@@ -22,7 +22,7 @@ import "kv.proto";
 package distributedlog.proto.kv.rpc;
 
 option java_multiple_files = true;
-option java_package = "org.apache.distributedlog.stream.proto.kv.rpc";
+option java_package = "org.apache.bookkeeper.stream.proto.kv.rpc";
 
 // Routing Header added to identify the range & storage container information (used in the stream store)
 message RoutingHeader {

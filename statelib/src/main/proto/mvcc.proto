@@ -20,7 +20,7 @@ syntax = "proto3";
 package distributedlog.proto.statestore.mvcc;
 
 option java_multiple_files = true;
-option java_package = "org.apache.distributedlog.statestore.proto";
+option java_package = "org.apache.bookkeeper.statestore.proto";
 
 enum ValueType {
     BYTES   = 0;

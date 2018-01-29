@@ -20,7 +20,7 @@ syntax = "proto3";
 package distributedlog.proto.kv;
 
 option java_multiple_files = true;
-option java_package = "org.apache.distributedlog.stream.proto.kv";
+option java_package = "org.apache.bookkeeper.stream.proto.kv";
 
 message KeyValue {
   // key is the key in bytes. An empty key is not allowed.

@@ -20,12 +20,12 @@
   <packaging>pom</packaging>
   <modelVersion>4.0.0</modelVersion>
   <parent>
-    <groupId>org.apache.distributedlog</groupId>
+    <groupId>org.apache.bookkeeper</groupId>
     <artifactId>stream-storage-parent</artifactId>
     <version>0.6.0-SNAPSHOT</version>
   </parent>
   <artifactId>stream-storage-tests-parent</artifactId>
-  <name>Apache DistributedLog :: Stream Storage :: Tests</name>
+  <name>Apache BookKeeper :: Stream Storage :: Tests</name>
   <modules>
     <module>integration</module>
   </modules>

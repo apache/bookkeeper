@@ -19,34 +19,29 @@
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <modelVersion>4.0.0</modelVersion>
   <parent>
-    <groupId>org.apache.distributedlog</groupId>
+    <groupId>org.apache.bookkeeper</groupId>
     <artifactId>stream-storage-service-parent</artifactId>
     <version>0.6.0-SNAPSHOT</version>
     <relativePath>..</relativePath>
   </parent>
   <artifactId>stream-storage-service-impl</artifactId>
-  <name>Apache DistributedLog :: Stream Storage :: Storage :: Impl</name>
+  <name>Apache BookKeeper :: Stream Storage :: Storage :: Impl</name>
 
   <dependencies>
     <dependency>
-      <groupId>org.apache.distributedlog</groupId>
+      <groupId>org.apache.bookkeeper</groupId>
       <artifactId>stream-storage-service-api</artifactId>
       <version>${project.parent.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.apache.distributedlog</groupId>
+      <groupId>org.apache.bookkeeper</groupId>
       <artifactId>statelib</artifactId>
       <version>${project.parent.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.apache.distributedlog</groupId>
+      <groupId>org.apache.bookkeeper</groupId>
       <artifactId>statelib</artifactId>
       <version>${project.parent.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.distributedlog</groupId>
-      <artifactId>distributedlog-core</artifactId>
-      <version>${distributedlog.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.helix</groupId>

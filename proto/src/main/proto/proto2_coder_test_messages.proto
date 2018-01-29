@@ -24,7 +24,7 @@ syntax = "proto2";
 
 package proto2_coder_test_messages;
 
-option java_package = "org.apache.distributedlog.stream.coder.protobuf.test";
+option java_package = "org.apache.bookkeeper.stream.coder.protobuf.test";
 
 message MessageA {
   optional string field1 = 1;

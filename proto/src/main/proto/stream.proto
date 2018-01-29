@@ -22,7 +22,7 @@ import "common.proto";
 package distributedlog.proto.stream;
 
 option java_multiple_files = true;
-option java_package = "org.apache.distributedlog.stream.proto";
+option java_package = "org.apache.bookkeeper.stream.proto";
 
 //
 // Range

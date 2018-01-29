@@ -18,152 +18,152 @@
 <FindBugsFilter>
   <Match>
     <!-- generated code, we can't be held responsible for findbugs in it //-->
-    <Class name="~org\.apache\.distributedlog\.tests\.generated.*" />
+    <Class name="~org\.apache\.bookkeeper\.tests\.generated.*" />
   </Match>
   <Match>
     <!-- generated code, we can't be held responsible for findbugs in it //-->
-    <Class name="~org\.apache\.distributedlog\.thrift.*" />
+    <Class name="~org\.apache\.bookkeeper\.thrift.*" />
   </Match>
   <Match>
     <!-- generated code, we can't be held responsible for findbugs in it //-->
-    <Class name="~org\.apache\.distributedlog\.statestore\.proto.*" />
+    <Class name="~org\.apache\.bookkeeper\.statestore\.proto.*" />
   </Match>
   <!-- distributedlog-benchmark -->
   <Match>
     <!-- generated code, we can't be held responsible for findbugs in it //-->
-    <Class name="~org\.apache\.distributedlog\.benchmark\.thrift.*" />
+    <Class name="~org\.apache\.bookkeeper\.benchmark\.thrift.*" />
   </Match>
   <!-- distributedlog-common -->
   <Match>
-    <Class name="org.apache.distributedlog.common.concurrent.FutureUtils"/>
+    <Class name="org.apache.bookkeeper.common.concurrent.FutureUtils"/>
     <Bug pattern="NP_NULL_PARAM_DEREF_NONVIRTUAL" />
   </Match>
   <Match>
-    <Class name="org.apache.distributedlog.common.concurrent.FutureUtils$2"/>
+    <Class name="org.apache.bookkeeper.common.concurrent.FutureUtils$2"/>
     <Bug pattern="NP_NONNULL_PARAM_VIOLATION" />
   </Match>
   <Match>
-    <Class name="org.apache.distributedlog.common.concurrent.FutureUtils"/>
+    <Class name="org.apache.bookkeeper.common.concurrent.FutureUtils"/>
     <Method name="Void" />
     <Bug pattern="NM_METHOD_NAMING_CONVENTION" />
   </Match>
   <!-- distributedlog-core -->
   <Match>
     <!-- it is safe to store external bytes reference here. //-->
-    <Class name="org.apache.distributedlog.Entry$Builder" />
+    <Class name="org.apache.bookkeeper.Entry$Builder" />
     <Method name="setData" />
     <Bug pattern="EI_EXPOSE_REP2" />
   </Match>
   <Match>
     <!-- it is safe to store external bytes reference here. //-->
-    <Class name="org.apache.distributedlog.Entry" />
+    <Class name="org.apache.bookkeeper.Entry" />
     <Method name="getRawData" />
     <Bug pattern="EI_EXPOSE_REP" />
   </Match>
   <Match>
-    <Class name="org.apache.distributedlog.BKAsyncLogReader" />
+    <Class name="org.apache.bookkeeper.BKAsyncLogReader" />
     <Method name="run" />
     <Bug pattern="JLM_JSR166_UTILCONCURRENT_MONITORENTER" />
   </Match>
   <Match>
-    <Class name="org.apache.distributedlog.BKLogReadHandler$1" />
+    <Class name="org.apache.bookkeeper.BKLogReadHandler$1" />
     <Method name="onSuccess" />
     <Bug pattern="NP_NONNULL_PARAM_VIOLATION" />
   </Match>
   <Match>
-    <Class name="org.apache.distributedlog.BookKeeperClient$2" />
+    <Class name="org.apache.bookkeeper.BookKeeperClient$2" />
     <Bug pattern="NP_NONNULL_PARAM_VIOLATION" />
   </Match>
   <Match>
-    <Class name="org.apache.distributedlog.ReadUtils" />
+    <Class name="org.apache.bookkeeper.ReadUtils" />
     <Bug pattern="NP_NONNULL_PARAM_VIOLATION" />
   </Match>
   <Match>
-    <Class name="org.apache.distributedlog.ReadUtils$2" />
+    <Class name="org.apache.bookkeeper.ReadUtils$2" />
     <Bug pattern="NP_NONNULL_PARAM_VIOLATION" />
   </Match>
   <Match>
-    <Class name="org.apache.distributedlog.auditor.DLAuditor$2" />
+    <Class name="org.apache.bookkeeper.auditor.DLAuditor$2" />
     <Bug pattern="NP_NONNULL_PARAM_VIOLATION" />
   </Match>
   <Match>
-    <Class name="org.apache.distributedlog.auditor.DLAuditor$8" />
+    <Class name="org.apache.bookkeeper.auditor.DLAuditor$8" />
     <Bug pattern="NP_NONNULL_PARAM_VIOLATION" />
   </Match>
   <Match>
-    <Class name="org.apache.distributedlog.bk.SimpleLedgerAllocator$4" />
+    <Class name="org.apache.bookkeeper.bk.SimpleLedgerAllocator$4" />
     <Bug pattern="NP_NONNULL_PARAM_VIOLATION" />
   </Match>
   <Match>
-    <Class name="org.apache.distributedlog.bk.SimpleLedgerAllocator$4$1" />
+    <Class name="org.apache.bookkeeper.bk.SimpleLedgerAllocator$4$1" />
     <Bug pattern="NP_NONNULL_PARAM_VIOLATION" />
   </Match>
   <Match>
-    <Class name="org.apache.distributedlog.bk.SimpleLedgerAllocator$5" />
+    <Class name="org.apache.bookkeeper.bk.SimpleLedgerAllocator$5" />
     <Bug pattern="NP_NONNULL_PARAM_VIOLATION" />
   </Match>
   <Match>
-    <Class name="org.apache.distributedlog.impl.acl.ZKAccessControl$4" />
+    <Class name="org.apache.bookkeeper.impl.acl.ZKAccessControl$4" />
     <Bug pattern="NP_NONNULL_PARAM_VIOLATION" />
   </Match>
   <Match>
-    <Class name="org.apache.distributedlog.impl.acl.ZKAccessControlManager$1" />
+    <Class name="org.apache.bookkeeper.impl.acl.ZKAccessControlManager$1" />
     <Bug pattern="NP_NONNULL_PARAM_VIOLATION" />
   </Match>
   <Match>
-    <Class name="org.apache.distributedlog.impl.acl.ZKAccessControlManager$1$1" />
+    <Class name="org.apache.bookkeeper.impl.acl.ZKAccessControlManager$1$1" />
     <Bug pattern="NP_NONNULL_PARAM_VIOLATION" />
   </Match>
   <Match>
-    <Class name="org.apache.distributedlog.impl.metadata.ZKLogStreamMetadataStore$1$1" />
+    <Class name="org.apache.bookkeeper.impl.metadata.ZKLogStreamMetadataStore$1$1" />
     <Bug pattern="NP_NONNULL_PARAM_VIOLATION" />
   </Match>
   <Match>
-    <Class name="org.apache.distributedlog.lock.ZKSessionLock" />
+    <Class name="org.apache.bookkeeper.lock.ZKSessionLock" />
     <Bug pattern="NP_NONNULL_PARAM_VIOLATION" />
   </Match>
   <Match>
-    <Class name="org.apache.distributedlog.lock.ZKSessionLock$12" />
+    <Class name="org.apache.bookkeeper.lock.ZKSessionLock$12" />
     <Bug pattern="NP_NONNULL_PARAM_VIOLATION" />
   </Match>
   <Match>
-    <Class name="org.apache.distributedlog.lock.ZKSessionLock$13$1" />
+    <Class name="org.apache.bookkeeper.lock.ZKSessionLock$13$1" />
     <Bug pattern="NP_NONNULL_PARAM_VIOLATION" />
   </Match>
   <Match>
-    <Class name="org.apache.distributedlog.util.Utils" />
+    <Class name="org.apache.bookkeeper.util.Utils" />
     <Bug pattern="NP_NONNULL_PARAM_VIOLATION" />
   </Match>
   <Match>
-    <Class name="org.apache.distributedlog.util.Utils$6" />
+    <Class name="org.apache.bookkeeper.util.Utils$6" />
     <Bug pattern="NP_NONNULL_PARAM_VIOLATION" />
   </Match>
   <!-- distributedlog-protocol -->
   <Match>
     <!-- it is safe to store external bytes reference here. //-->
-    <Class name="org.apache.distributedlog.LogRecord" />
+    <Class name="org.apache.bookkeeper.LogRecord" />
     <Bug pattern="EI_EXPOSE_REP2" />
   </Match>
   <Match>
     <!-- it is safe to store external bytes reference here. //-->
-    <Class name="org.apache.distributedlog.LogRecord" />
+    <Class name="org.apache.bookkeeper.LogRecord" />
     <Method name="getPayload" />
     <Bug pattern="EI_EXPOSE_REP" />
   </Match>
   <!-- distributedlog-proxy-server -->
   <Match>
     <!-- generated code, we can't be held responsible for findbugs in it //-->
-    <Class name="~org\.apache\.distributedlog\.service\.placement\.thrift.*" />
+    <Class name="~org\.apache\.bookkeeper\.service\.placement\.thrift.*" />
   </Match>
   <Match>
     <!-- it is safe to cast exception here. //-->
-    <Class name="org.apache.distributedlog.service.DistributedLogServiceImpl$Stream$2" />
+    <Class name="org.apache.bookkeeper.service.DistributedLogServiceImpl$Stream$2" />
     <Method name="onFailure" />
     <Bug pattern="BC_UNCONFIRMED_CAST" />
   </Match>
   <Match>
     <!-- it is safe to cast exception here. //-->
-    <Class name="org.apache.distributedlog.service.stream.BulkWriteOp" />
+    <Class name="org.apache.bookkeeper.service.stream.BulkWriteOp" />
     <Method name="isDefiniteFailure" />
     <Bug pattern="BC_IMPOSSIBLE_INSTANCEOF" />
   </Match>
@@ -174,18 +174,18 @@
   </Match>
   <Match>
     <!-- it is safe to store external bytes reference here. //-->
-    <Class name="org.apache.distributedlog.messaging.PartitionedMultiWriter" />
+    <Class name="org.apache.bookkeeper.messaging.PartitionedMultiWriter" />
     <Bug pattern="EI_EXPOSE_REP2" />
   </Match>
   <Match>
     <!-- it is safe to store external bytes reference here. //-->
-    <Class name="org.apache.distributedlog.messaging.RRMultiWriter" />
+    <Class name="org.apache.bookkeeper.messaging.RRMultiWriter" />
     <Bug pattern="EI_EXPOSE_REP2" />
   </Match>
   <!-- state-store -->
   <Match>
     <!-- it is safe to store external bytes reference here. //-->
-    <Class name="org.apache.distributedlog.statestore.impl.mvcc.op.proto.ProtoPutOpImpl" />
+    <Class name="org.apache.bookkeeper.statestore.impl.mvcc.op.proto.ProtoPutOpImpl" />
     <Bug pattern="EI_EXPOSE_REP" />
   </Match>
 </FindBugsFilter>

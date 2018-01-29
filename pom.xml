@@ -19,10 +19,10 @@
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <modelVersion>4.0.0</modelVersion>
   <packaging>pom</packaging>
-  <groupId>org.apache.distributedlog</groupId>
+  <groupId>org.apache.bookkeeper</groupId>
   <artifactId>stream-storage-parent</artifactId>
   <version>0.6.0-SNAPSHOT</version>
-  <name>Apache DistributedLog :: Stream Storage :: Parent</name>
+  <name>Apache BookKeeper :: Stream Storage :: Parent</name>
   <url>http://maven.apache.org</url>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

@@ -20,7 +20,7 @@ syntax = "proto3";
 package distributedlog.proto.common;
 
 option java_multiple_files = true;
-option java_package = "org.apache.distributedlog.stream.proto.common";
+option java_package = "org.apache.bookkeeper.stream.proto.common";
 
 message Endpoint {
     string hostname     = 1;

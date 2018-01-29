@@ -19,21 +19,21 @@
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <modelVersion>4.0.0</modelVersion>
   <parent>
-    <groupId>org.apache.distributedlog</groupId>
+    <groupId>org.apache.bookkeeper</groupId>
     <artifactId>stream-storage-parent</artifactId>
     <version>0.6.0-SNAPSHOT</version>
   </parent>
   <artifactId>stream-storage-server</artifactId>
-  <name>Apache DistributedLog :: Stream Storage :: Server</name>
+  <name>Apache BookKeeper :: Stream Storage :: Server</name>
 
   <dependencies>
     <dependency>
-      <groupId>org.apache.distributedlog</groupId>
+      <groupId>org.apache.bookkeeper</groupId>
       <artifactId>stream-storage-service-impl</artifactId>
       <version>${project.parent.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.apache.distributedlog</groupId>
+      <groupId>org.apache.bookkeeper</groupId>
       <artifactId>stream-storage-java-client</artifactId>
       <version>${project.parent.version}</version>
     </dependency>
