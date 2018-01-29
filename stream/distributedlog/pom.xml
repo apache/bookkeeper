@@ -30,57 +30,7 @@
   <description>
     Apache DistributedLog provides a high performance replicated log service.
   </description>
-  <url>http://bookkeeper.apache.org/distributedlog</url>
   <inceptionYear>2016</inceptionYear>
-  <licenses>
-    <license>
-      <name>Apache License, Version 2.0</name>
-      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
-      <distribution>repo</distribution>
-    </license>
-  </licenses>
-  <scm>
-    <connection>scm:git:https://github.com/apache/distributedlog.git</connection>
-    <developerConnection>scm:git:https://github.com/apache/distributedlog.git</developerConnection>
-    <url>https://github.com/apache/distributedlog</url>
-    <tag>HEAD</tag>
-  </scm>
-  <issueManagement>
-    <system>jira</system>
-    <url>https://issues.apache.org/jira/browse/DL</url>
-  </issueManagement>
-  <mailingLists>
-    <mailingList>
-      <name>DistributedLog User</name>
-      <subscribe>distributedlog-user-subscribe@bookkeeper.apache.org</subscribe>
-      <unsubscribe>distributedlog-user-unsubscribe@bookkeeper.apache.org</unsubscribe>
-      <post>distributedlog-user@bookkeeper.apache.org</post>
-      <archive>http://www.mail-archive.com/distributedlog-user@bookkeeper.apache.org</archive>
-    </mailingList>
-    <mailingList>
-      <name>DistributedLog Dev</name>
-      <subscribe>distributedlog-dev-subscribe@bookkeeper.apache.org</subscribe>
-      <unsubscribe>distributedlog-dev-unsubscribe@bookkeeper.apache.org</unsubscribe>
-      <post>distributedlog-dev@bookkeeper.apache.org</post>
-      <archive>http://www.mail-archive.com/distributedlog-dev@bookkeeper.apache.org</archive>
-    </mailingList>
-    <mailingList>
-      <name>DistributedLog Commits</name>
-      <subscribe>distributedlog-commits-subscribe@bookkeeper.apache.org</subscribe>
-      <unsubscribe>distributedlog-commits-unsubscribe@bookkeeper.apache.org</unsubscribe>
-      <post>distributedlog-commits@bookkeeper.apache.org</post>
-      <archive>http://www.mail-archive.com/distributedlog-commits@bookkeeper.apache.org</archive>
-    </mailingList>
-  </mailingLists>
-  <developers>
-    <developer>
-      <name>The Apache DistributedLog Team</name>
-      <email>distributedlog-dev@bookkeeper.apache.org</email>
-      <url>http://bookkeeper.apache.org/distributedlog</url>
-      <organization>Apache Software Foundation</organization>
-      <organizationUrl>http://www.apache.org</organizationUrl>
-    </developer>
-  </developers>
   <modules>
     <module>common</module>
     <module>protocol</module>
