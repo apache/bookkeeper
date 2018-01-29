@@ -19,6 +19,8 @@ package org.apache.bookkeeper.tests.backwardcompat
 
 import com.github.dockerjava.api.DockerClient
 
+import lombok.Cleanup
+
 import org.apache.bookkeeper.tests.BookKeeperClusterUtils
 import org.apache.bookkeeper.tests.MavenClassLoader
 
@@ -79,16 +81,16 @@ class TestCompatUpgradeWithHostnameBookieId {
         Assert.assertTrue(BookKeeperClusterUtils.startAllBookiesWithVersion(docker, "4.1.0"))
 
         // Write a ledger with v4.1.0 client
-        def v410CL = MavenClassLoader.forBookKeeperVersion("4.1.0")
-        def v410BK = v410CL.newBookKeeper(zookeeper)
+        @Cleanup def v410CL = MavenClassLoader.forBookKeeperVersion("4.1.0")
+        @Cleanup def v410BK = v410CL.newBookKeeper(zookeeper)
 
         def ledger410 = v410BK.createLedger(3, 2, v410CL.digestType("CRC32"), PASSWD)
         writeEntries(ledger410, numEntries)
         ledger410.close()
 
         // Write a ledger with v4.2.0 client
-        def v420CL = MavenClassLoader.forBookKeeperVersion("4.2.0")
-        def v420BK = v420CL.newBookKeeper(zookeeper)
+        @Cleanup def v420CL = MavenClassLoader.forBookKeeperVersion("4.2.0")
+        @Cleanup def v420BK = v420CL.newBookKeeper(zookeeper)
 
         def ledger420 = v420BK.createLedger(3, 2, v420CL.digestType("CRC32"), PASSWD)
         writeEntries(ledger420, numEntries)
@@ -110,12 +112,12 @@ class TestCompatUpgradeWithHostnameBookieId {
         ledger420r.close()
 
         // Ensure we can write and read new ledgers with all client versions
-        def currentCL = MavenClassLoader.forBookKeeperVersion(currentVersion)
-        def currentBK = currentCL.newBookKeeper(zookeeper)
+        @Cleanup def currentCL = MavenClassLoader.forBookKeeperVersion(currentVersion)
+        @Cleanup def currentBK = currentCL.newBookKeeper(zookeeper)
         oldClientVersions.each{
             LOG.info("Testing ledger creation for version {}", it)
-            def oldCL = MavenClassLoader.forBookKeeperVersion(it)
-            def oldBK = oldCL.newBookKeeper(zookeeper)
+            @Cleanup def oldCL = MavenClassLoader.forBookKeeperVersion(it)
+            @Cleanup def oldBK = oldCL.newBookKeeper(zookeeper)
 
             def ledger0 = oldBK.createLedger(3, 2, oldCL.digestType("CRC32"), PASSWD)
             writeEntries(ledger0, numEntries)
@@ -124,17 +126,7 @@ class TestCompatUpgradeWithHostnameBookieId {
             def ledger1 = currentBK.openLedger(ledger0.getId(), currentCL.digestType("CRC32"), PASSWD)
             assertHasEntries(ledger1, numEntries)
             ledger1.close()
-
-            oldBK.close()
-            oldCL.close()
         }
-        currentBK.close()
-        v420BK.close()
-        v410BK.close()
-
-        currentCL.close()
-        v420CL.close()
-        v410CL.close()
     }
 
 

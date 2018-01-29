@@ -19,6 +19,8 @@ package org.apache.bookkeeper.tests.backwardcompat
 
 import com.github.dockerjava.api.DockerClient
 
+import lombok.Cleanup
+
 import org.apache.bookkeeper.tests.BookKeeperClusterUtils
 import org.apache.bookkeeper.tests.MavenClassLoader
 
@@ -49,8 +51,8 @@ class TestCompatUpgradeOldServerInClusterWithCookies {
         int numEntries = 10
 
         Assert.assertTrue(BookKeeperClusterUtils.startAllBookiesWithVersion(docker, "4.1.0"))
-        def v410CL = MavenClassLoader.forBookKeeperVersion("4.1.0")
-        def v410BK = v410CL.newBookKeeper(zookeeper)
+        @Cleanup def v410CL = MavenClassLoader.forBookKeeperVersion("4.1.0")
+        @Cleanup def v410BK = v410CL.newBookKeeper(zookeeper)
 
         def ledger0 = v410BK.createLedger(3, 2, v410CL.digestType("CRC32"), PASSWD)
         for (int i = 0; i < numEntries; i++) {
@@ -82,7 +84,5 @@ class TestCompatUpgradeOldServerInClusterWithCookies {
         } catch (Exception e) {
             // correct behaviour
         }
-
-        v410CL.close()
     }
 }

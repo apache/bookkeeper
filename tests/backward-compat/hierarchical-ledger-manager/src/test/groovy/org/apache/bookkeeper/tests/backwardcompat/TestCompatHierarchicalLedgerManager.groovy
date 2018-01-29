@@ -19,6 +19,8 @@ package org.apache.bookkeeper.tests.backwardcompat
 
 import com.github.dockerjava.api.DockerClient
 
+import lombok.Cleanup
+
 import org.apache.bookkeeper.tests.BookKeeperClusterUtils
 import org.apache.bookkeeper.tests.MavenClassLoader
 
@@ -59,8 +61,8 @@ class TestCompatHierarchicalLedgerManager {
 
         String zookeeper = BookKeeperClusterUtils.zookeeperConnectString(docker)
         int numEntries = 10
-        def v420CL = MavenClassLoader.forBookKeeperVersion("4.2.0")
-        def v420BK = v420CL.newBookKeeper(zookeeper)
+        @Cleanup def v420CL = MavenClassLoader.forBookKeeperVersion("4.2.0")
+        @Cleanup def v420BK = v420CL.newBookKeeper(zookeeper)
 
         def ledger0 = v420BK.createLedger(3, 2, v420CL.digestType("CRC32"), PASSWD)
         for (int i = 0; i < numEntries; i++) {
@@ -75,8 +77,8 @@ class TestCompatHierarchicalLedgerManager {
                                                    "org.apache.bookkeeper.meta.HierarchicalLedgerManagerFactory")
         Assert.assertTrue(BookKeeperClusterUtils.startAllBookiesWithVersion(docker, currentVersion))
 
-        def currentCL = MavenClassLoader.forBookKeeperVersion(currentVersion)
-        def currentBK = currentCL.newBookKeeper(zookeeper)
+        @Cleanup def currentCL = MavenClassLoader.forBookKeeperVersion(currentVersion)
+        @Cleanup def currentBK = currentCL.newBookKeeper(zookeeper)
 
         def ledger1 = currentBK.openLedger(ledger0.getId(), currentCL.digestType("CRC32"), PASSWD)
         Assert.assertEquals(numEntries, ledger1.getLastAddConfirmed() + 1 /* counts from 0 */)
@@ -88,11 +90,5 @@ class TestCompatHierarchicalLedgerManager {
             j++
         }
         ledger1.close()
-
-        v420BK.close()
-        currentBK.close()
-
-        v420CL.close()
-        currentCL.close()
     }
 }

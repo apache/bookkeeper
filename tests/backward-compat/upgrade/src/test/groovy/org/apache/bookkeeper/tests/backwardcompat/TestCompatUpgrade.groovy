@@ -19,6 +19,8 @@ package org.apache.bookkeeper.tests.backwardcompat
 
 import com.github.dockerjava.api.DockerClient
 
+import lombok.Cleanup
+
 import org.apache.bookkeeper.tests.BookKeeperClusterUtils
 import org.apache.bookkeeper.tests.MavenClassLoader
 
@@ -47,9 +49,8 @@ class TestCompatUpgrade {
         String zookeeper = BookKeeperClusterUtils.zookeeperConnectString(docker)
         LOG.info("Upgrading from {} to {}", currentlyRunning, upgradeTo)
         int numEntries = 10
-        def currentRunningCL = MavenClassLoader.forBookKeeperVersion(currentlyRunning)
-
-        def currentRunningBK = currentRunningCL.newBookKeeper(zookeeper)
+        @Cleanup def currentRunningCL = MavenClassLoader.forBookKeeperVersion(currentlyRunning)
+        @Cleanup def currentRunningBK = currentRunningCL.newBookKeeper(zookeeper)
 
         def ledger0 = currentRunningBK.createLedger(3, 2,
                                                     currentRunningCL.digestType("CRC32"),
@@ -60,8 +61,8 @@ class TestCompatUpgrade {
         ledger0.close()
 
         // Check whether current client can write to old server
-        def upgradedCL = MavenClassLoader.forBookKeeperVersion(upgradeTo)
-        def upgradedBK = upgradedCL.newBookKeeper(zookeeper)
+        @Cleanup def upgradedCL = MavenClassLoader.forBookKeeperVersion(upgradeTo)
+        @Cleanup def upgradedBK = upgradedCL.newBookKeeper(zookeeper)
         def ledger1 = upgradedBK.createLedger(3, 2, upgradedCL.digestType("CRC32"), PASSWD)
         try {
             ledger1.addEntry("foobar".getBytes())
@@ -90,12 +91,6 @@ class TestCompatUpgrade {
             j++
         }
         ledger2.close()
-
-        currentRunningBK.close()
-        upgradedBK.close()
-
-        currentRunningCL.close()
-        upgradedCL.close()
     }
 
     @Test
