@@ -22,11 +22,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.anyObject;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Matchers.isA;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -175,7 +173,7 @@ public class TestFutureUtils {
         assertFalse(withinFuture.isCancelled());
         assertFalse(withinFuture.isCompletedExceptionally());
         verify(scheduler, times(0))
-            .schedule(eq(1234L), isA(Runnable.class), eq(10), eq(TimeUnit.MILLISECONDS));
+            .schedule(eq(1234L), any(Runnable.class), eq(10), eq(TimeUnit.MILLISECONDS));
     }
 
     @Test
@@ -194,14 +192,14 @@ public class TestFutureUtils {
         assertFalse(withinFuture.isCancelled());
         assertFalse(withinFuture.isCompletedExceptionally());
         verify(scheduler, times(0))
-            .schedule(eq(1234L), isA(Runnable.class), eq(10), eq(TimeUnit.MILLISECONDS));
+            .schedule(eq(1234L), any(Runnable.class), eq(10), eq(TimeUnit.MILLISECONDS));
     }
 
     @Test
     public void testWithinCompleteBeforeTimeout() throws Exception {
         OrderedScheduler scheduler = mock(OrderedScheduler.class);
         ScheduledFuture<?> scheduledFuture = mock(ScheduledFuture.class);
-        when(scheduler.schedule(anyObject(), any(Runnable.class), anyLong(), any(TimeUnit.class)))
+        when(scheduler.schedule(any(), any(Runnable.class), anyLong(), any(TimeUnit.class)))
             .thenAnswer(invocationOnMock -> scheduledFuture);
         CompletableFuture<Long> newFuture = FutureUtils.createFuture();
         CompletableFuture<Long> withinFuture = FutureUtils.within(
