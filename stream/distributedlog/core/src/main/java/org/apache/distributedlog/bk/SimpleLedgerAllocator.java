@@ -440,7 +440,7 @@ public class SimpleLedgerAllocator implements LedgerAllocator, FutureEventListen
         }
         if (!cleanup) {
             LOG.info("Abort ledger allocator without cleaning up on {}.", allocatePath);
-            closePromise.complete(null);
+            FutureUtils.complete(closePromise, null);
             return closePromise;
         }
         cleanupAndClose(closePromise);
