@@ -344,16 +344,20 @@ public class GarbageCollectorThread extends SafeRunnable {
      * Check whether the configured cron is met and activate threshold.
      */
     private double getCurrentMajorCompactionThreshold(){
+        double currentThreshold = 0;
         // next fire time is in the interval
         if (medianMajorCron.nextTimeAfter(ZonedDateTime.now()).toInstant().toEpochMilli()
                 <= (majorCompactionInterval + lastChangeThresholdTime)) {
-            return medianMajorCompactionThreshold;
+            currentThreshold = medianMajorCompactionThreshold;
         }
         if (highMajorCron.nextTimeAfter(ZonedDateTime.now()).toInstant().toEpochMilli()
                 <= (majorCompactionInterval + lastChangeThresholdTime)) {
-            return highMajorCompactionThreshold;
+            currentThreshold = highMajorCompactionThreshold;
         }
         lastChangeThresholdTime = ZonedDateTime.now().toInstant().toEpochMilli();
+        if (currentThreshold > 0) {
+            return currentThreshold;
+        }
         return majorCompactionThreshold;
     }
 

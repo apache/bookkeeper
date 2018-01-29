@@ -1104,7 +1104,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return threshold of major compaction
      */
     public double getMajorCompactionThreshold() {
-        return getDouble(MAJOR_COMPACTION_THRESHOLD, 0.6f);
+        return getDouble(MAJOR_COMPACTION_THRESHOLD, 0.8f);
     }
 
     /**
@@ -1200,10 +1200,10 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
 
     /**
      * Get high major compaction cron expression.
-     * default is 0-3 h in Saturday.
+     * default is 0-3 h in Saturday and Sunday.
      */
     public String getHighMajorCompactionCron() {
-        return getString(HIGH_MAJOR_COMPACTION_CRON, "0 * 0-3 ? * 7");
+        return getString(HIGH_MAJOR_COMPACTION_CRON, "0 * 0-3 ? * SAT,SUN");
     }
 
     /**

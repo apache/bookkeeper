@@ -834,16 +834,4 @@ public class CronExpressionTest {
         // The next leap year is 2016, so an IllegalArgumentException is expected.
         new CronExpression("* * * 29 2 *").nextTimeAfter(after, 1000 * 60 * 60 * 24 * 356 * 2);
     }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void test_seconds_specified_but_should_be_omitted() throws Exception {
-        CronExpression.createWithoutSeconds("* * * 29 2 *");
-    }
-
-    @Test
-    public void test_without_seconds() throws Exception {
-        ZonedDateTime after = ZonedDateTime.of(2012, 3, 1, 0, 0, 0, 0, zoneId);
-        ZonedDateTime expected = ZonedDateTime.of(2016, 2, 29, 0, 0, 0, 0, zoneId);
-        assertTrue(CronExpression.createWithoutSeconds("* * 29 2 *").nextTimeAfter(after).equals(expected));
-    }
 }
