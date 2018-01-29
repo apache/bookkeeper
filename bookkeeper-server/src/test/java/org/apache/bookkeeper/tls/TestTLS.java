@@ -17,7 +17,6 @@
  */
 package org.apache.bookkeeper.tls;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -25,7 +24,6 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.IOException;
-import java.net.URLDecoder;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
@@ -102,7 +100,7 @@ public class TestTLS extends BookKeeperClusterTestCase {
     }
 
     private String getResourcePath(String resource) throws Exception {
-        return URLDecoder.decode(this.getClass().getClassLoader().getResource(resource).getPath(), UTF_8.name());
+        return this.getClass().getClassLoader().getResource(resource).toURI().getPath();
     }
 
     @Before
