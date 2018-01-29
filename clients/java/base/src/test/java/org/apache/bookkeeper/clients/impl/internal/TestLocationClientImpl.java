@@ -62,220 +62,222 @@ import org.junit.Test;
 @Slf4j
 public class TestLocationClientImpl extends GrpcClientTestBase {
 
-  private static StorageContainerEndpoint createEndpoint(int groupId) {
-    return StorageContainerEndpoint.newBuilder()
-      .setStorageContainerId(groupId)
-      .setRevision(1000L + groupId)
-      .setRwEndpoint(NetUtils.createEndpoint("127.0.0." + groupId, groupId))
-      .addRoEndpoint(NetUtils.createEndpoint("128.0.0." + groupId, groupId))
-      .build();
-  }
+    private static StorageContainerEndpoint createEndpoint(int groupId) {
+        return StorageContainerEndpoint.newBuilder()
+            .setStorageContainerId(groupId)
+            .setRevision(1000L + groupId)
+            .setRwEndpoint(NetUtils.createEndpoint("127.0.0." + groupId, groupId))
+            .addRoEndpoint(NetUtils.createEndpoint("128.0.0." + groupId, groupId))
+            .build();
+    }
 
-  private LocationClientImpl locationClient;
+    private LocationClientImpl locationClient;
 
-  private final List<StorageContainerEndpoint> endpoints = IntStream
-    .range(0, 10)
-    .boxed()
-    .map(i -> createEndpoint(i))
-    .collect(Collectors.toList());
+    private final List<StorageContainerEndpoint> endpoints = IntStream
+        .range(0, 10)
+        .boxed()
+        .map(i -> createEndpoint(i))
+        .collect(Collectors.toList());
 
-  private final StorageContainerServiceImplBase locationService = new StorageContainerServiceImplBase() {
+    private final StorageContainerServiceImplBase locationService = new StorageContainerServiceImplBase() {
+
+        @Override
+        public void getStorageContainerEndpoint(GetStorageContainerEndpointRequest request,
+                                                StreamObserver<GetStorageContainerEndpointResponse> responseObserver) {
+            GetStorageContainerEndpointResponse.Builder respBuilder = GetStorageContainerEndpointResponse.newBuilder();
+            if (0 == request.getRequestsCount()) {
+                responseObserver.onError(new StatusRuntimeException(Status.INVALID_ARGUMENT));
+            } else {
+                for (OneStorageContainerEndpointRequest oneRequest : request.getRequestsList()) {
+                    respBuilder.addResponses(processOneStorageContainerEndpointRequest(oneRequest));
+                }
+                respBuilder.setStatusCode(StatusCode.SUCCESS);
+                responseObserver.onNext(respBuilder.build());
+            }
+            responseObserver.onCompleted();
+        }
+
+        OneStorageContainerEndpointResponse.Builder processOneStorageContainerEndpointRequest(
+            OneStorageContainerEndpointRequest request) {
+            StatusCode code;
+            StorageContainerEndpoint endpoint = null;
+            if (request.getStorageContainer() < 0) {
+                code = StatusCode.INVALID_GROUP_ID;
+            } else if (request.getStorageContainer() >= endpoints.size()) {
+                code = StatusCode.GROUP_NOT_FOUND;
+            } else {
+                code = StatusCode.SUCCESS;
+                endpoint = endpoints.get((int) request.getStorageContainer());
+            }
+            if (endpoint != null) {
+                if (endpoint.getRevision() <= request.getRevision()) {
+                    code = StatusCode.STALE_GROUP_INFO;
+                    endpoint = null;
+                }
+            }
+            OneStorageContainerEndpointResponse.Builder builder = OneStorageContainerEndpointResponse.newBuilder()
+                .setStatusCode(code);
+            if (null != endpoint) {
+                builder = builder.setEndpoint(endpoint);
+            }
+            return builder;
+        }
+    };
+    private ServerServiceDefinition locationServiceDefinition;
 
     @Override
-    public void getStorageContainerEndpoint(GetStorageContainerEndpointRequest request,
-                                      StreamObserver<GetStorageContainerEndpointResponse> responseObserver) {
-      GetStorageContainerEndpointResponse.Builder respBuilder = GetStorageContainerEndpointResponse.newBuilder();
-      if (0 == request.getRequestsCount()) {
-        responseObserver.onError(new StatusRuntimeException(Status.INVALID_ARGUMENT));
-      } else {
-        for (OneStorageContainerEndpointRequest oneRequest : request.getRequestsList()) {
-          respBuilder.addResponses(processOneStorageContainerEndpointRequest(oneRequest));
+    protected void doSetup() throws Exception {
+        StorageClientSettings settings =
+            StorageClientSettings.newBuilder()
+                .managedChannelBuilder(InProcessChannelBuilder.forName(serverName).directExecutor())
+                .usePlaintext(true)
+                .build();
+        locationClient = new LocationClientImpl(settings, scheduler);
+        locationServiceDefinition = locationService.bindService();
+        serviceRegistry.addService(locationServiceDefinition);
+    }
+
+    @Override
+    protected void doTeardown() throws Exception {
+        if (null != locationClient) {
+            locationClient.close();
         }
-        respBuilder.setStatusCode(StatusCode.SUCCESS);
-        responseObserver.onNext(respBuilder.build());
-      }
-      responseObserver.onCompleted();
     }
 
-    OneStorageContainerEndpointResponse.Builder processOneStorageContainerEndpointRequest(
-      OneStorageContainerEndpointRequest request) {
-      StatusCode code;
-      StorageContainerEndpoint endpoint = null;
-      if (request.getStorageContainer() < 0) {
-        code = StatusCode.INVALID_GROUP_ID;
-      } else if (request.getStorageContainer() >= endpoints.size()) {
-        code = StatusCode.GROUP_NOT_FOUND;
-      } else {
-        code = StatusCode.SUCCESS;
-        endpoint = endpoints.get((int) request.getStorageContainer());
-      }
-      if (endpoint != null) {
-        if (endpoint.getRevision() <= request.getRevision()) {
-          code = StatusCode.STALE_GROUP_INFO;
-          endpoint = null;
+    private void assertOneStorageContainerEndpointResponse(
+        OneStorageContainerEndpointResponse response,
+        StatusCode expectedStatusCode,
+        StorageContainerEndpoint expectedEndpoint) {
+        assertEquals(expectedStatusCode, response.getStatusCode());
+        if (null != expectedEndpoint) {
+            assertEquals("Expected endpoint = " + expectedEndpoint + ", Actual endpoint = " + response.getEndpoint(),
+                expectedEndpoint, response.getEndpoint());
+        } else {
+            assertFalse(response.hasEndpoint());
         }
-      }
-      OneStorageContainerEndpointResponse.Builder builder = OneStorageContainerEndpointResponse.newBuilder()
-        .setStatusCode(code);
-      if (null != endpoint) {
-        builder = builder.setEndpoint(endpoint);
-      }
-      return builder;
     }
-  };
-  private ServerServiceDefinition locationServiceDefinition;
 
-  @Override
-  protected void doSetup() throws Exception {
-    StorageClientSettings settings =
-      StorageClientSettings.newBuilder()
-        .managedChannelBuilder(InProcessChannelBuilder.forName(serverName).directExecutor())
-        .usePlaintext(true)
-        .build();
-    locationClient = new LocationClientImpl(settings, scheduler);
-    locationServiceDefinition = locationService.bindService();
-    serviceRegistry.addService(locationServiceDefinition);
-  }
-
-  @Override
-  protected void doTeardown() throws Exception {
-    if (null != locationClient) {
-      locationClient.close();
+    @Test
+    public void testLocateStorageContainersSuccess() throws Exception {
+        CompletableFuture<List<OneStorageContainerEndpointResponse>> future =
+            locationClient.locateStorageContainers(Lists.newArrayList(
+                Revisioned.of(1L, IRevisioned.ANY_REVISION),
+                Revisioned.of(3L, IRevisioned.ANY_REVISION),
+                Revisioned.of(5L, IRevisioned.ANY_REVISION),
+                Revisioned.of(7L, IRevisioned.ANY_REVISION)
+            ));
+        List<OneStorageContainerEndpointResponse> result = FutureUtils.result(future);
+        assertEquals(4, result.size());
+        assertOneStorageContainerEndpointResponse(result.get(0), StatusCode.SUCCESS, endpoints.get(1));
+        assertOneStorageContainerEndpointResponse(result.get(1), StatusCode.SUCCESS, endpoints.get(3));
+        assertOneStorageContainerEndpointResponse(result.get(2), StatusCode.SUCCESS, endpoints.get(5));
+        assertOneStorageContainerEndpointResponse(result.get(3), StatusCode.SUCCESS, endpoints.get(7));
     }
-  }
 
-  private void assertOneStorageContainerEndpointResponse(
-      OneStorageContainerEndpointResponse response,
-      StatusCode expectedStatusCode,
-      StorageContainerEndpoint expectedEndpoint) {
-    assertEquals(expectedStatusCode, response.getStatusCode());
-    if (null != expectedEndpoint) {
-      assertEquals("Expected endpoint = " + expectedEndpoint + ", Actual endpoint = " + response.getEndpoint(),
-        expectedEndpoint, response.getEndpoint());
-    } else {
-      assertFalse(response.hasEndpoint());
-    }
-  }
-
-  @Test
-  public void testLocateStorageContainersSuccess() throws Exception {
-    CompletableFuture<List<OneStorageContainerEndpointResponse>> future =
-        locationClient.locateStorageContainers(Lists.newArrayList(
-            Revisioned.of(1L, IRevisioned.ANY_REVISION),
-            Revisioned.of(3L, IRevisioned.ANY_REVISION),
-            Revisioned.of(5L, IRevisioned.ANY_REVISION),
-            Revisioned.of(7L, IRevisioned.ANY_REVISION)
-        ));
-    List<OneStorageContainerEndpointResponse> result = FutureUtils.result(future);
-    assertEquals(4, result.size());
-    assertOneStorageContainerEndpointResponse(result.get(0), StatusCode.SUCCESS, endpoints.get(1));
-    assertOneStorageContainerEndpointResponse(result.get(1), StatusCode.SUCCESS, endpoints.get(3));
-    assertOneStorageContainerEndpointResponse(result.get(2), StatusCode.SUCCESS, endpoints.get(5));
-    assertOneStorageContainerEndpointResponse(result.get(3), StatusCode.SUCCESS, endpoints.get(7));
-  }
-
-  @Test
-  public void testLocateStorageContainersInvalidArgs() throws Exception {
-    CompletableFuture<List<OneStorageContainerEndpointResponse>> future =
-      locationClient.locateStorageContainers(Lists.newArrayList());
-    try {
-      future.get();
-      fail("Should fail with invalid arguments");
-    } catch (ExecutionException ee) {
-      Throwable cause = ee.getCause();
-      assertTrue(
-        "Unexpected exception : " + cause,
-        cause instanceof StatusRuntimeException);
-      assertEquals(Status.INVALID_ARGUMENT, ((StatusRuntimeException) cause).getStatus());
-    }
-  }
-
-  @Test
-  public void testLocateStorageContainersFailures() throws Exception {
-    CompletableFuture<List<OneStorageContainerEndpointResponse>> future =
-      locationClient.locateStorageContainers(Lists.newArrayList(
-        Revisioned.of(-1L, IRevisioned.ANY_REVISION), // invalid group id
-        Revisioned.of(1L, IRevisioned.ANY_REVISION), // valid group id
-        Revisioned.of(3L, Long.MAX_VALUE), // stale revision
-        Revisioned.of(Long.MAX_VALUE, IRevisioned.ANY_REVISION) // not found
-      ));
-    List<OneStorageContainerEndpointResponse> result = FutureUtils.result(future);
-    assertEquals(4, result.size());
-    assertOneStorageContainerEndpointResponse(result.get(0), StatusCode.INVALID_GROUP_ID, null);
-    assertOneStorageContainerEndpointResponse(result.get(1), StatusCode.SUCCESS, endpoints.get(1));
-    assertOneStorageContainerEndpointResponse(result.get(2), StatusCode.STALE_GROUP_INFO, null);
-    assertOneStorageContainerEndpointResponse(result.get(3), StatusCode.GROUP_NOT_FOUND, null);
-  }
-
-  @Test
-  public void testLocateStorageContainersRetryPredicate() throws Exception {
-    assertTrue(LOCATE_STORAGE_CONTAINERS_RETRY_PREDICATE.test(
-      new StatusException(Status.INTERNAL)));
-    assertTrue(LOCATE_STORAGE_CONTAINERS_RETRY_PREDICATE.test(
-      new StatusRuntimeException(Status.INTERNAL)));
-    assertFalse(LOCATE_STORAGE_CONTAINERS_RETRY_PREDICATE.test(
-      new StatusException(Status.INVALID_ARGUMENT)));
-    assertFalse(LOCATE_STORAGE_CONTAINERS_RETRY_PREDICATE.test(
-      new StatusRuntimeException(Status.INVALID_ARGUMENT)));
-    assertTrue(LOCATE_STORAGE_CONTAINERS_RETRY_PREDICATE.test(
-      new ClientException("test-2")));
-    assertTrue(LOCATE_STORAGE_CONTAINERS_RETRY_PREDICATE.test(
-      new StorageContainerException(StatusCode.FAILURE, "test-3")));
-  }
-
-  @Test
-  public void testLocateStorageContainersSucceedAfterRetried() throws Exception {
-    serviceRegistry.removeService(locationServiceDefinition);
-    final AtomicInteger retries = new AtomicInteger(3);
-    StatusRuntimeException statusException = new StatusRuntimeException(Status.INTERNAL);
-    StorageContainerServiceImplBase locationServiceWithFailures =
-      new StorageContainerServiceImplBase() {
-        @Override
-        public void getStorageContainerEndpoint(GetStorageContainerEndpointRequest request,
-                                          StreamObserver<GetStorageContainerEndpointResponse> responseObserver) {
-          if (retries.decrementAndGet() == 0) {
-            locationService.getStorageContainerEndpoint(request, responseObserver);
-            return;
-          }
-          responseObserver.onError(statusException);
+    @Test
+    public void testLocateStorageContainersInvalidArgs() throws Exception {
+        CompletableFuture<List<OneStorageContainerEndpointResponse>> future =
+            locationClient.locateStorageContainers(Lists.newArrayList());
+        try {
+            future.get();
+            fail("Should fail with invalid arguments");
+        } catch (ExecutionException ee) {
+            Throwable cause = ee.getCause();
+            assertTrue(
+                "Unexpected exception : " + cause,
+                cause instanceof StatusRuntimeException);
+            assertEquals(Status.INVALID_ARGUMENT, ((StatusRuntimeException) cause).getStatus());
         }
-      };
-    serviceRegistry.addService(locationServiceWithFailures.bindService());
-    testLocateStorageContainersSuccess();
-    assertEquals(0, retries.get());
-  }
-
-  @Test
-  public void testLocateStorageContainersFailureAfterRetried() throws Exception {
-    serviceRegistry.removeService(locationServiceDefinition);
-    final AtomicInteger retries = new AtomicInteger(3);
-    StatusRuntimeException statusException = new StatusRuntimeException(Status.INTERNAL);
-    StorageContainerServiceImplBase locationServiceWithFailures =
-      new StorageContainerServiceImplBase() {
-        @Override
-        public void getStorageContainerEndpoint(GetStorageContainerEndpointRequest request,
-                                          StreamObserver<GetStorageContainerEndpointResponse> responseObserver) {
-          if (retries.decrementAndGet() == 0) {
-            responseObserver.onError(new StatusRuntimeException(Status.INVALID_ARGUMENT));
-            return;
-          }
-          responseObserver.onError(statusException);
-        }
-      };
-    serviceRegistry.addService(locationServiceWithFailures.bindService());
-    CompletableFuture<List<OneStorageContainerEndpointResponse>> future =
-      locationClient.locateStorageContainers(Lists.newArrayList(
-        Revisioned.of(1L, IRevisioned.ANY_REVISION)
-      ));
-    try {
-      future.get();
-      fail("should fail with exception");
-    } catch (ExecutionException ee) {
-      assertNotNull(ee.getCause());
-      assertTrue(ee.getCause() instanceof StatusRuntimeException);
-      assertEquals(Status.INVALID_ARGUMENT, ((StatusRuntimeException) ee.getCause()).getStatus());
     }
-    assertEquals(0, retries.get());
-  }
+
+    @Test
+    public void testLocateStorageContainersFailures() throws Exception {
+        CompletableFuture<List<OneStorageContainerEndpointResponse>> future =
+            locationClient.locateStorageContainers(Lists.newArrayList(
+                Revisioned.of(-1L, IRevisioned.ANY_REVISION), // invalid group id
+                Revisioned.of(1L, IRevisioned.ANY_REVISION), // valid group id
+                Revisioned.of(3L, Long.MAX_VALUE), // stale revision
+                Revisioned.of(Long.MAX_VALUE, IRevisioned.ANY_REVISION) // not found
+            ));
+        List<OneStorageContainerEndpointResponse> result = FutureUtils.result(future);
+        assertEquals(4, result.size());
+        assertOneStorageContainerEndpointResponse(result.get(0), StatusCode.INVALID_GROUP_ID, null);
+        assertOneStorageContainerEndpointResponse(result.get(1), StatusCode.SUCCESS, endpoints.get(1));
+        assertOneStorageContainerEndpointResponse(result.get(2), StatusCode.STALE_GROUP_INFO, null);
+        assertOneStorageContainerEndpointResponse(result.get(3), StatusCode.GROUP_NOT_FOUND, null);
+    }
+
+    @Test
+    public void testLocateStorageContainersRetryPredicate() throws Exception {
+        assertTrue(LOCATE_STORAGE_CONTAINERS_RETRY_PREDICATE.test(
+            new StatusException(Status.INTERNAL)));
+        assertTrue(LOCATE_STORAGE_CONTAINERS_RETRY_PREDICATE.test(
+            new StatusRuntimeException(Status.INTERNAL)));
+        assertFalse(LOCATE_STORAGE_CONTAINERS_RETRY_PREDICATE.test(
+            new StatusException(Status.INVALID_ARGUMENT)));
+        assertFalse(LOCATE_STORAGE_CONTAINERS_RETRY_PREDICATE.test(
+            new StatusRuntimeException(Status.INVALID_ARGUMENT)));
+        assertTrue(LOCATE_STORAGE_CONTAINERS_RETRY_PREDICATE.test(
+            new ClientException("test-2")));
+        assertTrue(LOCATE_STORAGE_CONTAINERS_RETRY_PREDICATE.test(
+            new StorageContainerException(StatusCode.FAILURE, "test-3")));
+    }
+
+    @Test
+    public void testLocateStorageContainersSucceedAfterRetried() throws Exception {
+        serviceRegistry.removeService(locationServiceDefinition);
+        final AtomicInteger retries = new AtomicInteger(3);
+        StatusRuntimeException statusException = new StatusRuntimeException(Status.INTERNAL);
+        StorageContainerServiceImplBase locationServiceWithFailures =
+            new StorageContainerServiceImplBase() {
+                @Override
+                public void getStorageContainerEndpoint(
+                    GetStorageContainerEndpointRequest request,
+                    StreamObserver<GetStorageContainerEndpointResponse> responseObserver) {
+                    if (retries.decrementAndGet() == 0) {
+                        locationService.getStorageContainerEndpoint(request, responseObserver);
+                        return;
+                    }
+                    responseObserver.onError(statusException);
+                }
+            };
+        serviceRegistry.addService(locationServiceWithFailures.bindService());
+        testLocateStorageContainersSuccess();
+        assertEquals(0, retries.get());
+    }
+
+    @Test
+    public void testLocateStorageContainersFailureAfterRetried() throws Exception {
+        serviceRegistry.removeService(locationServiceDefinition);
+        final AtomicInteger retries = new AtomicInteger(3);
+        StatusRuntimeException statusException = new StatusRuntimeException(Status.INTERNAL);
+        StorageContainerServiceImplBase locationServiceWithFailures =
+            new StorageContainerServiceImplBase() {
+                @Override
+                public void getStorageContainerEndpoint(
+                    GetStorageContainerEndpointRequest request,
+                    StreamObserver<GetStorageContainerEndpointResponse> responseObserver) {
+                    if (retries.decrementAndGet() == 0) {
+                        responseObserver.onError(new StatusRuntimeException(Status.INVALID_ARGUMENT));
+                        return;
+                    }
+                    responseObserver.onError(statusException);
+                }
+            };
+        serviceRegistry.addService(locationServiceWithFailures.bindService());
+        CompletableFuture<List<OneStorageContainerEndpointResponse>> future =
+            locationClient.locateStorageContainers(Lists.newArrayList(
+                Revisioned.of(1L, IRevisioned.ANY_REVISION)
+            ));
+        try {
+            future.get();
+            fail("should fail with exception");
+        } catch (ExecutionException ee) {
+            assertNotNull(ee.getCause());
+            assertTrue(ee.getCause() instanceof StatusRuntimeException);
+            assertEquals(Status.INVALID_ARGUMENT, ((StatusRuntimeException) ee.getCause()).getStatus());
+        }
+        assertEquals(0, retries.get());
+    }
 
 }

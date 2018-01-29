@@ -34,28 +34,28 @@ import org.apache.bookkeeper.stream.proto.common.Endpoint;
 @ToString
 public class StorageContainerInfo implements IRevisioned {
 
-  public static StorageContainerInfo of(long groupId, long revision, Endpoint endpoint) {
-    return of(groupId, revision, endpoint, Lists.newArrayList(endpoint));
-  }
+    public static StorageContainerInfo of(long groupId, long revision, Endpoint endpoint) {
+        return of(groupId, revision, endpoint, Lists.newArrayList(endpoint));
+    }
 
-  /**
-   * KeyStorage Container Id.
-   */
-  private final long groupId;
+    /**
+     * KeyStorage Container Id.
+     */
+    private final long groupId;
 
-  /**
-   * The revision of storage container info.
-   */
-  private final long revision;
+    /**
+     * The revision of storage container info.
+     */
+    private final long revision;
 
-  /**
-   * Endpoint for write service.
-   */
-  private final Endpoint writeEndpoint;
+    /**
+     * Endpoint for write service.
+     */
+    private final Endpoint writeEndpoint;
 
-  /**
-   * Endpoints for read service.
-   */
-  private final List<Endpoint> readEndpoints;
+    /**
+     * Endpoints for read service.
+     */
+    private final List<Endpoint> readEndpoints;
 
 }

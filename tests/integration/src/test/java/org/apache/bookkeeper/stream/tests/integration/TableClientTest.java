@@ -172,16 +172,16 @@ public class TableClientTest extends StorageServerTestBase {
         ByteBuf valBuf2 = Unpooled.wrappedBuffer("testing-value-2".getBytes(UTF_8));
         try (PutOptionBuilder<ByteBuf> optionBuilder = optionFactory.newPutOption().prevKv(true)) {
             try (PutOption<ByteBuf> option = optionBuilder.build()) {
-                 try (PutResult<ByteBuf, ByteBuf> putResult = FutureUtils.result(table.put(
+                try (PutResult<ByteBuf, ByteBuf> putResult = FutureUtils.result(table.put(
                     rKeyBuf,
                     lKeyBuf,
                     valBuf2,
                     option))) {
-                     assertNotNull(putResult.prevKv());
-                     KeyValue<ByteBuf, ByteBuf> prevKv = putResult.prevKv();
-                     assertEquals("testing-key", new String(ByteBufUtil.getBytes(prevKv.key()), UTF_8));
-                     assertEquals("testing-value", new String(ByteBufUtil.getBytes(prevKv.value()), UTF_8));
-                 }
+                    assertNotNull(putResult.prevKv());
+                    KeyValue<ByteBuf, ByteBuf> prevKv = putResult.prevKv();
+                    assertEquals("testing-key", new String(ByteBufUtil.getBytes(prevKv.key()), UTF_8));
+                    assertEquals("testing-value", new String(ByteBufUtil.getBytes(prevKv.value()), UTF_8));
+                }
             }
         }
 
@@ -240,27 +240,27 @@ public class TableClientTest extends StorageServerTestBase {
         ByteBuf lEndKey = getLKey(50);
         try (RangeOptionBuilder<ByteBuf> optionBuilder = optionFactory.newRangeOption().endKey(lEndKey)) {
             try (RangeOption<ByteBuf> option = optionBuilder.build()) {
-                 try (RangeResult<ByteBuf, ByteBuf> rangeResult = FutureUtils.result(table.get(
-                     rKeyBuf,
-                     lStartKey,
-                     option))) {
-                     assertEquals(31, rangeResult.kvs().size());
-                     assertEquals(31, rangeResult.count());
-                     int i = 20;
-                     for (KeyValue<ByteBuf, ByteBuf> kvPair : rangeResult.kvs()) {
-                         assertEquals(getLKey(i), kvPair.key());
-                         assertEquals(getValue(i), kvPair.value());
-                         ++i;
-                     }
-                     assertEquals(51, i);
-                 }
+                try (RangeResult<ByteBuf, ByteBuf> rangeResult = FutureUtils.result(table.get(
+                    rKeyBuf,
+                    lStartKey,
+                    option))) {
+                    assertEquals(31, rangeResult.kvs().size());
+                    assertEquals(31, rangeResult.count());
+                    int i = 20;
+                    for (KeyValue<ByteBuf, ByteBuf> kvPair : rangeResult.kvs()) {
+                        assertEquals(getLKey(i), kvPair.key());
+                        assertEquals(getValue(i), kvPair.value());
+                        ++i;
+                    }
+                    assertEquals(51, i);
+                }
             }
         }
 
         // delete range
         try (DeleteOptionBuilder<ByteBuf> optionBuilder = optionFactory.newDeleteOption()
-             .prevKv(true)
-             .endKey(lEndKey)) {
+            .prevKv(true)
+            .endKey(lEndKey)) {
             try (DeleteOption<ByteBuf> option = optionBuilder.build()) {
                 try (DeleteResult<ByteBuf, ByteBuf> deleteRangeResult = FutureUtils.result(table.delete(
                     rKeyBuf,

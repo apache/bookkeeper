@@ -26,13 +26,13 @@ package org.apache.bookkeeper.common.util;
  */
 public interface IRevisioned {
 
-  long ANY_REVISION = -1L;
+    long ANY_REVISION = -1L;
 
-  /**
-   * Return the revision associated with the value.
-   *
-   * @return the revision associated with the value.
-   */
-  long getRevision();
+    /**
+     * Return the revision associated with the value.
+     *
+     * @return the revision associated with the value.
+     */
+    long getRevision();
 
 }

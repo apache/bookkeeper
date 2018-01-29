@@ -22,25 +22,25 @@ import org.apache.bookkeeper.stream.proto.common.Endpoint;
  */
 public interface StorageController extends AutoCloseable {
 
-  /**
-   * Create the cluster.
-   *
-   * @param clusterName cluster name.
-   * @param numStorageContainers num storage containers.
-   * @param numReplicas num replicas per storage container.
-   */
-  void createCluster(String clusterName,
-                     int numStorageContainers,
-                     int numReplicas);
+    /**
+     * Create the cluster.
+     *
+     * @param clusterName          cluster name.
+     * @param numStorageContainers num storage containers.
+     * @param numReplicas          num replicas per storage container.
+     */
+    void createCluster(String clusterName,
+                       int numStorageContainers,
+                       int numReplicas);
 
-  /**
-   * Add a node to a cluster.
-   *
-   * @param clusterName cluster name.
-   * @param endpointName node endpoint name.
-   */
-  void addNode(String clusterName,
-               Endpoint endpoint,
-               Optional<String> endpointName);
+    /**
+     * Add a node to a cluster.
+     *
+     * @param clusterName  cluster name.
+     * @param endpointName node endpoint name.
+     */
+    void addNode(String clusterName,
+                 Endpoint endpoint,
+                 Optional<String> endpointName);
 
 }

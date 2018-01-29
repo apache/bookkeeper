@@ -23,9 +23,9 @@ package org.apache.bookkeeper.clients.exceptions;
  */
 public class InvalidNamespaceNameException extends ClientException {
 
-  private static final long serialVersionUID = -7753743605040374222L;
+    private static final long serialVersionUID = -7753743605040374222L;
 
-  public InvalidNamespaceNameException(String colName) {
-    super("Invalid namespace name : " + colName);
-  }
+    public InvalidNamespaceNameException(String colName) {
+        super("Invalid namespace name : " + colName);
+    }
 }

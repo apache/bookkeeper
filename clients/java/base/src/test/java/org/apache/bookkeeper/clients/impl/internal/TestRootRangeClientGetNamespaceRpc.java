@@ -45,121 +45,122 @@ import org.apache.bookkeeper.stream.proto.storage.StatusCode;
  */
 public class TestRootRangeClientGetNamespaceRpc extends RootRangeClientImplTestBase {
 
-  private long colId;
-  private String colName;
-  private NamespaceProperties colProps;
-  private static final NamespaceConfiguration colConf = NamespaceConfiguration.newBuilder()
-    .setDefaultStreamConf(DEFAULT_STREAM_CONF)
-    .build();
+    private long colId;
+    private String colName;
+    private NamespaceProperties colProps;
+    private static final NamespaceConfiguration colConf = NamespaceConfiguration.newBuilder()
+        .setDefaultStreamConf(DEFAULT_STREAM_CONF)
+        .build();
 
-  @Override
-  protected void doSetup() throws Exception {
-    super.doSetup();
+    @Override
+    protected void doSetup() throws Exception {
+        super.doSetup();
 
-    this.colId = System.currentTimeMillis();
-    this.colName = testName.getMethodName();
-    this.colProps = NamespaceProperties.newBuilder()
-      .setNamespaceId(colId)
-      .setNamespaceName(colName)
-      .setDefaultStreamConf(DEFAULT_STREAM_CONF)
-      .build();
-  }
-
-  //
-  // Test Client Operations
-  //
-
-  //
-  // Namespace API
-  //
-
-
-  @Override
-  protected RootRangeServiceImplBase createRootRangeServiceForSuccess() {
-    return new RootRangeServiceImplBase() {
-      @Override
-      public void getNamespace(GetNamespaceRequest request,
-                                StreamObserver<GetNamespaceResponse> responseObserver) {
-        responseObserver.onNext(GetNamespaceResponse.newBuilder()
-          .setCode(StatusCode.SUCCESS)
-          .setColProps(colProps)
-          .build());
-        responseObserver.onCompleted();
-      }
-    };
-  }
-
-  @Override
-  protected void verifySuccess(RootRangeClient rootRangeClient) throws Exception {
-    CompletableFuture<NamespaceProperties> getFuture = rootRangeClient.getNamespace(colName);
-    assertTrue(colProps == getFuture.get());
-  }
-
-
-  @Override
-  protected RootRangeServiceImplBase createRootRangeServiceForRequestFailure() {
-    return new RootRangeServiceImplBase() {
-      @Override
-      public void getNamespace(GetNamespaceRequest request,
-                                StreamObserver<GetNamespaceResponse> responseObserver) {
-        responseObserver.onNext(GetNamespaceResponse.newBuilder()
-          .setCode(StatusCode.NAMESPACE_NOT_FOUND)
-          .build());
-        responseObserver.onCompleted();
-      }
-    };
-  }
-
-  @Override
-  protected void verifyRequestFailure(RootRangeClient rootRangeClient) throws Exception {
-    CompletableFuture<NamespaceProperties> getFuture = rootRangeClient.getNamespace(colName);
-    try {
-      getFuture.get();
-      fail("Should fail on rpc failure");
-    } catch (ExecutionException ee) {
-      assertNotNull(ee.getCause());
-      assertTrue(ee.getCause() instanceof NamespaceNotFoundException);
+        this.colId = System.currentTimeMillis();
+        this.colName = testName.getMethodName();
+        this.colProps = NamespaceProperties.newBuilder()
+            .setNamespaceId(colId)
+            .setNamespaceName(colName)
+            .setDefaultStreamConf(DEFAULT_STREAM_CONF)
+            .build();
     }
-  }
 
-  @Override
-  protected RootRangeServiceImplBase createRootRangeServiceForRpcFailure() {
-    return new RootRangeServiceImplBase() {
-      @Override
-      public void getNamespace(GetNamespaceRequest request,
-                                StreamObserver<GetNamespaceResponse> responseObserver) {
-        responseObserver.onError(new StatusRuntimeException(Status.INTERNAL));
-      }
-    };
-  }
+    //
+    // Test Client Operations
+    //
 
-  @Override
-  protected void verifyRpcFailure(RootRangeClient rootRangeClient) throws Exception {
-    CompletableFuture<NamespaceProperties> getFuture = rootRangeClient.getNamespace(colName);
-    try {
-      getFuture.get();
-      fail("Should fail on rpc failure");
-    } catch (ExecutionException ee) {
-      assertNotNull(ee.getCause());
-      assertTrue(ee.getCause() instanceof StatusRuntimeException);
-      StatusRuntimeException se = (StatusRuntimeException) ee.getCause();
-      assertEquals(Status.INTERNAL, se.getStatus());
+    //
+    // Namespace API
+    //
+
+
+    @Override
+    protected RootRangeServiceImplBase createRootRangeServiceForSuccess() {
+        return new RootRangeServiceImplBase() {
+            @Override
+            public void getNamespace(GetNamespaceRequest request,
+                                     StreamObserver<GetNamespaceResponse> responseObserver) {
+                responseObserver.onNext(GetNamespaceResponse.newBuilder()
+                    .setCode(StatusCode.SUCCESS)
+                    .setColProps(colProps)
+                    .build());
+                responseObserver.onCompleted();
+            }
+        };
     }
-  }
 
-  @Override
-  protected void verifyChannelFailure(IOException expectedException, RootRangeClient rootRangeClient) throws Exception {
-    CompletableFuture<NamespaceProperties> createFuture = rootRangeClient.createNamespace(colName, colConf);
-    try {
-      createFuture.get();
-      fail("Should fail on creating stream");
-    } catch (ExecutionException ee) {
-      assertNotNull(ee.getCause());
-      assertTrue(ee.getCause() instanceof ClientException);
-      ClientException zse = (ClientException) ee.getCause();
-      assertNotNull(zse.getCause());
-      assertTrue(expectedException == zse.getCause());
+    @Override
+    protected void verifySuccess(RootRangeClient rootRangeClient) throws Exception {
+        CompletableFuture<NamespaceProperties> getFuture = rootRangeClient.getNamespace(colName);
+        assertTrue(colProps == getFuture.get());
     }
-  }
+
+
+    @Override
+    protected RootRangeServiceImplBase createRootRangeServiceForRequestFailure() {
+        return new RootRangeServiceImplBase() {
+            @Override
+            public void getNamespace(GetNamespaceRequest request,
+                                     StreamObserver<GetNamespaceResponse> responseObserver) {
+                responseObserver.onNext(GetNamespaceResponse.newBuilder()
+                    .setCode(StatusCode.NAMESPACE_NOT_FOUND)
+                    .build());
+                responseObserver.onCompleted();
+            }
+        };
+    }
+
+    @Override
+    protected void verifyRequestFailure(RootRangeClient rootRangeClient) throws Exception {
+        CompletableFuture<NamespaceProperties> getFuture = rootRangeClient.getNamespace(colName);
+        try {
+            getFuture.get();
+            fail("Should fail on rpc failure");
+        } catch (ExecutionException ee) {
+            assertNotNull(ee.getCause());
+            assertTrue(ee.getCause() instanceof NamespaceNotFoundException);
+        }
+    }
+
+    @Override
+    protected RootRangeServiceImplBase createRootRangeServiceForRpcFailure() {
+        return new RootRangeServiceImplBase() {
+            @Override
+            public void getNamespace(GetNamespaceRequest request,
+                                     StreamObserver<GetNamespaceResponse> responseObserver) {
+                responseObserver.onError(new StatusRuntimeException(Status.INTERNAL));
+            }
+        };
+    }
+
+    @Override
+    protected void verifyRpcFailure(RootRangeClient rootRangeClient) throws Exception {
+        CompletableFuture<NamespaceProperties> getFuture = rootRangeClient.getNamespace(colName);
+        try {
+            getFuture.get();
+            fail("Should fail on rpc failure");
+        } catch (ExecutionException ee) {
+            assertNotNull(ee.getCause());
+            assertTrue(ee.getCause() instanceof StatusRuntimeException);
+            StatusRuntimeException se = (StatusRuntimeException) ee.getCause();
+            assertEquals(Status.INTERNAL, se.getStatus());
+        }
+    }
+
+    @Override
+    protected void verifyChannelFailure(IOException expectedException,
+                                        RootRangeClient rootRangeClient) throws Exception {
+        CompletableFuture<NamespaceProperties> createFuture = rootRangeClient.createNamespace(colName, colConf);
+        try {
+            createFuture.get();
+            fail("Should fail on creating stream");
+        } catch (ExecutionException ee) {
+            assertNotNull(ee.getCause());
+            assertTrue(ee.getCause() instanceof ClientException);
+            ClientException zse = (ClientException) ee.getCause();
+            assertNotNull(zse.getCause());
+            assertTrue(expectedException == zse.getCause());
+        }
+    }
 
 }

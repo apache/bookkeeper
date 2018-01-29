@@ -46,76 +46,77 @@ import org.apache.bookkeeper.stream.proto.storage.StatusCode;
  */
 public final class ProtocolInternalUtils {
 
-  private ProtocolInternalUtils() {}
-
-  static HashStreamRanges createActiveRanges(GetActiveRangesResponse response) {
-    TreeMap<Long, RangeProperties> ranges = Maps.newTreeMap();
-    long lastEndKey = Long.MIN_VALUE;
-    for (RelatedRanges rr : response.getRangesList()) {
-      RangeProperties range = rr.getProps();
-      long startKey = range.getStartHashKey();
-      long endKey = range.getEndHashKey();
-      checkState(
-        lastEndKey == startKey,
-        "Invalid range key found : expected = %s, actual = %s", lastEndKey, startKey);
-      ranges.put(startKey, range);
-      lastEndKey = endKey;
+    private ProtocolInternalUtils() {
     }
-    checkState(
-      Long.MAX_VALUE == lastEndKey,
-      "Missing key range [%s - %s)", lastEndKey, Long.MAX_VALUE);
-    checkState(
-      ranges.size() > 0,
-      "No active range found");
-    return HashStreamRanges.ofHash(
-      RangeKeyType.HASH,
-      ranges);
-  }
 
-  static final ExceptionalFunction<GetStorageContainerEndpointResponse, List<OneStorageContainerEndpointResponse>>
-    GetStorageContainerEndpointsFunction = response -> {
-      if (StatusCode.SUCCESS == response.getStatusCode()) {
-        return response.getResponsesList();
-      }
-      throw new StorageContainerException(
-        response.getStatusCode(),
-        "Fail to get storage container endpoints");
+    static HashStreamRanges createActiveRanges(GetActiveRangesResponse response) {
+        TreeMap<Long, RangeProperties> ranges = Maps.newTreeMap();
+        long lastEndKey = Long.MIN_VALUE;
+        for (RelatedRanges rr : response.getRangesList()) {
+            RangeProperties range = rr.getProps();
+            long startKey = range.getStartHashKey();
+            long endKey = range.getEndHashKey();
+            checkState(
+                lastEndKey == startKey,
+                "Invalid range key found : expected = %s, actual = %s", lastEndKey, startKey);
+            ranges.put(startKey, range);
+            lastEndKey = endKey;
+        }
+        checkState(
+            Long.MAX_VALUE == lastEndKey,
+            "Missing key range [%s - %s)", lastEndKey, Long.MAX_VALUE);
+        checkState(
+            ranges.size() > 0,
+            "No active range found");
+        return HashStreamRanges.ofHash(
+            RangeKeyType.HASH,
+            ranges);
+    }
+
+    static final ExceptionalFunction<GetStorageContainerEndpointResponse, List<OneStorageContainerEndpointResponse>>
+        GetStorageContainerEndpointsFunction = response -> {
+        if (StatusCode.SUCCESS == response.getStatusCode()) {
+            return response.getResponsesList();
+        }
+        throw new StorageContainerException(
+            response.getStatusCode(),
+            "Fail to get storage container endpoints");
     };
 
-  //
-  // Exceptions
-  //
+    //
+    // Exceptions
+    //
 
-  public static Throwable createRootRangeException(String streamName, StatusCode statusCode) {
-    switch (statusCode) {
-      case INVALID_NAMESPACE_NAME:
-        return new InvalidNamespaceNameException(streamName);
-      case NAMESPACE_EXISTS:
-        return new NamespaceExistsException(streamName);
-      case NAMESPACE_NOT_FOUND:
-        return new NamespaceNotFoundException(streamName);
-      case INVALID_STREAM_NAME:
-        return new InvalidStreamNameException(streamName);
-      case STREAM_EXISTS:
-        return new StreamExistsException(streamName);
-      case STREAM_NOT_FOUND:
-        return new StreamNotFoundException(streamName);
-      default:
-        return new ClientException("fail to access its root range : code = " + statusCode);
+    public static Throwable createRootRangeException(String streamName, StatusCode statusCode) {
+        switch (statusCode) {
+            case INVALID_NAMESPACE_NAME:
+                return new InvalidNamespaceNameException(streamName);
+            case NAMESPACE_EXISTS:
+                return new NamespaceExistsException(streamName);
+            case NAMESPACE_NOT_FOUND:
+                return new NamespaceNotFoundException(streamName);
+            case INVALID_STREAM_NAME:
+                return new InvalidStreamNameException(streamName);
+            case STREAM_EXISTS:
+                return new StreamExistsException(streamName);
+            case STREAM_NOT_FOUND:
+                return new StreamNotFoundException(streamName);
+            default:
+                return new ClientException("fail to access its root range : code = " + statusCode);
+        }
     }
-  }
 
-  public static Exception createMetaRangeException(String name,
-                                                   StatusCode statusCode) {
-    switch (statusCode) {
-      case STREAM_EXISTS:
-        return new StreamExistsException(name);
-      case STREAM_NOT_FOUND:
-        return new StreamNotFoundException(name);
-      default:
-        return new InternalServerException("Encountered internal server exception on stream "
-          + name + " : code = " + statusCode);
+    public static Exception createMetaRangeException(String name,
+                                                     StatusCode statusCode) {
+        switch (statusCode) {
+            case STREAM_EXISTS:
+                return new StreamExistsException(name);
+            case STREAM_NOT_FOUND:
+                return new StreamNotFoundException(name);
+            default:
+                return new InternalServerException("Encountered internal server exception on stream "
+                    + name + " : code = " + statusCode);
+        }
     }
-  }
 
 }

@@ -61,7 +61,7 @@ public class TestSimpleNameResolver {
             .collect(Collectors.toList());
 
         @SuppressWarnings("unchecked") // for the mock
-        SimpleNameResolver nameResolver = new SimpleNameResolver(
+            SimpleNameResolver nameResolver = new SimpleNameResolver(
             "test-name-resolver",
             mock(Resource.class),
             uris);

@@ -18,14 +18,14 @@ package org.apache.bookkeeper.stream.storage.exceptions;
  */
 public class StorageException extends Exception {
 
-  private static final long serialVersionUID = -1490659086557818714L;
+    private static final long serialVersionUID = -1490659086557818714L;
 
-  public StorageException(String msg) {
-    super(msg);
-  }
+    public StorageException(String msg) {
+        super(msg);
+    }
 
-  public StorageException(String msg, Throwable cause) {
-    super(msg, cause);
-  }
+    public StorageException(String msg, Throwable cause) {
+        super(msg, cause);
+    }
 
 }

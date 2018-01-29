@@ -53,90 +53,90 @@ import org.apache.bookkeeper.stream.proto.storage.StorageContainerServiceGrpc.St
  */
 public class LocationClientImpl implements LocationClient {
 
-  private final StorageClientSettings settings;
-  private final OrderedScheduler scheduler;
-  private final ManagedChannel channel;
-  private final StorageContainerServiceFutureStub locationService;
+    private final StorageClientSettings settings;
+    private final OrderedScheduler scheduler;
+    private final ManagedChannel channel;
+    private final StorageContainerServiceFutureStub locationService;
 
-  public LocationClientImpl(StorageClientSettings settings,
-                            OrderedScheduler scheduler) {
-    this.settings = settings;
-    this.scheduler = scheduler;
-    ManagedChannelBuilder builder = settings.managedChannelBuilder().orElse(
-      ManagedChannelBuilder
-        .forTarget("stream")
-        .nameResolverFactory(getResolver(settings))
-    );
-    if (settings.usePlaintext()) {
-      builder = builder.usePlaintext(true);
+    public LocationClientImpl(StorageClientSettings settings,
+                              OrderedScheduler scheduler) {
+        this.settings = settings;
+        this.scheduler = scheduler;
+        ManagedChannelBuilder builder = settings.managedChannelBuilder().orElse(
+            ManagedChannelBuilder
+                .forTarget("stream")
+                .nameResolverFactory(getResolver(settings))
+        );
+        if (settings.usePlaintext()) {
+            builder = builder.usePlaintext(true);
+        }
+        this.channel = builder.build();
+        this.locationService = GrpcUtils.configureGrpcStub(
+            StorageContainerServiceGrpc.newFutureStub(channel),
+            Optional.empty());
     }
-    this.channel = builder.build();
-    this.locationService = GrpcUtils.configureGrpcStub(
-      StorageContainerServiceGrpc.newFutureStub(channel),
-      Optional.empty());
-  }
 
-  private NameResolver.Factory getResolver(StorageClientSettings settings) {
-    if (settings.nameResolverFactory().isPresent()) {
-      return settings.nameResolverFactory().get();
-    } else {
-      return SimpleStreamResolverFactory.of(settings.endpoints());
+    private NameResolver.Factory getResolver(StorageClientSettings settings) {
+        if (settings.nameResolverFactory().isPresent()) {
+            return settings.nameResolverFactory().get();
+        } else {
+            return SimpleStreamResolverFactory.of(settings.endpoints());
+        }
     }
-  }
 
-  private Stream<Long> getDefaultBackoffs() {
-    return Backoff.exponential(
-      ClientConstants.DEFAULT_BACKOFF_START_MS,
-      ClientConstants.DEFAULT_BACKOFF_MULTIPLIER,
-      ClientConstants.DEFAULT_BACKOFF_MAX_MS);
-  }
-
-  @VisibleForTesting
-  static final Predicate<Throwable> LOCATE_STORAGE_CONTAINERS_RETRY_PREDICATE =
-    cause -> shouldRetryOnException(cause);
-
-  private static boolean shouldRetryOnException(Throwable cause) {
-    if (cause instanceof StatusRuntimeException || cause instanceof StatusException) {
-      Status status;
-      if (cause instanceof StatusException) {
-        status = ((StatusException) cause).getStatus();
-      } else {
-        status = ((StatusRuntimeException) cause).getStatus();
-      }
-      switch (status.getCode()) {
-        case INVALID_ARGUMENT:
-        case NOT_FOUND:
-        case ALREADY_EXISTS:
-        case PERMISSION_DENIED:
-        case UNAUTHENTICATED:
-          return false;
-        default:
-          return true;
-      }
-    } else if (cause instanceof RuntimeException) {
-      return false;
-    } else {
-      return true;
+    private Stream<Long> getDefaultBackoffs() {
+        return Backoff.exponential(
+            ClientConstants.DEFAULT_BACKOFF_START_MS,
+            ClientConstants.DEFAULT_BACKOFF_MULTIPLIER,
+            ClientConstants.DEFAULT_BACKOFF_MAX_MS);
     }
-  }
 
-  @Override
-  public CompletableFuture<List<OneStorageContainerEndpointResponse>>
-      locateStorageContainers(List<Revisioned<Long>> storageContainerIds) {
-    GetStorageContainerEndpointRequest request = createGetStorageContainerEndpointRequest(storageContainerIds);
-    return Retries.run(
-      getDefaultBackoffs(),
-      LOCATE_STORAGE_CONTAINERS_RETRY_PREDICATE,
-      () -> fromListenableFuture(
-        locationService.getStorageContainerEndpoint(request),
-        GetStorageContainerEndpointsFunction),
-      scheduler,
-      request);
-  }
+    @VisibleForTesting
+    static final Predicate<Throwable> LOCATE_STORAGE_CONTAINERS_RETRY_PREDICATE =
+        cause -> shouldRetryOnException(cause);
 
-  @Override
-  public void close() {
-    channel.shutdown();
-  }
+    private static boolean shouldRetryOnException(Throwable cause) {
+        if (cause instanceof StatusRuntimeException || cause instanceof StatusException) {
+            Status status;
+            if (cause instanceof StatusException) {
+                status = ((StatusException) cause).getStatus();
+            } else {
+                status = ((StatusRuntimeException) cause).getStatus();
+            }
+            switch (status.getCode()) {
+                case INVALID_ARGUMENT:
+                case NOT_FOUND:
+                case ALREADY_EXISTS:
+                case PERMISSION_DENIED:
+                case UNAUTHENTICATED:
+                    return false;
+                default:
+                    return true;
+            }
+        } else if (cause instanceof RuntimeException) {
+            return false;
+        } else {
+            return true;
+        }
+    }
+
+    @Override
+    public CompletableFuture<List<OneStorageContainerEndpointResponse>>
+    locateStorageContainers(List<Revisioned<Long>> storageContainerIds) {
+        GetStorageContainerEndpointRequest request = createGetStorageContainerEndpointRequest(storageContainerIds);
+        return Retries.run(
+            getDefaultBackoffs(),
+            LOCATE_STORAGE_CONTAINERS_RETRY_PREDICATE,
+            () -> fromListenableFuture(
+                locationService.getStorageContainerEndpoint(request),
+                GetStorageContainerEndpointsFunction),
+            scheduler,
+            request);
+    }
+
+    @Override
+    public void close() {
+        channel.shutdown();
+    }
 
 }

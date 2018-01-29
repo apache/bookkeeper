@@ -26,30 +26,31 @@ import org.apache.bookkeeper.stream.storage.impl.AsyncOperationProcessor;
 class DeleteNamespaceProcessor
     extends AsyncOperationProcessor<DeleteNamespaceRequest, DeleteNamespaceResponse, RootRangeStoreImpl> {
 
-  public static DeleteNamespaceProcessor of() {
-    return INSTANCE;
-  }
+    public static DeleteNamespaceProcessor of() {
+        return INSTANCE;
+    }
 
-  private static final DeleteNamespaceProcessor INSTANCE = new DeleteNamespaceProcessor();
+    private static final DeleteNamespaceProcessor INSTANCE = new DeleteNamespaceProcessor();
 
-  private DeleteNamespaceProcessor() {}
+    private DeleteNamespaceProcessor() {
+    }
 
-  @Override
-  protected StatusCode verifyRequest(RootRangeStoreImpl state,
-                                     DeleteNamespaceRequest request) {
-    return state.verifyDeleteNamespaceRequest(request);
-  }
+    @Override
+    protected StatusCode verifyRequest(RootRangeStoreImpl state,
+                                       DeleteNamespaceRequest request) {
+        return state.verifyDeleteNamespaceRequest(request);
+    }
 
-  @Override
-  protected DeleteNamespaceResponse failRequest(StatusCode code) {
-    return DeleteNamespaceResponse.newBuilder()
-      .setCode(code)
-      .build();
-  }
+    @Override
+    protected DeleteNamespaceResponse failRequest(StatusCode code) {
+        return DeleteNamespaceResponse.newBuilder()
+            .setCode(code)
+            .build();
+    }
 
-  @Override
-  protected CompletableFuture<DeleteNamespaceResponse> doProcessRequest(RootRangeStoreImpl state,
-                                                                         DeleteNamespaceRequest request) {
-    return state.doProcessDeleteNamespaceRequest(request);
-  }
+    @Override
+    protected CompletableFuture<DeleteNamespaceResponse> doProcessRequest(RootRangeStoreImpl state,
+                                                                          DeleteNamespaceRequest request) {
+        return state.doProcessDeleteNamespaceRequest(request);
+    }
 }

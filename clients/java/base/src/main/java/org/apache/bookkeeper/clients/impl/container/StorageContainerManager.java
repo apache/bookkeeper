@@ -30,42 +30,42 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class StorageContainerManager implements AutoCloseable {
 
-  @GuardedBy("storageContainers")
-  private final Map<Long, StorageContainerInfo> storageContainers;
+    @GuardedBy("storageContainers")
+    private final Map<Long, StorageContainerInfo> storageContainers;
 
-  public StorageContainerManager() {
-    this.storageContainers = Maps.newHashMap();
-  }
-
-  @Nullable
-  public StorageContainerInfo getStorageContainer(long groupId) {
-    synchronized (storageContainers) {
-      return this.storageContainers.get(groupId);
+    public StorageContainerManager() {
+        this.storageContainers = Maps.newHashMap();
     }
-  }
 
-  public boolean replaceStorageContainer(long groupId, StorageContainerInfo groupInfo) {
-    synchronized (storageContainers) {
-      StorageContainerInfo oldGroupInfo = storageContainers.get(groupId);
-      if (null == oldGroupInfo || oldGroupInfo.getRevision() < groupInfo.getRevision()) {
-        log.info("Updated the storage container info for group {} : ", groupId, groupInfo);
-        storageContainers.put(groupId, groupInfo);
-        return true;
-      }
-      return false;
+    @Nullable
+    public StorageContainerInfo getStorageContainer(long groupId) {
+        synchronized (storageContainers) {
+            return this.storageContainers.get(groupId);
+        }
     }
-  }
 
-  public void removeStorageContainer(long groupId) {
-    synchronized (storageContainers) {
-      storageContainers.remove(groupId);
+    public boolean replaceStorageContainer(long groupId, StorageContainerInfo groupInfo) {
+        synchronized (storageContainers) {
+            StorageContainerInfo oldGroupInfo = storageContainers.get(groupId);
+            if (null == oldGroupInfo || oldGroupInfo.getRevision() < groupInfo.getRevision()) {
+                log.info("Updated the storage container info for group {} : ", groupId, groupInfo);
+                storageContainers.put(groupId, groupInfo);
+                return true;
+            }
+            return false;
+        }
     }
-  }
 
-  @Override
-  public void close() {
-    synchronized (storageContainers) {
-      storageContainers.clear();
+    public void removeStorageContainer(long groupId) {
+        synchronized (storageContainers) {
+            storageContainers.remove(groupId);
+        }
     }
-  }
+
+    @Override
+    public void close() {
+        synchronized (storageContainers) {
+            storageContainers.clear();
+        }
+    }
 }

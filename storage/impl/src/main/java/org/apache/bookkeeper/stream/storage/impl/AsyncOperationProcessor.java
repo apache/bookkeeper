@@ -28,43 +28,43 @@ import org.apache.bookkeeper.stream.proto.storage.StatusCode;
  */
 public abstract class AsyncOperationProcessor<ReqT, RespT, StateT> {
 
-  public CompletableFuture<RespT> process(StateT state,
-                                          ReqT request,
-                                          ScheduledExecutorService executor) {
-    CompletableFuture<RespT> future = FutureUtils.createFuture();
-    executor.submit(() -> processRequest(
-      future,
-      state,
-      request));
-    return future;
-  }
-
-  protected abstract StatusCode verifyRequest(StateT state,
-                                              ReqT request);
-
-  protected abstract RespT failRequest(StatusCode code);
-
-  protected abstract CompletableFuture<RespT> doProcessRequest(StateT state, ReqT request);
-
-  protected void processRequest(CompletableFuture<RespT> future,
-                                StateT state,
-                                ReqT request) {
-    try {
-      StatusCode code = verifyRequest(state, request);
-      if (StatusCode.SUCCESS != code) {
-        future.complete(failRequest(code));
-      } else {
-        doProcessRequest(state, request).whenComplete((value, causeB) -> {
-          if (null == causeB) {
-            future.complete(value);
-          } else {
-            future.completeExceptionally(causeB);
-          }
-        });
-      }
-    } catch (Throwable cause) {
-      future.completeExceptionally(cause);
+    public CompletableFuture<RespT> process(StateT state,
+                                            ReqT request,
+                                            ScheduledExecutorService executor) {
+        CompletableFuture<RespT> future = FutureUtils.createFuture();
+        executor.submit(() -> processRequest(
+            future,
+            state,
+            request));
+        return future;
     }
-  }
+
+    protected abstract StatusCode verifyRequest(StateT state,
+                                                ReqT request);
+
+    protected abstract RespT failRequest(StatusCode code);
+
+    protected abstract CompletableFuture<RespT> doProcessRequest(StateT state, ReqT request);
+
+    protected void processRequest(CompletableFuture<RespT> future,
+                                  StateT state,
+                                  ReqT request) {
+        try {
+            StatusCode code = verifyRequest(state, request);
+            if (StatusCode.SUCCESS != code) {
+                future.complete(failRequest(code));
+            } else {
+                doProcessRequest(state, request).whenComplete((value, causeB) -> {
+                    if (null == causeB) {
+                        future.complete(value);
+                    } else {
+                        future.completeExceptionally(causeB);
+                    }
+                });
+            }
+        } catch (Throwable cause) {
+            future.completeExceptionally(cause);
+        }
+    }
 
 }

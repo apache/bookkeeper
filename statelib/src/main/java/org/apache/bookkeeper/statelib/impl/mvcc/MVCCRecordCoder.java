@@ -54,10 +54,10 @@ final class MVCCRecordCoder implements Coder<MVCCRecord> {
         int valLen = record.getValue().readableBytes();
 
         int totalLen =
-              Integer.BYTES     // meta len
-            + metaLen           // meta bytes
-            + Integer.BYTES     // val len
-            + valLen;           // val bytes
+            Integer.BYTES     // meta len
+                + metaLen           // meta bytes
+                + Integer.BYTES     // val len
+                + valLen;           // val bytes
 
         // NOTE: currently rocksdb jni only supports `byte[]`
         //       we can improve this if rocksdb jni support ByteBuffer or ByteBuf

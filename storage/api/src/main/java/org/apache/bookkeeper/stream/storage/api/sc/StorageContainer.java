@@ -29,30 +29,30 @@ import org.apache.bookkeeper.stream.storage.api.metadata.RangeStoreService;
 public interface StorageContainer
     extends AutoCloseable, RangeStoreService {
 
-  /**
-   * Get the storage container id.
-   *
-   * @return the storage container id.
-   */
-  long getId();
+    /**
+     * Get the storage container id.
+     *
+     * @return the storage container id.
+     */
+    long getId();
 
-  /**
-   * Start the storage container.
-   *
-   * @return a future represents the result of starting a storage container.
-   */
-  CompletableFuture<Void> start();
+    /**
+     * Start the storage container.
+     *
+     * @return a future represents the result of starting a storage container.
+     */
+    CompletableFuture<Void> start();
 
-  /**
-   * Stop the storage container.
-   *
-   * @return a future represents the result of stopping a storage container.
-   */
-  CompletableFuture<Void> stop();
+    /**
+     * Stop the storage container.
+     *
+     * @return a future represents the result of stopping a storage container.
+     */
+    CompletableFuture<Void> stop();
 
-  /**
-   * Close a storage container.
-   */
-  void close();
+    /**
+     * Close a storage container.
+     */
+    void close();
 
 }

@@ -37,102 +37,102 @@ import org.apache.bookkeeper.stream.storage.api.RangeStore;
  */
 class GrpcRootRangeService extends RootRangeServiceImplBase {
 
-  private final RangeStore rs;
+    private final RangeStore rs;
 
-  GrpcRootRangeService(RangeStore rs) {
-    this.rs = rs;
-  }
+    GrpcRootRangeService(RangeStore rs) {
+        this.rs = rs;
+    }
 
-  //
-  // Namespace API
-  //
+    //
+    // Namespace API
+    //
 
-  @Override
-  public void createNamespace(CreateNamespaceRequest request,
-                              StreamObserver<CreateNamespaceResponse> responseObserver) {
-    rs.createNamespace(request).whenComplete(
-      new ResponseHandler<CreateNamespaceResponse>(responseObserver) {
-        @Override
-        protected CreateNamespaceResponse createErrorResp(Throwable cause) {
-          return CreateNamespaceResponse.newBuilder()
-            .setCode(StatusCode.INTERNAL_SERVER_ERROR)
-            .build();
-        }
-      });
-  }
+    @Override
+    public void createNamespace(CreateNamespaceRequest request,
+                                StreamObserver<CreateNamespaceResponse> responseObserver) {
+        rs.createNamespace(request).whenComplete(
+            new ResponseHandler<CreateNamespaceResponse>(responseObserver) {
+                @Override
+                protected CreateNamespaceResponse createErrorResp(Throwable cause) {
+                    return CreateNamespaceResponse.newBuilder()
+                        .setCode(StatusCode.INTERNAL_SERVER_ERROR)
+                        .build();
+                }
+            });
+    }
 
-  @Override
-  public void deleteNamespace(DeleteNamespaceRequest request,
-                              StreamObserver<DeleteNamespaceResponse> responseObserver) {
-    rs.deleteNamespace(request).whenComplete(
-      new ResponseHandler<DeleteNamespaceResponse>(responseObserver) {
-        @Override
-        protected DeleteNamespaceResponse createErrorResp(Throwable cause) {
-          return DeleteNamespaceResponse.newBuilder()
-            .setCode(StatusCode.INTERNAL_SERVER_ERROR)
-            .build();
-        }
-      });
-  }
+    @Override
+    public void deleteNamespace(DeleteNamespaceRequest request,
+                                StreamObserver<DeleteNamespaceResponse> responseObserver) {
+        rs.deleteNamespace(request).whenComplete(
+            new ResponseHandler<DeleteNamespaceResponse>(responseObserver) {
+                @Override
+                protected DeleteNamespaceResponse createErrorResp(Throwable cause) {
+                    return DeleteNamespaceResponse.newBuilder()
+                        .setCode(StatusCode.INTERNAL_SERVER_ERROR)
+                        .build();
+                }
+            });
+    }
 
-  @Override
-  public void getNamespace(GetNamespaceRequest request,
-                           StreamObserver<GetNamespaceResponse> responseObserver) {
-    rs.getNamespace(request).whenComplete(
-      new ResponseHandler<GetNamespaceResponse>(responseObserver) {
-        @Override
-        protected GetNamespaceResponse createErrorResp(Throwable cause) {
-          return GetNamespaceResponse.newBuilder()
-            .setCode(StatusCode.INTERNAL_SERVER_ERROR)
-            .build();
-        }
-      });
-  }
+    @Override
+    public void getNamespace(GetNamespaceRequest request,
+                             StreamObserver<GetNamespaceResponse> responseObserver) {
+        rs.getNamespace(request).whenComplete(
+            new ResponseHandler<GetNamespaceResponse>(responseObserver) {
+                @Override
+                protected GetNamespaceResponse createErrorResp(Throwable cause) {
+                    return GetNamespaceResponse.newBuilder()
+                        .setCode(StatusCode.INTERNAL_SERVER_ERROR)
+                        .build();
+                }
+            });
+    }
 
-  //
-  // Stream API
-  //
+    //
+    // Stream API
+    //
 
-  @Override
-  public void createStream(CreateStreamRequest request,
-                           StreamObserver<CreateStreamResponse> responseObserver) {
-    rs.createStream(request).whenComplete(
-      new ResponseHandler<CreateStreamResponse>(responseObserver) {
-        @Override
-        protected CreateStreamResponse createErrorResp(Throwable cause) {
-          return CreateStreamResponse.newBuilder()
-            .setCode(StatusCode.INTERNAL_SERVER_ERROR)
-            .build();
-        }
-      });
-  }
+    @Override
+    public void createStream(CreateStreamRequest request,
+                             StreamObserver<CreateStreamResponse> responseObserver) {
+        rs.createStream(request).whenComplete(
+            new ResponseHandler<CreateStreamResponse>(responseObserver) {
+                @Override
+                protected CreateStreamResponse createErrorResp(Throwable cause) {
+                    return CreateStreamResponse.newBuilder()
+                        .setCode(StatusCode.INTERNAL_SERVER_ERROR)
+                        .build();
+                }
+            });
+    }
 
-  @Override
-  public void deleteStream(DeleteStreamRequest request,
-                           StreamObserver<DeleteStreamResponse> responseObserver) {
-    rs.deleteStream(request).whenComplete(
-      new ResponseHandler<DeleteStreamResponse>(responseObserver) {
-        @Override
-        protected DeleteStreamResponse createErrorResp(Throwable cause) {
-          return DeleteStreamResponse.newBuilder()
-            .setCode(StatusCode.INTERNAL_SERVER_ERROR)
-            .build();
-        }
-      });
-  }
+    @Override
+    public void deleteStream(DeleteStreamRequest request,
+                             StreamObserver<DeleteStreamResponse> responseObserver) {
+        rs.deleteStream(request).whenComplete(
+            new ResponseHandler<DeleteStreamResponse>(responseObserver) {
+                @Override
+                protected DeleteStreamResponse createErrorResp(Throwable cause) {
+                    return DeleteStreamResponse.newBuilder()
+                        .setCode(StatusCode.INTERNAL_SERVER_ERROR)
+                        .build();
+                }
+            });
+    }
 
-  @Override
-  public void getStream(GetStreamRequest request,
-                        StreamObserver<GetStreamResponse> responseObserver) {
-    rs.getStream(request).whenComplete(
-      new ResponseHandler<GetStreamResponse>(responseObserver) {
-        @Override
-        protected GetStreamResponse createErrorResp(Throwable cause) {
-          return GetStreamResponse.newBuilder()
-            .setCode(StatusCode.INTERNAL_SERVER_ERROR)
-            .build();
-        }
-      });
-  }
+    @Override
+    public void getStream(GetStreamRequest request,
+                          StreamObserver<GetStreamResponse> responseObserver) {
+        rs.getStream(request).whenComplete(
+            new ResponseHandler<GetStreamResponse>(responseObserver) {
+                @Override
+                protected GetStreamResponse createErrorResp(Throwable cause) {
+                    return GetStreamResponse.newBuilder()
+                        .setCode(StatusCode.INTERNAL_SERVER_ERROR)
+                        .build();
+                }
+            });
+    }
 
 }

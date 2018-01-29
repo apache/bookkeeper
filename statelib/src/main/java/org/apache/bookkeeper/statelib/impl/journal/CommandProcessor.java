@@ -28,9 +28,9 @@ public interface CommandProcessor<LocalStateStoreT> {
     /**
      * Apply the command to the local state store.
      *
-     * @param txid tx id
+     * @param txid   tx id
      * @param cmdBuf command buffer
-     * @param store local state store.
+     * @param store  local state store.
      */
     void applyCommand(long txid, ByteBuf cmdBuf, LocalStateStoreT store);
 

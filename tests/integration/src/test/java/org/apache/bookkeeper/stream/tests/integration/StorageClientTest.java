@@ -41,74 +41,74 @@ import org.junit.rules.TestName;
 @Slf4j
 public class StorageClientTest extends StorageServerTestBase {
 
-  @Rule
-  public final TestName testName = new TestName();
+    @Rule
+    public final TestName testName = new TestName();
 
-  private String nsName;
-  private String streamName;
-  private StorageAdminClient adminClient;
-  private StorageClient client;
-  private final StreamConfiguration streamConf = StreamConfiguration.newBuilder()
-    .setKeyType(RangeKeyType.HASH)
-    .setInitialNumRanges(4)
-    .setMinNumRanges(4)
-    .setRetentionPolicy(DEFAULT_RETENTION_POLICY)
-    .setRollingPolicy(DEFAULT_SEGMENT_ROLLING_POLICY)
-    .setSplitPolicy(DEFAULT_SPLIT_POLICY)
-    .build();
-  private final NamespaceConfiguration colConf = NamespaceConfiguration.newBuilder()
-    .setDefaultStreamConf(streamConf)
-    .build();
-  private URI defaultBackendUri;
+    private String nsName;
+    private String streamName;
+    private StorageAdminClient adminClient;
+    private StorageClient client;
+    private final StreamConfiguration streamConf = StreamConfiguration.newBuilder()
+        .setKeyType(RangeKeyType.HASH)
+        .setInitialNumRanges(4)
+        .setMinNumRanges(4)
+        .setRetentionPolicy(DEFAULT_RETENTION_POLICY)
+        .setRollingPolicy(DEFAULT_SEGMENT_ROLLING_POLICY)
+        .setSplitPolicy(DEFAULT_SPLIT_POLICY)
+        .build();
+    private final NamespaceConfiguration colConf = NamespaceConfiguration.newBuilder()
+        .setDefaultStreamConf(streamConf)
+        .build();
+    private URI defaultBackendUri;
 
-  @Override
-  protected void doSetup() throws Exception {
-    defaultBackendUri = URI.create("distributedlog://" + cluster.getZkServers() + "/stream/storage");
-    StorageClientSettings settings = StorageClientSettings.newBuilder()
-      .addEndpoints(cluster.getRpcEndpoints().toArray(new Endpoint[cluster.getRpcEndpoints().size()]))
-      .usePlaintext(true)
-      .build();
-    adminClient = StorageClientBuilder.newBuilder()
-      .withSettings(settings)
-      .buildAdmin();
-    nsName = "test_namespace";
-    FutureUtils.result(
-      adminClient.createNamespace(nsName, colConf));
-    client = StorageClientBuilder.newBuilder()
-      .withSettings(settings)
-      .withNamespace(nsName)
-      .build();
-    streamName = "test_stream";
-    createStream(streamName);
-  }
-
-  @Override
-  protected void doTeardown() throws Exception {
-    if (null != client) {
-      client.closeAsync();
+    @Override
+    protected void doSetup() throws Exception {
+        defaultBackendUri = URI.create("distributedlog://" + cluster.getZkServers() + "/stream/storage");
+        StorageClientSettings settings = StorageClientSettings.newBuilder()
+            .addEndpoints(cluster.getRpcEndpoints().toArray(new Endpoint[cluster.getRpcEndpoints().size()]))
+            .usePlaintext(true)
+            .build();
+        adminClient = StorageClientBuilder.newBuilder()
+            .withSettings(settings)
+            .buildAdmin();
+        nsName = "test_namespace";
+        FutureUtils.result(
+            adminClient.createNamespace(nsName, colConf));
+        client = StorageClientBuilder.newBuilder()
+            .withSettings(settings)
+            .withNamespace(nsName)
+            .build();
+        streamName = "test_stream";
+        createStream(streamName);
     }
-    if (null != adminClient) {
-      adminClient.closeAsync();
+
+    @Override
+    protected void doTeardown() throws Exception {
+        if (null != client) {
+            client.closeAsync();
+        }
+        if (null != adminClient) {
+            adminClient.closeAsync();
+        }
     }
-  }
 
-  private void createStream(String streamName) throws Exception {
-    FutureUtils.result(
-      adminClient.createStream(
-        nsName,
-        streamName,
-        streamConf));
-  }
+    private void createStream(String streamName) throws Exception {
+        FutureUtils.result(
+            adminClient.createStream(
+                nsName,
+                streamName,
+                streamConf));
+    }
 
-  @Test
-  public void testAdmin() throws Exception {
-    StreamProperties properties =
-      FutureUtils.result(adminClient.getStream(nsName, streamName));
-    assertEquals(
-        StreamConfiguration.newBuilder(streamConf)
-          .setBackendServiceUrl(defaultBackendUri.toString())
-          .build()
-        , properties.getStreamConf());
-  }
+    @Test
+    public void testAdmin() throws Exception {
+        StreamProperties properties =
+            FutureUtils.result(adminClient.getStream(nsName, streamName));
+        assertEquals(
+            StreamConfiguration.newBuilder(streamConf)
+                .setBackendServiceUrl(defaultBackendUri.toString())
+                .build()
+            , properties.getStreamConf());
+    }
 
 }

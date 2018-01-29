@@ -27,18 +27,18 @@ import org.apache.bookkeeper.stream.proto.storage.StorageContainerResponse;
  */
 public class StorageContainerResponseHandler extends ResponseHandler<StorageContainerResponse> {
 
-  public static StorageContainerResponseHandler of(StreamObserver<StorageContainerResponse> respObserver) {
-    return new StorageContainerResponseHandler(respObserver);
-  }
+    public static StorageContainerResponseHandler of(StreamObserver<StorageContainerResponse> respObserver) {
+        return new StorageContainerResponseHandler(respObserver);
+    }
 
-  private StorageContainerResponseHandler(StreamObserver<StorageContainerResponse> respObserver) {
-    super(respObserver);
-  }
+    private StorageContainerResponseHandler(StreamObserver<StorageContainerResponse> respObserver) {
+        super(respObserver);
+    }
 
-  @Override
-  protected StorageContainerResponse createErrorResp(Throwable cause) {
-    return StorageContainerResponse.newBuilder()
-      .setCode(StatusCode.INTERNAL_SERVER_ERROR)
-      .build();
-  }
+    @Override
+    protected StorageContainerResponse createErrorResp(Throwable cause) {
+        return StorageContainerResponse.newBuilder()
+            .setCode(StatusCode.INTERNAL_SERVER_ERROR)
+            .build();
+    }
 }

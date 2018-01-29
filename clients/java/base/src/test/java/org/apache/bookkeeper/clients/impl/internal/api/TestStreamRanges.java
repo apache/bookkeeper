@@ -32,93 +32,93 @@ import org.junit.Test;
  */
 public class TestStreamRanges {
 
-  @Test(expected = IllegalArgumentException.class)
-  public void testInvalidRangeKeyType() {
-    StreamRanges.ofHash(RangeKeyType.RAW, Maps.newTreeMap());
-  }
-
-  @Test
-  public void testConstructor() {
-    NavigableMap<Long, RangeProperties> ranges = Maps.newTreeMap();
-    for (long hashKey = 0L; hashKey < 10L; hashKey++) {
-      RangeProperties props = RangeProperties.newBuilder()
-        .setStorageContainerId(hashKey)
-        .setRangeId(hashKey)
-        .setStartHashKey(hashKey)
-        .setEndHashKey(hashKey)
-        .build();
-      ranges.put(hashKey, props);
+    @Test(expected = IllegalArgumentException.class)
+    public void testInvalidRangeKeyType() {
+        StreamRanges.ofHash(RangeKeyType.RAW, Maps.newTreeMap());
     }
 
-    HashStreamRanges hsr = StreamRanges.ofHash(
-      RangeKeyType.HASH,
-      ranges);
+    @Test
+    public void testConstructor() {
+        NavigableMap<Long, RangeProperties> ranges = Maps.newTreeMap();
+        for (long hashKey = 0L; hashKey < 10L; hashKey++) {
+            RangeProperties props = RangeProperties.newBuilder()
+                .setStorageContainerId(hashKey)
+                .setRangeId(hashKey)
+                .setStartHashKey(hashKey)
+                .setEndHashKey(hashKey)
+                .build();
+            ranges.put(hashKey, props);
+        }
 
-    assertEquals(RangeKeyType.HASH, hsr.getKeyType());
-    assertEquals(ranges, hsr.getRanges());
-    assertEquals(9L, hsr.getMaxRangeId());
-  }
+        HashStreamRanges hsr = StreamRanges.ofHash(
+            RangeKeyType.HASH,
+            ranges);
 
-  @Test
-  public void testEqual() {
-    NavigableMap<Long, RangeProperties> ranges1 = Maps.newTreeMap();
-    NavigableMap<Long, RangeProperties> ranges2 = Maps.newTreeMap();
-    for (long hashKey = 0L; hashKey < 10L; hashKey++) {
-      RangeProperties props1 = RangeProperties.newBuilder()
-        .setStorageContainerId(hashKey)
-        .setRangeId(hashKey)
-        .setStartHashKey(hashKey)
-        .setEndHashKey(hashKey)
-        .build();
-      ranges1.put(hashKey, props1);
-      RangeProperties props2 = RangeProperties.newBuilder()
-        .setStorageContainerId(hashKey)
-        .setRangeId(hashKey)
-        .setStartHashKey(hashKey)
-        .setEndHashKey(hashKey)
-        .build();
-      ranges2.put(hashKey, props2);
+        assertEquals(RangeKeyType.HASH, hsr.getKeyType());
+        assertEquals(ranges, hsr.getRanges());
+        assertEquals(9L, hsr.getMaxRangeId());
     }
 
-    HashStreamRanges hsr1 = StreamRanges.ofHash(
-      RangeKeyType.HASH,
-      ranges1);
-    HashStreamRanges hsr2 = StreamRanges.ofHash(
-      RangeKeyType.HASH,
-      ranges2);
+    @Test
+    public void testEqual() {
+        NavigableMap<Long, RangeProperties> ranges1 = Maps.newTreeMap();
+        NavigableMap<Long, RangeProperties> ranges2 = Maps.newTreeMap();
+        for (long hashKey = 0L; hashKey < 10L; hashKey++) {
+            RangeProperties props1 = RangeProperties.newBuilder()
+                .setStorageContainerId(hashKey)
+                .setRangeId(hashKey)
+                .setStartHashKey(hashKey)
+                .setEndHashKey(hashKey)
+                .build();
+            ranges1.put(hashKey, props1);
+            RangeProperties props2 = RangeProperties.newBuilder()
+                .setStorageContainerId(hashKey)
+                .setRangeId(hashKey)
+                .setStartHashKey(hashKey)
+                .setEndHashKey(hashKey)
+                .build();
+            ranges2.put(hashKey, props2);
+        }
 
-    assertEquals(hsr1, hsr2);
-  }
+        HashStreamRanges hsr1 = StreamRanges.ofHash(
+            RangeKeyType.HASH,
+            ranges1);
+        HashStreamRanges hsr2 = StreamRanges.ofHash(
+            RangeKeyType.HASH,
+            ranges2);
 
-  @Test
-  public void testNotEqual() {
-    NavigableMap<Long, RangeProperties> ranges1 = Maps.newTreeMap();
-    NavigableMap<Long, RangeProperties> ranges2 = Maps.newTreeMap();
-    for (long hashKey = 0L; hashKey < 10L; hashKey++) {
-      RangeProperties props1 = RangeProperties.newBuilder()
-        .setStorageContainerId(hashKey)
-        .setRangeId(hashKey)
-        .setStartHashKey(hashKey)
-        .setEndHashKey(hashKey)
-        .build();
-      ranges1.put(hashKey, props1);
-      RangeProperties props2 = RangeProperties.newBuilder()
-        .setStorageContainerId(hashKey)
-        .setRangeId(hashKey + 1)
-        .setStartHashKey(hashKey + 1)
-        .setEndHashKey(hashKey + 1)
-        .build();
-      ranges2.put(hashKey, props2);
+        assertEquals(hsr1, hsr2);
     }
 
-    HashStreamRanges hsr1 = StreamRanges.ofHash(
-      RangeKeyType.HASH,
-      ranges1);
-    HashStreamRanges hsr2 = StreamRanges.ofHash(
-      RangeKeyType.HASH,
-      ranges2);
+    @Test
+    public void testNotEqual() {
+        NavigableMap<Long, RangeProperties> ranges1 = Maps.newTreeMap();
+        NavigableMap<Long, RangeProperties> ranges2 = Maps.newTreeMap();
+        for (long hashKey = 0L; hashKey < 10L; hashKey++) {
+            RangeProperties props1 = RangeProperties.newBuilder()
+                .setStorageContainerId(hashKey)
+                .setRangeId(hashKey)
+                .setStartHashKey(hashKey)
+                .setEndHashKey(hashKey)
+                .build();
+            ranges1.put(hashKey, props1);
+            RangeProperties props2 = RangeProperties.newBuilder()
+                .setStorageContainerId(hashKey)
+                .setRangeId(hashKey + 1)
+                .setStartHashKey(hashKey + 1)
+                .setEndHashKey(hashKey + 1)
+                .build();
+            ranges2.put(hashKey, props2);
+        }
 
-    assertNotEquals(hsr1, hsr2);
-  }
+        HashStreamRanges hsr1 = StreamRanges.ofHash(
+            RangeKeyType.HASH,
+            ranges1);
+        HashStreamRanges hsr2 = StreamRanges.ofHash(
+            RangeKeyType.HASH,
+            ranges2);
+
+        assertNotEquals(hsr1, hsr2);
+    }
 
 }

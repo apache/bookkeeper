@@ -48,70 +48,70 @@ import org.apache.helix.participant.statemachine.Transition;
 @Slf4j
 public class WriteReadStateModelFactory extends StateModelFactory<StateModel> {
 
-  private final StorageContainerRegistry registry;
-
-  public WriteReadStateModelFactory(StorageContainerRegistry registry) {
-    this.registry = registry;
-  }
-
-  @Override
-  public StateModel createNewStateModel(String resourceName, String partitionName) {
-    return new WriteReadStateModel(registry);
-  }
-
-  /**
-   * The state model for storage container.
-   */
-  @StateModelInfo(states = "{'OFFLINE','READ','WRITE'}", initialState = "OFFLINE")
-  public static class WriteReadStateModel extends StateModel {
-
     private final StorageContainerRegistry registry;
 
-    WriteReadStateModel(StorageContainerRegistry registry) {
-      this.registry = registry;
+    public WriteReadStateModelFactory(StorageContainerRegistry registry) {
+        this.registry = registry;
     }
 
-    @Transition(from = "OFFLINE", to = "READ")
-    public void offlineToRead(Message msg,
-                              NotificationContext ctx) {
-      log.info("----- [OFFLINE --> READ] {} / {}", msg.getResourceName(), msg.getPartitionName());
-      // do nothing now
+    @Override
+    public StateModel createNewStateModel(String resourceName, String partitionName) {
+        return new WriteReadStateModel(registry);
     }
 
-    @Transition(from = "READ", to = "WRITE")
-    public void readToWrite(Message msg,
-                            NotificationContext ctx) throws Exception {
-      log.info("----- [READ --> WRITE] {} / {}", msg.getResourceName(), msg.getPartitionName());
-      try {
-        FutureUtils.result(registry.startStorageContainer(
-          getStorageContainerFromPartitionName(msg.getPartitionName())));
-      } catch (Exception e) {
-        log.error("----- [READ --> WRITE] {} / {} failed",
-          new Object[] { msg.getResourceName(), msg.getPartitionName(), e });
-        throw e;
-      }
-    }
+    /**
+     * The state model for storage container.
+     */
+    @StateModelInfo(states = "{'OFFLINE','READ','WRITE'}", initialState = "OFFLINE")
+    public static class WriteReadStateModel extends StateModel {
 
-    @Transition(from = "WRITE", to = "READ")
-    public void writeToRead(Message msg,
-                            NotificationContext ctx) throws Exception {
-      log.info("----- [WRITE --> READ] {} / {}", msg.getResourceName(), msg.getPartitionName());
-      try {
-        FutureUtils.result(registry.stopStorageContainer(
-          getStorageContainerFromPartitionName(msg.getPartitionName())));
-      } catch (Exception e) {
-        log.error("----- [WRITE --> READ] {} / {} failed",
-          new Object[] { msg.getResourceName(), msg.getPartitionName(), e });
-        throw e;
-      }
-    }
+        private final StorageContainerRegistry registry;
 
-    @Transition(from = "READ", to = "OFFLINE")
-    public void readToOffline(Message msg,
-                              NotificationContext ctx) {
-      log.info("----- [READ --> OFFLINE] {} / {}", msg.getResourceName(), msg.getPartitionName());
-      // do nothing now
-    }
+        WriteReadStateModel(StorageContainerRegistry registry) {
+            this.registry = registry;
+        }
 
-  }
+        @Transition(from = "OFFLINE", to = "READ")
+        public void offlineToRead(Message msg,
+                                  NotificationContext ctx) {
+            log.info("----- [OFFLINE --> READ] {} / {}", msg.getResourceName(), msg.getPartitionName());
+            // do nothing now
+        }
+
+        @Transition(from = "READ", to = "WRITE")
+        public void readToWrite(Message msg,
+                                NotificationContext ctx) throws Exception {
+            log.info("----- [READ --> WRITE] {} / {}", msg.getResourceName(), msg.getPartitionName());
+            try {
+                FutureUtils.result(registry.startStorageContainer(
+                    getStorageContainerFromPartitionName(msg.getPartitionName())));
+            } catch (Exception e) {
+                log.error("----- [READ --> WRITE] {} / {} failed",
+                    new Object[]{msg.getResourceName(), msg.getPartitionName(), e});
+                throw e;
+            }
+        }
+
+        @Transition(from = "WRITE", to = "READ")
+        public void writeToRead(Message msg,
+                                NotificationContext ctx) throws Exception {
+            log.info("----- [WRITE --> READ] {} / {}", msg.getResourceName(), msg.getPartitionName());
+            try {
+                FutureUtils.result(registry.stopStorageContainer(
+                    getStorageContainerFromPartitionName(msg.getPartitionName())));
+            } catch (Exception e) {
+                log.error("----- [WRITE --> READ] {} / {} failed",
+                    new Object[]{msg.getResourceName(), msg.getPartitionName(), e});
+                throw e;
+            }
+        }
+
+        @Transition(from = "READ", to = "OFFLINE")
+        public void readToOffline(Message msg,
+                                  NotificationContext ctx) {
+            log.info("----- [READ --> OFFLINE] {} / {}", msg.getResourceName(), msg.getPartitionName());
+            // do nothing now
+        }
+
+    }
 }

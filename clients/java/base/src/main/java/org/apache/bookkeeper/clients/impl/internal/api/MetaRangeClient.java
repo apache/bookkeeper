@@ -28,18 +28,18 @@ import org.apache.bookkeeper.stream.proto.StreamProperties;
  */
 public interface MetaRangeClient {
 
-  StreamProperties getStreamProps();
+    StreamProperties getStreamProps();
 
-  //
-  // KeyRange Related Operations
-  //
+    //
+    // KeyRange Related Operations
+    //
 
-  /**
-   * Retrieve the current active {@link org.apache.bookkeeper.stream.protocol.RangeId}s from
-   * a particular stream {@code streamId}.
-   *
-   * @return the current active ranges for a given stream.
-   */
-  CompletableFuture<HashStreamRanges> getActiveDataRanges();
+    /**
+     * Retrieve the current active {@link org.apache.bookkeeper.stream.protocol.RangeId}s from
+     * a particular stream {@code streamId}.
+     *
+     * @return the current active ranges for a given stream.
+     */
+    CompletableFuture<HashStreamRanges> getActiveDataRanges();
 
 }

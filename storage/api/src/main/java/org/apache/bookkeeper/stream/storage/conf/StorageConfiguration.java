@@ -22,47 +22,47 @@ import org.apache.commons.configuration.CompositeConfiguration;
  */
 public class StorageConfiguration extends ComponentConfiguration {
 
-  private static final String COMPONENT_PREFIX = "storage" + DELIMITER;
+    private static final String COMPONENT_PREFIX = "storage" + DELIMITER;
 
-  private static final String RANGE_STORE_DIRS = "range_store_dirs";
+    private static final String RANGE_STORE_DIRS = "range_store_dirs";
 
-  private static final String SERVE_READONLY_TABLES = "serve.readonly.tables";
+    private static final String SERVE_READONLY_TABLES = "serve.readonly.tables";
 
-  public StorageConfiguration(CompositeConfiguration conf) {
-    super(conf, COMPONENT_PREFIX);
-  }
-
-  public StorageConfiguration setRangeStoreDirNames(String[] dirNames) {
-    this.setProperty(RANGE_STORE_DIRS, dirNames);
-    return this;
-  }
-
-  private String[] getRangeStoreDirNames() {
-    String[] rangeStoreDirs = getStringArray(RANGE_STORE_DIRS);
-    if (null == rangeStoreDirs || 0 == rangeStoreDirs.length) {
-      return new String[] { "data/bookkeeper/ranges" };
-    } else {
-      return rangeStoreDirs;
+    public StorageConfiguration(CompositeConfiguration conf) {
+        super(conf, COMPONENT_PREFIX);
     }
-  }
 
-  public File[] getRangeStoreDirs() {
-    String[] rangeStoreDirNames = getRangeStoreDirNames();
-
-    File[] rangeStoreDirs = new File[rangeStoreDirNames.length];
-    for (int i = 0; i < rangeStoreDirNames.length; i++) {
-      rangeStoreDirs[i] = new File(rangeStoreDirNames[i]);
+    public StorageConfiguration setRangeStoreDirNames(String[] dirNames) {
+        this.setProperty(RANGE_STORE_DIRS, dirNames);
+        return this;
     }
-    return rangeStoreDirs;
-  }
 
-  public StorageConfiguration setServeReadOnlyTables(boolean serveReadOnlyTables) {
-    this.setProperty(SERVE_READONLY_TABLES, serveReadOnlyTables);
-    return this;
-  }
+    private String[] getRangeStoreDirNames() {
+        String[] rangeStoreDirs = getStringArray(RANGE_STORE_DIRS);
+        if (null == rangeStoreDirs || 0 == rangeStoreDirs.length) {
+            return new String[]{"data/bookkeeper/ranges"};
+        } else {
+            return rangeStoreDirs;
+        }
+    }
 
-  public boolean getServeReadOnlyTables() {
-    return getBoolean(SERVE_READONLY_TABLES, false);
-  }
+    public File[] getRangeStoreDirs() {
+        String[] rangeStoreDirNames = getRangeStoreDirNames();
+
+        File[] rangeStoreDirs = new File[rangeStoreDirNames.length];
+        for (int i = 0; i < rangeStoreDirNames.length; i++) {
+            rangeStoreDirs[i] = new File(rangeStoreDirNames[i]);
+        }
+        return rangeStoreDirs;
+    }
+
+    public StorageConfiguration setServeReadOnlyTables(boolean serveReadOnlyTables) {
+        this.setProperty(SERVE_READONLY_TABLES, serveReadOnlyTables);
+        return this;
+    }
+
+    public boolean getServeReadOnlyTables() {
+        return getBoolean(SERVE_READONLY_TABLES, false);
+    }
 
 }

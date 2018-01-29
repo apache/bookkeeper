@@ -29,23 +29,23 @@ import org.junit.Test;
  */
 public class TestStorageContainerInfo {
 
-  @Test
-  public void testBasic() {
-    long groupId = 1234L;
-    long revision = 4468L;
-    Endpoint endpoint = Endpoint.newBuilder()
-      .setHostname("123.46.78.96")
-      .setPort(3181)
-      .build();
-    StorageContainerInfo sc = StorageContainerInfo.of(
-      groupId,
-      revision,
-      endpoint,
-      Lists.newArrayList(endpoint));
-    assertEquals(groupId, sc.getGroupId());
-    assertEquals(revision, sc.getRevision());
-    assertEquals(endpoint, sc.getWriteEndpoint());
-    assertEquals(Lists.newArrayList(endpoint), sc.getReadEndpoints());
-  }
+    @Test
+    public void testBasic() {
+        long groupId = 1234L;
+        long revision = 4468L;
+        Endpoint endpoint = Endpoint.newBuilder()
+            .setHostname("123.46.78.96")
+            .setPort(3181)
+            .build();
+        StorageContainerInfo sc = StorageContainerInfo.of(
+            groupId,
+            revision,
+            endpoint,
+            Lists.newArrayList(endpoint));
+        assertEquals(groupId, sc.getGroupId());
+        assertEquals(revision, sc.getRevision());
+        assertEquals(endpoint, sc.getWriteEndpoint());
+        assertEquals(Lists.newArrayList(endpoint), sc.getReadEndpoints());
+    }
 
 }

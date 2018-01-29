@@ -234,8 +234,8 @@ public class TestRocksdbKVAsyncStoreWithCheckpoints extends TestDistributedLogBa
 
         // reload the store
         store = new RocksdbKVAsyncStore<>(
-                () -> new RocksdbKVStore<>(),
-                () -> namespace);
+            () -> new RocksdbKVStore<>(),
+            () -> namespace);
         FutureUtils.result(store.init(initSpec(runtime.getMethodName())));
 
         assertTrue(Files.exists(
@@ -256,7 +256,8 @@ public class TestRocksdbKVAsyncStoreWithCheckpoints extends TestDistributedLogBa
         writeExecutorController.advance(Duration.ofMinutes(1));
 
         // ensure checkpoint completed
-        checkpointExecutor.submit(() -> {}).get();
+        checkpointExecutor.submit(() -> {
+        }).get();
 
         store.close();
 

@@ -28,15 +28,15 @@ import org.apache.bookkeeper.stream.proto.storage.OneStorageContainerEndpointRes
  */
 public interface LocationClient extends AutoCloseable {
 
-  /**
-   * Get the locations for a list of storage container ids.
-   *
-   * @param storageContainerIds a list of storage container ids.
-   * @return list of storage container endpoints.
-   */
-  CompletableFuture<List<OneStorageContainerEndpointResponse>> locateStorageContainers(
-    List<Revisioned<Long>> storageContainerIds);
+    /**
+     * Get the locations for a list of storage container ids.
+     *
+     * @param storageContainerIds a list of storage container ids.
+     * @return list of storage container endpoints.
+     */
+    CompletableFuture<List<OneStorageContainerEndpointResponse>> locateStorageContainers(
+        List<Revisioned<Long>> storageContainerIds);
 
-  void close();
+    void close();
 
 }

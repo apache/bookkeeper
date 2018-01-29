@@ -40,7 +40,7 @@ interface TxnOpImpl<K, V> extends TxnOp<K, V> {
 
         @Override
         public TxnOpImpl<K, V> build() {
-            checkArgument(type() == OpType.TXN, "Invalid type "  + type() + " is configured");
+            checkArgument(type() == OpType.TXN, "Invalid type " + type() + " is configured");
             checkArgument(!compareOps().isEmpty(), "No compare op is specified");
             return super.build();
         }

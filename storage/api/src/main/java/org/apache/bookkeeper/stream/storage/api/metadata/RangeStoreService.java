@@ -20,6 +20,6 @@ import org.apache.bookkeeper.stream.storage.api.kv.TableStore;
  */
 public interface RangeStoreService
     extends MetaRangeStore,
-            RootRangeStore,
-            TableStore {
+    RootRangeStore,
+    TableStore {
 }

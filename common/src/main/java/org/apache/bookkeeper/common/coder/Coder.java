@@ -33,7 +33,7 @@ public interface Coder<T> extends Serializable {
     /**
      * Encodes the given value of type {@code T} onto the given output buffer.
      *
-     * @param value  value to encode
+     * @param value value to encode
      * @return the serialized bytes buf.
      */
     default ByteBuf encodeBuf(T value) {
@@ -51,7 +51,7 @@ public interface Coder<T> extends Serializable {
     /**
      * Encodes the given value of type {@code T} into the <tt>destBuf</tt>.
      *
-     * @param value value to encode
+     * @param value   value to encode
      * @param destBuf the dest buffer to keep the serialized bytes.
      */
     void encode(T value, ByteBuf destBuf);

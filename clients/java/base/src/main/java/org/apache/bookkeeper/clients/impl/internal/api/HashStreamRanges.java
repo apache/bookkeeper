@@ -27,9 +27,9 @@ import org.apache.bookkeeper.stream.proto.RangeProperties;
  */
 public class HashStreamRanges extends StreamRanges<Long> {
 
-  HashStreamRanges(NavigableMap<Long, RangeProperties> ranges,
-                   long maxRangeId) {
-    super(RangeKeyType.HASH, ranges, maxRangeId);
-  }
+    HashStreamRanges(NavigableMap<Long, RangeProperties> ranges,
+                     long maxRangeId) {
+        super(RangeKeyType.HASH, ranges, maxRangeId);
+    }
 
 }

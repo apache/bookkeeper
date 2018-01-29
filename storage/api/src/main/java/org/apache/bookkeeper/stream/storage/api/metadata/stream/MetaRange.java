@@ -30,63 +30,63 @@ import org.apache.bookkeeper.stream.proto.StreamProperties;
  */
 public interface MetaRange {
 
-  /**
-   * Get the stream name.
-   *
-   * @return stream name.
-   */
-  String getName();
+    /**
+     * Get the stream name.
+     *
+     * @return stream name.
+     */
+    String getName();
 
-  /**
-   * Create the stream.
-   *
-   * @param streamProps stream properties
-   * @return a future represents the creation result.
-   */
-  CompletableFuture<Boolean> create(StreamProperties streamProps);
+    /**
+     * Create the stream.
+     *
+     * @param streamProps stream properties
+     * @return a future represents the creation result.
+     */
+    CompletableFuture<Boolean> create(StreamProperties streamProps);
 
-  /**
-   * Load the stream metadata.
-   *
-   * @param streamId stream id to load metadata.
-   * @return a future represents an initialized metadata range instance.
-   */
-  CompletableFuture<MetaRange> load(long streamId);
+    /**
+     * Load the stream metadata.
+     *
+     * @param streamId stream id to load metadata.
+     * @return a future represents an initialized metadata range instance.
+     */
+    CompletableFuture<MetaRange> load(long streamId);
 
-  /**
-   * Delete a stream.
-   *
-   * @return a future represents the deletion result.
-   */
-  CompletableFuture<Boolean> delete(long streamId);
+    /**
+     * Delete a stream.
+     *
+     * @return a future represents the deletion result.
+     */
+    CompletableFuture<Boolean> delete(long streamId);
 
-  /**
-   * Get the stream configuration.
-   *
-   * @return the stream configuration.
-   */
-  CompletableFuture<StreamConfiguration> getConfiguration();
+    /**
+     * Get the stream configuration.
+     *
+     * @return the stream configuration.
+     */
+    CompletableFuture<StreamConfiguration> getConfiguration();
 
-  /**
-   * Get the stream state.
-   *
-   * @return a future represents the stream state.
-   */
-  CompletableFuture<ServingState> getServingState();
+    /**
+     * Get the stream state.
+     *
+     * @return a future represents the stream state.
+     */
+    CompletableFuture<ServingState> getServingState();
 
-  /**
-   * Update the stream state.
-   *
-   * @param state the stream state
-   * @return a future represents the stream state.
-   */
-  CompletableFuture<ServingState> updateServingState(ServingState state);
+    /**
+     * Update the stream state.
+     *
+     * @param state the stream state
+     * @return a future represents the stream state.
+     */
+    CompletableFuture<ServingState> updateServingState(ServingState state);
 
-  /**
-   * Return the current active ranges.
-   *
-   * @return the current active ranges.
-   */
-  CompletableFuture<List<RangeMetadata>> getActiveRanges();
+    /**
+     * Return the current active ranges.
+     *
+     * @return the current active ranges.
+     */
+    CompletableFuture<List<RangeMetadata>> getActiveRanges();
 
 }

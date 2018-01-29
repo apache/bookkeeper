@@ -23,9 +23,9 @@ package org.apache.bookkeeper.clients.exceptions;
  */
 public class NamespaceExistsException extends ClientException {
 
-  private static final long serialVersionUID = -1607186521948277966L;
+    private static final long serialVersionUID = -1607186521948277966L;
 
-  public NamespaceExistsException(String colName) {
-    super("Namespace '" + colName + "' already exists");
-  }
+    public NamespaceExistsException(String colName) {
+        super("Namespace '" + colName + "' already exists");
+    }
 }

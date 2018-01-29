@@ -43,71 +43,71 @@ import org.apache.helix.model.InstanceConfig;
 @Slf4j
 public class HelixStorageController implements StorageController {
 
-  static final String RESOURCE_NAME = "storagecontainers";
+    static final String RESOURCE_NAME = "storagecontainers";
 
-  private final ZKHelixAdmin admin;
+    private final ZKHelixAdmin admin;
 
-  public HelixStorageController(String zkServers) {
-    this.admin = new ZKHelixAdmin(zkServers);
-  }
-
-  @VisibleForTesting
-  ZKHelixAdmin getAdmin() {
-    return admin;
-  }
-
-  static long getStorageContainerFromPartitionName(String partitionName) {
-    return Long.parseLong(partitionName.replace(RESOURCE_NAME + "_", ""));
-  }
-
-  @Override
-  public void createCluster(String clusterName,
-                            int numStorageContainers,
-                            int numReplicas) {
-    List<String> clusters = admin.getClusters();
-    if (clusters.contains(clusterName)) {
-      return;
+    public HelixStorageController(String zkServers) {
+        this.admin = new ZKHelixAdmin(zkServers);
     }
-    log.info("Creating new cluster : {}", clusterName);
 
-    admin.addCluster(clusterName);
-    admin.addStateModelDef(clusterName, "WriteRead", WriteReadSMD.build());
-    admin.addResource(
-      clusterName,
-      RESOURCE_NAME,
-      numStorageContainers,
-      WriteReadSMD.NAME,
-      "FULL_AUTO");
-    admin.rebalance(clusterName, RESOURCE_NAME, 3);
-
-    log.info("Created new cluster : {}", clusterName);
-  }
-
-  static String getEndpointName(Endpoint endpoint) {
-    return endpoint.getHostname() + "_" + endpoint.getPort();
-  }
-
-  @Override
-  public void addNode(String clusterName,
-                      Endpoint endpoint,
-                      Optional<String> endpointNameOptional) {
-    String endpointName = endpointNameOptional.orElse(getEndpointName(endpoint));
-    if (admin.getInstancesInCluster(clusterName)
-        .contains(endpointName)) {
-      log.info("Instance {} already exists in cluster {}, skip creating the instance",
-        endpointName, clusterName);
-      return;
+    @VisibleForTesting
+    ZKHelixAdmin getAdmin() {
+        return admin;
     }
-    log.info("Adding a new instance {} ({}) to the cluster {}.",
-      new Object[] { endpointName, endpoint, clusterName });
-    InstanceConfig config = new InstanceConfig(endpointName);
-    config.setHostName(endpoint.getHostname());
-    config.setPort(Integer.toString(endpoint.getPort()));
-    admin.addInstance(clusterName, config);
-  }
 
-  @Override
-  public void close() {
-    admin.close();
-  }
+    static long getStorageContainerFromPartitionName(String partitionName) {
+        return Long.parseLong(partitionName.replace(RESOURCE_NAME + "_", ""));
+    }
+
+    @Override
+    public void createCluster(String clusterName,
+                              int numStorageContainers,
+                              int numReplicas) {
+        List<String> clusters = admin.getClusters();
+        if (clusters.contains(clusterName)) {
+            return;
+        }
+        log.info("Creating new cluster : {}", clusterName);
+
+        admin.addCluster(clusterName);
+        admin.addStateModelDef(clusterName, "WriteRead", WriteReadSMD.build());
+        admin.addResource(
+            clusterName,
+            RESOURCE_NAME,
+            numStorageContainers,
+            WriteReadSMD.NAME,
+            "FULL_AUTO");
+        admin.rebalance(clusterName, RESOURCE_NAME, 3);
+
+        log.info("Created new cluster : {}", clusterName);
+    }
+
+    static String getEndpointName(Endpoint endpoint) {
+        return endpoint.getHostname() + "_" + endpoint.getPort();
+    }
+
+    @Override
+    public void addNode(String clusterName,
+                        Endpoint endpoint,
+                        Optional<String> endpointNameOptional) {
+        String endpointName = endpointNameOptional.orElse(getEndpointName(endpoint));
+        if (admin.getInstancesInCluster(clusterName)
+            .contains(endpointName)) {
+            log.info("Instance {} already exists in cluster {}, skip creating the instance",
+                endpointName, clusterName);
+            return;
+        }
+        log.info("Adding a new instance {} ({}) to the cluster {}.",
+            new Object[]{endpointName, endpoint, clusterName});
+        InstanceConfig config = new InstanceConfig(endpointName);
+        config.setHostName(endpoint.getHostname());
+        config.setPort(Integer.toString(endpoint.getPort()));
+        admin.addInstance(clusterName, config);
+    }
+
+    @Override
+    public void close() {
+        admin.close();
+    }
 }

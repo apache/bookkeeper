@@ -56,153 +56,153 @@ import org.apache.bookkeeper.stream.storage.impl.store.MVCCStoreFactory;
  * KeyRange Service.
  */
 public class RangeStoreImpl
-  extends AbstractLifecycleComponent<StorageConfiguration>
-  implements RangeStore {
+    extends AbstractLifecycleComponent<StorageConfiguration>
+    implements RangeStore {
 
-  private final Resource<OrderedScheduler> schedulerResource;
-  private final OrderedScheduler scheduler;
-  private final StorageContainerManagerFactory scmFactory;
-  private final StorageContainerRegistryImpl scRegistry;
-  private final StorageContainerManager scManager;
-  private final MVCCStoreFactory storeFactory;
+    private final Resource<OrderedScheduler> schedulerResource;
+    private final OrderedScheduler scheduler;
+    private final StorageContainerManagerFactory scmFactory;
+    private final StorageContainerRegistryImpl scRegistry;
+    private final StorageContainerManager scManager;
+    private final MVCCStoreFactory storeFactory;
 
-  public RangeStoreImpl(StorageConfiguration conf,
-                        Resource<OrderedScheduler> schedulerResource,
-                        StorageContainerManagerFactory factory,
-                        MVCCStoreFactory mvccStoreFactory,
-                        URI defaultBackendUri,
-                        int numStorageContainers,
-                        StatsLogger statsLogger) {
-    super("range-service", conf, statsLogger);
-    this.schedulerResource = schedulerResource;
-    this.scheduler = SharedResourceManager.shared().get(schedulerResource);
-    this.scmFactory = factory;
-    StorageContainerPlacementPolicy placementPolicy =
-      StorageContainerPlacementPolicyImpl.of(numStorageContainers);
-    this.storeFactory = mvccStoreFactory;
-    this.scRegistry = new StorageContainerRegistryImpl(
-      new DefaultStorageContainerFactory(
-        conf,
-        placementPolicy,
-        scheduler,
-        storeFactory,
-        defaultBackendUri),
-      scheduler);
-    this.scManager = scmFactory.create(numStorageContainers, conf, scRegistry);
-  }
+    public RangeStoreImpl(StorageConfiguration conf,
+                          Resource<OrderedScheduler> schedulerResource,
+                          StorageContainerManagerFactory factory,
+                          MVCCStoreFactory mvccStoreFactory,
+                          URI defaultBackendUri,
+                          int numStorageContainers,
+                          StatsLogger statsLogger) {
+        super("range-service", conf, statsLogger);
+        this.schedulerResource = schedulerResource;
+        this.scheduler = SharedResourceManager.shared().get(schedulerResource);
+        this.scmFactory = factory;
+        StorageContainerPlacementPolicy placementPolicy =
+            StorageContainerPlacementPolicyImpl.of(numStorageContainers);
+        this.storeFactory = mvccStoreFactory;
+        this.scRegistry = new StorageContainerRegistryImpl(
+            new DefaultStorageContainerFactory(
+                conf,
+                placementPolicy,
+                scheduler,
+                storeFactory,
+                defaultBackendUri),
+            scheduler);
+        this.scManager = scmFactory.create(numStorageContainers, conf, scRegistry);
+    }
 
-  @Override
-  public ScheduledExecutorService chooseExecutor(long key) {
-    return this.scheduler.chooseThread(key);
-  }
+    @Override
+    public ScheduledExecutorService chooseExecutor(long key) {
+        return this.scheduler.chooseThread(key);
+    }
 
-  @VisibleForTesting
-  StorageContainerRegistryImpl getRegistry() {
-    return this.scRegistry;
-  }
+    @VisibleForTesting
+    StorageContainerRegistryImpl getRegistry() {
+        return this.scRegistry;
+    }
 
-  @Override
-  public StorageContainerRoutingService getRoutingService() {
-    return this.scManager;
-  }
+    @Override
+    public StorageContainerRoutingService getRoutingService() {
+        return this.scManager;
+    }
 
-  //
-  // Lifecycle management
-  //
+    //
+    // Lifecycle management
+    //
 
-  @Override
-  protected void doStart() {
-    this.scManager.start();
-  }
+    @Override
+    protected void doStart() {
+        this.scManager.start();
+    }
 
-  @Override
-  protected void doStop() {
-    this.scManager.stop();
-    this.scRegistry.close();
-  }
+    @Override
+    protected void doStop() {
+        this.scManager.stop();
+        this.scRegistry.close();
+    }
 
-  @Override
-  protected void doClose() throws IOException {
-    this.scManager.close();
-    // stop the core scheduler
-    SharedResourceManager.shared().release(
-      schedulerResource,
-      scheduler);
-  }
+    @Override
+    protected void doClose() throws IOException {
+        this.scManager.close();
+        // stop the core scheduler
+        SharedResourceManager.shared().release(
+            schedulerResource,
+            scheduler);
+    }
 
-  private StorageContainer getStorageContainer(long scId) {
-    return scRegistry.getStorageContainer(scId);
-  }
+    private StorageContainer getStorageContainer(long scId) {
+        return scRegistry.getStorageContainer(scId);
+    }
 
-  //
-  // Root Range Service
-  //
+    //
+    // Root Range Service
+    //
 
-  @Override
-  public CompletableFuture<CreateNamespaceResponse> createNamespace(CreateNamespaceRequest request) {
-    return getStorageContainer(ROOT_STORAGE_CONTAINER_ID).createNamespace(request);
-  }
+    @Override
+    public CompletableFuture<CreateNamespaceResponse> createNamespace(CreateNamespaceRequest request) {
+        return getStorageContainer(ROOT_STORAGE_CONTAINER_ID).createNamespace(request);
+    }
 
-  @Override
-  public CompletableFuture<DeleteNamespaceResponse> deleteNamespace(DeleteNamespaceRequest request) {
-    return getStorageContainer(ROOT_STORAGE_CONTAINER_ID).deleteNamespace(request);
-  }
+    @Override
+    public CompletableFuture<DeleteNamespaceResponse> deleteNamespace(DeleteNamespaceRequest request) {
+        return getStorageContainer(ROOT_STORAGE_CONTAINER_ID).deleteNamespace(request);
+    }
 
-  @Override
-  public CompletableFuture<GetNamespaceResponse> getNamespace(GetNamespaceRequest request) {
-    return getStorageContainer(ROOT_STORAGE_CONTAINER_ID).getNamespace(request);
-  }
+    @Override
+    public CompletableFuture<GetNamespaceResponse> getNamespace(GetNamespaceRequest request) {
+        return getStorageContainer(ROOT_STORAGE_CONTAINER_ID).getNamespace(request);
+    }
 
-  @Override
-  public CompletableFuture<CreateStreamResponse> createStream(CreateStreamRequest request) {
-    return getStorageContainer(ROOT_STORAGE_CONTAINER_ID).createStream(request);
-  }
+    @Override
+    public CompletableFuture<CreateStreamResponse> createStream(CreateStreamRequest request) {
+        return getStorageContainer(ROOT_STORAGE_CONTAINER_ID).createStream(request);
+    }
 
-  @Override
-  public CompletableFuture<DeleteStreamResponse> deleteStream(DeleteStreamRequest request) {
-    return getStorageContainer(ROOT_STORAGE_CONTAINER_ID).deleteStream(request);
-  }
+    @Override
+    public CompletableFuture<DeleteStreamResponse> deleteStream(DeleteStreamRequest request) {
+        return getStorageContainer(ROOT_STORAGE_CONTAINER_ID).deleteStream(request);
+    }
 
-  @Override
-  public CompletableFuture<GetStreamResponse> getStream(GetStreamRequest request) {
-    return getStorageContainer(ROOT_STORAGE_CONTAINER_ID).getStream(request);
-  }
+    @Override
+    public CompletableFuture<GetStreamResponse> getStream(GetStreamRequest request) {
+        return getStorageContainer(ROOT_STORAGE_CONTAINER_ID).getStream(request);
+    }
 
-  //
-  // Stream Meta Range Service
-  //
+    //
+    // Stream Meta Range Service
+    //
 
-  @Override
-  public CompletableFuture<StorageContainerResponse> getActiveRanges(StorageContainerRequest request) {
-    return getStorageContainer(request.getScId()).getActiveRanges(request);
-  }
+    @Override
+    public CompletableFuture<StorageContainerResponse> getActiveRanges(StorageContainerRequest request) {
+        return getStorageContainer(request.getScId()).getActiveRanges(request);
+    }
 
-  //
-  // Table Service
-  //
+    //
+    // Table Service
+    //
 
-  @Override
-  public CompletableFuture<StorageContainerResponse> range(StorageContainerRequest request) {
-    return getStorageContainer(request.getScId()).range(request);
-  }
+    @Override
+    public CompletableFuture<StorageContainerResponse> range(StorageContainerRequest request) {
+        return getStorageContainer(request.getScId()).range(request);
+    }
 
-  @Override
-  public CompletableFuture<StorageContainerResponse> put(StorageContainerRequest request) {
-    return getStorageContainer(request.getScId()).put(request);
-  }
+    @Override
+    public CompletableFuture<StorageContainerResponse> put(StorageContainerRequest request) {
+        return getStorageContainer(request.getScId()).put(request);
+    }
 
-  @Override
-  public CompletableFuture<StorageContainerResponse> delete(StorageContainerRequest request) {
-    return getStorageContainer(request.getScId()).delete(request);
-  }
+    @Override
+    public CompletableFuture<StorageContainerResponse> delete(StorageContainerRequest request) {
+        return getStorageContainer(request.getScId()).delete(request);
+    }
 
-  @Override
-  public CompletableFuture<StorageContainerResponse> txn(StorageContainerRequest request) {
-    return getStorageContainer(request.getScId()).txn(request);
-  }
+    @Override
+    public CompletableFuture<StorageContainerResponse> txn(StorageContainerRequest request) {
+        return getStorageContainer(request.getScId()).txn(request);
+    }
 
-  @Override
-  public CompletableFuture<StorageContainerResponse> incr(StorageContainerRequest request) {
-    return getStorageContainer(request.getScId()).incr(request);
-  }
+    @Override
+    public CompletableFuture<StorageContainerResponse> incr(StorageContainerRequest request) {
+        return getStorageContainer(request.getScId()).incr(request);
+    }
 }

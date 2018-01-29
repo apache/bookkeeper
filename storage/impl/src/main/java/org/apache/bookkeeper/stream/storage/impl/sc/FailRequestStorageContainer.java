@@ -47,118 +47,118 @@ import org.apache.bookkeeper.stream.storage.api.sc.StorageContainer;
  */
 public final class FailRequestStorageContainer implements StorageContainer {
 
-  public static StorageContainer of(OrderedScheduler scheduler) {
-    return new FailRequestStorageContainer(scheduler);
-  }
+    public static StorageContainer of(OrderedScheduler scheduler) {
+        return new FailRequestStorageContainer(scheduler);
+    }
 
-  private final OrderedScheduler scheduler;
+    private final OrderedScheduler scheduler;
 
-  private FailRequestStorageContainer(OrderedScheduler scheduler) {
-    this.scheduler = scheduler;
-  }
+    private FailRequestStorageContainer(OrderedScheduler scheduler) {
+        this.scheduler = scheduler;
+    }
 
-  @Override
-  public long getId() {
-    return INVALID_STORAGE_CONTAINER_ID;
-  }
+    @Override
+    public long getId() {
+        return INVALID_STORAGE_CONTAINER_ID;
+    }
 
-  @Override
-  public CompletableFuture<Void> start() {
-    return CompletableFuture.completedFuture(null);
-  }
+    @Override
+    public CompletableFuture<Void> start() {
+        return CompletableFuture.completedFuture(null);
+    }
 
-  @Override
-  public CompletableFuture<Void> stop() {
-    return CompletableFuture.completedFuture(null);
-  }
+    @Override
+    public CompletableFuture<Void> stop() {
+        return CompletableFuture.completedFuture(null);
+    }
 
-  @Override
-  public void close() {
-    // no-op
-  }
+    @Override
+    public void close() {
+        // no-op
+    }
 
-  private <T> CompletableFuture<T> failWrongGroupRequest(long scId) {
-    CompletableFuture<T> future = FutureUtils.createFuture();
-    scheduler.submitOrdered(scId, () -> {
-      future.completeExceptionally(new StatusRuntimeException(Status.NOT_FOUND));
-    });
-    return future;
-  }
+    private <T> CompletableFuture<T> failWrongGroupRequest(long scId) {
+        CompletableFuture<T> future = FutureUtils.createFuture();
+        scheduler.submitOrdered(scId, () -> {
+            future.completeExceptionally(new StatusRuntimeException(Status.NOT_FOUND));
+        });
+        return future;
+    }
 
-  //
-  // Namespace API
-  //
+    //
+    // Namespace API
+    //
 
-  @Override
-  public CompletableFuture<CreateNamespaceResponse> createNamespace(CreateNamespaceRequest request) {
-    return failWrongGroupRequest(ROOT_STORAGE_CONTAINER_ID);
-  }
+    @Override
+    public CompletableFuture<CreateNamespaceResponse> createNamespace(CreateNamespaceRequest request) {
+        return failWrongGroupRequest(ROOT_STORAGE_CONTAINER_ID);
+    }
 
-  @Override
-  public CompletableFuture<DeleteNamespaceResponse> deleteNamespace(DeleteNamespaceRequest request) {
-    return failWrongGroupRequest(ROOT_STORAGE_CONTAINER_ID);
-  }
+    @Override
+    public CompletableFuture<DeleteNamespaceResponse> deleteNamespace(DeleteNamespaceRequest request) {
+        return failWrongGroupRequest(ROOT_STORAGE_CONTAINER_ID);
+    }
 
-  @Override
-  public CompletableFuture<GetNamespaceResponse> getNamespace(GetNamespaceRequest request) {
-    return failWrongGroupRequest(ROOT_STORAGE_CONTAINER_ID);
-  }
+    @Override
+    public CompletableFuture<GetNamespaceResponse> getNamespace(GetNamespaceRequest request) {
+        return failWrongGroupRequest(ROOT_STORAGE_CONTAINER_ID);
+    }
 
-  //
-  // Stream API
-  //
+    //
+    // Stream API
+    //
 
-  @Override
-  public CompletableFuture<CreateStreamResponse> createStream(CreateStreamRequest request) {
-    return failWrongGroupRequest(ROOT_STORAGE_CONTAINER_ID);
-  }
+    @Override
+    public CompletableFuture<CreateStreamResponse> createStream(CreateStreamRequest request) {
+        return failWrongGroupRequest(ROOT_STORAGE_CONTAINER_ID);
+    }
 
-  @Override
-  public CompletableFuture<DeleteStreamResponse> deleteStream(DeleteStreamRequest request) {
-    return failWrongGroupRequest(ROOT_STORAGE_CONTAINER_ID);
-  }
+    @Override
+    public CompletableFuture<DeleteStreamResponse> deleteStream(DeleteStreamRequest request) {
+        return failWrongGroupRequest(ROOT_STORAGE_CONTAINER_ID);
+    }
 
-  @Override
-  public CompletableFuture<GetStreamResponse> getStream(GetStreamRequest request) {
-    return failWrongGroupRequest(ROOT_STORAGE_CONTAINER_ID);
-  }
+    @Override
+    public CompletableFuture<GetStreamResponse> getStream(GetStreamRequest request) {
+        return failWrongGroupRequest(ROOT_STORAGE_CONTAINER_ID);
+    }
 
-  //
-  // Stream Meta Range API.
-  //
+    //
+    // Stream Meta Range API.
+    //
 
-  @Override
-  public CompletableFuture<StorageContainerResponse> getActiveRanges(StorageContainerRequest request) {
-    return failWrongGroupRequest(request.getScId());
-  }
+    @Override
+    public CompletableFuture<StorageContainerResponse> getActiveRanges(StorageContainerRequest request) {
+        return failWrongGroupRequest(request.getScId());
+    }
 
-  //
-  // Table API
-  //
+    //
+    // Table API
+    //
 
 
-  @Override
-  public CompletableFuture<StorageContainerResponse> range(StorageContainerRequest request) {
-    return failWrongGroupRequest(request.getScId());
-  }
+    @Override
+    public CompletableFuture<StorageContainerResponse> range(StorageContainerRequest request) {
+        return failWrongGroupRequest(request.getScId());
+    }
 
-  @Override
-  public CompletableFuture<StorageContainerResponse> put(StorageContainerRequest request) {
-    return failWrongGroupRequest(request.getScId());
-  }
+    @Override
+    public CompletableFuture<StorageContainerResponse> put(StorageContainerRequest request) {
+        return failWrongGroupRequest(request.getScId());
+    }
 
-  @Override
-  public CompletableFuture<StorageContainerResponse> delete(StorageContainerRequest request) {
-    return failWrongGroupRequest(request.getScId());
-  }
+    @Override
+    public CompletableFuture<StorageContainerResponse> delete(StorageContainerRequest request) {
+        return failWrongGroupRequest(request.getScId());
+    }
 
-  @Override
-  public CompletableFuture<StorageContainerResponse> txn(StorageContainerRequest request) {
-    return failWrongGroupRequest(request.getScId());
-  }
+    @Override
+    public CompletableFuture<StorageContainerResponse> txn(StorageContainerRequest request) {
+        return failWrongGroupRequest(request.getScId());
+    }
 
-  @Override
-  public CompletableFuture<StorageContainerResponse> incr(StorageContainerRequest request) {
-    return failWrongGroupRequest(request.getScId());
-  }
+    @Override
+    public CompletableFuture<StorageContainerResponse> incr(StorageContainerRequest request) {
+        return failWrongGroupRequest(request.getScId());
+    }
 }

@@ -45,7 +45,7 @@ final class KVUtils {
         .setNopReq(NopRequest.newBuilder().build())
         .build();
 
-    static  ByteBuf serialize(ByteBuf valBuf, long revision) {
+    static ByteBuf serialize(ByteBuf valBuf, long revision) {
         int serializedSize = valBuf.readableBytes() + Long.BYTES;
         ByteBuf buffer = PooledByteBufAllocator.DEFAULT.heapBuffer(serializedSize);
         buffer.writeLong(revision);
@@ -53,7 +53,7 @@ final class KVUtils {
         return buffer;
     }
 
-    static  ByteBuf serialize(byte[] value, long revision) {
+    static ByteBuf serialize(byte[] value, long revision) {
         int serializedSize = value.length + Long.BYTES;
         ByteBuf buffer = PooledByteBufAllocator.DEFAULT.heapBuffer(serializedSize);
         buffer.writeLong(revision);

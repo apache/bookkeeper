@@ -34,7 +34,7 @@ public interface KVStoreWriteView<K, V> {
     /**
      * Update the <code>value</code> associated with the <code>key</code>.
      *
-     * @param key the key to update
+     * @param key   the key to update
      * @param value the new value to associate with the key
      * @throws NullPointerException if a null key is provided
      */
@@ -44,7 +44,7 @@ public interface KVStoreWriteView<K, V> {
      * Update the <code>value</code> associated with the <code>key</code>,
      * unless a value is already associated with the key.
      *
-     * @param key the key to update
+     * @param key   the key to update
      * @param value the new value to associate with the key
      * @return the old value if there is already a value associated with the key. the <i>put</i> operation
      * is treated as failure in this case. or null if there is no such key. the <i>put</i> operation succeeds

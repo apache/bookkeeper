@@ -23,9 +23,9 @@ package org.apache.bookkeeper.clients.exceptions;
  */
 public class NamespaceNotFoundException extends ClientException {
 
-  private static final long serialVersionUID = -3125238097662039645L;
+    private static final long serialVersionUID = -3125238097662039645L;
 
-  public NamespaceNotFoundException(String colName) {
-    super("Namespace '" + colName + "' is not found");
-  }
+    public NamespaceNotFoundException(String colName) {
+        super("Namespace '" + colName + "' is not found");
+    }
 }

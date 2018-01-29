@@ -23,18 +23,18 @@ package org.apache.bookkeeper.clients.exceptions;
  */
 public class InternalServerException extends ClientException {
 
-  private static final long serialVersionUID = 1427129447865372324L;
+    private static final long serialVersionUID = 1427129447865372324L;
 
-  public InternalServerException(String message) {
-    super(message);
-  }
+    public InternalServerException(String message) {
+        super(message);
+    }
 
-  public InternalServerException(Throwable cause) {
-    super(cause);
-  }
+    public InternalServerException(Throwable cause) {
+        super(cause);
+    }
 
-  public InternalServerException(String message, Throwable cause) {
-    super(cause);
-  }
+    public InternalServerException(String message, Throwable cause) {
+        super(cause);
+    }
 
 }

@@ -49,105 +49,105 @@ public class StorageServerClientManagerImpl
     extends AbstractAutoAsyncCloseable
     implements StorageServerClientManager {
 
-  private final Resource<OrderedScheduler> schedulerResource;
-  private final OrderedScheduler scheduler;
-  private final StorageServerChannelManager channelManager;
-  private final StorageContainerChannelManager scChannelManager;
+    private final Resource<OrderedScheduler> schedulerResource;
+    private final OrderedScheduler scheduler;
+    private final StorageServerChannelManager channelManager;
+    private final StorageContainerChannelManager scChannelManager;
 
-  // clients
-  private final LocationClient locationClient;
-  private final RootRangeClient rootRangeClient;
-  private final StreamMetadataCache streamMetadataCache;
-  private final ConcurrentMap<Long, MetaRangeClientImpl> metaRangeClients;
+    // clients
+    private final LocationClient locationClient;
+    private final RootRangeClient rootRangeClient;
+    private final StreamMetadataCache streamMetadataCache;
+    private final ConcurrentMap<Long, MetaRangeClientImpl> metaRangeClients;
 
-  public StorageServerClientManagerImpl(StorageClientSettings settings,
-                                        Resource<OrderedScheduler> schedulerResource) {
-     this(
-       settings,
-       schedulerResource,
-       StorageServerChannel.factory(settings.usePlaintext()));
-  }
-
-  public StorageServerClientManagerImpl(StorageClientSettings settings,
-                                        Resource<OrderedScheduler> schedulerResource,
-                                        Function<Endpoint, StorageServerChannel> channelFactory) {
-    this.schedulerResource = schedulerResource;
-    this.scheduler = SharedResourceManager.shared().get(schedulerResource);
-    this.locationClient = new LocationClientImpl(settings, scheduler);
-    this.channelManager = new StorageServerChannelManager(channelFactory);
-    this.scChannelManager = new StorageContainerChannelManager(
-      this.channelManager,
-      this.locationClient,
-      scheduler);
-    this.rootRangeClient = new RootRangeClientImpl(
-      scheduler,
-      scChannelManager);
-    this.streamMetadataCache = new StreamMetadataCache(rootRangeClient);
-    this.metaRangeClients = Maps.newConcurrentMap();
-  }
-
-  @VisibleForTesting
-  StorageContainerChannelManager getStorageContainerChannelManager() {
-    return scChannelManager;
-  }
-
-  @Override
-  public StorageContainerChannel getStorageContainerChannel(long scId) {
-    return scChannelManager.getOrCreate(scId);
-  }
-
-  @Override
-  public LocationClient getLocationClient() {
-    return this.locationClient;
-  }
-
-  @Override
-  public RootRangeClient getRootRangeClient() {
-    return this.rootRangeClient;
-  }
-
-  @Override
-  public MetaRangeClientImpl openMetaRangeClient(StreamProperties streamProps) {
-    MetaRangeClientImpl client = metaRangeClients.get(streamProps.getStreamId());
-    if (null != client) {
-      return client;
+    public StorageServerClientManagerImpl(StorageClientSettings settings,
+                                          Resource<OrderedScheduler> schedulerResource) {
+        this(
+            settings,
+            schedulerResource,
+            StorageServerChannel.factory(settings.usePlaintext()));
     }
-    MetaRangeClientImpl newClient = new MetaRangeClientImpl(
-      streamProps,
-      scheduler,
-      scChannelManager);
-    MetaRangeClientImpl oldClient = metaRangeClients.putIfAbsent(
-      streamProps.getStreamId(),
-      newClient);
-    if (null != oldClient) {
-      return oldClient;
-    } else {
-      streamMetadataCache.putStreamProperties(streamProps.getStreamId(), streamProps);
-      return newClient;
+
+    public StorageServerClientManagerImpl(StorageClientSettings settings,
+                                          Resource<OrderedScheduler> schedulerResource,
+                                          Function<Endpoint, StorageServerChannel> channelFactory) {
+        this.schedulerResource = schedulerResource;
+        this.scheduler = SharedResourceManager.shared().get(schedulerResource);
+        this.locationClient = new LocationClientImpl(settings, scheduler);
+        this.channelManager = new StorageServerChannelManager(channelFactory);
+        this.scChannelManager = new StorageContainerChannelManager(
+            this.channelManager,
+            this.locationClient,
+            scheduler);
+        this.rootRangeClient = new RootRangeClientImpl(
+            scheduler,
+            scChannelManager);
+        this.streamMetadataCache = new StreamMetadataCache(rootRangeClient);
+        this.metaRangeClients = Maps.newConcurrentMap();
     }
-  }
 
-  @Override
-  public CompletableFuture<StreamProperties> getStreamProperties(long streamId) {
-    return streamMetadataCache.getStreamProperties(streamId);
-  }
-
-  @Override
-  public CompletableFuture<MetaRangeClient> openMetaRangeClient(long streamId) {
-    MetaRangeClientImpl client = metaRangeClients.get(streamId);
-    if (null != client) {
-      return FutureUtils.value(client);
+    @VisibleForTesting
+    StorageContainerChannelManager getStorageContainerChannelManager() {
+        return scChannelManager;
     }
-    return getStreamProperties(streamId).thenApply(props -> openMetaRangeClient(props));
-  }
 
-  @Override
-  protected void closeAsyncOnce(CompletableFuture<Void> closeFuture) {
-    locationClient.close();
-    channelManager.close();
-    scheduler.submit(() -> {
-      SharedResourceManager.shared().release(schedulerResource, scheduler);
-      closeFuture.complete(null);
-    });
-  }
+    @Override
+    public StorageContainerChannel getStorageContainerChannel(long scId) {
+        return scChannelManager.getOrCreate(scId);
+    }
+
+    @Override
+    public LocationClient getLocationClient() {
+        return this.locationClient;
+    }
+
+    @Override
+    public RootRangeClient getRootRangeClient() {
+        return this.rootRangeClient;
+    }
+
+    @Override
+    public MetaRangeClientImpl openMetaRangeClient(StreamProperties streamProps) {
+        MetaRangeClientImpl client = metaRangeClients.get(streamProps.getStreamId());
+        if (null != client) {
+            return client;
+        }
+        MetaRangeClientImpl newClient = new MetaRangeClientImpl(
+            streamProps,
+            scheduler,
+            scChannelManager);
+        MetaRangeClientImpl oldClient = metaRangeClients.putIfAbsent(
+            streamProps.getStreamId(),
+            newClient);
+        if (null != oldClient) {
+            return oldClient;
+        } else {
+            streamMetadataCache.putStreamProperties(streamProps.getStreamId(), streamProps);
+            return newClient;
+        }
+    }
+
+    @Override
+    public CompletableFuture<StreamProperties> getStreamProperties(long streamId) {
+        return streamMetadataCache.getStreamProperties(streamId);
+    }
+
+    @Override
+    public CompletableFuture<MetaRangeClient> openMetaRangeClient(long streamId) {
+        MetaRangeClientImpl client = metaRangeClients.get(streamId);
+        if (null != client) {
+            return FutureUtils.value(client);
+        }
+        return getStreamProperties(streamId).thenApply(props -> openMetaRangeClient(props));
+    }
+
+    @Override
+    protected void closeAsyncOnce(CompletableFuture<Void> closeFuture) {
+        locationClient.close();
+        channelManager.close();
+        scheduler.submit(() -> {
+            SharedResourceManager.shared().release(schedulerResource, scheduler);
+            closeFuture.complete(null);
+        });
+    }
 }

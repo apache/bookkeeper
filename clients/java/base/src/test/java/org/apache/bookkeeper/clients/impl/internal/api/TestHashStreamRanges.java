@@ -31,26 +31,26 @@ import org.junit.Test;
  */
 public class TestHashStreamRanges {
 
-  @Test
-  public void testConstructor() {
-    NavigableMap<Long, RangeProperties> ranges = Maps.newTreeMap();
-    for (long hashKey = 0L; hashKey < 10L; hashKey++) {
-      RangeProperties props = RangeProperties.newBuilder()
-        .setStorageContainerId(hashKey)
-        .setRangeId(hashKey)
-        .setStartHashKey(hashKey)
-        .setEndHashKey(hashKey)
-        .build();
-      ranges.put(hashKey, props);
+    @Test
+    public void testConstructor() {
+        NavigableMap<Long, RangeProperties> ranges = Maps.newTreeMap();
+        for (long hashKey = 0L; hashKey < 10L; hashKey++) {
+            RangeProperties props = RangeProperties.newBuilder()
+                .setStorageContainerId(hashKey)
+                .setRangeId(hashKey)
+                .setStartHashKey(hashKey)
+                .setEndHashKey(hashKey)
+                .build();
+            ranges.put(hashKey, props);
+        }
+
+        HashStreamRanges hsr = new HashStreamRanges(
+            ranges,
+            9L);
+
+        assertEquals(RangeKeyType.HASH, hsr.getKeyType());
+        assertEquals(ranges, hsr.getRanges());
+        assertEquals(9L, hsr.getMaxRangeId());
     }
-
-    HashStreamRanges hsr = new HashStreamRanges(
-      ranges,
-      9L);
-
-    assertEquals(RangeKeyType.HASH, hsr.getKeyType());
-    assertEquals(ranges, hsr.getRanges());
-    assertEquals(9L, hsr.getMaxRangeId());
-  }
 
 }

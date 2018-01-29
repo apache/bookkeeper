@@ -45,75 +45,75 @@ public class HelixStorageContainerManager
     extends AbstractLifecycleComponent<StorageConfiguration>
     implements StorageContainerManager {
 
-  private final String zkServers;
-  private final String clusterName;
-  private final StorageContainerRegistry registry;
-  private final Endpoint endpoint;
-  private final Optional<String> endpointName;
-  private final HelixManager manager;
-  private final RoutingTableProvider rtProvider;
+    private final String zkServers;
+    private final String clusterName;
+    private final StorageContainerRegistry registry;
+    private final Endpoint endpoint;
+    private final Optional<String> endpointName;
+    private final HelixManager manager;
+    private final RoutingTableProvider rtProvider;
 
-  public HelixStorageContainerManager(String zkServers,
-                                      String clusterName,
-                                      StorageConfiguration conf,
-                                      StorageContainerRegistry registry,
-                                      Endpoint endpoint,
-                                      Optional<String> endpointName,
-                                      StatsLogger statsLogger) {
-    super("helix-storage-container-manager", conf, statsLogger);
-    this.zkServers = zkServers;
-    this.clusterName = clusterName;
-    this.registry = registry;
-    this.endpoint = endpoint;
-    this.endpointName = endpointName;
-    // create the helix manager
-    this.manager = HelixManagerFactory.getZKHelixManager(
-      clusterName,
-      endpointName.orElse(getEndpointName(endpoint)),
-      InstanceType.CONTROLLER_PARTICIPANT,
-      zkServers);
-    this.rtProvider = new RoutingTableProvider();
-  }
-
-  @Override
-  public Endpoint getStorageContainer(long scId) {
-    List<InstanceConfig> instances = this.rtProvider.getInstances(
-      RESOURCE_NAME, RESOURCE_NAME + "_" + scId, "WRITE");
-    if (instances.isEmpty()) {
-      return null;
-    } else {
-      InstanceConfig instance = instances.get(0);
-      return Endpoint.newBuilder()
-          .setHostname(instance.getHostName())
-          .setPort(Integer.parseInt(instance.getPort()))
-          .build();
+    public HelixStorageContainerManager(String zkServers,
+                                        String clusterName,
+                                        StorageConfiguration conf,
+                                        StorageContainerRegistry registry,
+                                        Endpoint endpoint,
+                                        Optional<String> endpointName,
+                                        StatsLogger statsLogger) {
+        super("helix-storage-container-manager", conf, statsLogger);
+        this.zkServers = zkServers;
+        this.clusterName = clusterName;
+        this.registry = registry;
+        this.endpoint = endpoint;
+        this.endpointName = endpointName;
+        // create the helix manager
+        this.manager = HelixManagerFactory.getZKHelixManager(
+            clusterName,
+            endpointName.orElse(getEndpointName(endpoint)),
+            InstanceType.CONTROLLER_PARTICIPANT,
+            zkServers);
+        this.rtProvider = new RoutingTableProvider();
     }
-  }
 
-  @Override
-  protected void doStart() {
-    // create the controller
-    try (HelixStorageController controller = new HelixStorageController(zkServers)) {
-      controller.addNode(clusterName, endpoint, endpointName);
+    @Override
+    public Endpoint getStorageContainer(long scId) {
+        List<InstanceConfig> instances = this.rtProvider.getInstances(
+            RESOURCE_NAME, RESOURCE_NAME + "_" + scId, "WRITE");
+        if (instances.isEmpty()) {
+            return null;
+        } else {
+            InstanceConfig instance = instances.get(0);
+            return Endpoint.newBuilder()
+                .setHostname(instance.getHostName())
+                .setPort(Integer.parseInt(instance.getPort()))
+                .build();
+        }
     }
-    StateMachineEngine sme = this.manager.getStateMachineEngine();
-    StateModelFactory<StateModel> smFactory = new WriteReadStateModelFactory(registry);
-    sme.registerStateModelFactory(WriteReadSMD.NAME, smFactory);
-    try {
-      manager.connect();
-      manager.addExternalViewChangeListener(rtProvider);
-    } catch (Exception e) {
-      throw new StorageRuntimeException(e);
+
+    @Override
+    protected void doStart() {
+        // create the controller
+        try (HelixStorageController controller = new HelixStorageController(zkServers)) {
+            controller.addNode(clusterName, endpoint, endpointName);
+        }
+        StateMachineEngine sme = this.manager.getStateMachineEngine();
+        StateModelFactory<StateModel> smFactory = new WriteReadStateModelFactory(registry);
+        sme.registerStateModelFactory(WriteReadSMD.NAME, smFactory);
+        try {
+            manager.connect();
+            manager.addExternalViewChangeListener(rtProvider);
+        } catch (Exception e) {
+            throw new StorageRuntimeException(e);
+        }
     }
-  }
 
-  @Override
-  protected void doStop() {
-    manager.disconnect();
-  }
+    @Override
+    protected void doStop() {
+        manager.disconnect();
+    }
 
-  @Override
-  protected void doClose() throws IOException {
+    @Override
+    protected void doClose() throws IOException {
 
-  }
+    }
 }

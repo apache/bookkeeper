@@ -46,19 +46,19 @@ import org.junit.Test;
  */
 public class TableStoreUtilsTest {
 
-    private final byte[] rKey = new byte[] { 'a', 'b', 'c' };
-    private final byte[] lKey = new byte[] { 'd', 'e', 'e' };
-    private final byte[] storeKeyWithRKey = new byte[] {
+    private final byte[] rKey = new byte[]{'a', 'b', 'c'};
+    private final byte[] lKey = new byte[]{'d', 'e', 'e'};
+    private final byte[] storeKeyWithRKey = new byte[]{
         HAS_ROUTING_KEY,
         'a', 'b', 'c',
         SEP,
         'd', 'e', 'e'
     };
-    private final byte[] storeKeyWithoutRKey = new byte[] {
+    private final byte[] storeKeyWithoutRKey = new byte[]{
         NO_ROUTING_KEY,
         'd', 'e', 'e'
     };
-    private final byte[] value = new byte[] { 'v', 'a', 'l', 'u', 'e' };
+    private final byte[] value = new byte[]{'v', 'a', 'l', 'u', 'e'};
 
     @Test
     public void testHasRKey() {
@@ -95,7 +95,7 @@ public class TableStoreUtilsTest {
 
     @Test
     public void testHandleCause() {
-        StatusCode[] protoCodes = new StatusCode[] {
+        StatusCode[] protoCodes = new StatusCode[]{
             StatusCode.SUCCESS,
             StatusCode.INTERNAL_SERVER_ERROR,
             StatusCode.BAD_REQUEST,
@@ -106,7 +106,7 @@ public class TableStoreUtilsTest {
             StatusCode.KEY_NOT_FOUND,
             StatusCode.KEY_EXISTS,
         };
-        Code[] codes = new Code[] {
+        Code[] codes = new Code[]{
             Code.OK,
             Code.INTERNAL_ERROR,
             Code.INVALID_ARGUMENT,

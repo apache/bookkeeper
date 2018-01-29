@@ -53,161 +53,161 @@ import org.junit.rules.TestName;
  */
 public abstract class RootRangeClientImplTestBase extends GrpcClientTestBase {
 
-  @Rule
-  public final TestName testName = new TestName();
+    @Rule
+    public final TestName testName = new TestName();
 
-  private OrderedScheduler scheduler;
-  private RootRangeClientImpl rootRangeClient;
-  private final LocationClient locationClient = mock(LocationClient.class);
+    private OrderedScheduler scheduler;
+    private RootRangeClientImpl rootRangeClient;
+    private final LocationClient locationClient = mock(LocationClient.class);
 
-  private StorageServerChannel mockChannel = mock(StorageServerChannel.class);
-  private StorageServerChannel mockChannel2 = mock(StorageServerChannel.class);
-  private StorageServerChannel mockChannel3 = mock(StorageServerChannel.class);
-  private final Endpoint endpoint = Endpoint.newBuilder()
-    .setHostname("127.0.0.1")
-    .setPort(8181)
-    .build();
-  private final Endpoint endpoint2 = Endpoint.newBuilder()
-    .setHostname("127.0.0.2")
-    .setPort(8282)
-    .build();
-  private final Endpoint endpoint3 = Endpoint.newBuilder()
-    .setHostname("127.0.0.3")
-    .setPort(8383)
-    .build();
-  private final StorageServerChannelManager channelManager = new StorageServerChannelManager(
-    ep -> {
-      if (endpoint2 == ep) {
-        return mockChannel2;
-      } else if (endpoint3 == ep) {
-        return mockChannel3;
-      } else {
-        return mockChannel;
-      }
-    });
+    private StorageServerChannel mockChannel = mock(StorageServerChannel.class);
+    private StorageServerChannel mockChannel2 = mock(StorageServerChannel.class);
+    private StorageServerChannel mockChannel3 = mock(StorageServerChannel.class);
+    private final Endpoint endpoint = Endpoint.newBuilder()
+        .setHostname("127.0.0.1")
+        .setPort(8181)
+        .build();
+    private final Endpoint endpoint2 = Endpoint.newBuilder()
+        .setHostname("127.0.0.2")
+        .setPort(8282)
+        .build();
+    private final Endpoint endpoint3 = Endpoint.newBuilder()
+        .setHostname("127.0.0.3")
+        .setPort(8383)
+        .build();
+    private final StorageServerChannelManager channelManager = new StorageServerChannelManager(
+        ep -> {
+            if (endpoint2 == ep) {
+                return mockChannel2;
+            } else if (endpoint3 == ep) {
+                return mockChannel3;
+            } else {
+                return mockChannel;
+            }
+        });
 
-  @Override
-  protected void doSetup() throws Exception {
-    scheduler = OrderedScheduler.newSchedulerBuilder()
-      .numThreads(1)
-      .name("test-range-server-manager")
-      .build();
-    rootRangeClient = new RootRangeClientImpl(
-      scheduler,
-      new StorageContainerChannelManager(
-        channelManager,
-        locationClient,
-        scheduler));
-  }
-
-  @Override
-  protected void doTeardown() throws Exception {
-    if (null != scheduler) {
-      scheduler.shutdown();
+    @Override
+    protected void doSetup() throws Exception {
+        scheduler = OrderedScheduler.newSchedulerBuilder()
+            .numThreads(1)
+            .name("test-range-server-manager")
+            .build();
+        rootRangeClient = new RootRangeClientImpl(
+            scheduler,
+            new StorageContainerChannelManager(
+                channelManager,
+                locationClient,
+                scheduler));
     }
-  }
 
-  protected abstract RootRangeServiceImplBase createRootRangeServiceForSuccess();
+    @Override
+    protected void doTeardown() throws Exception {
+        if (null != scheduler) {
+            scheduler.shutdown();
+        }
+    }
 
-  protected abstract void verifySuccess(RootRangeClient rootRangeClient) throws Exception;
+    protected abstract RootRangeServiceImplBase createRootRangeServiceForSuccess();
 
-  @Test
-  public void testRequestSuccess() throws Exception {
-    CompletableFuture<StorageServerChannel> serviceFuture = FutureUtils.createFuture();
-    rootRangeClient.getStorageContainerClient().setStorageServerChannelFuture(serviceFuture);
+    protected abstract void verifySuccess(RootRangeClient rootRangeClient) throws Exception;
 
-    RootRangeServiceImplBase rootRangeService = createRootRangeServiceForSuccess();
-    serviceRegistry.addService(rootRangeService.bindService());
-    StorageServerChannel rsChannel = new StorageServerChannel(
-      InProcessChannelBuilder.forName(serverName).directExecutor().build(),
-      Optional.empty());
-    serviceFuture.complete(rsChannel);
+    @Test
+    public void testRequestSuccess() throws Exception {
+        CompletableFuture<StorageServerChannel> serviceFuture = FutureUtils.createFuture();
+        rootRangeClient.getStorageContainerClient().setStorageServerChannelFuture(serviceFuture);
 
-    verifySuccess(rootRangeClient);
-  }
+        RootRangeServiceImplBase rootRangeService = createRootRangeServiceForSuccess();
+        serviceRegistry.addService(rootRangeService.bindService());
+        StorageServerChannel rsChannel = new StorageServerChannel(
+            InProcessChannelBuilder.forName(serverName).directExecutor().build(),
+            Optional.empty());
+        serviceFuture.complete(rsChannel);
 
-
-  protected abstract RootRangeServiceImplBase createRootRangeServiceForRequestFailure();
-
-  protected abstract void verifyRequestFailure(RootRangeClient rootRangeClient) throws Exception;
-
-  @Test
-  public void testRequestFailure() throws Exception {
-    CompletableFuture<StorageServerChannel> serviceFuture = FutureUtils.createFuture();
-    rootRangeClient.getStorageContainerClient().setStorageServerChannelFuture(serviceFuture);
-
-    RootRangeServiceImplBase rootRangeService = createRootRangeServiceForRequestFailure();
-    serviceRegistry.addService(rootRangeService.bindService());
-    StorageServerChannel rsChannel = new StorageServerChannel(
-      InProcessChannelBuilder.forName(serverName).directExecutor().build(),
-      Optional.empty());
-    serviceFuture.complete(rsChannel);
-
-    verifyRequestFailure(rootRangeClient);
-  }
+        verifySuccess(rootRangeClient);
+    }
 
 
-  protected abstract RootRangeServiceImplBase createRootRangeServiceForRpcFailure();
+    protected abstract RootRangeServiceImplBase createRootRangeServiceForRequestFailure();
 
-  protected abstract void verifyRpcFailure(RootRangeClient rootRangeClient) throws Exception;
+    protected abstract void verifyRequestFailure(RootRangeClient rootRangeClient) throws Exception;
 
-  @Test
-  public void testRpcFailure() throws Exception {
-    CompletableFuture<StorageServerChannel> serviceFuture = FutureUtils.createFuture();
-    rootRangeClient.getStorageContainerClient().setStorageServerChannelFuture(serviceFuture);
+    @Test
+    public void testRequestFailure() throws Exception {
+        CompletableFuture<StorageServerChannel> serviceFuture = FutureUtils.createFuture();
+        rootRangeClient.getStorageContainerClient().setStorageServerChannelFuture(serviceFuture);
 
-    RootRangeServiceImplBase rootRangeService = createRootRangeServiceForRpcFailure();
-    serviceRegistry.addService(rootRangeService.bindService());
-    StorageServerChannel rsChannel = new StorageServerChannel(
-      InProcessChannelBuilder.forName(serverName).directExecutor().build(),
-      Optional.empty());
-    serviceFuture.complete(rsChannel);
+        RootRangeServiceImplBase rootRangeService = createRootRangeServiceForRequestFailure();
+        serviceRegistry.addService(rootRangeService.bindService());
+        StorageServerChannel rsChannel = new StorageServerChannel(
+            InProcessChannelBuilder.forName(serverName).directExecutor().build(),
+            Optional.empty());
+        serviceFuture.complete(rsChannel);
 
-    verifyRpcFailure(rootRangeClient);
-  }
+        verifyRequestFailure(rootRangeClient);
+    }
 
-  protected abstract void verifyChannelFailure(IOException expectedException, RootRangeClient rootRangeClient)
-      throws Exception;
 
-  @Test
-  public void testChannelFailure() throws Exception {
-    CompletableFuture<StorageServerChannel> serviceFuture = FutureUtils.createFuture();
-    rootRangeClient.getStorageContainerClient().setStorageServerChannelFuture(serviceFuture);
+    protected abstract RootRangeServiceImplBase createRootRangeServiceForRpcFailure();
 
-    IOException ioe = new IOException(testName.getMethodName());
-    serviceFuture.completeExceptionally(ioe);
+    protected abstract void verifyRpcFailure(RootRangeClient rootRangeClient) throws Exception;
 
-    verifyChannelFailure(ioe, rootRangeClient);
-  }
+    @Test
+    public void testRpcFailure() throws Exception {
+        CompletableFuture<StorageServerChannel> serviceFuture = FutureUtils.createFuture();
+        rootRangeClient.getStorageContainerClient().setStorageServerChannelFuture(serviceFuture);
 
-  @Test
-  public void testCreateRootRangeException() {
-    String name = "test-create-root-range-exception";
-    // stream exists exception
-    Throwable cause1 = createRootRangeException(name, StatusCode.STREAM_EXISTS);
-    assertTrue(cause1 instanceof StreamExistsException);
-    StreamExistsException see = (StreamExistsException) cause1;
-    // stream not found
-    Throwable cause2 = createRootRangeException(name, StatusCode.STREAM_NOT_FOUND);
-    assertTrue(cause2 instanceof StreamNotFoundException);
-    StreamNotFoundException snfe = (StreamNotFoundException) cause2;
-    // failure
-    Throwable cause3 = createRootRangeException(name, StatusCode.FAILURE);
-    assertTrue(cause3 instanceof ClientException);
-    ClientException se = (ClientException) cause3;
-    assertEquals("fail to access its root range : code = " + StatusCode.FAILURE,
-      se.getMessage());
-    // unexpected
-    Throwable cause4 = createRootRangeException(name, StatusCode.BAD_VERSION);
-    assertTrue(cause4 instanceof ClientException);
-    // namespace exists exception
-    Throwable cause5 = createRootRangeException(name, StatusCode.NAMESPACE_EXISTS);
-    assertTrue(cause5 instanceof NamespaceExistsException);
-    // namespace not-found exception
-    Throwable cause6 = createRootRangeException(name, StatusCode.NAMESPACE_NOT_FOUND);
-    assertTrue(cause6 instanceof NamespaceNotFoundException);
-    // invalid namespace name
-    Throwable cause7 = createRootRangeException(name, StatusCode.INVALID_NAMESPACE_NAME);
-    assertTrue(cause7 instanceof InvalidNamespaceNameException);
-  }
+        RootRangeServiceImplBase rootRangeService = createRootRangeServiceForRpcFailure();
+        serviceRegistry.addService(rootRangeService.bindService());
+        StorageServerChannel rsChannel = new StorageServerChannel(
+            InProcessChannelBuilder.forName(serverName).directExecutor().build(),
+            Optional.empty());
+        serviceFuture.complete(rsChannel);
+
+        verifyRpcFailure(rootRangeClient);
+    }
+
+    protected abstract void verifyChannelFailure(IOException expectedException, RootRangeClient rootRangeClient)
+        throws Exception;
+
+    @Test
+    public void testChannelFailure() throws Exception {
+        CompletableFuture<StorageServerChannel> serviceFuture = FutureUtils.createFuture();
+        rootRangeClient.getStorageContainerClient().setStorageServerChannelFuture(serviceFuture);
+
+        IOException ioe = new IOException(testName.getMethodName());
+        serviceFuture.completeExceptionally(ioe);
+
+        verifyChannelFailure(ioe, rootRangeClient);
+    }
+
+    @Test
+    public void testCreateRootRangeException() {
+        String name = "test-create-root-range-exception";
+        // stream exists exception
+        Throwable cause1 = createRootRangeException(name, StatusCode.STREAM_EXISTS);
+        assertTrue(cause1 instanceof StreamExistsException);
+        StreamExistsException see = (StreamExistsException) cause1;
+        // stream not found
+        Throwable cause2 = createRootRangeException(name, StatusCode.STREAM_NOT_FOUND);
+        assertTrue(cause2 instanceof StreamNotFoundException);
+        StreamNotFoundException snfe = (StreamNotFoundException) cause2;
+        // failure
+        Throwable cause3 = createRootRangeException(name, StatusCode.FAILURE);
+        assertTrue(cause3 instanceof ClientException);
+        ClientException se = (ClientException) cause3;
+        assertEquals("fail to access its root range : code = " + StatusCode.FAILURE,
+            se.getMessage());
+        // unexpected
+        Throwable cause4 = createRootRangeException(name, StatusCode.BAD_VERSION);
+        assertTrue(cause4 instanceof ClientException);
+        // namespace exists exception
+        Throwable cause5 = createRootRangeException(name, StatusCode.NAMESPACE_EXISTS);
+        assertTrue(cause5 instanceof NamespaceExistsException);
+        // namespace not-found exception
+        Throwable cause6 = createRootRangeException(name, StatusCode.NAMESPACE_NOT_FOUND);
+        assertTrue(cause6 instanceof NamespaceNotFoundException);
+        // invalid namespace name
+        Throwable cause7 = createRootRangeException(name, StatusCode.INVALID_NAMESPACE_NAME);
+        assertTrue(cause7 instanceof InvalidNamespaceNameException);
+    }
 }

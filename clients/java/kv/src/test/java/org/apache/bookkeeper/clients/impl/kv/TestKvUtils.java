@@ -54,125 +54,125 @@ import org.junit.Test;
  */
 public class TestKvUtils {
 
-  private static final long scId = System.currentTimeMillis();
-  private static final ByteString routingKey = ByteString.copyFrom("test-routing-key", UTF_8);
-  private static final ByteBuf key = Unpooled.wrappedBuffer("test-key".getBytes(UTF_8));
-  private static final ByteBuf value = Unpooled.wrappedBuffer("test-value".getBytes(UTF_8));
-  private static final ByteString keyBs = ByteString.copyFrom("test-key".getBytes(UTF_8));
-  private static final ByteString valueBs = ByteString.copyFrom("test-value".getBytes(UTF_8));
+    private static final long scId = System.currentTimeMillis();
+    private static final ByteString routingKey = ByteString.copyFrom("test-routing-key", UTF_8);
+    private static final ByteBuf key = Unpooled.wrappedBuffer("test-key".getBytes(UTF_8));
+    private static final ByteBuf value = Unpooled.wrappedBuffer("test-value".getBytes(UTF_8));
+    private static final ByteString keyBs = ByteString.copyFrom("test-key".getBytes(UTF_8));
+    private static final ByteString valueBs = ByteString.copyFrom("test-value".getBytes(UTF_8));
 
-  private final OptionFactory<ByteBuf> optionFactory = new OptionFactoryImpl<>();
+    private final OptionFactory<ByteBuf> optionFactory = new OptionFactoryImpl<>();
 
-  @Test
-  public void testNewRangeRequest() {
-    try (RangeOptionBuilder<ByteBuf> optionBuilder = optionFactory.newRangeOption()
-      .endKey(key.retainedDuplicate())
-      .countOnly(true)
-      .keysOnly(true)
-      .limit(10)
-      .revision(1234L)) {
-      try (RangeOption<ByteBuf> rangeOption = optionBuilder.build()){
-        RangeRequest rr = newRangeRequest(key, rangeOption).build();
+    @Test
+    public void testNewRangeRequest() {
+        try (RangeOptionBuilder<ByteBuf> optionBuilder = optionFactory.newRangeOption()
+            .endKey(key.retainedDuplicate())
+            .countOnly(true)
+            .keysOnly(true)
+            .limit(10)
+            .revision(1234L)) {
+            try (RangeOption<ByteBuf> rangeOption = optionBuilder.build()) {
+                RangeRequest rr = newRangeRequest(key, rangeOption).build();
+                assertEquals(keyBs, rr.getKey());
+                assertEquals(keyBs, rr.getRangeEnd());
+                assertTrue(rr.getCountOnly());
+                assertTrue(rr.getKeysOnly());
+                assertEquals(10, rr.getLimit());
+                assertEquals(1234L, rr.getRevision());
+                assertFalse(rr.hasHeader());
+            }
+        }
+    }
+
+    @Test
+    public void testNewKvRangeRequest() {
+        try (RangeOptionBuilder<ByteBuf> optionBuilder = optionFactory.newRangeOption()
+            .endKey(key.retainedDuplicate())
+            .countOnly(true)
+            .keysOnly(true)
+            .limit(10)
+            .revision(1234L)) {
+            try (RangeOption rangeOption = optionBuilder.build()) {
+                RangeRequest.Builder rrBuilder = newRangeRequest(key, rangeOption);
+                StorageContainerRequest request = newKvRangeRequest(scId, rrBuilder);
+                assertEquals(scId, request.getScId());
+                assertEquals(KV_RANGE, request.getType());
+                assertEquals(rrBuilder.build(), request.getKvRangeReq());
+            }
+        }
+    }
+
+    @Test
+    public void testNewPutRequest() {
+        try (PutOptionBuilder<ByteBuf> optionBuilder = optionFactory.newPutOption().prevKv(true)) {
+            try (PutOption option = optionBuilder.build()) {
+                PutRequest rr = newPutRequest(key, value, option).build();
+                assertEquals(keyBs, rr.getKey());
+                assertEquals(valueBs, rr.getValue());
+                assertTrue(rr.getPrevKv());
+                assertFalse(rr.hasHeader());
+            }
+        }
+    }
+
+    @Test
+    public void testNewKvPutRequest() {
+        try (PutOptionBuilder<ByteBuf> optionBuilder = optionFactory.newPutOption().prevKv(true)) {
+            try (PutOption option = optionBuilder.build()) {
+                PutRequest.Builder putBuilder = newPutRequest(key, value, option);
+                StorageContainerRequest request = newKvPutRequest(scId, putBuilder);
+                assertEquals(scId, request.getScId());
+                assertEquals(KV_PUT, request.getType());
+                assertEquals(putBuilder.build(), request.getKvPutReq());
+            }
+        }
+    }
+
+    @Test
+    public void testNewIncrementRequest() {
+        IncrementRequest rr = newIncrementRequest(key, 100L).build();
         assertEquals(keyBs, rr.getKey());
-        assertEquals(keyBs, rr.getRangeEnd());
-        assertTrue(rr.getCountOnly());
-        assertTrue(rr.getKeysOnly());
-        assertEquals(10, rr.getLimit());
-        assertEquals(1234L, rr.getRevision());
+        assertEquals(100L, rr.getAmount());
         assertFalse(rr.hasHeader());
-      }
     }
-  }
 
-  @Test
-  public void testNewKvRangeRequest() {
-    try (RangeOptionBuilder<ByteBuf> optionBuilder = optionFactory.newRangeOption()
-        .endKey(key.retainedDuplicate())
-        .countOnly(true)
-        .keysOnly(true)
-        .limit(10)
-        .revision(1234L)) {
-      try (RangeOption rangeOption = optionBuilder.build()) {
-        RangeRequest.Builder rrBuilder = newRangeRequest(key, rangeOption);
-        StorageContainerRequest request = newKvRangeRequest(scId, rrBuilder);
+    @Test
+    public void testNewKvIncrementRequest() {
+        IncrementRequest.Builder incrBuilder = newIncrementRequest(key, 100L);
+        StorageContainerRequest request = newKvIncrementRequest(scId, incrBuilder);
         assertEquals(scId, request.getScId());
-        assertEquals(KV_RANGE, request.getType());
-        assertEquals(rrBuilder.build(), request.getKvRangeReq());
-      }
+        assertEquals(KV_INCREMENT, request.getType());
+        assertEquals(incrBuilder.build(), request.getKvIncrReq());
     }
-  }
 
-  @Test
-  public void testNewPutRequest() {
-    try (PutOptionBuilder<ByteBuf> optionBuilder = optionFactory.newPutOption().prevKv(true)) {
-      try (PutOption option = optionBuilder.build()) {
-        PutRequest rr = newPutRequest(key, value, option).build();
-        assertEquals(keyBs, rr.getKey());
-        assertEquals(valueBs, rr.getValue());
-        assertTrue(rr.getPrevKv());
-        assertFalse(rr.hasHeader());
-      }
+    @Test
+    public void testNewDeleteRequest() {
+        try (DeleteOptionBuilder<ByteBuf> optionBuilder = optionFactory.newDeleteOption()
+            .endKey(key.retainedDuplicate())
+            .prevKv(true)) {
+            try (DeleteOption option = optionBuilder.build()) {
+                DeleteRangeRequest rr = newDeleteRequest(key, option).build();
+                assertEquals(keyBs, rr.getKey());
+                assertEquals(keyBs, rr.getRangeEnd());
+                assertTrue(rr.getPrevKv());
+                assertFalse(rr.hasHeader());
+            }
+        }
     }
-  }
 
-  @Test
-  public void testNewKvPutRequest() {
-    try (PutOptionBuilder<ByteBuf> optionBuilder = optionFactory.newPutOption().prevKv(true)) {
-      try (PutOption option = optionBuilder.build()) {
-        PutRequest.Builder putBuilder = newPutRequest(key, value, option);
-        StorageContainerRequest request = newKvPutRequest(scId, putBuilder);
-        assertEquals(scId, request.getScId());
-        assertEquals(KV_PUT, request.getType());
-        assertEquals(putBuilder.build(), request.getKvPutReq());
-      }
+    @Test
+    public void testNewKvDeleteRequest() {
+        try (DeleteOptionBuilder<ByteBuf> optionBuilder = optionFactory.newDeleteOption()
+            .endKey(key.retainedDuplicate())
+            .prevKv(true)) {
+            try (DeleteOption option = optionBuilder.build()) {
+                DeleteRangeRequest.Builder delBuilder = newDeleteRequest(key, option);
+                StorageContainerRequest request = newKvDeleteRequest(scId, delBuilder);
+                assertEquals(scId, request.getScId());
+                assertEquals(KV_DELETE, request.getType());
+                assertEquals(delBuilder.build(), request.getKvDeleteReq());
+            }
+        }
     }
-  }
-
-  @Test
-  public void testNewIncrementRequest() {
-    IncrementRequest rr = newIncrementRequest(key, 100L).build();
-    assertEquals(keyBs, rr.getKey());
-    assertEquals(100L, rr.getAmount());
-    assertFalse(rr.hasHeader());
-  }
-
-  @Test
-  public void testNewKvIncrementRequest() {
-    IncrementRequest.Builder incrBuilder = newIncrementRequest(key, 100L);
-    StorageContainerRequest request = newKvIncrementRequest(scId, incrBuilder);
-    assertEquals(scId, request.getScId());
-    assertEquals(KV_INCREMENT, request.getType());
-    assertEquals(incrBuilder.build(), request.getKvIncrReq());
-  }
-
-  @Test
-  public void testNewDeleteRequest() {
-    try (DeleteOptionBuilder<ByteBuf> optionBuilder = optionFactory.newDeleteOption()
-      .endKey(key.retainedDuplicate())
-      .prevKv(true)) {
-      try (DeleteOption option = optionBuilder.build()) {
-        DeleteRangeRequest rr = newDeleteRequest(key, option).build();
-        assertEquals(keyBs, rr.getKey());
-        assertEquals(keyBs, rr.getRangeEnd());
-        assertTrue(rr.getPrevKv());
-        assertFalse(rr.hasHeader());
-      }
-    }
-  }
-
-  @Test
-  public void testNewKvDeleteRequest() {
-    try (DeleteOptionBuilder<ByteBuf> optionBuilder = optionFactory.newDeleteOption()
-      .endKey(key.retainedDuplicate())
-      .prevKv(true)) {
-      try (DeleteOption option = optionBuilder.build()) {
-        DeleteRangeRequest.Builder delBuilder = newDeleteRequest(key, option);
-        StorageContainerRequest request = newKvDeleteRequest(scId, delBuilder);
-        assertEquals(scId, request.getScId());
-        assertEquals(KV_DELETE, request.getType());
-        assertEquals(delBuilder.build(), request.getKvDeleteReq());
-      }
-    }
-  }
 
 }

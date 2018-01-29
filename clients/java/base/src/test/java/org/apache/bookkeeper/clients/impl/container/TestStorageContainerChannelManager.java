@@ -35,40 +35,40 @@ import org.junit.Test;
  */
 public class TestStorageContainerChannelManager {
 
-  @Test
-  public void testGetOrCreate() {
-    StorageContainerChannel channel1 = mock(StorageContainerChannel.class);
-    StorageContainerChannel channel2 = mock(StorageContainerChannel.class);
-    StorageContainerChannel channel3 = mock(StorageContainerChannel.class);
+    @Test
+    public void testGetOrCreate() {
+        StorageContainerChannel channel1 = mock(StorageContainerChannel.class);
+        StorageContainerChannel channel2 = mock(StorageContainerChannel.class);
+        StorageContainerChannel channel3 = mock(StorageContainerChannel.class);
 
-    StorageContainerChannelFactory factory = mock(StorageContainerChannelFactory.class);
-    StorageContainerChannelManager manager = new StorageContainerChannelManager(factory);
-    when(factory.createStorageContainerChannel(anyLong()))
-      .thenReturn(channel1)
-      .thenReturn(channel2)
-      .thenReturn(channel3);
+        StorageContainerChannelFactory factory = mock(StorageContainerChannelFactory.class);
+        StorageContainerChannelManager manager = new StorageContainerChannelManager(factory);
+        when(factory.createStorageContainerChannel(anyLong()))
+            .thenReturn(channel1)
+            .thenReturn(channel2)
+            .thenReturn(channel3);
 
-    assertNull(manager.remove(1L));
-    assertEquals(channel1, manager.getOrCreate(1L));
-    verify(factory, times(1)).createStorageContainerChannel(eq(1L));
-    assertEquals(channel1, manager.getOrCreate(1L));
-    verify(factory, times(1)).createStorageContainerChannel(eq(1L));
+        assertNull(manager.remove(1L));
+        assertEquals(channel1, manager.getOrCreate(1L));
+        verify(factory, times(1)).createStorageContainerChannel(eq(1L));
+        assertEquals(channel1, manager.getOrCreate(1L));
+        verify(factory, times(1)).createStorageContainerChannel(eq(1L));
 
-    assertEquals(channel1, manager.remove(1L));
-  }
-
-  @Test
-  public void testClear() throws Exception {
-    StorageContainerChannelManager manager = new StorageContainerChannelManager(
-      scId -> mock(StorageContainerChannel.class));
-
-    int numChannels = 10;
-    for (int i = 0; i < numChannels; i++) {
-      assertNotNull(manager.getOrCreate(i));
+        assertEquals(channel1, manager.remove(1L));
     }
-    assertEquals(numChannels, manager.getNumChannels());
-    manager.close();
-    assertEquals(0, manager.getNumChannels());
-  }
+
+    @Test
+    public void testClear() throws Exception {
+        StorageContainerChannelManager manager = new StorageContainerChannelManager(
+            scId -> mock(StorageContainerChannel.class));
+
+        int numChannels = 10;
+        for (int i = 0; i < numChannels; i++) {
+            assertNotNull(manager.getOrCreate(i));
+        }
+        assertEquals(numChannels, manager.getNumChannels());
+        manager.close();
+        assertEquals(0, manager.getNumChannels());
+    }
 
 }

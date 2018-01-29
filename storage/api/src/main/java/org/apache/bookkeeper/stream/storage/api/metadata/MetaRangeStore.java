@@ -27,12 +27,12 @@ import org.apache.bookkeeper.stream.proto.storage.StorageContainerResponse;
  */
 public interface MetaRangeStore {
 
-  /**
-   * Get the current active ranges.
-   *
-   * @param request the request
-   * @return the active ranges
-   */
-  CompletableFuture<StorageContainerResponse> getActiveRanges(StorageContainerRequest request);
+    /**
+     * Get the current active ranges.
+     *
+     * @param request the request
+     * @return the active ranges
+     */
+    CompletableFuture<StorageContainerResponse> getActiveRanges(StorageContainerRequest request);
 
 }

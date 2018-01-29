@@ -26,32 +26,32 @@ import org.apache.bookkeeper.stream.server.conf.BookieConfiguration;
  */
 public class StatsProviderService extends AbstractLifecycleComponent<BookieConfiguration> {
 
-  private final ServerConfiguration serverConf = new ServerConfiguration();
-  private final StatsProvider statsProvider;
+    private final ServerConfiguration serverConf = new ServerConfiguration();
+    private final StatsProvider statsProvider;
 
-  public StatsProviderService(BookieConfiguration conf) {
-    super("stats-provider", conf, NullStatsLogger.INSTANCE);
-    this.serverConf.loadConf(conf.getUnderlyingConf());
-    Stats.loadStatsProvider(conf);
-    this.statsProvider = Stats.get();
-  }
+    public StatsProviderService(BookieConfiguration conf) {
+        super("stats-provider", conf, NullStatsLogger.INSTANCE);
+        this.serverConf.loadConf(conf.getUnderlyingConf());
+        Stats.loadStatsProvider(conf);
+        this.statsProvider = Stats.get();
+    }
 
-  public StatsProvider getStatsProvider() {
-    return statsProvider;
-  }
+    public StatsProvider getStatsProvider() {
+        return statsProvider;
+    }
 
-  @Override
-  protected void doStart() {
-    this.statsProvider.start(serverConf);
-  }
+    @Override
+    protected void doStart() {
+        this.statsProvider.start(serverConf);
+    }
 
-  @Override
-  protected void doStop() {
-    this.statsProvider.stop();
-  }
+    @Override
+    protected void doStop() {
+        this.statsProvider.stop();
+    }
 
-  @Override
-  protected void doClose() throws IOException {
-    // do nothing
-  }
+    @Override
+    protected void doClose() throws IOException {
+        // do nothing
+    }
 }

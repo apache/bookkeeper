@@ -34,75 +34,76 @@ import org.apache.bookkeeper.stream.storage.api.RangeStore;
 @Slf4j
 public class GrpcServer extends AbstractLifecycleComponent<StorageServerConfiguration> {
 
-  public static GrpcServer build(GrpcServerSpec spec) {
-    return new GrpcServer(
-      spec.storeSupplier().get(),
-      spec.storeServerConf(),
-      spec.endpoint(),
-      spec.localServerName(),
-      spec.localHandlerRegistry(),
-      spec.statsLogger());
-  }
-
-  private final Endpoint myEndpoint;
-  private final Server grpcServer;
-
-  public GrpcServer(RangeStore rangeStore,
-                    StorageServerConfiguration conf,
-                    Endpoint myEndpoint,
-                    StatsLogger statsLogger) {
-    this(rangeStore, conf, myEndpoint, null, null, statsLogger);
-  }
-
-  @VisibleForTesting
-  public GrpcServer(RangeStore rangeStore,
-                    StorageServerConfiguration conf,
-                    Endpoint myEndpoint,
-                    String localServerName,
-                    HandlerRegistry localHandlerRegistry,
-                    StatsLogger statsLogger) {
-    super("range-grpc-server", conf, statsLogger);
-    this.myEndpoint = myEndpoint;
-    if (null != localServerName) {
-      InProcessServerBuilder serverBuilder = InProcessServerBuilder
-        .forName(localServerName)
-        .directExecutor();
-      if (null != localHandlerRegistry) {
-        serverBuilder = serverBuilder.fallbackHandlerRegistry(localHandlerRegistry);
-      }
-      this.grpcServer = serverBuilder.build();
-    } else {
-      this.grpcServer = ServerBuilder
-        .forPort(this.myEndpoint.getPort())
-        .addService(new GrpcRootRangeService(rangeStore))
-        .addService(new GrpcStorageContainerService(rangeStore))
-        .addService(new GrpcMetaRangeService(rangeStore))
-        .addService(new GrpcTableService(rangeStore))
-        .build();
+    public static GrpcServer build(GrpcServerSpec spec) {
+        return new GrpcServer(
+            spec.storeSupplier().get(),
+            spec.storeServerConf(),
+            spec.endpoint(),
+            spec.localServerName(),
+            spec.localHandlerRegistry(),
+            spec.statsLogger());
     }
-  }
 
-  @VisibleForTesting
-  Server getGrpcServer() {
-    return grpcServer;
-  }
+    private final Endpoint myEndpoint;
+    private final Server grpcServer;
 
-  @Override
-  protected void doStart() {
-    try {
-      grpcServer.start();
-    } catch (IOException e) {
-      log.error("Failed to start grpc server", e);
-      throw new StorageServerRuntimeException("Failed to start grpc server", e);
+    public GrpcServer(RangeStore rangeStore,
+                      StorageServerConfiguration conf,
+                      Endpoint myEndpoint,
+                      StatsLogger statsLogger) {
+        this(rangeStore, conf, myEndpoint, null, null, statsLogger);
     }
-  }
 
-  @Override
-  protected void doStop() {
-    grpcServer.shutdown();
-  }
+    @VisibleForTesting
+    public GrpcServer(RangeStore rangeStore,
+                      StorageServerConfiguration conf,
+                      Endpoint myEndpoint,
+                      String localServerName,
+                      HandlerRegistry localHandlerRegistry,
+                      StatsLogger statsLogger) {
+        super("range-grpc-server", conf, statsLogger);
+        this.myEndpoint = myEndpoint;
+        if (null != localServerName) {
+            InProcessServerBuilder serverBuilder = InProcessServerBuilder
+                .forName(localServerName)
+                .directExecutor();
+            if (null != localHandlerRegistry) {
+                serverBuilder = serverBuilder.fallbackHandlerRegistry(localHandlerRegistry);
+            }
+            this.grpcServer = serverBuilder.build();
+        } else {
+            this.grpcServer = ServerBuilder
+                .forPort(this.myEndpoint.getPort())
+                .addService(new GrpcRootRangeService(rangeStore))
+                .addService(new GrpcStorageContainerService(rangeStore))
+                .addService(new GrpcMetaRangeService(rangeStore))
+                .addService(new GrpcTableService(rangeStore))
+                .build();
+        }
+    }
 
-  @Override
-  protected void doClose() throws IOException {}
+    @VisibleForTesting
+    Server getGrpcServer() {
+        return grpcServer;
+    }
+
+    @Override
+    protected void doStart() {
+        try {
+            grpcServer.start();
+        } catch (IOException e) {
+            log.error("Failed to start grpc server", e);
+            throw new StorageServerRuntimeException("Failed to start grpc server", e);
+        }
+    }
+
+    @Override
+    protected void doStop() {
+        grpcServer.shutdown();
+    }
+
+    @Override
+    protected void doClose() throws IOException {
+    }
 
 }

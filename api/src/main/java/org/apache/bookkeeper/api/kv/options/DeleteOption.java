@@ -19,8 +19,8 @@ package org.apache.bookkeeper.api.kv.options;
  */
 public interface DeleteOption<K> extends Option<K> {
 
-  K endKey();
+    K endKey();
 
-  boolean prevKv();
+    boolean prevKv();
 
 }

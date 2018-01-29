@@ -33,8 +33,8 @@ import org.apache.bookkeeper.api.kv.result.PutResult;
 @Getter
 @Setter
 public class IncrementResultImpl<K, V>
-        extends ResultImpl<K, V, IncrementResultImpl<K, V>>
-        implements IncrementResult<K, V> {
+    extends ResultImpl<K, V, IncrementResultImpl<K, V>>
+    implements IncrementResult<K, V> {
 
     IncrementResultImpl(Handle<IncrementResultImpl<K, V>> handle) {
         super(OpType.PUT, handle);

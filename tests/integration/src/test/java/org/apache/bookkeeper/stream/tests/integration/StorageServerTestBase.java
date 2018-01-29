@@ -34,47 +34,47 @@ import org.junit.rules.TemporaryFolder;
 @Slf4j
 public abstract class StorageServerTestBase {
 
-  static {
-    // org.apache.zookeeper.test.ClientBase uses FourLetterWordMain, from 3.5.3 four letter words
-    // are disabled by default due to security reasons
-    System.setProperty("zookeeper.4lw.commands.whitelist", "*");
-  }
-
-  @Rule
-  public final TemporaryFolder testDir = new TemporaryFolder();
-
-  protected final StreamClusterSpec spec;
-  protected StreamCluster cluster;
-
-  protected StorageServerTestBase() {
-    this(StreamClusterSpec.builder()
-      .baseConf(new CompositeConfiguration())
-      .numServers(3)
-      .build());
-  }
-
-  protected StorageServerTestBase(StreamClusterSpec spec) {
-    this.spec = spec;
-  }
-
-  @Before
-  public void setUp() throws Exception {
-    spec.storageRootDir(testDir.newFolder("tests"));
-    this.cluster = StreamCluster.build(spec);
-    this.cluster.start();
-    doSetup();
-  }
-
-  protected abstract void doSetup() throws Exception;
-
-  @After
-  public void tearDown() throws Exception {
-    doTeardown();
-    if (null != this.cluster) {
-      this.cluster.stop();
+    static {
+        // org.apache.zookeeper.test.ClientBase uses FourLetterWordMain, from 3.5.3 four letter words
+        // are disabled by default due to security reasons
+        System.setProperty("zookeeper.4lw.commands.whitelist", "*");
     }
-  }
 
-  protected abstract void doTeardown() throws Exception;
+    @Rule
+    public final TemporaryFolder testDir = new TemporaryFolder();
+
+    protected final StreamClusterSpec spec;
+    protected StreamCluster cluster;
+
+    protected StorageServerTestBase() {
+        this(StreamClusterSpec.builder()
+            .baseConf(new CompositeConfiguration())
+            .numServers(3)
+            .build());
+    }
+
+    protected StorageServerTestBase(StreamClusterSpec spec) {
+        this.spec = spec;
+    }
+
+    @Before
+    public void setUp() throws Exception {
+        spec.storageRootDir(testDir.newFolder("tests"));
+        this.cluster = StreamCluster.build(spec);
+        this.cluster.start();
+        doSetup();
+    }
+
+    protected abstract void doSetup() throws Exception;
+
+    @After
+    public void tearDown() throws Exception {
+        doTeardown();
+        if (null != this.cluster) {
+            this.cluster.stop();
+        }
+    }
+
+    protected abstract void doTeardown() throws Exception;
 
 }

@@ -43,81 +43,81 @@ import org.apache.bookkeeper.common.util.SharedResourceManager.Resource;
 @Getter
 public class StorageResources {
 
-  public static StorageResources create() {
-    return create(StorageResourcesSpec.builder().build());
-  }
+    public static StorageResources create() {
+        return create(StorageResourcesSpec.builder().build());
+    }
 
-  public static StorageResources create(StorageResourcesSpec spec) {
-    return new StorageResources(spec);
-  }
+    public static StorageResources create(StorageResourcesSpec spec) {
+        return new StorageResources(spec);
+    }
 
-  private static Resource<OrderedScheduler> createSchedulerResource(String name, int numThreads) {
-      return new Resource<OrderedScheduler>() {
-          @Override
-          public OrderedScheduler create() {
-              return OrderedScheduler.newSchedulerBuilder()
-                  .numThreads(numThreads)
-                  .name(name)
-                  .build();
-          }
+    private static Resource<OrderedScheduler> createSchedulerResource(String name, int numThreads) {
+        return new Resource<OrderedScheduler>() {
+            @Override
+            public OrderedScheduler create() {
+                return OrderedScheduler.newSchedulerBuilder()
+                    .numThreads(numThreads)
+                    .name(name)
+                    .build();
+            }
 
-          @Override
-          public void close(OrderedScheduler scheduler) {
+            @Override
+            public void close(OrderedScheduler scheduler) {
                 scheduler.shutdown();
-          }
+            }
 
-          @Override
-          public String toString() {
-              return name;
-          }
-      };
-  }
+            @Override
+            public String toString() {
+                return name;
+            }
+        };
+    }
 
-  private final Resource<OrderedScheduler> scheduler;
-  private final Resource<OrderedScheduler> ioWriteScheduler;
-  private final Resource<OrderedScheduler> ioReadScheduler;
-  private final Resource<OrderedScheduler> checkpointScheduler;
-  private final Resource<HashedWheelTimer> timer;
+    private final Resource<OrderedScheduler> scheduler;
+    private final Resource<OrderedScheduler> ioWriteScheduler;
+    private final Resource<OrderedScheduler> ioReadScheduler;
+    private final Resource<OrderedScheduler> checkpointScheduler;
+    private final Resource<HashedWheelTimer> timer;
 
-  private StorageResources(StorageResourcesSpec spec) {
-    this.scheduler = createSchedulerResource(
-        "storage-scheduler", spec.numSchedulerThreads());
-    this.ioWriteScheduler = createSchedulerResource(
-        "io-write-scheduler", spec.numIOWriteThreads());
-    this.ioReadScheduler = createSchedulerResource(
-        "io-read-scheduler", spec.numIOReadThreads());
-    this.checkpointScheduler = createSchedulerResource(
-        "io-checkpoint-scheduler", spec.numCheckpointThreads());
+    private StorageResources(StorageResourcesSpec spec) {
+        this.scheduler = createSchedulerResource(
+            "storage-scheduler", spec.numSchedulerThreads());
+        this.ioWriteScheduler = createSchedulerResource(
+            "io-write-scheduler", spec.numIOWriteThreads());
+        this.ioReadScheduler = createSchedulerResource(
+            "io-read-scheduler", spec.numIOReadThreads());
+        this.checkpointScheduler = createSchedulerResource(
+            "io-checkpoint-scheduler", spec.numCheckpointThreads());
 
-    this.timer =
-      new Resource<HashedWheelTimer>() {
+        this.timer =
+            new Resource<HashedWheelTimer>() {
 
-        private static final String name = "storage-timer";
+                private static final String name = "storage-timer";
 
-        @Override
-        public HashedWheelTimer create() {
-          HashedWheelTimer timer = new HashedWheelTimer(
-            new ThreadFactoryBuilder()
-              .setNameFormat(name + "-%d")
-              .build(),
-            200,
-            TimeUnit.MILLISECONDS,
-            512,
-            true);
-          timer.start();
-          return timer;
-        }
+                @Override
+                public HashedWheelTimer create() {
+                    HashedWheelTimer timer = new HashedWheelTimer(
+                        new ThreadFactoryBuilder()
+                            .setNameFormat(name + "-%d")
+                            .build(),
+                        200,
+                        TimeUnit.MILLISECONDS,
+                        512,
+                        true);
+                    timer.start();
+                    return timer;
+                }
 
-        @Override
-        public void close(HashedWheelTimer instance) {
-          instance.stop();
-        }
+                @Override
+                public void close(HashedWheelTimer instance) {
+                    instance.stop();
+                }
 
-        @Override
-        public String toString() {
-          return name;
-        }
-      };
-  }
+                @Override
+                public String toString() {
+                    return name;
+                }
+            };
+    }
 
 }

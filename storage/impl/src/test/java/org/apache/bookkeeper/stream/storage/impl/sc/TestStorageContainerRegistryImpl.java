@@ -50,118 +50,118 @@ import org.junit.Test;
  */
 public class TestStorageContainerRegistryImpl {
 
-  private OrderedScheduler scheduler;
+    private OrderedScheduler scheduler;
 
-  @Before
-  public void setUp() {
-    this.scheduler = OrderedScheduler.newSchedulerBuilder()
-      .numThreads(1)
-      .name("test-storage-container-registry-impl")
-      .build();
-  }
-
-  @After
-  public void tearDown() {
-    if (null != this.scheduler) {
-      this.scheduler.shutdown();
-    }
-  }
-
-  private StorageContainer createStorageContainer() {
-    StorageContainer sc = mock(StorageContainer.class);
-    when(sc.start()).thenReturn(FutureUtils.value(null));
-    when(sc.stop()).thenReturn(FutureUtils.value(null));
-    return sc;
-  }
-
-  private StorageContainerFactory createStorageContainerFactory() {
-    return scId -> createStorageContainer();
-  }
-
-  @Test
-  public void testOperationsAfterClosed() throws Exception {
-    StorageContainerFactory scFactory = createStorageContainerFactory();
-    StorageContainerRegistryImpl registry = new StorageContainerRegistryImpl(scFactory, scheduler);
-    registry.close();
-
-    long scId = 1234L;
-
-    try {
-      FutureUtils.result(registry.startStorageContainer(scId));
-      fail("Should fail to start storage container after registry is closed");
-    } catch (ObjectClosedException oce) {
-      // expected
-      assertEquals(0, registry.getNumStorageContainers());
+    @Before
+    public void setUp() {
+        this.scheduler = OrderedScheduler.newSchedulerBuilder()
+            .numThreads(1)
+            .name("test-storage-container-registry-impl")
+            .build();
     }
 
-    try {
-      FutureUtils.result(registry.stopStorageContainer(scId));
-      fail("Should fail to start storage container after registry is closed");
-    } catch (ObjectClosedException oce) {
-      // expected
-      assertEquals(0, registry.getNumStorageContainers());
+    @After
+    public void tearDown() {
+        if (null != this.scheduler) {
+            this.scheduler.shutdown();
+        }
     }
-  }
 
-  @Test
-  public void testStopNotFoundStorageContainer() throws Exception {
-    StorageContainerFactory scFactory = createStorageContainerFactory();
-    StorageContainerRegistryImpl registry = new StorageContainerRegistryImpl(scFactory, scheduler);
-    FutureUtils.result(registry.stopStorageContainer(1234L));
-    assertEquals(0, registry.getNumStorageContainers());
-  }
-
-  @Test
-  public void testStartStorageContainerTwice() throws Exception {
-    StorageContainerFactory scFactory = createStorageContainerFactory();
-    StorageContainerRegistryImpl registry = new StorageContainerRegistryImpl(scFactory, scheduler);
-    FutureUtils.result(registry.startStorageContainer(1234L));
-    assertEquals(1, registry.getNumStorageContainers());
-    // second time
-    try {
-      FutureUtils.result(registry.startStorageContainer(1234L));
-      fail("Should fail on starting same storage container twice");
-    } catch (StorageException ue) {
-      assertEquals(1, registry.getNumStorageContainers());
+    private StorageContainer createStorageContainer() {
+        StorageContainer sc = mock(StorageContainer.class);
+        when(sc.start()).thenReturn(FutureUtils.value(null));
+        when(sc.stop()).thenReturn(FutureUtils.value(null));
+        return sc;
     }
-  }
 
-  @Test
-  public void testStartStopStorageContainers() throws Exception {
-    StorageContainer sc1 = createStorageContainer();
-    StorageContainer sc2 = createStorageContainer();
-    StorageContainerFactory factory = scId -> {
-      if (scId == 1L) {
-        return sc1;
-      } else {
-        return sc2;
-      }
-    };
+    private StorageContainerFactory createStorageContainerFactory() {
+        return scId -> createStorageContainer();
+    }
 
-    long scId = 1L;
+    @Test
+    public void testOperationsAfterClosed() throws Exception {
+        StorageContainerFactory scFactory = createStorageContainerFactory();
+        StorageContainerRegistryImpl registry = new StorageContainerRegistryImpl(scFactory, scheduler);
+        registry.close();
 
-    StorageContainerRegistryImpl registry = new StorageContainerRegistryImpl(factory, scheduler);
-    FutureUtils.result(registry.startStorageContainer(scId));
-    assertEquals(1, registry.getNumStorageContainers());
-    assertEquals(sc1, registry.getStorageContainer(scId));
+        long scId = 1234L;
 
-    scId = 2L;
-    FutureUtils.result(registry.startStorageContainer(scId));
-    assertEquals(2, registry.getNumStorageContainers());
-    assertEquals(sc1, registry.getStorageContainer(1L));
-    assertEquals(sc2, registry.getStorageContainer(2L));
+        try {
+            FutureUtils.result(registry.startStorageContainer(scId));
+            fail("Should fail to start storage container after registry is closed");
+        } catch (ObjectClosedException oce) {
+            // expected
+            assertEquals(0, registry.getNumStorageContainers());
+        }
 
-    FutureUtils.result(registry.stopStorageContainer(scId));
-    assertEquals(1, registry.getNumStorageContainers());
-    assertEquals(sc1, registry.getStorageContainer(1L));
+        try {
+            FutureUtils.result(registry.stopStorageContainer(scId));
+            fail("Should fail to start storage container after registry is closed");
+        } catch (ObjectClosedException oce) {
+            // expected
+            assertEquals(0, registry.getNumStorageContainers());
+        }
+    }
 
-    registry.close();
-    verify(sc1, times(1)).close();
-    assertEquals(0, registry.getNumStorageContainers());
+    @Test
+    public void testStopNotFoundStorageContainer() throws Exception {
+        StorageContainerFactory scFactory = createStorageContainerFactory();
+        StorageContainerRegistryImpl registry = new StorageContainerRegistryImpl(scFactory, scheduler);
+        FutureUtils.result(registry.stopStorageContainer(1234L));
+        assertEquals(0, registry.getNumStorageContainers());
+    }
 
-    // double close
-    registry.close();
-    verify(sc1, times(1)).close();
-  }
+    @Test
+    public void testStartStorageContainerTwice() throws Exception {
+        StorageContainerFactory scFactory = createStorageContainerFactory();
+        StorageContainerRegistryImpl registry = new StorageContainerRegistryImpl(scFactory, scheduler);
+        FutureUtils.result(registry.startStorageContainer(1234L));
+        assertEquals(1, registry.getNumStorageContainers());
+        // second time
+        try {
+            FutureUtils.result(registry.startStorageContainer(1234L));
+            fail("Should fail on starting same storage container twice");
+        } catch (StorageException ue) {
+            assertEquals(1, registry.getNumStorageContainers());
+        }
+    }
+
+    @Test
+    public void testStartStopStorageContainers() throws Exception {
+        StorageContainer sc1 = createStorageContainer();
+        StorageContainer sc2 = createStorageContainer();
+        StorageContainerFactory factory = scId -> {
+            if (scId == 1L) {
+                return sc1;
+            } else {
+                return sc2;
+            }
+        };
+
+        long scId = 1L;
+
+        StorageContainerRegistryImpl registry = new StorageContainerRegistryImpl(factory, scheduler);
+        FutureUtils.result(registry.startStorageContainer(scId));
+        assertEquals(1, registry.getNumStorageContainers());
+        assertEquals(sc1, registry.getStorageContainer(scId));
+
+        scId = 2L;
+        FutureUtils.result(registry.startStorageContainer(scId));
+        assertEquals(2, registry.getNumStorageContainers());
+        assertEquals(sc1, registry.getStorageContainer(1L));
+        assertEquals(sc2, registry.getStorageContainer(2L));
+
+        FutureUtils.result(registry.stopStorageContainer(scId));
+        assertEquals(1, registry.getNumStorageContainers());
+        assertEquals(sc1, registry.getStorageContainer(1L));
+
+        registry.close();
+        verify(sc1, times(1)).close();
+        assertEquals(0, registry.getNumStorageContainers());
+
+        // double close
+        registry.close();
+        verify(sc1, times(1)).close();
+    }
 
 }

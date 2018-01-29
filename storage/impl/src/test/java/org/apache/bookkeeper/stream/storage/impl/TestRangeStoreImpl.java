@@ -86,472 +86,472 @@ import org.junit.Test;
 @Slf4j
 public class TestRangeStoreImpl {
 
-  private static final StreamProperties streamProps = StreamProperties.newBuilder()
-    .setStorageContainerId(System.currentTimeMillis())
-    .setStreamId(System.currentTimeMillis())
-    .setStreamName("test-create-add-stream-request")
-    .setStreamConf(DEFAULT_STREAM_CONF)
-    .build();
-
-  private static StreamName createStreamName(String name) {
-    return StreamName.newBuilder()
-      .setColName(name + "_col")
-      .setStreamName(name + "_stream")
-      .build();
-  }
-
-  private static Endpoint createEndpoint(String hostname,
-                                         int port) {
-    return Endpoint.newBuilder()
-        .setHostname(hostname)
-        .setPort(port)
+    private static final StreamProperties streamProps = StreamProperties.newBuilder()
+        .setStorageContainerId(System.currentTimeMillis())
+        .setStreamId(System.currentTimeMillis())
+        .setStreamName("test-create-add-stream-request")
+        .setStreamConf(DEFAULT_STREAM_CONF)
         .build();
-  }
 
-  private final CompositeConfiguration compConf =
-    new CompositeConfiguration();
-  private final StorageConfiguration storageConf =
-    new StorageConfiguration(compConf);
-  private final NamespaceConfiguration namespaceConf =
-    NamespaceConfiguration.newBuilder()
-      .setDefaultStreamConf(DEFAULT_STREAM_CONF)
-      .build();
-  private StorageResources storageResources;
-  private RangeStoreImpl rangeStore;
-
-  //
-  // Utils for table api
-  //
-  private static final ByteString TEST_ROUTING_KEY = ByteString.copyFromUtf8("test-routing-key");
-  private static final ByteString TEST_KEY = ByteString.copyFromUtf8("test-key");
-  private static final ByteString TEST_VAL = ByteString.copyFromUtf8("test-val");
-  private static final RoutingHeader TEST_ROUTING_HEADER = RoutingHeader.newBuilder()
-      .setRKey(TEST_ROUTING_KEY)
-      .setStreamId(1234L)
-      .setRangeId(1256L)
-      .build();
-  private static final ResponseHeader TEST_RESP_HEADER = ResponseHeader.newBuilder()
-      .setRoutingHeader(TEST_ROUTING_HEADER)
-      .build();
-
-  private static StorageContainerRequest createPutRequest(long scId) {
-    return StorageContainerRequest.newBuilder()
-        .setType(Type.KV_PUT)
-        .setScId(scId)
-        .setKvPutReq(PutRequest.newBuilder()
-            .setHeader(TEST_ROUTING_HEADER)
-            .setKey(TEST_KEY)
-            .setValue(TEST_VAL)
-            .build())
-        .build();
-  }
-
-  private static StorageContainerResponse createPutResponse(StatusCode code) {
-    return StorageContainerResponse.newBuilder()
-        .setCode(code)
-        .setKvPutResp(PutResponse.newBuilder()
-            .setHeader(TEST_RESP_HEADER)
-            .build())
-        .build();
-  }
-
-  private static StorageContainerRequest createRangeRequest(long scId) {
-    return StorageContainerRequest.newBuilder()
-        .setType(Type.KV_RANGE)
-        .setScId(scId)
-        .setKvRangeReq(RangeRequest.newBuilder()
-            .setHeader(TEST_ROUTING_HEADER)
-            .setKey(TEST_KEY)
-            .build())
-        .build();
-  }
-
-  private static StorageContainerResponse createRangeResponse(StatusCode code) {
-    return StorageContainerResponse.newBuilder()
-        .setCode(code)
-        .setKvRangeResp(RangeResponse.newBuilder()
-            .setHeader(TEST_RESP_HEADER)
-            .setCount(0)
-            .build())
-        .build();
-  }
-
-  private static StorageContainerRequest createDeleteRequest(long scId) {
-    return StorageContainerRequest.newBuilder()
-        .setType(Type.KV_DELETE)
-        .setScId(scId)
-        .setKvDeleteReq(DeleteRangeRequest.newBuilder()
-            .setHeader(TEST_ROUTING_HEADER)
-            .setKey(TEST_KEY)
-            .build())
-        .build();
-  }
-
-  private static StorageContainerResponse createDeleteResponse(StatusCode code) {
-    return StorageContainerResponse.newBuilder()
-        .setCode(code)
-        .setKvDeleteResp(DeleteRangeResponse.newBuilder()
-            .setHeader(TEST_RESP_HEADER)
-            .setDeleted(0)
-            .build())
-        .build();
-  }
-
-  @Before
-  public void setUp() throws Exception {
-    storageResources = StorageResources.create();
-
-    Endpoint endpoint = createEndpoint("127.0.0.1", 0);
-
-    // create the client manager
-    MVCCStoreFactory storeFactory = mock(MVCCStoreFactory.class);
-    MVCCAsyncStore<byte[], byte[]> store = mock(MVCCAsyncStore.class);
-    when(storeFactory.openStore(anyLong(), anyLong(), anyLong()))
-        .thenReturn(FutureUtils.value(store));
-    when(storeFactory.closeStores(anyLong()))
-        .thenReturn(FutureUtils.Void());
-
-    rangeStore = (RangeStoreImpl) RangeStoreBuilder.newBuilder()
-      .withStorageConfiguration(storageConf)
-      .withStorageResources(storageResources)
-      .withStorageContainerManagerFactory((numScs, storeConf, rgRegistry)
-        -> new LocalStorageContainerManager(endpoint, storeConf, rgRegistry, 2))
-      .withRangeStoreFactory(storeFactory)
-      .withDefaultBackendUri(URI.create("distributedlog://127.0.0.1/stream/storage"))
-      .build();
-    rangeStore.start();
-  }
-
-  @After
-  public void tearDown() {
-    if (null != rangeStore) {
-      rangeStore.close();
+    private static StreamName createStreamName(String name) {
+        return StreamName.newBuilder()
+            .setColName(name + "_col")
+            .setStreamName(name + "_stream")
+            .build();
     }
-  }
 
-  private <T> void verifyNotFoundException(CompletableFuture<T> future,
-                                           Status status)
-      throws InterruptedException {
-    try {
-      future.get();
-    } catch (ExecutionException ee) {
-      assertTrue(ee.getCause() instanceof StatusRuntimeException);
-      StatusRuntimeException sre = (StatusRuntimeException) ee.getCause();
-      assertEquals(status, sre.getStatus());
+    private static Endpoint createEndpoint(String hostname,
+                                           int port) {
+        return Endpoint.newBuilder()
+            .setHostname(hostname)
+            .setPort(port)
+            .build();
     }
-  }
 
-  //
-  // Namespace API
-  //
+    private final CompositeConfiguration compConf =
+        new CompositeConfiguration();
+    private final StorageConfiguration storageConf =
+        new StorageConfiguration(compConf);
+    private final NamespaceConfiguration namespaceConf =
+        NamespaceConfiguration.newBuilder()
+            .setDefaultStreamConf(DEFAULT_STREAM_CONF)
+            .build();
+    private StorageResources storageResources;
+    private RangeStoreImpl rangeStore;
 
-  @Test
-  public void testCreateNamespaceNoRootStorageContainerStore() throws Exception {
-    rangeStore.getRegistry().stopStorageContainer(ROOT_STORAGE_CONTAINER_ID).join();
+    //
+    // Utils for table api
+    //
+    private static final ByteString TEST_ROUTING_KEY = ByteString.copyFromUtf8("test-routing-key");
+    private static final ByteString TEST_KEY = ByteString.copyFromUtf8("test-key");
+    private static final ByteString TEST_VAL = ByteString.copyFromUtf8("test-val");
+    private static final RoutingHeader TEST_ROUTING_HEADER = RoutingHeader.newBuilder()
+        .setRKey(TEST_ROUTING_KEY)
+        .setStreamId(1234L)
+        .setRangeId(1256L)
+        .build();
+    private static final ResponseHeader TEST_RESP_HEADER = ResponseHeader.newBuilder()
+        .setRoutingHeader(TEST_ROUTING_HEADER)
+        .build();
 
-    String colName = "test-create-namespace-no-root-storage-container-store";
-    verifyNotFoundException(
-      rangeStore.createNamespace(createCreateNamespaceRequest(colName, namespaceConf)),
-      Status.NOT_FOUND);
-  }
+    private static StorageContainerRequest createPutRequest(long scId) {
+        return StorageContainerRequest.newBuilder()
+            .setType(Type.KV_PUT)
+            .setScId(scId)
+            .setKvPutReq(PutRequest.newBuilder()
+                .setHeader(TEST_ROUTING_HEADER)
+                .setKey(TEST_KEY)
+                .setValue(TEST_VAL)
+                .build())
+            .build();
+    }
 
-  @Test
-  public void testDeleteNamespaceNoRootStorageContainerStore() throws Exception {
-    rangeStore.getRegistry().stopStorageContainer(ROOT_STORAGE_CONTAINER_ID).join();
+    private static StorageContainerResponse createPutResponse(StatusCode code) {
+        return StorageContainerResponse.newBuilder()
+            .setCode(code)
+            .setKvPutResp(PutResponse.newBuilder()
+                .setHeader(TEST_RESP_HEADER)
+                .build())
+            .build();
+    }
 
-    String colName = "test-delete-namespace-no-root-storage-container-store";
-    verifyNotFoundException(
-      rangeStore.deleteNamespace(createDeleteNamespaceRequest(colName)),
-      Status.NOT_FOUND);
-  }
+    private static StorageContainerRequest createRangeRequest(long scId) {
+        return StorageContainerRequest.newBuilder()
+            .setType(Type.KV_RANGE)
+            .setScId(scId)
+            .setKvRangeReq(RangeRequest.newBuilder()
+                .setHeader(TEST_ROUTING_HEADER)
+                .setKey(TEST_KEY)
+                .build())
+            .build();
+    }
 
-  @Test
-  public void testGetNamespaceNoRootStorageContainerStore() throws Exception {
-    rangeStore.getRegistry().stopStorageContainer(ROOT_STORAGE_CONTAINER_ID).join();
+    private static StorageContainerResponse createRangeResponse(StatusCode code) {
+        return StorageContainerResponse.newBuilder()
+            .setCode(code)
+            .setKvRangeResp(RangeResponse.newBuilder()
+                .setHeader(TEST_RESP_HEADER)
+                .setCount(0)
+                .build())
+            .build();
+    }
 
-    String colName = "test-get-namespace-no-root-storage-container-store";
-    verifyNotFoundException(
-      rangeStore.getNamespace(createGetNamespaceRequest(colName)),
-      Status.NOT_FOUND);
-  }
+    private static StorageContainerRequest createDeleteRequest(long scId) {
+        return StorageContainerRequest.newBuilder()
+            .setType(Type.KV_DELETE)
+            .setScId(scId)
+            .setKvDeleteReq(DeleteRangeRequest.newBuilder()
+                .setHeader(TEST_ROUTING_HEADER)
+                .setKey(TEST_KEY)
+                .build())
+            .build();
+    }
 
-  @Test
-  public void testCreateNamespaceMockRootStorageContainerStore() throws Exception {
-    String colName = "test-create-namespace-mock-root-storage-container-store";
+    private static StorageContainerResponse createDeleteResponse(StatusCode code) {
+        return StorageContainerResponse.newBuilder()
+            .setCode(code)
+            .setKvDeleteResp(DeleteRangeResponse.newBuilder()
+                .setHeader(TEST_RESP_HEADER)
+                .setDeleted(0)
+                .build())
+            .build();
+    }
 
-    StorageContainer scStore = mock(StorageContainer.class);
-    when(scStore.stop()).thenReturn(FutureUtils.value(null));
-    rangeStore.getRegistry().setStorageContainer(ROOT_STORAGE_CONTAINER_ID, scStore);
-    CreateNamespaceResponse createResp = CreateNamespaceResponse.newBuilder()
-      .setCode(StatusCode.NAMESPACE_EXISTS)
-      .build();
-    CreateNamespaceRequest request = createCreateNamespaceRequest(colName, namespaceConf);
+    @Before
+    public void setUp() throws Exception {
+        storageResources = StorageResources.create();
 
-    when(scStore.createNamespace(request))
-      .thenReturn(CompletableFuture.completedFuture(createResp));
+        Endpoint endpoint = createEndpoint("127.0.0.1", 0);
 
-    CompletableFuture<CreateNamespaceResponse> createRespFuture =
-      rangeStore.createNamespace(request);
-    verify(scStore, times(1)).createNamespace(request);
-    assertTrue(createResp == createRespFuture.get());
-  }
+        // create the client manager
+        MVCCStoreFactory storeFactory = mock(MVCCStoreFactory.class);
+        MVCCAsyncStore<byte[], byte[]> store = mock(MVCCAsyncStore.class);
+        when(storeFactory.openStore(anyLong(), anyLong(), anyLong()))
+            .thenReturn(FutureUtils.value(store));
+        when(storeFactory.closeStores(anyLong()))
+            .thenReturn(FutureUtils.Void());
 
-  @Test
-  public void testDeleteNamespaceMockRootStorageContainerStore() throws Exception {
-    String colName = "test-delete-namespace-no-root-storage-container-store";
+        rangeStore = (RangeStoreImpl) RangeStoreBuilder.newBuilder()
+            .withStorageConfiguration(storageConf)
+            .withStorageResources(storageResources)
+            .withStorageContainerManagerFactory((numScs, storeConf, rgRegistry)
+                -> new LocalStorageContainerManager(endpoint, storeConf, rgRegistry, 2))
+            .withRangeStoreFactory(storeFactory)
+            .withDefaultBackendUri(URI.create("distributedlog://127.0.0.1/stream/storage"))
+            .build();
+        rangeStore.start();
+    }
 
-    StorageContainer scStore = mock(StorageContainer.class);
-    when(scStore.stop()).thenReturn(FutureUtils.value(null));
-    rangeStore.getRegistry().setStorageContainer(ROOT_STORAGE_CONTAINER_ID, scStore);
-    DeleteNamespaceResponse deleteResp = DeleteNamespaceResponse.newBuilder()
-      .setCode(StatusCode.NAMESPACE_NOT_FOUND)
-      .build();
-    DeleteNamespaceRequest request = createDeleteNamespaceRequest(colName);
+    @After
+    public void tearDown() {
+        if (null != rangeStore) {
+            rangeStore.close();
+        }
+    }
 
-    when(scStore.deleteNamespace(request))
-      .thenReturn(CompletableFuture.completedFuture(deleteResp));
+    private <T> void verifyNotFoundException(CompletableFuture<T> future,
+                                             Status status)
+        throws InterruptedException {
+        try {
+            future.get();
+        } catch (ExecutionException ee) {
+            assertTrue(ee.getCause() instanceof StatusRuntimeException);
+            StatusRuntimeException sre = (StatusRuntimeException) ee.getCause();
+            assertEquals(status, sre.getStatus());
+        }
+    }
 
-    CompletableFuture<DeleteNamespaceResponse> deleteRespFuture =
-      rangeStore.deleteNamespace(request);
-    verify(scStore, times(1)).deleteNamespace(request);
-    assertTrue(deleteResp == deleteRespFuture.get());
-  }
+    //
+    // Namespace API
+    //
 
-  @Test
-  public void testGetNamespaceMockRootStorageContainerStore() throws Exception {
-    String colName = "test-get-namespace-no-root-storage-container-store";
+    @Test
+    public void testCreateNamespaceNoRootStorageContainerStore() throws Exception {
+        rangeStore.getRegistry().stopStorageContainer(ROOT_STORAGE_CONTAINER_ID).join();
 
-    StorageContainer scStore = mock(StorageContainer.class);
-    when(scStore.stop()).thenReturn(FutureUtils.value(null));
-    rangeStore.getRegistry().setStorageContainer(ROOT_STORAGE_CONTAINER_ID, scStore);
-    GetNamespaceResponse getResp = GetNamespaceResponse.newBuilder()
-      .setCode(StatusCode.NAMESPACE_NOT_FOUND)
-      .build();
-    GetNamespaceRequest request = createGetNamespaceRequest(colName);
+        String colName = "test-create-namespace-no-root-storage-container-store";
+        verifyNotFoundException(
+            rangeStore.createNamespace(createCreateNamespaceRequest(colName, namespaceConf)),
+            Status.NOT_FOUND);
+    }
 
-    when(scStore.getNamespace(request)).thenReturn(
-      CompletableFuture.completedFuture(getResp));
+    @Test
+    public void testDeleteNamespaceNoRootStorageContainerStore() throws Exception {
+        rangeStore.getRegistry().stopStorageContainer(ROOT_STORAGE_CONTAINER_ID).join();
 
-    CompletableFuture<GetNamespaceResponse> getRespFuture =
-      rangeStore.getNamespace(request);
-    verify(scStore, times(1)).getNamespace(request);
-    assertTrue(getResp == getRespFuture.get());
-  }
+        String colName = "test-delete-namespace-no-root-storage-container-store";
+        verifyNotFoundException(
+            rangeStore.deleteNamespace(createDeleteNamespaceRequest(colName)),
+            Status.NOT_FOUND);
+    }
 
-  //
-  // Test Stream API
-  //
+    @Test
+    public void testGetNamespaceNoRootStorageContainerStore() throws Exception {
+        rangeStore.getRegistry().stopStorageContainer(ROOT_STORAGE_CONTAINER_ID).join();
 
-  @Test
-  public void testCreateStreamNoRootStorageContainerStore() throws Exception {
-    rangeStore.getRegistry().stopStorageContainer(ROOT_STORAGE_CONTAINER_ID).join();
+        String colName = "test-get-namespace-no-root-storage-container-store";
+        verifyNotFoundException(
+            rangeStore.getNamespace(createGetNamespaceRequest(colName)),
+            Status.NOT_FOUND);
+    }
 
-    String colName = "test-create-namespace-no-root-storage-container-store";
-    String streamName = colName;
-    verifyNotFoundException(
-      rangeStore.createStream(createCreateStreamRequest(colName, streamName, DEFAULT_STREAM_CONF)),
-      Status.NOT_FOUND);
-  }
+    @Test
+    public void testCreateNamespaceMockRootStorageContainerStore() throws Exception {
+        String colName = "test-create-namespace-mock-root-storage-container-store";
 
-  @Test
-  public void testDeleteStreamNoRootStorageContainerStore() throws Exception {
-    rangeStore.getRegistry().stopStorageContainer(ROOT_STORAGE_CONTAINER_ID).join();
+        StorageContainer scStore = mock(StorageContainer.class);
+        when(scStore.stop()).thenReturn(FutureUtils.value(null));
+        rangeStore.getRegistry().setStorageContainer(ROOT_STORAGE_CONTAINER_ID, scStore);
+        CreateNamespaceResponse createResp = CreateNamespaceResponse.newBuilder()
+            .setCode(StatusCode.NAMESPACE_EXISTS)
+            .build();
+        CreateNamespaceRequest request = createCreateNamespaceRequest(colName, namespaceConf);
 
-    String colName = "test-delete-namespace-no-root-storage-container-store";
-    String streamName = colName;
-    verifyNotFoundException(
-      rangeStore.deleteStream(createDeleteStreamRequest(colName, streamName)),
-      Status.NOT_FOUND);
-  }
+        when(scStore.createNamespace(request))
+            .thenReturn(CompletableFuture.completedFuture(createResp));
 
-  @Test
-  public void testGetStreamNoRootStorageContainerStore() throws Exception {
-    rangeStore.getRegistry().stopStorageContainer(ROOT_STORAGE_CONTAINER_ID).join();
+        CompletableFuture<CreateNamespaceResponse> createRespFuture =
+            rangeStore.createNamespace(request);
+        verify(scStore, times(1)).createNamespace(request);
+        assertTrue(createResp == createRespFuture.get());
+    }
 
-    String colName = "test-get-namespace-no-root-storage-container-store";
-    String streamName = colName;
-    verifyNotFoundException(
-      rangeStore.getStream(createGetStreamRequest(colName, streamName)),
-      Status.NOT_FOUND);
-  }
+    @Test
+    public void testDeleteNamespaceMockRootStorageContainerStore() throws Exception {
+        String colName = "test-delete-namespace-no-root-storage-container-store";
 
-  @Test
-  public void testCreateStreamMockRootStorageContainerStore() throws Exception {
-    String colName = "test-create-namespace-mock-root-storage-container-store";
-    String streamName = colName;
+        StorageContainer scStore = mock(StorageContainer.class);
+        when(scStore.stop()).thenReturn(FutureUtils.value(null));
+        rangeStore.getRegistry().setStorageContainer(ROOT_STORAGE_CONTAINER_ID, scStore);
+        DeleteNamespaceResponse deleteResp = DeleteNamespaceResponse.newBuilder()
+            .setCode(StatusCode.NAMESPACE_NOT_FOUND)
+            .build();
+        DeleteNamespaceRequest request = createDeleteNamespaceRequest(colName);
 
-    StorageContainer scStore = mock(StorageContainer.class);
-    when(scStore.stop()).thenReturn(FutureUtils.value(null));
-    rangeStore.getRegistry().setStorageContainer(ROOT_STORAGE_CONTAINER_ID, scStore);
-    CreateStreamResponse createResp = CreateStreamResponse.newBuilder()
-      .setCode(StatusCode.STREAM_EXISTS)
-      .build();
-    CreateStreamRequest createReq = createCreateStreamRequest(colName, streamName, DEFAULT_STREAM_CONF);
-    when(scStore.createStream(createReq)).thenReturn(
-      CompletableFuture.completedFuture(createResp));
+        when(scStore.deleteNamespace(request))
+            .thenReturn(CompletableFuture.completedFuture(deleteResp));
 
-    CompletableFuture<CreateStreamResponse> createRespFuture =
-      rangeStore.createStream(createReq);
-    verify(scStore, times(1)).createStream(createReq);
-    assertTrue(createResp == createRespFuture.get());
-  }
+        CompletableFuture<DeleteNamespaceResponse> deleteRespFuture =
+            rangeStore.deleteNamespace(request);
+        verify(scStore, times(1)).deleteNamespace(request);
+        assertTrue(deleteResp == deleteRespFuture.get());
+    }
 
-  @Test
-  public void testDeleteStreamMockRootStorageContainerStore() throws Exception {
-    String colName = "test-delete-namespace-no-root-storage-container-store";
-    String streamName = colName;
+    @Test
+    public void testGetNamespaceMockRootStorageContainerStore() throws Exception {
+        String colName = "test-get-namespace-no-root-storage-container-store";
 
-    StorageContainer scStore = mock(StorageContainer.class);
-    when(scStore.stop()).thenReturn(FutureUtils.value(null));
-    rangeStore.getRegistry().setStorageContainer(ROOT_STORAGE_CONTAINER_ID, scStore);
-    DeleteStreamResponse deleteResp = DeleteStreamResponse.newBuilder()
-      .setCode(StatusCode.STREAM_NOT_FOUND)
-      .build();
-    DeleteStreamRequest deleteReq = createDeleteStreamRequest(colName, streamName);
-    when(scStore.deleteStream(deleteReq)).thenReturn(
-      CompletableFuture.completedFuture(deleteResp));
+        StorageContainer scStore = mock(StorageContainer.class);
+        when(scStore.stop()).thenReturn(FutureUtils.value(null));
+        rangeStore.getRegistry().setStorageContainer(ROOT_STORAGE_CONTAINER_ID, scStore);
+        GetNamespaceResponse getResp = GetNamespaceResponse.newBuilder()
+            .setCode(StatusCode.NAMESPACE_NOT_FOUND)
+            .build();
+        GetNamespaceRequest request = createGetNamespaceRequest(colName);
 
-    CompletableFuture<DeleteStreamResponse> deleteRespFuture =
-      rangeStore.deleteStream(deleteReq);
-    verify(scStore, times(1)).deleteStream(deleteReq);
-    assertTrue(deleteResp == deleteRespFuture.get());
-  }
+        when(scStore.getNamespace(request)).thenReturn(
+            CompletableFuture.completedFuture(getResp));
 
-  @Test
-  public void testGetStreamMockRootStorageContainerStore() throws Exception {
-    String colName = "test-get-namespace-no-root-storage-container-store";
-    String streamName = colName;
+        CompletableFuture<GetNamespaceResponse> getRespFuture =
+            rangeStore.getNamespace(request);
+        verify(scStore, times(1)).getNamespace(request);
+        assertTrue(getResp == getRespFuture.get());
+    }
 
-    StorageContainer scStore = mock(StorageContainer.class);
-    when(scStore.stop()).thenReturn(FutureUtils.value(null));
-    rangeStore.getRegistry().setStorageContainer(ROOT_STORAGE_CONTAINER_ID, scStore);
-    GetStreamResponse getResp = GetStreamResponse.newBuilder()
-      .setCode(StatusCode.STREAM_NOT_FOUND)
-      .build();
-    GetStreamRequest getReq = createGetStreamRequest(colName, streamName);
-    when(scStore.getStream(getReq)).thenReturn(
-      CompletableFuture.completedFuture(getResp));
+    //
+    // Test Stream API
+    //
 
-    CompletableFuture<GetStreamResponse> getRespFuture =
-      rangeStore.getStream(getReq);
-    verify(scStore, times(1)).getStream(getReq);
-    assertTrue(getResp == getRespFuture.get());
-  }
+    @Test
+    public void testCreateStreamNoRootStorageContainerStore() throws Exception {
+        rangeStore.getRegistry().stopStorageContainer(ROOT_STORAGE_CONTAINER_ID).join();
 
-  @Test
-  public void testGetActiveRangesNoManager() throws Exception {
-    verifyNotFoundException(
-      rangeStore.getActiveRanges(createGetActiveRangesRequest(12L, 34L)),
-      Status.NOT_FOUND);
-  }
+        String colName = "test-create-namespace-no-root-storage-container-store";
+        String streamName = colName;
+        verifyNotFoundException(
+            rangeStore.createStream(createCreateStreamRequest(colName, streamName, DEFAULT_STREAM_CONF)),
+            Status.NOT_FOUND);
+    }
 
-  @Test
-  public void testGetActiveRangesMockManager() throws Exception {
-    long scId = System.currentTimeMillis();
+    @Test
+    public void testDeleteStreamNoRootStorageContainerStore() throws Exception {
+        rangeStore.getRegistry().stopStorageContainer(ROOT_STORAGE_CONTAINER_ID).join();
 
-    StreamProperties props = StreamProperties.newBuilder(streamProps)
-      .setStorageContainerId(scId)
-      .build();
+        String colName = "test-delete-namespace-no-root-storage-container-store";
+        String streamName = colName;
+        verifyNotFoundException(
+            rangeStore.deleteStream(createDeleteStreamRequest(colName, streamName)),
+            Status.NOT_FOUND);
+    }
 
-    StorageContainer scStore = mock(StorageContainer.class);
-    when(scStore.stop()).thenReturn(FutureUtils.value(null));
-    rangeStore.getRegistry().setStorageContainer(scId, scStore);
+    @Test
+    public void testGetStreamNoRootStorageContainerStore() throws Exception {
+        rangeStore.getRegistry().stopStorageContainer(ROOT_STORAGE_CONTAINER_ID).join();
 
-    StorageContainerResponse resp = StorageContainerResponse.newBuilder()
-      .setCode(StatusCode.STREAM_NOT_FOUND)
-      .build();
-    StorageContainerRequest request = createGetActiveRangesRequest(scId, 34L);
+        String colName = "test-get-namespace-no-root-storage-container-store";
+        String streamName = colName;
+        verifyNotFoundException(
+            rangeStore.getStream(createGetStreamRequest(colName, streamName)),
+            Status.NOT_FOUND);
+    }
 
-    when(scStore.getActiveRanges(request))
-      .thenReturn(CompletableFuture.completedFuture(resp));
+    @Test
+    public void testCreateStreamMockRootStorageContainerStore() throws Exception {
+        String colName = "test-create-namespace-mock-root-storage-container-store";
+        String streamName = colName;
 
-    CompletableFuture<StorageContainerResponse> future =
-      rangeStore.getActiveRanges(request);
-    verify(scStore, times(1)).getActiveRanges(request);
-    assertTrue(resp == future.get());
-  }
+        StorageContainer scStore = mock(StorageContainer.class);
+        when(scStore.stop()).thenReturn(FutureUtils.value(null));
+        rangeStore.getRegistry().setStorageContainer(ROOT_STORAGE_CONTAINER_ID, scStore);
+        CreateStreamResponse createResp = CreateStreamResponse.newBuilder()
+            .setCode(StatusCode.STREAM_EXISTS)
+            .build();
+        CreateStreamRequest createReq = createCreateStreamRequest(colName, streamName, DEFAULT_STREAM_CONF);
+        when(scStore.createStream(createReq)).thenReturn(
+            CompletableFuture.completedFuture(createResp));
+
+        CompletableFuture<CreateStreamResponse> createRespFuture =
+            rangeStore.createStream(createReq);
+        verify(scStore, times(1)).createStream(createReq);
+        assertTrue(createResp == createRespFuture.get());
+    }
+
+    @Test
+    public void testDeleteStreamMockRootStorageContainerStore() throws Exception {
+        String colName = "test-delete-namespace-no-root-storage-container-store";
+        String streamName = colName;
+
+        StorageContainer scStore = mock(StorageContainer.class);
+        when(scStore.stop()).thenReturn(FutureUtils.value(null));
+        rangeStore.getRegistry().setStorageContainer(ROOT_STORAGE_CONTAINER_ID, scStore);
+        DeleteStreamResponse deleteResp = DeleteStreamResponse.newBuilder()
+            .setCode(StatusCode.STREAM_NOT_FOUND)
+            .build();
+        DeleteStreamRequest deleteReq = createDeleteStreamRequest(colName, streamName);
+        when(scStore.deleteStream(deleteReq)).thenReturn(
+            CompletableFuture.completedFuture(deleteResp));
+
+        CompletableFuture<DeleteStreamResponse> deleteRespFuture =
+            rangeStore.deleteStream(deleteReq);
+        verify(scStore, times(1)).deleteStream(deleteReq);
+        assertTrue(deleteResp == deleteRespFuture.get());
+    }
+
+    @Test
+    public void testGetStreamMockRootStorageContainerStore() throws Exception {
+        String colName = "test-get-namespace-no-root-storage-container-store";
+        String streamName = colName;
+
+        StorageContainer scStore = mock(StorageContainer.class);
+        when(scStore.stop()).thenReturn(FutureUtils.value(null));
+        rangeStore.getRegistry().setStorageContainer(ROOT_STORAGE_CONTAINER_ID, scStore);
+        GetStreamResponse getResp = GetStreamResponse.newBuilder()
+            .setCode(StatusCode.STREAM_NOT_FOUND)
+            .build();
+        GetStreamRequest getReq = createGetStreamRequest(colName, streamName);
+        when(scStore.getStream(getReq)).thenReturn(
+            CompletableFuture.completedFuture(getResp));
+
+        CompletableFuture<GetStreamResponse> getRespFuture =
+            rangeStore.getStream(getReq);
+        verify(scStore, times(1)).getStream(getReq);
+        assertTrue(getResp == getRespFuture.get());
+    }
+
+    @Test
+    public void testGetActiveRangesNoManager() throws Exception {
+        verifyNotFoundException(
+            rangeStore.getActiveRanges(createGetActiveRangesRequest(12L, 34L)),
+            Status.NOT_FOUND);
+    }
+
+    @Test
+    public void testGetActiveRangesMockManager() throws Exception {
+        long scId = System.currentTimeMillis();
+
+        StreamProperties props = StreamProperties.newBuilder(streamProps)
+            .setStorageContainerId(scId)
+            .build();
+
+        StorageContainer scStore = mock(StorageContainer.class);
+        when(scStore.stop()).thenReturn(FutureUtils.value(null));
+        rangeStore.getRegistry().setStorageContainer(scId, scStore);
+
+        StorageContainerResponse resp = StorageContainerResponse.newBuilder()
+            .setCode(StatusCode.STREAM_NOT_FOUND)
+            .build();
+        StorageContainerRequest request = createGetActiveRangesRequest(scId, 34L);
+
+        when(scStore.getActiveRanges(request))
+            .thenReturn(CompletableFuture.completedFuture(resp));
+
+        CompletableFuture<StorageContainerResponse> future =
+            rangeStore.getActiveRanges(request);
+        verify(scStore, times(1)).getActiveRanges(request);
+        assertTrue(resp == future.get());
+    }
 
 
-  //
-  // Table API
-  //
+    //
+    // Table API
+    //
 
-  @Test
-  public void testPutNoStorageContainer() throws Exception {
-    rangeStore.getRegistry().stopStorageContainer(ROOT_STORAGE_CONTAINER_ID).join();
+    @Test
+    public void testPutNoStorageContainer() throws Exception {
+        rangeStore.getRegistry().stopStorageContainer(ROOT_STORAGE_CONTAINER_ID).join();
 
-    verifyNotFoundException(
-      rangeStore.put(createPutRequest(ROOT_STORAGE_CONTAINER_ID)),
-      Status.NOT_FOUND);
-  }
+        verifyNotFoundException(
+            rangeStore.put(createPutRequest(ROOT_STORAGE_CONTAINER_ID)),
+            Status.NOT_FOUND);
+    }
 
-  @Test
-  public void testDeleteNoStorageContainer() throws Exception {
-    rangeStore.getRegistry().stopStorageContainer(ROOT_STORAGE_CONTAINER_ID).join();
+    @Test
+    public void testDeleteNoStorageContainer() throws Exception {
+        rangeStore.getRegistry().stopStorageContainer(ROOT_STORAGE_CONTAINER_ID).join();
 
-    verifyNotFoundException(
-      rangeStore.delete(createDeleteRequest(ROOT_STORAGE_CONTAINER_ID)),
-      Status.NOT_FOUND);
-  }
+        verifyNotFoundException(
+            rangeStore.delete(createDeleteRequest(ROOT_STORAGE_CONTAINER_ID)),
+            Status.NOT_FOUND);
+    }
 
-  @Test
-  public void testRangeNoStorageContainer() throws Exception {
-    rangeStore.getRegistry().stopStorageContainer(ROOT_STORAGE_CONTAINER_ID).join();
+    @Test
+    public void testRangeNoStorageContainer() throws Exception {
+        rangeStore.getRegistry().stopStorageContainer(ROOT_STORAGE_CONTAINER_ID).join();
 
-    verifyNotFoundException(
-      rangeStore.range(createRangeRequest(ROOT_STORAGE_CONTAINER_ID)),
-      Status.NOT_FOUND);
-  }
+        verifyNotFoundException(
+            rangeStore.range(createRangeRequest(ROOT_STORAGE_CONTAINER_ID)),
+            Status.NOT_FOUND);
+    }
 
-  @Test
-  public void testRangeMockStorageContainer() throws Exception {
-    StorageContainer scStore = mock(StorageContainer.class);
-    when(scStore.stop()).thenReturn(FutureUtils.value(null));
-    rangeStore.getRegistry().setStorageContainer(ROOT_STORAGE_CONTAINER_ID, scStore);
-    StorageContainerResponse response = createRangeResponse(StatusCode.SUCCESS);
-    StorageContainerRequest request = createRangeRequest(ROOT_STORAGE_CONTAINER_ID);
+    @Test
+    public void testRangeMockStorageContainer() throws Exception {
+        StorageContainer scStore = mock(StorageContainer.class);
+        when(scStore.stop()).thenReturn(FutureUtils.value(null));
+        rangeStore.getRegistry().setStorageContainer(ROOT_STORAGE_CONTAINER_ID, scStore);
+        StorageContainerResponse response = createRangeResponse(StatusCode.SUCCESS);
+        StorageContainerRequest request = createRangeRequest(ROOT_STORAGE_CONTAINER_ID);
 
-    when(scStore.range(request))
-      .thenReturn(CompletableFuture.completedFuture(response));
+        when(scStore.range(request))
+            .thenReturn(CompletableFuture.completedFuture(response));
 
-    CompletableFuture<StorageContainerResponse> future =
-      rangeStore.range(request);
-    verify(scStore, times(1)).range(eq(request));
-    assertTrue(response == future.get());
-  }
+        CompletableFuture<StorageContainerResponse> future =
+            rangeStore.range(request);
+        verify(scStore, times(1)).range(eq(request));
+        assertTrue(response == future.get());
+    }
 
-  @Test
-  public void testDeleteMockStorageContainer() throws Exception {
-    StorageContainer scStore = mock(StorageContainer.class);
-    when(scStore.stop()).thenReturn(FutureUtils.value(null));
-    rangeStore.getRegistry().setStorageContainer(ROOT_STORAGE_CONTAINER_ID, scStore);
-    StorageContainerResponse response = createDeleteResponse(StatusCode.SUCCESS);
-    StorageContainerRequest request = createDeleteRequest(ROOT_STORAGE_CONTAINER_ID);
+    @Test
+    public void testDeleteMockStorageContainer() throws Exception {
+        StorageContainer scStore = mock(StorageContainer.class);
+        when(scStore.stop()).thenReturn(FutureUtils.value(null));
+        rangeStore.getRegistry().setStorageContainer(ROOT_STORAGE_CONTAINER_ID, scStore);
+        StorageContainerResponse response = createDeleteResponse(StatusCode.SUCCESS);
+        StorageContainerRequest request = createDeleteRequest(ROOT_STORAGE_CONTAINER_ID);
 
-    when(scStore.delete(request))
-      .thenReturn(CompletableFuture.completedFuture(response));
+        when(scStore.delete(request))
+            .thenReturn(CompletableFuture.completedFuture(response));
 
-    CompletableFuture<StorageContainerResponse> future =
-      rangeStore.delete(request);
-    verify(scStore, times(1)).delete(eq(request));
-    assertTrue(response == future.get());
-  }
+        CompletableFuture<StorageContainerResponse> future =
+            rangeStore.delete(request);
+        verify(scStore, times(1)).delete(eq(request));
+        assertTrue(response == future.get());
+    }
 
-  @Test
-  public void testPutMockStorageContainer() throws Exception {
-    StorageContainer scStore = mock(StorageContainer.class);
-    when(scStore.stop()).thenReturn(FutureUtils.value(null));
-    rangeStore.getRegistry().setStorageContainer(ROOT_STORAGE_CONTAINER_ID, scStore);
-    StorageContainerResponse response = createPutResponse(StatusCode.SUCCESS);
-    StorageContainerRequest request = createPutRequest(ROOT_STORAGE_CONTAINER_ID);
+    @Test
+    public void testPutMockStorageContainer() throws Exception {
+        StorageContainer scStore = mock(StorageContainer.class);
+        when(scStore.stop()).thenReturn(FutureUtils.value(null));
+        rangeStore.getRegistry().setStorageContainer(ROOT_STORAGE_CONTAINER_ID, scStore);
+        StorageContainerResponse response = createPutResponse(StatusCode.SUCCESS);
+        StorageContainerRequest request = createPutRequest(ROOT_STORAGE_CONTAINER_ID);
 
-    when(scStore.put(request))
-      .thenReturn(CompletableFuture.completedFuture(response));
+        when(scStore.put(request))
+            .thenReturn(CompletableFuture.completedFuture(response));
 
-    CompletableFuture<StorageContainerResponse> future =
-      rangeStore.put(request);
-    verify(scStore, times(1)).put(eq(request));
-    assertTrue(response == future.get());
-  }
+        CompletableFuture<StorageContainerResponse> future =
+            rangeStore.put(request);
+        verify(scStore, times(1)).put(eq(request));
+        assertTrue(response == future.get());
+    }
 
 }

@@ -35,54 +35,54 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public class TestResponseObserver<RespT> implements StreamObserver<RespT> {
 
-  private final AtomicReference<RespT> resultHolder =
-    new AtomicReference<>();
-  private final AtomicReference<Throwable> exceptionHolder =
-    new AtomicReference<>();
-  private final CountDownLatch latch = new CountDownLatch(1);
+    private final AtomicReference<RespT> resultHolder =
+        new AtomicReference<>();
+    private final AtomicReference<Throwable> exceptionHolder =
+        new AtomicReference<>();
+    private final CountDownLatch latch = new CountDownLatch(1);
 
-  @Override
-  public void onNext(RespT resp) {
-    resultHolder.set(resp);
-  }
-
-  @Override
-  public void onError(Throwable t) {
-    exceptionHolder.set(t);
-    latch.countDown();
-  }
-
-  @Override
-  public void onCompleted() {
-    latch.countDown();
-  }
-
-  public RespT get() throws Throwable {
-    latch.await();
-    if (null != exceptionHolder.get()) {
-      throw exceptionHolder.get();
+    @Override
+    public void onNext(RespT resp) {
+        resultHolder.set(resp);
     }
-    return resultHolder.get();
-  }
 
-  public void verifySuccess(RespT resp) throws Exception {
-    latch.await();
-    assertNull(exceptionHolder.get());
-    assertNotNull(resultHolder.get());
-    assertEquals(resp, resultHolder.get());
-  }
-
-  public void verifyException(Status status) throws Exception {
-    latch.await();
-    assertNull(resultHolder.get());
-    assertNotNull(exceptionHolder.get());
-    assertTrue(
-      exceptionHolder.get() instanceof StatusRuntimeException
-        || exceptionHolder.get() instanceof StatusException);
-    if (exceptionHolder.get() instanceof StatusRuntimeException) {
-      assertEquals(status, ((StatusRuntimeException) exceptionHolder.get()).getStatus());
-    } else if (exceptionHolder.get() instanceof StatusException) {
-      assertEquals(status, ((StatusException) exceptionHolder.get()).getStatus());
+    @Override
+    public void onError(Throwable t) {
+        exceptionHolder.set(t);
+        latch.countDown();
     }
-  }
+
+    @Override
+    public void onCompleted() {
+        latch.countDown();
+    }
+
+    public RespT get() throws Throwable {
+        latch.await();
+        if (null != exceptionHolder.get()) {
+            throw exceptionHolder.get();
+        }
+        return resultHolder.get();
+    }
+
+    public void verifySuccess(RespT resp) throws Exception {
+        latch.await();
+        assertNull(exceptionHolder.get());
+        assertNotNull(resultHolder.get());
+        assertEquals(resp, resultHolder.get());
+    }
+
+    public void verifyException(Status status) throws Exception {
+        latch.await();
+        assertNull(resultHolder.get());
+        assertNotNull(exceptionHolder.get());
+        assertTrue(
+            exceptionHolder.get() instanceof StatusRuntimeException
+                || exceptionHolder.get() instanceof StatusException);
+        if (exceptionHolder.get() instanceof StatusRuntimeException) {
+            assertEquals(status, ((StatusRuntimeException) exceptionHolder.get()).getStatus());
+        } else if (exceptionHolder.get() instanceof StatusException) {
+            assertEquals(status, ((StatusException) exceptionHolder.get()).getStatus());
+        }
+    }
 }

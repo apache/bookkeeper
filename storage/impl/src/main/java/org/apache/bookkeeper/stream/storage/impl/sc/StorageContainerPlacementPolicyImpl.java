@@ -23,23 +23,23 @@ import org.apache.bookkeeper.stream.protocol.util.StorageContainerPlacementPolic
  */
 public class StorageContainerPlacementPolicyImpl implements StorageContainerPlacementPolicy {
 
-  public static StorageContainerPlacementPolicyImpl of(int numStorageContainers) {
-    return new StorageContainerPlacementPolicyImpl(numStorageContainers);
-  }
+    public static StorageContainerPlacementPolicyImpl of(int numStorageContainers) {
+        return new StorageContainerPlacementPolicyImpl(numStorageContainers);
+    }
 
-  private final int numStorageContainers;
+    private final int numStorageContainers;
 
-  private StorageContainerPlacementPolicyImpl(int numStorageContainers) {
-    this.numStorageContainers = numStorageContainers;
-  }
+    private StorageContainerPlacementPolicyImpl(int numStorageContainers) {
+        this.numStorageContainers = numStorageContainers;
+    }
 
-  @VisibleForTesting
-  long getNumStorageContainers() {
-    return numStorageContainers;
-  }
+    @VisibleForTesting
+    long getNumStorageContainers() {
+        return numStorageContainers;
+    }
 
-  @Override
-  public long placeStreamRange(long streamId, long rangeId) {
-    return ThreadLocalRandom.current().nextInt(numStorageContainers);
-  }
+    @Override
+    public long placeStreamRange(long streamId, long rangeId) {
+        return ThreadLocalRandom.current().nextInt(numStorageContainers);
+    }
 }

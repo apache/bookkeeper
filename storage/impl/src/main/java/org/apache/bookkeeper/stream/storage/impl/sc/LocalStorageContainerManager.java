@@ -33,45 +33,45 @@ public class LocalStorageContainerManager
     extends AbstractLifecycleComponent<StorageConfiguration>
     implements StorageContainerManager {
 
-  private final Endpoint myEndpoint;
-  private final int numStorageContainers;
-  private final StorageContainerRegistry registry;
+    private final Endpoint myEndpoint;
+    private final int numStorageContainers;
+    private final StorageContainerRegistry registry;
 
-  public LocalStorageContainerManager(Endpoint myEndpoint,
-                                StorageConfiguration conf,
-                                StorageContainerRegistry scRegistry,
-                                int numStorageContainers) {
-    super("local-storage-container-manager", conf, NullStatsLogger.INSTANCE);
-    this.myEndpoint = myEndpoint;
-    this.registry = scRegistry;
-    this.numStorageContainers = numStorageContainers;
-  }
-
-  @Override
-  public Endpoint getStorageContainer(long scId) {
-    return myEndpoint;
-  }
-
-  @Override
-  protected void doStart() {
-    List<CompletableFuture<Void>> futures = Lists.newArrayListWithExpectedSize(numStorageContainers);
-    for (int scId = 0; scId < numStorageContainers; scId++) {
-      futures.add(this.registry.startStorageContainer(scId));
+    public LocalStorageContainerManager(Endpoint myEndpoint,
+                                        StorageConfiguration conf,
+                                        StorageContainerRegistry scRegistry,
+                                        int numStorageContainers) {
+        super("local-storage-container-manager", conf, NullStatsLogger.INSTANCE);
+        this.myEndpoint = myEndpoint;
+        this.registry = scRegistry;
+        this.numStorageContainers = numStorageContainers;
     }
-    FutureUtils.collect(futures).join();
-  }
 
-  @Override
-  protected void doStop() {
-    List<CompletableFuture<Void>> futures = Lists.newArrayListWithExpectedSize(numStorageContainers);
-    for (int scId = 0; scId < numStorageContainers; scId++) {
-      futures.add(this.registry.stopStorageContainer(scId));
+    @Override
+    public Endpoint getStorageContainer(long scId) {
+        return myEndpoint;
     }
-    FutureUtils.collect(futures).join();
-  }
 
-  @Override
-  protected void doClose() throws IOException {
-    // do nothing
-  }
+    @Override
+    protected void doStart() {
+        List<CompletableFuture<Void>> futures = Lists.newArrayListWithExpectedSize(numStorageContainers);
+        for (int scId = 0; scId < numStorageContainers; scId++) {
+            futures.add(this.registry.startStorageContainer(scId));
+        }
+        FutureUtils.collect(futures).join();
+    }
+
+    @Override
+    protected void doStop() {
+        List<CompletableFuture<Void>> futures = Lists.newArrayListWithExpectedSize(numStorageContainers);
+        for (int scId = 0; scId < numStorageContainers; scId++) {
+            futures.add(this.registry.stopStorageContainer(scId));
+        }
+        FutureUtils.collect(futures).join();
+    }
+
+    @Override
+    protected void doClose() throws IOException {
+        // do nothing
+    }
 }

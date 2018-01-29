@@ -42,84 +42,84 @@ import org.apache.bookkeeper.stream.proto.storage.TableServiceGrpc.TableServiceF
  */
 public class StorageServerChannel implements AutoCloseable {
 
-  public static Function<Endpoint, StorageServerChannel> factory(boolean usePlaintext) {
-    return (endpoint) -> new StorageServerChannel(endpoint, Optional.empty(), usePlaintext);
-  }
-
-  private final Optional<String> token;
-  private final ManagedChannel channel;
-
-  @GuardedBy("this")
-  private RootRangeServiceFutureStub rootRangeService;
-  @GuardedBy("this")
-  private MetaRangeServiceFutureStub metaRangeService;
-  @GuardedBy("this")
-  private StorageContainerServiceFutureStub scService;
-  @GuardedBy("this")
-  private TableServiceFutureStub kvService;
-
-  /**
-   * Construct a range server channel to a given range server endpoint.
-   *
-   * @param endpoint range server endpoint.
-   * @param token token used to access range server
-   */
-  public StorageServerChannel(Endpoint endpoint,
-                              Optional<String> token,
-                              boolean usePlainText) {
-    this.token = token;
-    this.channel = ManagedChannelBuilder.forAddress(
-      endpoint.getHostname(),
-      endpoint.getPort())
-      .usePlaintext(usePlainText)
-      .build();
-  }
-
-  @VisibleForTesting
-  public StorageServerChannel(ManagedChannel channel,
-                              Optional<String> token) {
-    this.token = token;
-    this.channel = channel;
-  }
-
-  public synchronized RootRangeServiceFutureStub getRootRangeService() {
-    if (null == rootRangeService) {
-      rootRangeService = GrpcUtils.configureGrpcStub(
-        RootRangeServiceGrpc.newFutureStub(channel),
-        token);
+    public static Function<Endpoint, StorageServerChannel> factory(boolean usePlaintext) {
+        return (endpoint) -> new StorageServerChannel(endpoint, Optional.empty(), usePlaintext);
     }
-    return rootRangeService;
-  }
 
-  public synchronized MetaRangeServiceFutureStub getMetaRangeService() {
-    if (null == metaRangeService) {
-      metaRangeService = GrpcUtils.configureGrpcStub(
-        MetaRangeServiceGrpc.newFutureStub(channel),
-        token);
+    private final Optional<String> token;
+    private final ManagedChannel channel;
+
+    @GuardedBy("this")
+    private RootRangeServiceFutureStub rootRangeService;
+    @GuardedBy("this")
+    private MetaRangeServiceFutureStub metaRangeService;
+    @GuardedBy("this")
+    private StorageContainerServiceFutureStub scService;
+    @GuardedBy("this")
+    private TableServiceFutureStub kvService;
+
+    /**
+     * Construct a range server channel to a given range server endpoint.
+     *
+     * @param endpoint range server endpoint.
+     * @param token    token used to access range server
+     */
+    public StorageServerChannel(Endpoint endpoint,
+                                Optional<String> token,
+                                boolean usePlainText) {
+        this.token = token;
+        this.channel = ManagedChannelBuilder.forAddress(
+            endpoint.getHostname(),
+            endpoint.getPort())
+            .usePlaintext(usePlainText)
+            .build();
     }
-    return metaRangeService;
-  }
 
-  public synchronized StorageContainerServiceFutureStub getStorageContainerService() {
-    if (null == scService) {
-      scService = GrpcUtils.configureGrpcStub(
-        StorageContainerServiceGrpc.newFutureStub(channel),
-        token);
+    @VisibleForTesting
+    public StorageServerChannel(ManagedChannel channel,
+                                Optional<String> token) {
+        this.token = token;
+        this.channel = channel;
     }
-    return scService;
-  }
 
-  public synchronized TableServiceFutureStub getTableService() {
-    if (null == kvService) {
-      kvService = GrpcUtils.configureGrpcStub(
-        TableServiceGrpc.newFutureStub(channel),
-        token);
+    public synchronized RootRangeServiceFutureStub getRootRangeService() {
+        if (null == rootRangeService) {
+            rootRangeService = GrpcUtils.configureGrpcStub(
+                RootRangeServiceGrpc.newFutureStub(channel),
+                token);
+        }
+        return rootRangeService;
     }
-    return kvService;
-  }
 
-  @Override
-  public void close() {
-    channel.shutdown();
-  }
+    public synchronized MetaRangeServiceFutureStub getMetaRangeService() {
+        if (null == metaRangeService) {
+            metaRangeService = GrpcUtils.configureGrpcStub(
+                MetaRangeServiceGrpc.newFutureStub(channel),
+                token);
+        }
+        return metaRangeService;
+    }
+
+    public synchronized StorageContainerServiceFutureStub getStorageContainerService() {
+        if (null == scService) {
+            scService = GrpcUtils.configureGrpcStub(
+                StorageContainerServiceGrpc.newFutureStub(channel),
+                token);
+        }
+        return scService;
+    }
+
+    public synchronized TableServiceFutureStub getTableService() {
+        if (null == kvService) {
+            kvService = GrpcUtils.configureGrpcStub(
+                TableServiceGrpc.newFutureStub(channel),
+                token);
+        }
+        return kvService;
+    }
+
+    @Override
+    public void close() {
+        channel.shutdown();
+    }
 }

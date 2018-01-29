@@ -35,37 +35,37 @@ import org.junit.Test;
  */
 public class TestStorageServerChannel {
 
-  private final String serverName = "fake server for " + getClass();
-  private final MutableHandlerRegistry serviceRegistry = new MutableHandlerRegistry();
-  private Server fakeServer;
+    private final String serverName = "fake server for " + getClass();
+    private final MutableHandlerRegistry serviceRegistry = new MutableHandlerRegistry();
+    private Server fakeServer;
 
-  @Before
-  public void setUp() throws Exception {
-    fakeServer = InProcessServerBuilder
-      .forName(serverName)
-      .fallbackHandlerRegistry(serviceRegistry)
-      .directExecutor()
-      .build()
-      .start();
-  }
-
-  @After
-  public void tearDown() throws Exception {
-    if (null != fakeServer) {
-      fakeServer.shutdown();
+    @Before
+    public void setUp() throws Exception {
+        fakeServer = InProcessServerBuilder
+            .forName(serverName)
+            .fallbackHandlerRegistry(serviceRegistry)
+            .directExecutor()
+            .build()
+            .start();
     }
-  }
 
-  @Test
-  public void testBasic() {
-    ManagedChannel managedChannel = InProcessChannelBuilder.forName(serverName).directExecutor().build();
-    Optional<String> token = Optional.empty();
-    StorageServerChannel channel = new StorageServerChannel(managedChannel, token);
-    assertNotNull(channel.getRootRangeService());
-    assertNotNull(channel.getMetaRangeService());
-    assertNotNull(channel.getStorageContainerService());
-    assertNotNull(channel.getTableService());
-    channel.close();
-  }
+    @After
+    public void tearDown() throws Exception {
+        if (null != fakeServer) {
+            fakeServer.shutdown();
+        }
+    }
+
+    @Test
+    public void testBasic() {
+        ManagedChannel managedChannel = InProcessChannelBuilder.forName(serverName).directExecutor().build();
+        Optional<String> token = Optional.empty();
+        StorageServerChannel channel = new StorageServerChannel(managedChannel, token);
+        assertNotNull(channel.getRootRangeService());
+        assertNotNull(channel.getMetaRangeService());
+        assertNotNull(channel.getStorageContainerService());
+        assertNotNull(channel.getTableService());
+        channel.close();
+    }
 
 }

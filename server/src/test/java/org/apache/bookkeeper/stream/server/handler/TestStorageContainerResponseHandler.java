@@ -43,69 +43,69 @@ import org.mockito.stubbing.Answer;
  */
 public class TestStorageContainerResponseHandler {
 
-  @Test
-  public void testSuccessResponse() {
-    StreamObserver<StorageContainerResponse> observer =
-      mock(StreamObserver.class);
-    StorageContainerResponseHandler handler = StorageContainerResponseHandler.of(observer);
-    StorageContainerResponse response = StorageContainerResponse.newBuilder()
-      .setCode(StatusCode.SUCCESS)
-      .build();
-    handler.accept(response, null);
-    verify(observer, times(1)).onNext(response);
-    verify(observer, times(1)).onCompleted();
-    verify(observer, times(0)).onError(any());
-  }
+    @Test
+    public void testSuccessResponse() {
+        StreamObserver<StorageContainerResponse> observer =
+            mock(StreamObserver.class);
+        StorageContainerResponseHandler handler = StorageContainerResponseHandler.of(observer);
+        StorageContainerResponse response = StorageContainerResponse.newBuilder()
+            .setCode(StatusCode.SUCCESS)
+            .build();
+        handler.accept(response, null);
+        verify(observer, times(1)).onNext(response);
+        verify(observer, times(1)).onCompleted();
+        verify(observer, times(0)).onError(any());
+    }
 
-  @Test
-  public void testStatusRuntimeException() {
-    StreamObserver<StorageContainerResponse> observer =
-      mock(StreamObserver.class);
-    StorageContainerResponseHandler handler = StorageContainerResponseHandler.of(observer);
-    StatusRuntimeException exception = new StatusRuntimeException(Status.NOT_FOUND);
-    handler.accept(null, exception);
-    verify(observer, times(0)).onNext(any());
-    verify(observer, times(0)).onCompleted();
-    verify(observer, times(1)).onError(exception);
-  }
+    @Test
+    public void testStatusRuntimeException() {
+        StreamObserver<StorageContainerResponse> observer =
+            mock(StreamObserver.class);
+        StorageContainerResponseHandler handler = StorageContainerResponseHandler.of(observer);
+        StatusRuntimeException exception = new StatusRuntimeException(Status.NOT_FOUND);
+        handler.accept(null, exception);
+        verify(observer, times(0)).onNext(any());
+        verify(observer, times(0)).onCompleted();
+        verify(observer, times(1)).onError(exception);
+    }
 
-  @Test
-  public void testStatusException() {
-    StreamObserver<StorageContainerResponse> observer =
-      mock(StreamObserver.class);
-    StorageContainerResponseHandler handler = StorageContainerResponseHandler.of(observer);
-    StatusException exception = new StatusException(Status.NOT_FOUND);
-    handler.accept(null, exception);
-    verify(observer, times(0)).onNext(any());
-    verify(observer, times(0)).onCompleted();
-    verify(observer, times(1)).onError(exception);
-  }
+    @Test
+    public void testStatusException() {
+        StreamObserver<StorageContainerResponse> observer =
+            mock(StreamObserver.class);
+        StorageContainerResponseHandler handler = StorageContainerResponseHandler.of(observer);
+        StatusException exception = new StatusException(Status.NOT_FOUND);
+        handler.accept(null, exception);
+        verify(observer, times(0)).onNext(any());
+        verify(observer, times(0)).onCompleted();
+        verify(observer, times(1)).onError(exception);
+    }
 
-  @Test
-  public void testInternalError() throws Exception {
-    StreamObserver<StorageContainerResponse> observer =
-      mock(StreamObserver.class);
-    AtomicReference<StorageContainerResponse> responseHolder =
-      new AtomicReference<>(null);
-    CountDownLatch latch = new CountDownLatch(1);
-    doAnswer((Answer<Void>) invocation -> {
-      StorageContainerResponse resp = invocation.getArgument(0);
-      responseHolder.set(resp);
-      latch.countDown();
-      return null;
-    }).when(observer).onNext(any(StorageContainerResponse.class));
-    StorageContainerResponseHandler handler = StorageContainerResponseHandler.of(observer);
-    StorageException exception = new StorageException("test-exception");
-    handler.accept(null, exception);
-    verify(observer, times(1)).onNext(any());
-    verify(observer, times(1)).onCompleted();
-    verify(observer, times(0)).onError(any());
+    @Test
+    public void testInternalError() throws Exception {
+        StreamObserver<StorageContainerResponse> observer =
+            mock(StreamObserver.class);
+        AtomicReference<StorageContainerResponse> responseHolder =
+            new AtomicReference<>(null);
+        CountDownLatch latch = new CountDownLatch(1);
+        doAnswer((Answer<Void>) invocation -> {
+            StorageContainerResponse resp = invocation.getArgument(0);
+            responseHolder.set(resp);
+            latch.countDown();
+            return null;
+        }).when(observer).onNext(any(StorageContainerResponse.class));
+        StorageContainerResponseHandler handler = StorageContainerResponseHandler.of(observer);
+        StorageException exception = new StorageException("test-exception");
+        handler.accept(null, exception);
+        verify(observer, times(1)).onNext(any());
+        verify(observer, times(1)).onCompleted();
+        verify(observer, times(0)).onError(any());
 
-    latch.await();
-    assertNotNull(responseHolder.get());
-    assertEquals(
-      StatusCode.INTERNAL_SERVER_ERROR,
-      responseHolder.get().getCode());
-  }
+        latch.await();
+        assertNotNull(responseHolder.get());
+        assertEquals(
+            StatusCode.INTERNAL_SERVER_ERROR,
+            responseHolder.get().getCode());
+    }
 
 }

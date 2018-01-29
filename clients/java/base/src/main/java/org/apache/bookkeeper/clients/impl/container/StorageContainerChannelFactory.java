@@ -24,6 +24,6 @@ package org.apache.bookkeeper.clients.impl.container;
 @FunctionalInterface
 public interface StorageContainerChannelFactory {
 
-  StorageContainerChannel createStorageContainerChannel(long scId);
+    StorageContainerChannel createStorageContainerChannel(long scId);
 
 }

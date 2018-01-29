@@ -38,25 +38,25 @@ import org.apache.bookkeeper.stream.proto.RangeProperties;
 @RequiredArgsConstructor
 public abstract class StreamRanges<T> {
 
-  public static HashStreamRanges ofHash(RangeKeyType keyType,
-                                        NavigableMap<Long, RangeProperties> ranges) {
-    checkArgument(RangeKeyType.HASH == keyType,
-      "Only hash routing is supported now. %s is not supported.", keyType);
-    NavigableMap<Long, RangeProperties> readOnlyRanges = Collections.unmodifiableNavigableMap(ranges);
-    long maxRangeId = 0L;
-    for (RangeProperties props : ranges.values()) {
-      maxRangeId = Math.max(maxRangeId, props.getRangeId());
+    public static HashStreamRanges ofHash(RangeKeyType keyType,
+                                          NavigableMap<Long, RangeProperties> ranges) {
+        checkArgument(RangeKeyType.HASH == keyType,
+            "Only hash routing is supported now. %s is not supported.", keyType);
+        NavigableMap<Long, RangeProperties> readOnlyRanges = Collections.unmodifiableNavigableMap(ranges);
+        long maxRangeId = 0L;
+        for (RangeProperties props : ranges.values()) {
+            maxRangeId = Math.max(maxRangeId, props.getRangeId());
+        }
+        return new HashStreamRanges(readOnlyRanges, maxRangeId);
     }
-    return new HashStreamRanges(readOnlyRanges, maxRangeId);
-  }
 
-  private final RangeKeyType keyType;
-  private final NavigableMap<T, RangeProperties> ranges;
-  // the id (which is basically the max id among the ranges)
-  // that tracks the changes to the range list of a stream.
-  // the id here can be easily used for syncing the range list by
-  // just comparing the id seen at client side and the id seen
-  // at server side.
-  private final long maxRangeId;
+    private final RangeKeyType keyType;
+    private final NavigableMap<T, RangeProperties> ranges;
+    // the id (which is basically the max id among the ranges)
+    // that tracks the changes to the range list of a stream.
+    // the id here can be easily used for syncing the range list by
+    // just comparing the id seen at client side and the id seen
+    // at server side.
+    private final long maxRangeId;
 
 }

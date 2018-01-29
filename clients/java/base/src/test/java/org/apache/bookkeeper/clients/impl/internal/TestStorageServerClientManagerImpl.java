@@ -44,76 +44,78 @@ import org.junit.Test;
  */
 public class TestStorageServerClientManagerImpl extends GrpcClientTestBase {
 
-  @Override
-  protected void doSetup() throws Exception {}
+    @Override
+    protected void doSetup() throws Exception {
+    }
 
-  @Override
-  protected void doTeardown() throws Exception {}
+    @Override
+    protected void doTeardown() throws Exception {
+    }
 
-  @Test
-  public void testGetMetaRangeClient() throws Exception {
-    long streamId = 3456L;
-    StreamProperties props = StreamProperties.newBuilder()
-      .setStorageContainerId(1234L)
-      .setStreamId(streamId)
-      .setStreamName("metaclient-stream")
-      .setStreamConf(StreamConfiguration.newBuilder().build())
-      .build();
+    @Test
+    public void testGetMetaRangeClient() throws Exception {
+        long streamId = 3456L;
+        StreamProperties props = StreamProperties.newBuilder()
+            .setStorageContainerId(1234L)
+            .setStreamId(streamId)
+            .setStreamName("metaclient-stream")
+            .setStreamConf(StreamConfiguration.newBuilder().build())
+            .build();
 
-    MetaRangeClientImpl metaRangeClient = serverManager.openMetaRangeClient(props);
-    assertEquals(1234L, metaRangeClient.getStorageContainerClient().getStorageContainerId());
-    assertTrue(props == metaRangeClient.getStreamProps());
+        MetaRangeClientImpl metaRangeClient = serverManager.openMetaRangeClient(props);
+        assertEquals(1234L, metaRangeClient.getStorageContainerClient().getStorageContainerId());
+        assertTrue(props == metaRangeClient.getStreamProps());
 
-    // the stream properties will be cached here
-    assertEquals(props, FutureUtils.result(serverManager.getStreamProperties(streamId)));
+        // the stream properties will be cached here
+        assertEquals(props, FutureUtils.result(serverManager.getStreamProperties(streamId)));
 
-    // the metadata range client is cached as well
-    assertEquals(metaRangeClient, FutureUtils.result(serverManager.openMetaRangeClient(streamId)));
-  }
+        // the metadata range client is cached as well
+        assertEquals(metaRangeClient, FutureUtils.result(serverManager.openMetaRangeClient(streamId)));
+    }
 
-  @Test
-  public void testGetMetaRangeClientByStreamId() throws Exception {
-    long streamId = 3456L;
-    StreamProperties props = StreamProperties.newBuilder()
-      .setStorageContainerId(1234L)
-      .setStreamId(streamId)
-      .setStreamName("metaclient-stream")
-      .setStreamConf(StreamConfiguration.newBuilder().build())
-      .build();
+    @Test
+    public void testGetMetaRangeClientByStreamId() throws Exception {
+        long streamId = 3456L;
+        StreamProperties props = StreamProperties.newBuilder()
+            .setStorageContainerId(1234L)
+            .setStreamId(streamId)
+            .setStreamName("metaclient-stream")
+            .setStreamConf(StreamConfiguration.newBuilder().build())
+            .build();
 
-    RootRangeServiceImplBase rootRangeService = new RootRangeServiceImplBase() {
-      @Override
-      public void getStream(GetStreamRequest request,
-                            StreamObserver<GetStreamResponse> responseObserver) {
-        responseObserver.onNext(GetStreamResponse.newBuilder()
-          .setCode(StatusCode.SUCCESS)
-          .setStreamProps(props)
-          .build());
-        responseObserver.onCompleted();
-      }
-    };
-    serviceRegistry.addService(rootRangeService.bindService());
+        RootRangeServiceImplBase rootRangeService = new RootRangeServiceImplBase() {
+            @Override
+            public void getStream(GetStreamRequest request,
+                                  StreamObserver<GetStreamResponse> responseObserver) {
+                responseObserver.onNext(GetStreamResponse.newBuilder()
+                    .setCode(StatusCode.SUCCESS)
+                    .setStreamProps(props)
+                    .build());
+                responseObserver.onCompleted();
+            }
+        };
+        serviceRegistry.addService(rootRangeService.bindService());
 
-    // the stream properties will be cached here
-    assertEquals(props, FutureUtils.result(serverManager.getStreamProperties(streamId)));
+        // the stream properties will be cached here
+        assertEquals(props, FutureUtils.result(serverManager.getStreamProperties(streamId)));
 
-    // the metadata range client is cached as well
-    MetaRangeClient client = FutureUtils.result(serverManager.openMetaRangeClient(streamId));
-    assertEquals(props, client.getStreamProps());
-  }
+        // the metadata range client is cached as well
+        MetaRangeClient client = FutureUtils.result(serverManager.openMetaRangeClient(streamId));
+        assertEquals(props, client.getStreamProps());
+    }
 
-  @Test
-  public void testGetLocationClient() throws Exception {
-    LocationClient lc = serverManager.getLocationClient();
-    assertNotNull(lc);
-    assertEquals(lc, serverManager.getLocationClient());
-    List<OneStorageContainerEndpointResponse> responses =
-      FutureUtils.result(lc.locateStorageContainers(Lists.newArrayList(Revisioned.of(123L, 456L))));
-    assertEquals(1, responses.size());
-    assertEquals(StatusCode.SUCCESS, responses.get(0).getStatusCode());
-    assertEquals(ENDPOINT, responses.get(0).getEndpoint().getRwEndpoint());
-    assertEquals(0, responses.get(0).getEndpoint().getRoEndpointCount());
-  }
+    @Test
+    public void testGetLocationClient() throws Exception {
+        LocationClient lc = serverManager.getLocationClient();
+        assertNotNull(lc);
+        assertEquals(lc, serverManager.getLocationClient());
+        List<OneStorageContainerEndpointResponse> responses =
+            FutureUtils.result(lc.locateStorageContainers(Lists.newArrayList(Revisioned.of(123L, 456L))));
+        assertEquals(1, responses.size());
+        assertEquals(StatusCode.SUCCESS, responses.get(0).getStatusCode());
+        assertEquals(ENDPOINT, responses.get(0).getEndpoint().getRwEndpoint());
+        assertEquals(0, responses.get(0).getEndpoint().getRoEndpointCount());
+    }
 
 
 }

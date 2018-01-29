@@ -33,6 +33,6 @@ package org.apache.bookkeeper.stream.protocol.util;
  */
 public interface StorageContainerPlacementPolicy {
 
-  long placeStreamRange(long streamId, long rangeId);
+    long placeStreamRange(long streamId, long rangeId);
 
 }

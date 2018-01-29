@@ -20,12 +20,12 @@ package org.apache.bookkeeper.stream.storage.api.sc;
 @FunctionalInterface
 public interface StorageContainerFactory {
 
-  /**
-   * Create a new instance of a {@link StorageContainer}.
-   *
-   * @param scId storage container id.
-   * @return a new instance of storage container.
-   */
-  StorageContainer createStorageContainer(long scId);
+    /**
+     * Create a new instance of a {@link StorageContainer}.
+     *
+     * @param scId storage container id.
+     * @return a new instance of storage container.
+     */
+    StorageContainer createStorageContainer(long scId);
 
 }

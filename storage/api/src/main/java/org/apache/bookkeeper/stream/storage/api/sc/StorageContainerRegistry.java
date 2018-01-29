@@ -21,38 +21,38 @@ import java.util.concurrent.CompletableFuture;
  */
 public interface StorageContainerRegistry extends AutoCloseable {
 
-  /**
-   * Gets the number of registered storage containers.
-   *
-   * @return the number of registered storage containers.
-   */
-  int getNumStorageContainers();
+    /**
+     * Gets the number of registered storage containers.
+     *
+     * @return the number of registered storage containers.
+     */
+    int getNumStorageContainers();
 
-  /**
-   * Get the instance of storage container {@code storageContainerId}.
-   *
-   * @return the instance of the storage container
-   */
-  StorageContainer getStorageContainer(long storageContainerId);
+    /**
+     * Get the instance of storage container {@code storageContainerId}.
+     *
+     * @return the instance of the storage container
+     */
+    StorageContainer getStorageContainer(long storageContainerId);
 
-  /**
-   * Start the storage container in this registry.
-   *
-   * @param scId storage container id
-   * @return a future represents the started storage container or exception if failed to start.
-   */
-  CompletableFuture<Void> startStorageContainer(long scId);
+    /**
+     * Start the storage container in this registry.
+     *
+     * @param scId storage container id
+     * @return a future represents the started storage container or exception if failed to start.
+     */
+    CompletableFuture<Void> startStorageContainer(long scId);
 
-  /**
-   * Stop the storage container in this registry.
-   *
-   * @param scId storage container id
-   * @return a future represents the result of stopping a storage container or exception if failed to start.
-   */
-  CompletableFuture<Void> stopStorageContainer(long scId);
+    /**
+     * Stop the storage container in this registry.
+     *
+     * @param scId storage container id
+     * @return a future represents the result of stopping a storage container or exception if failed to start.
+     */
+    CompletableFuture<Void> stopStorageContainer(long scId);
 
-  /**
-   * Close the registry.
-   */
-  void close();
+    /**
+     * Close the registry.
+     */
+    void close();
 }

@@ -28,9 +28,9 @@ public interface MVCCStoreFactory extends AutoCloseable {
     /**
      * Open the state store for storing range <tt>scId</tt>/<tt>streamId</tt>/<tt>rangeId</tt>.
      *
-     * @param scId storage container id
+     * @param scId     storage container id
      * @param streamId stream id
-     * @param rangeId range id
+     * @param rangeId  range id
      * @return an state store instance
      */
     CompletableFuture<MVCCAsyncStore<byte[], byte[]>> openStore(long scId, long streamId, long rangeId);

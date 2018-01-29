@@ -31,36 +31,37 @@ import java.util.concurrent.CompletableFuture;
  */
 public final class GrpcUtils {
 
-  private GrpcUtils() {}
+    private GrpcUtils() {
+    }
 
-  /**
-   * Configure a grpc stub with optional credential token.
-   *
-   * @param stub grpc stub
-   * @param token credential token
-   * @param <T>
-   * @return a configured grpc stub.
-   */
-  public static <T extends AbstractStub<T>> T configureGrpcStub(T stub, Optional<String> token) {
-    return token.map(t -> {
-      Metadata metadata = new Metadata();
-      Metadata.Key<String> tokenKey = Metadata.Key.of(TOKEN, Metadata.ASCII_STRING_MARSHALLER);
-      metadata.put(tokenKey, t);
-      CallCredentials callCredentials = (method, attrs, appExecutor, applier) -> {
-        applier.apply(metadata);
-      };
-      return stub.withCallCredentials(callCredentials);
-    }).orElse(stub);
-  }
+    /**
+     * Configure a grpc stub with optional credential token.
+     *
+     * @param stub  grpc stub
+     * @param token credential token
+     * @param <T>
+     * @return a configured grpc stub.
+     */
+    public static <T extends AbstractStub<T>> T configureGrpcStub(T stub, Optional<String> token) {
+        return token.map(t -> {
+            Metadata metadata = new Metadata();
+            Metadata.Key<String> tokenKey = Metadata.Key.of(TOKEN, Metadata.ASCII_STRING_MARSHALLER);
+            metadata.put(tokenKey, t);
+            CallCredentials callCredentials = (method, attrs, appExecutor, applier) -> {
+                applier.apply(metadata);
+            };
+            return stub.withCallCredentials(callCredentials);
+        }).orElse(stub);
+    }
 
-  /**
-   * Process rpc exception.
-   *
-   * @param rpcCause rpc cause.
-   * @param future future to complete exceptionally
-   */
-  public static <T> void processRpcException(Throwable rpcCause, CompletableFuture<T> future) {
-    future.completeExceptionally(rpcCause);
-  }
+    /**
+     * Process rpc exception.
+     *
+     * @param rpcCause rpc cause.
+     * @param future   future to complete exceptionally
+     */
+    public static <T> void processRpcException(Throwable rpcCause, CompletableFuture<T> future) {
+        future.completeExceptionally(rpcCause);
+    }
 
 }

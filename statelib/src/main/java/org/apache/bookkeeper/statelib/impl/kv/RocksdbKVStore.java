@@ -293,13 +293,13 @@ public class RocksdbKVStore<K, V> implements KVStore<K, V> {
     protected Pair<RocksDB, List<ColumnFamilyHandle>> openLocalDB(File dir,
                                                                   DBOptions options,
                                                                   ColumnFamilyOptions cfOpts)
-            throws StateStoreException {
+        throws StateStoreException {
         return openRocksdb(dir, options, cfOpts);
     }
 
     protected static Pair<RocksDB, List<ColumnFamilyHandle>> openRocksdb(
         File dir, DBOptions options, ColumnFamilyOptions cfOpts)
-            throws StateStoreException {
+        throws StateStoreException {
         // make sure the db directory's parent dir is created
         ColumnFamilyDescriptor metaDesc = new ColumnFamilyDescriptor(METADATA_CF, cfOpts);
         ColumnFamilyDescriptor dataDesc = new ColumnFamilyDescriptor(DATA_CF, cfOpts);
@@ -674,7 +674,6 @@ public class RocksdbKVStore<K, V> implements KVStore<K, V> {
             checkNotNull(endKey, "End key cannot be null");
             this.endKeyBytes = keyCoder.encode(endKey);
         }
-
 
 
         @Override

@@ -26,30 +26,31 @@ import org.apache.bookkeeper.stream.storage.impl.AsyncOperationProcessor;
 class CreateNamespaceProcessor
     extends AsyncOperationProcessor<CreateNamespaceRequest, CreateNamespaceResponse, RootRangeStoreImpl> {
 
-  public static CreateNamespaceProcessor of() {
-    return INSTANCE;
-  }
+    public static CreateNamespaceProcessor of() {
+        return INSTANCE;
+    }
 
-  private static final CreateNamespaceProcessor INSTANCE = new CreateNamespaceProcessor();
+    private static final CreateNamespaceProcessor INSTANCE = new CreateNamespaceProcessor();
 
-  private CreateNamespaceProcessor() {}
+    private CreateNamespaceProcessor() {
+    }
 
-  @Override
-  protected StatusCode verifyRequest(RootRangeStoreImpl state,
-                                     CreateNamespaceRequest request) {
-    return state.verifyCreateNamespaceRequest(request);
-  }
+    @Override
+    protected StatusCode verifyRequest(RootRangeStoreImpl state,
+                                       CreateNamespaceRequest request) {
+        return state.verifyCreateNamespaceRequest(request);
+    }
 
-  @Override
-  protected CreateNamespaceResponse failRequest(StatusCode code) {
-    return CreateNamespaceResponse.newBuilder()
-      .setCode(code)
-      .build();
-  }
+    @Override
+    protected CreateNamespaceResponse failRequest(StatusCode code) {
+        return CreateNamespaceResponse.newBuilder()
+            .setCode(code)
+            .build();
+    }
 
-  @Override
-  protected CompletableFuture<CreateNamespaceResponse> doProcessRequest(RootRangeStoreImpl state,
-                                                                           CreateNamespaceRequest request) {
-    return state.doProcessCreateNamespaceRequest(request);
-  }
+    @Override
+    protected CompletableFuture<CreateNamespaceResponse> doProcessRequest(RootRangeStoreImpl state,
+                                                                          CreateNamespaceRequest request) {
+        return state.doProcessCreateNamespaceRequest(request);
+    }
 }

@@ -49,118 +49,118 @@ import org.apache.bookkeeper.stream.proto.StreamProperties;
 @Slf4j
 class StorageClientImpl extends AbstractAutoAsyncCloseable implements StorageClient {
 
-  private static final String COMPONENT_NAME = StorageClientImpl.class.getSimpleName();
+    private static final String COMPONENT_NAME = StorageClientImpl.class.getSimpleName();
 
-  private final String namespaceName;
-  private final StorageClientSettings settings;
-  private final ClientResources resources;
-  private final OrderedScheduler scheduler;
+    private final String namespaceName;
+    private final StorageClientSettings settings;
+    private final ClientResources resources;
+    private final OrderedScheduler scheduler;
 
-  // clients
-  private final StorageServerClientManager serverManager;
+    // clients
+    private final StorageServerClientManager serverManager;
 
-  public StorageClientImpl(String namespaceName,
-                           StorageClientSettings settings,
-                           ClientResources resources) {
-    this.namespaceName = namespaceName;
-    this.settings = settings;
-    this.resources = resources;
-    this.serverManager = new StorageServerClientManagerImpl(settings, resources.scheduler());
-    this.scheduler = SharedResourceManager.shared().get(resources.scheduler());
+    public StorageClientImpl(String namespaceName,
+                             StorageClientSettings settings,
+                             ClientResources resources) {
+        this.namespaceName = namespaceName;
+        this.settings = settings;
+        this.resources = resources;
+        this.serverManager = new StorageServerClientManagerImpl(settings, resources.scheduler());
+        this.scheduler = SharedResourceManager.shared().get(resources.scheduler());
 
-  }
+    }
 
-  private CompletableFuture<StreamProperties> getStreamProperties(String streamName) {
-    return this.serverManager.getRootRangeClient().getStream(namespaceName, streamName);
-  }
+    private CompletableFuture<StreamProperties> getStreamProperties(String streamName) {
+        return this.serverManager.getRootRangeClient().getStream(namespaceName, streamName);
+    }
 
-  //
-  // Materialized Views
-  //
+    //
+    // Materialized Views
+    //
 
-  @Override
-  public CompletableFuture<PTable<ByteBuf, ByteBuf>> openPTable(String streamName) {
-    return ExceptionUtils.callAndHandleClosedAsync(
-      COMPONENT_NAME,
-      isClosed(),
-      (future) -> openStreamAsTableImpl(streamName, future));
-  }
+    @Override
+    public CompletableFuture<PTable<ByteBuf, ByteBuf>> openPTable(String streamName) {
+        return ExceptionUtils.callAndHandleClosedAsync(
+            COMPONENT_NAME,
+            isClosed(),
+            (future) -> openStreamAsTableImpl(streamName, future));
+    }
 
-  @Override
-  public CompletableFuture<Table<ByteBuf, ByteBuf>> openTable(String table) {
-    return openPTable(table)
-        .thenApply(pTable -> new ByteBufTableImpl(pTable));
-  }
+    @Override
+    public CompletableFuture<Table<ByteBuf, ByteBuf>> openTable(String table) {
+        return openPTable(table)
+            .thenApply(pTable -> new ByteBufTableImpl(pTable));
+    }
 
-  private void openStreamAsTableImpl(String streamName,
-                                     CompletableFuture<PTable<ByteBuf, ByteBuf>> future) {
-    FutureUtils.proxyTo(
-      getStreamProperties(streamName).thenComposeAsync(props -> {
-        if (log.isInfoEnabled()) {
-          log.info("Retrieved stream properties for stream {} : {}", streamName, props);
-        }
-        return new PByteBufTableImpl(
-          streamName,
-          props,
-          serverManager,
-          scheduler.chooseThread(props.getStreamId())
-        ).initialize();
-      }),
-      future
-    );
-  }
+    private void openStreamAsTableImpl(String streamName,
+                                       CompletableFuture<PTable<ByteBuf, ByteBuf>> future) {
+        FutureUtils.proxyTo(
+            getStreamProperties(streamName).thenComposeAsync(props -> {
+                if (log.isInfoEnabled()) {
+                    log.info("Retrieved stream properties for stream {} : {}", streamName, props);
+                }
+                return new PByteBufTableImpl(
+                    streamName,
+                    props,
+                    serverManager,
+                    scheduler.chooseThread(props.getStreamId())
+                ).initialize();
+            }),
+            future
+        );
+    }
 
-  @Override
-  public CompletableFuture<PTableWriter<ByteBuf, ByteBuf>> openPTableWriter(String table) {
-    return ExceptionUtils.callAndHandleClosedAsync(
-        COMPONENT_NAME,
-        isClosed(),
-        (future) -> openTableWriterImpl(table, future));
-  }
+    @Override
+    public CompletableFuture<PTableWriter<ByteBuf, ByteBuf>> openPTableWriter(String table) {
+        return ExceptionUtils.callAndHandleClosedAsync(
+            COMPONENT_NAME,
+            isClosed(),
+            (future) -> openTableWriterImpl(table, future));
+    }
 
-  @Override
-  public CompletableFuture<TableWriter<ByteBuf, ByteBuf>> openTableWriter(String table) {
-    return openPTableWriter(table)
-        .thenApply(pTableWriter -> new ByteBufTableWriterImpl(pTableWriter));
-  }
+    @Override
+    public CompletableFuture<TableWriter<ByteBuf, ByteBuf>> openTableWriter(String table) {
+        return openPTableWriter(table)
+            .thenApply(pTableWriter -> new ByteBufTableWriterImpl(pTableWriter));
+    }
 
-  private void openTableWriterImpl(String streamName,
-                                   CompletableFuture<PTableWriter<ByteBuf, ByteBuf>> future) {
-    FutureUtils.proxyTo(
-        getStreamProperties(streamName).thenComposeAsync(props -> {
-            log.info("Retrieved stream properties for stream {} : {}", streamName, props);
-          try {
-            return new PByteBufTableWriterImpl(
-                streamName,
-                props,
-                serverManager,
-                scheduler.chooseThread(props.getStreamId())
-            ).initialize();
-          } catch (IOException e) {
-            return FutureUtils.exception(e);
-          }
-        }),
-        future
-    );
-  }
+    private void openTableWriterImpl(String streamName,
+                                     CompletableFuture<PTableWriter<ByteBuf, ByteBuf>> future) {
+        FutureUtils.proxyTo(
+            getStreamProperties(streamName).thenComposeAsync(props -> {
+                log.info("Retrieved stream properties for stream {} : {}", streamName, props);
+                try {
+                    return new PByteBufTableWriterImpl(
+                        streamName,
+                        props,
+                        serverManager,
+                        scheduler.chooseThread(props.getStreamId())
+                    ).initialize();
+                } catch (IOException e) {
+                    return FutureUtils.exception(e);
+                }
+            }),
+            future
+        );
+    }
 
-  //
-  // Closeable API
-  //
+    //
+    // Closeable API
+    //
 
-  @Override
-  protected void closeAsyncOnce(CompletableFuture<Void> closeFuture) {
-    scheduler.submit(() -> {
-      serverManager.close();
-      closeFuture.complete(null);
-      SharedResourceManager.shared().release(resources.scheduler(), scheduler);
-      scheduler.shutdown();
-    });
-  }
+    @Override
+    protected void closeAsyncOnce(CompletableFuture<Void> closeFuture) {
+        scheduler.submit(() -> {
+            serverManager.close();
+            closeFuture.complete(null);
+            SharedResourceManager.shared().release(resources.scheduler(), scheduler);
+            scheduler.shutdown();
+        });
+    }
 
-  @Override
-  public void close() {
-    super.close();
-    scheduler.forceShutdown(100, TimeUnit.MILLISECONDS);
-  }
+    @Override
+    public void close() {
+        super.close();
+        scheduler.forceShutdown(100, TimeUnit.MILLISECONDS);
+    }
 }

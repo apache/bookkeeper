@@ -40,7 +40,7 @@ interface IncrementOpImpl<K, V> extends IncrementOp<K, V> {
 
         @Override
         public IncrementOpImpl<K, V> build() {
-            checkArgument(type() == OpType.INCREMENT, "Invalid type "  + type() + " is configured");
+            checkArgument(type() == OpType.INCREMENT, "Invalid type " + type() + " is configured");
             checkNotNull(key(), "No key is specified");
             return super.build();
         }

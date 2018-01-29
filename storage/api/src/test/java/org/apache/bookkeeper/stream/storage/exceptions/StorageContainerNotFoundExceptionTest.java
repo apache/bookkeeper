@@ -23,10 +23,10 @@ import org.junit.Test;
  */
 public class StorageContainerNotFoundExceptionTest {
 
-  @Test
-  public void testGetMessage() {
-    StorageContainerNotFoundException scnfe = new StorageContainerNotFoundException(1234L);
-    assertEquals("Storage Container 1234 is not found", scnfe.getMessage());
-  }
+    @Test
+    public void testGetMessage() {
+        StorageContainerNotFoundException scnfe = new StorageContainerNotFoundException(1234L);
+        assertEquals("Storage Container 1234 is not found", scnfe.getMessage());
+    }
 
 }

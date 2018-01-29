@@ -23,9 +23,9 @@ package org.apache.bookkeeper.clients.exceptions;
  */
 public class StreamExistsException extends ClientException {
 
-  private static final long serialVersionUID = -5390807609060490398L;
+    private static final long serialVersionUID = -5390807609060490398L;
 
-  public StreamExistsException(String name) {
-    super("Stream '" + name + "' already exists");
-  }
+    public StreamExistsException(String name) {
+        super("Stream '" + name + "' already exists");
+    }
 }

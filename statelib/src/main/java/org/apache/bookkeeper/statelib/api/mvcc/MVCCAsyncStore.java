@@ -49,8 +49,8 @@ import org.apache.bookkeeper.statelib.api.mvcc.result.Result;
 @Evolving
 public interface MVCCAsyncStore<K, V>
     extends AsyncStateStore,
-            MVCCAsyncStoreWriteView<K, V>,
-            MVCCAsyncStoreReadView<K, V> {
+    MVCCAsyncStoreWriteView<K, V>,
+    MVCCAsyncStoreReadView<K, V> {
 
     static <T> CompletableFuture<T> failWithCode(Code code, String msg) {
         return FutureUtils.exception(new MVCCStoreException(code, msg));

@@ -883,7 +883,7 @@ class MVCCStoreImpl<K, V> extends RocksdbKVStore<K, V> implements MVCCStore<K, V
             return put(revision, batch, (PutOp<K, V>) op);
         } else if (op instanceof DeleteOp) {
             return delete(revision, batch, (DeleteOp<K, V>) op, true);
-        } else if (op instanceof RangeOp){
+        } else if (op instanceof RangeOp) {
             return range((RangeOp<K, V>) op);
         } else {
             throw new MVCCStoreException(Code.ILLEGAL_OP, "Unknown operation in a transaction : " + op);

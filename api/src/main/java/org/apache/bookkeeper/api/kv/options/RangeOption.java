@@ -18,14 +18,14 @@ package org.apache.bookkeeper.api.kv.options;
  */
 public interface RangeOption<K> extends Option<K> {
 
-  long limit();
+    long limit();
 
-  long revision();
+    long revision();
 
-  boolean keysOnly();
+    boolean keysOnly();
 
-  boolean countOnly();
+    boolean countOnly();
 
-  K endKey();
+    K endKey();
 
 }

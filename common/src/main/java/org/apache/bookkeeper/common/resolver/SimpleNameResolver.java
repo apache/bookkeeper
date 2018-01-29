@@ -37,8 +37,8 @@ public class SimpleNameResolver extends AbstractNameResolver {
     private final List<EquivalentAddressGroup> servers;
 
     public SimpleNameResolver(String name,
-                       Resource<ExecutorService> executorResource,
-                       List<URI> endpoints) {
+                              Resource<ExecutorService> executorResource,
+                              List<URI> endpoints) {
         super(name, executorResource);
         this.servers = Collections.unmodifiableList(
             endpoints.stream()

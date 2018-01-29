@@ -34,45 +34,46 @@ import org.apache.bookkeeper.stream.storage.api.RangeStore;
 @Accessors(fluent = true)
 public class GrpcServerSpec {
 
-  /**
-   * Get the store supplier for building grpc server.
-   *
-   * @return store supplier for building grpc server.
-   */
-  Supplier<RangeStore> storeSupplier;
+    /**
+     * Get the store supplier for building grpc server.
+     *
+     * @return store supplier for building grpc server.
+     */
+    Supplier<RangeStore> storeSupplier;
 
-  /**
-   * Get the storage server configuration.
-   *
-   * @return storage server configuration.
-   */
-  StorageServerConfiguration storeServerConf;
+    /**
+     * Get the storage server configuration.
+     *
+     * @return storage server configuration.
+     */
+    StorageServerConfiguration storeServerConf;
 
-  /**
-   * Get the grpc endpoint.
-   * @return grpc endpoint.
-   */
-  Endpoint endpoint;
+    /**
+     * Get the grpc endpoint.
+     *
+     * @return grpc endpoint.
+     */
+    Endpoint endpoint;
 
-  /**
-   * Get the stats logger.
-   *
-   * @return stats logger.
-   */
-  StatsLogger statsLogger;
+    /**
+     * Get the stats logger.
+     *
+     * @return stats logger.
+     */
+    StatsLogger statsLogger;
 
-  /**
-   * Get the local server name.
-   *
-   * @return local server name.
-   */
-  String localServerName;
+    /**
+     * Get the local server name.
+     *
+     * @return local server name.
+     */
+    String localServerName;
 
-  /**
-   * Get the local handler registry.
-   *
-   * @return local handler registry.
-   */
-  HandlerRegistry localHandlerRegistry;
+    /**
+     * Get the local handler registry.
+     *
+     * @return local handler registry.
+     */
+    HandlerRegistry localHandlerRegistry;
 
 }

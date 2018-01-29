@@ -27,11 +27,11 @@ import org.apache.bookkeeper.stream.proto.StreamProperties;
 @FunctionalInterface
 public interface TableRangeFactory<K, V> {
 
-  PTable<K, V> openTableRange(StreamProperties streamProps,
-                              RangeProperties rangeProps,
-                              ScheduledExecutorService executor,
-                              OpFactory<K, V> opFactory,
-                              ResultFactory<K, V> resultFactory,
-                              KeyValueFactory<K, V> kvFactory);
+    PTable<K, V> openTableRange(StreamProperties streamProps,
+                                RangeProperties rangeProps,
+                                ScheduledExecutorService executor,
+                                OpFactory<K, V> opFactory,
+                                ResultFactory<K, V> resultFactory,
+                                KeyValueFactory<K, V> kvFactory);
 
 }

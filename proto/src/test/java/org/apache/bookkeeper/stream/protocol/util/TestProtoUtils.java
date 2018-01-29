@@ -48,164 +48,164 @@ import org.junit.rules.TestName;
  */
 public class TestProtoUtils {
 
-  @Rule
-  public final TestName name = new TestName();
+    @Rule
+    public final TestName name = new TestName();
 
-  @Test
-  public void testValidateNamespaceName() {
-    assertTrue(validateNamespaceName("namespace_name"));
-    assertTrue(validateNamespaceName("NamespaceName"));
-    assertTrue(validateNamespaceName("9NamespaceName"));
-    assertFalse(validateNamespaceName("namespace-name"));
-    assertFalse(validateNamespaceName("!namespace_name"));
-  }
+    @Test
+    public void testValidateNamespaceName() {
+        assertTrue(validateNamespaceName("namespace_name"));
+        assertTrue(validateNamespaceName("NamespaceName"));
+        assertTrue(validateNamespaceName("9NamespaceName"));
+        assertFalse(validateNamespaceName("namespace-name"));
+        assertFalse(validateNamespaceName("!namespace_name"));
+    }
 
-  @Test
-  public void testValidateStreamName() {
-    assertTrue(validateStreamName("stream_name"));
-    assertTrue(validateStreamName("StreamName"));
-    assertTrue(validateStreamName("9StreamName"));
-    assertFalse(validateStreamName("stream-name"));
-    assertFalse(validateStreamName("!stream_name"));
-  }
+    @Test
+    public void testValidateStreamName() {
+        assertTrue(validateStreamName("stream_name"));
+        assertTrue(validateStreamName("StreamName"));
+        assertTrue(validateStreamName("9StreamName"));
+        assertFalse(validateStreamName("stream-name"));
+        assertFalse(validateStreamName("!stream_name"));
+    }
 
-  @Test
-  public void testKeyRangeOverlaps1() {
-    assertFalse(keyRangeOverlaps(1000L, 2000L, 3000L, 4000L));
-    assertTrue(keyRangeOverlaps(1000L, 2000L, 1500L, 2500L));
-    assertTrue(keyRangeOverlaps(1000L, 2000L, 1500L, 1800L));
-    assertTrue(keyRangeOverlaps(1000L, 3500L, 3000L, 4000L));
-    assertTrue(keyRangeOverlaps(3200L, 3500L, 3000L, 4000L));
-  }
+    @Test
+    public void testKeyRangeOverlaps1() {
+        assertFalse(keyRangeOverlaps(1000L, 2000L, 3000L, 4000L));
+        assertTrue(keyRangeOverlaps(1000L, 2000L, 1500L, 2500L));
+        assertTrue(keyRangeOverlaps(1000L, 2000L, 1500L, 1800L));
+        assertTrue(keyRangeOverlaps(1000L, 3500L, 3000L, 4000L));
+        assertTrue(keyRangeOverlaps(3200L, 3500L, 3000L, 4000L));
+    }
 
-  @Test
-  public void testKeyRangeOverlaps2() {
-    assertFalse(keyRangeOverlaps(
-      Pair.of(1000L, 2000L),
-      Pair.of(3000L, 4000L)));
-    assertTrue(keyRangeOverlaps(
-      Pair.of(1000L, 2000L),
-      Pair.of(1500L, 2500L)));
-    assertTrue(keyRangeOverlaps(
-      Pair.of(1000L, 2000L),
-      Pair.of(1500L, 1800L)));
-    assertTrue(keyRangeOverlaps(
-      Pair.of(1000L, 3500L),
-      Pair.of(3000L, 4000L)));
-    assertTrue(keyRangeOverlaps(
-      Pair.of(3200L, 3500L),
-      Pair.of(3000L, 4000L)));
-  }
+    @Test
+    public void testKeyRangeOverlaps2() {
+        assertFalse(keyRangeOverlaps(
+            Pair.of(1000L, 2000L),
+            Pair.of(3000L, 4000L)));
+        assertTrue(keyRangeOverlaps(
+            Pair.of(1000L, 2000L),
+            Pair.of(1500L, 2500L)));
+        assertTrue(keyRangeOverlaps(
+            Pair.of(1000L, 2000L),
+            Pair.of(1500L, 1800L)));
+        assertTrue(keyRangeOverlaps(
+            Pair.of(1000L, 3500L),
+            Pair.of(3000L, 4000L)));
+        assertTrue(keyRangeOverlaps(
+            Pair.of(3200L, 3500L),
+            Pair.of(3000L, 4000L)));
+    }
 
-  private static RangeProperties createRangeMeta(long startKey, long endKey) {
-    return RangeProperties.newBuilder()
-      .setStartHashKey(startKey)
-      .setEndHashKey(endKey)
-      .setStorageContainerId(1234L)
-      .setRangeId(1234L)
-      .build();
-  }
+    private static RangeProperties createRangeMeta(long startKey, long endKey) {
+        return RangeProperties.newBuilder()
+            .setStartHashKey(startKey)
+            .setEndHashKey(endKey)
+            .setStorageContainerId(1234L)
+            .setRangeId(1234L)
+            .build();
+    }
 
-  @Test
-  public void testKeyRangeOverlaps3() {
-    assertFalse(keyRangeOverlaps(
-      createRangeMeta(1000L, 2000L),
-      createRangeMeta(3000L, 4000L)));
-    assertTrue(keyRangeOverlaps(
-      createRangeMeta(1000L, 2000L),
-      createRangeMeta(1500L, 2500L)));
-    assertTrue(keyRangeOverlaps(
-      createRangeMeta(1000L, 2000L),
-      createRangeMeta(1500L, 1800L)));
-    assertTrue(keyRangeOverlaps(
-      createRangeMeta(1000L, 3500L),
-      createRangeMeta(3000L, 4000L)));
-    assertTrue(keyRangeOverlaps(
-      createRangeMeta(3200L, 3500L),
-      createRangeMeta(3000L, 4000L)));
-  }
+    @Test
+    public void testKeyRangeOverlaps3() {
+        assertFalse(keyRangeOverlaps(
+            createRangeMeta(1000L, 2000L),
+            createRangeMeta(3000L, 4000L)));
+        assertTrue(keyRangeOverlaps(
+            createRangeMeta(1000L, 2000L),
+            createRangeMeta(1500L, 2500L)));
+        assertTrue(keyRangeOverlaps(
+            createRangeMeta(1000L, 2000L),
+            createRangeMeta(1500L, 1800L)));
+        assertTrue(keyRangeOverlaps(
+            createRangeMeta(1000L, 3500L),
+            createRangeMeta(3000L, 4000L)));
+        assertTrue(keyRangeOverlaps(
+            createRangeMeta(3200L, 3500L),
+            createRangeMeta(3000L, 4000L)));
+    }
 
-  @Test
-  public void testKeyRangeOverlaps4() {
-    assertFalse(keyRangeOverlaps(
-      createRangeMeta(1000L, 2000L),
-      Pair.of(3000L, 4000L)));
-    assertTrue(keyRangeOverlaps(
-      createRangeMeta(1000L, 2000L),
-      Pair.of(1500L, 2500L)));
-    assertTrue(keyRangeOverlaps(
-      createRangeMeta(1000L, 2000L),
-      Pair.of(1500L, 1800L)));
-    assertTrue(keyRangeOverlaps(
-      createRangeMeta(1000L, 3500L),
-      Pair.of(3000L, 4000L)));
-    assertTrue(keyRangeOverlaps(
-      createRangeMeta(3200L, 3500L),
-      Pair.of(3000L, 4000L)));
-  }
+    @Test
+    public void testKeyRangeOverlaps4() {
+        assertFalse(keyRangeOverlaps(
+            createRangeMeta(1000L, 2000L),
+            Pair.of(3000L, 4000L)));
+        assertTrue(keyRangeOverlaps(
+            createRangeMeta(1000L, 2000L),
+            Pair.of(1500L, 2500L)));
+        assertTrue(keyRangeOverlaps(
+            createRangeMeta(1000L, 2000L),
+            Pair.of(1500L, 1800L)));
+        assertTrue(keyRangeOverlaps(
+            createRangeMeta(1000L, 3500L),
+            Pair.of(3000L, 4000L)));
+        assertTrue(keyRangeOverlaps(
+            createRangeMeta(3200L, 3500L),
+            Pair.of(3000L, 4000L)));
+    }
 
-  @Test
-  public void testKeyRangeOverlaps5() {
-    assertFalse(keyRangeOverlaps(
-      Pair.of(1000L, 2000L),
-      createRangeMeta(3000L, 4000L)));
-    assertTrue(keyRangeOverlaps(
-      Pair.of(1000L, 2000L),
-      createRangeMeta(1500L, 2500L)));
-    assertTrue(keyRangeOverlaps(
-      Pair.of(1000L, 2000L),
-      createRangeMeta(1500L, 1800L)));
-    assertTrue(keyRangeOverlaps(
-      Pair.of(1000L, 3500L),
-      createRangeMeta(3000L, 4000L)));
-    assertTrue(keyRangeOverlaps(
-      Pair.of(3200L, 3500L),
-      createRangeMeta(3000L, 4000L)));
-  }
+    @Test
+    public void testKeyRangeOverlaps5() {
+        assertFalse(keyRangeOverlaps(
+            Pair.of(1000L, 2000L),
+            createRangeMeta(3000L, 4000L)));
+        assertTrue(keyRangeOverlaps(
+            Pair.of(1000L, 2000L),
+            createRangeMeta(1500L, 2500L)));
+        assertTrue(keyRangeOverlaps(
+            Pair.of(1000L, 2000L),
+            createRangeMeta(1500L, 1800L)));
+        assertTrue(keyRangeOverlaps(
+            Pair.of(1000L, 3500L),
+            createRangeMeta(3000L, 4000L)));
+        assertTrue(keyRangeOverlaps(
+            Pair.of(3200L, 3500L),
+            createRangeMeta(3000L, 4000L)));
+    }
 
-  @Test
-  public void testIsStreamCreated() {
-    assertFalse(isStreamCreated(LifecycleState.UNINIT));
-    assertFalse(isStreamCreated(LifecycleState.CREATING));
-    assertTrue(isStreamCreated(LifecycleState.CREATED));
-    assertTrue(isStreamCreated(LifecycleState.FENCING));
-    assertTrue(isStreamCreated(LifecycleState.FENCED));
-  }
+    @Test
+    public void testIsStreamCreated() {
+        assertFalse(isStreamCreated(LifecycleState.UNINIT));
+        assertFalse(isStreamCreated(LifecycleState.CREATING));
+        assertTrue(isStreamCreated(LifecycleState.CREATED));
+        assertTrue(isStreamCreated(LifecycleState.FENCING));
+        assertTrue(isStreamCreated(LifecycleState.FENCED));
+    }
 
-  @Test
-  public void testIsStreamWritable() {
-    assertTrue(isStreamWritable(ServingState.WRITABLE));
-    assertFalse(isStreamWritable(ServingState.READONLY));
-  }
+    @Test
+    public void testIsStreamWritable() {
+        assertTrue(isStreamWritable(ServingState.WRITABLE));
+        assertFalse(isStreamWritable(ServingState.READONLY));
+    }
 
-  //
-  // Namespace API
-  //
+    //
+    // Namespace API
+    //
 
-  @Test
-  public void testCreateCreateNamespaceRequest() {
-    NamespaceConfiguration colConf = NamespaceConfiguration.newBuilder()
-      .setDefaultStreamConf(DEFAULT_STREAM_CONF)
-      .build();
-    CreateNamespaceRequest request = createCreateNamespaceRequest(
-      name.getMethodName(),
-      colConf);
-    assertEquals(name.getMethodName(), request.getName());
-    assertEquals(colConf, request.getColConf());
-  }
+    @Test
+    public void testCreateCreateNamespaceRequest() {
+        NamespaceConfiguration colConf = NamespaceConfiguration.newBuilder()
+            .setDefaultStreamConf(DEFAULT_STREAM_CONF)
+            .build();
+        CreateNamespaceRequest request = createCreateNamespaceRequest(
+            name.getMethodName(),
+            colConf);
+        assertEquals(name.getMethodName(), request.getName());
+        assertEquals(colConf, request.getColConf());
+    }
 
-  @Test
-  public void testCreateDeleteNamespaceRequest() {
-    DeleteNamespaceRequest request = createDeleteNamespaceRequest(
-      name.getMethodName());
-    assertEquals(name.getMethodName(), request.getName());
-  }
+    @Test
+    public void testCreateDeleteNamespaceRequest() {
+        DeleteNamespaceRequest request = createDeleteNamespaceRequest(
+            name.getMethodName());
+        assertEquals(name.getMethodName(), request.getName());
+    }
 
-  @Test
-  public void testCreateGetNamespaceRequest() {
-    GetNamespaceRequest request = createGetNamespaceRequest(
-      name.getMethodName());
-    assertEquals(name.getMethodName(), request.getName());
-  }
+    @Test
+    public void testCreateGetNamespaceRequest() {
+        GetNamespaceRequest request = createGetNamespaceRequest(
+            name.getMethodName());
+        assertEquals(name.getMethodName(), request.getName());
+    }
 
 }

@@ -29,30 +29,30 @@ import org.junit.Test;
  */
 public class TestStreamRange {
 
-  @Test
-  public void testConstructor() {
-    RangeId sr = RangeId.of(1234L, 5678L);
-    assertEquals(1234L, sr.getStreamId());
-    assertEquals(5678L, sr.getRangeId());
-  }
+    @Test
+    public void testConstructor() {
+        RangeId sr = RangeId.of(1234L, 5678L);
+        assertEquals(1234L, sr.getStreamId());
+        assertEquals(5678L, sr.getRangeId());
+    }
 
-  @Test
-  public void testEqual() {
-    RangeId sr1 = RangeId.of(1234L, 5678L);
-    RangeId sr2 = RangeId.of(1234L, 5678L);
-    RangeId sr3 = RangeId.of(1234L, 5679L);
-    RangeId sr4 = RangeId.of(1235L, 5679L);
+    @Test
+    public void testEqual() {
+        RangeId sr1 = RangeId.of(1234L, 5678L);
+        RangeId sr2 = RangeId.of(1234L, 5678L);
+        RangeId sr3 = RangeId.of(1234L, 5679L);
+        RangeId sr4 = RangeId.of(1235L, 5679L);
 
-    assertTrue(sr1.equals(sr2));
-    assertFalse(sr1.equals(sr3));
-    assertFalse(sr1.equals(sr4));
-    assertFalse(sr3.equals(sr4));
-  }
+        assertTrue(sr1.equals(sr2));
+        assertFalse(sr1.equals(sr3));
+        assertFalse(sr1.equals(sr4));
+        assertFalse(sr3.equals(sr4));
+    }
 
-  @Test
-  public void testToString() {
-    RangeId sr = RangeId.of(1234L, 5678L);
-    assertEquals("range(1234, 5678)", sr.toString());
-  }
+    @Test
+    public void testToString() {
+        RangeId sr = RangeId.of(1234L, 5678L);
+        assertEquals("range(1234, 5678)", sr.toString());
+    }
 
 }

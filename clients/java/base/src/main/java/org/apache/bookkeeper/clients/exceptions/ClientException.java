@@ -23,17 +23,17 @@ package org.apache.bookkeeper.clients.exceptions;
  */
 public class ClientException extends Exception {
 
-  private static final long serialVersionUID = -6847254537510944300L;
+    private static final long serialVersionUID = -6847254537510944300L;
 
-  public ClientException(String message) {
-    super(message);
-  }
+    public ClientException(String message) {
+        super(message);
+    }
 
-  public ClientException(String message, Throwable cause) {
-    super(message, cause);
-  }
+    public ClientException(String message, Throwable cause) {
+        super(message, cause);
+    }
 
-  public ClientException(Throwable cause) {
-    super(cause);
-  }
+    public ClientException(Throwable cause) {
+        super(cause);
+    }
 }

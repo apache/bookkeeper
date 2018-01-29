@@ -27,32 +27,32 @@ import org.apache.bookkeeper.stream.storage.impl.store.MVCCStoreFactory;
  */
 public class DefaultStorageContainerFactory implements StorageContainerFactory {
 
-  private final StorageConfiguration storageConf;
-  private final StorageContainerPlacementPolicy rangePlacementPolicy;
-  private final OrderedScheduler scheduler;
-  private final MVCCStoreFactory storeFactory;
-  private final URI defaultBackendUri;
+    private final StorageConfiguration storageConf;
+    private final StorageContainerPlacementPolicy rangePlacementPolicy;
+    private final OrderedScheduler scheduler;
+    private final MVCCStoreFactory storeFactory;
+    private final URI defaultBackendUri;
 
-  public DefaultStorageContainerFactory(StorageConfiguration storageConf,
-                                        StorageContainerPlacementPolicy rangePlacementPolicy,
-                                        OrderedScheduler scheduler,
-                                        MVCCStoreFactory storeFactory,
-                                        URI defaultBackendUri) {
-    this.storageConf = storageConf;
-    this.rangePlacementPolicy = rangePlacementPolicy;
-    this.scheduler = scheduler;
-    this.storeFactory = storeFactory;
-    this.defaultBackendUri = defaultBackendUri;
-  }
+    public DefaultStorageContainerFactory(StorageConfiguration storageConf,
+                                          StorageContainerPlacementPolicy rangePlacementPolicy,
+                                          OrderedScheduler scheduler,
+                                          MVCCStoreFactory storeFactory,
+                                          URI defaultBackendUri) {
+        this.storageConf = storageConf;
+        this.rangePlacementPolicy = rangePlacementPolicy;
+        this.scheduler = scheduler;
+        this.storeFactory = storeFactory;
+        this.defaultBackendUri = defaultBackendUri;
+    }
 
-  @Override
-  public StorageContainer createStorageContainer(long scId) {
-    return new StorageContainerImpl(
-      storageConf,
-      scId,
-      rangePlacementPolicy,
-      scheduler,
-      storeFactory,
-      defaultBackendUri);
-  }
+    @Override
+    public StorageContainer createStorageContainer(long scId) {
+        return new StorageContainerImpl(
+            storageConf,
+            scId,
+            rangePlacementPolicy,
+            scheduler,
+            storeFactory,
+            defaultBackendUri);
+    }
 }

@@ -20,9 +20,9 @@ package org.apache.bookkeeper.stream.storage.exceptions;
  */
 public class StorageContainerNotFoundException extends StorageException {
 
-  private static final long serialVersionUID = -1886110936055603724L;
+    private static final long serialVersionUID = -1886110936055603724L;
 
-  public StorageContainerNotFoundException(long scId) {
-    super("Storage Container " + scId + " is not found");
-  }
+    public StorageContainerNotFoundException(long scId) {
+        super("Storage Container " + scId + " is not found");
+    }
 }

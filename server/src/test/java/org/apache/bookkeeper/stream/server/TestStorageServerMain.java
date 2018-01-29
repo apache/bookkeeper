@@ -24,18 +24,18 @@ import org.junit.Test;
  */
 public class TestStorageServerMain {
 
-  @Test
-  public void testHelp() {
-    assertEquals(
-      ExitCode.INVALID_CONF.code(),
-      StorageServer.doMain(new String[] { "-h" }));
-  }
+    @Test
+    public void testHelp() {
+        assertEquals(
+            ExitCode.INVALID_CONF.code(),
+            StorageServer.doMain(new String[]{"-h"}));
+    }
 
-  @Test(expected = ParameterException.class)
-  public void testIllegalPort() {
-    assertEquals(
-      ExitCode.INVALID_CONF.code(),
-      StorageServer.doMain(new String[] { "-p", "abcd"}));
-  }
+    @Test(expected = ParameterException.class)
+    public void testIllegalPort() {
+        assertEquals(
+            ExitCode.INVALID_CONF.code(),
+            StorageServer.doMain(new String[]{"-p", "abcd"}));
+    }
 
 }

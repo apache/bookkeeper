@@ -39,26 +39,26 @@ import org.mockito.Mockito;
  */
 public class TestDefaultStorageContainerFactory {
 
-  @Test
-  public void testCreate() throws Exception {
-    OrderedScheduler scheduler = mock(OrderedScheduler.class);
-    OrderedScheduler snapshotScheduler = mock(OrderedScheduler.class);
-    MVCCStoreFactory storeFactory = mock(MVCCStoreFactory.class);
-    ListeningScheduledExecutorService snapshotExecutor = mock(ListeningScheduledExecutorService.class);
-    when(snapshotScheduler.chooseThread(anyLong())).thenReturn(snapshotExecutor);
-    Mockito.doReturn(mock(ListenableScheduledFuture.class))
-      .when(snapshotExecutor).scheduleWithFixedDelay(
-      any(Runnable.class), anyInt(), anyInt(), any(TimeUnit.class));
+    @Test
+    public void testCreate() throws Exception {
+        OrderedScheduler scheduler = mock(OrderedScheduler.class);
+        OrderedScheduler snapshotScheduler = mock(OrderedScheduler.class);
+        MVCCStoreFactory storeFactory = mock(MVCCStoreFactory.class);
+        ListeningScheduledExecutorService snapshotExecutor = mock(ListeningScheduledExecutorService.class);
+        when(snapshotScheduler.chooseThread(anyLong())).thenReturn(snapshotExecutor);
+        Mockito.doReturn(mock(ListenableScheduledFuture.class))
+            .when(snapshotExecutor).scheduleWithFixedDelay(
+            any(Runnable.class), anyInt(), anyInt(), any(TimeUnit.class));
 
 
-    DefaultStorageContainerFactory factory = new DefaultStorageContainerFactory(
-      new StorageConfiguration(new CompositeConfiguration()),
-      (streamId, rangeId) -> streamId,
-      scheduler,
-      storeFactory,
-      URI.create("distributedlog://127.0.0.1/stream/storage"));
-    StorageContainer sc = factory.createStorageContainer(1234L);
-    assertTrue(sc instanceof StorageContainerImpl);
-    assertEquals(1234L, sc.getId());
-  }
+        DefaultStorageContainerFactory factory = new DefaultStorageContainerFactory(
+            new StorageConfiguration(new CompositeConfiguration()),
+            (streamId, rangeId) -> streamId,
+            scheduler,
+            storeFactory,
+            URI.create("distributedlog://127.0.0.1/stream/storage"));
+        StorageContainer sc = factory.createStorageContainer(1234L);
+        assertTrue(sc instanceof StorageContainerImpl);
+        assertEquals(1234L, sc.getId());
+    }
 }

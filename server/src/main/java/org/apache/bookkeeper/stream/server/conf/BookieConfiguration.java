@@ -21,13 +21,13 @@ import org.apache.commons.configuration.CompositeConfiguration;
  */
 public class BookieConfiguration extends ComponentConfiguration {
 
-  private static final String COMPONENT_PREFIX = "bookie" + DELIMITER;
+    private static final String COMPONENT_PREFIX = "bookie" + DELIMITER;
 
-  public static BookieConfiguration of(CompositeConfiguration conf) {
-    return new BookieConfiguration(conf);
-  }
+    public static BookieConfiguration of(CompositeConfiguration conf) {
+        return new BookieConfiguration(conf);
+    }
 
-  protected BookieConfiguration(CompositeConfiguration conf) {
-    super(conf, COMPONENT_PREFIX);
-  }
+    protected BookieConfiguration(CompositeConfiguration conf) {
+        super(conf, COMPONENT_PREFIX);
+    }
 }

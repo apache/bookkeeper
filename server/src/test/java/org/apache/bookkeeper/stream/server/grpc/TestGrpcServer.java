@@ -33,37 +33,37 @@ import org.junit.rules.TestName;
  */
 public class TestGrpcServer {
 
-  @Rule
-  public TestName name = new TestName();
+    @Rule
+    public TestName name = new TestName();
 
-  private final CompositeConfiguration compConf = new CompositeConfiguration();
+    private final CompositeConfiguration compConf = new CompositeConfiguration();
 
-  @Test
-  public void testCreateLocalServer() {
-    GrpcServer server = new GrpcServer(
-      mock(RangeStoreImpl.class),
-      StorageServerConfiguration.of(compConf),
-      null,
-      name.getMethodName(),
-      new MutableHandlerRegistry(),
-      NullStatsLogger.INSTANCE);
-    server.start();
-    assertEquals(-1, server.getGrpcServer().getPort());
-    server.close();
-  }
+    @Test
+    public void testCreateLocalServer() {
+        GrpcServer server = new GrpcServer(
+            mock(RangeStoreImpl.class),
+            StorageServerConfiguration.of(compConf),
+            null,
+            name.getMethodName(),
+            new MutableHandlerRegistry(),
+            NullStatsLogger.INSTANCE);
+        server.start();
+        assertEquals(-1, server.getGrpcServer().getPort());
+        server.close();
+    }
 
-  @Test
-  public void testCreateBindServer() throws Exception {
-    GrpcServer server = new GrpcServer(
-      mock(RangeStoreImpl.class),
-      StorageServerConfiguration.of(compConf),
-      StorageServer.createLocalEndpoint(0, false),
-      null,
-      null,
-      NullStatsLogger.INSTANCE);
-    server.start();
-    assertTrue(server.getGrpcServer().getPort() > 0);
-    server.close();
-  }
+    @Test
+    public void testCreateBindServer() throws Exception {
+        GrpcServer server = new GrpcServer(
+            mock(RangeStoreImpl.class),
+            StorageServerConfiguration.of(compConf),
+            StorageServer.createLocalEndpoint(0, false),
+            null,
+            null,
+            NullStatsLogger.INSTANCE);
+        server.start();
+        assertTrue(server.getGrpcServer().getPort() > 0);
+        server.close();
+    }
 
 }

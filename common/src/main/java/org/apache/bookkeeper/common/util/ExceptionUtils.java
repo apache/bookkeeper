@@ -30,46 +30,47 @@ import org.apache.bookkeeper.common.exceptions.ObjectClosedException;
  */
 public final class ExceptionUtils {
 
-  private ExceptionUtils() {}
-
-  /**
-   * Execute the callable {@code callable}.
-   *
-   * <p>If the object {@code componentName} is already closed ({@code isClosed}), it will be
-   * failed immediately without calling {@code callable}.
-   *
-   * @param componentName the component name
-   * @param isClosed predicate to check whether the component is closed or not.
-   * @param callable the callable to execute
-   * @param <T> result type
-   * @return the future represents the result.
-   */
-  public static <T>CompletableFuture<T> callAndHandleClosedAsync(String componentName,
-                                                                 boolean isClosed,
-                                                                 CompletableRunnable<T> callable) {
-    CompletableFuture<T> future = FutureUtils.createFuture();
-    if (isClosed) {
-      future.completeExceptionally(new ObjectClosedException(componentName));
-    } else {
-      callable.run(future);
+    private ExceptionUtils() {
     }
-    return future;
-  }
 
-  /**
-   * Convert a {@link Throwable} to an {@link IOException}.
-   *
-   * @param cause reason to fail
-   * @return a converted {@link IOException}.
-   */
-  public static IOException toIOException(Throwable cause) {
-    if (cause instanceof IOException) {
-      return (IOException) cause;
-    } else if (cause instanceof ExecutionException || cause instanceof CompletionException) {
-      return toIOException(cause.getCause());
-    } else {
-      return new IOException(cause);
+    /**
+     * Execute the callable {@code callable}.
+     *
+     * <p>If the object {@code componentName} is already closed ({@code isClosed}), it will be
+     * failed immediately without calling {@code callable}.
+     *
+     * @param componentName the component name
+     * @param isClosed      predicate to check whether the component is closed or not.
+     * @param callable      the callable to execute
+     * @param <T>           result type
+     * @return the future represents the result.
+     */
+    public static <T> CompletableFuture<T> callAndHandleClosedAsync(String componentName,
+                                                                    boolean isClosed,
+                                                                    CompletableRunnable<T> callable) {
+        CompletableFuture<T> future = FutureUtils.createFuture();
+        if (isClosed) {
+            future.completeExceptionally(new ObjectClosedException(componentName));
+        } else {
+            callable.run(future);
+        }
+        return future;
     }
-  }
+
+    /**
+     * Convert a {@link Throwable} to an {@link IOException}.
+     *
+     * @param cause reason to fail
+     * @return a converted {@link IOException}.
+     */
+    public static IOException toIOException(Throwable cause) {
+        if (cause instanceof IOException) {
+            return (IOException) cause;
+        } else if (cause instanceof ExecutionException || cause instanceof CompletionException) {
+            return toIOException(cause.getCause());
+        } else {
+            return new IOException(cause);
+        }
+    }
 
 }

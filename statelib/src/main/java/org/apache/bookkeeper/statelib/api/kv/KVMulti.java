@@ -31,7 +31,7 @@ public interface KVMulti<K, V> {
     /**
      * Update the value associated with the provided key.
      *
-     * @param key the key to update
+     * @param key   the key to update
      * @param value the new value to associate with the key.
      */
     void put(K key, V value);
@@ -47,7 +47,7 @@ public interface KVMulti<K, V> {
      * Delete the range from <code>key</code> to <code>value</code>.
      *
      * @param from the begin key to delete (inclusive)
-     * @param to the end key to delete (exclusive)
+     * @param to   the end key to delete (exclusive)
      */
     void deleteRange(K from, K to);
 

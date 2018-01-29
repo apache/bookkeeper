@@ -31,70 +31,70 @@ import org.apache.bookkeeper.stream.proto.StreamProperties;
  */
 public interface RootRangeClient {
 
-  /**
-   * Create a namespace.
-   *
-   * @param namespace namespace
-   * @param colConf namespace configuration
-   * @return a future represents the result of creation.
-   */
-  CompletableFuture<NamespaceProperties> createNamespace(String namespace,
+    /**
+     * Create a namespace.
+     *
+     * @param namespace namespace
+     * @param colConf   namespace configuration
+     * @return a future represents the result of creation.
+     */
+    CompletableFuture<NamespaceProperties> createNamespace(String namespace,
                                                            NamespaceConfiguration colConf);
 
-  /**
-   * Delete a namespace.
-   *
-   * @param namespace namespace.
-   * @return a future represents the result of deletion.
-   */
-  CompletableFuture<Boolean> deleteNamespace(String namespace);
+    /**
+     * Delete a namespace.
+     *
+     * @param namespace namespace.
+     * @return a future represents the result of deletion.
+     */
+    CompletableFuture<Boolean> deleteNamespace(String namespace);
 
-  /**
-   * Get the namespace properties of the provided {@code namespace}.
-   *
-   * @param namespace namespace name
-   * @return a future represents namespace properties.
-   */
-  CompletableFuture<NamespaceProperties> getNamespace(String namespace);
+    /**
+     * Get the namespace properties of the provided {@code namespace}.
+     *
+     * @param namespace namespace name
+     * @return a future represents namespace properties.
+     */
+    CompletableFuture<NamespaceProperties> getNamespace(String namespace);
 
-  /**
-   * Create a stream.
-   *
-   * @param colName namespace name
-   * @param streamName stream name
-   * @param streamConf stream configuration
-   * @return response of creating a stream.
-   */
-  CompletableFuture<StreamProperties> createStream(String colName,
-                                                   String streamName,
-                                                   StreamConfiguration streamConf);
+    /**
+     * Create a stream.
+     *
+     * @param colName    namespace name
+     * @param streamName stream name
+     * @param streamConf stream configuration
+     * @return response of creating a stream.
+     */
+    CompletableFuture<StreamProperties> createStream(String colName,
+                                                     String streamName,
+                                                     StreamConfiguration streamConf);
 
-  /**
-   * Delete the stream {@code streamName}.
-   *
-   * @param colName namespace name
-   * @param streamName stream name
-   * @return a future represents the metadata of a stream.
-   */
-  CompletableFuture<Boolean> deleteStream(String colName,
-                                          String streamName);
+    /**
+     * Delete the stream {@code streamName}.
+     *
+     * @param colName    namespace name
+     * @param streamName stream name
+     * @return a future represents the metadata of a stream.
+     */
+    CompletableFuture<Boolean> deleteStream(String colName,
+                                            String streamName);
 
-  /**
-   * Get the stream metadata of a given stream {@code streamName}.
-   *
-   * @param colName namespace name
-   * @param streamName stream name
-   * @return a future represents the metadata of a stream.
-   */
-  CompletableFuture<StreamProperties> getStream(String colName,
-                                                String streamName);
+    /**
+     * Get the stream metadata of a given stream {@code streamName}.
+     *
+     * @param colName    namespace name
+     * @param streamName stream name
+     * @return a future represents the metadata of a stream.
+     */
+    CompletableFuture<StreamProperties> getStream(String colName,
+                                                  String streamName);
 
-  /**
-   * Get the stream metadata of a given stream identified by {@code streamId}.
-   *
-   * @param streamId stream id
-   * @return a future represents the metadata of a stream.
-   */
-  CompletableFuture<StreamProperties> getStream(long streamId);
+    /**
+     * Get the stream metadata of a given stream identified by {@code streamId}.
+     *
+     * @param streamId stream id
+     * @return a future represents the metadata of a stream.
+     */
+    CompletableFuture<StreamProperties> getStream(long streamId);
 
 }

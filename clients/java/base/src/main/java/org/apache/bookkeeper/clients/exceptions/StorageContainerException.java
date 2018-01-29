@@ -21,22 +21,22 @@ import org.apache.bookkeeper.stream.proto.storage.StatusCode;
  */
 public class StorageContainerException extends ClientException {
 
-  private static final long serialVersionUID = 8941947758993722207L;
+    private static final long serialVersionUID = 8941947758993722207L;
 
-  private final StatusCode code;
+    private final StatusCode code;
 
-  public StorageContainerException(StatusCode code, String message) {
-    super("StorageContainerError : StatusCode = " + code + ", Error = " + message);
-    this.code = code;
-  }
+    public StorageContainerException(StatusCode code, String message) {
+        super("StorageContainerError : StatusCode = " + code + ", Error = " + message);
+        this.code = code;
+    }
 
-  /**
-   * Return the server response code that indicate the error on server side.
-   *
-   * @return status code
-   */
-  public StatusCode getCode() {
-    return code;
-  }
+    /**
+     * Return the server response code that indicate the error on server side.
+     *
+     * @return status code
+     */
+    public StatusCode getCode() {
+        return code;
+    }
 
 }

@@ -33,29 +33,29 @@ import org.junit.Test;
  */
 public class TestStorageClientSettings {
 
-  @Test
-  public void testDefault() {
-    List<Endpoint> endpoints = Lists.newArrayList(
-      Endpoint.newBuilder()
-        .setHostname("127.0.0.1")
-        .setPort(80)
-        .build());
-    StorageClientSettings settings = StorageClientSettings.newBuilder()
-      .addAllEndpoints(endpoints)
-      .build();
-    assertEquals(Runtime.getRuntime().availableProcessors(), settings.numWorkerThreads());
-    assertTrue(settings.usePlaintext());
-    assertFalse(settings.clientName().isPresent());
-  }
-
-  @Test
-  public void testEmptyBuilder() {
-    try {
-      StorageClientSettings.newBuilder().build();
-      fail("Should fail with missing endpoints");
-    } catch (IllegalArgumentException iae) {
-      assertEquals("No name resolver or endpoints or channel builder provided", iae.getMessage());
+    @Test
+    public void testDefault() {
+        List<Endpoint> endpoints = Lists.newArrayList(
+            Endpoint.newBuilder()
+                .setHostname("127.0.0.1")
+                .setPort(80)
+                .build());
+        StorageClientSettings settings = StorageClientSettings.newBuilder()
+            .addAllEndpoints(endpoints)
+            .build();
+        assertEquals(Runtime.getRuntime().availableProcessors(), settings.numWorkerThreads());
+        assertTrue(settings.usePlaintext());
+        assertFalse(settings.clientName().isPresent());
     }
-  }
+
+    @Test
+    public void testEmptyBuilder() {
+        try {
+            StorageClientSettings.newBuilder().build();
+            fail("Should fail with missing endpoints");
+        } catch (IllegalArgumentException iae) {
+            assertEquals("No name resolver or endpoints or channel builder provided", iae.getMessage());
+        }
+    }
 
 }

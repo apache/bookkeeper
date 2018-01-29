@@ -31,8 +31,8 @@ import org.apache.bookkeeper.statelib.api.mvcc.result.RangeResult;
  */
 @Setter
 public class RangeResultImpl<K, V>
-        extends ResultImpl<K, V, RangeResultImpl<K, V>>
-        implements RangeResult<K, V> {
+    extends ResultImpl<K, V, RangeResultImpl<K, V>>
+    implements RangeResult<K, V> {
 
     private List<KVRecord<K, V>> kvs = Collections.emptyList();
     private long count = 0L;

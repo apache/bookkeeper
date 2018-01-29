@@ -30,64 +30,64 @@ import org.apache.bookkeeper.common.util.OrderedScheduler;
  */
 public class StorageContainerChannelManager implements AutoCloseable {
 
-  private final StorageContainerChannelFactory factory;
-  private final ConcurrentMap<Long, StorageContainerChannel> scChannels;
+    private final StorageContainerChannelFactory factory;
+    private final ConcurrentMap<Long, StorageContainerChannel> scChannels;
 
-  public StorageContainerChannelManager(StorageServerChannelManager channelManager,
-                                  LocationClient locationClient,
-                                  OrderedScheduler scheduler) {
-    this((scId) -> new StorageContainerChannel(
-      scId,
-      channelManager,
-      locationClient,
-      scheduler.chooseThread(scId)));
-  }
-
-  @VisibleForTesting
-  StorageContainerChannelManager(StorageContainerChannelFactory factory) {
-    this.factory = factory;
-    this.scChannels = Maps.newConcurrentMap();
-  }
-
-  @VisibleForTesting
-  int getNumChannels() {
-    return scChannels.size();
-  }
-
-  /**
-   * Retrieve the storage container channel for storage container {@code scId}.
-   *
-   * <p>This call will create the storage container channel if it doesn't exist before.
-   *
-   * @param scId storage container id.
-   * @return storage container channel.
-   */
-  public StorageContainerChannel getOrCreate(long scId) {
-    StorageContainerChannel scChannel = scChannels.get(scId);
-    if (null == scChannel) {
-      StorageContainerChannel newChannel = factory.createStorageContainerChannel(scId);
-      StorageContainerChannel oldChannel = scChannels.putIfAbsent(scId, newChannel);
-      if (null == oldChannel) {
-        scChannel = newChannel;
-      } else {
-        scChannel = oldChannel;
-      }
+    public StorageContainerChannelManager(StorageServerChannelManager channelManager,
+                                          LocationClient locationClient,
+                                          OrderedScheduler scheduler) {
+        this((scId) -> new StorageContainerChannel(
+            scId,
+            channelManager,
+            locationClient,
+            scheduler.chooseThread(scId)));
     }
-    return scChannel;
-  }
 
-  /**
-   * Remove the storage container channel from the channels map.
-   *
-   * @param scId storage container channel id.
-   * @return the removed storage container channel.
-   */
-  public StorageContainerChannel remove(long scId) {
-    return scChannels.remove(scId);
-  }
+    @VisibleForTesting
+    StorageContainerChannelManager(StorageContainerChannelFactory factory) {
+        this.factory = factory;
+        this.scChannels = Maps.newConcurrentMap();
+    }
 
-  @Override
-  public void close() throws Exception {
-    scChannels.clear();
-  }
+    @VisibleForTesting
+    int getNumChannels() {
+        return scChannels.size();
+    }
+
+    /**
+     * Retrieve the storage container channel for storage container {@code scId}.
+     *
+     * <p>This call will create the storage container channel if it doesn't exist before.
+     *
+     * @param scId storage container id.
+     * @return storage container channel.
+     */
+    public StorageContainerChannel getOrCreate(long scId) {
+        StorageContainerChannel scChannel = scChannels.get(scId);
+        if (null == scChannel) {
+            StorageContainerChannel newChannel = factory.createStorageContainerChannel(scId);
+            StorageContainerChannel oldChannel = scChannels.putIfAbsent(scId, newChannel);
+            if (null == oldChannel) {
+                scChannel = newChannel;
+            } else {
+                scChannel = oldChannel;
+            }
+        }
+        return scChannel;
+    }
+
+    /**
+     * Remove the storage container channel from the channels map.
+     *
+     * @param scId storage container channel id.
+     * @return the removed storage container channel.
+     */
+    public StorageContainerChannel remove(long scId) {
+        return scChannels.remove(scId);
+    }
+
+    @Override
+    public void close() throws Exception {
+        scChannels.clear();
+    }
 }

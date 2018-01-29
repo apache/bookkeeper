@@ -61,7 +61,7 @@ public interface RangeOpImpl<K, V> extends RangeOp<K, V>, Predicate<MVCCRecord> 
 
         @Override
         public RangeOpImpl<K, V> build() {
-            checkArgument(type() == OpType.RANGE, "Invalid type "  + type() + " is configured");
+            checkArgument(type() == OpType.RANGE, "Invalid type " + type() + " is configured");
             checkArgument(isRangeOp() || (!isRangeOp() && key().isPresent()),
                 "No key is provided from a single get operation");
             return super.build();

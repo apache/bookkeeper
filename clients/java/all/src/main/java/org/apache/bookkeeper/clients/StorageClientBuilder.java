@@ -33,74 +33,75 @@ import org.apache.bookkeeper.clients.utils.ClientResources;
  */
 public class StorageClientBuilder implements Supplier<StorageClient> {
 
-  private StorageClientSettings settings = null;
-  private String namespaceName = null;
+    private StorageClientSettings settings = null;
+    private String namespaceName = null;
 
-  /**
-   * Create a builder to build {@link StorageClient} clients.
-   *
-   * @return StorageClient builder
-   */
-  public static StorageClientBuilder newBuilder() {
-    return new StorageClientBuilder();
-  }
+    /**
+     * Create a builder to build {@link StorageClient} clients.
+     *
+     * @return StorageClient builder
+     */
+    public static StorageClientBuilder newBuilder() {
+        return new StorageClientBuilder();
+    }
 
-  private StorageClientBuilder() {}
+    private StorageClientBuilder() {
+    }
 
-  /**
-   * Configure the client with {@link StorageClientSettings}.
-   *
-   * @param settings stream withSettings
-   * @return stream client builder
-   */
-  public StorageClientBuilder withSettings(StorageClientSettings settings) {
-    this.settings = settings;
-    return this;
-  }
+    /**
+     * Configure the client with {@link StorageClientSettings}.
+     *
+     * @param settings stream withSettings
+     * @return stream client builder
+     */
+    public StorageClientBuilder withSettings(StorageClientSettings settings) {
+        this.settings = settings;
+        return this;
+    }
 
-  /**
-   * Configure the namespace that the client will interact with.
-   *
-   * <p>The namespace name will be used for building the stream client for interacting with streams
-   * within the namespace.
-   *
-   * @param colName colletion name
-   * @return stream client builder.
-   * @see #build()
-   */
-  public StorageClientBuilder withNamespace(String colName) {
-    this.namespaceName = colName;
-    return this;
-  }
+    /**
+     * Configure the namespace that the client will interact with.
+     *
+     * <p>The namespace name will be used for building the stream client for interacting with streams
+     * within the namespace.
+     *
+     * @param colName colletion name
+     * @return stream client builder.
+     * @see #build()
+     */
+    public StorageClientBuilder withNamespace(String colName) {
+        this.namespaceName = colName;
+        return this;
+    }
 
-  /**
-   * Build a {@link StorageClient} client.
-   *
-   * @return a {@link StorageClient} client.
-   */
-  public StorageClient build() {
-    checkNotNull(settings, "Stream settings is null");
-    checkArgument(validateNamespaceName(namespaceName), "Namespace name '" + namespaceName + "'is invalid");
+    /**
+     * Build a {@link StorageClient} client.
+     *
+     * @return a {@link StorageClient} client.
+     */
+    public StorageClient build() {
+        checkNotNull(settings, "Stream settings is null");
+        checkArgument(validateNamespaceName(namespaceName), "Namespace name '" + namespaceName + "'is invalid");
 
-    return new StorageClientImpl(
-      namespaceName,
-      settings,
-      ClientResources.create());
-  }
+        return new StorageClientImpl(
+            namespaceName,
+            settings,
+            ClientResources.create());
+    }
 
-  /**
-   * Build a {@link StorageAdminClient} client.
-   *
-   * @return a {@link StorageAdminClient} client.
-   */
-  public StorageAdminClient buildAdmin() {
-    checkNotNull(settings, "Storage client settings is null");
+    /**
+     * Build a {@link StorageAdminClient} client.
+     *
+     * @return a {@link StorageAdminClient} client.
+     */
+    public StorageAdminClient buildAdmin() {
+        checkNotNull(settings, "Storage client settings is null");
 
-    return new StorageAdminClientImpl(settings);
-  }
+        return new StorageAdminClientImpl(settings);
+    }
 
-  @Override
-  public StorageClient get() {
-    return build();
-  }
+    @Override
+    public StorageClient get() {
+        return build();
+    }
 }

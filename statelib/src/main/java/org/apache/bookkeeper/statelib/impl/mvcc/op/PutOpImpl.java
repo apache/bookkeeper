@@ -42,7 +42,7 @@ interface PutOpImpl<K, V> extends PutOp<K, V> {
 
         @Override
         public PutOpImpl<K, V> build() {
-            checkArgument(type() == OpType.PUT, "Invalid type "  + type() + " is configured");
+            checkArgument(type() == OpType.PUT, "Invalid type " + type() + " is configured");
             checkNotNull(key(), "No key is specified");
             return super.build();
         }

@@ -52,190 +52,190 @@ import org.apache.commons.configuration.PropertiesConfiguration;
 @Slf4j
 public class StorageServer {
 
-  private static class ServerArguments {
+    private static class ServerArguments {
 
-    @Parameter(names = { "-c", "--conf" }, description = "Configuration file for storage server")
-    private String serverConfigFile;
+        @Parameter(names = {"-c", "--conf"}, description = "Configuration file for storage server")
+        private String serverConfigFile;
 
-    @Parameter(names = { "-p", "--port" }, description = "Port to listen on for gPRC server")
-    private int port = 3182;
+        @Parameter(names = {"-p", "--port"}, description = "Port to listen on for gPRC server")
+        private int port = 3182;
 
-    @Parameter(names = { "-h", "--help" }, description = "Show this help message")
-    private boolean help = false;
+        @Parameter(names = {"-h", "--help"}, description = "Show this help message")
+        private boolean help = false;
 
-  }
-
-  private static void loadConfFile(CompositeConfiguration conf, String confFile)
-    throws IllegalArgumentException {
-    try {
-      Configuration loadedConf = new PropertiesConfiguration(
-        new File(confFile).toURI().toURL());
-      conf.addConfiguration(loadedConf);
-    } catch (MalformedURLException e) {
-      log.error("Could not open configuration file {}", confFile, e);
-      throw new IllegalArgumentException("Could not open configuration file " + confFile, e);
-    } catch (ConfigurationException e) {
-      log.error("Malformed configuration file {}", confFile, e);
-      throw new IllegalArgumentException("Malformed configuration file " + confFile, e);
-    }
-    log.info("Loaded configuration file {}", confFile);
-  }
-
-  public static Endpoint createLocalEndpoint(int port, boolean useHostname) throws UnknownHostException {
-    String hostname;
-    if (useHostname) {
-      hostname = InetAddress.getLocalHost().getHostName();
-    } else {
-      hostname = InetAddress.getLocalHost().getHostAddress();
-    }
-    return Endpoint.newBuilder()
-        .setHostname(hostname)
-        .setPort(port)
-        .build();
-  }
-
-  public static void main(String[] args) {
-    int retCode = doMain(args);
-    Runtime.getRuntime().exit(retCode);
-  }
-
-  static int doMain(String[] args) {
-    // register thread uncaught exception handler
-    Thread.setDefaultUncaughtExceptionHandler((thread, exception) ->
-      log.error("Uncaught exception in thread {}: {}", thread.getName(), exception.getMessage()));
-
-    CountDownLatch aliveLatch = new CountDownLatch(1);
-
-    // parse the commandline
-    ServerArguments arguments = new ServerArguments();
-    JCommander jCommander = new JCommander(arguments);
-    jCommander.setProgramName("StorageServer");
-    jCommander.parse(args);
-
-    if (arguments.help) {
-      jCommander.usage();
-      return ExitCode.INVALID_CONF.code();
     }
 
-    CompositeConfiguration conf = new CompositeConfiguration();
-    if (null != arguments.serverConfigFile) {
-      loadConfFile(conf, arguments.serverConfigFile);
+    private static void loadConfFile(CompositeConfiguration conf, String confFile)
+        throws IllegalArgumentException {
+        try {
+            Configuration loadedConf = new PropertiesConfiguration(
+                new File(confFile).toURI().toURL());
+            conf.addConfiguration(loadedConf);
+        } catch (MalformedURLException e) {
+            log.error("Could not open configuration file {}", confFile, e);
+            throw new IllegalArgumentException("Could not open configuration file " + confFile, e);
+        } catch (ConfigurationException e) {
+            log.error("Malformed configuration file {}", confFile, e);
+            throw new IllegalArgumentException("Malformed configuration file " + confFile, e);
+        }
+        log.info("Loaded configuration file {}", confFile);
     }
 
-    int grpcPort = arguments.port;
-
-    LifecycleComponent storageServer;
-    try {
-      storageServer = startStorageServer(
-        conf,
-        grpcPort,
-        1024,
-        Optional.empty());
-    } catch (ConfigurationException e) {
-      log.error("Invalid storage configuration", e);
-      return ExitCode.INVALID_CONF.code();
-    } catch (UnknownHostException e) {
-      log.error("Unknonw host name", e);
-      return ExitCode.UNKNOWN_HOSTNAME.code();
+    public static Endpoint createLocalEndpoint(int port, boolean useHostname) throws UnknownHostException {
+        String hostname;
+        if (useHostname) {
+            hostname = InetAddress.getLocalHost().getHostName();
+        } else {
+            hostname = InetAddress.getLocalHost().getHostAddress();
+        }
+        return Endpoint.newBuilder()
+            .setHostname(hostname)
+            .setPort(port)
+            .build();
     }
 
-    ComponentStarter.startComponent(storageServer, aliveLatch);
-    try {
-      aliveLatch.await();
-    } catch (InterruptedException e) {
-      // the server is interrupted.
-      log.info("Storage server is interrupted. Exiting ...");
+    public static void main(String[] args) {
+        int retCode = doMain(args);
+        Runtime.getRuntime().exit(retCode);
     }
-    return ExitCode.OK.code();
-  }
 
-  public static LifecycleComponent startStorageServer(CompositeConfiguration conf,
-                                                      int grpcPort,
-                                                      int numStorageContainers,
-                                                      Optional<String> instanceName)
-      throws ConfigurationException, UnknownHostException {
-    BookieConfiguration bkConf = BookieConfiguration.of(conf);
-    bkConf.validate();
+    static int doMain(String[] args) {
+        // register thread uncaught exception handler
+        Thread.setDefaultUncaughtExceptionHandler((thread, exception) ->
+            log.error("Uncaught exception in thread {}: {}", thread.getName(), exception.getMessage()));
 
-    DLConfiguration dlConf = DLConfiguration.of(conf);
-    dlConf.validate();
+        CountDownLatch aliveLatch = new CountDownLatch(1);
 
-    StorageServerConfiguration serverConf = StorageServerConfiguration.of(conf);
-    serverConf.validate();
+        // parse the commandline
+        ServerArguments arguments = new ServerArguments();
+        JCommander jCommander = new JCommander(arguments);
+        jCommander.setProgramName("StorageServer");
+        jCommander.parse(args);
 
-    StorageConfiguration storageConf = new StorageConfiguration(conf);
-    storageConf.validate();
+        if (arguments.help) {
+            jCommander.usage();
+            return ExitCode.INVALID_CONF.code();
+        }
 
-    // Get my local endpoint
-    Endpoint myEndpoint = createLocalEndpoint(grpcPort, false);
+        CompositeConfiguration conf = new CompositeConfiguration();
+        if (null != arguments.serverConfigFile) {
+            loadConfFile(conf, arguments.serverConfigFile);
+        }
 
-    // Create shared resources
-    StorageResources storageResources = StorageResources.create();
+        int grpcPort = arguments.port;
 
-    // Create the stats provider
-    StatsProviderService statsProviderService = new StatsProviderService(bkConf);
-    StatsLogger rootStatsLogger = statsProviderService.getStatsProvider().getStatsLogger("");
+        LifecycleComponent storageServer;
+        try {
+            storageServer = startStorageServer(
+                conf,
+                grpcPort,
+                1024,
+                Optional.empty());
+        } catch (ConfigurationException e) {
+            log.error("Invalid storage configuration", e);
+            return ExitCode.INVALID_CONF.code();
+        } catch (UnknownHostException e) {
+            log.error("Unknonw host name", e);
+            return ExitCode.UNKNOWN_HOSTNAME.code();
+        }
 
-    // Create the bookie service
-    BookieService bookieService = new BookieService(bkConf, rootStatsLogger);
+        ComponentStarter.startComponent(storageServer, aliveLatch);
+        try {
+            aliveLatch.await();
+        } catch (InterruptedException e) {
+            // the server is interrupted.
+            log.info("Storage server is interrupted. Exiting ...");
+        }
+        return ExitCode.OK.code();
+    }
 
-    // Create the distributedlog namespace service
-    DLNamespaceProviderService dlNamespaceProvider = new DLNamespaceProviderService(
-      bookieService.serverConf(),
-      dlConf,
-      rootStatsLogger.scope("dl"));
+    public static LifecycleComponent startStorageServer(CompositeConfiguration conf,
+                                                        int grpcPort,
+                                                        int numStorageContainers,
+                                                        Optional<String> instanceName)
+        throws ConfigurationException, UnknownHostException {
+        BookieConfiguration bkConf = BookieConfiguration.of(conf);
+        bkConf.validate();
 
-    // Create range (stream) store
-    RangeStoreBuilder rangeStoreBuilder = RangeStoreBuilder.newBuilder()
-      .withStatsLogger(rootStatsLogger.scope("storage"))
-      .withStorageConfiguration(storageConf)
-      // the storage resources shared across multiple components
-      .withStorageResources(storageResources)
-      // the number of storage containers
-      .withNumStorageContainers(numStorageContainers)
-      // the default log backend uri
-      .withDefaultBackendUri(dlNamespaceProvider.getDlogUri())
-      // with the storage container manager (currently it is helix)
-      .withStorageContainerManagerFactory((ignored, storeConf, registry) ->
-        new HelixStorageContainerManager(
-          bookieService.serverConf().getZkServers(),
-          "stream/helix",
-          storeConf,
-          registry,
-          myEndpoint,
-          instanceName,
-          rootStatsLogger.scope("helix")))
-      // with the inter storage container client manager
-      .withRangeStoreFactory(
-        new MVCCStoreFactoryImpl(
-            dlNamespaceProvider,
-            storageConf.getRangeStoreDirs(),
-            storageResources,
-            storageConf.getServeReadOnlyTables()));
-    StorageService storageService = new StorageService(
-      storageConf, rangeStoreBuilder, rootStatsLogger.scope("storage"));
+        DLConfiguration dlConf = DLConfiguration.of(conf);
+        dlConf.validate();
 
-    // Create gRPC server
-    StatsLogger rpcStatsLogger = rootStatsLogger.scope("grpc");
-    GrpcServerSpec serverSpec = GrpcServerSpec.builder()
-      .storeSupplier(storageService)
-      .storeServerConf(serverConf)
-      .endpoint(myEndpoint)
-      .statsLogger(rpcStatsLogger)
-      .build();
-    GrpcService grpcService = new GrpcService(
-      serverConf, serverSpec, rpcStatsLogger);
+        StorageServerConfiguration serverConf = StorageServerConfiguration.of(conf);
+        serverConf.validate();
+
+        StorageConfiguration storageConf = new StorageConfiguration(conf);
+        storageConf.validate();
+
+        // Get my local endpoint
+        Endpoint myEndpoint = createLocalEndpoint(grpcPort, false);
+
+        // Create shared resources
+        StorageResources storageResources = StorageResources.create();
+
+        // Create the stats provider
+        StatsProviderService statsProviderService = new StatsProviderService(bkConf);
+        StatsLogger rootStatsLogger = statsProviderService.getStatsProvider().getStatsLogger("");
+
+        // Create the bookie service
+        BookieService bookieService = new BookieService(bkConf, rootStatsLogger);
+
+        // Create the distributedlog namespace service
+        DLNamespaceProviderService dlNamespaceProvider = new DLNamespaceProviderService(
+            bookieService.serverConf(),
+            dlConf,
+            rootStatsLogger.scope("dl"));
+
+        // Create range (stream) store
+        RangeStoreBuilder rangeStoreBuilder = RangeStoreBuilder.newBuilder()
+            .withStatsLogger(rootStatsLogger.scope("storage"))
+            .withStorageConfiguration(storageConf)
+            // the storage resources shared across multiple components
+            .withStorageResources(storageResources)
+            // the number of storage containers
+            .withNumStorageContainers(numStorageContainers)
+            // the default log backend uri
+            .withDefaultBackendUri(dlNamespaceProvider.getDlogUri())
+            // with the storage container manager (currently it is helix)
+            .withStorageContainerManagerFactory((ignored, storeConf, registry) ->
+                new HelixStorageContainerManager(
+                    bookieService.serverConf().getZkServers(),
+                    "stream/helix",
+                    storeConf,
+                    registry,
+                    myEndpoint,
+                    instanceName,
+                    rootStatsLogger.scope("helix")))
+            // with the inter storage container client manager
+            .withRangeStoreFactory(
+                new MVCCStoreFactoryImpl(
+                    dlNamespaceProvider,
+                    storageConf.getRangeStoreDirs(),
+                    storageResources,
+                    storageConf.getServeReadOnlyTables()));
+        StorageService storageService = new StorageService(
+            storageConf, rangeStoreBuilder, rootStatsLogger.scope("storage"));
+
+        // Create gRPC server
+        StatsLogger rpcStatsLogger = rootStatsLogger.scope("grpc");
+        GrpcServerSpec serverSpec = GrpcServerSpec.builder()
+            .storeSupplier(storageService)
+            .storeServerConf(serverConf)
+            .endpoint(myEndpoint)
+            .statsLogger(rpcStatsLogger)
+            .build();
+        GrpcService grpcService = new GrpcService(
+            serverConf, serverSpec, rpcStatsLogger);
 
 
-    // Create all the service stack
-    return LifecycleComponentStack.newBuilder()
-      .withName("storage-server")
-      .addComponent(statsProviderService)     // stats provider
-      .addComponent(bookieService)            // bookie server
-      .addComponent(dlNamespaceProvider)      // service that provides dl namespace
-      .addComponent(storageService)           // range (stream) store
-      .addComponent(grpcService)              // range (stream) server (gRPC)
-      .build();
-  }
+        // Create all the service stack
+        return LifecycleComponentStack.newBuilder()
+            .withName("storage-server")
+            .addComponent(statsProviderService)     // stats provider
+            .addComponent(bookieService)            // bookie server
+            .addComponent(dlNamespaceProvider)      // service that provides dl namespace
+            .addComponent(storageService)           // range (stream) store
+            .addComponent(grpcService)              // range (stream) server (gRPC)
+            .build();
+    }
 
 }

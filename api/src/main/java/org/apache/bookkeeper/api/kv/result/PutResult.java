@@ -18,11 +18,11 @@ package org.apache.bookkeeper.api.kv.result;
  */
 public interface PutResult<K, V> extends Result<K, V> {
 
-  /**
-   * Return the previous kv pair of previous value.
-   *
-   * @return the previous kv pair of previous value.
-   */
-  KeyValue<K, V> prevKv();
+    /**
+     * Return the previous kv pair of previous value.
+     *
+     * @return the previous kv pair of previous value.
+     */
+    KeyValue<K, V> prevKv();
 
 }

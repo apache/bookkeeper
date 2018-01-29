@@ -31,79 +31,79 @@ import org.junit.Test;
  */
 public class TestRangeStoreBuilder {
 
-  private MVCCStoreFactory storeFactory;
-  private final URI uri = URI.create("distributedlog://127.0.0.1/stream/storage");
+    private MVCCStoreFactory storeFactory;
+    private final URI uri = URI.create("distributedlog://127.0.0.1/stream/storage");
 
-  @Before
-  public void setup() {
-    this.storeFactory = mock(MVCCStoreFactory.class);
-  }
+    @Before
+    public void setup() {
+        this.storeFactory = mock(MVCCStoreFactory.class);
+    }
 
-  @Test(expected = NullPointerException.class)
-  public void testBuildNullConfiguration() {
-    RangeStoreBuilder.newBuilder()
-      .withStorageConfiguration(null)
-      .withStorageContainerManagerFactory(mock(StorageContainerManagerFactory.class))
-      .withStorageResources(StorageResources.create())
-      .withRangeStoreFactory(storeFactory)
-      .withDefaultBackendUri(uri)
-      .build();
-  }
+    @Test(expected = NullPointerException.class)
+    public void testBuildNullConfiguration() {
+        RangeStoreBuilder.newBuilder()
+            .withStorageConfiguration(null)
+            .withStorageContainerManagerFactory(mock(StorageContainerManagerFactory.class))
+            .withStorageResources(StorageResources.create())
+            .withRangeStoreFactory(storeFactory)
+            .withDefaultBackendUri(uri)
+            .build();
+    }
 
-  @Test(expected = NullPointerException.class)
-  public void testBuildNullResources() {
-    RangeStoreBuilder.newBuilder()
-      .withStorageConfiguration(mock(StorageConfiguration.class))
-      .withStorageContainerManagerFactory(mock(StorageContainerManagerFactory.class))
-      .withStorageResources(null)
-      .withRangeStoreFactory(storeFactory)
-      .withDefaultBackendUri(uri)
-      .build();
-  }
+    @Test(expected = NullPointerException.class)
+    public void testBuildNullResources() {
+        RangeStoreBuilder.newBuilder()
+            .withStorageConfiguration(mock(StorageConfiguration.class))
+            .withStorageContainerManagerFactory(mock(StorageContainerManagerFactory.class))
+            .withStorageResources(null)
+            .withRangeStoreFactory(storeFactory)
+            .withDefaultBackendUri(uri)
+            .build();
+    }
 
-  @Test(expected = NullPointerException.class)
-  public void testBuildNullRGManagerFactory() {
-    RangeStoreBuilder.newBuilder()
-      .withStorageConfiguration(mock(StorageConfiguration.class))
-      .withStorageContainerManagerFactory(null)
-      .withStorageResources(StorageResources.create())
-      .withRangeStoreFactory(storeFactory)
-      .withDefaultBackendUri(uri)
-      .build();
-  }
+    @Test(expected = NullPointerException.class)
+    public void testBuildNullRGManagerFactory() {
+        RangeStoreBuilder.newBuilder()
+            .withStorageConfiguration(mock(StorageConfiguration.class))
+            .withStorageContainerManagerFactory(null)
+            .withStorageResources(StorageResources.create())
+            .withRangeStoreFactory(storeFactory)
+            .withDefaultBackendUri(uri)
+            .build();
+    }
 
-  @Test(expected = NullPointerException.class)
-  public void testBuildNullStoreFactory() {
-    RangeStoreBuilder.newBuilder()
-      .withStorageConfiguration(mock(StorageConfiguration.class))
-      .withStorageContainerManagerFactory(mock(StorageContainerManagerFactory.class))
-      .withStorageResources(StorageResources.create())
-      .withRangeStoreFactory(null)
-      .withDefaultBackendUri(uri)
-      .build();
-  }
+    @Test(expected = NullPointerException.class)
+    public void testBuildNullStoreFactory() {
+        RangeStoreBuilder.newBuilder()
+            .withStorageConfiguration(mock(StorageConfiguration.class))
+            .withStorageContainerManagerFactory(mock(StorageContainerManagerFactory.class))
+            .withStorageResources(StorageResources.create())
+            .withRangeStoreFactory(null)
+            .withDefaultBackendUri(uri)
+            .build();
+    }
 
-  @Test(expected = NullPointerException.class)
-  public void testBuildNullDefaultBackendUri() {
-    RangeStoreBuilder.newBuilder()
-      .withStorageConfiguration(mock(StorageConfiguration.class))
-      .withStorageContainerManagerFactory(mock(StorageContainerManagerFactory.class))
-      .withStorageResources(StorageResources.create())
-      .withRangeStoreFactory(storeFactory)
-      .withDefaultBackendUri(null)
-      .build();
-  }
+    @Test(expected = NullPointerException.class)
+    public void testBuildNullDefaultBackendUri() {
+        RangeStoreBuilder.newBuilder()
+            .withStorageConfiguration(mock(StorageConfiguration.class))
+            .withStorageContainerManagerFactory(mock(StorageContainerManagerFactory.class))
+            .withStorageResources(StorageResources.create())
+            .withRangeStoreFactory(storeFactory)
+            .withDefaultBackendUri(null)
+            .build();
+    }
 
-  @Test
-  public void testBuild() {
-    RangeStore rangeStore = RangeStoreBuilder.newBuilder()
-      .withStorageConfiguration(mock(StorageConfiguration.class))
-      .withStorageContainerManagerFactory(mock(StorageContainerManagerFactory.class))
-      .withStorageResources(StorageResources.create())
-      .withRangeStoreFactory(storeFactory)
-      .withDefaultBackendUri(uri)
-      .build();
-    assertTrue(rangeStore instanceof RangeStoreImpl);
-  }
+    @Test
+    public void testBuild() {
+        RangeStore rangeStore = RangeStoreBuilder.newBuilder()
+            .withStorageConfiguration(mock(StorageConfiguration.class))
+            .withStorageContainerManagerFactory(mock(StorageContainerManagerFactory.class))
+            .withStorageResources(StorageResources.create())
+            .withRangeStoreFactory(storeFactory)
+            .withDefaultBackendUri(uri)
+            .build();
+        assertTrue(rangeStore instanceof RangeStoreImpl);
+    }
 
 }

@@ -28,26 +28,26 @@ import java.util.function.BiConsumer;
  */
 public abstract class ResponseHandler<RespT> implements BiConsumer<RespT, Throwable> {
 
-  protected final StreamObserver<RespT> respObserver;
+    protected final StreamObserver<RespT> respObserver;
 
-  protected ResponseHandler(StreamObserver<RespT> respObserver) {
-    this.respObserver = respObserver;
-  }
-
-  protected abstract RespT createErrorResp(Throwable cause);
-
-  @Override
-  public void accept(RespT respT, Throwable cause) {
-    if (null != cause) {
-      if (cause instanceof StatusRuntimeException
-        || cause instanceof StatusException) {
-        respObserver.onError(cause);
-        return;
-      }
-      respObserver.onNext(createErrorResp(cause));
-    } else {
-      respObserver.onNext(respT);
+    protected ResponseHandler(StreamObserver<RespT> respObserver) {
+        this.respObserver = respObserver;
     }
-    respObserver.onCompleted();
-  }
+
+    protected abstract RespT createErrorResp(Throwable cause);
+
+    @Override
+    public void accept(RespT respT, Throwable cause) {
+        if (null != cause) {
+            if (cause instanceof StatusRuntimeException
+                || cause instanceof StatusException) {
+                respObserver.onError(cause);
+                return;
+            }
+            respObserver.onNext(createErrorResp(cause));
+        } else {
+            respObserver.onNext(respT);
+        }
+        respObserver.onCompleted();
+    }
 }

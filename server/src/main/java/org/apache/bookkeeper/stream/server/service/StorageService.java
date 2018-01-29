@@ -31,34 +31,34 @@ public class StorageService
     extends AbstractLifecycleComponent<StorageConfiguration>
     implements Supplier<RangeStore> {
 
-  private final RangeStoreBuilder storeBuilder;
-  private RangeStore store;
+    private final RangeStoreBuilder storeBuilder;
+    private RangeStore store;
 
-  public StorageService(StorageConfiguration conf,
-                        RangeStoreBuilder storeBuilder,
-                        StatsLogger statsLogger) {
-    super("storage-service", conf, statsLogger);
-    this.storeBuilder = storeBuilder;
-  }
+    public StorageService(StorageConfiguration conf,
+                          RangeStoreBuilder storeBuilder,
+                          StatsLogger statsLogger) {
+        super("storage-service", conf, statsLogger);
+        this.storeBuilder = storeBuilder;
+    }
 
-  @Override
-  protected void doStart() {
-    store = storeBuilder.build();
-    store.start();
-  }
+    @Override
+    protected void doStart() {
+        store = storeBuilder.build();
+        store.start();
+    }
 
-  @Override
-  protected void doStop() {
-    store.stop();
-  }
+    @Override
+    protected void doStop() {
+        store.stop();
+    }
 
-  @Override
-  protected void doClose() throws IOException {
-    store.close();
-  }
+    @Override
+    protected void doClose() throws IOException {
+        store.close();
+    }
 
-  @Override
-  public RangeStore get() {
-    return store;
-  }
+    @Override
+    public RangeStore get() {
+        return store;
+    }
 }

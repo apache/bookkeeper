@@ -93,7 +93,6 @@ public class TestMVCCStoreImpl {
     //
 
 
-
     @Test
     public void testGetNull() throws Exception {
         store.init(spec);

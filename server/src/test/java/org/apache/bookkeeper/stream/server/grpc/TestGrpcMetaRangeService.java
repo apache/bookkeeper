@@ -41,100 +41,100 @@ import org.junit.Test;
  */
 public class TestGrpcMetaRangeService {
 
-  private static final Throwable CAUSE = new Exception("test-exception");
+    private static final Throwable CAUSE = new Exception("test-exception");
 
-  //
-  // Meta KeyRange Server Requests tests
-  //
+    //
+    // Meta KeyRange Server Requests tests
+    //
 
-  @Test
-  public void testGetActiveRangesSuccess() throws Exception {
-    RangeStoreImpl rangeService = mock(RangeStoreImpl.class);
-    GrpcMetaRangeService grpcService = new GrpcMetaRangeService(rangeService);
+    @Test
+    public void testGetActiveRangesSuccess() throws Exception {
+        RangeStoreImpl rangeService = mock(RangeStoreImpl.class);
+        GrpcMetaRangeService grpcService = new GrpcMetaRangeService(rangeService);
 
-    StorageContainerRequest request = StorageContainerRequest
-      .newBuilder()
-      .setType(StorageContainerRequest.Type.GET_ACTIVE_RANGES)
-      .setGetActiveRangesReq(GetActiveRangesRequest
-        .newBuilder()
-        .setStreamId(23456L)
-        .build())
-      .build();
+        StorageContainerRequest request = StorageContainerRequest
+            .newBuilder()
+            .setType(StorageContainerRequest.Type.GET_ACTIVE_RANGES)
+            .setGetActiveRangesReq(GetActiveRangesRequest
+                .newBuilder()
+                .setStreamId(23456L)
+                .build())
+            .build();
 
-    StorageContainerResponse response = StorageContainerResponse.newBuilder()
-      .setCode(StatusCode.SUCCESS)
-      .setGetActiveRangesResp(GetActiveRangesResponse.newBuilder())
-      .build();
+        StorageContainerResponse response = StorageContainerResponse.newBuilder()
+            .setCode(StatusCode.SUCCESS)
+            .setGetActiveRangesResp(GetActiveRangesResponse.newBuilder())
+            .build();
 
-    when(rangeService.getActiveRanges(request)).thenReturn(
-      CompletableFuture.completedFuture(response));
+        when(rangeService.getActiveRanges(request)).thenReturn(
+            CompletableFuture.completedFuture(response));
 
-    TestResponseObserver<StorageContainerResponse> responseObserver =
-      new TestResponseObserver<>();
-    grpcService.getActiveRanges(
-      request,
-      responseObserver);
+        TestResponseObserver<StorageContainerResponse> responseObserver =
+            new TestResponseObserver<>();
+        grpcService.getActiveRanges(
+            request,
+            responseObserver);
 
-    responseObserver.verifySuccess(response);
-    verify(rangeService, times(1)).getActiveRanges(request);
-  }
+        responseObserver.verifySuccess(response);
+        verify(rangeService, times(1)).getActiveRanges(request);
+    }
 
-  @Test
-  public void testGetActiveRangesFailure() throws Exception {
-    RangeStoreImpl rangeService = mock(RangeStoreImpl.class);
-    GrpcMetaRangeService grpcService = new GrpcMetaRangeService(rangeService);
+    @Test
+    public void testGetActiveRangesFailure() throws Exception {
+        RangeStoreImpl rangeService = mock(RangeStoreImpl.class);
+        GrpcMetaRangeService grpcService = new GrpcMetaRangeService(rangeService);
 
-    StorageContainerRequest request = StorageContainerRequest
-      .newBuilder()
-      .setType(StorageContainerRequest.Type.GET_ACTIVE_RANGES)
-      .setGetActiveRangesReq(GetActiveRangesRequest
-        .newBuilder()
-        .setStreamId(23456L)
-        .build())
-      .build();
+        StorageContainerRequest request = StorageContainerRequest
+            .newBuilder()
+            .setType(StorageContainerRequest.Type.GET_ACTIVE_RANGES)
+            .setGetActiveRangesReq(GetActiveRangesRequest
+                .newBuilder()
+                .setStreamId(23456L)
+                .build())
+            .build();
 
-    StorageContainerResponse response = StorageContainerResponse.newBuilder()
-      .setCode(StatusCode.INTERNAL_SERVER_ERROR)
-      .build();
+        StorageContainerResponse response = StorageContainerResponse.newBuilder()
+            .setCode(StatusCode.INTERNAL_SERVER_ERROR)
+            .build();
 
-    when(rangeService.getActiveRanges(request)).thenReturn(
-      FutureUtils.exception(CAUSE));
+        when(rangeService.getActiveRanges(request)).thenReturn(
+            FutureUtils.exception(CAUSE));
 
-    TestResponseObserver<StorageContainerResponse> responseObserver =
-      new TestResponseObserver<>();
-    grpcService.getActiveRanges(
-      request,
-      responseObserver);
+        TestResponseObserver<StorageContainerResponse> responseObserver =
+            new TestResponseObserver<>();
+        grpcService.getActiveRanges(
+            request,
+            responseObserver);
 
-    responseObserver.verifySuccess(response);
-    verify(rangeService, times(1)).getActiveRanges(request);
-  }
+        responseObserver.verifySuccess(response);
+        verify(rangeService, times(1)).getActiveRanges(request);
+    }
 
-  @Test
-  public void testGetActiveRangesException() throws Exception {
-    RangeStoreImpl rangeService = mock(RangeStoreImpl.class);
-    GrpcMetaRangeService grpcService = new GrpcMetaRangeService(rangeService);
+    @Test
+    public void testGetActiveRangesException() throws Exception {
+        RangeStoreImpl rangeService = mock(RangeStoreImpl.class);
+        GrpcMetaRangeService grpcService = new GrpcMetaRangeService(rangeService);
 
-    StorageContainerRequest request = StorageContainerRequest
-      .newBuilder()
-      .setType(StorageContainerRequest.Type.GET_ACTIVE_RANGES)
-      .setGetActiveRangesReq(GetActiveRangesRequest
-        .newBuilder()
-        .setStreamId(23456L)
-        .build())
-      .build();
+        StorageContainerRequest request = StorageContainerRequest
+            .newBuilder()
+            .setType(StorageContainerRequest.Type.GET_ACTIVE_RANGES)
+            .setGetActiveRangesReq(GetActiveRangesRequest
+                .newBuilder()
+                .setStreamId(23456L)
+                .build())
+            .build();
 
-    when(rangeService.getActiveRanges(request)).thenReturn(
-      FutureUtils.exception(new StatusRuntimeException(Status.NOT_FOUND)));
+        when(rangeService.getActiveRanges(request)).thenReturn(
+            FutureUtils.exception(new StatusRuntimeException(Status.NOT_FOUND)));
 
-    TestResponseObserver<StorageContainerResponse> responseObserver =
-      new TestResponseObserver<>();
-    grpcService.getActiveRanges(
-      request,
-      responseObserver);
+        TestResponseObserver<StorageContainerResponse> responseObserver =
+            new TestResponseObserver<>();
+        grpcService.getActiveRanges(
+            request,
+            responseObserver);
 
-    responseObserver.verifyException(Status.NOT_FOUND);
-    verify(rangeService, times(1)).getActiveRanges(request);
-  }
+        responseObserver.verifyException(Status.NOT_FOUND);
+        verify(rangeService, times(1)).getActiveRanges(request);
+    }
 
 }

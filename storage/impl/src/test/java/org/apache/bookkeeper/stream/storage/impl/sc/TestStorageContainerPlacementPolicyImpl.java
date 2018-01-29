@@ -24,14 +24,14 @@ import org.junit.Test;
  */
 public class TestStorageContainerPlacementPolicyImpl {
 
-  @Test
-  public void testPlacement() {
-    int numStorageContainers = 1024;
-    StorageContainerPlacementPolicyImpl placementPolicy =
-      StorageContainerPlacementPolicyImpl.of(numStorageContainers);
-    assertEquals(numStorageContainers, placementPolicy.getNumStorageContainers());
-    long scId = placementPolicy.placeStreamRange(1234L, 5678L);
-    assertTrue(scId >= 0 && scId < placementPolicy.getNumStorageContainers());
-  }
+    @Test
+    public void testPlacement() {
+        int numStorageContainers = 1024;
+        StorageContainerPlacementPolicyImpl placementPolicy =
+            StorageContainerPlacementPolicyImpl.of(numStorageContainers);
+        assertEquals(numStorageContainers, placementPolicy.getNumStorageContainers());
+        long scId = placementPolicy.placeStreamRange(1234L, 5678L);
+        assertTrue(scId >= 0 && scId < placementPolicy.getNumStorageContainers());
+    }
 
 }

@@ -30,7 +30,7 @@ import lombok.ToString;
 @ToString
 public class Revisioned<T> implements IRevisioned {
 
-  private final T value;
-  private final long revision;
+    private final T value;
+    private final long revision;
 
 }

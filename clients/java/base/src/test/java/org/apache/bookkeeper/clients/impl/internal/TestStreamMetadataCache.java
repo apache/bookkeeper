@@ -39,32 +39,32 @@ import org.junit.Test;
  */
 public class TestStreamMetadataCache {
 
-  private final RootRangeClient scClient = mock(RootRangeClient.class);
-  private final StreamMetadataCache cache = new StreamMetadataCache(scClient);
-  private final StreamProperties props = StreamProperties.newBuilder()
-    .setStorageContainerId(1234L)
-    .setStreamId(2345L)
-    .setStreamName("test-stream")
-    .setStreamConf(DEFAULT_STREAM_CONF)
-    .build();
+    private final RootRangeClient scClient = mock(RootRangeClient.class);
+    private final StreamMetadataCache cache = new StreamMetadataCache(scClient);
+    private final StreamProperties props = StreamProperties.newBuilder()
+        .setStorageContainerId(1234L)
+        .setStreamId(2345L)
+        .setStreamName("test-stream")
+        .setStreamConf(DEFAULT_STREAM_CONF)
+        .build();
 
-  @Test
-  public void testGetStreamProperties() throws Exception {
-    when(scClient.getStream(anyLong()))
-      .thenReturn(FutureUtils.value(props));
-    assertEquals(0, cache.getStreams().size());
-    assertEquals(props, FutureUtils.result(cache.getStreamProperties(1234L)));
-    assertEquals(1, cache.getStreams().size());
-    verify(scClient, times(1)).getStream(eq(1234L));
-  }
+    @Test
+    public void testGetStreamProperties() throws Exception {
+        when(scClient.getStream(anyLong()))
+            .thenReturn(FutureUtils.value(props));
+        assertEquals(0, cache.getStreams().size());
+        assertEquals(props, FutureUtils.result(cache.getStreamProperties(1234L)));
+        assertEquals(1, cache.getStreams().size());
+        verify(scClient, times(1)).getStream(eq(1234L));
+    }
 
-  @Test
-  public void testPutStreamProperties() throws Exception {
-    assertEquals(0, cache.getStreams().size());
-    assertTrue(cache.putStreamProperties(1234L, props));
-    assertEquals(1, cache.getStreams().size());
-    assertFalse(cache.putStreamProperties(1234L, props));
-    assertEquals(1, cache.getStreams().size());
-  }
+    @Test
+    public void testPutStreamProperties() throws Exception {
+        assertEquals(0, cache.getStreams().size());
+        assertTrue(cache.putStreamProperties(1234L, props));
+        assertEquals(1, cache.getStreams().size());
+        assertFalse(cache.putStreamProperties(1234L, props));
+        assertEquals(1, cache.getStreams().size());
+    }
 
 }

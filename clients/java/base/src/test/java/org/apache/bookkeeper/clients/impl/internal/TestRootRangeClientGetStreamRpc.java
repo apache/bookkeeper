@@ -44,112 +44,112 @@ import org.apache.bookkeeper.stream.proto.storage.StatusCode;
  */
 public class TestRootRangeClientGetStreamRpc extends RootRangeClientImplTestBase {
 
-  private long streamId;
-  private String colName;
-  private String streamName;
-  private StreamProperties streamProps;
+    private long streamId;
+    private String colName;
+    private String streamName;
+    private StreamProperties streamProps;
 
-  @Override
-  protected void doSetup() throws Exception {
-    super.doSetup();
+    @Override
+    protected void doSetup() throws Exception {
+        super.doSetup();
 
-    this.streamId = System.currentTimeMillis();
-    this.colName = testName.getMethodName() + "_col";
-    this.streamName = testName.getMethodName() + "_stream";
-    this.streamProps = StreamProperties.newBuilder()
-      .setStorageContainerId(System.currentTimeMillis())
-      .setStreamId(streamId)
-      .setStreamName(streamName)
-      .setStreamConf(DEFAULT_STREAM_CONF)
-      .build();
-  }
-
-  @Override
-  protected RootRangeServiceImplBase createRootRangeServiceForSuccess() {
-    return new RootRangeServiceImplBase() {
-      @Override
-      public void getStream(GetStreamRequest request,
-                            StreamObserver<GetStreamResponse> responseObserver) {
-        responseObserver.onNext(GetStreamResponse.newBuilder()
-          .setCode(StatusCode.SUCCESS)
-          .setStreamProps(streamProps)
-          .build());
-        responseObserver.onCompleted();
-      }
-    };
-  }
-
-  @Override
-  protected void verifySuccess(RootRangeClient rootRangeClient) throws Exception {
-    CompletableFuture<StreamProperties> getFuture = rootRangeClient.getStream(colName, streamName);
-    assertTrue(streamProps == getFuture.get());
-  }
-
-  @Override
-  protected RootRangeServiceImplBase createRootRangeServiceForRequestFailure() {
-    return new RootRangeServiceImplBase() {
-      @Override
-      public void getStream(GetStreamRequest request,
-                            StreamObserver<GetStreamResponse> responseObserver) {
-        responseObserver.onNext(GetStreamResponse.newBuilder()
-          .setCode(StatusCode.STREAM_NOT_FOUND)
-          .build());
-        responseObserver.onCompleted();
-      }
-    };
-  }
-
-  @Override
-  protected void verifyRequestFailure(RootRangeClient rootRangeClient) throws Exception {
-    CompletableFuture<StreamProperties> getFuture = rootRangeClient.getStream(colName, streamName);
-    try {
-      getFuture.get();
-      fail("Should fail on rpc failure");
-    } catch (ExecutionException ee) {
-      assertNotNull(ee.getCause());
-      assertTrue(ee.getCause() instanceof StreamNotFoundException);
+        this.streamId = System.currentTimeMillis();
+        this.colName = testName.getMethodName() + "_col";
+        this.streamName = testName.getMethodName() + "_stream";
+        this.streamProps = StreamProperties.newBuilder()
+            .setStorageContainerId(System.currentTimeMillis())
+            .setStreamId(streamId)
+            .setStreamName(streamName)
+            .setStreamConf(DEFAULT_STREAM_CONF)
+            .build();
     }
-  }
 
-  @Override
-  protected RootRangeServiceImplBase createRootRangeServiceForRpcFailure() {
-    return new RootRangeServiceImplBase() {
-      @Override
-      public void getStream(GetStreamRequest request,
-                            StreamObserver<GetStreamResponse> responseObserver) {
-        responseObserver.onError(new StatusRuntimeException(Status.INTERNAL));
-      }
-    };
-  }
-
-  @Override
-  protected void verifyRpcFailure(RootRangeClient rootRangeClient) throws Exception {
-    CompletableFuture<StreamProperties> getFuture = rootRangeClient.getStream(colName, streamName);
-    try {
-      getFuture.get();
-      fail("Should fail on rpc failure");
-    } catch (ExecutionException ee) {
-      assertNotNull(ee.getCause());
-      assertTrue(ee.getCause() instanceof StatusRuntimeException);
-      StatusRuntimeException se = (StatusRuntimeException) ee.getCause();
-      assertEquals(Status.INTERNAL, se.getStatus());
+    @Override
+    protected RootRangeServiceImplBase createRootRangeServiceForSuccess() {
+        return new RootRangeServiceImplBase() {
+            @Override
+            public void getStream(GetStreamRequest request,
+                                  StreamObserver<GetStreamResponse> responseObserver) {
+                responseObserver.onNext(GetStreamResponse.newBuilder()
+                    .setCode(StatusCode.SUCCESS)
+                    .setStreamProps(streamProps)
+                    .build());
+                responseObserver.onCompleted();
+            }
+        };
     }
-  }
 
-  @Override
-  protected void verifyChannelFailure(IOException expectedException,
-                                      RootRangeClient rootRangeClient) throws Exception {
-
-    CompletableFuture<StreamProperties> getFuture = rootRangeClient.getStream(colName, streamName);
-    try {
-      getFuture.get();
-      fail("Should fail on creating stream");
-    } catch (ExecutionException ee) {
-      assertNotNull(ee.getCause());
-      assertTrue(ee.getCause() instanceof ClientException);
-      ClientException zse = (ClientException) ee.getCause();
-      assertNotNull(zse.getCause());
-      assertTrue(expectedException == zse.getCause());
+    @Override
+    protected void verifySuccess(RootRangeClient rootRangeClient) throws Exception {
+        CompletableFuture<StreamProperties> getFuture = rootRangeClient.getStream(colName, streamName);
+        assertTrue(streamProps == getFuture.get());
     }
-  }
+
+    @Override
+    protected RootRangeServiceImplBase createRootRangeServiceForRequestFailure() {
+        return new RootRangeServiceImplBase() {
+            @Override
+            public void getStream(GetStreamRequest request,
+                                  StreamObserver<GetStreamResponse> responseObserver) {
+                responseObserver.onNext(GetStreamResponse.newBuilder()
+                    .setCode(StatusCode.STREAM_NOT_FOUND)
+                    .build());
+                responseObserver.onCompleted();
+            }
+        };
+    }
+
+    @Override
+    protected void verifyRequestFailure(RootRangeClient rootRangeClient) throws Exception {
+        CompletableFuture<StreamProperties> getFuture = rootRangeClient.getStream(colName, streamName);
+        try {
+            getFuture.get();
+            fail("Should fail on rpc failure");
+        } catch (ExecutionException ee) {
+            assertNotNull(ee.getCause());
+            assertTrue(ee.getCause() instanceof StreamNotFoundException);
+        }
+    }
+
+    @Override
+    protected RootRangeServiceImplBase createRootRangeServiceForRpcFailure() {
+        return new RootRangeServiceImplBase() {
+            @Override
+            public void getStream(GetStreamRequest request,
+                                  StreamObserver<GetStreamResponse> responseObserver) {
+                responseObserver.onError(new StatusRuntimeException(Status.INTERNAL));
+            }
+        };
+    }
+
+    @Override
+    protected void verifyRpcFailure(RootRangeClient rootRangeClient) throws Exception {
+        CompletableFuture<StreamProperties> getFuture = rootRangeClient.getStream(colName, streamName);
+        try {
+            getFuture.get();
+            fail("Should fail on rpc failure");
+        } catch (ExecutionException ee) {
+            assertNotNull(ee.getCause());
+            assertTrue(ee.getCause() instanceof StatusRuntimeException);
+            StatusRuntimeException se = (StatusRuntimeException) ee.getCause();
+            assertEquals(Status.INTERNAL, se.getStatus());
+        }
+    }
+
+    @Override
+    protected void verifyChannelFailure(IOException expectedException,
+                                        RootRangeClient rootRangeClient) throws Exception {
+
+        CompletableFuture<StreamProperties> getFuture = rootRangeClient.getStream(colName, streamName);
+        try {
+            getFuture.get();
+            fail("Should fail on creating stream");
+        } catch (ExecutionException ee) {
+            assertNotNull(ee.getCause());
+            assertTrue(ee.getCause() instanceof ClientException);
+            ClientException zse = (ClientException) ee.getCause();
+            assertNotNull(zse.getCause());
+            assertTrue(expectedException == zse.getCause());
+        }
+    }
 }

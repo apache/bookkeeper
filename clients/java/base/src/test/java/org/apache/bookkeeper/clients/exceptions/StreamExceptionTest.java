@@ -28,20 +28,20 @@ import org.junit.Test;
  */
 public class StreamExceptionTest {
 
-  @Test
-  public void testStreamExistsException() {
-    String streamName = "stream-exists";
-    StreamExistsException see = new StreamExistsException(streamName);
-    assertEquals("Stream 'stream-exists' already exists", see.getMessage());
-    assertNull(see.getCause());
-  }
+    @Test
+    public void testStreamExistsException() {
+        String streamName = "stream-exists";
+        StreamExistsException see = new StreamExistsException(streamName);
+        assertEquals("Stream 'stream-exists' already exists", see.getMessage());
+        assertNull(see.getCause());
+    }
 
-  @Test
-  public void testStreamNotFoundException() {
-    String streamName = "stream-not-found";
-    StreamNotFoundException snfe = new StreamNotFoundException(streamName);
-    assertEquals("Stream 'stream-not-found' is not found", snfe.getMessage());
-    assertNull(snfe.getCause());
-  }
+    @Test
+    public void testStreamNotFoundException() {
+        String streamName = "stream-not-found";
+        StreamNotFoundException snfe = new StreamNotFoundException(streamName);
+        assertEquals("Stream 'stream-not-found' is not found", snfe.getMessage());
+        assertNull(snfe.getCause());
+    }
 
 }

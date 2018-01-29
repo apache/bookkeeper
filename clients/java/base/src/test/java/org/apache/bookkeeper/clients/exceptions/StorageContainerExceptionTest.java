@@ -29,13 +29,14 @@ import org.junit.Test;
  */
 public class StorageContainerExceptionTest {
 
-  @Test
-  public void testGetMessage() {
-    StatusCode code = StatusCode.STALE_GROUP_INFO;
-    StorageContainerException exception = new StorageContainerException(code, "test-get-message");
-    assertEquals(code, exception.getCode());
-    assertEquals("StorageContainerError : StatusCode = " + code + ", Error = test-get-message", exception.getMessage());
-    assertNull(exception.getCause());
-  }
+    @Test
+    public void testGetMessage() {
+        StatusCode code = StatusCode.STALE_GROUP_INFO;
+        StorageContainerException exception = new StorageContainerException(code, "test-get-message");
+        assertEquals(code, exception.getCode());
+        assertEquals("StorageContainerError : StatusCode = " + code + ", Error = test-get-message",
+            exception.getMessage());
+        assertNull(exception.getCause());
+    }
 
 }

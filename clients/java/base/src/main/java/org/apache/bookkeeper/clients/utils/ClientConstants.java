@@ -23,14 +23,14 @@ package org.apache.bookkeeper.clients.utils;
  */
 public final class ClientConstants {
 
-  public static final String TOKEN = "token";
+    public static final String TOKEN = "token";
 
-  //
-  // Backoff Related Constants
-  //
+    //
+    // Backoff Related Constants
+    //
 
-  public static final int DEFAULT_BACKOFF_START_MS = 200;
-  public static final int DEFAULT_BACKOFF_MAX_MS = 1000;
-  public static final int DEFAULT_BACKOFF_MULTIPLIER = 2;
+    public static final int DEFAULT_BACKOFF_START_MS = 200;
+    public static final int DEFAULT_BACKOFF_MAX_MS = 1000;
+    public static final int DEFAULT_BACKOFF_MULTIPLIER = 2;
 
 }

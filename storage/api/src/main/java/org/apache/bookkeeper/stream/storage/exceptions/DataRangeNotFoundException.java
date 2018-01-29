@@ -23,9 +23,9 @@ package org.apache.bookkeeper.stream.storage.exceptions;
  */
 public class DataRangeNotFoundException extends StorageRuntimeException {
 
-  private static final long serialVersionUID = 3066131887547875796L;
+    private static final long serialVersionUID = 3066131887547875796L;
 
-  public DataRangeNotFoundException(long streamId, long rangeId) {
-    super("Data range (" + streamId + ", " + rangeId + ") is not found");
-  }
+    public DataRangeNotFoundException(long streamId, long rangeId) {
+        super("Data range (" + streamId + ", " + rangeId + ") is not found");
+    }
 }

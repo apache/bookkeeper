@@ -35,51 +35,51 @@ import org.apache.bookkeeper.stream.server.conf.BookieConfiguration;
 @Slf4j
 public class BookieService extends AbstractLifecycleComponent<BookieConfiguration> {
 
-  @Getter
-  private final ServerConfiguration serverConf;
-  private BookieServer bs;
+    @Getter
+    private final ServerConfiguration serverConf;
+    private BookieServer bs;
 
-  public BookieService(BookieConfiguration conf, StatsLogger statsLogger) {
-    super("bookie-server", conf, statsLogger);
-    this.serverConf = new ServerConfiguration();
-    this.serverConf.loadConf(conf.getUnderlyingConf());
-  }
-
-  @Override
-  protected void doStart() {
-    List<File> indexDirs;
-    if (null == serverConf.getIndexDirs()) {
-      indexDirs = Collections.emptyList();
-    } else {
-      indexDirs = Arrays.asList(serverConf.getIndexDirs());
+    public BookieService(BookieConfiguration conf, StatsLogger statsLogger) {
+        super("bookie-server", conf, statsLogger);
+        this.serverConf = new ServerConfiguration();
+        this.serverConf.loadConf(conf.getUnderlyingConf());
     }
-    log.info("Hello, I'm your bookie, listening on port {} :"
-        + " zkServers = {}, journals = {}, ledgers = {}, index = {}",
-        new Object[] {
-          serverConf.getBookiePort(),
-          serverConf.getZkServers(),
-          Arrays.asList(serverConf.getJournalDirNames()),
-          Arrays.asList(serverConf.getLedgerDirs()),
-          indexDirs
-        });
-    try {
-      this.bs = new BookieServer(serverConf, statsLogger);
-      bs.start();
-      log.info("Started bookie server successfully.");
-    } catch (Exception e) {
-      throw new RuntimeException("Failed to start bookie server", e);
-    }
-  }
 
-  @Override
-  protected void doStop() {
-    if (null != bs) {
-      bs.shutdown();
+    @Override
+    protected void doStart() {
+        List<File> indexDirs;
+        if (null == serverConf.getIndexDirs()) {
+            indexDirs = Collections.emptyList();
+        } else {
+            indexDirs = Arrays.asList(serverConf.getIndexDirs());
+        }
+        log.info("Hello, I'm your bookie, listening on port {} :"
+                + " zkServers = {}, journals = {}, ledgers = {}, index = {}",
+            new Object[]{
+                serverConf.getBookiePort(),
+                serverConf.getZkServers(),
+                Arrays.asList(serverConf.getJournalDirNames()),
+                Arrays.asList(serverConf.getLedgerDirs()),
+                indexDirs
+            });
+        try {
+            this.bs = new BookieServer(serverConf, statsLogger);
+            bs.start();
+            log.info("Started bookie server successfully.");
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to start bookie server", e);
+        }
     }
-  }
 
-  @Override
-  protected void doClose() throws IOException {
-    // no-op
-  }
+    @Override
+    protected void doStop() {
+        if (null != bs) {
+            bs.shutdown();
+        }
+    }
+
+    @Override
+    protected void doClose() throws IOException {
+        // no-op
+    }
 }

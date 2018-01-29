@@ -33,90 +33,90 @@ import org.apache.commons.lang.StringUtils;
  */
 public class NetUtils {
 
-  /**
-   * Get the inet socket address for the provided {@code endpoint}.
-   *
-   * @param endpoint network endpoint
-   * @return inet socket address for the network endpoint
-   */
-  public static InetSocketAddress of(Endpoint endpoint) {
-    return new InetSocketAddress(endpoint.getHostname(), endpoint.getPort());
-  }
-
-  public static String getLocalHostName(boolean useHostname) {
-    String hostname;
-    try {
-      if (useHostname) {
-        hostname = InetAddress.getLocalHost().getHostName();
-      } else {
-        hostname = InetAddress.getLocalHost().getHostAddress();
-      }
-    } catch (UnknownHostException uhe) {
-      hostname = "Unknown-Host-Name";
+    /**
+     * Get the inet socket address for the provided {@code endpoint}.
+     *
+     * @param endpoint network endpoint
+     * @return inet socket address for the network endpoint
+     */
+    public static InetSocketAddress of(Endpoint endpoint) {
+        return new InetSocketAddress(endpoint.getHostname(), endpoint.getPort());
     }
-    return hostname;
-  }
 
-  public static Endpoint getLocalEndpoint(int port, boolean useHostname)
-    throws UnknownHostException {
-    String hostname;
-    if (useHostname) {
-      hostname = InetAddress.getLocalHost().getHostName();
-    } else {
-      hostname = InetAddress.getLocalHost().getHostAddress();
+    public static String getLocalHostName(boolean useHostname) {
+        String hostname;
+        try {
+            if (useHostname) {
+                hostname = InetAddress.getLocalHost().getHostName();
+            } else {
+                hostname = InetAddress.getLocalHost().getHostAddress();
+            }
+        } catch (UnknownHostException uhe) {
+            hostname = "Unknown-Host-Name";
+        }
+        return hostname;
     }
-    return createEndpoint(hostname, port);
-  }
 
-  /**
-   * Get the list of endpoints from an endpoint string.
-   *
-   * @param endpointStr an endpoint string.
-   * @return list of endpoints.
-   */
-  public static List<Endpoint> parseEndpoints(String endpointStr) {
-    String[] endpointParts = StringUtils.split(endpointStr, ',');
-    checkArgument(endpointParts.length > 0,
-      "Invalid endpoint strings %s", endpointStr);
-    List<Endpoint> endpoints = Lists.newArrayListWithExpectedSize(endpointParts.length);
-    for (String endpointPart : endpointParts) {
-      endpoints.add(parseEndpoint(endpointPart));
+    public static Endpoint getLocalEndpoint(int port, boolean useHostname)
+        throws UnknownHostException {
+        String hostname;
+        if (useHostname) {
+            hostname = InetAddress.getLocalHost().getHostName();
+        } else {
+            hostname = InetAddress.getLocalHost().getHostAddress();
+        }
+        return createEndpoint(hostname, port);
     }
-    return endpoints;
-  }
 
-  /**
-   * Parse an endpoint from an endpoint string.
-   *
-   * @param endpointStr an endpoint string.
-   * @return endpoint.
-   */
-  public static Endpoint parseEndpoint(String endpointStr) {
-    String[] endpointParts = StringUtils.split(endpointStr, ':');
-    checkArgument(2 == endpointParts.length,
-      "Invalid endpoint string %s - It should be 'host:port'.", endpointStr);
-    String host = endpointParts[0];
-    int port;
-    try {
-      port = Integer.parseInt(endpointParts[1]);
-    } catch (NumberFormatException nfe) {
-      throw new IllegalArgumentException("Invalid port found in the endpoint string " + endpointStr, nfe);
+    /**
+     * Get the list of endpoints from an endpoint string.
+     *
+     * @param endpointStr an endpoint string.
+     * @return list of endpoints.
+     */
+    public static List<Endpoint> parseEndpoints(String endpointStr) {
+        String[] endpointParts = StringUtils.split(endpointStr, ',');
+        checkArgument(endpointParts.length > 0,
+            "Invalid endpoint strings %s", endpointStr);
+        List<Endpoint> endpoints = Lists.newArrayListWithExpectedSize(endpointParts.length);
+        for (String endpointPart : endpointParts) {
+            endpoints.add(parseEndpoint(endpointPart));
+        }
+        return endpoints;
     }
-    return createEndpoint(host, port);
-  }
 
-  /**
-   * Create an endpoint from {@code hostname} and {@code port}.
-   *
-   * @param hostname hostname of the endpoint
-   * @param port port of the endpoint
-   * @return an endpoint created from {@code hostname} and {@code port}.
-   */
-  public static Endpoint createEndpoint(String hostname, int port) {
-    return Endpoint.newBuilder()
-      .setHostname(hostname)
-      .setPort(port)
-      .build();
-  }
+    /**
+     * Parse an endpoint from an endpoint string.
+     *
+     * @param endpointStr an endpoint string.
+     * @return endpoint.
+     */
+    public static Endpoint parseEndpoint(String endpointStr) {
+        String[] endpointParts = StringUtils.split(endpointStr, ':');
+        checkArgument(2 == endpointParts.length,
+            "Invalid endpoint string %s - It should be 'host:port'.", endpointStr);
+        String host = endpointParts[0];
+        int port;
+        try {
+            port = Integer.parseInt(endpointParts[1]);
+        } catch (NumberFormatException nfe) {
+            throw new IllegalArgumentException("Invalid port found in the endpoint string " + endpointStr, nfe);
+        }
+        return createEndpoint(host, port);
+    }
+
+    /**
+     * Create an endpoint from {@code hostname} and {@code port}.
+     *
+     * @param hostname hostname of the endpoint
+     * @param port     port of the endpoint
+     * @return an endpoint created from {@code hostname} and {@code port}.
+     */
+    public static Endpoint createEndpoint(String hostname, int port) {
+        return Endpoint.newBuilder()
+            .setHostname(hostname)
+            .setPort(port)
+            .build();
+    }
 
 }

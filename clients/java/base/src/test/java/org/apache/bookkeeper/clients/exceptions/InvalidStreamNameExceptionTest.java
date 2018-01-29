@@ -30,14 +30,14 @@ import org.junit.rules.TestName;
  */
 public class InvalidStreamNameExceptionTest {
 
-  @Rule
-  public TestName name = new TestName();
+    @Rule
+    public TestName name = new TestName();
 
-  @Test
-  public void testGetMessage() {
-    InvalidStreamNameException icne = new InvalidStreamNameException(name.getMethodName());
-    assertEquals("Invalid stream name : " + name.getMethodName(), icne.getMessage());
-    assertNull(icne.getCause());
-  }
+    @Test
+    public void testGetMessage() {
+        InvalidStreamNameException icne = new InvalidStreamNameException(name.getMethodName());
+        assertEquals("Invalid stream name : " + name.getMethodName(), icne.getMessage());
+        assertNull(icne.getCause());
+    }
 
 }

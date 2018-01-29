@@ -59,135 +59,135 @@ import org.junit.Test;
  */
 public class TestMetaRangeClientImpl extends GrpcClientTestBase {
 
-  private static final long streamId = 1234L;
-  private static final long groupId = 456L;
-  private static final StreamProperties streamProps = StreamProperties.newBuilder()
-    .setStreamId(streamId)
-    .setStorageContainerId(groupId)
-    .setStreamName("test-meta-range-client")
-    .setStreamConf(StreamConfiguration.newBuilder().build())
-    .build();
-  private final LocationClient locationClient = mock(LocationClient.class);
-  private MetaRangeClientImpl metaRangeClient;
-  private final StorageServerChannel rsChannel = mock(StorageServerChannel.class);
-  private final StorageServerChannelManager channelManager = new StorageServerChannelManager(
-    ep -> rsChannel);
+    private static final long streamId = 1234L;
+    private static final long groupId = 456L;
+    private static final StreamProperties streamProps = StreamProperties.newBuilder()
+        .setStreamId(streamId)
+        .setStorageContainerId(groupId)
+        .setStreamName("test-meta-range-client")
+        .setStreamConf(StreamConfiguration.newBuilder().build())
+        .build();
+    private final LocationClient locationClient = mock(LocationClient.class);
+    private MetaRangeClientImpl metaRangeClient;
+    private final StorageServerChannel rsChannel = mock(StorageServerChannel.class);
+    private final StorageServerChannelManager channelManager = new StorageServerChannelManager(
+        ep -> rsChannel);
 
-  @Override
-  protected void doSetup() throws Exception {
-    scheduler = OrderedScheduler.newSchedulerBuilder()
-      .numThreads(1)
-      .name("test-meta-range-client")
-      .build();
-    metaRangeClient = new MetaRangeClientImpl(
-      streamProps,
-      scheduler,
-      new StorageContainerChannelManager(
-        channelManager,
-        locationClient,
-        scheduler));
-  }
-
-  @Override
-  protected void doTeardown() throws Exception {
-    if (null != scheduler) {
-      scheduler.shutdown();
+    @Override
+    protected void doSetup() throws Exception {
+        scheduler = OrderedScheduler.newSchedulerBuilder()
+            .numThreads(1)
+            .name("test-meta-range-client")
+            .build();
+        metaRangeClient = new MetaRangeClientImpl(
+            streamProps,
+            scheduler,
+            new StorageContainerChannelManager(
+                channelManager,
+                locationClient,
+                scheduler));
     }
-  }
 
-
-  private RelatedRanges buildRelatedRange(long startKey,
-                                          long endKey,
-                                          long rangeId,
-                                          long groupId,
-                                          List<Long> parentRanges) {
-    return RelatedRanges.newBuilder()
-      .setProps(buildRangeMeta(
-        startKey, endKey, rangeId, groupId))
-      .setType(RelationType.PARENTS)
-      .addAllRelatedRanges(parentRanges)
-      .build();
-  }
-
-
-  private RangeProperties buildRangeMeta(long startKey,
-                                         long endKey,
-                                         long rangeId,
-                                         long groupId) {
-    return RangeProperties.newBuilder()
-      .setStartHashKey(startKey)
-      .setEndHashKey(endKey)
-      .setRangeId(rangeId)
-      .setStorageContainerId(groupId)
-      .build();
-  }
-
-  @Test
-  public void testGetActiveStreamRanges() throws Exception {
-    CompletableFuture<StorageServerChannel> serviceFuture = FutureUtils.createFuture();
-    metaRangeClient.getStorageContainerClient().setStorageServerChannelFuture(serviceFuture);
-
-    // create response
-    GetActiveRangesResponse getActiveRangesResponse = GetActiveRangesResponse.newBuilder()
-      .addRanges(
-        buildRelatedRange(Long.MIN_VALUE, 0L, 123L, 1L, Lists.newArrayList(113L))
-      ).addRanges(
-        buildRelatedRange(0L, Long.MAX_VALUE, 124L, 2L, Lists.newArrayList(114L))
-      ).build();
-    StorageContainerResponse response = StorageContainerResponse.newBuilder()
-      .setCode(StatusCode.SUCCESS)
-      .setGetActiveRangesResp(getActiveRangesResponse)
-      .build();
-
-    MetaRangeServiceImplBase metaRangeService = new MetaRangeServiceImplBase() {
-      @Override
-      public void getActiveRanges(StorageContainerRequest request,
-                                  StreamObserver<StorageContainerResponse> responseObserver) {
-        responseObserver.onNext(response);
-        responseObserver.onCompleted();
-      }
-    };
-    serviceRegistry.addService(metaRangeService.bindService());
-
-    StorageServerChannel rsChannel = new StorageServerChannel(
-      InProcessChannelBuilder.forName(serverName).directExecutor().build(),
-      Optional.empty());
-    serviceFuture.complete(rsChannel);
-
-    HashStreamRanges expectedStream = createActiveRanges(response.getGetActiveRangesResp());
-    CompletableFuture<HashStreamRanges> getFuture = metaRangeClient.getActiveDataRanges();
-    assertEquals(expectedStream, getFuture.get());
-  }
-
-  @Test
-  public void testGetActiveStreamRangesFailure() throws Exception {
-    CompletableFuture<StorageServerChannel> serviceFuture = FutureUtils.createFuture();
-    metaRangeClient.getStorageContainerClient().setStorageServerChannelFuture(serviceFuture);
-
-    MetaRangeServiceImplBase metaRangeService = new MetaRangeServiceImplBase() {
-      @Override
-      public void getActiveRanges(StorageContainerRequest request,
-                                  StreamObserver<StorageContainerResponse> responseObserver) {
-        responseObserver.onError(new StatusRuntimeException(Status.INTERNAL));
-      }
-    };
-    serviceRegistry.addService(metaRangeService.bindService());
-
-    StorageServerChannel rsChannel = new StorageServerChannel(
-      InProcessChannelBuilder.forName(serverName).directExecutor().build(),
-      Optional.empty());
-    serviceFuture.complete(rsChannel);
-
-    CompletableFuture<HashStreamRanges> getFuture = metaRangeClient.getActiveDataRanges();
-    try {
-      getFuture.get();
-      fail("should fail on rpc failure");
-    } catch (ExecutionException ee) {
-      assertNotNull(ee.getCause());
-      assertTrue(ee.getCause() instanceof StatusRuntimeException);
-      StatusRuntimeException se = (StatusRuntimeException) ee.getCause();
-      assertEquals(Status.INTERNAL, se.getStatus());
+    @Override
+    protected void doTeardown() throws Exception {
+        if (null != scheduler) {
+            scheduler.shutdown();
+        }
     }
-  }
+
+
+    private RelatedRanges buildRelatedRange(long startKey,
+                                            long endKey,
+                                            long rangeId,
+                                            long groupId,
+                                            List<Long> parentRanges) {
+        return RelatedRanges.newBuilder()
+            .setProps(buildRangeMeta(
+                startKey, endKey, rangeId, groupId))
+            .setType(RelationType.PARENTS)
+            .addAllRelatedRanges(parentRanges)
+            .build();
+    }
+
+
+    private RangeProperties buildRangeMeta(long startKey,
+                                           long endKey,
+                                           long rangeId,
+                                           long groupId) {
+        return RangeProperties.newBuilder()
+            .setStartHashKey(startKey)
+            .setEndHashKey(endKey)
+            .setRangeId(rangeId)
+            .setStorageContainerId(groupId)
+            .build();
+    }
+
+    @Test
+    public void testGetActiveStreamRanges() throws Exception {
+        CompletableFuture<StorageServerChannel> serviceFuture = FutureUtils.createFuture();
+        metaRangeClient.getStorageContainerClient().setStorageServerChannelFuture(serviceFuture);
+
+        // create response
+        GetActiveRangesResponse getActiveRangesResponse = GetActiveRangesResponse.newBuilder()
+            .addRanges(
+                buildRelatedRange(Long.MIN_VALUE, 0L, 123L, 1L, Lists.newArrayList(113L))
+            ).addRanges(
+                buildRelatedRange(0L, Long.MAX_VALUE, 124L, 2L, Lists.newArrayList(114L))
+            ).build();
+        StorageContainerResponse response = StorageContainerResponse.newBuilder()
+            .setCode(StatusCode.SUCCESS)
+            .setGetActiveRangesResp(getActiveRangesResponse)
+            .build();
+
+        MetaRangeServiceImplBase metaRangeService = new MetaRangeServiceImplBase() {
+            @Override
+            public void getActiveRanges(StorageContainerRequest request,
+                                        StreamObserver<StorageContainerResponse> responseObserver) {
+                responseObserver.onNext(response);
+                responseObserver.onCompleted();
+            }
+        };
+        serviceRegistry.addService(metaRangeService.bindService());
+
+        StorageServerChannel rsChannel = new StorageServerChannel(
+            InProcessChannelBuilder.forName(serverName).directExecutor().build(),
+            Optional.empty());
+        serviceFuture.complete(rsChannel);
+
+        HashStreamRanges expectedStream = createActiveRanges(response.getGetActiveRangesResp());
+        CompletableFuture<HashStreamRanges> getFuture = metaRangeClient.getActiveDataRanges();
+        assertEquals(expectedStream, getFuture.get());
+    }
+
+    @Test
+    public void testGetActiveStreamRangesFailure() throws Exception {
+        CompletableFuture<StorageServerChannel> serviceFuture = FutureUtils.createFuture();
+        metaRangeClient.getStorageContainerClient().setStorageServerChannelFuture(serviceFuture);
+
+        MetaRangeServiceImplBase metaRangeService = new MetaRangeServiceImplBase() {
+            @Override
+            public void getActiveRanges(StorageContainerRequest request,
+                                        StreamObserver<StorageContainerResponse> responseObserver) {
+                responseObserver.onError(new StatusRuntimeException(Status.INTERNAL));
+            }
+        };
+        serviceRegistry.addService(metaRangeService.bindService());
+
+        StorageServerChannel rsChannel = new StorageServerChannel(
+            InProcessChannelBuilder.forName(serverName).directExecutor().build(),
+            Optional.empty());
+        serviceFuture.complete(rsChannel);
+
+        CompletableFuture<HashStreamRanges> getFuture = metaRangeClient.getActiveDataRanges();
+        try {
+            getFuture.get();
+            fail("should fail on rpc failure");
+        } catch (ExecutionException ee) {
+            assertNotNull(ee.getCause());
+            assertTrue(ee.getCause() instanceof StatusRuntimeException);
+            StatusRuntimeException se = (StatusRuntimeException) ee.getCause();
+            assertEquals(Status.INTERNAL, se.getStatus());
+        }
+    }
 
 }

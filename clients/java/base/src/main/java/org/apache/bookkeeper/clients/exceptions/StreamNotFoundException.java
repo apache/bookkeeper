@@ -23,9 +23,9 @@ package org.apache.bookkeeper.clients.exceptions;
  */
 public class StreamNotFoundException extends ClientException {
 
-  private static final long serialVersionUID = 3997545979114643367L;
+    private static final long serialVersionUID = 3997545979114643367L;
 
-  public StreamNotFoundException(String name) {
-    super("Stream '" + name + "' is not found");
-  }
+    public StreamNotFoundException(String name) {
+        super("Stream '" + name + "' is not found");
+    }
 }

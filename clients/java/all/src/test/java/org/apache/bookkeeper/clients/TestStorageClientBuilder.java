@@ -28,28 +28,28 @@ import org.junit.Test;
  */
 public class TestStorageClientBuilder {
 
-  @Test(expected = NullPointerException.class)
-  public void testBuildClientNullSettings() {
-    StorageClientBuilder.newBuilder()
-      .withSettings(null)
-      .withNamespace("namespace")
-      .build();
-  }
+    @Test(expected = NullPointerException.class)
+    public void testBuildClientNullSettings() {
+        StorageClientBuilder.newBuilder()
+            .withSettings(null)
+            .withNamespace("namespace")
+            .build();
+    }
 
-  @Test(expected = IllegalArgumentException.class)
-  public void testBuildClientNullNamespaceName() {
-    StorageClientBuilder.newBuilder()
-      .withSettings(mock(StorageClientSettings.class))
-      .withNamespace(null)
-      .build();
-  }
+    @Test(expected = IllegalArgumentException.class)
+    public void testBuildClientNullNamespaceName() {
+        StorageClientBuilder.newBuilder()
+            .withSettings(mock(StorageClientSettings.class))
+            .withNamespace(null)
+            .build();
+    }
 
-  @Test(expected = IllegalArgumentException.class)
-  public void testBuildClientInvalidNamespaceName() {
-    StorageClientBuilder.newBuilder()
-      .withSettings(mock(StorageClientSettings.class))
-      .withNamespace("invalid-namespace")
-      .build();
-  }
+    @Test(expected = IllegalArgumentException.class)
+    public void testBuildClientInvalidNamespaceName() {
+        StorageClientBuilder.newBuilder()
+            .withSettings(mock(StorageClientSettings.class))
+            .withNamespace("invalid-namespace")
+            .build();
+    }
 
 }

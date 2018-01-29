@@ -30,49 +30,49 @@ import org.apache.bookkeeper.stream.proto.StreamProperties;
  */
 public interface StorageServerClientManager extends AutoAsyncCloseable {
 
-  /**
-   * Get the channel connected to a storage container <i>scId</i>.
-   *
-   * @param scId storage container id
-   * @return the channel connected to the storage container.
-   */
-  StorageContainerChannel getStorageContainerChannel(long scId);
+    /**
+     * Get the channel connected to a storage container <i>scId</i>.
+     *
+     * @param scId storage container id
+     * @return the channel connected to the storage container.
+     */
+    StorageContainerChannel getStorageContainerChannel(long scId);
 
-  /**
-   * Create a location client.
-   *
-   * @return a location client.
-   */
-  LocationClient getLocationClient();
+    /**
+     * Create a location client.
+     *
+     * @return a location client.
+     */
+    LocationClient getLocationClient();
 
-  /**
-   * Create a root range client.
-   *
-   * @return a root range client.
-   */
-  RootRangeClient getRootRangeClient();
+    /**
+     * Create a root range client.
+     *
+     * @return a root range client.
+     */
+    RootRangeClient getRootRangeClient();
 
-  /**
-   * Get the stream properties of a given stream {@code streamId}.
-   *
-   * @param streamId stream id
-   * @return a future represents the get result.
-   */
-  CompletableFuture<StreamProperties> getStreamProperties(long streamId);
+    /**
+     * Get the stream properties of a given stream {@code streamId}.
+     *
+     * @param streamId stream id
+     * @return a future represents the get result.
+     */
+    CompletableFuture<StreamProperties> getStreamProperties(long streamId);
 
-  /**
-   * Create a meta range client.
-   *
-   * @return a meta range client.
-   */
-  MetaRangeClient openMetaRangeClient(StreamProperties streamProps);
+    /**
+     * Create a meta range client.
+     *
+     * @return a meta range client.
+     */
+    MetaRangeClient openMetaRangeClient(StreamProperties streamProps);
 
-  /**
-   * Open a meta range client for a given stream {@code streamId}.
-   *
-   * @param streamId stream id
-   * @return a future represents open future.
-   */
-  CompletableFuture<MetaRangeClient> openMetaRangeClient(long streamId);
+    /**
+     * Open a meta range client for a given stream {@code streamId}.
+     *
+     * @param streamId stream id
+     * @return a future represents open future.
+     */
+    CompletableFuture<MetaRangeClient> openMetaRangeClient(long streamId);
 
 }

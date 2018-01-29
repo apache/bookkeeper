@@ -47,8 +47,8 @@ import org.apache.distributedlog.api.namespace.Namespace;
  */
 @Slf4j
 class MVCCAsyncBytesStoreImpl
-        extends AbstractStateStoreWithJournal<MVCCStoreImpl<byte[], byte[]>>
-        implements MVCCAsyncStore<byte[], byte[]> {
+    extends AbstractStateStoreWithJournal<MVCCStoreImpl<byte[], byte[]>>
+    implements MVCCAsyncStore<byte[], byte[]> {
 
     MVCCAsyncBytesStoreImpl(Supplier<MVCCStoreImpl<byte[], byte[]>> storeSupplier,
                             Supplier<Namespace> namespaceSupplier) {

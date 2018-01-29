@@ -32,58 +32,58 @@ import org.apache.bookkeeper.stream.proto.storage.StorageContainerResponse;
 public class TableRequestProcessor<RespT>
     extends ListenableFutureRpcProcessor<StorageContainerRequest, StorageContainerResponse, RespT> {
 
-  public static <T> TableRequestProcessor<T> of(
-      StorageContainerRequest request,
-      Function<StorageContainerResponse, T> responseFunc,
-      StorageContainerChannel channel,
-      ScheduledExecutorService executor) {
-    return new TableRequestProcessor<>(request, responseFunc, channel, executor);
-  }
-
-  private final StorageContainerRequest request;
-  private final Function<StorageContainerResponse, RespT> responseFunc;
-
-  private TableRequestProcessor(StorageContainerRequest request,
-                                Function<StorageContainerResponse, RespT> respFunc,
-                                StorageContainerChannel channel,
-                                ScheduledExecutorService executor) {
-    super(channel, executor);
-    this.request = request;
-    this.responseFunc = respFunc;
-  }
-
-  @Override
-  protected StorageContainerRequest createRequest() {
-    return request;
-  }
-
-  @Override
-  protected ListenableFuture<StorageContainerResponse> sendRPC(StorageServerChannel rsChannel,
-                                                               StorageContainerRequest request) {
-    switch (request.getType()) {
-      case KV_RANGE:
-        return rsChannel.getTableService().range(request);
-      case KV_PUT:
-        return rsChannel.getTableService().put(request);
-      case KV_DELETE:
-        return rsChannel.getTableService().delete(request);
-      case KV_INCREMENT:
-        return rsChannel.getTableService().increment(request);
-      case KV_TXN:
-        return rsChannel.getTableService().txn(request);
-      default:
-        SettableFuture<StorageContainerResponse> respFuture = SettableFuture.create();
-        respFuture.setException(new Exception("Unknown request " + request));
-        return respFuture;
+    public static <T> TableRequestProcessor<T> of(
+        StorageContainerRequest request,
+        Function<StorageContainerResponse, T> responseFunc,
+        StorageContainerChannel channel,
+        ScheduledExecutorService executor) {
+        return new TableRequestProcessor<>(request, responseFunc, channel, executor);
     }
-  }
 
-  @Override
-  protected RespT processResponse(StorageContainerResponse response) throws Exception {
-    if (StatusCode.SUCCESS == response.getCode()) {
-      return responseFunc.apply(response);
+    private final StorageContainerRequest request;
+    private final Function<StorageContainerResponse, RespT> responseFunc;
+
+    private TableRequestProcessor(StorageContainerRequest request,
+                                  Function<StorageContainerResponse, RespT> respFunc,
+                                  StorageContainerChannel channel,
+                                  ScheduledExecutorService executor) {
+        super(channel, executor);
+        this.request = request;
+        this.responseFunc = respFunc;
     }
-    throw new InternalServerException("Encountered internal server exception : code = "
-      + response.getCode());
-  }
+
+    @Override
+    protected StorageContainerRequest createRequest() {
+        return request;
+    }
+
+    @Override
+    protected ListenableFuture<StorageContainerResponse> sendRPC(StorageServerChannel rsChannel,
+                                                                 StorageContainerRequest request) {
+        switch (request.getType()) {
+            case KV_RANGE:
+                return rsChannel.getTableService().range(request);
+            case KV_PUT:
+                return rsChannel.getTableService().put(request);
+            case KV_DELETE:
+                return rsChannel.getTableService().delete(request);
+            case KV_INCREMENT:
+                return rsChannel.getTableService().increment(request);
+            case KV_TXN:
+                return rsChannel.getTableService().txn(request);
+            default:
+                SettableFuture<StorageContainerResponse> respFuture = SettableFuture.create();
+                respFuture.setException(new Exception("Unknown request " + request));
+                return respFuture;
+        }
+    }
+
+    @Override
+    protected RespT processResponse(StorageContainerResponse response) throws Exception {
+        if (StatusCode.SUCCESS == response.getCode()) {
+            return responseFunc.apply(response);
+        }
+        throw new InternalServerException("Encountered internal server exception : code = "
+            + response.getCode());
+    }
 }

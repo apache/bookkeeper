@@ -21,11 +21,11 @@ import org.apache.bookkeeper.stream.proto.common.Endpoint;
  */
 public interface StorageContainerRoutingService {
 
-  /**
-   * Get the location for a storage container.
-   *
-   * @return location for a storage container.
-   */
-  Endpoint getStorageContainer(long scId);
+    /**
+     * Get the location for a storage container.
+     *
+     * @return location for a storage container.
+     */
+    Endpoint getStorageContainer(long scId);
 
 }

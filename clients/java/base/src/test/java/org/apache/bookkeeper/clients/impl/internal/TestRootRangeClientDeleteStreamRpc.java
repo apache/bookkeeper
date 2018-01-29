@@ -42,100 +42,100 @@ import org.apache.bookkeeper.stream.proto.storage.StatusCode;
  */
 public class TestRootRangeClientDeleteStreamRpc extends RootRangeClientImplTestBase {
 
-  private String colName;
-  private String streamName;
+    private String colName;
+    private String streamName;
 
-  @Override
-  protected void doSetup() throws Exception {
-    super.doSetup();
+    @Override
+    protected void doSetup() throws Exception {
+        super.doSetup();
 
-    this.colName = testName.getMethodName() + "_col";
-    this.streamName = testName.getMethodName() + "_col";
-  }
-
-  @Override
-  protected RootRangeServiceImplBase createRootRangeServiceForSuccess() {
-    return new RootRangeServiceImplBase() {
-      @Override
-      public void deleteStream(DeleteStreamRequest request,
-                               StreamObserver<DeleteStreamResponse> responseObserver) {
-        responseObserver.onNext(DeleteStreamResponse.newBuilder()
-          .setCode(StatusCode.SUCCESS)
-          .build());
-        responseObserver.onCompleted();
-      }
-    };
-  }
-
-  @Override
-  protected void verifySuccess(RootRangeClient rootRangeClient) throws Exception {
-    assertTrue(rootRangeClient.deleteStream(colName, streamName).get());
-  }
-
-  @Override
-  protected RootRangeServiceImplBase createRootRangeServiceForRequestFailure() {
-    return new RootRangeServiceImplBase() {
-      @Override
-      public void deleteStream(DeleteStreamRequest request,
-                               StreamObserver<DeleteStreamResponse> responseObserver) {
-        responseObserver.onNext(DeleteStreamResponse.newBuilder()
-          .setCode(StatusCode.STREAM_NOT_FOUND)
-          .build());
-        responseObserver.onCompleted();
-      }
-    };
-  }
-
-  @Override
-  protected void verifyRequestFailure(RootRangeClient rootRangeClient) throws Exception {
-    CompletableFuture<Boolean> deleteFuture = rootRangeClient.deleteStream(colName, streamName);
-    try {
-      deleteFuture.get();
-      fail("Should fail on rpc failure");
-    } catch (ExecutionException ee) {
-      assertNotNull(ee.getCause());
-      assertTrue(ee.getCause() instanceof StreamNotFoundException);
+        this.colName = testName.getMethodName() + "_col";
+        this.streamName = testName.getMethodName() + "_col";
     }
-  }
 
-  @Override
-  protected RootRangeServiceImplBase createRootRangeServiceForRpcFailure() {
-    return new RootRangeServiceImplBase() {
-      @Override
-      public void deleteStream(DeleteStreamRequest request,
-                               StreamObserver<DeleteStreamResponse> responseObserver) {
-        responseObserver.onError(new StatusRuntimeException(Status.INTERNAL));
-      }
-    };
-  }
-
-  @Override
-  protected void verifyRpcFailure(RootRangeClient rootRangeClient) throws Exception {
-    CompletableFuture<Boolean> deleteFuture = rootRangeClient.deleteStream(colName, streamName);
-    try {
-      deleteFuture.get();
-      fail("Should fail on rpc failure");
-    } catch (ExecutionException ee) {
-      assertNotNull(ee.getCause());
-      assertTrue(ee.getCause() instanceof StatusRuntimeException);
-      StatusRuntimeException se = (StatusRuntimeException) ee.getCause();
-      assertEquals(Status.INTERNAL, se.getStatus());
+    @Override
+    protected RootRangeServiceImplBase createRootRangeServiceForSuccess() {
+        return new RootRangeServiceImplBase() {
+            @Override
+            public void deleteStream(DeleteStreamRequest request,
+                                     StreamObserver<DeleteStreamResponse> responseObserver) {
+                responseObserver.onNext(DeleteStreamResponse.newBuilder()
+                    .setCode(StatusCode.SUCCESS)
+                    .build());
+                responseObserver.onCompleted();
+            }
+        };
     }
-  }
 
-  @Override
-  protected void verifyChannelFailure(IOException expectedException,
-                                      RootRangeClient rootRangeClient) throws Exception {
-    CompletableFuture<Boolean> deleteFuture = rootRangeClient.deleteStream(colName, streamName);
-    try {
-      deleteFuture.get();
-      fail("Should fail on rpc operation");
-    } catch (ExecutionException ee) {
-      assertNotNull(ee.getCause());
-      assertTrue(ee.getCause() instanceof ClientException);
-      ClientException zse = (ClientException) ee.getCause();
-      assertNotNull(zse.getCause());
-      assertTrue(expectedException == zse.getCause());
+    @Override
+    protected void verifySuccess(RootRangeClient rootRangeClient) throws Exception {
+        assertTrue(rootRangeClient.deleteStream(colName, streamName).get());
     }
-  }
+
+    @Override
+    protected RootRangeServiceImplBase createRootRangeServiceForRequestFailure() {
+        return new RootRangeServiceImplBase() {
+            @Override
+            public void deleteStream(DeleteStreamRequest request,
+                                     StreamObserver<DeleteStreamResponse> responseObserver) {
+                responseObserver.onNext(DeleteStreamResponse.newBuilder()
+                    .setCode(StatusCode.STREAM_NOT_FOUND)
+                    .build());
+                responseObserver.onCompleted();
+            }
+        };
+    }
+
+    @Override
+    protected void verifyRequestFailure(RootRangeClient rootRangeClient) throws Exception {
+        CompletableFuture<Boolean> deleteFuture = rootRangeClient.deleteStream(colName, streamName);
+        try {
+            deleteFuture.get();
+            fail("Should fail on rpc failure");
+        } catch (ExecutionException ee) {
+            assertNotNull(ee.getCause());
+            assertTrue(ee.getCause() instanceof StreamNotFoundException);
+        }
+    }
+
+    @Override
+    protected RootRangeServiceImplBase createRootRangeServiceForRpcFailure() {
+        return new RootRangeServiceImplBase() {
+            @Override
+            public void deleteStream(DeleteStreamRequest request,
+                                     StreamObserver<DeleteStreamResponse> responseObserver) {
+                responseObserver.onError(new StatusRuntimeException(Status.INTERNAL));
+            }
+        };
+    }
+
+    @Override
+    protected void verifyRpcFailure(RootRangeClient rootRangeClient) throws Exception {
+        CompletableFuture<Boolean> deleteFuture = rootRangeClient.deleteStream(colName, streamName);
+        try {
+            deleteFuture.get();
+            fail("Should fail on rpc failure");
+        } catch (ExecutionException ee) {
+            assertNotNull(ee.getCause());
+            assertTrue(ee.getCause() instanceof StatusRuntimeException);
+            StatusRuntimeException se = (StatusRuntimeException) ee.getCause();
+            assertEquals(Status.INTERNAL, se.getStatus());
+        }
+    }
+
+    @Override
+    protected void verifyChannelFailure(IOException expectedException,
+                                        RootRangeClient rootRangeClient) throws Exception {
+        CompletableFuture<Boolean> deleteFuture = rootRangeClient.deleteStream(colName, streamName);
+        try {
+            deleteFuture.get();
+            fail("Should fail on rpc operation");
+        } catch (ExecutionException ee) {
+            assertNotNull(ee.getCause());
+            assertTrue(ee.getCause() instanceof ClientException);
+            ClientException zse = (ClientException) ee.getCause();
+            assertNotNull(zse.getCause());
+            assertTrue(expectedException == zse.getCause());
+        }
+    }
 }

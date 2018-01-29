@@ -37,68 +37,68 @@ import org.apache.bookkeeper.stream.proto.storage.GetStreamResponse;
  *
  * <p>These information includes:
  * <ul>
- *   <li>the list of namespace</li>
- *   <li>the list of streams within each namespace</li>
- *   <li>the list of transactions</li>
- *   <li>the list of read groups</li>
+ * <li>the list of namespace</li>
+ * <li>the list of streams within each namespace</li>
+ * <li>the list of transactions</li>
+ * <li>the list of read groups</li>
  * </ul>
  */
 public interface RootRangeStore {
 
-  //
-  // Namespace API
-  //
+    //
+    // Namespace API
+    //
 
-  /**
-   * Create a new namespace with the provide <i>name</i> and configuration <i>colConf</i>.
-   *
-   * @param request create namespace request
-   * @return public namespace properties on success or exception on failure.
-   */
-  CompletableFuture<CreateNamespaceResponse> createNamespace(CreateNamespaceRequest request);
+    /**
+     * Create a new namespace with the provide <i>name</i> and configuration <i>colConf</i>.
+     *
+     * @param request create namespace request
+     * @return public namespace properties on success or exception on failure.
+     */
+    CompletableFuture<CreateNamespaceResponse> createNamespace(CreateNamespaceRequest request);
 
-  /**
-   * Delete a namespace named <i>colName</i>.
-   *
-   * @param request delete namespace request
-   * @return null on success or exception on failure.
-   */
-  CompletableFuture<DeleteNamespaceResponse> deleteNamespace(DeleteNamespaceRequest request);
+    /**
+     * Delete a namespace named <i>colName</i>.
+     *
+     * @param request delete namespace request
+     * @return null on success or exception on failure.
+     */
+    CompletableFuture<DeleteNamespaceResponse> deleteNamespace(DeleteNamespaceRequest request);
 
-  /**
-   * Retrieve the configuration for namespace <i>colName</i>.
-   *
-   * @param request get namespace request
-   * @return public namespace properties on success or exception on failure.
-   */
-  CompletableFuture<GetNamespaceResponse> getNamespace(GetNamespaceRequest request);
+    /**
+     * Retrieve the configuration for namespace <i>colName</i>.
+     *
+     * @param request get namespace request
+     * @return public namespace properties on success or exception on failure.
+     */
+    CompletableFuture<GetNamespaceResponse> getNamespace(GetNamespaceRequest request);
 
-  //
-  // Stream API
-  //
+    //
+    // Stream API
+    //
 
-  /**
-   * Create a new stream with the provide <i>name</i> and configuration <i>streamConf</i>.
-   *
-   * @param request create stream request
-   * @return public stream properties on success or exception on failure.
-   */
-  CompletableFuture<CreateStreamResponse> createStream(CreateStreamRequest request);
+    /**
+     * Create a new stream with the provide <i>name</i> and configuration <i>streamConf</i>.
+     *
+     * @param request create stream request
+     * @return public stream properties on success or exception on failure.
+     */
+    CompletableFuture<CreateStreamResponse> createStream(CreateStreamRequest request);
 
-  /**
-   * Delete a stream named <i>streamName</i>.
-   *
-   * @param request delete stream request
-   * @return null on success or exception on failure.
-   */
-  CompletableFuture<DeleteStreamResponse> deleteStream(DeleteStreamRequest request);
+    /**
+     * Delete a stream named <i>streamName</i>.
+     *
+     * @param request delete stream request
+     * @return null on success or exception on failure.
+     */
+    CompletableFuture<DeleteStreamResponse> deleteStream(DeleteStreamRequest request);
 
-  /**
-   * Retrieve the configuration for stream <i>streamName</i>.
-   *
-   * @param request get stream request
-   * @return public stream properties on success or exception on failure.
-   */
-  CompletableFuture<GetStreamResponse> getStream(GetStreamRequest request);
+    /**
+     * Retrieve the configuration for stream <i>streamName</i>.
+     *
+     * @param request get stream request
+     * @return public stream properties on success or exception on failure.
+     */
+    CompletableFuture<GetStreamResponse> getStream(GetStreamRequest request);
 
 }

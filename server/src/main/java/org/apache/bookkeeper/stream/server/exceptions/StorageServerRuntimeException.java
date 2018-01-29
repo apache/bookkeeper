@@ -21,17 +21,17 @@ import org.apache.bookkeeper.stream.storage.exceptions.StorageRuntimeException;
  */
 public class StorageServerRuntimeException extends StorageRuntimeException {
 
-  private static final long serialVersionUID = -5503452340852281043L;
+    private static final long serialVersionUID = -5503452340852281043L;
 
-  public StorageServerRuntimeException(String message) {
-    super(message);
-  }
+    public StorageServerRuntimeException(String message) {
+        super(message);
+    }
 
-  public StorageServerRuntimeException(String message, Throwable cause) {
-    super(message, cause);
-  }
+    public StorageServerRuntimeException(String message, Throwable cause) {
+        super(message, cause);
+    }
 
-  public StorageServerRuntimeException(Throwable cause) {
-    super(cause);
-  }
+    public StorageServerRuntimeException(Throwable cause) {
+        super(cause);
+    }
 }

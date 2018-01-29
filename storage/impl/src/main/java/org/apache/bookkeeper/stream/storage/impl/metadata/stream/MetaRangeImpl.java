@@ -63,420 +63,420 @@ import org.apache.bookkeeper.stream.storage.exceptions.DataRangeNotFoundExceptio
 @Slf4j
 public class MetaRangeImpl implements MetaRange {
 
-  private static final byte METADATA_SEP = (byte) 0x1;
-  private static final byte RANGE_SEP = (byte) 0x2;
-  private static final byte END_SEP = (byte) 0xff;
+    private static final byte METADATA_SEP = (byte) 0x1;
+    private static final byte RANGE_SEP = (byte) 0x2;
+    private static final byte END_SEP = (byte) 0xff;
 
-  public static final byte[] getStreamMetadataKey(long streamId) {
-    byte[] metadataKey = new byte[Long.BYTES + 1];
-    Bytes.toBytes(streamId, metadataKey, 0);
-    metadataKey[Long.BYTES] = METADATA_SEP;
-    return metadataKey;
-  }
-
-  public static final byte[] getStreamRangeKey(long streamId, long rangeId) {
-    byte[] rangeKey = new byte[2 * Long.BYTES + 1];
-    Bytes.toBytes(streamId, rangeKey, 0);
-    rangeKey[Long.BYTES] = RANGE_SEP;
-    Bytes.toBytes(rangeId, rangeKey, Long.BYTES + 1);
-    return rangeKey;
-  }
-
-  public static final byte[] getStreamMetadataEndKey(long streamId) {
-    byte[] metadataKey = new byte[Long.BYTES + 1];
-    Bytes.toBytes(streamId, metadataKey, 0);
-    metadataKey[Long.BYTES] = END_SEP;
-    return metadataKey;
-  }
-
-  public static final boolean isMetadataKey(byte[] key) {
-    return key.length == (Long.BYTES + 1) && key[Long.BYTES] == METADATA_SEP;
-  }
-
-  static final boolean isStreamRangeKey(byte[] key) {
-    return key.length == (2 * Long.BYTES + 1) && key[Long.BYTES] == RANGE_SEP;
-  }
-
-  private final MVCCAsyncStore<byte[], byte[]> store;
-  private final ExecutorService executor;
-  private final StorageContainerPlacementPolicy placementPolicy;
-
-  @GuardedBy("this")
-  private long streamId;
-  @GuardedBy("this")
-  private StreamProperties streamProps;
-  @OrderedBy(key = "streamId")
-  private LifecycleState lifecycleState = LifecycleState.UNINIT;
-  @OrderedBy(key = "streamId")
-  private ServingState servingState = ServingState.WRITABLE;
-  @OrderedBy(key = "streamId")
-  private long cTime = 0L;
-  @OrderedBy(key = "streamId")
-  private long mTime = 0L;
-
-  @OrderedBy(key = "streamId")
-  private long nextRangeId = MIN_DATA_RANGE_ID;
-  /**
-   * All the ranges in the stream.
-   *
-   * <p>The ranges are sorted by range id. It implies that these
-   * ranges are also sorted in the increasing order of their creation time.
-   */
-  @OrderedBy(key = "streamId")
-  private final NavigableMap<Long, RangeMetadata> ranges;
-  /**
-   * List of ranges that are currently active in the stream.
-   */
-  @OrderedBy(key = "streamId")
-  private final List<Long> currentRanges;
-
-  // the revision of this meta range in local store.
-  private long revision;
-
-  public MetaRangeImpl(MVCCAsyncStore<byte[], byte[]> store,
-                       ExecutorService executor,
-                       StorageContainerPlacementPolicy placementPolicy) {
-    this(
-      store,
-      executor,
-      placementPolicy,
-      Maps.newTreeMap(),
-      Lists.newArrayList(),
-      StreamMetadata
-        .newBuilder()
-        .setLifecycleState(LifecycleState.UNINIT)
-        .setServingState(ServingState.WRITABLE)
-        .setNextRangeId(MIN_DATA_RANGE_ID)
-        .build(),
-      0L,
-      0L);
-  }
-
-  private MetaRangeImpl(MVCCAsyncStore<byte[], byte[]> store,
-                        ExecutorService executor,
-                        StorageContainerPlacementPolicy placementPolicy,
-                        NavigableMap<Long, RangeMetadata> ranges,
-                        List<Long> currentRanges,
-                        StreamMetadata meta,
-                        long cTime,
-                        long mTime) {
-    this.store = store;
-    this.executor = executor;
-    this.placementPolicy = placementPolicy;
-    // construct the state
-    this.ranges = ranges;
-    this.currentRanges = currentRanges;
-    this.cTime = cTime;
-    this.mTime = mTime;
-    this.streamProps = meta.getProps();
-    this.streamId = streamProps.getStreamId();
-    this.lifecycleState = meta.getLifecycleState();
-    this.servingState = meta.getServingState();
-    this.nextRangeId = meta.getNextRangeId();
-  }
-
-  @VisibleForTesting
-  public long unsafeGetCreationTime() {
-    return cTime;
-  }
-
-  @VisibleForTesting
-  public long unsafeGetModificationTime() {
-    return mTime;
-  }
-
-  @VisibleForTesting
-  public LifecycleState unsafeGetLifecycleState() {
-    return lifecycleState;
-  }
-
-  @VisibleForTesting
-  public synchronized StreamProperties unsafeGetStreamProperties() {
-    return streamProps;
-  }
-
-  @VisibleForTesting
-  public synchronized long unsafeGetStreamId() {
-    return streamId;
-  }
-
-  @VisibleForTesting
-  public NavigableMap<Long, RangeMetadata> unsafeGetRanges() {
-    return ranges;
-  }
-
-  @VisibleForTesting
-  private synchronized StreamMetadata toStreamMetadata(LifecycleState state) {
-    StreamMetadata.Builder builder = StreamMetadata
-      .newBuilder()
-      .setProps(streamProps)
-      .setLifecycleState(state)
-      .setServingState(servingState)
-      .setNextRangeId(nextRangeId)
-      .setCTime(cTime)
-      .setMTime(mTime)
-      .addAllCurrentRanges(currentRanges);
-    return builder.build();
-  }
-
-  private synchronized StreamMetadata toStreamMetadata(ServingState state, long mTime) {
-    StreamMetadata.Builder builder = StreamMetadata
-      .newBuilder()
-      .setProps(streamProps)
-      .setLifecycleState(lifecycleState)
-      .setServingState(state)
-      .setNextRangeId(nextRangeId)
-      .setCTime(cTime)
-      .setMTime(mTime)
-      .addAllCurrentRanges(currentRanges);
-    return builder.build();
-  }
-
-  @VisibleForTesting
-  public List<Long> unsafeGetCurrentRanges() {
-    return currentRanges;
-  }
-
-  private <T> CompletableFuture<T> checkStreamCreated(Supplier<CompletableFuture<T>> supplier) {
-    CompletableFuture<T> future = FutureUtils.createFuture();
-    executor.submit(() -> {
-      try {
-        if (isStreamCreated(lifecycleState)) {
-          supplier.get()
-              .thenApplyAsync(value -> future.complete(value), executor)
-              .exceptionally(cause -> future.completeExceptionally(cause));
-        } else {
-          throw new IllegalStateException("Stream isn't created yet.");
-        }
-      } catch (Throwable cause) {
-        future.completeExceptionally(cause);
-      }
-    });
-    return future;
-  }
-
-  @OrderedBy(key = "streamId")
-  private void checkLifecycleState(LifecycleState expected) {
-    checkState(expected == lifecycleState, "Unexpected state " + lifecycleState + ", expected to be " + expected);
-  }
-
-  @Override
-  public synchronized String getName() {
-    checkState(null != streamProps);
-    return streamProps.getStreamName();
-  }
-
-  private <T> CompletableFuture<T> executeTask(Consumer<CompletableFuture<T>> consumer) {
-    CompletableFuture<T> executeFuture = FutureUtils.createFuture();
-    executor.submit(() -> {
-      try {
-        consumer.accept(executeFuture);
-      } catch (Throwable cause) {
-        executeFuture.completeExceptionally(cause);
-      }
-    });
-    return executeFuture;
-  }
-
-  @Override
-  public CompletableFuture<Boolean> create(StreamProperties streamProps) {
-    return executeTask((future) -> unsafeCreate(future, streamProps));
-  }
-
-  @OrderedBy(key = "streamId")
-  private void unsafeCreate(CompletableFuture<Boolean> createFuture,
-                            StreamProperties streamProps) {
-    // 1. verify the state
-    checkLifecycleState(LifecycleState.UNINIT);
-    this.lifecycleState = LifecycleState.CREATING;
-
-    // 2. store the props/configuration
-    synchronized (this) {
-      this.streamProps = streamProps;
+    public static final byte[] getStreamMetadataKey(long streamId) {
+        byte[] metadataKey = new byte[Long.BYTES + 1];
+        Bytes.toBytes(streamId, metadataKey, 0);
+        metadataKey[Long.BYTES] = METADATA_SEP;
+        return metadataKey;
     }
-    this.streamId = streamProps.getStreamId();
-    this.cTime = this.mTime = System.currentTimeMillis();
 
-    TxnOpBuilder<byte[], byte[]> txnBuilder = store.newTxn();
-
-    // 3. create the ranges
-    List<RangeProperties> propertiesList =
-      split(streamId, streamProps.getStreamConf().getInitialNumRanges(), nextRangeId, placementPolicy);
-    for (RangeProperties props : propertiesList) {
-      RangeMetadata meta = RangeMetadata.newBuilder()
-        .setProps(props)
-        .setCreateTime(cTime)
-        .setFenceTime(Long.MAX_VALUE)
-        .setState(RangeState.RANGE_ACTIVE)
-        .addAllParents(Lists.newArrayList())
-        .build();
-      ranges.put(props.getRangeId(), meta);
-      currentRanges.add(props.getRangeId());
-
-      txnBuilder = txnBuilder.addSuccessOps(
-        store.newPut(
-            getStreamRangeKey(streamId, props.getRangeId()),
-            meta.toByteArray()));
+    public static final byte[] getStreamRangeKey(long streamId, long rangeId) {
+        byte[] rangeKey = new byte[2 * Long.BYTES + 1];
+        Bytes.toBytes(streamId, rangeKey, 0);
+        rangeKey[Long.BYTES] = RANGE_SEP;
+        Bytes.toBytes(rangeId, rangeKey, Long.BYTES + 1);
+        return rangeKey;
     }
-    nextRangeId += propertiesList.size();
 
-    // serialize the stream metadata
-    byte[] streamMetadataKey = getStreamMetadataKey(streamId);
-    txnBuilder = txnBuilder.addSuccessOps(
-        store.newPut(
-            streamMetadataKey,
-            toStreamMetadata(LifecycleState.CREATED).toByteArray()));
-
-    // create stream only when stream doesn't exists
-    txnBuilder = txnBuilder.addCompareOps(
-        store.newCompareValue(CompareResult.EQUAL, streamMetadataKey, null));
-
-    if (log.isTraceEnabled()) {
-      log.trace("Execute create stream metadata range txn {}", streamProps);
+    public static final byte[] getStreamMetadataEndKey(long streamId) {
+        byte[] metadataKey = new byte[Long.BYTES + 1];
+        Bytes.toBytes(streamId, metadataKey, 0);
+        metadataKey[Long.BYTES] = END_SEP;
+        return metadataKey;
     }
-    store.txn(txnBuilder.build())
-        .thenApplyAsync(txnResult -> {
-          try {
-            if (log.isTraceEnabled()) {
-              log.trace("Create stream metadata range txn result = {}", txnResult.isSuccess());
+
+    public static final boolean isMetadataKey(byte[] key) {
+        return key.length == (Long.BYTES + 1) && key[Long.BYTES] == METADATA_SEP;
+    }
+
+    static final boolean isStreamRangeKey(byte[] key) {
+        return key.length == (2 * Long.BYTES + 1) && key[Long.BYTES] == RANGE_SEP;
+    }
+
+    private final MVCCAsyncStore<byte[], byte[]> store;
+    private final ExecutorService executor;
+    private final StorageContainerPlacementPolicy placementPolicy;
+
+    @GuardedBy("this")
+    private long streamId;
+    @GuardedBy("this")
+    private StreamProperties streamProps;
+    @OrderedBy(key = "streamId")
+    private LifecycleState lifecycleState = LifecycleState.UNINIT;
+    @OrderedBy(key = "streamId")
+    private ServingState servingState = ServingState.WRITABLE;
+    @OrderedBy(key = "streamId")
+    private long cTime = 0L;
+    @OrderedBy(key = "streamId")
+    private long mTime = 0L;
+
+    @OrderedBy(key = "streamId")
+    private long nextRangeId = MIN_DATA_RANGE_ID;
+    /**
+     * All the ranges in the stream.
+     *
+     * <p>The ranges are sorted by range id. It implies that these
+     * ranges are also sorted in the increasing order of their creation time.
+     */
+    @OrderedBy(key = "streamId")
+    private final NavigableMap<Long, RangeMetadata> ranges;
+    /**
+     * List of ranges that are currently active in the stream.
+     */
+    @OrderedBy(key = "streamId")
+    private final List<Long> currentRanges;
+
+    // the revision of this meta range in local store.
+    private long revision;
+
+    public MetaRangeImpl(MVCCAsyncStore<byte[], byte[]> store,
+                         ExecutorService executor,
+                         StorageContainerPlacementPolicy placementPolicy) {
+        this(
+            store,
+            executor,
+            placementPolicy,
+            Maps.newTreeMap(),
+            Lists.newArrayList(),
+            StreamMetadata
+                .newBuilder()
+                .setLifecycleState(LifecycleState.UNINIT)
+                .setServingState(ServingState.WRITABLE)
+                .setNextRangeId(MIN_DATA_RANGE_ID)
+                .build(),
+            0L,
+            0L);
+    }
+
+    private MetaRangeImpl(MVCCAsyncStore<byte[], byte[]> store,
+                          ExecutorService executor,
+                          StorageContainerPlacementPolicy placementPolicy,
+                          NavigableMap<Long, RangeMetadata> ranges,
+                          List<Long> currentRanges,
+                          StreamMetadata meta,
+                          long cTime,
+                          long mTime) {
+        this.store = store;
+        this.executor = executor;
+        this.placementPolicy = placementPolicy;
+        // construct the state
+        this.ranges = ranges;
+        this.currentRanges = currentRanges;
+        this.cTime = cTime;
+        this.mTime = mTime;
+        this.streamProps = meta.getProps();
+        this.streamId = streamProps.getStreamId();
+        this.lifecycleState = meta.getLifecycleState();
+        this.servingState = meta.getServingState();
+        this.nextRangeId = meta.getNextRangeId();
+    }
+
+    @VisibleForTesting
+    public long unsafeGetCreationTime() {
+        return cTime;
+    }
+
+    @VisibleForTesting
+    public long unsafeGetModificationTime() {
+        return mTime;
+    }
+
+    @VisibleForTesting
+    public LifecycleState unsafeGetLifecycleState() {
+        return lifecycleState;
+    }
+
+    @VisibleForTesting
+    public synchronized StreamProperties unsafeGetStreamProperties() {
+        return streamProps;
+    }
+
+    @VisibleForTesting
+    public synchronized long unsafeGetStreamId() {
+        return streamId;
+    }
+
+    @VisibleForTesting
+    public NavigableMap<Long, RangeMetadata> unsafeGetRanges() {
+        return ranges;
+    }
+
+    @VisibleForTesting
+    private synchronized StreamMetadata toStreamMetadata(LifecycleState state) {
+        StreamMetadata.Builder builder = StreamMetadata
+            .newBuilder()
+            .setProps(streamProps)
+            .setLifecycleState(state)
+            .setServingState(servingState)
+            .setNextRangeId(nextRangeId)
+            .setCTime(cTime)
+            .setMTime(mTime)
+            .addAllCurrentRanges(currentRanges);
+        return builder.build();
+    }
+
+    private synchronized StreamMetadata toStreamMetadata(ServingState state, long mTime) {
+        StreamMetadata.Builder builder = StreamMetadata
+            .newBuilder()
+            .setProps(streamProps)
+            .setLifecycleState(lifecycleState)
+            .setServingState(state)
+            .setNextRangeId(nextRangeId)
+            .setCTime(cTime)
+            .setMTime(mTime)
+            .addAllCurrentRanges(currentRanges);
+        return builder.build();
+    }
+
+    @VisibleForTesting
+    public List<Long> unsafeGetCurrentRanges() {
+        return currentRanges;
+    }
+
+    private <T> CompletableFuture<T> checkStreamCreated(Supplier<CompletableFuture<T>> supplier) {
+        CompletableFuture<T> future = FutureUtils.createFuture();
+        executor.submit(() -> {
+            try {
+                if (isStreamCreated(lifecycleState)) {
+                    supplier.get()
+                        .thenApplyAsync(value -> future.complete(value), executor)
+                        .exceptionally(cause -> future.completeExceptionally(cause));
+                } else {
+                    throw new IllegalStateException("Stream isn't created yet.");
+                }
+            } catch (Throwable cause) {
+                future.completeExceptionally(cause);
             }
-            if (txnResult.isSuccess()) {
-              List<Result<byte[], byte[]>> results = txnResult.results();
-              MetaRangeImpl.this.revision = results.get(results.size() - 1).revision();
-
-              // mark the state to CREATED
-              this.lifecycleState = LifecycleState.CREATED;
-              createFuture.complete(true);
-            } else {
-              createFuture.complete(false);
-            }
-            return null;
-          } finally {
-            txnResult.recycle();
-          }
-        }, executor)
-        .exceptionally(cause -> {
-          createFuture.completeExceptionally(cause);
-          return null;
         });
-  }
+        return future;
+    }
 
-  @Override
-  public CompletableFuture<MetaRange> load(long streamId) {
-    byte[] streamMetadataKey = getStreamMetadataKey(streamId);
-    byte[] streamMetadataEndKey = getStreamMetadataEndKey(streamId);
+    @OrderedBy(key = "streamId")
+    private void checkLifecycleState(LifecycleState expected) {
+        checkState(expected == lifecycleState, "Unexpected state " + lifecycleState + ", expected to be " + expected);
+    }
 
-    return store.range(streamMetadataKey, streamMetadataEndKey)
-        .thenApplyAsync(kvs -> {
-            if (kvs.isEmpty()) {
-              return null;
-            } else {
-              loadMetadata(kvs);
-              return MetaRangeImpl.this;
+    @Override
+    public synchronized String getName() {
+        checkState(null != streamProps);
+        return streamProps.getStreamName();
+    }
+
+    private <T> CompletableFuture<T> executeTask(Consumer<CompletableFuture<T>> consumer) {
+        CompletableFuture<T> executeFuture = FutureUtils.createFuture();
+        executor.submit(() -> {
+            try {
+                consumer.accept(executeFuture);
+            } catch (Throwable cause) {
+                executeFuture.completeExceptionally(cause);
             }
-        }, executor);
-  }
-
-  private void loadMetadata(List<KVRecord<byte[], byte[]>> kvs) {
-    for (KVRecord<byte[], byte[]> kv : kvs) {
-      if (isMetadataKey(kv.key())) {
-        this.revision = kv.modifiedRevision();
-        long streamId = Bytes.toLong(kv.key(), 0);
-        loadStreamMetadata(streamId, kv.value());
-      } else if (isStreamRangeKey(kv.key())) {
-        long streamId = Bytes.toLong(kv.key(), 0);
-        long rangeId = Bytes.toLong(kv.key(), Long.BYTES + 1);
-        loadRangeMetadata(streamId, rangeId, kv.value());
-      }
-    }
-  }
-
-  private void loadStreamMetadata(long streamId, byte[] streamMetadataBytes) {
-    this.streamId = streamId;
-    StreamMetadata metadata;
-    try {
-        metadata = StreamMetadata.parseFrom(streamMetadataBytes);
-    } catch (InvalidProtocolBufferException e) {
-        throw new RuntimeException("Invalid stream metadata of stream " + streamId, e);
+        });
+        return executeFuture;
     }
 
-    this.streamProps = metadata.getProps();
-    this.lifecycleState = metadata.getLifecycleState();
-    this.servingState = metadata.getServingState();
-    this.currentRanges.clear();
-    this.currentRanges.addAll(metadata.getCurrentRangesList());
-    this.nextRangeId = metadata.getNextRangeId();
-    this.cTime = metadata.getCTime();
-    this.mTime = metadata.getMTime();
-  }
-
-  private void loadRangeMetadata(long streamId, long rangeId, byte[] rangeMetadataBytes) {
-    checkArgument(this.streamId == streamId);
-    checkArgument(rangeId >= 0L);
-
-    RangeMetadata metadata;
-    try {
-      metadata = RangeMetadata.parseFrom(rangeMetadataBytes);
-    } catch (InvalidProtocolBufferException e) {
-      throw new RuntimeException("Invalid range metadata of range (" + streamId + ", " + rangeId + ")", e);
+    @Override
+    public CompletableFuture<Boolean> create(StreamProperties streamProps) {
+        return executeTask((future) -> unsafeCreate(future, streamProps));
     }
 
-    this.ranges.put(rangeId, metadata);
-  }
+    @OrderedBy(key = "streamId")
+    private void unsafeCreate(CompletableFuture<Boolean> createFuture,
+                              StreamProperties streamProps) {
+        // 1. verify the state
+        checkLifecycleState(LifecycleState.UNINIT);
+        this.lifecycleState = LifecycleState.CREATING;
 
-  @Override
-  public CompletableFuture<Boolean> delete(long streamId) {
-    byte[] streamMetadataKey = getStreamMetadataKey(streamId);
-    byte[] streamEndKey = getStreamMetadataEndKey(streamId);
+        // 2. store the props/configuration
+        synchronized (this) {
+            this.streamProps = streamProps;
+        }
+        this.streamId = streamProps.getStreamId();
+        this.cTime = this.mTime = System.currentTimeMillis();
 
-    return store.deleteRange(streamMetadataKey, streamEndKey)
-        .thenApplyAsync(kvs -> !kvs.isEmpty(), executor);
-  }
+        TxnOpBuilder<byte[], byte[]> txnBuilder = store.newTxn();
 
-  @Override
-  public CompletableFuture<ServingState> getServingState() {
-    return checkStreamCreated(() -> FutureUtils.value(servingState));
-  }
+        // 3. create the ranges
+        List<RangeProperties> propertiesList =
+            split(streamId, streamProps.getStreamConf().getInitialNumRanges(), nextRangeId, placementPolicy);
+        for (RangeProperties props : propertiesList) {
+            RangeMetadata meta = RangeMetadata.newBuilder()
+                .setProps(props)
+                .setCreateTime(cTime)
+                .setFenceTime(Long.MAX_VALUE)
+                .setState(RangeState.RANGE_ACTIVE)
+                .addAllParents(Lists.newArrayList())
+                .build();
+            ranges.put(props.getRangeId(), meta);
+            currentRanges.add(props.getRangeId());
 
-  @Override
-  public CompletableFuture<ServingState> updateServingState(ServingState state) {
-    return checkStreamCreated(() -> {
-      long mTime = System.currentTimeMillis();
-      byte[] streamMetadataKey = getStreamMetadataKey(streamId);
-      byte[] streamMetadata = toStreamMetadata(state, mTime).toByteArray();
-      return store.rPut(streamMetadataKey, streamMetadata, revision)
-          .thenApplyAsync(newRev -> {
-            this.servingState = state;
-            this.mTime = mTime;
-            this.revision = newRev;
-            return state;
-          }, executor);
-    });
-  }
+            txnBuilder = txnBuilder.addSuccessOps(
+                store.newPut(
+                    getStreamRangeKey(streamId, props.getRangeId()),
+                    meta.toByteArray()));
+        }
+        nextRangeId += propertiesList.size();
 
-  @Override
-  public CompletableFuture<StreamConfiguration> getConfiguration() {
-    return checkStreamCreated(() -> FutureUtils.value(unsafeGetStreamProperties().getStreamConf()));
-  }
+        // serialize the stream metadata
+        byte[] streamMetadataKey = getStreamMetadataKey(streamId);
+        txnBuilder = txnBuilder.addSuccessOps(
+            store.newPut(
+                streamMetadataKey,
+                toStreamMetadata(LifecycleState.CREATED).toByteArray()));
 
-  private RangeMetadata unsafeGetDataRange(long rangeId) throws DataRangeNotFoundException {
-    RangeMetadata rangeMeta = ranges.get(rangeId);
-    if (null == rangeMeta) {
-      throw new DataRangeNotFoundException(streamId, rangeId);
+        // create stream only when stream doesn't exists
+        txnBuilder = txnBuilder.addCompareOps(
+            store.newCompareValue(CompareResult.EQUAL, streamMetadataKey, null));
+
+        if (log.isTraceEnabled()) {
+            log.trace("Execute create stream metadata range txn {}", streamProps);
+        }
+        store.txn(txnBuilder.build())
+            .thenApplyAsync(txnResult -> {
+                try {
+                    if (log.isTraceEnabled()) {
+                        log.trace("Create stream metadata range txn result = {}", txnResult.isSuccess());
+                    }
+                    if (txnResult.isSuccess()) {
+                        List<Result<byte[], byte[]>> results = txnResult.results();
+                        MetaRangeImpl.this.revision = results.get(results.size() - 1).revision();
+
+                        // mark the state to CREATED
+                        this.lifecycleState = LifecycleState.CREATED;
+                        createFuture.complete(true);
+                    } else {
+                        createFuture.complete(false);
+                    }
+                    return null;
+                } finally {
+                    txnResult.recycle();
+                }
+            }, executor)
+            .exceptionally(cause -> {
+                createFuture.completeExceptionally(cause);
+                return null;
+            });
     }
-    return rangeMeta;
-  }
 
-  @Override
-  public CompletableFuture<List<RangeMetadata>> getActiveRanges() {
-    return checkStreamCreated(() -> {
-      List<Long> rangesIds = ImmutableList.copyOf(currentRanges);
-      List<RangeMetadata> properties = Lists.newArrayListWithExpectedSize(rangesIds.size());
-      for (long rangeId : rangesIds) {
-        properties.add(unsafeGetDataRange(rangeId));
-      }
-      return FutureUtils.value(properties);
-    });
-  }
+    @Override
+    public CompletableFuture<MetaRange> load(long streamId) {
+        byte[] streamMetadataKey = getStreamMetadataKey(streamId);
+        byte[] streamMetadataEndKey = getStreamMetadataEndKey(streamId);
+
+        return store.range(streamMetadataKey, streamMetadataEndKey)
+            .thenApplyAsync(kvs -> {
+                if (kvs.isEmpty()) {
+                    return null;
+                } else {
+                    loadMetadata(kvs);
+                    return MetaRangeImpl.this;
+                }
+            }, executor);
+    }
+
+    private void loadMetadata(List<KVRecord<byte[], byte[]>> kvs) {
+        for (KVRecord<byte[], byte[]> kv : kvs) {
+            if (isMetadataKey(kv.key())) {
+                this.revision = kv.modifiedRevision();
+                long streamId = Bytes.toLong(kv.key(), 0);
+                loadStreamMetadata(streamId, kv.value());
+            } else if (isStreamRangeKey(kv.key())) {
+                long streamId = Bytes.toLong(kv.key(), 0);
+                long rangeId = Bytes.toLong(kv.key(), Long.BYTES + 1);
+                loadRangeMetadata(streamId, rangeId, kv.value());
+            }
+        }
+    }
+
+    private void loadStreamMetadata(long streamId, byte[] streamMetadataBytes) {
+        this.streamId = streamId;
+        StreamMetadata metadata;
+        try {
+            metadata = StreamMetadata.parseFrom(streamMetadataBytes);
+        } catch (InvalidProtocolBufferException e) {
+            throw new RuntimeException("Invalid stream metadata of stream " + streamId, e);
+        }
+
+        this.streamProps = metadata.getProps();
+        this.lifecycleState = metadata.getLifecycleState();
+        this.servingState = metadata.getServingState();
+        this.currentRanges.clear();
+        this.currentRanges.addAll(metadata.getCurrentRangesList());
+        this.nextRangeId = metadata.getNextRangeId();
+        this.cTime = metadata.getCTime();
+        this.mTime = metadata.getMTime();
+    }
+
+    private void loadRangeMetadata(long streamId, long rangeId, byte[] rangeMetadataBytes) {
+        checkArgument(this.streamId == streamId);
+        checkArgument(rangeId >= 0L);
+
+        RangeMetadata metadata;
+        try {
+            metadata = RangeMetadata.parseFrom(rangeMetadataBytes);
+        } catch (InvalidProtocolBufferException e) {
+            throw new RuntimeException("Invalid range metadata of range (" + streamId + ", " + rangeId + ")", e);
+        }
+
+        this.ranges.put(rangeId, metadata);
+    }
+
+    @Override
+    public CompletableFuture<Boolean> delete(long streamId) {
+        byte[] streamMetadataKey = getStreamMetadataKey(streamId);
+        byte[] streamEndKey = getStreamMetadataEndKey(streamId);
+
+        return store.deleteRange(streamMetadataKey, streamEndKey)
+            .thenApplyAsync(kvs -> !kvs.isEmpty(), executor);
+    }
+
+    @Override
+    public CompletableFuture<ServingState> getServingState() {
+        return checkStreamCreated(() -> FutureUtils.value(servingState));
+    }
+
+    @Override
+    public CompletableFuture<ServingState> updateServingState(ServingState state) {
+        return checkStreamCreated(() -> {
+            long mTime = System.currentTimeMillis();
+            byte[] streamMetadataKey = getStreamMetadataKey(streamId);
+            byte[] streamMetadata = toStreamMetadata(state, mTime).toByteArray();
+            return store.rPut(streamMetadataKey, streamMetadata, revision)
+                .thenApplyAsync(newRev -> {
+                    this.servingState = state;
+                    this.mTime = mTime;
+                    this.revision = newRev;
+                    return state;
+                }, executor);
+        });
+    }
+
+    @Override
+    public CompletableFuture<StreamConfiguration> getConfiguration() {
+        return checkStreamCreated(() -> FutureUtils.value(unsafeGetStreamProperties().getStreamConf()));
+    }
+
+    private RangeMetadata unsafeGetDataRange(long rangeId) throws DataRangeNotFoundException {
+        RangeMetadata rangeMeta = ranges.get(rangeId);
+        if (null == rangeMeta) {
+            throw new DataRangeNotFoundException(streamId, rangeId);
+        }
+        return rangeMeta;
+    }
+
+    @Override
+    public CompletableFuture<List<RangeMetadata>> getActiveRanges() {
+        return checkStreamCreated(() -> {
+            List<Long> rangesIds = ImmutableList.copyOf(currentRanges);
+            List<RangeMetadata> properties = Lists.newArrayListWithExpectedSize(rangesIds.size());
+            for (long rangeId : rangesIds) {
+                properties.add(unsafeGetDataRange(rangeId));
+            }
+            return FutureUtils.value(properties);
+        });
+    }
 
 }

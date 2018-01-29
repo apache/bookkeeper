@@ -31,62 +31,70 @@ import org.apache.commons.configuration.CompositeConfiguration;
 @Setter
 public class StreamClusterSpec {
 
-  /**
-   * Returns the number of servers to run in this cluster.
-   *
-   * @return the number of servers to run in this cluster.
-   */
-  @Default int numServers = 3;
+    /**
+     * Returns the number of servers to run in this cluster.
+     *
+     * @return the number of servers to run in this cluster.
+     */
+    @Default
+    int numServers = 3;
 
-  /**
-   * Returns the configuration used by the servers across the cluster.
-   *
-   * @return the configuration used by the servers across the cluster.
-   */
-  CompositeConfiguration baseConf;
+    /**
+     * Returns the configuration used by the servers across the cluster.
+     *
+     * @return the configuration used by the servers across the cluster.
+     */
+    CompositeConfiguration baseConf;
 
-  /**
-   * Returns the zookeeper servers used in this cluster.
-   *
-   * @return the zookeeper servers used in this cluster.
-   */
-  @Default String zkServers = "127.0.0.1";
+    /**
+     * Returns the zookeeper servers used in this cluster.
+     *
+     * @return the zookeeper servers used in this cluster.
+     */
+    @Default
+    String zkServers = "127.0.0.1";
 
-  /**
-   * Returns if should start zookeeper.
-   *
-   * @return true if should start zookeeper, otherwise false.
-   */
-  @Default boolean shouldStartZooKeeper = true;
+    /**
+     * Returns if should start zookeeper.
+     *
+     * @return true if should start zookeeper, otherwise false.
+     */
+    @Default
+    boolean shouldStartZooKeeper = true;
 
-  /**
-   * Returns the zookeeper server port used in this cluster.
-   *
-   * @return the zookeeper server port used in this cluster.
-   */
-  @Default int zkPort = 2181;
+    /**
+     * Returns the zookeeper server port used in this cluster.
+     *
+     * @return the zookeeper server port used in this cluster.
+     */
+    @Default
+    int zkPort = 2181;
 
-  /**
-   * Returns the bookie server port used in this cluster.
-   *
-   * @return the bookie server port used in this cluster.
-   */
-  @Default int initialBookiePort = 3181;
+    /**
+     * Returns the bookie server port used in this cluster.
+     *
+     * @return the bookie server port used in this cluster.
+     */
+    @Default
+    int initialBookiePort = 3181;
 
-  /**
-   * Returns the gRPC server port used in this cluster.
-   *
-   * @return the gRPC server port used in this cluster.
-   */
-  @Default int initialGrpcPort = 4181;
+    /**
+     * Returns the gRPC server port used in this cluster.
+     *
+     * @return the gRPC server port used in this cluster.
+     */
+    @Default
+    int initialGrpcPort = 4181;
 
-  /**
-   * The root dir used by the stream storage to store data.
-   *
-   * @return the root dir used by the stream storage to store data.
-   */
-  @Default File storageRootDir = new File("data/bookkeeper");
+    /**
+     * The root dir used by the stream storage to store data.
+     *
+     * @return the root dir used by the stream storage to store data.
+     */
+    @Default
+    File storageRootDir = new File("data/bookkeeper");
 
-  @Default boolean serveReadOnlyTable = false;
+    @Default
+    boolean serveReadOnlyTable = false;
 
 }

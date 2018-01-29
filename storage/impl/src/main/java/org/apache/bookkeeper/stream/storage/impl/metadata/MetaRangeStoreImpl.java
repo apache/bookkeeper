@@ -47,98 +47,98 @@ import org.apache.bookkeeper.stream.storage.impl.metadata.stream.MetaRangeImpl;
 public class MetaRangeStoreImpl
     implements MetaRangeStore {
 
-  private final MVCCAsyncStore<byte[], byte[]> store;
-  private final ScheduledExecutorService executor;
-  private final StorageContainerPlacementPolicy rangePlacementPolicy;
-  private final Map<Long, MetaRangeImpl> streams;
+    private final MVCCAsyncStore<byte[], byte[]> store;
+    private final ScheduledExecutorService executor;
+    private final StorageContainerPlacementPolicy rangePlacementPolicy;
+    private final Map<Long, MetaRangeImpl> streams;
 
-  public MetaRangeStoreImpl(MVCCAsyncStore<byte[], byte[]> store,
-                            StorageContainerPlacementPolicy rangePlacementPolicy,
-                            ScheduledExecutorService executor) {
-    this.store = store;
-    this.executor = executor;
-    this.rangePlacementPolicy = rangePlacementPolicy;
-    this.streams = Maps.newHashMap();
-  }
-
-  //
-  // Methods for {@link MetaRangeStore}
-  //
-
-  //
-  // Stream API
-  //
-
-  private CompletableFuture<StorageContainerResponse> createStreamIfMissing(long streamId,
-                                                                            MetaRangeImpl metaRange,
-                                                                            StreamProperties streamProps) {
-      if (null == streamProps) {
-        return FutureUtils.value(StorageContainerResponse.newBuilder()
-            .setCode(StatusCode.STREAM_NOT_FOUND)
-            .build());
-      }
-
-      return metaRange.create(streamProps).thenCompose(created -> {
-          if (created) {
-              synchronized (streams) {
-                  streams.put(streamId, metaRange);
-              }
-              return getActiveRanges(metaRange);
-          } else {
-              return FutureUtils.value(StorageContainerResponse.newBuilder()
-                  .setCode(StatusCode.INTERNAL_SERVER_ERROR)
-                  .build());
-          }
-      });
-  }
-
-  @Override
-  public CompletableFuture<StorageContainerResponse> getActiveRanges(StorageContainerRequest request) {
-    checkState(
-      StorageContainerRequest.Type.GET_ACTIVE_RANGES == request.getType(),
-      "Wrong request type: %s", request.getType());
-    final long streamId = request.getGetActiveRangesReq().getStreamId();
-
-    MetaRangeImpl metaRange = streams.get(streamId);
-
-    if (null == metaRange) {
-      final MetaRangeImpl metaRangeImpl = new MetaRangeImpl(store, executor, rangePlacementPolicy);
-      return metaRangeImpl.load(streamId)
-          .thenCompose(mr -> {
-            if (null == mr) {
-              StreamProperties streamProps = request.getGetActiveRangesReq().hasStreamProps()
-                  ? request.getGetActiveRangesReq().getStreamProps() : null;
-              return createStreamIfMissing(streamId, metaRangeImpl, streamProps);
-            } else {
-              synchronized (streams) {
-                  streams.put(streamId, (MetaRangeImpl) mr);
-              }
-              return getActiveRanges(mr);
-            }
-          });
-    } else {
-      return getActiveRanges(metaRange);
+    public MetaRangeStoreImpl(MVCCAsyncStore<byte[], byte[]> store,
+                              StorageContainerPlacementPolicy rangePlacementPolicy,
+                              ScheduledExecutorService executor) {
+        this.store = store;
+        this.executor = executor;
+        this.rangePlacementPolicy = rangePlacementPolicy;
+        this.streams = Maps.newHashMap();
     }
-  }
 
-  private CompletableFuture<StorageContainerResponse> getActiveRanges(MetaRange metaRange) {
-    StorageContainerResponse.Builder scBuilder = StorageContainerResponse.newBuilder();
-    GetActiveRangesResponse.Builder respBuilder = GetActiveRangesResponse.newBuilder();
-    return metaRange.getActiveRanges()
-        .thenApplyAsync(ranges -> {
-            for (RangeMetadata range : ranges) {
-              RelatedRanges.Builder rrBuilder = RelatedRanges.newBuilder()
-                  .setProps(range.getProps())
-                  .setType(RelationType.PARENTS)
-                  .addAllRelatedRanges(range.getParentsList());
-              respBuilder.addRanges(rrBuilder);
+    //
+    // Methods for {@link MetaRangeStore}
+    //
+
+    //
+    // Stream API
+    //
+
+    private CompletableFuture<StorageContainerResponse> createStreamIfMissing(long streamId,
+                                                                              MetaRangeImpl metaRange,
+                                                                              StreamProperties streamProps) {
+        if (null == streamProps) {
+            return FutureUtils.value(StorageContainerResponse.newBuilder()
+                .setCode(StatusCode.STREAM_NOT_FOUND)
+                .build());
+        }
+
+        return metaRange.create(streamProps).thenCompose(created -> {
+            if (created) {
+                synchronized (streams) {
+                    streams.put(streamId, metaRange);
+                }
+                return getActiveRanges(metaRange);
+            } else {
+                return FutureUtils.value(StorageContainerResponse.newBuilder()
+                    .setCode(StatusCode.INTERNAL_SERVER_ERROR)
+                    .build());
             }
-            return scBuilder
-                .setCode(StatusCode.SUCCESS)
-                .setGetActiveRangesResp(respBuilder)
-                .build();
-        }, executor)
-        .exceptionally(cause -> scBuilder.setCode(StatusCode.INTERNAL_SERVER_ERROR).build());
-  }
+        });
+    }
+
+    @Override
+    public CompletableFuture<StorageContainerResponse> getActiveRanges(StorageContainerRequest request) {
+        checkState(
+            StorageContainerRequest.Type.GET_ACTIVE_RANGES == request.getType(),
+            "Wrong request type: %s", request.getType());
+        final long streamId = request.getGetActiveRangesReq().getStreamId();
+
+        MetaRangeImpl metaRange = streams.get(streamId);
+
+        if (null == metaRange) {
+            final MetaRangeImpl metaRangeImpl = new MetaRangeImpl(store, executor, rangePlacementPolicy);
+            return metaRangeImpl.load(streamId)
+                .thenCompose(mr -> {
+                    if (null == mr) {
+                        StreamProperties streamProps = request.getGetActiveRangesReq().hasStreamProps()
+                            ? request.getGetActiveRangesReq().getStreamProps() : null;
+                        return createStreamIfMissing(streamId, metaRangeImpl, streamProps);
+                    } else {
+                        synchronized (streams) {
+                            streams.put(streamId, (MetaRangeImpl) mr);
+                        }
+                        return getActiveRanges(mr);
+                    }
+                });
+        } else {
+            return getActiveRanges(metaRange);
+        }
+    }
+
+    private CompletableFuture<StorageContainerResponse> getActiveRanges(MetaRange metaRange) {
+        StorageContainerResponse.Builder scBuilder = StorageContainerResponse.newBuilder();
+        GetActiveRangesResponse.Builder respBuilder = GetActiveRangesResponse.newBuilder();
+        return metaRange.getActiveRanges()
+            .thenApplyAsync(ranges -> {
+                for (RangeMetadata range : ranges) {
+                    RelatedRanges.Builder rrBuilder = RelatedRanges.newBuilder()
+                        .setProps(range.getProps())
+                        .setType(RelationType.PARENTS)
+                        .addAllRelatedRanges(range.getParentsList());
+                    respBuilder.addRanges(rrBuilder);
+                }
+                return scBuilder
+                    .setCode(StatusCode.SUCCESS)
+                    .setGetActiveRangesResp(respBuilder)
+                    .build();
+            }, executor)
+            .exceptionally(cause -> scBuilder.setCode(StatusCode.INTERNAL_SERVER_ERROR).build());
+    }
 
 }

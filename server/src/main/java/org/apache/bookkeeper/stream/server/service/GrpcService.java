@@ -25,29 +25,29 @@ import org.apache.bookkeeper.stream.server.grpc.GrpcServerSpec;
  */
 public class GrpcService extends AbstractLifecycleComponent<StorageServerConfiguration> {
 
-  private final GrpcServerSpec spec;
-  private GrpcServer server;
+    private final GrpcServerSpec spec;
+    private GrpcServer server;
 
-  public GrpcService(StorageServerConfiguration conf,
-                     GrpcServerSpec spec,
-                     StatsLogger statsLogger) {
-    super("grpc-service", conf, statsLogger);
-    this.spec = spec;
-  }
+    public GrpcService(StorageServerConfiguration conf,
+                       GrpcServerSpec spec,
+                       StatsLogger statsLogger) {
+        super("grpc-service", conf, statsLogger);
+        this.spec = spec;
+    }
 
-  @Override
-  protected void doStart() {
-    this.server = GrpcServer.build(spec);
-    this.server.start();
-  }
+    @Override
+    protected void doStart() {
+        this.server = GrpcServer.build(spec);
+        this.server.start();
+    }
 
-  @Override
-  protected void doStop() {
-    this.server.stop();
-  }
+    @Override
+    protected void doStop() {
+        this.server.stop();
+    }
 
-  @Override
-  protected void doClose() throws IOException {
-    this.server.close();
-  }
+    @Override
+    protected void doClose() throws IOException {
+        this.server.close();
+    }
 }

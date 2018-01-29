@@ -30,14 +30,14 @@ import org.junit.rules.TestName;
  */
 public class NamespaceNotFoundExceptionTest {
 
-  @Rule
-  public TestName name = new TestName();
+    @Rule
+    public TestName name = new TestName();
 
-  @Test
-  public void testGetMessage() {
-    NamespaceNotFoundException cnfe = new NamespaceNotFoundException(name.getMethodName());
-    assertEquals("Namespace '" + name.getMethodName() + "' is not found", cnfe.getMessage());
-    assertNull(cnfe.getCause());
-  }
+    @Test
+    public void testGetMessage() {
+        NamespaceNotFoundException cnfe = new NamespaceNotFoundException(name.getMethodName());
+        assertEquals("Namespace '" + name.getMethodName() + "' is not found", cnfe.getMessage());
+        assertNull(cnfe.getCause());
+    }
 
 }

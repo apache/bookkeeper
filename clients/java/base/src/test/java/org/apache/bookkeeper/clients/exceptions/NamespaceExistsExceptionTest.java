@@ -30,14 +30,14 @@ import org.junit.rules.TestName;
  */
 public class NamespaceExistsExceptionTest {
 
-  @Rule
-  public TestName name = new TestName();
+    @Rule
+    public TestName name = new TestName();
 
-  @Test
-  public void testGetMessage() {
-    NamespaceExistsException cee = new NamespaceExistsException(name.getMethodName());
-    assertEquals("Namespace '" + name.getMethodName() + "' already exists", cee.getMessage());
-    assertNull(cee.getCause());
-  }
+    @Test
+    public void testGetMessage() {
+        NamespaceExistsException cee = new NamespaceExistsException(name.getMethodName());
+        assertEquals("Namespace '" + name.getMethodName() + "' already exists", cee.getMessage());
+        assertNull(cee.getCause());
+    }
 
 }

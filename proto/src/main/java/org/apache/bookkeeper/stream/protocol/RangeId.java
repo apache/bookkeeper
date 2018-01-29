@@ -30,30 +30,30 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode
 public class RangeId implements Comparable<RangeId>, Serializable {
 
-  public static final Comparator<RangeId> COMPARATOR = Comparator.naturalOrder();
+    public static final Comparator<RangeId> COMPARATOR = Comparator.naturalOrder();
 
-  private static final long serialVersionUID = 1704491294262309389L;
+    private static final long serialVersionUID = 1704491294262309389L;
 
-  private final long streamId;
-  private final long rangeId;
+    private final long streamId;
+    private final long rangeId;
 
-  @Override
-  public String toString() {
-    StringBuilder sb = new StringBuilder();
-    sb.append("range(")
-      .append(streamId)
-      .append(", ")
-      .append(rangeId)
-      .append(')');
-    return sb.toString();
-  }
-
-  @Override
-  public int compareTo(RangeId other) {
-    int result = Long.compare(streamId, other.streamId);
-    if (result == 0) {
-      result = Long.compare(rangeId, other.rangeId);
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("range(")
+            .append(streamId)
+            .append(", ")
+            .append(rangeId)
+            .append(')');
+        return sb.toString();
     }
-    return result;
-  }
+
+    @Override
+    public int compareTo(RangeId other) {
+        int result = Long.compare(streamId, other.streamId);
+        if (result == 0) {
+            result = Long.compare(rangeId, other.rangeId);
+        }
+        return result;
+    }
 }

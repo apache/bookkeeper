@@ -47,201 +47,201 @@ import org.junit.Test;
 @Slf4j
 public class TestMetaRangeImpl extends MVCCAsyncStoreTestBase {
 
-  private StreamProperties streamProps;
-  private MetaRangeImpl metaRange;
+    private StreamProperties streamProps;
+    private MetaRangeImpl metaRange;
 
-  @Override
-  protected void doSetup() {
-    this.streamProps = StreamProperties.newBuilder()
-      .setStorageContainerId(1234L)
-      .setStreamConf(DEFAULT_STREAM_CONF)
-      .setStreamName(name.getMethodName() + "_stream")
-      .setStreamId(System.currentTimeMillis())
-      .build();
-    this.metaRange = new MetaRangeImpl(
-      this.store,
-      this.scheduler.chooseThread(),
-      StorageContainerPlacementPolicyImpl.of(1024));
-  }
-
-  @Override
-  protected void doTeardown() throws Exception {
-  }
-
-  private <T> void assertIllegalStateException(CompletableFuture<T> future) throws Exception {
-    try {
-      future.get();
-      fail("Should fail on illegal state");
-    } catch (ExecutionException ee) {
-      // expected.
-      assertTrue(ee.getCause() instanceof IllegalStateException);
+    @Override
+    protected void doSetup() {
+        this.streamProps = StreamProperties.newBuilder()
+            .setStorageContainerId(1234L)
+            .setStreamConf(DEFAULT_STREAM_CONF)
+            .setStreamName(name.getMethodName() + "_stream")
+            .setStreamId(System.currentTimeMillis())
+            .build();
+        this.metaRange = new MetaRangeImpl(
+            this.store,
+            this.scheduler.chooseThread(),
+            StorageContainerPlacementPolicyImpl.of(1024));
     }
-  }
 
-  @Test
-  public void testCreate() throws Exception {
-    assertTrue(FutureUtils.result(this.metaRange.create(streamProps)));
+    @Override
+    protected void doTeardown() throws Exception {
+    }
 
-    verifyStreamMetadata(metaRange, streamProps);
-  }
+    private <T> void assertIllegalStateException(CompletableFuture<T> future) throws Exception {
+        try {
+            future.get();
+            fail("Should fail on illegal state");
+        } catch (ExecutionException ee) {
+            // expected.
+            assertTrue(ee.getCause() instanceof IllegalStateException);
+        }
+    }
 
-  @Test
-  public void testLoad() throws Exception {
-    assertTrue(FutureUtils.result(this.metaRange.create(streamProps)));
+    @Test
+    public void testCreate() throws Exception {
+        assertTrue(FutureUtils.result(this.metaRange.create(streamProps)));
 
-    MetaRangeImpl newMetaRange = new MetaRangeImpl(
-        store,
-        scheduler.chooseThread(),
-        StorageContainerPlacementPolicyImpl.of(1024));
-    assertNotNull(FutureUtils.result(newMetaRange.load(streamProps.getStreamId())));
-    verifyStreamMetadata(newMetaRange, streamProps);
-  }
+        verifyStreamMetadata(metaRange, streamProps);
+    }
 
-  private void verifyStreamMetadata(MetaRangeImpl metaRange,
-                                    StreamProperties streamProps)
+    @Test
+    public void testLoad() throws Exception {
+        assertTrue(FutureUtils.result(this.metaRange.create(streamProps)));
+
+        MetaRangeImpl newMetaRange = new MetaRangeImpl(
+            store,
+            scheduler.chooseThread(),
+            StorageContainerPlacementPolicyImpl.of(1024));
+        assertNotNull(FutureUtils.result(newMetaRange.load(streamProps.getStreamId())));
+        verifyStreamMetadata(newMetaRange, streamProps);
+    }
+
+    private void verifyStreamMetadata(MetaRangeImpl metaRange,
+                                      StreamProperties streamProps)
         throws Exception {
-    // verify the stream properties
-    assertEquals(
-      LifecycleState.CREATED,
-      metaRange.unsafeGetLifecycleState());
-    assertEquals(
-      name.getMethodName() + "_stream",
-      this.metaRange.getName());
-    long cTime = metaRange.unsafeGetCreationTime();
-    assertTrue(metaRange.unsafeGetCreationTime() == this.metaRange.unsafeGetModificationTime());
-    assertEquals(streamProps, metaRange.unsafeGetStreamProperties());
-    assertEquals(streamProps.getStreamId(), metaRange.unsafeGetStreamId());
-    assertEquals(ServingState.WRITABLE, FutureUtils.result(metaRange.getServingState()));
-    assertEquals(
-      streamProps.getStreamConf(),
-      FutureUtils.result(metaRange.getConfiguration()));
+        // verify the stream properties
+        assertEquals(
+            LifecycleState.CREATED,
+            metaRange.unsafeGetLifecycleState());
+        assertEquals(
+            name.getMethodName() + "_stream",
+            this.metaRange.getName());
+        long cTime = metaRange.unsafeGetCreationTime();
+        assertTrue(metaRange.unsafeGetCreationTime() == this.metaRange.unsafeGetModificationTime());
+        assertEquals(streamProps, metaRange.unsafeGetStreamProperties());
+        assertEquals(streamProps.getStreamId(), metaRange.unsafeGetStreamId());
+        assertEquals(ServingState.WRITABLE, FutureUtils.result(metaRange.getServingState()));
+        assertEquals(
+            streamProps.getStreamConf(),
+            FutureUtils.result(metaRange.getConfiguration()));
 
-    // verify the stream ranges
-    List<Long> activeRanges = Lists.transform(
-      FutureUtils.result(metaRange.getActiveRanges()),
-      (metadata) -> metadata.getProps().getRangeId()
-    );
-    assertEquals(streamProps.getStreamConf().getInitialNumRanges(), activeRanges.size());
-    assertEquals(
-      Lists.newArrayList(LongStream.range(1024L, 1024L + activeRanges.size()).iterator()),
-      activeRanges);
-    NavigableMap<Long, RangeMetadata> ranges = metaRange.unsafeGetRanges();
-    long startKey = Long.MIN_VALUE;
-    long rangeSize = Long.MAX_VALUE / (activeRanges.size() / 2);
-    for (int idx = 0; idx < activeRanges.size(); ++idx) {
-      long rid = activeRanges.get(idx);
-      RangeMetadata rangeMetadata = ranges.get(rid);
-      long endKey = startKey + rangeSize;
-      if (idx == activeRanges.size() - 1) {
-        endKey = Long.MAX_VALUE;
-      }
+        // verify the stream ranges
+        List<Long> activeRanges = Lists.transform(
+            FutureUtils.result(metaRange.getActiveRanges()),
+            (metadata) -> metadata.getProps().getRangeId()
+        );
+        assertEquals(streamProps.getStreamConf().getInitialNumRanges(), activeRanges.size());
+        assertEquals(
+            Lists.newArrayList(LongStream.range(1024L, 1024L + activeRanges.size()).iterator()),
+            activeRanges);
+        NavigableMap<Long, RangeMetadata> ranges = metaRange.unsafeGetRanges();
+        long startKey = Long.MIN_VALUE;
+        long rangeSize = Long.MAX_VALUE / (activeRanges.size() / 2);
+        for (int idx = 0; idx < activeRanges.size(); ++idx) {
+            long rid = activeRanges.get(idx);
+            RangeMetadata rangeMetadata = ranges.get(rid);
+            long endKey = startKey + rangeSize;
+            if (idx == activeRanges.size() - 1) {
+                endKey = Long.MAX_VALUE;
+            }
 
-      verifyRangeMetadata(rangeMetadata,
-          startKey,
-          endKey,
-          rid,
-          cTime,
-          Long.MAX_VALUE,
-          RangeState.RANGE_ACTIVE);
+            verifyRangeMetadata(rangeMetadata,
+                startKey,
+                endKey,
+                rid,
+                cTime,
+                Long.MAX_VALUE,
+                RangeState.RANGE_ACTIVE);
 
-      readRangeMetadataAndVerify(streamProps.getStreamId(), rid,
-          startKey,
-          endKey,
-          rid,
-          cTime,
-          Long.MAX_VALUE,
-          RangeState.RANGE_ACTIVE);
+            readRangeMetadataAndVerify(streamProps.getStreamId(), rid,
+                startKey,
+                endKey,
+                rid,
+                cTime,
+                Long.MAX_VALUE,
+                RangeState.RANGE_ACTIVE);
 
-      startKey = endKey;
+            startKey = endKey;
+        }
     }
-  }
 
-  private void readRangeMetadataAndVerify(long streamId,
-                                          long rangeId,
-                                          long expectedStartKey,
-                                          long expectedEndKey,
-                                          long expectedRid,
-                                          long expectedCTime,
-                                          long expectedFenceTime,
-                                          RangeState expectedRangeState) throws Exception {
-    byte[] rangeKey = MetaRangeImpl.getStreamRangeKey(streamId, rangeId);
-    byte[] rangeMetadataBytes = FutureUtils.result(store.get(rangeKey));
-    RangeMetadata rangeMetadata = RangeMetadata.parseFrom(rangeMetadataBytes);
+    private void readRangeMetadataAndVerify(long streamId,
+                                            long rangeId,
+                                            long expectedStartKey,
+                                            long expectedEndKey,
+                                            long expectedRid,
+                                            long expectedCTime,
+                                            long expectedFenceTime,
+                                            RangeState expectedRangeState) throws Exception {
+        byte[] rangeKey = MetaRangeImpl.getStreamRangeKey(streamId, rangeId);
+        byte[] rangeMetadataBytes = FutureUtils.result(store.get(rangeKey));
+        RangeMetadata rangeMetadata = RangeMetadata.parseFrom(rangeMetadataBytes);
 
-    verifyRangeMetadata(
-        rangeMetadata,
-        expectedStartKey,
-        expectedEndKey,
-        expectedRid,
-        expectedCTime,
-        expectedFenceTime,
-        expectedRangeState);
-  }
-
-  private void verifyRangeMetadata(RangeMetadata metadata,
-                                   long expectedStartKey,
-                                   long expectedEndKey,
-                                   long expectedRid,
-                                   long expectedCTime,
-                                   long expectedFenceTime,
-                                   RangeState expectedRangeState) {
-    assertEquals(expectedStartKey, metadata.getProps().getStartHashKey());
-    assertEquals(expectedEndKey, metadata.getProps().getEndHashKey());
-    assertEquals(expectedRid, metadata.getProps().getRangeId());
-    assertEquals(expectedCTime, metadata.getCreateTime());
-    assertEquals(expectedFenceTime, metadata.getFenceTime());
-    assertEquals(expectedRangeState, metadata.getState());
-  }
-
-  @Test
-  public void testDoubleCreate() throws Exception {
-    // create first time
-    assertTrue(FutureUtils.result(this.metaRange.create(streamProps)));
-    // created again
-    assertIllegalStateException(this.metaRange.create(streamProps));
-  }
-
-  @Test
-  public void testUpdateServingState() throws Exception {
-    // create first time
-    assertTrue(FutureUtils.result(this.metaRange.create(streamProps)));
-    long mTime = this.metaRange.unsafeGetModificationTime();
-    assertEquals(
-      ServingState.WRITABLE,
-      FutureUtils.result(this.metaRange.getServingState()));
-    long newTime = this.metaRange.unsafeGetModificationTime();
-    assertTrue(newTime >= mTime);
-    mTime = newTime;
-    assertEquals(
-      ServingState.READONLY,
-      FutureUtils.result(this.metaRange.updateServingState(ServingState.READONLY)));
-    newTime = this.metaRange.unsafeGetModificationTime();
-    assertTrue(newTime >= mTime);
-  }
-
-  @Test
-  public void testUpdateServingStateConcurrently() throws Exception {
-    assertTrue(FutureUtils.result(this.metaRange.create(streamProps)));
-
-    long mTime = this.metaRange.unsafeGetModificationTime();
-
-    CompletableFuture<ServingState> updateFuture1 = metaRange.updateServingState(ServingState.WRITABLE);
-    CompletableFuture<ServingState> updateFuture2 = metaRange.updateServingState(ServingState.READONLY);
-
-    try {
-      updateFuture1.get();
-    } catch (Exception e) {
-      assertEquals(ServingState.READONLY, updateFuture2.get());
-      assertTrue(metaRange.unsafeGetModificationTime() >= mTime);
-      assertEquals(ServingState.READONLY, FutureUtils.result(this.metaRange.getServingState()));
+        verifyRangeMetadata(
+            rangeMetadata,
+            expectedStartKey,
+            expectedEndKey,
+            expectedRid,
+            expectedCTime,
+            expectedFenceTime,
+            expectedRangeState);
     }
-    try {
-      updateFuture2.get();
-    } catch (Exception e) {
-      assertEquals(ServingState.WRITABLE, updateFuture1.get());
-      assertTrue(metaRange.unsafeGetModificationTime() >= mTime);
-      assertEquals(ServingState.WRITABLE, FutureUtils.result(this.metaRange.getServingState()));
+
+    private void verifyRangeMetadata(RangeMetadata metadata,
+                                     long expectedStartKey,
+                                     long expectedEndKey,
+                                     long expectedRid,
+                                     long expectedCTime,
+                                     long expectedFenceTime,
+                                     RangeState expectedRangeState) {
+        assertEquals(expectedStartKey, metadata.getProps().getStartHashKey());
+        assertEquals(expectedEndKey, metadata.getProps().getEndHashKey());
+        assertEquals(expectedRid, metadata.getProps().getRangeId());
+        assertEquals(expectedCTime, metadata.getCreateTime());
+        assertEquals(expectedFenceTime, metadata.getFenceTime());
+        assertEquals(expectedRangeState, metadata.getState());
     }
-  }
+
+    @Test
+    public void testDoubleCreate() throws Exception {
+        // create first time
+        assertTrue(FutureUtils.result(this.metaRange.create(streamProps)));
+        // created again
+        assertIllegalStateException(this.metaRange.create(streamProps));
+    }
+
+    @Test
+    public void testUpdateServingState() throws Exception {
+        // create first time
+        assertTrue(FutureUtils.result(this.metaRange.create(streamProps)));
+        long mTime = this.metaRange.unsafeGetModificationTime();
+        assertEquals(
+            ServingState.WRITABLE,
+            FutureUtils.result(this.metaRange.getServingState()));
+        long newTime = this.metaRange.unsafeGetModificationTime();
+        assertTrue(newTime >= mTime);
+        mTime = newTime;
+        assertEquals(
+            ServingState.READONLY,
+            FutureUtils.result(this.metaRange.updateServingState(ServingState.READONLY)));
+        newTime = this.metaRange.unsafeGetModificationTime();
+        assertTrue(newTime >= mTime);
+    }
+
+    @Test
+    public void testUpdateServingStateConcurrently() throws Exception {
+        assertTrue(FutureUtils.result(this.metaRange.create(streamProps)));
+
+        long mTime = this.metaRange.unsafeGetModificationTime();
+
+        CompletableFuture<ServingState> updateFuture1 = metaRange.updateServingState(ServingState.WRITABLE);
+        CompletableFuture<ServingState> updateFuture2 = metaRange.updateServingState(ServingState.READONLY);
+
+        try {
+            updateFuture1.get();
+        } catch (Exception e) {
+            assertEquals(ServingState.READONLY, updateFuture2.get());
+            assertTrue(metaRange.unsafeGetModificationTime() >= mTime);
+            assertEquals(ServingState.READONLY, FutureUtils.result(this.metaRange.getServingState()));
+        }
+        try {
+            updateFuture2.get();
+        } catch (Exception e) {
+            assertEquals(ServingState.WRITABLE, updateFuture1.get());
+            assertTrue(metaRange.unsafeGetModificationTime() >= mTime);
+            assertEquals(ServingState.WRITABLE, FutureUtils.result(this.metaRange.getServingState()));
+        }
+    }
 
 }

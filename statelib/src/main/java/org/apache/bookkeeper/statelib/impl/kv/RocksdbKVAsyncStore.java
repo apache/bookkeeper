@@ -38,8 +38,8 @@ import org.apache.distributedlog.api.namespace.Namespace;
  * A async kv store implementation.
  */
 public class RocksdbKVAsyncStore<K, V>
-        extends AbstractStateStoreWithJournal<RocksdbKVStore<byte[], byte[]>>
-        implements KVAsyncStore<K, V> {
+    extends AbstractStateStoreWithJournal<RocksdbKVStore<byte[], byte[]>>
+    implements KVAsyncStore<K, V> {
 
     private static final byte[] CATCHUP_MARKER = new byte[0];
 

@@ -38,41 +38,41 @@ import org.apache.bookkeeper.stream.proto.StreamProperties;
 @Slf4j
 class MetaRangeClientImpl implements MetaRangeClient {
 
-  private final StreamProperties streamProps;
-  private final ScheduledExecutorService executor;
-  private final StorageContainerChannel scClient;
+    private final StreamProperties streamProps;
+    private final ScheduledExecutorService executor;
+    private final StorageContainerChannel scClient;
 
-  MetaRangeClientImpl(StreamProperties streamProps,
-                      OrderedScheduler scheduler,
-                      StorageContainerChannelManager channelManager) {
-    this.streamProps = streamProps;
-    this.executor = scheduler.chooseThread(streamProps.getStreamId());
-    this.scClient = channelManager.getOrCreate(streamProps.getStorageContainerId());
-  }
+    MetaRangeClientImpl(StreamProperties streamProps,
+                        OrderedScheduler scheduler,
+                        StorageContainerChannelManager channelManager) {
+        this.streamProps = streamProps;
+        this.executor = scheduler.chooseThread(streamProps.getStreamId());
+        this.scClient = channelManager.getOrCreate(streamProps.getStorageContainerId());
+    }
 
-  @Override
-  public StreamProperties getStreamProps() {
-    return streamProps;
-  }
+    @Override
+    public StreamProperties getStreamProps() {
+        return streamProps;
+    }
 
-  StorageContainerChannel getStorageContainerClient() {
-    return scClient;
-  }
+    StorageContainerChannel getStorageContainerClient() {
+        return scClient;
+    }
 
-  //
-  // Meta KeyRange Server Requests
-  //
+    //
+    // Meta KeyRange Server Requests
+    //
 
-  @Override
-  public CompletableFuture<HashStreamRanges> getActiveDataRanges() {
-    return MetaRangeRequestProcessor.of(
-      createGetActiveRangesRequest(
-          scClient.getStorageContainerId(),
-          streamProps),
-      (response) -> createActiveRanges(response.getGetActiveRangesResp()),
-      scClient,
-      executor
-    ).process();
-  }
+    @Override
+    public CompletableFuture<HashStreamRanges> getActiveDataRanges() {
+        return MetaRangeRequestProcessor.of(
+            createGetActiveRangesRequest(
+                scClient.getStorageContainerId(),
+                streamProps),
+            (response) -> createActiveRanges(response.getGetActiveRangesResp()),
+            scClient,
+            executor
+        ).process();
+    }
 
 }

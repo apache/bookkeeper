@@ -24,53 +24,53 @@ import java.util.concurrent.CompletableFuture;
  */
 public class RpcUtils {
 
-  /**
-   * Function to create request.
-   */
-  @FunctionalInterface
-  public interface CreateRequestFunc<ReqT> {
-    ReqT apply();
-  }
+    /**
+     * Function to create request.
+     */
+    @FunctionalInterface
+    public interface CreateRequestFunc<ReqT> {
+        ReqT apply();
+    }
 
-  /**
-   * Function to process request.
-   */
-  @FunctionalInterface
-  public interface ProcessRequestFunc<ReqT, RespT, ServiceT>  {
-    ListenableFuture<RespT> process(ServiceT service, ReqT req);
-  }
+    /**
+     * Function to process request.
+     */
+    @FunctionalInterface
+    public interface ProcessRequestFunc<ReqT, RespT, ServiceT> {
+        ListenableFuture<RespT> process(ServiceT service, ReqT req);
+    }
 
-  /**
-   * Function to process response.
-   */
-  @FunctionalInterface
-  public interface ProcessResponseFunc<RespT, T> {
-    void process(RespT resp, CompletableFuture<T> resultFuture);
-  }
+    /**
+     * Function to process response.
+     */
+    @FunctionalInterface
+    public interface ProcessResponseFunc<RespT, T> {
+        void process(RespT resp, CompletableFuture<T> resultFuture);
+    }
 
-  public static <T, ReqT, RespT, ServiceT> void processRpc(
-      ServiceT service,
-      CompletableFuture<T> result,
-      CreateRequestFunc<ReqT> createRequestFunc,
-      ProcessRequestFunc<ReqT, RespT, ServiceT> processRequestFunc,
-      ProcessResponseFunc<RespT, T> processResponseFunc) {
-    ReqT request = createRequestFunc.apply();
-    ListenableFuture<RespT> resultFuture =
-      processRequestFunc.process(service, request);
-    Futures.addCallback(
-      resultFuture,
-      new FutureCallback<RespT>() {
-        @Override
-        public void onSuccess(RespT resp) {
-          processResponseFunc.process(resp, result);
-        }
+    public static <T, ReqT, RespT, ServiceT> void processRpc(
+        ServiceT service,
+        CompletableFuture<T> result,
+        CreateRequestFunc<ReqT> createRequestFunc,
+        ProcessRequestFunc<ReqT, RespT, ServiceT> processRequestFunc,
+        ProcessResponseFunc<RespT, T> processResponseFunc) {
+        ReqT request = createRequestFunc.apply();
+        ListenableFuture<RespT> resultFuture =
+            processRequestFunc.process(service, request);
+        Futures.addCallback(
+            resultFuture,
+            new FutureCallback<RespT>() {
+                @Override
+                public void onSuccess(RespT resp) {
+                    processResponseFunc.process(resp, result);
+                }
 
-        @Override
-        public void onFailure(Throwable throwable) {
-          GrpcUtils.processRpcException(throwable, result);
-        }
-      }
-    );
-  }
+                @Override
+                public void onFailure(Throwable throwable) {
+                    GrpcUtils.processRpcException(throwable, result);
+                }
+            }
+        );
+    }
 
 }

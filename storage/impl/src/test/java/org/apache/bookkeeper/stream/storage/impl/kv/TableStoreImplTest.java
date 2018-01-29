@@ -221,7 +221,7 @@ public class TableStoreImplTest extends MVCCAsyncStoreTestBase {
     }
 
     StorageContainerResponse vPutToTableStore(int key, int value, long version)
-            throws Exception {
+        throws Exception {
         return result(
             tableStore.txn(StorageContainerRequest.newBuilder()
                 .setType(Type.KV_TXN)
@@ -277,7 +277,7 @@ public class TableStoreImplTest extends MVCCAsyncStoreTestBase {
     }
 
     StorageContainerResponse rPutToTableStore(int key, int value, long revision)
-            throws Exception {
+        throws Exception {
         return result(
             tableStore.txn(StorageContainerRequest.newBuilder()
                 .setType(Type.KV_TXN)
@@ -524,7 +524,7 @@ public class TableStoreImplTest extends MVCCAsyncStoreTestBase {
                                int startModRevision,
                                int expectedVersion) {
         int idx = startKey;
-        for (KeyValue kv: kvs) {
+        for (KeyValue kv : kvs) {
             assertEquals(getKey(idx), kv.getKey());
             assertEquals(getValue(idx), kv.getValue());
             // revision - starts from 1, but the first revision is used for nop barrier record.

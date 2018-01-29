@@ -19,6 +19,6 @@ package org.apache.bookkeeper.api.kv.options;
  */
 public interface PutOption<K> extends Option<K> {
 
-  boolean prevKv();
+    boolean prevKv();
 
 }

@@ -25,19 +25,19 @@ import org.junit.Test;
  */
 public class TestStorageConfiguration {
 
-  @Test(timeout = 60000)
-  public void testGetStorageSettings() {
-    CompositeConfiguration conf = new CompositeConfiguration();
-    conf.setProperty("xxx.key", "xxx.value");
-    conf.setProperty("storage.key", "storage.value");
-    conf.setProperty("storage-key", "storage-value");
+    @Test(timeout = 60000)
+    public void testGetStorageSettings() {
+        CompositeConfiguration conf = new CompositeConfiguration();
+        conf.setProperty("xxx.key", "xxx.value");
+        conf.setProperty("storage.key", "storage.value");
+        conf.setProperty("storage-key", "storage-value");
 
-    StorageConfiguration storageConf = new StorageConfiguration(conf);
-    assertEquals("storage.value", storageConf.getString("key"));
-    assertTrue(storageConf.containsKey("key"));
-    assertFalse(storageConf.containsKey("xxx.key"));
-    assertFalse(storageConf.containsKey("storage.key"));
-    assertFalse(storageConf.containsKey("storage-key"));
-  }
+        StorageConfiguration storageConf = new StorageConfiguration(conf);
+        assertEquals("storage.value", storageConf.getString("key"));
+        assertTrue(storageConf.containsKey("key"));
+        assertFalse(storageConf.containsKey("xxx.key"));
+        assertFalse(storageConf.containsKey("storage.key"));
+        assertFalse(storageConf.containsKey("storage-key"));
+    }
 
 }

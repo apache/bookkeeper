@@ -24,19 +24,19 @@ import org.apache.bookkeeper.stream.storage.api.sc.StorageContainerRoutingServic
  */
 public interface RangeStore extends LifecycleComponent, RangeStoreService {
 
-  /**
-   * Get the routing service.
-   *
-   * @return routing service.
-   */
-  StorageContainerRoutingService getRoutingService();
+    /**
+     * Get the routing service.
+     *
+     * @return routing service.
+     */
+    StorageContainerRoutingService getRoutingService();
 
-  /**
-   * Choose the executor for a given {@code key}.
-   *
-   * @param key submit key
-   * @return executor
-   */
-  ScheduledExecutorService chooseExecutor(long key);
+    /**
+     * Choose the executor for a given {@code key}.
+     *
+     * @param key submit key
+     * @return executor
+     */
+    ScheduledExecutorService chooseExecutor(long key);
 
 }

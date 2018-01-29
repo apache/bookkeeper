@@ -31,38 +31,38 @@ import org.apache.bookkeeper.stream.storage.api.RangeStore;
 @Slf4j
 class GrpcStorageContainerService extends StorageContainerServiceImplBase {
 
-  private final RangeStore rangeStore;
+    private final RangeStore rangeStore;
 
-  GrpcStorageContainerService(RangeStore rangeStore) {
-    this.rangeStore = rangeStore;
-  }
-
-  @Override
-  public void getStorageContainerEndpoint(GetStorageContainerEndpointRequest request,
-                                          StreamObserver<GetStorageContainerEndpointResponse> responseObserver) {
-    GetStorageContainerEndpointResponse.Builder responseBuilder = GetStorageContainerEndpointResponse.newBuilder()
-      .setStatusCode(StatusCode.SUCCESS);
-    for (int i = 0; i < request.getRequestsCount(); i++) {
-      Endpoint endpoint = rangeStore
-        .getRoutingService()
-        .getStorageContainer(request.getRequests(i).getStorageContainer());
-      OneStorageContainerEndpointResponse.Builder oneRespBuilder;
-      if (null != endpoint) {
-        oneRespBuilder = OneStorageContainerEndpointResponse.newBuilder()
-          .setStatusCode(StatusCode.SUCCESS)
-          .setEndpoint(
-            StorageContainerEndpoint.newBuilder()
-              .setRwEndpoint(endpoint)
-              .addRoEndpoint(endpoint)
-              .setRevision(0L));
-      } else {
-        oneRespBuilder = OneStorageContainerEndpointResponse.newBuilder()
-          .setStatusCode(StatusCode.INTERNAL_SERVER_ERROR);
-      }
-      responseBuilder = responseBuilder.addResponses(oneRespBuilder);
+    GrpcStorageContainerService(RangeStore rangeStore) {
+        this.rangeStore = rangeStore;
     }
-    responseObserver.onNext(responseBuilder.build());
-    responseObserver.onCompleted();
-  }
+
+    @Override
+    public void getStorageContainerEndpoint(GetStorageContainerEndpointRequest request,
+                                            StreamObserver<GetStorageContainerEndpointResponse> responseObserver) {
+        GetStorageContainerEndpointResponse.Builder responseBuilder = GetStorageContainerEndpointResponse.newBuilder()
+            .setStatusCode(StatusCode.SUCCESS);
+        for (int i = 0; i < request.getRequestsCount(); i++) {
+            Endpoint endpoint = rangeStore
+                .getRoutingService()
+                .getStorageContainer(request.getRequests(i).getStorageContainer());
+            OneStorageContainerEndpointResponse.Builder oneRespBuilder;
+            if (null != endpoint) {
+                oneRespBuilder = OneStorageContainerEndpointResponse.newBuilder()
+                    .setStatusCode(StatusCode.SUCCESS)
+                    .setEndpoint(
+                        StorageContainerEndpoint.newBuilder()
+                            .setRwEndpoint(endpoint)
+                            .addRoEndpoint(endpoint)
+                            .setRevision(0L));
+            } else {
+                oneRespBuilder = OneStorageContainerEndpointResponse.newBuilder()
+                    .setStatusCode(StatusCode.INTERNAL_SERVER_ERROR);
+            }
+            responseBuilder = responseBuilder.addResponses(oneRespBuilder);
+        }
+        responseObserver.onNext(responseBuilder.build());
+        responseObserver.onCompleted();
+    }
 
 }

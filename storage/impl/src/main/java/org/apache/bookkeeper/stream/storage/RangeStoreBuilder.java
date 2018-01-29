@@ -30,114 +30,115 @@ import org.apache.bookkeeper.stream.storage.impl.store.MVCCStoreFactory;
  */
 public final class RangeStoreBuilder {
 
-  public static RangeStoreBuilder newBuilder() {
-    return new RangeStoreBuilder();
-  }
-
-  private StatsLogger statsLogger = NullStatsLogger.INSTANCE;
-  private StorageConfiguration storeConf = null;
-  private StorageResources storeResources = null;
-  private StorageContainerManagerFactory scmFactory = null;
-  private MVCCStoreFactory mvccStoreFactory = null;
-  private int numStorageContainers = 1024;
-  private URI defaultBackendUri = null;
-
-  private RangeStoreBuilder() {}
-
-  /**
-   * Build the range store with the provided {@code numStorageContainers}.
-   *
-   * @param numStorageContainers number of the storage containers.
-   * @return range store builder
-   */
-  public RangeStoreBuilder withNumStorageContainers(int numStorageContainers) {
-    this.numStorageContainers = numStorageContainers;
-    return this;
-  }
-
-  /**
-   * Build the range store with the provided {@link StatsLogger}.
-   *
-   * @param statsLogger stats logger for collecting stats.
-   * @return range store builder;
-   */
-  public RangeStoreBuilder withStatsLogger(StatsLogger statsLogger) {
-    if (null == statsLogger) {
-      return this;
+    public static RangeStoreBuilder newBuilder() {
+        return new RangeStoreBuilder();
     }
-    this.statsLogger = statsLogger;
-    return this;
-  }
 
-  /**
-   * Build the range store with provided {@link StorageConfiguration}.
-   *
-   * @param storeConf storage configuration
-   * @return range store builder
-   */
-  public RangeStoreBuilder withStorageConfiguration(StorageConfiguration storeConf) {
-    this.storeConf = storeConf;
-    return this;
-  }
+    private StatsLogger statsLogger = NullStatsLogger.INSTANCE;
+    private StorageConfiguration storeConf = null;
+    private StorageResources storeResources = null;
+    private StorageContainerManagerFactory scmFactory = null;
+    private MVCCStoreFactory mvccStoreFactory = null;
+    private int numStorageContainers = 1024;
+    private URI defaultBackendUri = null;
 
-  /**
-   * Build the range store with provided {@link StorageContainerManagerFactory}.
-   *
-   * @param scmFactory storage container manager factory.
-   * @return range store builder
-   */
-  public RangeStoreBuilder withStorageContainerManagerFactory(StorageContainerManagerFactory scmFactory) {
-    this.scmFactory = scmFactory;
-    return this;
-  }
+    private RangeStoreBuilder() {
+    }
 
-  /**
-   * Build the range store with provided {@link StorageResources}.
-   *
-   * @param resources storage resources.
-   * @return range store builder.
-   */
-  public RangeStoreBuilder withStorageResources(StorageResources resources) {
-    this.storeResources = resources;
-    return this;
-  }
+    /**
+     * Build the range store with the provided {@code numStorageContainers}.
+     *
+     * @param numStorageContainers number of the storage containers.
+     * @return range store builder
+     */
+    public RangeStoreBuilder withNumStorageContainers(int numStorageContainers) {
+        this.numStorageContainers = numStorageContainers;
+        return this;
+    }
 
-  /**
-   * Build the range store with provided {@link MVCCStoreFactory}.
-   *
-   * @param storeFactory factory to create range stores.
-   * @return range store builder.
-   */
-  public RangeStoreBuilder withRangeStoreFactory(MVCCStoreFactory storeFactory) {
-    this.mvccStoreFactory = storeFactory;
-    return this;
-  }
+    /**
+     * Build the range store with the provided {@link StatsLogger}.
+     *
+     * @param statsLogger stats logger for collecting stats.
+     * @return range store builder;
+     */
+    public RangeStoreBuilder withStatsLogger(StatsLogger statsLogger) {
+        if (null == statsLogger) {
+            return this;
+        }
+        this.statsLogger = statsLogger;
+        return this;
+    }
 
-  /**
-   * Backend uri for storing table ranges.
-   *
-   * @param uri uri for storing table ranges.
-   * @return range store builder.
-   */
-  public RangeStoreBuilder withDefaultBackendUri(URI uri) {
-    this.defaultBackendUri = uri;
-    return this;
-  }
+    /**
+     * Build the range store with provided {@link StorageConfiguration}.
+     *
+     * @param storeConf storage configuration
+     * @return range store builder
+     */
+    public RangeStoreBuilder withStorageConfiguration(StorageConfiguration storeConf) {
+        this.storeConf = storeConf;
+        return this;
+    }
 
-  public RangeStore build() {
-    checkNotNull(scmFactory, "StorageContainerManagerFactory is not provided");
-    checkNotNull(storeConf, "StorageConfiguration is not provided");
-    checkNotNull(mvccStoreFactory, "MVCCStoreFactory is not provided");
-    checkNotNull(defaultBackendUri, "Default backend uri is not provided");
+    /**
+     * Build the range store with provided {@link StorageContainerManagerFactory}.
+     *
+     * @param scmFactory storage container manager factory.
+     * @return range store builder
+     */
+    public RangeStoreBuilder withStorageContainerManagerFactory(StorageContainerManagerFactory scmFactory) {
+        this.scmFactory = scmFactory;
+        return this;
+    }
 
-    return new RangeStoreImpl(
-      storeConf,
-      storeResources.scheduler(),
-      scmFactory,
-      mvccStoreFactory,
-      defaultBackendUri,
-      numStorageContainers,
-      statsLogger);
-  }
+    /**
+     * Build the range store with provided {@link StorageResources}.
+     *
+     * @param resources storage resources.
+     * @return range store builder.
+     */
+    public RangeStoreBuilder withStorageResources(StorageResources resources) {
+        this.storeResources = resources;
+        return this;
+    }
+
+    /**
+     * Build the range store with provided {@link MVCCStoreFactory}.
+     *
+     * @param storeFactory factory to create range stores.
+     * @return range store builder.
+     */
+    public RangeStoreBuilder withRangeStoreFactory(MVCCStoreFactory storeFactory) {
+        this.mvccStoreFactory = storeFactory;
+        return this;
+    }
+
+    /**
+     * Backend uri for storing table ranges.
+     *
+     * @param uri uri for storing table ranges.
+     * @return range store builder.
+     */
+    public RangeStoreBuilder withDefaultBackendUri(URI uri) {
+        this.defaultBackendUri = uri;
+        return this;
+    }
+
+    public RangeStore build() {
+        checkNotNull(scmFactory, "StorageContainerManagerFactory is not provided");
+        checkNotNull(storeConf, "StorageConfiguration is not provided");
+        checkNotNull(mvccStoreFactory, "MVCCStoreFactory is not provided");
+        checkNotNull(defaultBackendUri, "Default backend uri is not provided");
+
+        return new RangeStoreImpl(
+            storeConf,
+            storeResources.scheduler(),
+            scmFactory,
+            mvccStoreFactory,
+            defaultBackendUri,
+            numStorageContainers,
+            statsLogger);
+    }
 
 }

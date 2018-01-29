@@ -41,122 +41,122 @@ import org.apache.bookkeeper.common.util.Backoff;
 @Slf4j
 public abstract class ListenableFutureRpcProcessor<RequestT, ResponseT, ResultT>
     implements BiConsumer<StorageServerChannel, Throwable>,
-               FutureCallback<ResponseT>,
-               Runnable {
+    FutureCallback<ResponseT>,
+    Runnable {
 
-  private static final long startBackoffMs = 200;
-  private static final long maxBackoffMs = 2000;
-  private static final int maxRetries = 3;
+    private static final long startBackoffMs = 200;
+    private static final long maxBackoffMs = 2000;
+    private static final int maxRetries = 3;
 
-  private final StorageContainerChannel scChannel;
-  private final Iterator<Long> backoffs;
-  private final ScheduledExecutorService executor;
-  private final CompletableFuture<ResultT> resultFuture;
+    private final StorageContainerChannel scChannel;
+    private final Iterator<Long> backoffs;
+    private final ScheduledExecutorService executor;
+    private final CompletableFuture<ResultT> resultFuture;
 
-  protected ListenableFutureRpcProcessor(StorageContainerChannel channel,
-                                         ScheduledExecutorService executor) {
-    this.scChannel = channel;
-    this.backoffs = configureBackoffs();
-    this.resultFuture = FutureUtils.createFuture();
-    this.executor = executor;
-  }
-
-  protected Iterator<Long> configureBackoffs() {
-    return Backoff.exponentialJittered(startBackoffMs, maxBackoffMs).limit(maxRetries).iterator();
-  }
-
-  /**
-   * Create the rpc request for the processor.
-   *
-   * @return the created rpc request.
-   */
-  protected abstract RequestT createRequest();
-
-  /**
-   * Get the RPC service from the server channel.
-   *
-   * @return rpc service.
-   */
-  protected abstract ListenableFuture<ResponseT> sendRPC(StorageServerChannel rsChannel, RequestT requestT);
-
-  /**
-   * Process the response and convert it back to a result.
-   *
-   * @param response response
-   * @return the converted result.
-   */
-  protected abstract ResultT processResponse(ResponseT response) throws Exception;
-
-  public CompletableFuture<ResultT> process() {
-    scChannel.getStorageContainerChannelFuture().whenCompleteAsync(this, executor);
-    return resultFuture;
-  }
-
-  @Override
-  public void run() {
-    process();
-  }
-
-  /**
-   * Logic on handling channel exceptions.
-   *
-   * @param storageServerChannel server channel
-   * @param cause exception on establishing channel.
-   */
-  @Override
-  public void accept(StorageServerChannel storageServerChannel, Throwable cause) {
-    if (null != cause) {
-      // failure to retrieve a channel to the server that hosts this storage container
-      resultFuture.completeExceptionally(cause);
-      return;
+    protected ListenableFutureRpcProcessor(StorageContainerChannel channel,
+                                           ScheduledExecutorService executor) {
+        this.scChannel = channel;
+        this.backoffs = configureBackoffs();
+        this.resultFuture = FutureUtils.createFuture();
+        this.executor = executor;
     }
 
-    sendRpcToServerChannel(storageServerChannel);
-  }
-
-  private void sendRpcToServerChannel(StorageServerChannel rsChannel) {
-    RequestT request;
-    try {
-      request = createRequest();
-    } catch (Exception e) {
-      // fail to create request
-      resultFuture.completeExceptionally(e);
-      return;
+    protected Iterator<Long> configureBackoffs() {
+        return Backoff.exponentialJittered(startBackoffMs, maxBackoffMs).limit(maxRetries).iterator();
     }
 
-    Futures.addCallback(
-      sendRPC(rsChannel, request),
-      this,
-      executor);
-  }
+    /**
+     * Create the rpc request for the processor.
+     *
+     * @return the created rpc request.
+     */
+    protected abstract RequestT createRequest();
 
-  @Override
-  public void onSuccess(ResponseT result) {
-    try {
-      resultFuture.complete(processResponse(result));
-    } catch (Exception e) {
-      resultFuture.completeExceptionally(e);
+    /**
+     * Get the RPC service from the server channel.
+     *
+     * @return rpc service.
+     */
+    protected abstract ListenableFuture<ResponseT> sendRPC(StorageServerChannel rsChannel, RequestT requestT);
+
+    /**
+     * Process the response and convert it back to a result.
+     *
+     * @param response response
+     * @return the converted result.
+     */
+    protected abstract ResultT processResponse(ResponseT response) throws Exception;
+
+    public CompletableFuture<ResultT> process() {
+        scChannel.getStorageContainerChannelFuture().whenCompleteAsync(this, executor);
+        return resultFuture;
     }
-  }
 
-  @Override
-  public void onFailure(Throwable t) {
-    boolean shouldRetry = false;
-    if (t instanceof StatusRuntimeException) {
-      shouldRetry = shouldRetryOn(((StatusRuntimeException) t).getStatus());
-    } else if (t instanceof StatusException) {
-      shouldRetry = shouldRetryOn(((StatusException) t).getStatus());
+    @Override
+    public void run() {
+        process();
     }
 
-    if (shouldRetry && backoffs.hasNext()) {
-      long backoffMs = backoffs.next();
-      executor.schedule(this, backoffMs, TimeUnit.MILLISECONDS);
-    } else {
-      resultFuture.completeExceptionally(t);
-    }
-  }
+    /**
+     * Logic on handling channel exceptions.
+     *
+     * @param storageServerChannel server channel
+     * @param cause                exception on establishing channel.
+     */
+    @Override
+    public void accept(StorageServerChannel storageServerChannel, Throwable cause) {
+        if (null != cause) {
+            // failure to retrieve a channel to the server that hosts this storage container
+            resultFuture.completeExceptionally(cause);
+            return;
+        }
 
-  protected boolean shouldRetryOn(Status statusCode) {
-    return Status.NOT_FOUND == statusCode;
-  }
+        sendRpcToServerChannel(storageServerChannel);
+    }
+
+    private void sendRpcToServerChannel(StorageServerChannel rsChannel) {
+        RequestT request;
+        try {
+            request = createRequest();
+        } catch (Exception e) {
+            // fail to create request
+            resultFuture.completeExceptionally(e);
+            return;
+        }
+
+        Futures.addCallback(
+            sendRPC(rsChannel, request),
+            this,
+            executor);
+    }
+
+    @Override
+    public void onSuccess(ResponseT result) {
+        try {
+            resultFuture.complete(processResponse(result));
+        } catch (Exception e) {
+            resultFuture.completeExceptionally(e);
+        }
+    }
+
+    @Override
+    public void onFailure(Throwable t) {
+        boolean shouldRetry = false;
+        if (t instanceof StatusRuntimeException) {
+            shouldRetry = shouldRetryOn(((StatusRuntimeException) t).getStatus());
+        } else if (t instanceof StatusException) {
+            shouldRetry = shouldRetryOn(((StatusException) t).getStatus());
+        }
+
+        if (shouldRetry && backoffs.hasNext()) {
+            long backoffMs = backoffs.next();
+            executor.schedule(this, backoffMs, TimeUnit.MILLISECONDS);
+        } else {
+            resultFuture.completeExceptionally(t);
+        }
+    }
+
+    protected boolean shouldRetryOn(Status statusCode) {
+        return Status.NOT_FOUND == statusCode;
+    }
 }

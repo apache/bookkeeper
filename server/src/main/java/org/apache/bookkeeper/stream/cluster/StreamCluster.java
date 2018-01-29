@@ -63,263 +63,263 @@ import org.apache.zookeeper.ZooKeeper;
 public class StreamCluster
     extends AbstractLifecycleComponent<StorageConfiguration> {
 
-  private static final int MAX_RETRIES = 20;
+    private static final int MAX_RETRIES = 20;
 
-  /**
-   * Build a stream cluster from the provided cluster {@code spec}.
-   *
-   * @param spec the spec to build stream cluster.
-   * @return stream cluster spec.
-   */
-  public static StreamCluster build(StreamClusterSpec spec) {
-    return new StreamCluster(spec);
-  }
-
-  //
-  // DL Settings
-  //
-  private static final String ROOT_PATH = "/stream";
-  private static final String LEDGERS_PATH = "/stream/ledgers";
-  private static final String LEDGERS_AVAILABLE_PATH = "/stream/ledgers/available";
-  private static final String NAMESPACE = "/stream/storage";
-
-  private final StreamClusterSpec spec;
-  private final List<Endpoint> rpcEndpoints;
-  private CompositeConfiguration baseConf;
-  private String zkEnsemble;
-  private int zkPort;
-  private ZooKeeperServerShim zks;
-  private List<LifecycleComponent> servers;
-  private int nextBookiePort;
-  private int nextGrpcPort;
-
-  private StreamCluster(StreamClusterSpec spec) {
-    super(
-      "stream-cluster",
-      new StorageConfiguration(spec.baseConf()),
-      NullStatsLogger.INSTANCE);
-    this.spec = spec;
-    this.servers = Lists.newArrayListWithExpectedSize(spec.numServers());
-    this.rpcEndpoints = Lists.newArrayListWithExpectedSize(spec.numServers());
-    this.nextBookiePort = spec.initialBookiePort();
-    this.nextGrpcPort = spec.initialGrpcPort();
-  }
-
-  public List<Endpoint> getRpcEndpoints() {
-    return rpcEndpoints;
-  }
-
-  public String getZkServers() {
-    return zkEnsemble;
-  }
-
-  private void startZooKeeper() throws Exception {
-    if (!spec.shouldStartZooKeeper()) {
-      zkPort = spec.zkPort();
-      zkEnsemble = spec.zkServers() + ":" + zkPort;
-      return;
+    /**
+     * Build a stream cluster from the provided cluster {@code spec}.
+     *
+     * @param spec the spec to build stream cluster.
+     * @return stream cluster spec.
+     */
+    public static StreamCluster build(StreamClusterSpec spec) {
+        return new StreamCluster(spec);
     }
 
-    File zkDir = new File(spec.storageRootDir, "zookeeper");
-    Pair<ZooKeeperServerShim, Integer> zkServerAndPort =
-        LocalDLMEmulator.runZookeeperOnAnyPort(zkDir);
-    zks = zkServerAndPort.getLeft();
-    zkPort = zkServerAndPort.getRight();
-    log.info("Started zookeeper at port {}.", zkPort);
-    zkEnsemble = "127.0.0.1:" + zkPort;
-  }
+    //
+    // DL Settings
+    //
+    private static final String ROOT_PATH = "/stream";
+    private static final String LEDGERS_PATH = "/stream/ledgers";
+    private static final String LEDGERS_AVAILABLE_PATH = "/stream/ledgers/available";
+    private static final String NAMESPACE = "/stream/storage";
 
-  private void stopZooKeeper() {
-    // stop the zookeeper server
-    if (null != zks) {
-      zks.stop();
+    private final StreamClusterSpec spec;
+    private final List<Endpoint> rpcEndpoints;
+    private CompositeConfiguration baseConf;
+    private String zkEnsemble;
+    private int zkPort;
+    private ZooKeeperServerShim zks;
+    private List<LifecycleComponent> servers;
+    private int nextBookiePort;
+    private int nextGrpcPort;
+
+    private StreamCluster(StreamClusterSpec spec) {
+        super(
+            "stream-cluster",
+            new StorageConfiguration(spec.baseConf()),
+            NullStatsLogger.INSTANCE);
+        this.spec = spec;
+        this.servers = Lists.newArrayListWithExpectedSize(spec.numServers());
+        this.rpcEndpoints = Lists.newArrayListWithExpectedSize(spec.numServers());
+        this.nextBookiePort = spec.initialBookiePort();
+        this.nextGrpcPort = spec.initialGrpcPort();
     }
-  }
 
-  private void initializeCluster() throws Exception {
-    log.info("Initializing the stream cluster.");
-    ZooKeeper zkc = null;
-    try (StorageController controller = new HelixStorageController(zkEnsemble)) {
-      // initialize the configuration
-      ServerConfiguration serverConf = new ServerConfiguration();
-      serverConf.setZkServers(zkEnsemble);
-      serverConf.setZkLedgersRootPath(LEDGERS_PATH);
-      serverConf.setAllowLoopback(true);
-      serverConf.setGcWaitTime(300000);
-      serverConf.setDiskUsageWarnThreshold(0.9999f);
-      serverConf.setDiskUsageThreshold(0.999999f);
-      this.baseConf = serverConf;
+    public List<Endpoint> getRpcEndpoints() {
+        return rpcEndpoints;
+    }
 
-      zkc = ZooKeeperClient.newBuilder()
-          .connectString(zkEnsemble)
-          .sessionTimeoutMs(60000)
-          .build();
-      Transaction txn = zkc.transaction();
-      txn.create(
-          ROOT_PATH, new byte[0], ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-      txn.create(
-          LEDGERS_PATH, new byte[0], ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-      txn.create(
-          LEDGERS_AVAILABLE_PATH, new byte[0], ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+    public String getZkServers() {
+        return zkEnsemble;
+    }
 
-      try {
-        txn.commit();
-      } catch (KeeperException ke) {
-        if (Code.NODEEXISTS != ke.code()) {
-          throw ke;
+    private void startZooKeeper() throws Exception {
+        if (!spec.shouldStartZooKeeper()) {
+            zkPort = spec.zkPort();
+            zkEnsemble = spec.zkServers() + ":" + zkPort;
+            return;
         }
-      }
 
-      log.info("Initialize the bookkeeper metadata.");
-
-      // initialize the storage
-      controller.createCluster("stream/helix", spec.numServers() * 2, 1);
-      log.info("Initialized the helix metadata with {} storage containers.", spec.numServers() * 2);
-    } finally {
-      if (null != zkc) {
-        zkc.close();
-      }
+        File zkDir = new File(spec.storageRootDir, "zookeeper");
+        Pair<ZooKeeperServerShim, Integer> zkServerAndPort =
+            LocalDLMEmulator.runZookeeperOnAnyPort(zkDir);
+        zks = zkServerAndPort.getLeft();
+        zkPort = zkServerAndPort.getRight();
+        log.info("Started zookeeper at port {}.", zkPort);
+        zkEnsemble = "127.0.0.1:" + zkPort;
     }
-  }
 
-  private LifecycleComponent startServer() throws Exception {
-    int bookiePort;
-    int grpcPort;
-    boolean success = false;
-    int retries = 0;
-
-    while (!success) {
-      synchronized (this) {
-        bookiePort = nextBookiePort++;
-        grpcPort = nextGrpcPort++;
-      }
-      LifecycleComponent server = null;
-      try {
-        ServerConfiguration serverConf = new ServerConfiguration();
-        serverConf.loadConf(baseConf);
-        serverConf.setBookiePort(bookiePort);
-        File bkDir = new File(spec.storageRootDir(), "bookie_" + bookiePort);
-        serverConf.setJournalDirName(bkDir.getPath());
-        serverConf.setLedgerDirNames(new String[] { bkDir.getPath() });
-
-        DistributedLogConfiguration dlConf = new DistributedLogConfiguration();
-        dlConf.loadConf(serverConf);
-
-        File rangesStoreDir = new File(spec.storageRootDir(), "ranges_" + grpcPort);
-        StorageConfiguration storageConf = new StorageConfiguration(serverConf);
-        storageConf.setRangeStoreDirNames(new String[] { rangesStoreDir.getPath() });
-        storageConf.setServeReadOnlyTables(spec.serveReadOnlyTable);
-
-        log.info("Attempting to start storage server at (bookie port = {}, grpc port = {})"
-                + " : bkDir = {}, rangesStoreDir = {}, serveReadOnlyTables = {}",
-                bookiePort, grpcPort, bkDir, rangesStoreDir, spec.serveReadOnlyTable);
-        server = StorageServer.startStorageServer(
-          serverConf,
-          grpcPort,
-          spec.numServers() * 2,
-          Optional.empty());
-        server.start();
-        log.info("Started storage server at (bookie port = {}, grpc port = {})",
-          bookiePort, grpcPort);
-        this.rpcEndpoints.add(StorageServer.createLocalEndpoint(grpcPort, false));
-        return server;
-      } catch (Throwable e) {
-        log.error("Failed to start storage server", e);
-        if (null != server) {
-          server.stop();
+    private void stopZooKeeper() {
+        // stop the zookeeper server
+        if (null != zks) {
+            zks.stop();
         }
-        if (e.getCause() instanceof BindException) {
-          retries++;
-          if (retries > MAX_RETRIES) {
-            throw (BindException) e.getCause();
-          }
-        } else {
-          throw e;
+    }
+
+    private void initializeCluster() throws Exception {
+        log.info("Initializing the stream cluster.");
+        ZooKeeper zkc = null;
+        try (StorageController controller = new HelixStorageController(zkEnsemble)) {
+            // initialize the configuration
+            ServerConfiguration serverConf = new ServerConfiguration();
+            serverConf.setZkServers(zkEnsemble);
+            serverConf.setZkLedgersRootPath(LEDGERS_PATH);
+            serverConf.setAllowLoopback(true);
+            serverConf.setGcWaitTime(300000);
+            serverConf.setDiskUsageWarnThreshold(0.9999f);
+            serverConf.setDiskUsageThreshold(0.999999f);
+            this.baseConf = serverConf;
+
+            zkc = ZooKeeperClient.newBuilder()
+                .connectString(zkEnsemble)
+                .sessionTimeoutMs(60000)
+                .build();
+            Transaction txn = zkc.transaction();
+            txn.create(
+                ROOT_PATH, new byte[0], ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+            txn.create(
+                LEDGERS_PATH, new byte[0], ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+            txn.create(
+                LEDGERS_AVAILABLE_PATH, new byte[0], ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+
+            try {
+                txn.commit();
+            } catch (KeeperException ke) {
+                if (Code.NODEEXISTS != ke.code()) {
+                    throw ke;
+                }
+            }
+
+            log.info("Initialize the bookkeeper metadata.");
+
+            // initialize the storage
+            controller.createCluster("stream/helix", spec.numServers() * 2, 1);
+            log.info("Initialized the helix metadata with {} storage containers.", spec.numServers() * 2);
+        } finally {
+            if (null != zkc) {
+                zkc.close();
+            }
         }
-      }
     }
-    throw new IOException("Failed to start any storage server.");
-  }
 
-  private void startServers() throws Exception {
-    log.info("Starting {} storage servers.", spec.numServers());
-    ExecutorService executor = Executors.newCachedThreadPool();
-    List<Future<LifecycleComponent>> startFutures = Lists.newArrayList();
-    for (int i = 0; i < spec.numServers(); i++) {
-      Future<LifecycleComponent> future = executor.submit(() -> startServer());
-      startFutures.add(future);
+    private LifecycleComponent startServer() throws Exception {
+        int bookiePort;
+        int grpcPort;
+        boolean success = false;
+        int retries = 0;
+
+        while (!success) {
+            synchronized (this) {
+                bookiePort = nextBookiePort++;
+                grpcPort = nextGrpcPort++;
+            }
+            LifecycleComponent server = null;
+            try {
+                ServerConfiguration serverConf = new ServerConfiguration();
+                serverConf.loadConf(baseConf);
+                serverConf.setBookiePort(bookiePort);
+                File bkDir = new File(spec.storageRootDir(), "bookie_" + bookiePort);
+                serverConf.setJournalDirName(bkDir.getPath());
+                serverConf.setLedgerDirNames(new String[]{bkDir.getPath()});
+
+                DistributedLogConfiguration dlConf = new DistributedLogConfiguration();
+                dlConf.loadConf(serverConf);
+
+                File rangesStoreDir = new File(spec.storageRootDir(), "ranges_" + grpcPort);
+                StorageConfiguration storageConf = new StorageConfiguration(serverConf);
+                storageConf.setRangeStoreDirNames(new String[]{rangesStoreDir.getPath()});
+                storageConf.setServeReadOnlyTables(spec.serveReadOnlyTable);
+
+                log.info("Attempting to start storage server at (bookie port = {}, grpc port = {})"
+                        + " : bkDir = {}, rangesStoreDir = {}, serveReadOnlyTables = {}",
+                    bookiePort, grpcPort, bkDir, rangesStoreDir, spec.serveReadOnlyTable);
+                server = StorageServer.startStorageServer(
+                    serverConf,
+                    grpcPort,
+                    spec.numServers() * 2,
+                    Optional.empty());
+                server.start();
+                log.info("Started storage server at (bookie port = {}, grpc port = {})",
+                    bookiePort, grpcPort);
+                this.rpcEndpoints.add(StorageServer.createLocalEndpoint(grpcPort, false));
+                return server;
+            } catch (Throwable e) {
+                log.error("Failed to start storage server", e);
+                if (null != server) {
+                    server.stop();
+                }
+                if (e.getCause() instanceof BindException) {
+                    retries++;
+                    if (retries > MAX_RETRIES) {
+                        throw (BindException) e.getCause();
+                    }
+                } else {
+                    throw e;
+                }
+            }
+        }
+        throw new IOException("Failed to start any storage server.");
     }
-    for (Future<LifecycleComponent> future : startFutures) {
-      servers.add(future.get());
+
+    private void startServers() throws Exception {
+        log.info("Starting {} storage servers.", spec.numServers());
+        ExecutorService executor = Executors.newCachedThreadPool();
+        List<Future<LifecycleComponent>> startFutures = Lists.newArrayList();
+        for (int i = 0; i < spec.numServers(); i++) {
+            Future<LifecycleComponent> future = executor.submit(() -> startServer());
+            startFutures.add(future);
+        }
+        for (Future<LifecycleComponent> future : startFutures) {
+            servers.add(future.get());
+        }
+        log.info("Started {} storage servers.", spec.numServers());
+        executor.shutdown();
     }
-    log.info("Started {} storage servers.", spec.numServers());
-    executor.shutdown();
-  }
 
-  private void createDefaultNamespaces() throws Exception {
-    StorageClientSettings settings = StorageClientSettings.newBuilder()
-        .addEndpoints(getRpcEndpoints().toArray(new Endpoint[getRpcEndpoints().size()]))
-        .usePlaintext(true)
-        .build();
-    log.info("RpcEndpoints are : {}", settings.endpoints());
-    String namespaceName = "default";
-    try (StorageAdminClient admin = StorageClientBuilder.newBuilder()
-        .withSettings(settings)
-        .buildAdmin()) {
+    private void createDefaultNamespaces() throws Exception {
+        StorageClientSettings settings = StorageClientSettings.newBuilder()
+            .addEndpoints(getRpcEndpoints().toArray(new Endpoint[getRpcEndpoints().size()]))
+            .usePlaintext(true)
+            .build();
+        log.info("RpcEndpoints are : {}", settings.endpoints());
+        String namespaceName = "default";
+        try (StorageAdminClient admin = StorageClientBuilder.newBuilder()
+            .withSettings(settings)
+            .buildAdmin()) {
 
-      System.out.println("Creating namespace '" + namespaceName + "' ...");
-      try {
-        NamespaceProperties nsProps = result(
-            admin.createNamespace(
-                namespaceName,
-                NamespaceConfiguration.newBuilder()
-                    .setDefaultStreamConf(DEFAULT_STREAM_CONF)
-                    .build()));
-        System.out.println("Successfully created namespace '" + namespaceName + "':");
-        System.out.println(nsProps);
-      } catch (NamespaceExistsException nee) {
-        System.out.println("Namespace '" + namespaceName + "' already exists.");
-      }
+            System.out.println("Creating namespace '" + namespaceName + "' ...");
+            try {
+                NamespaceProperties nsProps = result(
+                    admin.createNamespace(
+                        namespaceName,
+                        NamespaceConfiguration.newBuilder()
+                            .setDefaultStreamConf(DEFAULT_STREAM_CONF)
+                            .build()));
+                System.out.println("Successfully created namespace '" + namespaceName + "':");
+                System.out.println(nsProps);
+            } catch (NamespaceExistsException nee) {
+                System.out.println("Namespace '" + namespaceName + "' already exists.");
+            }
+        }
     }
-  }
 
-  private void stopServers() {
-    for (LifecycleComponent server : servers) {
-      server.close();
+    private void stopServers() {
+        for (LifecycleComponent server : servers) {
+            server.close();
+        }
     }
-  }
 
-  @Override
-  protected void doStart() {
-    try {
-      // start zookeeper servers
-      startZooKeeper();
+    @Override
+    protected void doStart() {
+        try {
+            // start zookeeper servers
+            startZooKeeper();
 
-      // initialize the cluster
-      initializeCluster();
+            // initialize the cluster
+            initializeCluster();
 
-      // stop servers
-      startServers();
+            // stop servers
+            startServers();
 
-      // create default namespaces
-      createDefaultNamespaces();
+            // create default namespaces
+            createDefaultNamespaces();
 
-      // wait for 10 seconds
-      TimeUnit.SECONDS.sleep(10);
-    } catch (Exception e) {
-      throw new RuntimeException(e);
+            // wait for 10 seconds
+            TimeUnit.SECONDS.sleep(10);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
-  }
 
-  @Override
-  protected void doStop() {
-  }
+    @Override
+    protected void doStop() {
+    }
 
-  @Override
-  protected void doClose() throws IOException {
-    // stop the servers
-    stopServers();
-    // stop zookeeper
-    stopZooKeeper();
-  }
+    @Override
+    protected void doClose() throws IOException {
+        // stop the servers
+        stopServers();
+        // stop zookeeper
+        stopZooKeeper();
+    }
 }

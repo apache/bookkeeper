@@ -118,7 +118,7 @@ public abstract class AbstractStateStoreWithJournal<LocalStateStoreT extends Sta
         // schedule periodical checkpoint
         if (null != checkpointInterval) {
             long checkpointIntervalMs = checkpointInterval.toMillis();
-            checkpointTask =  writeIOScheduler.scheduleAtFixedRate(
+            checkpointTask = writeIOScheduler.scheduleAtFixedRate(
                 () -> localStore.checkpoint(),
                 checkpointIntervalMs,
                 checkpointIntervalMs,

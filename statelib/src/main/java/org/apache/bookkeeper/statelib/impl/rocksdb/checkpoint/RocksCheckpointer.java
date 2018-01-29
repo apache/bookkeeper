@@ -45,7 +45,7 @@ public class RocksCheckpointer implements AutoCloseable {
     public static CheckpointMetadata restore(String dbName,
                                              File dbPath,
                                              CheckpointStore checkpointStore)
-            throws StateStoreException {
+        throws StateStoreException {
         try {
             String dbPrefix = String.format("%s", dbName);
 
@@ -102,8 +102,8 @@ public class RocksCheckpointer implements AutoCloseable {
         }
     }
 
-    private static Pair<String, CheckpointMetadata > getLatestCheckpoint(
-            String dbPrefix, CheckpointStore checkpointStore) throws IOException {
+    private static Pair<String, CheckpointMetadata> getLatestCheckpoint(
+        String dbPrefix, CheckpointStore checkpointStore) throws IOException {
         String remoteCheckpointsPath = RocksUtils.getDestCheckpointsPath(dbPrefix);
         List<String> files = checkpointStore.listFiles(remoteCheckpointsPath);
         CheckpointMetadata latestCheckpoint = null;

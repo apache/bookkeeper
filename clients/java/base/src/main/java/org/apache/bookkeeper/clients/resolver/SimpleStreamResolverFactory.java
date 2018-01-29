@@ -39,52 +39,52 @@ import org.apache.bookkeeper.stream.proto.common.Endpoint;
  */
 public class SimpleStreamResolverFactory extends AbstractNameResolverFactory {
 
-  private static final String SCHEME = "stream";
-  private static final String NAME = "simple";
+    private static final String SCHEME = "stream";
+    private static final String NAME = "simple";
 
-  public static final SimpleStreamResolverFactory of(List<Endpoint> endpoints) {
-    return new SimpleStreamResolverFactory(endpoints);
-  }
-
-  public static final SimpleStreamResolverFactory of(Endpoint... endpoints) {
-    return new SimpleStreamResolverFactory(Lists.newArrayList(endpoints));
-  }
-
-  private final List<URI> endpointURIs;
-
-  private SimpleStreamResolverFactory(List<Endpoint> endpoints) {
-    this.endpointURIs = Lists.transform(
-      endpoints,
-      new Function<Endpoint, URI>() {
-        @Override
-        public URI apply(Endpoint endpoint) {
-          return URI.create(SCHEME + "://" + endpoint.getHostname() + ":" + endpoint.getPort());
-        }
-      }
-    );
-  }
-
-  @Override
-  public String name() {
-    return NAME;
-  }
-
-  @Nullable
-  @Override
-  public NameResolver newNameResolver(URI targetUri, Attributes params) {
-    if (!Objects.equal(SCHEME, targetUri.getScheme())) {
-      return null;
+    public static final SimpleStreamResolverFactory of(List<Endpoint> endpoints) {
+        return new SimpleStreamResolverFactory(endpoints);
     }
-    String targetPath = checkNotNull(targetUri.getPath());
-    checkArgument(targetPath.startsWith("/"),
-      "the path component (%s) of the target (%s) must start with '/'",
-      targetPath, targetUri);
-    String name = targetPath.substring(1);
-    return new SimpleNameResolver(name, ClientResources.shared().executor(), this.endpointURIs);
-  }
 
-  @Override
-  public String getDefaultScheme() {
-    return SCHEME;
-  }
+    public static final SimpleStreamResolverFactory of(Endpoint... endpoints) {
+        return new SimpleStreamResolverFactory(Lists.newArrayList(endpoints));
+    }
+
+    private final List<URI> endpointURIs;
+
+    private SimpleStreamResolverFactory(List<Endpoint> endpoints) {
+        this.endpointURIs = Lists.transform(
+            endpoints,
+            new Function<Endpoint, URI>() {
+                @Override
+                public URI apply(Endpoint endpoint) {
+                    return URI.create(SCHEME + "://" + endpoint.getHostname() + ":" + endpoint.getPort());
+                }
+            }
+        );
+    }
+
+    @Override
+    public String name() {
+        return NAME;
+    }
+
+    @Nullable
+    @Override
+    public NameResolver newNameResolver(URI targetUri, Attributes params) {
+        if (!Objects.equal(SCHEME, targetUri.getScheme())) {
+            return null;
+        }
+        String targetPath = checkNotNull(targetUri.getPath());
+        checkArgument(targetPath.startsWith("/"),
+            "the path component (%s) of the target (%s) must start with '/'",
+            targetPath, targetUri);
+        String name = targetPath.substring(1);
+        return new SimpleNameResolver(name, ClientResources.shared().executor(), this.endpointURIs);
+    }
+
+    @Override
+    public String getDefaultScheme() {
+        return SCHEME;
+    }
 }

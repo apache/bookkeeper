@@ -78,266 +78,267 @@ import org.apache.bookkeeper.stream.storage.impl.store.MVCCStoreFactory;
 public class StorageContainerImpl
     implements StorageContainer {
 
-  private final long scId;
+    private final long scId;
 
-  // store container that used for fail requests.
-  private final StorageContainer failRequestStorageContainer;
-  // store factory
-  private final MVCCStoreFactory storeFactory;
-  // storage container
-  @Getter(value = AccessLevel.PACKAGE)
-  private MetaRangeStore mgStore;
-  @Getter(value = AccessLevel.PACKAGE)
-  private final MetaRangeStoreFactory mrStoreFactory;
-  // root range
-  @Getter(value = AccessLevel.PACKAGE)
-  private RootRangeStore rootRange;
-  @Getter(value = AccessLevel.PACKAGE)
-  private final RootRangeStoreFactory rrStoreFactory;
-  // table range stores
-  @Getter(value = AccessLevel.PACKAGE)
-  private final TableStoreCache tableStoreCache;
-  @Getter(value = AccessLevel.PACKAGE)
-  private final TableStoreFactory tableStoreFactory;
+    // store container that used for fail requests.
+    private final StorageContainer failRequestStorageContainer;
+    // store factory
+    private final MVCCStoreFactory storeFactory;
+    // storage container
+    @Getter(value = AccessLevel.PACKAGE)
+    private MetaRangeStore mgStore;
+    @Getter(value = AccessLevel.PACKAGE)
+    private final MetaRangeStoreFactory mrStoreFactory;
+    // root range
+    @Getter(value = AccessLevel.PACKAGE)
+    private RootRangeStore rootRange;
+    @Getter(value = AccessLevel.PACKAGE)
+    private final RootRangeStoreFactory rrStoreFactory;
+    // table range stores
+    @Getter(value = AccessLevel.PACKAGE)
+    private final TableStoreCache tableStoreCache;
+    @Getter(value = AccessLevel.PACKAGE)
+    private final TableStoreFactory tableStoreFactory;
 
-  public StorageContainerImpl(StorageConfiguration storageConf,
-                              long scId,
-                              StorageContainerPlacementPolicy rangePlacementPolicy,
-                              OrderedScheduler scheduler,
-                              MVCCStoreFactory storeFactory,
-                              URI defaultBackendUri) {
-      this(
-          scId,
-          scheduler,
-          storeFactory,
-          store -> new RootRangeStoreImpl(defaultBackendUri, store, rangePlacementPolicy, scheduler.chooseThread(scId)),
-          store -> new MetaRangeStoreImpl(store, rangePlacementPolicy, scheduler.chooseThread(scId)),
-          store -> new TableStoreImpl(store));
-  }
-
-  public StorageContainerImpl(long scId,
-                              OrderedScheduler scheduler,
-                              MVCCStoreFactory storeFactory,
-                              RootRangeStoreFactory rrStoreFactory,
-                              MetaRangeStoreFactory mrStoreFactory,
-                              TableStoreFactory tableStoreFactory) {
-    this.scId = scId;
-    this.failRequestStorageContainer = FailRequestStorageContainer.of(scheduler);
-    this.rootRange = failRequestStorageContainer;
-    this.mgStore = failRequestStorageContainer;
-    this.storeFactory = storeFactory;
-    this.rrStoreFactory = rrStoreFactory;
-    this.mrStoreFactory = mrStoreFactory;
-    this.tableStoreFactory = tableStoreFactory;
-    this.tableStoreCache = new TableStoreCache(storeFactory, tableStoreFactory);
-  }
-
-  //
-  // Services
-  //
-
-  @Override
-  public long getId() {
-    return scId;
-  }
-
-  private CompletableFuture<Void> startRootRangeStore() {
-    if (ROOT_STORAGE_CONTAINER_ID != scId) {
-      return FutureUtils.Void();
+    public StorageContainerImpl(StorageConfiguration storageConf,
+                                long scId,
+                                StorageContainerPlacementPolicy rangePlacementPolicy,
+                                OrderedScheduler scheduler,
+                                MVCCStoreFactory storeFactory,
+                                URI defaultBackendUri) {
+        this(
+            scId,
+            scheduler,
+            storeFactory,
+            store -> new RootRangeStoreImpl(
+                defaultBackendUri, store, rangePlacementPolicy, scheduler.chooseThread(scId)),
+            store -> new MetaRangeStoreImpl(store, rangePlacementPolicy, scheduler.chooseThread(scId)),
+            store -> new TableStoreImpl(store));
     }
-    return storeFactory.openStore(
-        ROOT_STORAGE_CONTAINER_ID,
-        ROOT_STREAM_ID,
-        ROOT_RANGE_ID
-    ).thenApply(store -> {
-      rootRange = rrStoreFactory.createStore(store);
-      return null;
-    });
-  }
 
-  private CompletableFuture<Void> startMetaRangeStore(long scId) {
-    return storeFactory.openStore(
-        scId,
-        CONTAINER_META_STREAM_ID,
-        CONTAINER_META_RANGE_ID
-    ).thenApply(store -> {
-      mgStore = mrStoreFactory.createStore(store);
-      return null;
-    });
-  }
-
-  @Override
-  public CompletableFuture<Void> start() {
-    log.info("Starting storage container ({}) ...", getId());
-
-    List<CompletableFuture<Void>> futures = Lists.newArrayList(
-        startRootRangeStore(),
-        startMetaRangeStore(scId));
-
-    return FutureUtils.collect(futures).thenApply(ignored -> {
-      log.info("Successfully started storage container ({}).", getId());
-      return null;
-    });
-  }
-
-  @Override
-  public CompletableFuture<Void> stop() {
-    log.info("Stopping storage container ({}) ...", getId());
-
-    return storeFactory.closeStores(scId).thenApply(ignored -> {
-      log.info("Successfully stopped storage container ({}).", getId());
-      return null;
-    });
-  }
-
-  @Override
-  public void close() {
-    stop().join();
-  }
-
-  //
-  // Storage Container API
-  //
-
-  //
-  // Namespace API
-  //
-
-  @Override
-  public CompletableFuture<CreateNamespaceResponse> createNamespace(CreateNamespaceRequest request) {
-    return rootRange.createNamespace(request);
-  }
-
-  @Override
-  public CompletableFuture<DeleteNamespaceResponse> deleteNamespace(DeleteNamespaceRequest request) {
-    return rootRange.deleteNamespace(request);
-  }
-
-  @Override
-  public CompletableFuture<GetNamespaceResponse> getNamespace(GetNamespaceRequest request) {
-    return rootRange.getNamespace(request);
-  }
-
-  //
-  // Stream API.
-  //
-
-  @Override
-  public CompletableFuture<CreateStreamResponse> createStream(CreateStreamRequest request) {
-    return rootRange.createStream(request);
-  }
-
-  @Override
-  public CompletableFuture<DeleteStreamResponse> deleteStream(DeleteStreamRequest request) {
-    return rootRange.deleteStream(request);
-  }
-
-  @Override
-  public CompletableFuture<GetStreamResponse> getStream(GetStreamRequest request) {
-    return rootRange.getStream(request);
-  }
-
-  //
-  // Stream Meta Range API.
-  //
-
-  @Override
-  public CompletableFuture<StorageContainerResponse> getActiveRanges(StorageContainerRequest request) {
-    return mgStore.getActiveRanges(request);
-  }
-
-  //
-  // Table API
-  //
-
-
-  @Override
-  public CompletableFuture<StorageContainerResponse> range(StorageContainerRequest request) {
-    checkArgument(Type.KV_RANGE == request.getType());
-
-    long scId = request.getScId();
-    RangeRequest rr = request.getKvRangeReq();
-    RoutingHeader header = rr.getHeader();
-
-    RangeId rid = RangeId.of(header.getStreamId(), header.getRangeId());
-    TableStore store = tableStoreCache.getTableStore(rid);
-    if (null != store) {
-      return store.range(request);
-    } else {
-      return tableStoreCache.openTableStore(scId, rid)
-          .thenCompose(s -> s.range(request));
+    public StorageContainerImpl(long scId,
+                                OrderedScheduler scheduler,
+                                MVCCStoreFactory storeFactory,
+                                RootRangeStoreFactory rrStoreFactory,
+                                MetaRangeStoreFactory mrStoreFactory,
+                                TableStoreFactory tableStoreFactory) {
+        this.scId = scId;
+        this.failRequestStorageContainer = FailRequestStorageContainer.of(scheduler);
+        this.rootRange = failRequestStorageContainer;
+        this.mgStore = failRequestStorageContainer;
+        this.storeFactory = storeFactory;
+        this.rrStoreFactory = rrStoreFactory;
+        this.mrStoreFactory = mrStoreFactory;
+        this.tableStoreFactory = tableStoreFactory;
+        this.tableStoreCache = new TableStoreCache(storeFactory, tableStoreFactory);
     }
-  }
 
-  @Override
-  public CompletableFuture<StorageContainerResponse> put(StorageContainerRequest request) {
-    checkArgument(Type.KV_PUT == request.getType());
+    //
+    // Services
+    //
 
-    long scId = request.getScId();
-    PutRequest rr = request.getKvPutReq();
-    RoutingHeader header = rr.getHeader();
-
-    RangeId rid = RangeId.of(header.getStreamId(), header.getRangeId());
-    TableStore store = tableStoreCache.getTableStore(rid);
-    if (null != store) {
-      return store.put(request);
-    } else {
-      return tableStoreCache.openTableStore(scId, rid)
-          .thenCompose(s -> s.put(request));
+    @Override
+    public long getId() {
+        return scId;
     }
-  }
 
-  @Override
-  public CompletableFuture<StorageContainerResponse> delete(StorageContainerRequest request) {
-    checkArgument(Type.KV_DELETE == request.getType());
-
-    long scId = request.getScId();
-    DeleteRangeRequest rr = request.getKvDeleteReq();
-    RoutingHeader header = rr.getHeader();
-
-    RangeId rid = RangeId.of(header.getStreamId(), header.getRangeId());
-    TableStore store = tableStoreCache.getTableStore(rid);
-    if (null != store) {
-      return store.delete(request);
-    } else {
-      return tableStoreCache.openTableStore(scId, rid)
-          .thenCompose(s -> s.delete(request));
+    private CompletableFuture<Void> startRootRangeStore() {
+        if (ROOT_STORAGE_CONTAINER_ID != scId) {
+            return FutureUtils.Void();
+        }
+        return storeFactory.openStore(
+            ROOT_STORAGE_CONTAINER_ID,
+            ROOT_STREAM_ID,
+            ROOT_RANGE_ID
+        ).thenApply(store -> {
+            rootRange = rrStoreFactory.createStore(store);
+            return null;
+        });
     }
-  }
 
-  @Override
-  public CompletableFuture<StorageContainerResponse> txn(StorageContainerRequest request) {
-    checkArgument(Type.KV_TXN == request.getType());
-
-    long scId = request.getScId();
-    TxnRequest rr = request.getKvTxnReq();
-    RoutingHeader header = rr.getHeader();
-
-    RangeId rid = RangeId.of(header.getStreamId(), header.getRangeId());
-    TableStore store = tableStoreCache.getTableStore(rid);
-    if (null != store) {
-      return store.txn(request);
-    } else {
-      return tableStoreCache.openTableStore(scId, rid)
-          .thenCompose(s -> s.txn(request));
+    private CompletableFuture<Void> startMetaRangeStore(long scId) {
+        return storeFactory.openStore(
+            scId,
+            CONTAINER_META_STREAM_ID,
+            CONTAINER_META_RANGE_ID
+        ).thenApply(store -> {
+            mgStore = mrStoreFactory.createStore(store);
+            return null;
+        });
     }
-  }
 
-  @Override
-  public CompletableFuture<StorageContainerResponse> incr(StorageContainerRequest request) {
-    checkArgument(Type.KV_INCREMENT == request.getType());
+    @Override
+    public CompletableFuture<Void> start() {
+        log.info("Starting storage container ({}) ...", getId());
 
-    long scId = request.getScId();
-    IncrementRequest ir = request.getKvIncrReq();
-    RoutingHeader header = ir.getHeader();
+        List<CompletableFuture<Void>> futures = Lists.newArrayList(
+            startRootRangeStore(),
+            startMetaRangeStore(scId));
 
-    RangeId rid = RangeId.of(header.getStreamId(), header.getRangeId());
-    TableStore store = tableStoreCache.getTableStore(rid);
-    if (null != store) {
-      return store.incr(request);
-    } else {
-      return tableStoreCache.openTableStore(scId, rid)
-          .thenCompose(s -> s.incr(request));
+        return FutureUtils.collect(futures).thenApply(ignored -> {
+            log.info("Successfully started storage container ({}).", getId());
+            return null;
+        });
     }
-  }
+
+    @Override
+    public CompletableFuture<Void> stop() {
+        log.info("Stopping storage container ({}) ...", getId());
+
+        return storeFactory.closeStores(scId).thenApply(ignored -> {
+            log.info("Successfully stopped storage container ({}).", getId());
+            return null;
+        });
+    }
+
+    @Override
+    public void close() {
+        stop().join();
+    }
+
+    //
+    // Storage Container API
+    //
+
+    //
+    // Namespace API
+    //
+
+    @Override
+    public CompletableFuture<CreateNamespaceResponse> createNamespace(CreateNamespaceRequest request) {
+        return rootRange.createNamespace(request);
+    }
+
+    @Override
+    public CompletableFuture<DeleteNamespaceResponse> deleteNamespace(DeleteNamespaceRequest request) {
+        return rootRange.deleteNamespace(request);
+    }
+
+    @Override
+    public CompletableFuture<GetNamespaceResponse> getNamespace(GetNamespaceRequest request) {
+        return rootRange.getNamespace(request);
+    }
+
+    //
+    // Stream API.
+    //
+
+    @Override
+    public CompletableFuture<CreateStreamResponse> createStream(CreateStreamRequest request) {
+        return rootRange.createStream(request);
+    }
+
+    @Override
+    public CompletableFuture<DeleteStreamResponse> deleteStream(DeleteStreamRequest request) {
+        return rootRange.deleteStream(request);
+    }
+
+    @Override
+    public CompletableFuture<GetStreamResponse> getStream(GetStreamRequest request) {
+        return rootRange.getStream(request);
+    }
+
+    //
+    // Stream Meta Range API.
+    //
+
+    @Override
+    public CompletableFuture<StorageContainerResponse> getActiveRanges(StorageContainerRequest request) {
+        return mgStore.getActiveRanges(request);
+    }
+
+    //
+    // Table API
+    //
+
+
+    @Override
+    public CompletableFuture<StorageContainerResponse> range(StorageContainerRequest request) {
+        checkArgument(Type.KV_RANGE == request.getType());
+
+        long scId = request.getScId();
+        RangeRequest rr = request.getKvRangeReq();
+        RoutingHeader header = rr.getHeader();
+
+        RangeId rid = RangeId.of(header.getStreamId(), header.getRangeId());
+        TableStore store = tableStoreCache.getTableStore(rid);
+        if (null != store) {
+            return store.range(request);
+        } else {
+            return tableStoreCache.openTableStore(scId, rid)
+                .thenCompose(s -> s.range(request));
+        }
+    }
+
+    @Override
+    public CompletableFuture<StorageContainerResponse> put(StorageContainerRequest request) {
+        checkArgument(Type.KV_PUT == request.getType());
+
+        long scId = request.getScId();
+        PutRequest rr = request.getKvPutReq();
+        RoutingHeader header = rr.getHeader();
+
+        RangeId rid = RangeId.of(header.getStreamId(), header.getRangeId());
+        TableStore store = tableStoreCache.getTableStore(rid);
+        if (null != store) {
+            return store.put(request);
+        } else {
+            return tableStoreCache.openTableStore(scId, rid)
+                .thenCompose(s -> s.put(request));
+        }
+    }
+
+    @Override
+    public CompletableFuture<StorageContainerResponse> delete(StorageContainerRequest request) {
+        checkArgument(Type.KV_DELETE == request.getType());
+
+        long scId = request.getScId();
+        DeleteRangeRequest rr = request.getKvDeleteReq();
+        RoutingHeader header = rr.getHeader();
+
+        RangeId rid = RangeId.of(header.getStreamId(), header.getRangeId());
+        TableStore store = tableStoreCache.getTableStore(rid);
+        if (null != store) {
+            return store.delete(request);
+        } else {
+            return tableStoreCache.openTableStore(scId, rid)
+                .thenCompose(s -> s.delete(request));
+        }
+    }
+
+    @Override
+    public CompletableFuture<StorageContainerResponse> txn(StorageContainerRequest request) {
+        checkArgument(Type.KV_TXN == request.getType());
+
+        long scId = request.getScId();
+        TxnRequest rr = request.getKvTxnReq();
+        RoutingHeader header = rr.getHeader();
+
+        RangeId rid = RangeId.of(header.getStreamId(), header.getRangeId());
+        TableStore store = tableStoreCache.getTableStore(rid);
+        if (null != store) {
+            return store.txn(request);
+        } else {
+            return tableStoreCache.openTableStore(scId, rid)
+                .thenCompose(s -> s.txn(request));
+        }
+    }
+
+    @Override
+    public CompletableFuture<StorageContainerResponse> incr(StorageContainerRequest request) {
+        checkArgument(Type.KV_INCREMENT == request.getType());
+
+        long scId = request.getScId();
+        IncrementRequest ir = request.getKvIncrReq();
+        RoutingHeader header = ir.getHeader();
+
+        RangeId rid = RangeId.of(header.getStreamId(), header.getRangeId());
+        TableStore store = tableStoreCache.getTableStore(rid);
+        if (null != store) {
+            return store.incr(request);
+        } else {
+            return tableStoreCache.openTableStore(scId, rid)
+                .thenCompose(s -> s.incr(request));
+        }
+    }
 }

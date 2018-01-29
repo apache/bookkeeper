@@ -42,98 +42,98 @@ import org.apache.bookkeeper.stream.proto.storage.StatusCode;
  */
 public class TestRootRangeClientDeleteNamespaceRpc extends RootRangeClientImplTestBase {
 
-  private String colName;
+    private String colName;
 
-  @Override
-  protected void doSetup() throws Exception {
-    super.doSetup();
+    @Override
+    protected void doSetup() throws Exception {
+        super.doSetup();
 
-    this.colName = testName.getMethodName();
-  }
-
-  @Override
-  protected RootRangeServiceImplBase createRootRangeServiceForSuccess() {
-    return new RootRangeServiceImplBase() {
-      @Override
-      public void deleteNamespace(DeleteNamespaceRequest request,
-                                   StreamObserver<DeleteNamespaceResponse> responseObserver) {
-        responseObserver.onNext(DeleteNamespaceResponse.newBuilder()
-          .setCode(StatusCode.SUCCESS)
-          .build());
-        responseObserver.onCompleted();
-      }
-    };
-  }
-
-  @Override
-  protected void verifySuccess(RootRangeClient rootRangeClient) throws Exception {
-    rootRangeClient.deleteNamespace(colName).get();
-  }
-
-  @Override
-  protected RootRangeServiceImplBase createRootRangeServiceForRequestFailure() {
-    return new RootRangeServiceImplBase() {
-      @Override
-      public void deleteNamespace(DeleteNamespaceRequest request,
-                                   StreamObserver<DeleteNamespaceResponse> responseObserver) {
-        responseObserver.onNext(DeleteNamespaceResponse.newBuilder()
-          .setCode(StatusCode.NAMESPACE_NOT_FOUND)
-          .build());
-        responseObserver.onCompleted();
-      }
-    };
-  }
-
-  @Override
-  protected void verifyRequestFailure(RootRangeClient rootRangeClient) throws Exception {
-    CompletableFuture<Boolean> deleteFuture = rootRangeClient.deleteNamespace(colName);
-    try {
-      deleteFuture.get();
-      fail("Should fail on rpc failure");
-    } catch (ExecutionException ee) {
-      assertNotNull(ee.getCause());
-      assertTrue(ee.getCause() instanceof NamespaceNotFoundException);
+        this.colName = testName.getMethodName();
     }
-  }
 
-  @Override
-  protected RootRangeServiceImplBase createRootRangeServiceForRpcFailure() {
-    return new RootRangeServiceImplBase() {
-      @Override
-      public void deleteNamespace(DeleteNamespaceRequest request,
-                                   StreamObserver<DeleteNamespaceResponse> responseObserver) {
-        responseObserver.onError(new StatusRuntimeException(Status.INTERNAL));
-      }
-    };
-  }
-
-  @Override
-  protected void verifyRpcFailure(RootRangeClient rootRangeClient) throws Exception {
-    CompletableFuture<Boolean> deleteFuture = rootRangeClient.deleteNamespace(colName);
-    try {
-      deleteFuture.get();
-      fail("Should fail on rpc failure");
-    } catch (ExecutionException ee) {
-      assertNotNull(ee.getCause());
-      assertTrue(ee.getCause() instanceof StatusRuntimeException);
-      StatusRuntimeException se = (StatusRuntimeException) ee.getCause();
-      assertEquals(Status.INTERNAL, se.getStatus());
+    @Override
+    protected RootRangeServiceImplBase createRootRangeServiceForSuccess() {
+        return new RootRangeServiceImplBase() {
+            @Override
+            public void deleteNamespace(DeleteNamespaceRequest request,
+                                        StreamObserver<DeleteNamespaceResponse> responseObserver) {
+                responseObserver.onNext(DeleteNamespaceResponse.newBuilder()
+                    .setCode(StatusCode.SUCCESS)
+                    .build());
+                responseObserver.onCompleted();
+            }
+        };
     }
-  }
 
-  @Override
-  protected void verifyChannelFailure(IOException expectedException,
-                                      RootRangeClient rootRangeClient) throws Exception {
-    CompletableFuture<Boolean> deleteFuture = rootRangeClient.deleteNamespace(colName);
-    try {
-      deleteFuture.get();
-      fail("Should fail on rpc operation");
-    } catch (ExecutionException ee) {
-      assertNotNull(ee.getCause());
-      assertTrue(ee.getCause() instanceof ClientException);
-      ClientException zse = (ClientException) ee.getCause();
-      assertNotNull(zse.getCause());
-      assertTrue(expectedException == zse.getCause());
+    @Override
+    protected void verifySuccess(RootRangeClient rootRangeClient) throws Exception {
+        rootRangeClient.deleteNamespace(colName).get();
     }
-  }
+
+    @Override
+    protected RootRangeServiceImplBase createRootRangeServiceForRequestFailure() {
+        return new RootRangeServiceImplBase() {
+            @Override
+            public void deleteNamespace(DeleteNamespaceRequest request,
+                                        StreamObserver<DeleteNamespaceResponse> responseObserver) {
+                responseObserver.onNext(DeleteNamespaceResponse.newBuilder()
+                    .setCode(StatusCode.NAMESPACE_NOT_FOUND)
+                    .build());
+                responseObserver.onCompleted();
+            }
+        };
+    }
+
+    @Override
+    protected void verifyRequestFailure(RootRangeClient rootRangeClient) throws Exception {
+        CompletableFuture<Boolean> deleteFuture = rootRangeClient.deleteNamespace(colName);
+        try {
+            deleteFuture.get();
+            fail("Should fail on rpc failure");
+        } catch (ExecutionException ee) {
+            assertNotNull(ee.getCause());
+            assertTrue(ee.getCause() instanceof NamespaceNotFoundException);
+        }
+    }
+
+    @Override
+    protected RootRangeServiceImplBase createRootRangeServiceForRpcFailure() {
+        return new RootRangeServiceImplBase() {
+            @Override
+            public void deleteNamespace(DeleteNamespaceRequest request,
+                                        StreamObserver<DeleteNamespaceResponse> responseObserver) {
+                responseObserver.onError(new StatusRuntimeException(Status.INTERNAL));
+            }
+        };
+    }
+
+    @Override
+    protected void verifyRpcFailure(RootRangeClient rootRangeClient) throws Exception {
+        CompletableFuture<Boolean> deleteFuture = rootRangeClient.deleteNamespace(colName);
+        try {
+            deleteFuture.get();
+            fail("Should fail on rpc failure");
+        } catch (ExecutionException ee) {
+            assertNotNull(ee.getCause());
+            assertTrue(ee.getCause() instanceof StatusRuntimeException);
+            StatusRuntimeException se = (StatusRuntimeException) ee.getCause();
+            assertEquals(Status.INTERNAL, se.getStatus());
+        }
+    }
+
+    @Override
+    protected void verifyChannelFailure(IOException expectedException,
+                                        RootRangeClient rootRangeClient) throws Exception {
+        CompletableFuture<Boolean> deleteFuture = rootRangeClient.deleteNamespace(colName);
+        try {
+            deleteFuture.get();
+            fail("Should fail on rpc operation");
+        } catch (ExecutionException ee) {
+            assertNotNull(ee.getCause());
+            assertTrue(ee.getCause() instanceof ClientException);
+            ClientException zse = (ClientException) ee.getCause();
+            assertNotNull(zse.getCause());
+            assertTrue(expectedException == zse.getCause());
+        }
+    }
 }

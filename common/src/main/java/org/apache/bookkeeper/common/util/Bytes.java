@@ -27,7 +27,7 @@ public class Bytes {
      * Get a long number from a bytes array starting from the provided {@code index}.
      *
      * @param memory the bytes array
-     * @param index the starting index
+     * @param index  the starting index
      * @return the long number.
      */
     public static long toLong(byte[] memory, int index) {

@@ -30,14 +30,14 @@ import org.junit.rules.TestName;
  */
 public class InvalidNamespaceNameExceptionTest {
 
-  @Rule
-  public TestName name = new TestName();
+    @Rule
+    public TestName name = new TestName();
 
-  @Test
-  public void testGetMessage() {
-    InvalidNamespaceNameException icne = new InvalidNamespaceNameException(name.getMethodName());
-    assertEquals("Invalid namespace name : " + name.getMethodName(), icne.getMessage());
-    assertNull(icne.getCause());
-  }
+    @Test
+    public void testGetMessage() {
+        InvalidNamespaceNameException icne = new InvalidNamespaceNameException(name.getMethodName());
+        assertEquals("Invalid namespace name : " + name.getMethodName(), icne.getMessage());
+        assertNull(icne.getCause());
+    }
 
 }

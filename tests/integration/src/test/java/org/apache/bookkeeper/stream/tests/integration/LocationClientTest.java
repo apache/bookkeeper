@@ -41,52 +41,52 @@ import org.junit.Test;
 @Slf4j
 public class LocationClientTest extends StorageServerTestBase {
 
-  private OrderedScheduler scheduler;
-  private LocationClient client;
+    private OrderedScheduler scheduler;
+    private LocationClient client;
 
-  @Override
-  protected void doSetup() throws Exception {
-    scheduler = OrderedScheduler.newSchedulerBuilder()
-      .name("location-client-test")
-      .numThreads(1)
-      .build();
-    StorageClientSettings settings = StorageClientSettings.newBuilder()
-      .addEndpoints(cluster.getRpcEndpoints().toArray(new Endpoint[cluster.getRpcEndpoints().size()]))
-      .usePlaintext(true)
-      .build();
-    client = new LocationClientImpl(
-      settings,
-      scheduler);
-  }
-
-  @Override
-  protected void doTeardown() throws Exception {
-    if (null != client) {
-      client.close();
+    @Override
+    protected void doSetup() throws Exception {
+        scheduler = OrderedScheduler.newSchedulerBuilder()
+            .name("location-client-test")
+            .numThreads(1)
+            .build();
+        StorageClientSettings settings = StorageClientSettings.newBuilder()
+            .addEndpoints(cluster.getRpcEndpoints().toArray(new Endpoint[cluster.getRpcEndpoints().size()]))
+            .usePlaintext(true)
+            .build();
+        client = new LocationClientImpl(
+            settings,
+            scheduler);
     }
-    if (null != scheduler) {
-      scheduler.shutdown();
+
+    @Override
+    protected void doTeardown() throws Exception {
+        if (null != client) {
+            client.close();
+        }
+        if (null != scheduler) {
+            scheduler.shutdown();
+        }
     }
-  }
 
-  @Test
-  public void testLocateStorageContainers() throws Exception {
-    List<OneStorageContainerEndpointResponse> responses = client.locateStorageContainers(
-      Lists.newArrayList(
-        Revisioned.of(ROOT_STORAGE_CONTAINER_ID, -1L))
-    ).get();
-    assertEquals(1, responses.size());
-    OneStorageContainerEndpointResponse oneResponse = responses.get(0);
-    assertEquals(StatusCode.SUCCESS, oneResponse.getStatusCode());
+    @Test
+    public void testLocateStorageContainers() throws Exception {
+        List<OneStorageContainerEndpointResponse> responses = client.locateStorageContainers(
+            Lists.newArrayList(
+                Revisioned.of(ROOT_STORAGE_CONTAINER_ID, -1L))
+        ).get();
+        assertEquals(1, responses.size());
+        OneStorageContainerEndpointResponse oneResponse = responses.get(0);
+        assertEquals(StatusCode.SUCCESS, oneResponse.getStatusCode());
 
-    Endpoint endpoint = oneResponse.getEndpoint().getRwEndpoint();
-    log.info("Current cluster endpoints = {}", cluster.getRpcEndpoints());
-    log.info("Response : rw endpoint = {}", endpoint);
-    assertTrue(cluster.getRpcEndpoints().contains(endpoint));
+        Endpoint endpoint = oneResponse.getEndpoint().getRwEndpoint();
+        log.info("Current cluster endpoints = {}", cluster.getRpcEndpoints());
+        log.info("Response : rw endpoint = {}", endpoint);
+        assertTrue(cluster.getRpcEndpoints().contains(endpoint));
 
-    assertEquals(1, oneResponse.getEndpoint().getRoEndpointCount());
-    endpoint = oneResponse.getEndpoint().getRoEndpoint(0);
-    log.info("Response : ro endpoint = {}", endpoint);
-    assertTrue(cluster.getRpcEndpoints().contains(endpoint));
-  }
+        assertEquals(1, oneResponse.getEndpoint().getRoEndpointCount());
+        endpoint = oneResponse.getEndpoint().getRoEndpoint(0);
+        log.info("Response : ro endpoint = {}", endpoint);
+        assertTrue(cluster.getRpcEndpoints().contains(endpoint));
+    }
 }

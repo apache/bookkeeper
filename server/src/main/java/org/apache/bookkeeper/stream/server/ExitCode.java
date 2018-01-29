@@ -33,19 +33,19 @@ package org.apache.bookkeeper.stream.server;
  */
 public enum ExitCode {
 
-  OK(0),
-  INVALID_CONF(-1),
-  UNKNOWN_HOSTNAME(-2),
-  INVALID_HOST(-3);
+    OK(0),
+    INVALID_CONF(-1),
+    UNKNOWN_HOSTNAME(-2),
+    INVALID_HOST(-3);
 
-  private final int code;
+    private final int code;
 
-  ExitCode(int code) {
-    this.code = code;
-  }
+    ExitCode(int code) {
+        this.code = code;
+    }
 
-  public int code() {
-    return code;
-  }
+    public int code() {
+        return code;
+    }
 
 }

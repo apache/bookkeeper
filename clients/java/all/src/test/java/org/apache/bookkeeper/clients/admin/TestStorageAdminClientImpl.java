@@ -41,89 +41,90 @@ import org.junit.rules.TestName;
  */
 public class TestStorageAdminClientImpl {
 
-  private static final NamespaceConfiguration colConf = NamespaceConfiguration.newBuilder()
-    .setDefaultStreamConf(DEFAULT_STREAM_CONF)
-    .build();
-  private static final NamespaceProperties colProps = NamespaceProperties.newBuilder()
-    .setNamespaceId(System.currentTimeMillis())
-    .setNamespaceName("namespace")
-    .setDefaultStreamConf(DEFAULT_STREAM_CONF)
-    .build();
-  private static final StreamProperties streamProps = StreamProperties.newBuilder()
-    .setStreamId(System.currentTimeMillis())
-    .setStorageContainerId(System.currentTimeMillis())
-    .setStreamName("stream_" + System.currentTimeMillis())
-    .setStreamConf(DEFAULT_STREAM_CONF)
-    .build();
+    private static final NamespaceConfiguration colConf = NamespaceConfiguration.newBuilder()
+        .setDefaultStreamConf(DEFAULT_STREAM_CONF)
+        .build();
+    private static final NamespaceProperties colProps = NamespaceProperties.newBuilder()
+        .setNamespaceId(System.currentTimeMillis())
+        .setNamespaceName("namespace")
+        .setDefaultStreamConf(DEFAULT_STREAM_CONF)
+        .build();
+    private static final StreamProperties streamProps = StreamProperties.newBuilder()
+        .setStreamId(System.currentTimeMillis())
+        .setStorageContainerId(System.currentTimeMillis())
+        .setStreamName("stream_" + System.currentTimeMillis())
+        .setStreamConf(DEFAULT_STREAM_CONF)
+        .build();
 
-  @Rule
-  public TestName testName = new TestName();
+    @Rule
+    public TestName testName = new TestName();
 
-  private RootRangeClient mockRootRangeClient = mock(RootRangeClient.class);
-  private StorageServerClientManager mockManager = mock(StorageServerClientManager.class);
-  private StorageAdminClientImpl adminClient;
+    private RootRangeClient mockRootRangeClient = mock(RootRangeClient.class);
+    private StorageServerClientManager mockManager = mock(StorageServerClientManager.class);
+    private StorageAdminClientImpl adminClient;
 
-  @Before
-  public void setUp() {
-    when(mockManager.getRootRangeClient()).thenReturn(mockRootRangeClient);
-    this.adminClient = new StorageAdminClientImpl(() -> mockManager);
-  }
+    @Before
+    public void setUp() {
+        when(mockManager.getRootRangeClient()).thenReturn(mockRootRangeClient);
+        this.adminClient = new StorageAdminClientImpl(() -> mockManager);
+    }
 
-  @Test
-  public void testCreateNamespace() throws Exception {
-    String colName = testName.getMethodName();
-    when(mockRootRangeClient.createNamespace(colName, colConf))
-      .thenReturn(FutureUtils.value(colProps));
-    assertEquals(colProps, FutureUtils.result(adminClient.createNamespace(colName, colConf)));
-    verify(mockRootRangeClient, times(1)).createNamespace(colName, colConf);
-  }
+    @Test
+    public void testCreateNamespace() throws Exception {
+        String colName = testName.getMethodName();
+        when(mockRootRangeClient.createNamespace(colName, colConf))
+            .thenReturn(FutureUtils.value(colProps));
+        assertEquals(colProps, FutureUtils.result(adminClient.createNamespace(colName, colConf)));
+        verify(mockRootRangeClient, times(1)).createNamespace(colName, colConf);
+    }
 
-  @Test
-  public void testDeleteNamespace() throws Exception {
-    String colName = testName.getMethodName();
-    when(mockRootRangeClient.deleteNamespace(colName))
-      .thenReturn(FutureUtils.value(true));
-    assertEquals(true, FutureUtils.result(adminClient.deleteNamespace(colName)));
-    verify(mockRootRangeClient, times(1)).deleteNamespace(colName);
-  }
+    @Test
+    public void testDeleteNamespace() throws Exception {
+        String colName = testName.getMethodName();
+        when(mockRootRangeClient.deleteNamespace(colName))
+            .thenReturn(FutureUtils.value(true));
+        assertEquals(true, FutureUtils.result(adminClient.deleteNamespace(colName)));
+        verify(mockRootRangeClient, times(1)).deleteNamespace(colName);
+    }
 
-  @Test
-  public void testGetNamespace() throws Exception {
-    String colName = testName.getMethodName();
-    when(mockRootRangeClient.getNamespace(colName))
-      .thenReturn(FutureUtils.value(colProps));
-    assertEquals(colProps, FutureUtils.result(adminClient.getNamespace(colName)));
-    verify(mockRootRangeClient, times(1)).getNamespace(colName);
-  }
+    @Test
+    public void testGetNamespace() throws Exception {
+        String colName = testName.getMethodName();
+        when(mockRootRangeClient.getNamespace(colName))
+            .thenReturn(FutureUtils.value(colProps));
+        assertEquals(colProps, FutureUtils.result(adminClient.getNamespace(colName)));
+        verify(mockRootRangeClient, times(1)).getNamespace(colName);
+    }
 
-  @Test
-  public void testCreateStream() throws Exception {
-    String colName = testName.getMethodName();
-    String streamName = colName + "_stream";
-    when(mockRootRangeClient.createStream(colName, streamName, DEFAULT_STREAM_CONF))
-      .thenReturn(FutureUtils.value(streamProps));
-    assertEquals(streamProps, FutureUtils.result(adminClient.createStream(colName, streamName, DEFAULT_STREAM_CONF)));
-    verify(mockRootRangeClient, times(1)).createStream(colName, streamName, DEFAULT_STREAM_CONF);
-  }
+    @Test
+    public void testCreateStream() throws Exception {
+        String colName = testName.getMethodName();
+        String streamName = colName + "_stream";
+        when(mockRootRangeClient.createStream(colName, streamName, DEFAULT_STREAM_CONF))
+            .thenReturn(FutureUtils.value(streamProps));
+        assertEquals(streamProps, FutureUtils.result(
+            adminClient.createStream(colName, streamName, DEFAULT_STREAM_CONF)));
+        verify(mockRootRangeClient, times(1)).createStream(colName, streamName, DEFAULT_STREAM_CONF);
+    }
 
-  @Test
-  public void testDeleteStream() throws Exception {
-    String colName = testName.getMethodName();
-    String streamName = colName + "_stream";
-    when(mockRootRangeClient.deleteStream(colName, streamName))
-      .thenReturn(FutureUtils.value(true));
-    assertEquals(true, FutureUtils.result(adminClient.deleteStream(colName, streamName)));
-    verify(mockRootRangeClient, times(1)).deleteStream(colName, streamName);
-  }
+    @Test
+    public void testDeleteStream() throws Exception {
+        String colName = testName.getMethodName();
+        String streamName = colName + "_stream";
+        when(mockRootRangeClient.deleteStream(colName, streamName))
+            .thenReturn(FutureUtils.value(true));
+        assertEquals(true, FutureUtils.result(adminClient.deleteStream(colName, streamName)));
+        verify(mockRootRangeClient, times(1)).deleteStream(colName, streamName);
+    }
 
-  @Test
-  public void testGetStream() throws Exception {
-    String colName = testName.getMethodName();
-    String streamName = colName + "_stream";
-    when(mockRootRangeClient.getStream(colName, streamName))
-      .thenReturn(FutureUtils.value(streamProps));
-    assertEquals(streamProps, FutureUtils.result(adminClient.getStream(colName, streamName)));
-    verify(mockRootRangeClient, times(1)).getStream(colName, streamName);
-  }
+    @Test
+    public void testGetStream() throws Exception {
+        String colName = testName.getMethodName();
+        String streamName = colName + "_stream";
+        when(mockRootRangeClient.getStream(colName, streamName))
+            .thenReturn(FutureUtils.value(streamProps));
+        assertEquals(streamProps, FutureUtils.result(adminClient.getStream(colName, streamName)));
+        verify(mockRootRangeClient, times(1)).getStream(colName, streamName);
+    }
 
 }

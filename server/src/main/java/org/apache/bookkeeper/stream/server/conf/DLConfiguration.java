@@ -22,13 +22,13 @@ import org.apache.commons.configuration.CompositeConfiguration;
  */
 public class DLConfiguration extends ComponentConfiguration {
 
-  public static final String COMPONENT_PREFIX = "dl" + DELIMITER;
+    public static final String COMPONENT_PREFIX = "dl" + DELIMITER;
 
-  public static DLConfiguration of(CompositeConfiguration conf) {
-    return new DLConfiguration(conf);
-  }
+    public static DLConfiguration of(CompositeConfiguration conf) {
+        return new DLConfiguration(conf);
+    }
 
-  private DLConfiguration(CompositeConfiguration conf) {
-    super(conf, COMPONENT_PREFIX);
-  }
+    private DLConfiguration(CompositeConfiguration conf) {
+        super(conf, COMPONENT_PREFIX);
+    }
 }

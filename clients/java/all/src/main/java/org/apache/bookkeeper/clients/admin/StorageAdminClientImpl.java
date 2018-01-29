@@ -42,92 +42,92 @@ import org.apache.bookkeeper.stream.proto.StreamProperties;
 @Slf4j
 public class StorageAdminClientImpl extends AbstractAutoAsyncCloseable implements StorageAdminClient {
 
-  // clients
-  private final StorageServerClientManager clientManager;
-  private final RootRangeClient rootRangeClient;
+    // clients
+    private final StorageServerClientManager clientManager;
+    private final RootRangeClient rootRangeClient;
 
-  /**
-   * Create a stream admin client with provided {@code withSettings}.
-   *
-   * @param settings withSettings to create an admin client.
-   */
-  public StorageAdminClientImpl(StorageClientSettings settings) {
-    this(
-      settings,
-      ClientResources.create().scheduler());
-  }
-
-  /**
-   * Create a stream admin client with provided {@code withSettings} and {@code scheduler}.
-   *
-   * @param settings withSettings to create an admin client.
-   * @param schedulerResource scheduler to execute.
-   */
-  public StorageAdminClientImpl(StorageClientSettings settings,
-                                Resource<OrderedScheduler> schedulerResource) {
-    this(() -> new StorageServerClientManagerImpl(settings, schedulerResource));
-  }
-
-  @VisibleForTesting
-  StorageAdminClientImpl(Supplier<StorageServerClientManager> factory) {
-    this.clientManager = factory.get();
-    this.rootRangeClient = this.clientManager.getRootRangeClient();
-  }
-
-  @Override
-  public CompletableFuture<NamespaceProperties> createNamespace(String namespace,
-                                                                  NamespaceConfiguration colConf) {
-    return rootRangeClient.createNamespace(namespace, colConf);
-  }
-
-  @Override
-  public CompletableFuture<Boolean> deleteNamespace(String namespace) {
-    return rootRangeClient.deleteNamespace(namespace);
-  }
-
-  @Override
-  public CompletableFuture<NamespaceProperties> getNamespace(String namespace) {
-    return rootRangeClient.getNamespace(namespace);
-  }
-
-  @Override
-  public CompletableFuture<StreamProperties> createStream(String namespace,
-                                                          String streamName,
-                                                          StreamConfiguration streamConf) {
-    return rootRangeClient.createStream(namespace, streamName, streamConf);
-  }
-
-  @Override
-  public CompletableFuture<Boolean> deleteStream(String namespace,
-                                                 String streamName) {
-    return rootRangeClient.deleteStream(namespace, streamName);
-  }
-
-  @Override
-  public CompletableFuture<StreamProperties> getStream(String namespace,
-                                                       String streamName) {
-    return rootRangeClient.getStream(namespace, streamName);
-  }
-
-  //
-  // Closeable API
-  //
-
-  @Override
-  protected void closeAsyncOnce(CompletableFuture<Void> closeFuture) {
-    clientManager.closeAsync().whenComplete((result, cause) -> {
-      closeFuture.complete(null);
-    });
-  }
-
-  @Override
-  public void close() {
-    try {
-      closeAsync().get();
-    } catch (InterruptedException e) {
-      log.debug("Interrupted on closing stream admin client", e);
-    } catch (ExecutionException e) {
-      log.debug("Failed to cloe stream admin client", e);
+    /**
+     * Create a stream admin client with provided {@code withSettings}.
+     *
+     * @param settings withSettings to create an admin client.
+     */
+    public StorageAdminClientImpl(StorageClientSettings settings) {
+        this(
+            settings,
+            ClientResources.create().scheduler());
     }
-  }
+
+    /**
+     * Create a stream admin client with provided {@code withSettings} and {@code scheduler}.
+     *
+     * @param settings          withSettings to create an admin client.
+     * @param schedulerResource scheduler to execute.
+     */
+    public StorageAdminClientImpl(StorageClientSettings settings,
+                                  Resource<OrderedScheduler> schedulerResource) {
+        this(() -> new StorageServerClientManagerImpl(settings, schedulerResource));
+    }
+
+    @VisibleForTesting
+    StorageAdminClientImpl(Supplier<StorageServerClientManager> factory) {
+        this.clientManager = factory.get();
+        this.rootRangeClient = this.clientManager.getRootRangeClient();
+    }
+
+    @Override
+    public CompletableFuture<NamespaceProperties> createNamespace(String namespace,
+                                                                  NamespaceConfiguration colConf) {
+        return rootRangeClient.createNamespace(namespace, colConf);
+    }
+
+    @Override
+    public CompletableFuture<Boolean> deleteNamespace(String namespace) {
+        return rootRangeClient.deleteNamespace(namespace);
+    }
+
+    @Override
+    public CompletableFuture<NamespaceProperties> getNamespace(String namespace) {
+        return rootRangeClient.getNamespace(namespace);
+    }
+
+    @Override
+    public CompletableFuture<StreamProperties> createStream(String namespace,
+                                                            String streamName,
+                                                            StreamConfiguration streamConf) {
+        return rootRangeClient.createStream(namespace, streamName, streamConf);
+    }
+
+    @Override
+    public CompletableFuture<Boolean> deleteStream(String namespace,
+                                                   String streamName) {
+        return rootRangeClient.deleteStream(namespace, streamName);
+    }
+
+    @Override
+    public CompletableFuture<StreamProperties> getStream(String namespace,
+                                                         String streamName) {
+        return rootRangeClient.getStream(namespace, streamName);
+    }
+
+    //
+    // Closeable API
+    //
+
+    @Override
+    protected void closeAsyncOnce(CompletableFuture<Void> closeFuture) {
+        clientManager.closeAsync().whenComplete((result, cause) -> {
+            closeFuture.complete(null);
+        });
+    }
+
+    @Override
+    public void close() {
+        try {
+            closeAsync().get();
+        } catch (InterruptedException e) {
+            log.debug("Interrupted on closing stream admin client", e);
+        } catch (ExecutionException e) {
+            log.debug("Failed to cloe stream admin client", e);
+        }
+    }
 }

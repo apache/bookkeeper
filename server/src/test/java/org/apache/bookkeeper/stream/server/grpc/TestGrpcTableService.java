@@ -48,292 +48,292 @@ import org.junit.Test;
  */
 public class TestGrpcTableService {
 
-  private static final Throwable CAUSE = new Exception("test-exception");
+    private static final Throwable CAUSE = new Exception("test-exception");
 
-  private static final ByteString TEST_ROUTING_KEY = ByteString.copyFromUtf8("test-routing-key");
-  private static final RoutingHeader ROUTING_HEADER = RoutingHeader.newBuilder()
-      .setStreamId(1234L)
-      .setRangeId(1234L)
-      .setRKey(TEST_ROUTING_KEY)
-      .build();
-  private static final ByteString TEST_KEY = ByteString.copyFromUtf8("test-key");
-  private static final ByteString TEST_VAL = ByteString.copyFromUtf8("test-val");
+    private static final ByteString TEST_ROUTING_KEY = ByteString.copyFromUtf8("test-routing-key");
+    private static final RoutingHeader ROUTING_HEADER = RoutingHeader.newBuilder()
+        .setStreamId(1234L)
+        .setRangeId(1234L)
+        .setRKey(TEST_ROUTING_KEY)
+        .build();
+    private static final ByteString TEST_KEY = ByteString.copyFromUtf8("test-key");
+    private static final ByteString TEST_VAL = ByteString.copyFromUtf8("test-val");
 
-  //
-  // Meta KeyRange Server Requests tests
-  //
+    //
+    // Meta KeyRange Server Requests tests
+    //
 
-  @Test
-  public void testPutSuccess() throws Exception {
-    RangeStore rangeService = mock(RangeStore.class);
-    GrpcTableService grpcService = new GrpcTableService(rangeService);
+    @Test
+    public void testPutSuccess() throws Exception {
+        RangeStore rangeService = mock(RangeStore.class);
+        GrpcTableService grpcService = new GrpcTableService(rangeService);
 
-    StorageContainerRequest request = StorageContainerRequest
-        .newBuilder()
-        .setType(Type.KV_PUT)
-        .setKvPutReq(PutRequest
+        StorageContainerRequest request = StorageContainerRequest
             .newBuilder()
-            .setKey(TEST_KEY)
-            .setValue(TEST_VAL)
-            .setHeader(ROUTING_HEADER))
-        .build();
+            .setType(Type.KV_PUT)
+            .setKvPutReq(PutRequest
+                .newBuilder()
+                .setKey(TEST_KEY)
+                .setValue(TEST_VAL)
+                .setHeader(ROUTING_HEADER))
+            .build();
 
-    StorageContainerResponse response = StorageContainerResponse.newBuilder()
-        .setCode(StatusCode.SUCCESS)
-        .setKvPutResp(PutResponse.newBuilder())
-        .build();
+        StorageContainerResponse response = StorageContainerResponse.newBuilder()
+            .setCode(StatusCode.SUCCESS)
+            .setKvPutResp(PutResponse.newBuilder())
+            .build();
 
-    when(rangeService.put(request)).thenReturn(
-        CompletableFuture.completedFuture(response));
+        when(rangeService.put(request)).thenReturn(
+            CompletableFuture.completedFuture(response));
 
-    TestResponseObserver<StorageContainerResponse> responseObserver =
-        new TestResponseObserver<>();
-    grpcService.put(
-        request,
-        responseObserver);
+        TestResponseObserver<StorageContainerResponse> responseObserver =
+            new TestResponseObserver<>();
+        grpcService.put(
+            request,
+            responseObserver);
 
-    responseObserver.verifySuccess(response);
-    verify(rangeService, times(1)).put(request);
-  }
+        responseObserver.verifySuccess(response);
+        verify(rangeService, times(1)).put(request);
+    }
 
-  @Test
-  public void testPutFailure() throws Exception {
-    RangeStore rangeService = mock(RangeStore.class);
-    GrpcTableService grpcService = new GrpcTableService(rangeService);
+    @Test
+    public void testPutFailure() throws Exception {
+        RangeStore rangeService = mock(RangeStore.class);
+        GrpcTableService grpcService = new GrpcTableService(rangeService);
 
-    StorageContainerRequest request = StorageContainerRequest
-        .newBuilder()
-        .setType(Type.KV_PUT)
-        .setKvPutReq(PutRequest
+        StorageContainerRequest request = StorageContainerRequest
             .newBuilder()
-            .setKey(TEST_KEY)
-            .setValue(TEST_VAL)
-            .setHeader(ROUTING_HEADER))
-        .build();
+            .setType(Type.KV_PUT)
+            .setKvPutReq(PutRequest
+                .newBuilder()
+                .setKey(TEST_KEY)
+                .setValue(TEST_VAL)
+                .setHeader(ROUTING_HEADER))
+            .build();
 
-    StorageContainerResponse response = StorageContainerResponse.newBuilder()
-        .setCode(StatusCode.INTERNAL_SERVER_ERROR)
-        .build();
+        StorageContainerResponse response = StorageContainerResponse.newBuilder()
+            .setCode(StatusCode.INTERNAL_SERVER_ERROR)
+            .build();
 
-    when(rangeService.put(request)).thenReturn(
-        FutureUtils.exception(CAUSE));
+        when(rangeService.put(request)).thenReturn(
+            FutureUtils.exception(CAUSE));
 
-    TestResponseObserver<StorageContainerResponse> responseObserver =
-        new TestResponseObserver<>();
-    grpcService.put(
-        request,
-        responseObserver);
+        TestResponseObserver<StorageContainerResponse> responseObserver =
+            new TestResponseObserver<>();
+        grpcService.put(
+            request,
+            responseObserver);
 
-    responseObserver.verifySuccess(response);
-    verify(rangeService, times(1)).put(request);
-  }
+        responseObserver.verifySuccess(response);
+        verify(rangeService, times(1)).put(request);
+    }
 
-  @Test
-  public void testPutException() throws Exception {
-    RangeStore rangeService = mock(RangeStore.class);
-    GrpcTableService grpcService = new GrpcTableService(rangeService);
+    @Test
+    public void testPutException() throws Exception {
+        RangeStore rangeService = mock(RangeStore.class);
+        GrpcTableService grpcService = new GrpcTableService(rangeService);
 
-    StorageContainerRequest request = StorageContainerRequest
-        .newBuilder()
-        .setType(Type.KV_PUT)
-        .setKvPutReq(PutRequest
+        StorageContainerRequest request = StorageContainerRequest
             .newBuilder()
-            .setKey(TEST_KEY)
-            .setValue(TEST_VAL)
-            .setHeader(ROUTING_HEADER))
-        .build();
+            .setType(Type.KV_PUT)
+            .setKvPutReq(PutRequest
+                .newBuilder()
+                .setKey(TEST_KEY)
+                .setValue(TEST_VAL)
+                .setHeader(ROUTING_HEADER))
+            .build();
 
-    when(rangeService.put(request)).thenReturn(
-        FutureUtils.exception(new StatusRuntimeException(Status.NOT_FOUND)));
+        when(rangeService.put(request)).thenReturn(
+            FutureUtils.exception(new StatusRuntimeException(Status.NOT_FOUND)));
 
-    TestResponseObserver<StorageContainerResponse> responseObserver =
-        new TestResponseObserver<>();
-    grpcService.put(
-        request,
-        responseObserver);
+        TestResponseObserver<StorageContainerResponse> responseObserver =
+            new TestResponseObserver<>();
+        grpcService.put(
+            request,
+            responseObserver);
 
-    responseObserver.verifyException(Status.NOT_FOUND);
-    verify(rangeService, times(1)).put(request);
-  }
+        responseObserver.verifyException(Status.NOT_FOUND);
+        verify(rangeService, times(1)).put(request);
+    }
 
-  @Test
-  public void testRangeSuccess() throws Exception {
-    RangeStore rangeService = mock(RangeStore.class);
-    GrpcTableService grpcService = new GrpcTableService(rangeService);
+    @Test
+    public void testRangeSuccess() throws Exception {
+        RangeStore rangeService = mock(RangeStore.class);
+        GrpcTableService grpcService = new GrpcTableService(rangeService);
 
-    StorageContainerRequest request = StorageContainerRequest
-        .newBuilder()
-        .setType(Type.KV_RANGE)
-        .setKvRangeReq(RangeRequest
+        StorageContainerRequest request = StorageContainerRequest
             .newBuilder()
-            .setKey(TEST_KEY)
-            .setHeader(ROUTING_HEADER))
-        .build();
+            .setType(Type.KV_RANGE)
+            .setKvRangeReq(RangeRequest
+                .newBuilder()
+                .setKey(TEST_KEY)
+                .setHeader(ROUTING_HEADER))
+            .build();
 
-    StorageContainerResponse response = StorageContainerResponse.newBuilder()
-        .setCode(StatusCode.SUCCESS)
-        .setKvRangeResp(RangeResponse.newBuilder())
-        .build();
+        StorageContainerResponse response = StorageContainerResponse.newBuilder()
+            .setCode(StatusCode.SUCCESS)
+            .setKvRangeResp(RangeResponse.newBuilder())
+            .build();
 
-    when(rangeService.range(request)).thenReturn(
-        CompletableFuture.completedFuture(response));
+        when(rangeService.range(request)).thenReturn(
+            CompletableFuture.completedFuture(response));
 
-    TestResponseObserver<StorageContainerResponse> responseObserver =
-        new TestResponseObserver<>();
-    grpcService.range(
-        request,
-        responseObserver);
+        TestResponseObserver<StorageContainerResponse> responseObserver =
+            new TestResponseObserver<>();
+        grpcService.range(
+            request,
+            responseObserver);
 
-    responseObserver.verifySuccess(response);
-    verify(rangeService, times(1)).range(request);
-  }
+        responseObserver.verifySuccess(response);
+        verify(rangeService, times(1)).range(request);
+    }
 
-  @Test
-  public void testRangeActiveRangesFailure() throws Exception {
-    RangeStore rangeService = mock(RangeStore.class);
-    GrpcTableService grpcService = new GrpcTableService(rangeService);
+    @Test
+    public void testRangeActiveRangesFailure() throws Exception {
+        RangeStore rangeService = mock(RangeStore.class);
+        GrpcTableService grpcService = new GrpcTableService(rangeService);
 
-    StorageContainerRequest request = StorageContainerRequest
-        .newBuilder()
-        .setType(Type.KV_RANGE)
-        .setKvRangeReq(RangeRequest
+        StorageContainerRequest request = StorageContainerRequest
             .newBuilder()
-            .setKey(TEST_KEY)
-            .setHeader(ROUTING_HEADER))
-        .build();
+            .setType(Type.KV_RANGE)
+            .setKvRangeReq(RangeRequest
+                .newBuilder()
+                .setKey(TEST_KEY)
+                .setHeader(ROUTING_HEADER))
+            .build();
 
-    StorageContainerResponse response = StorageContainerResponse.newBuilder()
-        .setCode(StatusCode.INTERNAL_SERVER_ERROR)
-        .build();
+        StorageContainerResponse response = StorageContainerResponse.newBuilder()
+            .setCode(StatusCode.INTERNAL_SERVER_ERROR)
+            .build();
 
-    when(rangeService.range(request)).thenReturn(
-        FutureUtils.exception(CAUSE));
+        when(rangeService.range(request)).thenReturn(
+            FutureUtils.exception(CAUSE));
 
-    TestResponseObserver<StorageContainerResponse> responseObserver =
-        new TestResponseObserver<>();
-    grpcService.range(
-        request,
-        responseObserver);
+        TestResponseObserver<StorageContainerResponse> responseObserver =
+            new TestResponseObserver<>();
+        grpcService.range(
+            request,
+            responseObserver);
 
-    responseObserver.verifySuccess(response);
-    verify(rangeService, times(1)).range(request);
-  }
+        responseObserver.verifySuccess(response);
+        verify(rangeService, times(1)).range(request);
+    }
 
-  @Test
-  public void testRangeActiveRangesException() throws Exception {
-    RangeStore rangeService = mock(RangeStore.class);
-    GrpcTableService grpcService = new GrpcTableService(rangeService);
+    @Test
+    public void testRangeActiveRangesException() throws Exception {
+        RangeStore rangeService = mock(RangeStore.class);
+        GrpcTableService grpcService = new GrpcTableService(rangeService);
 
-    StorageContainerRequest request = StorageContainerRequest
-        .newBuilder()
-        .setType(Type.KV_RANGE)
-        .setKvRangeReq(RangeRequest
+        StorageContainerRequest request = StorageContainerRequest
             .newBuilder()
-            .setKey(TEST_KEY)
-            .setHeader(ROUTING_HEADER))
-        .build();
+            .setType(Type.KV_RANGE)
+            .setKvRangeReq(RangeRequest
+                .newBuilder()
+                .setKey(TEST_KEY)
+                .setHeader(ROUTING_HEADER))
+            .build();
 
-    when(rangeService.range(request)).thenReturn(
-        FutureUtils.exception(new StatusRuntimeException(Status.NOT_FOUND)));
+        when(rangeService.range(request)).thenReturn(
+            FutureUtils.exception(new StatusRuntimeException(Status.NOT_FOUND)));
 
-    TestResponseObserver<StorageContainerResponse> responseObserver =
-        new TestResponseObserver<>();
-    grpcService.range(
-        request,
-        responseObserver);
+        TestResponseObserver<StorageContainerResponse> responseObserver =
+            new TestResponseObserver<>();
+        grpcService.range(
+            request,
+            responseObserver);
 
-    responseObserver.verifyException(Status.NOT_FOUND);
-    verify(rangeService, times(1)).range(request);
-  }
+        responseObserver.verifyException(Status.NOT_FOUND);
+        verify(rangeService, times(1)).range(request);
+    }
 
-  @Test
-  public void testDeleteSuccess() throws Exception {
-    RangeStore rangeService = mock(RangeStore.class);
-    GrpcTableService grpcService = new GrpcTableService(rangeService);
+    @Test
+    public void testDeleteSuccess() throws Exception {
+        RangeStore rangeService = mock(RangeStore.class);
+        GrpcTableService grpcService = new GrpcTableService(rangeService);
 
-    StorageContainerRequest request = StorageContainerRequest
-        .newBuilder()
-        .setType(Type.KV_DELETE)
-        .setKvDeleteReq(DeleteRangeRequest
+        StorageContainerRequest request = StorageContainerRequest
             .newBuilder()
-            .setKey(TEST_KEY)
-            .setHeader(ROUTING_HEADER))
-        .build();
+            .setType(Type.KV_DELETE)
+            .setKvDeleteReq(DeleteRangeRequest
+                .newBuilder()
+                .setKey(TEST_KEY)
+                .setHeader(ROUTING_HEADER))
+            .build();
 
-    StorageContainerResponse response = StorageContainerResponse.newBuilder()
-        .setCode(StatusCode.SUCCESS)
-        .setKvDeleteResp(DeleteRangeResponse.newBuilder())
-        .build();
+        StorageContainerResponse response = StorageContainerResponse.newBuilder()
+            .setCode(StatusCode.SUCCESS)
+            .setKvDeleteResp(DeleteRangeResponse.newBuilder())
+            .build();
 
-    when(rangeService.delete(request)).thenReturn(
-        CompletableFuture.completedFuture(response));
+        when(rangeService.delete(request)).thenReturn(
+            CompletableFuture.completedFuture(response));
 
-    TestResponseObserver<StorageContainerResponse> responseObserver =
-        new TestResponseObserver<>();
-    grpcService.delete(
-        request,
-        responseObserver);
+        TestResponseObserver<StorageContainerResponse> responseObserver =
+            new TestResponseObserver<>();
+        grpcService.delete(
+            request,
+            responseObserver);
 
-    responseObserver.verifySuccess(response);
-    verify(rangeService, times(1)).delete(request);
-  }
+        responseObserver.verifySuccess(response);
+        verify(rangeService, times(1)).delete(request);
+    }
 
-  @Test
-  public void testDeleteFailure() throws Exception {
-    RangeStore rangeService = mock(RangeStore.class);
-    GrpcTableService grpcService = new GrpcTableService(rangeService);
+    @Test
+    public void testDeleteFailure() throws Exception {
+        RangeStore rangeService = mock(RangeStore.class);
+        GrpcTableService grpcService = new GrpcTableService(rangeService);
 
-    StorageContainerRequest request = StorageContainerRequest
-        .newBuilder()
-        .setType(Type.KV_DELETE)
-        .setKvDeleteReq(DeleteRangeRequest
+        StorageContainerRequest request = StorageContainerRequest
             .newBuilder()
-            .setKey(TEST_KEY)
-            .setHeader(ROUTING_HEADER))
-        .build();
+            .setType(Type.KV_DELETE)
+            .setKvDeleteReq(DeleteRangeRequest
+                .newBuilder()
+                .setKey(TEST_KEY)
+                .setHeader(ROUTING_HEADER))
+            .build();
 
-    StorageContainerResponse response = StorageContainerResponse.newBuilder()
-        .setCode(StatusCode.INTERNAL_SERVER_ERROR)
-        .build();
+        StorageContainerResponse response = StorageContainerResponse.newBuilder()
+            .setCode(StatusCode.INTERNAL_SERVER_ERROR)
+            .build();
 
-    when(rangeService.delete(request)).thenReturn(
-        FutureUtils.exception(CAUSE));
+        when(rangeService.delete(request)).thenReturn(
+            FutureUtils.exception(CAUSE));
 
-    TestResponseObserver<StorageContainerResponse> responseObserver =
-        new TestResponseObserver<>();
-    grpcService.delete(
-        request,
-        responseObserver);
+        TestResponseObserver<StorageContainerResponse> responseObserver =
+            new TestResponseObserver<>();
+        grpcService.delete(
+            request,
+            responseObserver);
 
-    responseObserver.verifySuccess(response);
-    verify(rangeService, times(1)).delete(request);
-  }
+        responseObserver.verifySuccess(response);
+        verify(rangeService, times(1)).delete(request);
+    }
 
-  @Test
-  public void testDeleteException() throws Exception {
-    RangeStore rangeService = mock(RangeStore.class);
-    GrpcTableService grpcService = new GrpcTableService(rangeService);
+    @Test
+    public void testDeleteException() throws Exception {
+        RangeStore rangeService = mock(RangeStore.class);
+        GrpcTableService grpcService = new GrpcTableService(rangeService);
 
-    StorageContainerRequest request = StorageContainerRequest
-        .newBuilder()
-        .setType(Type.KV_DELETE)
-        .setKvDeleteReq(DeleteRangeRequest
+        StorageContainerRequest request = StorageContainerRequest
             .newBuilder()
-            .setKey(TEST_KEY)
-            .setHeader(ROUTING_HEADER))
-        .build();
+            .setType(Type.KV_DELETE)
+            .setKvDeleteReq(DeleteRangeRequest
+                .newBuilder()
+                .setKey(TEST_KEY)
+                .setHeader(ROUTING_HEADER))
+            .build();
 
-    when(rangeService.delete(request)).thenReturn(
-        FutureUtils.exception(new StatusRuntimeException(Status.NOT_FOUND)));
+        when(rangeService.delete(request)).thenReturn(
+            FutureUtils.exception(new StatusRuntimeException(Status.NOT_FOUND)));
 
-    TestResponseObserver<StorageContainerResponse> responseObserver =
-        new TestResponseObserver<>();
-    grpcService.delete(
-        request,
-        responseObserver);
+        TestResponseObserver<StorageContainerResponse> responseObserver =
+            new TestResponseObserver<>();
+        grpcService.delete(
+            request,
+            responseObserver);
 
-    responseObserver.verifyException(Status.NOT_FOUND);
-    verify(rangeService, times(1)).delete(request);
-  }
+        responseObserver.verifyException(Status.NOT_FOUND);
+        verify(rangeService, times(1)).delete(request);
+    }
 
 }

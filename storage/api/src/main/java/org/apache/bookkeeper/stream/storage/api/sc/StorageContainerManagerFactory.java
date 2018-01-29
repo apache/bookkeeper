@@ -21,16 +21,16 @@ import org.apache.bookkeeper.stream.storage.conf.StorageConfiguration;
  */
 public interface StorageContainerManagerFactory {
 
-  /**
-   * Create a storage container manager to manage lifecycles of {@link StorageContainer}.
-   *
-   * @param numStorageContainers num of storage containers.
-   * @param conf storage configuration
-   * @param registry storage container registry
-   * @return storage container manager.
-   */
-  StorageContainerManager create(int numStorageContainers,
-                           StorageConfiguration conf,
-                           StorageContainerRegistry registry);
+    /**
+     * Create a storage container manager to manage lifecycles of {@link StorageContainer}.
+     *
+     * @param numStorageContainers num of storage containers.
+     * @param conf                 storage configuration
+     * @param registry             storage container registry
+     * @return storage container manager.
+     */
+    StorageContainerManager create(int numStorageContainers,
+                                   StorageConfiguration conf,
+                                   StorageContainerRegistry registry);
 
 }

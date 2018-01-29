@@ -23,9 +23,9 @@ package org.apache.bookkeeper.clients.exceptions;
  */
 public class InvalidStreamNameException extends ClientException {
 
-  private static final long serialVersionUID = -7753743605040374222L;
+    private static final long serialVersionUID = -7753743605040374222L;
 
-  public InvalidStreamNameException(String streamName) {
-    super("Invalid stream name : " + streamName);
-  }
+    public InvalidStreamNameException(String streamName) {
+        super("Invalid stream name : " + streamName);
+    }
 }

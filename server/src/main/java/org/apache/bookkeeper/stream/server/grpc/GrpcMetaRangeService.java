@@ -28,22 +28,22 @@ import org.apache.bookkeeper.stream.storage.api.RangeStore;
 @Slf4j
 class GrpcMetaRangeService extends MetaRangeServiceImplBase {
 
-  private final RangeStore rangeStore;
+    private final RangeStore rangeStore;
 
-  GrpcMetaRangeService(RangeStore service) {
-    this.rangeStore = service;
-    log.info("Created MetaRange service");
-  }
+    GrpcMetaRangeService(RangeStore service) {
+        this.rangeStore = service;
+        log.info("Created MetaRange service");
+    }
 
-  //
-  // Meta KeyRange Server Requests
-  //
+    //
+    // Meta KeyRange Server Requests
+    //
 
-  @Override
-  public void getActiveRanges(StorageContainerRequest request,
-                              StreamObserver<StorageContainerResponse> responseObserver) {
-    rangeStore.getActiveRanges(request).whenComplete(
-      StorageContainerResponseHandler.of(responseObserver));
-  }
+    @Override
+    public void getActiveRanges(StorageContainerRequest request,
+                                StreamObserver<StorageContainerResponse> responseObserver) {
+        rangeStore.getActiveRanges(request).whenComplete(
+            StorageContainerResponseHandler.of(responseObserver));
+    }
 
 }

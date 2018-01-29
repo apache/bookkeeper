@@ -37,81 +37,81 @@ import org.apache.bookkeeper.stream.proto.RangeProperties;
 @Slf4j
 public class RangeRouter<K> {
 
-  private final HashRouter<K> keyRouter;
-  private final StampedLock lock;
-  private HashStreamRanges ranges;
+    private final HashRouter<K> keyRouter;
+    private final StampedLock lock;
+    private HashStreamRanges ranges;
 
-  public RangeRouter(HashRouter<K> keyRouter) {
-    this.keyRouter = keyRouter;
-    this.lock = new StampedLock();
-  }
-
-  /**
-   * Get the range to route the given {@code key}.
-   *
-   * <p>If <i>key</i> is null, a range is picked randomly. Otherwise, the range is picked
-   * according to the hash code of {@code key}.
-   *
-   * <p>This function should be called after {@link #setRanges(HashStreamRanges)}.
-   *
-   * @param key the key to route
-   * @return the range to write.
-   * @throws IllegalStateException if ranges is empty.
-   */
-  public Long getRange(@Nullable K key) {
-    long routingKey;
-    if (null != key) {
-      routingKey = keyRouter.getRoutingKey(key);
-    } else {
-      routingKey = ThreadLocalRandom.current().nextLong();
+    public RangeRouter(HashRouter<K> keyRouter) {
+        this.keyRouter = keyRouter;
+        this.lock = new StampedLock();
     }
-    HashStreamRanges rs;
-    long stamp = lock.tryOptimisticRead();
-    rs = ranges;
-    if (!lock.validate(stamp)) {
-      stamp = lock.readLock();
-      try {
+
+    /**
+     * Get the range to route the given {@code key}.
+     *
+     * <p>If <i>key</i> is null, a range is picked randomly. Otherwise, the range is picked
+     * according to the hash code of {@code key}.
+     *
+     * <p>This function should be called after {@link #setRanges(HashStreamRanges)}.
+     *
+     * @param key the key to route
+     * @return the range to write.
+     * @throws IllegalStateException if ranges is empty.
+     */
+    public Long getRange(@Nullable K key) {
+        long routingKey;
+        if (null != key) {
+            routingKey = keyRouter.getRoutingKey(key);
+        } else {
+            routingKey = ThreadLocalRandom.current().nextLong();
+        }
+        HashStreamRanges rs;
+        long stamp = lock.tryOptimisticRead();
         rs = ranges;
-      } finally {
-        lock.unlockRead(stamp);
-      }
+        if (!lock.validate(stamp)) {
+            stamp = lock.readLock();
+            try {
+                rs = ranges;
+            } finally {
+                lock.unlockRead(stamp);
+            }
+        }
+        checkState(null != rs, "No range is available");
+
+        Map.Entry<Long, RangeProperties> ceilingEntry = rs.getRanges().floorEntry(routingKey);
+        return ceilingEntry.getValue().getRangeId();
     }
-    checkState(null != rs, "No range is available");
 
-    Map.Entry<Long, RangeProperties> ceilingEntry = rs.getRanges().floorEntry(routingKey);
-    return ceilingEntry.getValue().getRangeId();
-  }
-
-  public HashStreamRanges getRanges() {
-    HashStreamRanges rs;
-    long stamp = lock.tryOptimisticRead();
-    rs = ranges;
-    if (!lock.validate(stamp)) {
-      stamp = lock.readLock();
-      try {
+    public HashStreamRanges getRanges() {
+        HashStreamRanges rs;
+        long stamp = lock.tryOptimisticRead();
         rs = ranges;
-      } finally {
-        lock.unlockRead(stamp);
-      }
+        if (!lock.validate(stamp)) {
+            stamp = lock.readLock();
+            try {
+                rs = ranges;
+            } finally {
+                lock.unlockRead(stamp);
+            }
+        }
+        return rs;
     }
-    return rs;
-  }
 
-  public HashStreamRanges setRanges(HashStreamRanges ranges) {
-    long stamp = lock.writeLock();
-    try {
-      // we only update the routing only when see new active ranges
-      if ((this.ranges == null)
-          || (ranges.getMaxRangeId() > this.ranges.getMaxRangeId())) {
-        HashStreamRanges oldRanges = this.ranges;
-        this.ranges = ranges;
-        return oldRanges;
-      } else {
-        return null;
-      }
-    } finally {
-      lock.unlockWrite(stamp);
+    public HashStreamRanges setRanges(HashStreamRanges ranges) {
+        long stamp = lock.writeLock();
+        try {
+            // we only update the routing only when see new active ranges
+            if ((this.ranges == null)
+                || (ranges.getMaxRangeId() > this.ranges.getMaxRangeId())) {
+                HashStreamRanges oldRanges = this.ranges;
+                this.ranges = ranges;
+                return oldRanges;
+            } else {
+                return null;
+            }
+        } finally {
+            lock.unlockWrite(stamp);
+        }
     }
-  }
 
 }
