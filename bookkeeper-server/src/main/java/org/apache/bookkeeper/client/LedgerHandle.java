@@ -1570,7 +1570,8 @@ public class LedgerHandle implements WriteHandle {
         // when the ensemble changes are too frequent, close handle
         if (curNumEnsembleChanges > maxAllowedEnsembleChanges){
             if (LOG.isDebugEnabled()) {
-                LOG.debug("Ledger {} reaches max allowed ensemble change number {}", ledgerId, maxAllowedEnsembleChanges);
+                LOG.debug("Ledger {} reaches max allowed ensemble change number {}",
+                        ledgerId, maxAllowedEnsembleChanges);
             }
             handleUnrecoverableErrorDuringAdd(WriteException);
             return;
