@@ -27,6 +27,8 @@ import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicLong
 
+import lombok.Cleanup
+
 import org.apache.bookkeeper.client.BKException
 import org.apache.bookkeeper.client.BookKeeper
 import org.apache.bookkeeper.client.BookKeeperAdmin
@@ -156,7 +158,7 @@ class TestCompatRecoveryNoPassword {
         BookKeeperClusterUtils.legacyMetadataFormat(docker)
 
         // Create a 4.1.0 client, will update /ledgers/LAYOUT
-        def v410CL = MavenClassLoader.forBookKeeperVersion("4.1.0")
+        @Cleanup def v410CL = MavenClassLoader.forBookKeeperVersion("4.1.0")
         def v410Conf = v410CL.newInstance("org.apache.bookkeeper.conf.ClientConfiguration")
         v410Conf.setZkServers(zookeeper).setLedgerManagerType("hierarchical")
         def v410BK = v410CL.newInstance("org.apache.bookkeeper.client.BookKeeper", v410Conf)
