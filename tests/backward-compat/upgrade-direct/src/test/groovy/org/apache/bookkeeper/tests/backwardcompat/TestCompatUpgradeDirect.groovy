@@ -19,6 +19,8 @@ package org.apache.bookkeeper.tests.backwardcompat
 
 import com.github.dockerjava.api.DockerClient
 
+import lombok.Cleanup
+
 import org.apache.bookkeeper.tests.BookKeeperClusterUtils
 import org.apache.bookkeeper.tests.MavenClassLoader
 
@@ -50,8 +52,8 @@ class TestCompatUpgradeDirect {
         int numEntries = 10
 
         Assert.assertTrue(BookKeeperClusterUtils.startAllBookiesWithVersion(docker, "4.1.0"))
-        def v410CL = MavenClassLoader.forBookKeeperVersion("4.1.0")
-        def v410BK = v410CL.newBookKeeper(zookeeper)
+        @Cleanup def v410CL = MavenClassLoader.forBookKeeperVersion("4.1.0")
+        @Cleanup def v410BK = v410CL.newBookKeeper(zookeeper)
 
         def ledger0 = v410BK.createLedger(3, 2,
                                           v410CL.digestType("CRC32"),
@@ -62,8 +64,8 @@ class TestCompatUpgradeDirect {
         ledger0.close()
 
         // Current client shouldn't be able to write to 4.1.0 server
-        def currentCL = MavenClassLoader.forBookKeeperVersion(currentVersion)
-        def currentBK = currentCL.newBookKeeper(zookeeper)
+        @Cleanup def currentCL = MavenClassLoader.forBookKeeperVersion(currentVersion)
+        @Cleanup def currentBK = currentCL.newBookKeeper(zookeeper)
         def ledger1 = currentBK.createLedger(3, 2, currentCL.digestType("CRC32"), PASSWD)
         try {
             ledger1.addEntry("foobar".getBytes())
@@ -87,9 +89,6 @@ class TestCompatUpgradeDirect {
             j++
         }
         ledger2.close()
-
-        v410BK.close()
-        currentBK.close()
     }
 
     @Test
@@ -97,8 +96,8 @@ class TestCompatUpgradeDirect {
         String currentVersion = System.getProperty("currentVersion")
         String zookeeper = BookKeeperClusterUtils.zookeeperConnectString(docker)
 
-        def currentCL = MavenClassLoader.forBookKeeperVersion(currentVersion)
-        def currentBK = currentCL.newBookKeeper(zookeeper)
+        @Cleanup def currentCL = MavenClassLoader.forBookKeeperVersion(currentVersion)
+        @Cleanup def currentBK = currentCL.newBookKeeper(zookeeper)
 
         def numEntries = 5
         def ledger0 = currentBK.createLedger(3, 2,
@@ -109,8 +108,8 @@ class TestCompatUpgradeDirect {
         }
         ledger0.close()
 
-        def v410CL = MavenClassLoader.forBookKeeperVersion("4.1.0")
-        def v410BK = v410CL.newBookKeeper(zookeeper)
+        @Cleanup def v410CL = MavenClassLoader.forBookKeeperVersion("4.1.0")
+        @Cleanup def v410BK = v410CL.newBookKeeper(zookeeper)
 
         try {
             def ledger1 = v410BK.openLedger(ledger0.getId(), v410CL.digestType("CRC32"), PASSWD)
@@ -118,8 +117,5 @@ class TestCompatUpgradeDirect {
         } catch (Exception e) {
             // correct behaviour
         }
-
-        currentBK.close()
-        v410BK.close()
     }
 }
