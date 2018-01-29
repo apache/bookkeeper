@@ -81,10 +81,10 @@
     </developer>
   </developers>
   <modules>
-    <module>distributedlog-common</module>
-    <module>distributedlog-protocol</module>
-    <module>distributedlog-core</module>
-    <module>distributedlog-io</module>
+    <module>common</module>
+    <module>protocol</module>
+    <module>core</module>
+    <module>io</module>
   </modules>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
