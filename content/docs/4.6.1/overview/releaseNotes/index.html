@@ -455,19 +455,45 @@
 
       <div class="content">
         <section class="bk-main-content">
-          <p>This is the seventh release of BookKeeper as an Apache Top Level Project!</p>
+          <p>This is the eighth release of BookKeeper as an Apache Top Level Project!</p>
 
-<p>The 4.6.1 release incorporates new fixes, improvements, and features since previous major release 4.5.0.</p>
+<p>The 4.6.1 release is a bugfix release which fixes a bunch of issues reported from users of 4.6.0.</p>
 
 <p>Apache BookKeeper users are encouraged to upgrade to 4.6.1. The technical details of this release are summarized
 below.</p>
 
 <h2 id="highlights">Highlights</h2>
 
+<ul>
+  <li>
+    <p>Fix critical bug on index persistence manager, see <a href="https://github.com/apache/bookkeeper/pull/913">https://github.com/apache/bookkeeper/pull/913</a></p>
+  </li>
+  <li>
+    <p>Fix critical bug to allow using versions of Netty newer than 4.1.2 on classpath, see <a href="https://github.com/apache/bookkeeper/pull/996">https://github.com/apache/bookkeeper/pull/996</a></p>
+  </li>
+  <li>
+    <p>Enhance Java 9 compatibility, see <a href="https://github.com/apache/bookkeeper/issues/326">https://github.com/apache/bookkeeper/issues/326</a></p>
+  </li>
+  <li>
+    <p>New option to track task execution time, see <a href="https://github.com/apache/bookkeeper/issues/931">https://github.com/apache/bookkeeper/issues/931</a></p>
+  </li>
+  <li>
+    <p>Distribute a version of BookKeeper which embeds and relocates Guava and Protobuf, see <a href="https://github.com/apache/bookkeeper/issues/922">https://github.com/apache/bookkeeper/issues/922</a></p>
+  </li>
+  <li>
+    <p>Add description for the new error code “Too many requests”, see <a href="https://github.com/apache/bookkeeper/pull/921">https://github.com/apache/bookkeeper/pull/921</a></p>
+  </li>
+</ul>
+
 <h3 id="dependencies-upgrade">Dependencies Upgrade</h3>
+
+<p>There is no dependency upgrade since 4.6.0, but now we distribute a ‘shaded’ version of main artifacts, see <a href="../ledger-api">Ledger API</a></p>
 
 <h2 id="full-list-of-changes">Full list of changes</h2>
 
+<ul>
+  <li><a href="https://github.com/apache/bookkeeper/issues?utf8=%E2%9C%93&amp;q=label%3Arelease%2F4.6.1+is%3Aclosed">https://github.com/apache/bookkeeper/issues?utf8=%E2%9C%93&amp;q=label%3Arelease%2F4.6.1+is%3Aclosed</a></li>
+</ul>
 
         </section>
 
