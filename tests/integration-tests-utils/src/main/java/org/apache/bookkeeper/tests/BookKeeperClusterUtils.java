@@ -80,6 +80,23 @@ public class BookKeeperClusterUtils {
         }
     }
 
+    public static boolean metadataFormatIfNeeded(DockerClient docker, String version) throws Exception {
+        try (ZooKeeper zk = BookKeeperClusterUtils.zookeeperClient(docker)) {
+            if (zk.exists("/ledgers", false) == null) {
+                String bookkeeper = "/opt/bookkeeper/" + version + "/bin/bookkeeper";
+                runOnAnyBookie(docker, bookkeeper, "shell", "metaformat", "-nonInteractive");
+                return true;
+            } else {
+                return false;
+            }
+        }
+    }
+
+    public static void formatAllBookies(DockerClient docker, String version) throws Exception {
+        String bookkeeper = "/opt/bookkeeper/" + version + "/bin/bookkeeper";
+        BookKeeperClusterUtils.runOnAllBookies(docker, bookkeeper, "shell", "bookieformat", "-nonInteractive");
+    }
+
     public static void updateBookieConf(DockerClient docker, String containerId,
                                         String version, String key, String value) throws Exception {
         String confFile = "/opt/bookkeeper/" + version + "/conf/bk_server.conf";
