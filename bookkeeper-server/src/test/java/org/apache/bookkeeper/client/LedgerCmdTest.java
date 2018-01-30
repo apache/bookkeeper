@@ -22,15 +22,19 @@ package org.apache.bookkeeper.client;
 
 import static junit.framework.TestCase.assertEquals;
 
+import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.apache.bookkeeper.bookie.BookieAccessor;
 import org.apache.bookkeeper.bookie.BookieShell;
 import org.apache.bookkeeper.bookie.storage.ldb.DbLedgerStorage;
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
+import org.apache.bookkeeper.util.EntryFormatter;
+import org.apache.bookkeeper.util.LedgerIdFormatter;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -62,11 +66,20 @@ public class LedgerCmdTest extends BookKeeperClusterTestCase {
         LOG.info("Create ledger and add entries to it");
         LedgerHandle lh1 = createLedgerWithEntries(bk, 10);
 
-        String[] argv = new String[] { "ledger", Long.toString(lh1.getId()) };
+        bs.forEach(bookieServer -> {
+            try {
+                BookieAccessor.forceFlush(bookieServer.getBookie());
+            } catch (IOException e) {
+                LOG.error("Error forceFlush:", e);
+            }
+        });
+
+        String[] argv = { "ledger", Long.toString(lh1.getId()) };
         final ServerConfiguration conf = bsConfs.get(0);
         conf.setUseHostNameAsBookieID(true);
 
-        BookieShell bkShell = new BookieShell();
+        BookieShell bkShell =
+            new BookieShell(LedgerIdFormatter.LONG_LEDGERID_FORMATTER, EntryFormatter.STRING_FORMATTER);
         bkShell.setConf(conf);
 
         assertEquals("Failed to return exit code!", 0, bkShell.run(argv));
