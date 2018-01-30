@@ -212,7 +212,9 @@ public class LedgerChecker {
                 if (numberOfEntriesToBeVerified != 0) {
                     int lengthOfBucket = (int) (lengthOfLedgerFragment / numberOfEntriesToBeVerified);
                     Random rand = new Random();
-                    for (long index = firstStored; index < (lastStored - lengthOfBucket -1); index += lengthOfBucket) {
+                    for (long index = firstStored;
+                         index < (lastStored - lengthOfBucket - 1);
+                         index += lengthOfBucket) {
                         long potentialEntryId = rand.nextInt((lengthOfBucket)) + index;
                         if (fragment.isStoredEntryId(potentialEntryId, bookieIndex)) {
                             entriesToBeVerified.add(potentialEntryId);
@@ -221,10 +223,9 @@ public class LedgerChecker {
                 }
                 entriesToBeVerified.add(firstStored);
                 entriesToBeVerified.add(lastStored);
-
             } else {
                 // Verify the entire fragment
-                while(firstStored <= lastStored) {
+                while (firstStored <= lastStored) {
                     if (fragment.isStoredEntryId(firstStored, bookieIndex)) {
                         entriesToBeVerified.add(firstStored);
                     }
