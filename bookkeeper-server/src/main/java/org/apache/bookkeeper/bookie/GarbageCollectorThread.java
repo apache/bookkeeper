@@ -236,7 +236,13 @@ public class GarbageCollectorThread extends SafeRunnable {
                 throw new IOException("Too short major compaction interval : "
                                     + majorCompactionInterval);
             }
-            enableMajorCompaction = true;
+            if (majorCompactionThreshold > medianMajorCompactionThreshold
+                    || medianMajorCompactionThreshold > highMajorCompactionThreshold) {
+                throw new IOException("Invalid major compaction settings : major ("
+                        + majorCompactionThreshold + "), median major (" + medianMajorCompactionThreshold
+                        + "), high major ( " + highMajorCompactionThreshold + ")");
+            }
+                enableMajorCompaction = true;
         }
 
         if (enableMinorCompaction && enableMajorCompaction) {
@@ -346,11 +352,12 @@ public class GarbageCollectorThread extends SafeRunnable {
     private double getCurrentMajorCompactionThreshold(){
         double currentThreshold = 0;
         // next fire time is in the interval
-        if (medianMajorCron.nextTimeAfter(ZonedDateTime.now()).toInstant().toEpochMilli()
+        if (!medianMajorCron.isDisable()
+                && medianMajorCron.nextTimeAfter(ZonedDateTime.now()).toInstant().toEpochMilli()
                 <= (majorCompactionInterval + lastChangeThresholdTime)) {
             currentThreshold = medianMajorCompactionThreshold;
         }
-        if (highMajorCron.nextTimeAfter(ZonedDateTime.now()).toInstant().toEpochMilli()
+        if (!highMajorCron.isDisable() && highMajorCron.nextTimeAfter(ZonedDateTime.now()).toInstant().toEpochMilli()
                 <= (majorCompactionInterval + lastChangeThresholdTime)) {
             currentThreshold = highMajorCompactionThreshold;
         }

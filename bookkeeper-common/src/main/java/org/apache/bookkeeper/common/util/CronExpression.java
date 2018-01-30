@@ -65,7 +65,7 @@ public class CronExpression {
             this.names = names;
         }
     }
-
+    private final boolean disable;
     private final String expr;
     private final SimpleField secondField;
     private final SimpleField minuteField;
@@ -76,7 +76,15 @@ public class CronExpression {
 
     public CronExpression(final String expr) {
         if (expr == null) {
-            throw new IllegalArgumentException("expr is null"); //$NON-NLS-1$
+            disable = true;
+            this.expr = null;
+            this.secondField = null;
+            this.minuteField = null;
+            this.hourField = null;
+            this.dayOfMonthField = null;
+            this.monthField = null;
+            this.dayOfWeekField = null;
+            return;
         }
 
         this.expr = expr;
@@ -95,23 +103,33 @@ public class CronExpression {
         this.dayOfMonthField = new DayOfMonthField(parts[3]);
         this.monthField = new SimpleField(CronFieldType.MONTH, parts[4]);
         this.dayOfWeekField = new DayOfWeekField(parts[5]);
+        disable = false;
     }
 
+    public boolean isDisable() {
+        return disable;
+    }
     public ZonedDateTime nextTimeAfter(ZonedDateTime afterTime) {
+        if (disable) {
+            throw new IllegalArgumentException("The CronExpression is disable ");
+        }
         // will search for the next time within the next 4 years. If there is no
         // time matching, an InvalidArgumentException will be thrown (it is very
         // likely that the cron expression is invalid, like the February 30th).
         return nextTimeAfter(afterTime, afterTime.plusYears(4));
     }
 
-    public ZonedDateTime nextTimeAfter(ZonedDateTime afterTime, long durationInMillis) {
+    ZonedDateTime nextTimeAfter(ZonedDateTime afterTime, long durationInMillis) {
+        if (disable) {
+            throw new IllegalArgumentException("The CronExpression is disable ");
+        }
         // will search for the next time within the next durationInMillis
         // millisecond. Be aware that the duration is specified in millis,
         // but in fact the limit is checked on a day-to-day basis.
         return nextTimeAfter(afterTime, afterTime.plus(Duration.ofMillis(durationInMillis)));
     }
 
-    public ZonedDateTime nextTimeAfter(ZonedDateTime afterTime, ZonedDateTime dateTimeBarrier) {
+    ZonedDateTime nextTimeAfter(ZonedDateTime afterTime, ZonedDateTime dateTimeBarrier) {
         ZonedDateTime nextTime = ZonedDateTime.from(afterTime).withNano(0).plusSeconds(1).withNano(0);
 
         while (true) { // day of week

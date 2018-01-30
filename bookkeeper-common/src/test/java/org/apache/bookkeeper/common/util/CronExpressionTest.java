@@ -172,9 +172,12 @@ public class CronExpressionTest {
         assertTrue(cronExpr.nextTimeAfter(after).equals(expected));
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void check_invalid_input() throws Exception {
-        new CronExpression(null);
+    /**
+     * test of disable cron expression.
+     */
+    @Test
+    public void check_disable_input() {
+        assertTrue(new CronExpression(null).isDisable());
     }
 
     @Test
