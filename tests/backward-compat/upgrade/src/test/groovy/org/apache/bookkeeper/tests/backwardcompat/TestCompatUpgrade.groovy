@@ -19,8 +19,6 @@ package org.apache.bookkeeper.tests.backwardcompat
 
 import com.github.dockerjava.api.DockerClient
 
-import lombok.Cleanup
-
 import org.apache.bookkeeper.tests.BookKeeperClusterUtils
 import org.apache.bookkeeper.tests.MavenClassLoader
 
@@ -49,48 +47,55 @@ class TestCompatUpgrade {
         String zookeeper = BookKeeperClusterUtils.zookeeperConnectString(docker)
         LOG.info("Upgrading from {} to {}", currentlyRunning, upgradeTo)
         int numEntries = 10
-        @Cleanup def currentRunningCL = MavenClassLoader.forBookKeeperVersion(currentlyRunning)
-        @Cleanup def currentRunningBK = currentRunningCL.newBookKeeper(zookeeper)
+        def currentRunningCL = MavenClassLoader.forBookKeeperVersion(currentlyRunning)
+        def currentRunningBK = currentRunningCL.newBookKeeper(zookeeper)
+        def upgradedCL = MavenClassLoader.forBookKeeperVersion(upgradeTo)
+        def upgradedBK = upgradedCL.newBookKeeper(zookeeper)
 
-        def ledger0 = currentRunningBK.createLedger(3, 2,
-                                                    currentRunningCL.digestType("CRC32"),
-                                                    PASSWD)
-        for (int i = 0; i < numEntries; i++) {
-            ledger0.addEntry(("foobar" + i).getBytes())
-        }
-        ledger0.close()
-
-        // Check whether current client can write to old server
-        @Cleanup def upgradedCL = MavenClassLoader.forBookKeeperVersion(upgradeTo)
-        @Cleanup def upgradedBK = upgradedCL.newBookKeeper(zookeeper)
-        def ledger1 = upgradedBK.createLedger(3, 2, upgradedCL.digestType("CRC32"), PASSWD)
         try {
-            ledger1.addEntry("foobar".getBytes())
-
-            if (clientCompatBroken) {
-                Assert.fail("Shouldn't have been able to write")
+            def ledger0 = currentRunningBK.createLedger(3, 2,
+                                                        currentRunningCL.digestType("CRC32"),
+                                                        PASSWD)
+            for (int i = 0; i < numEntries; i++) {
+                ledger0.addEntry(("foobar" + i).getBytes())
             }
-        } catch (Exception e) {
-            if (!clientCompatBroken) {
-                throw e;
+            ledger0.close()
+
+            // Check whether current client can write to old server
+            def ledger1 = upgradedBK.createLedger(3, 2, upgradedCL.digestType("CRC32"), PASSWD)
+            try {
+                ledger1.addEntry("foobar".getBytes())
+
+                if (clientCompatBroken) {
+                    Assert.fail("Shouldn't have been able to write")
+                }
+            } catch (Exception e) {
+                if (!clientCompatBroken) {
+                    throw e;
+                }
             }
-        }
 
-        Assert.assertTrue(BookKeeperClusterUtils.stopAllBookies(docker))
-        Assert.assertTrue(BookKeeperClusterUtils.startAllBookiesWithVersion(docker, upgradeTo))
+            Assert.assertTrue(BookKeeperClusterUtils.stopAllBookies(docker))
+            Assert.assertTrue(BookKeeperClusterUtils.startAllBookiesWithVersion(docker, upgradeTo))
 
-        // check that old client can read its old ledgers on new server
-        def ledger2 = currentRunningBK.openLedger(ledger0.getId(), currentRunningCL.digestType("CRC32"),
-                                                  PASSWD)
-        Assert.assertEquals(numEntries, ledger2.getLastAddConfirmed() + 1 /* counts from 0 */)
-        def entries = ledger2.readEntries(0, ledger2.getLastAddConfirmed())
-        int j = 0
-        while (entries.hasMoreElements()) {
-            def e = entries.nextElement()
-            Assert.assertEquals(new String(e.getEntry()), "foobar"+ j)
-            j++
+            // check that old client can read its old ledgers on new server
+            def ledger2 = currentRunningBK.openLedger(ledger0.getId(), currentRunningCL.digestType("CRC32"),
+                                                      PASSWD)
+            Assert.assertEquals(numEntries, ledger2.getLastAddConfirmed() + 1 /* counts from 0 */)
+            def entries = ledger2.readEntries(0, ledger2.getLastAddConfirmed())
+            int j = 0
+            while (entries.hasMoreElements()) {
+                def e = entries.nextElement()
+                Assert.assertEquals(new String(e.getEntry()), "foobar"+ j)
+                j++
+            }
+            ledger2.close()
+        } finally {
+            upgradedBK.close()
+            upgradedCL.close()
+            currentRunningBK.close()
+            currentRunningCL.close()
         }
-        ledger2.close()
     }
 
     @Test

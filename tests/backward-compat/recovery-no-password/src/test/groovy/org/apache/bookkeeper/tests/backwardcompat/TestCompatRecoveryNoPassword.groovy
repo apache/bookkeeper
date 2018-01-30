@@ -27,8 +27,6 @@ import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicLong
 
-import lombok.Cleanup
-
 import org.apache.bookkeeper.client.BKException
 import org.apache.bookkeeper.client.BookKeeper
 import org.apache.bookkeeper.client.BookKeeperAdmin
@@ -158,96 +156,100 @@ class TestCompatRecoveryNoPassword {
         BookKeeperClusterUtils.legacyMetadataFormat(docker)
 
         // Create a 4.1.0 client, will update /ledgers/LAYOUT
-        @Cleanup def v410CL = MavenClassLoader.forBookKeeperVersion("4.1.0")
-        def v410Conf = v410CL.newInstance("org.apache.bookkeeper.conf.ClientConfiguration")
-        v410Conf.setZkServers(zookeeper).setLedgerManagerType("hierarchical")
-        def v410BK = v410CL.newInstance("org.apache.bookkeeper.client.BookKeeper", v410Conf)
-
-        // Start bookies
-        def bookieContainers = new ArrayList<>(DockerUtils.cubeIdsMatching("bookkeeper"))
-        Assert.assertTrue(bookieContainers.size() >= 3)
-        Assert.assertTrue(BookKeeperClusterUtils.startBookieWithVersion(
-                docker, bookieContainers.get(0), currentVersion))
-        Assert.assertTrue(BookKeeperClusterUtils.startBookieWithVersion(
-                docker, bookieContainers.get(1), currentVersion))
-
-        // recreate bk client so that it reads bookie list
-        v410BK.close()
-        v410BK = v410CL.newBookKeeper(zookeeper)
-
-        // Write a ledger
-        def ledger0 = v410BK.createLedger(2, 2,
-                                          v410CL.digestType("MAC"), passwdCorrect)
-        for (int i = 0; i < numEntries; i++) {
-            ledger0.addEntry("foobar".getBytes())
-        }
-        ledger0.close()
-        v410BK.close()
-
-        // start a new bookie, and kill one of the initial 2
-        def failedBookieId = new BookieSocketAddress(
-            DockerUtils.getContainerIP(docker, bookieContainers.get(0)), 3181)
-        Assert.assertTrue(BookKeeperClusterUtils.stopBookie(
-                docker, bookieContainers.get(0)))
-        Assert.assertTrue(BookKeeperClusterUtils.startBookieWithVersion(
-                docker, bookieContainers.get(2), currentVersion))
-
-        def bkCur = new BookKeeper(zookeeper)
-
-        LedgerHandle lh = bkCur.openLedgerNoRecovery(
-            ledger0.getId(), BookKeeper.DigestType.MAC, passwdCorrect)
-        Assert.assertFalse("Should be entries missing",
-                           verifyFullyReplicated(bkCur, lh, numEntries))
-        lh.close()
-
-        ClientConfiguration adminConf = new ClientConfiguration()
-        adminConf.setZkServers(zookeeper)
-        adminConf.setBookieRecoveryDigestType(BookKeeper.DigestType.MAC)
-        adminConf.setBookieRecoveryPasswd(passwdBad)
-
-        def bka = new BookKeeperAdmin(adminConf)
+        def v410CL = MavenClassLoader.forBookKeeperVersion("4.1.0")
         try {
+            def v410Conf = v410CL.newInstance("org.apache.bookkeeper.conf.ClientConfiguration")
+            v410Conf.setZkServers(zookeeper).setLedgerManagerType("hierarchical")
+            def v410BK = v410CL.newInstance("org.apache.bookkeeper.client.BookKeeper", v410Conf)
+
+            // Start bookies
+            def bookieContainers = new ArrayList<>(DockerUtils.cubeIdsMatching("bookkeeper"))
+            Assert.assertTrue(bookieContainers.size() >= 3)
+            Assert.assertTrue(BookKeeperClusterUtils.startBookieWithVersion(
+                    docker, bookieContainers.get(0), currentVersion))
+            Assert.assertTrue(BookKeeperClusterUtils.startBookieWithVersion(
+                    docker, bookieContainers.get(1), currentVersion))
+
+            // recreate bk client so that it reads bookie list
+            v410BK.close()
+            v410BK = v410CL.newBookKeeper(zookeeper)
+
+            // Write a ledger
+            def ledger0 = v410BK.createLedger(2, 2,
+                                              v410CL.digestType("MAC"), passwdCorrect)
+            for (int i = 0; i < numEntries; i++) {
+                ledger0.addEntry("foobar".getBytes())
+            }
+            ledger0.close()
+            v410BK.close()
+
+            // start a new bookie, and kill one of the initial 2
+            def failedBookieId = new BookieSocketAddress(
+                DockerUtils.getContainerIP(docker, bookieContainers.get(0)), 3181)
+            Assert.assertTrue(BookKeeperClusterUtils.stopBookie(
+                    docker, bookieContainers.get(0)))
+            Assert.assertTrue(BookKeeperClusterUtils.startBookieWithVersion(
+                    docker, bookieContainers.get(2), currentVersion))
+
+            def bkCur = new BookKeeper(zookeeper)
+            LedgerHandle lh = bkCur.openLedgerNoRecovery(
+                ledger0.getId(), BookKeeper.DigestType.MAC, passwdCorrect)
+            Assert.assertFalse("Should be entries missing",
+                               verifyFullyReplicated(bkCur, lh, numEntries))
+            lh.close()
+
+            ClientConfiguration adminConf = new ClientConfiguration()
+            adminConf.setZkServers(zookeeper)
+            adminConf.setBookieRecoveryDigestType(BookKeeper.DigestType.MAC)
+            adminConf.setBookieRecoveryPasswd(passwdBad)
+
+            def bka = new BookKeeperAdmin(adminConf)
+            try {
+                bka.recoverBookieData(failedBookieId)
+                Assert.fail("Shouldn't be able to recover with wrong password")
+            } catch (BKException bke) {
+                // correct behaviour
+            } finally {
+                bka.close();
+            }
+
+            adminConf.setBookieRecoveryDigestType(BookKeeper.DigestType.CRC32)
+            adminConf.setBookieRecoveryPasswd(passwdCorrect)
+
+            bka = new BookKeeperAdmin(adminConf)
+            try {
+                bka.recoverBookieData(failedBookieId)
+                Assert.fail("Shouldn't be able to recover with wrong digest")
+            } catch (BKException bke) {
+                // correct behaviour
+            } finally {
+                bka.close();
+            }
+
+            // Check that entries are still missing
+            lh = bkCur.openLedgerNoRecovery(ledger0.getId(),
+                                            BookKeeper.DigestType.MAC, passwdCorrect)
+            Assert.assertFalse("Should be entries missing",
+                               verifyFullyReplicated(bkCur, lh, numEntries))
+            lh.close()
+
+
+            // Set correct password and mac, recovery will work
+            adminConf.setBookieRecoveryDigestType(BookKeeper.DigestType.MAC)
+            adminConf.setBookieRecoveryPasswd(passwdCorrect)
+
+            bka = new BookKeeperAdmin(adminConf)
             bka.recoverBookieData(failedBookieId)
-            Assert.fail("Shouldn't be able to recover with wrong password")
-        } catch (BKException bke) {
-            // correct behaviour
+            bka.close()
+
+            lh = bkCur.openLedgerNoRecovery(ledger0.getId(),
+                                            BookKeeper.DigestType.MAC, passwdCorrect)
+            Assert.assertTrue("Should have recovered everything",
+                              verifyFullyReplicated(bkCur, lh, numEntries))
+            lh.close()
+            bkCur.close()
         } finally {
-            bka.close();
+            v410CL.close()
         }
-
-        adminConf.setBookieRecoveryDigestType(BookKeeper.DigestType.CRC32)
-        adminConf.setBookieRecoveryPasswd(passwdCorrect)
-
-        bka = new BookKeeperAdmin(adminConf)
-        try {
-            bka.recoverBookieData(failedBookieId)
-            Assert.fail("Shouldn't be able to recover with wrong digest")
-        } catch (BKException bke) {
-            // correct behaviour
-        } finally {
-            bka.close();
-        }
-
-        // Check that entries are still missing
-        lh = bkCur.openLedgerNoRecovery(ledger0.getId(),
-                                        BookKeeper.DigestType.MAC, passwdCorrect)
-        Assert.assertFalse("Should be entries missing",
-                           verifyFullyReplicated(bkCur, lh, numEntries))
-        lh.close()
-
-
-        // Set correct password and mac, recovery will work
-        adminConf.setBookieRecoveryDigestType(BookKeeper.DigestType.MAC)
-        adminConf.setBookieRecoveryPasswd(passwdCorrect)
-
-        bka = new BookKeeperAdmin(adminConf)
-        bka.recoverBookieData(failedBookieId)
-        bka.close()
-
-        lh = bkCur.openLedgerNoRecovery(ledger0.getId(),
-                                        BookKeeper.DigestType.MAC, passwdCorrect)
-        Assert.assertTrue("Should have recovered everything",
-                          verifyFullyReplicated(bkCur, lh, numEntries))
-        lh.close()
     }
 }
