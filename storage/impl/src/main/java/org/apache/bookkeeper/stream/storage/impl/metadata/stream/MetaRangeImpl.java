@@ -37,7 +37,6 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 import javax.annotation.concurrent.GuardedBy;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.bookkeeper.common.annotation.OrderedBy;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.common.util.Bytes;
 import org.apache.bookkeeper.statelib.api.mvcc.KVRecord;
@@ -105,16 +104,11 @@ public class MetaRangeImpl implements MetaRange {
     private long streamId;
     @GuardedBy("this")
     private StreamProperties streamProps;
-    @OrderedBy(key = "streamId")
     private LifecycleState lifecycleState = LifecycleState.UNINIT;
-    @OrderedBy(key = "streamId")
     private ServingState servingState = ServingState.WRITABLE;
-    @OrderedBy(key = "streamId")
     private long cTime = 0L;
-    @OrderedBy(key = "streamId")
     private long mTime = 0L;
 
-    @OrderedBy(key = "streamId")
     private long nextRangeId = MIN_DATA_RANGE_ID;
     /**
      * All the ranges in the stream.
@@ -122,12 +116,10 @@ public class MetaRangeImpl implements MetaRange {
      * <p>The ranges are sorted by range id. It implies that these
      * ranges are also sorted in the increasing order of their creation time.
      */
-    @OrderedBy(key = "streamId")
     private final NavigableMap<Long, RangeMetadata> ranges;
     /**
      * List of ranges that are currently active in the stream.
      */
-    @OrderedBy(key = "streamId")
     private final List<Long> currentRanges;
 
     // the revision of this meta range in local store.
@@ -255,7 +247,6 @@ public class MetaRangeImpl implements MetaRange {
         return future;
     }
 
-    @OrderedBy(key = "streamId")
     private void checkLifecycleState(LifecycleState expected) {
         checkState(expected == lifecycleState, "Unexpected state " + lifecycleState + ", expected to be " + expected);
     }
@@ -283,7 +274,6 @@ public class MetaRangeImpl implements MetaRange {
         return executeTask((future) -> unsafeCreate(future, streamProps));
     }
 
-    @OrderedBy(key = "streamId")
     private void unsafeCreate(CompletableFuture<Boolean> createFuture,
                               StreamProperties streamProps) {
         // 1. verify the state

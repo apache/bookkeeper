@@ -31,7 +31,6 @@ import org.apache.bookkeeper.clients.impl.channel.StorageServerChannel;
 import org.apache.bookkeeper.clients.impl.channel.StorageServerChannelManager;
 import org.apache.bookkeeper.clients.impl.internal.api.LocationClient;
 import org.apache.bookkeeper.clients.utils.ClientConstants;
-import org.apache.bookkeeper.common.annotation.OrderedBy;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.common.exceptions.ObjectClosedException;
 import org.apache.bookkeeper.common.util.IRevisioned;
@@ -125,7 +124,6 @@ public class StorageContainerChannel {
             }, executor);
     }
 
-    @OrderedBy(key = "scId")
     private void handleFetchStorageContainerInfoFailure(Throwable cause) {
         log.info("Failed to fetch info of storage container ({}) - '{}'. Retry in {} ms ...",
             new Object[]{scId, cause.getMessage(), ClientConstants.DEFAULT_BACKOFF_START_MS});
@@ -134,7 +132,6 @@ public class StorageContainerChannel {
         }, ClientConstants.DEFAULT_BACKOFF_START_MS, TimeUnit.MILLISECONDS);
     }
 
-    @OrderedBy(key = "scId")
     private void handleFetchStorageContainerInfoSuccess(
         List<OneStorageContainerEndpointResponse> storageContainerEndpoints) {
         if (storageContainerEndpoints.size() != 1) {
