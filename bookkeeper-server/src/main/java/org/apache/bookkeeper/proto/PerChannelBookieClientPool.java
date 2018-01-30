@@ -41,6 +41,17 @@ public interface PerChannelBookieClientPool {
     void obtain(GenericCallback<PerChannelBookieClient> callback, long key);
 
     /**
+     * Returns status of a client.
+     * It is suggested to delay/throttle requests to this channel if isWritable is false.
+     *
+     * @param key
+     * @return
+     */
+    default boolean isWritable(long key) {
+        return true;
+    }
+
+    /**
      * record any read/write error on {@link PerChannelBookieClientPool}.
      */
     void recordError();

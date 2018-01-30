@@ -78,6 +78,7 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
     final boolean isRecoveryRead;
     boolean parallelRead = false;
     final AtomicBoolean complete = new AtomicBoolean(false);
+    boolean allowFastFail = false;
 
     abstract class LedgerEntryRequest implements SpeculativeRequestExecutor, AutoCloseable {
 
@@ -389,6 +390,7 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
                 return null;
             }
 
+            // ToDo: pick replica with writable PCBC
             int replica = nextReplicaIndexToReadFrom;
             int bookieIndex = writeSet.get(nextReplicaIndexToReadFrom);
             nextReplicaIndexToReadFrom++;
@@ -471,6 +473,7 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
         this.endEntryId = endEntryId;
         this.scheduler = scheduler;
         this.isRecoveryRead = isRecoveryRead;
+        this.allowFastFail = false;
         numPendingEntries = endEntryId - startEntryId + 1;
         requiredBookiesMissingEntryForRecovery = getLedgerMetadata().getWriteQuorumSize()
                 - getLedgerMetadata().getAckQuorumSize() + 1;
@@ -499,6 +502,10 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
     PendingReadOp parallelRead(boolean enabled) {
         this.parallelRead = enabled;
         return this;
+    }
+
+    void allowFastFailOnBlockedServer() {
+        allowFastFail = true;
     }
 
     public void submit() {
@@ -566,7 +573,7 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
         }
 
         lh.bk.getBookieClient().readEntry(to, lh.ledgerId, entry.entryImpl.getEntryId(),
-                                     this, new ReadContext(bookieIndex, to, entry));
+                                     this, new ReadContext(bookieIndex, to, entry), allowFastFail);
     }
 
     @Override

@@ -19,6 +19,7 @@ package org.apache.bookkeeper.client;
 
 import static org.apache.bookkeeper.client.api.BKException.Code.NoBookieAvailableException;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -66,6 +67,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
+import org.mockito.stubbing.Stubber;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -157,6 +159,7 @@ public abstract class MockBookKeeperTestCase {
         when(bk.getLedgerManager()).thenReturn(ledgerManager);
         when(bk.getLedgerIdGenerator()).thenReturn(ledgerIdGenerator);
         when(bk.getReturnRc(anyInt())).thenAnswer(invocationOnMock -> invocationOnMock.getArgument(0));
+        when(bookieClient.isWritable(any(), anyLong())).thenReturn(true);
 
         setupLedgerIdGenerator();
         setupCreateLedgerMetadata();
@@ -422,7 +425,7 @@ public abstract class MockBookKeeperTestCase {
         }).when(bookieClient).readEntryAndFenceLedger(any(), anyLong(), any(), anyLong(),
             any(BookkeeperInternalCallbacks.ReadEntryCallback.class), any());
 
-        doAnswer(invokation -> {
+        final Stubber stub = doAnswer(invokation -> {
             Object[] args = invokation.getArguments();
             BookieSocketAddress bookieSocketAddress = (BookieSocketAddress) args[0];
             long ledgerId = (Long) args[1];
@@ -459,8 +462,12 @@ public abstract class MockBookKeeperTestCase {
                 }
             });
             return null;
-        }).when(bookieClient).readEntry(any(), anyLong(), anyLong(),
+        });
+
+        stub.when(bookieClient).readEntry(any(), anyLong(), anyLong(),
             any(BookkeeperInternalCallbacks.ReadEntryCallback.class), any());
+        stub.when(bookieClient).readEntry(any(), anyLong(), anyLong(),
+                any(BookkeeperInternalCallbacks.ReadEntryCallback.class), any(), anyBoolean());
     }
 
     private static byte[] extractEntryPayload(long ledgerId, long entryId, ByteBuf toSend)
@@ -483,7 +490,7 @@ public abstract class MockBookKeeperTestCase {
 
     @SuppressWarnings("unchecked")
     protected void setupBookieClientAddEntry() {
-        doAnswer(invokation -> {
+        final Stubber stub = doAnswer(invokation -> {
             Object[] args = invokation.getArguments();
             BookkeeperInternalCallbacks.WriteCallback callback = (BookkeeperInternalCallbacks.WriteCallback) args[5];
             BookieSocketAddress bookieSocketAddress = (BookieSocketAddress) args[0];
@@ -521,11 +528,19 @@ public abstract class MockBookKeeperTestCase {
                 }
             });
             return null;
-        }).when(bookieClient).addEntry(any(BookieSocketAddress.class),
+        });
+
+        stub.when(bookieClient).addEntry(any(BookieSocketAddress.class),
+                anyLong(), any(byte[].class),
+                anyLong(), any(ByteBuf.class),
+                any(BookkeeperInternalCallbacks.WriteCallback.class),
+                any(), anyInt());
+
+        stub.when(bookieClient).addEntry(any(BookieSocketAddress.class),
             anyLong(), any(byte[].class),
             anyLong(), any(ByteBuf.class),
             any(BookkeeperInternalCallbacks.WriteCallback.class),
-            any(), anyInt());
+            any(), anyInt(), anyBoolean());
     }
 
 }

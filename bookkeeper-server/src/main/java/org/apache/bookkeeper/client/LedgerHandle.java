@@ -35,6 +35,9 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import java.security.GeneralSecurityException;
 import java.security.NoSuchAlgorithmException;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumSet;
@@ -71,6 +74,7 @@ import org.apache.bookkeeper.client.api.WriteHandle;
 import org.apache.bookkeeper.client.impl.LedgerEntryImpl;
 import org.apache.bookkeeper.common.concurrent.FutureEventListener;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
+import org.apache.bookkeeper.common.util.MathUtils;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks;
@@ -82,6 +86,7 @@ import org.apache.bookkeeper.proto.checksum.DigestManager;
 import org.apache.bookkeeper.proto.checksum.MacDigestManager;
 import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.Gauge;
+import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.util.OrderedSafeExecutor.OrderedSafeGenericCallback;
 import org.apache.bookkeeper.util.SafeRunnable;
 import org.apache.commons.collections4.IteratorUtils;
@@ -113,6 +118,8 @@ public class LedgerHandle implements WriteHandle {
     final EnumSet<WriteFlag> writeFlags;
     ScheduledFuture<?> timeoutFuture = null;
 
+    final long waitForWriteSetMs;
+
     /**
      * Invalid entry id. This value is returned from methods which
      * should return an entry id but there is no valid entry available.
@@ -128,6 +135,7 @@ public class LedgerHandle implements WriteHandle {
     final Counter ensembleChangeCounter;
     final Counter lacUpdateHitsCounter;
     final Counter lacUpdateMissesCounter;
+    private final OpStatsLogger sendWaitStats;
 
     // This empty master key is used when an empty password is provided which is the hash of an empty string
     private static final byte[] emptyLedgerKey;
@@ -148,6 +156,7 @@ public class LedgerHandle implements WriteHandle {
         this.enableParallelRecoveryRead = bk.getConf().getEnableParallelRecoveryRead();
         this.recoveryReadBatchSize = bk.getConf().getRecoveryReadBatchSize();
         this.writeFlags = writeFlags;
+        this.waitForWriteSetMs = bk.getConf().getWaitTimeoutOnBackpressureMillis();
 
         if (metadata.isClosed()) {
             lastAddConfirmed = lastAddPushed = metadata.getLastEntryId();
@@ -197,6 +206,7 @@ public class LedgerHandle implements WriteHandle {
         ensembleChangeCounter = bk.getStatsLogger().getCounter(BookKeeperClientStats.ENSEMBLE_CHANGES);
         lacUpdateHitsCounter = bk.getStatsLogger().getCounter(BookKeeperClientStats.LAC_UPDATE_HITS);
         lacUpdateMissesCounter = bk.getStatsLogger().getCounter(BookKeeperClientStats.LAC_UPDATE_MISSES);
+        sendWaitStats = bk.getStatsLogger().getOpStatsLogger(BookKeeperClientStats.CLIENT_SEND_WAIT_TIMER);
         bk.getStatsLogger().registerGauge(BookKeeperClientStats.PENDING_ADDS,
                                           new Gauge<Integer>() {
                                               public Integer getDefaultValue() {
@@ -791,6 +801,17 @@ public class LedgerHandle implements WriteHandle {
                                                               long lastEntry) {
         PendingReadOp op = new PendingReadOp(this, bk.getScheduler(), firstEntry, lastEntry);
         if (!bk.isClosed()) {
+            // waiting on the first one.
+            // not very helpful if there are multiple ensembles or if bookie goes into unresponsive
+            // state later after N requests sent.
+            // unfortunately it seems that alternatives are:
+            // - send reads one-by-one (our case anyway)
+            // - block worker pool (not good)
+            DistributionSchedule.WriteSet ws = distributionSchedule.getWriteSet(firstEntry);
+            if (!waitForWritable(ws, firstEntry, ws.size() - 1, waitForWriteSetMs)) {
+                op.allowFastFailOnBlockedServer();
+            }
+
             bk.getMainWorkerPool().submitOrdered(ledgerId, op);
         } else {
             op.future().completeExceptionally(BKException.create(ClientClosedException));
@@ -990,6 +1011,78 @@ public class LedgerHandle implements WriteHandle {
         doAsyncAddEntry(op);
     }
 
+    private boolean isWritesetWritable(DistributionSchedule.WriteSet writeSet,
+                                       long key, int allowedNonWritableCount) {
+        if (allowedNonWritableCount < 0) {
+            allowedNonWritableCount = 0;
+        }
+
+        final int sz = writeSet.size();
+        final int requiredWritable = sz - allowedNonWritableCount;
+
+        int nonWritableCount = 0;
+        for (int i = 0; i < sz; i++) {
+            if (!bk.getBookieClient().isWritable(metadata.currentEnsemble.get(i), key)) {
+                nonWritableCount++;
+                if (nonWritableCount >= allowedNonWritableCount) {
+                    return false;
+                }
+            } else {
+                final int knownWritable = i - nonWritableCount;
+                if (knownWritable >= requiredWritable) {
+                    return true;
+                }
+            }
+        }
+        return true;
+    }
+
+    protected boolean waitForWritable(DistributionSchedule.WriteSet writeSet, long key,
+                                    int allowedNonWritableCount, long durationMs) {
+        if (durationMs < 0) {
+            return true;
+        }
+
+        final long startTime = MathUtils.nowInNano();
+        boolean success = true;
+
+        if (durationMs == 0) {
+            success = isWritesetWritable(writeSet, key, allowedNonWritableCount);
+        } else {
+            int backoff = 1;
+            final Instant deadline = Instant.now().plus(durationMs, ChronoUnit.MILLIS);
+
+            while (!isWritesetWritable(writeSet, key, allowedNonWritableCount)) {
+                if (Instant.now().isBefore(deadline)) {
+                    long maxSleep = Duration.between(Instant.now(), deadline).toMillis();
+                    if (maxSleep < 0) {
+                        maxSleep = 1;
+                    }
+                    long sleepMs = Math.min(backoff, maxSleep);
+
+                    try {
+                        Thread.sleep(sleepMs);
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        success = isWritesetWritable(writeSet, key, allowedNonWritableCount);
+                        break;
+                    }
+                    backoff = backoff * 2;
+                } else {
+                    success = false;
+                    break;
+                }
+            }
+        }
+
+        if (success) {
+            sendWaitStats.registerSuccessfulEvent(MathUtils.elapsedNanos(startTime), TimeUnit.NANOSECONDS);
+        } else {
+            sendWaitStats.registerFailedEvent(MathUtils.elapsedNanos(startTime), TimeUnit.NANOSECONDS);
+        }
+        return success;
+    }
+
     protected void doAsyncAddEntry(final PendingAddOp op) {
         if (throttler != null) {
             throttler.acquire();
@@ -1032,6 +1125,11 @@ public class LedgerHandle implements WriteHandle {
                         LedgerHandle.this, INVALID_ENTRY_ID, op.ctx);
             }
             return;
+        }
+
+        if (!waitForWritable(distributionSchedule.getWriteSet(op.getEntryId()), op.getEntryId(),
+                0, waitForWriteSetMs)) {
+            op.allowFastFailOnBlockedServer();
         }
 
         try {

@@ -211,6 +211,11 @@ public class LedgerHandleAdv extends LedgerHandle implements WriteAdvHandle {
             return;
         }
 
+        if (!waitForWritable(distributionSchedule.getWriteSet(op.getEntryId()),
+                op.getEntryId(), 0, waitForWriteSetMs)) {
+            op.allowFastFailOnBlockedServer();
+        }
+
         try {
             bk.getMainWorkerPool().submitOrdered(ledgerId, op);
         } catch (RejectedExecutionException e) {

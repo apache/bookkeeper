@@ -74,6 +74,8 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
     boolean callbackTriggered;
     boolean hasRun;
 
+    boolean allowFastFail = false;
+
     static PendingAddOp create(LedgerHandle lh, ByteBuf payload, AddCallback cb, Object ctx) {
         PendingAddOp op = RECYCLER.get();
         op.lh = lh;
@@ -93,6 +95,7 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
         op.callbackTriggered = false;
         op.hasRun = false;
         op.requestTimeNanos = Long.MAX_VALUE;
+        op.allowFastFail = false;
         return op;
     }
 
@@ -102,6 +105,11 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
      */
     PendingAddOp enableRecoveryAdd() {
         isRecoveryAdd = true;
+        return this;
+    }
+
+    PendingAddOp allowFastFailOnBlockedServer() {
+        allowFastFail = true;
         return this;
     }
 
@@ -121,7 +129,7 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
         int flags = isRecoveryAdd ? BookieProtocol.FLAG_RECOVERY_ADD : BookieProtocol.FLAG_NONE;
 
         lh.bk.getBookieClient().addEntry(lh.metadata.currentEnsemble.get(bookieIndex), lh.ledgerId, lh.ledgerKey,
-                entryId, toSend, this, bookieIndex, flags);
+                entryId, toSend, this, bookieIndex, flags, allowFastFail);
         ++pendingWriteRequests;
     }
 
@@ -428,6 +436,7 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
         pendingWriteRequests = 0;
         callbackTriggered = false;
         hasRun = false;
+        allowFastFail = false;
 
         recyclerHandle.recycle(this);
     }
