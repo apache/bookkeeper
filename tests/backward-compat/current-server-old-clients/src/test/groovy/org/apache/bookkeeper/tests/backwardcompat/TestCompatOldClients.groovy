@@ -41,7 +41,7 @@ class TestCompatOldClients {
     // 4.1.0 doesn't work because metadata format changed
     private def oldClientVersions = ["4.2.0", "4.2.1", "4.2.2", "4.2.3", "4.2.4",
                                      "4.3.0", "4.3.1", "4.3.2", "4.4.0", "4.5.0", "4.5.1",
-                                     "4.6.0"]
+                                     "4.6.0", "4.6.1"]
 
     @ArquillianResource
     DockerClient docker
@@ -84,7 +84,8 @@ class TestCompatOldClients {
                 ledger0.addEntry("shouldn't work".getBytes())
                 Assert.fail("Shouldn't have been able to add any more")
             } catch (Exception e) {
-                // correct behaviour
+                Assert.assertEquals(e.getClass().getName(),
+                                    "org.apache.bookkeeper.client.BKException\$BKLedgerClosedException")
             }
 
             // should be able to open it and read it back
