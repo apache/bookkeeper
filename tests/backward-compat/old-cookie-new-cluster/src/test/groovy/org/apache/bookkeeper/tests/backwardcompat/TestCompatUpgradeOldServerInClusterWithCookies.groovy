@@ -19,8 +19,6 @@ package org.apache.bookkeeper.tests.backwardcompat
 
 import com.github.dockerjava.api.DockerClient
 
-import lombok.Cleanup
-
 import org.apache.bookkeeper.tests.BookKeeperClusterUtils
 import org.apache.bookkeeper.tests.MavenClassLoader
 
@@ -51,38 +49,42 @@ class TestCompatUpgradeOldServerInClusterWithCookies {
         int numEntries = 10
 
         Assert.assertTrue(BookKeeperClusterUtils.startAllBookiesWithVersion(docker, "4.1.0"))
-        @Cleanup def v410CL = MavenClassLoader.forBookKeeperVersion("4.1.0")
-        @Cleanup def v410BK = v410CL.newBookKeeper(zookeeper)
-
-        def ledger0 = v410BK.createLedger(3, 2, v410CL.digestType("CRC32"), PASSWD)
-        for (int i = 0; i < numEntries; i++) {
-            ledger0.addEntry(("foobar" + i).getBytes())
-        }
-        ledger0.close()
-
-        Assert.assertTrue(BookKeeperClusterUtils.stopAllBookies(docker))
-
-        // format metadata
-        String bookieScript = "/opt/bookkeeper/" + currentVersion + "/bin/bookkeeper"
-        Assert.assertTrue(
-            BookKeeperClusterUtils.runOnAnyBookie(docker, bookieScript,
-                                                  "shell", "metaformat", "-nonInteractive", "-force"))
-
-        // bookies shouldn't come up because the cookie doesn't have instance id
-        Assert.assertFalse(BookKeeperClusterUtils.startAllBookiesWithVersion(docker, currentVersion))
-
-        // format bookie
-        BookKeeperClusterUtils.runOnAllBookies(docker, bookieScript,
-                                               "shell", "bookieformat", "-nonInteractive", "-force")
-
-        // bookies should come up
-        Assert.assertTrue(BookKeeperClusterUtils.startAllBookiesWithVersion(docker, currentVersion))
-
-        // but data has been lost of course, we formatted everything
+        def v410CL = MavenClassLoader.forBookKeeperVersion("4.1.0")
+        def v410BK = v410CL.newBookKeeper(zookeeper)
         try {
-            v410BK.openLedger(ledger0.getId(), v410CL.digestType("CRC32"), PASSWD)
-        } catch (Exception e) {
-            // correct behaviour
+            def ledger0 = v410BK.createLedger(3, 2, v410CL.digestType("CRC32"), PASSWD)
+            for (int i = 0; i < numEntries; i++) {
+                ledger0.addEntry(("foobar" + i).getBytes())
+            }
+            ledger0.close()
+
+            Assert.assertTrue(BookKeeperClusterUtils.stopAllBookies(docker))
+
+            // format metadata
+            String bookieScript = "/opt/bookkeeper/" + currentVersion + "/bin/bookkeeper"
+            Assert.assertTrue(
+                BookKeeperClusterUtils.runOnAnyBookie(docker, bookieScript,
+                                                      "shell", "metaformat", "-nonInteractive", "-force"))
+
+            // bookies shouldn't come up because the cookie doesn't have instance id
+            Assert.assertFalse(BookKeeperClusterUtils.startAllBookiesWithVersion(docker, currentVersion))
+
+            // format bookie
+            BookKeeperClusterUtils.runOnAllBookies(docker, bookieScript,
+                                                   "shell", "bookieformat", "-nonInteractive", "-force")
+
+            // bookies should come up
+            Assert.assertTrue(BookKeeperClusterUtils.startAllBookiesWithVersion(docker, currentVersion))
+
+            // but data has been lost of course, we formatted everything
+            try {
+                v410BK.openLedger(ledger0.getId(), v410CL.digestType("CRC32"), PASSWD)
+            } catch (Exception e) {
+                // correct behaviour
+            }
+        } finally {
+            v410BK.close()
+            v410CL.close()
         }
     }
 }
