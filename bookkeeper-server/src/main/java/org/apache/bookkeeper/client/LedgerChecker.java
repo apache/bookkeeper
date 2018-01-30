@@ -31,7 +31,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieClient;
-import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
 import org.slf4j.Logger;
@@ -204,27 +203,27 @@ public class LedgerChecker {
             int numberOfEntriesToBeVerified =
                 (int) (lengthOfLedgerFragment * (percentageOfLedgerFragmentToBeVerified / 100.0));
 
-            Set<Long> entriesToBeVerified = new HashSet();
+            HashSet<Long> entriesToBeVerified = new HashSet<Long>();
 
             if (numberOfEntriesToBeVerified != lengthOfLedgerFragment) {
                 // Evenly pick random entries over the length of the fragment
-                if (numberOfEntriesToBeVerified !=0) {
+                if (numberOfEntriesToBeVerified != 0) {
                     int lengthOfBucket = (int) (lengthOfLedgerFragment / numberOfEntriesToBeVerified);
                     Random rand = new Random();
-                    for (long index = firstStored; index < (lastStored - lengthOfBucket -1); index += lengthOfBucket) {
+                    for (long index = firstStored; index < (lastStored - lengthOfBucket - 1); index += lengthOfBucket) {
                         entriesToBeVerified.add(rand.nextInt((lengthOfBucket)) + index);
                     }
                 }
-                if(!entriesToBeVerified.contains(firstStored)) {
+                if (!entriesToBeVerified.contains(firstStored)) {
                     entriesToBeVerified.add(firstStored);
                 }
-                if(!entriesToBeVerified.contains(lastStored)) {
+                if (!entriesToBeVerified.contains(lastStored)) {
                     entriesToBeVerified.add(lastStored);
                 }
 
             } else {
                 // Verify the entire fragment
-                while(firstStored <= lastStored) {
+                while (firstStored <= lastStored) {
                     entriesToBeVerified.add(firstStored);
                     firstStored++;
                 }
@@ -232,9 +231,8 @@ public class LedgerChecker {
             ReadManyEntriesCallback manycb = new ReadManyEntriesCallback(entriesToBeVerified.size(),
                     fragment, cb);
 
-            for(Long entryID: entriesToBeVerified) {
-                bookieClient.readEntry(fragment.getAddress(), fragment
-                        .getLedgerId(), entryID, manycb, null, BookieProtocol.FLAG_NONE);
+            for (Long entryID: entriesToBeVerified) {
+                bookieClient.readEntry(bookie, fragment.getLedgerId(), entryID, manycb, null);
             }
         }
     }
@@ -367,7 +365,8 @@ public class LedgerChecker {
                                                       if (result) {
                                                           fragments.add(lastLedgerFragment);
                                                       }
-                                                      checkFragments(fragments, cb, percentageOfLedgerFragmentToBeVerified);
+                                                      checkFragments(fragments, cb,
+                                                          percentageOfLedgerFragmentToBeVerified);
                                                   }
                                               });
 

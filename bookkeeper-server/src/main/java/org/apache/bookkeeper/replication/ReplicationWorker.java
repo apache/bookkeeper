@@ -235,7 +235,8 @@ public class ReplicationWorker implements Runnable {
         boolean deferLedgerLockRelease = false;
 
         try (LedgerHandle lh = admin.openLedgerNoRecovery(ledgerIdToReplicate)) {
-            Set<LedgerFragment> fragments = getUnderreplicatedFragments(lh, conf.getAuditorLedgerVerificationPercentage());
+            Set<LedgerFragment> fragments =
+                getUnderreplicatedFragments(lh, conf.getAuditorLedgerVerificationPercentage());
 
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Founds fragments {} for replication from ledger: {}", fragments, ledgerIdToReplicate);
@@ -372,7 +373,8 @@ public class ReplicationWorker implements Runnable {
                         lh = admin.openLedger(ledgerId);
                     }
 
-                    Set<LedgerFragment> fragments = getUnderreplicatedFragments(lh, conf.getAuditorLedgerVerificationPercentage());
+                    Set<LedgerFragment> fragments =
+                        getUnderreplicatedFragments(lh, conf.getAuditorLedgerVerificationPercentage());
                     for (LedgerFragment fragment : fragments) {
                         if (!fragment.isClosed()) {
                             lh = admin.openLedger(ledgerId);
