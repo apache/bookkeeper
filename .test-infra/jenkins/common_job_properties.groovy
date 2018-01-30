@@ -42,7 +42,7 @@ class common_job_properties {
   static void setTopLevelMainJobProperties(context,
                                            String branch = 'master',
                                            String jdkVersion = 'JDK 1.8 (latest)',
-                                           int timeout = 100,
+                                           int timeout = 200,
                                            String jenkinsExecutorLabel = 'ubuntu') {
     // GitHub project.
     context.properties {
