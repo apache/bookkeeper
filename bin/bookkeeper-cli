@@ -1,0 +1,153 @@
+#!/usr/bin/env bash
+#
+#/**
+# * Copyright 2007 The Apache Software Foundation
+# *
+# * Licensed to the Apache Software Foundation (ASF) under one
+# * or more contributor license agreements.  See the NOTICE file
+# * distributed with this work for additional information
+# * regarding copyright ownership.  The ASF licenses this file
+# * to you under the Apache License, Version 2.0 (the
+# * "License"); you may not use this file except in compliance
+# * with the License.  You may obtain a copy of the License at
+# *
+# *     http://www.apache.org/licenses/LICENSE-2.0
+# *
+# * Unless required by applicable law or agreed to in writing, software
+# * distributed under the License is distributed on an "AS IS" BASIS,
+# * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# * See the License for the specific language governing permissions and
+# * limitations under the License.
+# */
+
+BINDIR=`dirname "$0"`
+BK_HOME=`cd $BINDIR/..;pwd`
+
+DEFAULT_CONF=$BK_HOME/conf/bk_server.conf
+DEFAULT_LOG_CONF=$BK_HOME/conf/log4j.cli.properties
+TOOLS_HOME=${BK_HOME}/bookkeeper-tools
+
+source $BK_HOME/conf/bk_cli_env.sh
+
+# Check for the java to use
+if [[ -z $JAVA_HOME ]]; then
+  JAVA=$(which java)
+  if [ $? = 0 ]; then
+    echo "JAVA_HOME not set, using java from PATH. ($JAVA)"
+  else
+    echo "Error: JAVA_HOME not set, and no java executable found in $PATH." 1>&2
+    exit 1
+  fi
+else
+  JAVA=$JAVA_HOME/bin/java
+fi
+
+find_cli_jar() {
+  DIR=$1
+  if [ -d $DIR ]; then
+    cd $DIR
+    for f in *.jar; do
+      if [[ $f =~ ^(org.apache.bookkeeper-)?bookkeeper-tools-[0-9\\.]*(-SNAPSHOT)?.jar$ ]]; then
+        echo $DIR/$f
+          return
+      fi
+    done
+  fi
+}
+
+RELEASE_JAR=$(find_cli_jar ${BK_HOME})
+if [ -n "${RELEASE_JAR}" ]; then
+  CLI_JAR=${RELEASE_JAR}
+else
+  RELEASE_JAR=$(find_cli_jar ${BK_HOME}/lib)
+  if [ -n "${RELEASE_JAR}" ]; then
+    CLI_JAR=${RELEASE_JAR}
+  fi
+fi
+
+BUILT_JAR=$(find_cli_jar ${TOOLS_HOME}/target)
+
+if [ -z "${BUILT_JAR}" ] && [ -z "${CLI_JAR}" ]; then
+  echo "Couldn't find bookkeeper jar."
+  read -p "Do you want me to run \`mvn package -DskiptTests\` for you ? " answer
+  case "${answer:0:1}" in
+    y|Y )
+      mvn package -DskipTests
+      ;;
+    * )
+      exit 1
+      ;;
+  esac
+
+  BUILT_JAR=$(find_cli_jar ${TOOLS_HOME}/target)
+  if [ -n "${BUILT_JAR}" ]; then
+    CLI_JAR=$BUILT_JAR
+  fi
+fi
+
+if [ -e "${BUILT_JAR}" ]; then
+  CLI_JAR="${BUILT_JAR}"
+fi
+
+if [ ! -e "${CLI_JAR}" ]; then
+  echo "Could not find bookkeeper cli jar."
+  exit 1
+fi
+
+add_maven_deps_to_classpath() {
+  MVN="mvn"
+  if [ "$MAVEN_HOME" != "" ]; then
+    MVN=${MAVEN_HOME}/bin/mvn
+  fi
+
+  # Need to generate classpath from maven pom. This is costly so generate it
+  # and cache it. Save the file into our target dir so a mvn clean will get
+  # clean it up and force us create a new one.
+  f="${TOOLS_HOME}/target/cached_classpath.txt"
+  if [ ! -f "${f}" ]
+  then
+    ${MVN} -f "${TOOLS_HOME}/pom.xml" dependency:build-classpath -Dmdep.outputFile="${f}" &> /dev/null
+  fi
+  CLI_CLASSPATH=${CLASSPATH}:`cat "${f}"`
+}
+
+if [ -d "$BK_HOME/lib" ]; then
+  for i in $BK_HOME/lib/*.jar; do
+    CLI_CLASSPATH=$CLI_CLASSPATH:$i
+  done
+else
+  add_maven_deps_to_classpath
+fi
+
+if [ -z "$CLI_CONF" ]; then
+  CLI_CONF=$DEFAULT_CONF
+fi
+
+if [ -z "$CLI_LOG_CONF" ]; then
+  CLI_LOG_CONF=$DEFAULT_LOG_CONF
+fi
+
+CLI_CLASSPATH="$CLI_JAR:$CLI_CLASSPATH:$CLI_EXTRA_CLASSPATH"
+CLI_CLASSPATH="`dirname $CLI_LOG_CONF`:$CLI_CLASSPATH"
+OPTS="$OPTS -Dlog4j.configuration=`basename $CLI_LOG_CONF`"
+
+OPTS="-cp $CLI_CLASSPATH $OPTS"
+
+OPTS="$OPTS $CLI_EXTRA_OPTS"
+
+# Disable ipv6 as it can cause issues
+OPTS="$OPTS -Djava.net.preferIPv4Stack=true"
+
+# log directory & file
+CLI_ROOT_LOGGER=${CLI_ROOT_LOGGER:-"INFO,CONSOLE"}
+CLI_LOG_DIR=${CLI_LOG_DIR:-"$BK_HOME/logs"}
+CLI_LOG_FILE=${CLI_LOG_FILE:-"bookkeeper-cli.log"}
+
+#Configure log configuration system properties
+OPTS="$OPTS -Dbookkeeper.cli.root.logger=$CLI_ROOT_LOGGER"
+OPTS="$OPTS -Dbookkeeper.cli.log.dir=$CLI_LOG_DIR"
+OPTS="$OPTS -Dbookkeeper.cli.log.file=$CLI_LOG_FILE"
+
+#Change to BK_HOME to support relative paths
+cd "$BK_HOME"
+exec $JAVA $OPTS org.apache.bookkeeper.tools.cli.BookieShell --conf $CLI_CONF $@
