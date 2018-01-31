@@ -21,6 +21,7 @@
 package org.apache.bookkeeper.client;
 
 import static org.apache.bookkeeper.client.api.BKException.Code.ClientClosedException;
+import static org.apache.bookkeeper.client.api.BKException.Code.WriteException;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Objects;
@@ -120,6 +121,7 @@ public class LedgerHandle implements WriteHandle {
 
     final AtomicInteger blockAddCompletions = new AtomicInteger(0);
     final AtomicInteger numEnsembleChanges = new AtomicInteger(0);
+    final int maxAllowedEnsembleChanges;
     Queue<PendingAddOp> pendingAddOps;
     ExplicitLacFlushPolicy explicitLacFlushPolicy;
 
@@ -191,6 +193,7 @@ public class LedgerHandle implements WriteHandle {
             }
         };
 
+        maxAllowedEnsembleChanges = bk.getConf().getMaxAllowedEnsembleChanges();
         ensembleChangeCounter = bk.getStatsLogger().getCounter(BookKeeperClientStats.ENSEMBLE_CHANGES);
         lacUpdateHitsCounter = bk.getStatsLogger().getCounter(BookKeeperClientStats.LAC_UPDATE_HITS);
         lacUpdateMissesCounter = bk.getStatsLogger().getCounter(BookKeeperClientStats.LAC_UPDATE_MISSES);
@@ -1520,7 +1523,7 @@ public class LedgerHandle implements WriteHandle {
                     continue;
                 }
                 try {
-                    BookieSocketAddress newBookie = bk.bookieWatcher.replaceBookie(
+                    BookieSocketAddress newBookie = bk.getBookieWatcher().replaceBookie(
                         metadata.getEnsembleSize(),
                         metadata.getWriteQuorumSize(),
                         metadata.getAckQuorumSize(),
@@ -1552,8 +1555,7 @@ public class LedgerHandle implements WriteHandle {
 
     void handleBookieFailure(final Map<Integer, BookieSocketAddress> failedBookies) {
         int curBlockAddCompletions = blockAddCompletions.incrementAndGet();
-
-        if (bk.disableEnsembleChangeFeature.isAvailable()) {
+        if (bk.getDisableEnsembleChangeFeature().isAvailable()) {
             blockAddCompletions.decrementAndGet();
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Ensemble change is disabled. Retry sending to failed bookies {} for ledger {}.",
@@ -1565,6 +1567,15 @@ public class LedgerHandle implements WriteHandle {
 
         int curNumEnsembleChanges = numEnsembleChanges.incrementAndGet();
 
+        // when the ensemble changes are too frequent, close handle
+        if (curNumEnsembleChanges > maxAllowedEnsembleChanges){
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Ledger {} reaches max allowed ensemble change number {}",
+                        ledgerId, maxAllowedEnsembleChanges);
+            }
+            handleUnrecoverableErrorDuringAdd(WriteException);
+            return;
+        }
         synchronized (metadata) {
             try {
                 EnsembleInfo ensembleInfo = replaceBookieInMetadata(failedBookies, curNumEnsembleChanges);
