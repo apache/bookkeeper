@@ -30,7 +30,6 @@ import org.apache.bookkeeper.zookeeper.RetryPolicy;
 import org.apache.distributedlog.DistributedLogConfiguration;
 import org.apache.distributedlog.ZooKeeperClient;
 import org.apache.distributedlog.ZooKeeperClientBuilder;
-import org.apache.distributedlog.api.MetadataAccessor;
 import org.apache.distributedlog.common.concurrent.FutureUtils;
 import org.apache.distributedlog.exceptions.AlreadyClosedException;
 import org.apache.distributedlog.exceptions.DLInterruptedException;
@@ -46,7 +45,8 @@ import org.slf4j.LoggerFactory;
 /**
  * access to ZKMetadata.
  */
-public class ZKMetadataAccessor implements MetadataAccessor {
+@SuppressWarnings("deprecation")
+public class ZKMetadataAccessor implements org.apache.distributedlog.api.MetadataAccessor {
     static final Logger LOG = LoggerFactory.getLogger(ZKMetadataAccessor.class);
     protected final String name;
     protected CompletableFuture<Void> closePromise;

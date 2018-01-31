@@ -22,12 +22,12 @@
   <parent>
     <groupId>org.apache.distributedlog</groupId>
     <artifactId>distributedlog</artifactId>
-    <version>0.6.0-SNAPSHOT</version>
+    <version>4.7.0-SNAPSHOT</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
   <artifactId>distributedlog-io</artifactId>
   <packaging>pom</packaging>
-  <name>Apache DistributedLog :: IO</name>
+  <name>Apache BookKeeper :: DistributedLog :: IO</name>
   <modules>
     <module>dlfs</module>
   </modules>

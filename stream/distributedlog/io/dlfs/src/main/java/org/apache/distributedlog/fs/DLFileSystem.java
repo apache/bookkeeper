@@ -265,7 +265,7 @@ public class DLFileSystem extends FileSystem {
                 Path childPath = new Path(path, child);
                 statusList.add(getFileStatus(childPath));
             }
-            Collections.sort(statusList, Comparator.comparing(FileStatus::getPath));
+            Collections.sort(statusList, Comparator.comparing(fileStatus -> fileStatus.getPath().getName()));
             return statusList.toArray(new FileStatus[statusList.size()]);
         } catch (LogNotFoundException e) {
             throw new FileNotFoundException(path.toString());

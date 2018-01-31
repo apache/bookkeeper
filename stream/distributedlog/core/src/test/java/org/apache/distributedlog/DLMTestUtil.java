@@ -41,7 +41,6 @@ import org.apache.bookkeeper.versioning.Version;
 import org.apache.distributedlog.api.AsyncLogWriter;
 import org.apache.distributedlog.api.DistributedLogManager;
 import org.apache.distributedlog.api.LogReader;
-import org.apache.distributedlog.api.MetadataAccessor;
 import org.apache.distributedlog.api.namespace.Namespace;
 import org.apache.distributedlog.api.namespace.NamespaceBuilder;
 import org.apache.distributedlog.common.util.PermitLimiter;
@@ -51,11 +50,8 @@ import org.apache.distributedlog.logsegment.LogSegmentEntryStore;
 import org.apache.distributedlog.namespace.NamespaceDriver;
 import org.apache.distributedlog.util.ConfUtils;
 import org.apache.distributedlog.util.Utils;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-
 
 /**
  * Utility class for setting up bookkeeper ensembles
@@ -100,9 +96,11 @@ public class DLMTestUtil {
         return namespace.openLog(name);
     }
 
-    static MetadataAccessor createNewMetadataAccessor(DistributedLogConfiguration conf,
-                                                      String name,
-                                                      URI uri) throws Exception {
+    @SuppressWarnings("deprecation")
+    static org.apache.distributedlog.api.MetadataAccessor createNewMetadataAccessor(
+            DistributedLogConfiguration conf,
+            String name,
+            URI uri) throws Exception {
         // TODO: Metadata Accessor seems to be a legacy object which only used by kestrel
         //       (we might consider deprecating this)
         Namespace namespace = NamespaceBuilder.newBuilder()
