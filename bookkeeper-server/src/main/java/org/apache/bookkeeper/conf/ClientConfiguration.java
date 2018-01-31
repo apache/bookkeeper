@@ -116,6 +116,7 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
     protected static final String REORDER_READ_SEQUENCE_ENABLED = "reorderReadSequenceEnabled";
     // Add Parameters
     protected static final String DELAY_ENSEMBLE_CHANGE = "delayEnsembleChange";
+    protected static final String MAX_ALLOWED_ENSEMBLE_CHANGES = "maxNumEnsembleChanges";
     // Timeout Setting
     protected static final String ADD_ENTRY_TIMEOUT_SEC = "addEntryTimeoutSec";
     protected static final String ADD_ENTRY_QUORUM_TIMEOUT_SEC = "addEntryQuorumTimeoutSec";
@@ -1666,6 +1667,26 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
         return this;
     }
 
+    /**
+     * Get the max allowed ensemble change number.
+     *
+     * @return value of MaxAllowedEnsembleChanges, default MAX_VALUE, indicating feature is disable.
+     */
+    public int getMaxAllowedEnsembleChanges() {
+        return getInt(MAX_ALLOWED_ENSEMBLE_CHANGES, Integer.MAX_VALUE);
+    }
+
+    /**
+     * Set the max allowed ensemble change number.
+     *
+     * @param num
+     *          value of MaxAllowedEnsembleChanges
+     * @return client configuration.
+     */
+    public ClientConfiguration setMaxAllowedEnsembleChanges(int num) {
+        setProperty(MAX_ALLOWED_ENSEMBLE_CHANGES, num);
+        return this;
+    }
 
     /**
      * Option to use Netty Pooled ByteBufs.

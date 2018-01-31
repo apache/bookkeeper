@@ -17,9 +17,13 @@
  */
 package org.apache.bookkeeper.client;
 
+import static org.apache.bookkeeper.client.api.BKException.Code.NoBookieAvailableException;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.anySet;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -29,7 +33,10 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentSkipListSet;
@@ -44,6 +51,7 @@ import org.apache.bookkeeper.client.api.CreateBuilder;
 import org.apache.bookkeeper.client.api.DeleteBuilder;
 import org.apache.bookkeeper.client.api.OpenBuilder;
 import org.apache.bookkeeper.conf.ClientConfiguration;
+import org.apache.bookkeeper.feature.Feature;
 import org.apache.bookkeeper.meta.LedgerIdGenerator;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.net.BookieSocketAddress;
@@ -82,6 +90,10 @@ public abstract class MockBookKeeperTestCase {
     protected ConcurrentSkipListSet<Long> fencedLedgers;
     protected ConcurrentMap<Long, Map<BookieSocketAddress, Map<Long, MockEntry>>> mockLedgerData;
 
+    List<BookieSocketAddress> failedBookies;
+    Set<BookieSocketAddress> availableBookies;
+    private int lastIndexForBK;
+
     private Map<BookieSocketAddress, Map<Long, MockEntry>> getMockLedgerContents(long ledgerId) {
         return mockLedgerData.computeIfAbsent(ledgerId, (id) -> new ConcurrentHashMap<>());
     }
@@ -90,7 +102,11 @@ public abstract class MockBookKeeperTestCase {
         return getMockLedgerContents(ledgerId).computeIfAbsent(bookieSocketAddress, addr -> new ConcurrentHashMap<>());
     }
 
-    private MockEntry getMockLedgerEntry(long ledgerId, BookieSocketAddress bookieSocketAddress, long entryId) {
+    private MockEntry getMockLedgerEntry(long ledgerId,
+                                         BookieSocketAddress bookieSocketAddress, long entryId) throws BKException{
+        if (failedBookies.contains(bookieSocketAddress)) {
+            throw BKException.create(NoBookieAvailableException);
+        }
         return getMockLedgerContentsInBookie(ledgerId, bookieSocketAddress).get(entryId);
     }
 
@@ -124,9 +140,13 @@ public abstract class MockBookKeeperTestCase {
 
         NullStatsLogger nullStatsLogger = setupLoggers();
 
+        failedBookies = new ArrayList<>();
+        availableBookies = new HashSet<>();
+
         when(bk.getCloseLock()).thenReturn(new ReentrantReadWriteLock());
         when(bk.isClosed()).thenReturn(false);
         when(bk.getBookieWatcher()).thenReturn(bookieWatcher);
+        when(bk.getDisableEnsembleChangeFeature()).thenReturn(mock(Feature.class));
         when(bk.getExplicitLacInterval()).thenReturn(0);
         when(bk.getMainWorkerPool()).thenReturn(executor);
         when(bk.getBookieClient()).thenReturn(bookieClient);
@@ -145,6 +165,7 @@ public abstract class MockBookKeeperTestCase {
         setupRemoveLedgerMetadata();
         setupRegisterLedgerMetadataListener();
         setupBookieWatcherForNewEnsemble();
+        setupBookieWatcherForEnsembleChange();
         setupBookieClientReadEntry();
         setupBookieClientAddEntry();
     }
@@ -188,6 +209,17 @@ public abstract class MockBookKeeperTestCase {
         when(bk.isClosed()).thenReturn(true);
     }
 
+    protected void killBookie(BookieSocketAddress killedBookieSocketAddress) {
+        failedBookies.add(killedBookieSocketAddress);
+        availableBookies.remove(killedBookieSocketAddress);
+    }
+
+    protected BookieSocketAddress startNewBookie() {
+        BookieSocketAddress address = generateBookieSocketAddress(lastIndexForBK++);
+        availableBookies.add(address);
+        return address;
+    }
+
     protected BookieSocketAddress generateBookieSocketAddress(int index) {
         return new BookieSocketAddress("localhost", 1111 + index);
     }
@@ -197,6 +229,8 @@ public abstract class MockBookKeeperTestCase {
         for (int i = 0; i < ensembleSize; i++) {
             ensemble.add(generateBookieSocketAddress(i));
         }
+        availableBookies.addAll(ensemble);
+        lastIndexForBK = ensembleSize;
         return ensemble;
     }
 
@@ -213,6 +247,25 @@ public abstract class MockBookKeeperTestCase {
             });
     }
 
+    private void setupBookieWatcherForEnsembleChange() throws BKException.BKNotEnoughBookiesException {
+        when(bookieWatcher.replaceBookie(anyInt(), anyInt(), anyInt(), anyMap(), anyList(), anyInt(), anySet()))
+                .thenAnswer((Answer<BookieSocketAddress>) new Answer<BookieSocketAddress>() {
+                    @Override
+                    @SuppressWarnings("unchecked")
+                    public BookieSocketAddress answer(InvocationOnMock invocation) throws Throwable {
+                        Object[] args = invocation.getArguments();
+                        List<BookieSocketAddress> existingBookies = (List<BookieSocketAddress>) args[4];
+                        Set<BookieSocketAddress> excludeBookies = (Set<BookieSocketAddress>) args[6];
+                        excludeBookies.addAll(existingBookies);
+                        Set<BookieSocketAddress> remainBookies = new HashSet<BookieSocketAddress>(availableBookies);
+                        remainBookies.removeAll(excludeBookies);
+                        if (remainBookies.iterator().hasNext()) {
+                            return remainBookies.iterator().next();
+                        }
+                        throw BKException.create(BKException.Code.NotEnoughBookiesException);
+                    }
+                });
+    }
     private void submit(Runnable operation) {
         try {
             scheduler.submit(operation);
@@ -343,7 +396,14 @@ public abstract class MockBookKeeperTestCase {
                     LOG.error("Initialize macManager fail", gse);
                 }
                 fencedLedgers.add(ledgerId);
-                MockEntry mockEntry = getMockLedgerEntry(ledgerId, bookieSocketAddress, entryId);
+                MockEntry mockEntry = null;
+                try {
+                    mockEntry = getMockLedgerEntry(ledgerId, bookieSocketAddress, entryId);
+                } catch (BKException bke) {
+                    LOG.info("readEntryAndFenceLedger - occur BKException {}@{} at {}", entryId, ledgerId,
+                            bookieSocketAddress);
+                    callback.readEntryComplete(bke.getCode(), ledgerId, entryId, null, args[5]);
+                }
                 if (mockEntry != null) {
                     LOG.info("readEntryAndFenceLedger - found mock entry {}@{} at {}", entryId, ledgerId,
                             bookieSocketAddress);
@@ -377,7 +437,14 @@ public abstract class MockBookKeeperTestCase {
                 } catch (GeneralSecurityException gse){
                     LOG.error("Initialize macManager fail", gse);
                 }
-                MockEntry mockEntry = getMockLedgerEntry(ledgerId, bookieSocketAddress, entryId);
+                MockEntry mockEntry = null;
+                try {
+                    mockEntry = getMockLedgerEntry(ledgerId, bookieSocketAddress, entryId);
+                } catch (BKException bke) {
+                    LOG.info("readEntryAndFenceLedger - occur BKException {}@{} at {}", entryId, ledgerId,
+                            bookieSocketAddress);
+                    callback.readEntryComplete(bke.getCode(), ledgerId, entryId, null, args[5]);
+                }
                 if (mockEntry != null) {
                     LOG.info("readEntry - found mock entry {}@{} at {}", entryId, ledgerId, bookieSocketAddress);
                     ByteBuf entry = macManager.computeDigestAndPackageForSending(entryId,
@@ -441,9 +508,13 @@ public abstract class MockBookKeeperTestCase {
                     callback.writeComplete(BKException.Code.LedgerFencedException,
                         ledgerId, entryId, bookieSocketAddress, ctx);
                 } else {
+                    if (failedBookies.contains(bookieSocketAddress)) {
+                        callback.writeComplete(NoBookieAvailableException, ledgerId, entryId, bookieSocketAddress, ctx);
+                        return;
+                    }
                     if (getMockLedgerContentsInBookie(ledgerId, bookieSocketAddress).isEmpty()) {
-                        registerMockEntryForRead(ledgerId, BookieProtocol.LAST_ADD_CONFIRMED, bookieSocketAddress,
-                            new byte[0], BookieProtocol.INVALID_ENTRY_ID);
+                            registerMockEntryForRead(ledgerId, BookieProtocol.LAST_ADD_CONFIRMED, bookieSocketAddress,
+                                    new byte[0], BookieProtocol.INVALID_ENTRY_ID);
                     }
                     registerMockEntryForRead(ledgerId, entryId, bookieSocketAddress, entry, ledgerId);
                     callback.writeComplete(BKException.Code.OK, ledgerId, entryId, bookieSocketAddress, ctx);

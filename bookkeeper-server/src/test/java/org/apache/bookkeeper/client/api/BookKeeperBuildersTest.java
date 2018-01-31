@@ -25,11 +25,9 @@ import static org.apache.bookkeeper.common.concurrent.FutureUtils.result;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
-
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
-
 import org.apache.bookkeeper.client.BKException.BKClientClosedException;
 import org.apache.bookkeeper.client.BKException.BKIncorrectParameterException;
 import org.apache.bookkeeper.client.BKException.BKNoSuchLedgerExistsException;
@@ -39,7 +37,6 @@ import org.apache.bookkeeper.client.LedgerMetadata;
 import org.apache.bookkeeper.client.MockBookKeeperTestCase;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.proto.BookieProtocol;
-
 import org.junit.Test;
 
 /**
@@ -340,8 +337,8 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
 
         ledgerMetadata.getEnsembles().values().forEach(bookieAddressList -> {
             bookieAddressList.forEach(bookieAddress -> {
-                registerMockEntryForRead(ledgerId, BookieProtocol.LAST_ADD_CONFIRMED, bookieAddress, entryData, -1);
-                registerMockEntryForRead(ledgerId, 0, bookieAddress, entryData, -1);
+                    registerMockEntryForRead(ledgerId, BookieProtocol.LAST_ADD_CONFIRMED, bookieAddress, entryData, -1);
+                    registerMockEntryForRead(ledgerId, 0, bookieAddress, entryData, -1);
             });
         });
 
