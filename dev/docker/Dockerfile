@@ -17,4 +17,7 @@
 # under the License.
 #
 
-FROM maven:3.5.0-jdk-8
+FROM maven:3.5.0-jdk-9
+
+RUN apt-get update
+RUN apt-get install -y g++ cmake

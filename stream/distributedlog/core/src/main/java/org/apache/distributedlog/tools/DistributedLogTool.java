@@ -86,7 +86,6 @@ import org.apache.distributedlog.api.AsyncLogReader;
 import org.apache.distributedlog.api.AsyncLogWriter;
 import org.apache.distributedlog.api.DistributedLogManager;
 import org.apache.distributedlog.api.LogReader;
-import org.apache.distributedlog.api.MetadataAccessor;
 import org.apache.distributedlog.api.namespace.Namespace;
 import org.apache.distributedlog.api.namespace.NamespaceBuilder;
 import org.apache.distributedlog.auditor.DLAuditor;
@@ -105,9 +104,6 @@ import org.apache.distributedlog.namespace.NamespaceDriver;
 import org.apache.distributedlog.util.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-
-
 
 /**
  *DistributedLogTool.
@@ -470,6 +466,7 @@ import org.slf4j.LoggerFactory;
             return 0;
         }
 
+        @SuppressWarnings("deprecation")
         protected void printStreams(Namespace namespace) throws Exception {
             Iterator<String> streams = namespace.getLogs();
             System.out.println("Streams under " + getUri() + " : ");
@@ -480,7 +477,7 @@ import org.slf4j.LoggerFactory;
                 if (!printMetadata) {
                     continue;
                 }
-                MetadataAccessor accessor =
+                org.apache.distributedlog.api.MetadataAccessor accessor =
                         namespace.getNamespaceDriver().getMetadataAccessor(streamName);
                 byte[] metadata = accessor.getMetadata();
                 if (null == metadata || metadata.length == 0) {

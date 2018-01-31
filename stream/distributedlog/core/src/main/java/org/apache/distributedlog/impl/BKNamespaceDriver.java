@@ -51,7 +51,6 @@ import org.apache.distributedlog.ZooKeeperClientBuilder;
 
 import org.apache.distributedlog.acl.AccessControlManager;
 import org.apache.distributedlog.acl.DefaultAccessControlManager;
-import org.apache.distributedlog.api.MetadataAccessor;
 import org.apache.distributedlog.api.subscription.SubscriptionsStore;
 import org.apache.distributedlog.bk.LedgerAllocator;
 import org.apache.distributedlog.bk.LedgerAllocatorUtils;
@@ -82,9 +81,6 @@ import org.apache.zookeeper.common.PathUtils;
 import org.apache.zookeeper.data.Stat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-
-
 
 /**
  * Manager for ZooKeeper/BookKeeper based namespace.
@@ -520,8 +516,9 @@ public class BKNamespaceDriver implements NamespaceDriver {
     // Legacy Intefaces
     //
 
+    @SuppressWarnings("deprecation")
     @Override
-    public MetadataAccessor getMetadataAccessor(String streamName)
+    public org.apache.distributedlog.api.MetadataAccessor getMetadataAccessor(String streamName)
             throws InvalidStreamNameException, IOException {
         if (getBkdlConfig().isFederatedNamespace()) {
             throw new UnsupportedOperationException();

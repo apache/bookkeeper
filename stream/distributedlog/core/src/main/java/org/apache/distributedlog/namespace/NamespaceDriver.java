@@ -24,7 +24,6 @@ import org.apache.bookkeeper.feature.FeatureProvider;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.distributedlog.DistributedLogConfiguration;
 import org.apache.distributedlog.acl.AccessControlManager;
-import org.apache.distributedlog.api.MetadataAccessor;
 import org.apache.distributedlog.api.subscription.SubscriptionsStore;
 import org.apache.distributedlog.config.DynamicDistributedLogConfiguration;
 import org.apache.distributedlog.exceptions.InvalidStreamNameException;
@@ -33,9 +32,6 @@ import org.apache.distributedlog.logsegment.LogSegmentEntryStore;
 import org.apache.distributedlog.metadata.LogMetadataStore;
 import org.apache.distributedlog.metadata.LogStreamMetadataStore;
 import org.apache.distributedlog.util.OrderedScheduler;
-
-
-
 
 /**
  * Manager to manage all the stores required by a namespace.
@@ -128,7 +124,8 @@ public interface NamespaceDriver extends Closeable {
      * @param streamName name of log stream.
      * @return metadata accessor for log stream {@code streamName}.
      */
-    MetadataAccessor getMetadataAccessor(String streamName)
+    @SuppressWarnings("deprecation")
+    org.apache.distributedlog.api.MetadataAccessor getMetadataAccessor(String streamName)
             throws InvalidStreamNameException, IOException;
 
     /**

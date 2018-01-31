@@ -25,10 +25,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyObject;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -48,7 +47,6 @@ import org.apache.distributedlog.LogSegmentMetadata;
 import org.apache.distributedlog.TestZooKeeperClientBuilder;
 import org.apache.distributedlog.ZooKeeperClient;
 import org.apache.distributedlog.ZooKeeperClusterTestCase;
-import org.apache.distributedlog.api.MetadataAccessor;
 import org.apache.distributedlog.api.namespace.Namespace;
 import org.apache.distributedlog.api.namespace.NamespaceBuilder;
 import org.apache.distributedlog.common.concurrent.FutureUtils;
@@ -396,6 +394,7 @@ public class TestZKLogStreamMetadataStore extends ZooKeeperClusterTestCase {
         Utils.ioResult(getLog(uri, logName, logIdentifier, zkc, true, false));
     }
 
+    @SuppressWarnings("deprecation")
     @Test(timeout = 60000)
     public void testCreateLogMetadataWithCustomMetadata() throws Exception {
         String logName = testName.getMethodName();
@@ -409,7 +408,8 @@ public class TestZKLogStreamMetadataStore extends ZooKeeperClusterTestCase {
             .uri(uri)
             .build();
 
-        MetadataAccessor accessor = namespace.getNamespaceDriver().getMetadataAccessor(logName);
+        org.apache.distributedlog.api.MetadataAccessor accessor =
+            namespace.getNamespaceDriver().getMetadataAccessor(logName);
         accessor.createOrUpdateMetadata(logName.getBytes("UTF-8"));
         accessor.close();
 
@@ -438,7 +438,7 @@ public class TestZKLogStreamMetadataStore extends ZooKeeperClusterTestCase {
             Children2Callback callback = (Children2Callback) invocationOnMock.getArguments()[2];
             callback.processResult(Code.BADVERSION.intValue(), path, null, null, null);
             return null;
-        }).when(mockZk).getChildren(anyString(), anyBoolean(), any(Children2Callback.class), anyObject());
+        }).when(mockZk).getChildren(anyString(), anyBoolean(), any(Children2Callback.class), any());
 
         String logSegmentsPath = LogMetadata.getLogSegmentsPath(uri, logName, logIdentifier);
         try {
@@ -508,7 +508,7 @@ public class TestZKLogStreamMetadataStore extends ZooKeeperClusterTestCase {
             StatCallback callback = (StatCallback) invocationOnMock.getArguments()[2];
             callback.processResult(Code.BADVERSION.intValue(), path, null, null);
             return null;
-        }).when(mockZk).exists(anyString(), anyBoolean(), any(StatCallback.class), anyObject());
+        }).when(mockZk).exists(anyString(), anyBoolean(), any(StatCallback.class), any());
 
         try {
             FutureUtils.result(getMissingPaths(mockZkc, uri, "path/to/log"));

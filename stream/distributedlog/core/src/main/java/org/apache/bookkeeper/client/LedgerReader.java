@@ -36,6 +36,7 @@ import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieClient;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
+import org.apache.bookkeeper.proto.checksum.DigestManager;
 
 /**
  * Reader used for DL tools to read entries.
@@ -184,12 +185,12 @@ public class LedgerReader {
             }
 
 
-            if (LedgerHandle.INVALID_ENTRY_ID >= recoveryData.lastAddConfirmed) {
+            if (LedgerHandle.INVALID_ENTRY_ID >= recoveryData.getLastAddConfirmed()) {
                 callback.operationComplete(BKException.Code.OK, resultList);
                 return;
             }
 
-            long entryId = recoveryData.lastAddConfirmed;
+            long entryId = recoveryData.getLastAddConfirmed();
             PendingReadOp op = new PendingReadOp(lh, lh.bk.scheduler, entryId, entryId, false);
             op.future().whenComplete(readListener);
             op.submit();
@@ -211,7 +212,7 @@ public class LedgerReader {
             } else {
                 try {
                     DigestManager.RecoveryData data = lh.macManager.verifyDigestAndReturnLastConfirmed(buffer);
-                    rr = new ReadResult<Long>(eid1, BKException.Code.OK, data.lastAddConfirmed, bookieAddress);
+                    rr = new ReadResult<Long>(eid1, BKException.Code.OK, data.getLastAddConfirmed(), bookieAddress);
                 } catch (BKException.BKDigestMatchException e) {
                     rr = new ReadResult<Long>(eid1, BKException.Code.DigestMatchException, null, bookieAddress);
                 }

@@ -64,6 +64,7 @@
     <module>tests</module>
     <module>bookkeeper-dist</module>
     <module>microbenchmarks</module>
+    <module>stream/distributedlog</module>
   </modules>
   <mailingLists>
     <mailingList>
@@ -110,7 +111,7 @@
     <jmh.version>1.19</jmh.version>
     <junit.version>4.12</junit.version>
     <lombok.version>1.16.18</lombok.version>
-    <mockito-core.version>2.13.0</mockito-core.version>
+    <mockito.version>2.13.0</mockito.version>
     <netty.version>4.1.12.Final</netty.version>
     <netty-boringssl.version>2.0.3.Final</netty-boringssl.version>
     <powermock.version>2.0.0-beta.5</powermock.version>
@@ -181,7 +182,7 @@
     <dependency>
       <groupId>org.mockito</groupId>
       <artifactId>mockito-core</artifactId>
-      <version>${mockito-core.version}</version>
+      <version>${mockito.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
