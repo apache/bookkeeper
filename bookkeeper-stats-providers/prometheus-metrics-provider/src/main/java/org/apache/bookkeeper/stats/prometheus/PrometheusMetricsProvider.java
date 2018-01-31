@@ -23,6 +23,7 @@ import io.prometheus.client.hotspot.MemoryPoolsExports;
 import io.prometheus.client.hotspot.StandardExports;
 import io.prometheus.client.hotspot.ThreadExports;
 import java.net.InetSocketAddress;
+import org.apache.bookkeeper.stats.CachingStatsProvider;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.stats.StatsProvider;
 import org.apache.commons.configuration.Configuration;
@@ -39,6 +40,28 @@ public class PrometheusMetricsProvider implements StatsProvider {
 
     private final CollectorRegistry registry = new CollectorRegistry();
     private Server server;
+    private final CachingStatsProvider cachingStatsProvider;
+
+    public PrometheusMetricsProvider() {
+        this.cachingStatsProvider = new CachingStatsProvider(
+            new StatsProvider() {
+                @Override
+                public void start(Configuration conf) {
+                    // nop
+                }
+
+                @Override
+                public void stop() {
+                    // nop
+                }
+
+                @Override
+                public StatsLogger getStatsLogger(String scope) {
+                    return new PrometheusStatsLogger(registry, scope);
+                }
+            }
+        );
+    }
 
     @Override
     public void start(Configuration conf) {
@@ -79,7 +102,7 @@ public class PrometheusMetricsProvider implements StatsProvider {
 
     @Override
     public StatsLogger getStatsLogger(String scope) {
-        return new PrometheusStatsLogger(registry, scope);
+        return this.cachingStatsProvider.getStatsLogger(scope);
     }
 
     private static final Logger log = LoggerFactory.getLogger(PrometheusMetricsProvider.class);

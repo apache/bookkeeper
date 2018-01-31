@@ -3157,15 +3157,16 @@ public class BookieShell implements Tool {
         final MutableBoolean entryFound = new MutableBoolean(false);
         scanEntryLog(logId, new EntryLogScanner() {
             @Override
-            public boolean accept(long ledgerId) {
-                return (((!entryFound.booleanValue()) || (entryId == -1)));
+            public boolean accept(long candidateLedgerId) {
+                return ((candidateLedgerId == ledgerId) && ((!entryFound.booleanValue()) || (entryId == -1)));
             }
 
             @Override
-            public void process(long ledgerId, long startPos, ByteBuf entry) {
+            public void process(long candidateLedgerId, long startPos, ByteBuf entry) {
                 long entrysLedgerId = entry.getLong(entry.readerIndex());
                 long entrysEntryId = entry.getLong(entry.readerIndex() + 8);
-                if ((ledgerId == entrysLedgerId) && ((entrysEntryId == entryId)) || (entryId == -1)) {
+                if ((candidateLedgerId == entrysLedgerId) && (candidateLedgerId == ledgerId)
+                        && ((entrysEntryId == entryId) || (entryId == -1))) {
                     entryFound.setValue(true);
                     formatEntry(startPos, entry, printMsg);
                 }

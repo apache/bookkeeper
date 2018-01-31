@@ -15,9 +15,12 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-package org.apache.bookkeeper.tests
+package org.apache.bookkeeper.tests.backwardcompat
 
 import com.github.dockerjava.api.DockerClient
+
+import org.apache.bookkeeper.tests.BookKeeperClusterUtils
+import org.apache.bookkeeper.tests.MavenClassLoader
 
 import org.jboss.arquillian.junit.Arquillian
 import org.jboss.arquillian.test.api.ArquillianResource
@@ -49,44 +52,47 @@ class TestCompatUpgradeDirect {
         Assert.assertTrue(BookKeeperClusterUtils.startAllBookiesWithVersion(docker, "4.1.0"))
         def v410CL = MavenClassLoader.forBookKeeperVersion("4.1.0")
         def v410BK = v410CL.newBookKeeper(zookeeper)
-
-        def ledger0 = v410BK.createLedger(3, 2,
-                                          v410CL.digestType("CRC32"),
-                                          PASSWD)
-        for (int i = 0; i < numEntries; i++) {
-            ledger0.addEntry(("foobar" + i).getBytes())
-        }
-        ledger0.close()
-
-        // Current client shouldn't be able to write to 4.1.0 server
         def currentCL = MavenClassLoader.forBookKeeperVersion(currentVersion)
         def currentBK = currentCL.newBookKeeper(zookeeper)
-        def ledger1 = currentBK.createLedger(3, 2, currentCL.digestType("CRC32"), PASSWD)
         try {
-            ledger1.addEntry("foobar".getBytes())
+            def ledger0 = v410BK.createLedger(3, 2,
+                                              v410CL.digestType("CRC32"),
+                                              PASSWD)
+            for (int i = 0; i < numEntries; i++) {
+                ledger0.addEntry(("foobar" + i).getBytes())
+            }
+            ledger0.close()
 
-            Assert.fail("Shouldn't have been able to write")
-        } catch (Exception e) {
-            // correct behaviour
+            // Current client shouldn't be able to write to 4.1.0 server
+            def ledger1 = currentBK.createLedger(3, 2, currentCL.digestType("CRC32"), PASSWD)
+            try {
+                ledger1.addEntry("foobar".getBytes())
+
+                Assert.fail("Shouldn't have been able to write")
+            } catch (Exception e) {
+                // correct behaviour
+            }
+
+            Assert.assertTrue(BookKeeperClusterUtils.stopAllBookies(docker))
+            Assert.assertTrue(BookKeeperClusterUtils.startAllBookiesWithVersion(docker, currentVersion))
+
+            // check that old client can read its old ledgers on new server
+            def ledger2 = v410BK.openLedger(ledger0.getId(), v410CL.digestType("CRC32"), PASSWD)
+            Assert.assertEquals(numEntries, ledger2.getLastAddConfirmed() + 1 /* counts from 0 */)
+            def entries = ledger2.readEntries(0, ledger2.getLastAddConfirmed())
+            int j = 0
+            while (entries.hasMoreElements()) {
+                def e = entries.nextElement()
+                Assert.assertEquals(new String(e.getEntry()), "foobar"+ j)
+                j++
+            }
+            ledger2.close()
+        } finally {
+            currentBK.close()
+            currentCL.close()
+            v410BK.close()
+            v410CL.close()
         }
-
-        Assert.assertTrue(BookKeeperClusterUtils.stopAllBookies(docker))
-        Assert.assertTrue(BookKeeperClusterUtils.startAllBookiesWithVersion(docker, currentVersion))
-
-        // check that old client can read its old ledgers on new server
-        def ledger2 = v410BK.openLedger(ledger0.getId(), v410CL.digestType("CRC32"), PASSWD)
-        Assert.assertEquals(numEntries, ledger2.getLastAddConfirmed() + 1 /* counts from 0 */)
-        def entries = ledger2.readEntries(0, ledger2.getLastAddConfirmed())
-        int j = 0
-        while (entries.hasMoreElements()) {
-            def e = entries.nextElement()
-            Assert.assertEquals(new String(e.getEntry()), "foobar"+ j)
-            j++
-        }
-        ledger2.close()
-
-        v410BK.close()
-        currentBK.close()
     }
 
     @Test
@@ -96,27 +102,30 @@ class TestCompatUpgradeDirect {
 
         def currentCL = MavenClassLoader.forBookKeeperVersion(currentVersion)
         def currentBK = currentCL.newBookKeeper(zookeeper)
-
-        def numEntries = 5
-        def ledger0 = currentBK.createLedger(3, 2,
-                                             currentCL.digestType("CRC32"),
-                                             PASSWD)
-        for (int i = 0; i < numEntries; i++) {
-            ledger0.addEntry(("foobar" + i).getBytes())
-        }
-        ledger0.close()
-
         def v410CL = MavenClassLoader.forBookKeeperVersion("4.1.0")
         def v410BK = v410CL.newBookKeeper(zookeeper)
 
         try {
-            def ledger1 = v410BK.openLedger(ledger0.getId(), v410CL.digestType("CRC32"), PASSWD)
-            Assert.fail("Shouldn't have been able to open")
-        } catch (Exception e) {
-            // correct behaviour
-        }
+            def numEntries = 5
+            def ledger0 = currentBK.createLedger(3, 2,
+                                                 currentCL.digestType("CRC32"),
+                                                 PASSWD)
+            for (int i = 0; i < numEntries; i++) {
+                ledger0.addEntry(("foobar" + i).getBytes())
+            }
+            ledger0.close()
 
-        currentBK.close()
-        v410BK.close()
+            try {
+                def ledger1 = v410BK.openLedger(ledger0.getId(), v410CL.digestType("CRC32"), PASSWD)
+                Assert.fail("Shouldn't have been able to open")
+            } catch (Exception e) {
+                // correct behaviour
+            }
+        } finally {
+            v410BK.close()
+            v410CL.close()
+            currentBK.close()
+            currentCL.close()
+        }
     }
 }

@@ -15,9 +15,12 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-package org.apache.bookkeeper.tests
+package org.apache.bookkeeper.tests.backwardcompat
 
 import com.github.dockerjava.api.DockerClient
+
+import org.apache.bookkeeper.tests.BookKeeperClusterUtils
+import org.apache.bookkeeper.tests.MavenClassLoader
 
 import org.jboss.arquillian.junit.Arquillian
 import org.jboss.arquillian.test.api.ArquillianResource
@@ -55,38 +58,42 @@ class TestCompatHierarchicalLedgerManager {
         Assert.assertTrue(BookKeeperClusterUtils.startAllBookiesWithVersion(docker, "4.2.0"))
 
         String zookeeper = BookKeeperClusterUtils.zookeeperConnectString(docker)
-        int numEntries = 10
+
         def v420CL = MavenClassLoader.forBookKeeperVersion("4.2.0")
         def v420BK = v420CL.newBookKeeper(zookeeper)
-
-        def ledger0 = v420BK.createLedger(3, 2, v420CL.digestType("CRC32"), PASSWD)
-        for (int i = 0; i < numEntries; i++) {
-            ledger0.addEntry(("foobar" + i).getBytes())
-        }
-        ledger0.close()
-
-        Assert.assertTrue(BookKeeperClusterUtils.stopAllBookies(docker))
-
-        BookKeeperClusterUtils.updateAllBookieConf(docker, currentVersion,
-                                                   "ledgerManagerFactoryClass",
-                                                   "org.apache.bookkeeper.meta.HierarchicalLedgerManagerFactory")
-        Assert.assertTrue(BookKeeperClusterUtils.startAllBookiesWithVersion(docker, currentVersion))
-
         def currentCL = MavenClassLoader.forBookKeeperVersion(currentVersion)
         def currentBK = currentCL.newBookKeeper(zookeeper)
+        try {
+            int numEntries = 10
 
-        def ledger1 = currentBK.openLedger(ledger0.getId(), currentCL.digestType("CRC32"), PASSWD)
-        Assert.assertEquals(numEntries, ledger1.getLastAddConfirmed() + 1 /* counts from 0 */)
-        def entries = ledger1.readEntries(0, ledger1.getLastAddConfirmed())
-        int j = 0
-        while (entries.hasMoreElements()) {
-            def e = entries.nextElement()
-            Assert.assertEquals(new String(e.getEntry()), "foobar"+ j)
-            j++
+            def ledger0 = v420BK.createLedger(3, 2, v420CL.digestType("CRC32"), PASSWD)
+            for (int i = 0; i < numEntries; i++) {
+                ledger0.addEntry(("foobar" + i).getBytes())
+            }
+            ledger0.close()
+
+            Assert.assertTrue(BookKeeperClusterUtils.stopAllBookies(docker))
+
+            BookKeeperClusterUtils.updateAllBookieConf(docker, currentVersion,
+                                                       "ledgerManagerFactoryClass",
+                                                       "org.apache.bookkeeper.meta.HierarchicalLedgerManagerFactory")
+            Assert.assertTrue(BookKeeperClusterUtils.startAllBookiesWithVersion(docker, currentVersion))
+
+            def ledger1 = currentBK.openLedger(ledger0.getId(), currentCL.digestType("CRC32"), PASSWD)
+            Assert.assertEquals(numEntries, ledger1.getLastAddConfirmed() + 1 /* counts from 0 */)
+            def entries = ledger1.readEntries(0, ledger1.getLastAddConfirmed())
+            int j = 0
+            while (entries.hasMoreElements()) {
+                def e = entries.nextElement()
+                Assert.assertEquals(new String(e.getEntry()), "foobar"+ j)
+                j++
+            }
+            ledger1.close()
+        } finally {
+            currentBK.close()
+            currentCL.close()
+            v420BK.close()
+            v420CL.close()
         }
-        ledger1.close()
-
-        v420BK.close()
-        currentBK.close()
     }
 }
