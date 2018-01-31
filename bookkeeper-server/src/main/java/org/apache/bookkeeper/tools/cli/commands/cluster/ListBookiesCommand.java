@@ -25,6 +25,8 @@ import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.google.common.collect.Lists;
 import java.util.List;
+import lombok.Setter;
+import lombok.experimental.Accessors;
 import org.apache.bookkeeper.discover.RegistrationClient;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.tools.cli.helpers.DiscoveryCommand;
@@ -32,6 +34,8 @@ import org.apache.bookkeeper.tools.cli.helpers.DiscoveryCommand;
 /**
  * Command to list available bookies.
  */
+@Accessors(fluent = true)
+@Setter
 @Parameters(commandDescription = "List the bookies, which are running as either readwrite or readonly mode.")
 public class ListBookiesCommand extends DiscoveryCommand {
 

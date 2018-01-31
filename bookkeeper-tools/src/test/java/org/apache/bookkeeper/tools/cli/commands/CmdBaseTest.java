@@ -64,7 +64,7 @@ public class CmdBaseTest {
 
         CmdTest(ServerConfiguration conf, JCommander commander, SubCommand subCommand) {
             super("test", conf, commander);
-            addSubCommand(new SubCommand());
+            addSubCommand(subCommand);
         }
     }
 

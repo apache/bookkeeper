@@ -23,6 +23,8 @@ import static org.apache.bookkeeper.common.concurrent.FutureUtils.result;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import java.util.concurrent.TimeUnit;
+import lombok.Setter;
+import lombok.experimental.Accessors;
 import org.apache.bookkeeper.client.api.BookKeeper;
 import org.apache.bookkeeper.client.api.DigestType;
 import org.apache.bookkeeper.client.api.WriteHandle;
@@ -31,6 +33,8 @@ import org.apache.bookkeeper.tools.cli.helpers.ClientCommand;
 /**
  * A client command that simply tests if a cluster is healthy.
  */
+@Accessors(fluent = true)
+@Setter
 @Parameters(commandDescription = "Simple test to create a ledger and write entries to it.")
 public class SimpleTestCommand extends ClientCommand {
 

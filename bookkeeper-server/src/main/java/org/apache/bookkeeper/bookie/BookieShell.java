@@ -97,6 +97,9 @@ import org.apache.bookkeeper.proto.BookieClient;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.replication.AuditorElector;
 import org.apache.bookkeeper.stats.NullStatsLogger;
+import org.apache.bookkeeper.tools.cli.commands.bookie.LastMarkCommand;
+import org.apache.bookkeeper.tools.cli.commands.client.SimpleTestCommand;
+import org.apache.bookkeeper.tools.cli.commands.cluster.ListBookiesCommand;
 import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.util.DiskChecker;
 import org.apache.bookkeeper.util.EntryFormatter;
@@ -1065,33 +1068,18 @@ public class BookieShell implements Tool {
 
         @Override
         public int runCmd(CommandLine cmdLine) throws Exception {
-            byte[] data = new byte[100]; // test data
-
             int ensemble = getOptionIntValue(cmdLine, "ensemble", 3);
             int writeQuorum = getOptionIntValue(cmdLine, "writeQuorum", 2);
             int ackQuorum = getOptionIntValue(cmdLine, "ackQuorum", 2);
             int numEntries = getOptionIntValue(cmdLine, "numEntries", 1000);
 
-            ClientConfiguration conf = new ClientConfiguration();
-            conf.addConfiguration(bkConf);
-            BookKeeper bk = new BookKeeper(conf);
-            LedgerHandle lh = bk.createLedger(ensemble, writeQuorum, ackQuorum,
-                    BookKeeper.DigestType.MAC, new byte[0]);
-            System.out.println("Ledger ID: " + lh.getId());
-            long lastReport = System.nanoTime();
-            for (int i = 0; i < numEntries; i++) {
-                lh.addEntry(data);
-                if (TimeUnit.SECONDS.convert(System.nanoTime() - lastReport,
-                        TimeUnit.NANOSECONDS) > 1) {
-                    System.out.println(i + " entries written");
-                    lastReport = System.nanoTime();
-                }
-            }
+            SimpleTestCommand command = new SimpleTestCommand()
+                .ensembleSize(ensemble)
+                .writeQuorumSize(writeQuorum)
+                .ackQuorumSize(ackQuorum)
+                .numEntries(numEntries);
 
-            lh.close();
-            bk.close();
-            System.out.println(numEntries + " entries written to ledger " + lh.getId());
-
+            command.run(bkConf);
             return 0;
         }
 
@@ -1438,7 +1426,8 @@ public class BookieShell implements Tool {
 
         @Override
         public int runCmd(CommandLine c) throws Exception {
-            printLastLogMark();
+            LastMarkCommand command = new LastMarkCommand();
+            command.run(bkConf);
             return 0;
         }
 
@@ -1482,29 +1471,11 @@ public class BookieShell implements Tool {
                 printUsage();
                 return 1;
             }
-            ClientConfiguration clientConf = new ClientConfiguration(bkConf);
-            clientConf.setZkServers(bkConf.getZkServers());
-            BookKeeperAdmin bka = new BookKeeperAdmin(clientConf);
 
-            int count = 0;
-            Collection<BookieSocketAddress> bookies = new ArrayList<BookieSocketAddress>();
-            if (cmdLine.hasOption("rw")) {
-                Collection<BookieSocketAddress> availableBookies = bka
-                        .getAvailableBookies();
-                bookies.addAll(availableBookies);
-            } else if (cmdLine.hasOption("ro")) {
-                Collection<BookieSocketAddress> roBookies = bka
-                        .getReadOnlyBookies();
-                bookies.addAll(roBookies);
-            }
-            for (BookieSocketAddress b : bookies) {
-                System.out.println(getBookieSocketAddrStringRepresentation(b));
-                count++;
-            }
-            if (count == 0) {
-                System.err.println("No bookie exists!");
-                return 1;
-            }
+            ListBookiesCommand command = new ListBookiesCommand()
+                .readwrite(readwrite)
+                .readonly(readonly);
+            command.run(bkConf);
             return 0;
         }
 
