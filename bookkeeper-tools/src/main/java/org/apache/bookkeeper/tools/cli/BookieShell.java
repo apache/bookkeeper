@@ -116,7 +116,7 @@ public class BookieShell {
         this.config = new ServerConfiguration();
     }
 
-    void setupShell() {
+    boolean setupShell() {
         for (Entry<String, Class> entry : commandMap.entrySet()) {
             try {
                 Object obj = newCommandInstance(entry.getValue(), config);
@@ -127,9 +127,10 @@ public class BookieShell {
             } catch (Exception e) {
                 System.err.println("Fail to load sub command '" + entry.getKey() + "' : " + e.getMessage());
                 e.printStackTrace();
-                System.exit(1);
+                return false;
             }
         }
+        return true;
     }
 
     @VisibleForTesting
@@ -138,7 +139,11 @@ public class BookieShell {
     }
 
     boolean run(String[] args) {
-        setupShell();
+        if (!setupShell()) {
+            // fail to setup the shell, fail this command.
+            return false;
+        }
+
         if (args.length == 0) {
             commander.usage();
             return false;
