@@ -27,6 +27,15 @@ Client Guide | API docs
 
 ## News
 
+### 30 January, 2018: Release 4.6.1 available
+
+This is the eighth release of BookKeeper as an Apache Top Level Project!
+
+The 4.6.1 release is a bugfix release.
+
+See [BookKeeper 4.6.1 Release Notes](../docs/4.6.1/overview/releaseNotes) for details.
+
+
 ### 27 December, 2017: Release 4.6.0 available
 
 This is the seventh release of BookKeeper as an Apache Top Level Project!

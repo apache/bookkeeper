@@ -22,10 +22,13 @@ package org.apache.bookkeeper.proto;
 
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.BOOKIE_SCOPE;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.SERVER_SCOPE;
+import static org.apache.bookkeeper.conf.AbstractConfiguration.PERMITTED_STARTUP_USERS;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.io.IOException;
 import java.net.UnknownHostException;
+import java.security.AccessControlException;
+import java.util.Arrays;
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieCriticalThread;
 import org.apache.bookkeeper.bookie.BookieException;
@@ -77,6 +80,7 @@ public class BookieServer {
             throws IOException, KeeperException, InterruptedException,
             BookieException, UnavailableException, CompatibilityException, SecurityException {
         this.conf = conf;
+        validateUser(conf);
         this.statsLogger = statsLogger;
         this.nettyServer = new BookieNettyServer(this.conf, null);
         try {
@@ -158,6 +162,28 @@ public class BookieServer {
         this.requestProcessor.close();
         running = false;
     }
+
+    /**
+     * Ensure the current user can start-up the process if it's restricted.
+     */
+    private void validateUser(ServerConfiguration conf) throws AccessControlException {
+        if (conf.containsKey(PERMITTED_STARTUP_USERS)) {
+            String currentUser = System.getProperty("user.name");
+            String[] propertyValue = conf.getPermittedStartupUsers();
+            for (String s : propertyValue) {
+                if (s.equals(currentUser)) {
+                    return;
+                }
+            }
+            String errorMsg =
+                    "System cannot start because current user isn't in permittedStartupUsers."
+                            + " Current user: " + currentUser + " permittedStartupUsers: "
+                            + Arrays.toString(propertyValue);
+            LOG.error(errorMsg);
+            throw new AccessControlException(errorMsg);
+        }
+    }
+
 
     public boolean isRunning() {
         return bookie.isRunning() && nettyServer.isRunning() && running;
