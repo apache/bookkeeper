@@ -674,12 +674,26 @@ public class BookieShell implements Tool {
                 printUsage();
                 return -1;
             }
-            if (printMeta) {
-                // print meta
-                readLedgerMeta(ledgerId);
+
+            if (bkConf.getLedgerStorageClass().equals(DbLedgerStorage.class.getName())) {
+                // dump ledger info
+                try {
+                    DbLedgerStorage.readLedgerIndexEntries(ledgerId, bkConf,
+                            (currentEntry, entryLogId, position) -> System.out.println(
+                                    "entry " + currentEntry + "\t:\t(log: " + entryLogId + ", pos: " + position + ")"));
+                } catch (IOException e) {
+                    System.err.printf("ERROR: initializing dbLedgerStorage %s", e.getMessage());
+                    return -1;
+                }
+            } else {
+                if (printMeta) {
+                    // print meta
+                    readLedgerMeta(ledgerId);
+                }
+                // dump ledger info
+                readLedgerIndexEntries(ledgerId);
             }
-            // dump ledger info
-            readLedgerIndexEntries(ledgerId);
+
             return 0;
         }
 
@@ -3002,7 +3016,7 @@ public class BookieShell implements Tool {
     }
 
     /**
-     * Read ledger index entires.
+     * Read ledger index entries.
      *
      * @param ledgerId Ledger Id
      * @throws IOException
