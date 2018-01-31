@@ -18,6 +18,7 @@
 package org.apache.bookkeeper.stats.twitter.finagle;
 
 import com.twitter.finagle.stats.StatsReceiver;
+import org.apache.bookkeeper.stats.CachingStatsProvider;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.stats.StatsProvider;
 import org.apache.commons.configuration.Configuration;
@@ -29,9 +30,28 @@ import org.apache.commons.configuration.Configuration;
  */
 public class FinagleStatsProvider implements StatsProvider {
     private final StatsReceiver stats;
+    private final CachingStatsProvider cachingStatsProvider;
 
     public FinagleStatsProvider(final StatsReceiver stats) {
         this.stats = stats;
+        this.cachingStatsProvider = new CachingStatsProvider(
+            new StatsProvider() {
+                @Override
+                public void start(Configuration conf) {
+                    // nop
+                }
+
+                @Override
+                public void stop() {
+                    // nop
+                }
+
+                @Override
+                public StatsLogger getStatsLogger(String scope) {
+                    return new FinagleStatsLoggerImpl(stats.scope(scope));
+                }
+            }
+        );
     }
 
     @Override
@@ -42,6 +62,6 @@ public class FinagleStatsProvider implements StatsProvider {
 
     @Override
     public StatsLogger getStatsLogger(final String scope) {
-        return new FinagleStatsLoggerImpl(this.stats.scope(scope));
+        return this.cachingStatsProvider.getStatsLogger(scope);
     }
 }

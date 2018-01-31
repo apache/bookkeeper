@@ -168,14 +168,6 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     protected static final String HTTP_SERVER_ENABLED = "httpServerEnabled";
     protected static final String HTTP_SERVER_PORT = "httpServerPort";
 
-    // TLS parameters
-    protected static final String TLS_KEYSTORE_TYPE = "tlsKeyStoreType";
-    protected static final String TLS_KEYSTORE = "tlsKeyStore";
-    protected static final String TLS_KEYSTORE_PASSWORD_PATH = "tlsKeyStorePasswordPath";
-    protected static final String TLS_TRUSTSTORE_TYPE = "tlsTrustStoreType";
-    protected static final String TLS_TRUSTSTORE = "tlsTrustStore";
-    protected static final String TLS_TRUSTSTORE_PASSWORD_PATH = "tlsTrustStorePasswordPath";
-
     // Lifecycle Components
     protected static final String EXTRA_SERVER_COMPONENTS = "extraServerComponents";
 
@@ -2331,7 +2323,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     /**
      * Set the keystore path for the client.
      *
-     * @return ServerConfiguration
+     * @return
      */
     public ServerConfiguration setTLSKeyStore(String arg) {
         setProperty(TLS_KEYSTORE, arg);
@@ -2412,6 +2404,25 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      */
     public ServerConfiguration setTLSTrustStorePasswordPath(String arg) {
         setProperty(TLS_TRUSTSTORE_PASSWORD_PATH, arg);
+        return this;
+    }
+
+    /**
+     * Get the path to file containing TLS Certificate.
+     *
+     * @return
+     */
+    public String getTLSCertificatePath() {
+        return getString(TLS_CERTIFICATE_PATH, null);
+    }
+
+    /**
+     * Set the path to file containing TLS Certificate.
+     *
+     * @return
+     */
+    public ServerConfiguration setTLSCertificatePath(String arg) {
+        setProperty(TLS_CERTIFICATE_PATH, arg);
         return this;
     }
 
