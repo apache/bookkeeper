@@ -40,6 +40,11 @@
   <profiles>
     <profile>
       <id>docker</id>
+      <activation>
+        <property>
+          <name>integrationTests</name>
+        </property>
+      </activation>
       <build>
         <plugins>
           <plugin>

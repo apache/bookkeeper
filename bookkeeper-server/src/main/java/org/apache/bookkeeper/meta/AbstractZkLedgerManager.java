@@ -63,7 +63,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Abstract ledger manager based on zookeeper, which provides common methods such as query zk nodes.
  */
-abstract class AbstractZkLedgerManager implements LedgerManager, Watcher {
+public abstract class AbstractZkLedgerManager implements LedgerManager, Watcher {
 
     private static final Logger LOG = LoggerFactory.getLogger(AbstractZkLedgerManager.class);
 
@@ -79,6 +79,9 @@ abstract class AbstractZkLedgerManager implements LedgerManager, Watcher {
     // we use this to prevent long stack chains from building up in callbacks
     protected ScheduledExecutorService scheduler;
 
+    /**
+     * ReadLedgerMetadataTask class.
+     */
     protected class ReadLedgerMetadataTask implements Runnable, GenericCallback<LedgerMetadata> {
 
         final long ledgerId;
@@ -463,7 +466,10 @@ abstract class AbstractZkLedgerManager implements LedgerManager, Watcher {
         ZkUtils.getChildrenInSingleNode(zk, path, new GenericCallback<List<String>>() {
             @Override
             public void operationComplete(int rc, List<String> ledgerNodes) {
-                if (Code.OK.intValue() != rc) {
+                if (Code.NONODE.intValue() == rc) {
+                    finalCb.processResult(successRc, null, ctx);
+                    return;
+                } else if (Code.OK.intValue() != rc) {
                     finalCb.processResult(failureRc, null, ctx);
                     return;
                 }
@@ -496,15 +502,39 @@ abstract class AbstractZkLedgerManager implements LedgerManager, Watcher {
      *          Znode Name
      * @return true  if the znode is a special znode otherwise false
      */
-     protected static boolean isSpecialZnode(String znode) {
+     public static boolean isSpecialZnode(String znode) {
         if (BookKeeperConstants.AVAILABLE_NODE.equals(znode)
                 || BookKeeperConstants.COOKIE_NODE.equals(znode)
                 || BookKeeperConstants.LAYOUT_ZNODE.equals(znode)
                 || BookKeeperConstants.INSTANCEID.equals(znode)
-                || BookKeeperConstants.UNDER_REPLICATION_NODE.equals(znode)) {
+                || BookKeeperConstants.UNDER_REPLICATION_NODE.equals(znode)
+                || LegacyHierarchicalLedgerManager.IDGEN_ZNODE.equals(znode)
+                || LongHierarchicalLedgerManager.IDGEN_ZNODE.equals(znode)
+                || znode.startsWith(ZkLedgerIdGenerator.LEDGER_ID_GEN_PREFIX)) {
             return true;
         }
         return false;
+    }
+
+    /**
+     * regex expression for name of top level parent znode for ledgers (in
+     * HierarchicalLedgerManager) or znode of a ledger (in FlatLedgerManager).
+     *
+     * @return
+     */
+    protected abstract String getLedgerParentNodeRegex();
+
+    /**
+     * whether the child of ledgersRootPath is a top level parent znode for
+     * ledgers (in HierarchicalLedgerManager) or znode of a ledger (in
+     * FlatLedgerManager).
+     *
+     * @param znode
+     *            Znode Name
+     * @return
+     */
+    public boolean isLedgerParentNode(String znode) {
+        return znode.matches(getLedgerParentNodeRegex());
     }
 
     /**

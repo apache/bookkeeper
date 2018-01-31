@@ -51,6 +51,43 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
     // Passwd
     protected static final String PASSWD = "passwd";
 
+    // Client TLS (@deprecated since 4.7.0)
+    /**
+     * @deprecated Use {@link #TLS_KEYSTORE_TYPE}
+     */
+    @Deprecated
+    protected static final String CLIENT_TLS_KEYSTORE_TYPE = "clientKeyStoreType";
+
+    /**
+     * @deprecated Use {@link #TLS_KEYSTORE}
+     */
+    @Deprecated
+    protected static final String CLIENT_TLS_KEYSTORE = "clientKeyStore";
+
+    /**
+     * @deprecated Use {@link #TLS_KEYSTORE_PASSWORD_PATH}
+     */
+    @Deprecated
+    protected static final String CLIENT_TLS_KEYSTORE_PASSWORD_PATH = "clientKeyStorePasswordPath";
+
+    /**
+     * @deprecated Use {@link #TLS_TRUSTSTORE_TYPE}
+     */
+    @Deprecated
+    protected static final String CLIENT_TLS_TRUSTSTORE_TYPE = "clientTrustStoreType";
+
+    /**
+     * @deprecated Use {@link #TLS_TRUSTSTORE}
+     */
+    @Deprecated
+    protected static final String CLIENT_TLS_TRUSTSTORE = "clientTrustStore";
+
+    /**
+     * @deprecated Use {@link #TLS_TRUSTSTORE_PASSWORD_PATH}
+     */
+    @Deprecated
+    protected static final String CLIENT_TLS_TRUSTSTORE_PASSWORD_PATH = "clientTrustStorePasswordPath";
+
     // NIO Parameters
     protected static final String CLIENT_TCP_NODELAY = "clientTcpNoDelay";
     protected static final String CLIENT_SOCK_KEEPALIVE = "clientSockKeepalive";
@@ -79,6 +116,7 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
     protected static final String REORDER_READ_SEQUENCE_ENABLED = "reorderReadSequenceEnabled";
     // Add Parameters
     protected static final String DELAY_ENSEMBLE_CHANGE = "delayEnsembleChange";
+    protected static final String MAX_ALLOWED_ENSEMBLE_CHANGES = "maxNumEnsembleChanges";
     // Timeout Setting
     protected static final String ADD_ENTRY_TIMEOUT_SEC = "addEntryTimeoutSec";
     protected static final String ADD_ENTRY_QUORUM_TIMEOUT_SEC = "addEntryQuorumTimeoutSec";
@@ -144,14 +182,6 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
 
     // Client auth provider factory class name. It must be configured on Bookies to for the Auditor
     protected static final String CLIENT_AUTH_PROVIDER_FACTORY_CLASS = "clientAuthProviderFactoryClass";
-
-    // Client TLS
-    protected static final String TLS_KEYSTORE_TYPE = "clientKeyStoreType";
-    protected static final String TLS_KEYSTORE = "clientKeyStore";
-    protected static final String TLS_KEYSTORE_PASSWORD_PATH = "clientKeyStorePasswordPath";
-    protected static final String TLS_TRUSTSTORE_TYPE = "clientTrustStoreType";
-    protected static final String TLS_TRUSTSTORE = "clientTrustStore";
-    protected static final String TLS_TRUSTSTORE_PASSWORD_PATH = "clientTrustStorePasswordPath";
 
     // Registration Client
     protected static final String REGISTRATION_CLIENT_CLASS = "registrationClientClass";
@@ -1419,7 +1449,7 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
      * @return
      */
     public String getTLSKeyStoreType() {
-        return getString(TLS_KEYSTORE_TYPE, "JKS");
+        return getString(CLIENT_TLS_KEYSTORE_TYPE, getString(TLS_KEYSTORE_TYPE, "JKS"));
     }
 
 
@@ -1439,7 +1469,7 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
      * @return
      */
     public String getTLSKeyStore() {
-        return getString(TLS_KEYSTORE, null);
+        return getString(CLIENT_TLS_KEYSTORE, getString(TLS_KEYSTORE, null));
     }
 
     /**
@@ -1458,7 +1488,7 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
      * @return
      */
     public String getTLSKeyStorePasswordPath() {
-        return getString(TLS_KEYSTORE_PASSWORD_PATH, null);
+        return getString(CLIENT_TLS_KEYSTORE_PASSWORD_PATH, getString(TLS_KEYSTORE_PASSWORD_PATH, null));
     }
 
     /**
@@ -1477,7 +1507,7 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
      * @return
      */
     public String getTLSTrustStoreType() {
-        return getString(TLS_TRUSTSTORE_TYPE, "JKS");
+        return getString(CLIENT_TLS_TRUSTSTORE_TYPE, getString(TLS_TRUSTSTORE_TYPE, "JKS"));
     }
 
     /**
@@ -1496,7 +1526,7 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
      * @return
      */
     public String getTLSTrustStore() {
-        return getString(TLS_TRUSTSTORE, null);
+        return getString(CLIENT_TLS_TRUSTSTORE, getString(TLS_TRUSTSTORE, null));
     }
 
     /**
@@ -1516,7 +1546,7 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
      * @return
      */
     public String getTLSTrustStorePasswordPath() {
-        return getString(TLS_TRUSTSTORE_PASSWORD_PATH, null);
+        return getString(CLIENT_TLS_TRUSTSTORE_PASSWORD_PATH, getString(TLS_TRUSTSTORE_PASSWORD_PATH, null));
     }
 
     /**
@@ -1526,6 +1556,25 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
      */
     public ClientConfiguration setTLSTrustStorePasswordPath(String arg) {
         setProperty(TLS_TRUSTSTORE_PASSWORD_PATH, arg);
+        return this;
+    }
+
+    /**
+     * Get the path to file containing TLS Certificate.
+     *
+     * @return
+     */
+    public String getTLSCertificatePath() {
+        return getString(TLS_CERTIFICATE_PATH, null);
+    }
+
+    /**
+     * Set the path to file containing TLS Certificate.
+     *
+     * @return
+     */
+    public ClientConfiguration setTLSCertificatePath(String arg) {
+        setProperty(TLS_CERTIFICATE_PATH, arg);
         return this;
     }
 
@@ -1618,6 +1667,26 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
         return this;
     }
 
+    /**
+     * Get the max allowed ensemble change number.
+     *
+     * @return value of MaxAllowedEnsembleChanges, default MAX_VALUE, indicating feature is disable.
+     */
+    public int getMaxAllowedEnsembleChanges() {
+        return getInt(MAX_ALLOWED_ENSEMBLE_CHANGES, Integer.MAX_VALUE);
+    }
+
+    /**
+     * Set the max allowed ensemble change number.
+     *
+     * @param num
+     *          value of MaxAllowedEnsembleChanges
+     * @return client configuration.
+     */
+    public ClientConfiguration setMaxAllowedEnsembleChanges(int num) {
+        setProperty(MAX_ALLOWED_ENSEMBLE_CHANGES, num);
+        return this;
+    }
 
     /**
      * Option to use Netty Pooled ByteBufs.

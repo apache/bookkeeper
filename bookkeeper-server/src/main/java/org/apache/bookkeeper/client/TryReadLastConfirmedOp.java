@@ -19,10 +19,10 @@ package org.apache.bookkeeper.client;
 
 import io.netty.buffer.ByteBuf;
 
-import org.apache.bookkeeper.client.DigestManager.RecoveryData;
 import org.apache.bookkeeper.client.ReadLastConfirmedOp.LastConfirmedDataCallback;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
+import org.apache.bookkeeper.proto.checksum.DigestManager.RecoveryData;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -72,9 +72,9 @@ class TryReadLastConfirmedOp implements ReadEntryCallback {
                 RecoveryData recoveryData = lh.macManager.verifyDigestAndReturnLastConfirmed(buffer);
                 if (LOG.isTraceEnabled()) {
                     LOG.trace("Received lastAddConfirmed (lac={}, length={}) from bookie({}) for (lid={}).",
-                            recoveryData.lastAddConfirmed, recoveryData.length, bookieIndex, ledgerId);
+                            recoveryData.getLastAddConfirmed(), recoveryData.getLength(), bookieIndex, ledgerId);
                 }
-                if (recoveryData.lastAddConfirmed > maxRecoveredData.lastAddConfirmed) {
+                if (recoveryData.getLastAddConfirmed() > maxRecoveredData.getLastAddConfirmed()) {
                     maxRecoveredData = recoveryData;
                     // callback immediately
                     cb.readLastConfirmedDataComplete(BKException.Code.OK, maxRecoveredData);

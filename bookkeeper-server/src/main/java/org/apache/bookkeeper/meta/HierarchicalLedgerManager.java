@@ -118,4 +118,9 @@ class HierarchicalLedgerManager extends AbstractHierarchicalLedgerManager {
         }
 
     }
+
+    @Override
+    protected String getLedgerParentNodeRegex() {
+        return StringUtils.HIERARCHICAL_LEDGER_PARENT_NODE_REGEX;
+    }
 }

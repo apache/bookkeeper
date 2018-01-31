@@ -712,6 +712,7 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
         ledgers.add(4L);
         storage.setMasterKey(4, key);
         storage.addEntry(genEntry(4, 1, ENTRY_SIZE)); // force ledger 1 page to flush
+        storage.shutdown();
 
         storage = new InterleavedLedgerStorage();
         storage.initialize(

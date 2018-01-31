@@ -1035,6 +1035,9 @@ public class Bookie extends BookieCriticalThread {
             }
         } catch (InterruptedException ie) {
             LOG.error("Interrupted during shutting down bookie : ", ie);
+        } catch (Exception e) {
+            LOG.error("Got Exception while trying to shutdown Bookie", e);
+            throw e;
         } finally {
             // setting running to false here, so watch thread
             // in bookie server know it only after bookie shut down

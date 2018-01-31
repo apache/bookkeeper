@@ -112,7 +112,8 @@ class BookieWatcher {
         }
     }
 
-    public Set<BookieSocketAddress> getReadOnlyBookies() throws BKException {
+    public Set<BookieSocketAddress> getReadOnlyBookies()
+            throws BKException {
         try {
             return FutureUtils.result(registrationClient.getReadOnlyBookies(), EXCEPTION_FUNC).getValue();
         } catch (BKInterruptedException ie) {

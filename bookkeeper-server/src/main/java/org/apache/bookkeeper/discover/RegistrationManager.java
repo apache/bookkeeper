@@ -99,6 +99,17 @@ public interface RegistrationManager extends AutoCloseable {
     void unregisterBookie(String bookieId, boolean readOnly) throws BookieException;
 
     /**
+     * Checks if Bookie with the given BookieId is registered as readwrite or
+     * readonly bookie.
+     *
+     * @param bookieId bookie id
+     * @return returns true if a bookie with bookieid is currently registered as
+     *          readwrite or readonly bookie.
+     * @throws BookieException
+     */
+    boolean isBookieRegistered(String bookieId) throws BookieException;
+
+    /**
      * Write the cookie data, which will be used for verifying the integrity of the bookie environment.
      *
      * @param bookieId bookie id
@@ -135,16 +146,32 @@ public interface RegistrationManager extends AutoCloseable {
     /**
      * Prepare ledgers root node, availableNode, readonly node..
      *
-     * @param conf the conf
      * @return Returns true if old data exists, false if not.
      */
-    boolean prepareFormat(ServerConfiguration conf) throws Exception;
+    boolean prepareFormat() throws Exception;
+
+    /**
+     * Initializes new cluster by creating required znodes for the cluster. If
+     * ledgersrootpath is already existing then it will error out.
+     *
+     * @return returns true if new cluster is successfully created or false if it failed to initialize.
+     * @throws Exception
+     */
+    boolean initNewCluster() throws Exception;
 
     /**
      * Do format boolean.
      *
-     * @param conf the conf
      * @return Returns true if success do format, false if not.
      */
-    boolean format(ServerConfiguration conf) throws Exception;
+    boolean format() throws Exception;
+
+    /**
+     * Nukes existing cluster metadata.
+     *
+     * @return returns true if cluster metadata is successfully nuked
+     *          or false if it failed to nuke the cluster metadata.
+     * @throws Exception
+     */
+    boolean nukeExistingCluster() throws Exception;
 }

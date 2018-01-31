@@ -26,22 +26,36 @@ import static org.apache.bookkeeper.util.BookKeeperConstants.READONLY;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Charsets;
+
 import java.io.IOException;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
+
 import lombok.extern.slf4j.Slf4j;
+
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.BookieException.BookieIllegalOpException;
 import org.apache.bookkeeper.bookie.BookieException.CookieNotFoundException;
 import org.apache.bookkeeper.bookie.BookieException.MetadataStoreException;
+import org.apache.bookkeeper.client.BKException;
+import org.apache.bookkeeper.client.BKException.BKInterruptedException;
+import org.apache.bookkeeper.client.BKException.MetaStoreException;
+import org.apache.bookkeeper.common.concurrent.FutureUtils;
+import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LayoutManager;
+import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.ZkLayoutManager;
 import org.apache.bookkeeper.meta.ZkLedgerUnderreplicationManager;
+import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.util.ZkUtils;
@@ -59,6 +73,7 @@ import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.Watcher.Event.EventType;
 import org.apache.zookeeper.Watcher.Event.KeeperState;
 import org.apache.zookeeper.ZKUtil;
+import org.apache.zookeeper.ZooDefs.Ids;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.ACL;
 import org.apache.zookeeper.data.Stat;
@@ -68,6 +83,18 @@ import org.apache.zookeeper.data.Stat;
  */
 @Slf4j
 public class ZKRegistrationManager implements RegistrationManager {
+
+    private static final Function<Throwable, BKException> EXCEPTION_FUNC = cause -> {
+        if (cause instanceof BKException) {
+            log.error("Failed to get bookie list : ", cause);
+            return (BKException) cause;
+        } else if (cause instanceof InterruptedException) {
+            log.error("Interrupted reading bookie list : ", cause);
+            return new BKInterruptedException();
+        } else {
+            return new MetaStoreException();
+        }
+    };
 
     private ServerConfiguration conf;
     private ZooKeeper zk;
@@ -421,96 +448,168 @@ public class ZKRegistrationManager implements RegistrationManager {
     }
 
     @Override
-    public boolean prepareFormat(ServerConfiguration conf) throws Exception {
-        try (ZooKeeper zk = ZooKeeperClient.newBuilder()
-            .connectString(conf.getZkServers())
-            .sessionTimeoutMs(conf.getZkTimeout())
-            .build()) {
-
-            log.info("Formatting ZooKeeper metadata, ledger root path: {}", conf.getZkLedgersRootPath());
-            boolean ledgerRootExists = null != zk.exists(
-                conf.getZkLedgersRootPath(), false);
-            boolean availableNodeExists = null != zk.exists(
-                conf.getZkAvailableBookiesPath(), false);
-            List<ACL> zkAcls = ZkUtils.getACLs(conf);
-            // Create ledgers root node if not exists
-            if (!ledgerRootExists) {
-                zk.create(conf.getZkLedgersRootPath(), "".getBytes(Charsets.UTF_8),
-                    zkAcls, CreateMode.PERSISTENT);
-            }
-            // create available bookies node if not exists
-            if (!availableNodeExists) {
-                zk.create(conf.getZkAvailableBookiesPath(), "".getBytes(Charsets.UTF_8),
-                    zkAcls, CreateMode.PERSISTENT);
-            }
-
-            // create readonly bookies node if not exists
-            if (null == zk.exists(conf.getZkAvailableBookiesPath() + "/" + READONLY, false)) {
-                zk.create(
-                    conf.getZkAvailableBookiesPath() + "/" + READONLY,
-                    new byte[0],
-                    zkAcls,
-                    CreateMode.PERSISTENT);
-            }
-
-            return ledgerRootExists;
+    public boolean prepareFormat() throws Exception {
+        boolean ledgerRootExists = null != zk.exists(conf.getZkLedgersRootPath(), false);
+        boolean availableNodeExists = null != zk.exists(conf.getZkAvailableBookiesPath(), false);
+        List<ACL> zkAcls = ZkUtils.getACLs(conf);
+        // Create ledgers root node if not exists
+        if (!ledgerRootExists) {
+            zk.create(conf.getZkLedgersRootPath(), "".getBytes(Charsets.UTF_8), zkAcls, CreateMode.PERSISTENT);
         }
+        // create available bookies node if not exists
+        if (!availableNodeExists) {
+            zk.create(conf.getZkAvailableBookiesPath(), "".getBytes(Charsets.UTF_8), zkAcls, CreateMode.PERSISTENT);
+        }
+
+        // create readonly bookies node if not exists
+        if (null == zk.exists(conf.getZkAvailableBookiesPath() + "/" + READONLY, false)) {
+            zk.create(conf.getZkAvailableBookiesPath() + "/" + READONLY, new byte[0], zkAcls, CreateMode.PERSISTENT);
+        }
+
+        return ledgerRootExists;
     }
 
     @Override
-    public boolean format(ServerConfiguration conf) throws Exception {
-        // Clear underreplicated ledgers
-        try (ZooKeeper zk = ZooKeeperClient.newBuilder()
-            .connectString(conf.getZkServers())
-            .sessionTimeoutMs(conf.getZkTimeout())
-            .build()) {
-            try {
-                ZKUtil.deleteRecursive(zk, ZkLedgerUnderreplicationManager.getBasePath(conf.getZkLedgersRootPath())
-                    + BookKeeperConstants.DEFAULT_ZK_LEDGERS_ROOT_PATH);
-            } catch (KeeperException.NoNodeException e) {
-                if (log.isDebugEnabled()) {
-                    log.debug("underreplicated ledgers root path node not exists in zookeeper to delete");
-                }
-            }
+    public boolean initNewCluster() throws Exception {
+        String zkLedgersRootPath = conf.getZkLedgersRootPath();
+        String zkServers = conf.getZkServers();
+        String zkAvailableBookiesPath = conf.getZkAvailableBookiesPath();
+        log.info("Initializing ZooKeeper metadata for new cluster, ZKServers: {} ledger root path: {}", zkServers,
+                zkLedgersRootPath);
 
-            // Clear underreplicatedledger locks
-            try {
-                ZKUtil.deleteRecursive(zk, ZkLedgerUnderreplicationManager.getBasePath(conf.getZkLedgersRootPath())
-                    + '/' + BookKeeperConstants.UNDER_REPLICATION_LOCK);
-            } catch (KeeperException.NoNodeException e) {
-                if (log.isDebugEnabled()) {
-                    log.debug("underreplicatedledger locks node not exists in zookeeper to delete");
-                }
-            }
+        boolean ledgerRootExists = null != zk.exists(conf.getZkLedgersRootPath(), false);
 
-            // Clear the cookies
-            try {
-                ZKUtil.deleteRecursive(zk, conf.getZkLedgersRootPath()
-                    + "/cookies");
-            } catch (KeeperException.NoNodeException e) {
-                if (log.isDebugEnabled()) {
-                    log.debug("cookies node not exists in zookeeper to delete");
-                }
-            }
+        if (ledgerRootExists) {
+            log.error("Ledger root path: {} already exists", conf.getZkLedgersRootPath());
+            return false;
+        }
 
-            // Clear the INSTANCEID
-            try {
-                zk.delete(conf.getZkLedgersRootPath() + "/"
-                    + BookKeeperConstants.INSTANCEID, -1);
-            } catch (KeeperException.NoNodeException e) {
-                if (log.isDebugEnabled()) {
-                    log.debug("INSTANCEID not exists in zookeeper to delete");
-                }
-            }
+        // Create ledgers root node
+        zk.create(zkLedgersRootPath, "".getBytes(UTF_8), Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
 
-            // create INSTANCEID
-            String instanceId = UUID.randomUUID().toString();
-            zk.create(conf.getZkLedgersRootPath() + "/"
-                    + BookKeeperConstants.INSTANCEID, instanceId.getBytes(Charsets.UTF_8),
-                ZkUtils.getACLs(conf), CreateMode.PERSISTENT);
+        // create available bookies node
+        zk.create(zkAvailableBookiesPath, "".getBytes(UTF_8), Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
 
-            log.info("Successfully formatted BookKeeper metadata");
+        // creates the new layout and stores in zookeeper
+        LedgerManagerFactory.newLedgerManagerFactory(conf, layoutManager);
+
+        // create INSTANCEID
+        String instanceId = UUID.randomUUID().toString();
+        zk.create(conf.getZkLedgersRootPath() + "/" + BookKeeperConstants.INSTANCEID, instanceId.getBytes(UTF_8),
+                Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+
+        log.info("Successfully initiated cluster. ZKServers: {} ledger root path: {} instanceId: {}", zkServers,
+                zkLedgersRootPath, instanceId);
+        return true;
+    }
+
+    @Override
+    public boolean nukeExistingCluster() throws Exception {
+        String zkLedgersRootPath = conf.getZkLedgersRootPath();
+        String zkServers = conf.getZkServers();
+        log.info("Nuking ZooKeeper metadata of existing cluster, ZKServers: {} ledger root path: {}",
+                zkServers, zkLedgersRootPath);
+
+        boolean ledgerRootExists = null != zk.exists(conf.getZkLedgersRootPath(), false);
+        if (!ledgerRootExists) {
+            log.info("There is no existing cluster with ledgersRootPath: {} in ZKServers: {}, "
+                    + "so exiting nuke operation", zkLedgersRootPath, conf.getZkServers());
             return true;
+        }
+
+        String availableBookiesPath = conf.getZkAvailableBookiesPath();
+        boolean availableNodeExists = null != zk.exists(availableBookiesPath, false);
+        try (RegistrationClient regClient = new ZKRegistrationClient()) {
+            regClient.initialize(new ClientConfiguration(conf), null, NullStatsLogger.INSTANCE, Optional.empty());
+            if (availableNodeExists) {
+                Collection<BookieSocketAddress> rwBookies = FutureUtils
+                        .result(regClient.getWritableBookies(), EXCEPTION_FUNC).getValue();
+                if (rwBookies != null && !rwBookies.isEmpty()) {
+                    log.error("Bookies are still up and connected to this cluster, "
+                            + "stop all bookies before nuking the cluster");
+                    return false;
+                }
+
+                String readOnlyBookieRegPath = availableBookiesPath + "/" + BookKeeperConstants.READONLY;
+                boolean readonlyNodeExists = null != zk.exists(readOnlyBookieRegPath, false);
+                if (readonlyNodeExists) {
+                    Collection<BookieSocketAddress> roBookies = FutureUtils
+                            .result(regClient.getReadOnlyBookies(), EXCEPTION_FUNC).getValue();
+                    if (roBookies != null && !roBookies.isEmpty()) {
+                        log.error("Readonly Bookies are still up and connected to this cluster, "
+                                + "stop all bookies before nuking the cluster");
+                        return false;
+                    }
+                }
+            }
+        }
+
+        LedgerManagerFactory ledgerManagerFactory = LedgerManagerFactory.newLedgerManagerFactory(conf, layoutManager);
+        return ledgerManagerFactory.validateAndNukeExistingCluster(conf, layoutManager);
+    }
+
+    @Override
+    public boolean format() throws Exception {
+        // Clear underreplicated ledgers
+        try {
+            ZKUtil.deleteRecursive(zk, ZkLedgerUnderreplicationManager.getBasePath(conf.getZkLedgersRootPath())
+                    + BookKeeperConstants.DEFAULT_ZK_LEDGERS_ROOT_PATH);
+        } catch (KeeperException.NoNodeException e) {
+            if (log.isDebugEnabled()) {
+                log.debug("underreplicated ledgers root path node not exists in zookeeper to delete");
+            }
+        }
+
+        // Clear underreplicatedledger locks
+        try {
+            ZKUtil.deleteRecursive(zk, ZkLedgerUnderreplicationManager.getBasePath(conf.getZkLedgersRootPath()) + '/'
+                    + BookKeeperConstants.UNDER_REPLICATION_LOCK);
+        } catch (KeeperException.NoNodeException e) {
+            if (log.isDebugEnabled()) {
+                log.debug("underreplicatedledger locks node not exists in zookeeper to delete");
+            }
+        }
+
+        // Clear the cookies
+        try {
+            ZKUtil.deleteRecursive(zk, conf.getZkLedgersRootPath() + "/cookies");
+        } catch (KeeperException.NoNodeException e) {
+            if (log.isDebugEnabled()) {
+                log.debug("cookies node not exists in zookeeper to delete");
+            }
+        }
+
+        // Clear the INSTANCEID
+        try {
+            zk.delete(conf.getZkLedgersRootPath() + "/" + BookKeeperConstants.INSTANCEID, -1);
+        } catch (KeeperException.NoNodeException e) {
+            if (log.isDebugEnabled()) {
+                log.debug("INSTANCEID not exists in zookeeper to delete");
+            }
+        }
+
+        // create INSTANCEID
+        String instanceId = UUID.randomUUID().toString();
+        zk.create(conf.getZkLedgersRootPath() + "/" + BookKeeperConstants.INSTANCEID,
+                instanceId.getBytes(Charsets.UTF_8), ZkUtils.getACLs(conf), CreateMode.PERSISTENT);
+
+        log.info("Successfully formatted BookKeeper metadata");
+        return true;
+    }
+
+    @Override
+    public boolean isBookieRegistered(String bookieId) throws BookieException {
+        String regPath = bookieRegistrationPath + "/" + bookieId;
+        String readonlyRegPath = bookieReadonlyRegistrationPath + "/" + bookieId;
+        try {
+            return ((null != zk.exists(regPath, false)) || (null != zk.exists(readonlyRegPath, false)));
+        } catch (KeeperException e) {
+            log.error("ZK exception while checking registration ephemeral znodes for BookieId: {}", bookieId, e);
+            throw new MetadataStoreException(e);
+        } catch (InterruptedException e) {
+            log.error("InterruptedException while checking registration ephemeral znodes for BookieId: {}", bookieId,
+                    e);
+            throw new MetadataStoreException(e);
         }
     }
 }
