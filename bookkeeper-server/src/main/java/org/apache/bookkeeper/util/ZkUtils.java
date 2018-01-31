@@ -108,8 +108,7 @@ public class ZkUtils {
      * Asynchronously deletes zookeeper path recursively and optimistically.
      * This method is used for deleting the leaf nodes and its corresponding
      * parents if they don't have anymore children after deleting the child
-     * node. For this to work as expected, provided znodeVersion should be -1,
-     * so that there wont be version mismatches with any of the parent nodes. If
+     * node. For deleting the parent nodes it uses -1 as znodeversion. If
      * it fails to delete the leafnode then it will callback with the received
      * error code, but it fails to delete the parent node for whatsoever reason
      * it stops proceeding further and it will callback with ok error code.
@@ -119,7 +118,7 @@ public class ZkUtils {
      * @param originalPath
      *            Zookeeper full path
      * @param znodeVersion
-     *            version of the node
+     *            the expected node version of the leafnode
      * @param callback
      *            callback
      * @param leafNodePath
@@ -134,7 +133,7 @@ public class ZkUtils {
             public void processResult(int rc, String path, Object ctx) {
                 if (rc == Code.OK.intValue()) {
                     String parent = new File(originalPath).getParent().replace("\\", "/");
-                    asyncDeleteFullPathOptimistic(zk, parent, znodeVersion, callback, leafNodePath);
+                    asyncDeleteFullPathOptimistic(zk, parent, -1, callback, leafNodePath);
                 } else {
                     if (path.equals(leafNodePath)) {
                         callback.processResult(rc, path, leafNodePath);
