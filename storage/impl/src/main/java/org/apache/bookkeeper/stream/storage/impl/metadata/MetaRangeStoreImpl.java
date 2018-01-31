@@ -19,6 +19,7 @@
 package org.apache.bookkeeper.stream.storage.impl.metadata;
 
 import static com.google.common.base.Preconditions.checkState;
+import static org.apache.bookkeeper.stream.proto.storage.StorageContainerRequest.RequestCase.GET_ACTIVE_RANGES_REQ;
 
 import com.google.common.collect.Maps;
 import java.util.Map;
@@ -95,8 +96,8 @@ public class MetaRangeStoreImpl
     @Override
     public CompletableFuture<StorageContainerResponse> getActiveRanges(StorageContainerRequest request) {
         checkState(
-            StorageContainerRequest.Type.GET_ACTIVE_RANGES == request.getType(),
-            "Wrong request type: %s", request.getType());
+            GET_ACTIVE_RANGES_REQ == request.getRequestCase(),
+            "Wrong request type: %s", request.getRequestCase());
         final long streamId = request.getGetActiveRangesReq().getStreamId();
 
         MetaRangeImpl metaRange = streams.get(streamId);

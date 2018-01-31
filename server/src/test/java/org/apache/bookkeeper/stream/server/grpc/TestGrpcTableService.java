@@ -37,7 +37,6 @@ import org.apache.bookkeeper.stream.proto.kv.rpc.RangeResponse;
 import org.apache.bookkeeper.stream.proto.kv.rpc.RoutingHeader;
 import org.apache.bookkeeper.stream.proto.storage.StatusCode;
 import org.apache.bookkeeper.stream.proto.storage.StorageContainerRequest;
-import org.apache.bookkeeper.stream.proto.storage.StorageContainerRequest.Type;
 import org.apache.bookkeeper.stream.proto.storage.StorageContainerResponse;
 import org.apache.bookkeeper.stream.server.TestResponseObserver;
 import org.apache.bookkeeper.stream.storage.api.RangeStore;
@@ -70,7 +69,6 @@ public class TestGrpcTableService {
 
         StorageContainerRequest request = StorageContainerRequest
             .newBuilder()
-            .setType(Type.KV_PUT)
             .setKvPutReq(PutRequest
                 .newBuilder()
                 .setKey(TEST_KEY)
@@ -103,7 +101,6 @@ public class TestGrpcTableService {
 
         StorageContainerRequest request = StorageContainerRequest
             .newBuilder()
-            .setType(Type.KV_PUT)
             .setKvPutReq(PutRequest
                 .newBuilder()
                 .setKey(TEST_KEY)
@@ -135,7 +132,6 @@ public class TestGrpcTableService {
 
         StorageContainerRequest request = StorageContainerRequest
             .newBuilder()
-            .setType(Type.KV_PUT)
             .setKvPutReq(PutRequest
                 .newBuilder()
                 .setKey(TEST_KEY)
@@ -163,7 +159,6 @@ public class TestGrpcTableService {
 
         StorageContainerRequest request = StorageContainerRequest
             .newBuilder()
-            .setType(Type.KV_RANGE)
             .setKvRangeReq(RangeRequest
                 .newBuilder()
                 .setKey(TEST_KEY)
@@ -195,7 +190,6 @@ public class TestGrpcTableService {
 
         StorageContainerRequest request = StorageContainerRequest
             .newBuilder()
-            .setType(Type.KV_RANGE)
             .setKvRangeReq(RangeRequest
                 .newBuilder()
                 .setKey(TEST_KEY)
@@ -226,7 +220,6 @@ public class TestGrpcTableService {
 
         StorageContainerRequest request = StorageContainerRequest
             .newBuilder()
-            .setType(Type.KV_RANGE)
             .setKvRangeReq(RangeRequest
                 .newBuilder()
                 .setKey(TEST_KEY)
@@ -253,7 +246,6 @@ public class TestGrpcTableService {
 
         StorageContainerRequest request = StorageContainerRequest
             .newBuilder()
-            .setType(Type.KV_DELETE)
             .setKvDeleteReq(DeleteRangeRequest
                 .newBuilder()
                 .setKey(TEST_KEY)
@@ -285,7 +277,6 @@ public class TestGrpcTableService {
 
         StorageContainerRequest request = StorageContainerRequest
             .newBuilder()
-            .setType(Type.KV_DELETE)
             .setKvDeleteReq(DeleteRangeRequest
                 .newBuilder()
                 .setKey(TEST_KEY)
@@ -316,7 +307,6 @@ public class TestGrpcTableService {
 
         StorageContainerRequest request = StorageContainerRequest
             .newBuilder()
-            .setType(Type.KV_DELETE)
             .setKvDeleteReq(DeleteRangeRequest
                 .newBuilder()
                 .setKey(TEST_KEY)

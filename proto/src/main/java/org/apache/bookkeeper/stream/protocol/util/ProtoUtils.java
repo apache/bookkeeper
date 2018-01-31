@@ -43,7 +43,6 @@ import org.apache.bookkeeper.stream.proto.storage.OneStorageContainerEndpointRes
 import org.apache.bookkeeper.stream.proto.storage.StatusCode;
 import org.apache.bookkeeper.stream.proto.storage.StorageContainerEndpoint;
 import org.apache.bookkeeper.stream.proto.storage.StorageContainerRequest;
-import org.apache.bookkeeper.stream.proto.storage.StorageContainerRequest.Type;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 
@@ -225,14 +224,13 @@ public class ProtoUtils {
     // Meta Range API
     //
 
-    private static StorageContainerRequest.Builder newScRequestBuilder(long scId, Type type) {
+    private static StorageContainerRequest.Builder newScRequestBuilder(long scId) {
         return StorageContainerRequest.newBuilder()
-            .setType(type)
             .setScId(scId);
     }
 
     public static StorageContainerRequest createGetActiveRangesRequest(long scId, long streamId) {
-        return newScRequestBuilder(scId, Type.GET_ACTIVE_RANGES)
+        return newScRequestBuilder(scId)
             .setGetActiveRangesReq(GetActiveRangesRequest.newBuilder()
                 .setStreamId(streamId))
             .build();
@@ -240,7 +238,7 @@ public class ProtoUtils {
 
     public static StorageContainerRequest createGetActiveRangesRequest(long scId,
                                                                        StreamProperties streamProps) {
-        return newScRequestBuilder(scId, Type.GET_ACTIVE_RANGES)
+        return newScRequestBuilder(scId)
             .setGetActiveRangesReq(GetActiveRangesRequest.newBuilder()
                 .setStreamId(streamProps.getStreamId())
                 .setStreamProps(streamProps))

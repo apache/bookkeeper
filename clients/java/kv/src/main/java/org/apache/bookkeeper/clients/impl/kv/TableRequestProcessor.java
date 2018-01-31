@@ -60,16 +60,16 @@ public class TableRequestProcessor<RespT>
     @Override
     protected ListenableFuture<StorageContainerResponse> sendRPC(StorageServerChannel rsChannel,
                                                                  StorageContainerRequest request) {
-        switch (request.getType()) {
-            case KV_RANGE:
+        switch (request.getRequestCase()) {
+            case KV_RANGE_REQ:
                 return rsChannel.getTableService().range(request);
-            case KV_PUT:
+            case KV_PUT_REQ:
                 return rsChannel.getTableService().put(request);
-            case KV_DELETE:
+            case KV_DELETE_REQ:
                 return rsChannel.getTableService().delete(request);
-            case KV_INCREMENT:
+            case KV_INCR_REQ:
                 return rsChannel.getTableService().increment(request);
-            case KV_TXN:
+            case KV_TXN_REQ:
                 return rsChannel.getTableService().txn(request);
             default:
                 SettableFuture<StorageContainerResponse> respFuture = SettableFuture.create();

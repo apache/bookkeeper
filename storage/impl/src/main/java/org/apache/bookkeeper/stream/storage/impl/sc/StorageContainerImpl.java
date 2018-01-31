@@ -19,6 +19,11 @@
 package org.apache.bookkeeper.stream.storage.impl.sc;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static org.apache.bookkeeper.stream.proto.storage.StorageContainerRequest.RequestCase.KV_DELETE_REQ;
+import static org.apache.bookkeeper.stream.proto.storage.StorageContainerRequest.RequestCase.KV_INCR_REQ;
+import static org.apache.bookkeeper.stream.proto.storage.StorageContainerRequest.RequestCase.KV_PUT_REQ;
+import static org.apache.bookkeeper.stream.proto.storage.StorageContainerRequest.RequestCase.KV_RANGE_REQ;
+import static org.apache.bookkeeper.stream.proto.storage.StorageContainerRequest.RequestCase.KV_TXN_REQ;
 import static org.apache.bookkeeper.stream.protocol.ProtocolConstants.CONTAINER_META_RANGE_ID;
 import static org.apache.bookkeeper.stream.protocol.ProtocolConstants.CONTAINER_META_STREAM_ID;
 import static org.apache.bookkeeper.stream.protocol.ProtocolConstants.ROOT_RANGE_ID;
@@ -53,7 +58,6 @@ import org.apache.bookkeeper.stream.proto.storage.GetNamespaceResponse;
 import org.apache.bookkeeper.stream.proto.storage.GetStreamRequest;
 import org.apache.bookkeeper.stream.proto.storage.GetStreamResponse;
 import org.apache.bookkeeper.stream.proto.storage.StorageContainerRequest;
-import org.apache.bookkeeper.stream.proto.storage.StorageContainerRequest.Type;
 import org.apache.bookkeeper.stream.proto.storage.StorageContainerResponse;
 import org.apache.bookkeeper.stream.protocol.RangeId;
 import org.apache.bookkeeper.stream.protocol.util.StorageContainerPlacementPolicy;
@@ -254,7 +258,7 @@ public class StorageContainerImpl
 
     @Override
     public CompletableFuture<StorageContainerResponse> range(StorageContainerRequest request) {
-        checkArgument(Type.KV_RANGE == request.getType());
+        checkArgument(KV_RANGE_REQ == request.getRequestCase());
 
         long scId = request.getScId();
         RangeRequest rr = request.getKvRangeReq();
@@ -272,7 +276,7 @@ public class StorageContainerImpl
 
     @Override
     public CompletableFuture<StorageContainerResponse> put(StorageContainerRequest request) {
-        checkArgument(Type.KV_PUT == request.getType());
+        checkArgument(KV_PUT_REQ == request.getRequestCase());
 
         long scId = request.getScId();
         PutRequest rr = request.getKvPutReq();
@@ -290,7 +294,7 @@ public class StorageContainerImpl
 
     @Override
     public CompletableFuture<StorageContainerResponse> delete(StorageContainerRequest request) {
-        checkArgument(Type.KV_DELETE == request.getType());
+        checkArgument(KV_DELETE_REQ == request.getRequestCase());
 
         long scId = request.getScId();
         DeleteRangeRequest rr = request.getKvDeleteReq();
@@ -308,7 +312,7 @@ public class StorageContainerImpl
 
     @Override
     public CompletableFuture<StorageContainerResponse> txn(StorageContainerRequest request) {
-        checkArgument(Type.KV_TXN == request.getType());
+        checkArgument(KV_TXN_REQ == request.getRequestCase());
 
         long scId = request.getScId();
         TxnRequest rr = request.getKvTxnReq();
@@ -326,7 +330,7 @@ public class StorageContainerImpl
 
     @Override
     public CompletableFuture<StorageContainerResponse> incr(StorageContainerRequest request) {
-        checkArgument(Type.KV_INCREMENT == request.getType());
+        checkArgument(KV_INCR_REQ == request.getRequestCase());
 
         long scId = request.getScId();
         IncrementRequest ir = request.getKvIncrReq();

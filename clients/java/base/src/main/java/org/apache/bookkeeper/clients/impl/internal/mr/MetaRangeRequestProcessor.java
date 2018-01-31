@@ -65,8 +65,8 @@ public class MetaRangeRequestProcessor<RespT>
     @Override
     protected ListenableFuture<StorageContainerResponse> sendRPC(StorageServerChannel rsChannel,
                                                                  StorageContainerRequest request) {
-        switch (request.getType()) {
-            case GET_ACTIVE_RANGES:
+        switch (request.getRequestCase()) {
+            case GET_ACTIVE_RANGES_REQ:
                 return rsChannel.getMetaRangeService().getActiveRanges(request);
             default:
                 SettableFuture<StorageContainerResponse> respFuture = SettableFuture.create();
@@ -76,8 +76,8 @@ public class MetaRangeRequestProcessor<RespT>
     }
 
     private String getIdentifier(StorageContainerRequest request) {
-        switch (request.getType()) {
-            case GET_ACTIVE_RANGES:
+        switch (request.getRequestCase()) {
+            case GET_ACTIVE_RANGES_REQ:
                 return "" + request.getGetActiveRangesReq().getStreamId();
             default:
                 return "";

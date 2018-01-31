@@ -47,7 +47,6 @@ import org.apache.bookkeeper.stream.proto.kv.rpc.TxnRequest;
 import org.apache.bookkeeper.stream.proto.kv.rpc.TxnResponse;
 import org.apache.bookkeeper.stream.proto.storage.StatusCode;
 import org.apache.bookkeeper.stream.proto.storage.StorageContainerRequest;
-import org.apache.bookkeeper.stream.proto.storage.StorageContainerRequest.Type;
 import org.apache.bookkeeper.stream.proto.storage.StorageContainerResponse;
 import org.apache.bookkeeper.stream.proto.storage.StorageContainerResponse.ResponseCase;
 import org.apache.bookkeeper.stream.storage.impl.store.MVCCAsyncStoreTestBase;
@@ -112,7 +111,6 @@ public class TableStoreImplTest extends MVCCAsyncStoreTestBase {
 
     private CompletableFuture<StorageContainerResponse> writeKV(int i, boolean prevKv) {
         return tableStore.put(StorageContainerRequest.newBuilder()
-            .setType(Type.KV_PUT)
             .setScId(SC_ID)
             .setKvPutReq(PutRequest.newBuilder()
                 .setKey(getKey(i))
@@ -125,7 +123,6 @@ public class TableStoreImplTest extends MVCCAsyncStoreTestBase {
     StorageContainerResponse getKeyFromTableStore(int i) throws Exception {
         return result(
             tableStore.range(StorageContainerRequest.newBuilder()
-                .setType(Type.KV_RANGE)
                 .setScId(SC_ID)
                 .setKvRangeReq(RangeRequest.newBuilder()
                     .setHeader(HEADER)
@@ -151,7 +148,6 @@ public class TableStoreImplTest extends MVCCAsyncStoreTestBase {
     void putKeyToTableStore(int key, int value) throws Exception {
         StorageContainerResponse response = result(
             tableStore.put(StorageContainerRequest.newBuilder()
-                .setType(Type.KV_PUT)
                 .setScId(SC_ID)
                 .setKvPutReq(PutRequest.newBuilder()
                     .setHeader(HEADER)
@@ -170,7 +166,6 @@ public class TableStoreImplTest extends MVCCAsyncStoreTestBase {
     KeyValue putIfAbsentToTableStore(int key, int value, boolean expectedSuccess) throws Exception {
         StorageContainerResponse response = result(
             tableStore.txn(StorageContainerRequest.newBuilder()
-                .setType(Type.KV_TXN)
                 .setScId(SC_ID)
                 .setKvTxnReq(TxnRequest.newBuilder()
                     .setHeader(HEADER)
@@ -224,7 +219,6 @@ public class TableStoreImplTest extends MVCCAsyncStoreTestBase {
         throws Exception {
         return result(
             tableStore.txn(StorageContainerRequest.newBuilder()
-                .setType(Type.KV_TXN)
                 .setScId(SC_ID)
                 .setKvTxnReq(TxnRequest.newBuilder()
                     .setHeader(HEADER)
@@ -280,7 +274,6 @@ public class TableStoreImplTest extends MVCCAsyncStoreTestBase {
         throws Exception {
         return result(
             tableStore.txn(StorageContainerRequest.newBuilder()
-                .setType(Type.KV_TXN)
                 .setScId(SC_ID)
                 .setKvTxnReq(TxnRequest.newBuilder()
                     .setHeader(HEADER)
@@ -308,7 +301,6 @@ public class TableStoreImplTest extends MVCCAsyncStoreTestBase {
     KeyValue deleteKeyFromTableStore(int key) throws Exception {
         StorageContainerResponse response = result(
             tableStore.delete(StorageContainerRequest.newBuilder()
-                .setType(Type.KV_DELETE)
                 .setScId(SC_ID)
                 .setKvDeleteReq(DeleteRangeRequest.newBuilder()
                     .setHeader(HEADER)
@@ -331,7 +323,6 @@ public class TableStoreImplTest extends MVCCAsyncStoreTestBase {
     List<KeyValue> deleteRange(int startKey, int endKey) throws Exception {
         StorageContainerResponse response = result(
             tableStore.delete(StorageContainerRequest.newBuilder()
-                .setType(Type.KV_DELETE)
                 .setScId(SC_ID)
                 .setKvDeleteReq(DeleteRangeRequest.newBuilder()
                     .setHeader(HEADER)
@@ -351,7 +342,6 @@ public class TableStoreImplTest extends MVCCAsyncStoreTestBase {
     List<KeyValue> range(int startKey, int endKey) throws Exception {
         StorageContainerResponse response = result(
             tableStore.range(StorageContainerRequest.newBuilder()
-                .setType(Type.KV_RANGE)
                 .setScId(SC_ID)
                 .setKvRangeReq(RangeRequest.newBuilder()
                     .setHeader(HEADER)

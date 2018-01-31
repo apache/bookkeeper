@@ -14,12 +14,6 @@
 
 package org.apache.bookkeeper.clients.impl.kv;
 
-import static org.apache.bookkeeper.stream.proto.storage.StorageContainerRequest.Type.KV_DELETE;
-import static org.apache.bookkeeper.stream.proto.storage.StorageContainerRequest.Type.KV_INCREMENT;
-import static org.apache.bookkeeper.stream.proto.storage.StorageContainerRequest.Type.KV_PUT;
-import static org.apache.bookkeeper.stream.proto.storage.StorageContainerRequest.Type.KV_RANGE;
-import static org.apache.bookkeeper.stream.proto.storage.StorageContainerRequest.Type.KV_TXN;
-
 import com.google.common.collect.Lists;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.UnsafeByteOperations;
@@ -95,7 +89,6 @@ public final class KvUtils {
         RangeRequest.Builder rangeReq) {
         return StorageContainerRequest.newBuilder()
             .setScId(scId)
-            .setType(KV_RANGE)
             .setKvRangeReq(rangeReq)
             .build();
     }
@@ -128,7 +121,6 @@ public final class KvUtils {
         PutRequest.Builder putReq) {
         return StorageContainerRequest.newBuilder()
             .setScId(scId)
-            .setType(KV_PUT)
             .setKvPutReq(putReq)
             .build();
     }
@@ -158,7 +150,6 @@ public final class KvUtils {
         IncrementRequest.Builder putReq) {
         return StorageContainerRequest.newBuilder()
             .setScId(scId)
-            .setType(KV_INCREMENT)
             .setKvIncrReq(putReq)
             .build();
     }
@@ -183,7 +174,6 @@ public final class KvUtils {
         DeleteRangeRequest.Builder deleteReq) {
         return StorageContainerRequest.newBuilder()
             .setScId(scId)
-            .setType(KV_DELETE)
             .setKvDeleteReq(deleteReq)
             .build();
     }
@@ -317,7 +307,6 @@ public final class KvUtils {
         TxnRequest.Builder txnReq) {
         return StorageContainerRequest.newBuilder()
             .setScId(scId)
-            .setType(KV_TXN)
             .setKvTxnReq(txnReq)
             .build();
     }

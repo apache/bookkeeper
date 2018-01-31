@@ -67,7 +67,6 @@ import org.apache.bookkeeper.stream.proto.storage.GetStreamRequest;
 import org.apache.bookkeeper.stream.proto.storage.GetStreamResponse;
 import org.apache.bookkeeper.stream.proto.storage.StatusCode;
 import org.apache.bookkeeper.stream.proto.storage.StorageContainerRequest;
-import org.apache.bookkeeper.stream.proto.storage.StorageContainerRequest.Type;
 import org.apache.bookkeeper.stream.proto.storage.StorageContainerResponse;
 import org.apache.bookkeeper.stream.storage.RangeStoreBuilder;
 import org.apache.bookkeeper.stream.storage.StorageResources;
@@ -136,7 +135,6 @@ public class TestRangeStoreImpl {
 
     private static StorageContainerRequest createPutRequest(long scId) {
         return StorageContainerRequest.newBuilder()
-            .setType(Type.KV_PUT)
             .setScId(scId)
             .setKvPutReq(PutRequest.newBuilder()
                 .setHeader(TEST_ROUTING_HEADER)
@@ -157,7 +155,6 @@ public class TestRangeStoreImpl {
 
     private static StorageContainerRequest createRangeRequest(long scId) {
         return StorageContainerRequest.newBuilder()
-            .setType(Type.KV_RANGE)
             .setScId(scId)
             .setKvRangeReq(RangeRequest.newBuilder()
                 .setHeader(TEST_ROUTING_HEADER)
@@ -178,7 +175,6 @@ public class TestRangeStoreImpl {
 
     private static StorageContainerRequest createDeleteRequest(long scId) {
         return StorageContainerRequest.newBuilder()
-            .setType(Type.KV_DELETE)
             .setScId(scId)
             .setKvDeleteReq(DeleteRangeRequest.newBuilder()
                 .setHeader(TEST_ROUTING_HEADER)

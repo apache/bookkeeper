@@ -23,10 +23,10 @@ import static org.apache.bookkeeper.clients.impl.kv.KvUtils.newKvPutRequest;
 import static org.apache.bookkeeper.clients.impl.kv.KvUtils.newKvRangeRequest;
 import static org.apache.bookkeeper.clients.impl.kv.KvUtils.newPutRequest;
 import static org.apache.bookkeeper.clients.impl.kv.KvUtils.newRangeRequest;
-import static org.apache.bookkeeper.stream.proto.storage.StorageContainerRequest.Type.KV_DELETE;
-import static org.apache.bookkeeper.stream.proto.storage.StorageContainerRequest.Type.KV_INCREMENT;
-import static org.apache.bookkeeper.stream.proto.storage.StorageContainerRequest.Type.KV_PUT;
-import static org.apache.bookkeeper.stream.proto.storage.StorageContainerRequest.Type.KV_RANGE;
+import static org.apache.bookkeeper.stream.proto.storage.StorageContainerRequest.RequestCase.KV_DELETE_REQ;
+import static org.apache.bookkeeper.stream.proto.storage.StorageContainerRequest.RequestCase.KV_INCR_REQ;
+import static org.apache.bookkeeper.stream.proto.storage.StorageContainerRequest.RequestCase.KV_PUT_REQ;
+import static org.apache.bookkeeper.stream.proto.storage.StorageContainerRequest.RequestCase.KV_RANGE_REQ;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -96,7 +96,7 @@ public class TestKvUtils {
                 RangeRequest.Builder rrBuilder = newRangeRequest(key, rangeOption);
                 StorageContainerRequest request = newKvRangeRequest(scId, rrBuilder);
                 assertEquals(scId, request.getScId());
-                assertEquals(KV_RANGE, request.getType());
+                assertEquals(KV_RANGE_REQ, request.getRequestCase());
                 assertEquals(rrBuilder.build(), request.getKvRangeReq());
             }
         }
@@ -122,7 +122,7 @@ public class TestKvUtils {
                 PutRequest.Builder putBuilder = newPutRequest(key, value, option);
                 StorageContainerRequest request = newKvPutRequest(scId, putBuilder);
                 assertEquals(scId, request.getScId());
-                assertEquals(KV_PUT, request.getType());
+                assertEquals(KV_PUT_REQ, request.getRequestCase());
                 assertEquals(putBuilder.build(), request.getKvPutReq());
             }
         }
@@ -141,7 +141,7 @@ public class TestKvUtils {
         IncrementRequest.Builder incrBuilder = newIncrementRequest(key, 100L);
         StorageContainerRequest request = newKvIncrementRequest(scId, incrBuilder);
         assertEquals(scId, request.getScId());
-        assertEquals(KV_INCREMENT, request.getType());
+        assertEquals(KV_INCR_REQ, request.getRequestCase());
         assertEquals(incrBuilder.build(), request.getKvIncrReq());
     }
 
@@ -169,7 +169,7 @@ public class TestKvUtils {
                 DeleteRangeRequest.Builder delBuilder = newDeleteRequest(key, option);
                 StorageContainerRequest request = newKvDeleteRequest(scId, delBuilder);
                 assertEquals(scId, request.getScId());
-                assertEquals(KV_DELETE, request.getType());
+                assertEquals(KV_DELETE_REQ, request.getRequestCase());
                 assertEquals(delBuilder.build(), request.getKvDeleteReq());
             }
         }

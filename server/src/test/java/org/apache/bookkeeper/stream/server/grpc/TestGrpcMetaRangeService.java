@@ -54,7 +54,6 @@ public class TestGrpcMetaRangeService {
 
         StorageContainerRequest request = StorageContainerRequest
             .newBuilder()
-            .setType(StorageContainerRequest.Type.GET_ACTIVE_RANGES)
             .setGetActiveRangesReq(GetActiveRangesRequest
                 .newBuilder()
                 .setStreamId(23456L)
@@ -86,7 +85,6 @@ public class TestGrpcMetaRangeService {
 
         StorageContainerRequest request = StorageContainerRequest
             .newBuilder()
-            .setType(StorageContainerRequest.Type.GET_ACTIVE_RANGES)
             .setGetActiveRangesReq(GetActiveRangesRequest
                 .newBuilder()
                 .setStreamId(23456L)
@@ -117,7 +115,6 @@ public class TestGrpcMetaRangeService {
 
         StorageContainerRequest request = StorageContainerRequest
             .newBuilder()
-            .setType(StorageContainerRequest.Type.GET_ACTIVE_RANGES)
             .setGetActiveRangesReq(GetActiveRangesRequest
                 .newBuilder()
                 .setStreamId(23456L)

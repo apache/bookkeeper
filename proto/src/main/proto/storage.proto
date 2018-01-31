@@ -236,25 +236,7 @@ service StorageContainerService {
 }
 
 message StorageContainerRequest {
-
-    enum Type {
-        NONE                    = 0;
-
-        // namespace operations
-
-        // stream metadata operations
-        GET_ACTIVE_RANGES       = 200;
-
-        // K/V operations
-        KV_RANGE                = 400;
-        KV_PUT                  = 401;
-        KV_DELETE               = 402;
-        KV_TXN                  = 403;
-        KV_INCREMENT            = 404;
-    }
-
     int64 sc_id                 = 1;
-    Type type                   = 2;
 
     oneof request {
         // stream metadata operations

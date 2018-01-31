@@ -37,7 +37,6 @@ import org.apache.bookkeeper.stream.proto.storage.GetActiveRangesResponse;
 import org.apache.bookkeeper.stream.proto.storage.RelatedRanges;
 import org.apache.bookkeeper.stream.proto.storage.StatusCode;
 import org.apache.bookkeeper.stream.proto.storage.StorageContainerRequest;
-import org.apache.bookkeeper.stream.proto.storage.StorageContainerRequest.Type;
 import org.apache.bookkeeper.stream.proto.storage.StorageContainerResponse;
 import org.apache.bookkeeper.stream.storage.impl.metadata.stream.MetaRangeImpl;
 import org.apache.bookkeeper.stream.storage.impl.sc.StorageContainerPlacementPolicyImpl;
@@ -77,7 +76,6 @@ public class MetaRangeStoreImplTest extends MVCCAsyncStoreTestBase {
             reqBuilder = reqBuilder.setStreamProps(streamProperties);
         }
         return StorageContainerRequest.newBuilder()
-            .setType(Type.GET_ACTIVE_RANGES)
             .setGetActiveRangesReq(reqBuilder)
             .setScId(1L)
             .build();

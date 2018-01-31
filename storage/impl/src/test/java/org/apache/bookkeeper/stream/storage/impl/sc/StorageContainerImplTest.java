@@ -17,6 +17,10 @@
  */
 package org.apache.bookkeeper.stream.storage.impl.sc;
 
+import static org.apache.bookkeeper.stream.proto.storage.StorageContainerRequest.RequestCase.KV_DELETE_REQ;
+import static org.apache.bookkeeper.stream.proto.storage.StorageContainerRequest.RequestCase.KV_PUT_REQ;
+import static org.apache.bookkeeper.stream.proto.storage.StorageContainerRequest.RequestCase.KV_RANGE_REQ;
+import static org.apache.bookkeeper.stream.proto.storage.StorageContainerRequest.RequestCase.KV_TXN_REQ;
 import static org.apache.bookkeeper.stream.protocol.ProtocolConstants.CONTAINER_META_RANGE_ID;
 import static org.apache.bookkeeper.stream.protocol.ProtocolConstants.CONTAINER_META_STREAM_ID;
 import static org.apache.bookkeeper.stream.protocol.ProtocolConstants.ROOT_RANGE_ID;
@@ -36,6 +40,7 @@ import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.bookkeeper.statelib.api.mvcc.MVCCAsyncStore;
 import org.apache.bookkeeper.stream.proto.kv.rpc.DeleteRangeRequest;
+import org.apache.bookkeeper.stream.proto.kv.rpc.IncrementRequest;
 import org.apache.bookkeeper.stream.proto.kv.rpc.PutRequest;
 import org.apache.bookkeeper.stream.proto.kv.rpc.RangeRequest;
 import org.apache.bookkeeper.stream.proto.kv.rpc.RoutingHeader;
@@ -53,7 +58,7 @@ import org.apache.bookkeeper.stream.proto.storage.GetNamespaceResponse;
 import org.apache.bookkeeper.stream.proto.storage.GetStreamRequest;
 import org.apache.bookkeeper.stream.proto.storage.GetStreamResponse;
 import org.apache.bookkeeper.stream.proto.storage.StorageContainerRequest;
-import org.apache.bookkeeper.stream.proto.storage.StorageContainerRequest.Type;
+import org.apache.bookkeeper.stream.proto.storage.StorageContainerRequest.RequestCase;
 import org.apache.bookkeeper.stream.proto.storage.StorageContainerResponse;
 import org.apache.bookkeeper.stream.protocol.RangeId;
 import org.apache.bookkeeper.stream.storage.api.kv.TableStore;
@@ -332,30 +337,33 @@ public class StorageContainerImplTest {
     // Table API
     //
 
-    private StorageContainerRequest newStorageContainerRequest(Type type) {
+    private StorageContainerRequest newStorageContainerRequest(RequestCase type) {
         StorageContainerRequest.Builder reqBuilder = StorageContainerRequest.newBuilder()
-            .setScId(SCID)
-            .setType(type);
+            .setScId(SCID);
         RoutingHeader header = RoutingHeader.newBuilder()
             .setStreamId(STREAM_ID)
             .setRangeId(RANGE_ID)
             .build();
         switch (type) {
-            case KV_PUT:
+            case KV_PUT_REQ:
                 reqBuilder = reqBuilder.setKvPutReq(
                     PutRequest.newBuilder().setHeader(header));
                 break;
-            case KV_DELETE:
+            case KV_DELETE_REQ:
                 reqBuilder = reqBuilder.setKvDeleteReq(
                     DeleteRangeRequest.newBuilder().setHeader(header));
                 break;
-            case KV_RANGE:
+            case KV_RANGE_REQ:
                 reqBuilder = reqBuilder.setKvRangeReq(
                     RangeRequest.newBuilder().setHeader(header));
                 break;
-            case KV_TXN:
+            case KV_TXN_REQ:
                 reqBuilder = reqBuilder.setKvTxnReq(
                     TxnRequest.newBuilder().setHeader(header));
+                break;
+            case KV_INCR_REQ:
+                reqBuilder = reqBuilder.setKvIncrReq(
+                    IncrementRequest.newBuilder().setHeader(header));
                 break;
             default:
                 break;
@@ -371,7 +379,7 @@ public class StorageContainerImplTest {
         when(trStore.range(any(StorageContainerRequest.class)))
             .thenReturn(FutureUtils.value(expectedResp));
 
-        StorageContainerRequest request = newStorageContainerRequest(Type.KV_RANGE);
+        StorageContainerRequest request = newStorageContainerRequest(KV_RANGE_REQ);
         StorageContainerResponse response = FutureUtils.result(container.range(request));
         assertSame(expectedResp, response);
         assertSame(trStore, container.getTableStoreCache().getTableStore(RID));
@@ -386,7 +394,7 @@ public class StorageContainerImplTest {
             .thenReturn(FutureUtils.value(expectedResp));
         container.getTableStoreCache().getTableStores().put(RID, trStore);
 
-        StorageContainerRequest request = newStorageContainerRequest(Type.KV_RANGE);
+        StorageContainerRequest request = newStorageContainerRequest(KV_RANGE_REQ);
         StorageContainerResponse response = FutureUtils.result(container.range(request));
         assertSame(expectedResp, response);
     }
@@ -399,7 +407,7 @@ public class StorageContainerImplTest {
         when(trStore.put(any(StorageContainerRequest.class)))
             .thenReturn(FutureUtils.value(expectedResp));
 
-        StorageContainerRequest request = newStorageContainerRequest(Type.KV_PUT);
+        StorageContainerRequest request = newStorageContainerRequest(KV_PUT_REQ);
         StorageContainerResponse response = FutureUtils.result(container.put(request));
         assertSame(expectedResp, response);
         assertSame(trStore, container.getTableStoreCache().getTableStore(RID));
@@ -414,7 +422,7 @@ public class StorageContainerImplTest {
             .thenReturn(FutureUtils.value(expectedResp));
         container.getTableStoreCache().getTableStores().put(RID, trStore);
 
-        StorageContainerRequest request = newStorageContainerRequest(Type.KV_PUT);
+        StorageContainerRequest request = newStorageContainerRequest(KV_PUT_REQ);
         StorageContainerResponse response = FutureUtils.result(container.put(request));
         assertSame(expectedResp, response);
     }
@@ -427,7 +435,7 @@ public class StorageContainerImplTest {
         when(trStore.delete(any(StorageContainerRequest.class)))
             .thenReturn(FutureUtils.value(expectedResp));
 
-        StorageContainerRequest request = newStorageContainerRequest(Type.KV_DELETE);
+        StorageContainerRequest request = newStorageContainerRequest(KV_DELETE_REQ);
         StorageContainerResponse response = FutureUtils.result(container.delete(request));
         assertSame(expectedResp, response);
         assertSame(trStore, container.getTableStoreCache().getTableStore(RID));
@@ -442,7 +450,7 @@ public class StorageContainerImplTest {
             .thenReturn(FutureUtils.value(expectedResp));
         container.getTableStoreCache().getTableStores().put(RID, trStore);
 
-        StorageContainerRequest request = newStorageContainerRequest(Type.KV_DELETE);
+        StorageContainerRequest request = newStorageContainerRequest(KV_DELETE_REQ);
         StorageContainerResponse response = FutureUtils.result(container.delete(request));
         assertSame(expectedResp, response);
     }
@@ -455,7 +463,7 @@ public class StorageContainerImplTest {
         when(trStore.txn(any(StorageContainerRequest.class)))
             .thenReturn(FutureUtils.value(expectedResp));
 
-        StorageContainerRequest request = newStorageContainerRequest(Type.KV_TXN);
+        StorageContainerRequest request = newStorageContainerRequest(KV_TXN_REQ);
         StorageContainerResponse response = FutureUtils.result(container.txn(request));
         assertSame(expectedResp, response);
         assertSame(trStore, container.getTableStoreCache().getTableStore(RID));
@@ -470,7 +478,7 @@ public class StorageContainerImplTest {
             .thenReturn(FutureUtils.value(expectedResp));
         container.getTableStoreCache().getTableStores().put(RID, trStore);
 
-        StorageContainerRequest request = newStorageContainerRequest(Type.KV_TXN);
+        StorageContainerRequest request = newStorageContainerRequest(KV_TXN_REQ);
         StorageContainerResponse response = FutureUtils.result(container.txn(request));
         assertSame(expectedResp, response);
     }
