@@ -766,6 +766,8 @@
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.BookieNode.html#BookieNode-org.apache.bookkeeper.net.BookieSocketAddress-java.lang.String-">BookieNode(BookieSocketAddress, String)</a></span> - Constructor for class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.BookieNode.html" title="class in org.apache.bookkeeper.client">TopologyAwareEnsemblePlacementPolicy.BookieNode</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerReader.html#bookiesForLedger-org.apache.bookkeeper.client.LedgerHandle-">bookiesForLedger(LedgerHandle)</a></span> - Static method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerReader.html" title="class in org.apache.bookkeeper.client">LedgerReader</a></dt>
+<dd>&nbsp;</dd>
 <dt><a href="org/apache/bookkeeper/client/BookiesHealthInfo.html" title="interface in org.apache.bookkeeper.client"><span class="typeNameLink">BookiesHealthInfo</span></a> - Interface in <a href="org/apache/bookkeeper/client/package-summary.html">org.apache.bookkeeper.client</a></dt>
 <dd>
 <div class="block">This interface returns heuristics used to determine the health of a Bookkeeper server for read
@@ -828,6 +830,12 @@
 <dd>
 <div class="block">There are 3 digest types that can be used for verification.</div>
 </dd>
+<dt><a href="org/apache/bookkeeper/client/BookKeeperAccessor.html" title="class in org.apache.bookkeeper.client"><span class="typeNameLink">BookKeeperAccessor</span></a> - Class in <a href="org/apache/bookkeeper/client/package-summary.html">org.apache.bookkeeper.client</a></dt>
+<dd>
+<div class="block">Accessor to protected methods in bookkeeper.</div>
+</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeperAccessor.html#BookKeeperAccessor--">BookKeeperAccessor()</a></span> - Constructor for class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeperAccessor.html" title="class in org.apache.bookkeeper.client">BookKeeperAccessor</a></dt>
+<dd>&nbsp;</dd>
 <dt><a href="org/apache/bookkeeper/client/BookKeeperAdmin.html" title="class in org.apache.bookkeeper.client"><span class="typeNameLink">BookKeeperAdmin</span></a> - Class in <a href="org/apache/bookkeeper/client/package-summary.html">org.apache.bookkeeper.client</a></dt>
 <dd>
 <div class="block">Admin client for BookKeeper clusters.</div>
@@ -1625,6 +1633,8 @@
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerEntry.html#entryId">entryId</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerEntry.html" title="class in org.apache.bookkeeper.client">LedgerEntry</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerReader.ReadResult.html#entryId">entryId</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerReader.ReadResult.html" title="class in org.apache.bookkeeper.client">LedgerReader.ReadResult</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/PendingAddOp.html#entryId">entryId</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/PendingAddOp.html" title="class in org.apache.bookkeeper.client">PendingAddOp</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/PendingReadOp.LedgerEntryRequest.html#entryImpl">entryImpl</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/PendingReadOp.LedgerEntryRequest.html" title="class in org.apache.bookkeeper.client">PendingReadOp.LedgerEntryRequest</a></dt>
@@ -1786,6 +1796,8 @@
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#FORCE_READ_ONLY_BOOKIE">FORCE_READ_ONLY_BOOKIE</a></span> - Static variable in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeperAccessor.html#forceRecoverLedger-org.apache.bookkeeper.client.LedgerHandle-org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback-">forceRecoverLedger(LedgerHandle, BookkeeperInternalCallbacks.GenericCallback&lt;Void&gt;)</a></span> - Static method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeperAccessor.html" title="class in org.apache.bookkeeper.client">BookKeeperAccessor</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeper.html#forConfig-org.apache.bookkeeper.conf.ClientConfiguration-">forConfig(ClientConfiguration)</a></span> - Static method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeper.html" title="class in org.apache.bookkeeper.client">BookKeeper</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeperAdmin.html#format-org.apache.bookkeeper.conf.ServerConfiguration-boolean-boolean-">format(ServerConfiguration, boolean, boolean)</a></span> - Static method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeperAdmin.html" title="class in org.apache.bookkeeper.client">BookKeeperAdmin</a></dt>
@@ -1794,6 +1806,10 @@
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeperAdmin.html#formatEnsemble-java.util.ArrayList-java.util.Set-char-">formatEnsemble(ArrayList&lt;BookieSocketAddress&gt;, Set&lt;BookieSocketAddress&gt;, char)</a></span> - Static method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeperAdmin.html" title="class in org.apache.bookkeeper.client">BookKeeperAdmin</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerReader.html#forwardReadEntriesFromLastConfirmed-org.apache.bookkeeper.client.LedgerHandle-org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback-">forwardReadEntriesFromLastConfirmed(LedgerHandle, BookkeeperInternalCallbacks.GenericCallback&lt;List&lt;LedgerEntry&gt;&gt;)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerReader.html" title="class in org.apache.bookkeeper.client">LedgerReader</a></dt>
+<dd>
+<div class="block">Forward reading entries from last add confirmed.</div>
+</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerFragmentReplicator.SingleFragmentCallback.html#fragmentStartId">fragmentStartId</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerFragmentReplicator.SingleFragmentCallback.html" title="class in org.apache.bookkeeper.client">LedgerFragmentReplicator.SingleFragmentCallback</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeper.DigestType.html#fromApiDigestType-org.apache.bookkeeper.client.api.DigestType-">fromApiDigestType(DigestType)</a></span> - Static method in enum org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeper.DigestType.html" title="enum in org.apache.bookkeeper.client">BookKeeper.DigestType</a></dt>
@@ -1916,6 +1932,8 @@
 <div class="block">Get a list of the available bookies.</div>
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/OpStatsData.html#getAvgLatencyMillis--">getAvgLatencyMillis()</a></span> - Method in class org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/OpStatsData.html" title="class in org.apache.bookkeeper.stats">OpStatsData</a></dt>
+<dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerReader.ReadResult.html#getBookieAddress--">getBookieAddress()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerReader.ReadResult.html" title="class in org.apache.bookkeeper.client">LedgerReader.ReadResult</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#getBookieAuthProviderFactoryClass--">getBookieAuthProviderFactoryClass()</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
 <dd>
@@ -2262,6 +2280,8 @@
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerEntry.html#getEntryId--">getEntryId()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerEntry.html" title="class in org.apache.bookkeeper.client">LedgerEntry</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerReader.ReadResult.html#getEntryId--">getEntryId()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerReader.ReadResult.html" title="class in org.apache.bookkeeper.client">LedgerReader.ReadResult</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/PendingAddOp.html#getEntryId--">getEntryId()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/PendingAddOp.html" title="class in org.apache.bookkeeper.client">PendingAddOp</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerEntry.html#getEntryInputStream--">getEntryInputStream()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerEntry.html" title="class in org.apache.bookkeeper.client">LedgerEntry</a></dt>
@@ -2533,6 +2553,8 @@
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeper.html#getLedgerManager--">getLedgerManager()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeper.html" title="class in org.apache.bookkeeper.client">BookKeeper</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeperAccessor.html#getLedgerManager-org.apache.bookkeeper.client.BookKeeper-">getLedgerManager(BookKeeper)</a></span> - Static method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeperAccessor.html" title="class in org.apache.bookkeeper.client">BookKeeperAccessor</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/AbstractConfiguration.html#getLedgerManagerFactoryClass--">getLedgerManagerFactoryClass()</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a></dt>
 <dd>
 <div class="block">Get ledger manager factory class.</div>
@@ -2547,6 +2569,8 @@
 <dd>
 <div class="block">Returns the metadata of this ledger.</div>
 </dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeperAccessor.html#getLedgerMetadata-org.apache.bookkeeper.client.LedgerHandle-">getLedgerMetadata(LedgerHandle)</a></span> - Static method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeperAccessor.html" title="class in org.apache.bookkeeper.client">BookKeeperAccessor</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeperAdmin.html#getLedgerMetadata-org.apache.bookkeeper.client.LedgerHandle-">getLedgerMetadata(LedgerHandle)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeperAdmin.html" title="class in org.apache.bookkeeper.client">BookKeeperAdmin</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerHandle.html#getLedgerMetadata--">getLedgerMetadata()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a></dt>
@@ -2884,6 +2908,8 @@
 <dd>
 <div class="block">Get the re-replication entry batch size.</div>
 </dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerReader.ReadResult.html#getResultCode--">getResultCode()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerReader.ReadResult.html" title="class in org.apache.bookkeeper.client">LedgerReader.ReadResult</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeper.html#getReturnRc-int-">getReturnRc(int)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeper.html" title="class in org.apache.bookkeeper.client">BookKeeper</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#getRwRereplicateBackoffMs--">getRwRereplicateBackoffMs()</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
@@ -3106,6 +3132,8 @@
 <dd>
 <div class="block">Use older Bookkeeper wire protocol (no protobuf).</div>
 </dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerReader.ReadResult.html#getValue--">getValue()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerReader.ReadResult.html" title="class in org.apache.bookkeeper.client">LedgerReader.ReadResult</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#getVerifyMetadataOnGC--">getVerifyMetadataOnGC()</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
 <dd>
 <div class="block">Get whether the bookie is configured to double check prior to gc.</div>
@@ -3874,6 +3902,16 @@
 <dd>&nbsp;</dd>
 <dt><a href="org/apache/bookkeeper/client/LedgerOpenOp.OpenBuilderImpl.html" title="class in org.apache.bookkeeper.client"><span class="typeNameLink">LedgerOpenOp.OpenBuilderImpl</span></a> - Class in <a href="org/apache/bookkeeper/client/package-summary.html">org.apache.bookkeeper.client</a></dt>
 <dd>&nbsp;</dd>
+<dt><a href="org/apache/bookkeeper/client/LedgerReader.html" title="class in org.apache.bookkeeper.client"><span class="typeNameLink">LedgerReader</span></a> - Class in <a href="org/apache/bookkeeper/client/package-summary.html">org.apache.bookkeeper.client</a></dt>
+<dd>
+<div class="block">Reader used for DL tools to read entries.</div>
+</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerReader.html#LedgerReader-org.apache.bookkeeper.client.BookKeeper-">LedgerReader(BookKeeper)</a></span> - Constructor for class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerReader.html" title="class in org.apache.bookkeeper.client">LedgerReader</a></dt>
+<dd>&nbsp;</dd>
+<dt><a href="org/apache/bookkeeper/client/LedgerReader.ReadResult.html" title="class in org.apache.bookkeeper.client"><span class="typeNameLink">LedgerReader.ReadResult</span></a>&lt;<a href="org/apache/bookkeeper/client/LedgerReader.ReadResult.html" title="type parameter in LedgerReader.ReadResult">T</a>&gt; - Class in <a href="org/apache/bookkeeper/client/package-summary.html">org.apache.bookkeeper.client</a></dt>
+<dd>
+<div class="block">Read Result Holder.</div>
+</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/api/BKException.Code.html#LedgerRecoveryException">LedgerRecoveryException</a></span> - Static variable in interface org.apache.bookkeeper.client.api.<a href="org/apache/bookkeeper/client/api/BKException.Code.html" title="interface in org.apache.bookkeeper.client.api">BKException.Code</a></dt>
 <dd>
 <div class="block">Ledger recovery operations failed.</div>
@@ -4709,6 +4747,8 @@
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerHandle.LastConfirmedCtx.html#rc">rc</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerHandle.LastConfirmedCtx.html" title="class in org.apache.bookkeeper.client">LedgerHandle.LastConfirmedCtx</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerReader.ReadResult.html#rc">rc</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerReader.ReadResult.html" title="class in org.apache.bookkeeper.client">LedgerReader.ReadResult</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/PendingReadOp.LedgerEntryRequest.html#rc">rc</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/PendingReadOp.LedgerEntryRequest.html" title="class in org.apache.bookkeeper.client">PendingReadOp.LedgerEntryRequest</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/ReadLastConfirmedAndEntryOp.ReadLACAndEntryRequest.html#rc">rc</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/ReadLastConfirmedAndEntryOp.ReadLACAndEntryRequest.html" title="class in org.apache.bookkeeper.client">ReadLastConfirmedAndEntryOp.ReadLACAndEntryRequest</a></dt>
@@ -4785,6 +4825,8 @@
 <dd>
 <div class="block">Read a sequence of entries synchronously.</div>
 </dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerReader.html#readEntriesFromAllBookies-org.apache.bookkeeper.client.LedgerHandle-long-org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback-">readEntriesFromAllBookies(LedgerHandle, long, BookkeeperInternalCallbacks.GenericCallback&lt;Set&lt;LedgerReader.ReadResult&lt;ByteBuf&gt;&gt;&gt;)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerReader.html" title="class in org.apache.bookkeeper.client">LedgerReader</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerHandle.html#readEntriesInternalAsync-long-long-">readEntriesInternalAsync(long, long)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/PendingReadOp.html#readEntryComplete-int-long-long-io.netty.buffer.ByteBuf-java.lang.Object-">readEntryComplete(int, long, long, ByteBuf, Object)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/PendingReadOp.html" title="class in org.apache.bookkeeper.client">PendingReadOp</a></dt>
@@ -4811,6 +4853,8 @@
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/ReadLastConfirmedAndEntryOp.ReadLACAndEntryRequest.html#ReadLACAndEntryRequest-java.util.ArrayList-long-long-">ReadLACAndEntryRequest(ArrayList&lt;BookieSocketAddress&gt;, long, long)</a></span> - Constructor for class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/ReadLastConfirmedAndEntryOp.ReadLACAndEntryRequest.html" title="class in org.apache.bookkeeper.client">ReadLastConfirmedAndEntryOp.ReadLACAndEntryRequest</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/PendingReadLacOp.html#readLacComplete-int-long-io.netty.buffer.ByteBuf-io.netty.buffer.ByteBuf-java.lang.Object-">readLacComplete(int, long, ByteBuf, ByteBuf, Object)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/PendingReadLacOp.html" title="class in org.apache.bookkeeper.client">PendingReadLacOp</a></dt>
+<dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerReader.html#readLacs-org.apache.bookkeeper.client.LedgerHandle-long-org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback-">readLacs(LedgerHandle, long, BookkeeperInternalCallbacks.GenericCallback&lt;Set&lt;LedgerReader.ReadResult&lt;Long&gt;&gt;&gt;)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerReader.html" title="class in org.apache.bookkeeper.client">LedgerReader</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeper.html#readLACSpeculativeRequestPolicy">readLACSpeculativeRequestPolicy</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeper.html" title="class in org.apache.bookkeeper.client">BookKeeper</a></dt>
 <dd>&nbsp;</dd>
@@ -4894,6 +4938,8 @@
 <dt><a href="org/apache/bookkeeper/client/ReadOnlyLedgerHandle.MetadataUpdater.html" title="class in org.apache.bookkeeper.client"><span class="typeNameLink">ReadOnlyLedgerHandle.MetadataUpdater</span></a> - Class in <a href="org/apache/bookkeeper/client/package-summary.html">org.apache.bookkeeper.client</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/PendingReadOp.html#readOpLogger">readOpLogger</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/PendingReadOp.html" title="class in org.apache.bookkeeper.client">PendingReadOp</a></dt>
+<dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerReader.ReadResult.html#ReadResult-long-int-T-java.net.InetSocketAddress-">ReadResult(long, int, T, InetSocketAddress)</a></span> - Constructor for class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerReader.ReadResult.html" title="class in org.apache.bookkeeper.client">LedgerReader.ReadResult</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeper.html#readSpeculativeRequestPolicy">readSpeculativeRequestPolicy</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeper.html" title="class in org.apache.bookkeeper.client">BookKeeper</a></dt>
 <dd>&nbsp;</dd>
@@ -6312,6 +6358,8 @@
  rereplicationEntryBatchSize of entries in each one and can treat them as
  sub fragments.</div>
 </dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerReader.ReadResult.html#srcAddr">srcAddr</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerReader.ReadResult.html" title="class in org.apache.bookkeeper.client">LedgerReader.ReadResult</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html#stabilizePeriodSeconds">stabilizePeriodSeconds</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html" title="class in org.apache.bookkeeper.client">RackawareEnsemblePlacementPolicyImpl</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookieInfoReader.html#start--">start()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookieInfoReader.html" title="class in org.apache.bookkeeper.client">BookieInfoReader</a></dt>
@@ -6800,6 +6848,8 @@
 <div class="block">Validate the configuration.</div>
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeperAdmin.SyncObject.html#value">value</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeperAdmin.SyncObject.html" title="class in org.apache.bookkeeper.client">BookKeeperAdmin.SyncObject</a></dt>
+<dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerReader.ReadResult.html#value">value</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerReader.ReadResult.html" title="class in org.apache.bookkeeper.client">LedgerReader.ReadResult</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/api/DigestType.html#valueOf-java.lang.String-">valueOf(String)</a></span> - Static method in enum org.apache.bookkeeper.client.api.<a href="org/apache/bookkeeper/client/api/DigestType.html" title="enum in org.apache.bookkeeper.client.api">DigestType</a></dt>
 <dd>
