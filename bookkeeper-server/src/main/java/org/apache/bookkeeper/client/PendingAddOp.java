@@ -208,6 +208,7 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
      * Initiate the add operation.
      */
     public void safeRun() {
+        hasRun = true;
         if (callbackTriggered) {
             // this should only be true if the request was failed due
             // to another request ahead in the pending queue,
@@ -231,7 +232,6 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
                 sendWriteRequest(writeSet.get(i));
             }
         } finally {
-            hasRun = true;
             writeSet.recycle();
         }
     }
