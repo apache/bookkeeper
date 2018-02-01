@@ -1807,22 +1807,24 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
 
     /**
      * Set what percentage of a ledger (fragment)'s entries will be verified.
-     * 0 - only the first and entry of each ledger fragment would be verified
+     * 0 - only the first and last entry of each ledger fragment would be verified
      * 100 - the entire ledger fragment would be verified
      * anything else - randomly picked entries from over the fragment would be verifiec
      * @param auditorLedgerVerificationPercentage The verification proportion as a percentage
+     * @return ServerConfiguration
      */
-    public void setAuditorLedgerVerificationPercentage(long auditorLedgerVerificationPercentage) {
+    public ServerConfiguration setAuditorLedgerVerificationPercentage(long auditorLedgerVerificationPercentage) {
         setProperty(AUDITOR_LEDGER_VERIFICATION_PERCENTAGE, auditorLedgerVerificationPercentage);
+        return this;
     }
 
     /**
      * Get what percentage of a ledger (fragment)'s entries will be verified.
      * @see #setAuditorLedgerVerificationPercentage(long)
-     * @return percentage of a ledger (fragment)'s entries will be verifie. Default is 100%
+     * @return percentage of a ledger (fragment)'s entries will be verified. Default is 0.
      */
     public long getAuditorLedgerVerificationPercentage() {
-        return getLong(AUDITOR_LEDGER_VERIFICATION_PERCENTAGE, 100);
+        return getLong(AUDITOR_LEDGER_VERIFICATION_PERCENTAGE, 0);
     }
 
     /**

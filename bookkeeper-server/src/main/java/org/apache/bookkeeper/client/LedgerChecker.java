@@ -24,18 +24,20 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Random;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import org.apache.bookkeeper.client.BKException.Code;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieClient;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 
 /**
  * A utility class to check the complete ledger and finds the UnderReplicated fragments if any.
@@ -199,7 +201,11 @@ public class LedgerChecker {
             bookieClient.readEntry(bookie, fragment
                     .getLedgerId(), firstStored, manycb, null);
         } else {
-            assert lastStored > firstStored;
+            if (lastStored <= firstStored) {
+                cb.operationComplete(Code.IncorrectParameterException, null);
+                return;
+            }
+
             long lengthOfLedgerFragment = lastStored - firstStored + 1;
 
             int numberOfEntriesToBeVerified =
@@ -209,13 +215,12 @@ public class LedgerChecker {
 
             if (numberOfEntriesToBeVerified < lengthOfLedgerFragment) {
                 // Evenly pick random entries over the length of the fragment
-                if (numberOfEntriesToBeVerified != 0) {
+                if (numberOfEntriesToBeVerified > 0) {
                     int lengthOfBucket = (int) (lengthOfLedgerFragment / numberOfEntriesToBeVerified);
-                    Random rand = new Random();
                     for (long index = firstStored;
                          index < (lastStored - lengthOfBucket - 1);
                          index += lengthOfBucket) {
-                        long potentialEntryId = rand.nextInt((lengthOfBucket)) + index;
+                        long potentialEntryId = ThreadLocalRandom.current().nextInt((lengthOfBucket)) + index;
                         if (fragment.isStoredEntryId(potentialEntryId, bookieIndex)) {
                             entriesToBeVerified.add(potentialEntryId);
                         }
@@ -306,7 +311,7 @@ public class LedgerChecker {
      */
     public void checkLedger(final LedgerHandle lh,
                             final GenericCallback<Set<LedgerFragment>> cb) {
-        checkLedger(lh, cb, 100L);
+        checkLedger(lh, cb, 0L);
     }
 
     public void checkLedger(final LedgerHandle lh,
