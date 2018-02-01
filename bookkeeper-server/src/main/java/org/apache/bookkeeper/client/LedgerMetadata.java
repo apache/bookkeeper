@@ -340,9 +340,11 @@ public class LedgerMetadata implements org.apache.bookkeeper.client.api.LedgerMe
             builder.setCtime(ctime);
         }
 
-        builder.setDigestType(digestType);
-        if (hasPassword && withPassword) {
-            builder.setPassword(ByteString.copyFrom(password));
+        if (hasPassword) {
+            builder.setDigestType(digestType);
+            if (withPassword) {
+                builder.setPassword(ByteString.copyFrom(password));
+            }
         }
 
         if (customMetadata != null) {
