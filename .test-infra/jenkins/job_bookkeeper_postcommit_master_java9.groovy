@@ -42,5 +42,5 @@ mavenJob('bookkeeper_postcommit_master_java9') {
   common_job_properties.setMavenConfig(delegate)
 
   // Maven build project.
-  goals('clean apache-rat:check package spotbugs:check')
+  goals('clean apache-rat:check package spotbugs:check -Ddistributedlog')
 }
