@@ -63,11 +63,11 @@ public class AutoRecoveryMain {
     private static final Logger LOG = LoggerFactory
             .getLogger(AutoRecoveryMain.class);
 
-    private ServerConfiguration conf;
-    ZooKeeper zk;
-    AuditorElector auditorElector;
-    ReplicationWorker replicationWorker;
-    private AutoRecoveryDeathWatcher deathWatcher;
+    private final ServerConfiguration conf;
+    final ZooKeeper zk;
+    final AuditorElector auditorElector;
+    final ReplicationWorker replicationWorker;
+    private final AutoRecoveryDeathWatcher deathWatcher;
     private int exitCode;
     private volatile boolean shuttingDown = false;
     private volatile boolean running = false;

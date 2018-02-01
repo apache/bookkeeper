@@ -22,6 +22,7 @@ package org.apache.bookkeeper.client;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -44,6 +45,7 @@ import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
 import java.util.SortedMap;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.ExecutionException;
@@ -1430,6 +1432,30 @@ public class BookKeeperAdmin implements AutoCloseable {
     public void decommissionBookie(BookieSocketAddress bookieAddress)
             throws CompatibilityException, UnavailableException, KeeperException, InterruptedException, IOException,
             BKAuditException, TimeoutException, BKException {
+        int maxSleepTimeInBetweenChecks = 10 * 60 * 1000; // 10 minutes
+        int sleepTimePerLedger = 10 * 1000; // 10 secs
+
+        decommissionBookie(
+            bookieAddress,
+            // default wait strategy is to sleep for 30 secs.
+            // so that Auditor gets chance to trigger its
+            // force audittask and let the underreplicationmanager process
+            // to do its replication process
+            () -> {
+                Thread.sleep(30 * 1000);
+                return null;
+            },
+            sleepTimePerLedger,
+            maxSleepTimeInBetweenChecks);
+    }
+
+    @VisibleForTesting
+    public void decommissionBookie(BookieSocketAddress bookieAddress,
+                                   Callable<Void> waitAuditorStrategy,
+                                   int sleepTimePerLedger,
+                                   int maxSleepTimeInBetweenChecks)
+            throws CompatibilityException, UnavailableException, KeeperException, InterruptedException, IOException,
+            BKAuditException, TimeoutException, BKException {
         if (getAvailableBookies().contains(bookieAddress) || getReadOnlyBookies().contains(bookieAddress)) {
             LOG.error("Bookie: {} is not shutdown yet", bookieAddress);
             throw BKException.create(BKException.Code.IllegalOpException);
@@ -1437,12 +1463,13 @@ public class BookKeeperAdmin implements AutoCloseable {
 
         triggerAudit();
 
-        /*
-         * Sleep for 30 secs, so that Auditor gets chance to trigger its
-         * force audittask and let the underreplicationmanager process
-         * to do its replication process
-         */
-        Thread.sleep(30 * 1000);
+        try {
+            waitAuditorStrategy.call();
+        } catch (InterruptedException ie) {
+            throw ie;
+        } catch (Exception e) {
+            throw new TimeoutException("Encountered exception on waiting auditor auditing the bookies");
+        }
 
         /*
          * get the collection of the ledgers which are stored in this
@@ -1459,7 +1486,12 @@ public class BookKeeperAdmin implements AutoCloseable {
              * bookies by making sure that these ledgers metadata don't
              * contain this bookie as part of their ensemble.
              */
-            waitForLedgersToBeReplicated(ledgersStoredInThisBookie, bookieAddress, bkc.ledgerManager);
+            waitForLedgersToBeReplicated(
+                ledgersStoredInThisBookie,
+                bookieAddress,
+                bkc.ledgerManager,
+                sleepTimePerLedger,
+                maxSleepTimeInBetweenChecks);
         }
 
         // for double-checking, check if any ledgers are listed as underreplicated because of this bookie
@@ -1471,14 +1503,18 @@ public class BookKeeperAdmin implements AutoCloseable {
                     + "Have to make sure that those ledger fragments are rereplicated");
             List<Long> urLedgers = new ArrayList<>();
             urLedgerIterator.forEachRemaining(urLedgers::add);
-            waitForLedgersToBeReplicated(urLedgers, bookieAddress, bkc.ledgerManager);
+            waitForLedgersToBeReplicated(
+                urLedgers, bookieAddress, bkc.ledgerManager, sleepTimePerLedger, maxSleepTimeInBetweenChecks);
         }
     }
 
-    private void waitForLedgersToBeReplicated(Collection<Long> ledgers, BookieSocketAddress thisBookieAddress,
-            LedgerManager ledgerManager) throws InterruptedException, TimeoutException {
-        int maxSleepTimeInBetweenChecks = 10 * 60 * 1000; // 10 minutes
-        int sleepTimePerLedger = 10 * 1000; // 10 secs
+    private void waitForLedgersToBeReplicated(Collection<Long> ledgers,
+                                              BookieSocketAddress thisBookieAddress,
+                                              LedgerManager ledgerManager,
+                                              int sleepTimePerLedger,
+                                              int maxSleepTimeInBetweenChecks)
+            throws InterruptedException, TimeoutException {
+
         Predicate<Long> validateBookieIsNotPartOfEnsemble = ledgerId -> !areEntriesOfLedgerStoredInTheBookie(ledgerId,
                 thisBookieAddress, ledgerManager);
         while (!ledgers.isEmpty()) {

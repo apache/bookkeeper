@@ -22,14 +22,16 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 import java.util.Iterator;
+import lombok.Cleanup;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.client.BKException.BKIllegalOpException;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.ZkLedgerUnderreplicationManager;
+import org.apache.bookkeeper.replication.Auditor;
+import org.apache.bookkeeper.replication.AutoRecoveryMain;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
-import org.apache.bookkeeper.test.annotations.FlakyTest;
 import org.junit.Test;
 
 /**
@@ -44,14 +46,17 @@ public class BookieDecommissionTest extends BookKeeperClusterTestCase {
 
     public BookieDecommissionTest() {
         super(NUM_OF_BOOKIES, 480);
-        baseConf.setOpenLedgerRereplicationGracePeriod(String.valueOf(30000));
-        setAutoRecoveryEnabled(true);
+        baseConf.setOpenLedgerRereplicationGracePeriod(100);
+        setAutoRecoveryEnabled(false);
     }
 
-    @FlakyTest("https://github.com/apache/bookkeeper/issues/502")
+    @Test
     public void testDecommissionBookie() throws Exception {
+        @Cleanup("shutdown") AutoRecoveryMain recoveryProcess = new AutoRecoveryMain(bsConfs.get(0));
+        recoveryProcess.start();
+
         ZkLedgerUnderreplicationManager urLedgerMgr = new ZkLedgerUnderreplicationManager(baseClientConf, zkc);
-        BookKeeperAdmin bkAdmin = new BookKeeperAdmin(zkUtil.getZooKeeperConnectString());
+        @Cleanup BookKeeperAdmin bkAdmin = new BookKeeperAdmin(zkUtil.getZooKeeperConnectString());
 
         int numOfLedgers = 2 * NUM_OF_BOOKIES;
         int numOfEntries = 2 * NUM_OF_BOOKIES;
@@ -86,7 +91,18 @@ public class BookieDecommissionTest extends BookKeeperClusterTestCase {
          * this decommisionBookie should make sure that there are no
          * underreplicated ledgers because of this bookie
          */
-        bkAdmin.decommissionBookie(Bookie.getBookieAddress(killedBookieConf));
+        bkAdmin.decommissionBookie(
+            Bookie.getBookieAddress(killedBookieConf),
+            () -> {
+                Auditor auditor = recoveryProcess.getAuditor();
+                if (null != auditor) {
+                    auditor.submitLostBookieRecoveryDelayChangedEvent().get();
+                    log.info("Wait until auditor completes the auditing task.");
+                }
+                return null;
+            },
+            100 /* sleep time per ledger */,
+            1000 /* max sleep time in between checks */);
         bkAdmin.triggerAudit();
         Thread.sleep(500);
         Iterator<Long> ledgersToRereplicate = urLedgerMgr.listLedgersToRereplicate(null);
@@ -99,7 +115,18 @@ public class BookieDecommissionTest extends BookKeeperClusterTestCase {
         }
 
         killedBookieConf = killBookie(0);
-        bkAdmin.decommissionBookie(Bookie.getBookieAddress(killedBookieConf));
+        bkAdmin.decommissionBookie(
+            Bookie.getBookieAddress(killedBookieConf),
+            () -> {
+                Auditor auditor = recoveryProcess.getAuditor();
+                if (null != auditor) {
+                    auditor.submitLostBookieRecoveryDelayChangedEvent().get();
+                    log.info("Wait until auditor completes the auditing task.");
+                }
+                return null;
+            },
+            100 /* sleep time per ledger */,
+            1000 /* max sleep time in between checks */);
         bkAdmin.triggerAudit();
         Thread.sleep(500);
         ledgersToRereplicate = urLedgerMgr.listLedgersToRereplicate(null);
@@ -110,13 +137,15 @@ public class BookieDecommissionTest extends BookKeeperClusterTestCase {
             }
             fail("There are not supposed to be any underreplicatedledgers");
         }
-        bkAdmin.close();
     }
 
     @Test
     public void testDecommissionForLedgersWithMultipleSegmentsAndNotWriteClosed() throws Exception {
         ZkLedgerUnderreplicationManager urLedgerMgr = new ZkLedgerUnderreplicationManager(baseClientConf, zkc);
-        BookKeeperAdmin bkAdmin = new BookKeeperAdmin(zkUtil.getZooKeeperConnectString());
+        // call `setLostBookieRecoveryDelay` to ensure the znode is created before testing.
+        urLedgerMgr.setLostBookieRecoveryDelay(1800);
+
+        @Cleanup BookKeeperAdmin bkAdmin = new BookKeeperAdmin(zkUtil.getZooKeeperConnectString());
         int numOfEntries = 2 * NUM_OF_BOOKIES;
 
         LedgerHandle lh1 = bkc.createLedgerAdv(1L, numBookies, 3, 3, digestType, PASSWORD.getBytes(), null);
@@ -152,6 +181,9 @@ public class BookieDecommissionTest extends BookKeeperClusterTestCase {
         lh1.close();
         lh2.close();
 
+        @Cleanup("shutdown") AutoRecoveryMain recoveryProcess = new AutoRecoveryMain(bsConfs.get(0));
+        recoveryProcess.start();
+
         /*
          * If the last fragment of the ledger is underreplicated and if the
          * ledger is not closed then it will remain underreplicated for
@@ -159,7 +191,18 @@ public class BookieDecommissionTest extends BookKeeperClusterTestCase {
          * info. Check BOOKKEEPER-237 and BOOKKEEPER-325. But later
          * ReplicationWorker will fence the ledger.
          */
-        bkAdmin.decommissionBookie(Bookie.getBookieAddress(killedBookieConf));
+        bkAdmin.decommissionBookie(
+            Bookie.getBookieAddress(killedBookieConf),
+            () -> {
+                Auditor auditor = recoveryProcess.getAuditor();
+                if (null != auditor) {
+                    auditor.submitLostBookieRecoveryDelayChangedEvent().get();
+                    log.info("Wait until auditor completes the auditing task.");
+                }
+                return null;
+            },
+            100 /* sleep time per ledger */,
+            1000 /* max sleep time in between checks */);
         bkAdmin.triggerAudit();
         Thread.sleep(500);
         Iterator<Long> ledgersToRereplicate = urLedgerMgr.listLedgersToRereplicate(null);
@@ -170,7 +213,6 @@ public class BookieDecommissionTest extends BookKeeperClusterTestCase {
             }
             fail("There are not supposed to be any underreplicatedledgers");
         }
-        bkAdmin.close();
     }
 
 }

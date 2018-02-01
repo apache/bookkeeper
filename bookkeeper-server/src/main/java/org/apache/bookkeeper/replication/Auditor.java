@@ -269,7 +269,8 @@ public class Auditor {
             });
     }
 
-    synchronized Future<?> submitLostBookieRecoveryDelayChangedEvent() {
+    @VisibleForTesting
+    public synchronized Future<?> submitLostBookieRecoveryDelayChangedEvent() {
         if (executor.isShutdown()) {
             SettableFuture<Void> f = SettableFuture.<Void> create();
             f.setException(new BKAuditException("Auditor shutting down"));

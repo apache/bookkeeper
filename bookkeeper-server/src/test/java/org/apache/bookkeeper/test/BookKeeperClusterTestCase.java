@@ -88,7 +88,7 @@ public abstract class BookKeeperClusterTestCase {
     protected final ServerConfiguration baseConf = TestBKConfiguration.newServerConfiguration();
     protected final ClientConfiguration baseClientConf = new ClientConfiguration();
 
-    private final Map<BookieServer, AutoRecoveryMain> autoRecoveryProcesses = new HashMap<>();
+    protected final Map<BookieServer, AutoRecoveryMain> autoRecoveryProcesses = new HashMap<>();
 
     private boolean isAutoRecoveryEnabled;
 

@@ -1206,10 +1206,11 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      *
      * @see org.apache.bookkeeper.client.BookKeeper#openLedger
      *
-     * @param waitTime time to wait before replicating ledger fragment
+     * @param waitTimeMs time to wait before replicating ledger fragment, in milliseconds
      */
-    public void setOpenLedgerRereplicationGracePeriod(String waitTime) {
-        setProperty(OPEN_LEDGER_REREPLICATION_GRACE_PERIOD, waitTime);
+    public ServerConfiguration setOpenLedgerRereplicationGracePeriod(long waitTimeMs) {
+        setProperty(OPEN_LEDGER_REREPLICATION_GRACE_PERIOD, waitTimeMs);
+        return this;
     }
 
     /**

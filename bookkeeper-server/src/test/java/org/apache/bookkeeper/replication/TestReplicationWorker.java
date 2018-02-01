@@ -413,7 +413,7 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
         LOG.info("New Bookie addr :" + newBkAddr);
 
         // set to 3s instead of default 30s
-        baseConf.setOpenLedgerRereplicationGracePeriod("3000");
+        baseConf.setOpenLedgerRereplicationGracePeriod(3000);
         ReplicationWorker rw = new ReplicationWorker(zkc, baseConf);
 
         LedgerManagerFactory mFactory = LedgerManagerFactory

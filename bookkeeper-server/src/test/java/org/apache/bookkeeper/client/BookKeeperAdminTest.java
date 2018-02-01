@@ -61,7 +61,7 @@ public class BookKeeperAdminTest extends BookKeeperClusterTestCase {
     public BookKeeperAdminTest() {
         super(numOfBookies, 480);
         baseConf.setLostBookieRecoveryDelay(lostBookieRecoveryDelayInitValue);
-        baseConf.setOpenLedgerRereplicationGracePeriod(String.valueOf(30000));
+        baseConf.setOpenLedgerRereplicationGracePeriod(500);
         setAutoRecoveryEnabled(true);
     }
 
