@@ -42,8 +42,15 @@ freeStyleJob('bookkeeper_precommit_integrationtests') {
         maven {
             // Set Maven parameters.
             common_job_properties.setMavenConfig(delegate)
-            rootPom('tests/pom.xml')
+            rootPOM('tests/pom.xml')
             goals('test -DintegrationTests')
         }
+    }
+
+    publishers {
+        archiveArtifacts {
+            pattern('**/target/container-logs/*')
+        }
+        archiveJunit('**/surefire-reports/TEST-*.xml')
     }
 }
