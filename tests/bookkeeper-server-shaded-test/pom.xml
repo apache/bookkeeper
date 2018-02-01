@@ -84,7 +84,8 @@
         </configuration>
         <executions>
           <execution>
-            <phase>test-compile</phase>
+            <id>checkstyle</id>
+            <phase>validate</phase>
             <goals>
               <goal>check</goal>
             </goals>
