@@ -1,6 +1,5 @@
-BUNDLER_VERSION = 1.15.1
-BUNDLE = bundle _${BUNDLER_VERSION}_
-JEKYLL = ${BUNDLE} exec jekyll
+BUNDLE := bundle
+JEKYLL := $(BUNDLE) exec jekyll
 
 dev:
 	code .
@@ -12,18 +11,17 @@ clean:
 
 setup:
 	gem install bundler \
-		-v ${BUNDLER_VERSION} \
 		--no-rdoc \
 		--no-ri
-	NOKOGIRI_USE_SYSTEM_LIBRARIES=true ${BUNDLE} install \
+	NOKOGIRI_USE_SYSTEM_LIBRARIES=true $(BUNDLE) install \
 		--path vendor/bundle
 
 build: clean
-	${JEKYLL} build \
+	$(JEKYLL) build \
 		--config _config.yml
 
 apache: clean
-	JEKYLL_ENV=production ${JEKYLL} build \
+	JEKYLL_ENV=production $(JEKYLL) build \
 		--config _config.yml,_config.apache.yml
 
 javadoc:
@@ -33,10 +31,10 @@ latest_javadoc:
 	scripts/javadoc-gen.sh "latest"
 
 staging: clean
-	${JEKYLL} build --config _config.yml,_config.staging.yml
+	$(JEKYLL) build --config _config.yml,_config.staging.yml
 
 serve: build
-	${JEKYLL} serve \
+	$(JEKYLL) serve \
 		--incremental \
 		--livereload \
 		--config _config.yml,_config.local.yml
