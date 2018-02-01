@@ -20,6 +20,11 @@
  */
 package org.apache.bookkeeper.client;
 
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.NEW_ENSEMBLE_TIME;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.REPLACE_BOOKIE_TIME;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.WATCHER_SCOPE;
+import static org.apache.bookkeeper.client.BookKeeperClientStats.CLIENT_SCOPE;
+import static org.apache.bookkeeper.client.BookKeeperClientStats.LEDGER_ENSEMBLE_BOOKIE_DISTRIBUTION;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -175,6 +180,7 @@ public class TestDelayEnsembleChange extends BookKeeperClusterTestCase {
         startNewBookie();
         startNewBookie();
 
+        bkc.getTestStatsProvider().clear();
         LedgerHandle lh = bkc.createLedger(5, 5, 3, digestType, testPasswd);
 
         byte[] data = "foobar".getBytes();
@@ -183,6 +189,24 @@ public class TestDelayEnsembleChange extends BookKeeperClusterTestCase {
         for (int i = 0; i < numEntries; i++) {
             lh.addEntry(data);
         }
+
+        for (BookieSocketAddress addr : lh.getLedgerMetadata().getEnsembles().get(0L)) {
+            assertTrue(
+                    LEDGER_ENSEMBLE_BOOKIE_DISTRIBUTION + " should be > 0 for " + addr,
+                    bkc.getTestStatsProvider().getCounter(
+                            CLIENT_SCOPE + "." + LEDGER_ENSEMBLE_BOOKIE_DISTRIBUTION + "-" + addr)
+                            .get() > 0);
+        }
+        assertTrue(
+                "Stats should have captured a new ensemble",
+                bkc.getTestStatsProvider().getOpStatsLogger(
+                        CLIENT_SCOPE + "." + WATCHER_SCOPE + "." + NEW_ENSEMBLE_TIME)
+                        .getSuccessCount() > 0);
+        assertTrue(
+                "Stats should not have captured an ensemble change",
+                bkc.getTestStatsProvider().getOpStatsLogger(
+                        CLIENT_SCOPE + "." + WATCHER_SCOPE + "." + REPLACE_BOOKIE_TIME)
+                        .getSuccessCount() == 0);
 
         logger.info("Kill bookie 0 and write {} entries.", numEntries);
 
@@ -196,6 +220,11 @@ public class TestDelayEnsembleChange extends BookKeeperClusterTestCase {
         // ensure there is no ensemble changed
         assertEquals("There should be no ensemble change if delaying ensemble change is enabled.",
                      1, lh.getLedgerMetadata().getEnsembles().size());
+        assertTrue(
+                "Stats should not have captured an ensemble change",
+                bkc.getTestStatsProvider().getOpStatsLogger(
+                        CLIENT_SCOPE + "." + WATCHER_SCOPE + "." + REPLACE_BOOKIE_TIME)
+                        .getSuccessCount() == 0);
 
         logger.info("Kill bookie 1 and write another {} entries.", numEntries);
 
@@ -217,9 +246,14 @@ public class TestDelayEnsembleChange extends BookKeeperClusterTestCase {
             lh.addEntry(data);
         }
 
-        // ensemble change should kill in
+        // ensemble change should kick in
         assertEquals("There should be ensemble change if ack quorum couldn't be formed.",
                      2, lh.getLedgerMetadata().getEnsembles().size());
+        assertTrue(
+                "Stats should have captured an ensemble change",
+                bkc.getTestStatsProvider().getOpStatsLogger(
+                        CLIENT_SCOPE + "." + WATCHER_SCOPE + "." + REPLACE_BOOKIE_TIME)
+                        .getSuccessCount() > 0);
 
         ArrayList<BookieSocketAddress> firstFragment = lh.getLedgerMetadata().getEnsemble(0);
         ArrayList<BookieSocketAddress> secondFragment = lh.getLedgerMetadata().getEnsemble(3 * numEntries);

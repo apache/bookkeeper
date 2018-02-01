@@ -38,4 +38,8 @@ public class HierarchicalLedgerManagerFactory extends LegacyHierarchicalLedgerMa
                 subIdGenerator, zkAcls);
     }
 
+    @Override
+    public LedgerManager newLedgerManager() {
+        return new HierarchicalLedgerManager(conf, zk);
+    }
 }

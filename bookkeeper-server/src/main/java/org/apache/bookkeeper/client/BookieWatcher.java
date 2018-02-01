@@ -17,6 +17,9 @@
  */
 package org.apache.bookkeeper.client;
 
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.NEW_ENSEMBLE_TIME;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.REPLACE_BOOKIE_TIME;
+
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.RemovalListener;
@@ -35,9 +38,12 @@ import org.apache.bookkeeper.client.BKException.BKInterruptedException;
 import org.apache.bookkeeper.client.BKException.BKNotEnoughBookiesException;
 import org.apache.bookkeeper.client.BKException.MetaStoreException;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
+import org.apache.bookkeeper.common.util.MathUtils;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.discover.RegistrationClient;
 import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.stats.OpStatsLogger;
+import org.apache.bookkeeper.stats.StatsLogger;
 
 /**
  * This class is responsible for maintaining a consistent view of what bookies
@@ -64,6 +70,8 @@ class BookieWatcher {
     private final ClientConfiguration conf;
     private final RegistrationClient registrationClient;
     private final EnsemblePlacementPolicy placementPolicy;
+    private final OpStatsLogger newEnsembleTimer;
+    private final OpStatsLogger replaceBookieTimer;
 
     // Bookies that will not be preferred to be chosen in a new ensemble
     final Cache<BookieSocketAddress, Boolean> quarantinedBookies;
@@ -76,7 +84,8 @@ class BookieWatcher {
 
     public BookieWatcher(ClientConfiguration conf,
                          EnsemblePlacementPolicy placementPolicy,
-                         RegistrationClient registrationClient) {
+                         RegistrationClient registrationClient,
+                         StatsLogger statsLogger)  {
         this.conf = conf;
         this.placementPolicy = placementPolicy;
         this.registrationClient = registrationClient;
@@ -90,6 +99,8 @@ class BookieWatcher {
                     }
 
                 }).build();
+        this.newEnsembleTimer = statsLogger.getOpStatsLogger(NEW_ENSEMBLE_TIME);
+        this.replaceBookieTimer = statsLogger.getOpStatsLogger(REPLACE_BOOKIE_TIME);
     }
 
     public Set<BookieSocketAddress> getBookies() throws BKException {
@@ -101,7 +112,8 @@ class BookieWatcher {
         }
     }
 
-    public Set<BookieSocketAddress> getReadOnlyBookies() throws BKException {
+    public Set<BookieSocketAddress> getReadOnlyBookies()
+            throws BKException {
         try {
             return FutureUtils.result(registrationClient.getReadOnlyBookies(), EXCEPTION_FUNC).getValue();
         } catch (BKInterruptedException ie) {
@@ -191,18 +203,23 @@ class BookieWatcher {
     public ArrayList<BookieSocketAddress> newEnsemble(int ensembleSize, int writeQuorumSize,
         int ackQuorumSize, Map<String, byte[]> customMetadata)
             throws BKNotEnoughBookiesException {
+        long startTime = MathUtils.nowInNano();
+        ArrayList<BookieSocketAddress> socketAddresses;
         try {
-            // we try to only get from the healthy bookies first
-            return placementPolicy.newEnsemble(ensembleSize,
+            socketAddresses = placementPolicy.newEnsemble(ensembleSize,
                     writeQuorumSize, ackQuorumSize, customMetadata, new HashSet<BookieSocketAddress>(
-                    quarantinedBookies.asMap().keySet()));
+                            quarantinedBookies.asMap().keySet()));
+            // we try to only get from the healthy bookies first
+            newEnsembleTimer.registerSuccessfulEvent(MathUtils.nowInNano() - startTime, TimeUnit.NANOSECONDS);
         } catch (BKNotEnoughBookiesException e) {
             if (log.isDebugEnabled()) {
                 log.debug("Not enough healthy bookies available, using quarantined bookies");
             }
-            return placementPolicy.newEnsemble(
-                ensembleSize, writeQuorumSize, ackQuorumSize, customMetadata, new HashSet<>());
+            socketAddresses = placementPolicy.newEnsemble(
+                    ensembleSize, writeQuorumSize, ackQuorumSize, customMetadata, new HashSet<>());
+            newEnsembleTimer.registerFailedEvent(MathUtils.nowInNano() - startTime, TimeUnit.NANOSECONDS);
         }
+        return socketAddresses;
     }
 
     /**
@@ -219,20 +236,27 @@ class BookieWatcher {
                                              List<BookieSocketAddress> existingBookies, int bookieIdx,
                                              Set<BookieSocketAddress> excludeBookies)
             throws BKNotEnoughBookiesException {
+        long startTime = MathUtils.nowInNano();
         BookieSocketAddress addr = existingBookies.get(bookieIdx);
+        BookieSocketAddress socketAddress;
         try {
             // we exclude the quarantined bookies also first
             Set<BookieSocketAddress> existingAndQuarantinedBookies = new HashSet<BookieSocketAddress>(existingBookies);
             existingAndQuarantinedBookies.addAll(quarantinedBookies.asMap().keySet());
-            return placementPolicy.replaceBookie(ensembleSize, writeQuorumSize, ackQuorumSize, customMetadata,
+            socketAddress = placementPolicy.replaceBookie(
+                    ensembleSize, writeQuorumSize, ackQuorumSize, customMetadata,
                     existingAndQuarantinedBookies, addr, excludeBookies);
+            replaceBookieTimer.registerSuccessfulEvent(MathUtils.nowInNano() - startTime, TimeUnit.NANOSECONDS);
         } catch (BKNotEnoughBookiesException e) {
             if (log.isDebugEnabled()) {
                 log.debug("Not enough healthy bookies available, using quarantined bookies");
             }
-            return placementPolicy.replaceBookie(ensembleSize, writeQuorumSize, ackQuorumSize, customMetadata,
+            socketAddress = placementPolicy.replaceBookie(
+                    ensembleSize, writeQuorumSize, ackQuorumSize, customMetadata,
                     new HashSet<BookieSocketAddress>(existingBookies), addr, excludeBookies);
+            replaceBookieTimer.registerFailedEvent(MathUtils.nowInNano() - startTime, TimeUnit.NANOSECONDS);
         }
+        return socketAddress;
     }
 
     /**

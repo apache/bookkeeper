@@ -568,6 +568,9 @@ public class EntryLogger {
         } finally {
             serializedMap.release();
         }
+        // Flush the ledger's map out before we write the header.
+        // Otherwise the header might point to something that is not fully written
+        entryLogChannel.flush(false);
 
         // Update the headers with the map offset and count of ledgers
         ByteBuffer mapInfo = ByteBuffer.allocate(8 + 4);
@@ -1314,6 +1317,8 @@ public class EntryLogger {
                 // Move to next entry, if any
                 offset += ledgersMapSize + 4;
             }
+        } catch (IndexOutOfBoundsException e) {
+            throw new IOException(e);
         } finally {
             ledgersMap.release();
         }

@@ -17,16 +17,39 @@
 package org.apache.bookkeeper.stats.prometheus;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertSame;
 
 import io.prometheus.client.Collector;
 import io.prometheus.client.CollectorRegistry;
 import java.lang.reflect.Field;
 import java.util.Map;
+import org.apache.bookkeeper.stats.Counter;
+import org.apache.bookkeeper.stats.OpStatsLogger;
+import org.apache.bookkeeper.stats.StatsLogger;
 import org.junit.Test;
 
 public class TestPrometheusMetricsProvider {
 
     private final CollectorRegistry registry = new CollectorRegistry();
+
+    @Test
+    public void testCache() {
+        PrometheusMetricsProvider provider = new PrometheusMetricsProvider();
+
+        StatsLogger statsLogger =  provider.getStatsLogger("test");
+
+        OpStatsLogger opStatsLogger1 = statsLogger.getOpStatsLogger("optest");
+        OpStatsLogger opStatsLogger2 = statsLogger.getOpStatsLogger("optest");
+        assertSame(opStatsLogger1, opStatsLogger2);
+
+        Counter counter1 = statsLogger.getCounter("countertest");
+        Counter counter2 = statsLogger.getCounter("countertest");
+        assertSame(counter1, counter2);
+
+        StatsLogger scope1 = statsLogger.scope("scopetest");
+        StatsLogger scope2 = statsLogger.scope("scopetest");
+        assertSame(scope1, scope2);
+    }
 
     @Test
     public void testCounter() {

@@ -21,6 +21,7 @@
 package org.apache.bookkeeper.client;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.WATCHER_SCOPE;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Optional;
@@ -70,6 +71,8 @@ import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.net.DNSToSwitchMapping;
 import org.apache.bookkeeper.proto.BookieClient;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
+import org.apache.bookkeeper.proto.DataFormats;
+import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
@@ -115,6 +118,8 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
     private OpStatsLogger readLacOpLogger;
     private OpStatsLogger recoverAddEntriesStats;
     private OpStatsLogger recoverReadEntriesStats;
+
+    private Counter speculativeReadCounter;
 
     // whether the event loop group is one we created, or is owned by whoever
     // instantiated us
@@ -395,7 +400,8 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
     /**
      * Constructor for use with the builder. Other constructors also use it.
      */
-    private BookKeeper(ClientConfiguration conf,
+    @VisibleForTesting
+    BookKeeper(ClientConfiguration conf,
                        ZooKeeper zkc,
                        EventLoopGroup eventLoopGroup,
                        StatsLogger statsLogger,
@@ -491,11 +497,12 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
         } else {
             this.readLACSpeculativeRequestPolicy = Optional.<SpeculativeRequestExecutionPolicy>absent();
         }
-
         // initialize bookie client
         this.bookieClient = new BookieClient(conf, this.eventLoopGroup, this.mainWorkerPool,
                                              scheduler, statsLogger);
-        this.bookieWatcher = new BookieWatcher(conf, this.placementPolicy, regClient);
+        this.bookieWatcher = new BookieWatcher(
+                conf, this.placementPolicy, regClient,
+                this.statsLogger.scope(WATCHER_SCOPE));
         if (conf.getDiskWeightBasedPlacementEnabled()) {
             LOG.info("Weighted ledger placement enabled");
             ThreadFactoryBuilder tFBuilder = new ThreadFactoryBuilder()
@@ -580,6 +587,13 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
         }
     }
 
+    /**
+     * Returns ref to speculative read counter, needed in PendingReadOp.
+     */
+    Counter getSpeculativeReadCounter() {
+        return speculativeReadCounter;
+    }
+
     @VisibleForTesting
     public LedgerManager getLedgerManager() {
         return ledgerManager;
@@ -636,11 +650,14 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
     }
 
     /**
-     * There are 2 digest types that can be used for verification. The CRC32 is
+     * There are 3 digest types that can be used for verification. The CRC32 is
      * cheap to compute but does not protect against byzantine bookies (i.e., a
      * bookie might report fake bytes and a matching CRC32). The MAC code is more
      * expensive to compute, but is protected by a password, i.e., a bookie can't
-     * report fake bytes with a mathching MAC unless it knows the password
+     * report fake bytes with a mathching MAC unless it knows the password.
+     * The CRC32C, which use SSE processor instruction, has better performance than CRC32.
+     * Legacy DigestType for backward compatibility. If we want to add new DigestType,
+     * we should add it in here, client.api.DigestType and DigestType in DataFormats.proto.
      */
     public enum DigestType {
         MAC, CRC32, CRC32C;
@@ -653,6 +670,18 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
                     return DigestType.CRC32;
                 case CRC32C:
                     return DigestType.CRC32C;
+                default:
+                    throw new IllegalArgumentException("Unable to convert digest type " + digestType);
+            }
+        }
+        public static DataFormats.LedgerMetadataFormat.DigestType toProtoDigestType(DigestType digestType) {
+            switch (digestType) {
+                case MAC:
+                    return DataFormats.LedgerMetadataFormat.DigestType.HMAC;
+                case CRC32:
+                    return DataFormats.LedgerMetadataFormat.DigestType.CRC32;
+                case CRC32C:
+                    return DataFormats.LedgerMetadataFormat.DigestType.CRC32C;
                 default:
                     throw new IllegalArgumentException("Unable to convert digest type " + digestType);
             }
@@ -677,6 +706,15 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
 
     public Optional<SpeculativeRequestExecutionPolicy> getReadLACSpeculativeRequestPolicy() {
         return readLACSpeculativeRequestPolicy;
+    }
+
+    /**
+     * Get the disableEnsembleChangeFeature.
+     *
+     * @return disableEnsembleChangeFeature for the BookKeeper instance.
+     */
+    Feature getDisableEnsembleChangeFeature() {
+        return disableEnsembleChangeFeature;
     }
 
     /**
@@ -779,7 +817,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
             }
             new LedgerCreateOp(BookKeeper.this, ensSize, writeQuorumSize,
                                ackQuorumSize, digestType, passwd, cb, ctx,
-                               customMetadata, EnumSet.noneOf(WriteFlag.class))
+                               customMetadata, EnumSet.noneOf(WriteFlag.class), getStatsLogger())
                 .initiate();
         } finally {
             closeLock.readLock().unlock();
@@ -983,7 +1021,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
             }
             new LedgerCreateOp(BookKeeper.this, ensSize, writeQuorumSize,
                                ackQuorumSize, digestType, passwd, cb, ctx,
-                               customMetadata, EnumSet.noneOf(WriteFlag.class))
+                               customMetadata, EnumSet.noneOf(WriteFlag.class), getStatsLogger())
                                        .initiateAdv(-1L);
         } finally {
             closeLock.readLock().unlock();
@@ -1094,7 +1132,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
             }
             new LedgerCreateOp(BookKeeper.this, ensSize, writeQuorumSize,
                                ackQuorumSize, digestType, passwd, cb, ctx,
-                               customMetadata, EnumSet.noneOf(WriteFlag.class))
+                               customMetadata, EnumSet.noneOf(WriteFlag.class), getStatsLogger())
                     .initiateAdv(ledgerId);
         } finally {
             closeLock.readLock().unlock();
@@ -1414,6 +1452,8 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
         readLacOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.READ_LAC_OP);
         recoverAddEntriesStats = stats.getOpStatsLogger(BookKeeperClientStats.LEDGER_RECOVER_ADD_ENTRIES);
         recoverReadEntriesStats = stats.getOpStatsLogger(BookKeeperClientStats.LEDGER_RECOVER_READ_ENTRIES);
+
+        speculativeReadCounter = stats.getCounter(BookKeeperClientStats.SPECULATIVE_READ_COUNT);
     }
 
     OpStatsLogger getCreateOpLogger() {

@@ -103,7 +103,7 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
         entryLogger = new EntryLogger(conf, ledgerDirsManager, this);
         ledgerCache = new LedgerCacheImpl(conf, activeLedgers,
                 null == indexDirsManager ? ledgerDirsManager : indexDirsManager, statsLogger);
-        gcThread = new GarbageCollectorThread(conf, ledgerManager, this);
+        gcThread = new GarbageCollectorThread(conf, ledgerManager, this, statsLogger.scope("gc"));
         ledgerDirsManager.addLedgerDirsListener(getLedgerDirsListener());
         // Expose Stats
         getOffsetStats = statsLogger.getOpStatsLogger(STORAGE_GET_OFFSET);

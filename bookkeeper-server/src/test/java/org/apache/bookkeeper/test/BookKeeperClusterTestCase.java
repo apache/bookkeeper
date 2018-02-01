@@ -126,13 +126,32 @@ public abstract class BookKeeperClusterTestCase {
     public void tearDown() throws Exception {
         Stopwatch sw = Stopwatch.createStarted();
         LOG.info("TearDown");
+        Exception tearDownException = null;
         // stop bookkeeper service
-        stopBKCluster();
+        try {
+            stopBKCluster();
+        } catch (Exception e) {
+            LOG.error("Got Exception while trying to stop BKCluster", e);
+            tearDownException = e;
+        }
         // stop zookeeper service
-        stopZKCluster();
+        try {
+            stopZKCluster();
+        } catch (Exception e) {
+            LOG.error("Got Exception while trying to stop ZKCluster", e);
+            tearDownException = e;
+        }
         // cleanup temp dirs
-        cleanupTempDirs();
+        try {
+            cleanupTempDirs();
+        } catch (Exception e) {
+            LOG.error("Got Exception while trying to cleanupTempDirs", e);
+            tearDownException = e;
+        }
         LOG.info("Tearing down test {} in {} ms.", runtime.getMethodName(), sw.elapsed(TimeUnit.MILLISECONDS));
+        if (tearDownException != null) {
+            throw tearDownException;
+        }
     }
 
     protected File createTempDir(String prefix, String suffix) throws IOException {
@@ -169,7 +188,7 @@ public abstract class BookKeeperClusterTestCase {
     protected void startBKCluster() throws Exception {
         baseClientConf.setZkServers(zkUtil.getZooKeeperConnectString());
         if (numBookies > 0) {
-            bkc = new BookKeeperTestClient(baseClientConf);
+            bkc = new BookKeeperTestClient(baseClientConf, new TestStatsProvider());
         }
 
         // Create Bookie Servers (B1, B2, B3)
@@ -230,7 +249,6 @@ public abstract class BookKeeperClusterTestCase {
         ServerConfiguration conf = new ServerConfiguration(baseConf);
         conf.setBookiePort(port);
         conf.setZkServers(zkServers);
-        conf.setAllowLoopback(true);
         conf.setJournalDirName(journalDir.getPath());
         String[] ledgerDirNames = new String[ledgerDirs.length];
         for (int i = 0; i < ledgerDirs.length; i++) {
@@ -567,7 +585,7 @@ public abstract class BookKeeperClusterTestCase {
         bsLoggers.put(address, provider);
 
         if (bkc == null) {
-            bkc = new BookKeeperTestClient(baseClientConf);
+            bkc = new BookKeeperTestClient(baseClientConf, new TestStatsProvider());
         }
 
         Future<?> waitForBookie = conf.isForceReadOnlyBookie()
@@ -605,7 +623,7 @@ public abstract class BookKeeperClusterTestCase {
 
         BookieSocketAddress address = Bookie.getBookieAddress(conf);
         if (bkc == null) {
-            bkc = new BookKeeperTestClient(baseClientConf);
+            bkc = new BookKeeperTestClient(baseClientConf, new TestStatsProvider());
         }
         Future<?> waitForBookie = conf.isForceReadOnlyBookie()
             ? bkc.waitForReadOnlyBookie(address)

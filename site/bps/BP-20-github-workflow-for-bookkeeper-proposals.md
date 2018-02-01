@@ -1,8 +1,8 @@
 ---
 title: "BP-20: github workflow for bookkeeper proposals"
-issue: https://github.com/apache/bookkeeper/<issue-number>
-state: "Under Discussion"
-release: "N/A"
+issue: https://github.com/apache/bookkeeper/761
+state: "Adopted"
+release: "4.7.0"
 ---
 
 ### Motivation

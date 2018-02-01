@@ -20,6 +20,13 @@
  */
 package org.apache.bookkeeper.bookie;
 
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.ACTIVE_ENTRY_LOG_COUNT;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.ACTIVE_ENTRY_LOG_SPACE_BYTES;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.MAJOR_COMPACTION_COUNT;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.MINOR_COMPACTION_COUNT;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.RECLAIMED_COMPACTION_SPACE_BYTES;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.RECLAIMED_DELETION_SPACE_BYTES;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.THREAD_RUNTIME;
 import static org.apache.bookkeeper.bookie.TransactionalEntryLogCompactor.COMPACTED_SUFFIX;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -54,6 +61,7 @@ import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.LedgerMetadataLis
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.Processor;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
+import org.apache.bookkeeper.test.TestStatsProvider;
 import org.apache.bookkeeper.util.DiskChecker;
 import org.apache.bookkeeper.util.HardLink;
 import org.apache.bookkeeper.util.MathUtils;
@@ -284,6 +292,19 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
         // restart bookies
         restartBookies(baseConf);
 
+        getGCThread().enableForceGC();
+        getGCThread().triggerGC().get();
+        assertTrue(
+                "ACTIVE_ENTRY_LOG_COUNT should have been updated",
+                getStatsProvider(0)
+                        .getGauge("bookie.gc." + ACTIVE_ENTRY_LOG_COUNT)
+                        .getSample().intValue() > 0);
+        assertTrue(
+                "ACTIVE_ENTRY_LOG_SPACE_BYTES should have been updated",
+                getStatsProvider(0)
+                        .getGauge("bookie.gc." + ACTIVE_ENTRY_LOG_SPACE_BYTES)
+                        .getSample().intValue() > 0);
+
         long lastMinorCompactionTime = getGCThread().lastMinorCompactionTime;
         long lastMajorCompactionTime = getGCThread().lastMajorCompactionTime;
         assertFalse(getGCThread().enableMajorCompaction);
@@ -307,9 +328,20 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
                             + ledgerDirectory, TestUtils.hasLogFiles(ledgerDirectory, true, 0, 1, 2));
         }
 
-        // even entry log files are removed, we still can access entries for ledger1
-        // since those entries has been compacted to new entry log
+        // even though entry log files are removed, we still can access entries for ledger1
+        // since those entries have been compacted to a new entry log
         verifyLedger(lhs[0].getId(), 0, lhs[0].getLastAddConfirmed());
+
+        assertTrue(
+                "RECLAIMED_COMPACTION_SPACE_BYTES should have been updated",
+                getStatsProvider(0)
+                        .getCounter("bookie.gc." + RECLAIMED_COMPACTION_SPACE_BYTES)
+                        .get().intValue() > 0);
+        assertTrue(
+                "RECLAIMED_DELETION_SPACE_BYTES should have been updated",
+                getStatsProvider(0)
+                        .getCounter("bookie.gc." + RECLAIMED_DELETION_SPACE_BYTES)
+                        .get().intValue() > 0);
     }
 
     @Test
@@ -680,6 +712,7 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
         ledgers.add(4L);
         storage.setMasterKey(4, key);
         storage.addEntry(genEntry(4, 1, ENTRY_SIZE)); // force ledger 1 page to flush
+        storage.shutdown();
 
         storage = new InterleavedLedgerStorage();
         storage.initialize(
@@ -843,6 +876,7 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
             Bookie.checkDirectoryStructure(dir);
         }
         InterleavedLedgerStorage storage = new InterleavedLedgerStorage();
+        TestStatsProvider stats = new TestStatsProvider();
         storage.initialize(
             conf,
             LedgerManagerFactory
@@ -855,30 +889,66 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
             null,
             cp,
             Checkpointer.NULL,
-            NullStatsLogger.INSTANCE);
+            stats.getStatsLogger("storage"));
         storage.start();
 
-        // test suspend Major GC.
+        int majorCompactions = stats.getCounter("storage.gc." + MAJOR_COMPACTION_COUNT).get().intValue();
+        int minorCompactions = stats.getCounter("storage.gc." + MINOR_COMPACTION_COUNT).get().intValue();
         Thread.sleep(conf.getMajorCompactionInterval() * 1000
-                   + conf.getGcWaitTime());
+                + conf.getGcWaitTime());
+        assertTrue(
+                "Major compaction should have happened",
+                stats.getCounter("storage.gc." + MAJOR_COMPACTION_COUNT).get() > majorCompactions);
+
+        // test suspend Major GC.
         storage.gcThread.suspendMajorGC();
+
         Thread.sleep(1000);
         long startTime = MathUtils.now();
+        majorCompactions = stats.getCounter("storage.gc." + MAJOR_COMPACTION_COUNT).get().intValue();
         Thread.sleep(conf.getMajorCompactionInterval() * 1000
                    + conf.getGcWaitTime());
-        assertTrue("major compaction triggered while set suspend",
+        assertTrue("major compaction triggered while suspended",
                 storage.gcThread.lastMajorCompactionTime < startTime);
+        assertTrue("major compaction triggered while suspended",
+                stats.getCounter("storage.gc." + MAJOR_COMPACTION_COUNT).get() == majorCompactions);
+
+        // test suspend Major GC.
+        Thread.sleep(conf.getMinorCompactionInterval() * 1000
+                + conf.getGcWaitTime());
+        assertTrue(
+                "Minor compaction should have happened",
+                stats.getCounter("storage.gc." + MINOR_COMPACTION_COUNT).get() > minorCompactions);
 
         // test suspend Minor GC.
         storage.gcThread.suspendMinorGC();
+
         Thread.sleep(1000);
         startTime = MathUtils.now();
+        minorCompactions = stats.getCounter("storage.gc." + MINOR_COMPACTION_COUNT).get().intValue();
         Thread.sleep(conf.getMajorCompactionInterval() * 1000
                    + conf.getGcWaitTime());
-        assertTrue("minor compaction triggered while set suspend",
+        assertTrue("minor compaction triggered while suspended",
                 storage.gcThread.lastMinorCompactionTime < startTime);
+        assertTrue("minor compaction triggered while suspended",
+                stats.getCounter("storage.gc." + MINOR_COMPACTION_COUNT).get() == minorCompactions);
+
+        // test resume
         storage.gcThread.resumeMinorGC();
         storage.gcThread.resumeMajorGC();
+
+        Thread.sleep((conf.getMajorCompactionInterval() + conf.getMinorCompactionInterval()) * 1000
+                + (conf.getGcWaitTime() * 2));
+        assertTrue(
+                "Major compaction should have happened",
+                stats.getCounter("storage.gc." + MAJOR_COMPACTION_COUNT).get() > majorCompactions);
+        assertTrue(
+                "Minor compaction should have happened",
+                stats.getCounter("storage.gc." + MINOR_COMPACTION_COUNT).get() > minorCompactions);
+        assertTrue(
+                "gcThreadRunttime should be non-zero",
+                stats.getOpStatsLogger("storage.gc." + THREAD_RUNTIME).getSuccessCount() > 0);
+
     }
 
     @Test

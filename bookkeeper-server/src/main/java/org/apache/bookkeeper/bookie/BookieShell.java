@@ -26,7 +26,11 @@ import com.google.common.collect.Maps;
 import com.google.common.net.InetAddresses;
 import com.google.common.util.concurrent.AbstractFuture;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.util.concurrent.DefaultThreadFactory;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -56,8 +60,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
+import java.util.stream.LongStream;
 import org.apache.bookkeeper.bookie.BookieException.CookieNotFoundException;
 import org.apache.bookkeeper.bookie.BookieException.InvalidCookieException;
 import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
@@ -85,6 +93,7 @@ import org.apache.bookkeeper.meta.LedgerManager.LedgerRangeIterator;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
 import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.proto.BookieClient;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.replication.AuditorElector;
 import org.apache.bookkeeper.stats.NullStatsLogger;
@@ -94,6 +103,7 @@ import org.apache.bookkeeper.util.EntryFormatter;
 import org.apache.bookkeeper.util.IOUtils;
 import org.apache.bookkeeper.util.LedgerIdFormatter;
 import org.apache.bookkeeper.util.MathUtils;
+import org.apache.bookkeeper.util.OrderedSafeExecutor;
 import org.apache.bookkeeper.util.Tool;
 import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.versioning.Versioned;
@@ -129,6 +139,9 @@ public class BookieShell implements Tool {
     static final String LEDGERID_FORMATTER_OPT = "ledgeridformat";
 
     static final String CMD_METAFORMAT = "metaformat";
+    static final String CMD_INITBOOKIE = "initbookie";
+    static final String CMD_INITNEWCLUSTER = "initnewcluster";
+    static final String CMD_NUKEEXISTINGCLUSTER = "nukeexistingcluster";
     static final String CMD_BOOKIEFORMAT = "bookieformat";
     static final String CMD_RECOVER = "recover";
     static final String CMD_LEDGER = "ledger";
@@ -137,6 +150,7 @@ public class BookieShell implements Tool {
     static final String CMD_LEDGERMETADATA = "ledgermetadata";
     static final String CMD_LISTUNDERREPLICATED = "listunderreplicated";
     static final String CMD_WHOISAUDITOR = "whoisauditor";
+    static final String CMD_WHATISINSTANCEID = "whatisinstanceid";
     static final String CMD_SIMPLETEST = "simpletest";
     static final String CMD_BOOKIESANITYTEST = "bookiesanity";
     static final String CMD_READLOG = "readlog";
@@ -262,6 +276,99 @@ public class BookieShell implements Tool {
     }
 
     /**
+     * Intializes new cluster by creating required znodes for the cluster. If
+     * ledgersrootpath is already existing then it will error out. If for any
+     * reason it errors out while creating znodes for the cluster, then before
+     * running initnewcluster again, try nuking existing cluster by running
+     * nukeexistingcluster. This is required because ledgersrootpath znode would
+     * be created after verifying that it doesn't exist, hence during next retry
+     * of initnewcluster it would complain saying that ledgersrootpath is
+     * already existing.
+     */
+    class InitNewCluster extends MyCommand {
+        Options opts = new Options();
+
+        InitNewCluster() {
+            super(CMD_INITNEWCLUSTER);
+        }
+
+        @Override
+        Options getOptions() {
+            return opts;
+        }
+
+        @Override
+        String getDescription() {
+            return "Initializes a new bookkeeper cluster. If initnewcluster fails then try nuking "
+                    + "existing cluster by running nukeexistingcluster before running initnewcluster again";
+        }
+
+        @Override
+        String getUsage() {
+            return "initnewcluster";
+        }
+
+        @Override
+        int runCmd(CommandLine cmdLine) throws Exception {
+            boolean result = BookKeeperAdmin.initNewCluster(bkConf);
+            return (result) ? 0 : 1;
+        }
+    }
+
+    /**
+     * Nuke bookkeeper metadata of existing cluster in zookeeper.
+     */
+    class NukeExistingCluster extends MyCommand {
+        Options opts = new Options();
+
+        NukeExistingCluster() {
+            super(CMD_NUKEEXISTINGCLUSTER);
+            opts.addOption("p", "zkledgersrootpath", true, "zookeeper ledgers rootpath");
+            opts.addOption("i", "instanceid", true, "instanceid");
+            opts.addOption("f", "force", false,
+                    "If instanceid is not specified, "
+                    + "then whether to force nuke the metadata without validating instanceid");
+        }
+
+        @Override
+        Options getOptions() {
+            return opts;
+        }
+
+        @Override
+        String getDescription() {
+            return "Nuke bookkeeper cluster by deleting metadata";
+        }
+
+        @Override
+        String getUsage() {
+            return "nukeexistingcluster -zkledgersrootpath <zkledgersrootpath> [-instanceid <instanceid> | -force]";
+        }
+
+        @Override
+        int runCmd(CommandLine cmdLine) throws Exception {
+            boolean force = cmdLine.hasOption("f");
+            String zkledgersrootpath = cmdLine.getOptionValue("zkledgersrootpath");
+            String instanceid = cmdLine.getOptionValue("instanceid");
+
+            /*
+             * for NukeExistingCluster command 'zkledgersrootpath' should be provided and either force option or
+             * instanceid should be provided.
+             */
+            if ((zkledgersrootpath == null) || (force == (instanceid != null))) {
+                LOG.error(
+                        "zkledgersrootpath should be specified and either force option "
+                        + "or instanceid should be specified (but not both)");
+                printUsage();
+                return -1;
+            }
+
+            boolean result = BookKeeperAdmin.nukeExistingCluster(bkConf, zkledgersrootpath, instanceid, force);
+            return (result) ? 0 : 1;
+        }
+    }
+
+    /**
      * Formats the local data present in current bookie server.
      */
     class BookieFormatCmd extends MyCommand {
@@ -313,6 +420,40 @@ public class BookieShell implements Tool {
                     rm.close();
                 }
             }
+            return (result) ? 0 : 1;
+        }
+    }
+
+    /**
+     * Initializes bookie, by making sure that the journalDir, ledgerDirs and
+     * indexDirs are empty and there is no registered Bookie with this BookieId.
+     */
+    class InitBookieCmd extends MyCommand {
+        Options opts = new Options();
+
+        public InitBookieCmd() {
+            super(CMD_INITBOOKIE);
+        }
+
+        @Override
+        Options getOptions() {
+            return opts;
+        }
+
+        @Override
+        String getDescription() {
+            return "Initialize new Bookie";
+        }
+
+        @Override
+        String getUsage() {
+            return CMD_INITBOOKIE;
+        }
+
+        @Override
+        int runCmd(CommandLine cmdLine) throws Exception {
+            ServerConfiguration conf = new ServerConfiguration(bkConf);
+            boolean result = BookKeeperAdmin.initBookie(conf);
             return (result) ? 0 : 1;
         }
     }
@@ -533,12 +674,26 @@ public class BookieShell implements Tool {
                 printUsage();
                 return -1;
             }
-            if (printMeta) {
-                // print meta
-                readLedgerMeta(ledgerId);
+
+            if (bkConf.getLedgerStorageClass().equals(DbLedgerStorage.class.getName())) {
+                // dump ledger info
+                try {
+                    DbLedgerStorage.readLedgerIndexEntries(ledgerId, bkConf,
+                            (currentEntry, entryLogId, position) -> System.out.println(
+                                    "entry " + currentEntry + "\t:\t(log: " + entryLogId + ", pos: " + position + ")"));
+                } catch (IOException e) {
+                    System.err.printf("ERROR: initializing dbLedgerStorage %s", e.getMessage());
+                    return -1;
+                }
+            } else {
+                if (printMeta) {
+                    // print meta
+                    readLedgerMeta(ledgerId);
+                }
+                // dump ledger info
+                readLedgerIndexEntries(ledgerId);
             }
-            // dump ledger info
-            readLedgerIndexEntries(ledgerId);
+
             return 0;
         }
 
@@ -570,7 +725,9 @@ public class BookieShell implements Tool {
             lOpts.addOption("l", "ledgerid", true, "Ledger ID");
             lOpts.addOption("fe", "firstentryid", true, "First EntryID");
             lOpts.addOption("le", "lastentryid", true, "Last EntryID");
-            lOpts.addOption("r", "force-recovery", false, "Ensure the ledger is properly closed before reading");
+            lOpts.addOption("r", "force-recovery", false,
+                "Ensure the ledger is properly closed before reading");
+            lOpts.addOption("b", "bookie", true, "Only read from a specific bookie");
         }
 
         @Override
@@ -585,7 +742,7 @@ public class BookieShell implements Tool {
 
         @Override
         String getUsage() {
-            return "readledger   [-msg] -ledgerid <ledgerid> "
+            return "readledger  [-bookie <address:port>]  [-msg] -ledgerid <ledgerid> "
                     + "[-firstentryid <firstentryid> [-lastentryid <lastentryid>]] "
                     + "[-force-recovery]";
         }
@@ -603,13 +760,18 @@ public class BookieShell implements Tool {
 
             boolean printMsg = cmdLine.hasOption("m");
             boolean forceRecovery = cmdLine.hasOption("r");
+            final BookieSocketAddress bookie;
+            if (cmdLine.hasOption("b")) {
+                // A particular bookie was specified
+                bookie = new BookieSocketAddress(cmdLine.getOptionValue("b"));
+            } else {
+                bookie = null;
+            }
 
             ClientConfiguration conf = new ClientConfiguration();
             conf.addConfiguration(bkConf);
 
-            BookKeeperAdmin bk = null;
-            try {
-                bk = new BookKeeperAdmin(conf);
+            try (BookKeeperAdmin bk = new BookKeeperAdmin(conf)) {
                 if (forceRecovery) {
                     // Force the opening of the ledger to trigger recovery
                     try (LedgerHandle lh = bk.openLedger(ledgerId)) {
@@ -619,17 +781,58 @@ public class BookieShell implements Tool {
                     }
                 }
 
-                Iterator<LedgerEntry> entries = bk.readEntries(ledgerId, firstEntry, lastEntry).iterator();
-                while (entries.hasNext()) {
-                    LedgerEntry entry = entries.next();
-                    formatEntry(entry, printMsg);
-                }
-            } catch (Exception e) {
-                LOG.error("Error reading entries from ledger {}", ledgerId, e);
-                return -1;
-            } finally {
-                if (bk != null) {
-                    bk.close();
+                if (bookie == null) {
+                    // No bookie was specified, use normal bk client
+                    Iterator<LedgerEntry> entries = bk.readEntries(ledgerId, firstEntry, lastEntry).iterator();
+                    while (entries.hasNext()) {
+                        LedgerEntry entry = entries.next();
+                        formatEntry(entry, printMsg);
+                    }
+                } else {
+                    // Use BookieClient to target a specific bookie
+                    EventLoopGroup eventLoopGroup = new NioEventLoopGroup();
+                    OrderedSafeExecutor executor = OrderedSafeExecutor.newBuilder()
+                        .numThreads(1)
+                        .name("BookieClientScheduler")
+                        .build();
+
+                    ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor(
+                        new DefaultThreadFactory("BookKeeperClientSchedulerPool"));
+
+                    BookieClient bookieClient = new BookieClient(conf, eventLoopGroup, executor,
+                        scheduler, NullStatsLogger.INSTANCE);
+
+                    LongStream.range(firstEntry, lastEntry).forEach(entryId -> {
+                        CompletableFuture<Void> future = new CompletableFuture<>();
+
+                        bookieClient.readEntry(bookie, ledgerId, entryId,
+                            (rc, ledgerId1, entryId1, buffer, ctx) -> {
+                                if (rc != BKException.Code.OK) {
+                                    LOG.error("Failed to read entry {} -- {}", entryId1, BKException.getMessage(rc));
+                                    future.completeExceptionally(BKException.create(rc));
+                                    return;
+                                }
+
+                                System.out.println("--------- Lid=" + ledgerIdFormatter.formatLedgerId(ledgerId)
+                                    + ", Eid=" + entryId + " ---------");
+                                if (printMsg) {
+                                    System.out.println("Data: " + ByteBufUtil.prettyHexDump(buffer));
+                                }
+
+                                buffer.release();
+                                future.complete(null);
+                            }, null);
+
+                        try {
+                            future.get();
+                        } catch (Exception e) {
+                            LOG.error("Error future.get while reading entries from ledger {}", ledgerId, e);
+                        }
+                    });
+
+                    eventLoopGroup.shutdownGracefully();
+                    executor.shutdown();
+                    bookieClient.close();
                 }
             }
 
@@ -1611,6 +1814,42 @@ public class BookieShell implements Tool {
     }
 
     /**
+     * Prints the instanceid of the cluster.
+     */
+    class WhatIsInstanceId extends MyCommand {
+        Options opts = new Options();
+
+        public WhatIsInstanceId() {
+            super(CMD_WHATISINSTANCEID);
+        }
+
+        @Override
+        Options getOptions() {
+            return opts;
+        }
+
+        @Override
+        String getDescription() {
+            return "Print the instanceid of the cluster";
+        }
+
+        @Override
+        String getUsage() {
+            return "whatisinstanceid";
+        }
+
+        @Override
+        int runCmd(CommandLine cmdLine) throws Exception {
+            try (RegistrationManager rm = RegistrationManager.instantiateRegistrationManager(bkConf)) {
+                String readInstanceId = rm.getClusterInstanceId();
+                LOG.info("ZKServers: {} ZkLedgersRootPath: {} InstanceId: {}", bkConf.getZkServers(),
+                        bkConf.getZkLedgersRootPath(), readInstanceId);
+            }
+            return 0;
+        }
+    }
+
+    /**
      * Update cookie command.
      */
     class UpdateCookieCmd extends MyCommand {
@@ -1926,7 +2165,7 @@ public class BookieShell implements Tool {
 
         @Override
         String getUsage() {
-            return "updateledger -bookieId <hostname|ip> [-updatespersec N] [-limit N] [-verbose true/false] "
+            return "updateledgers -bookieId <hostname|ip> [-updatespersec N] [-limit N] [-verbose true/false] "
                     + "[-printprogress N]";
         }
 
@@ -2468,6 +2707,9 @@ public class BookieShell implements Tool {
 
     {
         commands.put(CMD_METAFORMAT, new MetaFormatCmd());
+        commands.put(CMD_INITBOOKIE, new InitBookieCmd());
+        commands.put(CMD_INITNEWCLUSTER, new InitNewCluster());
+        commands.put(CMD_NUKEEXISTINGCLUSTER, new NukeExistingCluster());
         commands.put(CMD_BOOKIEFORMAT, new BookieFormatCmd());
         commands.put(CMD_RECOVER, new RecoverCmd());
         commands.put(CMD_LEDGER, new LedgerCmd());
@@ -2475,6 +2717,7 @@ public class BookieShell implements Tool {
         commands.put(CMD_LISTLEDGERS, new ListLedgersCmd());
         commands.put(CMD_LISTUNDERREPLICATED, new ListUnderreplicatedCmd());
         commands.put(CMD_WHOISAUDITOR, new WhoIsAuditorCmd());
+        commands.put(CMD_WHATISINSTANCEID, new WhatIsInstanceId());
         commands.put(CMD_LEDGERMETADATA, new LedgerMetadataCmd());
         commands.put(CMD_SIMPLETEST, new SimpleTestCmd());
         commands.put(CMD_BOOKIESANITYTEST, new BookieSanityTestCmd());
@@ -2513,7 +2756,7 @@ public class BookieShell implements Tool {
     }
 
     private void printShellUsage() {
-        System.err.println("Usage: bookkeeper shell [-ledgeridformat <hex/long/uuid>] "
+        System.err.println("Usage: bookkeeper shell [-localbookie [<host:port>]] [-ledgeridformat <hex/long/uuid>] "
                 + "[-entryformat <hex/string>] [-conf configuration] <command>");
         System.err.println("where command is one of:");
         List<String> commandNames = new ArrayList<String>();
@@ -2726,7 +2969,8 @@ public class BookieShell implements Tool {
         if (null == journals) {
             journals = Lists.newArrayListWithCapacity(bkConf.getJournalDirs().length);
             for (File journalDir : bkConf.getJournalDirs()) {
-                journals.add(new Journal(journalDir, bkConf, new LedgerDirsManager(bkConf, bkConf.getLedgerDirs(),
+                journals.add(new Journal(new File(journalDir, BookKeeperConstants.CURRENT_DIR), bkConf,
+                    new LedgerDirsManager(bkConf, bkConf.getLedgerDirs(),
                         new DiskChecker(bkConf.getDiskUsageThreshold(), bkConf.getDiskUsageWarnThreshold()))));
             }
         }
@@ -2772,7 +3016,7 @@ public class BookieShell implements Tool {
     }
 
     /**
-     * Read ledger index entires.
+     * Read ledger index entries.
      *
      * @param ledgerId Ledger Id
      * @throws IOException
@@ -2927,15 +3171,16 @@ public class BookieShell implements Tool {
         final MutableBoolean entryFound = new MutableBoolean(false);
         scanEntryLog(logId, new EntryLogScanner() {
             @Override
-            public boolean accept(long ledgerId) {
-                return (((!entryFound.booleanValue()) || (entryId == -1)));
+            public boolean accept(long candidateLedgerId) {
+                return ((candidateLedgerId == ledgerId) && ((!entryFound.booleanValue()) || (entryId == -1)));
             }
 
             @Override
-            public void process(long ledgerId, long startPos, ByteBuf entry) {
+            public void process(long candidateLedgerId, long startPos, ByteBuf entry) {
                 long entrysLedgerId = entry.getLong(entry.readerIndex());
                 long entrysEntryId = entry.getLong(entry.readerIndex() + 8);
-                if ((ledgerId == entrysLedgerId) && ((entrysEntryId == entryId)) || (entryId == -1)) {
+                if ((candidateLedgerId == entrysLedgerId) && (candidateLedgerId == ledgerId)
+                        && ((entrysEntryId == entryId) || (entryId == -1))) {
                     entryFound.setValue(true);
                     formatEntry(startPos, entry, printMsg);
                 }

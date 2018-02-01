@@ -52,7 +52,8 @@ class FileInfoBackingCache {
                 // have been able to get a reference to it here.
                 // The caller of loadFileInfo owns the refence, and is
                 // responsible for calling the corresponding #release().
-                assert(fi.tryRetain());
+                boolean retained = fi.tryRetain();
+                assert(retained);
                 return fi;
             }
         } finally {
@@ -67,7 +68,8 @@ class FileInfoBackingCache {
             fileInfos.put(ledgerId, fi);
 
             // see comment above for why we assert
-            assert(fi.tryRetain());
+            boolean retained = fi.tryRetain();
+            assert(retained);
             return fi;
         } finally {
             lock.writeLock().unlock();

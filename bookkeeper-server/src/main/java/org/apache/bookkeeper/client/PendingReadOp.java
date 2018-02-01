@@ -42,6 +42,8 @@ import org.apache.bookkeeper.common.util.SafeRunnable;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallbackCtx;
+import org.apache.bookkeeper.proto.checksum.DigestManager;
+import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.util.MathUtils;
 import org.slf4j.Logger;
@@ -61,14 +63,16 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
     private ScheduledFuture<?> speculativeTask = null;
     protected final List<LedgerEntryRequest> seq;
     private final CompletableFuture<LedgerEntries> future;
-    Set<BookieSocketAddress> heardFromHosts;
-    BitSet heardFromHostsBitSet;
+    private final Set<BookieSocketAddress> heardFromHosts;
+    private final BitSet heardFromHostsBitSet;
+    private final Set<BookieSocketAddress> sentToHosts = new HashSet<BookieSocketAddress>();
     LedgerHandle lh;
     long numPendingEntries;
     long startEntryId;
     long endEntryId;
     long requestTimeNanos;
     OpStatsLogger readOpLogger;
+    private final Counter speculativeReadCounter;
 
     final int maxMissedReadsAllowed;
     final boolean isRecoveryRead;
@@ -255,8 +259,9 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
                 public Boolean call() throws Exception {
                     if (!isComplete() && null != maybeSendSpeculativeRead(heardFromHostsBitSet)) {
                         if (LOG.isDebugEnabled()) {
-                            LOG.debug("Send speculative read for {}. Hosts heard are {}, ensemble is {}.",
-                                    this, heardFromHostsBitSet, ensemble);
+                            LOG.debug("Send speculative read for {}. Hosts sent are {}, "
+                                            + " Hosts heard are {}, ensemble is {}.",
+                                this, sentToHosts, heardFromHostsBitSet, ensemble);
                         }
                         return true;
                     }
@@ -362,6 +367,7 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
             // only send another read, if we have had no response at all (even for other entries)
             // from any of the other bookies we have sent the request to
             if (sentTo.cardinality() == 0) {
+                speculativeReadCounter.inc();
                 return sendNextRead();
             } else {
                 return null;
@@ -396,6 +402,7 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
             try {
                 BookieSocketAddress to = ensemble.get(bookieIndex);
                 sendReadTo(bookieIndex, to, this);
+                sentToHosts.add(to);
                 sentReplicas.set(replica);
                 return to;
             } catch (InterruptedException ie) {
@@ -470,6 +477,7 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
         heardFromHostsBitSet = new BitSet(getLedgerMetadata().getEnsembleSize());
 
         readOpLogger = lh.bk.getReadOpLogger();
+        speculativeReadCounter = lh.bk.getSpeculativeReadCounter();
     }
 
     CompletableFuture<LedgerEntries> future() {
@@ -611,8 +619,10 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
                     break;
                 }
             }
-            LOG.error("Read of ledger entry failed: L{} E{}-E{}, Heard from {} : bitset = {}. First unread entry is {}",
-                    lh.getId(), startEntryId, endEntryId, heardFromHosts, heardFromHostsBitSet,
+            LOG.error(
+                    "Read of ledger entry failed: L{} E{}-E{}, Sent to {}, "
+                            + "Heard from {} : bitset = {}. First unread entry is {}",
+                    lh.getId(), startEntryId, endEntryId, sentToHosts, heardFromHosts, heardFromHostsBitSet,
                     firstUnread);
             readOpLogger.registerFailedEvent(latencyNanos, TimeUnit.NANOSECONDS);
             // release the entries

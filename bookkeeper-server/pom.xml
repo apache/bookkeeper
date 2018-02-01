@@ -284,13 +284,16 @@
             <exclude>**/.project</exclude>
             <exclude>**/.checkstyle</exclude>
             <exclude>**/.settings/*</exclude>
-            <exclude>certs/keyStoreClientPassword.txt</exclude>
-            <exclude>certs/keyStoreServerPassword.txt</exclude>
-            <exclude>certs/trustStorePassword.txt</exclude>
-            <exclude>src/test/resources/cacerts</exclude>
+            <exclude>src/test/resources/server-key.pem</exclude>
+            <exclude>src/test/resources/server-key.p12</exclude>
+            <exclude>src/test/resources/server-key.jks</exclude>
+            <exclude>src/test/resources/server-cert.pem</exclude>
+            <exclude>src/test/resources/client-key.pem</exclude>
+            <exclude>src/test/resources/client-key.p12</exclude>
+            <exclude>src/test/resources/client-key.jks</exclude>
+            <exclude>src/test/resources/client-cert.pem</exclude>
             <exclude>src/test/resources/keyStoreClientPassword.txt</exclude>
             <exclude>src/test/resources/keyStoreServerPassword.txt</exclude>
-            <exclude>src/test/resources/trustStorePassword.txt</exclude>
           </excludes>
         </configuration>
       </plugin>
@@ -397,58 +400,6 @@
       </dependencies>
     </profile>
     <profile>
-      <id>dev</id>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-checkstyle-plugin</artifactId>
-            <configuration>
-              <skip>true</skip>
-            </configuration>
-          </plugin>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-surefire-plugin</artifactId>
-            <version>${maven-surefire-plugin.version}</version>
-            <configuration>
-              <argLine>-Xmx2G -Djava.net.preferIPv4Stack=true</argLine>
-              <redirectTestOutputToFile>false</redirectTestOutputToFile>
-              <reuseForks>false</reuseForks>
-              <forkedProcessTimeoutInSeconds>1800</forkedProcessTimeoutInSeconds>
-              <trimStackTrace>false</trimStackTrace>
-            </configuration>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-    <profile>
-      <id>dev-debug</id>
-      <build>
-          <plugins>
-          <plugin>
-               <groupId>org.apache.maven.plugins</groupId>
-               <artifactId>maven-checkstyle-plugin</artifactId>
-               <configuration>
-                   <skip>true</skip>
-               </configuration>
-            </plugin>
-            <plugin>
-              <groupId>org.apache.maven.plugins</groupId>
-              <artifactId>maven-surefire-plugin</artifactId>
-              <version>${maven-surefire-plugin.version}</version>
-              <configuration>
-                <argLine>-Xmx2G -Djava.net.preferIPv4Stack=true -Dbookkeeper.root.logger=DEBUG,CONSOLE</argLine>
-                <redirectTestOutputToFile>false</redirectTestOutputToFile>
-                <reuseForks>false</reuseForks>
-                <forkedProcessTimeoutInSeconds>1800</forkedProcessTimeoutInSeconds>
-                <trimStackTrace>false</trimStackTrace>
-              </configuration>
-            </plugin>
-        </plugins>
-      </build>
-    </profile>
-    <profile>
       <id>codahale-metrics-provider</id>
       <dependencies>
         <dependency>
@@ -477,6 +428,31 @@
           <version>${project.parent.version}</version>
         </dependency>
       </dependencies>
+    </profile>
+    <profile>
+      <id>tls-certs</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>exec-maven-plugin</artifactId>
+            <version>1.6.0</version>
+            <executions>
+              <execution>
+                <id>Generate Self-Signed Certificates</id>
+                <phase>generate-test-resources</phase>
+                <goals>
+                  <goal>exec</goal>
+                </goals>
+                <configuration>
+                  <workingDirectory>${basedir}/src/test/resources</workingDirectory>
+                  <executable>${basedir}/src/test/resources/generateKeysAndCerts.sh</executable>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
     </profile>
   </profiles>
 </project>
