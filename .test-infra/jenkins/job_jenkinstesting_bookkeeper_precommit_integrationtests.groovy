@@ -38,7 +38,7 @@ freeStyleJob('bookkeeper_precommit_integrationtests') {
             common_job_properties.setMavenConfig(delegate)
 
             goals('clean install -Pdocker')
-            properties(skipTests: true)
+            properties(skipTests: true, interactiveMode: false)
         }
 
         maven {
