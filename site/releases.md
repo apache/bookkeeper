@@ -3,13 +3,11 @@ title: Apache BookKeeper&trade; Releases
 layout: community
 ---
 
-## Download
+Version **{{ site.latest_release }}** is the latest release of BookKeeper. The current stable version is **{{ site.stable_release }}**.
 
-{{ site.latest_release }} is latest release. The current stable version is {{ site.stable_release }}.
+Releases are available to download from [Apache mirrors](http://www.apache.org/dyn/closer.cgi/bookkeeper).
 
-Releases are available to download from Apache mirrors: [Download](http://www.apache.org/dyn/closer.cgi/bookkeeper)
-
-You can verify your download by following these [procedures](http://www.apache.org/info/verification.html) and using these [KEYS](https://dist.apache.org/repos/dist/release/bookkeeper/KEYS).
+You can verify your download by following these [procedures](http://www.apache.org/info/verification.html) and using these [KEYS](https://www.apache.org/dist/bookkeeper/KEYS).
 
 If you want to download older releases, they are available in the [Apache archive](http://archive.apache.org/dist/bookkeeper/).
 
