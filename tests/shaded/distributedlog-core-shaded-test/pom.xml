@@ -19,32 +19,55 @@
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <modelVersion>4.0.0</modelVersion>
   <parent>
-    <groupId>org.apache.bookkeeper.tests</groupId>
-    <artifactId>tests-parent</artifactId>
+    <groupId>org.apache.bookkeeper.tests.shaded</groupId>
+    <artifactId>shaded-tests-parent</artifactId>
     <version>4.7.0-SNAPSHOT</version>
     <relativePath>..</relativePath>
   </parent>
-  <artifactId>bookkeeper-server-shaded-artifact-test</artifactId>
-  <name>Apache BookKeeper :: Tests :: bookkeeper-server shaded artifact test</name>
+  <artifactId>distributedlog-core-shaded-test</artifactId>
+  <name>Apache BookKeeper :: Tests :: distributedlog-core-shaded test</name>
   <dependencies>
     <dependency>
-      <groupId>org.apache.bookkeeper</groupId>
-      <artifactId>bookkeeper-server</artifactId>
+      <groupId>org.apache.distributedlog</groupId>
+      <artifactId>distributedlog-core-shaded</artifactId>
       <version>${project.version}</version>
-      <classifier>shaded</classifier>
       <scope>test</scope>
+      <!-- when running `mvn install` in the whole project,
+           it will still reference none dependency-reduced
+           pom file. so exclude these dependencies explicitly
+           to verify protobuf and guava classes have been relocated -->
       <exclusions>
         <exclusion>
           <groupId>org.apache.bookkeeper</groupId>
-          <artifactId>bookkeeper-common</artifactId>
+          <artifactId>bookkeeper-server</artifactId>
         </exclusion>
         <exclusion>
-          <groupId>org.apache.bookkeeper</groupId>
-          <artifactId>bookkeeper-proto</artifactId>
+          <groupId>org.apache.bookkeeper.http</groupId>
+          <artifactId>bookkeeper-http</artifactId>
         </exclusion>
         <exclusion>
           <groupId>org.apache.bookkeeper</groupId>
           <artifactId>circe-checksum</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.distributedlog</groupId>
+          <artifactId>distributedlog-core</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.distributedlog</groupId>
+          <artifactId>distributedlog-common</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.distributedlog</groupId>
+          <artifactId>distributedlog-protocol</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.zookeeper</groupId>
+          <artifactId>zookeeper</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.thrift</groupId>
+          <artifactId>libthrift</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -85,7 +108,8 @@
         </configuration>
         <executions>
           <execution>
-            <phase>test-compile</phase>
+            <id>checkstyle</id>
+            <phase>validate</phase>
             <goals>
               <goal>check</goal>
             </goals>
