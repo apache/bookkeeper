@@ -29,11 +29,14 @@ freeStyleJob('bookkeeper_precommit_integrationtests') {
         'JDK 1.8 (latest)',
         120)
 
-    // Set Maven parameters.
-    common_job_properties.setMavenConfig(delegate)
-
     steps {
         // Build everything
-        maven('clean install -Pdocker -DskipTests')
+        maven {
+            // Set Maven parameters.
+            common_job_properties.setMavenConfig(delegate)
+
+            goals('clean install')
+            properties(skipTests: true)
+        }
     }
 }
