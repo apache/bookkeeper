@@ -36,7 +36,8 @@ import org.junit.Test;
  */
 public class LedgerMetadataTest {
 
-    private static final byte[] passwd = "testPasswd".getBytes(UTF_8);
+    private static final String passwdStr = "testPasswd";
+    private static final byte[] passwd = passwdStr.getBytes(UTF_8);
 
     @Test
     public void testGetters() {
@@ -154,4 +155,20 @@ public class LedgerMetadataTest {
         assertTrue(lm1.isConflictWith(lm2));
     }
 
+    @Test
+    public void testToString() {
+        LedgerMetadata lm1 = new LedgerMetadata(
+            3,
+            3,
+            2,
+            DigestType.CRC32,
+            passwd,
+            Collections.emptyMap(),
+            true);
+
+        assertTrue("toString should contain 'password' field", lm1.toString().contains("password"));
+        assertTrue("toString should contain password value", lm1.toString().contains(passwdStr));
+        assertFalse("toSafeString should not contain 'password' field", lm1.toSafeString().contains("password"));
+        assertFalse("toSafeString should not contain password value", lm1.toSafeString().contains(passwdStr));
+    }
 }
