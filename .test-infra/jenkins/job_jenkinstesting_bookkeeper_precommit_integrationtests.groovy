@@ -19,7 +19,7 @@
 import common_job_properties
 
 // This is the Java precommit which runs a maven install, and the current set of precommit tests.
-freestyleJob('bookkeeper_precommit_integrationtests') {
+freeStyleJob('bookkeeper_precommit_integrationtests') {
     description('precommit integration test verification for pull requests of <a href="http://bookkeeper.apache.org">Apache BookKeeper</a>.')
 
     // Set common parameters.
