@@ -30,6 +30,8 @@ freeStyleJob('bookkeeper_precommit_integrationtests') {
         120)
 
     steps {
+        shell('docker version')
+
         // Build everything
         maven {
             // Set Maven parameters.
