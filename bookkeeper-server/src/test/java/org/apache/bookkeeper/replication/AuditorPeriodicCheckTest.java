@@ -376,7 +376,7 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
         ServerConfiguration conf = killBookie(bookieIdx);
         Bookie writeFailingBookie = new Bookie(conf) {
             @Override
-            public void addEntry(ByteBuf entry, WriteCallback cb,
+            public void addEntry(ByteBuf entry, boolean ackBeforeSync, WriteCallback cb,
                              Object ctx, byte[] masterKey)
                              throws IOException, BookieException {
                 try {
