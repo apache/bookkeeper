@@ -181,7 +181,8 @@ class common_job_properties {
   static void setMavenConfig(context, mavenInstallation='Maven 3.5.0', mavenOpts='-Xmx4096m -Xms2048m') {
     context.mavenInstallation(mavenInstallation)
     context.mavenOpts('-Dorg.slf4j.simpleLogger.showDateTime=true')
-    context.mavenOpts('-Dorg.slf4j.simpleLogger.dateTimeFormat=yyyy-MM-dd\\\'T\\\'HH:mm:ss.SSS')
+        context.mavenOpts('-Dorg.slf4j.simpleLogger.dateTimeFormat=yyyy-MM-dd\\\'T\\\'HH:mm:ss.SSS')
+        context.mavenOpts('-B')
     // The -XX:+TieredCompilation -XX:TieredStopAtLevel=1 JVM options enable
     // tiered compilation to make the JVM startup times faster during the tests.
     context.mavenOpts('-XX:+TieredCompilation')
