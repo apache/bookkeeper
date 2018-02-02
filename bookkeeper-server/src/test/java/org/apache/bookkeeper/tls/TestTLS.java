@@ -17,6 +17,13 @@
  */
 package org.apache.bookkeeper.tls;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.security.cert.Certificate;
@@ -33,17 +40,25 @@ import org.apache.bookkeeper.auth.AuthCallbacks;
 import org.apache.bookkeeper.auth.AuthToken;
 import org.apache.bookkeeper.auth.BookieAuthProvider;
 import org.apache.bookkeeper.auth.ClientAuthProvider;
-import org.apache.bookkeeper.client.*;
+import org.apache.bookkeeper.client.BKException;
+import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
+import org.apache.bookkeeper.client.BookKeeperAdmin;
+import org.apache.bookkeeper.client.BookKeeperClientStats;
+import org.apache.bookkeeper.client.BookKeeperTestClient;
+import org.apache.bookkeeper.client.LedgerEntry;
+import org.apache.bookkeeper.client.LedgerHandle;
+import org.apache.bookkeeper.client.LedgerMetadata;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.net.BookieSocketAddress;
-import org.apache.bookkeeper.proto.*;
-import org.apache.bookkeeper.stats.StatsLogger;
+import org.apache.bookkeeper.proto.BookieConnectionPeer;
+import org.apache.bookkeeper.proto.BookieServer;
+import org.apache.bookkeeper.proto.ClientConnectionPeer;
+import org.apache.bookkeeper.proto.TestPerChannelBookieClient;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.test.TestStatsProvider;
 import org.junit.After;
-import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -51,8 +66,6 @@ import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static org.junit.Assert.*;
 
 /**
  * Tests with TLS enabled.
@@ -654,7 +667,7 @@ public class TestTLS extends BookKeeperClusterTestCase {
     }
 
     /**
-     * Verify TLS and non-TLS channel counters
+     * Verify TLS and non-TLS channel counters.
      */
     @Test
     public void testTLSChannelCounters() throws Exception {
@@ -674,7 +687,7 @@ public class TestTLS extends BookKeeperClusterTestCase {
         testClient(nonTlsClient, numBookies);
 
         // verify stats
-        for(int i = 0; i < numBookies; i++) {
+        for (int i = 0; i < numBookies; i++) {
             BookieServer bookie = bs.get(i);
             InetSocketAddress addr = bookie.getLocalAddress().getSocketAddress();
             StringBuilder nameBuilder = new StringBuilder(BookKeeperClientStats.CHANNEL_SCOPE)
@@ -687,30 +700,40 @@ public class TestTLS extends BookKeeperClusterTestCase {
                     .append(".");
 
             // check stats on TLS enabled client
-            assertEquals("Mismatch TLS channel count", 1, tlsClient.getTestStatsProvider().getCounter(nameBuilder.toString() +
-                    BookKeeperClientStats.ACTIVE_TLS_CHANNEL_COUNTER).get().longValue());
-            assertEquals("TLS handshake failure unexpected", 0, tlsClient.getTestStatsProvider().getCounter(nameBuilder.toString() +
-                    BookKeeperClientStats.FAILED_TLS_HANDSHAKE_COUNTER).get().longValue());
-            assertEquals("Mismatch non-TLS channel count", 0, tlsClient.getTestStatsProvider().getCounter(nameBuilder.toString() +
-                    BookKeeperClientStats.ACTIVE_NON_TLS_CHANNEL_COUNTER).get().longValue());
-            assertEquals("Connection failures unexpected", 0, tlsClient.getTestStatsProvider().getCounter(nameBuilder.toString() +
-                    BookKeeperClientStats.FAILED_CONNECTION_COUNTER).get().longValue());
+            assertEquals("Mismatch TLS channel count", 1,
+                    tlsClient.getTestStatsProvider().getCounter(nameBuilder.toString()
+                    + BookKeeperClientStats.ACTIVE_TLS_CHANNEL_COUNTER).get().longValue());
+            assertEquals("TLS handshake failure unexpected", 0,
+                    tlsClient.getTestStatsProvider().getCounter(nameBuilder.toString()
+                    + BookKeeperClientStats.FAILED_TLS_HANDSHAKE_COUNTER).get().longValue());
+            assertEquals("Mismatch non-TLS channel count", 0,
+                    tlsClient.getTestStatsProvider().getCounter(nameBuilder.toString()
+                    + BookKeeperClientStats.ACTIVE_NON_TLS_CHANNEL_COUNTER).get().longValue());
+            assertEquals("Connection failures unexpected", 0,
+                    tlsClient.getTestStatsProvider().getCounter(nameBuilder.toString()
+                    + BookKeeperClientStats.FAILED_CONNECTION_COUNTER).get().longValue());
 
             // check stats on non-TLS enabled client
-            assertEquals("Mismatch TLS channel count", 0, nonTlsClient.getTestStatsProvider().getCounter(nameBuilder.toString() +
-                    BookKeeperClientStats.ACTIVE_TLS_CHANNEL_COUNTER).get().longValue());
-            assertEquals("TLS handshake failure unexpected", 0, nonTlsClient.getTestStatsProvider().getCounter(nameBuilder.toString() +
-                    BookKeeperClientStats.FAILED_TLS_HANDSHAKE_COUNTER).get().longValue());
-            assertEquals("Mismatch non-TLS channel count", 1, nonTlsClient.getTestStatsProvider().getCounter(nameBuilder.toString() +
-                    BookKeeperClientStats.ACTIVE_NON_TLS_CHANNEL_COUNTER).get().longValue());
-            assertEquals("Connection failures unexpected", 0, nonTlsClient.getTestStatsProvider().getCounter(nameBuilder.toString() +
-                    BookKeeperClientStats.FAILED_CONNECTION_COUNTER).get().longValue());
+            assertEquals("Mismatch TLS channel count", 0,
+                    nonTlsClient.getTestStatsProvider().getCounter(nameBuilder.toString()
+                    + BookKeeperClientStats.ACTIVE_TLS_CHANNEL_COUNTER).get().longValue());
+            assertEquals("TLS handshake failure unexpected", 0,
+                    nonTlsClient.getTestStatsProvider().getCounter(nameBuilder.toString()
+                    + BookKeeperClientStats.FAILED_TLS_HANDSHAKE_COUNTER).get().longValue());
+            assertEquals("Mismatch non-TLS channel count", 1,
+                    nonTlsClient.getTestStatsProvider().getCounter(nameBuilder.toString()
+                    + BookKeeperClientStats.ACTIVE_NON_TLS_CHANNEL_COUNTER).get().longValue());
+            assertEquals("Connection failures unexpected", 0,
+                    nonTlsClient.getTestStatsProvider().getCounter(nameBuilder.toString()
+                    + BookKeeperClientStats.FAILED_CONNECTION_COUNTER).get().longValue());
 
             bookie.shutdown();
-            assertEquals("Mismatch TLS channel count", 0, tlsClient.getTestStatsProvider().getCounter(nameBuilder.toString() +
-                    BookKeeperClientStats.ACTIVE_TLS_CHANNEL_COUNTER).get().longValue());
-            assertEquals("Mismatch non-TLS channel count", 0, nonTlsClient.getTestStatsProvider().getCounter(nameBuilder.toString() +
-                    BookKeeperClientStats.ACTIVE_NON_TLS_CHANNEL_COUNTER).get().longValue());
+            assertEquals("Mismatch TLS channel count", 0,
+                    tlsClient.getTestStatsProvider().getCounter(nameBuilder.toString()
+                    + BookKeeperClientStats.ACTIVE_TLS_CHANNEL_COUNTER).get().longValue());
+            assertEquals("Mismatch non-TLS channel count", 0,
+                    nonTlsClient.getTestStatsProvider().getCounter(nameBuilder.toString()
+                    + BookKeeperClientStats.ACTIVE_NON_TLS_CHANNEL_COUNTER).get().longValue());
 
         }
     }
@@ -779,7 +802,8 @@ public class TestTLS extends BookKeeperClusterTestCase {
                 .append(addr.getPort())
                 .append(".");
 
-        assertEquals("TLS handshake failure expected", 1, client.getTestStatsProvider().getCounter(nameBuilder.toString() +
-                BookKeeperClientStats.FAILED_TLS_HANDSHAKE_COUNTER).get().longValue());
+        assertEquals("TLS handshake failure expected", 1,
+                client.getTestStatsProvider().getCounter(nameBuilder.toString()
+                + BookKeeperClientStats.FAILED_TLS_HANDSHAKE_COUNTER).get().longValue());
     }
 }
