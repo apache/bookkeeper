@@ -18,26 +18,59 @@
  */
 package org.apache.bookkeeper.metadata.etcd;
 
+import static org.apache.bookkeeper.metadata.etcd.EtcdUtils.ioResult;
+
+import com.coreos.jetcd.KV;
+import com.coreos.jetcd.Lease;
+import com.coreos.jetcd.data.ByteSequence;
+import com.coreos.jetcd.kv.GetResponse;
+import com.coreos.jetcd.options.GetOption;
 import java.io.IOException;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import org.apache.bookkeeper.meta.LayoutManager;
 import org.apache.bookkeeper.meta.LedgerLayout;
 
 /**
  * Etcd based layout manager.
  */
+@Getter(AccessLevel.PACKAGE)
 class EtcdLayoutManager implements LayoutManager {
+
+    private final KV kvClient;
+    private final Lease leaseClient;
+    private final String scope;
+    private final ByteSequence layoutKey;
+
+    EtcdLayoutManager(KV kvClient,
+                      Lease leaseClient,
+                      String scope) {
+        this.kvClient = kvClient;
+        this.leaseClient = leaseClient;
+        this.scope = scope;
+        this.layoutKey = ByteSequence.fromString(
+            EtcdUtils.getLayoutKey(scope));
+    }
+
     @Override
     public LedgerLayout readLedgerLayout() throws IOException {
-        return null;
+        GetResponse response = ioResult(kvClient.get(layoutKey, GetOption.DEFAULT));
+        if (response.getCount() <= 0) {
+            return null;
+        } else {
+            byte[] layoutData = response.getKvs().get(0).getValue().getBytes();
+            return LedgerLayout.parseLayout(layoutData);
+        }
     }
 
     @Override
     public void storeLedgerLayout(LedgerLayout layout) throws IOException {
-
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public void deleteLedgerLayout() throws IOException {
-
+        throw new UnsupportedOperationException();
     }
 }

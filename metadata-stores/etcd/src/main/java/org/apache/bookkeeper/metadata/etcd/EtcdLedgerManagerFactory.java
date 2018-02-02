@@ -18,6 +18,9 @@
  */
 package org.apache.bookkeeper.metadata.etcd;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
+import com.coreos.jetcd.KV;
 import java.io.IOException;
 import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.apache.bookkeeper.meta.LayoutManager;
@@ -32,33 +35,46 @@ import org.apache.zookeeper.KeeperException;
  * Etcd based ledger manager factory.
  */
 public class EtcdLedgerManagerFactory extends LedgerManagerFactory {
+
+    private String scope;
+    private KV kvClient;
+
     @Override
     public int getCurrentVersion() {
         return 0;
     }
 
     @Override
-    public LedgerManagerFactory initialize(AbstractConfiguration conf, LayoutManager layoutManager, int factoryVersion) throws IOException {
-        return null;
+    public LedgerManagerFactory initialize(AbstractConfiguration conf,
+                                           LayoutManager layoutManager,
+                                           int factoryVersion) throws IOException {
+        checkArgument(layoutManager instanceof EtcdLayoutManager);
+
+        EtcdLayoutManager etcdLayoutManager = (EtcdLayoutManager) layoutManager;
+
+        this.scope = conf.getZkLedgersRootPath();
+        this.kvClient = etcdLayoutManager.getKvClient();
+
+        return this;
     }
 
     @Override
     public LedgerIdGenerator newLedgerIdGenerator() {
-        return null;
+        return new EtcdIdGenerator(kvClient, scope);
     }
 
     @Override
     public LedgerManager newLedgerManager() {
-        return null;
+        return new EtcdLedgerManager(kvClient, scope);
     }
 
     @Override
     public LedgerUnderreplicationManager newLedgerUnderreplicationManager() throws KeeperException, InterruptedException, CompatibilityException {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public boolean validateAndNukeExistingCluster(AbstractConfiguration<?> conf, LayoutManager lm) throws InterruptedException, KeeperException, IOException {
-        return false;
+        throw new UnsupportedOperationException();
     }
 }

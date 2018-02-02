@@ -18,8 +18,13 @@
  */
 package org.apache.bookkeeper.metadata.etcd;
 
+import static org.apache.bookkeeper.util.BookKeeperConstants.LAYOUT_ZNODE;
+
+import java.io.IOException;
+import java.util.concurrent.CompletableFuture;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
+import org.apache.bookkeeper.common.concurrent.FutureUtils;
 
 /**
  * Utils for etcd based metadata store.
@@ -37,6 +42,25 @@ final class EtcdUtils {
             scope,
             LEDGER_IDGEN_PREFIX,
             DEFAULT_IDGEN_BUCKET);
+    }
+
+    static String getLayoutKey(String scope) {
+        return String.format("%s/%s",
+            scope, LAYOUT_ZNODE);
+    }
+
+    static String getLedgerKey(String scope, long ledgerId) {
+        return String.format("%s/ledgers/%019d", scope, ledgerId);
+    }
+
+    static <T> T ioResult(CompletableFuture<T> future) throws IOException {
+        return FutureUtils.result(future, cause -> {
+            if (cause instanceof IOException) {
+                return (IOException) cause;
+            } else {
+                return new IOException(cause);
+            }
+        });
     }
 
     public static long toLong(byte[] memory, int index) {
