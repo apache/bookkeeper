@@ -57,6 +57,7 @@
     <module>bookkeeper-stats</module>
     <module>bookkeeper-proto</module>
     <module>bookkeeper-server</module>
+    <module>metadata-stores</module>
     <module>bookkeeper-benchmark</module>
     <module>bookkeeper-stats-providers</module>
     <module>bookkeeper-http</module>
@@ -104,6 +105,7 @@
     <!-- dependencies -->
     <commons-configuration.version>1.10</commons-configuration.version>
     <commons-lang3.version>3.3.2</commons-lang3.version>
+    <etcd.version>0.0.1</etcd.version>
     <google.code.version>3.0.2</google.code.version>
     <google.errorprone.version>2.1.2</google.errorprone.version>
     <guava.version>20.0</guava.version>
