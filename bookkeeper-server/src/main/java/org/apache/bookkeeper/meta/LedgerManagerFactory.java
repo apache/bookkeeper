@@ -207,7 +207,7 @@ public abstract class LedgerManagerFactory implements AutoCloseable {
             @SuppressWarnings("deprecation")
             String lmType = conf.getLedgerManagerType();
             if (lmType == null) {
-                factoryClass = FlatLedgerManagerFactory.class;
+                factoryClass = HierarchicalLedgerManagerFactory.class;
             } else {
                 if (FlatLedgerManagerFactory.NAME.equals(lmType)) {
                     factoryClass = FlatLedgerManagerFactory.class;
