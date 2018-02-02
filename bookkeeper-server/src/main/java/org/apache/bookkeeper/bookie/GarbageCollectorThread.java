@@ -28,11 +28,15 @@ import static org.apache.bookkeeper.bookie.BookKeeperServerStats.MINOR_COMPACTIO
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.RECLAIMED_COMPACTION_SPACE_BYTES;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.RECLAIMED_DELETION_SPACE_BYTES;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.THREAD_RUNTIME;
+import static org.quartz.CronScheduleBuilder.cronSchedule;
+import static org.quartz.JobBuilder.newJob;
+import static org.quartz.TriggerBuilder.newTrigger;
 
 import com.google.common.annotations.VisibleForTesting;
 import io.netty.util.concurrent.DefaultThreadFactory;
+
 import java.io.IOException;
-import java.time.ZonedDateTime;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -43,9 +47,9 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+
 import java.util.concurrent.atomic.AtomicLong;
 import org.apache.bookkeeper.bookie.GarbageCollector.GarbageCleaner;
-import org.apache.bookkeeper.common.util.CronExpression;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.stats.Counter;
@@ -54,22 +58,28 @@ import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.MathUtils;
 import org.apache.bookkeeper.util.SafeRunnable;
+import org.quartz.CronTrigger;
+import org.quartz.JobDetail;
+import org.quartz.Scheduler;
+import org.quartz.SchedulerException;
+import org.quartz.impl.StdSchedulerFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 
 /**
  * This is the garbage collector thread that runs in the background to
  * remove any entry log files that no longer contains any active ledger.
  */
-public class GarbageCollectorThread extends SafeRunnable {
+public class GarbageCollectorThread extends SafeRunnable implements Serializable{
     private static final Logger LOG = LoggerFactory.getLogger(GarbageCollectorThread.class);
     private static final int SECOND = 1000;
+    private static final long serialVersionUID = 8831216697587016042L;
 
     // Maps entry log files to the set of ledgers that comprise the file and the size usage per ledger
     private Map<Long, EntryLogMetadata> entryLogMetaMap = new ConcurrentHashMap<Long, EntryLogMetadata>();
 
     private final ScheduledExecutorService gcExecutor;
+    private Scheduler sched;
     Future<?> scheduledFuture = null;
 
     // This is how often we want to run the Garbage Collector Thread (in milliseconds).
@@ -83,14 +93,8 @@ public class GarbageCollectorThread extends SafeRunnable {
 
     boolean enableMajorCompaction = false;
     final double majorCompactionThreshold;
-
-    final double medianMajorCompactionThreshold;
-    final double highMajorCompactionThreshold;
     final long majorCompactionInterval;
     long lastMajorCompactionTime;
-    long lastChangeThresholdTime;
-    private final CronExpression medianMajorCron;
-    private final CronExpression highMajorCron;
 
     final boolean isForceGCAllowWhenNoSpace;
 
@@ -126,6 +130,9 @@ public class GarbageCollectorThread extends SafeRunnable {
     final AtomicBoolean suspendMajorCompaction = new AtomicBoolean(false);
     // Boolean to disable minor compaction, when disk is full
     final AtomicBoolean suspendMinorCompaction = new AtomicBoolean(false);
+    // Boolean to indicate whether CronBasedCompactionSchedule is on
+    final AtomicBoolean enableCronBasedCompactionSchedule = new AtomicBoolean(true);
+    final String scheduleMajorCompactionCron;
 
     final GarbageCollector garbageCollector;
     final GarbageCleaner garbageCleaner;
@@ -146,6 +153,15 @@ public class GarbageCollectorThread extends SafeRunnable {
                                   StatsLogger statsLogger)
         throws IOException {
         gcExecutor = Executors.newSingleThreadScheduledExecutor(new DefaultThreadFactory("GarbageCollectorThread"));
+        try {
+            sched = new StdSchedulerFactory().getScheduler();
+        } catch (SchedulerException se) {
+            if (se.getUnderlyingException() instanceof IOException) {
+                throw (IOException) se.getUnderlyingException();
+            } else {
+                enableCronBasedCompactionSchedule.set(false);
+            }
+        }
         this.conf = conf;
 
         this.entryLogger = ledgerStorage.getEntryLogger();
@@ -203,17 +219,12 @@ public class GarbageCollectorThread extends SafeRunnable {
         minorCompactionInterval = conf.getMinorCompactionInterval() * SECOND;
         majorCompactionThreshold = conf.getMajorCompactionThreshold();
         majorCompactionInterval = conf.getMajorCompactionInterval() * SECOND;
-        medianMajorCompactionThreshold = conf.getMedianMajorCompactionThreshold();
-        highMajorCompactionThreshold = conf.getHighMajorCompactionThreshold();
         isForceGCAllowWhenNoSpace = conf.getIsForceGCAllowWhenNoSpace();
         if (conf.getUseTransactionalCompaction()) {
             this.compactor = new TransactionalEntryLogCompactor(this);
         } else {
             this.compactor = new EntryLogCompactor(this);
         }
-
-        medianMajorCron = new CronExpression(conf.getMedianMajorCompactionCron());
-        highMajorCron = new CronExpression(conf.getHighMajorCompactionCron());
 
         if (minorCompactionInterval > 0 && minorCompactionThreshold > 0) {
             if (minorCompactionThreshold > 1.0f) {
@@ -236,13 +247,7 @@ public class GarbageCollectorThread extends SafeRunnable {
                 throw new IOException("Too short major compaction interval : "
                                     + majorCompactionInterval);
             }
-            if (majorCompactionThreshold > medianMajorCompactionThreshold
-                    || medianMajorCompactionThreshold > highMajorCompactionThreshold) {
-                throw new IOException("Invalid major compaction settings : major ("
-                        + majorCompactionThreshold + "), median major (" + medianMajorCompactionThreshold
-                        + "), high major ( " + highMajorCompactionThreshold + ")");
-            }
-                enableMajorCompaction = true;
+            enableMajorCompaction = true;
         }
 
         if (enableMinorCompaction && enableMajorCompaction) {
@@ -261,7 +266,10 @@ public class GarbageCollectorThread extends SafeRunnable {
                + majorCompactionThreshold + ", interval=" + majorCompactionInterval);
 
         lastMinorCompactionTime = lastMajorCompactionTime = MathUtils.now();
-        lastChangeThresholdTime = ZonedDateTime.now().toInstant().toEpochMilli();
+        scheduleMajorCompactionCron = conf.getScheduleMajorCompactionCron();
+        if (scheduleMajorCompactionCron == null) {
+            enableCronBasedCompactionSchedule.set(false);
+        }
     }
 
     public void enableForceGC() {
@@ -328,6 +336,23 @@ public class GarbageCollectorThread extends SafeRunnable {
             scheduledFuture.cancel(false);
         }
         scheduledFuture = gcExecutor.scheduleAtFixedRate(this, gcWaitTime, gcWaitTime, TimeUnit.MILLISECONDS);
+        if (enableCronBasedCompactionSchedule.get()) {
+            try {
+                doCronBasedSchedule();
+            } catch (SchedulerException se) {
+                LOG.error("Schedule CronBasedCompaction fail in GarbageCollectorThread", se);
+            }
+        }
+    }
+
+    private void doCronBasedSchedule() throws SchedulerException{
+        JobDetail job = newJob(CronBasedCompactionJob.class).withIdentity("gc", "group_job")
+                .build();
+        CronTrigger trigger = newTrigger().withIdentity("gc_trigger", "group_trigger")
+                .withSchedule(cronSchedule(scheduleMajorCompactionCron)).build();
+        job.getJobDataMap().put("gcThread", this);
+        sched.scheduleJob(job, trigger);
+        sched.start();
     }
 
     @Override
@@ -343,29 +368,6 @@ public class GarbageCollectorThread extends SafeRunnable {
             // collection cycle started
             forceGarbageCollection.set(false);
         }
-
-    }
-
-    /**
-     * Check whether the configured cron is met and activate threshold.
-     */
-    private double getCurrentMajorCompactionThreshold(){
-        double currentThreshold = 0;
-        // next fire time is in the interval
-        if (!medianMajorCron.isDisable()
-                && medianMajorCron.nextTimeAfter(ZonedDateTime.now()).toInstant().toEpochMilli()
-                <= (majorCompactionInterval + lastChangeThresholdTime)) {
-            currentThreshold = medianMajorCompactionThreshold;
-        }
-        if (!highMajorCron.isDisable() && highMajorCron.nextTimeAfter(ZonedDateTime.now()).toInstant().toEpochMilli()
-                <= (majorCompactionInterval + lastChangeThresholdTime)) {
-            currentThreshold = highMajorCompactionThreshold;
-        }
-        lastChangeThresholdTime = ZonedDateTime.now().toInstant().toEpochMilli();
-        if (currentThreshold > 0) {
-            return currentThreshold;
-        }
-        return majorCompactionThreshold;
     }
 
     public void runWithFlags(boolean force, boolean suspendMajor, boolean suspendMinor) {
@@ -373,9 +375,6 @@ public class GarbageCollectorThread extends SafeRunnable {
         if (force) {
             LOG.info("Garbage collector thread forced to perform GC before expiry of wait time.");
         }
-
-        double currentMajorCompactionThreshold = getCurrentMajorCompactionThreshold();
-
         // Recover and clean up previous state if using transactional compaction
         compactor.cleanUpAndRecover();
 
@@ -401,7 +400,7 @@ public class GarbageCollectorThread extends SafeRunnable {
             && (force || curTime - lastMajorCompactionTime > majorCompactionInterval)) {
             // enter major compaction
             LOG.info("Enter major compaction, suspendMajor {}", suspendMajor);
-            doCompactEntryLogs(currentMajorCompactionThreshold);
+            doCompactEntryLogs(majorCompactionThreshold);
             lastMajorCompactionTime = MathUtils.now();
             // and also move minor compaction time
             lastMinorCompactionTime = lastMajorCompactionTime;
@@ -416,7 +415,6 @@ public class GarbageCollectorThread extends SafeRunnable {
         }
         this.gcThreadRuntime.registerSuccessfulEvent(
                 MathUtils.nowInNano() - threadStart, TimeUnit.NANOSECONDS);
-
     }
 
     /**
@@ -523,6 +521,7 @@ public class GarbageCollectorThread extends SafeRunnable {
 
         // Interrupt GC executor thread
         gcExecutor.shutdownNow();
+//        sched.shutdown(true);
     }
 
     /**
@@ -616,5 +615,4 @@ public class GarbageCollectorThread extends SafeRunnable {
     CompactableLedgerStorage getLedgerStorage() {
         return ledgerStorage;
     }
-
 }

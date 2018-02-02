@@ -42,10 +42,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     protected static final String MINOR_COMPACTION_THRESHOLD = "minorCompactionThreshold";
     protected static final String MAJOR_COMPACTION_INTERVAL = "majorCompactionInterval";
     protected static final String MAJOR_COMPACTION_THRESHOLD = "majorCompactionThreshold";
-    protected static final String MAJOR_MEDIAN_COMPACTION_THRESHOLD = "majorMedianCompactionThreshold";
-    protected static final String MAJOR_HIGH_COMPACTION_THRESHOLD = "majorHighCompactionThreshold";
-    private static final String MEDIAN_MAJOR_COMPACTION_CRON = "medianMajorCompactionCron";
-    private static final String HIGH_MAJOR_COMPACTION_CRON = "highMajorCompactionCron";
+    private static final String SCHEDULE_MAJOR_COMPACTION_CRON = "scheduleMajorCompactionCron";
     protected static final String IS_THROTTLE_BY_BYTES = "isThrottleByBytes";
     protected static final String COMPACTION_MAX_OUTSTANDING_REQUESTS = "compactionMaxOutstandingRequests";
     protected static final String COMPACTION_RATE = "compactionRate";
@@ -1122,104 +1119,27 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     }
 
     /**
-     * Get threshold of median major compaction.
-     *
-     * the median threshold is used when the system is
-     * in a specific schedule time interval which is expressed by cronExpression
-     * @see #getMedianMajorCompactionCron()
-     *
-     * @return threshold of median major compaction
-     */
-    public double getMedianMajorCompactionThreshold() {
-        return getDouble(MAJOR_MEDIAN_COMPACTION_THRESHOLD, 0.85f);
-    }
-
-    /**
-     * Set threshold of median major compaction.
-     *
-     * @see #getMedianMajorCompactionThreshold()
-     *
-     * @param threshold
-     *          Threshold of median major compaction
-     * @return server configuration
-     */
-    public ServerConfiguration setMedianMajorCompactionThreshold(double threshold) {
-        setProperty(MAJOR_MEDIAN_COMPACTION_THRESHOLD, threshold);
-        return this;
-    }
-
-    /**
-     * Get threshold of high major compaction.
-     *
-     * the high threshold is used when the system is
-     * in a specific schedule time interval which is expressed by cronExpression
-     * @see #getHighMajorCompactionCron()
-     *
-     * @return threshold of high major compaction
-     */
-    public double getHighMajorCompactionThreshold() {
-        return getDouble(MAJOR_HIGH_COMPACTION_THRESHOLD, 0.9f);
-    }
-
-    /**
-     * Set threshold of high major compaction.
-     *
-     * @see #getHighMajorCompactionThreshold()
-     *
-     * @param threshold
-     *          Threshold of major compaction
-     * @return server configuration
-     */
-    public ServerConfiguration setHighMajorCompactionThreshold(double threshold) {
-        setProperty(MAJOR_HIGH_COMPACTION_THRESHOLD, threshold);
-        return this;
-    }
-
-    /**
-     * Get median major compaction cron expression.
-     * default is null to disable.
-     */
-    public String getMedianMajorCompactionCron() {
-        return getString(MEDIAN_MAJOR_COMPACTION_CRON, null);
-    }
-
-    /**
-     * Set median major compaction cron expression,
+     * Set major compaction cron expression for schedule.
      * set this value to a time intervals in which system load is low,
      * where deeper compaction is better.
      *
-     *
-     * @param medianMajorCompactionCron
-     *          specified cron expression indicates median major compaction intervals.
+     * @param scheduleMajorCompactionCron
+     *          specified cron expression for schedule.
      * @return server configuration
      */
-    public ServerConfiguration setMedianMajorCompactionCron(String medianMajorCompactionCron) {
-        setProperty(MEDIAN_MAJOR_COMPACTION_CRON, medianMajorCompactionCron);
+    public ServerConfiguration setScheduleMajorCompactionCron(String scheduleMajorCompactionCron) {
+        setProperty(SCHEDULE_MAJOR_COMPACTION_CRON, scheduleMajorCompactionCron);
         return this;
     }
 
     /**
-     * Get high major compaction cron expression.
+     * Get major compaction cron expression for schedule.
      * default is null to disable.
      * "0 * 0-3 ? * SAT,SUN" indicates 0-3 h in Saturday and Sunday.
      */
-    public String getHighMajorCompactionCron() {
-        return getString(HIGH_MAJOR_COMPACTION_CRON, null);
+    public String getScheduleMajorCompactionCron() {
+        return getString(SCHEDULE_MAJOR_COMPACTION_CRON, null);
     }
-
-    /**
-     * Set high major compaction cron expression,
-     * set this value to a time intervals in which system load is very low.
-     *
-     * @param highMajorCompactionCron
-     *          specified cron expression indicates high major compaction intervals.
-     * @return server configuration
-     */
-    public ServerConfiguration setHighMajorCompactionCron(String highMajorCompactionCron) {
-        setProperty(HIGH_MAJOR_COMPACTION_CRON, highMajorCompactionCron);
-        return this;
-    }
-
 
     /**
      * Get interval to run minor compaction, in seconds.

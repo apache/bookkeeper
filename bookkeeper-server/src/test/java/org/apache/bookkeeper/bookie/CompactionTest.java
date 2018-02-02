@@ -39,6 +39,7 @@ import java.io.IOException;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.List;
@@ -51,7 +52,6 @@ import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.LedgerEntry;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.LedgerMetadata;
-import org.apache.bookkeeper.common.util.CronExpression;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.discover.RegistrationManager;
@@ -72,6 +72,7 @@ import org.apache.bookkeeper.versioning.Version;
 import org.apache.zookeeper.AsyncCallback;
 import org.junit.Before;
 import org.junit.Test;
+import org.quartz.CronExpression;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -80,8 +81,8 @@ import org.slf4j.LoggerFactory;
  */
 public abstract class CompactionTest extends BookKeeperClusterTestCase {
 
+    private static final Logger LOG = LoggerFactory.getLogger(CompactionTest.class);
 
-    private static final  Logger LOG = LoggerFactory.getLogger(CompactionTest.class);
     private static final int ENTRY_SIZE = 1024;
     private static final int NUM_BOOKIES = 1;
 
@@ -169,9 +170,8 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
                 lhs[2].addEntry(msg.getBytes());
             }
             if (changeNum) {
-                int changeNumber = (int) (numEntries * 0.1f);
-                num2 -= changeNumber;
-                num3 += changeNumber;
+                --num2;
+                ++num3;
             }
         }
 
@@ -273,7 +273,7 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
         // this test.
         assertTrue("Minor or major compaction did not trigger even on forcing.",
                 storage.gcThread.lastMajorCompactionTime > startTime
-                        && storage.gcThread.lastMinorCompactionTime > startTime);
+                && storage.gcThread.lastMinorCompactionTime > startTime);
         storage.shutdown();
     }
 
@@ -527,7 +527,7 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
 
         // entry logs ([0,1,2].log) should be compacted
         for (File ledgerDirectory : tmpDirs) {
-            assertFalse("Found entry log file ([0,1,2].log that should have been compacted in ledgerDirectory: "
+            assertFalse("Found entry log file ([0,1,2].log that should have not been compacted in ledgerDirectory: "
                       + ledgerDirectory, TestUtils.hasLogFiles(ledgerDirectory, true, 0, 1, 2));
         }
 
@@ -537,7 +537,7 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
     }
 
     @Test
-    public void testCronExpressionBasedCompaction() throws Exception {
+    public void testCronBasedCompactionSchedule() throws Exception {
         // prepare data
         LedgerHandle[] lhs = prepareData(3, true);
 
@@ -545,8 +545,6 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
             lh.close();
         }
 
-        baseConf.setMedianMajorCompactionThreshold(0.71);
-        baseConf.setHighMajorCompactionThreshold(0.91f);
 
         long lastMinorCompactionTime = getGCThread().lastMinorCompactionTime;
         long lastMajorCompactionTime = getGCThread().lastMajorCompactionTime;
@@ -557,59 +555,21 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
         bkc.deleteLedger(lhs[0].getId());
         bkc.deleteLedger(lhs[1].getId());
         LOG.info("Finished deleting the ledgers contains less entries.");
-        getGCThread().enableForceGC();
-        getGCThread().triggerGC().get();
-
-        // after garbage collection, minor compaction should not be executed
+        // compaction should not be executed by default
+        assertTrue(getGCThread().lastMinorCompactionTime == lastMinorCompactionTime);
+        assertTrue(getGCThread().lastMajorCompactionTime == lastMajorCompactionTime);
+        // execute every second
+        String  cron = "0/1 * * * * ?";
+        baseConf.setScheduleMajorCompactionCron(cron);
+        restartBookies(baseConf);
+        // compaction should be executed
         assertTrue(getGCThread().lastMinorCompactionTime > lastMinorCompactionTime);
         assertTrue(getGCThread().lastMajorCompactionTime > lastMajorCompactionTime);
-
         // entry logs ([0,1,2].log) should not be compacted, all remaining >= 0.7
         for (File ledgerDirectory : tmpDirs) {
             assertTrue("Not Found entry log file ([0,1,2].log that should have not been compacted in ledgerDirectory: "
                     + ledgerDirectory, TestUtils.hasLogFiles(ledgerDirectory, false, 0, 1, 2));
         }
-
-        // during specified peroid( low load system status), the Major GC goes deeper
-        ZonedDateTime now = ZonedDateTime.now();
-        String cron, disableHighCron;
-        // execute every second
-        cron = "* * * ? * *";
-        // set high cron expression more far to avoid high major compaction occur
-        if (now.getDayOfMonth() < 10) {
-            disableHighCron = "0 0 0 28 * ?";
-        } else {
-            disableHighCron = "0 0 0 1 * ?";
-        }
-        LOG.info("cron expression is {}, next fire time {}", cron, new CronExpression(cron).nextTimeAfter(now));
-        baseConf.setMedianMajorCompactionCron(cron);
-        baseConf.setHighMajorCompactionCron(disableHighCron);
-        // restart bookie to enable the new config
-        restartBookies(baseConf);
-        // median gc period
-        getGCThread().enableForceGC();
-        getGCThread().triggerGC().get();
-        // entry logs ([0].log) should be compacted, whose usage = 0.7, which threshold = 0.71
-        for (File ledgerDirectory : tmpDirs) {
-            assertFalse("Found entry log file 0.log that should have been compacted in ledgerDirectory: "
-                    + ledgerDirectory, TestUtils.hasLogFiles(ledgerDirectory, false, 0));
-            assertTrue("Not Found entry log file ([1,2].log that should have not been compacted in ledgerDirectory: "
-                    + ledgerDirectory, TestUtils.hasLogFiles(ledgerDirectory, false, 1, 2));
-
-        }
-
-
-        baseConf.setHighMajorCompactionCron(cron);
-        restartBookies(baseConf);
-        // high gc period
-        getGCThread().enableForceGC();
-        getGCThread().triggerGC().get();
-        // entry logs ([1,2].log) should be compacted
-        for (File ledgerDirectory : tmpDirs) {
-            assertFalse("Found entry log file ([1,2].log that should have been compacted in ledgerDirectory: "
-                    + ledgerDirectory, TestUtils.hasLogFiles(ledgerDirectory, false, 1, 2));
-        }
-
     }
 
     @Test
@@ -677,9 +637,9 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
         // entry logs (0.log) should not be compacted
         // entry logs ([1,2,3].log) should be compacted.
         for (File ledgerDirectory : tmpDirs) {
-            assertTrue("Not Found entry log file ([0].log that should have not been compacted in ledgerDirectory: "
+            assertTrue("Not Found entry log file ([0].log that should have been compacted in ledgerDirectory: "
                      + ledgerDirectory, TestUtils.hasLogFiles(ledgerDirectory, true, 0));
-            assertFalse("Found entry log file ([1,2,3].log that should have been compacted in ledgerDirectory: "
+            assertFalse("Found entry log file ([1,2,3].log that should have not been compacted in ledgerDirectory: "
                       + ledgerDirectory, TestUtils.hasLogFiles(ledgerDirectory, true, 1, 2, 3));
         }
 
@@ -1254,8 +1214,8 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
                     File dir = compactedLogFile.getParentFile();
                     String compactedFilename = compactedLogFile.getName();
                     // create a hard link "x.log" for file "x.log.y.compacted"
-                    this.newEntryLogFile =
-                            new File(dir, compactedFilename.substring(0, compactedFilename.indexOf(".log") + 4));
+                    this.newEntryLogFile = new File(dir, compactedFilename.substring(0,
+                                compactedFilename.indexOf(".log") + 4));
                     File hardlinkFile = new File(dir, newEntryLogFile.getName());
                     if (!hardlinkFile.exists()) {
                         HardLink.createHardLink(compactedLogFile, hardlinkFile);
