@@ -52,6 +52,7 @@ import org.apache.bookkeeper.proto.BookieConnectionPeer;
 import org.apache.bookkeeper.proto.ClientConnectionPeer;
 import org.apache.bookkeeper.proto.TestPerChannelBookieClient;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
+import org.apache.bookkeeper.tls.TLSContextFactory.KeyStoreType;
 import org.junit.After;
 import org.junit.Assume;
 import org.junit.Before;
@@ -59,16 +60,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
-import org.apache.bookkeeper.tls.TLSContextFactory;
-import org.apache.bookkeeper.tls.SecurityException;
-import org.apache.bookkeeper.tls.TLSContextFactory.KeyStoreType;
-
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -277,7 +268,7 @@ public class TestTLS extends BookKeeperClusterTestCase {
     }
 
     /**
-     * Verify that a server will not start if ssl is enabled but the cert password is incorrect
+     * Verify that a server will not start if ssl is enabled but the cert password is incorrect.
      */
     @Test
     public void testStartTLSServerBadPassword() throws Exception {
