@@ -32,12 +32,14 @@ freeStyleJob('bookkeeper_precommit_integrationtests') {
     steps {
         shell('docker version')
 
+	shell('docker pull apachebookkeeper/bookkeeper-all-versions:latest')
+
         // Build everything
         maven {
             // Set Maven parameters.
             common_job_properties.setMavenConfig(delegate)
 
-            goals('clean install -Pdocker')
+            goals('-B clean install -Pdocker')
             properties(skipTests: true, interactiveMode: false)
         }
 
