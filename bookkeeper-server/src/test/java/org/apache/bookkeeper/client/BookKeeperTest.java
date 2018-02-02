@@ -20,6 +20,7 @@
  */
 package org.apache.bookkeeper.client;
 
+import static org.apache.bookkeeper.common.concurrent.FutureUtils.result;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -39,7 +40,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.AsyncCallback.ReadCallback;
 import org.apache.bookkeeper.client.BKException.BKBookieHandleNotAvailableException;
+import org.apache.bookkeeper.client.BKException.BKIllegalOpException;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
+import org.apache.bookkeeper.client.api.WriteFlag;
+import org.apache.bookkeeper.client.api.WriteHandle;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.zookeeper.KeeperException.ConnectionLossException;
@@ -779,4 +783,22 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
         latch.await();
         bkc.close();
     }
+
+    @Test(expected = BKIllegalOpException.class)
+    public void testCannotUseWriteFlagsOnV2Protocol() throws Exception {
+        ClientConfiguration conf = new ClientConfiguration(baseClientConf);
+        conf.setUseV2WireProtocol(true);
+        try (BookKeeperTestClient bkc = new BookKeeperTestClient(conf);) {
+            try (WriteHandle wh = result(bkc.newCreateLedgerOp()
+                    .withEnsembleSize(3)
+                    .withWriteQuorumSize(3)
+                    .withAckQuorumSize(2)
+                    .withPassword("".getBytes())
+                    .withWriteFlags(WriteFlag.DEFERRED_SYNC)
+                    .execute())) {
+               result(wh.append("test".getBytes()));
+            }
+        }
+    }
+
 }

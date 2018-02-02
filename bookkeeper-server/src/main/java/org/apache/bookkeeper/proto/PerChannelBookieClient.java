@@ -596,8 +596,8 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         if (useV2WireProtocol) {
             if (writeFlags.contains(WriteFlag.DEFERRED_SYNC)) {
                 LOG.error("invalid writeflags {} for v2 protocol", writeFlags);
-                toSend.release();
                 cb.writeComplete(BKException.Code.IllegalOpException, ledgerId, entryId, addr, ctx);
+                return;
             }
             completionKey = acquireV2Key(ledgerId, entryId, OperationType.ADD_ENTRY);
             request = BookieProtocol.AddRequest.create(

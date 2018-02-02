@@ -310,6 +310,10 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
             // bookie client is closed.
             lh.errorOutPendingAdds(rc);
             return;
+        case BKException.Code.IllegalOpException:
+            // illegal operation requested, like using unsupported feature in v2 protocol
+            lh.handleUnrecoverableErrorDuringAdd(rc);
+            return;
         case BKException.Code.LedgerFencedException:
             LOG.warn("Fencing exception on write: L{} E{} on {}",
                     ledgerId, entryId, addr);
