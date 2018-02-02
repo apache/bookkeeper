@@ -28,12 +28,14 @@ import io.netty.buffer.ByteBuf;
 import io.netty.util.Recycler;
 import io.netty.util.Recycler.Handle;
 import io.netty.util.ReferenceCountUtil;
+import java.util.EnumSet;
 
 import java.util.Map;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
-
 import org.apache.bookkeeper.client.AsyncCallback.AddCallbackWithLatency;
+import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
+import org.apache.bookkeeper.client.api.WriteFlag;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
 import org.apache.bookkeeper.stats.Counter;
@@ -79,10 +81,10 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
     int pendingWriteRequests;
     boolean callbackTriggered;
     boolean hasRun;
-
+    EnumSet<WriteFlag> writeFlags;
     boolean allowFailFast = false;
-
-    static PendingAddOp create(LedgerHandle lh, ByteBuf payload, AddCallbackWithLatency cb, Object ctx) {
+    static PendingAddOp create(LedgerHandle lh, ByteBuf payload, EnumSet<WriteFlag> writeFlags,
+                               AddCallbackWithLatency cb, Object ctx) {
         PendingAddOp op = RECYCLER.get();
         op.lh = lh;
         op.isRecoveryAdd = false;
@@ -104,6 +106,7 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
         op.requestTimeNanos = Long.MAX_VALUE;
         op.allowFailFast = false;
         op.qwcLatency = 0;
+        op.writeFlags = writeFlags;
         return op;
     }
 
@@ -453,6 +456,7 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
         callbackTriggered = false;
         hasRun = false;
         allowFailFast = false;
+        writeFlags = null;
 
         recyclerHandle.recycle(this);
     }

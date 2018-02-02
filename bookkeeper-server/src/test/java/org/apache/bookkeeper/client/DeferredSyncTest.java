@@ -29,7 +29,7 @@ import org.junit.Test;
 /**
  * Client side tests on deferred sync write flag.
  */
-public class DeferredSyncClientSideTest extends MockBookKeeperTestCase {
+public class DeferredSyncTest extends MockBookKeeperTestCase {
 
     static final byte[] PASSWORD = "password".getBytes();
     static final ByteBuf DATA = Unpooled.wrappedBuffer("foobar".getBytes());

@@ -120,7 +120,6 @@ public class LedgerHandle implements WriteHandle {
     final DigestManager macManager;
     final DistributionSchedule distributionSchedule;
     final RateLimiter throttler;
-    final LastAddSyncedManager lastAddSyncedManager;
     final LoadingCache<BookieSocketAddress, Long> bookieFailureHistory;
     final boolean enableParallelRecoveryRead;
     final int recoveryReadBatchSize;
@@ -253,8 +252,6 @@ public class LedgerHandle implements WriteHandle {
                                                                   bk.getConf().getTimeoutMonitorIntervalSec(),
                                                                   TimeUnit.SECONDS);
         }
-        this.lastAddSyncedManager = new LastAddSyncedManager(metadata.getWriteQuorumSize(),
-                                                             metadata.getAckQuorumSize());
     }
 
     BookKeeper getBk() {
@@ -1039,7 +1036,7 @@ public class LedgerHandle implements WriteHandle {
 
     public void asyncAddEntry(ByteBuf data, final AddCallback cb, final Object ctx) {
         data.retain();
-        PendingAddOp op = PendingAddOp.create(this, data, cb, ctx);
+        PendingAddOp op = PendingAddOp.create(this, data, writeFlags, cb, ctx);
         doAsyncAddEntry(op);
     }
 
@@ -1106,7 +1103,8 @@ public class LedgerHandle implements WriteHandle {
      */
     void asyncRecoveryAddEntry(final byte[] data, final int offset, final int length,
                                final AddCallback cb, final Object ctx) {
-        PendingAddOp op = PendingAddOp.create(this, Unpooled.wrappedBuffer(data, offset, length), cb, ctx)
+        PendingAddOp op = PendingAddOp.create(this, Unpooled.wrappedBuffer(data, offset, length),
+                                              writeFlags, cb, ctx)
                 .enableRecoveryAdd();
         doAsyncAddEntry(op);
     }
@@ -1705,7 +1703,7 @@ public class LedgerHandle implements WriteHandle {
             pendingAddOps.remove();
             explicitLacFlushPolicy.updatePiggyBackedLac(lastAddConfirmed);
             if (writeFlags.contains(WriteFlag.DEFERRED_SYNC)) {
-                this.lastAddConfirmed = lastAddSyncedManager.calculateCurrentLastAddSynced();
+                // cannot update LastAddConfirmed, we are not sure bookie has stored the entry durably at this point
             } else {
                 this.lastAddConfirmed = Math.max(lastAddConfirmed, pendingAddOp.entryId);
             }
