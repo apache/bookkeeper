@@ -38,16 +38,16 @@ public class TestLedgerLayout {
             HierarchicalLedgerManagerFactory.class.getName(),
             2);
 
-    private static final LedgerLayout flat1 =
+    private static final LedgerLayout longHierarchical =
         new LedgerLayout(
-            FlatLedgerManagerFactory.class.getName(),
+            LongHierarchicalLedgerManagerFactory.class.getName(),
             1);
 
     @Test
     public void testEquals() {
         assertEquals(hierarchical1, hierarchical1);
         assertNotEquals(hierarchical1, hierarchical2);
-        assertNotEquals(hierarchical1, flat1);
+        assertNotEquals(hierarchical1, longHierarchical);
     }
 
     @Test

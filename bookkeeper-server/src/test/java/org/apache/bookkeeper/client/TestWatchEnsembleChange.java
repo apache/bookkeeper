@@ -31,7 +31,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.discover.RegistrationManager;
-import org.apache.bookkeeper.meta.FlatLedgerManagerFactory;
 import org.apache.bookkeeper.meta.HierarchicalLedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerIdGenerator;
 import org.apache.bookkeeper.meta.LedgerManager;
@@ -71,10 +70,11 @@ public class TestWatchEnsembleChange extends BookKeeperClusterTestCase {
         baseConf.setLedgerManagerFactoryClass(lmFactoryCls);
     }
 
+    @SuppressWarnings("deprecation")
     @Parameters
     public static Collection<Object[]> configs() {
         return Arrays.asList(new Object[][] {
-                { FlatLedgerManagerFactory.class },
+                { org.apache.bookkeeper.meta.FlatLedgerManagerFactory.class },
                 { HierarchicalLedgerManagerFactory.class },
                 { LongHierarchicalLedgerManagerFactory.class },
                 { MSLedgerManagerFactory.class },
