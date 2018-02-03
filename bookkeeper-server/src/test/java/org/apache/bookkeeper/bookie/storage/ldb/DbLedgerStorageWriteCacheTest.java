@@ -31,6 +31,7 @@ import java.io.IOException;
 
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -79,9 +80,8 @@ public class DbLedgerStorageWriteCacheTest {
         Bookie.checkDirectoryStructure(curDir);
 
         int gcWaitTime = 1000;
-        ServerConfiguration conf = new ServerConfiguration();
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
         conf.setGcWaitTime(gcWaitTime);
-        conf.setAllowLoopback(true);
         conf.setLedgerStorageClass(MockedDbLedgerStorage.class.getName());
         conf.setProperty(DbLedgerStorage.WRITE_CACHE_MAX_SIZE_MB, 1);
         conf.setLedgerDirNames(new String[] { tmpDir.toString() });
