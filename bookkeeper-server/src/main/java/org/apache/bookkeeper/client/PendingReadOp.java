@@ -74,7 +74,7 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
     OpStatsLogger readOpLogger;
     private final Counter speculativeReadCounter;
 
-    final int maxMissedReadsAllowed;
+    final int requiredBookiesMissingEntryForRecovery;
     final boolean isRecoveryRead;
     boolean parallelRead = false;
     final AtomicBoolean complete = new AtomicBoolean(false);
@@ -85,7 +85,7 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
 
         int rc = BKException.Code.OK;
         int firstError = BKException.Code.OK;
-        int numMissedEntryReads = 0;
+        int numBookiesMissingEntry = 0;
 
         final ArrayList<BookieSocketAddress> ensemble;
         final DistributionSchedule.WriteSet writeSet;
@@ -200,7 +200,7 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
             }
             if (BKException.Code.NoSuchEntryException == rc
                 || BKException.Code.NoSuchLedgerExistsException == rc) {
-                ++numMissedEntryReads;
+                ++numBookiesMissingEntry;
                 if (LOG.isDebugEnabled()) {
                     LOG.debug("No such entry found on bookie.  L{} E{} bookie: {}",
                             lh.ledgerId, entryImpl.getEntryId(), host);
@@ -298,14 +298,15 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
         @Override
         synchronized void logErrorAndReattemptRead(int bookieIndex, BookieSocketAddress host, String errMsg, int rc) {
             super.logErrorAndReattemptRead(bookieIndex, host, errMsg, rc);
-            --numPendings;
             // if received all responses or this entry doesn't meet quorum write, complete the request.
-            if (numMissedEntryReads > maxMissedReadsAllowed || numPendings == 0) {
-                if (BKException.Code.BookieHandleNotAvailableException == firstError
-                    && numMissedEntryReads > maxMissedReadsAllowed) {
-                    firstError = BKException.Code.NoSuchEntryException;
-                }
 
+            --numPendings;
+            if (isRecoveryRead && numBookiesMissingEntry >= requiredBookiesMissingEntryForRecovery) {
+                /* For recovery, report NoSuchEntry as soon as wQ-aQ+1 bookies report that they do not
+                 * have the entry */
+                fail(BKException.Code.NoSuchEntryException);
+            } else if (numPendings == 0) {
+                // if received all responses, complete the request.
                 fail(firstError);
             }
         }
@@ -364,8 +365,9 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
             BitSet sentTo = getSentToBitSet();
             sentTo.and(heardFrom);
 
-            // only send another read, if we have had no response at all (even for other entries)
-            // from any of the other bookies we have sent the request to
+            // only send another read if we have had no successful response at all
+            // (even for other entries) from any of the other bookies we have sent the
+            // request to
             if (sentTo.cardinality() == 0) {
                 speculativeReadCounter.inc();
                 return sendNextRead();
@@ -383,14 +385,6 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
             if (nextReplicaIndexToReadFrom >= getLedgerMetadata().getWriteQuorumSize()) {
                 // we are done, the read has failed from all replicas, just fail the
                 // read
-
-                // Do it a bit pessimistically, only when finished trying all replicas
-                // to check whether we received more missed reads than maxMissedReadsAllowed
-                if (BKException.Code.BookieHandleNotAvailableException == firstError
-                    && numMissedEntryReads > maxMissedReadsAllowed) {
-                    firstError = BKException.Code.NoSuchEntryException;
-                }
-
                 fail(firstError);
                 return null;
             }
@@ -423,6 +417,13 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
                 return;
             }
             erroredReplicas.set(replica);
+
+            if (isRecoveryRead && (numBookiesMissingEntry >= requiredBookiesMissingEntryForRecovery)) {
+                /* For recovery, report NoSuchEntry as soon as wQ-aQ+1 bookies report that they do not
+                 * have the entry */
+                fail(BKException.Code.NoSuchEntryException);
+                return;
+            }
 
             if (!readsOutstanding()) {
                 sendNextRead();
@@ -471,8 +472,8 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
         this.scheduler = scheduler;
         this.isRecoveryRead = isRecoveryRead;
         numPendingEntries = endEntryId - startEntryId + 1;
-        maxMissedReadsAllowed = getLedgerMetadata().getWriteQuorumSize()
-                - getLedgerMetadata().getAckQuorumSize();
+        requiredBookiesMissingEntryForRecovery = getLedgerMetadata().getWriteQuorumSize()
+                - getLedgerMetadata().getAckQuorumSize() + 1;
         heardFromHosts = new HashSet<>();
         heardFromHostsBitSet = new BitSet(getLedgerMetadata().getEnsembleSize());
 
