@@ -53,11 +53,12 @@ before_install:
             echo "Enable testing distributedlog modules if this pull request modifies files under directory `stream/distributedlog`."
         fi
     fi
+    export BK_VERSION=`mvn org.apache.maven.plugins:maven-help-plugin:2.1.1:evaluate     -Dexpression=project.version | grep -Ev '(^\[|Download\w+:)' 2> /dev/null`
 
 script:
   - travis_retry mvn --batch-mode clean apache-rat:check compile spotbugs:check install -DskipTests
-  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then dev/check-binary-license ./bookkeeper-dist/all/target/bookkeeper-all-4.7.0-SNAPSHOT-bin.tar.gz; fi
-  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then dev/check-binary-license ./bookkeeper-dist/server/target/bookkeeper-server-4.7.0-SNAPSHOT-bin.tar.gz; fi
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then dev/check-binary-license ./bookkeeper-dist/all/target/bookkeeper-all-${BK_VERSION}-bin.tar.gz; fi
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then dev/check-binary-license ./bookkeeper-dist/server/target/bookkeeper-server-${BK_VERSION}-bin.tar.gz; fi
   - if [ "$DLOG_MODIFIED" == "true" ]; then cd stream/distributedlog && mvn --batch-mode clean package -Ddistributedlog; fi
 # Disabled the tests here. Since tests are running much slower on Travis than on Jenkins
 #  - ./dev/ticktoc.sh "mvn --batch-mode clean package"
