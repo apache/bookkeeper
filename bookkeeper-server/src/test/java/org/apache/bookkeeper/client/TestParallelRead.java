@@ -139,7 +139,7 @@ public class TestParallelRead extends BookKeeperClusterTestCase {
     }
 
     @Test
-    public void testFailParallelReadMissingEntryImmediately() throws Exception {
+    public void testFailParallelRecoveryReadMissingEntryImmediately() throws Exception {
         int numEntries = 1;
 
         long id = getLedgerToRead(5, 5, 3, numEntries);
@@ -160,7 +160,7 @@ public class TestParallelRead extends BookKeeperClusterTestCase {
         sleepBookie(ensemble.get(1), latch2);
 
         PendingReadOp readOp =
-                new PendingReadOp(lh, lh.bk.scheduler, 10, 10);
+                new PendingReadOp(lh, lh.bk.scheduler, 10, 10, true);
         readOp.parallelRead(true).submit();
         // would fail immediately if found missing entries don't cover ack quorum
         expectFail(readOp.future(), Code.NoSuchEntryException);
