@@ -20,26 +20,27 @@ specific language governing permissions and limitations
 under the License.
 -->
 
-This documentation is for Apache BookKeeper&trade; version `{{ site.latest_version }}`.
+This documentation is for Apache BookKeeper&trade; version {{ site.latest_version }}.
 
-Apache BookKeeper&trade; is a scalable, fault tolerant and low latency storage service optimized for realtime workloads.
-It offers `durability`, `replication` and `strong consistency` as essentials for building reliable real-time applications.
+Apache BookKeeper&trade; is a scalable, fault-tolerant, low-latency storage service optimized for real-time workloads. It offers durability, replication, and strong consistency as essentials for building reliable real-time applications.
 
-It is suitable for being used in following scenerios:
+BookKeeper is suitable for a wide variety of use cases, including:
 
-- [WAL](https://en.wikipedia.org/wiki/Write-ahead_logging) (Write-Ahead-Logging), e.g. HDFS [namenode](https://hadoop.apache.org/docs/r2.5.2/hadoop-project-dist/hadoop-hdfs/HDFSHighAvailabilityWithNFS.html#BookKeeper_as_a_Shared_storage_EXPERIMENTAL).
-- Message Store, e.g. [Apache Pulsar](https://pulsar.incubator.apache.org/).
-- Offset/Cursor Store, e.g. Apache Pulsar.
-- Object/Blob Store, e.g. storing snapshots to replicated state machines.
+Use case | Example
+:--------|:-------
+[WAL](https://en.wikipedia.org/wiki/Write-ahead_logging) (write-ahead logging) | The HDFS [namenode](https://hadoop.apache.org/docs/r2.5.2/hadoop-project-dist/hadoop-hdfs/HDFSHighAvailabilityWithNFS.html#BookKeeper_as_a_Shared_storage_EXPERIMENTAL)
+Message storage | [Apache Pulsar](http://pulsar.incubator.apache.org/docs/latest/getting-started/ConceptsAndArchitecture/#persistent-storage)
+Offset/cursor storage | [Apache Pulsar](http://pulsar.incubator.apache.org/docs/latest/getting-started/ConceptsAndArchitecture/#persistent-storage)
+Object/[BLOB](https://en.wikipedia.org/wiki/Binary_large_object) storage | Storing snapshots to replicated state machines
 
 Learn more about Apache BookKeeper&trade; and what it can do for your organization:
 
 - [Apache BookKeeper {{ site.latest_version }} Release Notes](../releaseNotes)
 - [Java API docs](../../api/javadoc)
 
-Or start using Apache BookKeeper today.
+Or start [using](../../getting-started/installation) Apache BookKeeper today.
 
-### Users 
+### Users
 
 - **Concepts**: Start with [concepts](../../getting-started/concepts). This will help you to fully understand
     the other parts of the documentation, including the setup, integration and operation guides.
