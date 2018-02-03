@@ -360,7 +360,7 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
                 // read
 
                 // Do it a bit pessimistically, only when finished trying all replicas
-                // to check whether we received more missed reads than maxMissedReadsAllowed
+                // to check whether we received more missed reads than requiredBookiesMissingEntryForRecovery
                 if (BKException.Code.BookieHandleNotAvailableException == firstError
                         && numMissedEntryReads > maxMissedReadsAllowed) {
                     firstError = BKException.Code.NoSuchEntryException;
