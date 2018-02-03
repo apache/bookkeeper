@@ -270,8 +270,8 @@ groups:
 
 - name: Ledger manager settings
   params:
-  - param: ledgerManagerType
-    description: The ledger manager type, which defines how ledgers are stored, managed, and garbage collected. See the [Ledger Manager](../../getting-started/concepts#ledger-manager) guide for more details.
+  - param: ledgerManagerFactoryClass
+    description: The ledger manager factory class, which defines how ledgers are stored, managed, and garbage collected. See the [Ledger Manager](../../getting-started/concepts#ledger-manager) guide for more details.
     default: flat
   - param: zkLedgersRootPath
     description: Root Zookeeper path to store ledger metadata. This parameter is used by zookeeper-based ledger manager as a root znode to store all ledgers.

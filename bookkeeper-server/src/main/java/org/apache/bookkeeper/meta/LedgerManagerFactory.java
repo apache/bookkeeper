@@ -106,6 +106,7 @@ public abstract class LedgerManagerFactory implements AutoCloseable {
      * @return new ledger manager factory
      * @throws IOException
      */
+    @SuppressWarnings("deprecation")
     public static LedgerManagerFactory newLedgerManagerFactory(
         final AbstractConfiguration<?> conf, LayoutManager layoutManager)
             throws IOException, InterruptedException {
@@ -146,7 +147,6 @@ public abstract class LedgerManagerFactory implements AutoCloseable {
         // handle pre V2 layout
         if (layout.getLayoutFormatVersion() <= V1) {
             // pre V2 layout we use type of ledger manager
-            @SuppressWarnings("deprecation")
             String lmType = conf.getLedgerManagerType();
             if (lmType != null && !layout.getManagerFactoryClass().equals(lmType)) {
                 throw new IOException("Configured layout " + lmType
@@ -194,6 +194,7 @@ public abstract class LedgerManagerFactory implements AutoCloseable {
      * Creates the new layout and stores in zookeeper and returns the
      * LedgerManagerFactory instance.
      */
+    @SuppressWarnings("deprecation")
     private static LedgerManagerFactory createNewLMFactory(
             final AbstractConfiguration conf, final LayoutManager layoutManager,
             Class<? extends LedgerManagerFactory> factoryClass)
@@ -204,10 +205,9 @@ public abstract class LedgerManagerFactory implements AutoCloseable {
         // use default ledger manager factory if no one provided
         if (factoryClass == null) {
             // for backward compatibility, check manager type
-            @SuppressWarnings("deprecation")
             String lmType = conf.getLedgerManagerType();
             if (lmType == null) {
-                factoryClass = FlatLedgerManagerFactory.class;
+                factoryClass = HierarchicalLedgerManagerFactory.class;
             } else {
                 if (FlatLedgerManagerFactory.NAME.equals(lmType)) {
                     factoryClass = FlatLedgerManagerFactory.class;
