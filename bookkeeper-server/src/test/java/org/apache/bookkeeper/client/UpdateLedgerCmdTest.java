@@ -53,7 +53,6 @@ public class UpdateLedgerCmdTest extends BookKeeperClusterTestCase {
 
     public UpdateLedgerCmdTest() {
         super(3);
-        baseConf.setAllowLoopback(true);
         baseConf.setGcWaitTime(100000);
     }
 
