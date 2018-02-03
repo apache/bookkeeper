@@ -466,6 +466,14 @@
   <li>Or <a href="https://apachebookkeeper.herokuapp.com/">join us on Slack</a> to connect with Apache BookKeeper committers and contributors.</li>
 </ul>
 
+<h3 id="existing-api-changes">Existing API changes</h3>
+
+<ul>
+  <li>The default ledger manager factory is changed from FlatLedgerManagerFactory to HierarchicalLedgerManagerFactory if <code class="highlighter-rouge">ledgerManagerFactoryClass</code>
+is specified. If you have a cluster running with older versions and no <code class="highlighter-rouge">ledgerManagerFactoryClass</code> is set before, you need to set
+<code class="highlighter-rouge">ledgerManagerFactoryClass</code> explicitly to <code class="highlighter-rouge">org.apache.bookkeeper.meta.FlatLedgerManagerFactory</code> in your bookie configuration before upgrade.</li>
+</ul>
+
         </section>
 
         
@@ -478,6 +486,7 @@
 <div class="toc">
   <h2 class="title">Apache BookKeeper 4.7.0-SNAPSHOT Release Notes</h2>
   <ul class="section-nav">
+<li class="toc-entry toc-h3"><a href="#existing-api-changes">Existing API changes</a></li>
 </ul>
 </div>
 
