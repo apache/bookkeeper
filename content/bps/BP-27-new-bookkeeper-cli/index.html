@@ -241,9 +241,8 @@ Instead a new module <code class="highlighter-rouge">bookkeeper-tools</code> wil
 
 <p>The new bookkeeper CLI follows the pattern that pulsar-admin is using. The CLI commandline format would be:</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>$ bookkeeper-cli [general options] &lt;command-group&gt; &lt;command&gt; [options of command]
-</code></pre>
-</div>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ bookkeeper-cli [general options] &lt;command-group&gt; &lt;command&gt; [options of command]
+</code></pre></div></div>
 
 <h4 id="commandgroup-and-command">CommandGroup and Command</h4>
 
@@ -266,7 +265,7 @@ Instead a new module <code class="highlighter-rouge">bookkeeper-tools</code> wil
   <li>Show all command groups: <code class="highlighter-rouge">bookkeeper-cli --help</code></li>
 </ul>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>Usage: bookkeeper-cli [options] [command] [command options]
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Usage: bookkeeper-cli [options] [command] [command options]
   Options:
     -c, --conf
        Bookie Configuration File
@@ -285,11 +284,10 @@ Instead a new module <code class="highlighter-rouge">bookkeeper-tools</code> wil
 
     metadata      Commands that interact with metadata storage
       Usage: metadata [options]
-</code></pre>
-</div>
+</code></pre></div></div>
 <ul>
   <li>Show commands under <code class="highlighter-rouge">cluster</code>: <code class="highlighter-rouge">bookkeeper-cli cluster --help</code>
-    <div class="highlighter-rouge"><pre class="highlight"><code>Usage: bookie-shell cluster [options] [command] [command options]
+    <div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Usage: bookie-shell cluster [options] [command] [command options]
 Commands:
   listbookies      List the bookies, which are running as either readwrite or readonly mode.
     Usage: listbookies [options]
@@ -300,8 +298,7 @@ Commands:
         -rw, --readwrite
            Print readwrite bookies
            Default: false
-</code></pre>
-    </div>
+</code></pre></div>    </div>
   </li>
 </ul>
 

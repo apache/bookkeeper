@@ -241,20 +241,19 @@
 <p>I proposes the removal of OpenOpBuilder#withRecovery()</p>
 
 <p>A new method on BookKeeper:</p>
-<div class="highlighter-rouge"><pre class="highlight"><code>interface BookKeeper {
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>interface BookKeeper {
 
     ...
 
     CompletableFuture&lt;Void&gt; seal(ReadHandle handle);
 }
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <h3 id="proposed-changes">Proposed Changes</h3>
 
 <p>With the proposed interface changes, every ReadHandle will be opened without recovery. For the tailing usecase, usage will look like.</p>
 
-<div class="language-java highlighter-rouge"><pre class="highlight"><code><span class="n">ReadHandle</span> <span class="n">reader</span> <span class="o">=</span> <span class="n">bk</span><span class="o">.</span><span class="na">newOpenLedgerOp</span><span class="o">().</span><span class="na">withLedgerId</span><span class="o">(</span><span class="n">X</span><span class="o">).</span><span class="na">execute</span><span class="o">().</span><span class="na">get</span><span class="o">();</span>
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">ReadHandle</span> <span class="n">reader</span> <span class="o">=</span> <span class="n">bk</span><span class="o">.</span><span class="na">newOpenLedgerOp</span><span class="o">().</span><span class="na">withLedgerId</span><span class="o">(</span><span class="n">X</span><span class="o">).</span><span class="na">execute</span><span class="o">().</span><span class="na">get</span><span class="o">();</span>
 <span class="kt">long</span> <span class="n">lastReadEntry</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="o">;</span>
 <span class="k">while</span> <span class="o">(!</span><span class="n">leader</span><span class="o">)</span> <span class="o">{</span>
     <span class="kt">long</span> <span class="n">lac</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="na">getLastAddConfirmed</span><span class="o">();</span>
@@ -272,12 +271,11 @@
     <span class="n">doSomethingWithEntries</span><span class="o">(</span><span class="n">entries</span><span class="o">);</span>
 <span class="o">}</span>
 <span class="n">WriteHandle</span> <span class="n">writer</span> <span class="o">=</span> <span class="n">bk</span><span class="o">.</span><span class="na">newCreateLedgerOp</span><span class="o">().</span><span class="na">execute</span><span class="o">().</span><span class="na">get</span><span class="o">();</span>
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <p>Constrast this with how it is with the current recovery on open mechanism.</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>ReadHandle reader = bk.newOpenLedgerOp().withLedgerId(X).execute().get();
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ReadHandle reader = bk.newOpenLedgerOp().withLedgerId(X).execute().get();
 long lastReadEntry = -1;
 while (!leader) {
     long lac = reader.getLastAddConfirmed();
@@ -296,8 +294,7 @@ if (lac &gt; lastReadEntry) {
     doSomethingWithEntries(entries);
 }
 WriteHandle writer = bk.newCreateLedgerOp().execute().get();
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <p>The second one is more code, you need to remember to close the previous handle, and the intent of the operation is less clear.</p>
 

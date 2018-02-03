@@ -283,7 +283,7 @@
 
 <p>To check that licensing is correct, generate the tarball and run the script against it as follows (in this example I’ve removed references to protobuf from the LICENSE file).</p>
 
-<div class="language-shell highlighter-rouge"><pre class="highlight"><code>~/src/bookkeeper <span class="nv">$ </span>mvn clean package -DskipTests
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code>~/src/bookkeeper <span class="nv">$ </span>mvn clean package <span class="nt">-DskipTests</span>
 ...
 
 ~/src/bookkeeper <span class="nv">$ </span>dev/check-binary-license bookkeeper-dist/server/target/bookkeeper-server-4.7.0-SNAPSHOT-bin.tar.gz
@@ -291,8 +291,7 @@ com.google.protobuf-protobuf-java-3.4.0.jar unaccounted <span class="k">for in <
 deps/protobuf-3.4.0/LICENSE bundled, but not linked from LICENSE
 
 ~/src/bookkeeper <span class="nv">$ </span>
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <p>The script checks the following:</p>
 <ol>

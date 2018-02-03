@@ -472,9 +472,8 @@
 
 <p>On each bookie host, you need to <a href="../../getting-started/installation#download">download</a> the BookKeeper package as a tarball. Once you’ve done that, you need to configure the bookie by setting values in the <code class="highlighter-rouge">bookkeeper-server/conf/bk_server.conf</code> config file. The one parameter that you will absolutely need to change is the <a href="../../config#zkServers"><code class="highlighter-rouge">zkServers</code></a> parameter, which you will need to set to the ZooKeeper connection string for your ZooKeeper cluster. Here’s an example:</p>
 
-<div class="language-properties highlighter-rouge"><pre class="highlight"><code><span class="py">zkServers</span><span class="p">=</span><span class="s">100.0.0.1:2181,100.0.0.2:2181,100.0.0.3:2181</span>
-</code></pre>
-</div>
+<div class="language-properties highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="py">zkServers</span><span class="p">=</span><span class="s">100.0.0.1:2181,100.0.0.2:2181,100.0.0.3:2181</span>
+</code></pre></div></div>
 
 <blockquote>
   <p>A full listing of configurable parameters available in <code class="highlighter-rouge">bookkeeper-server/conf/bk_server.conf</code> can be found in the <a href="../../reference/config">Configuration</a> reference manual.</p>
@@ -482,9 +481,8 @@
 
 <p>Once the bookie’s configuration is set, you can start it up using the <a href="../../reference/cli#bookkeeper-bookie"><code class="highlighter-rouge">bookie</code></a> command of the <a href="../../reference/cli#bookkeeper"><code class="highlighter-rouge">bookkeeper</code></a> CLI tool:</p>
 
-<div class="language-shell highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span>bookkeeper-server/bin/bookkeeper bookie
-</code></pre>
-</div>
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>bookkeeper-server/bin/bookkeeper bookie
+</code></pre></div></div>
 
 <blockquote>
   <p>You can also build BookKeeper <a href="../../getting-started/installation#clone">by cloning it from source</a> or <a href="../../getting-started/installation#build-using-maven">using Maven</a>.</p>
@@ -519,9 +517,8 @@
 
 <p>Once you’ve started up a cluster of bookies, you need to set up cluster metadata for the cluster by running the following command from any bookie in the cluster:</p>
 
-<div class="language-shell highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span>bookkeeper-server/bin/bookkeeper shell metaformat
-</code></pre>
-</div>
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>bookkeeper-server/bin/bookkeeper shell metaformat
+</code></pre></div></div>
 
 <p>You can run in the formatting</p>
 

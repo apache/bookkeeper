@@ -467,24 +467,21 @@ by mechanism-specific details and wrap up with some operational details.</p>
   <li>
     <p>Pass the <code class="highlighter-rouge">JAAS</code> config file location as JVM parameter to each Bookie. For example:</p>
 
-    <div class="language-shell highlighter-rouge"><pre class="highlight"><code> -Djava.security.auth.login.config<span class="o">=</span>/etc/bookkeeper/bookie_jaas.conf 
-</code></pre>
-    </div>
+    <div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code> <span class="nt">-Djava</span>.security.auth.login.config<span class="o">=</span>/etc/bookkeeper/bookie_jaas.conf 
+</code></pre></div>    </div>
   </li>
   <li>
     <p>Enable SASL auth plugin in bookies, by setting <code class="highlighter-rouge">bookieAuthProviderFactoryClass</code> to <code class="highlighter-rouge">org.apache.bookkeeper.sasl.SASLBookieAuthProviderFactory</code>.</p>
 
-    <div class="language-shell highlighter-rouge"><pre class="highlight"><code> <span class="nv">bookieAuthProviderFactoryClass</span><span class="o">=</span>org.apache.bookkeeper.sasl.SASLBookieAuthProviderFactory
-</code></pre>
-    </div>
+    <div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code> <span class="nv">bookieAuthProviderFactoryClass</span><span class="o">=</span>org.apache.bookkeeper.sasl.SASLBookieAuthProviderFactory
+</code></pre></div>    </div>
   </li>
   <li>
     <p>If you are running <code class="highlighter-rouge">autorecovery</code> along with bookies, then you want to enable SASL auth plugin for <code class="highlighter-rouge">autorecovery</code>, by setting
  <code class="highlighter-rouge">clientAuthProviderFactoryClass</code> to <code class="highlighter-rouge">org.apache.bookkeeper.sasl.SASLClientProviderFactory</code>.</p>
 
-    <div class="language-shell highlighter-rouge"><pre class="highlight"><code> <span class="nv">clientAuthProviderFactoryClass</span><span class="o">=</span>org.apache.bookkeeper.sasl.SASLClientProviderFactory
-</code></pre>
-    </div>
+    <div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code> <span class="nv">clientAuthProviderFactoryClass</span><span class="o">=</span>org.apache.bookkeeper.sasl.SASLClientProviderFactory
+</code></pre></div>    </div>
   </li>
   <li>Follow the steps in <a href="#kerberos">GSSAPI (Kerberos)</a> to configure SASL.</li>
 </ol>
@@ -515,16 +512,14 @@ by mechanism-specific details and wrap up with some operational details.</p>
   <li>
     <p>Pass the <code class="highlighter-rouge">JAAS</code> config file location as JVM parameter to each client JVM. For example:</p>
 
-    <div class="language-shell highlighter-rouge"><pre class="highlight"><code> -Djava.security.auth.login.config<span class="o">=</span>/etc/bookkeeper/bookkeeper_jaas.conf 
-</code></pre>
-    </div>
+    <div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code> <span class="nt">-Djava</span>.security.auth.login.config<span class="o">=</span>/etc/bookkeeper/bookkeeper_jaas.conf 
+</code></pre></div>    </div>
   </li>
   <li>
     <p>Configure the following properties in bookkeeper <code class="highlighter-rouge">ClientConfiguration</code>:</p>
 
-    <div class="language-shell highlighter-rouge"><pre class="highlight"><code> <span class="nv">clientAuthProviderFactoryClass</span><span class="o">=</span>org.apache.bookkeeper.sasl.SASLClientProviderFactory
-</code></pre>
-    </div>
+    <div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code> <span class="nv">clientAuthProviderFactoryClass</span><span class="o">=</span>org.apache.bookkeeper.sasl.SASLClientProviderFactory
+</code></pre></div>    </div>
   </li>
 </ol>
 
@@ -550,10 +545,9 @@ for each Bookie in your cluster and for every operating system user that will ac
 
 <p>If you have installed your own Kerberos, you will need to create these principals yourself using the following commands:</p>
 
-<div class="language-shell highlighter-rouge"><pre class="highlight"><code>sudo /usr/sbin/kadmin.local -q <span class="s1">'addprinc -randkey bookkeeper/{hostname}@{REALM}'</span>
-sudo /usr/sbin/kadmin.local -q <span class="s2">"ktadd -k /etc/security/keytabs/{keytabname}.keytab bookkeeper/{hostname}@{REALM}"</span>
-</code></pre>
-</div>
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">sudo</span> /usr/sbin/kadmin.local <span class="nt">-q</span> <span class="s1">'addprinc -randkey bookkeeper/{hostname}@{REALM}'</span>
+<span class="nb">sudo</span> /usr/sbin/kadmin.local <span class="nt">-q</span> <span class="s2">"ktadd -k /etc/security/keytabs/{keytabname}.keytab bookkeeper/{hostname}@{REALM}"</span>
+</code></pre></div></div>
 
 <h5 id="all-hosts-must-be-reachable-using-hostnames">All hosts must be reachable using hostnames</h5>
 
@@ -566,7 +560,7 @@ sudo /usr/sbin/kadmin.local -q <span class="s2">"ktadd -k /etc/security/keytabs/
     <p>Add a suitably modified JAAS file similar to the one below to each Bookie’s config directory, let’s call it <code class="highlighter-rouge">bookie_jaas.conf</code>
 for this example (note that each bookie should have its own keytab):</p>
 
-    <div class="highlighter-rouge"><pre class="highlight"><code> Bookie {
+    <div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code> Bookie {
      com.sun.security.auth.module.Krb5LoginModule required
      useKeyTab=true
      storeKey=true
@@ -589,8 +583,7 @@ for this example (note that each bookie should have its own keytab):</p>
      keyTab="/etc/security/keytabs/bookie.keytab"
      principal="bookkeeper/bk1.hostname.com@EXAMPLE.COM";
  };
-</code></pre>
-    </div>
+</code></pre></div>    </div>
 
     <p>The <code class="highlighter-rouge">Bookie</code> section in the JAAS file tells the bookie which principal to use and the location of the keytab where this principal is stored.
  It allows the bookie to login using the keytab specified in this section. See <a href="#notes">notes</a> for more details on Zookeeper’s SASL configuration.</p>
@@ -598,16 +591,14 @@ for this example (note that each bookie should have its own keytab):</p>
   <li>
     <p>Pass the name of the JAAS file as a JVM parameter to each Bookie:</p>
 
-    <div class="language-shell highlighter-rouge"><pre class="highlight"><code> -Djava.security.auth.login.config<span class="o">=</span>/etc/bookkeeper/bookie_jaas.conf
-</code></pre>
-    </div>
+    <div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code> <span class="nt">-Djava</span>.security.auth.login.config<span class="o">=</span>/etc/bookkeeper/bookie_jaas.conf
+</code></pre></div>    </div>
 
     <p>You may also wish to specify the path to the <code class="highlighter-rouge">krb5.conf</code> file
  (see <a href="https://docs.oracle.com/javase/8/docs/technotes/guides/security/jgss/tutorials/KerberosReq.html">JDK’s Kerberos Requirements</a> for more details):</p>
 
-    <div class="language-shell highlighter-rouge"><pre class="highlight"><code> -Djava.security.krb5.conf<span class="o">=</span>/etc/bookkeeper/krb5.conf
-</code></pre>
-    </div>
+    <div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code> <span class="nt">-Djava</span>.security.krb5.conf<span class="o">=</span>/etc/bookkeeper/krb5.conf
+</code></pre></div>    </div>
   </li>
   <li>
     <p>Make sure the keytabs configured in the JAAS file are readable by the operating system user who is starting the Bookies.</p>
@@ -615,11 +606,10 @@ for this example (note that each bookie should have its own keytab):</p>
   <li>
     <p>Enable SASL authentication plugin in the bookies by setting following parameters.</p>
 
-    <div class="language-shell highlighter-rouge"><pre class="highlight"><code> <span class="nv">bookieAuthProviderFactoryClass</span><span class="o">=</span>org.apache.bookkeeper.sasl.SASLBookieAuthProviderFactory
+    <div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code> <span class="nv">bookieAuthProviderFactoryClass</span><span class="o">=</span>org.apache.bookkeeper.sasl.SASLBookieAuthProviderFactory
  <span class="c"># if you run `autorecovery` along with bookies</span>
  <span class="nv">clientAuthProviderFactoryClass</span><span class="o">=</span>org.apache.bookkeeper.sasl.SASLClientProviderFactory
-</code></pre>
-    </div>
+</code></pre></div>    </div>
   </li>
 </ol>
 
@@ -634,29 +624,26 @@ for this example (note that each bookie should have its own keytab):</p>
  how the clients like writers and readers can connect to the Bookies. The following is an example configuration for a client using
  a keytab (recommended for long-running processes):</p>
 
-    <div class="highlighter-rouge"><pre class="highlight"><code> BookKeeper {
+    <div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code> BookKeeper {
      com.sun.security.auth.module.Krb5LoginModule required
      useKeyTab=true
      storeKey=true
      keyTab="/etc/security/keytabs/bookkeeper.keytab"
      principal="bookkeeper-client-1@EXAMPLE.COM";
  };
-</code></pre>
-    </div>
+</code></pre></div>    </div>
   </li>
   <li>
     <p>Pass the name of the JAAS file as a JVM parameter to the client JVM:</p>
 
-    <div class="language-shell highlighter-rouge"><pre class="highlight"><code> -Djava.security.auth.login.config<span class="o">=</span>/etc/bookkeeper/bookkeeper_jaas.conf
-</code></pre>
-    </div>
+    <div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code> <span class="nt">-Djava</span>.security.auth.login.config<span class="o">=</span>/etc/bookkeeper/bookkeeper_jaas.conf
+</code></pre></div>    </div>
 
     <p>You may also wish to specify the path to the <code class="highlighter-rouge">krb5.conf</code> file (see
  <a href="https://docs.oracle.com/javase/8/docs/technotes/guides/security/jgss/tutorials/KerberosReq.html">JDK’s Kerberos Requirements</a> for more details).</p>
 
-    <div class="language-shell highlighter-rouge"><pre class="highlight"><code> -Djava.security.krb5.conf<span class="o">=</span>/etc/bookkeeper/krb5.conf
-</code></pre>
-    </div>
+    <div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code> <span class="nt">-Djava</span>.security.krb5.conf<span class="o">=</span>/etc/bookkeeper/krb5.conf
+</code></pre></div>    </div>
   </li>
   <li>
     <p>Make sure the keytabs configured in the <code class="highlighter-rouge">bookkeeper_jaas.conf</code> are readable by the operating system user who is starting bookkeeper client.</p>
@@ -664,9 +651,8 @@ for this example (note that each bookie should have its own keytab):</p>
   <li>
     <p>Enable SASL authentication plugin in the client by setting following parameters.</p>
 
-    <div class="language-shell highlighter-rouge"><pre class="highlight"><code> <span class="nv">clientAuthProviderFactoryClass</span><span class="o">=</span>org.apache.bookkeeper.sasl.SASLClientProviderFactory
-</code></pre>
-    </div>
+    <div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code> <span class="nv">clientAuthProviderFactoryClass</span><span class="o">=</span>org.apache.bookkeeper.sasl.SASLClientProviderFactory
+</code></pre></div>    </div>
   </li>
 </ol>
 

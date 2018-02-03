@@ -679,10 +679,9 @@
 
 <p>BookKeeper requires a ZooKeeper installation for storing <a href="#ledger">ledger</a> metadata. Whenever you construct a <a href="../../api/javadoc/org/apache/bookkeeper/client/BookKeeper"><code class="highlighter-rouge">BookKeeper</code></a> client object, you need to pass a list of ZooKeeper servers as a parameter to the constructor, like this:</p>
 
-<div class="language-java highlighter-rouge"><pre class="highlight"><code><span class="n">String</span> <span class="n">zkConnectionString</span> <span class="o">=</span> <span class="s">"127.0.0.1:2181"</span><span class="o">;</span>
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">String</span> <span class="n">zkConnectionString</span> <span class="o">=</span> <span class="s">"127.0.0.1:2181"</span><span class="o">;</span>
 <span class="n">BookKeeper</span> <span class="n">bkClient</span> <span class="o">=</span> <span class="k">new</span> <span class="n">BookKeeper</span><span class="o">(</span><span class="n">zkConnectionString</span><span class="o">);</span>
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <blockquote>
   <p>For more info on using the BookKeeper Java client, see <a href="../../api/ledger-api#the-java-ledger-api-client">this guide</a>.</p>
@@ -714,15 +713,13 @@
 
 <p>The <em>hierarchical ledger manager</em>, implemented in the <a href="../../api/javadoc/org/apache/bookkeeper/meta/HierarchicalLedgerManager"><code class="highlighter-rouge">HierarchicalLedgerManager</code></a> class, first obtains a global unique ID from ZooKeeper using an <a href="https://zookeeper.apache.org/doc/current/api/org/apache/zookeeper/CreateMode.html#EPHEMERAL_SEQUENTIAL"><code class="highlighter-rouge">EPHEMERAL_SEQUENTIAL</code></a> znode. Since ZooKeeper’s sequence counter has a format of <code class="highlighter-rouge">%10d</code> (10 digits with 0 padding, for example <code class="highlighter-rouge">&lt;path&gt;0000000001</code>), the hierarchical ledger manager splits the generated ID into 3 parts:</p>
 
-<div class="language-shell highlighter-rouge"><pre class="highlight"><code><span class="o">{</span>level1 <span class="o">(</span>2 digits<span class="o">)}{</span>level2 <span class="o">(</span>4 digits<span class="o">)}{</span>level3 <span class="o">(</span>4 digits<span class="o">)}</span>
-</code></pre>
-</div>
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">{</span>level1 <span class="o">(</span>2 digits<span class="o">)}{</span>level2 <span class="o">(</span>4 digits<span class="o">)}{</span>level3 <span class="o">(</span>4 digits<span class="o">)}</span>
+</code></pre></div></div>
 
 <p>These three parts are used to form the actual ledger node path to store ledger metadata:</p>
 
-<div class="language-shell highlighter-rouge"><pre class="highlight"><code><span class="o">{</span>ledgers_root_path<span class="o">}</span>/<span class="o">{</span>level1<span class="o">}</span>/<span class="o">{</span>level2<span class="o">}</span>/L<span class="o">{</span>level3<span class="o">}</span>
-</code></pre>
-</div>
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">{</span>ledgers_root_path<span class="o">}</span>/<span class="o">{</span>level1<span class="o">}</span>/<span class="o">{</span>level2<span class="o">}</span>/L<span class="o">{</span>level3<span class="o">}</span>
+</code></pre></div></div>
 
 <p>For example, ledger 0000000001 is split into three parts, 00, 0000, and 00001, and stored in znode <code class="highlighter-rouge">/{ledgers_root_path}/00/0000/L0001</code>. Each znode could have as many 10,000 ledgers, which avoids the problem of the child list being larger than the maximum ZooKeeper packet size (which is the <a href="https://issues.apache.org/jira/browse/BOOKKEEPER-39">limitation</a> that initially prompted the creation of the hierarchical ledger manager).</p>
 

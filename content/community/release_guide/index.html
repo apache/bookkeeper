@@ -352,55 +352,50 @@ You can reach out other committers in Apache BookKeeper community for signing yo
 
 <p><strong>First</strong>, Determine your Apache GPG Key and Key ID, as follows:</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>gpg --list-keys
-</code></pre>
-</div>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>gpg --list-keys
+</code></pre></div></div>
 
 <p>This will list your GPG keys. One of these should reflect your Apache account, for example:</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>--------------------------------------------------
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>--------------------------------------------------
 pub   2048R/845E6689 2016-02-23
 uid                  Nomen Nescio &lt;anonymous@apache.org&gt;
 sub   2048R/BA4D50BE 2016-02-23
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <p>Here, the key ID is the 8-digit hex string in the <code class="highlighter-rouge">pub</code> line: <code class="highlighter-rouge">845E6689</code>.</p>
 
 <p><strong>Second</strong>, add your Apache GPG key to the BookKeeper’s <code class="highlighter-rouge">KEYS</code> file in <a href="https://dist.apache.org/repos/dist/release/bookkeeper/KEYS"><code class="highlighter-rouge">dist</code></a>.</p>
 
-<div class="language-shell highlighter-rouge"><pre class="highlight"><code>
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
 <span class="c"># checkout the svn folder that contains the KEYS file</span>
 svn co https://dist.apache.org/repos/dist/release/bookkeeper bookkeeper_dist
 <span class="nb">cd </span>bookkeeper_dist
 
 <span class="c"># Export the key in ascii format and append it to the file</span>
-<span class="o">(</span> gpg --list-sigs <span class="nv">$USER</span>@apache.org
-  gpg --export --armor <span class="nv">$USER</span>@apache.org <span class="o">)</span> &gt;&gt; KEYS
+<span class="o">(</span> gpg <span class="nt">--list-sigs</span> <span class="nv">$USER</span>@apache.org
+  gpg <span class="nt">--export</span> <span class="nt">--armor</span> <span class="nv">$USER</span>@apache.org <span class="o">)</span> <span class="o">&gt;&gt;</span> KEYS
 
 <span class="c"># Commit to svn</span>
-svn ci -m <span class="s2">"Added gpg key for </span><span class="nv">$USER</span><span class="s2">"</span>
+svn ci <span class="nt">-m</span> <span class="s2">"Added gpg key for </span><span class="nv">$USER</span><span class="s2">"</span>
 
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <p>Once you committed, please verify if your GPG key shows up in the BookkKeeper’s <code class="highlighter-rouge">KEYS</code> file in <a href="https://dist.apache.org/repos/dist/release/bookkeeper/KEYS"><code class="highlighter-rouge">dist</code></a>.</p>
 
 <p><strong>Third</strong>, configure <code class="highlighter-rouge">git</code> to use this key when signing code by giving it your key ID, as follows:</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>git config --global user.signingkey 845E6689
-</code></pre>
-</div>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>git config --global user.signingkey 845E6689
+</code></pre></div></div>
 
 <p>You may drop the <code class="highlighter-rouge">--global</code> option if you’d prefer to use this key for the current repository only.</p>
 
 <p>You may wish to start <code class="highlighter-rouge">gpg-agent</code> to unlock your GPG key only once using your passphrase. Otherwise, you may need to enter this passphrase hundreds of times. The setup for <code class="highlighter-rouge">gpg-agent</code> varies based on operating system, but may be something like this:</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>eval $(gpg-agent --daemon --no-grab --write-env-file $HOME/.gpg-agent-info)
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>eval $(gpg-agent --daemon --no-grab --write-env-file $HOME/.gpg-agent-info)
 export GPG_TTY=$(tty)
 export GPG_AGENT_INFO
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <h4 id="access-to-apache-nexus-repository">Access to Apache Nexus repository</h4>
 
@@ -414,7 +409,7 @@ export GPG_AGENT_INFO
   <li>
     <p>Insert this snippet twice into your global Maven <code class="highlighter-rouge">settings.xml</code> file (use command <code class="highlighter-rouge">mvn -X | grep settings</code>, and read out the global Maven setting file), typically <code class="highlighter-rouge">${HOME}/.m2/settings.xml</code>. The end result should look like this, where <code class="highlighter-rouge">TOKEN_NAME</code> and <code class="highlighter-rouge">TOKEN_PASSWORD</code> are your secret tokens:</p>
 
-    <div class="highlighter-rouge"><pre class="highlight"><code> &lt;settings&gt;
+    <div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code> &lt;settings&gt;
    &lt;servers&gt;
      &lt;server&gt;
        &lt;id&gt;apache.releases.https&lt;/id&gt;
@@ -428,8 +423,7 @@ export GPG_AGENT_INFO
      &lt;/server&gt;
    &lt;/servers&gt;
  &lt;/settings&gt;
-</code></pre>
-    </div>
+</code></pre></div>    </div>
   </li>
 </ol>
 
@@ -510,31 +504,28 @@ We can use <a href="https://github.com/skywinder/github-changelog-generator">git
 
 <p>Check out the version of the codebase from which you start the release. For a new minor or major release, this may be <code class="highlighter-rouge">HEAD</code> of the <code class="highlighter-rouge">master</code> branch. To build a hotfix/incremental release, instead of the <code class="highlighter-rouge">master</code> branch, use the release tag of the release being patched. (Please make sure your cloned repository is up-to-date before starting.)</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>git checkout &lt;master branch OR release tag&gt;
-</code></pre>
-</div>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>git checkout &lt;master branch OR release tag&gt;
+</code></pre></div></div>
 
 <p>Set up a few environment variables to simplify Maven commands that follow. (We use <code class="highlighter-rouge">bash</code> Unix syntax in this guide.)</p>
 
 <p>For a major release (for instance 4.5.0):</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>MAJOR_VERSION="4.5"
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>MAJOR_VERSION="4.5"
 VERSION="4.5.0"
 NEXT_VERSION="4.6.0"
 BRANCH_NAME="branch-${MAJOR_VERSION}"
 DEVELOPMENT_VERSION="${NEXT_VERSION}-SNAPSHOT"
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <p>For a minor release (for instance 4.5.1):</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>MAJOR_VERSION="4.5"
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>MAJOR_VERSION="4.5"
 VERSION="4.5.1"
 NEXT_VERSION="4.5.2"
 BRANCH_NAME="branch-${MAJOR_VERSION}"
 DEVELOPMENT_VERSION="${NEXT_VERSION}-SNAPSHOT"
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <p>Version represents the release currently underway, while next version specifies the anticipated next version to be released from that branch. Normally, 4.5.0 is followed by 4.6.0, while 4.5.0 is followed by 4.5.1.</p>
 
@@ -547,12 +538,11 @@ at the end of this command. “dry run” will generate some temporary files in 
 them by running “mvn release:clean”.</p>
 </blockquote>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>mvn release:branch \
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>mvn release:branch \
     -DbranchName=${BRANCH_NAME} \
     -DdevelopmentVersion=${DEVELOPMENT_VERSION} \
     [-DdryRun]
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <blockquote>
   <p>If you failed at the middle of running this command, please check if you have <code class="highlighter-rouge">push</code> permissions on <code class="highlighter-rouge">github.com</code>.
@@ -566,9 +556,8 @@ $ git branch -D ${BRANCH_NAME}</master></p>
 
 <p>Check out the release branch.</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>git checkout ${BRANCH_NAME}
-</code></pre>
-</div>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>git checkout ${BRANCH_NAME}
+</code></pre></div></div>
 
 <p>The rest of this guide assumes that commands are run in the root of a repository on <code class="highlighter-rouge">${BRANCH_NAME}</code> with the above environment variables set.</p>
 
@@ -599,17 +588,15 @@ $ git branch -D ${BRANCH_NAME}</master></p>
 
 <h3 id="build-and-stage-java-artifacts-with-maven">Build and stage Java artifacts with Maven</h3>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>TODO: Currently we have to build and stage maven artifacts manually, because it requires pushing the artifacts to apache staging. We should look for a solution to automate that.
-</code></pre>
-</div>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>TODO: Currently we have to build and stage maven artifacts manually, because it requires pushing the artifacts to apache staging. We should look for a solution to automate that.
+</code></pre></div></div>
 
 <p>Set up a few environment variables to simplify Maven commands that follow. This identifies the release candidate being built. Start with <code class="highlighter-rouge">release candidate number</code> equal to <code class="highlighter-rouge">0</code> and increment it for each candidate.</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>RC_NUM="0"
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>RC_NUM="0"
 TAG="release-${VERSION}"
 RC_DIR="bookkeeper-${VERSION}-rc${RC_NUM}"
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <blockquote>
   <p>Please make sure <code class="highlighter-rouge">gpg</code> command is in your $PATH. The maven release plugin use <code class="highlighter-rouge">gpg</code> to sign generated jars and packages.</p>
@@ -617,7 +604,7 @@ RC_DIR="bookkeeper-${VERSION}-rc${RC_NUM}"
 
 <p>Use Maven release plugin to build the release artifacts, as follows:</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>mvn release:prepare \
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>mvn release:prepare \
     -Dresume=false \
     -DreleaseVersion=${VERSION} \
     -Dtag=${TAG} \
@@ -625,14 +612,12 @@ RC_DIR="bookkeeper-${VERSION}-rc${RC_NUM}"
     [-DdryRun] \
     [-Darguments="-Dmaven.javadoc.skip=true -DskipTests=true"] \ // to skip javadoc and tests
     [-Dresume=true] // resume prepare if it is interrupted in the middle
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <p>Use Maven release plugin to stage these artifacts on the Apache Nexus repository, as follows:</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>mvn release:perform [-DdryRun] [-Darguments="-Dmaven.javadoc.skip=true -DskipTests=true"] [-Dresume=true]
-</code></pre>
-</div>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>mvn release:perform [-DdryRun] [-Darguments="-Dmaven.javadoc.skip=true -DskipTests=true"] [-Dresume=true]
+</code></pre></div></div>
 
 <blockquote>
   <p>If <code class="highlighter-rouge">release:perform</code> failed, 
@@ -656,50 +641,45 @@ force push backed out local git branch to github again.</p>
   <li>
     <p>If you have not already, check out the BookKeeper section of the <code class="highlighter-rouge">dev</code> repository on <code class="highlighter-rouge">dist.apache.org</code> via Subversion. In a fresh directory:</p>
 
-    <div class="highlighter-rouge"><pre class="highlight"><code> svn co https://dist.apache.org/repos/dist/dev/bookkeeper
-</code></pre>
-    </div>
+    <div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code> svn co https://dist.apache.org/repos/dist/dev/bookkeeper
+</code></pre></div>    </div>
   </li>
   <li>
     <p>Make a directory for the new release:</p>
 
-    <div class="highlighter-rouge"><pre class="highlight"><code> mkdir bookkeeper/${RC_DIR}
-</code></pre>
-    </div>
+    <div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code> mkdir bookkeeper/${RC_DIR}
+</code></pre></div>    </div>
   </li>
   <li>
     <p>Copy the BookKeeper source and binary distribution, and their GPG signatures:</p>
 
-    <div class="highlighter-rouge"><pre class="highlight"><code> cp bookkeeper-dist/target/bookkeeper-${VERSION}-src.tar.gz bookkeeper/${RC_DIR}/bookkeeper-${VERSION}-src.tar.gz
+    <div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code> cp bookkeeper-dist/target/bookkeeper-${VERSION}-src.tar.gz bookkeeper/${RC_DIR}/bookkeeper-${VERSION}-src.tar.gz
  cp bookkeeper-dist/target/bookkeeper-${VERSION}-src.tar.gz.asc bookkeeper/${RC_DIR}/bookkeeper-${VERSION}-src.tar.gz.asc
  cp bookkeeper-dist/server/target/bookkeeper-server-${VERSION}-bin.tar.gz bookkeeper/${RC_DIR}/bookkeeper-server-${VERSION}-bin.tar.gz
  cp bookkeeper-dist/server/target/bookkeeper-server-${VERSION}-bin.tar.gz.asc bookkeeper/${RC_DIR}/bookkeeper-server-${VERSION}-bin.tar.gz.asc
  cp bookkeeper-dist/all/target/bookkeeper-all-${VERSION}-bin.tar.gz bookkeeper/${RC_DIR}/bookkeeper-all-${VERSION}-bin.tar.gz
  cp bookkeeper-dist/all/target/bookkeeper-all-${VERSION}-bin.tar.gz.asc bookkeeper/${RC_DIR}/bookkeeper-all-${VERSION}-bin.tar.gz.asc
-</code></pre>
-    </div>
+</code></pre></div>    </div>
   </li>
   <li>
     <p>Sign the BookKeeper source and binary distribution.</p>
 
-    <div class="highlighter-rouge"><pre class="highlight"><code> cd bookkeeper/${RC_DIR}
+    <div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code> cd bookkeeper/${RC_DIR}
  md5sum bookkeeper-${VERSION}-src.tar.gz &gt; bookkeeper-${VERSION}-src.tar.gz.md5
  shasum bookkeeper-${VERSION}-src.tar.gz &gt; bookkeeper-${VERSION}-src.tar.gz.sha1
  md5sum bookkeeper-server-${VERSION}-bin.tar.gz &gt; bookkeeper-server-${VERSION}-bin.tar.gz.md5
  shasum bookkeeper-server-${VERSION}-bin.tar.gz &gt; bookkeeper-server-${VERSION}-bin.tar.gz.sha1
  md5sum bookkeeper-all-${VERSION}-bin.tar.gz &gt; bookkeeper-all-${VERSION}-bin.tar.gz.md5
  shasum bookkeeper-all-${VERSION}-bin.tar.gz &gt; bookkeeper-all-${VERSION}-bin.tar.gz.sha1
-</code></pre>
-    </div>
+</code></pre></div>    </div>
   </li>
   <li>
     <p>Go back to BookKeeper directory, add and commit all the files.</p>
 
-    <div class="highlighter-rouge"><pre class="highlight"><code> cd ..
+    <div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code> cd ..
  svn add ${RC_DIR}
  svn commit
-</code></pre>
-    </div>
+</code></pre></div>    </div>
   </li>
   <li>
     <p>Verify that files are <a href="https://dist.apache.org/repos/dist/dev/bookkeeper">present</a>.</p>
@@ -721,7 +701,7 @@ force push backed out local git branch to github again.</p>
 
 <p>Start the review-and-vote thread on the dev@ mailing list. Here’s an email template; please adjust as you see fit.</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>From: Release Manager
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>From: Release Manager
 To: dev@bookkeeper.apache.org
 Subject: [VOTE] Release 4.5.0, release candidate #0
 
@@ -759,14 +739,13 @@ Release Manager
 [3] link
 [4] link
 [5] link
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <p>If there are any issues found in the release candidate, reply on the vote thread to cancel the vote. There’s no need to wait 72 hours. Proceed to the <code class="highlighter-rouge">Fix Issues</code> step below and address the problem. However, some issues don’t require cancellation. For example, if an issue is found in the website pull request, just correct it on the spot and the vote can continue as-is.</p>
 
 <p>If there are no issues, reply on the vote thread to close the voting. Then, tally the votes in a separate email. Here’s an email template; please adjust as you see fit. (NOTE: the approver list are binding approvers.)</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>From: Release Manager
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>From: Release Manager
 To: dev@bookkeeper.apache.org
 Subject: [RESULT] [VOTE] Release 0.4.0, release candidate #0
 
@@ -781,8 +760,7 @@ There are XXX approving votes, XXX of which are binding:
 There are no disapproving votes.
 
 Thanks everyone!
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <h3 id="checklist-to-proceed-to-the-finalization-step">Checklist to proceed to the finalization step</h3>
 
@@ -820,10 +798,9 @@ Thanks everyone!
   <p>This command will upgrade the <version> tag on every pom.xml locally to your workspace.</version></p>
 </blockquote>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>mvn release:update-versions
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>mvn release:update-versions
     -DdevelopmentVersion=${DEVELOPMENT_VERSION}
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <p>For instance if you have released 4.5.1, you have to change version to 4.5.2-SNAPSHOT.
 Then you have to create a PR and submit it for review.</p>
@@ -836,9 +813,8 @@ Then you have to create a PR and submit it for review.</p>
 
 <p>Copy the source release from the <code class="highlighter-rouge">dev</code> repository to the <code class="highlighter-rouge">release</code> repository at <code class="highlighter-rouge">dist.apache.org</code> using Subversion.</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>svn move https://dist.apache.org/repos/dist/dev/bookkeeper/bookkeeper-${VERSION}-rc${RC_NUM} https://dist.apache.org/repos/dist/release/bookkeeper/bookkeeper-${VERSION}
-</code></pre>
-</div>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>svn move https://dist.apache.org/repos/dist/dev/bookkeeper/bookkeeper-${VERSION}-rc${RC_NUM} https://dist.apache.org/repos/dist/release/bookkeeper/bookkeeper-${VERSION}
+</code></pre></div></div>
 
 <h3 id="update-website">Update Website</h3>
 
@@ -847,10 +823,9 @@ Then you have to create a PR and submit it for review.</p>
     <p>Create the documentation for <code class="highlighter-rouge">${VERSION}</code>. Run the <code class="highlighter-rouge">release.sh</code> to generate the branch for <code class="highlighter-rouge">${VERSION}</code> and bump
  the versions for website documentation.</p>
 
-    <div class="language-shell highlighter-rouge"><pre class="highlight"><code> <span class="nv">$ </span><span class="nb">cd </span>site
+    <div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code> <span class="nv">$ </span><span class="nb">cd </span>site
  <span class="nv">$ </span>./site/release.sh
-</code></pre>
-    </div>
+</code></pre></div>    </div>
 
     <p>Once run the <code class="highlighter-rouge">release.sh</code>, please send a pull request for it and get approval from any committers, then merge it.
  The CI job will automatically update the website in a few minutes. Please review the website to make sure the
@@ -874,18 +849,17 @@ Then you have to create a PR and submit it for review.</p>
   <li>
     <p>After this pull request is merged, you need to cherry-pick the change to the release tag.</p>
 
-    <div class="language-shell highlighter-rouge"><pre class="highlight"><code> // create a cherry-pick branch
+    <div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code> // create a cherry-pick branch
  <span class="nv">$ </span>git checkout <span class="k">${</span><span class="nv">TAG</span><span class="k">}</span>
- <span class="nv">$ </span>git checkout -b <span class="k">${</span><span class="nv">TAG</span><span class="k">}</span>_cherrypick
+ <span class="nv">$ </span>git checkout <span class="nt">-b</span> <span class="k">${</span><span class="nv">TAG</span><span class="k">}</span>_cherrypick
  <span class="nv">$ </span>git cherry-pick &lt;GIT SHA&gt;
  // remove the release tag locally and remotely
- <span class="nv">$ </span>git tag -d <span class="k">${</span><span class="nv">TAG</span><span class="k">}</span>
+ <span class="nv">$ </span>git tag <span class="nt">-d</span> <span class="k">${</span><span class="nv">TAG</span><span class="k">}</span>
  <span class="nv">$ </span>git push apache :<span class="k">${</span><span class="nv">TAG</span><span class="k">}</span>
  // re-tag based on the cherry-pick branch
  <span class="nv">$ </span>git tag <span class="k">${</span><span class="nv">TAG</span><span class="k">}</span>
  <span class="nv">$ </span>git push apache <span class="k">${</span><span class="nv">TAG</span><span class="k">}</span>
-</code></pre>
-    </div>
+</code></pre></div>    </div>
   </li>
   <li>
     <p>Verify the <a href="https://hub.docker.com/r/apache/bookkeeper/">docker hub</a> to see if a new build for the given tag is build.</p>
@@ -930,7 +904,7 @@ Then you have to create a PR and submit it for review.</p>
   <p>NOTE: Make sure sending the announce email using apache email, otherwise announce@apache.org will reject your email.</p>
 </blockquote>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>From: xxx@apache.org
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>From: xxx@apache.org
 To: dev@bookkeeper.apache.org, user@bookkeeper.apache.org, announce@apache.org
 Subject: [ANNOUNCE] Apache BookKeeper x.y.z released
  
@@ -958,8 +932,7 @@ We would like to thank the contributors that made the release possible.
 Regards,
  
 The BookKeeper Team
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <h3 id="recordkeeping">Recordkeeping</h3>
 

@@ -470,31 +470,28 @@
 
 <p>You can download Apache BookKeeper releases from one of many <a href="http://www.apache.org/dyn/closer.cgi/bookkeeper">Apache mirrors</a>. Here’s an example for the <a href="http://apache.claz.org/bookkeeper">apache.claz.org</a> mirror:</p>
 
-<div class="language-shell highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span>curl -O http://apache.claz.org/bookkeeper/bookkeeper-4.6.1/bookkeeper-4.6.1-src.tar.gz
-<span class="gp">$ </span>tar xvf bookkeeper-4.6.1-src.tar.gz
-<span class="gp">$ </span><span class="nb">cd </span>bookkeeper-4.6.1
-</code></pre>
-</div>
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>curl <span class="nt">-O</span> http://apache.claz.org/bookkeeper/bookkeeper-4.6.1/bookkeeper-4.6.1-src.tar.gz
+<span class="nv">$ </span><span class="nb">tar </span>xvf bookkeeper-4.6.1-src.tar.gz
+<span class="nv">$ </span><span class="nb">cd </span>bookkeeper-4.6.1
+</code></pre></div></div>
 
 <h2 id="clone">Clone</h2>
 
 <p>To build BookKeeper from source, clone the repository, either from the <a href="https://github.com/apache/bookkeeper">GitHub mirror</a> or from the <a href="http://git.apache.org/bookkeeper.git/">Apache repository</a>:</p>
 
-<div class="language-shell highlighter-rouge"><pre class="highlight"><code><span class="c"># From the GitHub mirror</span>
-<span class="gp">$ </span>git clone https://github.com/apache/bookkeeper
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># From the GitHub mirror</span>
+<span class="nv">$ </span>git clone https://github.com/apache/bookkeeper
 
 <span class="c"># From Apache directly</span>
-<span class="gp">$ </span>git clone git://git.apache.org/bookkeeper.git/
-</code></pre>
-</div>
+<span class="nv">$ </span>git clone git://git.apache.org/bookkeeper.git/
+</code></pre></div></div>
 
 <h2 id="build-using-maven">Build using Maven</h2>
 
 <p>Once you have the BookKeeper on your local machine, either by <a href="#download">downloading</a> or <a href="#clone">cloning</a> it, you can then build BookKeeper from source using Maven:</p>
 
-<div class="language-shell highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span>mvn package
-</code></pre>
-</div>
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>mvn package
+</code></pre></div></div>
 
 <blockquote>
   <p>You can skip tests by adding the <code class="highlighter-rouge">-DskipTests</code> flag when running <code class="highlighter-rouge">mvn package</code>.</p>

@@ -252,11 +252,10 @@
 <ol>
   <li>Remove Handle#asyncClose</li>
   <li>Add new method WriteHandle#seal.
-    <div class="highlighter-rouge"><pre class="highlight"><code>class WriteHandle {
+    <div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>class WriteHandle {
  CompletableFuture&lt;Void&gt; seal();
 }
-</code></pre>
-    </div>
+</code></pre></div>    </div>
   </li>
 </ol>
 
@@ -266,14 +265,13 @@
 
 <p>The proposed usage would look like:</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>try (WriteHandle writer = bk.newCreateLedgerOp().withPassword("bleh".getBytes()).execute().get()) {
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>try (WriteHandle writer = bk.newCreateLedgerOp().withPassword("bleh".getBytes()).execute().get()) {
     for (int i = 0; i &lt; 100; i++) {
         writer.append("foobar".getBytes());
     }
     writer.seal().get(); // no more entries can be added
 }
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <p><em>What if the user forgets to call #seal before closing the ledger?</em></p>
 

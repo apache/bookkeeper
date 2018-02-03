@@ -481,9 +481,8 @@ In (2), with a CA, the bookie or client will trust any certificate that was sign
 You can use Java’s <code class="highlighter-rouge">keytool</code> utility to accomplish this task. We will generate the key into a temporary keystore
 initially so that we can export and sign it later with CA.</p>
 
-<div class="language-shell highlighter-rouge"><pre class="highlight"><code>keytool -keystore bookie.keystore.jks -alias localhost -validity <span class="o">{</span>validity<span class="o">}</span> -genkey
-</code></pre>
-</div>
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code>keytool <span class="nt">-keystore</span> bookie.keystore.jks <span class="nt">-alias</span> localhost <span class="nt">-validity</span> <span class="o">{</span>validity<span class="o">}</span> <span class="nt">-genkey</span>
+</code></pre></div></div>
 
 <p>You need to specify two parameters in the above command:</p>
 
@@ -510,25 +509,22 @@ to ensure the passport is authentic. Similarly, the CA signs the certificates, a
 certificate is computationally difficult to forge. Thus, as long as the CA is a genuine and trusted authority, the clients have
 high assurance that they are connecting to the authentic machines.</p>
 
-<div class="language-shell highlighter-rouge"><pre class="highlight"><code>openssl req -new -x509 -keyout ca-key -out ca-cert -days 365
-</code></pre>
-</div>
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code>openssl req <span class="nt">-new</span> <span class="nt">-x509</span> <span class="nt">-keyout</span> ca-key <span class="nt">-out</span> ca-cert <span class="nt">-days</span> 365
+</code></pre></div></div>
 
 <p>The generated CA is simply a <em>public-private</em> key pair and certificate, and it is intended to sign other certificates.</p>
 
 <p>The next step is to add the generated CA to the clients’ truststore so that the clients can trust this CA:</p>
 
-<div class="language-shell highlighter-rouge"><pre class="highlight"><code>keytool -keystore bookie.truststore.jks -alias CARoot -import -file ca-cert
-</code></pre>
-</div>
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code>keytool <span class="nt">-keystore</span> bookie.truststore.jks <span class="nt">-alias</span> CARoot <span class="nt">-import</span> <span class="nt">-file</span> ca-cert
+</code></pre></div></div>
 
 <p>NOTE: If you configure the bookies to require client authentication by setting <code class="highlighter-rouge">sslClientAuthentication</code> to <code class="highlighter-rouge">true</code> on the
 <a href="../../reference/config">bookie config</a>, then you must also provide a truststore for the bookies and it should have all the CA
 certificates that clients keys were signed by.</p>
 
-<div class="language-shell highlighter-rouge"><pre class="highlight"><code>keytool -keystore client.truststore.jks -alias CARoot -import -file ca-cert
-</code></pre>
-</div>
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code>keytool <span class="nt">-keystore</span> client.truststore.jks <span class="nt">-alias</span> CARoot <span class="nt">-import</span> <span class="nt">-file</span> ca-cert
+</code></pre></div></div>
 
 <p>In contrast to the keystore, which stores each machine’s own identity, the truststore of a client stores all the certificates
 that the client should trust. Importing a certificate into one’s truststore also means trusting all certificates that are signed
@@ -541,22 +537,19 @@ That way all machines can authenticate all other machines.</p>
 
 <p>The next step is to sign all certificates in the keystore with the CA we generated. First, you need to export the certificate from the keystore:</p>
 
-<div class="language-shell highlighter-rouge"><pre class="highlight"><code>keytool -keystore bookie.keystore.jks -alias localhost -certreq -file cert-file
-</code></pre>
-</div>
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code>keytool <span class="nt">-keystore</span> bookie.keystore.jks <span class="nt">-alias</span> localhost <span class="nt">-certreq</span> <span class="nt">-file</span> cert-file
+</code></pre></div></div>
 
 <p>Then sign it with the CA:</p>
 
-<div class="language-shell highlighter-rouge"><pre class="highlight"><code>openssl x509 -req -CA ca-cert -CAkey ca-key -in cert-file -out cert-signed -days <span class="o">{</span>validity<span class="o">}</span> -CAcreateserial -passin pass:<span class="o">{</span>ca-password<span class="o">}</span>
-</code></pre>
-</div>
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code>openssl x509 <span class="nt">-req</span> <span class="nt">-CA</span> ca-cert <span class="nt">-CAkey</span> ca-key <span class="nt">-in</span> cert-file <span class="nt">-out</span> cert-signed <span class="nt">-days</span> <span class="o">{</span>validity<span class="o">}</span> <span class="nt">-CAcreateserial</span> <span class="nt">-passin</span> pass:<span class="o">{</span>ca-password<span class="o">}</span>
+</code></pre></div></div>
 
 <p>Finally, you need to import both the certificate of the CA and the signed certificate into the keystore:</p>
 
-<div class="language-shell highlighter-rouge"><pre class="highlight"><code>keytool -keystore bookie.keystore.jks -alias CARoot -import -file ca-cert
-keytool -keystore bookie.keystore.jks -alias localhost -import -file cert-signed
-</code></pre>
-</div>
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code>keytool <span class="nt">-keystore</span> bookie.keystore.jks <span class="nt">-alias</span> CARoot <span class="nt">-import</span> <span class="nt">-file</span> ca-cert
+keytool <span class="nt">-keystore</span> bookie.keystore.jks <span class="nt">-alias</span> localhost <span class="nt">-import</span> <span class="nt">-file</span> cert-signed
+</code></pre></div></div>
 
 <p>The definitions of the parameters are the following:</p>
 
@@ -585,7 +578,7 @@ netty bindings to leverage installed OpenSSL.</p>
 
 <p>The following TLS configs are needed on the bookie side:</p>
 
-<div class="language-shell highlighter-rouge"><pre class="highlight"><code><span class="nv">tlsProvider</span><span class="o">=</span>OpenSSL
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">tlsProvider</span><span class="o">=</span>OpenSSL
 <span class="c"># key store</span>
 <span class="nv">tlsKeyStoreType</span><span class="o">=</span>JKS
 <span class="nv">tlsKeyStore</span><span class="o">=</span>/var/private/tls/bookie.keystore.jks
@@ -594,8 +587,7 @@ netty bindings to leverage installed OpenSSL.</p>
 <span class="nv">tlsTrustStoreType</span><span class="o">=</span>JKS
 <span class="nv">tlsTrustStore</span><span class="o">=</span>/var/private/tls/bookie.truststore.jks
 <span class="nv">tlsTrustStorePasswordPath</span><span class="o">=</span>/var/private/tls/bookie.truststore.passwd
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <p>NOTE: it is important to restrict access to the store files and corresponding password files via filesystem permissions.</p>
 
@@ -614,19 +606,17 @@ netty bindings to leverage installed OpenSSL.</p>
 
 <p>To verify the bookie’s keystore and truststore are setup correctly you can run the following command:</p>
 
-<div class="language-shell highlighter-rouge"><pre class="highlight"><code>openssl s_client -debug -connect localhost:3181 -tls1
-</code></pre>
-</div>
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code>openssl s_client <span class="nt">-debug</span> <span class="nt">-connect</span> localhost:3181 <span class="nt">-tls1</span>
+</code></pre></div></div>
 
 <p>NOTE: TLSv1 should be listed under <code class="highlighter-rouge">tlsEnabledProtocols</code>.</p>
 
 <p>In the output of this command you should see the server’s certificate:</p>
 
-<div class="language-shell highlighter-rouge"><pre class="highlight"><code>-----BEGIN CERTIFICATE-----
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nt">-----BEGIN</span> CERTIFICATE-----
 <span class="o">{</span>variable sized random bytes<span class="o">}</span>
------END CERTIFICATE-----
-</code></pre>
-</div>
+<span class="nt">-----END</span> CERTIFICATE-----
+</code></pre></div></div>
 
 <p>If the certificate does not show up or if there are any other error messages then your keystore is not setup correctly.</p>
 
@@ -637,11 +627,10 @@ supported. The configs for TLS will be the same as bookies.</p>
 
 <p>If client authentication is not required by the bookies, the following is a minimal configuration example:</p>
 
-<div class="language-shell highlighter-rouge"><pre class="highlight"><code><span class="nv">tlsProvider</span><span class="o">=</span>OpenSSL
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">tlsProvider</span><span class="o">=</span>OpenSSL
 <span class="nv">clientTrustStore</span><span class="o">=</span>/var/private/tls/client.truststore.jks
 <span class="nv">clientTrustStorePasswordPath</span><span class="o">=</span>/var/private/tls/client.truststore.passwd
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <p>If client authentication is required, then a keystore must be created for each client, and the bookies’ truststores must
 trust the certificate in the client’s keystore. This may be done using commands that are similar to what we used for
@@ -649,11 +638,10 @@ the <a href="#bookie-keystore">bookie keystore</a>.</p>
 
 <p>And the following must also be configured:</p>
 
-<div class="language-shell highlighter-rouge"><pre class="highlight"><code><span class="nv">tlsClientAuthentication</span><span class="o">=</span><span class="nb">true
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">tlsClientAuthentication</span><span class="o">=</span><span class="nb">true
 </span><span class="nv">clientKeyStore</span><span class="o">=</span>/var/private/tls/client.keystore.jks
 <span class="nv">clientKeyStorePasswordPath</span><span class="o">=</span>/var/private/tls/client.keystore.passwd
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <p>NOTE: it is important to restrict access to the store files and corresponding password files via filesystem permissions.</p>
 
@@ -663,9 +651,8 @@ the <a href="#bookie-keystore">bookie keystore</a>.</p>
 
 <p>You can enable TLS debug logging at the JVM level by starting the bookies and/or clients with <code class="highlighter-rouge">javax.net.debug</code> system property. For example:</p>
 
-<div class="language-shell highlighter-rouge"><pre class="highlight"><code>-Djavax.net.debug<span class="o">=</span>all
-</code></pre>
-</div>
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nt">-Djavax</span>.net.debug<span class="o">=</span>all
+</code></pre></div></div>
 
 <p>You can find more details on this in <a href="http://docs.oracle.com/javase/8/docs/technotes/guides/security/jsse/ReadDebug.html">Oracle documentation</a> on
 <a href="http://docs.oracle.com/javase/8/docs/technotes/guides/security/jsse/ReadDebug.html">debugging SSL/TLS connections</a>.</p>

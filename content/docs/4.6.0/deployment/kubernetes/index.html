@@ -494,15 +494,14 @@
 
 <p>As an example, we’ll create a new GKE cluster for Kubernetes version <a href="https://github.com/kubernetes/kubernetes/blob/master/CHANGELOG.md#v164">1.6.4</a> in the <a href="https://cloud.google.com/compute/docs/regions-zones/regions-zones#available">us-central1-a</a> zone. The cluster will be named <code class="highlighter-rouge">bookkeeper-gke-cluster</code> and will consist of three VMs, each using two locally attached SSDs and running on <a href="https://cloud.google.com/compute/docs/machine-types">n1-standard-8</a> machines. These SSDs will be used by Bookie instances, one for the BookKeeper journal and the other for storing the actual data.</p>
 
-<div class="language-bash highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span>gcloud config <span class="nb">set </span>compute/zone us-central1-a
-<span class="gp">$ </span>gcloud config <span class="nb">set </span>project your-project-name
-<span class="gp">$ </span>gcloud container clusters create bookkeeper-gke-cluster <span class="se">\</span>
-  --machine-type<span class="o">=</span>n1-standard-8 <span class="se">\</span>
-  --num-nodes<span class="o">=</span>3 <span class="se">\</span>
-  --local-ssd-count<span class="o">=</span>2 <span class="se">\</span>
-  --enable-kubernetes-alpha
-</code></pre>
-</div>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>gcloud config <span class="nb">set </span>compute/zone us-central1-a
+<span class="nv">$ </span>gcloud config <span class="nb">set </span>project your-project-name
+<span class="nv">$ </span>gcloud container clusters create bookkeeper-gke-cluster <span class="se">\</span>
+  <span class="nt">--machine-type</span><span class="o">=</span>n1-standard-8 <span class="se">\</span>
+  <span class="nt">--num-nodes</span><span class="o">=</span>3 <span class="se">\</span>
+  <span class="nt">--local-ssd-count</span><span class="o">=</span>2 <span class="se">\</span>
+  <span class="nt">--enable-kubernetes-alpha</span>
+</code></pre></div></div>
 
 <p>By default, bookies will run on all the machines that have locally attached SSD disks. In this example, all of those machines will have two SSDs, but you can add different types of machines to the cluster later. You can control which machines host bookie servers using <a href="https://kubernetes.io/docs/concepts/overview/working-with-objects/labels">labels</a>.</p>
 
@@ -510,20 +509,18 @@
 
 <p>You can observe your cluster in the <a href="https://kubernetes.io/docs/tasks/access-application-cluster/web-ui-dashboard/">Kubernetes Dashboard</a> by downloading the credentials for your Kubernetes cluster and opening up a proxy to the cluster:</p>
 
-<div class="language-bash highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span>gcloud container clusters get-credentials bookkeeper-gke-cluster <span class="se">\</span>
-  --zone<span class="o">=</span>us-central1-a <span class="se">\</span>
-  --project<span class="o">=</span>your-project-name
-<span class="gp">$ </span>kubectl proxy
-</code></pre>
-</div>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>gcloud container clusters get-credentials bookkeeper-gke-cluster <span class="se">\</span>
+  <span class="nt">--zone</span><span class="o">=</span>us-central1-a <span class="se">\</span>
+  <span class="nt">--project</span><span class="o">=</span>your-project-name
+<span class="nv">$ </span>kubectl proxy
+</code></pre></div></div>
 
 <p>By default, the proxy will be opened on port 8001. Now you can navigate to <a href="http://localhost:8001/ui">localhost:8001/ui</a> in your browser to access the dashboard. At first your GKE cluster will be empty, but that will change as you begin deploying.</p>
 
 <p>When you create a cluster, your <code class="highlighter-rouge">kubectl</code> config in <code class="highlighter-rouge">~/.kube/config</code> (on MacOS and Linux) will be updated for you, so you probably won’t need to change your configuration. Nonetheless, you can ensure that <code class="highlighter-rouge">kubectl</code> can interact with your cluster by listing the nodes in the cluster:</p>
 
-<div class="language-bash highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span>kubectl get nodes
-</code></pre>
-</div>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>kubectl get nodes
+</code></pre></div></div>
 
 <p>If <code class="highlighter-rouge">kubectl</code> is working with your cluster, you can proceed to deploy ZooKeeper and Bookies.</p>
 
@@ -531,29 +528,26 @@
 
 <p>You <em>must</em> deploy ZooKeeper as the first component, as it is a dependency for the others.</p>
 
-<div class="language-bash highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span>kubectl apply -f zookeeper.yaml
-</code></pre>
-</div>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>kubectl apply <span class="nt">-f</span> zookeeper.yaml
+</code></pre></div></div>
 
 <p>Wait until all three ZooKeeper server pods are up and have the status <code class="highlighter-rouge">Running</code>. You can check on the status of the ZooKeeper pods at any time:</p>
 
-<div class="language-bash highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span>kubectl get pods -l <span class="nv">component</span><span class="o">=</span>zookeeper
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>kubectl get pods <span class="nt">-l</span> <span class="nv">component</span><span class="o">=</span>zookeeper
 NAME      READY     STATUS             RESTARTS   AGE
 zk-0      1/1       Running            0          18m
 zk-1      1/1       Running            0          17m
 zk-2      0/1       Running            6          15m
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <p>This step may take several minutes, as Kubernetes needs to download the Docker image on the VMs.</p>
 
 <p>If you want to connect to one of the remote zookeeper server, you can use<a href="https://github.com/rgs1/zk_shell">zk-shell</a>, you need to forward a local port to the
 remote zookeeper server:</p>
 
-<div class="language-bash highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span>kubectl port-forward zk-0 2181:2181
-<span class="gp">$ </span>zk-shell localhost 2181
-</code></pre>
-</div>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>kubectl port-forward zk-0 2181:2181
+<span class="nv">$ </span>zk-shell localhost 2181
+</code></pre></div></div>
 
 <h3 id="deploy-bookies">Deploy Bookies</h3>
 
@@ -575,27 +569,24 @@ the data replication. It maintains the best latency property. However, it uses <
 can be potentially higher when using persistent volumes, because there is usually built-in replication in the persistent volumes.</p>
 </blockquote>
 
-<div class="language-bash highlighter-rouge"><pre class="highlight"><code><span class="c"># deploy bookies in a daemon set</span>
-<span class="gp">$ </span>kubectl apply -f bookkeeper.yaml
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># deploy bookies in a daemon set</span>
+<span class="nv">$ </span>kubectl apply <span class="nt">-f</span> bookkeeper.yaml
 
 <span class="c"># deploy bookies in a stateful set</span>
-<span class="gp">$ </span>kubectl apply -f bookkeeper.stateful.yaml
-</code></pre>
-</div>
+<span class="nv">$ </span>kubectl apply <span class="nt">-f</span> bookkeeper.stateful.yaml
+</code></pre></div></div>
 
 <p>You can check on the status of the Bookie pods for these components either in the Kubernetes Dashboard or using <code class="highlighter-rouge">kubectl</code>:</p>
 
-<div class="language-bash highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span>kubectl get pods
-</code></pre>
-</div>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>kubectl get pods
+</code></pre></div></div>
 
 <p>While all BookKeeper pods is Running, by zk-shell you could find all available bookies under /ledgers/</p>
 
 <p>You could also run a <a href="https://github.com/ivankelly/bookkeeper-tutorial/">bookkeeper tutorial</a> instance, which named as ‘dice’ here, in this bookkeeper cluster.</p>
 
-<div class="language-bash highlighter-rouge"><pre class="highlight"><code><span class="nv">$﻿</span>kubectl run -i --tty --attach dice --image<span class="o">=</span>caiok/bookkeeper-tutorial --env <span class="nv">ZOOKEEPER_SERVERS</span><span class="o">=</span><span class="s2">"zk-0.zookeeper"</span>
-</code></pre>
-</div>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$﻿</span>kubectl run <span class="nt">-i</span> <span class="nt">--tty</span> <span class="nt">--attach</span> dice <span class="nt">--image</span><span class="o">=</span>caiok/bookkeeper-tutorial <span class="nt">--env</span> <span class="nv">ZOOKEEPER_SERVERS</span><span class="o">=</span><span class="s2">"zk-0.zookeeper"</span>
+</code></pre></div></div>
 
 <p>An example output of Dice instance is like this:</p>
 <pre><code class="language-aidl">➜ $ kubectl run -i --tty --attach dice --image=caiok/bookkeeper-tutorial --env ZOOKEEPER_SERVERS="zk-0.zookeeper"          
@@ -619,24 +610,20 @@ Value = 2, epoch = 5, leading
 
 <p>Delete Demo dice instance</p>
 
-<div class="language-bash highlighter-rouge"><pre class="highlight"><code><span class="nv">$﻿</span>kubectl delete deployment dice      
-</code></pre>
-</div>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$﻿</span>kubectl delete deployment dice      
+</code></pre></div></div>
 
 <p>Delete BookKeeper</p>
-<div class="language-bash highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span>kubectl delete -f bookkeeper.yaml    
-</code></pre>
-</div>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>kubectl delete <span class="nt">-f</span> bookkeeper.yaml    
+</code></pre></div></div>
 
 <p>Delete ZooKeeper</p>
-<div class="language-bash highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span>kubectl delete -f zookeeper.yaml    
-</code></pre>
-</div>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>kubectl delete <span class="nt">-f</span> zookeeper.yaml    
+</code></pre></div></div>
 
 <p>Delete cluster</p>
-<div class="language-bash highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span>gcloud container clusters delete bookkeeper-gke-cluster    
-</code></pre>
-</div>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>gcloud container clusters delete bookkeeper-gke-cluster    
+</code></pre></div></div>
 
 
         </section>

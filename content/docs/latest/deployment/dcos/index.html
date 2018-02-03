@@ -485,9 +485,8 @@
 
 <h2 id="installing-bookkeeper">Installing BookKeeper</h2>
 
-<div class="language-shell highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span>dcos package install bookkeeper --yes
-</code></pre>
-</div>
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>dcos package <span class="nb">install </span>bookkeeper <span class="nt">--yes</span>
+</code></pre></div></div>
 
 <p>This command will:</p>
 
@@ -499,7 +498,7 @@
 <p>The bookie that is automatically started up uses the host mode of the network and by default exports the service at <code class="highlighter-rouge">agent_ip:3181</code>.</p>
 
 <blockquote>
-  <p>If you run <code class="highlighter-rouge">dcos package install bookkeeper</code> without setting the <code class="highlighter-rouge">--yes</code> flag, the install will run in interactive mode. For more information on the <code class="highlighter-rouge">package install</code> command, see the <a href="https://docs.mesosphere.com/latest/cli/command-reference/dcos-package/dcos-package-install/">DC/OS docs</a>.</p>
+  <p>If you run <code class="highlighter-rouge">dcos package install bookkeeper</code> without setting the <code class="highlighter-rouge">--yes</code> flag, the install will run in interactive mode. For more information on the <code class="highlighter-rouge"><span class="k">package</span> <span class="n">install</span></code> command, see the <a href="https://docs.mesosphere.com/latest/cli/command-reference/dcos-package/dcos-package-install/">DC/OS docs</a>.</p>
 </blockquote>
 
 <h3 id="services">Services</h3>
@@ -532,15 +531,13 @@
 
 <p>To connect to bookies running on DC/OS using clients running within your Mesos cluster, you need to specify the ZooKeeper connection string for DC/OS’s ZooKeeper cluster:</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>master.mesos:2181
-</code></pre>
-</div>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>master.mesos:2181
+</code></pre></div></div>
 
 <p>This is the <em>only</em> ZooKeeper host/port you need to include in your connection string. Here’s an example using the <a href="../../api/ledger-api#the-java-ledger-api-client">Java client</a>:</p>
 
-<div class="language-java highlighter-rouge"><pre class="highlight"><code><span class="n">BookKeeper</span> <span class="n">bkClient</span> <span class="o">=</span> <span class="k">new</span> <span class="n">BookKeeper</span><span class="o">(</span><span class="s">"master.mesos:2181"</span><span class="o">);</span>
-</code></pre>
-</div>
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">BookKeeper</span> <span class="n">bkClient</span> <span class="o">=</span> <span class="k">new</span> <span class="n">BookKeeper</span><span class="o">(</span><span class="s">"master.mesos:2181"</span><span class="o">);</span>
+</code></pre></div></div>
 
 <p>If you’re connecting using a client running outside your Mesos cluster, you need to supply the public-facing connection string for your DC/OS ZooKeeper cluster.</p>
 
@@ -550,17 +547,15 @@
 
 <p>You can supply a non-default configuration when installing the package using a JSON file. Here’s an example command:</p>
 
-<div class="language-shell highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span>dcos package install bookkeeper <span class="se">\</span>
-  --options<span class="o">=</span>/path/to/config.json
-</code></pre>
-</div>
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>dcos package <span class="nb">install </span>bookkeeper <span class="se">\</span>
+  <span class="nt">--options</span><span class="o">=</span>/path/to/config.json
+</code></pre></div></div>
 
-<p>You can then fetch the current configuration for BookKeeper at any time using the <code class="highlighter-rouge">package describe</code> command:</p>
+<p>You can then fetch the current configuration for BookKeeper at any time using the <code class="highlighter-rouge"><span class="k">package</span> <span class="n">describe</span></code> command:</p>
 
-<div class="language-shell highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span>dcos package describe bookkeeper <span class="se">\</span>
-  --config
-</code></pre>
-</div>
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>dcos package describe bookkeeper <span class="se">\</span>
+  <span class="nt">--config</span>
+</code></pre></div></div>
 
 <h3 id="available-parameters">Available parameters</h3>
 
@@ -627,31 +622,28 @@
 
 <p>Here’s an example JSON configuration object for BookKeeper on DC/OS:</p>
 
-<div class="language-json highlighter-rouge"><pre class="highlight"><code><span class="p">{</span><span class="w">
-  </span><span class="nt">"instances"</span><span class="p">:</span><span class="w"> </span><span class="mi">5</span><span class="p">,</span><span class="w">
-  </span><span class="nt">"cpus"</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span><span class="w">
-  </span><span class="nt">"mem"</span><span class="p">:</span><span class="w"> </span><span class="mf">2048.0</span><span class="p">,</span><span class="w">
-  </span><span class="nt">"volume_size"</span><span class="p">:</span><span class="w"> </span><span class="mi">250</span><span class="w">
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
+  </span><span class="s2">"instances"</span><span class="p">:</span><span class="w"> </span><span class="mi">5</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"cpus"</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"mem"</span><span class="p">:</span><span class="w"> </span><span class="mf">2048.0</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"volume_size"</span><span class="p">:</span><span class="w"> </span><span class="mi">250</span><span class="w">
 </span><span class="p">}</span><span class="w">
-</span></code></pre>
-</div>
+</span></code></pre></div></div>
 
 <p>If that configuration were stored in a file called <code class="highlighter-rouge">bk-config.json</code>, you could apply that configuration upon installating the BookKeeper package using this command:</p>
 
-<div class="language-shell highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span>dcos package install bookkeeper <span class="se">\</span>
-  --options<span class="o">=</span>./bk-config.json
-</code></pre>
-</div>
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>dcos package <span class="nb">install </span>bookkeeper <span class="se">\</span>
+  <span class="nt">--options</span><span class="o">=</span>./bk-config.json
+</code></pre></div></div>
 
 <h2 id="uninstalling-bookkeeper">Uninstalling BookKeeper</h2>
 
-<p>You can shut down and uninstall the <code class="highlighter-rouge">bookkeeper</code> from DC/OS at any time using the <code class="highlighter-rouge">package uninstall</code> command:</p>
+<p>You can shut down and uninstall the <code class="highlighter-rouge">bookkeeper</code> from DC/OS at any time using the <code class="highlighter-rouge"><span class="k">package</span> <span class="n">uninstall</span></code> command:</p>
 
-<div class="language-shell highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span>dcos package uninstall bookkeeper
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>dcos package uninstall bookkeeper
 Uninstalled package <span class="o">[</span>bookkeeper] version <span class="o">[</span>4.7.0-SNAPSHOT]
 Thank you <span class="k">for </span>using bookkeeper.
-</code></pre>
-</div>
+</code></pre></div></div>
 
         </section>
 

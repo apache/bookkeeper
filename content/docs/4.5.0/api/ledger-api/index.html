@@ -473,7 +473,7 @@
 
 <p>If you’re using <a href="https://maven.apache.org/">Maven</a>, add this to your <a href="https://maven.apache.org/guides/introduction/introduction-to-the-pom.html"><code class="highlighter-rouge">pom.xml</code></a> build configuration file:</p>
 
-<div class="language-xml highlighter-rouge"><pre class="highlight"><code><span class="c">&lt;!-- in your &lt;properties&gt; block --&gt;</span>
+<div class="language-xml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c">&lt;!-- in your &lt;properties&gt; block --&gt;</span>
 <span class="nt">&lt;bookkeeper.version&gt;</span>4.5.0<span class="nt">&lt;/bookkeeper.version&gt;</span>
 
 <span class="c">&lt;!-- in your &lt;dependencies&gt; block --&gt;</span>
@@ -482,14 +482,13 @@
   <span class="nt">&lt;artifactId&gt;</span>bookkeeper-server<span class="nt">&lt;/artifactId&gt;</span>
   <span class="nt">&lt;version&gt;</span>${bookkeeper.version}<span class="nt">&lt;/version&gt;</span>
 <span class="nt">&lt;/dependency&gt;</span>
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <h3 id="gradle">Gradle</h3>
 
 <p>If you’re using <a href="https://gradle.org/">Gradle</a>, add this to your <a href="https://spring.io/guides/gs/gradle/"><code class="highlighter-rouge">build.gradle</code></a> build configuration file:</p>
 
-<div class="language-groovy highlighter-rouge"><pre class="highlight"><code><span class="n">dependencies</span> <span class="o">{</span>
+<div class="language-groovy highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">dependencies</span> <span class="o">{</span>
     <span class="n">compile</span> <span class="nl">group:</span> <span class="s1">'org.apache.bookkeeper'</span><span class="o">,</span> <span class="nl">name:</span> <span class="s1">'bookkeeper-server'</span><span class="o">,</span> <span class="nl">version:</span> <span class="s1">'4.5.0'</span>
 <span class="o">}</span>
 
@@ -497,8 +496,7 @@
 <span class="n">dependencies</span> <span class="o">{</span>
     <span class="n">compile</span> <span class="s1">'org.apache.bookkeeper:bookkeeper-server:4.5.0'</span>
 <span class="o">}</span>
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <h2 id="connection-string">Connection string</h2>
 
@@ -514,14 +512,13 @@
 
 <p>In order to create a new <a href="../javadoc/org/apache/bookkeeper/client/BookKeeper"><code class="highlighter-rouge">BookKeeper</code></a> client object, you need to pass in a <a href="#connection-string">connection string</a>. Here is an example client object using a ZooKeeper connection string:</p>
 
-<div class="language-java highlighter-rouge"><pre class="highlight"><code><span class="k">try</span> <span class="o">{</span>
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">try</span> <span class="o">{</span>
     <span class="n">String</span> <span class="n">connectionString</span> <span class="o">=</span> <span class="s">"127.0.0.1:2181"</span><span class="o">;</span> <span class="c1">// For a single-node, local ZooKeeper cluster</span>
     <span class="n">BookKeeper</span> <span class="n">bkClient</span> <span class="o">=</span> <span class="k">new</span> <span class="n">BookKeeper</span><span class="o">(</span><span class="n">connectionString</span><span class="o">);</span>
 <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">InterruptedException</span> <span class="o">|</span> <span class="n">IOException</span> <span class="o">|</span> <span class="n">KeeperException</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
     <span class="n">e</span><span class="o">.</span><span class="na">printStackTrace</span><span class="o">();</span>
 <span class="o">}</span>
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <blockquote>
   <p>If you’re running BookKeeper <a href="../../getting-started/run-locally">locally</a>, using the <a href="../../reference/cli#bookkeeper-localbookie"><code class="highlighter-rouge">localbookie</code></a> command, use <code class="highlighter-rouge">"127.0.0.1:2181"</code> for your connection string, as in the example above.</p>
@@ -533,29 +530,26 @@
   <li>
     <p>By passing in a <a href="../javadoc/org/apache/bookkeeper/conf/ClientConfiguration"><code class="highlighter-rouge">ClientConfiguration</code></a> object. Here’s an example:</p>
 
-    <div class="language-java highlighter-rouge"><pre class="highlight"><code><span class="n">ClientConfiguration</span> <span class="n">config</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ClientConfiguration</span><span class="o">();</span>
+    <div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">ClientConfiguration</span> <span class="n">config</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ClientConfiguration</span><span class="o">();</span>
 <span class="n">config</span><span class="o">.</span><span class="na">setZkServers</span><span class="o">(</span><span class="n">zkConnectionString</span><span class="o">);</span>
 <span class="n">config</span><span class="o">.</span><span class="na">setAddEntryTimeout</span><span class="o">(</span><span class="mi">2000</span><span class="o">);</span>
 <span class="n">BookKeeper</span> <span class="n">bkClient</span> <span class="o">=</span> <span class="k">new</span> <span class="n">BookKeeper</span><span class="o">(</span><span class="n">config</span><span class="o">);</span>
-</code></pre>
-    </div>
+</code></pre></div>    </div>
   </li>
   <li>
     <p>By specifying a <code class="highlighter-rouge">ClientConfiguration</code> and a <a href="http://zookeeper.apache.org/doc/current/api/org/apache/zookeeper/ZooKeeper.html"><code class="highlighter-rouge">ZooKeeper</code></a> client object:</p>
 
-    <div class="language-java highlighter-rouge"><pre class="highlight"><code><span class="n">ClientConfiguration</span> <span class="n">config</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ClientConfiguration</span><span class="o">();</span>
+    <div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">ClientConfiguration</span> <span class="n">config</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ClientConfiguration</span><span class="o">();</span>
 <span class="n">config</span><span class="o">.</span><span class="na">setAddEntryTimeout</span><span class="o">(</span><span class="mi">5000</span><span class="o">);</span>
 <span class="n">ZooKeeper</span> <span class="n">zkClient</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ZooKeeper</span><span class="o">(</span><span class="cm">/* client args */</span><span class="o">);</span>
 <span class="n">BookKeeper</span> <span class="n">bkClient</span> <span class="o">=</span> <span class="k">new</span> <span class="n">BookKeeper</span><span class="o">(</span><span class="n">config</span><span class="o">,</span> <span class="n">zkClient</span><span class="o">);</span>
-</code></pre>
-    </div>
+</code></pre></div>    </div>
   </li>
   <li>
     <p>Using the <code class="highlighter-rouge">forConfig</code> method:</p>
 
-    <div class="language-java highlighter-rouge"><pre class="highlight"><code><span class="n">BookKeeper</span> <span class="n">bkClient</span> <span class="o">=</span> <span class="n">BookKeeper</span><span class="o">.</span><span class="na">forConfig</span><span class="o">(</span><span class="n">conf</span><span class="o">).</span><span class="na">build</span><span class="o">();</span>
-</code></pre>
-    </div>
+    <div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">BookKeeper</span> <span class="n">bkClient</span> <span class="o">=</span> <span class="n">BookKeeper</span><span class="o">.</span><span class="na">forConfig</span><span class="o">(</span><span class="n">conf</span><span class="o">).</span><span class="na">build</span><span class="o">();</span>
+</code></pre></div>    </div>
   </li>
 </ul>
 
@@ -565,16 +559,15 @@
 
 <p>Here’s an example:</p>
 
-<div class="language-java highlighter-rouge"><pre class="highlight"><code><span class="kt">byte</span><span class="o">[]</span> <span class="n">password</span> <span class="o">=</span> <span class="s">"some-password"</span><span class="o">.</span><span class="na">getBytes</span><span class="o">();</span>
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kt">byte</span><span class="o">[]</span> <span class="n">password</span> <span class="o">=</span> <span class="s">"some-password"</span><span class="o">.</span><span class="na">getBytes</span><span class="o">();</span>
 <span class="n">LedgerHandle</span> <span class="n">handle</span> <span class="o">=</span> <span class="n">bkClient</span><span class="o">.</span><span class="na">createLedger</span><span class="o">(</span><span class="n">BookKeeper</span><span class="o">.</span><span class="na">DigestType</span><span class="o">.</span><span class="na">MAC</span><span class="o">,</span> <span class="n">password</span><span class="o">);</span>
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <p>You can also create ledgers asynchronously</p>
 
 <h3 id="create-ledgers-asynchronously">Create ledgers asynchronously</h3>
 
-<div class="language-java highlighter-rouge"><pre class="highlight"><code><span class="kd">class</span> <span class="nc">LedgerCreationCallback</span> <span class="kd">implements</span> <span class="n">AsyncCallback</span><span class="o">.</span><span class="na">CreateCallback</span> <span class="o">{</span>
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">class</span> <span class="nc">LedgerCreationCallback</span> <span class="kd">implements</span> <span class="n">AsyncCallback</span><span class="o">.</span><span class="na">CreateCallback</span> <span class="o">{</span>
     <span class="kd">public</span> <span class="kt">void</span> <span class="nf">createComplete</span><span class="o">(</span><span class="kt">int</span> <span class="n">returnCode</span><span class="o">,</span> <span class="n">LedgerHandle</span> <span class="n">handle</span><span class="o">,</span> <span class="n">Object</span> <span class="n">ctx</span><span class="o">)</span> <span class="o">{</span>
         <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"Ledger successfully created"</span><span class="o">);</span>
     <span class="o">}</span>
@@ -588,34 +581,30 @@
         <span class="k">new</span> <span class="nf">LedgerCreationCallback</span><span class="o">(),</span>
         <span class="s">"some context"</span>
 <span class="o">);</span>
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <h2 id="adding-entries-to-ledgers">Adding entries to ledgers</h2>
 
-<div class="language-java highlighter-rouge"><pre class="highlight"><code><span class="kt">long</span> <span class="n">entryId</span> <span class="o">=</span> <span class="n">ledger</span><span class="o">.</span><span class="na">addEntry</span><span class="o">(</span><span class="s">"Some entry data"</span><span class="o">.</span><span class="na">getBytes</span><span class="o">());</span>
-</code></pre>
-</div>
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kt">long</span> <span class="n">entryId</span> <span class="o">=</span> <span class="n">ledger</span><span class="o">.</span><span class="na">addEntry</span><span class="o">(</span><span class="s">"Some entry data"</span><span class="o">.</span><span class="na">getBytes</span><span class="o">());</span>
+</code></pre></div></div>
 
 <h3 id="add-entries-asynchronously">Add entries asynchronously</h3>
 
 <h2 id="reading-entries-from-ledgers">Reading entries from ledgers</h2>
 
-<div class="language-java highlighter-rouge"><pre class="highlight"><code><span class="n">Enumerator</span><span class="o">&lt;</span><span class="n">LedgerEntry</span><span class="o">&gt;</span> <span class="n">entries</span> <span class="o">=</span> <span class="n">handle</span><span class="o">.</span><span class="na">readEntries</span><span class="o">(</span><span class="mi">1</span><span class="o">,</span> <span class="mi">99</span><span class="o">);</span>
-</code></pre>
-</div>
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">Enumerator</span><span class="o">&lt;</span><span class="n">LedgerEntry</span><span class="o">&gt;</span> <span class="n">entries</span> <span class="o">=</span> <span class="n">handle</span><span class="o">.</span><span class="na">readEntries</span><span class="o">(</span><span class="mi">1</span><span class="o">,</span> <span class="mi">99</span><span class="o">);</span>
+</code></pre></div></div>
 
 <p>To read all possible entries from the ledger:</p>
 
-<div class="language-java highlighter-rouge"><pre class="highlight"><code><span class="n">Enumerator</span><span class="o">&lt;</span><span class="n">LedgerEntry</span><span class="o">&gt;</span> <span class="n">entries</span> <span class="o">=</span>
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">Enumerator</span><span class="o">&lt;</span><span class="n">LedgerEntry</span><span class="o">&gt;</span> <span class="n">entries</span> <span class="o">=</span>
   <span class="n">handle</span><span class="o">.</span><span class="na">readEntries</span><span class="o">(</span><span class="mi">0</span><span class="o">,</span> <span class="n">handle</span><span class="o">.</span><span class="na">getLastAddConfirmed</span><span class="o">());</span>
 
 <span class="k">while</span> <span class="o">(</span><span class="n">entries</span><span class="o">.</span><span class="na">hasNextElement</span><span class="o">())</span> <span class="o">{</span>
     <span class="n">LedgerEntry</span> <span class="n">entry</span> <span class="o">=</span> <span class="n">entries</span><span class="o">.</span><span class="na">nextElement</span><span class="o">();</span>
     <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"Successfully read entry "</span> <span class="o">+</span> <span class="n">entry</span><span class="o">.</span><span class="na">getId</span><span class="o">());</span>
 <span class="o">}</span>
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <h3 id="reading-entries-after-the-lastaddconfirmed-range">Reading entries after the LastAddConfirmed range</h3>
 
@@ -625,29 +614,27 @@ For entries which are within the range 0..LastAddConfirmed BookKeeper guarantees
 For entries outside that range it is possible that the writer never received the acknowledge and so there is the risk that the reader is seeing entries before the writer and this could result in a consistency issue in some cases.
 With this method you can even read entries before the LastAddConfirmed and entries after it with one call, the expected consistency will be as described above.</p>
 
-<div class="language-java highlighter-rouge"><pre class="highlight"><code><span class="n">Enumerator</span><span class="o">&lt;</span><span class="n">LedgerEntry</span><span class="o">&gt;</span> <span class="n">entries</span> <span class="o">=</span>
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">Enumerator</span><span class="o">&lt;</span><span class="n">LedgerEntry</span><span class="o">&gt;</span> <span class="n">entries</span> <span class="o">=</span>
   <span class="n">handle</span><span class="o">.</span><span class="na">readUnconfirmedEntries</span><span class="o">(</span><span class="mi">0</span><span class="o">,</span> <span class="n">lastEntryIdExpectedToRead</span><span class="o">);</span>
 
 <span class="k">while</span> <span class="o">(</span><span class="n">entries</span><span class="o">.</span><span class="na">hasNextElement</span><span class="o">())</span> <span class="o">{</span>
     <span class="n">LedgerEntry</span> <span class="n">entry</span> <span class="o">=</span> <span class="n">entries</span><span class="o">.</span><span class="na">nextElement</span><span class="o">();</span>
     <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"Successfully read entry "</span> <span class="o">+</span> <span class="n">entry</span><span class="o">.</span><span class="na">getId</span><span class="o">());</span>
 <span class="o">}</span>
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <h2 id="deleting-ledgers">Deleting ledgers</h2>
 
 <p><span class="pop" id="ledger-popover">Ledgers</span> can also be deleted synchronously or asynchronously.</p>
 
-<div class="language-java highlighter-rouge"><pre class="highlight"><code><span class="kt">long</span> <span class="n">ledgerId</span> <span class="o">=</span> <span class="mi">1234</span><span class="o">;</span>
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kt">long</span> <span class="n">ledgerId</span> <span class="o">=</span> <span class="mi">1234</span><span class="o">;</span>
 
 <span class="k">try</span> <span class="o">{</span>
     <span class="n">bkClient</span><span class="o">.</span><span class="na">deleteLedger</span><span class="o">(</span><span class="n">ledgerId</span><span class="o">);</span>
 <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">Exception</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
   <span class="n">e</span><span class="o">.</span><span class="na">printStackTrace</span><span class="o">();</span>
 <span class="o">}</span>
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <h3 id="delete-entries-asynchronously">Delete entries asynchronously</h3>
 
@@ -655,13 +642,12 @@ With this method you can even read entries before the LastAddConfirmed and entri
 
 <p>*</p>
 
-<div class="language-java highlighter-rouge"><pre class="highlight"><code><span class="kd">class</span> <span class="nc">DeleteEntryCallback</span> <span class="kd">implements</span> <span class="n">AsyncCallback</span><span class="o">.</span><span class="na">DeleteCallback</span> <span class="o">{</span>
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">class</span> <span class="nc">DeleteEntryCallback</span> <span class="kd">implements</span> <span class="n">AsyncCallback</span><span class="o">.</span><span class="na">DeleteCallback</span> <span class="o">{</span>
     <span class="kd">public</span> <span class="kt">void</span> <span class="nf">deleteComplete</span><span class="o">()</span> <span class="o">{</span>
         <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"Delete completed"</span><span class="o">);</span>
     <span class="o">}</span>
 <span class="o">}</span>
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <h2 id="simple-example">Simple example</h2>
 
@@ -679,7 +665,7 @@ With this method you can even read entries before the LastAddConfirmed and entri
   <li>reads all available entries</li>
 </ul>
 
-<div class="language-java highlighter-rouge"><pre class="highlight"><code><span class="c1">// Create a client object for the local ensemble. This</span>
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// Create a client object for the local ensemble. This</span>
 <span class="c1">// operation throws multiple exceptions, so make sure to</span>
 <span class="c1">// use a try/catch block when instantiating client objects.</span>
 <span class="n">BookKeeper</span> <span class="n">bkc</span> <span class="o">=</span> <span class="k">new</span> <span class="n">BookKeeper</span><span class="o">(</span><span class="s">"localhost:2181"</span><span class="o">);</span>
@@ -721,17 +707,15 @@ With this method you can even read entries before the LastAddConfirmed and entri
 <span class="c1">// Close the ledger and the client</span>
 <span class="n">lh</span><span class="o">.</span><span class="na">close</span><span class="o">();</span>
 <span class="n">bkc</span><span class="o">.</span><span class="na">close</span><span class="o">();</span>
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <p>Running this should return this output:</p>
 
-<div class="language-shell highlighter-rouge"><pre class="highlight"><code>Result: 0
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Result: 0
 Result: 1
 Result: 2
 <span class="c"># etc</span>
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <h2 id="example-application">Example application</h2>
 
@@ -747,9 +731,8 @@ Result: 2
 
 <p>To start up a cluster consisting of six <span class="pop" id="bookie-popover">bookies</span> locally:</p>
 
-<div class="language-shell highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span>bookkeeper-server/bin/bookkeeper localbookie 6
-</code></pre>
-</div>
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>bookkeeper-server/bin/bookkeeper localbookie 6
+</code></pre></div></div>
 
 <p>You can specify a different number of bookies if you’d like.</p>
 
@@ -767,15 +750,14 @@ Result: 2
 
 <p>To begin, download the base application, compile and run it.</p>
 
-<div class="language-shell highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span>git clone https://github.com/ivankelly/bookkeeper-tutorial.git
-<span class="gp">$ </span>mvn package
-<span class="gp">$ </span>mvn <span class="nb">exec</span>:java -Dexec.mainClass<span class="o">=</span>org.apache.bookkeeper.Dice
-</code></pre>
-</div>
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>git clone https://github.com/ivankelly/bookkeeper-tutorial.git
+<span class="nv">$ </span>mvn package
+<span class="nv">$ </span>mvn <span class="nb">exec</span>:java <span class="nt">-Dexec</span>.mainClass<span class="o">=</span>org.apache.bookkeeper.Dice
+</code></pre></div></div>
 
 <p>That should yield output that looks something like this:</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>[INFO] Scanning for projects...
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>[INFO] Scanning for projects...
 [INFO]                                                                         
 [INFO] ------------------------------------------------------------------------
 [INFO] Building tutorial 1.0-SNAPSHOT
@@ -786,14 +768,13 @@ Result: 2
 Value = 4
 Value = 5
 Value = 3
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <h3 id="the-base-application">The base application</h3>
 
 <p>The application in this tutorial is a dice application. The <code class="highlighter-rouge">Dice</code> class below has a <code class="highlighter-rouge">playDice</code> function that generates a random number between 1 and 6 every second, prints the value of the dice roll, and runs indefinitely.</p>
 
-<div class="language-java highlighter-rouge"><pre class="highlight"><code><span class="kd">public</span> <span class="kd">class</span> <span class="nc">Dice</span> <span class="o">{</span>
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">public</span> <span class="kd">class</span> <span class="nc">Dice</span> <span class="o">{</span>
     <span class="n">Random</span> <span class="n">r</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Random</span><span class="o">();</span>
 
     <span class="kt">void</span> <span class="nf">playDice</span><span class="o">()</span> <span class="kd">throws</span> <span class="n">InterruptedException</span> <span class="o">{</span>
@@ -803,12 +784,11 @@ Value = 3
         <span class="o">}</span>
     <span class="o">}</span>
 <span class="o">}</span>
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <p>When you run the <code class="highlighter-rouge">main</code> function of this class, a new <code class="highlighter-rouge">Dice</code> object will be instantiated and then run indefinitely:</p>
 
-<div class="language-java highlighter-rouge"><pre class="highlight"><code><span class="kd">public</span> <span class="kd">class</span> <span class="nc">Dice</span> <span class="o">{</span>
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">public</span> <span class="kd">class</span> <span class="nc">Dice</span> <span class="o">{</span>
     <span class="c1">// other methods</span>
 
     <span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="o">(</span><span class="n">String</span><span class="o">[]</span> <span class="n">args</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">InterruptedException</span> <span class="o">{</span>
@@ -816,8 +796,7 @@ Value = 3
         <span class="n">d</span><span class="o">.</span><span class="na">playDice</span><span class="o">();</span>
     <span class="o">}</span>
 <span class="o">}</span>
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <h3 id="leaders-and-followers-and-a-bit-of-background">Leaders and followers (and a bit of background)</h3>
 
@@ -845,7 +824,7 @@ Value = 3
 
 <p>We’ll use zookeeper to elect a leader. A zookeeper instance will have started locally when you started the localbookie application above. To verify it’s running, run the following command.</p>
 
-<div class="language-shell highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span><span class="nb">echo </span>stat | nc localhost 2181
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">echo stat</span> | nc localhost 2181
 Zookeeper version: 3.4.6-1569965, built on 02/20/2014 09:09 GMT
 Clients:
  /127.0.0.1:59343[1]<span class="o">(</span><span class="nv">queued</span><span class="o">=</span>0,recved<span class="o">=</span>40,sent<span class="o">=</span>41<span class="o">)</span>
@@ -863,12 +842,11 @@ Outstanding: 0
 Zxid: 0x11
 Mode: standalone
 Node count: 16
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <p>To interact with zookeeper, we’ll use the Curator client rather than the stock zookeeper client. Getting things right with the zookeeper client can be tricky, and curator removes a lot of the pointy corners for you. In fact, curator even provides a leader election recipe, so we need to do very little work to get leader election in our application.</p>
 
-<div class="language-java highlighter-rouge"><pre class="highlight"><code><span class="kd">public</span> <span class="kd">class</span> <span class="nc">Dice</span> <span class="kd">extends</span> <span class="n">LeaderSelectorListenerAdapter</span> <span class="kd">implements</span> <span class="n">Closeable</span> <span class="o">{</span>
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">public</span> <span class="kd">class</span> <span class="nc">Dice</span> <span class="kd">extends</span> <span class="n">LeaderSelectorListenerAdapter</span> <span class="kd">implements</span> <span class="n">Closeable</span> <span class="o">{</span>
 
     <span class="kd">final</span> <span class="kd">static</span> <span class="n">String</span> <span class="n">ZOOKEEPER_SERVER</span> <span class="o">=</span> <span class="s">"127.0.0.1:2181"</span><span class="o">;</span>
     <span class="kd">final</span> <span class="kd">static</span> <span class="n">String</span> <span class="n">ELECTION_PATH</span> <span class="o">=</span> <span class="s">"/dice-elect"</span><span class="o">;</span>
@@ -885,8 +863,7 @@ Node count: 16
         <span class="n">leaderSelector</span><span class="o">.</span><span class="na">autoRequeue</span><span class="o">();</span>
         <span class="n">leaderSelector</span><span class="o">.</span><span class="na">start</span><span class="o">();</span>
     <span class="o">}</span>
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <p>In the constructor for Dice, we need to create the curator client. We specify four things when creating the client, the location of the zookeeper service, the session timeout, the connect timeout and the retry policy.</p>
 
@@ -894,7 +871,7 @@ Node count: 16
 
 <p>Finally, you’ll have noticed that Dice now extends LeaderSelectorListenerAdapter and implements Closeable. Closeable is there to close the resource we have initialized in the constructor, the curator client and the leaderSelector. LeaderSelectorListenerAdapter is a callback that the leaderSelector uses to notify the instance that it is now the leader. It is passed as the third argument to the LeaderSelector constructor.</p>
 
-<div class="language-java highlighter-rouge"><pre class="highlight"><code>    <span class="nd">@Override</span>
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    <span class="nd">@Override</span>
     <span class="kd">public</span> <span class="kt">void</span> <span class="nf">takeLeadership</span><span class="o">(</span><span class="n">CuratorFramework</span> <span class="n">client</span><span class="o">)</span>
             <span class="kd">throws</span> <span class="n">Exception</span> <span class="o">{</span>
         <span class="kd">synchronized</span> <span class="o">(</span><span class="k">this</span><span class="o">)</span> <span class="o">{</span>
@@ -909,12 +886,11 @@ Node count: 16
             <span class="o">}</span>
         <span class="o">}</span>
     <span class="o">}</span>
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <p>takeLeadership() is the callback called by LeaderSelector when the instance is leader. It should only return when the instance wants to give up leadership. In our case, we never do so we wait on the current object until we’re interrupted. To signal to the rest of the program that we are leader we set a volatile boolean called leader to true. This is unset after we are interrupted.</p>
 
-<div class="language-java highlighter-rouge"><pre class="highlight"><code>    <span class="kt">void</span> <span class="nf">playDice</span><span class="o">()</span> <span class="kd">throws</span> <span class="n">InterruptedException</span> <span class="o">{</span>
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    <span class="kt">void</span> <span class="nf">playDice</span><span class="o">()</span> <span class="kd">throws</span> <span class="n">InterruptedException</span> <span class="o">{</span>
         <span class="k">while</span> <span class="o">(</span><span class="kc">true</span><span class="o">)</span> <span class="o">{</span>
             <span class="k">while</span> <span class="o">(</span><span class="n">leader</span><span class="o">)</span> <span class="o">{</span>
                 <span class="n">Thread</span><span class="o">.</span><span class="na">sleep</span><span class="o">(</span><span class="mi">1000</span><span class="o">);</span>
@@ -923,8 +899,7 @@ Node count: 16
             <span class="o">}</span>
         <span class="o">}</span>
     <span class="o">}</span>
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <p>Finally, we modify the <code class="highlighter-rouge">playDice</code> function to only generate random numbers when it is the leader.</p>
 
@@ -934,18 +909,17 @@ Node count: 16
 
 <p>Now go back to the shell that the original leader was on and wake up the process using fg. You’ll see something like the following:</p>
 
-<div class="language-shell highlighter-rouge"><pre class="highlight"><code>...
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code>...
 ...
 Value <span class="o">=</span> 4, isLeader <span class="o">=</span> <span class="nb">true
 </span>Value <span class="o">=</span> 4, isLeader <span class="o">=</span> <span class="nb">true</span>
 ^Z
-<span class="o">[</span>1]+  Stopped                 mvn <span class="nb">exec</span>:java -Dexec.mainClass<span class="o">=</span>org.apache.bookkeeper.Dice
-<span class="gp">$ </span><span class="nb">fg
-</span>mvn <span class="nb">exec</span>:java -Dexec.mainClass<span class="o">=</span>org.apache.bookkeeper.Dice
+<span class="o">[</span>1]+  Stopped                 mvn <span class="nb">exec</span>:java <span class="nt">-Dexec</span>.mainClass<span class="o">=</span>org.apache.bookkeeper.Dice
+<span class="nv">$ </span><span class="nb">fg
+</span>mvn <span class="nb">exec</span>:java <span class="nt">-Dexec</span>.mainClass<span class="o">=</span>org.apache.bookkeeper.Dice
 Value <span class="o">=</span> 3, isLeader <span class="o">=</span> <span class="nb">true
 </span>Value <span class="o">=</span> 1, isLeader <span class="o">=</span> <span class="nb">false</span>
-</code></pre>
-</div>
+</code></pre></div></div>
 
         </section>
 

@@ -484,15 +484,13 @@
 
 <p>To start a bookie in the foreground, use the <a href="../../reference/cli#bookkeeper-bookie"><code class="highlighter-rouge">bookie</code></a> command of the <a href="../../reference/cli#bookkeeper"><code class="highlighter-rouge">bookkeeper</code></a> CLI tool:</p>
 
-<div class="language-shell highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span>bookkeeper-server/bin/bookkeeper bookie
-</code></pre>
-</div>
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>bookkeeper-server/bin/bookkeeper bookie
+</code></pre></div></div>
 
 <p>To start a bookie in the background, use the <a href="../../reference/cli#bookkeeper-daemon.sh"><code class="highlighter-rouge">bookkeeper-daemon.sh</code></a> script and run <code class="highlighter-rouge">start bookie</code>:</p>
 
-<div class="language-shell highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span>bookkeeper-server/bin/bookkeeper-daemon.sh start bookie
-</code></pre>
-</div>
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>bookkeeper-server/bin/bookkeeper-daemon.sh start bookie
+</code></pre></div></div>
 
 <h3 id="local-bookies">Local bookies</h3>
 
@@ -500,9 +498,8 @@
 
 <p>This would spin up a local ensemble of 6 bookies:</p>
 
-<div class="language-shell highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span>bookkeeper-server/bin/bookkeeper localbookie 6
-</code></pre>
-</div>
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>bookkeeper-server/bin/bookkeeper localbookie 6
+</code></pre></div></div>
 
 <blockquote>
   <p>When you run a local bookie ensemble, all bookies run in a single JVM process.</p>
@@ -556,18 +553,16 @@
 
 <p>To enable logging for a bookie, create a <code class="highlighter-rouge">log4j.properties</code> file and point the <code class="highlighter-rouge">BOOKIE_LOG_CONF</code> environment variable to the configuration file. Here’s an example:</p>
 
-<div class="language-shell highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span><span class="nb">export </span><span class="nv">BOOKIE_LOG_CONF</span><span class="o">=</span>/some/path/log4j.properties
-<span class="gp">$ </span>bookkeeper-server/bin/bookkeeper bookie
-</code></pre>
-</div>
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">export </span><span class="nv">BOOKIE_LOG_CONF</span><span class="o">=</span>/some/path/log4j.properties
+<span class="nv">$ </span>bookkeeper-server/bin/bookkeeper bookie
+</code></pre></div></div>
 
 <h2 id="upgrading">Upgrading</h2>
 
 <p>From time to time you may need to make changes to the filesystem layout of bookies—changes that are incompatible with previous versions of BookKeeper and require that directories used with previous versions are upgraded. If a filesystem upgrade is required when updating BookKeeper, the bookie will fail to start and return an error like this:</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>2017-05-25 10:41:50,494 - ERROR - [main:Bookie@246] - Directory layout version is less than 3, upgrade needed
-</code></pre>
-</div>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>2017-05-25 10:41:50,494 - ERROR - [main:Bookie@246] - Directory layout version is less than 3, upgrade needed
+</code></pre></div></div>
 
 <p>BookKeeper provides a utility for upgrading the filesystem. You can perform an upgrade using the <a href="../../reference/cli#bookkeeper-upgrade"><code class="highlighter-rouge">upgrade</code></a> command of the <code class="highlighter-rouge">bookkeeper</code> CLI tool. When running <code class="highlighter-rouge">bookkeeper upgrade</code> you need to specify one of three flags:</p>
 
@@ -598,27 +593,23 @@
 
 <p>A standard upgrade pattern is to run an upgrade…</p>
 
-<div class="language-shell highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span>bookkeeper-server/bin/bookkeeper upgrade --upgrade
-</code></pre>
-</div>
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>bookkeeper-server/bin/bookkeeper upgrade <span class="nt">--upgrade</span>
+</code></pre></div></div>
 
 <p>…then check that everything is working normally, then kill the bookie. If everything is okay, finalize the upgrade…</p>
 
-<div class="language-shell highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span>bookkeeper-server/bin/bookkeeper upgrade --finalize
-</code></pre>
-</div>
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>bookkeeper-server/bin/bookkeeper upgrade <span class="nt">--finalize</span>
+</code></pre></div></div>
 
 <p>…and then restart the server:</p>
 
-<div class="language-shell highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span>bookkeeper-server/bin/bookkeeper bookie
-</code></pre>
-</div>
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>bookkeeper-server/bin/bookkeeper bookie
+</code></pre></div></div>
 
 <p>If something has gone wrong, you can always perform a rollback:</p>
 
-<div class="language-shell highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span>bookkeeper-server/bin/bookkeeper upgrade --rollback
-</code></pre>
-</div>
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>bookkeeper-server/bin/bookkeeper upgrade <span class="nt">--rollback</span>
+</code></pre></div></div>
 
 <h2 id="formatting">Formatting</h2>
 
@@ -626,15 +617,13 @@
 
 <p>By default, formatting is done in interactive mode, which prompts you to confirm the format operation if old data exists. You can disable confirmation using the <code class="highlighter-rouge">-nonInteractive</code> flag. If old data does exist, the format operation will abort <em>unless</em> you set the <code class="highlighter-rouge">-force</code> flag. Here’s an example:</p>
 
-<div class="language-shell highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span>bookkeeper-server/bin/bookkeeper shell metaformat
-</code></pre>
-</div>
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>bookkeeper-server/bin/bookkeeper shell metaformat
+</code></pre></div></div>
 
 <p>You can format the local filesystem data on a bookie using the <a href="../../reference/cli#bookkeeper-shell-bookieformat"><code class="highlighter-rouge">bookieformat</code></a> command on each bookie. Here’s an example:</p>
 
-<div class="language-shell highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span>bookkeeper-server/bin/bookkeeper shell bookieformat
-</code></pre>
-</div>
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>bookkeeper-server/bin/bookkeeper shell bookieformat
+</code></pre></div></div>
 
 <blockquote>
   <p>The <code class="highlighter-rouge">-force</code> and <code class="highlighter-rouge">-nonInteractive</code> flags are also available for the <code class="highlighter-rouge">bookieformat</code> command.</p>
@@ -648,13 +637,12 @@
 
 <p>Accidentally replacing disks or removing directories can cause a bookie to fail while trying to read a ledger fragment that, according to the ledger metadata, exists on the bookie. For this reason, when a bookie is started for the first time, its disk configuration is fixed for the lifetime of that bookie. Any change to its disk configuration, such as a crashed disk or an accidental configuration change, will result in the bookie being unable to start. That will throw an error like this:</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>2017-05-29 18:19:13,790 - ERROR - [main:BookieServer314] – Exception running bookie server : @
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>2017-05-29 18:19:13,790 - ERROR - [main:BookieServer314] – Exception running bookie server : @
 org.apache.bookkeeper.bookie.BookieException$InvalidCookieException
 .......at org.apache.bookkeeper.bookie.Cookie.verify(Cookie.java:82)
 .......at org.apache.bookkeeper.bookie.Bookie.checkEnvironment(Bookie.java:275)
 .......at org.apache.bookkeeper.bookie.Bookie.&lt;init&gt;(Bookie.java:351)
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <p>If the change was the result of an accidental configuration change, the change can be reverted and the bookie can be restarted. However, if the change <em>cannot</em> be reverted, such as is the case when you want to add a new disk or replace a disk, the bookie must be wiped and then all its data re-replicated onto it.</p>
 
@@ -665,21 +653,19 @@ org.apache.bookkeeper.bookie.BookieException$InvalidCookieException
   <li>
     <p>Run the following command to re-replicate the data:</p>
 
-    <div class="language-bash highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span>bin/bookkeeper org.apache.bookkeeper.tools.BookKeeperTools <span class="se">\</span>
+    <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>bin/bookkeeper org.apache.bookkeeper.tools.BookKeeperTools <span class="se">\</span>
   &lt;zkserver&gt; <span class="se">\</span>
   &lt;oldbookie&gt; <span class="se">\</span>
   &lt;newbookie&gt;
-</code></pre>
-    </div>
+</code></pre></div>    </div>
 
     <p>The ZooKeeper server, old bookie, and new bookie, are all identified by their external IP and <code class="highlighter-rouge">bookiePort</code> (3181 by default). Here’s an example:</p>
 
-    <div class="language-bash highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span>bin/bookkeeper org.apache.bookkeeper.tools.BookKeeperTools <span class="se">\</span>
+    <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>bin/bookkeeper org.apache.bookkeeper.tools.BookKeeperTools <span class="se">\</span>
   zk1.example.com <span class="se">\</span>
   192.168.1.10:3181 <span class="se">\</span>
   192.168.1.10:3181
-</code></pre>
-    </div>
+</code></pre></div>    </div>
 
     <p>See the <a href="../autorecovery">AutoRecovery</a> documentation for more info on the re-replication process.</p>
   </li>
