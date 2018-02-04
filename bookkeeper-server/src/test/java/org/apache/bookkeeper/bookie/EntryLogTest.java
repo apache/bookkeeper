@@ -37,11 +37,8 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.nio.ByteBuffer;
-import java.nio.channels.ClosedChannelException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -331,7 +328,7 @@ public class EntryLogTest {
     }
 
     /**
-     * Test Cache for logid2Channel and concurrentMap for logid2FileChannel work correctly.
+     * Test Cache for logid2Channel and FileChannelBackingCache for logid2FileChannel work correctly.
      * Note that, when an entryLogger is initialized, the entry log id will increase one.
      * when the preallocation is enabled, a new entrylogger will cost 2 logId.
      */
@@ -377,7 +374,7 @@ public class EntryLogTest {
         FakeEntryLogger logger = new FakeEntryLogger(conf, bookie.getLedgerDirsManager(), t);
         // create some read for the entry log
         ThreadLocal<Cache<Long, BufferedReadChannel>>  cacheThreadLocal = logger.logid2Channel;
-        ConcurrentMap<Long, EntryLogger.ReferenceCountedFileChannel> logid2FileChannel = logger.getLogid2FileChannel();
+        EntryLogger.FileChannelBackingCache logid2FileChannel = logger.getLogid2FileChannel();
         for (int j = 0; j < numEntries; j++) {
             logger.readEntry(0, j, positions[0][j]);
         }
@@ -416,23 +413,10 @@ public class EntryLogTest {
         // the cache hasn't readChannel for 2.log
         assertNull(cacheThreadLocal.get().getIfPresent(2L));
         // the corresponding file channel should be closed
-        LOG.info("map content is {}", logid2FileChannel.toString());
-        assertEquals(0, logid2FileChannel.get(1L).refCnt());
-        assertEquals(0, logid2FileChannel.get(2L).refCnt());
-        assertEquals(1, logid2FileChannel.get(3L).refCnt());
-        assertEquals(1, logid2FileChannel.get(4L).refCnt());
-        try {
-            logid2FileChannel.get(1L).getFileChannel().write(ByteBuffer.allocate(5));
-            fail("FileChannel has been closed, should not come here");
-        } catch (ClosedChannelException exception){
-
-        }
-        try {
-            logid2FileChannel.get(2L).getFileChannel().write(ByteBuffer.allocate(5));
-            fail("FileChannel has been closed, should not come here");
-        } catch (ClosedChannelException exception){
-
-        }
+        assertNull("FileChannel should be removed from backing cache", logid2FileChannel.get(1L));
+        assertNull("FileChannel should be removed from backing cache", logid2FileChannel.get(2L));
+        assertEquals(1, logid2FileChannel.get(3L).getRefCount());
+        assertEquals(1, logid2FileChannel.get(4L).getRefCount());
         logger.shutdown();
     }
 
@@ -542,9 +526,9 @@ public class EntryLogTest {
                     @Override
                     public Cache<Long, BufferedReadChannel> initialValue() {
                         return CacheBuilder.newBuilder().concurrencyLevel(1)
-                                .expireAfterAccess(getReadChannelCacheExpireTimeMs(), TimeUnit.MILLISECONDS)
-                                .removalListener(removal -> getLogid2FileChannel().get(removal.getKey()).release())
-                                .ticker(ticker).build(getReadChannelLoader());
+                            .expireAfterAccess(getReadChannelCacheExpireTimeMs(), TimeUnit.MILLISECONDS)
+                            .removalListener(removal -> getLogid2FileChannel().get((Long) removal.getKey()).release())
+                            .ticker(ticker).build(getReadChannelLoader());
                     }
                 };
 
