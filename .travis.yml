@@ -33,7 +33,10 @@ matrix:
       env: CUSTOM_JDK="oraclejdk9"
     - os: linux
       dist: trusty
-      env: CUSTOM_JDK="openjdk8"
+      sudo: true
+      env:
+        - CUSTOM_JDK="openjdk8"
+        - DOCKER="yes"
 
 before_install:
   - echo "MAVEN_OPTS='-Xmx3072m -XX:MaxPermSize=512m'" > ~/.mavenrc
@@ -42,6 +45,7 @@ before_install:
 
 script:
   - travis_retry mvn --batch-mode clean apache-rat:check compile spotbugs:check package -DskipTests
+  - if [ "$DOCKER" == "yes" ]; then mvn --batch-mode -f tests/pom.xml install -DintegrationTests; fi
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then dev/check-binary-license ./bookkeeper-dist/all/target/bookkeeper-all-4.7.0-SNAPSHOT-bin.tar.gz; fi
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then dev/check-binary-license ./bookkeeper-dist/server/target/bookkeeper-server-4.7.0-SNAPSHOT-bin.tar.gz; fi
 # Disabled the tests here. Since tests are running much slower on Travis than on Jenkins
