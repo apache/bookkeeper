@@ -30,10 +30,6 @@ freeStyleJob('bookkeeper_precommit_integrationtests') {
         120)
 
     steps {
-        shell('docker version')
-
-	shell('docker pull apachebookkeeper/bookkeeper-all-versions:latest')
-
         // Build everything
         maven {
             // Set Maven parameters.
