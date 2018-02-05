@@ -372,7 +372,8 @@ public class EntryLogger {
     };
 
     /**
-     * FileChannelBackingCache, to avoid get released file, adopt design of FileInfoBackingCache.
+     * FileChannelBackingCache used to cache RefCntFileChannels for read.
+     * In order to avoid get released file, adopt design of FileInfoBackingCache.
      * @see FileInfoBackingCache
      */
     class FileChannelBackingCache {
@@ -435,7 +436,7 @@ public class EntryLogger {
             }
         }
 
-        void closeAllWithoutFlushing() throws IOException {
+        void closeAllFileChannels() throws IOException {
             for (Map.Entry<Long, CachedFileChannel> entry : fileChannels.entrySet()) {
                 entry.getValue().fc.close();
             }
@@ -1263,11 +1264,16 @@ public class EntryLogger {
         if (brc != null) {
             return brc;
         }
-
-        FileChannelBackingCache.CachedFileChannel cachedFileChannel = logid2FileChannel.loadFileChannel(entryLogId);
-//        do {
-//            LOG.info("tryRetain to avoid cachedFileChannel invalidated by other thread.");
-//        } while (!cachedFileChannel.tryRetain());
+        FileChannelBackingCache.CachedFileChannel cachedFileChannel = null;
+        try {
+            do {
+                cachedFileChannel = logid2FileChannel.loadFileChannel(entryLogId);
+            } while (!cachedFileChannel.tryRetain());
+        } finally {
+            if (null != cachedFileChannel) {
+                cachedFileChannel.release();
+            }
+        }
         // We set the position of the write buffer of this buffered channel to Long.MAX_VALUE
         // so that there are no overlaps with the write buffer while reading
         brc = new BufferedReadChannel(cachedFileChannel.fc, conf.getReadBufferBytes());
@@ -1522,9 +1528,9 @@ public class EntryLogger {
         // since logChannel is buffered channel, do flush when shutting down
         LOG.info("Stopping EntryLogger");
         try {
+            //close corresponding fileChannels for read
+            logid2FileChannel.closeAllFileChannels();
             flush();
-            //close corresponding fileChannel
-            logid2FileChannel.closeAllWithoutFlushing();
             // close current writing log file
             closeFileChannel(logChannel);
             synchronized (compactionLogLock) {
@@ -1536,8 +1542,6 @@ public class EntryLogger {
             // we have no idea how to avoid io exception during shutting down, so just ignore it
             LOG.error("Error flush entry log during shutting down, which may cause entry log corrupted.", ie);
         } finally {
-            //close corresponding fileChannel again to avoid no closing
-//            logid2FileChannel.closeAllWithoutFlushing();
             forceCloseFileChannel(logChannel);
             synchronized (compactionLogLock) {
                 forceCloseFileChannel(compactionLogChannel);
