@@ -19,17 +19,37 @@
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <modelVersion>4.0.0</modelVersion>
   <parent>
-    <groupId>org.apache.bookkeeper.tests</groupId>
-    <artifactId>tests-parent</artifactId>
+    <groupId>org.apache.bookkeeper.tests.shaded</groupId>
+    <artifactId>shaded-tests-parent</artifactId>
     <version>4.7.0-SNAPSHOT</version>
     <relativePath>..</relativePath>
   </parent>
-  <artifactId>bookkeeper-server-shaded-test</artifactId>
-  <name>Apache BookKeeper :: Tests :: bookkeeper-server-shaded test</name>
+  <artifactId>bookkeeper-server-tests-shaded-test</artifactId>
+  <name>Apache BookKeeper :: Tests :: bookkeeper-server-tests-shaded test</name>
   <dependencies>
     <dependency>
       <groupId>org.apache.bookkeeper</groupId>
       <artifactId>bookkeeper-server-shaded</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
+      <!-- when running `mvn install` in the whole project,
+           it will still reference none dependency-reduced
+           pom file. so exclude these dependencies explicitly
+           to verify protobuf and guava classes have been relocated -->
+      <exclusions>
+        <exclusion>
+          <groupId>com.google.protobuf</groupId>
+          <artifactId>protobuf-java</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.google.guava</groupId>
+          <artifactId>guava</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.bookkeeper</groupId>
+      <artifactId>bookkeeper-server-tests-shaded</artifactId>
       <version>${project.version}</version>
       <scope>test</scope>
       <!-- when running `mvn install` in the whole project,
@@ -84,7 +104,8 @@
         </configuration>
         <executions>
           <execution>
-            <phase>test-compile</phase>
+            <id>checkstyle</id>
+            <phase>validate</phase>
             <goals>
               <goal>check</goal>
             </goals>

@@ -19,10 +19,9 @@ Master Issue: #<master-issue-number>
 > Otherwise:
 > 
 > - [ ] Make sure the PR title is formatted like:
->     `<Issue # or BOOKKEEPER-#>: Description of pull request`
+>     `<Issue #>: Description of pull request`
 >     `e.g. Issue 123: Description ...`
->     `e.g. BOOKKEEPER-1234: Description ...`
 > - [ ] Make sure tests pass via `mvn clean apache-rat:check install spotbugs:check`.
-> - [ ] Replace `<Issue # or BOOKKEEPER-#>` in the title with the actual Issue/JIRA number.
+> - [ ] Replace `<Issue #>` in the title with the actual Issue number.
 > 
 > ---

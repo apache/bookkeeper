@@ -518,6 +518,13 @@ In JIRA, inside [version management](https://issues.apache.org/jira/plugins/serv
 
 In Github, inside [milestones](https://github.com/apache/bookkeeper/milestones), hover over the current milestone and click `close` button to close a milestone and set today's date as due-date.
 
+### Update Release Schedule
+
+Update the [release schedule](../releases) page (only do this for feature release):
+
+- Bump the next feature release version and update its release window.
+- Update the release schedule to remove released version and add a new release.
+
 ### Checklist to proceed to the next step
 
 * Maven artifacts released and indexed in the [Maven Central Repository](https://search.maven.org/#search%7Cga%7C1%7Cg%3A%22org.apache.bookkeeper%22)
@@ -527,6 +534,7 @@ In Github, inside [milestones](https://github.com/apache/bookkeeper/milestones),
 * Release tagged in the source code repository
 * Release version finalized in JIRA and Github
 * Release section with release summary is added in [releases.md](https://github.com/apache/bookkeeper/blob/master/site/releases.md)
+* Release schedule page is updated
 
 **********
 
