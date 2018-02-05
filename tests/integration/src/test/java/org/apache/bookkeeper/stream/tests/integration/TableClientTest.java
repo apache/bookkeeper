@@ -34,15 +34,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.api.StorageClient;
 import org.apache.bookkeeper.api.kv.PTable;
 import org.apache.bookkeeper.api.kv.Txn;
+import org.apache.bookkeeper.api.kv.impl.options.OptionFactoryImpl;
 import org.apache.bookkeeper.api.kv.op.CompareResult;
 import org.apache.bookkeeper.api.kv.op.OpType;
 import org.apache.bookkeeper.api.kv.options.DeleteOption;
-import org.apache.bookkeeper.api.kv.options.DeleteOptionBuilder;
 import org.apache.bookkeeper.api.kv.options.OptionFactory;
+import org.apache.bookkeeper.api.kv.options.Options;
 import org.apache.bookkeeper.api.kv.options.PutOption;
-import org.apache.bookkeeper.api.kv.options.PutOptionBuilder;
 import org.apache.bookkeeper.api.kv.options.RangeOption;
-import org.apache.bookkeeper.api.kv.options.RangeOptionBuilder;
 import org.apache.bookkeeper.api.kv.result.DeleteResult;
 import org.apache.bookkeeper.api.kv.result.KeyValue;
 import org.apache.bookkeeper.api.kv.result.PutResult;
@@ -52,7 +51,6 @@ import org.apache.bookkeeper.api.kv.result.TxnResult;
 import org.apache.bookkeeper.clients.StorageClientBuilder;
 import org.apache.bookkeeper.clients.admin.StorageAdminClient;
 import org.apache.bookkeeper.clients.config.StorageClientSettings;
-import org.apache.bookkeeper.clients.impl.kv.option.OptionFactoryImpl;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.bookkeeper.stream.proto.NamespaceConfiguration;
@@ -156,127 +154,114 @@ public class TableClientTest extends StorageServerTestBase {
         ByteBuf lKeyBuf = Unpooled.wrappedBuffer(lKey);
         ByteBuf valBuf = Unpooled.wrappedBuffer(value);
 
-        try (PutOptionBuilder<ByteBuf> optionBuilder = optionFactory.newPutOption().prevKv(true)) {
-            try (PutOption<ByteBuf> option = optionBuilder.build()) {
-                try (PutResult<ByteBuf, ByteBuf> putResult = FutureUtils.result(table.put(
-                    rKeyBuf,
-                    lKeyBuf,
-                    valBuf,
-                    option))) {
-                    assertNull(putResult.prevKv());
-                }
+        try (PutOption<ByteBuf> option = Options.putAndGet()) {
+            try (PutResult<ByteBuf, ByteBuf> putResult = FutureUtils.result(table.put(
+                rKeyBuf,
+                lKeyBuf,
+                valBuf,
+                option))) {
+                assertNull(putResult.prevKv());
             }
         }
 
         // put second key
         ByteBuf valBuf2 = Unpooled.wrappedBuffer("testing-value-2".getBytes(UTF_8));
-        try (PutOptionBuilder<ByteBuf> optionBuilder = optionFactory.newPutOption().prevKv(true)) {
-            try (PutOption<ByteBuf> option = optionBuilder.build()) {
-                try (PutResult<ByteBuf, ByteBuf> putResult = FutureUtils.result(table.put(
-                    rKeyBuf,
-                    lKeyBuf,
-                    valBuf2,
-                    option))) {
-                    assertNotNull(putResult.prevKv());
-                    KeyValue<ByteBuf, ByteBuf> prevKv = putResult.prevKv();
-                    assertEquals("testing-key", new String(ByteBufUtil.getBytes(prevKv.key()), UTF_8));
-                    assertEquals("testing-value", new String(ByteBufUtil.getBytes(prevKv.value()), UTF_8));
-                }
+        try (PutOption<ByteBuf> option = Options.putAndGet()) {
+            try (PutResult<ByteBuf, ByteBuf> putResult = FutureUtils.result(table.put(
+                rKeyBuf,
+                lKeyBuf,
+                valBuf2,
+                option))) {
+                assertNotNull(putResult.prevKv());
+                KeyValue<ByteBuf, ByteBuf> prevKv = putResult.prevKv();
+                assertEquals("testing-key", new String(ByteBufUtil.getBytes(prevKv.key()), UTF_8));
+                assertEquals("testing-value", new String(ByteBufUtil.getBytes(prevKv.value()), UTF_8));
             }
         }
 
         // get key
-        try (RangeOptionBuilder<ByteBuf> optionBuilder = optionFactory.newRangeOption()) {
-            try (RangeOption<ByteBuf> option = optionBuilder.build()) {
-                try (RangeResult<ByteBuf, ByteBuf> getResult = FutureUtils.result(table.get(
-                    rKeyBuf,
-                    lKeyBuf,
-                    option
-                ))) {
-                    assertEquals(1, getResult.count());
-                    assertEquals(1, getResult.kvs().size());
-                    KeyValue<ByteBuf, ByteBuf> kv = getResult.kvs().get(0);
-                    assertEquals("testing-key", new String(ByteBufUtil.getBytes(kv.key()), UTF_8));
-                    assertEquals("testing-value-2", new String(ByteBufUtil.getBytes(kv.value()), UTF_8));
-                }
+        try (RangeOption<ByteBuf> option = optionFactory.newRangeOption().build()) {
+            try (RangeResult<ByteBuf, ByteBuf> getResult = FutureUtils.result(table.get(
+                rKeyBuf,
+                lKeyBuf,
+                option
+            ))) {
+                assertEquals(1, getResult.count());
+                assertEquals(1, getResult.kvs().size());
+                KeyValue<ByteBuf, ByteBuf> kv = getResult.kvs().get(0);
+                assertEquals("testing-key", new String(ByteBufUtil.getBytes(kv.key()), UTF_8));
+                assertEquals("testing-value-2", new String(ByteBufUtil.getBytes(kv.value()), UTF_8));
             }
         }
 
         // delete key
-        try (DeleteOptionBuilder<ByteBuf> optionBuilder = optionFactory.newDeleteOption().prevKv(true)) {
-            try (DeleteOption<ByteBuf> option = optionBuilder.build()) {
-                try (DeleteResult<ByteBuf, ByteBuf> deleteResult = FutureUtils.result(table.delete(
-                    rKeyBuf,
-                    lKeyBuf,
-                    option))) {
-                    assertEquals(1, deleteResult.numDeleted());
-                    assertEquals(1, deleteResult.prevKvs().size());
-                    KeyValue<ByteBuf, ByteBuf> kv = deleteResult.prevKvs().get(0);
-                    assertEquals("testing-key", new String(ByteBufUtil.getBytes(kv.key()), UTF_8));
-                    assertEquals("testing-value-2", new String(ByteBufUtil.getBytes(kv.value()), UTF_8));
-                }
+        try (DeleteOption<ByteBuf> option = optionFactory.newDeleteOption().prevKv(true).build()) {
+            try (DeleteResult<ByteBuf, ByteBuf> deleteResult = FutureUtils.result(table.delete(
+                rKeyBuf,
+                lKeyBuf,
+                option))) {
+                assertEquals(1, deleteResult.numDeleted());
+                assertEquals(1, deleteResult.prevKvs().size());
+                KeyValue<ByteBuf, ByteBuf> kv = deleteResult.prevKvs().get(0);
+                assertEquals("testing-key", new String(ByteBufUtil.getBytes(kv.key()), UTF_8));
+                assertEquals("testing-value-2", new String(ByteBufUtil.getBytes(kv.value()), UTF_8));
             }
         }
 
         // write a range of key
         int numKvs = 100;
         rKeyBuf = Unpooled.wrappedBuffer("test-key".getBytes(UTF_8));
-        try (PutOptionBuilder<ByteBuf> optionBuilder = optionFactory.newPutOption().prevKv(false)) {
-            try (PutOption<ByteBuf> option = optionBuilder.build()) {
-                for (int i = 0; i < numKvs; i++) {
-                    lKeyBuf = getLKey(i);
-                    valBuf = getValue(i);
-                    FutureUtils.result(table.put(
-                        rKeyBuf,
-                        lKeyBuf,
-                        valBuf,
-                        option));
-                }
+        try (PutOption<ByteBuf> option = Options.blindPut()) {
+            for (int i = 0; i < numKvs; i++) {
+                lKeyBuf = getLKey(i);
+                valBuf = getValue(i);
+                FutureUtils.result(table.put(
+                    rKeyBuf,
+                    lKeyBuf,
+                    valBuf,
+                    option));
             }
         }
 
         // get ranges
         ByteBuf lStartKey = getLKey(20);
         ByteBuf lEndKey = getLKey(50);
-        try (RangeOptionBuilder<ByteBuf> optionBuilder = optionFactory.newRangeOption().endKey(lEndKey)) {
-            try (RangeOption<ByteBuf> option = optionBuilder.build()) {
-                try (RangeResult<ByteBuf, ByteBuf> rangeResult = FutureUtils.result(table.get(
-                    rKeyBuf,
-                    lStartKey,
-                    option))) {
-                    assertEquals(31, rangeResult.kvs().size());
-                    assertEquals(31, rangeResult.count());
-                    int i = 20;
-                    for (KeyValue<ByteBuf, ByteBuf> kvPair : rangeResult.kvs()) {
-                        assertEquals(getLKey(i), kvPair.key());
-                        assertEquals(getValue(i), kvPair.value());
-                        ++i;
-                    }
-                    assertEquals(51, i);
+        try (RangeOption<ByteBuf> option = optionFactory.newRangeOption().endKey(lEndKey).build()) {
+            try (RangeResult<ByteBuf, ByteBuf> rangeResult = FutureUtils.result(table.get(
+                rKeyBuf,
+                lStartKey,
+                option))) {
+                assertEquals(31, rangeResult.kvs().size());
+                assertEquals(31, rangeResult.count());
+                int i = 20;
+                for (KeyValue<ByteBuf, ByteBuf> kvPair : rangeResult.kvs()) {
+                    assertEquals(getLKey(i), kvPair.key());
+                    assertEquals(getValue(i), kvPair.value());
+                    ++i;
                 }
+                assertEquals(51, i);
             }
         }
 
         // delete range
-        try (DeleteOptionBuilder<ByteBuf> optionBuilder = optionFactory.newDeleteOption()
+        try (DeleteOption<ByteBuf> option = optionFactory.newDeleteOption()
             .prevKv(true)
-            .endKey(lEndKey)) {
-            try (DeleteOption<ByteBuf> option = optionBuilder.build()) {
-                try (DeleteResult<ByteBuf, ByteBuf> deleteRangeResult = FutureUtils.result(table.delete(
-                    rKeyBuf,
-                    lStartKey,
-                    option))) {
-                    assertEquals(31, deleteRangeResult.numDeleted());
-                    assertEquals(31, deleteRangeResult.prevKvs().size());
-                    int i = 20;
-                    for (KeyValue<ByteBuf, ByteBuf> kvPair : deleteRangeResult.prevKvs()) {
-                        assertEquals(getLKey(i), kvPair.key());
-                        assertEquals(getValue(i), kvPair.value());
-                        ++i;
-                    }
-                    assertEquals(51, i);
-
+            .endKey(lEndKey)
+            .build()) {
+            try (DeleteResult<ByteBuf, ByteBuf> deleteRangeResult = FutureUtils.result(table.delete(
+                rKeyBuf,
+                lStartKey,
+                option))) {
+                assertEquals(31, deleteRangeResult.numDeleted());
+                assertEquals(31, deleteRangeResult.prevKvs().size());
+                int i = 20;
+                for (KeyValue<ByteBuf, ByteBuf> kvPair : deleteRangeResult.prevKvs()) {
+                    assertEquals(getLKey(i), kvPair.key());
+                    assertEquals(getValue(i), kvPair.value());
+                    ++i;
                 }
+                assertEquals(51, i);
+
             }
         }
 
@@ -303,19 +288,17 @@ public class TableClientTest extends StorageServerTestBase {
         }
 
         // get key
-        try (RangeOptionBuilder<ByteBuf> optionBuilder = optionFactory.newRangeOption()) {
-            try (RangeOption<ByteBuf> option = optionBuilder.build()) {
-                try (RangeResult<ByteBuf, ByteBuf> getResult = FutureUtils.result(table.get(
-                    lTxnKeyBuf,
-                    lTxnKeyBuf,
-                    option
-                ))) {
-                    assertEquals(1, getResult.count());
-                    assertEquals(1, getResult.kvs().size());
-                    KeyValue<ByteBuf, ByteBuf> kv = getResult.kvs().get(0);
-                    assertEquals("txn-key", new String(ByteBufUtil.getBytes(kv.key()), UTF_8));
-                    assertEquals("txn-value", new String(ByteBufUtil.getBytes(kv.value()), UTF_8));
-                }
+        try (RangeOption<ByteBuf> option = optionFactory.newRangeOption().build()) {
+            try (RangeResult<ByteBuf, ByteBuf> getResult = FutureUtils.result(table.get(
+                lTxnKeyBuf,
+                lTxnKeyBuf,
+                option
+            ))) {
+                assertEquals(1, getResult.count());
+                assertEquals(1, getResult.kvs().size());
+                KeyValue<ByteBuf, ByteBuf> kv = getResult.kvs().get(0);
+                assertEquals("txn-key", new String(ByteBufUtil.getBytes(kv.key()), UTF_8));
+                assertEquals("txn-value", new String(ByteBufUtil.getBytes(kv.value()), UTF_8));
             }
         }
 

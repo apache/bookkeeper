@@ -16,8 +16,9 @@ package org.apache.bookkeeper.clients.impl.kv;
 
 import java.util.concurrent.ScheduledExecutorService;
 import org.apache.bookkeeper.api.kv.PTable;
+import org.apache.bookkeeper.api.kv.impl.result.KeyValueFactory;
+import org.apache.bookkeeper.api.kv.impl.result.ResultFactory;
 import org.apache.bookkeeper.api.kv.op.OpFactory;
-import org.apache.bookkeeper.clients.impl.kv.result.ResultFactory;
 import org.apache.bookkeeper.stream.proto.RangeProperties;
 import org.apache.bookkeeper.stream.proto.StreamProperties;
 

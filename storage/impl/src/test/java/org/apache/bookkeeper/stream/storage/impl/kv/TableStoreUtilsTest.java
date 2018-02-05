@@ -34,10 +34,9 @@ import static org.mockito.Mockito.when;
 
 import com.google.protobuf.ByteString;
 import java.util.concurrent.ExecutionException;
+import org.apache.bookkeeper.api.kv.result.Code;
+import org.apache.bookkeeper.api.kv.result.KeyValue;
 import org.apache.bookkeeper.statelib.api.exceptions.MVCCStoreException;
-import org.apache.bookkeeper.statelib.api.mvcc.KVRecord;
-import org.apache.bookkeeper.statelib.api.mvcc.result.Code;
-import org.apache.bookkeeper.stream.proto.kv.KeyValue;
 import org.apache.bookkeeper.stream.proto.storage.StatusCode;
 import org.junit.Test;
 
@@ -145,14 +144,15 @@ public class TableStoreUtilsTest {
         long createRev = 2 * System.currentTimeMillis();
         long modRev = 3 * System.currentTimeMillis();
         long version = 4 * System.currentTimeMillis();
-        KVRecord<byte[], byte[]> kv = mock(KVRecord.class);
+        KeyValue<byte[], byte[]> kv = mock(KeyValue.class);
         when(kv.key()).thenReturn(storeKeyWithRKey);
         when(kv.value()).thenReturn(this.value);
         when(kv.createRevision()).thenReturn(createRev);
         when(kv.modifiedRevision()).thenReturn(modRev);
         when(kv.version()).thenReturn(version);
 
-        KeyValue keyValue = newKeyValue(ByteString.copyFrom(rKey), kv);
+        org.apache.bookkeeper.stream.proto.kv.KeyValue keyValue =
+            newKeyValue(ByteString.copyFrom(rKey), kv);
 
         assertEquals(ByteString.copyFrom(lKey), keyValue.getKey());
         assertEquals(ByteString.copyFrom(value), keyValue.getValue());

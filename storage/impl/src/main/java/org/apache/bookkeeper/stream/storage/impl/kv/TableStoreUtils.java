@@ -27,18 +27,17 @@ import java.util.concurrent.ExecutionException;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.bookkeeper.api.kv.op.CompareOp;
+import org.apache.bookkeeper.api.kv.op.CompareResult;
+import org.apache.bookkeeper.api.kv.op.OpFactory;
+import org.apache.bookkeeper.api.kv.result.Code;
+import org.apache.bookkeeper.api.kv.result.DeleteResult;
+import org.apache.bookkeeper.api.kv.result.IncrementResult;
+import org.apache.bookkeeper.api.kv.result.PutResult;
+import org.apache.bookkeeper.api.kv.result.RangeResult;
+import org.apache.bookkeeper.api.kv.result.Result;
+import org.apache.bookkeeper.api.kv.result.TxnResult;
 import org.apache.bookkeeper.statelib.api.exceptions.MVCCStoreException;
-import org.apache.bookkeeper.statelib.api.mvcc.KVRecord;
-import org.apache.bookkeeper.statelib.api.mvcc.op.CompareOp;
-import org.apache.bookkeeper.statelib.api.mvcc.op.CompareResult;
-import org.apache.bookkeeper.statelib.api.mvcc.op.OpFactory;
-import org.apache.bookkeeper.statelib.api.mvcc.result.Code;
-import org.apache.bookkeeper.statelib.api.mvcc.result.DeleteResult;
-import org.apache.bookkeeper.statelib.api.mvcc.result.IncrementResult;
-import org.apache.bookkeeper.statelib.api.mvcc.result.PutResult;
-import org.apache.bookkeeper.statelib.api.mvcc.result.RangeResult;
-import org.apache.bookkeeper.statelib.api.mvcc.result.Result;
-import org.apache.bookkeeper.statelib.api.mvcc.result.TxnResult;
 import org.apache.bookkeeper.stream.proto.kv.KeyValue;
 import org.apache.bookkeeper.stream.proto.kv.rpc.Compare;
 import org.apache.bookkeeper.stream.proto.kv.rpc.DeleteRangeResponse;
@@ -138,7 +137,8 @@ final class TableStoreUtils {
         }
     }
 
-    static KeyValue newKeyValue(ByteString rKey, KVRecord<byte[], byte[]> kv) {
+    static KeyValue newKeyValue(ByteString rKey,
+                                org.apache.bookkeeper.api.kv.result.KeyValue<byte[], byte[]> kv) {
         if (null == kv) {
             return null;
         }
@@ -149,7 +149,7 @@ final class TableStoreUtils {
             .setModRevision(kv.modifiedRevision())
             .setVersion(kv.version())
             .setIsNumber(kv.isNumber())
-            .setNumberValue(kv.number())
+            .setNumberValue(kv.numberValue())
             .build();
     }
 
@@ -160,8 +160,8 @@ final class TableStoreUtils {
             .setHeader(ResponseHeader.newBuilder()
                 .setRoutingHeader(routingHeader)
                 .build());
-        if (null != result.prevKV()) {
-            putRespBuilder = putRespBuilder.setPrevKv(newKeyValue(rKey, result.prevKV()));
+        if (null != result.prevKv()) {
+            putRespBuilder = putRespBuilder.setPrevKv(newKeyValue(rKey, result.prevKv()));
         }
         return putRespBuilder.build();
     }
@@ -184,7 +184,7 @@ final class TableStoreUtils {
                 .setRoutingHeader(routingHeader)
                 .build())
             .addAllKvs(Lists.transform(result.kvs(), kv -> newKeyValue(rKey, kv)))
-            .setMore(result.hasMore())
+            .setMore(result.more())
             .build();
     }
 

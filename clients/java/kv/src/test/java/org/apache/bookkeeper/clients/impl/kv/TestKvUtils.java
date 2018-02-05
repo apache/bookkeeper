@@ -34,14 +34,12 @@ import static org.junit.Assert.assertTrue;
 import com.google.protobuf.ByteString;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import org.apache.bookkeeper.api.kv.impl.options.OptionFactoryImpl;
 import org.apache.bookkeeper.api.kv.options.DeleteOption;
-import org.apache.bookkeeper.api.kv.options.DeleteOptionBuilder;
 import org.apache.bookkeeper.api.kv.options.OptionFactory;
+import org.apache.bookkeeper.api.kv.options.Options;
 import org.apache.bookkeeper.api.kv.options.PutOption;
-import org.apache.bookkeeper.api.kv.options.PutOptionBuilder;
 import org.apache.bookkeeper.api.kv.options.RangeOption;
-import org.apache.bookkeeper.api.kv.options.RangeOptionBuilder;
-import org.apache.bookkeeper.clients.impl.kv.option.OptionFactoryImpl;
 import org.apache.bookkeeper.stream.proto.kv.rpc.DeleteRangeRequest;
 import org.apache.bookkeeper.stream.proto.kv.rpc.IncrementRequest;
 import org.apache.bookkeeper.stream.proto.kv.rpc.PutRequest;
@@ -65,66 +63,69 @@ public class TestKvUtils {
 
     @Test
     public void testNewRangeRequest() {
-        try (RangeOptionBuilder<ByteBuf> optionBuilder = optionFactory.newRangeOption()
+        try (RangeOption<ByteBuf> rangeOption = optionFactory.newRangeOption()
             .endKey(key.retainedDuplicate())
             .countOnly(true)
             .keysOnly(true)
             .limit(10)
-            .revision(1234L)) {
-            try (RangeOption<ByteBuf> rangeOption = optionBuilder.build()) {
-                RangeRequest rr = newRangeRequest(key, rangeOption).build();
-                assertEquals(keyBs, rr.getKey());
-                assertEquals(keyBs, rr.getRangeEnd());
-                assertTrue(rr.getCountOnly());
-                assertTrue(rr.getKeysOnly());
-                assertEquals(10, rr.getLimit());
-                assertEquals(1234L, rr.getRevision());
-                assertFalse(rr.hasHeader());
-            }
+            .maxCreateRev(1234L)
+            .minCreateRev(234L)
+            .maxModRev(2345L)
+            .minModRev(1235L)
+            .build()) {
+            RangeRequest rr = newRangeRequest(key, rangeOption).build();
+            assertEquals(keyBs, rr.getKey());
+            assertEquals(keyBs, rr.getRangeEnd());
+            assertTrue(rr.getCountOnly());
+            assertTrue(rr.getKeysOnly());
+            assertEquals(10, rr.getLimit());
+            assertEquals(1234L, rr.getMaxCreateRevision());
+            assertEquals(234L, rr.getMinCreateRevision());
+            assertEquals(2345L, rr.getMaxModRevision());
+            assertEquals(1235L, rr.getMinModRevision());
+            assertFalse(rr.hasHeader());
         }
     }
 
     @Test
     public void testNewKvRangeRequest() {
-        try (RangeOptionBuilder<ByteBuf> optionBuilder = optionFactory.newRangeOption()
+        try (RangeOption<ByteBuf> rangeOption = optionFactory.newRangeOption()
             .endKey(key.retainedDuplicate())
             .countOnly(true)
             .keysOnly(true)
             .limit(10)
-            .revision(1234L)) {
-            try (RangeOption rangeOption = optionBuilder.build()) {
-                RangeRequest.Builder rrBuilder = newRangeRequest(key, rangeOption);
-                StorageContainerRequest request = newKvRangeRequest(scId, rrBuilder);
-                assertEquals(scId, request.getScId());
-                assertEquals(KV_RANGE_REQ, request.getRequestCase());
-                assertEquals(rrBuilder.build(), request.getKvRangeReq());
-            }
+            .maxCreateRev(1234L)
+            .minCreateRev(234L)
+            .maxModRev(2345L)
+            .minModRev(1235L)
+            .build()) {
+            RangeRequest.Builder rrBuilder = newRangeRequest(key, rangeOption);
+            StorageContainerRequest request = newKvRangeRequest(scId, rrBuilder);
+            assertEquals(scId, request.getScId());
+            assertEquals(KV_RANGE_REQ, request.getRequestCase());
+            assertEquals(rrBuilder.build(), request.getKvRangeReq());
         }
     }
 
     @Test
     public void testNewPutRequest() {
-        try (PutOptionBuilder<ByteBuf> optionBuilder = optionFactory.newPutOption().prevKv(true)) {
-            try (PutOption option = optionBuilder.build()) {
-                PutRequest rr = newPutRequest(key, value, option).build();
-                assertEquals(keyBs, rr.getKey());
-                assertEquals(valueBs, rr.getValue());
-                assertTrue(rr.getPrevKv());
-                assertFalse(rr.hasHeader());
-            }
+        try (PutOption<ByteBuf> option = Options.putAndGet()) {
+            PutRequest rr = newPutRequest(key, value, option).build();
+            assertEquals(keyBs, rr.getKey());
+            assertEquals(valueBs, rr.getValue());
+            assertTrue(rr.getPrevKv());
+            assertFalse(rr.hasHeader());
         }
     }
 
     @Test
     public void testNewKvPutRequest() {
-        try (PutOptionBuilder<ByteBuf> optionBuilder = optionFactory.newPutOption().prevKv(true)) {
-            try (PutOption option = optionBuilder.build()) {
-                PutRequest.Builder putBuilder = newPutRequest(key, value, option);
-                StorageContainerRequest request = newKvPutRequest(scId, putBuilder);
-                assertEquals(scId, request.getScId());
-                assertEquals(KV_PUT_REQ, request.getRequestCase());
-                assertEquals(putBuilder.build(), request.getKvPutReq());
-            }
+        try (PutOption<ByteBuf> option = Options.putAndGet()) {
+            PutRequest.Builder putBuilder = newPutRequest(key, value, option);
+            StorageContainerRequest request = newKvPutRequest(scId, putBuilder);
+            assertEquals(scId, request.getScId());
+            assertEquals(KV_PUT_REQ, request.getRequestCase());
+            assertEquals(putBuilder.build(), request.getKvPutReq());
         }
     }
 
@@ -147,31 +148,29 @@ public class TestKvUtils {
 
     @Test
     public void testNewDeleteRequest() {
-        try (DeleteOptionBuilder<ByteBuf> optionBuilder = optionFactory.newDeleteOption()
+        try (DeleteOption<ByteBuf> option = optionFactory.newDeleteOption()
             .endKey(key.retainedDuplicate())
-            .prevKv(true)) {
-            try (DeleteOption option = optionBuilder.build()) {
-                DeleteRangeRequest rr = newDeleteRequest(key, option).build();
-                assertEquals(keyBs, rr.getKey());
-                assertEquals(keyBs, rr.getRangeEnd());
-                assertTrue(rr.getPrevKv());
-                assertFalse(rr.hasHeader());
-            }
+            .prevKv(true)
+            .build()) {
+            DeleteRangeRequest rr = newDeleteRequest(key, option).build();
+            assertEquals(keyBs, rr.getKey());
+            assertEquals(keyBs, rr.getRangeEnd());
+            assertTrue(rr.getPrevKv());
+            assertFalse(rr.hasHeader());
         }
     }
 
     @Test
     public void testNewKvDeleteRequest() {
-        try (DeleteOptionBuilder<ByteBuf> optionBuilder = optionFactory.newDeleteOption()
+        try (DeleteOption<ByteBuf> option = optionFactory.newDeleteOption()
             .endKey(key.retainedDuplicate())
-            .prevKv(true)) {
-            try (DeleteOption option = optionBuilder.build()) {
-                DeleteRangeRequest.Builder delBuilder = newDeleteRequest(key, option);
-                StorageContainerRequest request = newKvDeleteRequest(scId, delBuilder);
-                assertEquals(scId, request.getScId());
-                assertEquals(KV_DELETE_REQ, request.getRequestCase());
-                assertEquals(delBuilder.build(), request.getKvDeleteReq());
-            }
+            .prevKv(true)
+            .build()) {
+            DeleteRangeRequest.Builder delBuilder = newDeleteRequest(key, option);
+            StorageContainerRequest request = newKvDeleteRequest(scId, delBuilder);
+            assertEquals(scId, request.getScId());
+            assertEquals(KV_DELETE_REQ, request.getRequestCase());
+            assertEquals(delBuilder.build(), request.getKvDeleteReq());
         }
     }
 

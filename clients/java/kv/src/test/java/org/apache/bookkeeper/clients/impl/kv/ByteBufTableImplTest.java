@@ -27,14 +27,11 @@ import static org.mockito.Mockito.verify;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import org.apache.bookkeeper.api.kv.PTable;
+import org.apache.bookkeeper.api.kv.impl.options.OptionFactoryImpl;
 import org.apache.bookkeeper.api.kv.options.DeleteOption;
-import org.apache.bookkeeper.api.kv.options.DeleteOptionBuilder;
 import org.apache.bookkeeper.api.kv.options.OptionFactory;
 import org.apache.bookkeeper.api.kv.options.PutOption;
-import org.apache.bookkeeper.api.kv.options.PutOptionBuilder;
 import org.apache.bookkeeper.api.kv.options.RangeOption;
-import org.apache.bookkeeper.api.kv.options.RangeOptionBuilder;
-import org.apache.bookkeeper.clients.impl.kv.option.OptionFactoryImpl;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -60,34 +57,28 @@ public class ByteBufTableImplTest {
 
     @Test
     public void testGet() {
-        try (RangeOptionBuilder<ByteBuf> optionBuilder = optionFactory.newRangeOption()) {
-            try (RangeOption<ByteBuf> option = optionBuilder.build()) {
-                table.get(key, option);
-                verify(pTable, times(1))
-                    .get(same(key), same(key), same(option));
-            }
+        try (RangeOption<ByteBuf> option = optionFactory.newRangeOption().build()) {
+            table.get(key, option);
+            verify(pTable, times(1))
+                .get(same(key), same(key), same(option));
         }
     }
 
     @Test
     public void testPut() {
-        try (PutOptionBuilder<ByteBuf> optionBuilder = optionFactory.newPutOption()) {
-            try (PutOption<ByteBuf> option = optionBuilder.build()) {
-                table.put(key, value, option);
-                verify(pTable, times(1))
-                    .put(same(key), same(key), same(value), same(option));
-            }
+        try (PutOption<ByteBuf> option = optionFactory.newPutOption().build()) {
+            table.put(key, value, option);
+            verify(pTable, times(1))
+                .put(same(key), same(key), same(value), same(option));
         }
     }
 
     @Test
     public void testDelete() {
-        try (DeleteOptionBuilder<ByteBuf> optionBuilder = optionFactory.newDeleteOption()) {
-            try (DeleteOption<ByteBuf> option = optionBuilder.build()) {
-                table.delete(key, option);
-                verify(pTable, times(1))
-                    .delete(same(key), same(key), same(option));
-            }
+        try (DeleteOption<ByteBuf> option = optionFactory.newDeleteOption().build()) {
+            table.delete(key, option);
+            verify(pTable, times(1))
+                .delete(same(key), same(key), same(option));
         }
     }
 

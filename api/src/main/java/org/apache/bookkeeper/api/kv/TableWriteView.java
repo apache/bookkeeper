@@ -25,6 +25,7 @@ import java.util.concurrent.CompletableFuture;
 import org.apache.bookkeeper.api.kv.exceptions.KvApiException;
 import org.apache.bookkeeper.api.kv.op.CompareResult;
 import org.apache.bookkeeper.api.kv.options.DeleteOption;
+import org.apache.bookkeeper.api.kv.options.Options;
 import org.apache.bookkeeper.api.kv.options.PutOption;
 import org.apache.bookkeeper.api.kv.result.Code;
 import org.apache.bookkeeper.api.kv.result.DeleteResult;
@@ -55,19 +56,14 @@ public interface TableWriteView<K, V> extends PTableBase<K, V> {
             return delete(key).thenApply(ignored -> null);
         }
 
-        PutOption<K> option = opFactory().optionFactory().newPutOption()
-            .prevKv(false)
-            .build();
-        return put(key, value, option)
+        return put(key, value, Options.blindPut())
             .thenApply(result -> {
                 try {
                     return (Void) null;
                 } finally {
                     result.close();
                 }
-            })
-            .whenComplete((v, cause) -> option.close());
-
+            });
     }
 
     default CompletableFuture<V> putIfAbsent(K pKey, K lKey, V value) {
@@ -132,11 +128,7 @@ public interface TableWriteView<K, V> extends PTableBase<K, V> {
     }
 
     default CompletableFuture<V> delete(K key) {
-        DeleteOption<K> option = opFactory().optionFactory().newDeleteOption()
-            .prevKv(true)
-            .endKey(null)
-            .build();
-        return delete(key, option)
+        return delete(key, Options.deleteAndGet())
             .thenApply(result -> {
                 try {
                     List<KeyValue<K, V>> prevKvs = result.prevKvs();
@@ -148,8 +140,7 @@ public interface TableWriteView<K, V> extends PTableBase<K, V> {
                 } finally {
                     result.close();
                 }
-            })
-            .whenComplete((v, cause) -> option.close());
+            });
     }
 
     default CompletableFuture<Boolean> delete(K key, V value) {
@@ -160,10 +151,7 @@ public interface TableWriteView<K, V> extends PTableBase<K, V> {
             .Then(
                 opFactory().newDelete(
                     key,
-                    opFactory().optionFactory().newDeleteOption()
-                        .endKey(null)
-                        .prevKv(true)
-                        .build()));
+                    Options.deleteAndGet()));
         return txn.commit()
             .thenApply(result -> {
                 try {
@@ -182,10 +170,7 @@ public interface TableWriteView<K, V> extends PTableBase<K, V> {
             .Then(
                 opFactory().newDelete(
                     key,
-                    opFactory().optionFactory().newDeleteOption()
-                        .endKey(null)
-                        .prevKv(true)
-                        .build()));
+                    Options.deleteAndGet()));
         return txn.commit()
             .thenCompose(result -> {
                 try {
@@ -216,10 +201,7 @@ public interface TableWriteView<K, V> extends PTableBase<K, V> {
             .Then(
                 opFactory().newDelete(
                     key,
-                    opFactory().optionFactory().newDeleteOption()
-                        .endKey(null)
-                        .prevKv(true)
-                        .build()));
+                    Options.deleteAndGet()));
         return txn.commit()
             .thenCompose(result -> {
                 try {

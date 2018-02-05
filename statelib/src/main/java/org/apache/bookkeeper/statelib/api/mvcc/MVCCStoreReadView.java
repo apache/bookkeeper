@@ -18,10 +18,10 @@
 
 package org.apache.bookkeeper.statelib.api.mvcc;
 
+import org.apache.bookkeeper.api.kv.op.RangeOp;
+import org.apache.bookkeeper.api.kv.result.RangeResult;
 import org.apache.bookkeeper.common.annotation.InterfaceAudience.Public;
 import org.apache.bookkeeper.common.annotation.InterfaceStability.Evolving;
-import org.apache.bookkeeper.statelib.api.mvcc.op.RangeOp;
-import org.apache.bookkeeper.statelib.api.mvcc.result.RangeResult;
 
 /**
  * The read view for a mvcc store.

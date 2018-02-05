@@ -20,23 +20,23 @@ package org.apache.bookkeeper.statelib.impl.mvcc.op.proto;
 
 import io.netty.util.Recycler;
 import io.netty.util.Recycler.Handle;
-import java.util.Optional;
 import lombok.RequiredArgsConstructor;
-import org.apache.bookkeeper.common.util.Recycled;
-import org.apache.bookkeeper.statelib.api.mvcc.op.DeleteOp;
-import org.apache.bookkeeper.statelib.api.mvcc.op.OpType;
-import org.apache.bookkeeper.statelib.impl.Constants;
+import lombok.ToString;
+import org.apache.bookkeeper.api.kv.op.DeleteOp;
+import org.apache.bookkeeper.api.kv.op.OpType;
+import org.apache.bookkeeper.api.kv.options.DeleteOption;
 import org.apache.bookkeeper.statestore.proto.DeleteRequest;
 
 /**
  * A protobuf encoded delete operation.
  */
 @RequiredArgsConstructor
-public class ProtoDeleteOpImpl implements DeleteOp<byte[], byte[]>, Recycled {
+@ToString(exclude = "recyclerHandle")
+public class ProtoDeleteOpImpl implements DeleteOp<byte[], byte[]>, DeleteOption<byte[]> {
 
-    public static ProtoDeleteOpImpl newDeleteOp(long revision, DeleteRequest req) {
+    public static ProtoDeleteOpImpl newDeleteOp(DeleteRequest req) {
         ProtoDeleteOpImpl op = RECYCLER.get();
-        op.setCommand(revision, req);
+        op.setCommand(req);
         return op;
     }
 
@@ -49,62 +49,59 @@ public class ProtoDeleteOpImpl implements DeleteOp<byte[], byte[]>, Recycled {
 
     private final Handle<ProtoDeleteOpImpl> recyclerHandle;
     private DeleteRequest req;
-    private Optional<byte[]> key;
-    private Optional<byte[]> endKey;
-    private long revision;
+    private byte[] key;
+    private byte[] endKey;
 
     private void reset() {
         req = null;
         key = null;
         endKey = null;
-        revision = Constants.INVALID_REVISION;
     }
 
-    private void setCommand(long revision, DeleteRequest req) {
+    private void setCommand(DeleteRequest req) {
         this.req = req;
-        this.revision = revision;
     }
 
     @Override
-    public void recycle() {
-        reset();
-        recyclerHandle.recycle(this);
-    }
-
-    @Override
-    public Optional<byte[]> key() {
+    public byte[] key() {
         if (null != key) {
             return key;
         }
         if (null == req.getKey()) {
-            key = Optional.empty();
+            key = null;
         } else {
-            key = Optional.of(req.getKey().toByteArray());
+            key = req.getKey().toByteArray();
         }
         return key;
     }
 
     @Override
-    public Optional<byte[]> endKey() {
+    public byte[] endKey() {
         if (null != endKey) {
             return endKey;
         }
         if (null == req.getRangeEnd()) {
-            key = Optional.empty();
+            endKey = null;
         } else {
-            key = Optional.of(req.getKey().toByteArray());
+            endKey = req.getRangeEnd().toByteArray();
         }
-        return key;
+        return endKey;
     }
 
     @Override
-    public boolean isRangeOp() {
-        return endKey.isPresent();
-    }
-
-    @Override
-    public boolean prevKV() {
+    public boolean prevKv() {
         return req.getPrevKv();
+    }
+
+    @Override
+    public DeleteOption<byte[]> option() {
+        return this;
+    }
+
+    @Override
+    public void close() {
+        reset();
+        recyclerHandle.recycle(this);
     }
 
     @Override
@@ -112,8 +109,4 @@ public class ProtoDeleteOpImpl implements DeleteOp<byte[], byte[]>, Recycled {
         return OpType.DELETE;
     }
 
-    @Override
-    public long revision() {
-        return revision;
-    }
 }

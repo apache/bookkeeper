@@ -37,13 +37,14 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 import javax.annotation.concurrent.GuardedBy;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.bookkeeper.api.kv.op.CompareResult;
+import org.apache.bookkeeper.api.kv.op.Op;
+import org.apache.bookkeeper.api.kv.op.TxnOp;
+import org.apache.bookkeeper.api.kv.result.KeyValue;
+import org.apache.bookkeeper.api.kv.result.Result;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.common.util.Bytes;
-import org.apache.bookkeeper.statelib.api.mvcc.KVRecord;
 import org.apache.bookkeeper.statelib.api.mvcc.MVCCAsyncStore;
-import org.apache.bookkeeper.statelib.api.mvcc.op.CompareResult;
-import org.apache.bookkeeper.statelib.api.mvcc.op.TxnOpBuilder;
-import org.apache.bookkeeper.statelib.api.mvcc.result.Result;
 import org.apache.bookkeeper.stream.proto.RangeMetadata;
 import org.apache.bookkeeper.stream.proto.RangeProperties;
 import org.apache.bookkeeper.stream.proto.RangeState;
@@ -287,11 +288,11 @@ public class MetaRangeImpl implements MetaRange {
         this.streamId = streamProps.getStreamId();
         this.cTime = this.mTime = System.currentTimeMillis();
 
-        TxnOpBuilder<byte[], byte[]> txnBuilder = store.newTxn();
-
         // 3. create the ranges
         List<RangeProperties> propertiesList =
             split(streamId, streamProps.getStreamConf().getInitialNumRanges(), nextRangeId, placementPolicy);
+        List<Op<byte[], byte[]>> successOps = Lists.newArrayListWithExpectedSize(
+            propertiesList.size() + 1);
         for (RangeProperties props : propertiesList) {
             RangeMetadata meta = RangeMetadata.newBuilder()
                 .setProps(props)
@@ -303,7 +304,7 @@ public class MetaRangeImpl implements MetaRange {
             ranges.put(props.getRangeId(), meta);
             currentRanges.add(props.getRangeId());
 
-            txnBuilder = txnBuilder.addSuccessOps(
+            successOps.add(
                 store.newPut(
                     getStreamRangeKey(streamId, props.getRangeId()),
                     meta.toByteArray()));
@@ -312,19 +313,21 @@ public class MetaRangeImpl implements MetaRange {
 
         // serialize the stream metadata
         byte[] streamMetadataKey = getStreamMetadataKey(streamId);
-        txnBuilder = txnBuilder.addSuccessOps(
+        successOps.add(
             store.newPut(
                 streamMetadataKey,
                 toStreamMetadata(LifecycleState.CREATED).toByteArray()));
 
-        // create stream only when stream doesn't exists
-        txnBuilder = txnBuilder.addCompareOps(
-            store.newCompareValue(CompareResult.EQUAL, streamMetadataKey, null));
+        TxnOp<byte[], byte[]> txn = store.newTxn()
+            // create stream only when stream doesn't exists
+            .If(store.newCompareValue(CompareResult.EQUAL, streamMetadataKey, null))
+            .Then(successOps.toArray(new Op[successOps.size()]))
+            .build();
 
         if (log.isTraceEnabled()) {
             log.trace("Execute create stream metadata range txn {}", streamProps);
         }
-        store.txn(txnBuilder.build())
+        store.txn(txn)
             .thenApplyAsync(txnResult -> {
                 try {
                     if (log.isTraceEnabled()) {
@@ -342,7 +345,7 @@ public class MetaRangeImpl implements MetaRange {
                     }
                     return null;
                 } finally {
-                    txnResult.recycle();
+                    txnResult.close();
                 }
             }, executor)
             .exceptionally(cause -> {
@@ -367,8 +370,8 @@ public class MetaRangeImpl implements MetaRange {
             }, executor);
     }
 
-    private void loadMetadata(List<KVRecord<byte[], byte[]>> kvs) {
-        for (KVRecord<byte[], byte[]> kv : kvs) {
+    private void loadMetadata(List<KeyValue<byte[], byte[]>> kvs) {
+        for (KeyValue<byte[], byte[]> kv : kvs) {
             if (isMetadataKey(kv.key())) {
                 this.revision = kv.modifiedRevision();
                 long streamId = Bytes.toLong(kv.key(), 0);

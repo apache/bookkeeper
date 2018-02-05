@@ -20,7 +20,13 @@ public interface RangeOption<K> extends Option<K> {
 
     long limit();
 
-    long revision();
+    long minModRev();
+
+    long maxModRev();
+
+    long minCreateRev();
+
+    long maxCreateRev();
 
     boolean keysOnly();
 

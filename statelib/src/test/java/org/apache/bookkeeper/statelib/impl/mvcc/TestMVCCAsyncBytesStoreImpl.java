@@ -34,15 +34,17 @@ import java.io.File;
 import java.net.URI;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import lombok.Cleanup;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.bookkeeper.api.kv.op.PutOp;
+import org.apache.bookkeeper.api.kv.options.Options;
+import org.apache.bookkeeper.api.kv.result.Code;
+import org.apache.bookkeeper.api.kv.result.KeyValue;
+import org.apache.bookkeeper.api.kv.result.PutResult;
 import org.apache.bookkeeper.common.coder.ByteArrayCoder;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.statelib.api.StateStoreSpec;
 import org.apache.bookkeeper.statelib.api.exceptions.MVCCStoreException;
-import org.apache.bookkeeper.statelib.api.mvcc.KVRecord;
-import org.apache.bookkeeper.statelib.api.mvcc.op.PutOp;
-import org.apache.bookkeeper.statelib.api.mvcc.result.Code;
-import org.apache.bookkeeper.statelib.api.mvcc.result.PutResult;
 import org.apache.commons.io.FileUtils;
 import org.apache.distributedlog.DLMTestUtil;
 import org.apache.distributedlog.TestDistributedLogBase;
@@ -170,12 +172,11 @@ public class TestMVCCAsyncBytesStoreImpl extends TestDistributedLogBase {
     }
 
     private CompletableFuture<PutResult<byte[], byte[]>> writeKV(int i, boolean prevKv) {
-        PutOp<byte[], byte[]> op = store.getOpFactory().buildPutOp()
-            .key(getKey(i))
-            .value(getValue(i))
-            .prevKV(prevKv)
-            .build();
-        return store.put(op);
+        PutOp<byte[], byte[]> op = store.getOpFactory().newPut(
+            getKey(i),
+            getValue(i),
+            Options.putAndGet());
+        return store.put(op).whenComplete((value, cause) -> op.close());
     }
 
     @Test
@@ -249,10 +250,9 @@ public class TestMVCCAsyncBytesStoreImpl extends TestDistributedLogBase {
             }
             // put(key2, v)
             assertNull(result(store.putIfAbsent(getKey(key), getValue(initialVal))));
-            KVRecord<byte[], byte[]> kv = result(store.getDetail(getKey(key)));
+            KeyValue<byte[], byte[]> kv = result(store.getKeyValue(getKey(key)));
             long revision = kv.modifiedRevision();
             assertArrayEquals(getValue(initialVal), kv.value());
-            kv.recycle();
             // vPut(key2, v, 0)
             assertEquals(revision + 1, result(store.rPut(getKey(key), getValue(casVal), revision)).longValue());
             assertArrayEquals(getValue(casVal), result(store.get(getKey(key))));
@@ -284,7 +284,7 @@ public class TestMVCCAsyncBytesStoreImpl extends TestDistributedLogBase {
         // vDelete
         {
             int key = 2;
-            KVRecord<byte[], byte[]> kv = result(store.getDetail(getKey(key)));
+            @Cleanup KeyValue<byte[], byte[]> kv = result(store.getKeyValue(getKey(key)));
             long expectedVersion = kv.version();
             try {
                 result(store.vDelete(getKey(key), expectedVersion + 1));
@@ -300,22 +300,19 @@ public class TestMVCCAsyncBytesStoreImpl extends TestDistributedLogBase {
                 assertEquals(Code.BAD_REVISION, e.getCode());
             }
             // vDelete(key2, version)
-            KVRecord<byte[], byte[]> deletedKv = (result(store.vDelete(getKey(key), expectedVersion)));
+            @Cleanup KeyValue<byte[], byte[]> deletedKv = (result(store.vDelete(getKey(key), expectedVersion)));
             assertNotNull(deletedKv);
             assertEquals(kv.createRevision(), deletedKv.createRevision());
             assertEquals(kv.modifiedRevision(), deletedKv.modifiedRevision());
             assertEquals(kv.version(), deletedKv.version());
             assertArrayEquals(kv.value(), deletedKv.value());
             assertNull(result(store.get(getKey(key))));
-
-            kv.recycle();
-            deletedKv.recycle();
         }
 
         // rPut
         {
             int key = 3;
-            KVRecord<byte[], byte[]> kv = result(store.getDetail(getKey(key)));
+            @Cleanup KeyValue<byte[], byte[]> kv = result(store.getKeyValue(getKey(key)));
             long expectedRevision = kv.modifiedRevision();
             try {
                 result(store.rDelete(getKey(key), expectedRevision + 1));
@@ -331,16 +328,13 @@ public class TestMVCCAsyncBytesStoreImpl extends TestDistributedLogBase {
                 assertEquals(Code.BAD_REVISION, e.getCode());
             }
             // rDelete(key2, revision)
-            KVRecord<byte[], byte[]> deletedKv = (result(store.rDelete(getKey(key), expectedRevision)));
+            @Cleanup KeyValue<byte[], byte[]> deletedKv = (result(store.rDelete(getKey(key), expectedRevision)));
             assertNotNull(deletedKv);
             assertEquals(kv.createRevision(), deletedKv.createRevision());
             assertEquals(kv.modifiedRevision(), deletedKv.modifiedRevision());
             assertEquals(kv.version(), deletedKv.version());
             assertArrayEquals(kv.value(), deletedKv.value());
             assertNull(result(store.get(getKey(key))));
-
-            kv.recycle();
-            deletedKv.recycle();
         }
 
         // increment failure
@@ -362,12 +356,8 @@ public class TestMVCCAsyncBytesStoreImpl extends TestDistributedLogBase {
             byte[] key = getKey(ki);
             for (int i = 0; i < 5; i++) {
                 result(store.increment(key, 100L));
-                KVRecord<byte[], byte[]> kv = result(store.getDetail(key));
-                try {
-                    assertEquals(100L * (i + 1), kv.number());
-                } finally {
-                    kv.recycle();
-                }
+                @Cleanup KeyValue<byte[], byte[]> kv = result(store.getKeyValue(key));
+                assertEquals(100L * (i + 1), kv.numberValue());
             }
         }
     }
@@ -383,19 +373,19 @@ public class TestMVCCAsyncBytesStoreImpl extends TestDistributedLogBase {
 
         for (PutResult<byte[], byte[]> kv : kvs) {
             assertEquals(Code.OK, kv.code());
-            assertNull(kv.prevKV());
-            kv.recycle();
+            assertNull(kv.prevKv());
+            kv.close();
         }
 
         verifyRange(20, 70, 2, 2, 0);
 
-        List<KVRecord<byte[], byte[]>> prevKvs = result(store.deleteRange(getKey(20), getKey(70)));
+        List<KeyValue<byte[], byte[]>> prevKvs = result(store.deleteRange(getKey(20), getKey(70)));
         assertNotNull(prevKvs);
         verifyRecords(
             prevKvs,
             20, 70,
             2, 2, 0);
-        prevKvs.forEach(KVRecord::recycle);
+        prevKvs.forEach(KeyValue::close);
 
         prevKvs = result(store.range(getKey(20), getKey(70)));
         assertTrue(prevKvs.isEmpty());
@@ -407,21 +397,21 @@ public class TestMVCCAsyncBytesStoreImpl extends TestDistributedLogBase {
                              int startModRevision,
                              int expectedVersion) throws Exception {
         int count = endKey - startKey + 1;
-        List<KVRecord<byte[], byte[]>> kvs = result(store.range(getKey(startKey), getKey(endKey)));
+        List<KeyValue<byte[], byte[]>> kvs = result(store.range(getKey(startKey), getKey(endKey)));
         assertEquals(count, kvs.size());
 
         verifyRecords(kvs, startKey, endKey, startCreateRevision, startModRevision, expectedVersion);
 
-        kvs.forEach(KVRecord::recycle);
+        kvs.forEach(KeyValue::close);
     }
 
-    private void verifyRecords(List<KVRecord<byte[], byte[]>> kvs,
+    private void verifyRecords(List<KeyValue<byte[], byte[]>> kvs,
                                int startKey, int endKey,
                                int startCreateRevision,
                                int startModRevision,
                                int expectedVersion) {
         int idx = startKey;
-        for (KVRecord<byte[], byte[]> record : kvs) {
+        for (KeyValue<byte[], byte[]> record : kvs) {
             assertArrayEquals(getKey(idx), record.key());
             assertArrayEquals(getValue(idx), record.value());
             // revision - starts from 1, but the first revision is used for nop barrier record.

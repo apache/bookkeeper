@@ -30,4 +30,7 @@ public interface Op<K, V> extends AutoCloseable {
 
     OpType type();
 
+    @Override
+    void close();
+
 }

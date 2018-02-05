@@ -22,14 +22,14 @@ import io.netty.buffer.ByteBuf;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.bookkeeper.api.kv.op.DeleteOp;
+import org.apache.bookkeeper.api.kv.op.IncrementOp;
+import org.apache.bookkeeper.api.kv.op.PutOp;
+import org.apache.bookkeeper.api.kv.result.Code;
+import org.apache.bookkeeper.api.kv.result.DeleteResult;
+import org.apache.bookkeeper.api.kv.result.IncrementResult;
+import org.apache.bookkeeper.api.kv.result.PutResult;
 import org.apache.bookkeeper.statelib.api.exceptions.MVCCStoreException;
-import org.apache.bookkeeper.statelib.api.mvcc.op.DeleteOp;
-import org.apache.bookkeeper.statelib.api.mvcc.op.IncrementOp;
-import org.apache.bookkeeper.statelib.api.mvcc.op.PutOp;
-import org.apache.bookkeeper.statelib.api.mvcc.result.Code;
-import org.apache.bookkeeper.statelib.api.mvcc.result.DeleteResult;
-import org.apache.bookkeeper.statelib.api.mvcc.result.IncrementResult;
-import org.apache.bookkeeper.statelib.api.mvcc.result.PutResult;
 import org.apache.bookkeeper.statelib.impl.journal.CommandProcessor;
 import org.apache.bookkeeper.statelib.impl.mvcc.op.proto.ProtoDeleteOpImpl;
 import org.apache.bookkeeper.statelib.impl.mvcc.op.proto.ProtoIncrementOpImpl;
@@ -45,11 +45,8 @@ class MVCCCommandProcessor implements CommandProcessor<MVCCStoreImpl<byte[], byt
     }
 
     private void applyPutCommand(long revision, Command command, MVCCStoreImpl<byte[], byte[]> store) {
-        ProtoPutOpImpl op = ProtoPutOpImpl.newPutOp(revision, command);
-        try {
+        try (ProtoPutOpImpl op = ProtoPutOpImpl.newPutOp(command)) {
             applyPutOp(revision, op, true, store);
-        } finally {
-            op.recycle();
         }
     }
 
@@ -57,8 +54,7 @@ class MVCCCommandProcessor implements CommandProcessor<MVCCStoreImpl<byte[], byt
                             PutOp<byte[], byte[]> op,
                             boolean ignoreSmallerRevision,
                             MVCCStoreImpl<byte[], byte[]> localStore) {
-        PutResult<byte[], byte[]> result = localStore.put(revision, op);
-        try {
+        try (PutResult<byte[], byte[]> result = localStore.put(revision, op)) {
             if (Code.OK == result.code()
                 || (ignoreSmallerRevision && Code.SMALLER_REVISION == result.code())) {
                 return;
@@ -66,18 +62,13 @@ class MVCCCommandProcessor implements CommandProcessor<MVCCStoreImpl<byte[], byt
             throw new MVCCStoreException(result.code(),
                 "Failed to apply command " + op + " at revision "
                     + revision + " to the state store " + localStore.name());
-        } finally {
-            result.recycle();
         }
     }
 
     private void applyDeleteCommand(long revision, Command command,
                                     MVCCStoreImpl<byte[], byte[]> store) {
-        ProtoDeleteOpImpl op = ProtoDeleteOpImpl.newDeleteOp(revision, command.getDeleteReq());
-        try {
+        try (ProtoDeleteOpImpl op = ProtoDeleteOpImpl.newDeleteOp(command.getDeleteReq())) {
             applyDeleteOp(revision, op, true, store);
-        } finally {
-            op.recycle();
         }
     }
 
@@ -85,8 +76,7 @@ class MVCCCommandProcessor implements CommandProcessor<MVCCStoreImpl<byte[], byt
                                DeleteOp<byte[], byte[]> op,
                                boolean ignoreSmallerRevision,
                                MVCCStoreImpl<byte[], byte[]> localStore) {
-        DeleteResult<byte[], byte[]> result = localStore.delete(revision, op);
-        try {
+        try (DeleteResult<byte[], byte[]> result = localStore.delete(revision, op)) {
             if (Code.OK == result.code()
                 || (ignoreSmallerRevision && Code.SMALLER_REVISION == result.code())) {
                 return;
@@ -94,8 +84,6 @@ class MVCCCommandProcessor implements CommandProcessor<MVCCStoreImpl<byte[], byt
             throw new MVCCStoreException(result.code(),
                 "Failed to apply command " + op + " at revision "
                     + revision + " to the state store " + localStore.name());
-        } finally {
-            result.recycle();
         }
     }
 
@@ -106,11 +94,8 @@ class MVCCCommandProcessor implements CommandProcessor<MVCCStoreImpl<byte[], byt
 
     private void applyIncrCommand(long revision, Command command,
                                   MVCCStoreImpl<byte[], byte[]> store) {
-        ProtoIncrementOpImpl op = ProtoIncrementOpImpl.newIncrementOp(revision, command);
-        try {
+        try (ProtoIncrementOpImpl op = ProtoIncrementOpImpl.newIncrementOp(command)) {
             applyIncrOp(revision, op, true, store);
-        } finally {
-            op.recycle();
         }
     }
 
@@ -118,8 +103,7 @@ class MVCCCommandProcessor implements CommandProcessor<MVCCStoreImpl<byte[], byt
                              IncrementOp<byte[], byte[]> op,
                              boolean ignoreSmallerRevision,
                              MVCCStoreImpl<byte[], byte[]> localStore) {
-        IncrementResult<byte[], byte[]> result = localStore.increment(revision, op);
-        try {
+        try (IncrementResult<byte[], byte[]> result = localStore.increment(revision, op)) {
             if (Code.OK == result.code()
                 || (ignoreSmallerRevision && Code.SMALLER_REVISION == result.code())) {
                 return;
@@ -127,8 +111,6 @@ class MVCCCommandProcessor implements CommandProcessor<MVCCStoreImpl<byte[], byt
             throw new MVCCStoreException(result.code(),
                 "Failed to apply command " + op + " at revision "
                     + revision + " to the state store " + localStore.name());
-        } finally {
-            result.recycle();
         }
     }
 

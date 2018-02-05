@@ -18,7 +18,7 @@
 
 package org.apache.bookkeeper.statelib.api.exceptions;
 
-import org.apache.bookkeeper.statelib.api.mvcc.result.Code;
+import org.apache.bookkeeper.api.kv.result.Code;
 
 /**
  * Exception thrown from a mvcc store.

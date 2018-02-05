@@ -20,6 +20,11 @@ import com.google.protobuf.UnsafeByteOperations;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import java.util.List;
+import org.apache.bookkeeper.api.kv.impl.result.IncrementResultImpl;
+import org.apache.bookkeeper.api.kv.impl.result.KeyValueFactory;
+import org.apache.bookkeeper.api.kv.impl.result.PutResultImpl;
+import org.apache.bookkeeper.api.kv.impl.result.ResultFactory;
+import org.apache.bookkeeper.api.kv.impl.result.TxnResultImpl;
 import org.apache.bookkeeper.api.kv.op.CompareOp;
 import org.apache.bookkeeper.api.kv.op.DeleteOp;
 import org.apache.bookkeeper.api.kv.op.Op;
@@ -33,10 +38,6 @@ import org.apache.bookkeeper.api.kv.result.IncrementResult;
 import org.apache.bookkeeper.api.kv.result.PutResult;
 import org.apache.bookkeeper.api.kv.result.RangeResult;
 import org.apache.bookkeeper.api.kv.result.TxnResult;
-import org.apache.bookkeeper.clients.impl.kv.result.IncrementResultImpl;
-import org.apache.bookkeeper.clients.impl.kv.result.PutResultImpl;
-import org.apache.bookkeeper.clients.impl.kv.result.ResultFactory;
-import org.apache.bookkeeper.clients.impl.kv.result.TxnResultImpl;
 import org.apache.bookkeeper.stream.proto.kv.KeyValue;
 import org.apache.bookkeeper.stream.proto.kv.rpc.Compare;
 import org.apache.bookkeeper.stream.proto.kv.rpc.Compare.CompareResult;
@@ -99,7 +100,10 @@ public final class KvUtils {
             .setCountOnly(option.countOnly())
             .setKeysOnly(option.keysOnly())
             .setLimit(option.limit())
-            .setRevision(option.revision());
+            .setMinCreateRevision(option.minCreateRev())
+            .setMaxCreateRevision(option.maxCreateRev())
+            .setMinModRevision(option.minModRev())
+            .setMaxModRevision(option.maxModRev());
         if (null != option.endKey()) {
             builder = builder.setRangeEnd(toProtoKey(option.endKey()));
         }
@@ -110,7 +114,7 @@ public final class KvUtils {
         RangeResponse response,
         ResultFactory<ByteBuf, ByteBuf> resultFactory,
         KeyValueFactory<ByteBuf, ByteBuf> kvFactory) {
-        return resultFactory.newRangeResult()
+        return resultFactory.newRangeResult(-1L)
             .count(response.getCount())
             .more(response.getMore())
             .kvs(fromProtoKeyValues(response.getKvsList(), kvFactory));
@@ -138,7 +142,7 @@ public final class KvUtils {
         PutResponse response,
         ResultFactory<ByteBuf, ByteBuf> resultFactory,
         KeyValueFactory<ByteBuf, ByteBuf> kvFactory) {
-        PutResultImpl<ByteBuf, ByteBuf> result = resultFactory.newPutResult();
+        PutResultImpl<ByteBuf, ByteBuf> result = resultFactory.newPutResult(-1L);
         if (response.hasPrevKv()) {
             result.prevKv(fromProtoKeyValue(response.getPrevKv(), kvFactory));
         }
@@ -165,7 +169,7 @@ public final class KvUtils {
         IncrementResponse response,
         ResultFactory<ByteBuf, ByteBuf> resultFactory,
         KeyValueFactory<ByteBuf, ByteBuf> kvFactory) {
-        IncrementResultImpl<ByteBuf, ByteBuf> result = resultFactory.newIncrementResult();
+        IncrementResultImpl<ByteBuf, ByteBuf> result = resultFactory.newIncrementResult(-1L);
         return result;
     }
 
@@ -192,7 +196,7 @@ public final class KvUtils {
         DeleteRangeResponse response,
         ResultFactory<ByteBuf, ByteBuf> resultFactory,
         KeyValueFactory<ByteBuf, ByteBuf> kvFactory) {
-        return resultFactory.newDeleteResult()
+        return resultFactory.newDeleteResult(-1L)
             .numDeleted(response.getDeleted())
             .prevKvs(fromProtoKeyValues(response.getPrevKvsList(), kvFactory));
     }
@@ -315,7 +319,7 @@ public final class KvUtils {
         TxnResponse txnResponse,
         ResultFactory<ByteBuf, ByteBuf> resultFactory,
         KeyValueFactory<ByteBuf, ByteBuf> kvFactory) {
-        TxnResultImpl<ByteBuf, ByteBuf> result = resultFactory.newTxnResult();
+        TxnResultImpl<ByteBuf, ByteBuf> result = resultFactory.newTxnResult(-1L);
         result.isSuccess(txnResponse.getSucceeded());
         result.results(Lists.transform(txnResponse.getResponsesList(), op -> {
             switch (op.getResponseCase()) {

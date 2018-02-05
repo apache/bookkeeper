@@ -20,9 +20,13 @@ package org.apache.bookkeeper.statelib.impl.mvcc;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.util.Recycler;
+import java.util.function.Predicate;
 import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
+import org.apache.bookkeeper.api.kv.impl.result.KeyValueFactory;
+import org.apache.bookkeeper.api.kv.impl.result.KeyValueImpl;
+import org.apache.bookkeeper.api.kv.options.RangeOption;
 import org.apache.bookkeeper.common.coder.Coder;
 import org.apache.bookkeeper.common.util.Recycled;
 import org.apache.bookkeeper.statestore.proto.ValueType;
@@ -33,7 +37,7 @@ import org.apache.bookkeeper.statestore.proto.ValueType;
 @Data
 @Setter
 @Getter
-public class MVCCRecord implements Recycled {
+public class MVCCRecord implements Recycled, Predicate<RangeOption<?>> {
 
     public static MVCCRecord newRecord() {
         return RECYCLER.get();
@@ -110,17 +114,27 @@ public class MVCCRecord implements Recycled {
         handle.recycle(this);
     }
 
-    <K, V> KVRecordImpl<K, V> asKVRecord(KVRecordFactory<K, V> recordFactory,
+    <K, V> KeyValueImpl<K, V> asKVRecord(KeyValueFactory<K, V> recordFactory,
                                          K key,
                                          Coder<V> valCoder) {
-        KVRecordImpl<K, V> kv = recordFactory.newRecord();
-        kv.setKey(key);
-        kv.setValue(valCoder.decode(value));
-        kv.setCreateRevision(createRev);
-        kv.setModRevision(modRev);
-        kv.setVersion(version);
-        kv.setNumber(ValueType.NUMBER == valueType);
-        kv.setValueNumber(number);
-        return kv;
+        return recordFactory.newKv()
+            .key(key)
+            .value(valCoder.decode(value))
+            .createRevision(createRev)
+            .modifiedRevision(modRev)
+            .version(version)
+            .isNumber(ValueType.NUMBER == valueType)
+            .numberValue(number);
+    }
+
+    @Override
+    public boolean test(RangeOption<?> rangeOption) {
+        if (null == rangeOption) {
+            return true;
+        }
+        return createRev >= rangeOption.minCreateRev()
+            && createRev <= rangeOption.maxCreateRev()
+            && modRev >= rangeOption.minModRev()
+            && modRev <= rangeOption.maxModRev();
     }
 }

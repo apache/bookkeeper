@@ -43,6 +43,7 @@ import org.apache.bookkeeper.stream.proto.StreamConfiguration;
 import org.apache.bookkeeper.stream.proto.StreamProperties;
 import org.apache.bookkeeper.stream.proto.common.Endpoint;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
@@ -50,6 +51,7 @@ import org.junit.rules.TestName;
 /**
  * Integration test for table service using table writer.
  */
+@Ignore
 @Slf4j
 public class TableWriterTest extends StorageServerTestBase {
 

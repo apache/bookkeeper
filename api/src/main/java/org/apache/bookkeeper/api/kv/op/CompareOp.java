@@ -41,4 +41,7 @@ public interface CompareOp<K, V> extends AutoCloseable {
 
     long revision();
 
+    @Override
+    void close();
+
 }

@@ -25,7 +25,7 @@ import org.apache.bookkeeper.api.kv.op.OpType;
 public interface Result<K, V> extends AutoCloseable {
 
     /**
-     * Returns the pkey of this delete ops.
+     * Returns the pkey of this op.
      *
      * <p>null if pkey is not defined.
      *
@@ -36,6 +36,13 @@ public interface Result<K, V> extends AutoCloseable {
     OpType type();
 
     Code code();
+
+    /**
+     * Returns the revision of this op.
+     *
+     * @return the revision of this op.
+     */
+    long revision();
 
     @Override
     void close();

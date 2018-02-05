@@ -22,6 +22,7 @@ import static io.netty.util.ReferenceCountUtil.retain;
 
 import java.util.concurrent.CompletableFuture;
 import org.apache.bookkeeper.api.kv.exceptions.KvApiException;
+import org.apache.bookkeeper.api.kv.options.Options;
 import org.apache.bookkeeper.api.kv.options.RangeOption;
 import org.apache.bookkeeper.api.kv.result.Code;
 import org.apache.bookkeeper.api.kv.result.KeyValue;
@@ -81,11 +82,7 @@ public interface TableReadView<K, V> extends PTableBase<K, V> {
     }
 
     default CompletableFuture<KeyValue<K, V>> getKv(K key) {
-        RangeOption<K> option = opFactory().optionFactory().newRangeOption()
-            .limit(1)
-            .endKey(null)
-            .build();
-        return get(key, option)
+        return get(key, Options.get())
             .thenApply(result -> {
                 try {
                     if (result.count() == 0) {
@@ -96,8 +93,7 @@ public interface TableReadView<K, V> extends PTableBase<K, V> {
                 } finally {
                     result.close();
                 }
-            })
-            .whenComplete((value, cause) -> option.close());
+            });
     }
 
 }

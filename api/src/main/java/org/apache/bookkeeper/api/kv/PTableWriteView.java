@@ -21,6 +21,7 @@ import java.util.concurrent.CompletableFuture;
 import org.apache.bookkeeper.api.kv.exceptions.KvApiException;
 import org.apache.bookkeeper.api.kv.op.CompareResult;
 import org.apache.bookkeeper.api.kv.options.DeleteOption;
+import org.apache.bookkeeper.api.kv.options.Options;
 import org.apache.bookkeeper.api.kv.options.PutOption;
 import org.apache.bookkeeper.api.kv.result.Code;
 import org.apache.bookkeeper.api.kv.result.DeleteResult;
@@ -51,19 +52,14 @@ public interface PTableWriteView<K, V> extends PTableBase<K, V> {
             return delete(pKey, lKey).thenApply(ignored -> null);
         }
 
-        PutOption<K> option = opFactory().optionFactory().newPutOption()
-            .prevKv(false)
-            .build();
-        return put(pKey, lKey, value, option)
+        return put(pKey, lKey, value, Options.blindPut())
             .thenApply(result -> {
                 try {
                     return (Void) null;
                 } finally {
                     result.close();
                 }
-            })
-            .whenComplete((v, cause) -> option.close());
-
+            });
     }
 
     default CompletableFuture<V> putIfAbsent(K pKey, K lKey, V value) {
@@ -128,11 +124,7 @@ public interface PTableWriteView<K, V> extends PTableBase<K, V> {
     }
 
     default CompletableFuture<V> delete(K pKey, K lKey) {
-        DeleteOption<K> option = opFactory().optionFactory().newDeleteOption()
-            .prevKv(true)
-            .endKey(null)
-            .build();
-        return delete(pKey, lKey, option)
+        return delete(pKey, lKey, Options.deleteAndGet())
             .thenApply(result -> {
                 try {
                     List<KeyValue<K, V>> prevKvs = result.prevKvs();
@@ -144,8 +136,7 @@ public interface PTableWriteView<K, V> extends PTableBase<K, V> {
                 } finally {
                     result.close();
                 }
-            })
-            .whenComplete((v, cause) -> option.close());
+            });
     }
 
     default CompletableFuture<List<KeyValue<K, V>>> deleteRange(K pKey, K lStartKey, K lEndKey) {
@@ -172,10 +163,7 @@ public interface PTableWriteView<K, V> extends PTableBase<K, V> {
             .Then(
                 opFactory().newDelete(
                     lKey,
-                    opFactory().optionFactory().newDeleteOption()
-                        .endKey(null)
-                        .prevKv(true)
-                        .build()));
+                    Options.deleteAndGet()));
         return txn.commit()
             .thenApply(result -> {
                 try {
@@ -194,10 +182,7 @@ public interface PTableWriteView<K, V> extends PTableBase<K, V> {
             .Then(
                 opFactory().newDelete(
                     lKey,
-                    opFactory().optionFactory().newDeleteOption()
-                        .endKey(null)
-                        .prevKv(true)
-                        .build()));
+                    Options.deleteAndGet()));
         return txn.commit()
             .thenCompose(result -> {
                 try {
@@ -228,10 +213,7 @@ public interface PTableWriteView<K, V> extends PTableBase<K, V> {
             .Then(
                 opFactory().newDelete(
                     lKey,
-                    opFactory().optionFactory().newDeleteOption()
-                        .endKey(null)
-                        .prevKv(true)
-                        .build()));
+                    Options.deleteAndGet()));
         return txn.commit()
             .thenCompose(result -> {
                 try {

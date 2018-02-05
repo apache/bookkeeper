@@ -20,23 +20,23 @@ package org.apache.bookkeeper.statelib.impl.mvcc.op.proto;
 
 import io.netty.util.Recycler;
 import io.netty.util.Recycler.Handle;
-import java.util.Optional;
 import lombok.RequiredArgsConstructor;
-import org.apache.bookkeeper.common.util.Recycled;
-import org.apache.bookkeeper.statelib.api.mvcc.op.OpType;
-import org.apache.bookkeeper.statelib.impl.Constants;
-import org.apache.bookkeeper.statelib.impl.mvcc.op.RangeOpImpl;
+import lombok.ToString;
+import org.apache.bookkeeper.api.kv.op.OpType;
+import org.apache.bookkeeper.api.kv.op.RangeOp;
+import org.apache.bookkeeper.api.kv.options.RangeOption;
 import org.apache.bookkeeper.statestore.proto.RangeRequest;
 
 /**
  * A protobuf encoded range operation.
  */
 @RequiredArgsConstructor
-public class ProtoRangeOpImpl implements RangeOpImpl<byte[], byte[]>, Recycled {
+@ToString(exclude = "recyclerHandle")
+public class ProtoRangeOpImpl implements RangeOp<byte[], byte[]>, RangeOption<byte[]> {
 
-    public static ProtoRangeOpImpl newRangeOp(long revision, RangeRequest request) {
+    public static ProtoRangeOpImpl newRangeOp(RangeRequest request) {
         ProtoRangeOpImpl op = RECYCLER.get();
-        op.setCommand(revision, request);
+        op.setCommand(request);
         return op;
     }
 
@@ -49,57 +49,54 @@ public class ProtoRangeOpImpl implements RangeOpImpl<byte[], byte[]>, Recycled {
 
     private final Handle<ProtoRangeOpImpl> recyclerHandle;
     private RangeRequest req;
-    private Optional<byte[]> key;
-    private Optional<byte[]> endKey;
-    private long revision;
+    private byte[] key;
+    private byte[] endKey;
 
     void reset() {
         req = null;
         key = null;
         endKey = null;
-        revision = Constants.INVALID_REVISION;
     }
 
-    void setCommand(long revision, RangeRequest request) {
+    void setCommand(RangeRequest request) {
         this.req = request;
-        this.revision = revision;
     }
 
     @Override
-    public void recycle() {
+    public void close() {
         reset();
         recyclerHandle.recycle(this);
     }
 
     @Override
-    public Optional<byte[]> key() {
+    public byte[] key() {
         if (null != key) {
             return key;
         }
         if (null == req.getKey()) {
-            key = Optional.empty();
+            key = null;
         } else {
-            key = Optional.of(req.getKey().toByteArray());
+            key = req.getKey().toByteArray();
         }
         return key;
     }
 
     @Override
-    public Optional<byte[]> endKey() {
+    public RangeOption<byte[]> option() {
+        return this;
+    }
+
+    @Override
+    public byte[] endKey() {
         if (null != endKey) {
             return endKey;
         }
         if (null == req.getRangeEnd()) {
-            key = Optional.empty();
+            key = null;
         } else {
-            key = Optional.of(req.getKey().toByteArray());
+            key = req.getRangeEnd().toByteArray();
         }
         return key;
-    }
-
-    @Override
-    public boolean isRangeOp() {
-        return endKey().isPresent();
     }
 
     @Override
@@ -128,12 +125,19 @@ public class ProtoRangeOpImpl implements RangeOpImpl<byte[], byte[]>, Recycled {
     }
 
     @Override
+    public boolean keysOnly() {
+        // TODO: fix this
+        return false;
+    }
+
+    @Override
+    public boolean countOnly() {
+        return req.getCountOnly();
+    }
+
+    @Override
     public OpType type() {
         return OpType.RANGE;
     }
 
-    @Override
-    public long revision() {
-        return revision;
-    }
 }

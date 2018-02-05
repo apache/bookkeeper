@@ -25,24 +25,25 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufOutputStream;
 import io.netty.buffer.Unpooled;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.bookkeeper.api.kv.op.CompareOp;
+import org.apache.bookkeeper.api.kv.op.CompareResult;
+import org.apache.bookkeeper.api.kv.op.CompareTarget;
+import org.apache.bookkeeper.api.kv.op.DeleteOp;
+import org.apache.bookkeeper.api.kv.op.IncrementOp;
+import org.apache.bookkeeper.api.kv.op.Op;
+import org.apache.bookkeeper.api.kv.op.PutOp;
+import org.apache.bookkeeper.api.kv.op.RangeOp;
+import org.apache.bookkeeper.api.kv.op.TxnOp;
+import org.apache.bookkeeper.api.kv.result.Code;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.statelib.api.exceptions.MVCCStoreException;
 import org.apache.bookkeeper.statelib.api.exceptions.StateStoreRuntimeException;
-import org.apache.bookkeeper.statelib.api.mvcc.op.CompareOp;
-import org.apache.bookkeeper.statelib.api.mvcc.op.CompareResult;
-import org.apache.bookkeeper.statelib.api.mvcc.op.CompareTarget;
-import org.apache.bookkeeper.statelib.api.mvcc.op.DeleteOp;
-import org.apache.bookkeeper.statelib.api.mvcc.op.IncrementOp;
-import org.apache.bookkeeper.statelib.api.mvcc.op.Op;
-import org.apache.bookkeeper.statelib.api.mvcc.op.PutOp;
-import org.apache.bookkeeper.statelib.api.mvcc.op.RangeOp;
-import org.apache.bookkeeper.statelib.api.mvcc.op.TxnOp;
-import org.apache.bookkeeper.statelib.api.mvcc.result.Code;
 import org.apache.bookkeeper.statelib.impl.Constants;
 import org.apache.bookkeeper.statestore.proto.Command;
 import org.apache.bookkeeper.statestore.proto.Compare;
@@ -70,32 +71,53 @@ public final class MVCCUtils {
             .setKey(UnsafeByteOperations.unsafeWrap(op.key()))
             .setValue(UnsafeByteOperations.unsafeWrap(op.value()))
             .setLease(0)
-            .setPrevKv(op.prevKV());
+            .setPrevKv(op.option().prevKv());
         return reqBuilder.build();
     }
 
     static DeleteRequest toDeleteRequest(DeleteOp<byte[], byte[]> op) {
-        DeleteRequest.Builder reqBuilder = DeleteRequest.newBuilder()
-            .setKey(UnsafeByteOperations.unsafeWrap(op.key().orElse(Constants.NULL_START_KEY)))
-            .setRangeEnd(UnsafeByteOperations.unsafeWrap(op.endKey().orElse(Constants.NULL_END_KEY)));
+        byte[] key = op.key();
+        if (null == key) {
+            key = Constants.NULL_START_KEY;
+        }
+        byte[] endKey = op.option().endKey();
+        if (null == endKey) {
+            endKey = Constants.NULL_END_KEY;
+        }
 
-        return reqBuilder.setPrevKv(op.prevKV()).build();
+        DeleteRequest.Builder reqBuilder = DeleteRequest.newBuilder()
+            .setKey(UnsafeByteOperations.unsafeWrap(key))
+            .setRangeEnd(UnsafeByteOperations.unsafeWrap(endKey));
+
+        return reqBuilder.setPrevKv(op.option().prevKv()).build();
     }
 
     static RangeRequest toRangeRequest(RangeOp<byte[], byte[]> op) {
+        byte[] key = op.key();
+        if (null == key) {
+            key = Constants.NULL_START_KEY;
+        }
+        byte[] endKey = op.option().endKey();
+        if (null == endKey) {
+            endKey = Constants.NULL_END_KEY;
+        }
+
         RangeRequest.Builder reqBuilder = RangeRequest.newBuilder()
-            .setKey(UnsafeByteOperations.unsafeWrap(op.key().orElse(Constants.NULL_START_KEY)))
-            .setRangeEnd(UnsafeByteOperations.unsafeWrap(op.endKey().orElse(Constants.NULL_END_KEY)))
-            .setMaxCreateRevision(op.maxCreateRev())
-            .setMinCreateRevision(op.minCreateRev())
-            .setMaxModRevision(op.maxModRev())
-            .setMinModRevision(op.minModRev())
+            .setKey(UnsafeByteOperations.unsafeWrap(key))
+            .setRangeEnd(UnsafeByteOperations.unsafeWrap(endKey))
+            .setMaxCreateRevision(op.option().maxCreateRev())
+            .setMinCreateRevision(op.option().minCreateRev())
+            .setMaxModRevision(op.option().maxModRev())
+            .setMinModRevision(op.option().minModRev())
             .setCountOnly(false);
 
         return reqBuilder.build();
     }
 
     private static List<RequestOp> toRequestOpList(List<Op<byte[], byte[]>> ops) {
+        if (ops == null) {
+            return Collections.emptyList();
+        }
         List<RequestOp> requestOps = Lists.newArrayListWithExpectedSize(ops.size());
         for (Op<byte[], byte[]> op : ops) {
             switch (op.type()) {
@@ -132,26 +154,26 @@ public final class MVCCUtils {
 
     private static Compare toCompare(CompareOp<byte[], byte[]> op) {
         Compare.Builder compareBuilder = Compare.newBuilder();
-        compareBuilder.setTarget(toProtoCompareTarget(op.getTarget()));
-        compareBuilder.setResult(toProtoCompareResult(op.getResult()));
-        compareBuilder.setKey(UnsafeByteOperations.unsafeWrap(op.getKey()));
-        switch (op.getTarget()) {
+        compareBuilder.setTarget(toProtoCompareTarget(op.target()));
+        compareBuilder.setResult(toProtoCompareResult(op.result()));
+        compareBuilder.setKey(UnsafeByteOperations.unsafeWrap(op.key()));
+        switch (op.target()) {
             case MOD:
-                compareBuilder.setModRevision(op.getRevision());
+                compareBuilder.setModRevision(op.revision());
                 break;
             case CREATE:
-                compareBuilder.setCreateRevision(op.getRevision());
+                compareBuilder.setCreateRevision(op.revision());
                 break;
             case VERSION:
-                compareBuilder.setVersion(op.getRevision());
+                compareBuilder.setVersion(op.revision());
                 break;
             case VALUE:
-                if (op.getValue().isPresent()) {
-                    compareBuilder.setValue(UnsafeByteOperations.unsafeWrap(op.getValue().get()));
+                if (op.value() != null) {
+                    compareBuilder.setValue(UnsafeByteOperations.unsafeWrap(op.value()));
                 }
                 break;
             default:
-                throw new IllegalArgumentException("Invalid compare target " + op.getTarget());
+                throw new IllegalArgumentException("Invalid compare target " + op.target());
         }
         return compareBuilder.build();
     }

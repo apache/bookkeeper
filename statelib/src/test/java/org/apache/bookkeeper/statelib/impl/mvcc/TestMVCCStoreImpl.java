@@ -28,23 +28,25 @@ import static org.junit.Assert.fail;
 import com.google.common.io.Files;
 import java.io.File;
 import java.util.List;
+import lombok.Cleanup;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.bookkeeper.api.kv.op.CompareResult;
+import org.apache.bookkeeper.api.kv.op.OpType;
+import org.apache.bookkeeper.api.kv.op.RangeOp;
+import org.apache.bookkeeper.api.kv.op.TxnOp;
+import org.apache.bookkeeper.api.kv.options.Options;
+import org.apache.bookkeeper.api.kv.result.Code;
+import org.apache.bookkeeper.api.kv.result.DeleteResult;
+import org.apache.bookkeeper.api.kv.result.KeyValue;
+import org.apache.bookkeeper.api.kv.result.PutResult;
+import org.apache.bookkeeper.api.kv.result.RangeResult;
+import org.apache.bookkeeper.api.kv.result.Result;
+import org.apache.bookkeeper.api.kv.result.TxnResult;
 import org.apache.bookkeeper.common.coder.StringUtf8Coder;
 import org.apache.bookkeeper.common.kv.KV;
 import org.apache.bookkeeper.statelib.api.StateStoreSpec;
 import org.apache.bookkeeper.statelib.api.exceptions.MVCCStoreException;
 import org.apache.bookkeeper.statelib.api.kv.KVIterator;
-import org.apache.bookkeeper.statelib.api.mvcc.KVRecord;
-import org.apache.bookkeeper.statelib.api.mvcc.op.CompareResult;
-import org.apache.bookkeeper.statelib.api.mvcc.op.OpType;
-import org.apache.bookkeeper.statelib.api.mvcc.op.RangeOp;
-import org.apache.bookkeeper.statelib.api.mvcc.op.TxnOp;
-import org.apache.bookkeeper.statelib.api.mvcc.result.Code;
-import org.apache.bookkeeper.statelib.api.mvcc.result.DeleteResult;
-import org.apache.bookkeeper.statelib.api.mvcc.result.PutResult;
-import org.apache.bookkeeper.statelib.api.mvcc.result.RangeResult;
-import org.apache.bookkeeper.statelib.api.mvcc.result.Result;
-import org.apache.bookkeeper.statelib.api.mvcc.result.TxnResult;
 import org.apache.commons.io.FileUtils;
 import org.junit.After;
 import org.junit.Before;
@@ -174,18 +176,19 @@ public class TestMVCCStoreImpl {
         store.init(spec);
         long revision = 99L;
         writeKVs(100, revision);
-        RangeOp<String, String> op = store.getOpFactory().buildRangeOp()
-            .key(getKey(20))
-            .endKey(getKey(79))
-            .limit(100)
-            .build();
-        RangeResult<String, String> result = store.range(op);
+        @Cleanup RangeOp<String, String> op = store.getOpFactory().newRange(
+            getKey(20),
+            store.getOpFactory().optionFactory().newRangeOption()
+                .endKey(getKey(79))
+                .limit(100)
+                .build());
+        @Cleanup RangeResult<String, String> result = store.range(op);
         assertEquals(Code.OK, result.code());
         assertEquals(60, result.count());
         assertEquals(60, result.kvs().size());
-        assertEquals(false, result.hasMore());
+        assertEquals(false, result.more());
         int idx = 20;
-        for (KVRecord<String, String> record : result.kvs()) {
+        for (KeyValue<String, String> record : result.kvs()) {
             assertEquals(getKey(idx), record.key());
             assertEquals(getValue(idx), record.value());
             assertEquals(revision, record.createRevision());
@@ -194,7 +197,6 @@ public class TestMVCCStoreImpl {
             ++idx;
         }
         assertEquals(80, idx);
-        result.recycle();
     }
 
     @Test
@@ -202,18 +204,19 @@ public class TestMVCCStoreImpl {
         store.init(spec);
         long revision = 99L;
         writeKVs(100, revision);
-        RangeOp<String, String> op = store.getOpFactory().buildRangeOp()
-            .key(getKey(20))
-            .endKey(getKey(99))
-            .limit(100)
-            .build();
-        RangeResult<String, String> result = store.range(op);
+        @Cleanup RangeOp<String, String> op = store.getOpFactory().newRange(
+            getKey(20),
+            store.getOpFactory().optionFactory().newRangeOption()
+                .endKey(getKey(99))
+                .limit(100)
+                .build());
+        @Cleanup RangeResult<String, String> result = store.range(op);
         assertEquals(Code.OK, result.code());
         assertEquals(80, result.count());
         assertEquals(80, result.kvs().size());
-        assertEquals(false, result.hasMore());
+        assertEquals(false, result.more());
         int idx = 20;
-        for (KVRecord<String, String> record : result.kvs()) {
+        for (KeyValue<String, String> record : result.kvs()) {
             assertEquals(getKey(idx), record.key());
             assertEquals(getValue(idx), record.value());
             assertEquals(revision, record.createRevision());
@@ -222,7 +225,6 @@ public class TestMVCCStoreImpl {
             ++idx;
         }
         assertEquals(100, idx);
-        result.recycle();
     }
 
     @Test
@@ -230,18 +232,19 @@ public class TestMVCCStoreImpl {
         store.init(spec);
         long revision = 99L;
         writeKVs(100, revision);
-        RangeOp<String, String> op = store.getOpFactory().buildRangeOp()
-            .key(getKey(20))
-            .endKey(getKey(79))
-            .limit(20)
-            .build();
-        RangeResult<String, String> result = store.range(op);
+        @Cleanup RangeOp<String, String> op = store.getOpFactory().newRange(
+            getKey(20),
+            store.getOpFactory().optionFactory().newRangeOption()
+                .endKey(getKey(79))
+                .limit(20)
+                .build());
+        @Cleanup RangeResult<String, String> result = store.range(op);
         assertEquals(Code.OK, result.code());
         assertEquals(20, result.count());
         assertEquals(20, result.kvs().size());
-        assertEquals(true, result.hasMore());
+        assertEquals(true, result.more());
         int idx = 20;
-        for (KVRecord<String, String> record : result.kvs()) {
+        for (KeyValue<String, String> record : result.kvs()) {
             assertEquals(getKey(idx), record.key());
             assertEquals(getValue(idx), record.value());
             assertEquals(revision, record.createRevision());
@@ -250,7 +253,6 @@ public class TestMVCCStoreImpl {
             ++idx;
         }
         assertEquals(40, idx);
-        result.recycle();
     }
 
     @Test
@@ -269,7 +271,7 @@ public class TestMVCCStoreImpl {
         writeKVs(100, 99L);
         // iterate all kvs
         KVIterator<String, String> iter = store.range(
-            null, null);
+            getKey(0), getKey(100));
         int idx = 0;
         while (iter.hasNext()) {
             KV<String, String> kv = iter.next();
@@ -280,9 +282,9 @@ public class TestMVCCStoreImpl {
         assertEquals(100, idx);
         iter.close();
         // delete range
-        store.deleteRange(null, getKey(20), 100L);
+        store.deleteRange(getKey(0), getKey(20), 100L);
         iter = store.range(
-            null, null);
+            getKey(0), getKey(100));
         idx = 21;
         while (iter.hasNext()) {
             KV<String, String> kv = iter.next();
@@ -301,7 +303,7 @@ public class TestMVCCStoreImpl {
         writeKVs(100, 99L);
         // iterate all kvs
         KVIterator<String, String> iter = store.range(
-            null, null);
+            getKey(0), getKey(100));
         int idx = 0;
         while (iter.hasNext()) {
             KV<String, String> kv = iter.next();
@@ -312,9 +314,9 @@ public class TestMVCCStoreImpl {
         assertEquals(100, idx);
         iter.close();
         // delete range
-        store.deleteRange(getKey(10), null, 100L);
+        store.deleteRange(getKey(10), getKey(100), 100L);
         iter = store.range(
-            null, null);
+            getKey(0), getKey(100));
         idx = 0;
         while (iter.hasNext()) {
             KV<String, String> kv = iter.next();
@@ -368,25 +370,24 @@ public class TestMVCCStoreImpl {
         store.init(spec);
         // write 10 kvs at revision 99L
         writeKVs(20, 99L);
-        TxnOp<String, String> txnOp = store.getOpFactory().buildTxnOp()
-            .revision(100L)
-            .addCompareOps(
+        @Cleanup TxnOp<String, String> txnOp = store.getOpFactory().newTxn()
+            .If(
                 store.getOpFactory().compareCreateRevision(
                     CompareResult.EQUAL,
                     getKey(10),
                     99L))
-            .addSuccessOps(
-                store.getOpFactory().buildPutOp()
-                    .key(getKey(11))
-                    .value("test-value")
-                    .prevKV(true)
-                    .build())
-            .addFailureOps(
-                store.getOpFactory().buildDeleteOp()
-                    .key(getKey(11))
-                    .build())
+            .Then(
+                store.getOpFactory().newPut(
+                    getKey(11),
+                    "test-value",
+                    Options.putAndGet()))
+            .Else(
+                store.getOpFactory().newDelete(
+                    getKey(11),
+                    store.getOpFactory().optionFactory().newDeleteOption()
+                        .build()))
             .build();
-        TxnResult<String, String> result = store.txn(txnOp);
+        @Cleanup TxnResult<String, String> result = store.txn(100L, txnOp);
         assertEquals(Code.OK, result.code());
         assertEquals(100L, result.revision());
         assertEquals(1, result.results().size());
@@ -394,13 +395,12 @@ public class TestMVCCStoreImpl {
         Result<String, String> subResult = result.results().get(0);
         assertEquals(OpType.PUT, subResult.type());
         PutResult<String, String> putResult = (PutResult<String, String>) subResult;
-        KVRecord<String, String> prevResult = putResult.prevKV();
+        KeyValue<String, String> prevResult = putResult.prevKv();
         assertEquals(getKey(11), prevResult.key());
         assertEquals(getValue(11), prevResult.value());
         assertEquals(99L, prevResult.createRevision());
         assertEquals(99L, prevResult.modifiedRevision());
         assertEquals(0L, prevResult.version());
-        result.recycle();
 
         assertEquals("test-value", store.get(getKey(11)));
     }
@@ -411,26 +411,23 @@ public class TestMVCCStoreImpl {
         store.init(spec);
         // write 10 kvs at revision 99L
         writeKVs(20, 99L);
-        TxnOp<String, String> txnOp = store.getOpFactory().buildTxnOp()
-            .revision(100L)
-            .addCompareOps(
+        @Cleanup TxnOp<String, String> txnOp = store.getOpFactory().newTxn()
+            .If(
                 store.getOpFactory().compareCreateRevision(
                     CompareResult.NOT_EQUAL,
                     getKey(10),
                     99L))
-            .addSuccessOps(
-                store.getOpFactory().buildPutOp()
-                    .key(getKey(11))
-                    .value("test-value")
-                    .prevKV(true)
-                    .build())
-            .addFailureOps(
-                store.getOpFactory().buildDeleteOp()
-                    .key(getKey(11))
-                    .prevKV(true)
-                    .build())
+            .Then(
+                store.getOpFactory().newPut(
+                    getKey(11),
+                    "test-value",
+                    Options.putAndGet()))
+            .Else(
+                store.getOpFactory().newDelete(
+                    getKey(11),
+                    Options.deleteAndGet()))
             .build();
-        TxnResult<String, String> result = store.txn(txnOp);
+        @Cleanup TxnResult<String, String> result = store.txn(100L, txnOp);
         assertEquals(Code.OK, result.code());
         assertEquals(100L, result.revision());
         assertEquals(1, result.results().size());
@@ -438,15 +435,14 @@ public class TestMVCCStoreImpl {
         Result<String, String> subResult = result.results().get(0);
         assertEquals(OpType.DELETE, subResult.type());
         DeleteResult<String, String> deleteResult = (DeleteResult<String, String>) subResult;
-        List<KVRecord<String, String>> prevResults = deleteResult.prevKvs();
+        List<KeyValue<String, String>> prevResults = deleteResult.prevKvs();
         assertEquals(1, prevResults.size());
-        KVRecord<String, String> prevResult = prevResults.get(0);
+        KeyValue<String, String> prevResult = prevResults.get(0);
         assertEquals(getKey(11), prevResult.key());
         assertEquals(getValue(11), prevResult.value());
         assertEquals(99L, prevResult.createRevision());
         assertEquals(99L, prevResult.modifiedRevision());
         assertEquals(0L, prevResult.version());
-        result.recycle();
 
         assertEquals(null, store.get(getKey(11)));
     }

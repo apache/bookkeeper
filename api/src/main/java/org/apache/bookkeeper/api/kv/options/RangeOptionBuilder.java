@@ -24,7 +24,13 @@ public interface RangeOptionBuilder<K> extends Builder<RangeOption<K>> {
 
     RangeOptionBuilder<K> limit(long limit);
 
-    RangeOptionBuilder<K> revision(long revision);
+    RangeOptionBuilder<K> minModRev(long revision);
+
+    RangeOptionBuilder<K> maxModRev(long revision);
+
+    RangeOptionBuilder<K> minCreateRev(long revision);
+
+    RangeOptionBuilder<K> maxCreateRev(long revision);
 
     RangeOptionBuilder<K> keysOnly(boolean keysOnly);
 

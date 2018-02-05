@@ -18,10 +18,10 @@
 
 package org.apache.bookkeeper.statelib.api.mvcc;
 
+import org.apache.bookkeeper.api.kv.op.OpFactory;
 import org.apache.bookkeeper.common.annotation.InterfaceAudience.Public;
 import org.apache.bookkeeper.common.annotation.InterfaceStability.Evolving;
 import org.apache.bookkeeper.statelib.api.StateStore;
-import org.apache.bookkeeper.statelib.api.mvcc.op.OpFactory;
 
 /**
  * A mvcc store that supports synchronous operations.

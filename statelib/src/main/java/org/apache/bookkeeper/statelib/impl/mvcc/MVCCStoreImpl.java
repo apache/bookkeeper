@@ -18,6 +18,7 @@
 
 package org.apache.bookkeeper.statelib.impl.mvcc;
 
+import static io.netty.util.ReferenceCountUtil.retain;
 import static org.apache.bookkeeper.statelib.impl.Constants.NULL_END_KEY;
 import static org.apache.bookkeeper.statelib.impl.Constants.NULL_START_KEY;
 
@@ -32,9 +33,37 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.NoSuchElementException;
-import java.util.function.Predicate;
 import javax.annotation.Nullable;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.bookkeeper.api.kv.impl.op.OpFactoryImpl;
+import org.apache.bookkeeper.api.kv.impl.result.DeleteResultImpl;
+import org.apache.bookkeeper.api.kv.impl.result.IncrementResultImpl;
+import org.apache.bookkeeper.api.kv.impl.result.KeyValueFactory;
+import org.apache.bookkeeper.api.kv.impl.result.KeyValueImpl;
+import org.apache.bookkeeper.api.kv.impl.result.PutResultImpl;
+import org.apache.bookkeeper.api.kv.impl.result.RangeResultImpl;
+import org.apache.bookkeeper.api.kv.impl.result.ResultFactory;
+import org.apache.bookkeeper.api.kv.impl.result.TxnResultImpl;
+import org.apache.bookkeeper.api.kv.op.CompareOp;
+import org.apache.bookkeeper.api.kv.op.CompareResult;
+import org.apache.bookkeeper.api.kv.op.CompareTarget;
+import org.apache.bookkeeper.api.kv.op.DeleteOp;
+import org.apache.bookkeeper.api.kv.op.IncrementOp;
+import org.apache.bookkeeper.api.kv.op.Op;
+import org.apache.bookkeeper.api.kv.op.OpFactory;
+import org.apache.bookkeeper.api.kv.op.PutOp;
+import org.apache.bookkeeper.api.kv.op.RangeOp;
+import org.apache.bookkeeper.api.kv.op.TxnOp;
+import org.apache.bookkeeper.api.kv.options.Options;
+import org.apache.bookkeeper.api.kv.options.RangeOption;
+import org.apache.bookkeeper.api.kv.result.Code;
+import org.apache.bookkeeper.api.kv.result.DeleteResult;
+import org.apache.bookkeeper.api.kv.result.IncrementResult;
+import org.apache.bookkeeper.api.kv.result.KeyValue;
+import org.apache.bookkeeper.api.kv.result.PutResult;
+import org.apache.bookkeeper.api.kv.result.RangeResult;
+import org.apache.bookkeeper.api.kv.result.Result;
+import org.apache.bookkeeper.api.kv.result.TxnResult;
 import org.apache.bookkeeper.common.coder.Coder;
 import org.apache.bookkeeper.common.kv.KV;
 import org.apache.bookkeeper.common.kv.KVImpl;
@@ -43,35 +72,9 @@ import org.apache.bookkeeper.statelib.api.exceptions.MVCCStoreException;
 import org.apache.bookkeeper.statelib.api.exceptions.StateStoreRuntimeException;
 import org.apache.bookkeeper.statelib.api.kv.KVIterator;
 import org.apache.bookkeeper.statelib.api.kv.KVMulti;
-import org.apache.bookkeeper.statelib.api.mvcc.KVRecord;
 import org.apache.bookkeeper.statelib.api.mvcc.MVCCStore;
-import org.apache.bookkeeper.statelib.api.mvcc.op.CompareOp;
-import org.apache.bookkeeper.statelib.api.mvcc.op.CompareResult;
-import org.apache.bookkeeper.statelib.api.mvcc.op.CompareTarget;
-import org.apache.bookkeeper.statelib.api.mvcc.op.DeleteOp;
-import org.apache.bookkeeper.statelib.api.mvcc.op.IncrementOp;
-import org.apache.bookkeeper.statelib.api.mvcc.op.Op;
-import org.apache.bookkeeper.statelib.api.mvcc.op.OpFactory;
-import org.apache.bookkeeper.statelib.api.mvcc.op.PutOp;
-import org.apache.bookkeeper.statelib.api.mvcc.op.RangeOp;
-import org.apache.bookkeeper.statelib.api.mvcc.op.TxnOp;
-import org.apache.bookkeeper.statelib.api.mvcc.result.Code;
-import org.apache.bookkeeper.statelib.api.mvcc.result.DeleteResult;
-import org.apache.bookkeeper.statelib.api.mvcc.result.IncrementResult;
-import org.apache.bookkeeper.statelib.api.mvcc.result.PutResult;
-import org.apache.bookkeeper.statelib.api.mvcc.result.RangeResult;
-import org.apache.bookkeeper.statelib.api.mvcc.result.Result;
-import org.apache.bookkeeper.statelib.api.mvcc.result.TxnResult;
 import org.apache.bookkeeper.statelib.impl.Constants;
 import org.apache.bookkeeper.statelib.impl.kv.RocksdbKVStore;
-import org.apache.bookkeeper.statelib.impl.mvcc.op.OpFactoryImpl;
-import org.apache.bookkeeper.statelib.impl.mvcc.op.RangeOpImpl;
-import org.apache.bookkeeper.statelib.impl.mvcc.result.DeleteResultImpl;
-import org.apache.bookkeeper.statelib.impl.mvcc.result.IncrementResultImpl;
-import org.apache.bookkeeper.statelib.impl.mvcc.result.PutResultImpl;
-import org.apache.bookkeeper.statelib.impl.mvcc.result.RangeResultImpl;
-import org.apache.bookkeeper.statelib.impl.mvcc.result.ResultFactory;
-import org.apache.bookkeeper.statelib.impl.mvcc.result.TxnResultImpl;
 import org.apache.bookkeeper.statelib.impl.rocksdb.RocksUtils;
 import org.apache.bookkeeper.statestore.proto.ValueType;
 import org.apache.commons.lang.mutable.MutableLong;
@@ -92,13 +95,13 @@ class MVCCStoreImpl<K, V> extends RocksdbKVStore<K, V> implements MVCCStore<K, V
     private static final Comparator<byte[]> COMPARATOR = UnsignedBytes.lexicographicalComparator();
 
     private final ResultFactory<K, V> resultFactory;
-    private final KVRecordFactory<K, V> recordFactory;
+    private final KeyValueFactory<K, V> recordFactory;
     private final OpFactory<K, V> opFactory;
     private final Coder<MVCCRecord> recordCoder = MVCCRecordCoder.of();
 
     MVCCStoreImpl() {
         this.resultFactory = new ResultFactory<>();
-        this.recordFactory = new KVRecordFactory<>();
+        this.recordFactory = new KeyValueFactory<>();
         this.opFactory = new OpFactoryImpl<>();
     }
 
@@ -128,135 +131,95 @@ class MVCCStoreImpl<K, V> extends RocksdbKVStore<K, V> implements MVCCStore<K, V
     }
 
     void increment(K key, long amount, long revision) {
-        IncrementOp<K, V> op = opFactory.buildIncrementOp()
-            .key(key)
-            .amount(amount)
-            .revision(revision)
-            .build();
-        IncrementResult<K, V> result = null;
-        try {
-            result = increment(op);
-            if (Code.OK != result.code()) {
-                throw new MVCCStoreException(result.code(),
-                    "Failed to increment (" + key + ", " + amount + ") to state store " + name);
-            }
-        } finally {
-            if (null != result) {
-                result.recycle();
+        try (IncrementOp<K, V> op = opFactory.newIncrement(key, amount)) {
+            try (IncrementResult<K, V> result = increment(revision, op)) {
+                if (Code.OK != result.code()) {
+                    throw new MVCCStoreException(result.code(),
+                        "Failed to increment (" + key + ", " + amount + ") to state store " + name);
+                }
             }
         }
     }
 
     void put(K key, V value, long revision) {
-        PutOp<K, V> op = opFactory.buildPutOp()
-            .key(key)
-            .value(value)
-            .prevKV(false)
-            .revision(revision)
-            .build();
-        PutResult<K, V> result = null;
-        try {
-            result = put(op);
-            if (Code.OK != result.code()) {
-                throw new MVCCStoreException(result.code(),
-                    "Failed to put (" + key + ", " + value + ", " + revision + ") to state store " + name);
-            }
-        } finally {
-            if (null != result) {
-                result.recycle();
+        try (PutOp<K, V> op = opFactory.newPut(
+            key, value,
+            Options.blindPut())) {
+            try (PutResult<K, V> result = put(revision, op)) {
+                if (Code.OK != result.code()) {
+                    throw new MVCCStoreException(result.code(),
+                        "Failed to put (" + key + ", " + value + ", " + revision + ") to state store " + name);
+                }
             }
         }
     }
 
     void delete(K key, long revision) {
-        DeleteOp<K, V> op = opFactory.buildDeleteOp()
-            .nullableKey(key)
-            .prevKV(false)
-            .revision(revision)
-            .build();
-        DeleteResult<K, V> result = null;
-        try {
-            result = delete(op);
-            if (Code.OK != result.code()) {
-                throw new MVCCStoreException(result.code(),
-                    "Failed to delete key=" + key + "from state store " + name);
-            }
-        } finally {
-            if (null != result) {
-                result.recycle();
+        try (DeleteOp<K, V> op = opFactory.newDelete(
+            key,
+            Options.delete())) {
+            try (DeleteResult<K, V> result = delete(revision, op)) {
+                if (Code.OK != result.code()) {
+                    throw new MVCCStoreException(result.code(),
+                        "Failed to delete key=" + key + "from state store " + name);
+                }
             }
         }
-
     }
 
     void deleteRange(K key, K endKey, long revision) {
-        DeleteOp<K, V> op = opFactory.buildDeleteOp()
-            .nullableKey(key)
-            .nullableEndKey(endKey)
-            .prevKV(false)
-            .revision(revision)
-            .isRangeOp(true)
-            .build();
-        DeleteResult<K, V> result = null;
-        try {
-            result = delete(op);
-            if (Code.OK != result.code()) {
-                throw new MVCCStoreException(result.code(),
-                    "Failed to delete key=" + key + "from state store " + name);
-            }
-        } finally {
-            if (null != result) {
-                result.recycle();
+        try (DeleteOp<K, V> op = opFactory.newDelete(
+            key,
+            opFactory.optionFactory().newDeleteOption()
+                .endKey(endKey)
+                .prevKv(false)
+                .build())) {
+            try (DeleteResult<K, V> result = delete(revision, op)) {
+                if (Code.OK != result.code()) {
+                    throw new MVCCStoreException(result.code(),
+                        "Failed to delete key=" + key + "from state store " + name);
+                }
             }
         }
-
     }
 
     Long getNumber(K key) {
-        RangeOp<K, V> op = opFactory.buildRangeOp()
-            .nullableKey(key)
-            .limit(1)
-            .build();
-        RangeResult<K, V> result = null;
-        try {
-            result = range(op);
-            if (Code.OK != result.code()) {
-                throw new MVCCStoreException(result.code(),
-                    "Failed to retrieve key from store " + name + " : code = " + result.code());
-            }
-            if (result.count() <= 0) {
-                return null;
-            } else {
-                return result.kvs().get(0).number();
-            }
-        } finally {
-            if (null != result) {
-                result.recycle();
+        try (RangeOp<K, V> op = opFactory.newRange(
+            key,
+            opFactory.optionFactory().newRangeOption()
+                .limit(1)
+                .build())) {
+            try (RangeResult<K, V> result = range(op)) {
+                if (Code.OK != result.code()) {
+                    throw new MVCCStoreException(result.code(),
+                        "Failed to retrieve key from store " + name + " : code = " + result.code());
+                }
+                if (result.count() <= 0) {
+                    return null;
+                } else {
+                    return result.kvs().get(0).numberValue();
+                }
             }
         }
     }
 
     @Override
     public synchronized V get(K key) {
-        RangeOp<K, V> op = opFactory.buildRangeOp()
-            .nullableKey(key)
-            .limit(1)
-            .build();
-        RangeResult<K, V> result = null;
-        try {
-            result = range(op);
-            if (Code.OK != result.code()) {
-                throw new MVCCStoreException(result.code(),
-                    "Failed to retrieve key from store " + name + " : code = " + result.code());
-            }
-            if (result.count() <= 0) {
-                return null;
-            } else {
-                return result.kvs().get(0).value();
-            }
-        } finally {
-            if (null != result) {
-                result.recycle();
+        try (RangeOp<K, V> op = opFactory.newRange(
+            key,
+            opFactory.optionFactory().newRangeOption()
+                .limit(1)
+                .build())) {
+            try (RangeResult<K, V> result = range(op)) {
+                if (Code.OK != result.code()) {
+                    throw new MVCCStoreException(result.code(),
+                        "Failed to retrieve key from store " + name + " : code = " + result.code());
+                }
+                if (result.count() <= 0) {
+                    return null;
+                } else {
+                    return retain(result.kvs().get(0).value());
+                }
             }
         }
     }
@@ -275,7 +238,7 @@ class MVCCStoreImpl<K, V> extends RocksdbKVStore<K, V> implements MVCCStore<K, V
         private final K to;
         private K next;
         private RangeResult<K, V> result;
-        private PeekingIterator<KVRecord<K, V>> resultIter;
+        private PeekingIterator<KeyValue<K, V>> resultIter;
         private boolean eor = false;
 
         private volatile boolean closed = false;
@@ -295,19 +258,20 @@ class MVCCStoreImpl<K, V> extends RocksdbKVStore<K, V> implements MVCCStore<K, V
         public void close() {
             kvIters.remove(this);
             if (null != result) {
-                result.recycle();
+                result.close();
             }
             closed = true;
         }
 
         private void getNextBatch() {
-            RangeOp<K, V> op = opFactory.buildRangeOp()
-                .nullableKey(next)
-                .nullableEndKey(to)
-                .isRangeOp(true)
-                .limit(32)
-                .build();
-            this.result = range(op);
+            try (RangeOp<K, V> op = opFactory.newRange(
+                next,
+                opFactory.optionFactory().newRangeOption()
+                    .endKey(to)
+                    .limit(32)
+                    .build())) {
+                this.result = range(op);
+            }
             if (Code.OK != result.code()) {
                 throw new MVCCStoreException(result.code(),
                     "Failed to fetch kv pairs at range [" + next + ", " + to + "] from state store " + name);
@@ -317,7 +281,7 @@ class MVCCStoreImpl<K, V> extends RocksdbKVStore<K, V> implements MVCCStore<K, V
 
         private void skipFirstKey() {
             while (this.resultIter.hasNext()) {
-                KVRecord<K, V> kv = this.resultIter.peek();
+                KeyValue<K, V> kv = this.resultIter.peek();
                 if (!kv.key().equals(next)) {
                     break;
                 }
@@ -336,8 +300,8 @@ class MVCCStoreImpl<K, V> extends RocksdbKVStore<K, V> implements MVCCStore<K, V
                 getNextBatch();
             }
             if (!this.resultIter.hasNext()) {
-                if (this.result.hasMore()) {
-                    this.result.recycle();
+                if (this.result.more()) {
+                    this.result.close();
                     getNextBatch();
                     skipFirstKey();
                     return hasNext();
@@ -354,7 +318,7 @@ class MVCCStoreImpl<K, V> extends RocksdbKVStore<K, V> implements MVCCStore<K, V
             if (!hasNext()) {
                 throw new NoSuchElementException();
             }
-            KVRecord<K, V> kv = this.resultIter.next();
+            KeyValue<K, V> kv = this.resultIter.next();
             next = kv.key();
             if (next.equals(to)) {
                 eor = true;
@@ -379,20 +343,16 @@ class MVCCStoreImpl<K, V> extends RocksdbKVStore<K, V> implements MVCCStore<K, V
      * TODO: the increment operation can be optimized using rocksdb merge operator.
      */
     @Override
-    public IncrementResult<K, V> increment(IncrementOp<K, V> op) {
-        return increment(op.revision(), op);
-    }
-
-    IncrementResult<K, V> increment(long revision, IncrementOp<K, V> op) {
+    public IncrementResult<K, V> increment(long revision, IncrementOp<K, V> op) {
         try {
             return processIncrement(revision, op);
         } catch (MVCCStoreException e) {
             IncrementResultImpl<K, V> result = resultFactory.newIncrementResult(revision);
-            result.setCode(e.getCode());
+            result.code(e.getCode());
             return result;
         } catch (StateStoreRuntimeException e) {
             IncrementResultImpl<K, V> result = resultFactory.newIncrementResult(revision);
-            result.setCode(Code.INTERNAL_ERROR);
+            result.code(Code.INTERNAL_ERROR);
             return result;
         }
     }
@@ -408,7 +368,7 @@ class MVCCStoreImpl<K, V> extends RocksdbKVStore<K, V> implements MVCCStore<K, V
             return result;
         } catch (StateStoreRuntimeException e) {
             if (null != result) {
-                result.recycle();
+                result.close();
             }
             throw e;
         } finally {
@@ -438,11 +398,11 @@ class MVCCStoreImpl<K, V> extends RocksdbKVStore<K, V> implements MVCCStore<K, V
             if (null != record) {
                 // validate the update revision before applying the update to the record
                 if (record.compareModRev(revision) >= 0) {
-                    result.setCode(Code.SMALLER_REVISION);
+                    result.code(Code.SMALLER_REVISION);
                     return result;
                 }
                 if (ValueType.NUMBER != record.getValueType()) {
-                    result.setCode(Code.ILLEGAL_OP);
+                    result.code(Code.ILLEGAL_OP);
                     return result;
                 }
                 record.setVersion(record.getVersion() + 1);
@@ -462,10 +422,10 @@ class MVCCStoreImpl<K, V> extends RocksdbKVStore<K, V> implements MVCCStore<K, V
             batch.put(dataCfHandle, rawKey, recordCoder.encode(record));
 
             // finalize the result
-            result.setCode(Code.OK);
+            result.code(Code.OK);
             return result;
         } catch (StateStoreRuntimeException e) {
-            result.recycle();
+            result.close();
             throw e;
         } finally {
             if (null != record) {
@@ -475,20 +435,16 @@ class MVCCStoreImpl<K, V> extends RocksdbKVStore<K, V> implements MVCCStore<K, V
     }
 
     @Override
-    public PutResult<K, V> put(PutOp<K, V> op) {
-        return put(op.revision(), op);
-    }
-
-    PutResult<K, V> put(long revision, PutOp<K, V> op) {
+    public PutResult<K, V> put(long revision, PutOp<K, V> op) {
         try {
             return processPut(revision, op);
         } catch (MVCCStoreException e) {
             PutResultImpl<K, V> result = resultFactory.newPutResult(revision);
-            result.setCode(e.getCode());
+            result.code(e.getCode());
             return result;
         } catch (StateStoreRuntimeException e) {
             PutResultImpl<K, V> result = resultFactory.newPutResult(revision);
-            result.setCode(Code.INTERNAL_ERROR);
+            result.code(Code.INTERNAL_ERROR);
             return result;
         }
     }
@@ -504,7 +460,7 @@ class MVCCStoreImpl<K, V> extends RocksdbKVStore<K, V> implements MVCCStore<K, V
             return result;
         } catch (StateStoreRuntimeException e) {
             if (null != result) {
-                result.recycle();
+                result.close();
             }
             throw e;
         } finally {
@@ -536,16 +492,16 @@ class MVCCStoreImpl<K, V> extends RocksdbKVStore<K, V> implements MVCCStore<K, V
             if (null != record) {
                 // validate the update revision before applying the update to the record
                 if (record.compareModRev(revision) >= 0) {
-                    result.setCode(Code.SMALLER_REVISION);
+                    result.code(Code.SMALLER_REVISION);
                     return result;
                 }
 
                 if (ValueType.BYTES != record.getValueType()) {
-                    result.setCode(Code.ILLEGAL_OP);
+                    result.code(Code.ILLEGAL_OP);
                     return result;
                 }
 
-                if (op.prevKV()) {
+                if (op.option().prevKv()) {
                     // make a copy before modification
                     oldRecord = record.duplicate();
                 }
@@ -562,17 +518,17 @@ class MVCCStoreImpl<K, V> extends RocksdbKVStore<K, V> implements MVCCStore<K, V
             batch.put(dataCfHandle, rawKey, recordCoder.encode(record));
 
             // finalize the result
-            result.setCode(Code.OK);
+            result.code(Code.OK);
             if (null != oldRecord) {
-                KVRecordImpl<K, V> prevKV = oldRecord.asKVRecord(
+                KeyValueImpl<K, V> prevKV = oldRecord.asKVRecord(
                     recordFactory,
                     key,
                     valCoder);
-                result.setPrevKV(prevKV);
+                result.prevKv(prevKV);
             }
             return result;
         } catch (StateStoreRuntimeException e) {
-            result.recycle();
+            result.close();
             throw e;
         } finally {
             if (null != record) {
@@ -589,20 +545,16 @@ class MVCCStoreImpl<K, V> extends RocksdbKVStore<K, V> implements MVCCStore<K, V
     //
 
     @Override
-    public DeleteResult<K, V> delete(DeleteOp<K, V> op) {
-        return delete(op.revision(), op);
-    }
-
-    DeleteResult<K, V> delete(long revision, DeleteOp<K, V> op) {
+    public DeleteResult<K, V> delete(long revision, DeleteOp<K, V> op) {
         try {
             return processDelete(revision, op);
         } catch (MVCCStoreException e) {
             DeleteResultImpl<K, V> result = resultFactory.newDeleteResult(revision);
-            result.setCode(e.getCode());
+            result.code(e.getCode());
             return result;
         } catch (StateStoreRuntimeException e) {
             DeleteResultImpl<K, V> result = resultFactory.newDeleteResult(revision);
-            result.setCode(Code.INTERNAL_ERROR);
+            result.code(Code.INTERNAL_ERROR);
             return result;
         }
     }
@@ -618,7 +570,7 @@ class MVCCStoreImpl<K, V> extends RocksdbKVStore<K, V> implements MVCCStore<K, V
             return result;
         } catch (StateStoreRuntimeException e) {
             if (null != result) {
-                result.recycle();
+                result.close();
             }
             throw e;
         } finally {
@@ -628,12 +580,12 @@ class MVCCStoreImpl<K, V> extends RocksdbKVStore<K, V> implements MVCCStore<K, V
 
     DeleteResult<K, V> delete(long revision, WriteBatch batch, DeleteOp<K, V> op, boolean allowBlind) {
         // parameters
-        final K key = op.key().orElse(null);
-        final K endKey = op.endKey().orElse(null);
-        final boolean blind = allowBlind && !op.prevKV();
+        final K key = op.key();
+        final K endKey = op.option().endKey();
+        final boolean blind = allowBlind && !op.option().prevKv();
 
         final byte[] rawKey = (null != key) ? keyCoder.encode(key) : NULL_START_KEY;
-        final byte[] rawEndKey = (null != endKey) ? keyCoder.encode(endKey) : (op.isRangeOp() ? NULL_END_KEY : null);
+        final byte[] rawEndKey = (null != endKey) ? keyCoder.encode(endKey) : null;
 
         // result
         final DeleteResultImpl<K, V> result = resultFactory.newDeleteResult(revision);
@@ -655,13 +607,13 @@ class MVCCStoreImpl<K, V> extends RocksdbKVStore<K, V> implements MVCCStore<K, V
                     false);
             }
 
-            List<KVRecord<K, V>> kvs = toKvs(keys, records);
+            List<KeyValue<K, V>> kvs = toKvs(keys, records);
 
-            result.setCode(Code.OK);
-            result.setPrevKvs(kvs);
-            result.setNumDeleted(numDeleted);
+            result.code(Code.OK);
+            result.prevKvs(kvs);
+            result.numDeleted(numDeleted);
         } catch (StateStoreRuntimeException e) {
-            result.recycle();
+            result.close();
             throw e;
         } finally {
             records.forEach(MVCCRecord::recycle);
@@ -718,7 +670,7 @@ class MVCCStoreImpl<K, V> extends RocksdbKVStore<K, V> implements MVCCStore<K, V
                 resultKeys,
                 resultValues,
                 numKvs,
-                record -> true,
+                null,
                 -1,
                 countOnly);
 
@@ -732,20 +684,16 @@ class MVCCStoreImpl<K, V> extends RocksdbKVStore<K, V> implements MVCCStore<K, V
     //
 
     @Override
-    public TxnResult<K, V> txn(TxnOp<K, V> op) {
-        return txn(op.revision(), op);
-    }
-
-    synchronized TxnResult<K, V> txn(long revision, TxnOp<K, V> op) {
+    public synchronized TxnResult<K, V> txn(long revision, TxnOp<K, V> op) {
         try {
             return processTxn(revision, op);
         } catch (MVCCStoreException e) {
             TxnResultImpl<K, V> result = resultFactory.newTxnResult(revision);
-            result.setCode(e.getCode());
+            result.code(e.getCode());
             return result;
         } catch (StateStoreRuntimeException e) {
             TxnResultImpl<K, V> result = resultFactory.newTxnResult(revision);
-            result.setCode(Code.INTERNAL_ERROR);
+            result.code(Code.INTERNAL_ERROR);
             return result;
         }
     }
@@ -764,6 +712,9 @@ class MVCCStoreImpl<K, V> extends RocksdbKVStore<K, V> implements MVCCStore<K, V
         } else {
             operations = op.failureOps();
         }
+        if (operations == null) {
+            operations = Collections.emptyList();
+        }
         results = Lists.newArrayListWithExpectedSize(operations.size());
 
         // 3. process the operations
@@ -775,13 +726,13 @@ class MVCCStoreImpl<K, V> extends RocksdbKVStore<K, V> implements MVCCStore<K, V
 
             // 4. repare the result
             TxnResultImpl<K, V> txnResult = resultFactory.newTxnResult(revision);
-            txnResult.setSuccess(success);
-            txnResult.setResults(results);
-            txnResult.setCode(Code.OK);
+            txnResult.isSuccess(success);
+            txnResult.results(results);
+            txnResult.code(Code.OK);
 
             return txnResult;
         } catch (StateStoreRuntimeException e) {
-            results.forEach(Result::recycle);
+            results.forEach(Result::close);
             throw e;
         }
 
@@ -789,12 +740,12 @@ class MVCCStoreImpl<K, V> extends RocksdbKVStore<K, V> implements MVCCStore<K, V
 
     boolean processCompareOp(CompareOp<K, V> op) {
         MVCCRecord record = null;
-        K key = op.getKey();
+        K key = op.key();
         byte[] rawKey = keyCoder.encode(key);
         try {
             record = getKeyRecord(key, rawKey);
             if (null == record) {
-                if (CompareTarget.VALUE != op.getTarget()) {
+                if (CompareTarget.VALUE != op.target()) {
                     throw new MVCCStoreException(Code.KEY_NOT_FOUND, "Key " + key + " is not found");
                 }
             }
@@ -809,33 +760,33 @@ class MVCCStoreImpl<K, V> extends RocksdbKVStore<K, V> implements MVCCStore<K, V
     boolean processCompareOp(@Nullable MVCCRecord record,
                              CompareOp<K, V> op) {
         int cmp;
-        switch (op.getTarget()) {
+        switch (op.target()) {
             case MOD:
-                cmp = record.compareModRev(op.getRevision());
+                cmp = record.compareModRev(op.revision());
                 break;
             case CREATE:
-                cmp = record.compareCreateRev(op.getRevision());
+                cmp = record.compareCreateRev(op.revision());
                 break;
             case VERSION:
-                cmp = record.compareVersion(op.getRevision());
+                cmp = record.compareVersion(op.revision());
                 break;
             case VALUE:
                 if (null == record) { // key not found
-                    if (CompareResult.EQUAL == op.getResult()) {
-                        return !op.getValue().isPresent();
-                    } else if (CompareResult.NOT_EQUAL == op.getResult()) {
-                        return op.getValue().isPresent();
+                    if (CompareResult.EQUAL == op.result()) {
+                        return op.value() == null;
+                    } else if (CompareResult.NOT_EQUAL == op.result()) {
+                        return op.value() != null;
                     } else {
                         return false;
                     }
                 }
                 // key is found and value-to-compare is present
-                if (op.getValue().isPresent()) {
-                    byte[] rawValue = valCoder.encode(op.getValue().get());
+                if (op.value() != null) {
+                    byte[] rawValue = valCoder.encode(op.value());
                     cmp = record.getValue().compareTo(Unpooled.wrappedBuffer(rawValue));
                 } else {
                     // key is found but value-to-compare is missing
-                    switch (op.getResult()) {
+                    switch (op.result()) {
                         case EQUAL:
                         case LESS:
                             return false;
@@ -848,7 +799,7 @@ class MVCCStoreImpl<K, V> extends RocksdbKVStore<K, V> implements MVCCStore<K, V
                 return false;
         }
         boolean success;
-        switch (op.getResult()) {
+        switch (op.result()) {
             case LESS:
                 success = cmp < 0;
                 break;
@@ -899,7 +850,7 @@ class MVCCStoreImpl<K, V> extends RocksdbKVStore<K, V> implements MVCCStore<K, V
                                   List<byte[]> resultKeys,
                                   List<MVCCRecord> resultValues,
                                   MutableLong numKvs,
-                                  @Nullable Predicate<MVCCRecord> predicate,
+                                  RangeOption<K> rangeOption,
                                   long limit,
                                   boolean countOnly) {
         try (RocksIterator iter = db.newIterator(dataCfHandle)) {
@@ -913,7 +864,7 @@ class MVCCStoreImpl<K, V> extends RocksdbKVStore<K, V> implements MVCCStore<K, V
                 }
                 MVCCRecord val = recordCoder.decode(iter.value());
 
-                processRecord(key, val, resultKeys, resultValues, numKvs, predicate, countOnly);
+                processRecord(key, val, resultKeys, resultValues, numKvs, rangeOption, countOnly);
 
                 iter.next();
             }
@@ -930,14 +881,14 @@ class MVCCStoreImpl<K, V> extends RocksdbKVStore<K, V> implements MVCCStore<K, V
                                List<byte[]> resultKeys,
                                List<MVCCRecord> resultValues,
                                MutableLong numKvs,
-                               @Nullable Predicate<MVCCRecord> predicate,
+                               RangeOption<K> rangeOption,
                                boolean countOnly) {
-        if (null == predicate && countOnly) {
+        if (null == rangeOption && countOnly) {
             numKvs.increment();
             return;
         }
 
-        if (null == predicate || predicate.test(record)) {
+        if (record.test(rangeOption)) {
             numKvs.increment();
             if (countOnly) {
                 record.recycle();
@@ -969,12 +920,12 @@ class MVCCStoreImpl<K, V> extends RocksdbKVStore<K, V> implements MVCCStore<K, V
         try {
             return processRange(rangeOp);
         } catch (MVCCStoreException e) {
-            RangeResultImpl<K, V> result = resultFactory.newRangeResult(rangeOp.revision());
-            result.setCode(e.getCode());
+            RangeResultImpl<K, V> result = resultFactory.newRangeResult(-1L);
+            result.code(e.getCode());
             return result;
         } catch (StateStoreRuntimeException e) {
-            RangeResultImpl<K, V> result = resultFactory.newRangeResult(rangeOp.revision());
-            result.setCode(Code.INTERNAL_ERROR);
+            RangeResultImpl<K, V> result = resultFactory.newRangeResult(-1L);
+            result.code(Code.INTERNAL_ERROR);
             return result;
         }
     }
@@ -983,32 +934,31 @@ class MVCCStoreImpl<K, V> extends RocksdbKVStore<K, V> implements MVCCStore<K, V
         checkStoreOpen();
 
         // parameters
-        final K key = rangeOp.key().orElse(null);
-        final K endKey = rangeOp.endKey().orElse(null);
-        final RangeOpImpl<K, V> rangeOpImpl = (RangeOpImpl<K, V>) rangeOp;
+        final K key = rangeOp.key();
+        final K endKey = rangeOp.option().endKey();
 
         // result
-        final RangeResultImpl<K, V> result = resultFactory.newRangeResult(rangeOp.revision());
+        final RangeResultImpl<K, V> result = resultFactory.newRangeResult(-1L);
 
         // raw key
         byte[] rawKey = (null != key) ? keyCoder.encode(key) : NULL_START_KEY;
 
-        if (null == endKey && !rangeOp.isRangeOp()) {
+        if (null == endKey) {
             // point lookup
             MVCCRecord record = getKeyRecord(key, rawKey);
             try {
-                if (null == record || !rangeOpImpl.test(record)) {
-                    result.setCount(0);
-                    result.setKvs(Collections.emptyList());
+                if (null == record || !record.test(rangeOp.option())) {
+                    result.count(0);
+                    result.kvs(Collections.emptyList());
                 } else {
-                    result.setCount(1);
-                    result.setKvs(Lists.newArrayList(record.asKVRecord(
+                    result.count(1);
+                    result.kvs(Lists.newArrayList(record.asKVRecord(
                         recordFactory,
                         key,
                         valCoder)));
                 }
-                result.setHasMore(false);
-                result.setCode(Code.OK);
+                result.more(false);
+                result.code(Code.OK);
                 return result;
             } finally {
                 if (null != record) {
@@ -1034,24 +984,24 @@ class MVCCStoreImpl<K, V> extends RocksdbKVStore<K, V> implements MVCCStore<K, V
                 keys,
                 records,
                 numKvs,
-                rangeOpImpl,
-                rangeOp.limit(),
+                rangeOp.option(),
+                rangeOp.option().limit(),
                 false);
 
-            List<KVRecord<K, V>> kvs = toKvs(keys, records);
+            List<KeyValue<K, V>> kvs = toKvs(keys, records);
 
-            result.setCode(Code.OK);
-            result.setKvs(kvs);
-            result.setCount(kvs.size());
-            result.setHasMore(hasMore);
+            result.code(Code.OK);
+            result.kvs(kvs);
+            result.count(kvs.size());
+            result.more(hasMore);
         } finally {
             records.forEach(MVCCRecord::recycle);
         }
         return result;
     }
 
-    private List<KVRecord<K, V>> toKvs(List<byte[]> keys, List<MVCCRecord> records) {
-        List<KVRecord<K, V>> kvs = Lists.newArrayListWithExpectedSize(keys.size());
+    private List<KeyValue<K, V>> toKvs(List<byte[]> keys, List<MVCCRecord> records) {
+        List<KeyValue<K, V>> kvs = Lists.newArrayListWithExpectedSize(keys.size());
 
         for (int i = 0; i < keys.size(); i++) {
             byte[] keyBytes = keys.get(i);

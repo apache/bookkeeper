@@ -45,6 +45,8 @@ public interface OpFactory<K, V> {
 
     IncrementOp<K, V> newIncrement(K key, long amount);
 
+    TxnOpBuilder<K, V> newTxn();
+
     CompareOp<K, V> compareVersion(CompareResult result, K key, long version);
 
     CompareOp<K, V> compareModRevision(CompareResult result, K key, long revision);

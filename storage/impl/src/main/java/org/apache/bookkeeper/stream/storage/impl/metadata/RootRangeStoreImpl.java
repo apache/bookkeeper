@@ -29,14 +29,14 @@ import java.net.URI;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledExecutorService;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.bookkeeper.api.kv.op.CompareResult;
+import org.apache.bookkeeper.api.kv.op.RangeOp;
+import org.apache.bookkeeper.api.kv.op.TxnOp;
+import org.apache.bookkeeper.api.kv.options.Options;
+import org.apache.bookkeeper.api.kv.result.KeyValue;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.common.util.Bytes;
-import org.apache.bookkeeper.statelib.api.mvcc.KVRecord;
 import org.apache.bookkeeper.statelib.api.mvcc.MVCCAsyncStore;
-import org.apache.bookkeeper.statelib.api.mvcc.op.CompareResult;
-import org.apache.bookkeeper.statelib.api.mvcc.op.RangeOp;
-import org.apache.bookkeeper.statelib.api.mvcc.op.TxnOp;
-import org.apache.bookkeeper.statelib.api.mvcc.op.TxnOpBuilder;
 import org.apache.bookkeeper.stream.proto.NamespaceMetadata;
 import org.apache.bookkeeper.stream.proto.NamespaceProperties;
 import org.apache.bookkeeper.stream.proto.StreamConfiguration;
@@ -153,19 +153,21 @@ public class RootRangeStoreImpl
     // Namespaces API
     //
 
-    CompletableFuture<KVRecord<byte[], byte[]>> getValue(byte[] key) {
-        RangeOp<byte[], byte[]> op = store.getOpFactory().buildRangeOp()
-            .isRangeOp(false)
-            .key(key)
-            .build();
-
+    CompletableFuture<KeyValue<byte[], byte[]>> getValue(byte[] key) {
+        RangeOp<byte[], byte[]> op = store.getOpFactory().newRange(
+            key,
+            Options.get());
         return store.range(op).thenApplyAsync(kvs -> {
-            if (kvs.count() <= 0) {
-                return null;
-            } else {
-                return kvs.kvs().get(0);
+            try {
+                if (kvs.count() <= 0) {
+                    return null;
+                } else {
+                    return kvs.getKvsAndClear().get(0);
+                }
+            } finally {
+                kvs.close();
             }
-        });
+        }).whenComplete((kv, cause) -> op.close());
     }
 
     @Override
@@ -201,7 +203,7 @@ public class RootRangeStoreImpl
                 } else {
                     currentNsId = Bytes.toLong(nsIdKv.value(), 0);
                     currentNsIdRev = nsIdKv.modifiedRevision();
-                    nsIdKv.recycle();
+                    nsIdKv.close();
                 }
 
                 return executeCreateNamespaceTxn(currentNsId, currentNsIdRev, request);
@@ -226,26 +228,18 @@ public class RootRangeStoreImpl
         byte[] nsIdKey = getNamespaceIdKey(namespaceId);
         byte[] nsIdVal = metadata.toByteArray();
 
-        TxnOpBuilder<byte[], byte[]> txnBuilder = store.newTxn()
-            .addCompareOps(
-                store.newCompareValue(CompareResult.EQUAL, nsNameKey, null))
-            .addSuccessOps(
-                store.newPut(nsNameKey, nsNameVal))
-            .addSuccessOps(
-                store.newPut(nsIdKey, nsIdVal))
-            .addSuccessOps(
-                store.newPut(NS_ID_KEY, Bytes.toBytes(namespaceId)));
-
-        if (currentNsIdRev < 0) {
-            txnBuilder = txnBuilder.addCompareOps(
-                store.newCompareValue(CompareResult.EQUAL, NS_ID_KEY, null));
-        } else {
-            txnBuilder = txnBuilder.addCompareOps(
-                store.newCompareModRevision(CompareResult.EQUAL, NS_ID_KEY, currentNsIdRev));
-        }
-
-        TxnOp<byte[], byte[]> txn = txnBuilder.build();
-
+        TxnOp<byte[], byte[]> txn = store.newTxn()
+            .If(
+                store.newCompareValue(CompareResult.EQUAL, nsNameKey, null),
+                currentNsIdRev < 0
+                    ? store.newCompareValue(CompareResult.EQUAL, NS_ID_KEY, null) :
+                    store.newCompareModRevision(CompareResult.EQUAL, NS_ID_KEY, currentNsIdRev)
+            )
+            .Then(
+                store.newPut(nsNameKey, nsNameVal),
+                store.newPut(nsIdKey, nsIdVal),
+                store.newPut(NS_ID_KEY, Bytes.toBytes(namespaceId)))
+            .build();
         return store.txn(txn)
             .thenApply(txnResult -> {
                 try {
@@ -259,9 +253,10 @@ public class RootRangeStoreImpl
                     }
                     return respBuilder.build();
                 } finally {
-                    txnResult.recycle();
+                    txnResult.close();
                 }
-            });
+            })
+            .whenComplete((resp, cause) -> txn.close());
     }
 
     @Override
@@ -304,14 +299,14 @@ public class RootRangeStoreImpl
 
 
         TxnOp<byte[], byte[]> txnOp = store.newTxn()
-            .addCompareOps(
-                store.newCompareValue(CompareResult.NOT_EQUAL, nsNameKey, null))
-            .addCompareOps(
-                store.newCompareValue(CompareResult.NOT_EQUAL, nsIdKey, null))
-            .addSuccessOps(
-                store.newDelete(nsNameKey))
-            .addSuccessOps(
-                store.newDeleteRange(nsIdKey, nsIdEndKey))
+            .If(
+                store.newCompareValue(CompareResult.NOT_EQUAL, nsNameKey, null),
+                store.newCompareValue(CompareResult.NOT_EQUAL, nsIdKey, null)
+            )
+            .Then(
+                store.newDelete(nsNameKey),
+                store.newDeleteRange(nsIdKey, nsIdEndKey)
+            )
             .build();
 
         return store.txn(txnOp).thenApply(txnResult -> {
@@ -325,9 +320,9 @@ public class RootRangeStoreImpl
                 }
                 return respBuilder.build();
             } finally {
-                txnResult.recycle();
+                txnResult.close();
             }
-        });
+        }).whenComplete((resp, cause) -> txnOp.close());
     }
 
     @Override
@@ -434,7 +429,7 @@ public class RootRangeStoreImpl
                 if (null != streamIdKv) {
                     currentStreamId = Bytes.toLong(streamIdKv.value(), 0);
                     currentStreamIdRev = streamIdKv.modifiedRevision();
-                    streamIdKv.recycle();
+                    streamIdKv.close();
                 }
 
                 return executeCreateStreamTxn(
@@ -483,27 +478,20 @@ public class RootRangeStoreImpl
         byte[] streamIdKey = getStreamIdKey(nsId, streamId);
         byte[] streamIdVal = streamProps.toByteArray();
 
-        TxnOpBuilder<byte[], byte[]> txnBuilder = store.newTxn()
-            .addCompareOps(
-                store.newCompareValue(CompareResult.NOT_EQUAL, nsIdKey, null))
-            .addCompareOps(
-                store.newCompareValue(CompareResult.EQUAL, streamNameKey, null))
-            .addSuccessOps(
-                store.newPut(streamNameKey, streamNameVal))
-            .addSuccessOps(
-                store.newPut(streamIdKey, streamIdVal))
-            .addSuccessOps(
-                store.newPut(STREAM_ID_KEY, Bytes.toBytes(streamId)));
-
-        if (currentStreamIdRev < 0) {
-            txnBuilder = txnBuilder.addCompareOps(
-                store.newCompareValue(CompareResult.EQUAL, STREAM_ID_KEY, null));
-        } else {
-            txnBuilder = txnBuilder.addCompareOps(
-                store.newCompareModRevision(CompareResult.EQUAL, STREAM_ID_KEY, currentStreamIdRev));
-        }
-
-        TxnOp<byte[], byte[]> txn = txnBuilder.build();
+        TxnOp<byte[], byte[]> txn = store.newTxn()
+            .If(
+                store.newCompareValue(CompareResult.NOT_EQUAL, nsIdKey, null),
+                currentStreamIdRev < 0
+                    ? store.newCompareValue(CompareResult.EQUAL, STREAM_ID_KEY, null) :
+                    store.newCompareModRevision(CompareResult.EQUAL, STREAM_ID_KEY, currentStreamIdRev),
+                store.newCompareValue(CompareResult.EQUAL, streamNameKey, null)
+            )
+            .Then(
+                store.newPut(streamNameKey, streamNameVal),
+                store.newPut(streamIdKey, streamIdVal),
+                store.newPut(STREAM_ID_KEY, Bytes.toBytes(streamId))
+            )
+            .build();
 
         return store.txn(txn)
             .thenApply(txnResult -> {
@@ -518,11 +506,14 @@ public class RootRangeStoreImpl
                     }
                     return respBuilder.build();
                 } finally {
-                    txnResult.recycle();
+                    txnResult.close();
+                    txn.close();
                 }
             })
-            .exceptionally(cause ->
-                CreateStreamResponse.newBuilder().setCode(StatusCode.INTERNAL_SERVER_ERROR).build());
+            .exceptionally(cause -> {
+                txn.close();
+                return CreateStreamResponse.newBuilder().setCode(StatusCode.INTERNAL_SERVER_ERROR).build();
+            });
     }
 
     @Override
@@ -578,16 +569,15 @@ public class RootRangeStoreImpl
         byte[] streamIdKey = getStreamIdKey(nsId, streamId);
 
         TxnOp<byte[], byte[]> txnOp = store.newTxn()
-            .addCompareOps(
-                store.newCompareValue(CompareResult.NOT_EQUAL, nsIdKey, null))
-            .addCompareOps(
-                store.newCompareValue(CompareResult.NOT_EQUAL, streamNameKey, null))
-            .addCompareOps(
-                store.newCompareValue(CompareResult.NOT_EQUAL, streamIdKey, null))
-            .addSuccessOps(
-                store.newDelete(streamIdKey))
-            .addSuccessOps(
-                store.newDelete(streamNameKey))
+            .If(
+                store.newCompareValue(CompareResult.NOT_EQUAL, nsIdKey, null),
+                store.newCompareValue(CompareResult.NOT_EQUAL, streamNameKey, null),
+                store.newCompareValue(CompareResult.NOT_EQUAL, streamIdKey, null)
+            )
+            .Then(
+                store.newDelete(streamIdKey),
+                store.newDelete(streamNameKey)
+            )
             .build();
 
         return store.txn(txnOp).thenApply(txnResult -> {
@@ -600,9 +590,9 @@ public class RootRangeStoreImpl
                 }
                 return respBuilder.build();
             } finally {
-                txnResult.recycle();
+                txnResult.close();
             }
-        });
+        }).whenComplete((resp, cause) -> txnOp.close());
     }
 
     @Override

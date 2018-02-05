@@ -24,6 +24,7 @@ import org.apache.bookkeeper.api.kv.op.IncrementOp;
 import org.apache.bookkeeper.api.kv.op.OpFactory;
 import org.apache.bookkeeper.api.kv.op.PutOp;
 import org.apache.bookkeeper.api.kv.op.RangeOp;
+import org.apache.bookkeeper.api.kv.options.Options;
 
 /**
  * A base class for {@link PTable}.
@@ -49,11 +50,11 @@ public interface PTableBase<K, V> extends AutoCloseable {
     }
 
     default PutOp<K, V> newPut(K key, V value) {
-        return opFactory().newPut(key, value, opFactory().optionFactory().newPutOption().prevKv(false).build());
+        return opFactory().newPut(key, value, Options.blindPut());
     }
 
     default DeleteOp<K, V> newDelete(K key) {
-        return opFactory().newDelete(key, opFactory().optionFactory().newDeleteOption().prevKv(false).build());
+        return opFactory().newDelete(key, Options.delete());
     }
 
     default IncrementOp<K, V> newIncrement(K key, long amount) {
@@ -63,12 +64,7 @@ public interface PTableBase<K, V> extends AutoCloseable {
     default RangeOp<K, V> newGet(K key) {
         return opFactory().newRange(
             key,
-            opFactory().optionFactory().newRangeOption()
-                .keysOnly(false)
-                .countOnly(false)
-                .limit(1)
-                .endKey(null)
-                .build());
+            Options.get());
     }
 
     @Override

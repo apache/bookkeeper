@@ -21,9 +21,10 @@ package org.apache.bookkeeper.statelib.impl.mvcc.op.proto;
 import io.netty.util.Recycler;
 import io.netty.util.Recycler.Handle;
 import lombok.RequiredArgsConstructor;
-import org.apache.bookkeeper.common.util.Recycled;
-import org.apache.bookkeeper.statelib.api.mvcc.op.OpType;
-import org.apache.bookkeeper.statelib.api.mvcc.op.PutOp;
+import lombok.ToString;
+import org.apache.bookkeeper.api.kv.op.OpType;
+import org.apache.bookkeeper.api.kv.op.PutOp;
+import org.apache.bookkeeper.api.kv.options.PutOption;
 import org.apache.bookkeeper.statelib.impl.Constants;
 import org.apache.bookkeeper.statestore.proto.Command;
 import org.apache.bookkeeper.statestore.proto.PutRequest;
@@ -32,11 +33,12 @@ import org.apache.bookkeeper.statestore.proto.PutRequest;
  * A protobuf encoded put operation.
  */
 @RequiredArgsConstructor
-public class ProtoPutOpImpl implements PutOp<byte[], byte[]>, Recycled {
+@ToString(exclude = "recyclerHandle")
+public class ProtoPutOpImpl implements PutOp<byte[], byte[]>, PutOption<byte[]> {
 
-    public static ProtoPutOpImpl newPutOp(long revision, Command command) {
+    public static ProtoPutOpImpl newPutOp(Command command) {
         ProtoPutOpImpl op = RECYCLER.get();
-        op.setCommand(revision, command);
+        op.setCommand(command);
         return op;
     }
 
@@ -62,13 +64,17 @@ public class ProtoPutOpImpl implements PutOp<byte[], byte[]>, Recycled {
         return value;
     }
 
-    public void setCommand(long revision, Command command) {
+    @Override
+    public PutOption option() {
+        return this;
+    }
+
+    public void setCommand(Command command) {
         this.req = command.getPutReq();
-        this.revision = revision;
     }
 
     @Override
-    public boolean prevKV() {
+    public boolean prevKv() {
         return req.getPrevKv();
     }
 
@@ -86,11 +92,6 @@ public class ProtoPutOpImpl implements PutOp<byte[], byte[]>, Recycled {
         return key;
     }
 
-    @Override
-    public long revision() {
-        return revision;
-    }
-
     void reset() {
         req = null;
         key = null;
@@ -99,7 +100,7 @@ public class ProtoPutOpImpl implements PutOp<byte[], byte[]>, Recycled {
     }
 
     @Override
-    public void recycle() {
+    public void close() {
         reset();
         recyclerHandle.recycle(this);
     }

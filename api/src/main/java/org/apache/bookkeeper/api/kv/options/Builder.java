@@ -20,11 +20,8 @@ package org.apache.bookkeeper.api.kv.options;
 /**
  * Builder interface.
  */
-public interface Builder<T> extends AutoCloseable {
+public interface Builder<T> {
 
     T build();
-
-    @Override
-    void close();
 
 }

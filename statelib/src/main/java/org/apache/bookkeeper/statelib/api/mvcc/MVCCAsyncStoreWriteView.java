@@ -20,16 +20,17 @@ package org.apache.bookkeeper.statelib.api.mvcc;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import org.apache.bookkeeper.api.kv.op.DeleteOp;
+import org.apache.bookkeeper.api.kv.op.IncrementOp;
+import org.apache.bookkeeper.api.kv.op.PutOp;
+import org.apache.bookkeeper.api.kv.op.TxnOp;
+import org.apache.bookkeeper.api.kv.result.DeleteResult;
+import org.apache.bookkeeper.api.kv.result.IncrementResult;
+import org.apache.bookkeeper.api.kv.result.KeyValue;
+import org.apache.bookkeeper.api.kv.result.PutResult;
+import org.apache.bookkeeper.api.kv.result.TxnResult;
 import org.apache.bookkeeper.common.annotation.InterfaceAudience.Public;
 import org.apache.bookkeeper.common.annotation.InterfaceStability.Evolving;
-import org.apache.bookkeeper.statelib.api.mvcc.op.DeleteOp;
-import org.apache.bookkeeper.statelib.api.mvcc.op.IncrementOp;
-import org.apache.bookkeeper.statelib.api.mvcc.op.PutOp;
-import org.apache.bookkeeper.statelib.api.mvcc.op.TxnOp;
-import org.apache.bookkeeper.statelib.api.mvcc.result.DeleteResult;
-import org.apache.bookkeeper.statelib.api.mvcc.result.IncrementResult;
-import org.apache.bookkeeper.statelib.api.mvcc.result.PutResult;
-import org.apache.bookkeeper.statelib.api.mvcc.result.TxnResult;
 
 /**
  * The write view of a mvcc key/value store that supports write operations, such as put and delete.
@@ -53,11 +54,11 @@ public interface MVCCAsyncStoreWriteView<K, V> {
 
     CompletableFuture<Boolean> delete(K k, V v);
 
-    CompletableFuture<List<KVRecord<K, V>>> deleteRange(K key, K endKey);
+    CompletableFuture<List<KeyValue<K, V>>> deleteRange(K key, K endKey);
 
-    CompletableFuture<KVRecord<K, V>> vDelete(K k, long expectedVersion);
+    CompletableFuture<KeyValue<K, V>> vDelete(K k, long expectedVersion);
 
-    CompletableFuture<KVRecord<K, V>> rDelete(K k, long expectedRevision);
+    CompletableFuture<KeyValue<K, V>> rDelete(K k, long expectedRevision);
 
     CompletableFuture<PutResult<K, V>> put(PutOp<K, V> op);
 

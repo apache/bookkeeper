@@ -20,10 +20,8 @@ package org.apache.bookkeeper.statelib.impl.mvcc.op.proto;
 import io.netty.util.Recycler;
 import io.netty.util.Recycler.Handle;
 import lombok.RequiredArgsConstructor;
-import org.apache.bookkeeper.common.util.Recycled;
-import org.apache.bookkeeper.statelib.api.mvcc.op.IncrementOp;
-import org.apache.bookkeeper.statelib.api.mvcc.op.OpType;
-import org.apache.bookkeeper.statelib.impl.Constants;
+import org.apache.bookkeeper.api.kv.op.IncrementOp;
+import org.apache.bookkeeper.api.kv.op.OpType;
 import org.apache.bookkeeper.statestore.proto.Command;
 import org.apache.bookkeeper.statestore.proto.IncrementRequest;
 
@@ -31,11 +29,11 @@ import org.apache.bookkeeper.statestore.proto.IncrementRequest;
  * A protobuf encoded increment operation.
  */
 @RequiredArgsConstructor
-public class ProtoIncrementOpImpl implements IncrementOp<byte[], byte[]>, Recycled {
+public class ProtoIncrementOpImpl implements IncrementOp<byte[], byte[]> {
 
-    public static ProtoIncrementOpImpl newIncrementOp(long revision, Command command) {
+    public static ProtoIncrementOpImpl newIncrementOp(Command command) {
         ProtoIncrementOpImpl op = RECYCLER.get();
-        op.setCommand(revision, command);
+        op.setCommand(command);
         return op;
     }
 
@@ -49,22 +47,19 @@ public class ProtoIncrementOpImpl implements IncrementOp<byte[], byte[]>, Recycl
     private final Handle<ProtoIncrementOpImpl> recyclerHandle;
     private IncrementRequest req;
     private byte[] key;
-    private long revision;
 
     @Override
     public long amount() {
         return req.getAmount();
     }
 
-    public void setCommand(long revision, Command command) {
+    public void setCommand(Command command) {
         this.req = command.getIncrReq();
-        this.revision = revision;
     }
-
 
     @Override
     public OpType type() {
-        return OpType.PUT;
+        return OpType.INCREMENT;
     }
 
     @Override
@@ -76,19 +71,13 @@ public class ProtoIncrementOpImpl implements IncrementOp<byte[], byte[]>, Recycl
         return key;
     }
 
-    @Override
-    public long revision() {
-        return revision;
-    }
-
     void reset() {
         req = null;
         key = null;
-        revision = Constants.INVALID_REVISION;
     }
 
     @Override
-    public void recycle() {
+    public void close() {
         reset();
         recyclerHandle.recycle(this);
     }

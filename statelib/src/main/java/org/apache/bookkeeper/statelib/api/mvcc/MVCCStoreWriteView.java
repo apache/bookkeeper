@@ -18,14 +18,14 @@
 
 package org.apache.bookkeeper.statelib.api.mvcc;
 
-import org.apache.bookkeeper.statelib.api.mvcc.op.DeleteOp;
-import org.apache.bookkeeper.statelib.api.mvcc.op.IncrementOp;
-import org.apache.bookkeeper.statelib.api.mvcc.op.PutOp;
-import org.apache.bookkeeper.statelib.api.mvcc.op.TxnOp;
-import org.apache.bookkeeper.statelib.api.mvcc.result.DeleteResult;
-import org.apache.bookkeeper.statelib.api.mvcc.result.IncrementResult;
-import org.apache.bookkeeper.statelib.api.mvcc.result.PutResult;
-import org.apache.bookkeeper.statelib.api.mvcc.result.TxnResult;
+import org.apache.bookkeeper.api.kv.op.DeleteOp;
+import org.apache.bookkeeper.api.kv.op.IncrementOp;
+import org.apache.bookkeeper.api.kv.op.PutOp;
+import org.apache.bookkeeper.api.kv.op.TxnOp;
+import org.apache.bookkeeper.api.kv.result.DeleteResult;
+import org.apache.bookkeeper.api.kv.result.IncrementResult;
+import org.apache.bookkeeper.api.kv.result.PutResult;
+import org.apache.bookkeeper.api.kv.result.TxnResult;
 
 /**
  * The write view of a mvcc key/value store that supports write operations, such as put and delete.
@@ -35,13 +35,13 @@ import org.apache.bookkeeper.statelib.api.mvcc.result.TxnResult;
  */
 public interface MVCCStoreWriteView<K, V> {
 
-    PutResult<K, V> put(PutOp<K, V> op);
+    PutResult<K, V> put(long revision, PutOp<K, V> op);
 
-    DeleteResult<K, V> delete(DeleteOp<K, V> op);
+    DeleteResult<K, V> delete(long revision, DeleteOp<K, V> op);
 
-    TxnResult<K, V> txn(TxnOp<K, V> op);
+    TxnResult<K, V> txn(long revision, TxnOp<K, V> op);
 
-    IncrementResult<K, V> increment(IncrementOp<K, V> op);
+    IncrementResult<K, V> increment(long revision, IncrementOp<K, V> op);
 
 
 }

@@ -30,20 +30,20 @@ import static org.apache.bookkeeper.stream.storage.impl.kv.TableStoreUtils.proce
 import com.google.protobuf.ByteString;
 import java.util.concurrent.CompletableFuture;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.bookkeeper.api.kv.op.DeleteOp;
+import org.apache.bookkeeper.api.kv.op.IncrementOp;
+import org.apache.bookkeeper.api.kv.op.Op;
+import org.apache.bookkeeper.api.kv.op.PutOp;
+import org.apache.bookkeeper.api.kv.op.RangeOp;
+import org.apache.bookkeeper.api.kv.op.TxnOp;
+import org.apache.bookkeeper.api.kv.op.TxnOpBuilder;
+import org.apache.bookkeeper.api.kv.options.RangeOptionBuilder;
+import org.apache.bookkeeper.api.kv.result.DeleteResult;
+import org.apache.bookkeeper.api.kv.result.IncrementResult;
+import org.apache.bookkeeper.api.kv.result.PutResult;
+import org.apache.bookkeeper.api.kv.result.RangeResult;
+import org.apache.bookkeeper.api.kv.result.TxnResult;
 import org.apache.bookkeeper.statelib.api.mvcc.MVCCAsyncStore;
-import org.apache.bookkeeper.statelib.api.mvcc.op.DeleteOp;
-import org.apache.bookkeeper.statelib.api.mvcc.op.IncrementOp;
-import org.apache.bookkeeper.statelib.api.mvcc.op.Op;
-import org.apache.bookkeeper.statelib.api.mvcc.op.PutOp;
-import org.apache.bookkeeper.statelib.api.mvcc.op.RangeOp;
-import org.apache.bookkeeper.statelib.api.mvcc.op.RangeOpBuilder;
-import org.apache.bookkeeper.statelib.api.mvcc.op.TxnOp;
-import org.apache.bookkeeper.statelib.api.mvcc.op.TxnOpBuilder;
-import org.apache.bookkeeper.statelib.api.mvcc.result.DeleteResult;
-import org.apache.bookkeeper.statelib.api.mvcc.result.IncrementResult;
-import org.apache.bookkeeper.statelib.api.mvcc.result.PutResult;
-import org.apache.bookkeeper.statelib.api.mvcc.result.RangeResult;
-import org.apache.bookkeeper.statelib.api.mvcc.result.TxnResult;
 import org.apache.bookkeeper.stream.proto.kv.rpc.Compare;
 import org.apache.bookkeeper.stream.proto.kv.rpc.DeleteRangeRequest;
 import org.apache.bookkeeper.stream.proto.kv.rpc.IncrementRequest;
@@ -86,7 +86,7 @@ public class TableStoreImpl implements TableStore {
                         result);
                     return rangeResp;
                 } finally {
-                    result.recycle();
+                    result.close();
                 }
             })
             .thenApply(rangeResp -> StorageContainerResponse.newBuilder()
@@ -103,7 +103,8 @@ public class TableStoreImpl implements TableStore {
 
     private CompletableFuture<RangeResult<byte[], byte[]>> range(RangeRequest request) {
         RangeOp<byte[], byte[]> op = buildRangeOp(request.getHeader(), request);
-        return store.range(op);
+        return store.range(op)
+            .whenComplete((rangeResult, throwable) -> op.close());
     }
 
     private RangeOp<byte[], byte[]> buildRangeOp(RoutingHeader header, RangeRequest request) {
@@ -115,27 +116,30 @@ public class TableStoreImpl implements TableStore {
         if (null != lEndKey && lEndKey.size() > 0) {
             storeEndKey = newStoreKey(rKey, lEndKey);
         }
-        RangeOpBuilder<byte[], byte[]> rangeOpBuilder = store.getOpFactory().buildRangeOp()
-            .key(storeKey)
-            .nullableEndKey(storeEndKey)
-            .isRangeOp(null != storeEndKey);
 
+        RangeOptionBuilder<byte[]> optionBuilder = store.getOpFactory().optionFactory().newRangeOption();
         if (request.getLimit() > 0) {
-            rangeOpBuilder = rangeOpBuilder.limit(request.getLimit());
+            optionBuilder.limit(request.getLimit());
         }
         if (request.getMaxCreateRevision() > 0) {
-            rangeOpBuilder = rangeOpBuilder.maxCreateRev(request.getMaxCreateRevision());
+            optionBuilder.maxCreateRev(request.getMaxCreateRevision());
         }
         if (request.getMaxModRevision() > 0) {
-            rangeOpBuilder = rangeOpBuilder.maxModRev(request.getMaxModRevision());
+            optionBuilder.maxModRev(request.getMaxModRevision());
         }
         if (request.getMinCreateRevision() > 0) {
-            rangeOpBuilder = rangeOpBuilder.minCreateRev(request.getMinCreateRevision());
+            optionBuilder.minCreateRev(request.getMinCreateRevision());
         }
         if (request.getMinModRevision() > 0) {
-            rangeOpBuilder = rangeOpBuilder.minModRev(request.getMinModRevision());
+            optionBuilder.minModRev(request.getMinModRevision());
         }
-        return rangeOpBuilder.build();
+        if (null != storeEndKey) {
+            optionBuilder.endKey(storeEndKey);
+        }
+
+        return store.getOpFactory().newRange(
+            storeKey,
+            optionBuilder.build());
     }
 
     @Override
@@ -149,7 +153,7 @@ public class TableStoreImpl implements TableStore {
                         putReq.getHeader(),
                         result);
                 } finally {
-                    result.recycle();
+                    result.close();
                 }
             })
             .thenApply(putResp -> StorageContainerResponse.newBuilder()
@@ -166,18 +170,20 @@ public class TableStoreImpl implements TableStore {
 
     private CompletableFuture<PutResult<byte[], byte[]>> put(PutRequest request) {
         PutOp<byte[], byte[]> op = buildPutOp(request.getHeader(), request);
-        return store.put(op);
+        return store.put(op)
+            .whenComplete((putResult, throwable) -> op.close());
     }
 
     private PutOp<byte[], byte[]> buildPutOp(RoutingHeader header, PutRequest request) {
         ByteString rKey = header.getRKey();
         ByteString lKey = request.getKey();
         byte[] storeKey = newStoreKey(rKey, lKey);
-        return store.getOpFactory().buildPutOp()
-            .key(storeKey)
-            .value(request.getValue().toByteArray())
-            .prevKV(request.getPrevKv())
-            .build();
+        return store.getOpFactory().newPut(
+            storeKey,
+            request.getValue().toByteArray(),
+            store.getOpFactory().optionFactory().newPutOption()
+                .prevKv(request.getPrevKv())
+                .build());
     }
 
     @Override
@@ -191,7 +197,7 @@ public class TableStoreImpl implements TableStore {
                         incrementReq.getHeader(),
                         result);
                 } finally {
-                    result.recycle();
+                    result.close();
                 }
             })
             .thenApply(incrementResp -> StorageContainerResponse.newBuilder()
@@ -208,17 +214,17 @@ public class TableStoreImpl implements TableStore {
 
     private CompletableFuture<IncrementResult<byte[], byte[]>> increment(IncrementRequest request) {
         IncrementOp<byte[], byte[]> op = buildIncrementOp(request.getHeader(), request);
-        return store.increment(op);
+        return store.increment(op)
+            .whenComplete((incrementResult, throwable) -> op.close());
     }
 
     private IncrementOp<byte[], byte[]> buildIncrementOp(RoutingHeader header, IncrementRequest request) {
         ByteString rKey = header.getRKey();
         ByteString lKey = request.getKey();
         byte[] storeKey = newStoreKey(rKey, lKey);
-        return store.getOpFactory().buildIncrementOp()
-            .key(storeKey)
-            .amount(request.getAmount())
-            .build();
+        return store.getOpFactory().newIncrement(
+            storeKey,
+            request.getAmount());
     }
 
     @Override
@@ -232,7 +238,7 @@ public class TableStoreImpl implements TableStore {
                         deleteReq.getHeader(),
                         result);
                 } finally {
-                    result.recycle();
+                    result.close();
                 }
             })
             .thenApply(deleteResp -> StorageContainerResponse.newBuilder()
@@ -246,7 +252,8 @@ public class TableStoreImpl implements TableStore {
 
     private CompletableFuture<DeleteResult<byte[], byte[]>> delete(DeleteRangeRequest request) {
         DeleteOp<byte[], byte[]> op = buildDeleteOp(request.getHeader(), request);
-        return store.delete(op);
+        return store.delete(op)
+            .whenComplete((deleteResult, throwable) -> op.close());
     }
 
     private DeleteOp<byte[], byte[]> buildDeleteOp(RoutingHeader header, DeleteRangeRequest request) {
@@ -258,12 +265,12 @@ public class TableStoreImpl implements TableStore {
         if (null != lEndKey && lEndKey.size() > 0) {
             storeEndKey = newStoreKey(rKey, lEndKey);
         }
-        return store.getOpFactory().buildDeleteOp()
-            .key(storeKey)
-            .nullableEndKey(storeEndKey)
-            .isRangeOp(null != storeEndKey)
-            .prevKV(request.getPrevKv())
-            .build();
+        return store.getOpFactory().newDelete(
+            storeKey,
+            store.getOpFactory().optionFactory().newDeleteOption()
+                .prevKv(request.getPrevKv())
+                .endKey(storeEndKey)
+                .build());
     }
 
     @Override
@@ -282,7 +289,7 @@ public class TableStoreImpl implements TableStore {
                         .setKvTxnResp(txnResponse)
                         .build();
                 } finally {
-                    txnResult.recycle();
+                    txnResult.close();
                 }
             })
             .exceptionally(cause -> StorageContainerResponse.newBuilder()
@@ -292,20 +299,21 @@ public class TableStoreImpl implements TableStore {
 
     private CompletableFuture<TxnResult<byte[], byte[]>> txn(TxnRequest request) {
         TxnOp<byte[], byte[]> op = buildTxnOp(request);
-        return store.txn(op);
+        return store.txn(op)
+            .whenComplete((txnResult, throwable) -> op.close());
     }
 
     private TxnOp<byte[], byte[]> buildTxnOp(TxnRequest request) {
         RoutingHeader header = request.getHeader();
-        TxnOpBuilder<byte[], byte[]> txnBuilder = store.getOpFactory().buildTxnOp();
+        TxnOpBuilder<byte[], byte[]> txnBuilder = store.getOpFactory().newTxn();
         for (RequestOp requestOp : request.getSuccessList()) {
-            txnBuilder.addSuccessOps(buildTxnOp(header, requestOp));
+            txnBuilder.Then(buildTxnOp(header, requestOp));
         }
         for (RequestOp requestOp : request.getFailureList()) {
-            txnBuilder.addFailureOps(buildTxnOp(header, requestOp));
+            txnBuilder.Else(buildTxnOp(header, requestOp));
         }
         for (Compare compare : request.getCompareList()) {
-            txnBuilder.addCompareOps(fromProtoCompare(store.getOpFactory(), header, compare));
+            txnBuilder.If(fromProtoCompare(store.getOpFactory(), header, compare));
         }
         return txnBuilder.build();
     }
