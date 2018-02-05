@@ -30,6 +30,7 @@ freeStyleJob('bookkeeper_precommit_integrationtests') {
         120)
 
     steps {
+        shell('docker system events > docker.log &')
         // Build everything
         maven {
             // Set Maven parameters.
@@ -51,6 +52,7 @@ freeStyleJob('bookkeeper_precommit_integrationtests') {
         archiveArtifacts {
 	  allowEmpty(true)
             pattern('**/target/container-logs/**')
+	    pattern('docker.log')
         }
         archiveJunit('**/surefire-reports/TEST-*.xml')
     }
