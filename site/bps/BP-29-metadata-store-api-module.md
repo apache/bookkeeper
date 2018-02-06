@@ -1,8 +1,8 @@
 ---
 title: "BP-29: Metadata API module"
 issue: https://github.com/apache/bookkeeper/<issue-number>
-state: 'Under Discussion'
-release: "x.y.z"
+state: 'Accepted'
+release: "N/A"
 ---
 
 ### Motivation
