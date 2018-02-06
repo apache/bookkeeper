@@ -43,6 +43,7 @@ import org.mockito.stubbing.Answer;
  */
 public class TestStorageContainerResponseHandler {
 
+    @SuppressWarnings("unchecked")
     @Test
     public void testSuccessResponse() {
         StreamObserver<StorageContainerResponse> observer =
@@ -57,6 +58,7 @@ public class TestStorageContainerResponseHandler {
         verify(observer, times(0)).onError(any());
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     public void testStatusRuntimeException() {
         StreamObserver<StorageContainerResponse> observer =
@@ -69,6 +71,7 @@ public class TestStorageContainerResponseHandler {
         verify(observer, times(1)).onError(exception);
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     public void testStatusException() {
         StreamObserver<StorageContainerResponse> observer =
@@ -81,6 +84,7 @@ public class TestStorageContainerResponseHandler {
         verify(observer, times(1)).onError(exception);
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     public void testInternalError() throws Exception {
         StreamObserver<StorageContainerResponse> observer =

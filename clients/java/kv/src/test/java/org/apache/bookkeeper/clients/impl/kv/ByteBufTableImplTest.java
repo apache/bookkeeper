@@ -46,6 +46,7 @@ public class ByteBufTableImplTest {
     private ByteBufTableImpl table;
     private OptionFactory<ByteBuf> optionFactory;
 
+    @SuppressWarnings("unchecked")
     @Before
     public void setup() {
         pTable = mock(PTable.class);

@@ -104,6 +104,7 @@ public class TestStorageServerClientManagerImpl extends GrpcClientTestBase {
         assertEquals(props, client.getStreamProps());
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     public void testGetLocationClient() throws Exception {
         LocationClient lc = serverManager.getLocationClient();

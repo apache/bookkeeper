@@ -47,6 +47,7 @@ import org.apache.bookkeeper.clients.impl.internal.api.StorageServerClientManage
 import org.apache.bookkeeper.clients.impl.routing.RangeRouter;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.common.router.ByteBufHashRouter;
+import org.apache.bookkeeper.stream.proto.RangeProperties;
 import org.apache.bookkeeper.stream.proto.StreamProperties;
 
 /**
@@ -61,17 +62,17 @@ public class PByteBufTableImpl implements PTable<ByteBuf, ByteBuf> {
     private static class FailRequestTxn implements Txn<ByteBuf, ByteBuf> {
 
         @Override
-        public Txn<ByteBuf, ByteBuf> If(CompareOp<ByteBuf, ByteBuf>... cmps) {
+        public Txn<ByteBuf, ByteBuf> If(CompareOp... cmps) {
             return this;
         }
 
         @Override
-        public Txn<ByteBuf, ByteBuf> Then(Op<ByteBuf, ByteBuf>... ops) {
+        public Txn<ByteBuf, ByteBuf> Then(Op... ops) {
             return this;
         }
 
         @Override
-        public Txn<ByteBuf, ByteBuf> Else(Op<ByteBuf, ByteBuf>... ops) {
+        public Txn<ByteBuf, ByteBuf> Else(Op... ops) {
             return this;
         }
 
@@ -141,7 +142,7 @@ public class PByteBufTableImpl implements PTable<ByteBuf, ByteBuf> {
     private final StreamProperties props;
     private final StorageServerClientManager clientManager;
     private final ScheduledExecutorService executor;
-    private final TableRangeFactory trFactory;
+    private final TableRangeFactory<ByteBuf, ByteBuf> trFactory;
     private final PTable<ByteBuf, ByteBuf> failRequestTable;
 
     // States
@@ -158,14 +159,24 @@ public class PByteBufTableImpl implements PTable<ByteBuf, ByteBuf> {
             props,
             clientManager,
             executor,
-            (streamProps, rangeProps, scheduler, opFactory, resultFactory, kvFactory) -> new PByteBufTableRangeImpl(
-                streamProps.getStreamId(),
-                rangeProps,
-                clientManager.getStorageContainerChannel(rangeProps.getStorageContainerId()),
-                executor,
-                opFactory,
-                resultFactory,
-                kvFactory),
+            new TableRangeFactory<ByteBuf, ByteBuf>() {
+                @Override
+                public PTable<ByteBuf, ByteBuf> openTableRange(StreamProperties streamProps,
+                                                               RangeProperties rangeProps,
+                                                               ScheduledExecutorService executor,
+                                                               OpFactory<ByteBuf, ByteBuf> opFactory,
+                                                               ResultFactory<ByteBuf, ByteBuf> resultFactory,
+                                                               KeyValueFactory<ByteBuf, ByteBuf> kvFactory) {
+                    return new PByteBufTableRangeImpl(
+                        streamProps.getStreamId(),
+                        rangeProps,
+                        clientManager.getStorageContainerChannel(rangeProps.getStorageContainerId()),
+                        executor,
+                        opFactory,
+                        resultFactory,
+                        kvFactory);
+                }
+            },
             Optional.empty());
     }
 
@@ -173,7 +184,7 @@ public class PByteBufTableImpl implements PTable<ByteBuf, ByteBuf> {
                              StreamProperties props,
                              StorageServerClientManager clientManager,
                              ScheduledExecutorService executor,
-                             TableRangeFactory factory,
+                             TableRangeFactory<ByteBuf, ByteBuf> factory,
                              Optional<RangeRouter<ByteBuf>> rangeRouterOverride) {
         this.streamName = streamName;
         this.props = props;
@@ -199,8 +210,8 @@ public class PByteBufTableImpl implements PTable<ByteBuf, ByteBuf> {
         return tableRanges;
     }
 
-    private PTable getTableRange(Long range) {
-        PTable tRange = tableRanges.get(range);
+    private PTable<ByteBuf, ByteBuf> getTableRange(Long range) {
+        PTable<ByteBuf, ByteBuf> tRange = tableRanges.get(range);
         // TODO: we need logic to handle scale/repartitioning
         if (null == tRange) {
             return failRequestTable;
@@ -233,7 +244,8 @@ public class PByteBufTableImpl implements PTable<ByteBuf, ByteBuf> {
             if (tableRanges.containsKey(range.getRangeId())) {
                 return;
             }
-            PTable tableRange = trFactory.openTableRange(props, range, executor, opFactory, resultFactory, kvFactory);
+            PTable<ByteBuf, ByteBuf> tableRange =
+                trFactory.openTableRange(props, range, executor, opFactory, resultFactory, kvFactory);
             if (log.isInfoEnabled()) {
                 log.info("Create table range client for range {}", range.getRangeId());
             }
@@ -266,7 +278,7 @@ public class PByteBufTableImpl implements PTable<ByteBuf, ByteBuf> {
     public CompletableFuture<PutResult<ByteBuf, ByteBuf>> put(ByteBuf pKey,
                                                               ByteBuf lKey,
                                                               ByteBuf value,
-                                                              PutOption option) {
+                                                              PutOption<ByteBuf> option) {
         Long range = rangeRouter.getRange(pKey);
         return getTableRange(range).put(pKey, lKey, value, option);
     }

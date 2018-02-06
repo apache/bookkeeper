@@ -193,6 +193,7 @@ public class TestRangeStoreImpl {
             .build();
     }
 
+    @SuppressWarnings("unchecked")
     @Before
     public void setUp() throws Exception {
         storageResources = StorageResources.create();

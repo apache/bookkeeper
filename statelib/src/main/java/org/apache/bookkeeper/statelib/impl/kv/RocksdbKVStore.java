@@ -212,6 +212,7 @@ public class RocksdbKVStore<K, V> implements KVStore<K, V> {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public synchronized void init(StateStoreSpec spec) throws StateStoreException {
         checkNotNull(spec.getLocalStateStoreDir(),
             "local state store directory is not configured");

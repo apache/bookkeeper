@@ -109,7 +109,7 @@ class PByteBufTableRangeImpl implements PTable<ByteBuf, ByteBuf> {
     public CompletableFuture<PutResult<ByteBuf, ByteBuf>> put(ByteBuf pKey,
                                                               ByteBuf lKey,
                                                               ByteBuf value,
-                                                              PutOption option) {
+                                                              PutOption<ByteBuf> option) {
         pKey.retain();
         lKey.retain();
         value.retain();
@@ -209,8 +209,9 @@ class PByteBufTableRangeImpl implements PTable<ByteBuf, ByteBuf> {
             this.resourcesToRelease = Lists.newArrayList();
         }
 
+        @SuppressWarnings("unchecked")
         @Override
-        public Txn<ByteBuf, ByteBuf> If(CompareOp<ByteBuf, ByteBuf>... cmps) {
+        public Txn<ByteBuf, ByteBuf> If(CompareOp... cmps) {
             for (CompareOp<ByteBuf, ByteBuf> cmp : cmps) {
                 txnBuilder.addCompare(toProtoCompare(cmp));
                 resourcesToRelease.add(cmp);
@@ -218,8 +219,9 @@ class PByteBufTableRangeImpl implements PTable<ByteBuf, ByteBuf> {
             return this;
         }
 
+        @SuppressWarnings("unchecked")
         @Override
-        public Txn<ByteBuf, ByteBuf> Then(Op<ByteBuf, ByteBuf>... ops) {
+        public Txn<ByteBuf, ByteBuf> Then(Op... ops) {
             for (Op<ByteBuf, ByteBuf> op : ops) {
                 txnBuilder.addSuccess(toProtoRequest(op));
                 resourcesToRelease.add(op);
@@ -227,8 +229,9 @@ class PByteBufTableRangeImpl implements PTable<ByteBuf, ByteBuf> {
             return this;
         }
 
+        @SuppressWarnings("unchecked")
         @Override
-        public Txn<ByteBuf, ByteBuf> Else(Op<ByteBuf, ByteBuf>... ops) {
+        public Txn<ByteBuf, ByteBuf> Else(Op... ops) {
             for (Op<ByteBuf, ByteBuf> op : ops) {
                 txnBuilder.addFailure(toProtoRequest(op));
                 resourcesToRelease.add(op);

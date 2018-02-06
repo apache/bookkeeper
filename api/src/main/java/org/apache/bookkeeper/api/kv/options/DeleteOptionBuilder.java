@@ -20,7 +20,7 @@ package org.apache.bookkeeper.api.kv.options;
 /**
  * Builder to build {@link DeleteOption}.
  */
-public interface DeleteOptionBuilder<K> extends Builder<DeleteOption> {
+public interface DeleteOptionBuilder<K> extends Builder<DeleteOption<K>> {
 
     DeleteOptionBuilder<K> endKey(K key);
 

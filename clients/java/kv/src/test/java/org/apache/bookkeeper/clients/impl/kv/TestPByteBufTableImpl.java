@@ -142,12 +142,13 @@ public class TestPByteBufTableImpl {
         }
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     public void testBasicOperations() throws Exception {
         when(mockMetaRangeClient.getActiveDataRanges())
             .thenReturn(FutureUtils.value(streamRanges1));
 
-        ConcurrentMap<Long, PTable> tableRanges = Maps.newConcurrentMap();
+        ConcurrentMap<Long, PTable<ByteBuf, ByteBuf>> tableRanges = Maps.newConcurrentMap();
         for (RangeProperties rangeProps : streamRanges1.getRanges().values()) {
             tableRanges.put(rangeProps.getRangeId(), mock(PTable.class));
         }
@@ -160,7 +161,7 @@ public class TestPByteBufTableImpl {
                 return Bytes.toLong(keyData, 0);
             });
 
-        TableRangeFactory trFactory =
+        TableRangeFactory<ByteBuf, ByteBuf> trFactory =
             (streamProps1, rangeProps, executor, opFactory, resultFactory, kvFactory)
                 -> tableRanges.get(rangeProps.getRangeId());
         PByteBufTableImpl table = new PByteBufTableImpl(
@@ -184,7 +185,7 @@ public class TestPByteBufTableImpl {
                 Unpooled.wrappedBuffer(Bytes.toBytes(rangeProps.getRangeId()));
             ByteBuf lkey =
                 Unpooled.wrappedBuffer(Bytes.toBytes(rangeProps.getRangeId()));
-            try (RangeOption option = optionFactory.newRangeOption().build()) {
+            try (RangeOption<ByteBuf> option = optionFactory.newRangeOption().build()) {
                 table.get(pkey, lkey, option);
                 verify(tableRanges.get(rangeProps.getRangeId()), times(1))
                     .get(eq(pkey), eq(lkey), eq(option));
@@ -199,7 +200,7 @@ public class TestPByteBufTableImpl {
                 Unpooled.wrappedBuffer(Bytes.toBytes(rangeProps.getRangeId()));
             ByteBuf value =
                 Unpooled.wrappedBuffer(Bytes.toBytes(rangeProps.getRangeId()));
-            try (PutOption option = optionFactory.newPutOption().build()) {
+            try (PutOption<ByteBuf> option = optionFactory.newPutOption().build()) {
                 table.put(pkey, lkey, value, option);
                 verify(tableRanges.get(rangeProps.getRangeId()), times(1))
                     .put(eq(pkey), eq(lkey), eq(value), eq(option));
@@ -224,7 +225,7 @@ public class TestPByteBufTableImpl {
                 Unpooled.wrappedBuffer(Bytes.toBytes(rangeProps.getRangeId()));
             ByteBuf lkey =
                 Unpooled.wrappedBuffer(Bytes.toBytes(rangeProps.getRangeId()));
-            try (DeleteOption option = optionFactory.newDeleteOption().build()) {
+            try (DeleteOption<ByteBuf> option = optionFactory.newDeleteOption().build()) {
                 table.delete(pkey, lkey, option);
                 verify(tableRanges.get(rangeProps.getRangeId()), times(1))
                     .delete(eq(pkey), eq(lkey), eq(option));

@@ -138,6 +138,7 @@ public class TableStoreUtilsTest {
         assertEquals(StatusCode.BAD_REVISION, handleCause(ee));
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     public void testNewKeyValue() {
         long rid = System.currentTimeMillis();

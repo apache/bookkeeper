@@ -46,8 +46,9 @@ class TxnOpBuilderImpl<K, V> implements TxnOpBuilder<K, V> {
         this.txnOpRecycler = txnOpRecycler;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
-    public synchronized TxnOpBuilder<K, V> If(CompareOp<K, V>... cmps) {
+    public synchronized TxnOpBuilder<K, V> If(CompareOp... cmps) {
         if (null == compareOps) {
             compareOps = Lists.newArrayList();
         }
@@ -57,8 +58,9 @@ class TxnOpBuilderImpl<K, V> implements TxnOpBuilder<K, V> {
         return this;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
-    public synchronized TxnOpBuilder<K, V> Then(Op<K, V>... ops) {
+    public synchronized TxnOpBuilder<K, V> Then(Op... ops) {
         if (null == successOps) {
             successOps = Lists.newArrayList();
         }
@@ -68,8 +70,9 @@ class TxnOpBuilderImpl<K, V> implements TxnOpBuilder<K, V> {
         return this;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
-    public synchronized TxnOpBuilder<K, V> Else(Op<K, V>... ops) {
+    public synchronized TxnOpBuilder<K, V> Else(Op... ops) {
         if (null == failureOps) {
             failureOps = Lists.newArrayList();
         }

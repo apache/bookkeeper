@@ -146,7 +146,7 @@ public final class MVCCUtils {
 
     private static List<Compare> toCompareList(List<CompareOp<byte[], byte[]>> ops) {
         List<Compare> compares = Lists.newArrayListWithExpectedSize(ops.size());
-        for (CompareOp op : ops) {
+        for (CompareOp<byte[], byte[]> op : ops) {
             compares.add(toCompare(op));
         }
         return compares;

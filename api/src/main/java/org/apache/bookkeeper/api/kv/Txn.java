@@ -66,7 +66,7 @@ public interface Txn<K, V> {
      * passed into Else() will be executed.
      */
     // CHECKSTYLE.OFF: MethodName
-    Txn<K, V> If(CompareOp<K, V>... cmps);
+    Txn<K, V> If(CompareOp... cmps);
     // CHECKSTYLE.ON: MethodName
 
     /**
@@ -74,7 +74,7 @@ public interface Txn<K, V> {
      * comparisons passed in If() succeed.
      */
     // CHECKSTYLE.OFF: MethodName
-    Txn<K, V> Then(Op<K, V>... ops);
+    Txn<K, V> Then(Op... ops);
     // CHECKSTYLE.ON: MethodName
 
     /**
@@ -82,7 +82,7 @@ public interface Txn<K, V> {
      * comparisons passed in If() fail.
      */
     // CHECKSTYLE.OFF: MethodName
-    Txn<K, V> Else(Op<K, V>... ops);
+    Txn<K, V> Else(Op... ops);
     // CHECKSTYLE.OFF: MethodName
 
     /**

@@ -40,6 +40,7 @@ public class ByteBufTableWriterImplTest {
     private ByteBuf value;
     private ByteBufTableWriterImpl tableWriter;
 
+    @SuppressWarnings("unchecked")
     @Before
     public void setup() {
         pTableWriter = mock(PTableWriter.class);

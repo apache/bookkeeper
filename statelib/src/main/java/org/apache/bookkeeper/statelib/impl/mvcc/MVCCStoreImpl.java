@@ -719,7 +719,7 @@ class MVCCStoreImpl<K, V> extends RocksdbKVStore<K, V> implements MVCCStore<K, V
 
         // 3. process the operations
         try (WriteBatch batch = new WriteBatch()) {
-            for (Op o : operations) {
+            for (Op<K, V> o : operations) {
                 results.add(executeOp(revision, batch, o));
             }
             executeBatch(batch);

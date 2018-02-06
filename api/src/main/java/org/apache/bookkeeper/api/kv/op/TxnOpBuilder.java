@@ -28,7 +28,7 @@ public interface TxnOpBuilder<K, V> {
      * passed into Else() will be executed.
      */
     // CHECKSTYLE.OFF: MethodName
-    TxnOpBuilder<K, V> If(CompareOp<K, V>... cmps);
+    TxnOpBuilder<K, V> If(CompareOp... cmp);
     // CHECKSTYLE.ON: MethodName
 
     /**
@@ -36,7 +36,7 @@ public interface TxnOpBuilder<K, V> {
      * comparisons passed in If() succeed.
      */
     // CHECKSTYLE.OFF: MethodName
-    TxnOpBuilder<K, V> Then(Op<K, V>... ops);
+    TxnOpBuilder<K, V> Then(Op... ops);
     // CHECKSTYLE.ON: MethodName
 
     /**
@@ -44,7 +44,7 @@ public interface TxnOpBuilder<K, V> {
      * comparisons passed in If() fail.
      */
     // CHECKSTYLE.OFF: MethodName
-    TxnOpBuilder<K, V> Else(Op<K, V>... ops);
+    TxnOpBuilder<K, V> Else(Op... ops);
     // CHECKSTYLE.OFF: MethodName
 
     TxnOp<K, V> build();

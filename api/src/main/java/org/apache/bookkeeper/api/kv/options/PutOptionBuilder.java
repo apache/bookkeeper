@@ -20,7 +20,7 @@ package org.apache.bookkeeper.api.kv.options;
 /**
  * Builder to build {@link PutOption}.
  */
-public interface PutOptionBuilder<K> extends Builder<PutOption> {
+public interface PutOptionBuilder<K> extends Builder<PutOption<K>> {
 
     PutOptionBuilder<K> prevKv(boolean enabled);
 

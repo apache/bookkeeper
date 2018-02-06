@@ -51,6 +51,7 @@ public class RocksdbKVAsyncStore<K, V>
         super(localStateStoreSupplier, namespaceSupplier);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public CompletableFuture<Void> init(StateStoreSpec spec) {
         this.keyCoder = (Coder<K>) spec.getKeyCoder();

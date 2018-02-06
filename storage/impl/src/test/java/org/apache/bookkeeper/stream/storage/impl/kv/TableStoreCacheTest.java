@@ -61,6 +61,7 @@ public class TableStoreCacheTest {
         assertTrue(storeCache.getTableStoresOpening().isEmpty());
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     public void testOpenTableStoreSuccessWhenStoreIsNotCached() throws Exception {
         assertNull(storeCache.getTableStore(RID));
@@ -105,6 +106,7 @@ public class TableStoreCacheTest {
         assertSame(store, FutureUtils.result(storeCache.openTableStore(SCID, RID)));
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     public void testConcurrentOpenTableStore() throws Exception {
         MVCCAsyncStore<byte[], byte[]> mvccStore1 = mock(MVCCAsyncStore.class);

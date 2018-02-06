@@ -291,8 +291,7 @@
           <source>1.8</source>
           <target>1.8</target>
           <compilerArgs>
-            <!-- waiting https://github.com/apache/bookkeeper/issues/691 -->
-            <!--compilerArg>-Werror</compilerArg-->
+            <compilerArg>-Werror</compilerArg>
             <compilerArg>-Xlint:deprecation</compilerArg>
             <compilerArg>-Xlint:unchecked</compilerArg>
             <!-- https://issues.apache.org/jira/browse/MCOMPILER-205 -->

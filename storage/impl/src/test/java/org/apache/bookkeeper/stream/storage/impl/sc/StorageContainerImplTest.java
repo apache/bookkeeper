@@ -95,6 +95,7 @@ public class StorageContainerImplTest {
     private TableStore trStore;
     private MVCCAsyncStore<byte[], byte[]> trMvccStore;
 
+    @SuppressWarnings("unchecked")
     @Before
     public void setUp() {
         this.scheduler = OrderedScheduler.newSchedulerBuilder()
