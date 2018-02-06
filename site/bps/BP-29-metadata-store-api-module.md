@@ -51,9 +51,9 @@ uses this pattern to load different metadata driver.
 So in zookeeper based metadata implementation, the metadata service uri can be:
 
 - `zk+flat://127.0.0.1/ledgers`: the scheme is "zk+flat". it means a zookeeper base metadata implementation and it uses flat ledger manager.
-- `zk+hierarchical://127.0.0.1/ledgers`: the scheme is "zk+flat". it means a zookeeper base metadata implementation and it
+- `zk+hierarchical://127.0.0.1/ledgers`: the scheme is "zk+hierarchical". it means a zookeeper base metadata implementation and it
   uses hierarchical ledger manager.
-- `zk+longhierarchical://127.0.0.1/ledgers`: the scheme is "zk+flat". it means a zookeeper base metadata implementation and it
+- `zk+longhierarchical://127.0.0.1/ledgers`: the scheme is "zk+longhierarchical". it means a zookeeper base metadata implementation and it
   uses long hierarchical ledger manager.
 
 #### Metadata Stores
