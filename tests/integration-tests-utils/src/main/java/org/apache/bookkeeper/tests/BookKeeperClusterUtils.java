@@ -192,7 +192,13 @@ public class BookKeeperClusterUtils {
             LOG.error("Exception stopping bookie", e);
             return false;
         }
-        return waitBookieDown(docker, containerId, 5, TimeUnit.SECONDS);
+        if (waitBookieDown(docker, containerId, 5, TimeUnit.SECONDS)) {
+            LOG.error("Bookie didn't go down (deregister from zk) after 5 seconds, dumping process list");
+            DockerUtils.runCommand(docker, containerId, "ps", "-ef");
+            return true;
+        } else {
+            return false;
+        }
     }
 
     public static boolean stopAllBookies(DockerClient docker) {
