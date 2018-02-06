@@ -133,7 +133,8 @@ public class DockerUtils {
 
     public static void runCommand(DockerClient docker, String containerId, String... cmd) throws Exception {
         CompletableFuture<Boolean> future = new CompletableFuture<>();
-        String execid = docker.execCreateCmd(containerId).withCmd(cmd).exec().getId();
+        String execid = docker.execCreateCmd(containerId).withCmd(cmd)
+            .withAttachStderr(true).withAttachStdout(true).exec().getId();
         String cmdString = Arrays.stream(cmd).collect(Collectors.joining(" "));
         docker.execStartCmd(execid).withDetach(false).exec(new ResultCallback<Frame>() {
                 @Override
