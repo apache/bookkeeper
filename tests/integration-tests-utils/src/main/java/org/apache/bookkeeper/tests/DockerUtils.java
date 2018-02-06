@@ -146,7 +146,12 @@ public class DockerUtils {
 
                 @Override
                 public void onNext(Frame object) {
-                    LOG.info("DOCKER.exec({}:{}): {}", containerId, cmdString, object);
+                    LOG.info("DOCKER.exec({}:{}): DOING SOMEHTING", containerId, cmdString);
+                    try {
+                        LOG.info("DOCKER.exec({}:{}): {}", containerId, cmdString, object);
+                    } catch (Exception e) {
+                        LOG.error("DOCKER.exec eror", e);
+                    }
                 }
 
                 @Override
