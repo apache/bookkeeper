@@ -17,7 +17,7 @@
  */
 syntax = "proto3";
 
-package distributedlog.proto.common;
+package bookkeeper.proto.common;
 
 option java_multiple_files = true;
 option java_package = "org.apache.bookkeeper.stream.proto.common";

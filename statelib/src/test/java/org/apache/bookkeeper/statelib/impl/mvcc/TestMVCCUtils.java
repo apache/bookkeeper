@@ -21,7 +21,7 @@ package org.apache.bookkeeper.statelib.impl.mvcc;
 import static org.junit.Assert.assertEquals;
 
 import io.netty.buffer.ByteBuf;
-import org.apache.bookkeeper.statestore.proto.Command;
+import org.apache.bookkeeper.stream.proto.kv.store.Command;
 import org.junit.Test;
 
 /**

@@ -25,7 +25,7 @@ import lombok.ToString;
 import org.apache.bookkeeper.api.kv.op.OpType;
 import org.apache.bookkeeper.api.kv.op.RangeOp;
 import org.apache.bookkeeper.api.kv.options.RangeOption;
-import org.apache.bookkeeper.statestore.proto.RangeRequest;
+import org.apache.bookkeeper.stream.proto.kv.rpc.RangeRequest;
 
 /**
  * A protobuf encoded range operation.

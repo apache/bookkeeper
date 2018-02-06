@@ -29,7 +29,7 @@ import org.apache.bookkeeper.api.kv.impl.result.KeyValueImpl;
 import org.apache.bookkeeper.api.kv.options.RangeOption;
 import org.apache.bookkeeper.common.coder.Coder;
 import org.apache.bookkeeper.common.util.Recycled;
-import org.apache.bookkeeper.statestore.proto.ValueType;
+import org.apache.bookkeeper.stream.proto.kv.store.ValueType;
 
 /**
  * An object represents the mvcc metdata and value for a given key.

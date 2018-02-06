@@ -46,7 +46,7 @@ import org.apache.bookkeeper.statelib.api.kv.KVIterator;
 import org.apache.bookkeeper.statelib.impl.kv.RocksdbKVStore;
 import org.apache.bookkeeper.statelib.impl.rocksdb.RocksUtils;
 import org.apache.bookkeeper.statelib.impl.rocksdb.checkpoint.fs.FSCheckpointManager;
-import org.apache.bookkeeper.statestore.proto.CheckpointMetadata;
+import org.apache.bookkeeper.stream.proto.kv.store.CheckpointMetadata;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;

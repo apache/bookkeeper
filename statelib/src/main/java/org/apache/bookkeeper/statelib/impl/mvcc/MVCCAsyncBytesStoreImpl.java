@@ -39,7 +39,7 @@ import org.apache.bookkeeper.statelib.api.exceptions.InvalidStateStoreException;
 import org.apache.bookkeeper.statelib.api.mvcc.MVCCAsyncStore;
 import org.apache.bookkeeper.statelib.impl.journal.AbstractStateStoreWithJournal;
 import org.apache.bookkeeper.statelib.impl.journal.CommandProcessor;
-import org.apache.bookkeeper.statestore.proto.Command;
+import org.apache.bookkeeper.stream.proto.kv.store.Command;
 import org.apache.distributedlog.api.namespace.Namespace;
 
 /**

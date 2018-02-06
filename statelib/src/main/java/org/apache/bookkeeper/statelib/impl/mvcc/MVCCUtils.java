@@ -45,15 +45,15 @@ import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.statelib.api.exceptions.MVCCStoreException;
 import org.apache.bookkeeper.statelib.api.exceptions.StateStoreRuntimeException;
 import org.apache.bookkeeper.statelib.impl.Constants;
-import org.apache.bookkeeper.statestore.proto.Command;
-import org.apache.bookkeeper.statestore.proto.Compare;
-import org.apache.bookkeeper.statestore.proto.DeleteRequest;
-import org.apache.bookkeeper.statestore.proto.IncrementRequest;
-import org.apache.bookkeeper.statestore.proto.NopRequest;
-import org.apache.bookkeeper.statestore.proto.PutRequest;
-import org.apache.bookkeeper.statestore.proto.RangeRequest;
-import org.apache.bookkeeper.statestore.proto.RequestOp;
-import org.apache.bookkeeper.statestore.proto.TxnRequest;
+import org.apache.bookkeeper.stream.proto.kv.rpc.Compare;
+import org.apache.bookkeeper.stream.proto.kv.rpc.DeleteRangeRequest;
+import org.apache.bookkeeper.stream.proto.kv.rpc.IncrementRequest;
+import org.apache.bookkeeper.stream.proto.kv.rpc.PutRequest;
+import org.apache.bookkeeper.stream.proto.kv.rpc.RangeRequest;
+import org.apache.bookkeeper.stream.proto.kv.rpc.RequestOp;
+import org.apache.bookkeeper.stream.proto.kv.rpc.TxnRequest;
+import org.apache.bookkeeper.stream.proto.kv.store.Command;
+import org.apache.bookkeeper.stream.proto.kv.store.NopRequest;
 
 /**
  * Utils for mvcc stores.
@@ -75,7 +75,7 @@ public final class MVCCUtils {
         return reqBuilder.build();
     }
 
-    static DeleteRequest toDeleteRequest(DeleteOp<byte[], byte[]> op) {
+    static DeleteRangeRequest toDeleteRequest(DeleteOp<byte[], byte[]> op) {
         byte[] key = op.key();
         if (null == key) {
             key = Constants.NULL_START_KEY;
@@ -85,7 +85,7 @@ public final class MVCCUtils {
             endKey = Constants.NULL_END_KEY;
         }
 
-        DeleteRequest.Builder reqBuilder = DeleteRequest.newBuilder()
+        DeleteRangeRequest.Builder reqBuilder = DeleteRangeRequest.newBuilder()
             .setKey(UnsafeByteOperations.unsafeWrap(key))
             .setRangeEnd(UnsafeByteOperations.unsafeWrap(endKey));
 
@@ -123,17 +123,17 @@ public final class MVCCUtils {
             switch (op.type()) {
                 case PUT:
                     requestOps.add(RequestOp.newBuilder()
-                        .setPutOp(toPutRequest((PutOp<byte[], byte[]>) op))
+                        .setRequestPut(toPutRequest((PutOp<byte[], byte[]>) op))
                         .build());
                     break;
                 case DELETE:
                     requestOps.add(RequestOp.newBuilder()
-                        .setDeleteOp(toDeleteRequest((DeleteOp<byte[], byte[]>) op))
+                        .setRequestDeleteRange(toDeleteRequest((DeleteOp<byte[], byte[]>) op))
                         .build());
                     break;
                 case RANGE:
                     requestOps.add(RequestOp.newBuilder()
-                        .setRangeOp(toRangeRequest((RangeOp<byte[], byte[]>) op))
+                        .setRequestRange(toRangeRequest((RangeOp<byte[], byte[]>) op))
                         .build());
                     break;
                 default:

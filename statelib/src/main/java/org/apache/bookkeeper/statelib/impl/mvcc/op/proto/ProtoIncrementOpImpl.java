@@ -22,8 +22,8 @@ import io.netty.util.Recycler.Handle;
 import lombok.RequiredArgsConstructor;
 import org.apache.bookkeeper.api.kv.op.IncrementOp;
 import org.apache.bookkeeper.api.kv.op.OpType;
-import org.apache.bookkeeper.statestore.proto.Command;
-import org.apache.bookkeeper.statestore.proto.IncrementRequest;
+import org.apache.bookkeeper.stream.proto.kv.rpc.IncrementRequest;
+import org.apache.bookkeeper.stream.proto.kv.store.Command;
 
 /**
  * A protobuf encoded increment operation.

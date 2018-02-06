@@ -19,7 +19,7 @@ syntax = "proto3";
 
 import "kv.proto";
 
-package distributedlog.proto.kv.rpc;
+package bookkeeper.proto.kv.rpc;
 
 option java_multiple_files = true;
 option java_package = "org.apache.bookkeeper.stream.proto.kv.rpc";

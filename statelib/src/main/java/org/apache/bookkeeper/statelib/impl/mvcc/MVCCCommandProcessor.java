@@ -34,7 +34,7 @@ import org.apache.bookkeeper.statelib.impl.journal.CommandProcessor;
 import org.apache.bookkeeper.statelib.impl.mvcc.op.proto.ProtoDeleteOpImpl;
 import org.apache.bookkeeper.statelib.impl.mvcc.op.proto.ProtoIncrementOpImpl;
 import org.apache.bookkeeper.statelib.impl.mvcc.op.proto.ProtoPutOpImpl;
-import org.apache.bookkeeper.statestore.proto.Command;
+import org.apache.bookkeeper.stream.proto.kv.store.Command;
 
 @Slf4j
 @NoArgsConstructor(access = AccessLevel.PRIVATE)

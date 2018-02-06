@@ -25,7 +25,7 @@ import lombok.ToString;
 import org.apache.bookkeeper.api.kv.op.DeleteOp;
 import org.apache.bookkeeper.api.kv.op.OpType;
 import org.apache.bookkeeper.api.kv.options.DeleteOption;
-import org.apache.bookkeeper.statestore.proto.DeleteRequest;
+import org.apache.bookkeeper.stream.proto.kv.rpc.DeleteRangeRequest;
 
 /**
  * A protobuf encoded delete operation.
@@ -34,7 +34,7 @@ import org.apache.bookkeeper.statestore.proto.DeleteRequest;
 @ToString(exclude = "recyclerHandle")
 public class ProtoDeleteOpImpl implements DeleteOp<byte[], byte[]>, DeleteOption<byte[]> {
 
-    public static ProtoDeleteOpImpl newDeleteOp(DeleteRequest req) {
+    public static ProtoDeleteOpImpl newDeleteOp(DeleteRangeRequest req) {
         ProtoDeleteOpImpl op = RECYCLER.get();
         op.setCommand(req);
         return op;
@@ -48,7 +48,7 @@ public class ProtoDeleteOpImpl implements DeleteOp<byte[], byte[]>, DeleteOption
     };
 
     private final Handle<ProtoDeleteOpImpl> recyclerHandle;
-    private DeleteRequest req;
+    private DeleteRangeRequest req;
     private byte[] key;
     private byte[] endKey;
 
@@ -58,7 +58,7 @@ public class ProtoDeleteOpImpl implements DeleteOp<byte[], byte[]>, DeleteOption
         endKey = null;
     }
 
-    private void setCommand(DeleteRequest req) {
+    private void setCommand(DeleteRangeRequest req) {
         this.req = req;
     }
 

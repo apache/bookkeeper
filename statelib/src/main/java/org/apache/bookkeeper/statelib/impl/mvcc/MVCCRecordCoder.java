@@ -28,7 +28,7 @@ import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import org.apache.bookkeeper.common.coder.Coder;
 import org.apache.bookkeeper.statelib.api.exceptions.StateStoreRuntimeException;
-import org.apache.bookkeeper.statestore.proto.KeyMeta;
+import org.apache.bookkeeper.stream.proto.kv.store.KeyMeta;
 
 /**
  * A coder for encoding and decoding {@link MVCCRecord}s.

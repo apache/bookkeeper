@@ -29,7 +29,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.statelib.api.checkpoint.CheckpointStore;
 import org.apache.bookkeeper.statelib.api.exceptions.StateStoreException;
 import org.apache.bookkeeper.statelib.impl.rocksdb.RocksUtils;
-import org.apache.bookkeeper.statestore.proto.CheckpointMetadata;
+import org.apache.bookkeeper.stream.proto.kv.store.CheckpointMetadata;
 
 /**
  * A task that restore a rocksdb instance.

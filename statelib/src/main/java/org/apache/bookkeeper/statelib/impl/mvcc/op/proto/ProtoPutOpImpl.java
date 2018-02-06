@@ -26,8 +26,8 @@ import org.apache.bookkeeper.api.kv.op.OpType;
 import org.apache.bookkeeper.api.kv.op.PutOp;
 import org.apache.bookkeeper.api.kv.options.PutOption;
 import org.apache.bookkeeper.statelib.impl.Constants;
-import org.apache.bookkeeper.statestore.proto.Command;
-import org.apache.bookkeeper.statestore.proto.PutRequest;
+import org.apache.bookkeeper.stream.proto.kv.rpc.PutRequest;
+import org.apache.bookkeeper.stream.proto.kv.store.Command;
 
 /**
  * A protobuf encoded put operation.

@@ -30,12 +30,12 @@ import org.apache.bookkeeper.api.kv.PTableWriter;
 import org.apache.bookkeeper.api.kv.exceptions.KvApiException;
 import org.apache.bookkeeper.api.kv.result.Code;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
-import org.apache.bookkeeper.statestore.proto.Command;
-import org.apache.bookkeeper.statestore.proto.DeleteRequest;
-import org.apache.bookkeeper.statestore.proto.IncrementRequest;
-import org.apache.bookkeeper.statestore.proto.PutRequest;
 import org.apache.bookkeeper.stream.proto.RangeProperties;
 import org.apache.bookkeeper.stream.proto.StreamProperties;
+import org.apache.bookkeeper.stream.proto.kv.rpc.DeleteRangeRequest;
+import org.apache.bookkeeper.stream.proto.kv.rpc.IncrementRequest;
+import org.apache.bookkeeper.stream.proto.kv.rpc.PutRequest;
+import org.apache.bookkeeper.stream.proto.kv.store.Command;
 import org.apache.distributedlog.LogRecord;
 import org.apache.distributedlog.api.AsyncLogWriter;
 import org.apache.distributedlog.api.DistributedLogManager;
@@ -131,7 +131,7 @@ class PByteBufTableRangeWriterImpl implements PTableWriter<ByteBuf, ByteBuf> {
                 .build();
         } else {
             command = Command.newBuilder()
-                .setDeleteReq(DeleteRequest.newBuilder()
+                .setDeleteReq(DeleteRangeRequest.newBuilder()
                     .setKey(UnsafeByteOperations.unsafeWrap(storeKey.nioBuffer()))
                     .build())
                 .build();
