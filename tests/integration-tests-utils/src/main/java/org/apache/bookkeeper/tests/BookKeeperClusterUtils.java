@@ -194,7 +194,12 @@ public class BookKeeperClusterUtils {
         }
         if (waitBookieDown(docker, containerId, 5, TimeUnit.SECONDS)) {
             LOG.error("Bookie didn't go down (deregister from zk) after 5 seconds, dumping process list");
-            DockerUtils.runCommand(docker, containerId, "ps", "-ef");
+            try {
+                DockerUtils.runCommand(docker, containerId, "ps", "-ef");
+                DockerUtils.runCommand(docker, containerId, "supervisorctl", "status");
+            } catch (Exception e) {
+                LOG.error("Exception dumping container processes", e);
+            }
             return true;
         } else {
             return false;
