@@ -1153,7 +1153,7 @@ public class BookKeeperAdmin implements AutoCloseable {
             }
 
             BookKeeper bkc = new BookKeeper(new ClientConfiguration(conf));
-            bkc.ledgerManagerFactory.format(conf, bkc.regClient.getLayoutManager());
+            bkc.ledgerManagerFactory.format(conf, bkc.getMetadataClientDriver().getLayoutManager());
 
             return rm.format();
         }

@@ -67,13 +67,18 @@ public class MetadataDriversTest {
         }
 
         @Override
-        public RegistrationClient getRegistrationClient() throws MetadataException {
+        public RegistrationClient getRegistrationClient() {
             return mock(RegistrationClient.class);
         }
 
         @Override
         public LedgerManagerFactory getLedgerManagerFactory() throws MetadataException {
             return mock(LedgerManagerFactory.class);
+        }
+
+        @Override
+        public LayoutManager getLayoutManager() {
+            return mock(LayoutManager.class);
         }
 
         @Override
@@ -97,13 +102,18 @@ public class MetadataDriversTest {
         }
 
         @Override
-        public RegistrationClient getRegistrationClient() throws MetadataException {
+        public RegistrationClient getRegistrationClient() {
             return mock(RegistrationClient.class);
         }
 
         @Override
         public LedgerManagerFactory getLedgerManagerFactory() throws MetadataException {
             return mock(LedgerManagerFactory.class);
+        }
+
+        @Override
+        public LayoutManager getLayoutManager() {
+            return mock(LayoutManager.class);
         }
 
         @Override

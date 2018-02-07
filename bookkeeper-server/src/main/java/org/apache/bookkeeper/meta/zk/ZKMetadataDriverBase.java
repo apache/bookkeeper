@@ -80,6 +80,9 @@ public class ZKMetadataDriverBase implements AutoCloseable {
                 case LongHierarchicalLedgerManagerFactory.NAME:
                     ledgerManagerFactoryClass = LongHierarchicalLedgerManagerFactory.class;
                     break;
+                case org.apache.bookkeeper.meta.MSLedgerManagerFactory.NAME:
+                    ledgerManagerFactoryClass = org.apache.bookkeeper.meta.MSLedgerManagerFactory.class;
+                    break;
                 default:
                     throw new IllegalArgumentException("Unknown ledger manager type found '"
                         + schemeParts[1] + "' at uri : " + metadataServiceUri);
@@ -179,6 +182,10 @@ public class ZKMetadataDriverBase implements AutoCloseable {
             zk,
             ledgersRootPath,
             acls);
+    }
+
+    public LayoutManager getLayoutManager() {
+        return layoutManager;
     }
 
     @SneakyThrows

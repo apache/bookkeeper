@@ -82,6 +82,16 @@ public class ZKMetadataDriverBaseStaticTest {
         );
     }
 
+    @SuppressWarnings("deprecation")
+    @Test
+    public void testResolveLedgerManagerFactoryMs() {
+        assertEquals(
+            org.apache.bookkeeper.meta.MSLedgerManagerFactory.class,
+            ZKMetadataDriverBase.resolveLedgerManagerFactory(
+                URI.create("zk+ms://127.0.0.1/ledgers"))
+        );
+    }
+
     @Test
     public void testResolveLedgerManagerFactoryHierarchical() {
         assertEquals(
