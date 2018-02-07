@@ -61,7 +61,7 @@ public class ZKMetadataDriverBase implements AutoCloseable {
     }
 
     @SuppressWarnings("deprecation")
-    protected static Class<? extends LedgerManagerFactory> resolveLedgerManagerFactory(URI metadataServiceUri) {
+    public static Class<? extends LedgerManagerFactory> resolveLedgerManagerFactory(URI metadataServiceUri) {
         checkNotNull(metadataServiceUri, "Metadata service uri is null");
         String scheme = metadataServiceUri.getScheme();
         checkNotNull(scheme, "Invalid metadata service : " + metadataServiceUri);

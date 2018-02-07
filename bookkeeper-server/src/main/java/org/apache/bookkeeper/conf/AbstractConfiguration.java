@@ -235,7 +235,9 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      * Get zookeeper servers to connect.
      *
      * @return zookeeper servers
+     * @deprecated since 4.7.0
      */
+    @Deprecated
     public String getZkServers() {
         List servers = getList(ZK_SERVERS, null);
         if (null == servers || 0 == servers.size()) {
@@ -249,7 +251,9 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      *
      * @param zkServers
      *          ZooKeeper servers to connect
+     * @deprecated since 4.7.0
      */
+    @Deprecated
     public T setZkServers(String zkServers) {
         setProperty(ZK_SERVERS, zkServers);
         return getThis();
@@ -305,7 +309,9 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      *
      * @param factoryClassName
      *          Ledger Manager Factory Class Name
+     * @deprecated since 4.7.0
      */
+    @Deprecated
     public void setLedgerManagerFactoryClassName(String factoryClassName) {
         setProperty(LEDGER_MANAGER_FACTORY_CLASS, factoryClassName);
     }
@@ -315,7 +321,9 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      *
      * @param factoryClass
      *          Ledger Manager Factory Class
+     * @deprecated since 4.7.0
      */
+    @Deprecated
     public void setLedgerManagerFactoryClass(Class<? extends LedgerManagerFactory> factoryClass) {
         setProperty(LEDGER_MANAGER_FACTORY_CLASS, factoryClass.getName());
     }
@@ -324,7 +332,9 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      * Get ledger manager factory class.
      *
      * @return ledger manager factory class
+     * @deprecated since 4.7.0
      */
+    @Deprecated
     public Class<? extends LedgerManagerFactory> getLedgerManagerFactoryClass()
         throws ConfigurationException {
         return ReflectionUtils.getClass(this, LEDGER_MANAGER_FACTORY_CLASS,
@@ -336,7 +346,9 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      * Set Zk Ledgers Root Path.
      *
      * @param zkLedgersPath zk ledgers root path
+     * @deprecated since 4.7.0
      */
+    @Deprecated
     public void setZkLedgersRootPath(String zkLedgersPath) {
         setProperty(ZK_LEDGERS_ROOT_PATH, zkLedgersPath);
     }
@@ -345,7 +357,9 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      * Get Zk Ledgers Root Path.
      *
      * @return zk ledgers root path
+     * @deprecated since 4.7.0
      */
+    @Deprecated
     public String getZkLedgersRootPath() {
         return getString(ZK_LEDGERS_ROOT_PATH, "/ledgers");
     }
@@ -391,7 +405,9 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      * Get the node under which available bookies are stored.
      *
      * @return Node under which available bookies are stored.
+     * @deprecated since 4.7.0
      */
+    @Deprecated
     public String getZkAvailableBookiesPath() {
         return getZkLedgersRootPath() + "/" + AVAILABLE_NODE;
     }

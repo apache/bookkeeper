@@ -18,10 +18,12 @@
 package org.apache.bookkeeper.meta;
 
 import java.io.IOException;
+import java.net.URI;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.apache.bookkeeper.meta.LayoutManager.LedgerLayoutExistsException;
+import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
 import org.apache.bookkeeper.util.ReflectionUtils;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.zookeeper.KeeperException;
@@ -123,13 +125,20 @@ public abstract class AbstractZkLedgerManagerFactory implements LedgerManagerFac
     public static LedgerManagerFactory newLedgerManagerFactory(
         final AbstractConfiguration<?> conf, LayoutManager layoutManager)
             throws IOException, InterruptedException {
-        Class<? extends LedgerManagerFactory> factoryClass;
+
+        String metadataServiceUriStr;
         try {
-            factoryClass = conf.getLedgerManagerFactoryClass();
-        } catch (Exception e) {
-            throw new IOException("Failed to get ledger manager factory class from configuration : ", e);
+            metadataServiceUriStr = conf.getMetadataServiceUri();
+        } catch (ConfigurationException e) {
+            log.error("Failed to retrieve metadata service uri from configuration", e);
+            throw new IOException(
+                "Failed to retrieve metadata service uri from configuration", e);
         }
-        String ledgerRootPath = conf.getZkLedgersRootPath();
+        URI metadataServiceUri = URI.create(metadataServiceUriStr);
+
+        Class<? extends LedgerManagerFactory> factoryClass =
+            ZKMetadataDriverBase.resolveLedgerManagerFactory(metadataServiceUri);
+        String ledgerRootPath = metadataServiceUri.getPath();
 
         if (null == ledgerRootPath || ledgerRootPath.length() == 0) {
             throw new IOException("Empty Ledger Root Path.");
