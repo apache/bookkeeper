@@ -183,7 +183,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         DistributionSchedule.WriteSet reorderSet = repp.reorderReadSequence(
                 ensemble, getBookiesHealthInfo(), writeSet);
         LOG.info("reorder set : {}", reorderSet);
-        assertEquals(reorderSet,origWriteSet);
+        assertEquals(reorderSet, origWriteSet);
     }
 
     @Test

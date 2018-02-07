@@ -936,8 +936,8 @@ class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsemblePlacemen
         } else {
             for (int i = 0; i < ensemble.size(); i++) {
                 BookieSocketAddress bookieAddr = ensemble.get(i);
-                if ((!knownBookies.containsKey(bookieAddr) && !readOnlyBookies.contains(bookieAddr)) ||
-                    slowBookies.getIfPresent(bookieAddr) != null) {
+                if ((!knownBookies.containsKey(bookieAddr) && !readOnlyBookies.contains(bookieAddr))
+                    || slowBookies.getIfPresent(bookieAddr) != null) {
                     // Found at least one bookie not available in the ensemble, or in slowBookies
                     isAnyBookieUnavailable = true;
                     break;
