@@ -536,8 +536,11 @@ public class ZKRegistrationManager implements RegistrationManager {
 
         String availableBookiesPath = conf.getZkAvailableBookiesPath();
         boolean availableNodeExists = null != zk.exists(availableBookiesPath, false);
-        try (RegistrationClient regClient = new ZKRegistrationClient()) {
-            regClient.initialize(new ClientConfiguration(conf), null, NullStatsLogger.INSTANCE, Optional.empty());
+        try (RegistrationClient regClient = new ZKRegistrationClient(
+            zk,
+            zkLedgersRootPath,
+            null
+        )) {
             if (availableNodeExists) {
                 Collection<BookieSocketAddress> rwBookies = FutureUtils
                         .result(regClient.getWritableBookies(), EXCEPTION_FUNC).getValue();

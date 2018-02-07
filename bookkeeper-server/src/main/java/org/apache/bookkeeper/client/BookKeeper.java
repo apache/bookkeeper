@@ -32,6 +32,7 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.util.HashedWheelTimer;
 import io.netty.util.concurrent.DefaultThreadFactory;
 import java.io.IOException;
+import java.net.URI;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
@@ -63,11 +64,13 @@ import org.apache.bookkeeper.discover.ZKRegistrationClient;
 import org.apache.bookkeeper.feature.Feature;
 import org.apache.bookkeeper.feature.FeatureProvider;
 import org.apache.bookkeeper.feature.SettableFeatureProvider;
-import org.apache.bookkeeper.meta.AbstractZkLedgerManagerFactory;
 import org.apache.bookkeeper.meta.CleanupLedgerManager;
 import org.apache.bookkeeper.meta.LedgerIdGenerator;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
+import org.apache.bookkeeper.meta.MetadataClientDriver;
+import org.apache.bookkeeper.meta.MetadataDrivers;
+import org.apache.bookkeeper.meta.exceptions.MetadataException;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.net.DNSToSwitchMapping;
 import org.apache.bookkeeper.proto.BookieClient;
@@ -102,7 +105,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
 
     static final Logger LOG = LoggerFactory.getLogger(BookKeeper.class);
 
-    final RegistrationClient regClient;
+
     final EventLoopGroup eventLoopGroup;
 
     // The stats logger for this client.
@@ -142,6 +145,9 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
     // Features
     final Feature disableEnsembleChangeFeature;
 
+    final MetadataClientDriver metadataDriver;
+    // Registration client to discover bookies
+    final RegistrationClient regClient;
     // Ledger manager responsible for how to store ledger meta data
     final LedgerManagerFactory ledgerManagerFactory;
     final LedgerManager ledgerManager;
@@ -441,21 +447,22 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
         this.disableEnsembleChangeFeature =
             this.featureProvider.getFeature(conf.getDisableEnsembleChangeFeatureName());
 
-        // initialize registration client
+        // initialize metadata driver
         try {
-            Class<? extends RegistrationClient> regClientCls = conf.getRegistrationClientClass();
-            this.regClient = ReflectionUtils.newInstance(regClientCls);
-            this.regClient.initialize(
+            this.metadataDriver = MetadataDrivers.getClientDriver(
+                URI.create(conf.getMetadataServiceUri()));
+            this.metadataDriver.initialize(
                 conf,
                 scheduler,
                 statsLogger,
                 java.util.Optional.ofNullable(zkc));
+            this.regClient = this.metadataDriver.getRegistrationClient();
         } catch (ConfigurationException ce) {
-            LOG.error("Failed to initialize registration client", ce);
-            throw new IOException("Failed to initialize registration client", ce);
-        } catch (BKException be) {
-            LOG.error("Failed to initialize registration client", be);
-            throw new IOException("Failed to initialize registration client", be);
+            LOG.error("Failed to initialize metadata client driver", ce);
+            throw new IOException("Failed to initialize metadata client driver", ce);
+        } catch (MetadataException me) {
+            LOG.error("Failed to initialize metadata client driver", me);
+            throw new IOException("Failed to initialize metadata client driver", me);
         }
 
         // initialize event loop group
@@ -525,9 +532,9 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
         // initialize ledger manager
         try {
             this.ledgerManagerFactory =
-                AbstractZkLedgerManagerFactory.newLedgerManagerFactory(conf, regClient.getLayoutManager());
-        } catch (IOException | InterruptedException e) {
-            throw e;
+                this.metadataDriver.getLedgerManagerFactory();
+        } catch (MetadataException e) {
+            throw new IOException("Failed to initialize ledger manager factory", e);
         }
         this.ledgerManager = new CleanupLedgerManager(ledgerManagerFactory.newLedgerManager());
         this.ledgerIdGenerator = ledgerManagerFactory.newLedgerIdGenerator();
@@ -649,8 +656,8 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
     }
 
     @VisibleForTesting
-    public RegistrationClient getRegClient() {
-        return regClient;
+    public MetadataClientDriver getMetadataClientDriver() {
+        return metadataDriver;
     }
 
     /**
@@ -1447,6 +1454,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
             eventLoopGroup.shutdownGracefully();
         }
         this.regClient.close();
+        this.metadataDriver.close();
     }
 
     private void initOpLoggers(StatsLogger stats) {

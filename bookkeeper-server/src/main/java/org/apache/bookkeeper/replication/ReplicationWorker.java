@@ -135,7 +135,7 @@ public class ReplicationWorker implements Runnable {
         LedgerManagerFactory mFactory = AbstractZkLedgerManagerFactory
                 .newLedgerManagerFactory(
                     this.conf,
-                    bkc.getRegClient().getLayoutManager());
+                    bkc.getMetadataClientDriver().getLayoutManager());
         this.underreplicationManager = mFactory
                 .newLedgerUnderreplicationManager();
         this.admin = new BookKeeperAdmin(bkc, statsLogger);

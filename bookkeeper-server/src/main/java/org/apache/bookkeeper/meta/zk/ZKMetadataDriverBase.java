@@ -181,6 +181,10 @@ public class ZKMetadataDriverBase implements AutoCloseable {
             acls);
     }
 
+    public LayoutManager getLayoutManager() {
+        return layoutManager;
+    }
+
     @SneakyThrows
     public synchronized LedgerManagerFactory getLedgerManagerFactory()
             throws MetadataException {

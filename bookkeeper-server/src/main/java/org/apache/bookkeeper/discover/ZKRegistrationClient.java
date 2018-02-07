@@ -18,14 +18,13 @@
 
 package org.apache.bookkeeper.discover;
 
+import static org.apache.bookkeeper.util.BookKeeperConstants.AVAILABLE_NODE;
 import static org.apache.bookkeeper.util.BookKeeperConstants.READONLY;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Sets;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -34,32 +33,20 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.bookkeeper.client.BKException;
-import org.apache.bookkeeper.client.BKException.BKInterruptedException;
 import org.apache.bookkeeper.client.BKException.Code;
 import org.apache.bookkeeper.client.BKException.ZKException;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.common.util.SafeRunnable;
-import org.apache.bookkeeper.conf.ClientConfiguration;
-import org.apache.bookkeeper.meta.LayoutManager;
-import org.apache.bookkeeper.meta.ZkLayoutManager;
 import org.apache.bookkeeper.net.BookieSocketAddress;
-import org.apache.bookkeeper.stats.StatsLogger;
-import org.apache.bookkeeper.util.ZkUtils;
 import org.apache.bookkeeper.versioning.LongVersion;
 import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.versioning.Version.Occurred;
 import org.apache.bookkeeper.versioning.Versioned;
-import org.apache.bookkeeper.zookeeper.BoundExponentialBackoffRetryPolicy;
-import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
-import org.apache.zookeeper.CreateMode;
-import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.Watcher.Event.EventType;
 import org.apache.zookeeper.Watcher.Event.KeeperState;
 import org.apache.zookeeper.ZooKeeper;
-import org.apache.zookeeper.data.ACL;
 
 /**
  * ZooKeeper based {@link RegistrationClient}.
@@ -67,9 +54,9 @@ import org.apache.zookeeper.data.ACL;
 @Slf4j
 public class ZKRegistrationClient implements RegistrationClient {
 
-    private static final int ZK_CONNECT_BACKOFF_MS = 200;
+    static final int ZK_CONNECT_BACKOFF_MS = 200;
 
-    private class WatchTask
+    class WatchTask
         implements SafeRunnable,
                    Watcher,
                    BiConsumer<Versioned<Set<BookieSocketAddress>>, Throwable>,
@@ -176,92 +163,28 @@ public class ZKRegistrationClient implements RegistrationClient {
         }
     }
 
-    private ClientConfiguration conf;
-    private ZooKeeper zk = null;
-    // whether the zk handle is one we created, or is owned by whoever
-    // instantiated us
-    private boolean ownZKHandle = false;
-    private ScheduledExecutorService scheduler;
+    private final ZooKeeper zk;
+    private final ScheduledExecutorService scheduler;
     private WatchTask watchWritableBookiesTask = null;
     private WatchTask watchReadOnlyBookiesTask = null;
 
     // registration paths
-    private String bookieRegistrationPath;
-    private String bookieReadonlyRegistrationPath;
+    private final String bookieRegistrationPath;
+    private final String bookieReadonlyRegistrationPath;
 
-    // layout manager
-    private List<ACL> acls;
-    private LayoutManager layoutManager;
-
-    @Override
-    public RegistrationClient initialize(ClientConfiguration conf,
-                                         ScheduledExecutorService scheduler,
-                                         StatsLogger statsLogger,
-                                         Optional<Object> zkOptional)
-            throws BKException {
-        this.conf = conf;
+    public ZKRegistrationClient(ZooKeeper zk,
+                                String ledgersRootPath,
+                                ScheduledExecutorService scheduler) {
+        this.zk = zk;
         this.scheduler = scheduler;
 
-        this.bookieRegistrationPath = conf.getZkAvailableBookiesPath();
+        this.bookieRegistrationPath = ledgersRootPath + "/" + AVAILABLE_NODE;
         this.bookieReadonlyRegistrationPath = this.bookieRegistrationPath + "/" + READONLY;
-
-        this.acls = ZkUtils.getACLs(conf);
-
-        // construct the zookeeper
-        if (zkOptional.isPresent()
-            && zkOptional.get() instanceof ZooKeeper) {
-            // if an external zookeeper is added, use the zookeeper instance
-            this.zk = (ZooKeeper) (zkOptional.get());
-            this.ownZKHandle = false;
-        } else {
-            try {
-                this.zk = ZooKeeperClient.newBuilder()
-                    .connectString(conf.getZkServers())
-                    .sessionTimeoutMs(conf.getZkTimeout())
-                    .operationRetryPolicy(new BoundExponentialBackoffRetryPolicy(conf.getZkTimeout(),
-                        conf.getZkTimeout(), 0))
-                    .statsLogger(statsLogger)
-                    .build();
-
-                if (null == zk.exists(bookieReadonlyRegistrationPath, false)) {
-                    try {
-                        zk.create(bookieReadonlyRegistrationPath,
-                            new byte[0],
-                            acls,
-                            CreateMode.PERSISTENT);
-                    } catch (KeeperException.NodeExistsException e) {
-                        // this node is just now created by someone.
-                    }
-                }
-            } catch (IOException | KeeperException e) {
-                log.error("Failed to create zookeeper client to {}", conf.getZkServers(), e);
-                ZKException zke = new ZKException();
-                zke.fillInStackTrace();
-                throw zke;
-            } catch (InterruptedException e) {
-                throw new BKInterruptedException();
-            }
-            this.ownZKHandle = true;
-        }
-
-        // layout manager
-        this.layoutManager = new ZkLayoutManager(
-            zk,
-            conf.getZkLedgersRootPath(),
-            acls);
-
-        return this;
     }
 
     @Override
     public void close() {
-        if (ownZKHandle && null != zk) {
-            try {
-                zk.close();
-            } catch (InterruptedException e) {
-                log.warn("Interrupted on closing zookeeper client", e);
-            }
-        }
+        // no-op
     }
 
     public ZooKeeper getZk() {
@@ -368,15 +291,6 @@ public class ZKRegistrationClient implements RegistrationClient {
             newBookieAddrs.add(bookieAddr);
         }
         return newBookieAddrs;
-    }
-    @VisibleForTesting
-    public void setLayoutManager(LayoutManager layoutManager) {
-        this.layoutManager = layoutManager;
-    }
-
-    @Override
-    public LayoutManager getLayoutManager() {
-        return layoutManager;
     }
 
 }

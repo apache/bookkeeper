@@ -141,7 +141,7 @@ public class Auditor {
             LedgerManagerFactory ledgerManagerFactory = AbstractZkLedgerManagerFactory
                     .newLedgerManagerFactory(
                         conf,
-                        bkc.getRegClient().getLayoutManager());
+                        bkc.getMetadataClientDriver().getLayoutManager());
             ledgerManager = ledgerManagerFactory.newLedgerManager();
             this.bookieLedgerIndexer = new BookieLedgerIndexer(ledgerManager);
 
