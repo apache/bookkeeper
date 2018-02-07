@@ -53,11 +53,6 @@ public class ListBookiesCommand extends DiscoveryCommand {
                     regClient.getWritableBookies()
                 ).getValue()
             );
-            bookies.addAll(
-                result(
-                    regClient.getReadOnlyBookies()
-                ).getValue()
-            );
         } else if (readonly) {
             bookies.addAll(
                 result(

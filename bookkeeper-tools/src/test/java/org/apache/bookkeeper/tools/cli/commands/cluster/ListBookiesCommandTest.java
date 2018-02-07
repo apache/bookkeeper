@@ -154,7 +154,7 @@ public class ListBookiesCommandTest extends DiscoveryCommandTestBase {
 
         if (readwrite) {
             verifyPrintBookies(3181, 10,1);
-            verifyPrintBookies(4181, 10,1);
+            verifyPrintBookies(4181, 10,0);
         } else if (readonly) {
             verifyPrintBookies(3181, 10,0);
             verifyPrintBookies(4181, 10,1);
