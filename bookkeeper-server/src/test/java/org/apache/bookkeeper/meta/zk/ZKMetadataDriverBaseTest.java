@@ -37,6 +37,7 @@ import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 import java.net.URI;
 import java.util.Optional;
 import org.apache.bookkeeper.conf.ClientConfiguration;
+import org.apache.bookkeeper.meta.AbstractZkLedgerManagerFactory;
 import org.apache.bookkeeper.meta.HierarchicalLedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.stats.NullStatsLogger;
@@ -139,7 +140,7 @@ public class ZKMetadataDriverBaseTest extends ZKMetadataDriverTestBase {
         assertSame(factory, driver.getLedgerManagerFactory());
         assertSame(factory, driver.lmFactory);
         verifyStatic(LedgerManagerFactory.class, times(1));
-        LedgerManagerFactory.newLedgerManagerFactory(
+        AbstractZkLedgerManagerFactory.newLedgerManagerFactory(
             same(conf),
             same(driver.layoutManager));
 

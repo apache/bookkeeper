@@ -30,6 +30,7 @@ import org.apache.bookkeeper.client.LedgerMetadata;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.discover.RegistrationManager;
+import org.apache.bookkeeper.meta.AbstractZkLedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
@@ -96,7 +97,7 @@ public class AuditorPeriodicBookieCheckTest extends BookKeeperClusterTestCase {
     @Test
     public void testPeriodicBookieCheckInterval() throws Exception {
         bsConfs.get(0).setZkServers(zkUtil.getZooKeeperConnectString());
-        LedgerManagerFactory mFactory = LedgerManagerFactory.newLedgerManagerFactory(
+        LedgerManagerFactory mFactory = AbstractZkLedgerManagerFactory.newLedgerManagerFactory(
             bsConfs.get(0),
             RegistrationManager.instantiateRegistrationManager(bsConfs.get(0)).getLayoutManager());
 

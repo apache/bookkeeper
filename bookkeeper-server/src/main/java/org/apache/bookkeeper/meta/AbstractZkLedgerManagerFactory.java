@@ -21,6 +21,9 @@ import java.io.IOException;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.conf.AbstractConfiguration;
+import org.apache.bookkeeper.meta.LayoutManager.LedgerLayoutExistsException;
+import org.apache.bookkeeper.util.ReflectionUtils;
+import org.apache.commons.configuration.ConfigurationException;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZKUtil;
 import org.apache.zookeeper.ZooKeeper;
@@ -30,11 +33,12 @@ import org.apache.zookeeper.ZooKeeper;
  * methods such as format and validateAndNukeExistingCluster.
  */
 @Slf4j
-public abstract class AbstractZkLedgerManagerFactory extends LedgerManagerFactory {
+public abstract class AbstractZkLedgerManagerFactory implements LedgerManagerFactory {
+
     protected ZooKeeper zk;
 
     @Override
-    public void format(AbstractConfiguration conf, LayoutManager layoutManager)
+    public void format(AbstractConfiguration<?> conf, LayoutManager layoutManager)
             throws InterruptedException, KeeperException, IOException {
         try (AbstractZkLedgerManager ledgerManager = (AbstractZkLedgerManager) newLedgerManager()) {
             String ledgersRootPath = conf.getZkLedgersRootPath();
@@ -45,8 +49,17 @@ public abstract class AbstractZkLedgerManagerFactory extends LedgerManagerFactor
                 }
             }
         }
-        // Delete and recreate the LAYOUT information.
-        super.format(conf, layoutManager);
+
+        Class<? extends LedgerManagerFactory> factoryClass;
+        try {
+            factoryClass = conf.getLedgerManagerFactoryClass();
+        } catch (ConfigurationException e) {
+            throw new IOException("Failed to get ledger manager factory class from configuration : ", e);
+        }
+
+        layoutManager.deleteLedgerLayout();
+        // Create new layout information again.
+        createNewLMFactory(conf, layoutManager, factoryClass);
     }
 
     @Override
@@ -92,4 +105,153 @@ public abstract class AbstractZkLedgerManagerFactory extends LedgerManagerFactor
                 zkServers, zkLedgersRootPath);
         return true;
     }
+
+    // v1 layout
+    static final int V1 = 1;
+
+    /**
+     * Create new Ledger Manager Factory.
+     *
+     * @param conf
+     *          Configuration Object.
+     * @param layoutManager
+     *          layout manager
+     * @return new ledger manager factory
+     * @throws IOException
+     */
+    @SuppressWarnings("deprecation")
+    public static LedgerManagerFactory newLedgerManagerFactory(
+        final AbstractConfiguration<?> conf, LayoutManager layoutManager)
+            throws IOException, InterruptedException {
+        Class<? extends LedgerManagerFactory> factoryClass;
+        try {
+            factoryClass = conf.getLedgerManagerFactoryClass();
+        } catch (Exception e) {
+            throw new IOException("Failed to get ledger manager factory class from configuration : ", e);
+        }
+        String ledgerRootPath = conf.getZkLedgersRootPath();
+
+        if (null == ledgerRootPath || ledgerRootPath.length() == 0) {
+            throw new IOException("Empty Ledger Root Path.");
+        }
+
+        // if layoutManager is null, return the default ledger manager
+        if (layoutManager == null) {
+            return new FlatLedgerManagerFactory()
+                   .initialize(conf, null, FlatLedgerManagerFactory.CUR_VERSION);
+        }
+
+        LedgerManagerFactory lmFactory;
+
+        // check that the configured ledger manager is
+        // compatible with the existing layout
+        LedgerLayout layout = layoutManager.readLedgerLayout();
+
+        if (layout == null) { // no existing layout
+            lmFactory = createNewLMFactory(conf, layoutManager, factoryClass);
+            return lmFactory
+                    .initialize(conf, layoutManager, lmFactory.getCurrentVersion());
+        }
+        if (log.isDebugEnabled()) {
+            log.debug("read ledger layout {}", layout);
+        }
+
+        // there is existing layout, we need to look into the layout.
+        // handle pre V2 layout
+        if (layout.getLayoutFormatVersion() <= V1) {
+            // pre V2 layout we use type of ledger manager
+            String lmType = conf.getLedgerManagerType();
+            if (lmType != null && !layout.getManagerFactoryClass().equals(lmType)) {
+                throw new IOException("Configured layout " + lmType
+                        + " does not match existing layout "  + layout.getManagerFactoryClass());
+            }
+
+            // create the ledger manager
+            if (FlatLedgerManagerFactory.NAME.equals(layout.getManagerFactoryClass())) {
+                lmFactory = new FlatLedgerManagerFactory();
+            } else if (HierarchicalLedgerManagerFactory.NAME.equals(layout.getManagerFactoryClass())) {
+                lmFactory = new HierarchicalLedgerManagerFactory();
+            } else {
+                throw new IOException("Unknown ledger manager type: " + lmType);
+            }
+            return lmFactory.initialize(conf, layoutManager, layout.getManagerVersion());
+        }
+
+        // handle V2 layout case
+        if (factoryClass != null && !layout.getManagerFactoryClass().equals(factoryClass.getName())
+                && conf.getProperty(AbstractConfiguration.LEDGER_MANAGER_FACTORY_DISABLE_CLASS_CHECK) == null) {
+                // Disable should ONLY happen during compatibility testing.
+
+            throw new IOException("Configured layout " + factoryClass.getName()
+                                + " does not match existing layout "  + layout.getManagerFactoryClass());
+        }
+        if (factoryClass == null) {
+            // no factory specified in configuration
+            try {
+                Class<?> theCls = Class.forName(layout.getManagerFactoryClass());
+                if (!LedgerManagerFactory.class.isAssignableFrom(theCls)) {
+                    throw new IOException("Wrong ledger manager factory " + layout.getManagerFactoryClass());
+                }
+                factoryClass = theCls.asSubclass(LedgerManagerFactory.class);
+            } catch (ClassNotFoundException cnfe) {
+                throw new IOException("Failed to instantiate ledger manager factory "
+                        + layout.getManagerFactoryClass());
+            }
+        }
+        // instantiate a factory
+        lmFactory = ReflectionUtils.newInstance(factoryClass);
+        return lmFactory.initialize(conf, layoutManager, layout.getManagerVersion());
+    }
+
+    /**
+     * Creates the new layout and stores in zookeeper and returns the
+     * LedgerManagerFactory instance.
+     */
+    @SuppressWarnings("deprecation")
+    protected static LedgerManagerFactory createNewLMFactory(
+            final AbstractConfiguration conf, final LayoutManager layoutManager,
+            Class<? extends LedgerManagerFactory> factoryClass)
+            throws IOException, InterruptedException {
+
+        LedgerManagerFactory lmFactory;
+        LedgerLayout layout;
+        // use default ledger manager factory if no one provided
+        if (factoryClass == null) {
+            // for backward compatibility, check manager type
+            String lmType = conf.getLedgerManagerType();
+            if (lmType == null) {
+                factoryClass = HierarchicalLedgerManagerFactory.class;
+            } else {
+                if (FlatLedgerManagerFactory.NAME.equals(lmType)) {
+                    factoryClass = FlatLedgerManagerFactory.class;
+                } else if (HierarchicalLedgerManagerFactory.NAME.equals(lmType)) {
+                    factoryClass = HierarchicalLedgerManagerFactory.class;
+                } else if (LongHierarchicalLedgerManagerFactory.NAME.equals(lmType)) {
+                    factoryClass = LongHierarchicalLedgerManagerFactory.class;
+                } else {
+                    throw new IOException("Unknown ledger manager type: "
+                            + lmType);
+                }
+            }
+        }
+
+        lmFactory = ReflectionUtils.newInstance(factoryClass);
+
+        layout = new LedgerLayout(factoryClass.getName(),
+                lmFactory.getCurrentVersion());
+        try {
+            layoutManager.storeLedgerLayout(layout);
+        } catch (LedgerLayoutExistsException e) {
+            LedgerLayout layout2 = layoutManager.readLedgerLayout();
+            if (!layout2.equals(layout)) {
+                throw new IOException(
+                        "Contention writing to layout to zookeeper, "
+                                + " other layout " + layout2
+                                + " is incompatible with our " + "layout "
+                                + layout);
+            }
+        }
+        return lmFactory;
+    }
+
 }

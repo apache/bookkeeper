@@ -63,6 +63,7 @@ import org.apache.bookkeeper.discover.ZKRegistrationClient;
 import org.apache.bookkeeper.feature.Feature;
 import org.apache.bookkeeper.feature.FeatureProvider;
 import org.apache.bookkeeper.feature.SettableFeatureProvider;
+import org.apache.bookkeeper.meta.AbstractZkLedgerManagerFactory;
 import org.apache.bookkeeper.meta.CleanupLedgerManager;
 import org.apache.bookkeeper.meta.LedgerIdGenerator;
 import org.apache.bookkeeper.meta.LedgerManager;
@@ -521,7 +522,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
         // initialize ledger manager
         try {
             this.ledgerManagerFactory =
-                LedgerManagerFactory.newLedgerManagerFactory(conf, regClient.getLayoutManager());
+                AbstractZkLedgerManagerFactory.newLedgerManagerFactory(conf, regClient.getLayoutManager());
         } catch (IOException | InterruptedException e) {
             throw e;
         }

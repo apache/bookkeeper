@@ -39,6 +39,7 @@ import org.apache.bookkeeper.http.HttpServer;
 import org.apache.bookkeeper.http.service.HttpEndpointService;
 import org.apache.bookkeeper.http.service.HttpServiceRequest;
 import org.apache.bookkeeper.http.service.HttpServiceResponse;
+import org.apache.bookkeeper.meta.AbstractZkLedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
@@ -663,7 +664,7 @@ public class TestHttpService extends BookKeeperClusterTestCase {
 
         //2,  GET, should return success.
         // first put ledger into rereplicate. then use api to list ur ledger.
-        LedgerManagerFactory mFactory = LedgerManagerFactory.newLedgerManagerFactory(
+        LedgerManagerFactory mFactory = AbstractZkLedgerManagerFactory.newLedgerManagerFactory(
             bsConfs.get(0),
             RegistrationManager.instantiateRegistrationManager(bsConfs.get(0)).getLayoutManager());
 

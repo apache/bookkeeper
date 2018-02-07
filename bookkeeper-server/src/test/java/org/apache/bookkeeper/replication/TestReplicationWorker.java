@@ -36,6 +36,7 @@ import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.LedgerHandleAdapter;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.discover.RegistrationManager;
+import org.apache.bookkeeper.meta.AbstractZkLedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
 import org.apache.bookkeeper.net.BookieSocketAddress;
@@ -87,7 +88,7 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
         super.setUp();
         baseConf.setZkServers(zkUtil.getZooKeeperConnectString());
         // initialize urReplicationManager
-        mFactory = LedgerManagerFactory.newLedgerManagerFactory(
+        mFactory = AbstractZkLedgerManagerFactory.newLedgerManagerFactory(
             baseClientConf,
             RegistrationManager
                 .instantiateRegistrationManager(new ServerConfiguration(baseClientConf)).getLayoutManager());
@@ -416,7 +417,7 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
         baseConf.setOpenLedgerRereplicationGracePeriod("3000");
         ReplicationWorker rw = new ReplicationWorker(zkc, baseConf);
 
-        LedgerManagerFactory mFactory = LedgerManagerFactory
+        LedgerManagerFactory mFactory = AbstractZkLedgerManagerFactory
             .newLedgerManagerFactory(
                 baseClientConf,
                 RegistrationManager
@@ -483,7 +484,7 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
         ReplicationWorker rw = new ReplicationWorker(zkc, baseConf);
 
         baseClientConf.setZkServers(zkUtil.getZooKeeperConnectString());
-        LedgerManagerFactory mFactory = LedgerManagerFactory
+        LedgerManagerFactory mFactory = AbstractZkLedgerManagerFactory
             .newLedgerManagerFactory(
                 baseClientConf,
                 RegistrationManager
