@@ -927,15 +927,21 @@ class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsemblePlacemen
         boolean useRegionAware = regionAware && (!myRegion.equals(UNKNOWN_REGION));
         int ensembleSize = ensemble.size();
 
-        // If all the bookies in the write set are available, simply return the original write set,
+        // For rack aware, If all the bookies in the write set are available, simply return the original write set,
         // to avoid creating more lists
         boolean isAnyBookieUnavailable = false;
-        for (int i = 0; i < ensemble.size(); i++) {
-            BookieSocketAddress bookieAddr = ensemble.get(i);
-            if (!knownBookies.containsKey(bookieAddr) && !readOnlyBookies.contains(bookieAddr)) {
-                // Found at least one bookie not available in the ensemble
-                isAnyBookieUnavailable = true;
-                break;
+
+        if (useRegionAware || reorderReadsRandom) {
+            isAnyBookieUnavailable = true;
+        } else {
+            for (int i = 0; i < ensemble.size(); i++) {
+                BookieSocketAddress bookieAddr = ensemble.get(i);
+                if ((!knownBookies.containsKey(bookieAddr) && !readOnlyBookies.contains(bookieAddr)) ||
+                    slowBookies.getIfPresent(bookieAddr) != null) {
+                    // Found at least one bookie not available in the ensemble, or in slowBookies
+                    isAnyBookieUnavailable = true;
+                    break;
+                }
             }
         }
 
