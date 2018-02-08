@@ -134,6 +134,17 @@
           </execution>
         </executions>
       </plugin>
+      <plugin>
+        <groupId>org.jacoco</groupId>
+        <artifactId>jacoco-maven-plugin</artifactId>
+        <version>0.8.0</version>
+        <configuration>
+            <excludes>
+                <!-- this class is generated -->
+                <exclude>com/scurrilous/circe/checksum/NarSystem*</exclude>
+            </excludes>
+        </configuration>
+       </plugin>
     </plugins>
   </build>
 
