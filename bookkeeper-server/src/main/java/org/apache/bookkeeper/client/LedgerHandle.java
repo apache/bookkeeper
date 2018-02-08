@@ -651,7 +651,7 @@ public class LedgerHandle implements WriteHandle {
             return;
         }
 
-        asyncReadEntriesInternal(firstEntry, lastEntry, cb, ctx, false);
+        asyncReadEntriesInternal(firstEntry, lastEntry, cb, ctx);
     }
 
     /**
@@ -801,7 +801,7 @@ public class LedgerHandle implements WriteHandle {
             // Ledger was empty, so there is no last entry to read
             cb.readComplete(BKException.Code.NoSuchEntryException, this, null, ctx);
         } else {
-            asyncReadEntriesInternal(lastEntryId, lastEntryId, cb, ctx, true);
+            asyncReadEntriesInternal(lastEntryId, lastEntryId, cb, ctx);
         }
     }
 

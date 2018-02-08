@@ -21,17 +21,15 @@ import static org.junit.Assert.assertEquals;
 
 import java.util.Enumeration;
 import java.util.concurrent.CountDownLatch;
-
 import org.apache.bookkeeper.client.AsyncCallback.ReadCallback;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
+/**
+  * Test read next entry and the latest last add confirmed.
+  */
 public class TestReadLastEntryAsync extends BookKeeperClusterTestCase {
-
-    static final Logger logger = LoggerFactory.getLogger(TestReadLastEntryAsync.class);
 
     final DigestType digestType;
 
