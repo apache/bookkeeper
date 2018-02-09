@@ -57,7 +57,10 @@ public class TestBenchmark extends BookKeeperClusterTestCase {
         BenchBookie.main(new String[] {
                 "--host", bookie.getSocketAddress().getHostName(),
                 "--port", String.valueOf(bookie.getPort()),
-                "--zookeeper", zkUtil.getZooKeeperConnectString()
+                "--zookeeper", zkUtil.getZooKeeperConnectString(),
+                "--warmupCount", "10",
+                "--latencyCount", "100",
+                "--throughputCount", "100"
                 });
     }
 
