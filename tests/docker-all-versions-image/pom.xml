@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <!--
    Licensed to the Apache Software Foundation (ASF) under one or more
    contributor license agreements.  See the NOTICE file distributed with
@@ -14,89 +15,20 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 -->
-
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <packaging>pom</packaging>
+  <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>org.apache.bookkeeper.tests</groupId>
     <artifactId>tests-parent</artifactId>
     <version>4.7.0-SNAPSHOT</version>
   </parent>
-  <modelVersion>4.0.0</modelVersion>
   <groupId>org.apache.bookkeeper.tests</groupId>
-  <artifactId>docker-all-versions-image</artifactId>
+  <artifactId>all-versions-image</artifactId>
   <name>Apache BookKeeper :: Tests :: Docker All Versions Image</name>
-  <packaging>pom</packaging>
-  <dependencies>
-    <dependency>
-      <groupId>org.apache.bookkeeper</groupId>
-      <artifactId>bookkeeper-dist-server</artifactId>
-      <version>${project.parent.version}</version>
-      <classifier>bin</classifier>
-      <type>tar.gz</type>
-      <scope>provided</scope>
-    </dependency>
-  </dependencies>
-  <profiles>
-    <profile>
-      <id>docker</id>
-      <activation>
-        <property>
-          <name>integrationTests</name>
-        </property>
-      </activation>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>com.spotify</groupId>
-            <artifactId>dockerfile-maven-plugin</artifactId>
-            <version>1.3.7</version>
-            <executions>
-              <execution>
-                <id>default</id>
-                <goals>
-                  <goal>build</goal>
-                </goals>
-              </execution>
-              <execution>
-                <id>add-latest-tag</id>
-                <goals>
-                  <goal>tag</goal>
-                </goals>
-                <configuration>
-                  <repository>apachebookkeeper/bookkeeper-all-versions</repository>
-                  <tag>latest</tag>
-                </configuration>
-              </execution>
-            </executions>
-            <configuration>
-              <repository>apachebookkeeper/bookkeeper-all-versions</repository>
-              <tag>${project.version}</tag>
-              <buildArgs>
-                <BK_TARBALL>target/bookkeeper-dist-server-${project.version}-bin.tar.gz</BK_TARBALL>
-              </buildArgs>
-            </configuration>
-          </plugin>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-dependency-plugin</artifactId>
-            <executions>
-              <execution>
-                <id>copy-tarball</id>
-                <goals>
-                  <goal>copy-dependencies</goal>
-                </goals>
-                <phase>generate-resources</phase>
-                <configuration>
-                  <outputDirectory>${project.build.directory}/</outputDirectory>
-                  <includeArtifactIds>bookkeeper-dist-server</includeArtifactIds>
-                  <excludeTransitive>true</excludeTransitive>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-  </profiles>
+  <modules>
+    <module>all-released-image</module>
+    <module>latest-image</module>
+  </modules>
 </project>
