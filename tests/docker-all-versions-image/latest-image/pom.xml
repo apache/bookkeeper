@@ -31,7 +31,7 @@
     <dependency>
       <groupId>org.apache.bookkeeper.tests</groupId>
       <artifactId>docker-all-released-versions-image</artifactId>
-      <version>4.6.1</version>
+      <version>${project.parent.version}</version>
       <type>pom</type>
     </dependency>
 
