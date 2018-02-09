@@ -69,7 +69,6 @@ public class TestSmoke {
             }
         }
 
-        Thread.sleep(10000);
         try (LedgerHandle readlh = bk.openLedger(ledgerId, BookKeeper.DigestType.CRC32, PASSWD)) {
             long lac = readlh.getLastAddConfirmed();
             int i = 0;
@@ -84,10 +83,7 @@ public class TestSmoke {
 
         bk.close();
 
-        if (!BookKeeperClusterUtils.stopAllBookies(docker)) {
-            Thread.sleep(20000);
-            Assert.fail("A bookie failed to stop");
-        }
+        Assert.assertTrue(BookKeeperClusterUtils.stopAllBookies(docker));
     }
 
 }
