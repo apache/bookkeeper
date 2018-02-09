@@ -130,6 +130,9 @@ public class BenchBookie {
         options.addOption("port", true, "Port of bookie to benchmark (default 3181)");
         options.addOption("zookeeper", true, "Zookeeper ensemble, (default \"localhost:2181\")");
         options.addOption("size", true, "Size of message to send, in bytes (default 1024)");
+        options.addOption("warmupCount", true, "Number of messages in warmup phase (default 999)");
+        options.addOption("latencyCount", true, "Number of messages in latency phase (default 5000)");
+        options.addOption("throughputCount", true, "Number of messages in throughput phase (default 50000)");
         options.addOption("help", false, "This message");
 
         CommandLineParser parser = new PosixParser();
@@ -145,6 +148,9 @@ public class BenchBookie {
         int port = Integer.parseInt(cmd.getOptionValue("port", "3181"));
         int size = Integer.parseInt(cmd.getOptionValue("size", "1024"));
         String servers = cmd.getOptionValue("zookeeper", "localhost:2181");
+        int warmUpCount = Integer.parseInt(cmd.getOptionValue("warmupCount", "999"));
+        int latencyCount = Integer.parseInt(cmd.getOptionValue("latencyCount", "5000"));
+        int throughputCount = Integer.parseInt(cmd.getOptionValue("throughputCount", "50000"));
 
         EventLoopGroup eventLoop;
         if (SystemUtils.IS_OS_LINUX) {
@@ -170,7 +176,6 @@ public class BenchBookie {
         LatencyCallback lc = new LatencyCallback();
 
         ThroughputCallback tc = new ThroughputCallback();
-        int warmUpCount = 999;
 
         long ledger = getValidLedgerId(servers);
         for (long entry = 0; entry < warmUpCount; entry++) {
@@ -188,9 +193,8 @@ public class BenchBookie {
 
         ledger = getValidLedgerId(servers);
         LOG.info("Benchmarking latency");
-        int entryCount = 5000;
         long startTime = System.nanoTime();
-        for (long entry = 0; entry < entryCount; entry++) {
+        for (long entry = 0; entry < latencyCount; entry++) {
             ByteBuf toSend = Unpooled.buffer(size);
             toSend.resetReaderIndex();
             toSend.resetWriterIndex();
@@ -203,15 +207,13 @@ public class BenchBookie {
             lc.waitForComplete();
         }
         long endTime = System.nanoTime();
-        LOG.info("Latency: " + (((double) (endTime - startTime)) / ((double) entryCount)) / 1000000.0);
-
-        entryCount = 50000;
+        LOG.info("Latency: " + (((double) (endTime - startTime)) / ((double) latencyCount)) / 1000000.0);
 
         ledger = getValidLedgerId(servers);
         LOG.info("Benchmarking throughput");
         startTime = System.currentTimeMillis();
         tc = new ThroughputCallback();
-        for (long entry = 0; entry < entryCount; entry++) {
+        for (long entry = 0; entry < throughputCount; entry++) {
             ByteBuf toSend = Unpooled.buffer(size);
             toSend.resetReaderIndex();
             toSend.resetWriterIndex();
@@ -221,9 +223,9 @@ public class BenchBookie {
             bc.addEntry(new BookieSocketAddress(addr, port), ledger, new byte[20],
                         entry, toSend, tc, null, BookieProtocol.FLAG_NONE);
         }
-        tc.waitFor(entryCount);
+        tc.waitFor(throughputCount);
         endTime = System.currentTimeMillis();
-        LOG.info("Throughput: " + ((long) entryCount) * 1000 / (endTime - startTime));
+        LOG.info("Throughput: " + ((long) throughputCount) * 1000 / (endTime - startTime));
 
         bc.close();
         scheduler.shutdown();
