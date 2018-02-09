@@ -83,6 +83,7 @@ public class BenchReadThroughputLatency {
         LedgerHandle lh = null;
         try {
             bk = new BookKeeper(conf);
+
             while (true) {
                 lh = bk.openLedgerNoRecovery(ledgerId, BookKeeper.DigestType.CRC32,
                                              passwd);
@@ -116,8 +117,13 @@ public class BenchReadThroughputLatency {
                 long endtime = System.nanoTime();
                 time += endtime - starttime;
 
-                lh.close();
+                boolean wasClosed = lh.isClosed();
+                lh.close(); // close the handle
                 lh = null;
+
+                if (wasClosed) {
+                    break;
+                }
                 Thread.sleep(1000);
             }
         } catch (InterruptedException ie) {
