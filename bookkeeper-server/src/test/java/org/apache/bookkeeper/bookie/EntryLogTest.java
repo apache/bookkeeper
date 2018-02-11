@@ -328,7 +328,7 @@ public class EntryLogTest {
     }
 
     /**
-     * Test Cache for logid2Channel and FileChannelBackingCache for logid2FileChannel work correctly.
+     * Test Cache for logid2ReadChannel and FileChannelBackingCache for logid2FileChannel work correctly.
      * Note that, when an entryLogger is initialized, the entry log id will increase one.
      * when the preallocation is enabled, a new entrylogger will cost 2 logId.
      */
@@ -373,8 +373,8 @@ public class EntryLogTest {
         FakeTicker t = new FakeTicker();
         FakeEntryLogger logger = new FakeEntryLogger(conf, bookie.getLedgerDirsManager(), t);
         // create some read for the entry log
-        ThreadLocal<Cache<Long, BufferedReadChannel>>  cacheThreadLocal = logger.logid2Channel;
-        EntryLogger.FileChannelBackingCache logid2FileChannel = logger.getLogid2FileChannel();
+        ThreadLocal<Cache<Long, BufferedReadChannel>>  cacheThreadLocal = logger.logid2ReadChannel;
+        FileChannelBackingCache logid2FileChannel = logger.getFileChannelBackingCache();
         for (int j = 0; j < numEntries; j++) {
             logger.readEntry(0, j, positions[0][j]);
         }
@@ -395,7 +395,7 @@ public class EntryLogTest {
 
         LOG.info("cache size is {}, content is {}", cacheThreadLocal.get().size(),
                 cacheThreadLocal.get().asMap().toString());
-        // read to new entry log, the old values in logid2Channel should has been invalidated
+        // read to new entry log, the old values in logid2ReadChannel should has been invalidated
         for (int j = 0; j < numEntries; j++) {
             logger.readEntry(2, j, positions[2][j]);
         }
@@ -521,19 +521,19 @@ public class EntryLogTest {
             this.ticker = ticker;
         }
 
-        private final ThreadLocal<Cache<Long, BufferedReadChannel>> logid2Channel =
-                new ThreadLocal<Cache<Long, BufferedReadChannel>>() {
-                    @Override
-                    public Cache<Long, BufferedReadChannel> initialValue() {
-                        return CacheBuilder.newBuilder().concurrencyLevel(1)
-                            .expireAfterAccess(getReadChannelCacheExpireTimeMs(), TimeUnit.MILLISECONDS)
-                            .removalListener(removal -> getLogid2FileChannel().get((Long) removal.getKey()).release())
-                            .ticker(ticker).build(getReadChannelLoader());
-                    }
-                };
+        private final ThreadLocal<Cache<Long, BufferedReadChannel>> logid2ReadChannel =
+            new ThreadLocal<Cache<Long, BufferedReadChannel>>() {
+                @Override
+                public Cache<Long, BufferedReadChannel> initialValue() {
+                    return CacheBuilder.newBuilder().concurrencyLevel(1)
+                        .expireAfterAccess(getReadChannelCacheExpireTimeMs(), TimeUnit.MILLISECONDS)
+                        .removalListener(removal -> getFileChannelBackingCache().get((Long) removal.getKey()).release())
+                        .ticker(ticker).build(getReadChannelLoader());
+                }
+            };
 
         public void putInReadChannels(long logId, BufferedReadChannel bc) {
-            Cache<Long, BufferedReadChannel> threadCahe = logid2Channel.get();
+            Cache<Long, BufferedReadChannel> threadCahe = logid2ReadChannel.get();
             threadCahe.put(logId, bc);
         }
 

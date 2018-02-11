@@ -54,10 +54,8 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CancellationException;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -65,7 +63,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.LedgerDirsListener;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.util.IOUtils;
@@ -337,7 +334,7 @@ public class EntryLogger {
      * When the BufferedReadChannel is removed, the underlying fileChannel's refCnt decrease 1,
      * temporally use 1h to relax replace after reading.
      */
-    private final ThreadLocal<Cache<Long, BufferedReadChannel>> logid2Channel =
+    private final ThreadLocal<Cache<Long, BufferedReadChannel>> logid2ReadChannel =
             new ThreadLocal<Cache<Long, BufferedReadChannel>>() {
         @Override
         public Cache<Long, BufferedReadChannel> initialValue() {
@@ -347,7 +344,7 @@ public class EntryLogger {
             return CacheBuilder.newBuilder().concurrencyLevel(1)
                     .expireAfterAccess(readChannelCacheExpireTimeMs, TimeUnit.MILLISECONDS)
                     //decrease the refCnt
-                    .removalListener(removal -> logid2FileChannel.get((Long) removal.getKey()).release())
+                    .removalListener(removal -> fileChannelBackingCache.get((Long) removal.getKey()).release())
                     .build(readChannelLoader);
         }
     };
@@ -372,163 +369,14 @@ public class EntryLogger {
     };
 
     /**
-     * FileChannelBackingCache used to cache RefCntFileChannels for read.
-     * In order to avoid get released file, adopt design of FileInfoBackingCache.
-     * @see FileInfoBackingCache
-     */
-    class FileChannelBackingCache {
-        static final int DEAD_REF = -0xdead;
-
-        final ConcurrentHashMap<Long, CachedFileChannel> fileChannels = new ConcurrentHashMap<>();
-
-        CachedFileChannel loadFileChannel(long logId) throws IOException {
-            CachedFileChannel cachedFileChannel = fileChannels.get(logId);
-            if (cachedFileChannel != null) {
-                boolean retained = cachedFileChannel.tryRetain();
-                assert(retained);
-                return cachedFileChannel;
-            }
-            File file = findFile(logId);
-            // get channel is used to open an existing entry log file
-            // it would be better to open using read mode
-            FileChannel newFc = new RandomAccessFile(file, "r").getChannel();
-            cachedFileChannel = new CachedFileChannel(logId, newFc);
-            fileChannels.put(logId, cachedFileChannel);
-            boolean retained = cachedFileChannel.tryRetain();
-            assert(retained);
-            return cachedFileChannel;
-        }
-
-        /**
-         * close FileChannel and remove from cache when possible.
-         * @param logId
-         * @param fc
-         */
-        private void releaseFileChannel(long logId, CachedFileChannel fc) {
-            if (fc.markDead()) {
-                try {
-                    fc.fc.close();
-                } catch (IOException e) {
-                    LOG.warn("Exception occurred in ReferenceCountedFileChannel"
-                            + " while closing channel for log file: {}", fc);
-                } finally {
-                    IOUtils.close(LOG, fc.fc);
-                }
-                fileChannels.remove(logId);
-            }
-        }
-
-        /**
-         * Remove all entries for this log file in each thread's cache.
-         * @param logId
-         */
-        public void removeFromChannelsAndClose(long logId) {
-            //remove the fileChannel from FileChannelBackingCache and close it
-            CachedFileChannel fileChannel = fileChannels.remove(logId);
-            fileChannel.release();
-            try {
-                fileChannel.fc.close();
-            } catch (IOException e) {
-                LOG.warn("Exception occurred in CachedFileChannel"
-                        + " while closing channel for log file: {}", logId);
-            } finally {
-                IOUtils.close(LOG, fileChannel.fc);
-            }
-        }
-
-        void closeAllFileChannels() throws IOException {
-            for (Map.Entry<Long, CachedFileChannel> entry : fileChannels.entrySet()) {
-                entry.getValue().fc.close();
-            }
-        }
-
-        public CachedFileChannel get(Long logId) {
-            return fileChannels.get(logId);
-        }
-
-        class CachedFileChannel {
-            private final FileChannel fc;
-            private final long entryLogId;
-            final AtomicInteger refCount;
-
-            CachedFileChannel(long entryLogId, FileChannel fileChannel) {
-                this.entryLogId = entryLogId;
-                this.fc = fileChannel;
-                this.refCount = new AtomicInteger(0);
-            }
-
-            /**
-             * Mark this fileinfo as dead. We can only mark a fileinfo as
-             * dead if noone currently holds a reference to it.
-             *
-             * @return true if we marked as dead, false otherwise
-             */
-            private boolean markDead() {
-                return refCount.compareAndSet(0, DEAD_REF);
-            }
-
-            /**
-             * Attempt to retain the file info.
-             * When a client obtains a fileinfo from a container object,
-             * but that container object may release the fileinfo before
-             * the client has a chance to call retain. In this case, the
-             * file info could be released and the destroyed before we ever
-             * get a chance to use it.
-             *
-             * <p>tryRetain avoids this problem, by doing a compare-and-swap on
-             * the reference count. If the refCount is negative, it means that
-             * the fileinfo is being cleaned up, and this fileinfo object should
-             * not be used. This works in tandem with #markDead, which will only
-             * set the refCount to negative if noone currently has it retained
-             * (i.e. the refCount is 0).
-             *
-             * @return true if we managed to increment the refcount, false otherwise
-             */
-            boolean tryRetain() {
-                while (true) {
-                    int count = refCount.get();
-                    if (count < 0) {
-                        return false;
-                    } else if (refCount.compareAndSet(count, count + 1)) {
-                        return true;
-                    }
-                }
-            }
-
-            @VisibleForTesting
-            int getRefCount() {
-                return refCount.get();
-            }
-
-            @VisibleForTesting
-            FileChannel getFileChannel() {
-                return fc;
-            }
-
-            void release() {
-                if (refCount.decrementAndGet() == 0) {
-                    releaseFileChannel(entryLogId, this);
-                }
-            }
-
-            @Override
-            public String toString() {
-                return "CachedFileChannel(logId=" + entryLogId
-                        + ",refCount=" + refCount.get()
-                        + ",id=" + System.identityHashCode(this) + ")";
-            }
-        }
-    }
-
-    /**
      * Each thread local buffered read channel can share the same file handle because reads are not relative
      * and don't cause a change in the channel's position.
      * Each file channel is mapped to a log id which represents an open log file.
      */
-    private FileChannelBackingCache logid2FileChannel = new FileChannelBackingCache();
+    private FileChannelBackingCache fileChannelBackingCache = new FileChannelBackingCache(this::findFile);
     @VisibleForTesting
-    FileChannelBackingCache getLogid2FileChannel() {
-        return logid2FileChannel;
+    FileChannelBackingCache getFileChannelBackingCache() {
+        return fileChannelBackingCache;
     }
 
     /**
@@ -537,12 +385,12 @@ public class EntryLogger {
      * @param bc
      */
     public void putInReadChannels(long logId, BufferedReadChannel bc) {
-        Cache<Long, BufferedReadChannel> threadCache = logid2Channel.get();
+        Cache<Long, BufferedReadChannel> threadCache = logid2ReadChannel.get();
         threadCache.put(logId, bc);
     }
 
-    public BufferedReadChannel getFromChannels(long logId) {
-        return logid2Channel.get().getIfPresent(logId);
+    BufferedReadChannel getFromChannels(long logId) {
+        return logid2ReadChannel.get().getIfPresent(logId);
     }
 
     /**
@@ -869,7 +717,7 @@ public class EntryLogger {
      *          Entry Log File Id
      */
     protected boolean removeEntryLog(long entryLogId) {
-        logid2FileChannel.removeFromChannelsAndClose(entryLogId);
+        fileChannelBackingCache.removeFromChannelsAndClose(entryLogId);
         File entryLogFile;
         try {
             entryLogFile = findFile(entryLogId);
@@ -1267,7 +1115,7 @@ public class EntryLogger {
         FileChannelBackingCache.CachedFileChannel cachedFileChannel = null;
         try {
             do {
-                cachedFileChannel = logid2FileChannel.loadFileChannel(entryLogId);
+                cachedFileChannel = fileChannelBackingCache.loadFileChannel(entryLogId);
             } while (!cachedFileChannel.tryRetain());
         } finally {
             if (null != cachedFileChannel) {
@@ -1276,7 +1124,7 @@ public class EntryLogger {
         }
         // We set the position of the write buffer of this buffered channel to Long.MAX_VALUE
         // so that there are no overlaps with the write buffer while reading
-        brc = new BufferedReadChannel(cachedFileChannel.fc, conf.getReadBufferBytes());
+        brc = new BufferedReadChannel(cachedFileChannel.fileChannel, conf.getReadBufferBytes());
         putInReadChannels(entryLogId, brc);
         return brc;
     }
@@ -1529,7 +1377,7 @@ public class EntryLogger {
         LOG.info("Stopping EntryLogger");
         try {
             //close corresponding fileChannels for read
-            logid2FileChannel.closeAllFileChannels();
+            fileChannelBackingCache.closeAllFileChannels();
             flush();
             // close current writing log file
             closeFileChannel(logChannel);
