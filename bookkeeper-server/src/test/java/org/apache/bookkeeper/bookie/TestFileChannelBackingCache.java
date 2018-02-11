@@ -23,7 +23,6 @@ package org.apache.bookkeeper.bookie;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.RemovalNotification;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import java.io.File;
 import java.io.IOException;
@@ -55,6 +54,10 @@ public class TestFileChannelBackingCache {
     final ThreadFactory threadFactory = new ThreadFactoryBuilder()
             .setNameFormat("backing-cache-test-%d").setDaemon(true).build();
     ExecutorService executor;
+
+    FileChannelBackingCache cache;
+    ThreadLocal<Cache<Long, BufferedReadChannel>> logid2ReadChannel;
+    Set<CachedFileChannel> allCachedFileChannels = new HashSet<>();
 
     public TestFileChannelBackingCache() throws Exception {
         baseDir = File.createTempFile("foo", "bar");
@@ -101,7 +104,7 @@ public class TestFileChannelBackingCache {
     @Test
     public void testRefCountRace() throws Exception {
         AtomicBoolean done = new AtomicBoolean(false);
-        FileChannelBackingCache cache = new FileChannelBackingCache(this::findFile);
+        cache = new FileChannelBackingCache(this::findFile);
         Iterable<Future<Set<CachedFileChannel>>> futures =
                 IntStream.range(0, 2).mapToObj(
                         (i) -> {
@@ -131,17 +134,8 @@ public class TestFileChannelBackingCache {
         }
     }
 
-    private void guavaEvictionListener(RemovalNotification<Long, CachedFileChannel> notification) {
-        notification.getValue().release();
-    }
-
-    FileChannelBackingCache cache;
-    ThreadLocal<Cache<Long, BufferedReadChannel>> logid2ReadChannel;
-    Set<CachedFileChannel> allCachedFileChannels = new HashSet<>();
-
-
     @Test
-    public void testRaceBufferedReadChannelEvictAndReleaseBeforeRetain() throws Exception {
+    public void testRaceBufferedReadChannel() throws Exception {
         AtomicBoolean done = new AtomicBoolean(false);
         cache = new FileChannelBackingCache(this::findFile);
         logid2ReadChannel =
@@ -158,7 +152,6 @@ public class TestFileChannelBackingCache {
                                 .build();
                     }
                 };
-
         Iterable<Future<Set<CachedFileChannel>>> futures =
                 LongStream.range(0L, 2L).mapToObj(
                         (i) -> {
@@ -177,8 +170,9 @@ public class TestFileChannelBackingCache {
         for (Future<Set<CachedFileChannel>> f : futures) {
             f.get();
         }
-        logid2ReadChannel.get().invalidateAll();
 
+        // evict all cachedFileChannel
+        logid2ReadChannel.get().invalidateAll();
         for (Future<Set<CachedFileChannel>> f : futures) {
             for (CachedFileChannel cachedFileChannel : f.get()) {
                 Assert.assertEquals(FileChannelBackingCache.DEAD_REF, cachedFileChannel.getRefCount());
