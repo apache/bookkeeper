@@ -6,6 +6,8 @@ mavenJob('bookkeeper_precommit_pullrequest_java9_testdf') {
 
   // Temporary information gathering to see if full disks are causing the builds to flake
   preBuildSteps {
+    shell("id")
+    shell("ulimit -a")
     shell("pwd")
     shell("df -h")
     shell("ps -ef")
