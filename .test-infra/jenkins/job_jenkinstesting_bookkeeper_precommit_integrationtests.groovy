@@ -33,10 +33,6 @@ freeStyleJob('bookkeeper_precommit_integrationtests') {
         shell('docker system events > docker.log &')
         // Build everything
         maven {
-            preBuildSteps {
-                shell("df -h")
-            }
-
             // Set Maven parameters.
             common_job_properties.setMavenConfig(delegate)
 
