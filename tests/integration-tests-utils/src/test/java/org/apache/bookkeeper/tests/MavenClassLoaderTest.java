@@ -39,9 +39,4 @@ public class MavenClassLoaderTest {
                                    org.apache.zookeeper.KeeperException.NoNodeException.class));
     }
 
-    @Test
-    public void testLoadSpecifyingMavenRepo() throws Exception {
-        MavenClassLoader.forArtifact("https://raw.githubusercontent.com/yahoo/bookkeeper/mvn-repo",
-                                     "org.apache.bookkeeper:bookkeeper-server:4.3.1.85-yahoo");
-    }
 }
