@@ -25,10 +25,10 @@
     <version>4.7.0-SNAPSHOT</version>
   </parent>
   <groupId>org.apache.bookkeeper.tests</groupId>
-  <artifactId>all-versions-image</artifactId>
-  <name>Apache BookKeeper :: Tests :: Docker All Versions Image</name>
+  <artifactId>docker-images</artifactId>
+  <name>Apache BookKeeper :: Tests :: Docker Images</name>
   <modules>
-    <module>all-released-image</module>
-    <module>latest-image</module>
+    <module>all-released-versions-image</module>
+    <module>all-versions-image</module>
   </modules>
 </project>
