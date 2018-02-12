@@ -22,6 +22,11 @@ import common_job_properties
 mavenJob('bookkeeper_precommit_pullrequest_java8') {
   description('precommit verification for pull requests of <a href="http://bookkeeper.apache.org">Apache BookKeeper</a> in Java 8.')
 
+  // Temporary information gathering to see if full disks are causing the builds to flake
+  preBuildSteps {
+    shell("df -h")
+  }
+
   // Execute concurrent builds if necessary.
   concurrentBuild()
 
