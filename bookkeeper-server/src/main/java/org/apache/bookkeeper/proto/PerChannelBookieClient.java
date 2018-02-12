@@ -1054,7 +1054,6 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         }
 
         if (cause instanceof DecoderException && cause.getCause() instanceof SSLHandshakeException) {
-//            failedTlsHandshakeCounter.inc();
             LOG.error("TLS handshake failed", cause);
             errorOutPendingOps(BKException.Code.SecurityException);
             Channel c = ctx.channel();
