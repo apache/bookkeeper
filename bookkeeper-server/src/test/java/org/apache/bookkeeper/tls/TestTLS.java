@@ -219,7 +219,7 @@ public class TestTLS extends BookKeeperClusterTestCase {
     /**
      * Verify that a server will not start if tls is enabled but no cert is specified.
      */
-    @Test(timeout = 60000)
+    @Test
     public void testStartTLSServerNoKeyStore() throws Exception {
         ServerConfiguration bookieConf = newServerConfiguration().setTLSKeyStore(null);
 
@@ -234,7 +234,7 @@ public class TestTLS extends BookKeeperClusterTestCase {
     /**
      * Verify handshake failure with a bad cert.
      */
-    @Test(timeout = 60000)
+    @Test
     public void testKeyMismatchFailure() throws Exception {
         // Valid test case only for PEM format keys
         Assume.assumeTrue(serverKeyStoreFormat == KeyStoreType.PEM);
