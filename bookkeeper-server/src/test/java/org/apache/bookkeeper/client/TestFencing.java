@@ -335,6 +335,41 @@ public class TestFencing extends BookKeeperClusterTestCase {
     }
 
     /**
+     * create a ledger and write entries.
+     * sleep a bookie
+     * Ensure that fencing proceeds even with the bookie sleeping
+     */
+    @Test
+    public void testFencingWithHungBookie() throws Exception {
+        LedgerHandle writelh = bkc.createLedger(digestType, "testPasswd".getBytes());
+
+        String tmp = "Foobar";
+
+        final int numEntries = 10;
+        for (int i = 0; i < numEntries; i++) {
+            writelh.addEntry(tmp.getBytes());
+        }
+
+        CountDownLatch sleepLatch = new CountDownLatch(1);
+        sleepBookie(writelh.getLedgerMetadata().getEnsembles().get(0L).get(1), sleepLatch);
+
+        LedgerHandle readlh = bkc.openLedger(writelh.getId(),
+                                             digestType, "testPasswd".getBytes());
+
+        try {
+            writelh.addEntry(tmp.getBytes());
+            LOG.error("Should have thrown an exception");
+            fail("Should have thrown an exception when trying to write");
+        } catch (BKException.BKLedgerFencedException e) {
+            // correct behaviour
+        }
+
+        sleepLatch.countDown();
+        readlh.close();
+        writelh.close();
+    }
+
+    /**
      * Test that fencing doesn't work with a bad password.
      */
     @Test

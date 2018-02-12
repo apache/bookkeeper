@@ -30,5 +30,6 @@
   <modules>
     <module>bookkeeper-server-shaded</module>
     <module>bookkeeper-server-tests-shaded</module>
+    <module>distributedlog-core-shaded</module>
   </modules>
 </project>

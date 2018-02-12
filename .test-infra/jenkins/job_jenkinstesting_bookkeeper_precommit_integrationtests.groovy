@@ -30,8 +30,7 @@ freeStyleJob('bookkeeper_precommit_integrationtests') {
         120)
 
     steps {
-        shell('docker version')
-
+        shell('docker system events > docker.log &')
         // Build everything
         maven {
             preBuildSteps {
@@ -41,7 +40,7 @@ freeStyleJob('bookkeeper_precommit_integrationtests') {
             // Set Maven parameters.
             common_job_properties.setMavenConfig(delegate)
 
-            goals('clean install -Pdocker')
+            goals('-B clean install -Pdocker')
             properties(skipTests: true, interactiveMode: false)
         }
 
@@ -49,13 +48,15 @@ freeStyleJob('bookkeeper_precommit_integrationtests') {
             // Set Maven parameters.
             common_job_properties.setMavenConfig(delegate)
             rootPOM('tests/pom.xml')
-            goals('test -DintegrationTests')
+            goals('-B test -DintegrationTests')
         }
     }
 
     publishers {
         archiveArtifacts {
-            pattern('**/target/container-logs/*')
+	  allowEmpty(true)
+            pattern('**/target/container-logs/**')
+	    pattern('docker.log')
         }
         archiveJunit('**/surefire-reports/TEST-*.xml')
     }
