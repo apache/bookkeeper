@@ -24,7 +24,9 @@ mavenJob('bookkeeper_precommit_pullrequest_java8') {
 
   // Temporary information gathering to see if full disks are causing the builds to flake
   preBuildSteps {
+    shell("pwd")
     shell("df -h")
+    shell("ps -ef")
   }
 
   // Execute concurrent builds if necessary.
