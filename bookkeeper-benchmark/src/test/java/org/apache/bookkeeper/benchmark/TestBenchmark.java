@@ -108,7 +108,7 @@ public class TestBenchmark extends BookKeeperClusterTestCase {
                 bk.close();
             }
         }
-        Assert.assertEquals(Integer.valueOf(0), f.get(30, TimeUnit.SECONDS));
+        Assert.assertEquals(Integer.valueOf(0), f.get());
 
         BenchReadThroughputLatency.main(new String[] {
                 "--zookeeper", zkUtil.getZooKeeperConnectString(),
