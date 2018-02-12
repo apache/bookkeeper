@@ -19,13 +19,6 @@
  */
 package org.apache.bookkeeper.benchmark;
 
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
-
-import java.util.concurrent.Executors;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.net.BookieSocketAddress;
@@ -81,20 +74,27 @@ public class TestBenchmark extends BookKeeperClusterTestCase {
 
     @Test
     public void testReadThroughputLatency() throws Exception {
-        ExecutorService executor = Executors.newSingleThreadExecutor(
-                new ThreadFactoryBuilder().setNameFormat("read-throughput-latency-test").build());
-        Future<Integer> f = executor.submit(() -> {
-                BenchReadThroughputLatency.main(new String[] {
-                        "--zookeeper", zkUtil.getZooKeeperConnectString(),
-                        "--listen", "10"});
-                return 0;
-            });
+        final AtomicBoolean threwException = new AtomicBoolean(false);
+        Thread t = new Thread() {
+                public void run() {
+                    try {
+                        BenchReadThroughputLatency.main(new String[] {
+                                "--zookeeper", zkUtil.getZooKeeperConnectString(),
+                                "--listen", "10"});
+                    } catch (Throwable t) {
+                        LOG.error("Error reading", t);
+                        threwException.set(true);
+                    }
+                }
+            };
+        t.start();
 
-        Thread.sleep(2000);
+        Thread.sleep(10000);
         byte data[] = new byte[1024];
         Arrays.fill(data, (byte)'x');
 
         long lastLedgerId = 0;
+        Assert.assertTrue("Thread should be running", t.isAlive());
         for (int i = 0; i < 10; i++) {
             BookKeeper bk = new BookKeeper(zkUtil.getZooKeeperConnectString());
             LedgerHandle lh = bk.createLedger(BookKeeper.DigestType.CRC32, "benchPasswd".getBytes());
@@ -108,7 +108,14 @@ public class TestBenchmark extends BookKeeperClusterTestCase {
                 bk.close();
             }
         }
-        Assert.assertEquals(Integer.valueOf(0), f.get());
+        for (int i = 0; i < 60; i++) {
+            if (!t.isAlive()) {
+                break;
+            }
+            Thread.sleep(100);
+        }
+
+        Assert.assertFalse("Thread should be finished", t.isAlive());
 
         BenchReadThroughputLatency.main(new String[] {
                 "--zookeeper", zkUtil.getZooKeeperConnectString(),
