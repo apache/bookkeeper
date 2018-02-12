@@ -128,7 +128,7 @@
     <maven-deploy-plugin.version>2.7</maven-deploy-plugin.version>
     <maven-jar-plugin.version>2.2</maven-jar-plugin.version>
     <maven-javadoc-plugin.version>2.10.4</maven-javadoc-plugin.version>
-    <maven-shade-plugin.version>2.4.3</maven-shade-plugin.version>
+    <maven-shade-plugin.version>3.1.0</maven-shade-plugin.version>
     <maven-source-plugin.version>2.2.1</maven-source-plugin.version>
     <maven-surefire-plugin.version>2.19.1</maven-surefire-plugin.version>
     <maven-assembly-plugin.version>2.2.1</maven-assembly-plugin.version>
