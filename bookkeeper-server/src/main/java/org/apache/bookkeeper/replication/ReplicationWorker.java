@@ -401,14 +401,14 @@ public class ReplicationWorker implements Runnable {
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                     LOG.info("InterruptedException while fencing the ledger {}"
-                            + " for rereplication of postponed ledgers", lh.getId(), e);
+                            + " for rereplication of postponed ledgers", ledgerId, e);
                 } catch (BKNoSuchLedgerExistsException bknsle) {
                     if (LOG.isDebugEnabled()) {
-                        LOG.debug("Ledger was deleted, safe to continue", bknsle);
+                        LOG.debug("Ledger {} was deleted, safe to continue", ledgerId, bknsle);
                     }
                 } catch (BKException e) {
                     LOG.error("BKException while fencing the ledger {}"
-                            + " for rereplication of postponed ledgers", lh.getId(), e);
+                            + " for rereplication of postponed ledgers", ledgerId, e);
                 } finally {
                     try {
                         if (lh != null) {
@@ -416,19 +416,19 @@ public class ReplicationWorker implements Runnable {
                         }
                     } catch (InterruptedException e) {
                         Thread.currentThread().interrupt();
-                        LOG.info("InterruptedException while closing ledger", e);
+                        LOG.info("InterruptedException while closing ledger {}", ledgerId, e);
                     } catch (BKException e) {
                         // Lets go ahead and release the lock. Catch actual
                         // exception in normal replication flow and take
                         // action.
-                        LOG.warn("BKException while closing ledger ", e);
+                        LOG.warn("BKException while closing ledger {} ", ledgerId, e);
                     } finally {
                         try {
                             underreplicationManager
                                     .releaseUnderreplicatedLedger(ledgerId);
                         } catch (UnavailableException e) {
                             LOG.error("UnavailableException while replicating fragments of ledger {}",
-                                    lh.getId(), e);
+                                    ledgerId, e);
                             shutdown();
                         }
                     }
