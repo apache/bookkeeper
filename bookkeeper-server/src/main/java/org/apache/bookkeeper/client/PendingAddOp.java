@@ -69,6 +69,7 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
     long timeoutNanos;
 
     OpStatsLogger addOpLogger;
+    OpStatsLogger addOpUrLogger;
     long currentLedgerLength;
     int pendingWriteRequests;
     boolean callbackTriggered;
@@ -88,6 +89,7 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
         op.completed = false;
         op.ackSet = lh.distributionSchedule.getAckSet();
         op.addOpLogger = lh.bk.getAddOpLogger();
+        op.addOpUrLogger = lh.bk.getAddOpUrLogger();
         op.timeoutNanos = lh.bk.addEntryQuorumTimeoutNanos;
         op.pendingWriteRequests = 0;
         op.callbackTriggered = false;
@@ -256,6 +258,12 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
         }
 
         if (completed) {
+            if (rc != BKException.Code.OK) {
+                // Got an error after satisfying AQ. This means we are under replicated at the create itself.
+                // Update the stat to reflect it.
+                long latencyNanos = MathUtils.elapsedNanos(requestTimeNanos);
+                addOpUrLogger.registerFailedEvent(latencyNanos, TimeUnit.NANOSECONDS);
+            }
             // even the add operation is completed, but because we don't reset completed flag back to false when
             // #unsetSuccessAndSendWriteRequest doesn't break ack quorum constraint. we still have current pending
             // add op is completed but never callback. so do a check here to complete again.
@@ -424,6 +432,7 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
         lh = null;
         isRecoveryAdd = false;
         addOpLogger = null;
+        addOpUrLogger = null;
         completed = false;
         pendingWriteRequests = 0;
         callbackTriggered = false;
