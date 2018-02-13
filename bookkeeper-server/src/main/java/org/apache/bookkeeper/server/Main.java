@@ -219,7 +219,6 @@ public class Main {
             // the server is interrupted
             log.info("Bookie server is interrupted. Exiting ...");
         }
-        server.close();
         return ExitCode.OK;
     }
 
