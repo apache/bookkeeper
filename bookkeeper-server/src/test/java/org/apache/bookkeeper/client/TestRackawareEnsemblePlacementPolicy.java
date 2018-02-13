@@ -182,10 +182,8 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         DistributionSchedule.WriteSet origWriteSet = writeSet.copy();
         DistributionSchedule.WriteSet reorderSet = repp.reorderReadSequence(
                 ensemble, getBookiesHealthInfo(), writeSet);
-        DistributionSchedule.WriteSet expectedSet = writeSetFromValues(1, 2, 3, 0);
         LOG.info("reorder set : {}", reorderSet);
-        assertFalse(reorderSet.equals(origWriteSet));
-        assertEquals(expectedSet, reorderSet);
+        assertEquals(reorderSet, origWriteSet);
     }
 
     @Test
@@ -913,6 +911,12 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
 
         bookieFailures.put(addr1, 20L);
         bookieFailures.put(addr2, 22L);
+
+        // remove failure bookies: addr1 and addr2
+        addrs = new HashSet<BookieSocketAddress>();
+        addrs.add(addr3);
+        addrs.add(addr4);
+        repp.onClusterChanged(addrs, new HashSet<BookieSocketAddress>());
 
         DistributionSchedule.WriteSet reoderSet = repp.reorderReadSequence(
                 ensemble, getBookiesHealthInfo(bookieFailures, new HashMap<>()), writeSet);
