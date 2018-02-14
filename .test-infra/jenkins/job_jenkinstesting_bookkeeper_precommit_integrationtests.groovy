@@ -22,6 +22,15 @@ import common_job_properties
 freeStyleJob('bookkeeper_precommit_integrationtests') {
     description('precommit integration test verification for pull requests of <a href="http://bookkeeper.apache.org">Apache BookKeeper</a>.')
 
+    // Temporary information gathering to see if full disks are causing the builds to flake
+    preBuildSteps {
+        shell("id")
+        shell("ulimit -a")
+        shell("pwd")
+        shell("df -h")
+        shell("ps aux")
+    }
+
     // Set common parameters.
     common_job_properties.setTopLevelMainJobProperties(
         delegate,
