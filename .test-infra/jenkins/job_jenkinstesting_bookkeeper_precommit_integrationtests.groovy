@@ -31,6 +31,9 @@ freeStyleJob('bookkeeper_precommit_integrationtests') {
 
     steps {
         shell('docker system events > docker.log &')
+
+        shell('docker pull apachebookkeeper/bookkeeper-all-released-versions:latest')
+
         // Build everything
         maven {
             // Set Maven parameters.
@@ -50,9 +53,9 @@ freeStyleJob('bookkeeper_precommit_integrationtests') {
 
     publishers {
         archiveArtifacts {
-	  allowEmpty(true)
+            allowEmpty(true)
             pattern('**/target/container-logs/**')
-	    pattern('docker.log')
+            pattern('docker.log')
         }
         archiveJunit('**/surefire-reports/TEST-*.xml')
     }
