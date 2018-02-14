@@ -96,11 +96,13 @@ public class ZKRegistrationClient implements RegistrationClient {
         }
 
         void watch() {
+            log.info("Watch {}", regPath);
             scheduleWatchTask(0L);
         }
 
         private void scheduleWatchTask(long delayMs) {
             try {
+                log.info("Schedule watch task in {} ms", delayMs);
                 scheduler.schedule(this, delayMs, TimeUnit.MILLISECONDS);
             } catch (RejectedExecutionException ree) {
                 log.warn("Failed to schedule watch bookies task", ree);
@@ -113,6 +115,8 @@ public class ZKRegistrationClient implements RegistrationClient {
                 return;
             }
 
+            log.info("Get children of {}", regPath);
+
             getChildren(regPath, this)
                 .whenCompleteAsync(this, scheduler);
         }
@@ -120,6 +124,7 @@ public class ZKRegistrationClient implements RegistrationClient {
         @Override
         public void accept(Versioned<Set<BookieSocketAddress>> bookieSet, Throwable throwable) {
             if (throwable != null) {
+                log.info("Encountered exception {}, backoff {}", throwable, ZK_CONNECT_BACKOFF_MS);
                 scheduleWatchTask(ZK_CONNECT_BACKOFF_MS);
                 firstRunFuture.completeExceptionally(throwable);
                 return;
@@ -139,6 +144,7 @@ public class ZKRegistrationClient implements RegistrationClient {
 
         @Override
         public void process(WatchedEvent event) {
+            log.info("Process event {}", event);
             if (EventType.None == event.getType()) {
                 if (KeeperState.Expired == event.getState()) {
                     scheduleWatchTask(ZK_CONNECT_BACKOFF_MS);

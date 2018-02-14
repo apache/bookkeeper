@@ -65,8 +65,6 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
-import org.mockito.ArgumentMatcher;
-import org.mockito.ArgumentMatchers;
 
 /**
  * Unit test of {@link RegistrationClient}.
@@ -271,8 +269,9 @@ public class TestZkRegistrationClient {
         verify(zk, times(1))
             .getChildren(anyString(), any(Watcher.class), any(Children2Callback.class), any());
 
+        log.info("Expire sessions");
         // simulate session expire
-        Set<Watcher> watcherSet = watchers.get(isWritable ? regPath : regReadonlyPath);
+        Set<Watcher> watcherSet = watchers.remove(isWritable ? regPath : regReadonlyPath);
         assertNotNull(watcherSet);
         assertEquals(1, watcherSet.size());
         for (Watcher watcher : watcherSet) {
