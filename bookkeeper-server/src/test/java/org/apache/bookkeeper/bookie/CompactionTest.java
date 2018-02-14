@@ -39,11 +39,11 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -852,7 +852,7 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
             new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()));
         final Set<Long> ledgers = Collections
             .newSetFromMap(new ConcurrentHashMap<Long, Boolean>());
-        
+
         LedgerManager manager = getLedgerManager(ledgers);
 
         CheckpointSource checkpointSource = new CheckpointSource() {
@@ -868,12 +868,12 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
             }
         };
         InterleavedLedgerStorage storage = new InterleavedLedgerStorage();
-        storage.initialize(conf, manager, dirs, dirs, null, checkpointSource, Checkpointer.NULL, NullStatsLogger.INSTANCE);
-        final byte[] KEY = "foobar".getBytes();
+        storage.initialize(conf, manager, dirs, dirs, null, checkpointSource,
+            Checkpointer.NULL, NullStatsLogger.INSTANCE);
 
         for (long ledger = 0; ledger <= 10; ledger++) {
             ledgers.add(ledger);
-            for(int entry = 1; entry <= 50; entry++) {
+            for (int entry = 1; entry <= 50; entry++) {
                 try {
                     storage.addEntry(genEntry(ledger, entry, ENTRY_SIZE));
                 } catch (IOException e) {
@@ -886,14 +886,16 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
         storage.shutdown();
 
         storage = new InterleavedLedgerStorage();
-        storage.initialize(conf, manager, dirs, dirs, null, checkpointSource, Checkpointer.NULL, NullStatsLogger.INSTANCE);
+        storage.initialize(conf, manager, dirs, dirs, null, checkpointSource,
+                           Checkpointer.NULL, NullStatsLogger.INSTANCE);
 
-        long startingEntriesCount = storage.gcThread.entryLogger.getLeastUnflushedLogId() - storage.gcThread.scannedLogId;
+        long startingEntriesCount = storage.gcThread.entryLogger.getLeastUnflushedLogId()
+            - storage.gcThread.scannedLogId;
         LOG.info("The old Log Entry count is: " + startingEntriesCount);
 
         Map<Long, EntryLogMetadata> entryLogMetaData = new HashMap<>();
-        Map<Long, EntryLogMetadata> finalEntryLogMetadataMap = storage.gcThread.extractMetaFromEntryLogs(entryLogMetaData);
-        long finalEntriesCount = storage.gcThread.entryLogger.getLeastUnflushedLogId() - storage.gcThread.scannedLogId;
+        long finalEntriesCount = storage.gcThread.entryLogger.getLeastUnflushedLogId()
+            - storage.gcThread.scannedLogId;
         LOG.info("The latest Log Entry count is: " + finalEntriesCount);
 
         assertTrue("The GC did not clean up entries...", startingEntriesCount != finalEntriesCount);
