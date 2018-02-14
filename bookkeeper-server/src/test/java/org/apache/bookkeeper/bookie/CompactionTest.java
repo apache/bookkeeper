@@ -840,8 +840,11 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
     /**
      * Test extractMetaFromEntryLogs optimized method to avoid excess memory usage.
      */
-    @Test(timeout = 60000)
     public void testExtractMetaFromEntryLogs() throws Exception {
+        // Always run this test with Throttle enabled. 
+        baseConf.setIsThrottleByBytes(true);
+        // restart bookies
+        restartBookies(baseConf);
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
         File tmpDir = createTempDir("bkTest", ".dir");
         File curDir = Bookie.getCurrentDirectory(tmpDir);
