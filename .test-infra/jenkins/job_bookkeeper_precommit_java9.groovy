@@ -28,7 +28,7 @@ mavenJob('bookkeeper_precommit_pullrequest_java9') {
     shell("ulimit -a")
     shell("pwd")
     shell("df -h")
-    shell("ps -ef")
+    shell("ps aux")
   }
 
   // Execute concurrent builds if necessary.
