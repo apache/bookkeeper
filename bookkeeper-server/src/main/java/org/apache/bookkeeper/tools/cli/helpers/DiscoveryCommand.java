@@ -23,8 +23,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import lombok.Cleanup;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.bookkeeper.client.api.BookKeeper;
 import org.apache.bookkeeper.conf.ClientConfiguration;
+import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.discover.RegistrationClient;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.util.ReflectionUtils;
@@ -33,9 +33,15 @@ import org.apache.bookkeeper.util.ReflectionUtils;
  * This is a mixin for commands that talks to discovery service.
  */
 @Slf4j
-public abstract class DiscoveryCommand extends ClientCommand {
+public abstract class DiscoveryCommand implements Command {
 
     @Override
+    public void run(ServerConfiguration conf) throws Exception {
+        // cast the server configuration to a client configuration object.
+        ClientConfiguration clientConf = new ClientConfiguration(conf);
+        run(clientConf);
+    }
+
     protected void run(ClientConfiguration conf) throws Exception {
         Class<? extends RegistrationClient> regClientCls = conf.getRegistrationClientClass();
         @Cleanup("shutdown") ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
@@ -47,11 +53,6 @@ public abstract class DiscoveryCommand extends ClientCommand {
                 Optional.empty());
             run(regClient);
         }
-    }
-
-    @Override
-    protected void run(BookKeeper bk) throws Exception {
-        throw new UnsupportedOperationException("Discovery command only uses registration client");
     }
 
     protected abstract void run(RegistrationClient regClient) throws Exception;

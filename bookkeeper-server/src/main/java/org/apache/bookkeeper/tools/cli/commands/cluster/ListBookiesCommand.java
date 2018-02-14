@@ -45,6 +45,15 @@ public class ListBookiesCommand extends DiscoveryCommand {
     private boolean readonly = false;
 
     @Override
+    public boolean validateArgs() {
+        if ((!readwrite && !readonly) || (readwrite && readonly)) {
+            System.err.println("One and only one of --readwrite and --readonly must be specified");
+            return false;
+        }
+        return true;
+    }
+
+    @Override
     protected void run(RegistrationClient regClient) throws Exception {
         List<BookieSocketAddress> bookies = Lists.newArrayList();
         if (readwrite) {

@@ -20,8 +20,8 @@ package org.apache.bookkeeper.tools.cli.commands.cluster;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.bookkeeper.common.concurrent.FutureUtils.value;
+import static org.junit.Assert.assertEquals;
 import static org.mockito.Answers.CALLS_REAL_METHODS;
-import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
@@ -101,61 +101,62 @@ public class ListBookiesCommandTest extends DiscoveryCommandTestBase {
 
     @Test
     public void testListReadWriteShortArgs() {
-        testCommand(true, false,
+        testCommand(true, false, true,
             "listbookies",
             "-rw");
     }
 
     @Test
     public void testListReadWriteLongArgs() {
-        testCommand(true, false,
+        testCommand(true, false, true,
             "listbookies",
             "--readwrite");
     }
 
     @Test
     public void testListReadOnlyShortArgs() {
-        testCommand(false, true,
+        testCommand(false, true, true,
             "listbookies",
             "-ro");
     }
 
     @Test
     public void testListReadOnlyLongArgs() {
-        testCommand(false, true,
+        testCommand(false, true, true,
             "listbookies",
             "--readonly");
     }
 
     @Test
     public void testListNoArgs() {
-        testCommand(false, false,
+        testCommand(false, false, false,
             "listbookies");
     }
 
     @Test
     public void testListTwoFlagsCoexistsShortArgs() {
-        testCommand(true, false,
+        testCommand(true, true, false,
             "listbookies", "-rw", "-ro");
     }
 
     @Test
     public void testListTwoFlagsCoexistsLongArgs() {
-        testCommand(true, false,
+        testCommand(true, true, false,
             "listbookies", "--readwrite", "--readonly");
     }
 
     private void testCommand(boolean readwrite,
                              boolean readonly,
+                             boolean expectedRetResult,
                              String... args) {
 
         CommandRunner runner = createCommandRunner(new ListBookiesCommand());
-        assertTrue(runner.runArgs(args));
+        assertEquals(expectedRetResult, runner.runArgs(args));
 
-        if (readwrite) {
+        if (readwrite && !readonly) {
             verifyPrintBookies(3181, 10,1);
             verifyPrintBookies(4181, 10,0);
-        } else if (readonly) {
+        } else if (readonly && !readwrite) {
             verifyPrintBookies(3181, 10,0);
             verifyPrintBookies(4181, 10,1);
         } else {

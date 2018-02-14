@@ -81,7 +81,6 @@ public class DiscoveryCommandTest {
     @Test
     public void testRun() throws Exception {
         cmd.run(serverConf);
-        verify(cmd, times(0)).run(any(BookKeeper.class));
         verify(cmd, times(1)).run(eq(regClient));
         verify(regClient, times(1))
             .initialize(eq(clientConf), eq(executor), eq(NullStatsLogger.INSTANCE), eq(Optional.empty()));

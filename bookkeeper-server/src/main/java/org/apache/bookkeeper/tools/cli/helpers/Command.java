@@ -33,6 +33,15 @@ public interface Command {
     String name();
 
     /**
+     * Validate the args before running the command.
+     *
+     * @return true if the args are valid, otherwise false.
+     */
+    default boolean validateArgs() {
+        return true;
+    }
+
+    /**
      * Run the command with provided configuration.
      *
      * @param conf server configuration.

@@ -77,8 +77,12 @@ public abstract class CmdBase {
         Command subCmd = (Command) cmdObj.getObjects().get(0);
 
         try {
-            subCmd.run(conf);
-            return true;
+            if (subCmd.validateArgs()) {
+                subCmd.run(conf);
+                return true;
+            } else {
+                return false;
+            }
         } catch (Exception e) {
             System.err.println("Failed to execute command '" + cmd + "' : " + e.getMessage());
             e.printStackTrace();
