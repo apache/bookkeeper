@@ -22,15 +22,6 @@ import common_job_properties
 freeStyleJob('bookkeeper_precommit_integrationtests') {
     description('precommit integration test verification for pull requests of <a href="http://bookkeeper.apache.org">Apache BookKeeper</a>.')
 
-    // Temporary information gathering to see if full disks are causing the builds to flake
-    preBuildSteps {
-        shell("id")
-        shell("ulimit -a")
-        shell("pwd")
-        shell("df -h")
-        shell("ps aux")
-    }
-
     // Set common parameters.
     common_job_properties.setTopLevelMainJobProperties(
         delegate,
@@ -39,7 +30,13 @@ freeStyleJob('bookkeeper_precommit_integrationtests') {
         120)
 
     steps {
-        shell('docker system events > docker.log &')
+        // Temporary information gathering to see if full disks are causing the builds to flake
+        shell('id')
+        shell('ulimit -a')
+        shell('pwd')
+        shell('df -h')
+        shell('ps aux')
+        shell('docker system events > docker.log & echo $! > docker-log.pid')
 
         shell('docker pull apachebookkeeper/bookkeeper-all-released-versions:latest')
 
@@ -58,6 +55,8 @@ freeStyleJob('bookkeeper_precommit_integrationtests') {
             rootPOM('tests/pom.xml')
             goals('-B test -DintegrationTests')
         }
+
+        shell('kill $(cat docker-log.pid) || true')
     }
 
     publishers {
