@@ -46,6 +46,7 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -802,6 +803,17 @@ public class LedgerHandle implements WriteHandle {
             cb.readComplete(BKException.Code.NoSuchEntryException, this, null, ctx);
         } else {
             asyncReadEntriesInternal(lastEntryId, lastEntryId, cb, ctx);
+        }
+    }
+
+    public org.apache.bookkeeper.client.api.LedgerEntry readLastEntry()
+        throws InterruptedException, ExecutionException {
+        long lastEntryId = getLastAddConfirmed();
+        if (lastEntryId < 0) {
+            // Ledger was empty, so there is no last entry to read
+            return null;
+        } else {
+            return readEntriesInternalAsync(lastEntryId, lastEntryId).get().getEntry(lastEntryId);
         }
     }
 

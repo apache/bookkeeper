@@ -27,6 +27,8 @@ import java.util.concurrent.RejectedExecutionException;
 
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.AsyncCallback.CloseCallback;
+import org.apache.bookkeeper.client.AsyncCallback.ReadCallback;
+import org.apache.bookkeeper.client.AsyncCallback.ReadLastConfirmedCallback;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.api.WriteFlag;
 import org.apache.bookkeeper.net.BookieSocketAddress;
@@ -177,5 +179,20 @@ class ReadOnlyLedgerHandle extends LedgerHandle implements LedgerMetadataListene
     @Override
     protected void initializeExplicitLacFlushPolicy() {
         explicitLacFlushPolicy = ExplicitLacFlushPolicy.VOID_EXPLICITLAC_FLUSH_POLICY;
+    }
+
+    @Override
+    public void asyncReadLastEntry(ReadCallback cb, Object ctx) {
+        asyncReadLastConfirmed(new ReadLastConfirmedCallback() {
+            @Override
+            public void readLastConfirmedComplete(int rc, long lastConfirmed, Object ctx) {
+                if (lastConfirmed < 0) {
+                    // Ledger was empty, so there is no last entry to read
+                    cb.readComplete(BKException.Code.NoSuchEntryException, ReadOnlyLedgerHandle.this, null, ctx);
+                } else {
+                    asyncReadEntriesInternal(lastConfirmed, lastConfirmed, cb, ctx);
+                }
+            }
+        }, ctx);
     }
 }
