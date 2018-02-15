@@ -20,13 +20,15 @@ package org.apache.bookkeeper.tools.cli.commands.cluster;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.bookkeeper.common.concurrent.FutureUtils.value;
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Answers.CALLS_REAL_METHODS;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
 
 import com.google.common.primitives.UnsignedBytes;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.Set;
 import java.util.TreeSet;
@@ -101,57 +103,56 @@ public class ListBookiesCommandTest extends DiscoveryCommandTestBase {
 
     @Test
     public void testListReadWriteShortArgs() {
-        testCommand(true, false, true,
+        testCommand(true, false,
             "listbookies",
             "-rw");
     }
 
     @Test
     public void testListReadWriteLongArgs() {
-        testCommand(true, false, true,
+        testCommand(true, false,
             "listbookies",
             "--readwrite");
     }
 
     @Test
     public void testListReadOnlyShortArgs() {
-        testCommand(false, true, true,
+        testCommand(false, true,
             "listbookies",
             "-ro");
     }
 
     @Test
     public void testListReadOnlyLongArgs() {
-        testCommand(false, true, true,
+        testCommand(false, true,
             "listbookies",
             "--readonly");
     }
 
     @Test
     public void testListNoArgs() {
-        testCommand(false, false, false,
+        testCommand(true, true,
             "listbookies");
     }
 
     @Test
     public void testListTwoFlagsCoexistsShortArgs() {
-        testCommand(true, true, false,
+        testCommand(true, true,
             "listbookies", "-rw", "-ro");
     }
 
     @Test
     public void testListTwoFlagsCoexistsLongArgs() {
-        testCommand(true, true, false,
+        testCommand(true, true,
             "listbookies", "--readwrite", "--readonly");
     }
 
     private void testCommand(boolean readwrite,
                              boolean readonly,
-                             boolean expectedRetResult,
                              String... args) {
 
         CommandRunner runner = createCommandRunner(new ListBookiesCommand());
-        assertEquals(expectedRetResult, runner.runArgs(args));
+        assertTrue(runner.runArgs(args));
 
         if (readwrite && !readonly) {
             verifyPrintBookies(3181, 10,1);
@@ -160,9 +161,26 @@ public class ListBookiesCommandTest extends DiscoveryCommandTestBase {
             verifyPrintBookies(3181, 10,0);
             verifyPrintBookies(4181, 10,1);
         } else {
-            verifyPrintBookies(3181, 10,0);
-            verifyPrintBookies(4181, 10,0);
+            verifyPrintBookies(3181, 10,1);
+            verifyPrintBookies(4181, 10,1);
         }
+    }
+
+    @Test
+    public void testListEmptyBookies() {
+        // overwrite regClient to return empty bookies
+        when(regClient.getWritableBookies())
+            .thenReturn(value(new Versioned<>(Collections.emptySet(), new LongVersion(0L))));
+        when(regClient.getReadOnlyBookies())
+            .thenReturn(value(new Versioned<>(Collections.emptySet(), new LongVersion(0L))));
+
+        CommandRunner runner = createCommandRunner(new ListBookiesCommand());
+        assertTrue(runner.runArgs("listbookies"));
+
+        PowerMockito.verifyStatic(
+                CommandHelpers.class,
+                times(0));
+        CommandHelpers.getBookieSocketAddrStringRepresentation(any());
     }
 
 }

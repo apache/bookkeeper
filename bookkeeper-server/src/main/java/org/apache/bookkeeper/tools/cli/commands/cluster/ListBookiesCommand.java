@@ -23,8 +23,8 @@ import static org.apache.bookkeeper.tools.cli.helpers.CommandHelpers.getBookieSo
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
-import com.google.common.collect.Lists;
-import java.util.List;
+import java.util.Collection;
+import java.util.Set;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 import org.apache.bookkeeper.discover.RegistrationClient;
@@ -45,35 +45,42 @@ public class ListBookiesCommand extends DiscoveryCommand {
     private boolean readonly = false;
 
     @Override
-    public boolean validateArgs() {
-        if ((!readwrite && !readonly) || (readwrite && readonly)) {
-            System.err.println("One and only one of --readwrite and --readonly must be specified");
-            return false;
+    protected void run(RegistrationClient regClient) throws Exception {
+        if (!readwrite && !readonly) {
+            // case: no args is provided. list all the bookies by default.
+            readwrite = true;
+            readonly = true;
         }
-        return true;
+
+        boolean hasBookies = false;
+        if (readwrite) {
+            Set<BookieSocketAddress> bookies = result(
+                regClient.getWritableBookies()
+            ).getValue();
+            if (!bookies.isEmpty()) {
+                System.out.println("ReadWrite Bookies :");
+                printBookies(bookies);
+                hasBookies = true;
+            }
+        }
+        if (readonly) {
+            Set<BookieSocketAddress> bookies = result(
+                regClient.getReadOnlyBookies()
+            ).getValue();
+            if (!bookies.isEmpty()) {
+                System.out.println("Readonly Bookies :");
+                printBookies(bookies);
+                hasBookies = true;
+            }
+        }
+        if (!hasBookies) {
+            System.err.println("No bookie exists!");
+        }
     }
 
-    @Override
-    protected void run(RegistrationClient regClient) throws Exception {
-        List<BookieSocketAddress> bookies = Lists.newArrayList();
-        if (readwrite) {
-            bookies.addAll(
-                result(
-                    regClient.getWritableBookies()
-                ).getValue()
-            );
-        } else if (readonly) {
-            bookies.addAll(
-                result(
-                    regClient.getReadOnlyBookies()
-                ).getValue()
-            );
-        }
+    private static void printBookies(Collection<BookieSocketAddress> bookies) {
         for (BookieSocketAddress b : bookies) {
             System.out.println(getBookieSocketAddrStringRepresentation(b));
-        }
-        if (bookies.isEmpty()) {
-            System.err.println("No bookie exists!");
         }
     }
 
