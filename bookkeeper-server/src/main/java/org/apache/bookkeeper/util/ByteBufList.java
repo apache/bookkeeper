@@ -141,7 +141,7 @@ public class ByteBufList extends AbstractReferenceCounted {
     }
 
     /**
-     * Prepend a {@link ByteBuf} at the end of this {@link ByteBufList}.
+     * Prepend a {@link ByteBuf} at the beginning of this {@link ByteBufList}.
      */
     public void prepend(ByteBuf buf) {
         buffers.add(0, buf);
