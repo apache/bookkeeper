@@ -21,10 +21,7 @@
 set -e
 
 TARBALL=$(ls apache-pulsar-*-incubating-bin.tar.gz | tail -1)
-
-if [ -f $T.asc ]; then
-    gpg --verify $TARBALL.asc
-fi
+gpg --verify $TARBALL.asc
 
 tar -zxf $TARBALL
 rm $TARBALL
