@@ -21,6 +21,9 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.CompositeByteBuf;
 
+/**
+ * Removed custom implementation of DoubleByteBuf, just relying on straight regular CompositeByteBuf.
+ */
 public class DoubleByteBuf extends CompositeByteBuf {
 
     public DoubleByteBuf(ByteBufAllocator alloc) {
