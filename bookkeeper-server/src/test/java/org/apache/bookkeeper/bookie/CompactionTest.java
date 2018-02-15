@@ -841,7 +841,7 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
      * Test extractMetaFromEntryLogs optimized method to avoid excess memory usage.
      */
     public void testExtractMetaFromEntryLogs() throws Exception {
-        // Always run this test with Throttle enabled. 
+        // Always run this test with Throttle enabled.
         baseConf.setIsThrottleByBytes(true);
         // restart bookies
         restartBookies(baseConf);
