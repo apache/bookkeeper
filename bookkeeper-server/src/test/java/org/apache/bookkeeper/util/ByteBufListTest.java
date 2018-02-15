@@ -407,11 +407,13 @@ public class ByteBufListTest {
         }
 
         @Override
+        @Deprecated
         public <T> Attribute<T> attr(AttributeKey<T> key) {
             return null;
         }
 
         @Override
+        @Deprecated
         public <T> boolean hasAttr(AttributeKey<T> key) {
             return false;
         }
