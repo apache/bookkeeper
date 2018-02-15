@@ -56,13 +56,13 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
 /**
- * Unit test of {@link BookieShell}
+ * Unit test of {@link BookKeeperCLI}
  */
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({ BookieShell.class, CmdBase.class })
+@PrepareForTest({ BookKeeperCLI.class, CmdBase.class })
 @PowerMockIgnore("org.apache.log4j.*")
 @Slf4j
-public class BookieShellTest {
+public class BookKeeperCLITest {
 
     @Parameters(commandDescription = "sub test command")
     static class SubTestCommand implements Command {
@@ -104,7 +104,7 @@ public class BookieShellTest {
     private ServerConfiguration conf;
     private JCommander commander;
     private JCommander subCommander;
-    private BookieShell shell;
+    private BookKeeperCLI shell;
     private CmdTest cmdTest;
     private SubTestCommand subCmdTest;
 
@@ -115,37 +115,37 @@ public class BookieShellTest {
             .thenReturn(conf);
 
         this.commander = spy(new JCommander());
-        PowerMockito.mockStatic(BookieShell.class);
-        when(BookieShell.newJCommander()).thenReturn(commander);
+        PowerMockito.mockStatic(BookKeeperCLI.class);
+        when(BookKeeperCLI.newJCommander()).thenReturn(commander);
 
         this.subCommander = spy(new JCommander());
         this.cmdTest = spy(new CmdTest(conf, subCommander));
-        when(BookieShell.newCommandInstance(eq(CmdTest.class), eq(conf)))
+        when(BookKeeperCLI.newCommandInstance(eq(CmdTest.class), eq(conf)))
             .thenReturn(cmdTest);
-        when(BookieShell.newCommandInstance(eq(CmdClient.class), eq(conf)))
+        when(BookKeeperCLI.newCommandInstance(eq(CmdClient.class), eq(conf)))
             .thenReturn(new CmdClient(conf));
-        when(BookieShell.newCommandInstance(eq(CmdCluster.class), eq(conf)))
+        when(BookKeeperCLI.newCommandInstance(eq(CmdCluster.class), eq(conf)))
             .thenReturn(new CmdCluster(conf));
-        when(BookieShell.newCommandInstance(eq(CmdMetadata.class), eq(conf)))
+        when(BookKeeperCLI.newCommandInstance(eq(CmdMetadata.class), eq(conf)))
             .thenReturn(new CmdMetadata(conf));
-        when(BookieShell.newCommandInstance(eq(CmdBookie.class), eq(conf)))
+        when(BookKeeperCLI.newCommandInstance(eq(CmdBookie.class), eq(conf)))
             .thenReturn(new CmdBookie(conf));
 
         PowerMockito.doCallRealMethod().when(
-            BookieShell.class, "registerSubcommand", eq("test"), eq(CmdTest.class));
-        BookieShell.registerSubcommand("test", CmdTest.class);
+            BookKeeperCLI.class, "registerSubcommand", eq("test"), eq(CmdTest.class));
+        BookKeeperCLI.registerSubcommand("test", CmdTest.class);
 
 
         this.subCmdTest = spy(new SubTestCommand());
         PowerMockito.whenNew(SubTestCommand.class).withNoArguments()
             .thenReturn(subCmdTest);
 
-        this.shell = spy(new BookieShell());
+        this.shell = spy(new BookKeeperCLI());
     }
 
     @Test
     public void testNoArgs() throws ConfigurationException {
-        BookieShell.unregisterSubcommand("test");
+        BookKeeperCLI.unregisterSubcommand("test");
 
         assertFalse(shell.runArgs());
         verify(shell, times(1)).setupShell();

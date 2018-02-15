@@ -50,7 +50,7 @@ public abstract class CmdBase {
     protected CmdBase(String cmdName, ServerConfiguration conf, JCommander commander) {
         this.conf = conf;
         this.commander = commander;
-        this.commander.setProgramName("bookie-shell " + cmdName);
+        this.commander.setProgramName("bookkeeper-cli " + cmdName);
     }
 
     protected void addSubCommand(Command command) {

@@ -39,10 +39,10 @@ import org.apache.bookkeeper.tools.cli.commands.CmdMetadata;
 import org.apache.commons.configuration.ConfigurationException;
 
 /**
- * Bookie Shell.
+ * BookKeeper CLI.
  */
 @Slf4j
-public class BookieShell {
+public class BookKeeperCLI {
 
     /**
      * Make this command map static. This provides a way to plugin different sub commands.
@@ -107,10 +107,10 @@ public class BookieShell {
     private final JCommander commander;
     private final ServerConfiguration config;
 
-    BookieShell() throws Exception {
+    BookKeeperCLI() throws Exception {
         this.shellArgs = new ShellArguments();
         this.commander = newJCommander();
-        this.commander.setProgramName("bookie-shell");
+        this.commander.setProgramName("bookkeeper-cli");
         this.commander.addObject(shellArgs);
 
         this.config = new ServerConfiguration();
@@ -200,7 +200,7 @@ public class BookieShell {
     }
 
     public static void main(String[] args) throws Exception {
-        BookieShell shell = new BookieShell();
+        BookKeeperCLI shell = new BookKeeperCLI();
 
         if (shell.run(args)) {
             System.exit(0);
