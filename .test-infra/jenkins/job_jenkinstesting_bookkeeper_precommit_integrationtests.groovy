@@ -35,7 +35,7 @@ freeStyleJob('bookkeeper_precommit_integrationtests') {
         shell('ulimit -a')
         shell('pwd')
         shell('df -h')
-        shell('ps aux')
+        shell('ps -eo euser,pid,ppid,pgid,start,pcpu,pmem,cmd')
         shell('docker system events > docker.log & echo $! > docker-log.pid')
 
         shell('docker pull apachebookkeeper/bookkeeper-all-released-versions:latest')
