@@ -186,11 +186,17 @@ class ReadOnlyLedgerHandle extends LedgerHandle implements LedgerMetadataListene
         asyncReadLastConfirmed(new ReadLastConfirmedCallback() {
             @Override
             public void readLastConfirmedComplete(int rc, long lastConfirmed, Object ctx) {
-                if (lastConfirmed < 0) {
-                    // Ledger was empty, so there is no last entry to read
-                    cb.readComplete(BKException.Code.NoSuchEntryException, ReadOnlyLedgerHandle.this, null, ctx);
+                if (rc == BKException.Code.OK) {
+                    if (lastConfirmed < 0) {
+                        // Ledger was empty, so there is no last entry to read
+                        cb.readComplete(BKException.Code.NoSuchEntryException, ReadOnlyLedgerHandle.this, null, ctx);
+                    } else {
+                        asyncReadEntriesInternal(lastConfirmed, lastConfirmed, cb, ctx);
+                    }
                 } else {
-                    asyncReadEntriesInternal(lastConfirmed, lastConfirmed, cb, ctx);
+                    LOG.error("ReadException in asyncReadLastEntry, ledgerId: {}, lac: {}, rc:{}",
+                        lastConfirmed, ledgerId, rc);
+                    cb.readComplete(rc, ReadOnlyLedgerHandle.this, null, ctx);
                 }
             }
         }, ctx);

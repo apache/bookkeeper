@@ -18,13 +18,14 @@
 package org.apache.bookkeeper.client;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.Assert.fail;
 
 import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.bookkeeper.client.AsyncCallback.ReadCallback;
+import org.apache.bookkeeper.client.BKException.Code;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.junit.Test;
@@ -72,9 +73,12 @@ public class TestReadLastEntry extends BookKeeperClusterTestCase {
         lh.close();
 
         LedgerHandle readLh = bkc.openLedger(lh.getId(), digestType, "".getBytes());
-        org.apache.bookkeeper.client.api.LedgerEntry lastEntry = readLh.readLastEntry();
-
-        assertNull(lastEntry);
+        try {
+            LedgerEntry lastEntry = readLh.readLastEntry();
+            fail("should fail with NoSuchEntryException");
+        } catch (BKException e) {
+            assertEquals(e.getCode(), Code.NoSuchEntryException);
+        }
 
         lh.close();
         readLh.close();
@@ -127,9 +131,9 @@ public class TestReadLastEntry extends BookKeeperClusterTestCase {
         lh.close();
 
         LedgerHandle readLh = bkc.openLedger(lh.getId(), digestType, "".getBytes());
-        org.apache.bookkeeper.client.api.LedgerEntry lastEntry = readLh.readLastEntry();
+        LedgerEntry lastEntry = readLh.readLastEntry();
 
-        assertEquals(lastEntry.getEntryBytes()[1023], Integer.valueOf(99).byteValue());
+        assertEquals(lastEntry.getEntry()[1023], Integer.valueOf(99).byteValue());
 
         lh.close();
         readLh.close();
