@@ -787,6 +787,38 @@ public class LedgerHandle implements WriteHandle {
         }
     }
 
+    /*
+     * Read the last entry in the ledger
+     *
+     * @param cb
+     *            object implementing read callback interface
+     * @param ctx
+     *            control object
+     */
+    public void asyncReadLastEntry(ReadCallback cb, Object ctx) {
+        long lastEntryId = getLastAddConfirmed();
+        if (lastEntryId < 0) {
+            // Ledger was empty, so there is no last entry to read
+            cb.readComplete(BKException.Code.NoSuchEntryException, this, null, ctx);
+        } else {
+            asyncReadEntriesInternal(lastEntryId, lastEntryId, cb, ctx);
+        }
+    }
+
+    public LedgerEntry readLastEntry()
+        throws InterruptedException, BKException {
+        long lastEntryId = getLastAddConfirmed();
+        if (lastEntryId < 0) {
+            // Ledger was empty, so there is no last entry to read
+            throw new BKException.BKNoSuchEntryException();
+        } else {
+            CompletableFuture<Enumeration<LedgerEntry>> result = new CompletableFuture<>();
+            asyncReadEntries(lastEntryId, lastEntryId, new SyncReadCallback(result), null);
+
+            return SyncCallbackUtils.waitForResult(result).nextElement();
+        }
+    }
+
     CompletableFuture<LedgerEntries> readEntriesInternalAsync(long firstEntry,
                                                               long lastEntry) {
         PendingReadOp op = new PendingReadOp(this, bk.getScheduler(), firstEntry, lastEntry);
