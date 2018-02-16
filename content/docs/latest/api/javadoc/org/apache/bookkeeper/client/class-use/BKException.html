@@ -328,27 +328,27 @@
 <tbody>
 <tr class="altColor">
 <td class="colFirst"><code>long</code></td>
-<td class="colLast"><span class="typeNameLabel">ReadOnlyLedgerHandle.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/ReadOnlyLedgerHandle.html#addEntry-byte:A-">addEntry</a></span>(byte[]&nbsp;data)</code>&nbsp;</td>
-</tr>
-<tr class="rowColor">
-<td class="colFirst"><code>long</code></td>
 <td class="colLast"><span class="typeNameLabel">LedgerHandle.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/LedgerHandle.html#addEntry-byte:A-">addEntry</a></span>(byte[]&nbsp;data)</code>
 <div class="block">Add entry synchronously to an open ledger.</div>
 </td>
 </tr>
-<tr class="altColor">
-<td class="colFirst"><code>long</code></td>
-<td class="colLast"><span class="typeNameLabel">ReadOnlyLedgerHandle.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/ReadOnlyLedgerHandle.html#addEntry-byte:A-int-int-">addEntry</a></span>(byte[]&nbsp;data,
-        int&nbsp;offset,
-        int&nbsp;length)</code>&nbsp;</td>
-</tr>
 <tr class="rowColor">
+<td class="colFirst"><code>long</code></td>
+<td class="colLast"><span class="typeNameLabel">ReadOnlyLedgerHandle.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/ReadOnlyLedgerHandle.html#addEntry-byte:A-">addEntry</a></span>(byte[]&nbsp;data)</code>&nbsp;</td>
+</tr>
+<tr class="altColor">
 <td class="colFirst"><code>long</code></td>
 <td class="colLast"><span class="typeNameLabel">LedgerHandle.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/LedgerHandle.html#addEntry-byte:A-int-int-">addEntry</a></span>(byte[]&nbsp;data,
         int&nbsp;offset,
         int&nbsp;length)</code>
 <div class="block">Add entry synchronously to an open ledger.</div>
 </td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>long</code></td>
+<td class="colLast"><span class="typeNameLabel">ReadOnlyLedgerHandle.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/ReadOnlyLedgerHandle.html#addEntry-byte:A-int-int-">addEntry</a></span>(byte[]&nbsp;data,
+        int&nbsp;offset,
+        int&nbsp;length)</code>&nbsp;</td>
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>long</code></td>
@@ -388,7 +388,9 @@
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>void</code></td>
-<td class="colLast"><span class="typeNameLabel">ReadOnlyLedgerHandle.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/ReadOnlyLedgerHandle.html#close--">close</a></span>()</code>&nbsp;</td>
+<td class="colLast"><span class="typeNameLabel">BookKeeper.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/BookKeeper.html#close--">close</a></span>()</code>
+<div class="block">Shuts down client.</div>
+</td>
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>void</code></td>
@@ -404,9 +406,7 @@
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>void</code></td>
-<td class="colLast"><span class="typeNameLabel">BookKeeper.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/BookKeeper.html#close--">close</a></span>()</code>
-<div class="block">Shuts down client.</div>
-</td>
+<td class="colLast"><span class="typeNameLabel">ReadOnlyLedgerHandle.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/ReadOnlyLedgerHandle.html#close--">close</a></span>()</code>&nbsp;</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a></code></td>
@@ -499,14 +499,14 @@
 </td>
 </tr>
 <tr class="rowColor">
-<td class="colFirst"><code>(package private) <a href="http://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util">Map</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress,<a href="../../../../../org/apache/bookkeeper/client/BookieInfoReader.BookieInfo.html" title="class in org.apache.bookkeeper.client">BookieInfoReader.BookieInfo</a>&gt;</code></td>
-<td class="colLast"><span class="typeNameLabel">BookieInfoReader.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/BookieInfoReader.html#getBookieInfo--">getBookieInfo</a></span>()</code>&nbsp;</td>
-</tr>
-<tr class="altColor">
 <td class="colFirst"><code><a href="http://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util">Map</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress,<a href="../../../../../org/apache/bookkeeper/client/BookieInfoReader.BookieInfo.html" title="class in org.apache.bookkeeper.client">BookieInfoReader.BookieInfo</a>&gt;</code></td>
 <td class="colLast"><span class="typeNameLabel">BookKeeper.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/BookKeeper.html#getBookieInfo--">getBookieInfo</a></span>()</code>
 <div class="block">Retrieves BookieInfo from all the bookies in the cluster.</div>
 </td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>(package private) <a href="http://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util">Map</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress,<a href="../../../../../org/apache/bookkeeper/client/BookieInfoReader.BookieInfo.html" title="class in org.apache.bookkeeper.client">BookieInfoReader.BookieInfo</a>&gt;</code></td>
+<td class="colLast"><span class="typeNameLabel">BookieInfoReader.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/BookieInfoReader.html#getBookieInfo--">getBookieInfo</a></span>()</code>&nbsp;</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code><a href="http://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;</code></td>
@@ -517,14 +517,14 @@
 <td class="colLast"><span class="typeNameLabel">BookKeeperAdmin.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/BookKeeperAdmin.html#getLedgersContainBookies-java.util.Set-">getLedgersContainBookies</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;bookies)</code>&nbsp;</td>
 </tr>
 <tr class="rowColor">
+<td class="colFirst"><code><a href="http://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;</code></td>
+<td class="colLast"><span class="typeNameLabel">BookieWatcher.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/BookieWatcher.html#getReadOnlyBookies--">getReadOnlyBookies</a></span>()</code>&nbsp;</td>
+</tr>
+<tr class="altColor">
 <td class="colFirst"><code><a href="http://docs.oracle.com/javase/8/docs/api/java/util/Collection.html?is-external=true" title="class or interface in java.util">Collection</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;</code></td>
 <td class="colLast"><span class="typeNameLabel">BookKeeperAdmin.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/BookKeeperAdmin.html#getReadOnlyBookies--">getReadOnlyBookies</a></span>()</code>
 <div class="block">Get a list of readonly bookies synchronously.</div>
 </td>
-</tr>
-<tr class="altColor">
-<td class="colFirst"><code><a href="http://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;</code></td>
-<td class="colLast"><span class="typeNameLabel">BookieWatcher.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/BookieWatcher.html#getReadOnlyBookies--">getReadOnlyBookies</a></span>()</code>&nbsp;</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>void</code></td>
@@ -596,6 +596,10 @@
 </td>
 </tr>
 <tr class="rowColor">
+<td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/client/LedgerEntry.html" title="class in org.apache.bookkeeper.client">LedgerEntry</a></code></td>
+<td class="colLast"><span class="typeNameLabel">LedgerHandle.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/LedgerHandle.html#readLastEntry--">readLastEntry</a></span>()</code>&nbsp;</td>
+</tr>
+<tr class="altColor">
 <td class="colFirst"><code><a href="http://docs.oracle.com/javase/8/docs/api/java/util/Enumeration.html?is-external=true" title="class or interface in java.util">Enumeration</a>&lt;<a href="../../../../../org/apache/bookkeeper/client/LedgerEntry.html" title="class in org.apache.bookkeeper.client">LedgerEntry</a>&gt;</code></td>
 <td class="colLast"><span class="typeNameLabel">LedgerHandle.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/LedgerHandle.html#readUnconfirmedEntries-long-long-">readUnconfirmedEntries</a></span>(long&nbsp;firstEntry,
                       long&nbsp;lastEntry)</code>
@@ -604,56 +608,56 @@
  <code>#asyncReadUnconfirmedEntries(long, long, ReadCallback, Object) </code></div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><span class="typeNameLabel">BookKeeperAdmin.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/BookKeeperAdmin.html#recoverBookieData-org.apache.bookkeeper.net.BookieSocketAddress-">recoverBookieData</a></span>(org.apache.bookkeeper.net.BookieSocketAddress&nbsp;bookieSrc)</code>
 <div class="block">Synchronous method to rebuild and recover the ledger fragments data that
  was stored on the source bookie.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><span class="typeNameLabel">BookKeeperAdmin.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/BookKeeperAdmin.html#recoverBookieData-long-java.util.Set-boolean-boolean-">recoverBookieData</a></span>(long&nbsp;lid,
                  <a href="http://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;bookiesSrc,
                  boolean&nbsp;dryrun,
                  boolean&nbsp;skipOpenLedgers)</code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><span class="typeNameLabel">BookKeeperAdmin.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/BookKeeperAdmin.html#recoverBookieData-java.util.Set-">recoverBookieData</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;bookiesSrc)</code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><span class="typeNameLabel">BookKeeperAdmin.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/BookKeeperAdmin.html#recoverBookieData-java.util.Set-boolean-boolean-">recoverBookieData</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;bookiesSrc,
                  boolean&nbsp;dryrun,
                  boolean&nbsp;skipOpenLedgers)</code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><span class="typeNameLabel">BookKeeperAdmin.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/BookKeeperAdmin.html#replicateLedgerFragment-org.apache.bookkeeper.client.LedgerHandle-org.apache.bookkeeper.client.LedgerFragment-">replicateLedgerFragment</a></span>(<a href="../../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
                        <a href="../../../../../org/apache/bookkeeper/client/LedgerFragment.html" title="class in org.apache.bookkeeper.client">LedgerFragment</a>&nbsp;ledgerFragment)</code>
 <div class="block">Replicate the Ledger fragment to target Bookie passed.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>long</code></td>
 <td class="colLast"><span class="typeNameLabel">LedgerHandle.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/LedgerHandle.html#tryReadLastConfirmed--">tryReadLastConfirmed</a></span>()</code>
 <div class="block">Obtains synchronously the last confirmed write from a quorum of bookies.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>static &lt;T&gt;&nbsp;T</code></td>
 <td class="colLast"><span class="typeNameLabel">SyncCallbackUtils.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/SyncCallbackUtils.html#waitForResult-java.util.concurrent.CompletableFuture-">waitForResult</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;T&gt;&nbsp;future)</code>
 <div class="block">Wait for a result.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><span class="typeNameLabel">BookKeeperAdmin.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/BookKeeperAdmin.html#watchReadOnlyBookiesChanged-org.apache.bookkeeper.discover.RegistrationClient.RegistrationListener-">watchReadOnlyBookiesChanged</a></span>(org.apache.bookkeeper.discover.RegistrationClient.RegistrationListener&nbsp;listener)</code>
 <div class="block">Notify when the available list of read only bookies changes.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><span class="typeNameLabel">BookKeeperAdmin.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/BookKeeperAdmin.html#watchWritableBookiesChanged-org.apache.bookkeeper.discover.RegistrationClient.RegistrationListener-">watchWritableBookiesChanged</a></span>(org.apache.bookkeeper.discover.RegistrationClient.RegistrationListener&nbsp;listener)</code>
 <div class="block">Notify when the available list of bookies changes.</div>
