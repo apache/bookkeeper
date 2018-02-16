@@ -618,4 +618,22 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      * Trickery to allow inheritance with fluent style.
      */
     protected abstract T getThis();
+
+    /**
+     * converts the config into string format, by appending the config values
+     * and separated by 'separator'.
+     *
+     * @param separator
+     *            separator to separate the configs in string
+     */
+    public String configAsString(String separator) {
+        StringBuilder configString = new StringBuilder();
+        Iterator<String> keys = this.getKeys();
+        while (keys.hasNext()) {
+            String key = (String) keys.next();
+            Object value = getProperty(key);
+            configString.append(key + "=" + value + separator);
+        }
+        return configString.toString();
+    }
 }

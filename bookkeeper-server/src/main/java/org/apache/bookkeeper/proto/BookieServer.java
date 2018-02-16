@@ -81,6 +81,8 @@ public class BookieServer {
             BookieException, UnavailableException, CompatibilityException, SecurityException {
         this.conf = conf;
         validateUser(conf);
+        String configAsString = conf.configAsString(System.getProperty("line.separator"));
+        LOG.info(configAsString);
         this.statsLogger = statsLogger;
         this.nettyServer = new BookieNettyServer(this.conf, null);
         try {
