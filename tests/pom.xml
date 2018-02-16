@@ -28,15 +28,14 @@
   <artifactId>tests-parent</artifactId>
   <name>Apache BookKeeper :: Tests</name>
   <modules>
-    <module>bookkeeper-server-shaded-artifact-test</module>
-    <module>bookkeeper-server-shaded-test</module>
-    <module>bookkeeper-server-tests-shaded-test</module>
-    <module>docker-all-versions-image</module>
+    <module>shaded</module>
+    <module>docker-images</module>
     <module>integration-tests-base</module>
     <module>integration-tests-base-groovy</module>
     <module>integration-tests-utils</module>
     <module>integration-tests-topologies</module>
     <module>backward-compat</module>
+    <module>integration</module>
   </modules>
   <build>
     <plugins>

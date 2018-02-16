@@ -1017,7 +1017,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         }
 
         errorOutOutstandingEntries(BKException.Code.BookieHandleNotAvailableException);
-        errorOutPendingOps(BKException.Code.SecurityException);
+        errorOutPendingOps(BKException.Code.BookieHandleNotAvailableException);
 
         synchronized (this) {
             if (this.channel == ctx.channel()
@@ -1063,9 +1063,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         }
 
         if (cause instanceof IOException) {
-            // these are thrown when a bookie fails, logging them just pollutes
-            // the logs (the failure is logged from the listeners on the write
-            // operation), so I'll just ignore it here.
+            LOG.warn("Exception caught on:{} cause:", ctx.channel(), cause);
             ctx.close();
             return;
         }
@@ -1274,7 +1272,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                         if (future.isSuccess() && state == ConnectionState.CONNECTING) {
                             LOG.error("Connection state changed before TLS handshake completed {}/{}", addr, state);
                             rc = BKException.Code.BookieHandleNotAvailableException;
-                            closeChannel(future.get());
+                            closeChannel(channel);
                             channel = null;
                             if (state != ConnectionState.CLOSED) {
                                 state = ConnectionState.DISCONNECTED;
@@ -1292,13 +1290,13 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                                 && (state == ConnectionState.CLOSED || state == ConnectionState.DISCONNECTED)) {
                             LOG.warn("Closed before TLS handshake completed, clean up: {}, current state {}",
                                     channel, state);
-                            closeChannel(future.get());
+                            closeChannel(channel);
                             rc = BKException.Code.BookieHandleNotAvailableException;
                             channel = null;
                         } else if (future.isSuccess() && state == ConnectionState.CONNECTED) {
                             LOG.debug("Already connected with another channel({}), so close the new channel({})",
-                                    channel, future.get());
-                            closeChannel(future.get());
+                                    channel, channel);
+                            closeChannel(channel);
                             return; // pendingOps should have been completed when other channel connected
                         } else {
                             LOG.error("TLS handshake failed with bookie: {}/{}, current state {} : ",

@@ -88,11 +88,11 @@ public class TestLedgerManager extends BookKeeperClusterTestCase {
             conf,
             zkLayoutManager);
         assertTrue("Ledger manager is unexpected type",
-                   (m instanceof FlatLedgerManagerFactory));
+                   (m instanceof HierarchicalLedgerManagerFactory));
         m.close();
 
         // mismatching conf
-        conf.setLedgerManagerFactoryClass(HierarchicalLedgerManagerFactory.class);
+        conf.setLedgerManagerFactoryClass(LongHierarchicalLedgerManagerFactory.class);
         try {
             LedgerManagerFactory.newLedgerManagerFactory(conf, zkLayoutManager);
             fail("Shouldn't reach here");
@@ -132,10 +132,10 @@ public class TestLedgerManager extends BookKeeperClusterTestCase {
                    Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
         conf.setZkLedgersRootPath(root0);
         // write v1 layout
-        writeLedgerLayout(root0, FlatLedgerManagerFactory.NAME,
-                          FlatLedgerManagerFactory.CUR_VERSION, 1);
+        writeLedgerLayout(root0, HierarchicalLedgerManagerFactory.NAME,
+                          HierarchicalLedgerManagerFactory.CUR_VERSION, 1);
 
-        conf.setLedgerManagerFactoryClass(FlatLedgerManagerFactory.class);
+        conf.setLedgerManagerFactoryClass(HierarchicalLedgerManagerFactory.class);
 
         ZkLayoutManager zkLayoutManager = new ZkLayoutManager(
             zkc,
@@ -147,18 +147,18 @@ public class TestLedgerManager extends BookKeeperClusterTestCase {
             zkLayoutManager);
 
         assertTrue("Ledger manager is unexpected type",
-                   (m instanceof FlatLedgerManagerFactory));
+                   (m instanceof HierarchicalLedgerManagerFactory));
         m.close();
 
         // v2 setting doesn't effect v1
         conf.setLedgerManagerFactoryClass(HierarchicalLedgerManagerFactory.class);
         m = LedgerManagerFactory.newLedgerManagerFactory(conf, zkLayoutManager);
         assertTrue("Ledger manager is unexpected type",
-                   (m instanceof FlatLedgerManagerFactory));
+                   (m instanceof HierarchicalLedgerManagerFactory));
         m.close();
 
         // mismatching conf
-        conf.setLedgerManagerType(HierarchicalLedgerManagerFactory.NAME);
+        conf.setLedgerManagerType(LongHierarchicalLedgerManagerFactory.NAME);
         try {
             LedgerManagerFactory.newLedgerManagerFactory(conf, zkLayoutManager);
             fail("Shouldn't reach here");
@@ -203,7 +203,7 @@ public class TestLedgerManager extends BookKeeperClusterTestCase {
                    Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
         conf.setZkLedgersRootPath(root1);
 
-        LedgerLayout layout1 = new LedgerLayout(FlatLedgerManagerFactory.class.getName(),
+        LedgerLayout layout1 = new LedgerLayout(HierarchicalLedgerManagerFactory.class.getName(),
                          0xdeadbeef);
         ZkLayoutManager zkLayoutManager1 = new ZkLayoutManager(zkc, root1, ZooDefs.Ids.OPEN_ACL_UNSAFE);
         zkLayoutManager1.storeLedgerLayout(layout1);
@@ -279,7 +279,7 @@ public class TestLedgerManager extends BookKeeperClusterTestCase {
         List<CreateLMThread> threads = new ArrayList<CreateLMThread>(numThreads);
         for (int i = 0; i < numThreads; i++) {
             CreateLMThread t = new CreateLMThread(zkUtil.getZooKeeperConnectString(),
-                    root0, FlatLedgerManagerFactory.class.getName(), barrier);
+                    root0, HierarchicalLedgerManagerFactory.class.getName(), barrier);
             t.start();
             threads.add(t);
         }
@@ -309,14 +309,14 @@ public class TestLedgerManager extends BookKeeperClusterTestCase {
         List<CreateLMThread> threadsA = new ArrayList<CreateLMThread>(numThreadsEach);
         for (int i = 0; i < numThreadsEach; i++) {
             CreateLMThread t = new CreateLMThread(zkUtil.getZooKeeperConnectString(),
-                    root0, FlatLedgerManagerFactory.class.getName(), barrier);
+                    root0, HierarchicalLedgerManagerFactory.class.getName(), barrier);
             t.start();
             threadsA.add(t);
         }
         List<CreateLMThread> threadsB = new ArrayList<CreateLMThread>(numThreadsEach);
         for (int i = 0; i < numThreadsEach; i++) {
             CreateLMThread t = new CreateLMThread(zkUtil.getZooKeeperConnectString(),
-                    root0, HierarchicalLedgerManagerFactory.class.getName(), barrier);
+                    root0, LongHierarchicalLedgerManagerFactory.class.getName(), barrier);
             t.start();
             threadsB.add(t);
         }

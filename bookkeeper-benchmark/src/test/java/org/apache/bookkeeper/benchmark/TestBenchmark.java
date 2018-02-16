@@ -25,6 +25,7 @@ import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.junit.Test;
 import org.junit.Assert;
+import org.junit.Before;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,6 +37,13 @@ public class TestBenchmark extends BookKeeperClusterTestCase {
 
     public TestBenchmark() {
         super(5);
+    }
+
+    @Before
+    public void setUp() throws Exception {
+        baseConf.setLedgerManagerFactoryClassName("org.apache.bookkeeper.meta.FlatLedgerManagerFactory");
+        baseClientConf.setLedgerManagerFactoryClassName("org.apache.bookkeeper.meta.FlatLedgerManagerFactory");
+        super.setUp();
     }
 
     @Test
@@ -57,7 +65,10 @@ public class TestBenchmark extends BookKeeperClusterTestCase {
         BenchBookie.main(new String[] {
                 "--host", bookie.getSocketAddress().getHostName(),
                 "--port", String.valueOf(bookie.getPort()),
-                "--zookeeper", zkUtil.getZooKeeperConnectString()
+                "--zookeeper", zkUtil.getZooKeeperConnectString(),
+                "--warmupCount", "10",
+                "--latencyCount", "100",
+                "--throughputCount", "100"
                 });
     }
 

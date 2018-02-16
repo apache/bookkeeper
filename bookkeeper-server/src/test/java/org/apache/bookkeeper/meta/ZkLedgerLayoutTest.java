@@ -87,8 +87,8 @@ public class ZkLedgerLayoutTest extends BookKeeperClusterTestCase {
         ClientConfiguration conf = new ClientConfiguration();
         // write bad version ledger layout
         writeLedgerLayout(conf.getZkLedgersRootPath(),
-                          FlatLedgerManagerFactory.class.getName(),
-                          FlatLedgerManagerFactory.CUR_VERSION,
+                          HierarchicalLedgerManagerFactory.class.getName(),
+                          HierarchicalLedgerManagerFactory.CUR_VERSION,
                           LedgerLayout.LAYOUT_FORMAT_VERSION + 1);
 
         ZkLayoutManager zkLayoutManager = new ZkLayoutManager(zkc, conf.getZkLedgersRootPath(), Ids.OPEN_ACL_UNSAFE);
@@ -130,7 +130,7 @@ public class ZkLedgerLayoutTest extends BookKeeperClusterTestCase {
         // write bad format ledger layout
         StringBuilder sb = new StringBuilder();
         sb.append(LedgerLayout.LAYOUT_FORMAT_VERSION).append("\n")
-          .append(FlatLedgerManagerFactory.class.getName());
+          .append(HierarchicalLedgerManagerFactory.class.getName());
         zkc.create(ledgersLayout, sb.toString().getBytes(),
                                  Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
         ZkLayoutManager zkLayoutManager = new ZkLayoutManager(zkc, rootPath, Ids.OPEN_ACL_UNSAFE);
@@ -148,15 +148,15 @@ public class ZkLedgerLayoutTest extends BookKeeperClusterTestCase {
         ClientConfiguration conf = new ClientConfiguration();
         // write v1 ledger layout
         writeLedgerLayout(conf.getZkLedgersRootPath(),
-                          FlatLedgerManagerFactory.NAME,
-                          FlatLedgerManagerFactory.CUR_VERSION, 1);
+                          HierarchicalLedgerManagerFactory.NAME,
+                          HierarchicalLedgerManagerFactory.CUR_VERSION, 1);
         ZkLayoutManager zkLayoutManager = new ZkLayoutManager(zkc, conf.getZkLedgersRootPath(), Ids.OPEN_ACL_UNSAFE);
 
         LedgerLayout layout = zkLayoutManager.readLedgerLayout();
 
         assertNotNull("Should not be null", layout);
-        assertEquals(FlatLedgerManagerFactory.NAME, layout.getManagerFactoryClass());
-        assertEquals(FlatLedgerManagerFactory.CUR_VERSION, layout.getManagerVersion());
+        assertEquals(HierarchicalLedgerManagerFactory.NAME, layout.getManagerFactoryClass());
+        assertEquals(HierarchicalLedgerManagerFactory.CUR_VERSION, layout.getManagerVersion());
         assertEquals(1, layout.getLayoutFormatVersion());
     }
 }

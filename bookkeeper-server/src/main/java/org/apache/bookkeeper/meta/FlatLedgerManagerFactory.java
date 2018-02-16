@@ -30,7 +30,10 @@ import org.apache.zookeeper.data.ACL;
 
 /**
  * Flat Ledger Manager Factory.
+ *
+ * @deprecated since 4.7.0. The implementation will be still available but not recommended to use.
  */
+@Deprecated
 public class FlatLedgerManagerFactory extends AbstractZkLedgerManagerFactory {
 
     public static final String NAME = "flat";
