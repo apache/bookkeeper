@@ -127,7 +127,7 @@ public class MavenClassLoader implements AutoCloseable {
                         } else {
                             return k;
                         }
-                    } catch (IllegalAccessException|NoSuchFieldException nsfe) {
+                    } catch (IllegalAccessException | NoSuchFieldException nsfe) {
                         return k;
                     }
                 }).toArray(Class[]::new);
