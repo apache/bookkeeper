@@ -33,11 +33,11 @@ mavenJob('bookkeeper_jenkinstesting_individual_retry') {
     200)
 
   // Sets that this is a PreCommit job.
-  common_job_properties.setPreCommit(delegate, 'Testing job to test individual retry (should always pass)')
+    common_job_properties.setPreCommit(delegate, 'Testing job to test individual retry', '/retest-indiv')
 
   // Set Maven parameters.
   common_job_properties.setMavenConfig(delegate)
 
   // Maven build project
-  goals('clean')
+  goals('blahblahblah')
 }

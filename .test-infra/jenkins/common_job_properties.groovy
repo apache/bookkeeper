@@ -134,7 +134,7 @@ class common_job_properties {
         // required to start it.
         if (prTriggerPhrase) {
           triggerPhrase(prTriggerPhrase)
-//          onlyTriggerPhrase()
+          onlyTriggerPhrase()
         }
 
         extensions {
