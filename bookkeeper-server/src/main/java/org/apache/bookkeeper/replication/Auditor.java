@@ -707,8 +707,7 @@ public class Auditor {
      */
     public void shutdown() {
         LOG.info("Shutting down auditor");
-        submitShutdownTask();
-
+        executor.shutdown();
         try {
             while (!executor.awaitTermination(30, TimeUnit.SECONDS)) {
                 LOG.warn("Executor not shutting down, interrupting");
