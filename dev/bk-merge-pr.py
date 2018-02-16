@@ -476,6 +476,19 @@ def get_reviewers(pr_num):
         reviewers_emails.append('{0} <{1}>'.format(username.encode('utf8'), useremail))
     return ', '.join(reviewers_emails)
 
+def check_ci_status(pr):
+    status_url = get_json("%s/commits/%s/status" % (GITHUB_API_BASE, pr["head"]["sha"]))
+    state = status_url["state"]
+    if state != "success":
+        comments = get_json(pr["comments_url"])
+        ignore_ci_comments = [c for c in comments if c["body"].upper() == "IGNORE CI"]
+        if len(ignore_ci_comments) > 0:
+            print "\n\nWARNING: The PR has not passed CI (state is %s)" % (state) \
+                + ", but this has been overridden by %s. \n" % (ignore_ci_comments[0]["user"]["login"]) \
+                + "Proceed at your own peril!\n\n"
+        else:
+            fail("The PR has not passed CI (state is %s)" % (state))
+
 def ask_release_for_github_issues(branch, labels):
     print "=== Add release to github issues ==="
     while True:
@@ -643,9 +656,11 @@ def main():
     pr = get_json("%s/pulls/%s" % (GITHUB_API_BASE, pr_num))
     pr_events = get_json("%s/issues/%s/events" % (GITHUB_API_BASE, pr_num))
     pr_reviewers = get_reviewers(pr_num)
+    check_ci_status(pr)
+
     url = pr["url"]
 
-    # 3. repare the title for commit message
+    # 3. repair the title for commit message
     pr_title = pr["title"]
     commit_title = raw_input("Commit title [%s]: " % pr_title.encode("utf-8")).decode("utf-8")
     if commit_title == "":
