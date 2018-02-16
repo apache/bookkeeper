@@ -57,6 +57,7 @@
     <module>bookkeeper-stats</module>
     <module>bookkeeper-proto</module>
     <module>bookkeeper-server</module>
+    <module>bookkeeper-tools</module>
     <module>bookkeeper-benchmark</module>
     <module>bookkeeper-stats-providers</module>
     <module>bookkeeper-http</module>
@@ -108,6 +109,7 @@
     <google.errorprone.version>2.1.2</google.errorprone.version>
     <guava.version>20.0</guava.version>
     <hamcrest.version>1.3</hamcrest.version>
+    <jcommander.version>1.48</jcommander.version>
     <jmh.version>1.19</jmh.version>
     <junit.version>4.12</junit.version>
     <lombok.version>1.16.18</lombok.version>
@@ -133,6 +135,16 @@
     <maven-surefire-plugin.version>2.19.1</maven-surefire-plugin.version>
     <maven-assembly-plugin.version>2.2.1</maven-assembly-plugin.version>
   </properties>
+
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>com.beust</groupId>
+        <artifactId>jcommander</artifactId>
+        <version>${jcommander.version}</version>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
 
   <!-- dependencies for all modules -->
   <dependencies>
