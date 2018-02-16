@@ -20,6 +20,8 @@
 
 set -e
 
+gpg --import KEYS.pulsar
+
 TARBALL=$(ls apache-pulsar-*-incubating-bin.tar.gz | tail -1)
 gpg --verify $TARBALL.asc
 
