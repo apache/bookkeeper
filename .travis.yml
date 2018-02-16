@@ -44,7 +44,7 @@ before_install:
     if [ "$TRAVIS_OS_NAME" == "linux" ]; then
         jdk_switcher use "$CUSTOM_JDK";
     fi
-    if [ "$TRAVIS_PULL_REQUEST" != "false" ]; then
+    if [ "$TRAVIS_PULL_REQUEST" == "false" ]; then
         export DLOG_MODIFIED="true"  
         echo "Enable testing distributedlog modules since they are not pull requests: TRAVIS_PULL_REQUEST=${TRAVIS_PULL_REQUEST}"
     else
