@@ -87,17 +87,22 @@ class FileChannelBackingCache {
      * @param cachedFileChannel
      */
     private void releaseFileChannel(long logId, CachedFileChannel cachedFileChannel) {
-        if (cachedFileChannel.markDead()) {
-            try {
-                cachedFileChannel.fileChannel.close();
-            } catch (IOException e) {
-                LOG.warn("Exception occurred in ReferenceCountedFileChannel"
-                        + " while closing channel for log file: {}", cachedFileChannel);
-            } finally {
-                IOUtils.close(LOG, cachedFileChannel.fileChannel);
+        lock.writeLock().lock();
+        try {
+            if (cachedFileChannel.markDead()) {
+                try {
+                    cachedFileChannel.fileChannel.close();
+                } catch (IOException e) {
+                    LOG.warn("Exception occurred in ReferenceCountedFileChannel"
+                            + " while closing channel for log file: {}", cachedFileChannel);
+                } finally {
+                    IOUtils.close(LOG, cachedFileChannel.fileChannel);
+                }
+                // to guarantee the removed cachedFileChannel is what we want to remove.
+                fileChannels.remove(logId, cachedFileChannel);
             }
-            // to guarantee the removed cachedFileChannel is what we want to remove.
-            fileChannels.remove(logId, cachedFileChannel);
+        } finally {
+            lock.writeLock().unlock();
         }
     }
 
@@ -125,7 +130,8 @@ class FileChannelBackingCache {
         }
     }
 
-    public CachedFileChannel get(Long logId) {
+    @VisibleForTesting
+    CachedFileChannel get(Long logId) {
         lock.readLock().lock();
         try {
         return fileChannels.get(logId);

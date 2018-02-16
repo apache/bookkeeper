@@ -56,7 +56,7 @@ public class TestFileChannelBackingCache {
     ExecutorService executor;
 
     FileChannelBackingCache cache;
-    ThreadLocal<Cache<Long, BufferedReadChannel>> logid2ReadChannel;
+    ThreadLocal<Cache<Long, EntryLogger.EntryLogBufferedReadChannel>> logid2ReadChannel;
     Set<CachedFileChannel> allCachedFileChannels = new HashSet<>();
 
     public TestFileChannelBackingCache() throws Exception {
@@ -139,17 +139,15 @@ public class TestFileChannelBackingCache {
         AtomicBoolean done = new AtomicBoolean(false);
         cache = new FileChannelBackingCache(this::findFile);
         logid2ReadChannel =
-                new ThreadLocal<Cache<Long, BufferedReadChannel>>() {
+                new ThreadLocal<Cache<Long, EntryLogger.EntryLogBufferedReadChannel>>() {
                     @Override
-                    public Cache<Long, BufferedReadChannel> initialValue() {
-                        // Since this is thread local there only one modifier
-                        // We dont really need the concurrency, but we need to use
-                        // the weak values. Therefore using the concurrency level of 1
+                    public Cache<Long, EntryLogger.EntryLogBufferedReadChannel> initialValue() {
                         return CacheBuilder.newBuilder().concurrencyLevel(1)
-                                .maximumSize(1)
-                                //decrease the refCnt
-                                .removalListener(removal -> cache.get((Long) removal.getKey()).release())
-                                .build();
+                            .maximumSize(1)
+                            //decrease the refCnt
+                            .removalListener(removal ->
+                                    ((EntryLogger.EntryLogBufferedReadChannel) removal.getValue()).release())
+                            .build();
                     }
                 };
         Iterable<Future<Set<CachedFileChannel>>> futures =
@@ -190,8 +188,8 @@ public class TestFileChannelBackingCache {
         return f;
     }
 
-    private BufferedReadChannel getChannelForLogId(long entryLogId) throws IOException {
-        BufferedReadChannel brc = logid2ReadChannel.get().getIfPresent(entryLogId);
+    private EntryLogger.EntryLogBufferedReadChannel getChannelForLogId(long entryLogId) throws IOException {
+        EntryLogger.EntryLogBufferedReadChannel brc = logid2ReadChannel.get().getIfPresent(entryLogId);
         if (brc != null) {
             return brc;
         }
@@ -206,8 +204,8 @@ public class TestFileChannelBackingCache {
             }
         }
         allCachedFileChannels.add(cachedFileChannel);
-        brc = new BufferedReadChannel(cachedFileChannel.fileChannel, 512);
-        Cache<Long, BufferedReadChannel> threadCache = logid2ReadChannel.get();
+        brc = new EntryLogger.EntryLogBufferedReadChannel(cachedFileChannel, 512);
+        Cache<Long, EntryLogger.EntryLogBufferedReadChannel> threadCache = logid2ReadChannel.get();
         threadCache.put(entryLogId, brc);
         return brc;
     }

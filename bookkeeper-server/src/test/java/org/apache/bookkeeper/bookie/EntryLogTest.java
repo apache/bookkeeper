@@ -373,7 +373,7 @@ public class EntryLogTest {
         FakeTicker t = new FakeTicker();
         FakeEntryLogger logger = new FakeEntryLogger(conf, bookie.getLedgerDirsManager(), t);
         // create some read for the entry log
-        ThreadLocal<Cache<Long, BufferedReadChannel>>  cacheThreadLocal = logger.logid2ReadChannel;
+        ThreadLocal<Cache<Long, EntryLogger.EntryLogBufferedReadChannel>>  cacheThreadLocal = logger.logid2ReadChannel;
         FileChannelBackingCache logid2FileChannel = logger.getFileChannelBackingCache();
         for (int j = 0; j < numEntries; j++) {
             logger.readEntry(0, j, positions[0][j]);
@@ -521,20 +521,24 @@ public class EntryLogTest {
             this.ticker = ticker;
         }
 
-        private final ThreadLocal<Cache<Long, BufferedReadChannel>> logid2ReadChannel =
-            new ThreadLocal<Cache<Long, BufferedReadChannel>>() {
-                @Override
-                public Cache<Long, BufferedReadChannel> initialValue() {
-                    return CacheBuilder.newBuilder().concurrencyLevel(1)
-                        .expireAfterAccess(getReadChannelCacheExpireTimeMs(), TimeUnit.MILLISECONDS)
-                        .removalListener(removal -> getFileChannelBackingCache().get((Long) removal.getKey()).release())
-                        .ticker(ticker).build(getReadChannelLoader());
-                }
-            };
+        private final ThreadLocal<Cache<Long, EntryLogBufferedReadChannel>> logid2ReadChannel =
+                new ThreadLocal<Cache<Long, EntryLogBufferedReadChannel>>() {
+                    @Override
+                    public Cache<Long, EntryLogBufferedReadChannel> initialValue() {
+                        return CacheBuilder.newBuilder().concurrencyLevel(1)
+                            .expireAfterAccess(getReadChannelCacheExpireTimeMs(), TimeUnit.MILLISECONDS)
+                            //decrease the refCnt
+                            .removalListener(removal -> ((EntryLogBufferedReadChannel) removal.getValue()).release())
+                            .ticker(ticker).build();
+                    }
+                };
 
-        public void putInReadChannels(long logId, BufferedReadChannel bc) {
-            Cache<Long, BufferedReadChannel> threadCahe = logid2ReadChannel.get();
-            threadCahe.put(logId, bc);
+        /**
+         * Override parend method to use mock logid2ReadChannel.
+         * @return
+         */
+        Cache<Long, EntryLogBufferedReadChannel> getThreadLocalCacheForReadChannel() {
+            return logid2ReadChannel.get();
         }
 
     }
