@@ -1,4 +1,5 @@
 /**
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -6,19 +7,23 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * <p>
- * http://www.apache.org/licenses/LICENSE-2.0
- * <p>
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
  * under the License.
+ *
  */
 package org.apache.bookkeeper.client;
 
-import static org.apache.bookkeeper.client.BookKeeperClientStats.*;
+import static org.apache.bookkeeper.client.BookKeeperClientStats.ADD_OP;
+import static org.apache.bookkeeper.client.BookKeeperClientStats.ADD_OP_UR;
+import static org.apache.bookkeeper.client.BookKeeperClientStats.CLIENT_SCOPE;
+import static org.apache.bookkeeper.client.BookKeeperClientStats.READ_OP_DM;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -58,7 +63,7 @@ import org.slf4j.LoggerFactory;
  * Testing ledger write entry cases.
  */
 public class BookieWriteLedgerTest extends
-        BookKeeperClusterTestCase implements AddCallback {
+    BookKeeperClusterTestCase implements AddCallback {
 
     private static final Logger LOG = LoggerFactory
             .getLogger(BookieWriteLedgerTest.class);
@@ -216,9 +221,9 @@ public class BookieWriteLedgerTest extends
 
         assertTrue(
                 "Stats should have captured a new UnderReplication during write",
-                bkc.getTestStatsProvider().getOpStatsLogger(
+                bkc.getTestStatsProvider().getCounter(
                         CLIENT_SCOPE + "." + ADD_OP_UR)
-                        .getFailureCount() > 0);
+                        .get() > 0);
 
         sleepLatch1.countDown();
         sleepLatch2.countDown();
@@ -246,9 +251,9 @@ public class BookieWriteLedgerTest extends
         readEntries(lh, entries1);
         assertTrue(
                 "Stats should have captured DigestMismatch on Read",
-                bkc.getTestStatsProvider().getOpStatsLogger(
+                bkc.getTestStatsProvider().getCounter(
                         CLIENT_SCOPE + "." + READ_OP_DM)
-                        .getFailureCount() > 0);
+                        .get() > 0);
         lh.close();
     }
 
@@ -326,9 +331,9 @@ public class BookieWriteLedgerTest extends
         try {
             CompletableFuture<Object> done = new CompletableFuture<>();
             lh.asyncAddEntry(Unpooled.wrappedBuffer(entry.array()),
-                    (int rc, LedgerHandle lh1, long entryId, Object ctx) -> {
-                        SyncCallbackUtils.finish(rc, null, done);
-                    }, null);
+                (int rc, LedgerHandle lh1, long entryId, Object ctx) -> {
+                SyncCallbackUtils.finish(rc, null, done);
+            }, null);
             done.get();
         } catch (ExecutionException ee) {
             assertTrue(ee.getCause() instanceof BKException);
@@ -339,9 +344,9 @@ public class BookieWriteLedgerTest extends
         try {
             CompletableFuture<Object> done = new CompletableFuture<>();
             lh.asyncAddEntry(entry.array(),
-                    (int rc, LedgerHandle lh1, long entryId, Object ctx) -> {
-                        SyncCallbackUtils.finish(rc, null, done);
-                    }, null);
+                (int rc, LedgerHandle lh1, long entryId, Object ctx) -> {
+                SyncCallbackUtils.finish(rc, null, done);
+            }, null);
             done.get();
         } catch (ExecutionException ee) {
             assertTrue(ee.getCause() instanceof BKException);
@@ -352,9 +357,9 @@ public class BookieWriteLedgerTest extends
         try {
             CompletableFuture<Object> done = new CompletableFuture<>();
             lh.asyncAddEntry(entry.array(), 0, 4,
-                    (int rc, LedgerHandle lh1, long entryId, Object ctx) -> {
-                        SyncCallbackUtils.finish(rc, null, done);
-                    }, null);
+                (int rc, LedgerHandle lh1, long entryId, Object ctx) -> {
+                SyncCallbackUtils.finish(rc, null, done);
+            }, null);
             done.get();
         } catch (ExecutionException ee) {
             assertTrue(ee.getCause() instanceof BKException);
@@ -448,7 +453,7 @@ public class BookieWriteLedgerTest extends
             lh = bkc.openLedger(ledgerId, digestType, ledgerPassword);
             Map<String, byte[]> outputCustomMetadataMap = lh.getCustomMetadata();
             assertTrue("Can't retrieve proper Custom Data",
-                    LedgerMetadata.areByteArrayValMapsEqual(inputCustomMetadataMap, outputCustomMetadataMap));
+                       LedgerMetadata.areByteArrayValMapsEqual(inputCustomMetadataMap, outputCustomMetadataMap));
             lh.close();
             bkc.deleteLedger(ledgerId);
         }

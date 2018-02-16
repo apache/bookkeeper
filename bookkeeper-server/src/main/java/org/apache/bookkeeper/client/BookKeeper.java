@@ -111,17 +111,18 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
     private OpStatsLogger deleteOpLogger;
     private OpStatsLogger recoverOpLogger;
     private OpStatsLogger readOpLogger;
-    private OpStatsLogger readOpDmLogger;
     private OpStatsLogger readLacAndEntryOpLogger;
     private OpStatsLogger readLacAndEntryRespLogger;
     private OpStatsLogger addOpLogger;
-    private OpStatsLogger addOpUrLogger;
     private OpStatsLogger writeLacOpLogger;
     private OpStatsLogger readLacOpLogger;
     private OpStatsLogger recoverAddEntriesStats;
     private OpStatsLogger recoverReadEntriesStats;
 
     private Counter speculativeReadCounter;
+    private Counter readOpDmCounter;
+    private Counter addOpUrCounter;
+
 
     // whether the event loop group is one we created, or is owned by whoever
     // instantiated us
@@ -1446,12 +1447,12 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
         openOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.OPEN_OP);
         recoverOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.RECOVER_OP);
         readOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.READ_OP);
-        readOpDmLogger = stats.getOpStatsLogger(BookKeeperClientStats.READ_OP_DM);
+        readOpDmCounter = stats.getCounter(BookKeeperClientStats.READ_OP_DM);
         readLacAndEntryOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.READ_LAST_CONFIRMED_AND_ENTRY);
         readLacAndEntryRespLogger = stats.getOpStatsLogger(
                 BookKeeperClientStats.READ_LAST_CONFIRMED_AND_ENTRY_RESPONSE);
         addOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.ADD_OP);
-        addOpUrLogger = stats.getOpStatsLogger(BookKeeperClientStats.ADD_OP_UR);
+        addOpUrCounter = stats.getCounter(BookKeeperClientStats.ADD_OP_UR);
         writeLacOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.WRITE_LAC_OP);
         readLacOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.READ_LAC_OP);
         recoverAddEntriesStats = stats.getOpStatsLogger(BookKeeperClientStats.LEDGER_RECOVER_ADD_ENTRIES);
@@ -1475,9 +1476,6 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
     OpStatsLogger getReadOpLogger() {
         return readOpLogger;
     }
-    OpStatsLogger getReadOpDmLogger() {
-        return readOpDmLogger;
-    }
     OpStatsLogger getReadLacAndEntryOpLogger() {
         return readLacAndEntryOpLogger;
     }
@@ -1486,9 +1484,6 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
     }
     OpStatsLogger getAddOpLogger() {
         return addOpLogger;
-    }
-    OpStatsLogger getAddOpUrLogger() {
-        return addOpUrLogger;
     }
     OpStatsLogger getWriteLacOpLogger() {
         return writeLacOpLogger;
@@ -1502,7 +1497,12 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
     OpStatsLogger getRecoverReadCountLogger() {
         return recoverReadEntriesStats;
     }
-
+    Counter getReadOpDmCounter() {
+        return readOpDmCounter;
+    }
+    Counter getAddOpUrCounter() {
+        return addOpUrCounter;
+    }
     static EventLoopGroup getDefaultEventLoopGroup() {
         ThreadFactory threadFactory = new DefaultThreadFactory("bookkeeper-io");
         final int numThreads = Runtime.getRuntime().availableProcessors() * 2;

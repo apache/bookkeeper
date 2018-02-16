@@ -34,6 +34,7 @@ import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
+import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.util.MathUtils;
 import org.apache.bookkeeper.util.SafeRunnable;
@@ -69,7 +70,7 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
     long timeoutNanos;
 
     OpStatsLogger addOpLogger;
-    OpStatsLogger addOpUrLogger;
+    Counter addOpUrCounter;
     long currentLedgerLength;
     int pendingWriteRequests;
     boolean callbackTriggered;
@@ -89,7 +90,7 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
         op.completed = false;
         op.ackSet = lh.distributionSchedule.getAckSet();
         op.addOpLogger = lh.bk.getAddOpLogger();
-        op.addOpUrLogger = lh.bk.getAddOpUrLogger();
+        op.addOpUrCounter = lh.bk.getAddOpUrCounter();
         op.timeoutNanos = lh.bk.addEntryQuorumTimeoutNanos;
         op.pendingWriteRequests = 0;
         op.callbackTriggered = false;
@@ -261,8 +262,7 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
             if (rc != BKException.Code.OK) {
                 // Got an error after satisfying AQ. This means we are under replicated at the create itself.
                 // Update the stat to reflect it.
-                long latencyNanos = MathUtils.elapsedNanos(requestTimeNanos);
-                addOpUrLogger.registerFailedEvent(latencyNanos, TimeUnit.NANOSECONDS);
+                addOpUrCounter.inc();
             }
             // even the add operation is completed, but because we don't reset completed flag back to false when
             // #unsetSuccessAndSendWriteRequest doesn't break ack quorum constraint. we still have current pending
@@ -432,7 +432,7 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
         lh = null;
         isRecoveryAdd = false;
         addOpLogger = null;
-        addOpUrLogger = null;
+        addOpUrCounter = null;
         completed = false;
         pendingWriteRequests = 0;
         callbackTriggered = false;

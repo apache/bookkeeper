@@ -26,7 +26,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiConsumer;
-
 import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.Gauge;
 import org.apache.bookkeeper.stats.OpStatsData;
@@ -148,10 +147,6 @@ public class TestStatsProvider implements StatsProvider {
         public synchronized long getSuccessCount() {
             return successCount;
         }
-
-        public synchronized long getFailureCount() {
-            return failureCount;
-        }
     }
 
     /**
@@ -198,8 +193,7 @@ public class TestStatsProvider implements StatsProvider {
         }
 
         @Override
-        public void removeScope(String name, StatsLogger statsLogger) {
-        }
+        public void removeScope(String name, StatsLogger statsLogger) {}
     }
 
     @Override
