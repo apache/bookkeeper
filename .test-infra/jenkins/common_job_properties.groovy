@@ -201,9 +201,10 @@ class common_job_properties {
   // Sets common config for PreCommit jobs.
   static void setPreCommit(context,
                            String commitStatusName,
-                           String successComment = '--none--') {
+                           String successComment = '--none--',
+                           String prTriggerPhrase = '') {
     // Set pull request build trigger.
-    setPullRequestBuildTrigger(context, commitStatusName, successComment)
+    setPullRequestBuildTrigger(context, commitStatusName, successComment, prTriggerPhrase)
   }
 
   // Enable triggering postcommit runs against pull requests. Users can comment the trigger phrase
