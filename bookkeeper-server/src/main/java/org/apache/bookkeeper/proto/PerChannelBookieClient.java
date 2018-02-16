@@ -938,6 +938,23 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
     }
 
     /**
+     * Errors out pending ops from per channel bookie client. As the channel
+     * is being closed, all the operations waiting on the connection
+     * will be sent to completion with error
+     */
+    void errorOutPendingOps(int rc) {
+        Queue<GenericCallback<PerChannelBookieClient>> oldPendingOps;
+        synchronized (this) {
+            oldPendingOps = pendingOps;
+            pendingOps = new ArrayDeque<>();
+        }
+
+        for (GenericCallback<PerChannelBookieClient> pendingOp : oldPendingOps) {
+            pendingOp.operationComplete(rc, PerChannelBookieClient.this);
+        }
+    }
+
+    /**
      * Errors out pending entries. We call this method from one thread to avoid
      * concurrent executions to QuorumOpMonitor (implements callbacks). It seems
      * simpler to call it from BookieHandle instead of calling directly from
@@ -978,6 +995,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         }
 
         errorOutOutstandingEntries(BKException.Code.BookieHandleNotAvailableException);
+        errorOutPendingOps(BKException.Code.BookieHandleNotAvailableException);
 
         synchronized (this) {
             if (this.channel == ctx.channel()
@@ -1014,9 +1032,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         }
 
         if (cause instanceof IOException) {
-            // these are thrown when a bookie fails, logging them just pollutes
-            // the logs (the failure is logged from the listeners on the write
-            // operation), so I'll just ignore it here.
+            LOG.warn("Exception caught on:{} cause:", ctx.channel(), cause);
             ctx.close();
             return;
         }
@@ -1225,7 +1241,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                         if (future.isSuccess() && state == ConnectionState.CONNECTING) {
                             LOG.error("Connection state changed before TLS handshake completed {}/{}", addr, state);
                             rc = BKException.Code.BookieHandleNotAvailableException;
-                            closeChannel(future.get());
+                            closeChannel(channel);
                             channel = null;
                             if (state != ConnectionState.CLOSED) {
                                 state = ConnectionState.DISCONNECTED;
@@ -1241,20 +1257,20 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                         } else if (future.isSuccess()
                                 && (state == ConnectionState.CLOSED || state == ConnectionState.DISCONNECTED)) {
                             LOG.warn("Closed before TLS handshake completed, clean up: {}, current state {}",
-                                    future.get(), state);
-                            closeChannel(future.get());
+                                    channel, state);
+                            closeChannel(channel);
                             rc = BKException.Code.BookieHandleNotAvailableException;
                             channel = null;
                         } else if (future.isSuccess() && state == ConnectionState.CONNECTED) {
                             LOG.debug("Already connected with another channel({}), so close the new channel({})",
-                                    channel, future.get());
-                            closeChannel(future.get());
+                                    channel, channel);
+                            closeChannel(channel);
                             return; // pendingOps should have been completed when other channel connected
                         } else {
                             LOG.error("TLS handshake failed with bookie: {}/{}, current state {} : ",
-                                    future.get(), addr, state, future.cause());
+                                    channel, addr, state, future.cause());
                             rc = BKException.Code.SecurityException;
-                            closeChannel(future.get());
+                            closeChannel(channel);
                             channel = null;
                             if (state != ConnectionState.CLOSED) {
                                 state = ConnectionState.DISCONNECTED;
