@@ -131,7 +131,10 @@ extends <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Enum.html?is
  report fake bytes with a mathching MAC unless it knows the password.
  The CRC32C, which use SSE processor instruction, has better performance than CRC32.
  Legacy DigestType for backward compatibility. If we want to add new DigestType,
- we should add it in here, client.api.DigestType and DigestType in DataFormats.proto.</div>
+ we should add it in here, client.api.DigestType and DigestType in DataFormats.proto.
+ If the digest type is set/passed in as DUMMY, a dummy digest is added/checked.
+ This DUMMY digest is mostly for test purposes or in situations/use-cases
+ where digest is considered a overhead.</div>
 </li>
 </ul>
 </div>
@@ -156,6 +159,9 @@ extends <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Enum.html?is
 <td class="colOne"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookKeeper.DigestType.html#CRC32C">CRC32C</a></span></code>&nbsp;</td>
 </tr>
 <tr class="altColor">
+<td class="colOne"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookKeeper.DigestType.html#DUMMY">DUMMY</a></span></code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
 <td class="colOne"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookKeeper.DigestType.html#MAC">MAC</a></span></code>&nbsp;</td>
 </tr>
 </table>
@@ -244,10 +250,19 @@ the order they are declared.</div>
 <a name="CRC32C">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>CRC32C</h4>
 <pre>public static final&nbsp;<a href="../../../../org/apache/bookkeeper/client/BookKeeper.DigestType.html" title="enum in org.apache.bookkeeper.client">BookKeeper.DigestType</a> CRC32C</pre>
+</li>
+</ul>
+<a name="DUMMY">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>DUMMY</h4>
+<pre>public static final&nbsp;<a href="../../../../org/apache/bookkeeper/client/BookKeeper.DigestType.html" title="enum in org.apache.bookkeeper.client">BookKeeper.DigestType</a> DUMMY</pre>
 </li>
 </ul>
 </li>
