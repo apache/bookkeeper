@@ -58,7 +58,6 @@ import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieClient;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks;
-import org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.DigestType;
 import org.apache.bookkeeper.proto.checksum.DigestManager;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.util.OrderedSafeExecutor;
@@ -181,6 +180,16 @@ public abstract class MockBookKeeperTestCase {
         when(bk.getRecoverAddCountLogger()).thenReturn(nullStatsLogger.getOpStatsLogger("mock"));
         when(bk.getRecoverReadCountLogger()).thenReturn(nullStatsLogger.getOpStatsLogger("mock"));
         return nullStatsLogger;
+    }
+
+    private DigestManager getDigestType(long ledgerId) throws GeneralSecurityException {
+        LedgerMetadata metadata = mockLedgerMetadataRegistry.get(ledgerId);
+        return DigestManager.instantiate(
+                ledgerId,
+                metadata.getPassword(),
+                org.apache.bookkeeper.client.BookKeeper.DigestType.toProtoDigestType(
+                        org.apache.bookkeeper.client.BookKeeper.DigestType.fromApiDigestType(
+                                metadata.getDigestType())));
     }
 
     @After
@@ -391,7 +400,7 @@ public abstract class MockBookKeeperTestCase {
             executor.submitOrdered(ledgerId, () -> {
                 DigestManager macManager = null;
                 try {
-                    macManager = DigestManager.instantiate(ledgerId, new byte[2], DigestType.CRC32);
+                    macManager = getDigestType(ledgerId);
                 } catch (GeneralSecurityException gse){
                     LOG.error("Initialize macManager fail", gse);
                 }
@@ -433,7 +442,7 @@ public abstract class MockBookKeeperTestCase {
             executor.submitOrdered(ledgerId, () -> {
                 DigestManager macManager = null;
                 try {
-                    macManager = DigestManager.instantiate(ledgerId, new byte[2], DigestType.CRC32);
+                    macManager = getDigestType(ledgerId);
                 } catch (GeneralSecurityException gse){
                     LOG.error("Initialize macManager fail", gse);
                 }
@@ -463,13 +472,13 @@ public abstract class MockBookKeeperTestCase {
             any(BookkeeperInternalCallbacks.ReadEntryCallback.class), any());
     }
 
-    private static byte[] extractEntryPayload(long ledgerId, long entryId, ByteBuf toSend)
+    private byte[] extractEntryPayload(long ledgerId, long entryId, ByteBuf toSend)
             throws BKException.BKDigestMatchException {
         ByteBuf toSendCopy = Unpooled.copiedBuffer(toSend);
         toSendCopy.resetReaderIndex();
         DigestManager macManager = null;
         try {
-            macManager = DigestManager.instantiate(ledgerId, new byte[2], DigestType.CRC32);
+            macManager = getDigestType(ledgerId);
         } catch (GeneralSecurityException gse){
             LOG.error("Initialize macManager fail", gse);
         }

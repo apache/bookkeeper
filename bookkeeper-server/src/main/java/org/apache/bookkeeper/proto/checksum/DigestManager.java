@@ -72,6 +72,8 @@ public abstract class DigestManager {
             return new CRC32DigestManager(ledgerId);
         case CRC32C:
             return new CRC32CDigestManager(ledgerId);
+        case DUMMY:
+            return new DummyDigestManager(ledgerId);
         default:
             throw new GeneralSecurityException("Unknown checksum type: " + digestType);
         }

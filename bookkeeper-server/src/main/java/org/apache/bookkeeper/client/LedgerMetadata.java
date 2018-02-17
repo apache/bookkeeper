@@ -39,6 +39,7 @@ import java.util.NavigableMap;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import lombok.EqualsAndHashCode;
 import org.apache.bookkeeper.client.api.DigestType;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat;
@@ -52,6 +53,7 @@ import org.slf4j.LoggerFactory;
  *
  * <p>It provides parsing and serialization methods of such metadata.
  */
+@EqualsAndHashCode
 public class LedgerMetadata implements org.apache.bookkeeper.client.api.LedgerMetadata {
     static final Logger LOG = LoggerFactory.getLogger(LedgerMetadata.class);
 
@@ -237,6 +239,8 @@ public class LedgerMetadata implements org.apache.bookkeeper.client.api.LedgerMe
                 return DigestType.CRC32;
             case CRC32C:
                 return DigestType.CRC32C;
+            case DUMMY:
+                return DigestType.DUMMY;
             default:
                 throw new IllegalArgumentException("Unable to convert digest type " + digestType);
         }
@@ -327,6 +331,10 @@ public class LedgerMetadata implements org.apache.bookkeeper.client.api.LedgerMe
     }
 
     LedgerMetadataFormat buildProtoFormat() {
+        return buildProtoFormat(true);
+    }
+
+    LedgerMetadataFormat buildProtoFormat(boolean withPassword) {
         LedgerMetadataFormat.Builder builder = LedgerMetadataFormat.newBuilder();
         builder.setQuorumSize(writeQuorumSize).setAckQuorumSize(ackQuorumSize)
             .setEnsembleSize(ensembleSize).setLength(length)
@@ -337,7 +345,10 @@ public class LedgerMetadata implements org.apache.bookkeeper.client.api.LedgerMe
         }
 
         if (hasPassword) {
-            builder.setDigestType(digestType).setPassword(ByteString.copyFrom(password));
+            builder.setDigestType(digestType);
+            if (withPassword) {
+                builder.setPassword(ByteString.copyFrom(password));
+            }
         }
 
         if (customMetadata != null) {
@@ -366,13 +377,17 @@ public class LedgerMetadata implements org.apache.bookkeeper.client.api.LedgerMe
      * @return the metadata serialized into a byte array
      */
     public byte[] serialize() {
+        return serialize(true);
+    }
+
+    public byte[] serialize(boolean withPassword) {
         if (metadataFormatVersion == 1) {
             return serializeVersion1();
         }
 
         StringBuilder s = new StringBuilder();
         s.append(VERSION_KEY).append(tSplitter).append(CURRENT_METADATA_FORMAT_VERSION).append(lSplitter);
-        s.append(TextFormat.printToString(buildProtoFormat()));
+        s.append(TextFormat.printToString(buildProtoFormat(withPassword)));
         if (LOG.isDebugEnabled()) {
             LOG.debug("Serialized config: {}", s);
         }
@@ -671,8 +686,24 @@ public class LedgerMetadata implements org.apache.bookkeeper.client.api.LedgerMe
 
     @Override
     public String toString() {
+        return toStringRepresentation(true);
+    }
+
+    /**
+     * Returns a string representation of this LedgerMetadata object by
+     * filtering out the password field.
+     *
+     * @return a string representation of the object without password field in
+     *         it.
+     */
+    public String toSafeString() {
+        return toStringRepresentation(false);
+    }
+
+    private String toStringRepresentation(boolean withPassword) {
         StringBuilder sb = new StringBuilder();
-        sb.append("(meta:").append(new String(serialize(), UTF_8)).append(", version:").append(version).append(")");
+        sb.append("(meta:").append(new String(serialize(withPassword), UTF_8)).append(", version:").append(version)
+                .append(")");
         return sb.toString();
     }
 

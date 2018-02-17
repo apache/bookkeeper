@@ -197,7 +197,7 @@ public class ZKRegistrationClient implements RegistrationClient {
     public RegistrationClient initialize(ClientConfiguration conf,
                                          ScheduledExecutorService scheduler,
                                          StatsLogger statsLogger,
-                                         Optional<ZooKeeper> zkOptional)
+                                         Optional<Object> zkOptional)
             throws BKException {
         this.conf = conf;
         this.scheduler = scheduler;
@@ -208,8 +208,10 @@ public class ZKRegistrationClient implements RegistrationClient {
         this.acls = ZkUtils.getACLs(conf);
 
         // construct the zookeeper
-        if (zkOptional.isPresent()) {
-            this.zk = zkOptional.get();
+        if (zkOptional.isPresent()
+            && zkOptional.get() instanceof ZooKeeper) {
+            // if an external zookeeper is added, use the zookeeper instance
+            this.zk = (ZooKeeper) (zkOptional.get());
             this.ownZKHandle = false;
         } else {
             try {

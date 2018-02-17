@@ -89,6 +89,7 @@ public abstract class LedgerManagerTestCase extends BookKeeperClusterTestCase {
         return ledgerIdGenerator;
     }
 
+    @SuppressWarnings("deprecation")
     @Parameters
     public static Collection<Object[]> configs() {
         return Arrays.asList(new Object[][] {

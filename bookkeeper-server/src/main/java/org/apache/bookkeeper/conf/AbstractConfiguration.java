@@ -25,7 +25,10 @@ import java.util.List;
 import javax.net.ssl.SSLEngine;
 
 import org.apache.bookkeeper.feature.Feature;
+import org.apache.bookkeeper.meta.AbstractZkLedgerManagerFactory;
+import org.apache.bookkeeper.meta.HierarchicalLedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
+import org.apache.bookkeeper.meta.LongHierarchicalLedgerManagerFactory;
 import org.apache.bookkeeper.util.EntryFormatter;
 import org.apache.bookkeeper.util.LedgerIdFormatter;
 import org.apache.bookkeeper.util.ReflectionUtils;
@@ -65,6 +68,7 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
     // Ledger Manager
     protected static final String LEDGER_MANAGER_TYPE = "ledgerManagerType";
     protected static final String LEDGER_MANAGER_FACTORY_CLASS = "ledgerManagerFactoryClass";
+    protected static final String METADATA_SERVICE_URI = "metadataServiceUri";
     protected static final String ZK_LEDGERS_ROOT_PATH = "zkLedgersRootPath";
     protected static final String ZK_REQUEST_RATE_LIMIT = "zkRequestRateLimit";
     protected static final String AVAILABLE_NODE = "available";
@@ -173,6 +177,58 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
             String key = iter.next();
             setProperty(key, baseConf.getProperty(key));
         }
+    }
+
+    /**
+     * Get metadata service uri.
+     *
+     * @return metadata service uri.
+     */
+    @SuppressWarnings("deprecation")
+    public String getMetadataServiceUri() throws ConfigurationException {
+        String serviceUri = getString(METADATA_SERVICE_URI);
+        if (null == serviceUri) {
+            // no service uri is defined, fallback to old settings
+            String ledgerManagerType;
+            Class<? extends LedgerManagerFactory> factoryClass = getLedgerManagerFactoryClass();
+            if (factoryClass == null) {
+                ledgerManagerType = HierarchicalLedgerManagerFactory.NAME;
+            } else {
+                if (!AbstractZkLedgerManagerFactory.class.isAssignableFrom(factoryClass)) {
+                    // this is a non-zk implementation
+                    throw new UnsupportedOperationException("metadata service uri is not supported for "
+                        + factoryClass);
+                }
+                if (factoryClass == HierarchicalLedgerManagerFactory.class) {
+                    ledgerManagerType = HierarchicalLedgerManagerFactory.NAME;
+                } else if (factoryClass == org.apache.bookkeeper.meta.FlatLedgerManagerFactory.class) {
+                    ledgerManagerType = org.apache.bookkeeper.meta.FlatLedgerManagerFactory.NAME;
+                } else if (factoryClass == LongHierarchicalLedgerManagerFactory.class) {
+                    ledgerManagerType = LongHierarchicalLedgerManagerFactory.NAME;
+                } else {
+                    throw new IllegalArgumentException("Unknown zookeeper based ledger manager factory : "
+                        + factoryClass);
+                }
+            }
+            serviceUri = String.format(
+                "zk+%s://%s%s",
+                ledgerManagerType,
+                getZkServers(),
+                getZkLedgersRootPath());
+        }
+        return serviceUri;
+    }
+
+    /**
+     * Set the metadata service uri.
+     *
+     * @param serviceUri the metadata service uri.
+     * @return the configuration object.
+     * @throws ConfigurationException
+     */
+    public T setMetadataServiceUri(String serviceUri) throws ConfigurationException {
+        setProperty(METADATA_SERVICE_URI, serviceUri);
+        return getThis();
     }
 
     /**

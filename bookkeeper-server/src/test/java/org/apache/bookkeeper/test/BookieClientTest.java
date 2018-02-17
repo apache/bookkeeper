@@ -69,7 +69,6 @@ public class BookieClientTest {
     public EventLoopGroup eventLoopGroup;
     public OrderedSafeExecutor executor;
     private ScheduledExecutorService scheduler;
-    ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
 
     @Before
     public void setUp() throws Exception {
@@ -152,7 +151,7 @@ public class BookieClientTest {
         final Object notifyObject = new Object();
         byte[] passwd = new byte[20];
         Arrays.fill(passwd, (byte) 'a');
-        BookieSocketAddress addr = new BookieSocketAddress("127.0.0.1", port);
+        BookieSocketAddress addr = bs.getLocalAddress();
         ResultStruct arc = new ResultStruct();
 
         BookieClient bc = new BookieClient(new ClientConfiguration(), eventLoopGroup, executor,
@@ -255,7 +254,7 @@ public class BookieClientTest {
     @Test
     public void testNoLedger() throws Exception {
         ResultStruct arc = new ResultStruct();
-        BookieSocketAddress addr = new BookieSocketAddress("127.0.0.1", port);
+        BookieSocketAddress addr = bs.getLocalAddress();
         BookieClient bc = new BookieClient(new ClientConfiguration(), eventLoopGroup, executor,
                                            scheduler, NullStatsLogger.INSTANCE);
         synchronized (arc) {
@@ -267,7 +266,7 @@ public class BookieClientTest {
 
     @Test
     public void testGetBookieInfo() throws IOException, InterruptedException {
-        BookieSocketAddress addr = new BookieSocketAddress("127.0.0.1", port);
+        BookieSocketAddress addr = bs.getLocalAddress();
         BookieClient bc = new BookieClient(new ClientConfiguration(), new NioEventLoopGroup(), executor,
                                            scheduler, NullStatsLogger.INSTANCE);
         long flags = BookkeeperProtocol.GetBookieInfoRequest.Flags.FREE_DISK_SPACE_VALUE

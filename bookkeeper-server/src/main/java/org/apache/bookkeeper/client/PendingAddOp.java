@@ -383,29 +383,40 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
         this.recyclerHandle = recyclerHandle;
     }
 
+
     private void maybeRecycle() {
-        // The reference to PendingAddOp can be held in 3 places
-        // - LedgerHandle#pendingAddOp
-        //   This reference is released when the callback is run
-        // - The executor
-        //   Released after safeRun finishes
-        // - BookieClient
-        //   Holds a reference from the point the addEntry requests are
-        //   sent.
-        // The object can only be recycled after all references are
-        // released, otherwise we could end up recycling twice and all
-        // joy that goes along with that.
-        if (hasRun && callbackTriggered && pendingWriteRequests == 0) {
-            recycle();
+        /**
+         * We have opportunity to recycle two objects here.
+         * PendingAddOp#toSend and LedgerHandle#pendingAddOp
+         *
+         * A. LedgerHandle#pendingAddOp: This can be released after all 3 conditions are met.
+         *    - After the callback is run
+         *    - After safeRun finished by the executor
+         *    - Write responses are returned from all bookies
+         *      as BookieClient Holds a reference from the point the addEntry requests are sent.
+         *
+         * B. ByteBuf can be released after 2 of the conditions are met.
+         *    - After the callback is run as we will not retry the write after callback
+         *    - After safeRun finished by the executor
+         * BookieClient takes and releases on this buffer immediately after sending the data.
+         *
+         * The object can only be recycled after the above conditions are met
+         * otherwise we could end up recycling twice and all
+         * joy that goes along with that.
+         */
+        if (hasRun && callbackTriggered) {
+            ReferenceCountUtil.release(toSend);
+            toSend = null;
+        }
+        if (toSend == null && pendingWriteRequests == 0) {
+            recyclePendAddOpObject();
         }
     }
 
-    private void recycle() {
+    private void recyclePendAddOpObject() {
         entryId = LedgerHandle.INVALID_ENTRY_ID;
         currentLedgerLength = -1;
-        ReferenceCountUtil.release(toSend);
         payload = null;
-        toSend = null;
         cb = null;
         ctx = null;
         ackSet.recycle();

@@ -77,7 +77,7 @@ class WriteEntryProcessor extends PacketProcessorBase implements WriteCallback {
             if (add.isRecoveryAdd()) {
                 requestProcessor.bookie.recoveryAddEntry(addData, this, channel, add.getMasterKey());
             } else {
-                requestProcessor.bookie.addEntry(addData, this, channel, add.getMasterKey());
+                requestProcessor.bookie.addEntry(addData, false, this, channel, add.getMasterKey());
             }
         } catch (IOException e) {
             LOG.error("Error writing " + add, e);

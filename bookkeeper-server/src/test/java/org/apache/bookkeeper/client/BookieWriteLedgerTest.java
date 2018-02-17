@@ -150,6 +150,34 @@ public class BookieWriteLedgerTest extends
     }
 
     /**
+     * Verify the functionality Ledgers with different digests.
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testLedgerDigestTest() throws Exception {
+        for (DigestType type: DigestType.values()) {
+            lh = bkc.createLedger(5, 3, 2, type, ledgerPassword);
+
+            for (int i = 0; i < numEntriesToWrite; i++) {
+                ByteBuffer entry = ByteBuffer.allocate(4);
+                entry.putInt(rng.nextInt(maxInt));
+                entry.position(0);
+
+                entries1.add(entry.array());
+                lh.addEntry(entry.array());
+            }
+
+            readEntries(lh, entries1);
+
+            long lid = lh.getId();
+            lh.close();
+            bkc.deleteLedger(lid);
+            entries1.clear();
+        }
+    }
+
+    /**
      * Verify the functionality of Advanced Ledger which returns
      * LedgerHandleAdv. LedgerHandleAdv takes entryId for addEntry, and let
      * user manage entryId allocation.

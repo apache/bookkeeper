@@ -85,6 +85,11 @@ public abstract class BookKeeperClusterTestCase {
     protected int numBookies;
     protected BookKeeperTestClient bkc;
 
+    /*
+     * Loopback interface is set as the listening interface and allowloopback is
+     * set to true in this server config. So bookies in this test process would
+     * bind to loopback address.
+     */
     protected final ServerConfiguration baseConf = TestBKConfiguration.newServerConfiguration();
     protected final ClientConfiguration baseClientConf = new ClientConfiguration();
 
@@ -99,7 +104,6 @@ public abstract class BookKeeperClusterTestCase {
     public BookKeeperClusterTestCase(int numBookies, int testTimeoutSecs) {
         this.numBookies = numBookies;
         this.globalTimeout = Timeout.seconds(testTimeoutSecs);
-        baseConf.setAllowLoopback(true);
     }
 
     @Before

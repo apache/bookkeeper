@@ -7,11 +7,9 @@ baseurl: /
 destination: local-generated
 twitter_url: https://twitter.com/asfbookkeeper
 
-livereload: true
-
 versions:
 - "4.6.1"
-# [next_version_placehodler]
+# [next_version_placeholder]
 - "4.6.0"
 - "4.5.1"
 - "4.5.0"
