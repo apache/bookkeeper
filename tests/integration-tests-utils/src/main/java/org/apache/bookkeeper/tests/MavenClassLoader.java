@@ -23,10 +23,14 @@ package org.apache.bookkeeper.tests;
 import com.google.common.collect.Lists;
 
 import java.io.File;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -100,6 +104,47 @@ public class MavenClassLoader implements AutoCloseable {
 
     public static MavenClassLoader forBookKeeperVersion(String version) throws Exception {
         return forArtifact("org.apache.bookkeeper:bookkeeper-server:" +  version);
+    }
+
+    public Object getClass(String className) throws Exception {
+        return Class.forName(className, true, classloader);
+    }
+
+    public Object callStaticMethod(String className, String methodName, ArrayList<?> args) throws Exception {
+        Class<?> klass = Class.forName(className, true, classloader);
+
+        try {
+            Class<?>[] paramTypes = args.stream().map((a)-> a.getClass()).toArray(Class[]::new);
+            return klass.getMethod(methodName, paramTypes).invoke(null, args.stream().toArray(Object[]::new));
+        } catch (NoSuchMethodException nsme) {
+            // maybe the params are primitives
+            Class<?>[] paramTypes = args.stream().map((a) -> {
+                    Class<?> k = a.getClass();
+                    try {
+                        Object type = k.getField("TYPE").get(null);
+                        if (type instanceof Class<?>) {
+                            return (Class<?>)type;
+                        } else {
+                            return k;
+                        }
+                    } catch (IllegalAccessException | NoSuchFieldException nsfe) {
+                        return k;
+                    }
+                }).toArray(Class[]::new);
+            return klass.getMethod(methodName, paramTypes).invoke(null, args.stream().toArray(Object[]::new));
+        }
+    }
+
+    public Object createCallback(String interfaceName, Object closure) throws Exception {
+        return Proxy.newProxyInstance(classloader,
+                                      new Class<?>[]{ Class.forName(interfaceName, true, classloader) },
+                                      new InvocationHandler() {
+                                          @Override
+                                          public Object invoke(Object proxy, Method m, Object[] args) throws Throwable {
+                                              Method call = closure.getClass().getMethod("call", Object[].class);
+                                              return call.invoke(closure, (Object)args);
+                                          }
+                                      });
     }
 
     public Object newInstance(String className, Object... args) throws Exception {
