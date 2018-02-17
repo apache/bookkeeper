@@ -20,11 +20,13 @@
  */
 package org.apache.bookkeeper.test;
 
+import com.google.common.util.concurrent.AbstractFuture;
+
+import java.util.concurrent.CompletableFuture;
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
-import com.google.common.util.concurrent.AbstractFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,13 +38,13 @@ public class TestCallbacks {
     private static final Logger logger = LoggerFactory.getLogger(TestCallbacks.class);
 
     public static class GenericCallbackFuture<T>
-        extends AbstractFuture<T> implements GenericCallback<T> {
+        extends CompletableFuture<T> implements GenericCallback<T> {
         @Override
         public void operationComplete(int rc, T value) {
             if (rc != BKException.Code.OK) {
-                setException(BKException.create(rc));
+                completeExceptionally(BKException.create(rc));
             } else {
-                set(value);
+                complete(value);
             }
         }
     }
