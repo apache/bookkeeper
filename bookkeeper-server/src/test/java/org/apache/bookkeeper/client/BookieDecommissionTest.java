@@ -22,6 +22,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 import java.util.Iterator;
+import java.util.concurrent.TimeUnit;
 import lombok.Cleanup;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.bookie.Bookie;
@@ -48,6 +49,15 @@ public class BookieDecommissionTest extends BookKeeperClusterTestCase {
         super(NUM_OF_BOOKIES, 480);
         baseConf.setOpenLedgerRereplicationGracePeriod(100);
         setAutoRecoveryEnabled(false);
+    }
+
+    private static Auditor waitUtilAuditorStarted(AutoRecoveryMain recoveryProcess) throws Exception {
+        Auditor auditor = recoveryProcess.getAuditor();
+        while (null == auditor) {
+            TimeUnit.MILLISECONDS.sleep(100);
+            auditor = recoveryProcess.getAuditor();
+        }
+        return auditor;
     }
 
     @Test
@@ -94,11 +104,7 @@ public class BookieDecommissionTest extends BookKeeperClusterTestCase {
         bkAdmin.decommissionBookie(
             Bookie.getBookieAddress(killedBookieConf),
             () -> {
-                Auditor auditor = recoveryProcess.getAuditor();
-                if (null != auditor) {
-                    auditor.submitLostBookieRecoveryDelayChangedEvent().get();
-                    log.info("Wait until auditor completes the auditing task.");
-                }
+
                 return null;
             },
             100 /* sleep time per ledger */,
@@ -118,11 +124,8 @@ public class BookieDecommissionTest extends BookKeeperClusterTestCase {
         bkAdmin.decommissionBookie(
             Bookie.getBookieAddress(killedBookieConf),
             () -> {
-                Auditor auditor = recoveryProcess.getAuditor();
-                if (null != auditor) {
-                    auditor.submitLostBookieRecoveryDelayChangedEvent().get();
-                    log.info("Wait until auditor completes the auditing task.");
-                }
+                Auditor auditor = waitUtilAuditorStarted(recoveryProcess);
+                auditor.submitLostBookieRecoveryDelayChangedEvent().get();
                 return null;
             },
             100 /* sleep time per ledger */,
@@ -194,11 +197,8 @@ public class BookieDecommissionTest extends BookKeeperClusterTestCase {
         bkAdmin.decommissionBookie(
             Bookie.getBookieAddress(killedBookieConf),
             () -> {
-                Auditor auditor = recoveryProcess.getAuditor();
-                if (null != auditor) {
-                    auditor.submitLostBookieRecoveryDelayChangedEvent().get();
-                    log.info("Wait until auditor completes the auditing task.");
-                }
+                Auditor auditor = waitUtilAuditorStarted(recoveryProcess);
+                auditor.submitLostBookieRecoveryDelayChangedEvent().get();
                 return null;
             },
             100 /* sleep time per ledger */,
