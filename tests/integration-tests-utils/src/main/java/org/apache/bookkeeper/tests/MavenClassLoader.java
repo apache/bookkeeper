@@ -31,6 +31,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
+import org.jboss.shrinkwrap.resolver.api.maven.ConfigurableMavenResolverSystem;
 import org.jboss.shrinkwrap.resolver.api.maven.Maven;
 import org.jboss.shrinkwrap.resolver.api.maven.ScopeType;
 import org.jboss.shrinkwrap.resolver.api.maven.coordinate.MavenDependencies;
@@ -48,8 +49,18 @@ public class MavenClassLoader implements AutoCloseable {
 
     private final URLClassLoader classloader;
 
+    public static MavenClassLoader forArtifact(String repo, String mainArtifact) throws Exception {
+        return createClassLoader(Maven.configureResolver().withRemoteRepo("custom", repo, "default"),
+                                 mainArtifact);
+    }
+
     public static MavenClassLoader forArtifact(String mainArtifact) throws Exception {
-        Optional<String> slf4jVersion = Arrays.stream(Maven.resolver().resolve(mainArtifact)
+        return createClassLoader(Maven.configureResolver(), mainArtifact);
+    }
+
+    private static MavenClassLoader createClassLoader(ConfigurableMavenResolverSystem resolver,
+                                                      String mainArtifact) throws Exception {
+        Optional<String> slf4jVersion = Arrays.stream(resolver.resolve(mainArtifact)
                                                       .withTransitivity().asResolvedArtifact())
             .filter((a) -> a.getCoordinate().getGroupId().equals("org.slf4j")
                     && a.getCoordinate().getArtifactId().equals("slf4j-log4j12"))
@@ -66,7 +77,7 @@ public class MavenClassLoader implements AutoCloseable {
                                                         ScopeType.COMPILE, false));
         }
 
-        File[] files = Maven.resolver().addDependencies(deps.toArray(new MavenDependency[0]))
+        File[] files = resolver.addDependencies(deps.toArray(new MavenDependency[0]))
             .resolve().withTransitivity().asFile();
         URLClassLoader cl = AccessController.doPrivileged(
                 new PrivilegedAction<URLClassLoader>() {

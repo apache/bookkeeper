@@ -235,6 +235,7 @@ Apache Software License, Version 2.
 - lib/org.eclipse.jetty-jetty-servlet-9.4.5.v20170502.jar [21]
 - lib/org.eclipse.jetty-jetty-util-9.4.5.v20170502.jar [21]
 - lib/org.rocksdb-rocksdbjni-5.8.6.jar [22]
+- lib/com.beust-jcommander-1.48.jar [23]
 
 [1] Source available at https://github.com/FasterXML/jackson-annotations/tree/jackson-annotations-2.8.9
 [2] Source available at https://github.com/FasterXML/jackson-core/tree/jackson-core-2.8.9
@@ -258,6 +259,7 @@ Apache Software License, Version 2.
 [20] Source available at https://github.com/apache/zookeeper/tree/release-3.5.3
 [21] Source available at https://github.com/eclipse/jetty.project/tree/jetty-9.4.5.v20170502
 [22] Source available at https://github.com/facebook/rocksdb/tree/v5.8.6
+[23] Source available at https://github.com/cbeust/jcommander/tree/jcommander-1.48
 
 ------------------------------------------------------------------------------------
 lib/io.netty-netty-all-4.1.12.Final.jar bundles some 3rd party dependencies

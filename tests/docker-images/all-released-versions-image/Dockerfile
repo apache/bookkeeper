@@ -17,16 +17,16 @@
 # under the License.
 #
 
-FROM centos:7
+FROM openjdk:8-jdk
 MAINTAINER Apache BookKeeper <dev@bookkeeper.apache.org>
 
-ARG BK_TARBALL=DOESNOTEXIST
 ENV BK_JOURNALDIR=/opt/bookkeeper/data/journal
 ENV BK_LEDGERDIR=/opt/bookkeeper/data/ledgers
 ENV BK_ZKCONNECTSTRING=zookeeper1,zookeeper2,zookeeper3
 
-RUN yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
-RUN yum install -y java-1.8.0-openjdk-headless wget bash python sudo supervisor which
+RUN apt-get update && apt-get install -qy wget supervisor bash \
+    && echo "dash dash/sh boolean false" | debconf-set-selections \
+    && DEBIAN_FRONTEND=noninteractive dpkg-reconfigure dash
 
 RUN mkdir /tarballs
 WORKDIR /tarballs
@@ -45,14 +45,19 @@ RUN wget -nv https://archive.apache.org/dist/bookkeeper/bookkeeper-4.4.0/bookkee
 RUN wget -nv https://archive.apache.org/dist/bookkeeper/bookkeeper-4.5.0/bookkeeper-server-4.5.0-bin.tar.gz{,.sha1,.md5,.asc}
 RUN wget -nv https://archive.apache.org/dist/bookkeeper/bookkeeper-4.5.1/bookkeeper-server-4.5.1-bin.tar.gz{,.sha1,.md5,.asc}
 RUN wget -nv https://archive.apache.org/dist/bookkeeper/bookkeeper-4.6.0/bookkeeper-server-4.6.0-bin.tar.gz{,.sha1,.md5,.asc}
+RUN wget -nv https://archive.apache.org/dist/bookkeeper/bookkeeper-4.6.1/bookkeeper-server-4.6.1-bin.tar.gz{,.sha1,.md5,.asc}
+RUN wget -nv https://archive.apache.org/dist/incubator/pulsar/pulsar-1.21.0-incubating/apache-pulsar-1.21.0-incubating-bin.tar.gz{,.asc}
 RUN wget -nv https://dist.apache.org/repos/dist/release/bookkeeper/KEYS
 RUN wget -nv http://svn.apache.org/repos/asf/zookeeper/bookkeeper/dist/KEYS?p=1620552 -O KEYS.old
-COPY ${BK_TARBALL} /tarballs/
+RUN wget -nv https://archive.apache.org/dist/incubator/pulsar/KEYS -O KEYS.pulsar
 
+RUN mkdir -p /etc/supervisord/conf.d && mkdir -p /var/run/supervisor && mkdir -p /var/log/bookkeeper
+ADD conf/supervisord.conf /etc/supervisord.conf
 ADD scripts/install-all-tarballs.sh /install-all-tarballs.sh
-RUN bash /install-all-tarballs.sh && rm -rf /tarballs
+ADD scripts/install-tarball.sh /install-tarball.sh
+ADD scripts/install-pulsar-tarball.sh /install-pulsar-tarball.sh
+RUN bash /install-all-tarballs.sh && bash /install-pulsar-tarball.sh && rm -rf /tarballs
 
 WORKDIR /
 ADD scripts/update-conf-and-boot.sh /update-conf-and-boot.sh
-RUN chmod +x /update-conf-and-boot.sh
 CMD ["/update-conf-and-boot.sh"]
