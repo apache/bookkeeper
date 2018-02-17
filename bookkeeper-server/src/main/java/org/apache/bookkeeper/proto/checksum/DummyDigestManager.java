@@ -18,34 +18,27 @@
  * under the License.
  *
  */
-package org.apache.bookkeeper.client.api;
+package org.apache.bookkeeper.proto.checksum;
 
-import org.apache.bookkeeper.common.annotation.InterfaceAudience.Public;
-import org.apache.bookkeeper.common.annotation.InterfaceStability.Unstable;
+import io.netty.buffer.ByteBuf;
+
 
 /**
- * Digest type.
- *
- * @since 4.6
+ * This class provides a noop digest implementation.
  */
-@Public
-@Unstable
-public enum DigestType {
+public class DummyDigestManager extends DigestManager {
+    public DummyDigestManager(long ledgerId) {
+        super(ledgerId);
+    }
 
-    /**
-     * Entries are verified by applied CRC32 algorithm.
-     */
-    CRC32,
-    /**
-     * Entries are verified by applied MAC algorithm.
-     */
-    MAC,
-    /**
-     * Entries are verified by applied CRC32C algorithm.
-     */
-    CRC32C,
-    /**
-     * Entries are not verified.
-     */
-    DUMMY,
+    @Override
+    int getMacCodeLength() {
+        return 0;
+    }
+
+    @Override
+    void update(ByteBuf buffer) {}
+
+    @Override
+    void populateValueAndReset(ByteBuf buffer) {}
 }

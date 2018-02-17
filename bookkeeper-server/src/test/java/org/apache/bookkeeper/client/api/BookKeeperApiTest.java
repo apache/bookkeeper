@@ -53,6 +53,7 @@ import org.slf4j.event.LoggingEvent;
  */
 public class BookKeeperApiTest extends MockBookKeeperTestCase {
 
+    private static final byte[] bigData = new byte[1024];
     private static final byte[] data = "foo".getBytes(UTF_8);
     private static final byte[] password = "password".getBytes(UTF_8);
 
@@ -161,6 +162,40 @@ public class BookKeeperApiTest extends MockBookKeeperTestCase {
                 .execute())) {
         }
     }
+
+    /**
+     * Verify the functionality Ledgers with different digests.
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testLedgerDigests() throws Exception {
+        for (DigestType type: DigestType.values()) {
+            long lId;
+            try (WriteHandle writer = result(newCreateLedgerOp()
+                    .withAckQuorumSize(1)
+                    .withWriteQuorumSize(2)
+                    .withEnsembleSize(3)
+                    .withDigestType(type)
+                    .withPassword(password)
+                    .execute())) {
+                lId = writer.getId();
+                assertEquals(-1L, writer.getLastAddPushed());
+                result(writer.append(ByteBuffer.wrap(bigData)));
+                assertEquals(bigData.length, writer.getLength());
+            }
+            try (ReadHandle reader = result(newOpenLedgerOp()
+                    .withDigestType(type)
+                    .withPassword(password)
+                    .withLedgerId(lId)
+                    .execute())) {
+                LedgerEntries entries = result(reader.read(0, 0));
+                checkEntries(entries, bigData);
+            }
+            result(newDeleteLedgerOp().withLedgerId(lId).execute());
+        }
+    }
+
 
     @Test(expected = BKDigestMatchException.class)
     public void testOpenLedgerDigestUnmatched() throws Exception {
