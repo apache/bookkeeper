@@ -53,7 +53,7 @@ import org.powermock.modules.junit4.PowerMockRunner;
  * Unit test of {@link ZKMetadataDriverBase}.
  */
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({ ZKMetadataDriverBase.class, ZooKeeperClient.class, LedgerManagerFactory.class })
+@PrepareForTest({ ZKMetadataDriverBase.class, ZooKeeperClient.class, AbstractZkLedgerManagerFactory.class })
 public class ZKMetadataDriverBaseTest extends ZKMetadataDriverTestBase {
 
     private ZKMetadataDriverBase driver;
@@ -128,10 +128,10 @@ public class ZKMetadataDriverBaseTest extends ZKMetadataDriverTestBase {
     public void testGetLedgerManagerFactory() throws Exception {
         driver.initialize(conf, NullStatsLogger.INSTANCE, Optional.empty());
 
-        mockStatic(LedgerManagerFactory.class);
+        mockStatic(AbstractZkLedgerManagerFactory.class);
         LedgerManagerFactory factory = mock(LedgerManagerFactory.class);
         PowerMockito.when(
-            LedgerManagerFactory.class,
+            AbstractZkLedgerManagerFactory.class,
             "newLedgerManagerFactory",
             same(conf),
             same(driver.layoutManager))
@@ -139,7 +139,7 @@ public class ZKMetadataDriverBaseTest extends ZKMetadataDriverTestBase {
 
         assertSame(factory, driver.getLedgerManagerFactory());
         assertSame(factory, driver.lmFactory);
-        verifyStatic(LedgerManagerFactory.class, times(1));
+        verifyStatic(AbstractZkLedgerManagerFactory.class, times(1));
         AbstractZkLedgerManagerFactory.newLedgerManagerFactory(
             same(conf),
             same(driver.layoutManager));
