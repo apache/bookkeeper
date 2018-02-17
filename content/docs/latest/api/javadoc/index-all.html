@@ -457,6 +457,8 @@
 <dd>
 <div class="block">Obtains asynchronously the last confirmed write from a quorum of bookies.</div>
 </dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#AUDITOR_LEDGER_VERIFICATION_PERCENTAGE">AUDITOR_LEDGER_VERIFICATION_PERCENTAGE</a></span> - Static variable in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#AUDITOR_PERIODIC_BOOKIE_CHECK_INTERVAL">AUDITOR_PERIODIC_BOOKIE_CHECK_INTERVAL</a></span> - Static variable in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#AUDITOR_PERIODIC_CHECK_INTERVAL">AUDITOR_PERIODIC_CHECK_INTERVAL</a></span> - Static variable in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
@@ -989,6 +991,8 @@
 <div class="block">Check that all the fragments in the passed in ledger, and report those
  which are missing.</div>
 </dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerChecker.html#checkLedger-org.apache.bookkeeper.client.LedgerHandle-org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback-long-">checkLedger(LedgerHandle, BookkeeperInternalCallbacks.GenericCallback&lt;Set&lt;LedgerFragment&gt;&gt;, long)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerChecker.html" title="class in org.apache.bookkeeper.client">LedgerChecker</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.RRTopologyAwareCoverageEnsemble.html#chosenNodes">chosenNodes</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.RRTopologyAwareCoverageEnsemble.html" title="class in org.apache.bookkeeper.client">TopologyAwareEnsemblePlacementPolicy.RRTopologyAwareCoverageEnsemble</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/CodahaleOpStatsLogger.html#clear--">clear()</a></span> - Method in class org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/CodahaleOpStatsLogger.html" title="class in org.apache.bookkeeper.stats">CodahaleOpStatsLogger</a></dt>
@@ -1924,6 +1928,10 @@
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#getAllowStorageExpansion--">getAllowStorageExpansion()</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
 <dd>
 <div class="block">Return whether we should allow addition of ledger/index dirs to an existing bookie.</div>
+</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#getAuditorLedgerVerificationPercentage--">getAuditorLedgerVerificationPercentage()</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
+<dd>
+<div class="block">Get what percentage of a ledger (fragment)'s entries will be verified.</div>
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#getAuditorPeriodicBookieCheckInterval--">getAuditorPeriodicBookieCheckInterval()</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
 <dd>
@@ -3585,6 +3593,8 @@
 <dd>
 <div class="block">Is statistics enabled.</div>
 </dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerFragment.html#isStoredEntryId-long-int-">isStoredEntryId(long, int)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerFragment.html" title="class in org.apache.bookkeeper.client">LedgerFragment</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/PendingReadOp.LedgerEntryRequest.html#issueSpeculativeRequest--">issueSpeculativeRequest()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/PendingReadOp.LedgerEntryRequest.html" title="class in org.apache.bookkeeper.client">PendingReadOp.LedgerEntryRequest</a></dt>
 <dd>
 <div class="block">Issues a speculative request and indicates if more speculative
@@ -5489,6 +5499,10 @@
 <dd>
 <div class="block">Change the setting of whether or not we should allow ledger/index
  dirs to be added to the current set of dirs.</div>
+</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#setAuditorLedgerVerificationPercentage-long-">setAuditorLedgerVerificationPercentage(long)</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
+<dd>
+<div class="block">Set what percentage of a ledger (fragment)'s entries will be verified.</div>
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#setAuditorPeriodicBookieCheckInterval-long-">setAuditorPeriodicBookieCheckInterval(long)</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
 <dd>

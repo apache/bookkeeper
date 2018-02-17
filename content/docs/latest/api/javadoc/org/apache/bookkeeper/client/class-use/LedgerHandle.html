@@ -353,13 +353,19 @@
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>void</code></td>
+<td class="colLast"><span class="typeNameLabel">LedgerChecker.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/LedgerChecker.html#checkLedger-org.apache.bookkeeper.client.LedgerHandle-org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback-long-">checkLedger</a></span>(<a href="../../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
+           org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;<a href="../../../../../org/apache/bookkeeper/client/LedgerFragment.html" title="class in org.apache.bookkeeper.client">LedgerFragment</a>&gt;&gt;&nbsp;cb,
+           long&nbsp;percentageOfLedgerFragmentToBeVerified)</code>&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>void</code></td>
 <td class="colLast"><span class="typeNameLabel">AsyncCallback.CloseCallback.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/AsyncCallback.CloseCallback.html#closeComplete-int-org.apache.bookkeeper.client.LedgerHandle-java.lang.Object-">closeComplete</a></span>(int&nbsp;rc,
              <a href="../../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
              <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&nbsp;ctx)</code>
 <div class="block">Callback definition.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><span class="typeNameLabel">SyncCallbackUtils.SyncCloseCallback.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/SyncCallbackUtils.SyncCloseCallback.html#closeComplete-int-org.apache.bookkeeper.client.LedgerHandle-java.lang.Object-">closeComplete</a></span>(int&nbsp;rc,
              <a href="../../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
@@ -367,20 +373,20 @@
 <div class="block">Close callback method.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><span class="typeNameLabel">LedgerHandle.NoopCloseCallback.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/LedgerHandle.NoopCloseCallback.html#closeComplete-int-org.apache.bookkeeper.client.LedgerHandle-java.lang.Object-">closeComplete</a></span>(int&nbsp;rc,
              <a href="../../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
              <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&nbsp;ctx)</code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>(package private) static <a href="../../../../../org/apache/bookkeeper/client/PendingAddOp.html" title="class in org.apache.bookkeeper.client">PendingAddOp</a></code></td>
 <td class="colLast"><span class="typeNameLabel">PendingAddOp.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/PendingAddOp.html#create-org.apache.bookkeeper.client.LedgerHandle-io.netty.buffer.ByteBuf-org.apache.bookkeeper.client.AsyncCallback.AddCallback-java.lang.Object-">create</a></span>(<a href="../../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
       io.netty.buffer.ByteBuf&nbsp;payload,
       <a href="../../../../../org/apache/bookkeeper/client/AsyncCallback.AddCallback.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.AddCallback</a>&nbsp;cb,
       <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&nbsp;ctx)</code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><span class="typeNameLabel">AsyncCallback.CreateCallback.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/AsyncCallback.CreateCallback.html#createComplete-int-org.apache.bookkeeper.client.LedgerHandle-java.lang.Object-">createComplete</a></span>(int&nbsp;rc,
               <a href="../../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
@@ -388,7 +394,7 @@
 <div class="block">Declaration of callback method.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><span class="typeNameLabel">SyncCallbackUtils.SyncCreateCallback.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/SyncCallbackUtils.SyncCreateCallback.html#createComplete-int-org.apache.bookkeeper.client.LedgerHandle-java.lang.Object-">createComplete</a></span>(int&nbsp;rc,
               <a href="../../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
@@ -396,7 +402,7 @@
 <div class="block">Create callback implementation for synchronous create call.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><span class="typeNameLabel">SyncCallbackUtils.SyncCreateAdvCallback.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/SyncCallbackUtils.SyncCreateAdvCallback.html#createComplete-int-org.apache.bookkeeper.client.LedgerHandle-java.lang.Object-">createComplete</a></span>(int&nbsp;rc,
               <a href="../../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
@@ -404,39 +410,39 @@
 <div class="block">Create callback implementation for synchronous create call.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>static void</code></td>
 <td class="colLast"><span class="typeNameLabel">BookKeeperAccessor.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/BookKeeperAccessor.html#forceRecoverLedger-org.apache.bookkeeper.client.LedgerHandle-org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback-">forceRecoverLedger</a></span>(<a href="../../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
                   org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Void.html?is-external=true" title="class or interface in java.lang">Void</a>&gt;&nbsp;cb)</code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><span class="typeNameLabel">LedgerReader.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/LedgerReader.html#forwardReadEntriesFromLastConfirmed-org.apache.bookkeeper.client.LedgerHandle-org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback-">forwardReadEntriesFromLastConfirmed</a></span>(<a href="../../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
                                    org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="../../../../../org/apache/bookkeeper/client/LedgerEntry.html" title="class in org.apache.bookkeeper.client">LedgerEntry</a>&gt;&gt;&nbsp;callback)</code>
 <div class="block">Forward reading entries from last add confirmed.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>static <a href="../../../../../org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a></code></td>
 <td class="colLast"><span class="typeNameLabel">BookKeeperAccessor.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/BookKeeperAccessor.html#getLedgerMetadata-org.apache.bookkeeper.client.LedgerHandle-">getLedgerMetadata</a></span>(<a href="../../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh)</code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a></code></td>
 <td class="colLast"><span class="typeNameLabel">BookKeeperAdmin.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/BookKeeperAdmin.html#getLedgerMetadata-org.apache.bookkeeper.client.LedgerHandle-">getLedgerMetadata</a></span>(<a href="../../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh)</code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><span class="typeNameLabel">LedgerRecoveryOp.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/LedgerRecoveryOp.html#onEntryComplete-int-org.apache.bookkeeper.client.LedgerHandle-org.apache.bookkeeper.client.LedgerEntry-java.lang.Object-">onEntryComplete</a></span>(int&nbsp;rc,
                <a href="../../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
                <a href="../../../../../org/apache/bookkeeper/client/LedgerEntry.html" title="class in org.apache.bookkeeper.client">LedgerEntry</a>&nbsp;entry,
                <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&nbsp;ctx)</code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>(package private) void</code></td>
 <td class="colLast"><span class="typeNameLabel">LedgerOpenOp.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/LedgerOpenOp.html#openComplete-int-org.apache.bookkeeper.client.LedgerHandle-">openComplete</a></span>(int&nbsp;rc,
             <a href="../../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh)</code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><span class="typeNameLabel">AsyncCallback.OpenCallback.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/AsyncCallback.OpenCallback.html#openComplete-int-org.apache.bookkeeper.client.LedgerHandle-java.lang.Object-">openComplete</a></span>(int&nbsp;rc,
             <a href="../../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
@@ -444,7 +450,7 @@
 <div class="block">Callback for asynchronous call to open ledger.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><span class="typeNameLabel">SyncCallbackUtils.SyncOpenCallback.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/SyncCallbackUtils.SyncOpenCallback.html#openComplete-int-org.apache.bookkeeper.client.LedgerHandle-java.lang.Object-">openComplete</a></span>(int&nbsp;rc,
             <a href="../../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
@@ -452,7 +458,7 @@
 <div class="block">Callback method for synchronous open operation.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><span class="typeNameLabel">AsyncCallback.ReadCallback.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/AsyncCallback.ReadCallback.html#readComplete-int-org.apache.bookkeeper.client.LedgerHandle-java.util.Enumeration-java.lang.Object-">readComplete</a></span>(int&nbsp;rc,
             <a href="../../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
@@ -461,7 +467,7 @@
 <div class="block">Callback declaration.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><span class="typeNameLabel">SyncCallbackUtils.SyncReadCallback.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/SyncCallbackUtils.SyncReadCallback.html#readComplete-int-org.apache.bookkeeper.client.LedgerHandle-java.util.Enumeration-java.lang.Object-">readComplete</a></span>(int&nbsp;rc,
             <a href="../../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
@@ -470,19 +476,19 @@
 <div class="block">Implementation of callback interface for synchronous read method.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><span class="typeNameLabel">LedgerReader.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/LedgerReader.html#readEntriesFromAllBookies-org.apache.bookkeeper.client.LedgerHandle-long-org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback-">readEntriesFromAllBookies</a></span>(<a href="../../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
                          long&nbsp;eid,
                          org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;<a href="../../../../../org/apache/bookkeeper/client/LedgerReader.ReadResult.html" title="class in org.apache.bookkeeper.client">LedgerReader.ReadResult</a>&lt;io.netty.buffer.ByteBuf&gt;&gt;&gt;&nbsp;callback)</code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><span class="typeNameLabel">LedgerReader.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/LedgerReader.html#readLacs-org.apache.bookkeeper.client.LedgerHandle-long-org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback-">readLacs</a></span>(<a href="../../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
         long&nbsp;eid,
         org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;<a href="../../../../../org/apache/bookkeeper/client/LedgerReader.ReadResult.html" title="class in org.apache.bookkeeper.client">LedgerReader.ReadResult</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>&gt;&gt;&gt;&nbsp;callback)</code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>(package private) void</code></td>
 <td class="colLast"><span class="typeNameLabel">LedgerFragmentReplicator.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/LedgerFragmentReplicator.html#replicate-org.apache.bookkeeper.client.LedgerHandle-org.apache.bookkeeper.client.LedgerFragment-org.apache.zookeeper.AsyncCallback.VoidCallback-java.util.Set-">replicate</a></span>(<a href="../../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
          <a href="../../../../../org/apache/bookkeeper/client/LedgerFragment.html" title="class in org.apache.bookkeeper.client">LedgerFragment</a>&nbsp;lf,
@@ -492,18 +498,18 @@
  a ledger that was stored in an ensemble that included the failed bookie.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><span class="typeNameLabel">BookKeeperAdmin.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/BookKeeperAdmin.html#replicateLedgerFragment-org.apache.bookkeeper.client.LedgerHandle-org.apache.bookkeeper.client.LedgerFragment-">replicateLedgerFragment</a></span>(<a href="../../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
                        <a href="../../../../../org/apache/bookkeeper/client/LedgerFragment.html" title="class in org.apache.bookkeeper.client">LedgerFragment</a>&nbsp;ledgerFragment)</code>
 <div class="block">Replicate the Ledger fragment to target Bookie passed.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>(package private) void</code></td>
 <td class="colLast"><span class="typeNameLabel">SyncCounter.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/SyncCounter.html#setLh-org.apache.bookkeeper.client.LedgerHandle-">setLh</a></span>(<a href="../../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh)</code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>(package private) static <a href="http://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;<a href="../../../../../org/apache/bookkeeper/client/LedgerFragment.html" title="class in org.apache.bookkeeper.client">LedgerFragment</a>&gt;</code></td>
 <td class="colLast"><span class="typeNameLabel">LedgerFragmentReplicator.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/LedgerFragmentReplicator.html#splitIntoSubFragments-org.apache.bookkeeper.client.LedgerHandle-org.apache.bookkeeper.client.LedgerFragment-long-">splitIntoSubFragments</a></span>(<a href="../../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
                      <a href="../../../../../org/apache/bookkeeper/client/LedgerFragment.html" title="class in org.apache.bookkeeper.client">LedgerFragment</a>&nbsp;ledgerFragment,
