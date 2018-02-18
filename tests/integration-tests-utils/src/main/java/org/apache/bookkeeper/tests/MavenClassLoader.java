@@ -83,6 +83,10 @@ public class MavenClassLoader implements AutoCloseable {
 
         File[] files = resolver.addDependencies(deps.toArray(new MavenDependency[0]))
             .resolve().withTransitivity().asFile();
+        LOG.info("IKDEBUG Loading files for {}", mainArtifact);
+        for (File f : files) {
+            LOG.info("IKDEBUG - {}", f.toString());
+        }
         URLClassLoader cl = AccessController.doPrivileged(
                 new PrivilegedAction<URLClassLoader>() {
                     @Override

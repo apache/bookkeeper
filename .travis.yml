@@ -33,7 +33,10 @@ matrix:
       env: CUSTOM_JDK="oraclejdk9"
     - os: linux
       dist: trusty
-      env: CUSTOM_JDK="openjdk8"
+      sudo: true
+      env:
+        - CUSTOM_JDK="openjdk8"
+        - DOCKER="yes"
 
 before_install:
 - |
@@ -58,6 +61,7 @@ before_install:
 
 script:
   - travis_retry mvn --batch-mode clean apache-rat:check compile spotbugs:check install -DskipTests
+  - if [ "$DOCKER" == "yes" ]; then mvn --batch-mode -f tests/pom.xml install -DintegrationTests; fi
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then dev/check-binary-license ./bookkeeper-dist/all/target/bookkeeper-all-${BK_VERSION}-bin.tar.gz; fi
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then dev/check-binary-license ./bookkeeper-dist/server/target/bookkeeper-server-${BK_VERSION}-bin.tar.gz; fi
   - if [ "$DLOG_MODIFIED" == "true" ]; then cd stream/distributedlog && mvn --batch-mode clean package -Ddistributedlog; fi
