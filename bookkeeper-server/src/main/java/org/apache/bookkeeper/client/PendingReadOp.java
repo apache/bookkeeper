@@ -72,6 +72,7 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
     long endEntryId;
     long requestTimeNanos;
     OpStatsLogger readOpLogger;
+    Counter readOpDmCounter;
     private final Counter speculativeReadCounter;
 
     final int requiredBookiesMissingEntryForRecovery;
@@ -134,6 +135,7 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
             try {
                 content = lh.macManager.verifyDigestAndReturnData(entryImpl.getEntryId(), buffer);
             } catch (BKDigestMatchException e) {
+                readOpDmCounter.inc();
                 logErrorAndReattemptRead(bookieIndex, host, "Mac mismatch", BKException.Code.DigestMatchException);
                 buffer.release();
                 return false;
@@ -478,6 +480,7 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
         heardFromHostsBitSet = new BitSet(getLedgerMetadata().getEnsembleSize());
 
         readOpLogger = lh.bk.getReadOpLogger();
+        readOpDmCounter = lh.bk.getReadOpDmCounter();
         speculativeReadCounter = lh.bk.getSpeculativeReadCounter();
     }
 

@@ -40,7 +40,10 @@ public interface BookKeeperClientStats {
     // Data Operations
 
     String ADD_OP = "ADD_ENTRY";
+    String ADD_OP_UR = "ADD_ENTRY_UR"; // Under Replicated during AddEntry.
     String READ_OP = "READ_ENTRY";
+    // Corrupted entry (Digest Mismatch/ Under Replication) detected during ReadEntry
+    String READ_OP_DM = "READ_ENTRY_DM";
     String WRITE_LAC_OP = "WRITE_LAC";
     String READ_LAC_OP = "READ_LAC";
     String READ_LAST_CONFIRMED_AND_ENTRY = "READ_LAST_CONFIRMED_AND_ENTRY";
