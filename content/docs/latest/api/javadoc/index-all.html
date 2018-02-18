@@ -108,6 +108,8 @@
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeperClientStats.html#ADD_OP_OUTSTANDING">ADD_OP_OUTSTANDING</a></span> - Static variable in interface org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeperClientStats.html" title="interface in org.apache.bookkeeper.client">BookKeeperClientStats</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeperClientStats.html#ADD_OP_UR">ADD_OP_UR</a></span> - Static variable in interface org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeperClientStats.html" title="interface in org.apache.bookkeeper.client">BookKeeperClientStats</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/DistributionSchedule.QuorumCoverageSet.html#addBookie-int-int-">addBookie(int, int)</a></span> - Method in interface org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/DistributionSchedule.QuorumCoverageSet.html" title="interface in org.apache.bookkeeper.client">DistributionSchedule.QuorumCoverageSet</a></dt>
 <dd>
 <div class="block">Add a bookie to the result set.</div>
@@ -196,6 +198,8 @@
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.RRTopologyAwareCoverageEnsemble.html#addNode-org.apache.bookkeeper.client.TopologyAwareEnsemblePlacementPolicy.BookieNode-">addNode(TopologyAwareEnsemblePlacementPolicy.BookieNode)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.RRTopologyAwareCoverageEnsemble.html" title="class in org.apache.bookkeeper.client">TopologyAwareEnsemblePlacementPolicy.RRTopologyAwareCoverageEnsemble</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/PendingAddOp.html#addOpLogger">addOpLogger</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/PendingAddOp.html" title="class in org.apache.bookkeeper.client">PendingAddOp</a></dt>
+<dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/PendingAddOp.html#addOpUrCounter">addOpUrCounter</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/PendingAddOp.html" title="class in org.apache.bookkeeper.client">PendingAddOp</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/RegionAwareEnsemblePlacementPolicy.html#address2Region">address2Region</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/RegionAwareEnsemblePlacementPolicy.html" title="class in org.apache.bookkeeper.client">RegionAwareEnsemblePlacementPolicy</a></dt>
 <dd>&nbsp;</dd>
@@ -1918,6 +1922,8 @@
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeper.html#getAddOpLogger--">getAddOpLogger()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeper.html" title="class in org.apache.bookkeeper.client">BookKeeper</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeper.html#getAddOpUrCounter--">getAddOpUrCounter()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeper.html" title="class in org.apache.bookkeeper.client">BookKeeper</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.BookieNode.html#getAddr--">getAddr()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.BookieNode.html" title="class in org.apache.bookkeeper.client">TopologyAwareEnsemblePlacementPolicy.BookieNode</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerFragment.html#getAddress-int-">getAddress(int)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerFragment.html" title="class in org.apache.bookkeeper.client">LedgerFragment</a></dt>
@@ -2885,6 +2891,8 @@
 <dd>
 <div class="block">Get a list of readonly bookies synchronously.</div>
 </dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeper.html#getReadOpDmCounter--">getReadOpDmCounter()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeper.html" title="class in org.apache.bookkeeper.client">BookKeeper</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeper.html#getReadOpLogger--">getReadOpLogger()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeper.html" title="class in org.apache.bookkeeper.client">BookKeeper</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeper.html#getReadSpeculativeRequestPolicy--">getReadSpeculativeRequestPolicy()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeper.html" title="class in org.apache.bookkeeper.client">BookKeeper</a></dt>
@@ -4837,6 +4845,8 @@
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeperClientStats.html#READ_OP">READ_OP</a></span> - Static variable in interface org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeperClientStats.html" title="interface in org.apache.bookkeeper.client">BookKeeperClientStats</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeperClientStats.html#READ_OP_DM">READ_OP_DM</a></span> - Static variable in interface org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeperClientStats.html" title="interface in org.apache.bookkeeper.client">BookKeeperClientStats</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeperClientStats.html#READ_OP_OUTSTANDING">READ_OP_OUTSTANDING</a></span> - Static variable in interface org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeperClientStats.html" title="interface in org.apache.bookkeeper.client">BookKeeperClientStats</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/AbstractConfiguration.html#READ_SYSTEM_PROPERTIES_PROPERTY">READ_SYSTEM_PROPERTIES_PROPERTY</a></span> - Static variable in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a></dt>
@@ -4980,6 +4990,8 @@
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/ReadOnlyLedgerHandle.html#ReadOnlyLedgerHandle-org.apache.bookkeeper.client.BookKeeper-long-org.apache.bookkeeper.client.LedgerMetadata-org.apache.bookkeeper.client.BookKeeper.DigestType-byte:A-boolean-">ReadOnlyLedgerHandle(BookKeeper, long, LedgerMetadata, BookKeeper.DigestType, byte[], boolean)</a></span> - Constructor for class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/ReadOnlyLedgerHandle.html" title="class in org.apache.bookkeeper.client">ReadOnlyLedgerHandle</a></dt>
 <dd>&nbsp;</dd>
 <dt><a href="org/apache/bookkeeper/client/ReadOnlyLedgerHandle.MetadataUpdater.html" title="class in org.apache.bookkeeper.client"><span class="typeNameLink">ReadOnlyLedgerHandle.MetadataUpdater</span></a> - Class in <a href="org/apache/bookkeeper/client/package-summary.html">org.apache.bookkeeper.client</a></dt>
+<dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/PendingReadOp.html#readOpDmCounter">readOpDmCounter</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/PendingReadOp.html" title="class in org.apache.bookkeeper.client">PendingReadOp</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/PendingReadOp.html#readOpLogger">readOpLogger</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/PendingReadOp.html" title="class in org.apache.bookkeeper.client">PendingReadOp</a></dt>
 <dd>&nbsp;</dd>

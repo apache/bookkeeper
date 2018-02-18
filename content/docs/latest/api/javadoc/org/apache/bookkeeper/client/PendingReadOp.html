@@ -194,22 +194,26 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCall
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/PendingReadOp.html#parallelRead">parallelRead</a></span></code>&nbsp;</td>
 </tr>
 <tr class="altColor">
+<td class="colFirst"><code>(package private) <a href="../../../../org/apache/bookkeeper/stats/Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/PendingReadOp.html#readOpDmCounter">readOpDmCounter</a></span></code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
 <td class="colFirst"><code>(package private) <a href="../../../../org/apache/bookkeeper/stats/OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/PendingReadOp.html#readOpLogger">readOpLogger</a></span></code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>(package private) long</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/PendingReadOp.html#requestTimeNanos">requestTimeNanos</a></span></code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>(package private) int</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/PendingReadOp.html#requiredBookiesMissingEntryForRecovery">requiredBookiesMissingEntryForRecovery</a></span></code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>protected <a href="http://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="../../../../org/apache/bookkeeper/client/PendingReadOp.LedgerEntryRequest.html" title="class in org.apache.bookkeeper.client">PendingReadOp.LedgerEntryRequest</a>&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/PendingReadOp.html#seq">seq</a></span></code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>(package private) long</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/PendingReadOp.html#startEntryId">startEntryId</a></span></code>&nbsp;</td>
 </tr>
@@ -398,6 +402,15 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCall
 <li class="blockList">
 <h4>readOpLogger</h4>
 <pre><a href="../../../../org/apache/bookkeeper/stats/OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a> readOpLogger</pre>
+</li>
+</ul>
+<a name="readOpDmCounter">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>readOpDmCounter</h4>
+<pre><a href="../../../../org/apache/bookkeeper/stats/Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a> readOpDmCounter</pre>
 </li>
 </ul>
 <a name="requiredBookiesMissingEntryForRecovery">
