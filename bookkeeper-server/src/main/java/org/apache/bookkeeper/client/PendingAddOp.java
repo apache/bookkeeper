@@ -34,6 +34,7 @@ import org.apache.bookkeeper.client.AsyncCallback.AddCallbackWithLatency;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
+import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.util.MathUtils;
 import org.apache.bookkeeper.util.SafeRunnable;
@@ -70,6 +71,7 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
     long timeoutNanos;
 
     OpStatsLogger addOpLogger;
+    Counter addOpUrCounter;
     long currentLedgerLength;
     int pendingWriteRequests;
     boolean callbackTriggered;
@@ -89,6 +91,7 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
         op.completed = false;
         op.ackSet = lh.distributionSchedule.getAckSet();
         op.addOpLogger = lh.bk.getAddOpLogger();
+        op.addOpUrCounter = lh.bk.getAddOpUrCounter();
         op.timeoutNanos = lh.bk.addEntryQuorumTimeoutNanos;
         op.pendingWriteRequests = 0;
         op.callbackTriggered = false;
@@ -258,6 +261,11 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
         }
 
         if (completed) {
+            if (rc != BKException.Code.OK) {
+                // Got an error after satisfying AQ. This means we are under replicated at the create itself.
+                // Update the stat to reflect it.
+                addOpUrCounter.inc();
+            }
             // even the add operation is completed, but because we don't reset completed flag back to false when
             // #unsetSuccessAndSendWriteRequest doesn't break ack quorum constraint. we still have current pending
             // add op is completed but never callback. so do a check here to complete again.
@@ -427,6 +435,7 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
         lh = null;
         isRecoveryAdd = false;
         addOpLogger = null;
+        addOpUrCounter = null;
         completed = false;
         pendingWriteRequests = 0;
         callbackTriggered = false;
