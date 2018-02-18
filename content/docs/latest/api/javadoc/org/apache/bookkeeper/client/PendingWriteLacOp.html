@@ -178,7 +178,7 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteLacCallb
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/PendingWriteLacOp.html#receivedResponseSet">receivedResponseSet</a></span></code>&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<td class="colFirst"><code>(package private) io.netty.buffer.ByteBuf</code></td>
+<td class="colFirst"><code>(package private) org.apache.bookkeeper.util.ByteBufList</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/PendingWriteLacOp.html#toSend">toSend</a></span></code>&nbsp;</td>
 </tr>
 </table>
@@ -217,7 +217,7 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteLacCallb
 </tr>
 <tr id="i0" class="altColor">
 <td class="colFirst"><code>(package private) void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/PendingWriteLacOp.html#initiate-io.netty.buffer.ByteBuf-">initiate</a></span>(io.netty.buffer.ByteBuf&nbsp;toSend)</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/PendingWriteLacOp.html#initiate-org.apache.bookkeeper.util.ByteBufList-">initiate</a></span>(org.apache.bookkeeper.util.ByteBufList&nbsp;toSend)</code>&nbsp;</td>
 </tr>
 <tr id="i1" class="rowColor">
 <td class="colFirst"><code>(package private) void</code></td>
@@ -262,7 +262,7 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteLacCallb
 <ul class="blockList">
 <li class="blockList">
 <h4>toSend</h4>
-<pre>io.netty.buffer.ByteBuf toSend</pre>
+<pre>org.apache.bookkeeper.util.ByteBufList toSend</pre>
 </li>
 </ul>
 <a name="cb">
@@ -391,13 +391,13 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteLacCallb
 <pre>void&nbsp;sendWriteLacRequest(int&nbsp;bookieIndex)</pre>
 </li>
 </ul>
-<a name="initiate-io.netty.buffer.ByteBuf-">
+<a name="initiate-org.apache.bookkeeper.util.ByteBufList-">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>initiate</h4>
-<pre>void&nbsp;initiate(io.netty.buffer.ByteBuf&nbsp;toSend)</pre>
+<pre>void&nbsp;initiate(org.apache.bookkeeper.util.ByteBufList&nbsp;toSend)</pre>
 </li>
 </ul>
 <a name="writeLacComplete-int-long-org.apache.bookkeeper.net.BookieSocketAddress-java.lang.Object-">
