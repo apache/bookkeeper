@@ -188,10 +188,8 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
             return;
         }
 
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Unsetting success for ledger: " + lh.ledgerId + " entry: " + entryId + " bookie index: "
+        LOG.info("Unsetting success for ledger: " + lh.ledgerId + " entry: " + entryId + " bookie index: "
                       + bookieIndex);
-        }
 
         // if we had already heard a success from this array index, need to
         // increment our number of responses that are pending, since we are

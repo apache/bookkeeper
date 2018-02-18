@@ -461,6 +461,7 @@ public class BookieWriteLedgerTest extends
         bkc.deleteLedger(ledgerId);
     }
 
+
     /**
      * In a loop create/write/delete the ledger with same ledgerId through
      * the functionality of Advanced Ledger which accepts ledgerId as input.
@@ -708,6 +709,83 @@ public class BookieWriteLedgerTest extends
         readEntries(lh2, entries2);
         lh.close();
         lh2.close();
+    }
+
+    /**
+     * LedgerHandleAdv out of order writers with ensemble changes.
+     * Verify that entry that was written to old ensemble will be
+     * written to new enseble too after ensemble change.
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testLedgerHandleAdvOutOfOrderWriteAndFrocedEnsembleChange() throws Exception {
+        // Create a ledger
+        long ledgerId = 0xABCDEF;
+        SyncObj syncObj1 = new SyncObj();
+        ByteBuffer entry;
+        lh = bkc.createLedgerAdv(ledgerId, 3, 3, 3, digestType, ledgerPassword, null);
+        entry = ByteBuffer.allocate(4);
+        // Add entries 0-4
+        for (int i = 0; i < 5; i++) {
+            entry.rewind();
+            entry.putInt(rng.nextInt(maxInt));
+            lh.addEntry(i, entry.array());
+        }
+
+        // Add 10 as Async Entry, which goes to first ensemble
+        ByteBuffer entry1 = ByteBuffer.allocate(4);
+        entry1.putInt(rng.nextInt(maxInt));
+        lh.asyncAddEntry(10, entry1.array(), 0, entry1.capacity(), this, syncObj1);
+
+        Thread.sleep(5000);// wait 5 sec so entry-11 goes to the bookies and gets response.
+
+        CountDownLatch sleepLatch1 = new CountDownLatch(1);
+        ArrayList<BookieSocketAddress> ensemble;
+
+        ensemble = lh.getLedgerMetadata().getEnsembles().entrySet().iterator().next().getValue();
+
+        // Put all 3 bookies to sleep and start 3 new ones
+        sleepBookie(ensemble.get(0), sleepLatch1);
+        sleepBookie(ensemble.get(1), sleepLatch1);
+        sleepBookie(ensemble.get(2), sleepLatch1);
+        startNewBookie();
+        startNewBookie();
+        startNewBookie();
+
+        // Original bookies are in sleep, new bookies added.
+        // Now add entries 5-9 which forces ensemble changes
+        // So at this point entries 0-4, 10 went to first
+        // ensemble, 5-9 will go to new ensemble.
+        for (int i = 5; i < 10; i++) {
+            entry.rewind();
+            entry.putInt(rng.nextInt(maxInt));
+            lh.addEntry(i, entry.array());
+        }
+
+        // Wakeup all 3 bookies that went to sleep
+        sleepLatch1.countDown();
+
+        // Wait for all entries to be acknowledged for the first ledger
+        synchronized (syncObj1) {
+            while (syncObj1.counter < 1) {
+                syncObj1.wait();
+            }
+            assertEquals(BKException.Code.OK, syncObj1.rc);
+        }
+
+        // Close write handle
+        lh.close();
+
+        // Open read handle
+        lh = bkc.openLedger(ledgerId, digestType, ledgerPassword);
+
+        // Make sure to read all 10 entries.
+        for (int i = 0; i < 11; i++) {
+            lh.readEntries(i, i);
+        }
+        lh.close();
+        bkc.deleteLedger(ledgerId);
     }
 
     /**
