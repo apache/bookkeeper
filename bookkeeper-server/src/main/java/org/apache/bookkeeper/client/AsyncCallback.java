@@ -26,6 +26,30 @@ import org.apache.bookkeeper.common.annotation.InterfaceStability;
 @InterfaceAudience.Public
 @InterfaceStability.Stable
 public interface AsyncCallback {
+    /**
+     * Async Callback for adding entries to ledgers with latency information.
+     *
+     * @since 4.7
+     */
+    @InterfaceAudience.Public
+    @InterfaceStability.Evolving
+    interface AddCallbackWithLatency {
+        /**
+         * Callback declaration which additionally passes quorum write complete latency.
+         *
+         * @param rc
+         *          return code
+         * @param lh
+         *          ledger handle
+         * @param entryId
+         *          entry identifier
+         * @param qwcLatency
+         *          QuorumWriteComplete Latency
+         * @param ctx
+         *          context object
+         */
+        void addCompleteWithLatency(int rc, LedgerHandle lh, long entryId, long qwcLatency, Object ctx);
+    }
 
     /**
      * Async Callback for adding entries to ledgers.
@@ -34,9 +58,9 @@ public interface AsyncCallback {
      */
     @InterfaceAudience.Public
     @InterfaceStability.Stable
-    interface AddCallback {
+    interface AddCallback extends AddCallbackWithLatency {
         /**
-         * Callback declaration.
+         * Callback to implement if latency information is not desired.
          *
          * @param rc
          *          return code
@@ -48,6 +72,24 @@ public interface AsyncCallback {
          *          context object
          */
         void addComplete(int rc, LedgerHandle lh, long entryId, Object ctx);
+
+        /**
+         * Callback declaration which additionally passes quorum write complete latency.
+         *
+         * @param rc
+         *          return code
+         * @param lh
+         *          ledger handle
+         * @param entryId
+         *          entry identifier
+         * @param qwcLatency
+         *          QuorumWriteComplete Latency
+         * @param ctx
+         *          context object
+         */
+        default void addCompleteWithLatency(int rc, LedgerHandle lh, long entryId, long qwcLatency, Object ctx) {
+            addComplete(rc, lh, entryId, ctx);
+        }
     }
 
     /**
