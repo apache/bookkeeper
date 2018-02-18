@@ -26,10 +26,12 @@ import static org.mockito.Mockito.mock;
 
 import com.google.common.collect.Maps;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 import org.apache.bookkeeper.client.api.BKException.Code;
 import org.apache.bookkeeper.util.ZkUtils;
+import org.apache.zookeeper.AsyncCallback.Children2Callback;
 import org.apache.zookeeper.AsyncCallback.DataCallback;
 import org.apache.zookeeper.AsyncCallback.StatCallback;
 import org.apache.zookeeper.AsyncCallback.StringCallback;
@@ -216,6 +218,38 @@ public abstract class MockZooKeeperTestCase {
             watcher.process(event);
         }
         return true;
+    }
+
+    protected void mockGetChildren(String expectedPath,
+                                   boolean expectedWatcher,
+                                   int retCode,
+                                   List<String> retChildren,
+                                   Stat retStat) {
+        doAnswer(invocationOnMock -> {
+            String p = invocationOnMock.getArgument(0);
+            Watcher w = invocationOnMock.getArgument(1);
+            Children2Callback callback = invocationOnMock.getArgument(2);
+            Object ctx = invocationOnMock.getArgument(3);
+
+            if (Code.OK == retCode) {
+                addWatcher(p, w);
+            }
+
+            callback.processResult(
+                retCode,
+                p,
+                ctx,
+                retChildren,
+                retStat
+            );
+
+            return null;
+
+        }).when(mockZk).getChildren(
+            eq(expectedPath),
+            expectedWatcher ? any(Watcher.class) : eq(null),
+            any(Children2Callback.class),
+            any());
     }
 
 }

@@ -29,19 +29,15 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import java.time.Duration;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
@@ -49,28 +45,34 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.client.BKException.ZKException;
 import org.apache.bookkeeper.common.testing.executors.MockExecutorController;
 import org.apache.bookkeeper.discover.RegistrationClient.RegistrationListener;
-import org.apache.bookkeeper.discover.ZKRegistrationClient.WatchTask;
 import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.util.ZkUtils;
 import org.apache.bookkeeper.versioning.LongVersion;
 import org.apache.bookkeeper.versioning.Versioned;
+import org.apache.bookkeeper.zookeeper.MockZooKeeperTestCase;
 import org.apache.zookeeper.AsyncCallback.Children2Callback;
 import org.apache.zookeeper.KeeperException.Code;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.Watcher.Event.EventType;
 import org.apache.zookeeper.Watcher.Event.KeeperState;
-import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.Stat;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
+import org.junit.runner.RunWith;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 
 /**
  * Unit test of {@link RegistrationClient}.
  */
+@RunWith(PowerMockRunner.class)
+@PrepareForTest({ ZKRegistrationClient.class, ZkUtils.class })
 @Slf4j
-public class TestZkRegistrationClient {
+public class TestZkRegistrationClient extends MockZooKeeperTestCase {
 
     @Rule
     public final TestName runtime = new TestName();
@@ -78,18 +80,17 @@ public class TestZkRegistrationClient {
     private String ledgersPath;
     private String regPath;
     private String regReadonlyPath;
-    private ZooKeeper zk;
     private ZKRegistrationClient zkRegistrationClient;
     private ScheduledExecutorService mockExecutor;
     private MockExecutorController controller;
-    private final Map<String, Set<Watcher>> watchers = Maps.newHashMap();
 
     @Before
-    public void setup() {
+    public void setup() throws Exception {
+        super.setup();
+
         this.ledgersPath = "/" + runtime.getMethodName();
         this.regPath = ledgersPath + "/" + AVAILABLE_NODE;
         this.regReadonlyPath = regPath + "/" + READONLY;
-        this.zk = mock(ZooKeeper.class);
         this.mockExecutor = mock(ScheduledExecutorService.class);
         this.controller = new MockExecutorController()
             .controlExecute(mockExecutor)
@@ -97,49 +98,17 @@ public class TestZkRegistrationClient {
             .controlSchedule(mockExecutor)
             .controlScheduleAtFixedRate(mockExecutor, 10);
         this.zkRegistrationClient = new ZKRegistrationClient(
-            zk,
+            mockZk,
             ledgersPath,
             mockExecutor
         );
     }
 
-    private void registerWatcher(String path, Watcher watcher) {
-        if (null == watcher) {
-            return;
+    @After
+    public void teardown() {
+        if (null != zkRegistrationClient) {
+            zkRegistrationClient.close();
         }
-        synchronized (watchers) {
-            Set<Watcher> watcherSet = watchers.get(path);
-            if (null == watcherSet) {
-                watcherSet = Sets.newHashSet();
-                watchers.put(path, watcherSet);
-            }
-            watcherSet.add(watcher);
-        }
-    }
-
-    private void mockGetChildren(String path, Class<? extends Watcher> watcherCls,
-                                 int rcToRespond,
-                                 List<String> childrenToRespond,
-                                 Stat statToRespond) {
-        doAnswer(invocationOnMock -> {
-            String p = invocationOnMock.getArgument(0);
-            Watcher w = invocationOnMock.getArgument(1);
-            Children2Callback callback = invocationOnMock.getArgument(2);
-            Object ctx = invocationOnMock.getArgument(3);
-
-            registerWatcher(p, w);
-
-            callback.processResult(
-                rcToRespond,
-                p,
-                ctx,
-                childrenToRespond,
-                statToRespond
-            );
-
-            return null;
-
-        }).when(zk).getChildren(eq(path), any(watcherCls), any(Children2Callback.class), any());
     }
 
     private static Set<BookieSocketAddress> prepareNBookies(int num) {
@@ -160,7 +129,7 @@ public class TestZkRegistrationClient {
         Stat stat = mock(Stat.class);
         when(stat.getVersion()).thenReturn(1234);
         mockGetChildren(
-            regPath, Watcher.class,
+            regPath, false,
             Code.OK.intValue(), children, stat);
 
         Versioned<Set<BookieSocketAddress>> result =
@@ -181,7 +150,7 @@ public class TestZkRegistrationClient {
         Stat stat = mock(Stat.class);
         when(stat.getVersion()).thenReturn(1234);
         mockGetChildren(
-            regReadonlyPath, Watcher.class,
+            regReadonlyPath, false,
             Code.OK.intValue(), children, stat);
 
         Versioned<Set<BookieSocketAddress>> result =
@@ -195,7 +164,7 @@ public class TestZkRegistrationClient {
     @Test
     public void testGetWritableBookiesFailure() throws Exception {
         mockGetChildren(
-            regPath, Watcher.class,
+            regPath, false,
             Code.NONODE.intValue(), null, null);
 
         try {
@@ -209,7 +178,7 @@ public class TestZkRegistrationClient {
     @Test
     public void testGetReadOnlyBookiesFailure() throws Exception {
         mockGetChildren(
-            regReadonlyPath, Watcher.class,
+            regReadonlyPath, false,
             Code.NONODE.intValue(), null, null);
 
         try {
@@ -252,7 +221,7 @@ public class TestZkRegistrationClient {
 
         mockGetChildren(
             isWritable ? regPath : regReadonlyPath,
-            WatchTask.class,
+            true,
             Code.OK.intValue(), children, stat);
 
         if (isWritable) {
@@ -266,27 +235,22 @@ public class TestZkRegistrationClient {
         assertTrue(Sets.difference(addresses, update.getValue()).isEmpty());
         assertTrue(Sets.difference(update.getValue(), addresses).isEmpty());
 
-        verify(zk, times(1))
+        verify(mockZk, times(1))
             .getChildren(anyString(), any(Watcher.class), any(Children2Callback.class), any());
 
         log.info("Expire sessions");
         // simulate session expire
-        Set<Watcher> watcherSet = watchers.remove(isWritable ? regPath : regReadonlyPath);
-        assertNotNull(watcherSet);
-        assertEquals(1, watcherSet.size());
-        for (Watcher watcher : watcherSet) {
-            watcher.process(new WatchedEvent(
-                EventType.None,
-                KeeperState.Expired,
-                isWritable ? regPath : regReadonlyPath));
-        }
+        notifyWatchedEvent(
+            EventType.None,
+            KeeperState.Expired,
+            isWritable ? regPath : regReadonlyPath);
 
         // if session expires, the watcher task will get into backoff state
         controller.advance(Duration.ofMillis(ZK_CONNECT_BACKOFF_MS));
 
         // the same updates returns, the getChildren calls increase to 2
         // but since there is no updates, so no notification is sent.
-        verify(zk, times(2))
+        verify(mockZk, times(2))
             .getChildren(anyString(), any(Watcher.class), any(Children2Callback.class), any());
         assertNull(updates.poll());
 
@@ -302,26 +266,21 @@ public class TestZkRegistrationClient {
 
         mockGetChildren(
             isWritable ? regPath : regReadonlyPath,
-            WatchTask.class,
+            true,
             Code.OK.intValue(), newChildren, newStat);
 
         // trigger watcher
-        watcherSet = watchers.get(isWritable ? regPath : regReadonlyPath);
-        assertNotNull(watcherSet);
-        assertEquals(1, watcherSet.size());
-        for (Watcher watcher : watcherSet) {
-            watcher.process(new WatchedEvent(
-                EventType.NodeChildrenChanged,
-                KeeperState.SyncConnected,
-                isWritable ? regPath : regReadonlyPath));
-        }
+        notifyWatchedEvent(
+            EventType.NodeChildrenChanged,
+            KeeperState.SyncConnected,
+            isWritable ? regPath : regReadonlyPath);
 
         update = updates.take();
         assertEquals(new LongVersion(1235), update.getVersion());
         assertTrue(Sets.difference(newAddresses, update.getValue()).isEmpty());
         assertTrue(Sets.difference(update.getValue(), newAddresses).isEmpty());
 
-        verify(zk, times(3))
+        verify(mockZk, times(3))
             .getChildren(anyString(), any(Watcher.class), any(Children2Callback.class), any());
     }
 
