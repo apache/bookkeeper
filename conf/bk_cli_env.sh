@@ -1,6 +1,8 @@
-#!/usr/bin/env bash
+#!/bin/sh
 #
 #/**
+# * Copyright 2007 The Apache Software Foundation
+# *
 # * Licensed to the Apache Software Foundation (ASF) under one
 # * or more contributor license agreements.  See the NOTICE file
 # * distributed with this work for additional information
@@ -18,25 +20,32 @@
 # * limitations under the License.
 # */
 
-set -e
+# Set JAVA_HOME here to override the environment setting
+# JAVA_HOME=
 
-gpg --import KEYS.pulsar
+# default settings for bookkeeper cli
 
-TARBALL=$(ls apache-pulsar-*-incubating-bin.tar.gz | tail -1)
+# Configuration file of settings used in bookkeeper cli
+# CLI_CONF=
 
-gpg --verify $TARBALL.asc
+# Extra options to be passed to the jvm
+# CLI_EXTRA_OPTS=
 
-VERSION="4.3-yahoo"
+# Add extra paths to the bookkeeper classpath
+# CLI_EXTRA_CLASSPATH=
 
-tar -zxf $TARBALL
-rm $TARBALL
-mv apache-pulsar-*-incubating /opt/bookkeeper/$VERSION
+#
+# CLI Logging Options
+#
 
-cat > /etc/supervisord/conf.d/bookkeeper-$VERSION.conf <<EOF
-[program:bookkeeper-$VERSION]
-autostart=false
-redirect_stderr=true
-stdout_logfile=/var/log/bookkeeper/stdout-$VERSION.log
-directory=/opt/bookkeeper/$VERSION
-command=/opt/bookkeeper/$VERSION/bin/pulsar bookie
-EOF
+# Log4j configuration file
+# CLI_LOG_CONF=
+
+# Logs location
+# CLI_LOG_DIR=
+
+# Log file name
+# CLI_LOG_FILE="bookkeeper-cli.log"
+
+# Log level & appender
+# CLI_ROOT_LOGGER="INFO,CONSOLE"
