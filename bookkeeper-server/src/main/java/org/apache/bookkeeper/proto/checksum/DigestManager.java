@@ -1,5 +1,3 @@
-package org.apache.bookkeeper.proto.checksum;
-
 /**
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -17,6 +15,7 @@ package org.apache.bookkeeper.proto.checksum;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.bookkeeper.proto.checksum;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.PooledByteBufAllocator;
@@ -27,7 +26,7 @@ import java.security.GeneralSecurityException;
 import org.apache.bookkeeper.client.BKException.BKDigestMatchException;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.DigestType;
-import org.apache.bookkeeper.util.DoubleByteBuf;
+import org.apache.bookkeeper.util.ByteBufList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -88,7 +87,8 @@ public abstract class DigestManager {
      * @param data
      * @return
      */
-    public ByteBuf computeDigestAndPackageForSending(long entryId, long lastAddConfirmed, long length, ByteBuf data) {
+    public ByteBufList computeDigestAndPackageForSending(long entryId, long lastAddConfirmed, long length,
+            ByteBuf data) {
         ByteBuf headersBuffer = PooledByteBufAllocator.DEFAULT.buffer(METADATA_LENGTH + macCodeLength);
         headersBuffer.writeLong(ledgerId);
         headersBuffer.writeLong(entryId);
@@ -99,7 +99,7 @@ public abstract class DigestManager {
         update(data);
         populateValueAndReset(headersBuffer);
 
-        return DoubleByteBuf.get(headersBuffer, data);
+        return ByteBufList.get(headersBuffer, data);
     }
 
     /**
@@ -109,7 +109,7 @@ public abstract class DigestManager {
      * @return
      */
 
-    public ByteBuf computeDigestAndPackageForSendingLac(long lac) {
+    public ByteBufList computeDigestAndPackageForSendingLac(long lac) {
         ByteBuf headersBuffer = PooledByteBufAllocator.DEFAULT.buffer(LAC_METADATA_LENGTH + macCodeLength);
         headersBuffer.writeLong(ledgerId);
         headersBuffer.writeLong(lac);
@@ -117,7 +117,7 @@ public abstract class DigestManager {
         update(headersBuffer);
         populateValueAndReset(headersBuffer);
 
-        return headersBuffer;
+        return ByteBufList.get(headersBuffer);
     }
 
     private void verifyDigest(ByteBuf dataReceived) throws BKDigestMatchException {

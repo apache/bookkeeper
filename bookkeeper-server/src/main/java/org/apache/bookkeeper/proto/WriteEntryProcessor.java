@@ -56,8 +56,8 @@ class WriteEntryProcessor extends PacketProcessorBase implements WriteCallback {
 
     @Override
     protected void processPacket() {
-        assert (request instanceof BookieProtocol.AddRequest);
-        BookieProtocol.AddRequest add = (BookieProtocol.AddRequest) request;
+        assert (request instanceof BookieProtocol.ParsedAddRequest);
+        BookieProtocol.ParsedAddRequest add = (BookieProtocol.ParsedAddRequest) request;
 
         if (requestProcessor.bookie.isReadOnly()) {
             LOG.warn("BookieServer is running in readonly mode,"
