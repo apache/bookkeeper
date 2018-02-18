@@ -47,6 +47,7 @@ import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.powermock.reflect.Whitebox;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -738,7 +739,19 @@ public class BookieWriteLedgerTest extends
         entry1.putInt(rng.nextInt(maxInt));
         lh.asyncAddEntry(10, entry1.array(), 0, entry1.capacity(), this, syncObj1);
 
-        Thread.sleep(5000);// wait 5 sec so entry-11 goes to the bookies and gets response.
+        // Make sure entry-10 goes to the bookies and gets response.
+        java.util.Queue<PendingAddOp> myPendingAddOps = Whitebox.getInternalState(lh, "pendingAddOps");
+        PendingAddOp addOp = null;
+        boolean pendingAddOpReceived = false;
+
+        while (!pendingAddOpReceived) {
+            addOp = myPendingAddOps.peek();
+            if (addOp.entryId == 10 && addOp.completed) {
+                pendingAddOpReceived = true;
+            } else {
+                Thread.sleep(1000);
+            }
+        }
 
         CountDownLatch sleepLatch1 = new CountDownLatch(1);
         ArrayList<BookieSocketAddress> ensemble;
