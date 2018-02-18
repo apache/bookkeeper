@@ -26,6 +26,7 @@ import io.netty.util.Recycler;
 import io.netty.util.Recycler.Handle;
 
 import org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessage;
+import org.apache.bookkeeper.util.ByteBufList;
 
 /**
  * The packets of the Bookie protocol all have a 4-byte integer indicating the
@@ -244,11 +245,11 @@ public interface BookieProtocol {
      * A Request that adds data.
      */
     class AddRequest extends Request {
-        ByteBuf data;
+        ByteBufList data;
 
         static AddRequest create(byte protocolVersion, long ledgerId,
                                  long entryId, short flags, byte[] masterKey,
-                                 ByteBuf data) {
+                                 ByteBufList data) {
             AddRequest add = RECYCLER.get();
             add.protocolVersion = protocolVersion;
             add.opCode = ADDENTRY;
@@ -260,8 +261,9 @@ public interface BookieProtocol {
             return add;
         }
 
-        ByteBuf getData() {
-            return data;
+        ByteBufList getData() {
+            // We need to have different ByteBufList instances for each bookie write
+            return ByteBufList.clone(data);
         }
 
         boolean isRecoveryAdd() {
@@ -280,6 +282,59 @@ public interface BookieProtocol {
         private static final Recycler<AddRequest> RECYCLER = new Recycler<AddRequest>() {
             protected AddRequest newObject(Handle<AddRequest> handle) {
                 return new AddRequest(handle);
+            }
+        };
+
+        @Override
+        public void recycle() {
+            ledgerId = -1;
+            entryId = -1;
+            masterKey = null;
+            data = null;
+            recyclerHandle.recycle(this);
+        }
+    }
+
+    /**
+     * This is similar to add request, but it used when processing the request on the bookie side.
+     */
+    class ParsedAddRequest extends Request {
+        ByteBuf data;
+
+        static ParsedAddRequest create(byte protocolVersion, long ledgerId, long entryId, short flags, byte[] masterKey,
+                ByteBuf data) {
+            ParsedAddRequest add = RECYCLER.get();
+            add.protocolVersion = protocolVersion;
+            add.opCode = ADDENTRY;
+            add.ledgerId = ledgerId;
+            add.entryId = entryId;
+            add.flags = flags;
+            add.masterKey = masterKey;
+            add.data = data.retain();
+            return add;
+        }
+
+        ByteBuf getData() {
+            // We need to have different ByteBufList instances for each bookie write
+            return data;
+        }
+
+        boolean isRecoveryAdd() {
+            return (flags & FLAG_RECOVERY_ADD) == FLAG_RECOVERY_ADD;
+        }
+
+        void release() {
+            data.release();
+        }
+
+        private final Handle<ParsedAddRequest> recyclerHandle;
+        private ParsedAddRequest(Handle<ParsedAddRequest> recyclerHandle) {
+            this.recyclerHandle = recyclerHandle;
+        }
+
+        private static final Recycler<ParsedAddRequest> RECYCLER = new Recycler<ParsedAddRequest>() {
+            protected ParsedAddRequest newObject(Handle<ParsedAddRequest> handle) {
+                return new ParsedAddRequest(handle);
             }
         };
 
