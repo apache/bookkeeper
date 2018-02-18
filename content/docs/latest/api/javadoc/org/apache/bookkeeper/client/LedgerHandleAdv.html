@@ -18,7 +18,7 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10};
+var methods = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -271,12 +271,23 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/WriteAdvHandle.
 </td>
 </tr>
 <tr id="i6" class="altColor">
+<td class="colFirst"><code>void</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerHandleAdv.html#asyncAddEntry-long-byte:A-int-int-org.apache.bookkeeper.client.AsyncCallback.AddCallbackWithLatency-java.lang.Object-">asyncAddEntry</a></span>(long&nbsp;entryId,
+             byte[]&nbsp;data,
+             int&nbsp;offset,
+             int&nbsp;length,
+             <a href="../../../../org/apache/bookkeeper/client/AsyncCallback.AddCallbackWithLatency.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.AddCallbackWithLatency</a>&nbsp;cb,
+             <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&nbsp;ctx)</code>
+<div class="block">Add entry asynchronously to an open ledger, using an offset and range.</div>
+</td>
+</tr>
+<tr id="i7" class="rowColor">
 <td class="colFirst"><code>protected void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerHandleAdv.html#doAsyncAddEntry-org.apache.bookkeeper.client.PendingAddOp-">doAsyncAddEntry</a></span>(<a href="../../../../org/apache/bookkeeper/client/PendingAddOp.html" title="class in org.apache.bookkeeper.client">PendingAddOp</a>&nbsp;op)</code>
 <div class="block">Overriding part is mostly around setting entryId.</div>
 </td>
 </tr>
-<tr id="i7" class="rowColor">
+<tr id="i8" class="altColor">
 <td class="colFirst"><code><a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerHandleAdv.html#write-long-io.netty.buffer.ByteBuf-">write</a></span>(long&nbsp;entryId,
      io.netty.buffer.ByteBuf&nbsp;data)</code>
@@ -478,6 +489,35 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/WriteAdvHandle.
 <dl>
 <dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
 <dd><code><a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html#asyncAddEntry-long-byte:A-int-int-org.apache.bookkeeper.client.AsyncCallback.AddCallback-java.lang.Object-">asyncAddEntry</a></code>&nbsp;in class&nbsp;<code><a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a></code></dd>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>entryId</code> - entryId of the entry to add</dd>
+<dd><code>data</code> - array of bytes to be written</dd>
+<dd><code>offset</code> - offset from which to take bytes from data</dd>
+<dd><code>length</code> - number of bytes to take from data</dd>
+<dd><code>cb</code> - object implementing callbackinterface</dd>
+<dd><code>ctx</code> - some control object</dd>
+<dt><span class="throwsLabel">Throws:</span></dt>
+<dd><code><a href="http://docs.oracle.com/javase/8/docs/api/java/lang/ArrayIndexOutOfBoundsException.html?is-external=true" title="class or interface in java.lang">ArrayIndexOutOfBoundsException</a></code> - if offset or length is negative or offset and length sum to a
+             value higher than the length of data.</dd>
+</dl>
+</li>
+</ul>
+<a name="asyncAddEntry-long-byte:A-int-int-org.apache.bookkeeper.client.AsyncCallback.AddCallbackWithLatency-java.lang.Object-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>asyncAddEntry</h4>
+<pre>public&nbsp;void&nbsp;asyncAddEntry(long&nbsp;entryId,
+                          byte[]&nbsp;data,
+                          int&nbsp;offset,
+                          int&nbsp;length,
+                          <a href="../../../../org/apache/bookkeeper/client/AsyncCallback.AddCallbackWithLatency.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.AddCallbackWithLatency</a>&nbsp;cb,
+                          <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&nbsp;ctx)</pre>
+<div class="block">Add entry asynchronously to an open ledger, using an offset and range.</div>
+<dl>
+<dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
+<dd><code><a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html#asyncAddEntry-long-byte:A-int-int-org.apache.bookkeeper.client.AsyncCallback.AddCallbackWithLatency-java.lang.Object-">asyncAddEntry</a></code>&nbsp;in class&nbsp;<code><a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a></code></dd>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>entryId</code> - entryId of the entry to add</dd>
 <dd><code>data</code> - array of bytes to be written</dd>

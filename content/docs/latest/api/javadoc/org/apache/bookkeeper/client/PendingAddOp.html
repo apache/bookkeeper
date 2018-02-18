@@ -157,7 +157,7 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/PendingAddOp.html#callbackTriggered">callbackTriggered</a></span></code>&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<td class="colFirst"><code>(package private) <a href="../../../../org/apache/bookkeeper/client/AsyncCallback.AddCallback.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.AddCallback</a></code></td>
+<td class="colFirst"><code>(package private) <a href="../../../../org/apache/bookkeeper/client/AsyncCallback.AddCallbackWithLatency.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.AddCallbackWithLatency</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/PendingAddOp.html#cb">cb</a></span></code>&nbsp;</td>
 </tr>
 <tr class="altColor">
@@ -202,13 +202,17 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>(package private) long</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/PendingAddOp.html#requestTimeNanos">requestTimeNanos</a></span></code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/PendingAddOp.html#qwcLatency">qwcLatency</a></span></code>&nbsp;</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>(package private) long</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/PendingAddOp.html#timeoutNanos">timeoutNanos</a></span></code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/PendingAddOp.html#requestTimeNanos">requestTimeNanos</a></span></code>&nbsp;</td>
 </tr>
 <tr class="altColor">
+<td class="colFirst"><code>(package private) long</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/PendingAddOp.html#timeoutNanos">timeoutNanos</a></span></code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
 <td class="colFirst"><code>(package private) io.netty.buffer.ByteBuf</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/PendingAddOp.html#toSend">toSend</a></span></code>&nbsp;</td>
 </tr>
@@ -236,9 +240,9 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback
 </tr>
 <tr id="i0" class="altColor">
 <td class="colFirst"><code>(package private) static <a href="../../../../org/apache/bookkeeper/client/PendingAddOp.html" title="class in org.apache.bookkeeper.client">PendingAddOp</a></code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/PendingAddOp.html#create-org.apache.bookkeeper.client.LedgerHandle-io.netty.buffer.ByteBuf-org.apache.bookkeeper.client.AsyncCallback.AddCallback-java.lang.Object-">create</a></span>(<a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/PendingAddOp.html#create-org.apache.bookkeeper.client.LedgerHandle-io.netty.buffer.ByteBuf-org.apache.bookkeeper.client.AsyncCallback.AddCallbackWithLatency-java.lang.Object-">create</a></span>(<a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
       io.netty.buffer.ByteBuf&nbsp;payload,
-      <a href="../../../../org/apache/bookkeeper/client/AsyncCallback.AddCallback.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.AddCallback</a>&nbsp;cb,
+      <a href="../../../../org/apache/bookkeeper/client/AsyncCallback.AddCallbackWithLatency.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.AddCallbackWithLatency</a>&nbsp;cb,
       <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&nbsp;ctx)</code>&nbsp;</td>
 </tr>
 <tr id="i1" class="rowColor">
@@ -369,7 +373,7 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback
 <ul class="blockList">
 <li class="blockList">
 <h4>cb</h4>
-<pre><a href="../../../../org/apache/bookkeeper/client/AsyncCallback.AddCallback.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.AddCallback</a> cb</pre>
+<pre><a href="../../../../org/apache/bookkeeper/client/AsyncCallback.AddCallbackWithLatency.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.AddCallbackWithLatency</a> cb</pre>
 </li>
 </ul>
 <a name="ctx">
@@ -444,6 +448,15 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback
 <pre>long requestTimeNanos</pre>
 </li>
 </ul>
+<a name="qwcLatency">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>qwcLatency</h4>
+<pre>long qwcLatency</pre>
+</li>
+</ul>
 <a name="timeoutNanos">
 <!--   -->
 </a>
@@ -506,7 +519,7 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback
 <!--   -->
 </a>
 <h3>Method Detail</h3>
-<a name="create-org.apache.bookkeeper.client.LedgerHandle-io.netty.buffer.ByteBuf-org.apache.bookkeeper.client.AsyncCallback.AddCallback-java.lang.Object-">
+<a name="create-org.apache.bookkeeper.client.LedgerHandle-io.netty.buffer.ByteBuf-org.apache.bookkeeper.client.AsyncCallback.AddCallbackWithLatency-java.lang.Object-">
 <!--   -->
 </a>
 <ul class="blockList">
@@ -514,7 +527,7 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback
 <h4>create</h4>
 <pre>static&nbsp;<a href="../../../../org/apache/bookkeeper/client/PendingAddOp.html" title="class in org.apache.bookkeeper.client">PendingAddOp</a>&nbsp;create(<a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
                            io.netty.buffer.ByteBuf&nbsp;payload,
-                           <a href="../../../../org/apache/bookkeeper/client/AsyncCallback.AddCallback.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.AddCallback</a>&nbsp;cb,
+                           <a href="../../../../org/apache/bookkeeper/client/AsyncCallback.AddCallbackWithLatency.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.AddCallbackWithLatency</a>&nbsp;cb,
                            <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&nbsp;ctx)</pre>
 </li>
 </ul>

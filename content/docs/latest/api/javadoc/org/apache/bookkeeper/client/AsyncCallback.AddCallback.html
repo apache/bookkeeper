@@ -18,8 +18,8 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":6};
-var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],4:["t3","Abstract Methods"]};
+var methods = {"i0":6,"i1":18};
+var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],4:["t3","Abstract Methods"],16:["t5","Default Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
 var tableTab = "tableTab";
@@ -50,7 +50,7 @@ var activeTableTab = "activeTableTab";
 <div class="subNav">
 <ul class="navList">
 <li><a href="../../../../org/apache/bookkeeper/client/AsyncCallback.html" title="interface in org.apache.bookkeeper.client"><span class="typeNameLink">Prev&nbsp;Class</span></a></li>
-<li><a href="../../../../org/apache/bookkeeper/client/AsyncCallback.AddLacCallback.html" title="interface in org.apache.bookkeeper.client"><span class="typeNameLink">Next&nbsp;Class</span></a></li>
+<li><a href="../../../../org/apache/bookkeeper/client/AsyncCallback.AddCallbackWithLatency.html" title="interface in org.apache.bookkeeper.client"><span class="typeNameLink">Next&nbsp;Class</span></a></li>
 </ul>
 <ul class="navList">
 <li><a href="../../../../index.html?org/apache/bookkeeper/client/AsyncCallback.AddCallback.html" target="_top">Frames</a></li>
@@ -100,6 +100,10 @@ var activeTableTab = "activeTableTab";
 <ul class="blockList">
 <li class="blockList">
 <dl>
+<dt>All Superinterfaces:</dt>
+<dd><a href="../../../../org/apache/bookkeeper/client/AsyncCallback.AddCallbackWithLatency.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.AddCallbackWithLatency</a></dd>
+</dl>
+<dl>
 <dt>All Known Implementing Classes:</dt>
 <dd><a href="../../../../org/apache/bookkeeper/client/LedgerRecoveryOp.html" title="class in org.apache.bookkeeper.client">LedgerRecoveryOp</a>, <a href="../../../../org/apache/bookkeeper/client/SyncCallbackUtils.SyncAddCallback.html" title="class in org.apache.bookkeeper.client">SyncCallbackUtils.SyncAddCallback</a></dd>
 </dl>
@@ -111,7 +115,8 @@ var activeTableTab = "activeTableTab";
 <br>
 <pre><a href="../../../../org/apache/bookkeeper/common/annotation/InterfaceAudience.Public.html" title="annotation in org.apache.bookkeeper.common.annotation">@InterfaceAudience.Public</a>
  <a href="../../../../org/apache/bookkeeper/common/annotation/InterfaceStability.Stable.html" title="annotation in org.apache.bookkeeper.common.annotation">@InterfaceStability.Stable</a>
-public static interface <span class="typeNameLabel">AsyncCallback.AddCallback</span></pre>
+public static interface <span class="typeNameLabel">AsyncCallback.AddCallback</span>
+extends <a href="../../../../org/apache/bookkeeper/client/AsyncCallback.AddCallbackWithLatency.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.AddCallbackWithLatency</a></pre>
 <div class="block">Async Callback for adding entries to ledgers.</div>
 <dl>
 <dt><span class="simpleTagLabel">Since:</span></dt>
@@ -130,7 +135,7 @@ public static interface <span class="typeNameLabel">AsyncCallback.AddCallback</s
 </a>
 <h3>Method Summary</h3>
 <table class="memberSummary" border="0" cellpadding="3" cellspacing="0" summary="Method Summary table, listing methods, and an explanation">
-<caption><span id="t0" class="activeTableTab"><span>All Methods</span><span class="tabEnd">&nbsp;</span></span><span id="t2" class="tableTab"><span><a href="javascript:show(2);">Instance Methods</a></span><span class="tabEnd">&nbsp;</span></span><span id="t3" class="tableTab"><span><a href="javascript:show(4);">Abstract Methods</a></span><span class="tabEnd">&nbsp;</span></span></caption>
+<caption><span id="t0" class="activeTableTab"><span>All Methods</span><span class="tabEnd">&nbsp;</span></span><span id="t2" class="tableTab"><span><a href="javascript:show(2);">Instance Methods</a></span><span class="tabEnd">&nbsp;</span></span><span id="t3" class="tableTab"><span><a href="javascript:show(4);">Abstract Methods</a></span><span class="tabEnd">&nbsp;</span></span><span id="t5" class="tableTab"><span><a href="javascript:show(16);">Default Methods</a></span><span class="tabEnd">&nbsp;</span></span></caption>
 <tr>
 <th class="colFirst" scope="col">Modifier and Type</th>
 <th class="colLast" scope="col">Method and Description</th>
@@ -141,7 +146,17 @@ public static interface <span class="typeNameLabel">AsyncCallback.AddCallback</s
            <a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
            long&nbsp;entryId,
            <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&nbsp;ctx)</code>
-<div class="block">Callback declaration.</div>
+<div class="block">Callback to implement if latency information is not desired.</div>
+</td>
+</tr>
+<tr id="i1" class="rowColor">
+<td class="colFirst"><code>default void</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/AsyncCallback.AddCallback.html#addCompleteWithLatency-int-org.apache.bookkeeper.client.LedgerHandle-long-long-java.lang.Object-">addCompleteWithLatency</a></span>(int&nbsp;rc,
+                      <a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
+                      long&nbsp;entryId,
+                      long&nbsp;qwcLatency,
+                      <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&nbsp;ctx)</code>
+<div class="block">Callback declaration which additionally passes quorum write complete latency.</div>
 </td>
 </tr>
 </table>
@@ -162,19 +177,43 @@ public static interface <span class="typeNameLabel">AsyncCallback.AddCallback</s
 <a name="addComplete-int-org.apache.bookkeeper.client.LedgerHandle-long-java.lang.Object-">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>addComplete</h4>
 <pre>void&nbsp;addComplete(int&nbsp;rc,
                  <a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
                  long&nbsp;entryId,
                  <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&nbsp;ctx)</pre>
-<div class="block">Callback declaration.</div>
+<div class="block">Callback to implement if latency information is not desired.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>rc</code> - return code</dd>
 <dd><code>lh</code> - ledger handle</dd>
 <dd><code>entryId</code> - entry identifier</dd>
+<dd><code>ctx</code> - context object</dd>
+</dl>
+</li>
+</ul>
+<a name="addCompleteWithLatency-int-org.apache.bookkeeper.client.LedgerHandle-long-long-java.lang.Object-">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>addCompleteWithLatency</h4>
+<pre>default&nbsp;void&nbsp;addCompleteWithLatency(int&nbsp;rc,
+                                    <a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
+                                    long&nbsp;entryId,
+                                    long&nbsp;qwcLatency,
+                                    <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&nbsp;ctx)</pre>
+<div class="block">Callback declaration which additionally passes quorum write complete latency.</div>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="../../../../org/apache/bookkeeper/client/AsyncCallback.AddCallbackWithLatency.html#addCompleteWithLatency-int-org.apache.bookkeeper.client.LedgerHandle-long-long-java.lang.Object-">addCompleteWithLatency</a></code>&nbsp;in interface&nbsp;<code><a href="../../../../org/apache/bookkeeper/client/AsyncCallback.AddCallbackWithLatency.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.AddCallbackWithLatency</a></code></dd>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>rc</code> - return code</dd>
+<dd><code>lh</code> - ledger handle</dd>
+<dd><code>entryId</code> - entry identifier</dd>
+<dd><code>qwcLatency</code> - QuorumWriteComplete Latency</dd>
 <dd><code>ctx</code> - context object</dd>
 </dl>
 </li>
@@ -208,7 +247,7 @@ public static interface <span class="typeNameLabel">AsyncCallback.AddCallback</s
 <div class="subNav">
 <ul class="navList">
 <li><a href="../../../../org/apache/bookkeeper/client/AsyncCallback.html" title="interface in org.apache.bookkeeper.client"><span class="typeNameLink">Prev&nbsp;Class</span></a></li>
-<li><a href="../../../../org/apache/bookkeeper/client/AsyncCallback.AddLacCallback.html" title="interface in org.apache.bookkeeper.client"><span class="typeNameLink">Next&nbsp;Class</span></a></li>
+<li><a href="../../../../org/apache/bookkeeper/client/AsyncCallback.AddCallbackWithLatency.html" title="interface in org.apache.bookkeeper.client"><span class="typeNameLink">Next&nbsp;Class</span></a></li>
 </ul>
 <ul class="navList">
 <li><a href="../../../../index.html?org/apache/bookkeeper/client/AsyncCallback.AddCallback.html" target="_top">Frames</a></li>
