@@ -73,7 +73,6 @@ import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.Watcher.Event.EventType;
 import org.apache.zookeeper.Watcher.Event.KeeperState;
 import org.apache.zookeeper.ZKUtil;
-import org.apache.zookeeper.ZooDefs.Ids;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.ACL;
 import org.apache.zookeeper.data.Stat;
@@ -485,10 +484,10 @@ public class ZKRegistrationManager implements RegistrationManager {
         }
 
         // Create ledgers root node
-        zk.create(zkLedgersRootPath, "".getBytes(UTF_8), Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+        zk.create(zkLedgersRootPath, "".getBytes(UTF_8), zkAcls, CreateMode.PERSISTENT);
 
         // create available bookies node
-        zk.create(zkAvailableBookiesPath, "".getBytes(UTF_8), Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+        zk.create(zkAvailableBookiesPath, "".getBytes(UTF_8), zkAcls, CreateMode.PERSISTENT);
 
         // creates the new layout and stores in zookeeper
         LedgerManagerFactory.newLedgerManagerFactory(conf, layoutManager);
@@ -496,7 +495,7 @@ public class ZKRegistrationManager implements RegistrationManager {
         // create INSTANCEID
         String instanceId = UUID.randomUUID().toString();
         zk.create(conf.getZkLedgersRootPath() + "/" + BookKeeperConstants.INSTANCEID, instanceId.getBytes(UTF_8),
-                Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+                zkAcls, CreateMode.PERSISTENT);
 
         log.info("Successfully initiated cluster. ZKServers: {} ledger root path: {} instanceId: {}", zkServers,
                 zkLedgersRootPath, instanceId);
