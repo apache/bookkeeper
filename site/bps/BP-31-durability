@@ -16,9 +16,9 @@ Apache BookKeeper is transitioning into a full fledged distributed storage that 
 ## Work Grouping (In the order of priority)
 ### Detect Durability Validation
 First step is to understand the areas of durability breaches. Design metrics that record durability contract violations. 
-* At the Creation: Validate durability contract the extent is being created
-* At the Deletion: Validate durability contract when extent is deleted
-* During lifetime: Validate durability contract during the lifetime of the extent.(periodic validator)
+* At the Creation: Validate durability contract when the ledger is being created
+* At the Deletion: Validate durability contract when ledger is deleted
+* During lifetime: Validate durability contract during the lifetime of the ledger.(periodic validator)
 * During Read: IO or Checksum errors in the read path
 ### Delete Discipline
 * Build a single delete choke point with stringent validations
@@ -30,9 +30,9 @@ First step is to understand the areas of durability breaches. Design metrics tha
 ### Plug Durability Violations
 Our first step is to identify durability viloations. That gives us the magnitude of the problem and areas that we need to focus. In this phase, fix high impact areas.
 * Identify source of problems detected by the work we did in step-1 above (Detect Durability Validation)
-* Rereplicate under replicated extents detected during write
-* Rereplicate under replicated / corrupted extents detected during read
-* Replicated under replicated extents identified by periodic validator.
+* Rereplicate under replicated ledgers detected during write
+* Rereplicate under replicated / corrupted ledgers detected during read
+* Replicated under replicated ledgers identified by periodic validator.
 ### Durability Test
 * Test plan, new tests and integrating it into CI pipeline. 
 ### Introduce bookie incarnation 
