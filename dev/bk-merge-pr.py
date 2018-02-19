@@ -477,8 +477,8 @@ def get_reviewers(pr_num):
     return ', '.join(reviewers_emails)
 
 def check_ci_status(pr):
-    status_url = get_json("%s/commits/%s/status" % (GITHUB_API_BASE, pr["head"]["sha"]))
-    state = status_url["state"]
+    ci_status = get_json("%s/commits/%s/status" % (GITHUB_API_BASE, pr["head"]["sha"]))
+    state = ci_status["state"]
     if state != "success":
         comments = get_json(pr["comments_url"])
         ignore_ci_comments = [c for c in comments if c["body"].upper() == "IGNORE CI"]
@@ -487,7 +487,39 @@ def check_ci_status(pr):
                 + ", but this has been overridden by %s. \n" % (ignore_ci_comments[0]["user"]["login"]) \
                 + "Proceed at your own peril!\n\n"
         else:
-            fail("The PR has not passed CI (state is %s)" % (state))
+            check_individual_ci_status(ci_status, comments)
+
+
+def check_individual_ci_status(ci_status, comments):
+    postcommit_java9_success = False
+    postcommit_java8_success = False
+    integration_tests_success = False
+    travis_success = False
+    for status in ci_status["statuses"]:
+        if status["context"] == u"Jenkins: Maven clean install (Java 9)":
+            postcommit_java9_success = status["state"] == "success"
+        elif status["context"] == u"Jenkins: Maven clean install (Java 8)": 
+            postcommit_java8_success = status["state"] == "success"
+        elif status["context"] == u"Jenkins: Integration Tests": 
+            integration_tests_success = status["state"] == "success"
+        elif status["context"] == u"continuous-integration/travis-ci/pr":
+            travis_success = status["state"] == "success"
+
+    if postcommit_java8_success and postcommit_java9_success and travis_success and not integration_tests_success:
+        # all ci passed except integration tests
+        ignore_it_ci_comments = [c for c in comments if c["body"].upper() == "IGNORE IT CI"]
+        if len(ignore_it_ci_comments) > 0:
+            print "\n\nWARNING: The PR has not passed integration tests CI" \
+                + ", but this has been overridden by %s. \n" % (ignore_it_ci_comments[0]["user"]["login"]) \
+                + "Proceed at your own peril!\n\n"
+        else:
+            fail("The PR has not passed integration tests CI")
+    else:
+        fail("The PR has not passed CI:\n" \
+            + "\t Travis: %s\n" % travis_success \
+            + "\t PostCommit (Java 8): %s\n" % postcommit_java8_success \
+            + "\t PostCommit (Java 9): %s\n" % postcommit_java9_success \
+            + "\t Integration Tests: %s\n" % integration_tests_success)
 
 def ask_release_for_github_issues(branch, labels):
     print "=== Add release to github issues ==="
