@@ -84,10 +84,13 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
+        <!-- DO NOT CHANGE VERSION
+             Versions newer than 2.8.1 do not respect useSystemClassLoader=false
+             https://issues.apache.org/jira/browse/SUREFIRE-1476 //-->
+        <version>2.8.1</version>
         <configuration>
-          <!-- forkCount=0 forces groovy tests to run in isolated classloaders
-               which is required if want to test BC without test deps interfering //-->
-          <forkCount>0</forkCount>
+          <forkCount>1</forkCount>
+          <useSystemClassLoader>false</useSystemClassLoader>
           <systemPropertyVariables>
             <!-- only takes effect in later simpleLogger versions (1.7+) //-->
             <org.slf4j.simpleLogger.logFile>System.out</org.slf4j.simpleLogger.logFile>
