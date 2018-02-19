@@ -102,7 +102,8 @@ class TestCompatOldClients {
         } finally {
             oldBK.close()
             oldCL.close()
-            fencingCL.close()
+
+            fencingBK.close()
             fencingCL.close()
         }
     }
