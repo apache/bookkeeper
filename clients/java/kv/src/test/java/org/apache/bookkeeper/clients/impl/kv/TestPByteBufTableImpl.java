@@ -28,6 +28,7 @@ import static org.mockito.Mockito.when;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
 import java.util.List;
 import java.util.NavigableMap;
@@ -48,7 +49,6 @@ import org.apache.bookkeeper.clients.impl.internal.api.StorageServerClientManage
 import org.apache.bookkeeper.clients.impl.routing.RangeRouter;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.common.router.HashRouter;
-import org.apache.bookkeeper.common.util.ByteBufUtils;
 import org.apache.bookkeeper.common.util.Bytes;
 import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.bookkeeper.stream.proto.RangeKeyType;
@@ -157,7 +157,7 @@ public class TestPByteBufTableImpl {
         when(mockRouter.getRange(any(ByteBuf.class)))
             .thenAnswer(invocationOnMock -> {
                 ByteBuf key = invocationOnMock.getArgument(0);
-                byte[] keyData = ByteBufUtils.getArray(key);
+                byte[] keyData = ByteBufUtil.getBytes(key);
                 return Bytes.toLong(keyData, 0);
             });
 
