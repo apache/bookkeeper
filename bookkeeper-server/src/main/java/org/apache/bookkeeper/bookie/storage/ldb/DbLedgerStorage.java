@@ -308,9 +308,8 @@ public class DbLedgerStorage implements CompactableLedgerStorage {
     public long addEntry(ByteBuf entry) throws IOException {
         long startTime = MathUtils.nowInNano();
 
-        long ledgerId = entry.readLong();
-        long entryId = entry.readLong();
-        entry.resetReaderIndex();
+        long ledgerId = entry.getLong(entry.readerIndex());
+        long entryId = entry.getLong(entry.readerIndex() + 8);
 
         if (log.isDebugEnabled()) {
             log.debug("Add entry. {}@{}", ledgerId, entryId);
