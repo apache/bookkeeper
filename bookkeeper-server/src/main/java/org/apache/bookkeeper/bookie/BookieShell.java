@@ -87,6 +87,7 @@ import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.discover.RegistrationManager;
 import org.apache.bookkeeper.discover.ZKRegistrationManager;
+import org.apache.bookkeeper.meta.AbstractZkLedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManager.LedgerRange;
 import org.apache.bookkeeper.meta.LedgerManager.LedgerRangeIterator;
@@ -891,7 +892,7 @@ public class BookieShell implements Tool {
 
             try (RegistrationManager rm = RegistrationManager.instantiateRegistrationManager(bkConf)) {
                 try (LedgerManagerFactory mFactory =
-                         LedgerManagerFactory.newLedgerManagerFactory(bkConf, rm.getLayoutManager())) {
+                         AbstractZkLedgerManagerFactory.newLedgerManagerFactory(bkConf, rm.getLayoutManager())) {
                     LedgerUnderreplicationManager underreplicationManager =
                         mFactory.newLedgerUnderreplicationManager();
                     Iterator<Long> iter = underreplicationManager.listLedgersToRereplicate(predicate);
@@ -921,7 +922,7 @@ public class BookieShell implements Tool {
 
         @Override
         public int runCmd(CommandLine cmdLine) throws Exception {
-            try (LedgerManagerFactory mFactory = LedgerManagerFactory.newLedgerManagerFactory(
+            try (LedgerManagerFactory mFactory = AbstractZkLedgerManagerFactory.newLedgerManagerFactory(
                     bkConf,
                     RegistrationManager.instantiateRegistrationManager(bkConf).getLayoutManager())) {
                 try (LedgerManager m = mFactory.newLedgerManager()) {
@@ -1024,7 +1025,7 @@ public class BookieShell implements Tool {
 
             try (RegistrationManager rm = RegistrationManager.instantiateRegistrationManager(bkConf)) {
                 try (LedgerManagerFactory mFactory =
-                         LedgerManagerFactory.newLedgerManagerFactory(bkConf, rm.getLayoutManager())){
+                         AbstractZkLedgerManagerFactory.newLedgerManagerFactory(bkConf, rm.getLayoutManager())){
                     try (LedgerManager m = mFactory.newLedgerManager()) {
                         ReadMetadataCallback cb = new ReadMetadataCallback(lid);
                         m.readLedgerMetadata(lid, cb);
@@ -1647,7 +1648,7 @@ public class BookieShell implements Tool {
 
             try (RegistrationManager rm =
                      RegistrationManager.instantiateRegistrationManager(bkConf)){
-                try (LedgerManagerFactory mFactory = LedgerManagerFactory.newLedgerManagerFactory(
+                try (LedgerManagerFactory mFactory = AbstractZkLedgerManagerFactory.newLedgerManagerFactory(
                     bkConf,
                     rm.getLayoutManager())) {
                     LedgerUnderreplicationManager underreplicationManager = mFactory.newLedgerUnderreplicationManager();

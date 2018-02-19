@@ -63,6 +63,7 @@ import org.apache.bookkeeper.util.StringUtils;
 import org.apache.bookkeeper.util.ZkUtils;
 import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.versioning.Versioned;
+import org.apache.commons.configuration.ConfigurationException;
 import org.apache.zookeeper.AsyncCallback;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZKUtil;
@@ -73,9 +74,14 @@ import org.slf4j.LoggerFactory;
 
 /**
  * MetaStore Based Ledger Manager Factory.
+ *
+ * <p>MSLedgerManagerFactory is a legacy abstraction that mixing zookeeper with a metadata store
+ * interface. It is not used by any production systems. It should be deprecated soon.
+ *
+ * @deprecated since 4.7.0
  */
 @Slf4j
-public class MSLedgerManagerFactory extends LedgerManagerFactory {
+public class MSLedgerManagerFactory extends AbstractZkLedgerManagerFactory {
 
     private static final Logger LOG = LoggerFactory.getLogger(MSLedgerManagerFactory.class);
 
@@ -87,7 +93,6 @@ public class MSLedgerManagerFactory extends LedgerManagerFactory {
     public static final String META_FIELD = ".META";
 
     AbstractConfiguration conf;
-    ZooKeeper zk;
     MetaStore metastore;
 
     @Override
@@ -723,7 +728,7 @@ public class MSLedgerManagerFactory extends LedgerManagerFactory {
     }
 
     @Override
-    public void format(AbstractConfiguration conf, LayoutManager layoutManager)
+    public void format(AbstractConfiguration<?> conf, LayoutManager layoutManager)
         throws InterruptedException, KeeperException, IOException {
         MetastoreTable ledgerTable;
         try {
@@ -739,7 +744,16 @@ public class MSLedgerManagerFactory extends LedgerManagerFactory {
         }
         LOG.info("Finished cleaning up table {}.", TABLE_NAME);
         // Delete and recreate the LAYOUT information.
-        super.format(conf, layoutManager);
+        Class<? extends LedgerManagerFactory> factoryClass;
+        try {
+            factoryClass = conf.getLedgerManagerFactoryClass();
+        } catch (ConfigurationException e) {
+            throw new IOException("Failed to get ledger manager factory class from configuration : ", e);
+        }
+
+        layoutManager.deleteLedgerLayout();
+        // Create new layout information again.
+        createNewLMFactory(conf, layoutManager, factoryClass);
     }
 
     @Override

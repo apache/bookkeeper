@@ -45,6 +45,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
+import org.apache.bookkeeper.meta.AbstractZkLedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
 import org.apache.bookkeeper.meta.ZkLayoutManager;
@@ -111,13 +112,13 @@ public class TestLedgerUnderreplicationManager {
         urLedgerPath = basePath
                 + BookKeeperConstants.DEFAULT_ZK_LEDGERS_ROOT_PATH;
 
-        lmf1 = LedgerManagerFactory.newLedgerManagerFactory(
+        lmf1 = AbstractZkLedgerManagerFactory.newLedgerManagerFactory(
             conf,
             new ZkLayoutManager(
                 zkc1,
                 conf.getZkLedgersRootPath(),
                 ZkUtils.getACLs(conf)));
-        lmf2 = LedgerManagerFactory.newLedgerManagerFactory(
+        lmf2 = AbstractZkLedgerManagerFactory.newLedgerManagerFactory(
             conf,
             new ZkLayoutManager(
                 zkc2,
