@@ -23,7 +23,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Map.Entry;
@@ -125,14 +124,12 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
         LOG.info("Killing Bookie", replicaToKill);
         killBookie(replicaToKill);
 
-        int startNewBookie = startNewBookie();
+        BookieSocketAddress newBkAddr = startNewBookieAndReturnAddress();
+        LOG.info("New Bookie addr : {}", newBkAddr);
+
         for (int i = 0; i < 10; i++) {
             lh.addEntry(data);
         }
-
-        BookieSocketAddress newBkAddr = new BookieSocketAddress(InetAddress
-                .getLocalHost().getHostAddress(), startNewBookie);
-        LOG.info("New Bookie addr :" + newBkAddr);
 
         ReplicationWorker rw = new ReplicationWorker(zkc, baseConf);
 
@@ -175,9 +172,7 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
         LOG.info("Killing Bookie", replicaToKill);
         ServerConfiguration killedBookieConfig = killBookie(replicaToKill);
 
-        int startNewBookie = startNewBookie();
-        BookieSocketAddress newBkAddr = new BookieSocketAddress(InetAddress
-                .getLocalHost().getHostAddress(), startNewBookie);
+        BookieSocketAddress newBkAddr = startNewBookieAndReturnAddress();
         LOG.info("New Bookie addr :" + newBkAddr);
 
         killAllBookies(lh, newBkAddr);
@@ -229,17 +224,13 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
 
         killAllBookies(lh, null);
         // Starte RW1
-        int startNewBookie1 = startNewBookie();
-        BookieSocketAddress newBkAddr1 = new BookieSocketAddress(InetAddress
-                .getLocalHost().getHostAddress(), startNewBookie1);
-        LOG.info("New Bookie addr :" + newBkAddr1);
+        BookieSocketAddress newBkAddr1 = startNewBookieAndReturnAddress();
+        LOG.info("New Bookie addr : {}", newBkAddr1);
         ReplicationWorker rw1 = new ReplicationWorker(zkc, baseConf);
 
         // Starte RW2
-        int startNewBookie2 = startNewBookie();
-        BookieSocketAddress newBkAddr2 = new BookieSocketAddress(InetAddress
-                .getLocalHost().getHostAddress(), startNewBookie2);
-        LOG.info("New Bookie addr :" + newBkAddr2);
+        BookieSocketAddress newBkAddr2 = startNewBookieAndReturnAddress();
+        LOG.info("New Bookie addr : {}", newBkAddr2);
         ZooKeeper zkc1 = ZooKeeperClient.newBuilder()
                 .connectString(zkUtil.getZooKeeperConnectString())
                 .sessionTimeoutMs(10000)
@@ -293,10 +284,8 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
         LOG.info("Killing Bookie", replicaToKill);
         killBookie(replicaToKill);
 
-        int startNewBookie = startNewBookie();
-        BookieSocketAddress newBkAddr = new BookieSocketAddress(InetAddress
-                .getLocalHost().getHostAddress(), startNewBookie);
-        LOG.info("New Bookie addr :" + newBkAddr);
+        BookieSocketAddress newBkAddr = startNewBookieAndReturnAddress();
+        LOG.info("New Bookie addr : {}", newBkAddr);
         ReplicationWorker rw = new ReplicationWorker(zkc, baseConf);
         rw.start();
 
@@ -349,11 +338,8 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
         killBookie(replicaToKillFromFirstLedger);
         lh2.close();
 
-        int startNewBookie = startNewBookie();
-
-        BookieSocketAddress newBkAddr = new BookieSocketAddress(InetAddress
-                .getLocalHost().getHostAddress(), startNewBookie);
-        LOG.info("New Bookie addr :" + newBkAddr);
+        BookieSocketAddress newBkAddr = startNewBookieAndReturnAddress();
+        LOG.info("New Bookie addr : {}", newBkAddr);
 
         ReplicationWorker rw = new ReplicationWorker(zkc, baseConf);
 
@@ -406,11 +392,8 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
         LOG.info("Killing Bookie", replicaToKill);
         killBookie(replicaToKill);
 
-        int startNewBookie = startNewBookie();
-
-        BookieSocketAddress newBkAddr = new BookieSocketAddress(InetAddress
-                .getLocalHost().getHostAddress(), startNewBookie);
-        LOG.info("New Bookie addr :" + newBkAddr);
+        BookieSocketAddress newBkAddr = startNewBookieAndReturnAddress();
+        LOG.info("New Bookie addr : {}", newBkAddr);
 
         // set to 3s instead of default 30s
         baseConf.setOpenLedgerRereplicationGracePeriod("3000");
@@ -468,17 +451,14 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
         LOG.info("Killing Bookie", replicaToKill);
         killBookie(replicaToKill);
 
-        int startNewBookie = startNewBookie();
+        BookieSocketAddress newBkAddr = startNewBookieAndReturnAddress();
+        LOG.info("New Bookie addr : {}", newBkAddr);
 
         // Reform ensemble...Making sure that last fragment is not in
         // under-replication
         for (int i = 0; i < 10; i++) {
             lh.addEntry(data);
         }
-
-        BookieSocketAddress newBkAddr = new BookieSocketAddress(InetAddress
-                .getLocalHost().getHostAddress(), startNewBookie);
-        LOG.info("New Bookie addr :" + newBkAddr);
 
         ReplicationWorker rw = new ReplicationWorker(zkc, baseConf);
 
