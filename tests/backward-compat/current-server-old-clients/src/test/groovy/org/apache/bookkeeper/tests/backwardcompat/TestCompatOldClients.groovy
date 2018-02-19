@@ -21,6 +21,7 @@ import com.github.dockerjava.api.DockerClient
 
 import org.apache.bookkeeper.tests.BookKeeperClusterUtils
 import org.apache.bookkeeper.tests.MavenClassLoader
+import org.apache.bookkeeper.tests.ThreadReaper
 
 import org.jboss.arquillian.junit.Arquillian
 import org.jboss.arquillian.test.api.ArquillianResource
@@ -111,14 +112,16 @@ class TestCompatOldClients {
     @Test
     public void testNewClientFencesOldClient() throws Exception {
         oldClientVersions.each{
-            testFencingOldClient(it, currentVersion)
+            def version = it
+            ThreadReaper.runWithReaper({ testFencingOldClient(version, currentVersion) })
         }
     }
 
     @Test
     public void testOldClientFencesOldClient() throws Exception {
         oldClientVersions.each{
-            testFencingOldClient(it, it)
+            def version = it
+            ThreadReaper.runWithReaper({ testFencingOldClient(version, version) })
         }
     }
 
@@ -162,14 +165,16 @@ class TestCompatOldClients {
     @Test
     public void testOldClientReadsNewClient() throws Exception {
         oldClientVersions.each{
-            testReads(currentVersion, it)
+            def version = it
+            ThreadReaper.runWithReaper({ testReads(currentVersion, version) })
         }
     }
 
     @Test
     public void testNewClientReadsNewClient() throws Exception {
         oldClientVersions.each{
-            testReads(it, currentVersion)
+            def version = it
+            ThreadReaper.runWithReaper({ testReads(version, currentVersion) })
         }
     }
 }
