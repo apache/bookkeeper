@@ -32,6 +32,8 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
+import lombok.AccessLevel;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.client.BKException.Code;
 import org.apache.bookkeeper.client.BKException.ZKException;
@@ -96,13 +98,11 @@ public class ZKRegistrationClient implements RegistrationClient {
         }
 
         void watch() {
-            log.info("Watch {}", regPath);
             scheduleWatchTask(0L);
         }
 
         private void scheduleWatchTask(long delayMs) {
             try {
-                log.info("Schedule watch task in {} ms", delayMs);
                 scheduler.schedule(this, delayMs, TimeUnit.MILLISECONDS);
             } catch (RejectedExecutionException ree) {
                 log.warn("Failed to schedule watch bookies task", ree);
@@ -115,8 +115,6 @@ public class ZKRegistrationClient implements RegistrationClient {
                 return;
             }
 
-            log.info("Get children of {}", regPath);
-
             getChildren(regPath, this)
                 .whenCompleteAsync(this, scheduler);
         }
@@ -124,14 +122,15 @@ public class ZKRegistrationClient implements RegistrationClient {
         @Override
         public void accept(Versioned<Set<BookieSocketAddress>> bookieSet, Throwable throwable) {
             if (throwable != null) {
-                log.info("Encountered exception {}, backoff {}", throwable, ZK_CONNECT_BACKOFF_MS);
-                scheduleWatchTask(ZK_CONNECT_BACKOFF_MS);
-                firstRunFuture.completeExceptionally(throwable);
+                if (firstRunFuture.isDone()) {
+                    scheduleWatchTask(ZK_CONNECT_BACKOFF_MS);
+                } else {
+                    firstRunFuture.completeExceptionally(throwable);
+                }
                 return;
             }
 
-            if (this.version.compare(bookieSet.getVersion()) == Occurred.BEFORE
-                || this.version.compare(bookieSet.getVersion()) == Occurred.CONCURRENTLY) {
+            if (this.version.compare(bookieSet.getVersion()) == Occurred.BEFORE) {
                 this.version = bookieSet.getVersion();
                 this.bookies = bookieSet.getValue();
 
@@ -144,7 +143,6 @@ public class ZKRegistrationClient implements RegistrationClient {
 
         @Override
         public void process(WatchedEvent event) {
-            log.info("Process event {}", event);
             if (EventType.None == event.getType()) {
                 if (KeeperState.Expired == event.getState()) {
                     scheduleWatchTask(ZK_CONNECT_BACKOFF_MS);
@@ -162,16 +160,26 @@ public class ZKRegistrationClient implements RegistrationClient {
 
         @Override
         public synchronized void close() {
-            if (!closed) {
+            if (closed) {
                 return;
             }
+            zk.removeWatches(
+                regPath,
+                this,
+                WatcherType.Children,
+                true,
+                (rc, path, ctx) -> {},
+                null
+            );
             closed = true;
         }
     }
 
     private final ZooKeeper zk;
     private final ScheduledExecutorService scheduler;
+    @Getter(AccessLevel.PACKAGE)
     private WatchTask watchWritableBookiesTask = null;
+    @Getter(AccessLevel.PACKAGE)
     private WatchTask watchReadOnlyBookiesTask = null;
 
     // registration paths
@@ -217,7 +225,7 @@ public class ZKRegistrationClient implements RegistrationClient {
                 return;
             }
 
-            Version version = new LongVersion(stat.getVersion());
+            Version version = new LongVersion(stat.getCversion());
             Set<BookieSocketAddress> bookies = convertToBookieAddresses(children);
             future.complete(new Versioned<>(bookies, version));
         }, null);
@@ -230,13 +238,21 @@ public class ZKRegistrationClient implements RegistrationClient {
         CompletableFuture<Void> f = new CompletableFuture<>();
         if (null == watchWritableBookiesTask) {
             watchWritableBookiesTask = new WatchTask(bookieRegistrationPath, f);
+        } else {
+            FutureUtils.proxyTo(
+                watchWritableBookiesTask.firstRunFuture,
+                f);
         }
 
         watchWritableBookiesTask.addListener(listener);
         if (watchWritableBookiesTask.getNumListeners() == 1) {
             watchWritableBookiesTask.watch();
         }
-        return f;
+        return f.whenComplete((value, cause) -> {
+            if (null != cause) {
+                unwatchWritableBookies(listener);
+            }
+        });
     }
 
     @Override
@@ -257,13 +273,21 @@ public class ZKRegistrationClient implements RegistrationClient {
         CompletableFuture<Void> f = new CompletableFuture<>();
         if (null == watchReadOnlyBookiesTask) {
             watchReadOnlyBookiesTask = new WatchTask(bookieReadonlyRegistrationPath, f);
+        } else {
+            FutureUtils.proxyTo(
+                watchReadOnlyBookiesTask.firstRunFuture,
+                f);
         }
 
         watchReadOnlyBookiesTask.addListener(listener);
         if (watchReadOnlyBookiesTask.getNumListeners() == 1) {
             watchReadOnlyBookiesTask.watch();
         }
-        return f;
+        return f.whenComplete((value, cause) -> {
+            if (null != cause) {
+                unwatchReadOnlyBookies(listener);
+            }
+        });
     }
 
     @Override

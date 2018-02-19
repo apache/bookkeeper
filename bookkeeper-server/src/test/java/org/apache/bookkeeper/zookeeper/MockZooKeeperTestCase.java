@@ -29,7 +29,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.client.api.BKException.Code;
+import org.apache.bookkeeper.common.testing.executors.MockExecutorController;
 import org.apache.bookkeeper.util.ZkUtils;
 import org.apache.zookeeper.AsyncCallback.Children2Callback;
 import org.apache.zookeeper.AsyncCallback.DataCallback;
@@ -52,11 +55,20 @@ public abstract class MockZooKeeperTestCase {
 
     protected final ConcurrentMap<String, Set<Watcher>> watchers = Maps.newConcurrentMap();
     protected ZooKeeper mockZk;
+    protected ScheduledExecutorService zkCallbackExecutor;
+    protected MockExecutorController zkCallbackController;
 
     protected void setup() throws Exception {
         this.mockZk = mock(ZooKeeper.class);
 
         PowerMockito.mockStatic(ZkUtils.class);
+
+        this.zkCallbackExecutor = mock(ScheduledExecutorService.class);
+        this.zkCallbackController = new MockExecutorController()
+            .controlExecute(zkCallbackExecutor)
+            .controlSubmit(zkCallbackExecutor)
+            .controlSchedule(zkCallbackExecutor)
+            .controlScheduleAtFixedRate(zkCallbackExecutor, 10);
     }
 
     private void addWatcher(String path, Watcher watcher) {
@@ -225,6 +237,16 @@ public abstract class MockZooKeeperTestCase {
                                    int retCode,
                                    List<String> retChildren,
                                    Stat retStat) {
+        mockGetChildren(
+            expectedPath, expectedWatcher, retCode, retChildren, retStat, 0);
+    }
+
+    protected void mockGetChildren(String expectedPath,
+                                   boolean expectedWatcher,
+                                   int retCode,
+                                   List<String> retChildren,
+                                   Stat retStat,
+                                   long delayMs) {
         doAnswer(invocationOnMock -> {
             String p = invocationOnMock.getArgument(0);
             Watcher w = invocationOnMock.getArgument(1);
@@ -235,14 +257,13 @@ public abstract class MockZooKeeperTestCase {
                 addWatcher(p, w);
             }
 
-            callback.processResult(
+            this.zkCallbackExecutor.schedule(() -> callback.processResult(
                 retCode,
                 p,
                 ctx,
                 retChildren,
                 retStat
-            );
-
+            ), delayMs, TimeUnit.MILLISECONDS);
             return null;
 
         }).when(mockZk).getChildren(

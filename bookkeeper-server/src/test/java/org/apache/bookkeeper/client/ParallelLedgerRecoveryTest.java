@@ -46,6 +46,12 @@ import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.HierarchicalLedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerManager;
+import org.apache.bookkeeper.meta.LedgerManagerFactory;
+import org.apache.bookkeeper.meta.MetadataDrivers;
+import org.apache.bookkeeper.meta.exceptions.Code;
+import org.apache.bookkeeper.meta.exceptions.MetadataException;
+import org.apache.bookkeeper.meta.zk.ZKMetadataBookieDriver;
+import org.apache.bookkeeper.meta.zk.ZKMetadataClientDriver;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
@@ -58,6 +64,7 @@ import org.apache.bookkeeper.util.ByteBufList;
 import org.apache.bookkeeper.versioning.Version;
 import org.apache.zookeeper.AsyncCallback.VoidCallback;
 import org.apache.zookeeper.KeeperException;
+import org.junit.After;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -155,15 +162,71 @@ public class ParallelLedgerRecoveryTest extends BookKeeperClusterTestCase {
         }
     }
 
+    static class TestMetadataClientDriver extends ZKMetadataClientDriver {
+
+        @Override
+        public synchronized LedgerManagerFactory getLedgerManagerFactory() throws MetadataException {
+            if (null == lmFactory) {
+                try {
+                    lmFactory = new TestLedgerManagerFactory()
+                        .initialize(conf, layoutManager, TestLedgerManagerFactory.CUR_VERSION);
+                } catch (IOException e) {
+                    throw new MetadataException(Code.METADATA_SERVICE_ERROR, e);
+                }
+            }
+            return lmFactory;
+        }
+    }
+
+    static class TestMetadataBookieDriver extends ZKMetadataBookieDriver {
+
+        @Override
+        public synchronized LedgerManagerFactory getLedgerManagerFactory() throws MetadataException {
+            if (null == lmFactory) {
+                try {
+                    lmFactory = new TestLedgerManagerFactory()
+                        .initialize(conf, layoutManager, TestLedgerManagerFactory.CUR_VERSION);
+                } catch (IOException e) {
+                    throw new MetadataException(Code.METADATA_SERVICE_ERROR, e);
+                }
+            }
+            return lmFactory;
+        }
+    }
+
     final DigestType digestType;
 
-    public ParallelLedgerRecoveryTest() {
+    public ParallelLedgerRecoveryTest() throws Exception {
         super(3);
+
+        this.digestType = DigestType.CRC32;
+    }
+
+    @Override
+    protected void startBKCluster() throws Exception {
+        MetadataDrivers.registerClientDriver("zk", TestMetadataClientDriver.class, true);
+        MetadataDrivers.registerBookieDriver("zk", TestMetadataBookieDriver.class, true);
+        baseConf.setMetadataServiceUri(
+            "zk://" + zkUtil.getZooKeeperConnectString() + baseConf.getZkLedgersRootPath());
         baseConf.setLedgerManagerFactoryClass(TestLedgerManagerFactory.class);
+        baseClientConf.setMetadataServiceUri(
+            "zk://" + zkUtil.getZooKeeperConnectString() + baseConf.getZkLedgersRootPath());
         baseClientConf.setLedgerManagerFactoryClass(TestLedgerManagerFactory.class);
         baseClientConf.setReadEntryTimeout(60000);
         baseClientConf.setAddEntryTimeout(60000);
-        this.digestType = DigestType.CRC32;
+
+        super.startBKCluster();
+    }
+
+    @After
+    @Override
+    public void tearDown() throws Exception {
+        try {
+            super.tearDown();
+        } finally {
+            MetadataDrivers.registerClientDriver("zk", ZKMetadataClientDriver.class, true);
+            MetadataDrivers.registerBookieDriver("zk", ZKMetadataBookieDriver.class, true);
+        }
     }
 
     @Test
