@@ -29,6 +29,7 @@ import io.netty.buffer.Unpooled;
 import org.apache.bookkeeper.api.kv.PTable;
 import org.apache.bookkeeper.api.kv.impl.options.OptionFactoryImpl;
 import org.apache.bookkeeper.api.kv.options.DeleteOption;
+import org.apache.bookkeeper.api.kv.options.IncrementOption;
 import org.apache.bookkeeper.api.kv.options.OptionFactory;
 import org.apache.bookkeeper.api.kv.options.PutOption;
 import org.apache.bookkeeper.api.kv.options.RangeOption;
@@ -85,8 +86,11 @@ public class ByteBufTableImplTest {
 
     @Test
     public void testIncrement() {
-        table.increment(key, 100L);
-        verify(pTable, times(1)).increment(same(key), same(key), eq(100L));
+        try (IncrementOption<ByteBuf> option = optionFactory.newIncrementOption().build()) {
+            table.increment(key, 100L, option);
+            verify(pTable, times(1))
+                .increment(same(key), same(key), eq(100L), same(option));
+        }
     }
 
     @Test

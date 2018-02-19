@@ -26,20 +26,24 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
+import lombok.ToString;
 import lombok.experimental.Accessors;
 import org.apache.bookkeeper.api.kv.op.IncrementOp;
 import org.apache.bookkeeper.api.kv.op.OpType;
+import org.apache.bookkeeper.api.kv.options.IncrementOption;
 
 @Accessors(fluent = true, chain = true)
 @Getter
 @Setter(AccessLevel.PACKAGE)
 @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
+@ToString(exclude = "handle")
 class IncrementOpImpl<K, V> implements IncrementOp<K, V> {
 
     private final Handle<IncrementOpImpl<K, V>> handle;
 
     private K key;
     private long amount;
+    private IncrementOption<K> option;
 
     @Override
     public OpType type() {
@@ -62,6 +66,10 @@ class IncrementOpImpl<K, V> implements IncrementOp<K, V> {
         release(key);
         this.key = null;
         this.amount = 0L;
+        if (null != option) {
+            option.close();
+            option = null;
+        }
 
         handle.recycle(this);
     }

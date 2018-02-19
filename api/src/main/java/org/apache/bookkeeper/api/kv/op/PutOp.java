@@ -36,6 +36,6 @@ public interface PutOp<K, V> extends Op<K, V> {
 
     V value();
 
-    PutOption option();
+    PutOption<K> option();
 
 }

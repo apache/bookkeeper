@@ -31,6 +31,7 @@ import org.apache.bookkeeper.api.kv.op.Op;
 import org.apache.bookkeeper.api.kv.op.PutOp;
 import org.apache.bookkeeper.api.kv.op.RangeOp;
 import org.apache.bookkeeper.api.kv.options.DeleteOption;
+import org.apache.bookkeeper.api.kv.options.IncrementOption;
 import org.apache.bookkeeper.api.kv.options.PutOption;
 import org.apache.bookkeeper.api.kv.options.RangeOption;
 import org.apache.bookkeeper.api.kv.result.DeleteResult;
@@ -159,17 +160,20 @@ public final class KvUtils {
     }
 
     public static IncrementRequest.Builder newIncrementRequest(ByteBuf key,
-                                                               long amount) {
+                                                               long amount,
+                                                               IncrementOption<ByteBuf> option) {
         return IncrementRequest.newBuilder()
             .setKey(UnsafeByteOperations.unsafeWrap(key.nioBuffer()))
-            .setAmount(amount);
+            .setAmount(amount)
+            .setGetTotal(option.getTotal());
     }
 
     public static IncrementResult<ByteBuf, ByteBuf> newIncrementResult(
         IncrementResponse response,
         ResultFactory<ByteBuf, ByteBuf> resultFactory,
         KeyValueFactory<ByteBuf, ByteBuf> kvFactory) {
-        IncrementResultImpl<ByteBuf, ByteBuf> result = resultFactory.newIncrementResult(-1L);
+        IncrementResultImpl<ByteBuf, ByteBuf> result = resultFactory.newIncrementResult(-1L)
+            .totalAmount(response.getTotalAmount());
         return result;
     }
 

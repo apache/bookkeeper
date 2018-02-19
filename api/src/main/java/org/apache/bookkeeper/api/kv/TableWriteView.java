@@ -25,10 +25,12 @@ import java.util.concurrent.CompletableFuture;
 import org.apache.bookkeeper.api.kv.exceptions.KvApiException;
 import org.apache.bookkeeper.api.kv.op.CompareResult;
 import org.apache.bookkeeper.api.kv.options.DeleteOption;
+import org.apache.bookkeeper.api.kv.options.IncrementOption;
 import org.apache.bookkeeper.api.kv.options.Options;
 import org.apache.bookkeeper.api.kv.options.PutOption;
 import org.apache.bookkeeper.api.kv.result.Code;
 import org.apache.bookkeeper.api.kv.result.DeleteResult;
+import org.apache.bookkeeper.api.kv.result.IncrementResult;
 import org.apache.bookkeeper.api.kv.result.KeyValue;
 import org.apache.bookkeeper.api.kv.result.PutResult;
 import org.apache.bookkeeper.api.kv.result.RangeResult;
@@ -47,9 +49,42 @@ public interface TableWriteView<K, V> extends PTableBase<K, V> {
 
     CompletableFuture<DeleteResult<K, V>> delete(K key, DeleteOption<K> option);
 
-    CompletableFuture<Void> increment(K key, long amount);
+    CompletableFuture<IncrementResult<K, V>> increment(K key, long amount, IncrementOption<K> option);
 
     Txn<K, V> txn(K key);
+
+    default CompletableFuture<Void> increment(K key, long amount) {
+        return increment(key, amount, Options.blindIncrement())
+            .thenApply(result -> {
+                try {
+                    return (Void) null;
+                } finally {
+                    result.close();
+                }
+            });
+    }
+
+    default CompletableFuture<Long> incrementAndGet(K key, long amount) {
+        return increment(key, amount, Options.incrementAndGet())
+            .thenApply(result -> {
+                try {
+                    return result.totalAmount();
+                } finally {
+                    result.close();
+                }
+            });
+    }
+
+    default CompletableFuture<Long> getAndIncrement(K key, long amount) {
+        return increment(key, amount, Options.incrementAndGet())
+            .thenApply(result -> {
+                try {
+                    return result.totalAmount() - amount;
+                } finally {
+                    result.close();
+                }
+            });
+    }
 
     default CompletableFuture<Void> put(K key, V value) {
         if (value == null) {

@@ -36,9 +36,11 @@ import org.apache.bookkeeper.api.kv.op.CompareOp;
 import org.apache.bookkeeper.api.kv.op.Op;
 import org.apache.bookkeeper.api.kv.op.OpFactory;
 import org.apache.bookkeeper.api.kv.options.DeleteOption;
+import org.apache.bookkeeper.api.kv.options.IncrementOption;
 import org.apache.bookkeeper.api.kv.options.PutOption;
 import org.apache.bookkeeper.api.kv.options.RangeOption;
 import org.apache.bookkeeper.api.kv.result.DeleteResult;
+import org.apache.bookkeeper.api.kv.result.IncrementResult;
 import org.apache.bookkeeper.api.kv.result.PutResult;
 import org.apache.bookkeeper.api.kv.result.RangeResult;
 import org.apache.bookkeeper.api.kv.result.TxnResult;
@@ -47,7 +49,6 @@ import org.apache.bookkeeper.clients.impl.internal.api.StorageServerClientManage
 import org.apache.bookkeeper.clients.impl.routing.RangeRouter;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.common.router.ByteBufHashRouter;
-import org.apache.bookkeeper.stream.proto.RangeProperties;
 import org.apache.bookkeeper.stream.proto.StreamProperties;
 
 /**
@@ -115,7 +116,10 @@ public class PByteBufTableImpl implements PTable<ByteBuf, ByteBuf> {
         }
 
         @Override
-        public CompletableFuture<Void> increment(ByteBuf pKey, ByteBuf lKey, long amount) {
+        public CompletableFuture<IncrementResult<ByteBuf, ByteBuf>> increment(ByteBuf pKey,
+                                                                              ByteBuf lKey,
+                                                                              long amount,
+                                                                              IncrementOption<ByteBuf> option) {
             return FutureUtils.exception(CAUSE);
         }
 
@@ -159,24 +163,15 @@ public class PByteBufTableImpl implements PTable<ByteBuf, ByteBuf> {
             props,
             clientManager,
             executor,
-            new TableRangeFactory<ByteBuf, ByteBuf>() {
-                @Override
-                public PTable<ByteBuf, ByteBuf> openTableRange(StreamProperties streamProps,
-                                                               RangeProperties rangeProps,
-                                                               ScheduledExecutorService executor,
-                                                               OpFactory<ByteBuf, ByteBuf> opFactory,
-                                                               ResultFactory<ByteBuf, ByteBuf> resultFactory,
-                                                               KeyValueFactory<ByteBuf, ByteBuf> kvFactory) {
-                    return new PByteBufTableRangeImpl(
-                        streamProps.getStreamId(),
-                        rangeProps,
-                        clientManager.getStorageContainerChannel(rangeProps.getStorageContainerId()),
-                        executor,
-                        opFactory,
-                        resultFactory,
-                        kvFactory);
-                }
-            },
+            (streamProps, rangeProps, executorService, opFactory, resultFactory, kvFactory)
+                -> new PByteBufTableRangeImpl(
+                    streamProps.getStreamId(),
+                    rangeProps,
+                    clientManager.getStorageContainerChannel(rangeProps.getStorageContainerId()),
+                    executorService,
+                    opFactory,
+                    resultFactory,
+                    kvFactory),
             Optional.empty());
     }
 
@@ -292,9 +287,12 @@ public class PByteBufTableImpl implements PTable<ByteBuf, ByteBuf> {
     }
 
     @Override
-    public CompletableFuture<Void> increment(ByteBuf pKey, ByteBuf lKey, long amount) {
+    public CompletableFuture<IncrementResult<ByteBuf, ByteBuf>> increment(ByteBuf pKey,
+                                                                          ByteBuf lKey,
+                                                                          long amount,
+                                                                          IncrementOption<ByteBuf> option) {
         Long range = rangeRouter.getRange(pKey);
-        return getTableRange(range).increment(pKey, lKey, amount);
+        return getTableRange(range).increment(pKey, lKey, amount, option);
     }
 
     @Override

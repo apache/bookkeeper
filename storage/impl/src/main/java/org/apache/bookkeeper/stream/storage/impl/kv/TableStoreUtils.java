@@ -171,7 +171,8 @@ final class TableStoreUtils {
         IncrementResponse.Builder putRespBuilder = IncrementResponse.newBuilder()
             .setHeader(ResponseHeader.newBuilder()
                 .setRoutingHeader(routingHeader)
-                .build());
+                .build())
+            .setTotalAmount(result.totalAmount());
         return putRespBuilder.build();
     }
 

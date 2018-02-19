@@ -35,4 +35,12 @@ package org.apache.bookkeeper.api.kv.result;
  * Increment response.
  */
 public interface IncrementResult<K, V> extends Result<K, V> {
+
+    /**
+     * Return the total amount after applying this increment op.
+     *
+     * @return the total amount after applying this increment op.
+     */
+    long totalAmount();
+
 }

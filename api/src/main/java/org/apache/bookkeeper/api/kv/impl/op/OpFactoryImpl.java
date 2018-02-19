@@ -32,6 +32,7 @@ import org.apache.bookkeeper.api.kv.op.PutOp;
 import org.apache.bookkeeper.api.kv.op.RangeOp;
 import org.apache.bookkeeper.api.kv.op.TxnOpBuilder;
 import org.apache.bookkeeper.api.kv.options.DeleteOption;
+import org.apache.bookkeeper.api.kv.options.IncrementOption;
 import org.apache.bookkeeper.api.kv.options.OptionFactory;
 import org.apache.bookkeeper.api.kv.options.PutOption;
 import org.apache.bookkeeper.api.kv.options.RangeOption;
@@ -105,10 +106,11 @@ public class OpFactoryImpl<K, V> implements OpFactory<K, V> {
     }
 
     @Override
-    public IncrementOp<K, V> newIncrement(K key, long amount) {
+    public IncrementOp<K, V> newIncrement(K key, long amount, IncrementOption<K> option) {
         return incrementOpRecycler.get()
             .key(key)
-            .amount(amount);
+            .amount(amount)
+            .option(option);
     }
 
     @Override

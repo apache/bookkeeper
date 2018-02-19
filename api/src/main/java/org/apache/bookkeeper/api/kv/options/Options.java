@@ -160,9 +160,53 @@ public final class Options {
 
     };
 
+    @SuppressWarnings("rawtypes")
+    private static final IncrementOption BLIND_INCREMENT_OPTION = new IncrementOption() {
+        @Override
+        public boolean getTotal() {
+            return false;
+        }
+
+        @Override
+        public void close() {
+        }
+
+        @Override
+        public String toString() {
+            return "IncrementOption(getTotal=false)";
+        }
+    };
+
+    @SuppressWarnings("rawtypes")
+    private static final IncrementOption INCREMENT_AND_GET_OPTION = new IncrementOption() {
+        @Override
+        public boolean getTotal() {
+            return true;
+        }
+
+        @Override
+        public void close() {
+        }
+
+        @Override
+        public String toString() {
+            return "IncrementOption(getTotal=true)";
+        }
+    };
+
     @SuppressWarnings("unchecked")
     public static <K> PutOption<K> blindPut() {
         return (PutOption<K>) BLIND_PUT_OPTION;
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <K> IncrementOption<K> blindIncrement() {
+        return (IncrementOption<K>) BLIND_INCREMENT_OPTION;
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <K> IncrementOption<K> incrementAndGet() {
+        return (IncrementOption<K>) INCREMENT_AND_GET_OPTION;
     }
 
     @SuppressWarnings("unchecked")

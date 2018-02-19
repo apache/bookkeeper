@@ -188,6 +188,8 @@ message IncrementRequest {
   bytes key = 1;
   // amount is a long number to increment
   int64 amount = 2;
+  // return the total amount after increment
+  bool get_total = 3;
 
   // header
   RoutingHeader header = 99;
@@ -195,6 +197,8 @@ message IncrementRequest {
 
 message IncrementResponse {
   ResponseHeader header = 1;
+  // if get_total is set in the request, the total amount will be returned after this increment.
+  int64 total_amount = 2;
 }
 
 message DeleteRangeRequest {

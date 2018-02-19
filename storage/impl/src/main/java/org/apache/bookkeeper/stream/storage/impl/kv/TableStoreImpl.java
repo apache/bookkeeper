@@ -224,7 +224,10 @@ public class TableStoreImpl implements TableStore {
         byte[] storeKey = newStoreKey(rKey, lKey);
         return store.getOpFactory().newIncrement(
             storeKey,
-            request.getAmount());
+            request.getAmount(),
+            store.getOpFactory().optionFactory().newIncrementOption()
+                .getTotal(request.getGetTotal())
+                .build());
     }
 
     @Override

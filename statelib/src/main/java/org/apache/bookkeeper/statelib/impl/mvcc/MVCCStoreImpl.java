@@ -131,7 +131,7 @@ class MVCCStoreImpl<K, V> extends RocksdbKVStore<K, V> implements MVCCStore<K, V
     }
 
     void increment(K key, long amount, long revision) {
-        try (IncrementOp<K, V> op = opFactory.newIncrement(key, amount)) {
+        try (IncrementOp<K, V> op = opFactory.newIncrement(key, amount, Options.blindIncrement())) {
             try (IncrementResult<K, V> result = increment(revision, op)) {
                 if (Code.OK != result.code()) {
                     throw new MVCCStoreException(result.code(),
@@ -423,6 +423,9 @@ class MVCCStoreImpl<K, V> extends RocksdbKVStore<K, V> implements MVCCStore<K, V
 
             // finalize the result
             result.code(Code.OK);
+            if (op.option().getTotal()) {
+                result.totalAmount(newAmount);
+            }
             return result;
         } catch (StateStoreRuntimeException e) {
             result.close();

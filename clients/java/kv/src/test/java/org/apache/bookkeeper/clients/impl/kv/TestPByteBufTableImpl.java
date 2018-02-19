@@ -20,6 +20,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -39,6 +40,7 @@ import org.apache.bookkeeper.api.kv.PTable;
 import org.apache.bookkeeper.api.kv.Txn;
 import org.apache.bookkeeper.api.kv.impl.options.OptionFactoryImpl;
 import org.apache.bookkeeper.api.kv.options.DeleteOption;
+import org.apache.bookkeeper.api.kv.options.IncrementOption;
 import org.apache.bookkeeper.api.kv.options.OptionFactory;
 import org.apache.bookkeeper.api.kv.options.PutOption;
 import org.apache.bookkeeper.api.kv.options.RangeOption;
@@ -214,9 +216,11 @@ public class TestPByteBufTableImpl {
             ByteBuf lkey =
                 Unpooled.wrappedBuffer(Bytes.toBytes(rangeProps.getRangeId()));
             long amount = 100L;
-            table.increment(pkey, lkey, amount);
-            verify(tableRanges.get(rangeProps.getRangeId()), times(1))
-                .increment(eq(pkey), eq(lkey), eq(amount));
+            try (IncrementOption<ByteBuf> option = optionFactory.newIncrementOption().build()) {
+                table.increment(pkey, lkey, amount, option);
+                verify(tableRanges.get(rangeProps.getRangeId()), times(1))
+                    .increment(eq(pkey), eq(lkey), eq(amount), same(option));
+            }
         }
 
         // test delete

@@ -70,4 +70,8 @@ public interface MVCCAsyncStoreWriteView<K, V> {
 
     CompletableFuture<Void> increment(K k, long amount);
 
+    CompletableFuture<Long> incrementAndGet(K k, long amount);
+
+    CompletableFuture<Long> getAndIncrement(K k, long amount);
+
 }

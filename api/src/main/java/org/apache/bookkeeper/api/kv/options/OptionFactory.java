@@ -28,4 +28,6 @@ public interface OptionFactory<K> {
 
     DeleteOptionBuilder<K> newDeleteOption();
 
+    IncrementOptionBuilder<K> newIncrementOption();
+
 }

@@ -36,6 +36,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import org.apache.bookkeeper.api.kv.impl.options.OptionFactoryImpl;
 import org.apache.bookkeeper.api.kv.options.DeleteOption;
+import org.apache.bookkeeper.api.kv.options.IncrementOption;
 import org.apache.bookkeeper.api.kv.options.OptionFactory;
 import org.apache.bookkeeper.api.kv.options.Options;
 import org.apache.bookkeeper.api.kv.options.PutOption;
@@ -131,19 +132,24 @@ public class TestKvUtils {
 
     @Test
     public void testNewIncrementRequest() {
-        IncrementRequest rr = newIncrementRequest(key, 100L).build();
-        assertEquals(keyBs, rr.getKey());
-        assertEquals(100L, rr.getAmount());
-        assertFalse(rr.hasHeader());
+        try (IncrementOption<ByteBuf> option = Options.incrementAndGet()) {
+            IncrementRequest rr = newIncrementRequest(key, 100L, option).build();
+            assertEquals(keyBs, rr.getKey());
+            assertEquals(100L, rr.getAmount());
+            assertTrue(rr.getGetTotal());
+            assertFalse(rr.hasHeader());
+        }
     }
 
     @Test
     public void testNewKvIncrementRequest() {
-        IncrementRequest.Builder incrBuilder = newIncrementRequest(key, 100L);
-        StorageContainerRequest request = newKvIncrementRequest(scId, incrBuilder);
-        assertEquals(scId, request.getScId());
-        assertEquals(KV_INCR_REQ, request.getRequestCase());
-        assertEquals(incrBuilder.build(), request.getKvIncrReq());
+        try (IncrementOption<ByteBuf> option = Options.incrementAndGet()) {
+            IncrementRequest.Builder incrBuilder = newIncrementRequest(key, 100L, option);
+            StorageContainerRequest request = newKvIncrementRequest(scId, incrBuilder);
+            assertEquals(scId, request.getScId());
+            assertEquals(KV_INCR_REQ, request.getRequestCase());
+            assertEquals(incrBuilder.build(), request.getKvIncrReq());
+        }
     }
 
     @Test

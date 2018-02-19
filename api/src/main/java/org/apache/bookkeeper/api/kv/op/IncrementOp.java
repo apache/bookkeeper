@@ -18,6 +18,7 @@
 
 package org.apache.bookkeeper.api.kv.op;
 
+import org.apache.bookkeeper.api.kv.options.IncrementOption;
 import org.apache.bookkeeper.common.annotation.InterfaceAudience.Public;
 import org.apache.bookkeeper.common.annotation.InterfaceStability.Evolving;
 
@@ -34,5 +35,7 @@ public interface IncrementOp<K, V> extends Op<K, V> {
     K key();
 
     long amount();
+
+    IncrementOption<K> option();
 
 }

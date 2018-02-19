@@ -58,7 +58,11 @@ public interface PTableBase<K, V> extends AutoCloseable {
     }
 
     default IncrementOp<K, V> newIncrement(K key, long amount) {
-        return opFactory().newIncrement(key, amount);
+        return opFactory().newIncrement(key, amount, Options.blindIncrement());
+    }
+
+    default IncrementOp<K, V> newIncrementAndGet(K key, long amount) {
+        return opFactory().newIncrement(key, amount, Options.incrementAndGet());
     }
 
     default RangeOp<K, V> newGet(K key) {

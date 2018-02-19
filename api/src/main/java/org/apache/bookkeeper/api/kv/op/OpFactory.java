@@ -19,6 +19,7 @@
 package org.apache.bookkeeper.api.kv.op;
 
 import org.apache.bookkeeper.api.kv.options.DeleteOption;
+import org.apache.bookkeeper.api.kv.options.IncrementOption;
 import org.apache.bookkeeper.api.kv.options.OptionFactory;
 import org.apache.bookkeeper.api.kv.options.PutOption;
 import org.apache.bookkeeper.api.kv.options.RangeOption;
@@ -43,7 +44,7 @@ public interface OpFactory<K, V> {
 
     RangeOp<K, V> newRange(K key, RangeOption<K> option);
 
-    IncrementOp<K, V> newIncrement(K key, long amount);
+    IncrementOp<K, V> newIncrement(K key, long amount, IncrementOption<K> option);
 
     TxnOpBuilder<K, V> newTxn();
 

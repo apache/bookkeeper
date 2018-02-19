@@ -22,6 +22,7 @@ import io.netty.util.Recycler.Handle;
 import lombok.RequiredArgsConstructor;
 import org.apache.bookkeeper.api.kv.op.IncrementOp;
 import org.apache.bookkeeper.api.kv.op.OpType;
+import org.apache.bookkeeper.api.kv.options.IncrementOption;
 import org.apache.bookkeeper.stream.proto.kv.rpc.IncrementRequest;
 import org.apache.bookkeeper.stream.proto.kv.store.Command;
 
@@ -29,7 +30,7 @@ import org.apache.bookkeeper.stream.proto.kv.store.Command;
  * A protobuf encoded increment operation.
  */
 @RequiredArgsConstructor
-public class ProtoIncrementOpImpl implements IncrementOp<byte[], byte[]> {
+public class ProtoIncrementOpImpl implements IncrementOp<byte[], byte[]>, IncrementOption<byte[]> {
 
     public static ProtoIncrementOpImpl newIncrementOp(Command command) {
         ProtoIncrementOpImpl op = RECYCLER.get();
@@ -51,6 +52,11 @@ public class ProtoIncrementOpImpl implements IncrementOp<byte[], byte[]> {
     @Override
     public long amount() {
         return req.getAmount();
+    }
+
+    @Override
+    public IncrementOption<byte[]> option() {
+        return this;
     }
 
     public void setCommand(Command command) {
@@ -80,5 +86,10 @@ public class ProtoIncrementOpImpl implements IncrementOp<byte[], byte[]> {
     public void close() {
         reset();
         recyclerHandle.recycle(this);
+    }
+
+    @Override
+    public boolean getTotal() {
+        return req.getGetTotal();
     }
 }

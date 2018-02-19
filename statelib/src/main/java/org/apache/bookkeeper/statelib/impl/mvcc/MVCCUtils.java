@@ -220,6 +220,7 @@ public final class MVCCUtils {
         return IncrementRequest.newBuilder()
             .setKey(UnsafeByteOperations.unsafeWrap(op.key()))
             .setAmount(op.amount())
+            .setGetTotal(op.option().getTotal())
             .build();
     }
 

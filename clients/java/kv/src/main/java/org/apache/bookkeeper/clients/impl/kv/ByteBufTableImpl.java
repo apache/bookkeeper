@@ -24,9 +24,11 @@ import org.apache.bookkeeper.api.kv.Table;
 import org.apache.bookkeeper.api.kv.Txn;
 import org.apache.bookkeeper.api.kv.op.OpFactory;
 import org.apache.bookkeeper.api.kv.options.DeleteOption;
+import org.apache.bookkeeper.api.kv.options.IncrementOption;
 import org.apache.bookkeeper.api.kv.options.PutOption;
 import org.apache.bookkeeper.api.kv.options.RangeOption;
 import org.apache.bookkeeper.api.kv.result.DeleteResult;
+import org.apache.bookkeeper.api.kv.result.IncrementResult;
 import org.apache.bookkeeper.api.kv.result.PutResult;
 import org.apache.bookkeeper.api.kv.result.RangeResult;
 
@@ -57,8 +59,10 @@ public class ByteBufTableImpl implements Table<ByteBuf, ByteBuf> {
     }
 
     @Override
-    public CompletableFuture<Void> increment(ByteBuf key, long amount) {
-        return underlying.increment(key, key, amount);
+    public CompletableFuture<IncrementResult<ByteBuf, ByteBuf>> increment(ByteBuf key,
+                                                                          long amount,
+                                                                          IncrementOption<ByteBuf> option) {
+        return underlying.increment(key, key, amount, option);
     }
 
     @Override

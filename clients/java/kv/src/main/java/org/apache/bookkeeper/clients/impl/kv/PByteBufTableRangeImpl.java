@@ -32,9 +32,11 @@ import org.apache.bookkeeper.api.kv.op.CompareOp;
 import org.apache.bookkeeper.api.kv.op.Op;
 import org.apache.bookkeeper.api.kv.op.OpFactory;
 import org.apache.bookkeeper.api.kv.options.DeleteOption;
+import org.apache.bookkeeper.api.kv.options.IncrementOption;
 import org.apache.bookkeeper.api.kv.options.PutOption;
 import org.apache.bookkeeper.api.kv.options.RangeOption;
 import org.apache.bookkeeper.api.kv.result.DeleteResult;
+import org.apache.bookkeeper.api.kv.result.IncrementResult;
 import org.apache.bookkeeper.api.kv.result.PutResult;
 import org.apache.bookkeeper.api.kv.result.RangeResult;
 import org.apache.bookkeeper.api.kv.result.TxnResult;
@@ -155,27 +157,24 @@ class PByteBufTableRangeImpl implements PTable<ByteBuf, ByteBuf> {
     }
 
     @Override
-    public CompletableFuture<Void> increment(ByteBuf pKey, ByteBuf lKey, long amount) {
+    public CompletableFuture<IncrementResult<ByteBuf, ByteBuf>> increment(ByteBuf pKey,
+                                                                          ByteBuf lKey,
+                                                                          long amount,
+                                                                          IncrementOption<ByteBuf> option) {
         pKey.retain();
         lKey.retain();
         return TableRequestProcessor.of(
             KvUtils.newKvIncrementRequest(
                 scChannel.getStorageContainerId(),
-                KvUtils.newIncrementRequest(lKey, amount)
+                KvUtils.newIncrementRequest(lKey, amount, option)
                     .setHeader(newRoutingHeader(pKey))),
             response -> KvUtils.newIncrementResult(response.getKvIncrResp(), resultFactory, kvFactory),
             scChannel,
             executor
-        )
-            .process()
-            .thenApply(result -> {
-                result.close();
-                return (Void) null;
-            })
-            .whenComplete((ignored, cause) -> {
-                pKey.release();
-                lKey.release();
-            });
+        ).process().whenComplete((ignored, cause) -> {
+            pKey.release();
+            lKey.release();
+        });
     }
 
     @Override

@@ -19,6 +19,7 @@ package org.apache.bookkeeper.api.kv.impl.options;
 
 import io.netty.util.Recycler;
 import org.apache.bookkeeper.api.kv.options.DeleteOptionBuilder;
+import org.apache.bookkeeper.api.kv.options.IncrementOptionBuilder;
 import org.apache.bookkeeper.api.kv.options.OptionFactory;
 import org.apache.bookkeeper.api.kv.options.PutOptionBuilder;
 import org.apache.bookkeeper.api.kv.options.RangeOptionBuilder;
@@ -73,6 +74,22 @@ public class OptionFactoryImpl<K> implements OptionFactory<K> {
             }
         };
 
+    private final Recycler<IncrementOptionImpl<K>> incrementOptionRecycler = new Recycler<IncrementOptionImpl<K>>() {
+        @Override
+        protected IncrementOptionImpl<K> newObject(Handle<IncrementOptionImpl<K>> handle) {
+            return new IncrementOptionImpl<>(handle);
+        }
+    };
+
+    private final Recycler<IncrementOptionBuilderImpl<K>> incrementOptionBuilderRecycler =
+        new Recycler<IncrementOptionBuilderImpl<K>>() {
+            @Override
+            protected IncrementOptionBuilderImpl<K> newObject(Handle<IncrementOptionBuilderImpl<K>> handle) {
+                return new IncrementOptionBuilderImpl<>(handle, incrementOptionRecycler);
+            }
+        };
+
+
     @Override
     public PutOptionBuilder<K> newPutOption() {
         return PutOptionBuilderImpl.create(putOptionBuilderRecycler);
@@ -86,5 +103,10 @@ public class OptionFactoryImpl<K> implements OptionFactory<K> {
     @Override
     public DeleteOptionBuilder<K> newDeleteOption() {
         return DeleteOptionBuilderImpl.create(deleteOptionBuilderRecycler);
+    }
+
+    @Override
+    public IncrementOptionBuilder<K> newIncrementOption() {
+        return IncrementOptionBuilderImpl.create(incrementOptionBuilderRecycler);
     }
 }

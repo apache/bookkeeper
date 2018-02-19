@@ -253,9 +253,15 @@ public class TableClientSimpleTest extends StorageServerTestBase {
         byte[] lIncrKey = "test-incr-lkey".getBytes(UTF_8);
         ByteBuf lIncrKeyBuf = Unpooled.wrappedBuffer(lIncrKey);
 
+        // test increment
         for (int j = 0; j < 5; j++) {
             result(table.increment(rKeyBuf, lIncrKeyBuf, 100L));
             long number = result(table.getNumber(rKeyBuf, lIncrKeyBuf));
+            assertEquals(100L * (j + 1), number);
+        }
+
+        for (int j = 5; j < 10; j++) {
+            long number = result(table.incrementAndGet(rKeyBuf, lIncrKeyBuf, 100L));
             assertEquals(100L * (j + 1), number);
         }
     }

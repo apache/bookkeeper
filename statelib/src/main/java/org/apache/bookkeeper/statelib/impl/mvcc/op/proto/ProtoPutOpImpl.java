@@ -65,7 +65,7 @@ public class ProtoPutOpImpl implements PutOp<byte[], byte[]>, PutOption<byte[]> 
     }
 
     @Override
-    public PutOption option() {
+    public PutOption<byte[]> option() {
         return this;
     }
 

@@ -124,6 +124,20 @@ public interface MVCCAsyncStore<K, V>
                 .build());
     }
 
+    default IncrementOp<K, V> newIncrement(K key, long amount) {
+        return getOpFactory().newIncrement(
+            key,
+            amount,
+            Options.blindIncrement());
+    }
+
+    default IncrementOp<K, V> newIncrementAndGet(K key, long amount) {
+        return getOpFactory().newIncrement(
+            key,
+            amount,
+            Options.incrementAndGet());
+    }
+
     @Override
     default CompletableFuture<V> get(K key) {
         RangeOp<K, V> op = getOpFactory().newRange(
@@ -432,12 +446,55 @@ public interface MVCCAsyncStore<K, V>
     default CompletableFuture<Void> increment(K k, long amount) {
         IncrementOp<K, V> op = getOpFactory().newIncrement(
             k,
-            amount);
+            amount,
+            Options.blindIncrement());
         return increment(op).thenCompose(result -> {
             try {
                 Code code = result.code();
                 if (Code.OK == code) {
                     return FutureUtils.Void();
+                } else {
+                    return failWithCode(code,
+                        "Failed to increment(" + k + ", " + amount + ") to store " + name());
+                }
+            } finally {
+                result.close();
+            }
+        });
+    }
+
+    @Override
+    default CompletableFuture<Long> incrementAndGet(K k, long amount) {
+        IncrementOp<K, V> op = getOpFactory().newIncrement(
+            k,
+            amount,
+            Options.incrementAndGet());
+        return increment(op).thenCompose(result -> {
+            try {
+                Code code = result.code();
+                if (Code.OK == code) {
+                    return FutureUtils.value(result.totalAmount());
+                } else {
+                    return failWithCode(code,
+                        "Failed to increment(" + k + ", " + amount + ") to store " + name());
+                }
+            } finally {
+                result.close();
+            }
+        });
+    }
+
+    @Override
+    default CompletableFuture<Long> getAndIncrement(K k, long amount) {
+        IncrementOp<K, V> op = getOpFactory().newIncrement(
+            k,
+            amount,
+            Options.incrementAndGet());
+        return increment(op).thenCompose(result -> {
+            try {
+                Code code = result.code();
+                if (Code.OK == code) {
+                    return FutureUtils.value(result.totalAmount() - amount);
                 } else {
                     return failWithCode(code,
                         "Failed to increment(" + k + ", " + amount + ") to store " + name());

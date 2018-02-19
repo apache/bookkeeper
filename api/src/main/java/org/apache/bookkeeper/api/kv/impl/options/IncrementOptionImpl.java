@@ -15,49 +15,45 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.bookkeeper.api.kv.impl.options;
 
-package org.apache.bookkeeper.api.kv.impl.result;
-
+import io.netty.util.Recycler;
 import io.netty.util.Recycler.Handle;
 import lombok.Getter;
-import lombok.Setter;
 import lombok.ToString;
 import lombok.experimental.Accessors;
-import org.apache.bookkeeper.api.kv.op.OpType;
-import org.apache.bookkeeper.api.kv.result.IncrementResult;
-import org.apache.bookkeeper.api.kv.result.PutResult;
+import org.apache.bookkeeper.api.kv.options.IncrementOption;
 
-/**
- * An implementation of {@link PutResult}.
- */
-@Accessors(fluent = true, chain = true)
+@Accessors(fluent = true)
 @Getter
-@Setter
-@ToString
-public class IncrementResultImpl<K, V>
-    extends ResultImpl<K, V, IncrementResultImpl<K, V>>
-    implements IncrementResult<K, V> {
+@ToString(exclude = "handle")
+class IncrementOptionImpl<K> implements IncrementOption<K> {
 
-    private long totalAmount = 0L;
-
-    IncrementResultImpl(Handle<IncrementResultImpl<K, V>> handle) {
-        super(OpType.PUT, handle);
+    static <K> IncrementOptionImpl<K> create(Recycler<IncrementOptionImpl<K>> recycler) {
+        return recycler.get();
     }
 
-    public IncrementResultImpl<K, V> totalAmount(long amount) {
-        this.totalAmount = amount;
-        return this;
+    private final Handle<IncrementOptionImpl<K>> handle;
+
+    private boolean getTotal;
+
+    IncrementOptionImpl(Handle<IncrementOptionImpl<K>> handle) {
+        this.handle = handle;
     }
 
-    @Override
-    IncrementResultImpl<K, V> asResult() {
-        return this;
+    void set(IncrementOptionBuilderImpl<K> builderImpl) {
+        this.getTotal = builderImpl.getTotal();
     }
 
     @Override
-    protected void reset() {
-        totalAmount = 0L;
-        super.reset();
+    public void close() {
+        this.getTotal = false;
+
+        handle.recycle(this);
     }
 
+    @Override
+    public boolean getTotal() {
+        return getTotal;
+    }
 }
