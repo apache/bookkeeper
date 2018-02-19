@@ -21,9 +21,7 @@ package org.apache.bookkeeper.api;
 import io.netty.buffer.ByteBuf;
 import java.util.concurrent.CompletableFuture;
 import org.apache.bookkeeper.api.kv.PTable;
-import org.apache.bookkeeper.api.kv.PTableWriter;
 import org.apache.bookkeeper.api.kv.Table;
-import org.apache.bookkeeper.api.kv.TableWriter;
 import org.apache.bookkeeper.common.annotation.InterfaceAudience.Public;
 import org.apache.bookkeeper.common.annotation.InterfaceStability.Evolving;
 import org.apache.bookkeeper.common.util.AutoAsyncCloseable;
@@ -38,9 +36,5 @@ public interface StorageClient extends AutoAsyncCloseable {
     CompletableFuture<PTable<ByteBuf, ByteBuf>> openPTable(String table);
 
     CompletableFuture<Table<ByteBuf, ByteBuf>> openTable(String table);
-
-    CompletableFuture<PTableWriter<ByteBuf, ByteBuf>> openPTableWriter(String table);
-
-    CompletableFuture<TableWriter<ByteBuf, ByteBuf>> openTableWriter(String table);
 
 }

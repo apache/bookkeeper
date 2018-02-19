@@ -19,22 +19,17 @@
 package org.apache.bookkeeper.clients;
 
 import io.netty.buffer.ByteBuf;
-import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.api.StorageClient;
 import org.apache.bookkeeper.api.kv.PTable;
-import org.apache.bookkeeper.api.kv.PTableWriter;
 import org.apache.bookkeeper.api.kv.Table;
-import org.apache.bookkeeper.api.kv.TableWriter;
 import org.apache.bookkeeper.clients.config.StorageClientSettings;
 import org.apache.bookkeeper.clients.impl.internal.StorageServerClientManagerImpl;
 import org.apache.bookkeeper.clients.impl.internal.api.StorageServerClientManager;
 import org.apache.bookkeeper.clients.impl.kv.ByteBufTableImpl;
-import org.apache.bookkeeper.clients.impl.kv.ByteBufTableWriterImpl;
 import org.apache.bookkeeper.clients.impl.kv.PByteBufTableImpl;
-import org.apache.bookkeeper.clients.impl.kv.PByteBufTableWriterImpl;
 import org.apache.bookkeeper.clients.utils.ClientResources;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.common.util.AbstractAutoAsyncCloseable;
@@ -105,40 +100,6 @@ class StorageClientImpl extends AbstractAutoAsyncCloseable implements StorageCli
                     serverManager,
                     scheduler.chooseThread(props.getStreamId())
                 ).initialize();
-            }),
-            future
-        );
-    }
-
-    @Override
-    public CompletableFuture<PTableWriter<ByteBuf, ByteBuf>> openPTableWriter(String table) {
-        return ExceptionUtils.callAndHandleClosedAsync(
-            COMPONENT_NAME,
-            isClosed(),
-            (future) -> openTableWriterImpl(table, future));
-    }
-
-    @Override
-    public CompletableFuture<TableWriter<ByteBuf, ByteBuf>> openTableWriter(String table) {
-        return openPTableWriter(table)
-            .thenApply(pTableWriter -> new ByteBufTableWriterImpl(pTableWriter));
-    }
-
-    private void openTableWriterImpl(String streamName,
-                                     CompletableFuture<PTableWriter<ByteBuf, ByteBuf>> future) {
-        FutureUtils.proxyTo(
-            getStreamProperties(streamName).thenComposeAsync(props -> {
-                log.info("Retrieved stream properties for stream {} : {}", streamName, props);
-                try {
-                    return new PByteBufTableWriterImpl(
-                        streamName,
-                        props,
-                        serverManager,
-                        scheduler.chooseThread(props.getStreamId())
-                    ).initialize();
-                } catch (IOException e) {
-                    return FutureUtils.exception(e);
-                }
             }),
             future
         );

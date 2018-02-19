@@ -19,7 +19,6 @@ package org.apache.bookkeeper.stream.cli.commands;
 
 import com.beust.jcommander.Parameters;
 import org.apache.bookkeeper.clients.config.StorageClientSettings.Builder;
-import org.apache.bookkeeper.stream.cli.commands.table.AppendCommand;
 import org.apache.bookkeeper.stream.cli.commands.table.GetCommand;
 import org.apache.bookkeeper.stream.cli.commands.table.IncrementCommand;
 import org.apache.bookkeeper.stream.cli.commands.table.PutCommand;
@@ -34,6 +33,5 @@ public class CmdTable extends CmdBase {
         addSubCommand(new PutCommand());
         addSubCommand(new GetCommand());
         addSubCommand(new IncrementCommand());
-        addSubCommand(new AppendCommand());
     }
 }
