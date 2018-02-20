@@ -432,6 +432,7 @@ public class BookieInfoReader {
         try {
             latch.await();
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             LOG.error("Received InterruptedException ", e);
             throw e;
         }

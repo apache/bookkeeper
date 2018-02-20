@@ -94,6 +94,7 @@ public class ZKNamespaceWatcher extends NamespaceWatcher
         } catch (ZooKeeperClient.ZooKeeperConnectionException e) {
             scheduleTask(this, conf.getZKSessionTimeoutMilliseconds());
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             logger.warn("Interrupted on watching namespace changes for {} : ", uri, e);
             scheduleTask(this, conf.getZKSessionTimeoutMilliseconds());
         }

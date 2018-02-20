@@ -93,6 +93,7 @@ class ReadEntryProcessor extends PacketProcessorBase {
                         errorCode = BookieProtocol.EOK;
                     }
                 } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
                     LOG.error("Interrupting fence read entry {}", read, ie);
                     errorCode = BookieProtocol.EIO;
                     data.release();

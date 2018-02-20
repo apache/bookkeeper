@@ -532,6 +532,7 @@ public class TestBKLogSegmentWriter extends TestDistributedLogBase {
             try {
                 deferLatch.await();
             } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
                 LOG.warn("Interrupted on deferring completion : ", e);
             }
         });

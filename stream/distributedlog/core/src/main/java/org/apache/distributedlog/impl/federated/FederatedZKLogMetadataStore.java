@@ -306,6 +306,7 @@ public class FederatedZKLogMetadataStore
         } catch (ZooKeeperClient.ZooKeeperConnectionException e) {
             promise.completeExceptionally(e);
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             promise.completeExceptionally(e);
         }
         return promise;
@@ -343,6 +344,7 @@ public class FederatedZKLogMetadataStore
         } catch (ZooKeeperClient.ZooKeeperConnectionException e) {
             promise.completeExceptionally(e);
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             promise.completeExceptionally(e);
         }
     }
@@ -540,6 +542,7 @@ public class FederatedZKLogMetadataStore
         } catch (ZooKeeperClient.ZooKeeperConnectionException e) {
             promise.completeExceptionally(e);
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             promise.completeExceptionally(e);
         }
 
@@ -568,6 +571,7 @@ public class FederatedZKLogMetadataStore
                     createLogInNamespaceSync(uri, logName);
                     createPromise.complete(uri);
                 } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
                     createPromise.completeExceptionally(e);
                 } catch (IOException e) {
                     createPromise.completeExceptionally(e);
@@ -709,6 +713,7 @@ public class FederatedZKLogMetadataStore
         } catch (ZooKeeperClient.ZooKeeperConnectionException e) {
             fetchPromise.completeExceptionally(e);
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             fetchPromise.completeExceptionally(e);
         }
         return fetchPromise;

@@ -145,6 +145,7 @@ public class LedgerAllocatorPool implements LedgerAllocator {
             }
             initializeAllocators(allocators);
         } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
             throw new DLInterruptedException("Interrupted when ensuring " + poolPath + " created : ", ie);
         } catch (KeeperException ke) {
             throw new IOException("Encountered zookeeper exception when initializing pool " + poolPath + " : ", ke);
@@ -278,6 +279,7 @@ public class LedgerAllocatorPool implements LedgerAllocator {
                 }
             }, null);
         } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
             logger.warn("Interrupted on rescuing ledger allocator {} : ", ledgerAllocator.allocatePath, ie);
             synchronized (LedgerAllocatorPool.this) {
                 rescueMap.remove(ledgerAllocator.allocatePath);

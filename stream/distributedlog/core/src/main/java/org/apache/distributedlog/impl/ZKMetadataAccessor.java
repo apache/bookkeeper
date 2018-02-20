@@ -171,6 +171,7 @@ public class ZKMetadataAccessor implements org.apache.distributedlog.api.Metadat
                 writerZKC.get().setData(zkPath, metadata, currentStat.getVersion());
             }
         } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
             throw new DLInterruptedException("Interrupted on creating or updating container metadata", ie);
         } catch (Exception exc) {
             throw new IOException("Exception creating or updating container metadata", exc);
@@ -206,6 +207,7 @@ public class ZKMetadataAccessor implements org.apache.distributedlog.api.Metadat
                 return readerZKC.get().getData(zkPath, false, currentStat);
             }
         } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
             throw new DLInterruptedException("Error reading the max tx id from zk", ie);
         } catch (Exception e) {
             throw new IOException("Error reading the max tx id from zk", e);

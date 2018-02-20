@@ -134,7 +134,10 @@ public class ZKRegistrationManager implements RegistrationManager {
 
         try {
             this.zk = newZookeeper(conf, listener);
-        } catch (InterruptedException | KeeperException | IOException e) {
+        } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
+            throw new MetadataStoreException(ie);
+        } catch (KeeperException | IOException e) {
             throw new MetadataStoreException(e);
         }
 
@@ -205,6 +208,7 @@ public class ZKRegistrationManager implements RegistrationManager {
             try {
                 zk.close();
             } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
                 log.warn("Interrupted on closing zookeeper client", e);
             }
         }
@@ -267,6 +271,7 @@ public class ZKRegistrationManager implements RegistrationManager {
             throw new IOException("ZK exception checking and wait ephemeral znode "
                     + regPath + " expired", ke);
         } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
             log.error("Interrupted checking and wait ephemeral znode {} expired : ", regPath, ie);
             throw new IOException("Interrupted checking and wait ephemeral znode "
                     + regPath + " expired", ie);
@@ -297,6 +302,7 @@ public class ZKRegistrationManager implements RegistrationManager {
             // exit here as this is a fatal error.
             throw new MetadataStoreException(ke);
         } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
             log.error("Interrupted exception registering ephemeral Znode for Bookie!", ie);
             // Throw an IOException back up. This will cause the Bookie
             // constructor to error out. Alternatively, we could do a System
@@ -348,7 +354,10 @@ public class ZKRegistrationManager implements RegistrationManager {
     private void doUnregisterBookie(String regPath) throws BookieException {
         try {
             zk.delete(regPath, -1);
-        } catch (InterruptedException | KeeperException e) {
+        } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
+            throw new MetadataStoreException(ie);
+        } catch (KeeperException e) {
             throw new MetadataStoreException(e);
         }
     }
@@ -381,7 +390,10 @@ public class ZKRegistrationManager implements RegistrationManager {
                     cookieData.getValue(),
                     (int) ((LongVersion) cookieData.getVersion()).getLongVersion());
             }
-        } catch (InterruptedException | KeeperException e) {
+        } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
+            throw new MetadataStoreException("Interrupted writing cookie for bookie " + bookieId, ie);
+        } catch (KeeperException e) {
             throw new MetadataStoreException("Failed to write cookie for bookie " + bookieId);
         }
     }
@@ -409,7 +421,10 @@ public class ZKRegistrationManager implements RegistrationManager {
             zk.delete(zkPath, (int) ((LongVersion) version).getLongVersion());
         } catch (NoNodeException e) {
             throw new CookieNotFoundException(bookieId);
-        } catch (InterruptedException | KeeperException e) {
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new MetadataStoreException("Interrupted deleting cookie for bookie " + bookieId, e);
+        } catch (KeeperException e) {
             throw new MetadataStoreException("Failed to delete cookie for bookie " + bookieId);
         }
 
@@ -625,6 +640,7 @@ public class ZKRegistrationManager implements RegistrationManager {
             log.error("ZK exception while checking registration ephemeral znodes for BookieId: {}", bookieId, e);
             throw new MetadataStoreException(e);
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             log.error("InterruptedException while checking registration ephemeral znodes for BookieId: {}", bookieId,
                     e);
             throw new MetadataStoreException(e);

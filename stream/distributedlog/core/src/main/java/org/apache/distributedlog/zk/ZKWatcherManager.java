@@ -182,6 +182,7 @@ public class ZKWatcherManager implements Watcher {
                         }, null);
                     }
                 } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
                     logger.debug("Encountered exception on removing watches from {}", path, e);
                 } catch (ZooKeeperClient.ZooKeeperConnectionException e) {
                     logger.debug("Encountered exception on removing watches from {}", path, e);

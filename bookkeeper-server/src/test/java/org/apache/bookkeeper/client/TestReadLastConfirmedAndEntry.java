@@ -78,6 +78,7 @@ public class TestReadLastConfirmedAndEntry extends BookKeeperClusterTestCase {
                     try {
                         Thread.sleep(600000);
                     } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
                         // ignore
                     }
                 } else {
@@ -177,6 +178,7 @@ public class TestReadLastConfirmedAndEntry extends BookKeeperClusterTestCase {
                 try {
                     readLatch.await();
                 } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
                     // no-op
                 }
             }

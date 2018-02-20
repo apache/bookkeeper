@@ -213,6 +213,7 @@ public class BookieLedgerIndexTest extends BookKeeperClusterTestCase {
             LOG.error("Test failed", e);
             fail("Test failed due to BookKeeper exception");
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             LOG.error("Test failed", e);
             fail("Test failed due to interruption");
         }

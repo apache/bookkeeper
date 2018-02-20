@@ -216,6 +216,7 @@ public class OrderedScheduler {
                     }
                 }).get();
             } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
                 throw new RuntimeException("Couldn't start thread " + i, e);
             } catch (ExecutionException e) {
                 throw new RuntimeException("Couldn't start thread " + i, e);
