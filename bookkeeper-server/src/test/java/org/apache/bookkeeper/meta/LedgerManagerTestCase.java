@@ -106,7 +106,7 @@ public abstract class LedgerManagerTestCase extends BookKeeperClusterTestCase {
     public void setUp() throws Exception {
         super.setUp();
         baseConf.setZkServers(zkUtil.getZooKeeperConnectString());
-        ledgerManagerFactory = LedgerManagerFactory.newLedgerManagerFactory(
+        ledgerManagerFactory = AbstractZkLedgerManagerFactory.newLedgerManagerFactory(
             baseConf,
             RegistrationManager
                 .instantiateRegistrationManager(baseConf).getLayoutManager());

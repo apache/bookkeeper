@@ -63,6 +63,7 @@ import org.apache.bookkeeper.discover.ZKRegistrationClient;
 import org.apache.bookkeeper.feature.Feature;
 import org.apache.bookkeeper.feature.FeatureProvider;
 import org.apache.bookkeeper.feature.SettableFeatureProvider;
+import org.apache.bookkeeper.meta.AbstractZkLedgerManagerFactory;
 import org.apache.bookkeeper.meta.CleanupLedgerManager;
 import org.apache.bookkeeper.meta.LedgerIdGenerator;
 import org.apache.bookkeeper.meta.LedgerManager;
@@ -120,6 +121,9 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
     private OpStatsLogger recoverReadEntriesStats;
 
     private Counter speculativeReadCounter;
+    private Counter readOpDmCounter;
+    private Counter addOpUrCounter;
+
 
     // whether the event loop group is one we created, or is owned by whoever
     // instantiated us
@@ -521,7 +525,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
         // initialize ledger manager
         try {
             this.ledgerManagerFactory =
-                LedgerManagerFactory.newLedgerManagerFactory(conf, regClient.getLayoutManager());
+                AbstractZkLedgerManagerFactory.newLedgerManagerFactory(conf, regClient.getLayoutManager());
         } catch (IOException | InterruptedException e) {
             throw e;
         }
@@ -658,9 +662,12 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
      * The CRC32C, which use SSE processor instruction, has better performance than CRC32.
      * Legacy DigestType for backward compatibility. If we want to add new DigestType,
      * we should add it in here, client.api.DigestType and DigestType in DataFormats.proto.
+     * If the digest type is set/passed in as DUMMY, a dummy digest is added/checked.
+     * This DUMMY digest is mostly for test purposes or in situations/use-cases
+     * where digest is considered a overhead.
      */
     public enum DigestType {
-        MAC, CRC32, CRC32C;
+        MAC, CRC32, CRC32C, DUMMY;
 
         public static DigestType fromApiDigestType(org.apache.bookkeeper.client.api.DigestType digestType) {
             switch (digestType) {
@@ -670,6 +677,8 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
                     return DigestType.CRC32;
                 case CRC32C:
                     return DigestType.CRC32C;
+                case DUMMY:
+                    return DigestType.DUMMY;
                 default:
                     throw new IllegalArgumentException("Unable to convert digest type " + digestType);
             }
@@ -682,6 +691,8 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
                     return DataFormats.LedgerMetadataFormat.DigestType.CRC32;
                 case CRC32C:
                     return DataFormats.LedgerMetadataFormat.DigestType.CRC32C;
+                case DUMMY:
+                    return DataFormats.LedgerMetadataFormat.DigestType.DUMMY;
                 default:
                     throw new IllegalArgumentException("Unable to convert digest type " + digestType);
             }
@@ -1444,10 +1455,12 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
         openOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.OPEN_OP);
         recoverOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.RECOVER_OP);
         readOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.READ_OP);
+        readOpDmCounter = stats.getCounter(BookKeeperClientStats.READ_OP_DM);
         readLacAndEntryOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.READ_LAST_CONFIRMED_AND_ENTRY);
         readLacAndEntryRespLogger = stats.getOpStatsLogger(
                 BookKeeperClientStats.READ_LAST_CONFIRMED_AND_ENTRY_RESPONSE);
         addOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.ADD_OP);
+        addOpUrCounter = stats.getCounter(BookKeeperClientStats.ADD_OP_UR);
         writeLacOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.WRITE_LAC_OP);
         readLacOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.READ_LAC_OP);
         recoverAddEntriesStats = stats.getOpStatsLogger(BookKeeperClientStats.LEDGER_RECOVER_ADD_ENTRIES);
@@ -1492,7 +1505,12 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
     OpStatsLogger getRecoverReadCountLogger() {
         return recoverReadEntriesStats;
     }
-
+    Counter getReadOpDmCounter() {
+        return readOpDmCounter;
+    }
+    Counter getAddOpUrCounter() {
+        return addOpUrCounter;
+    }
     static EventLoopGroup getDefaultEventLoopGroup() {
         ThreadFactory threadFactory = new DefaultThreadFactory("bookkeeper-io");
         final int numThreads = Runtime.getRuntime().availableProcessors() * 2;
