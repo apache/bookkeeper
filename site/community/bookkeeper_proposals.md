@@ -85,7 +85,7 @@ using Google Doc.
 
 This section lists all the _bookkeeper proposals_ made to BookKeeper.
 
-*Next Proposal Number: 30*
+*Next Proposal Number: 32*
 
 ### Inprogress
 
@@ -100,6 +100,7 @@ Proposal | State
 [BP-26: Move distributedlog library as part of bookkeeper](../../bps/BP-26-move-distributedlog-core-library) | Accepted
 [BP-27: New BookKeeper CLI](../../bps/BP-27-new-bookkeeper-cli) | Draft
 [BP-29: Metadata API module](../../bps/BP-29-metadata-store-api-module) | Draft
+[BP-30: BookKeeper Table Service](https://docs.google.com/document/d/155xAwWv5IdOitHh1NVMEwCMGgB28M3FyMiQSxEpjE-Y/edit#heading=h.56rbh52koe3f) | Draft
 
 ### Adopted
 
