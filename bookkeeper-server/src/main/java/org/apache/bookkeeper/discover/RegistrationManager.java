@@ -21,14 +21,8 @@ package org.apache.bookkeeper.discover;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.common.annotation.InterfaceAudience.LimitedPrivate;
 import org.apache.bookkeeper.common.annotation.InterfaceStability.Evolving;
-import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.meta.LayoutManager;
-import org.apache.bookkeeper.stats.NullStatsLogger;
-import org.apache.bookkeeper.stats.StatsLogger;
-import org.apache.bookkeeper.util.ReflectionUtils;
 import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.versioning.Versioned;
-import org.apache.commons.configuration.ConfigurationException;
 
 /**
  * Registration manager interface, which a bookie server will use to do the registration process.
@@ -36,22 +30,6 @@ import org.apache.commons.configuration.ConfigurationException;
 @LimitedPrivate
 @Evolving
 public interface RegistrationManager extends AutoCloseable {
-
-    /**
-     * Instantiate a RegistrationManager based on config.
-     */
-    static RegistrationManager instantiateRegistrationManager(ServerConfiguration conf) throws BookieException {
-        // Create the registration manager instance
-        Class<? extends RegistrationManager> managerCls;
-        try {
-            managerCls = conf.getRegistrationManagerClass();
-        } catch (ConfigurationException e) {
-            throw new BookieException.BookieIllegalOpException(e);
-        }
-
-        RegistrationManager manager = ReflectionUtils.newInstance(managerCls);
-        return manager.initialize(conf, () -> {}, NullStatsLogger.INSTANCE);
-    }
 
     /**
      * Registration Listener on listening the registration state.
@@ -65,10 +43,6 @@ public interface RegistrationManager extends AutoCloseable {
         void onRegistrationExpired();
 
     }
-
-    RegistrationManager initialize(ServerConfiguration conf,
-                                   RegistrationListener listener,
-                                   StatsLogger statsLogger) throws BookieException;
 
     @Override
     void close();
@@ -135,13 +109,6 @@ public interface RegistrationManager extends AutoCloseable {
      * @throws BookieException when fail to remove cookie
      */
     void removeCookie(String bookieId, Version version) throws BookieException;
-
-    /**
-     * Gets layout manager.
-     *
-     * @return the layout manager
-     */
-    LayoutManager getLayoutManager();
 
     /**
      * Prepare ledgers root node, availableNode, readonly node..

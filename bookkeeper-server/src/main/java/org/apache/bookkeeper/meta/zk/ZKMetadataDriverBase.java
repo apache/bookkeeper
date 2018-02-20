@@ -39,7 +39,7 @@ import org.apache.bookkeeper.meta.exceptions.Code;
 import org.apache.bookkeeper.meta.exceptions.MetadataException;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.ZkUtils;
-import org.apache.bookkeeper.zookeeper.BoundExponentialBackoffRetryPolicy;
+import org.apache.bookkeeper.zookeeper.RetryPolicy;
 import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.lang3.StringUtils;
@@ -120,6 +120,7 @@ public class ZKMetadataDriverBase implements AutoCloseable {
     @SneakyThrows(InterruptedException.class)
     protected void initialize(AbstractConfiguration<?> conf,
                               StatsLogger statsLogger,
+                              RetryPolicy zkRetryPolicy,
                               Optional<Object> optionalCtx) throws MetadataException {
         this.conf = conf;
 
@@ -151,8 +152,8 @@ public class ZKMetadataDriverBase implements AutoCloseable {
                 this.zk = ZooKeeperClient.newBuilder()
                     .connectString(zkServers)
                     .sessionTimeoutMs(conf.getZkTimeout())
-                    .operationRetryPolicy(new BoundExponentialBackoffRetryPolicy(conf.getZkTimeout(),
-                        conf.getZkTimeout(), 0))
+                    .operationRetryPolicy(zkRetryPolicy)
+                    .requestRateLimit(conf.getZkRequestRateLimit())
                     .statsLogger(statsLogger)
                     .build();
 

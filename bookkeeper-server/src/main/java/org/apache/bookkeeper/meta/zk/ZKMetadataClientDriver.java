@@ -28,6 +28,7 @@ import org.apache.bookkeeper.meta.MetadataClientDriver;
 import org.apache.bookkeeper.meta.MetadataDrivers;
 import org.apache.bookkeeper.meta.exceptions.MetadataException;
 import org.apache.bookkeeper.stats.StatsLogger;
+import org.apache.bookkeeper.zookeeper.BoundExponentialBackoffRetryPolicy;
 
 /**
  * ZooKeeper based metadata client driver.
@@ -51,11 +52,16 @@ public class ZKMetadataClientDriver
     public synchronized MetadataClientDriver initialize(ClientConfiguration conf,
                                                         ScheduledExecutorService scheduler,
                                                         StatsLogger statsLogger,
+
                                                         Optional<Object> optionalCtx)
             throws MetadataException {
         super.initialize(
             conf,
             statsLogger,
+            new BoundExponentialBackoffRetryPolicy(
+                conf.getZkTimeout(),
+                conf.getZkTimeout(),
+                0),
             optionalCtx);
         this.statsLogger = statsLogger;
         this.clientConf = conf;

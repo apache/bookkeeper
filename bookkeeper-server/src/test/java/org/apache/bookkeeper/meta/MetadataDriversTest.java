@@ -136,7 +136,7 @@ public class MetadataDriversTest {
         }
 
         @Override
-        public RegistrationManager getRegistrationManager() throws MetadataException {
+        public RegistrationManager getRegistrationManager() {
             return mock(RegistrationManager.class);
         }
 
@@ -165,7 +165,7 @@ public class MetadataDriversTest {
         }
 
         @Override
-        public RegistrationManager getRegistrationManager() throws MetadataException {
+        public RegistrationManager getRegistrationManager() {
             return mock(RegistrationManager.class);
         }
 

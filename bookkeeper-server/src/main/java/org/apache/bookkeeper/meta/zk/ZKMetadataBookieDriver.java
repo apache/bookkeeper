@@ -18,18 +18,19 @@
  */
 package org.apache.bookkeeper.meta.zk;
 
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.BOOKIE_SCOPE;
+
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.discover.RegistrationManager;
 import org.apache.bookkeeper.discover.RegistrationManager.RegistrationListener;
 import org.apache.bookkeeper.discover.ZKRegistrationManager;
 import org.apache.bookkeeper.meta.MetadataBookieDriver;
 import org.apache.bookkeeper.meta.MetadataDrivers;
-import org.apache.bookkeeper.meta.exceptions.Code;
 import org.apache.bookkeeper.meta.exceptions.MetadataException;
 import org.apache.bookkeeper.stats.StatsLogger;
+import org.apache.bookkeeper.zookeeper.BoundExponentialBackoffRetryPolicy;
 
 /**
  * ZooKeeper based metadata bookie driver.
@@ -56,38 +57,38 @@ public class ZKMetadataBookieDriver
                                                         StatsLogger statsLogger)
             throws MetadataException {
         super.initialize(
-            conf, statsLogger, Optional.empty());
-        this.statsLogger = statsLogger;
+            conf,
+            statsLogger.scope(BOOKIE_SCOPE),
+            new BoundExponentialBackoffRetryPolicy(conf.getZkRetryBackoffStartMs(),
+                        conf.getZkRetryBackoffMaxMs(), Integer.MAX_VALUE),
+            Optional.empty());
         this.serverConf = conf;
         this.listener = listener;
+        this.statsLogger = statsLogger;
         return this;
     }
 
     @Override
-    public synchronized RegistrationManager getRegistrationManager()
-            throws MetadataException {
+    public synchronized RegistrationManager getRegistrationManager() {
         if (null == regManager) {
-            regManager = new ZKRegistrationManager();
-            try {
-                regManager.initialize(
-                    serverConf,
-                    listener,
-                    statsLogger);
-            } catch (BookieException e) {
-                throw new MetadataException(
-                    Code.METADATA_SERVICE_ERROR,
-                    "Failed to initialize registration manager",
-                    e);
-            }
+            regManager = new ZKRegistrationManager(
+                serverConf,
+                zk,
+                listener
+            );
         }
         return regManager;
     }
 
     @Override
     public void close() {
-        if (null != regManager) {
-            regManager.close();
+        RegistrationManager rmToClose;
+        synchronized (this) {
+            rmToClose = regManager;
             regManager = null;
+        }
+        if (null != rmToClose) {
+            rmToClose.close();
         }
         super.close();
     }

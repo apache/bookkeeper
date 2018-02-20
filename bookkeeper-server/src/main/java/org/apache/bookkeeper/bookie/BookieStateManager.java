@@ -33,7 +33,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.discover.RegistrationManager;
-import org.apache.bookkeeper.discover.ZKRegistrationManager;
 import org.apache.bookkeeper.stats.Gauge;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
@@ -199,10 +198,9 @@ public class BookieStateManager implements StateManager {
     }
 
     private void doRegisterBookie(boolean isReadOnly) throws IOException {
-        if (null == registrationManager || ((ZKRegistrationManager) this.registrationManager).getZk() == null) {
-            // registration manager is null, means not register itself to zk.
-            // ZooKeeper is null existing only for testing.
-            LOG.info("null zk while do register");
+        if (null == registrationManager) {
+            // registration manager is null, means not register itself to metadata store.
+            LOG.info("null registration manager while do register");
             return;
         }
 

@@ -43,6 +43,7 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.URI;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.nio.file.FileStore;
@@ -69,9 +70,11 @@ import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirExcepti
 import org.apache.bookkeeper.common.util.Watcher;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.discover.RegistrationManager;
-import org.apache.bookkeeper.meta.AbstractZkLedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
+import org.apache.bookkeeper.meta.MetadataBookieDriver;
+import org.apache.bookkeeper.meta.MetadataDrivers;
+import org.apache.bookkeeper.meta.exceptions.MetadataException;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.net.DNS;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
@@ -83,7 +86,6 @@ import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.util.DiskChecker;
 import org.apache.bookkeeper.util.IOUtils;
 import org.apache.bookkeeper.util.MathUtils;
-import org.apache.bookkeeper.util.ReflectionUtils;
 import org.apache.bookkeeper.util.collections.ConcurrentLongHashMap;
 import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.versioning.Versioned;
@@ -123,8 +125,8 @@ public class Bookie extends BookieCriticalThread {
     LedgerDirsMonitor idxMonitor;
 
     // Registration Manager for managing registration
+    private final MetadataBookieDriver metadataDriver;
     RegistrationManager registrationManager;
-
 
     private int exitCode = ExitCode.OK;
 
@@ -629,21 +631,20 @@ public class Bookie extends BookieCriticalThread {
         }
 
         // instantiate zookeeper client to initialize ledger manager
-        this.registrationManager = instantiateRegistrationManager(conf);
+        this.metadataDriver = instantiateMetadataDriver(conf);
+        this.registrationManager = this.metadataDriver.getRegistrationManager();
         checkEnvironment(this.registrationManager);
         try {
             if (registrationManager != null) {
                 // current the registration manager is zookeeper only
-                ledgerManagerFactory = AbstractZkLedgerManagerFactory.newLedgerManagerFactory(
-                    conf,
-                    registrationManager.getLayoutManager());
+                ledgerManagerFactory = metadataDriver.getLedgerManagerFactory();
                 LOG.info("instantiate ledger manager {}", ledgerManagerFactory.getClass().getName());
                 ledgerManager = ledgerManagerFactory.newLedgerManager();
             } else {
                 ledgerManagerFactory = null;
                 ledgerManager = null;
             }
-        } catch (IOException | InterruptedException e) {
+        } catch (MetadataException e) {
             throw new MetadataStoreException("Failed to initialize ledger manager", e);
         }
         stateManager = new BookieStateManager(conf, statsLogger, registrationManager, ledgerDirsManager);
@@ -898,23 +899,26 @@ public class Bookie extends BookieCriticalThread {
     }
 
     /**
-     * Instantiate the registration manager for the Bookie.
+     * Instantiate the metadata driver for the Bookie.
      */
-    private RegistrationManager instantiateRegistrationManager(ServerConfiguration conf) throws BookieException {
-        // Create the registration manager instance
-        Class<? extends RegistrationManager> managerCls;
+    private MetadataBookieDriver instantiateMetadataDriver(ServerConfiguration conf) throws BookieException {
         try {
-            managerCls = conf.getRegistrationManagerClass();
+            MetadataBookieDriver driver = MetadataDrivers.getBookieDriver(
+                URI.create(conf.getMetadataServiceUri()));
+            driver.initialize(
+                conf,
+                () -> {
+                    stateManager.forceToUnregistered();
+                    // schedule a re-register operation
+                    stateManager.registerBookie(false);
+                },
+                statsLogger);
+            return driver;
+        } catch (MetadataException me) {
+            throw new MetadataStoreException("Failed to initialize metadata bookie driver", me);
         } catch (ConfigurationException e) {
             throw new BookieIllegalOpException(e);
         }
-
-        RegistrationManager manager = ReflectionUtils.newInstance(managerCls);
-        return manager.initialize(conf, () -> {
-            stateManager.forceToUnregistered();
-            // schedule a re-register operation
-            stateManager.registerBookie(false);
-        }, statsLogger);
     }
 
     /*

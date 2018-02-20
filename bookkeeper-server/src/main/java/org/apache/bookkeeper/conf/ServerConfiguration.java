@@ -2587,7 +2587,9 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      *
      * @param regManagerClass
      *            ManagerClass
+     * @deprecated since 4.7.0, in favor of using {@link #setMetadataServiceUri(String)}
      */
+    @Deprecated
     public void setRegistrationManagerClass(
             Class<? extends RegistrationManager> regManagerClass) {
         setProperty(REGISTRATION_MANAGER_CLASS, regManagerClass);
@@ -2597,7 +2599,9 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * Get Registration Manager Class.
      *
      * @return registration manager class.
+     * @deprecated since 4.7.0, in favor of using {@link #getMetadataServiceUri()}
      */
+    @Deprecated
     public Class<? extends RegistrationManager> getRegistrationManagerClass()
             throws ConfigurationException {
         return ReflectionUtils.getClass(this, REGISTRATION_MANAGER_CLASS,
