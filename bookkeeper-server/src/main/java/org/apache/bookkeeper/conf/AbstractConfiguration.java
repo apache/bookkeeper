@@ -20,13 +20,18 @@ package org.apache.bookkeeper.conf;
 import static org.apache.bookkeeper.conf.ClientConfiguration.CLIENT_AUTH_PROVIDER_FACTORY_CLASS;
 
 import java.net.URL;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+
 import javax.net.ssl.SSLEngine;
 
 import org.apache.bookkeeper.feature.Feature;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.util.EntryFormatter;
+import org.apache.bookkeeper.util.JsonUtil;
+import org.apache.bookkeeper.util.JsonUtil.ParseJsonException;
 import org.apache.bookkeeper.util.LedgerIdFormatter;
 import org.apache.bookkeeper.util.ReflectionUtils;
 import org.apache.bookkeeper.util.StringEntryFormatter;
@@ -620,20 +625,25 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
     protected abstract T getThis();
 
     /**
-     * converts the config into string format, by appending the config values
-     * and separated by 'separator'.
+     * returns the string representation of json format of this config.
      *
-     * @param separator
-     *            separator to separate the configs in string
+     * @return
+     * @throws ParseJsonException
      */
-    public String configAsString(String separator) {
-        StringBuilder configString = new StringBuilder();
-        Iterator<String> keys = this.getKeys();
-        while (keys.hasNext()) {
-            String key = (String) keys.next();
-            Object value = getProperty(key);
-            configString.append(key + "=" + value + separator);
+    public String asJson() throws ParseJsonException {
+        return JsonUtil.toJson(toMap());
+    }
+
+    private Map<String, Object> toMap() {
+        Map<String, Object> configMap = new HashMap<>();
+        Iterator<String> iterator = this.getKeys();
+        while (iterator.hasNext()) {
+            String key = iterator.next().toString();
+            Object property = this.getProperty(key);
+            if (property != null) {
+                configMap.put(key, property.toString());
+            }
         }
-        return configString.toString();
+        return configMap;
     }
 }

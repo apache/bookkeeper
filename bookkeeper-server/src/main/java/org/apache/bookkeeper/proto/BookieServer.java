@@ -46,6 +46,7 @@ import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.tls.SecurityException;
 import org.apache.bookkeeper.tls.SecurityHandlerFactory;
 import org.apache.bookkeeper.tls.SecurityProviderFactoryFactory;
+import org.apache.bookkeeper.util.JsonUtil.ParseJsonException;
 import org.apache.zookeeper.KeeperException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -81,8 +82,14 @@ public class BookieServer {
             BookieException, UnavailableException, CompatibilityException, SecurityException {
         this.conf = conf;
         validateUser(conf);
-        String configAsString = conf.configAsString(System.getProperty("line.separator"));
-        LOG.info(configAsString);
+        String configAsString;
+        try {
+            configAsString = conf.asJson();
+            LOG.info(configAsString);
+        } catch (ParseJsonException pe) {
+            LOG.error("Got ParseJsonException while converting Config to JSONString", pe);
+        }
+
         this.statsLogger = statsLogger;
         this.nettyServer = new BookieNettyServer(this.conf, null);
         try {
