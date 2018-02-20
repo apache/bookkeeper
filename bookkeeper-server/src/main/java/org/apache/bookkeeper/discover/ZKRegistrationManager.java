@@ -21,12 +21,14 @@ package org.apache.bookkeeper.discover;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.BOOKIE_SCOPE;
 import static org.apache.bookkeeper.util.BookKeeperConstants.COOKIE_NODE;
+import static org.apache.bookkeeper.util.BookKeeperConstants.EMPTY_BYTE_ARRAY;
 import static org.apache.bookkeeper.util.BookKeeperConstants.INSTANCEID;
 import static org.apache.bookkeeper.util.BookKeeperConstants.READONLY;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Charsets;
 
+import com.google.common.collect.Lists;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.HashSet;
@@ -69,6 +71,7 @@ import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.KeeperException.NoNodeException;
 import org.apache.zookeeper.KeeperException.NodeExistsException;
+import org.apache.zookeeper.Op;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.Watcher.Event.EventType;
@@ -474,6 +477,8 @@ public class ZKRegistrationManager implements RegistrationManager {
         String zkLedgersRootPath = conf.getZkLedgersRootPath();
         String zkServers = conf.getZkServers();
         String zkAvailableBookiesPath = conf.getZkAvailableBookiesPath();
+        String zkReadonlyBookiesPath = zkAvailableBookiesPath + "/" + READONLY;
+        String instanceIdPath = zkLedgersRootPath + "/" + INSTANCEID;
         log.info("Initializing ZooKeeper metadata for new cluster, ZKServers: {} ledger root path: {}", zkServers,
                 zkLedgersRootPath);
 
@@ -484,19 +489,31 @@ public class ZKRegistrationManager implements RegistrationManager {
             return false;
         }
 
+        List<Op> multiOps = Lists.newArrayListWithExpectedSize(4);
+
         // Create ledgers root node
-        zk.create(zkLedgersRootPath, "".getBytes(UTF_8), zkAcls, CreateMode.PERSISTENT);
+        multiOps.add(Op.create(zkLedgersRootPath, EMPTY_BYTE_ARRAY, zkAcls, CreateMode.PERSISTENT));
 
         // create available bookies node
-        zk.create(zkAvailableBookiesPath, "".getBytes(UTF_8), zkAcls, CreateMode.PERSISTENT);
+        multiOps.add(Op.create(zkAvailableBookiesPath, EMPTY_BYTE_ARRAY, zkAcls, CreateMode.PERSISTENT));
 
-        // creates the new layout and stores in zookeeper
-        AbstractZkLedgerManagerFactory.newLedgerManagerFactory(conf, layoutManager);
+        // create readonly bookies node
+        multiOps.add(Op.create(
+            zkReadonlyBookiesPath,
+            EMPTY_BYTE_ARRAY,
+            zkAcls,
+            CreateMode.PERSISTENT));
 
         // create INSTANCEID
         String instanceId = UUID.randomUUID().toString();
-        zk.create(conf.getZkLedgersRootPath() + "/" + BookKeeperConstants.INSTANCEID, instanceId.getBytes(UTF_8),
-                zkAcls, CreateMode.PERSISTENT);
+        multiOps.add(Op.create(instanceIdPath, instanceId.getBytes(UTF_8),
+                zkAcls, CreateMode.PERSISTENT));
+
+        // execute the multi ops
+        zk.multi(multiOps);
+
+        // creates the new layout and stores in zookeeper
+        AbstractZkLedgerManagerFactory.newLedgerManagerFactory(conf, layoutManager);
 
         log.info("Successfully initiated cluster. ZKServers: {} ledger root path: {} instanceId: {}", zkServers,
                 zkLedgersRootPath, instanceId);
