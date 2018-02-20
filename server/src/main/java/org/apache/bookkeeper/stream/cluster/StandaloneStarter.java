@@ -17,7 +17,8 @@
  */
 package org.apache.bookkeeper.stream.cluster;
 
-import java.nio.file.Paths;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.concurrent.CountDownLatch;
 import lombok.extern.slf4j.Slf4j;
 
@@ -27,20 +28,23 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class StandaloneStarter {
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         int retCode = doMain(args);
 
         Runtime.getRuntime().exit(retCode);
     }
 
-    static int doMain(String[] args) {
+    static int doMain(String[] args) throws Exception {
+        Path rootDir =  Files.createTempDirectory("data");
+        rootDir.toFile().deleteOnExit();
+
         StreamClusterSpec spec = StreamClusterSpec.builder()
             .numServers(3)
             .initialBookiePort(3181)
             .initialGrpcPort(4181)
             .serveReadOnlyTable(true)
             .shouldStartZooKeeper(true)
-            .storageRootDir(Paths.get("data", "streamstorage").toFile())
+            .storageRootDir(rootDir.toFile())
             .build();
 
         CountDownLatch liveLatch = new CountDownLatch(1);

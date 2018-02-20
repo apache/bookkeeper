@@ -1,3 +1,11 @@
+#BookKeeper Table Service
+
+BookKeeper Table Service is a contrib module added to BookKeeper, providing a table (aka key/value) service as part of the stream storage for bookkeeper.
+
+## Detail Design
+
+[BP-30](https://docs.google.com/document/d/155xAwWv5IdOitHh1NVMEwCMGgB28M3FyMiQSxEpjE-Y/edit#heading=h.56rbh52koe3f)
+
 ## Build
 
 ```
@@ -14,11 +22,11 @@ $ bin/streamstorage standalone
 
 CLI is available at `bin/streamstorage-cli`
 
-## Tutorials
+## Examples
 
 ### Distributed Counters
 
-#### Create Stream
+#### Create Table
 
 Stream is the management unit. A `Table` is a materialized view of a `Stream`.
 
@@ -33,20 +41,17 @@ bin/streamstorage-cli -s 127.0.0.1:4181 stream create --stream test_dist_counter
 bin/streamstorage-cli -s 127.0.0.1:4181 table get -t test_dist_counter -k "counter-1" --watch
 ```
 
-#### Mutable the table using a table writer
-
-A `TableWriter` is mutating a table by appending updates to its stream. For example, if you
-keep appending `incr(100)` updates, you will see the counter value keep incrementing.
+#### Increment a counter
 
 ```
-bin/streamstorage-cli -s 127.0.0.1:4181 table append -t test_dist_counter -k "counter-1" -a 100 --times 1000 -s 1000
+bin/streamstorage-cli -s 127.0.0.1:4181 table incr -t test_dist_counter -k "counter-1" -a 100
 ```
 
 ### K/V Store
 
-Use the stream store as the normal k/v store.
+Use the table service as the normal k/v store for storing metadata
 
-#### Create Stream
+#### Create Table
 
 ```
 bin/streamstorage-cli -s 127.0.0.1:4181 stream create --stream test_kv_store
@@ -76,17 +81,30 @@ bin/streamstorage-cli -s 127.0.0.1:4181 table incr -t test_kv_store -k "test-cou
 
 ## Features
 
-- [ ] Support PTable & Table
-    - PTable: short for `partitioned table`. the table is modeled as `<pKey, lKey> -> value`, kv pairs are partitioned based on `pKey`. range operations over a single `pKey` is supported.
-        - put/get/delete on single `<pKey, lKey>`
-        - range/deleteRange on a single `<pKey>`
-        - txn on a single `<pKey>`
-        - increment on single `<pKey, lKey>`
-    - Table: the table is modeled as `<key> -> value`. kv pairs are also partitioned, based on `key`. range operations are not supported. single key txn (aka cas operation) is supported.
-- [ ] Support PTableWriter & TableWriter
-    - `Writer` is a table mutator that mutate a table by appending updates to the journal streams of the tables. `Writer` is useful for aggregation (e.g. distributed counters).
-- [ ] Persistence
-    - The source-of-truth of a table is its journal stream.
-    - Rocksdb as its materialized index for each range partition.
-    - Incrementally checkpointing the materialized rocksdb to bookkeeper for faster recovery.
-- [ ] gRPC based
+- [x] API Model: support PTable & Table
+    - [x] PTable: short for `partitioned table`. the table is modeled as `<pKey, lKey> -> value`, kv pairs are partitioned based on `pKey`. range operations over a single `pKey` is supported.
+        - [x] put/get/delete on single `<pKey, lKey>`
+        - [x] range/deleteRange on a single `<pKey>`
+        - [x] txn on a single `<pKey>`
+        - [x] increment on single `<pKey, lKey>`
+    - [x] Table: the table is modeled as `<key> -> value`. kv pairs are also partitioned, based on `key`. range operations are not supported. single key txn (aka cas operation) is supported.
+- [x] Persistence
+    - [x] The source-of-truth of a table is its journals. The journal is a stream comprised of multiple log segments (aka ledgers).
+    - [x] Rocksdb as its materialized index for each range partition. Rocksdb can be ephemeral and it can be restored from checkpoints that are also persisted as log streams.
+    - [x] Rocksdb can spill in-memory data to disk. Additionally, the rocksdb files are periodically incrementally checkpointed to bookkeeper for fast recovery.
+- [ ] Clients
+    - [x] gRPC & protobuf based
+    - [x] Thick client with client-side request routing
+    - [x] Java implementation
+    - [ ] Thin client with server-side request routing
+    - [ ] Multiple language clients: C++, Python, Go
+- [ ] Deployment
+    - [ ] Run table service as a bookkeeper lifecycle component in bookie server
+
+## Later Improvements
+
+- [ ] Stream <-> Table exchangeable: (for metadata store)
+    - [ ] Can retrieve a Stream of updates from a key, a range of keys or a Table.
+    - [ ] A Stream can be materialized and viewed as a Table.
+- [ ] TTL or Lease: for supporting membership (for metadata store)
+- [ ] Auto Scale: split and merge ranges. should apply for both Stream and Table.
