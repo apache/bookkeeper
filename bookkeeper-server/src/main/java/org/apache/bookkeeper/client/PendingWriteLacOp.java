@@ -17,14 +17,13 @@
  */
 package org.apache.bookkeeper.client;
 
-import io.netty.buffer.ByteBuf;
-
 import java.util.BitSet;
 
 import org.apache.bookkeeper.client.AsyncCallback.AddLacCallback;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteLacCallback;
 import org.apache.bookkeeper.stats.OpStatsLogger;
+import org.apache.bookkeeper.util.ByteBufList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,7 +38,7 @@ import org.slf4j.LoggerFactory;
  */
 class PendingWriteLacOp implements WriteLacCallback {
     private static final Logger LOG = LoggerFactory.getLogger(PendingWriteLacOp.class);
-    ByteBuf toSend;
+    ByteBufList toSend;
     AddLacCallback cb;
     long lac;
     Object ctx;
@@ -75,7 +74,7 @@ class PendingWriteLacOp implements WriteLacCallback {
                 lac, toSend, this, bookieIndex);
     }
 
-    void initiate(ByteBuf toSend) {
+    void initiate(ByteBufList toSend) {
         this.toSend = toSend;
         DistributionSchedule.WriteSet writeSet = lh.distributionSchedule.getWriteSet(lac);
         try {

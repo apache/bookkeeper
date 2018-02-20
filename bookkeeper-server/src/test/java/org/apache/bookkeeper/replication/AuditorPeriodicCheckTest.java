@@ -50,6 +50,7 @@ import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.LedgerHandleAdapter;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.discover.RegistrationManager;
+import org.apache.bookkeeper.meta.AbstractZkLedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
 import org.apache.bookkeeper.net.BookieSocketAddress;
@@ -126,7 +127,7 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
      */
     @Test
     public void testEntryLogCorruption() throws Exception {
-        LedgerManagerFactory mFactory = LedgerManagerFactory.newLedgerManagerFactory(
+        LedgerManagerFactory mFactory = AbstractZkLedgerManagerFactory.newLedgerManagerFactory(
             bsConfs.get(0),
             RegistrationManager.instantiateRegistrationManager(bsConfs.get(0)).getLayoutManager());
         LedgerUnderreplicationManager underReplicationManager = mFactory.newLedgerUnderreplicationManager();
@@ -177,7 +178,7 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
      */
     @Test
     public void testIndexCorruption() throws Exception {
-        LedgerManagerFactory mFactory = LedgerManagerFactory.newLedgerManagerFactory(
+        LedgerManagerFactory mFactory = AbstractZkLedgerManagerFactory.newLedgerManagerFactory(
             bsConfs.get(0),
             RegistrationManager.instantiateRegistrationManager(bsConfs.get(0)).getLayoutManager());
 
@@ -227,7 +228,7 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
      */
     @Test
     public void testPeriodicCheckWhenDisabled() throws Exception {
-        LedgerManagerFactory mFactory = LedgerManagerFactory.newLedgerManagerFactory(
+        LedgerManagerFactory mFactory = AbstractZkLedgerManagerFactory.newLedgerManagerFactory(
             bsConfs.get(0),
             RegistrationManager.instantiateRegistrationManager(bsConfs.get(0)).getLayoutManager());
         final LedgerUnderreplicationManager underReplicationManager = mFactory.newLedgerUnderreplicationManager();
@@ -404,7 +405,7 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
      */
     @Test
     public void testFailedWriteRecovery() throws Exception {
-        LedgerManagerFactory mFactory = LedgerManagerFactory.newLedgerManagerFactory(
+        LedgerManagerFactory mFactory = AbstractZkLedgerManagerFactory.newLedgerManagerFactory(
                 bsConfs.get(0),
                 RegistrationManager.instantiateRegistrationManager(bsConfs.get(0)).getLayoutManager());
         LedgerUnderreplicationManager underReplicationManager = mFactory.newLedgerUnderreplicationManager();

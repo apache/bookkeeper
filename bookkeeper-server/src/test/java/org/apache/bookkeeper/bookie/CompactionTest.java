@@ -55,8 +55,8 @@ import org.apache.bookkeeper.client.LedgerMetadata;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.discover.RegistrationManager;
+import org.apache.bookkeeper.meta.AbstractZkLedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerManager;
-import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.LedgerMetadataListener;
@@ -252,7 +252,7 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
         InterleavedLedgerStorage storage = new InterleavedLedgerStorage();
         storage.initialize(
             conf,
-            LedgerManagerFactory
+            AbstractZkLedgerManagerFactory
                 .newLedgerManagerFactory(
                     conf,
                     RegistrationManager.instantiateRegistrationManager(conf).getLayoutManager())
@@ -949,7 +949,7 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
         TestStatsProvider stats = new TestStatsProvider();
         storage.initialize(
             conf,
-            LedgerManagerFactory
+            AbstractZkLedgerManagerFactory
                 .newLedgerManagerFactory(
                     conf,
                     RegistrationManager.instantiateRegistrationManager(conf).getLayoutManager())
