@@ -21,6 +21,8 @@
 
 package org.apache.bookkeeper.test;
 
+import static org.apache.bookkeeper.util.BookKeeperConstants.AVAILABLE_NODE;
+import static org.apache.bookkeeper.util.BookKeeperConstants.READONLY;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
@@ -98,7 +100,10 @@ public class ZooKeeperUtil {
     public void createBKEnsemble(String ledgersPath) throws KeeperException, InterruptedException {
         Transaction txn = zkc.transaction();
         txn.create(ledgersPath, new byte[0], Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-        txn.create(ledgersPath + "/available", new byte[0], Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+        txn.create(ledgersPath + "/" + AVAILABLE_NODE,
+            new byte[0], Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+        txn.create(ledgersPath + "/" + AVAILABLE_NODE + "/" + READONLY,
+            new byte[0], Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
         txn.commit();
     }
 

@@ -21,6 +21,7 @@
 package org.apache.bookkeeper.client;
 
 import static com.google.common.base.Charsets.UTF_8;
+import static org.apache.bookkeeper.util.BookKeeperConstants.READONLY;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -172,6 +173,9 @@ public class BookKeeperAdminTest extends BookKeeperClusterTestCase {
         String availableBookiesPath = newConfig.getZkAvailableBookiesPath();
         Assert.assertTrue("AvailableBookiesPath should have been created successfully " + availableBookiesPath,
                 (zkc.exists(availableBookiesPath, false) != null));
+        String readonlyBookiesPath = availableBookiesPath + "/" + READONLY;
+        Assert.assertTrue("ReadonlyBookiesPath should have been created successfully " + readonlyBookiesPath,
+            (zkc.exists(readonlyBookiesPath, false) != null));
         String instanceIdPath = newConfig.getZkLedgersRootPath() + "/" + BookKeeperConstants.INSTANCEID;
         Assert.assertTrue("InstanceId node should have been created successfully" + instanceIdPath,
                 (zkc.exists(instanceIdPath, false) != null));
@@ -274,7 +278,7 @@ public class BookKeeperAdminTest extends BookKeeperClusterTestCase {
          * register a RO bookie
          */
         String ipString = InetAddresses.fromInteger((new Random()).nextInt()).getHostAddress();
-        String roBookieRegPath = newConfig.getZkAvailableBookiesPath() + "/" + BookKeeperConstants.READONLY + "/"
+        String roBookieRegPath = newConfig.getZkAvailableBookiesPath() + "/" + READONLY + "/"
                 + ipString + ":3181";
         zkc.create(roBookieRegPath, new byte[0], Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL);
 

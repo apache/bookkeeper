@@ -18,7 +18,9 @@
 package org.apache.bookkeeper.util;
 
 import static com.google.common.base.Charsets.UTF_8;
+import static org.apache.bookkeeper.util.BookKeeperConstants.READONLY;
 
+import com.google.common.collect.Lists;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -46,6 +48,7 @@ import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
 import org.apache.commons.io.FileUtils;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
+import org.apache.zookeeper.Op;
 import org.apache.zookeeper.ZooDefs.Ids;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -114,14 +117,20 @@ public class LocalBookKeeper {
     private void initializeZookeeper(AbstractConfiguration conf, String zkHost, int zkPort) throws IOException {
         LOG.info("Instantiate ZK Client");
         //initialize the zk client with values
-        ZooKeeperClient zkc = null;
-        try {
-            zkc = ZooKeeperClient.newBuilder()
+        try (ZooKeeperClient zkc = ZooKeeperClient.newBuilder()
                     .connectString(zkHost + ":" + zkPort)
                     .sessionTimeoutMs(zkSessionTimeOut)
-                    .build();
-            zkc.create(conf.getZkLedgersRootPath(), new byte[0], Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-            zkc.create(conf.getZkAvailableBookiesPath(), new byte[0], Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+                    .build()) {
+            List<Op> multiOps = Lists.newArrayListWithExpectedSize(3);
+            multiOps.add(
+                Op.create(conf.getZkLedgersRootPath(), new byte[0], Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT));
+            multiOps.add(
+                Op.create(conf.getZkAvailableBookiesPath(), new byte[0], Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT));
+            multiOps.add(
+                Op.create(conf.getZkAvailableBookiesPath() + "/" + READONLY,
+                    new byte[0], Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT));
+
+            zkc.multi(multiOps);
             // No need to create an entry for each requested bookie anymore as the
             // BookieServers will register themselves with ZooKeeper on startup.
         } catch (KeeperException e) {
