@@ -584,12 +584,18 @@ public abstract class BookKeeperClusterTestCase {
      */
     public int startNewBookie()
             throws Exception {
+        return startNewBookieAndReturnAddress().getPort();
+    }
+
+    public BookieSocketAddress startNewBookieAndReturnAddress()
+            throws Exception {
         ServerConfiguration conf = newServerConfiguration();
         bsConfs.add(conf);
         LOG.info("Starting new bookie on port: {}", conf.getBookiePort());
-        bs.add(startBookie(conf));
+        BookieServer server = startBookie(conf);
+        bs.add(server);
 
-        return conf.getBookiePort();
+        return server.getLocalAddress();
     }
 
     /**

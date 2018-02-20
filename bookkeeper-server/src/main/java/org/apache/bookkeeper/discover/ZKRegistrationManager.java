@@ -52,6 +52,7 @@ import org.apache.bookkeeper.client.BKException.MetaStoreException;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.meta.AbstractZkLedgerManagerFactory;
 import org.apache.bookkeeper.meta.LayoutManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.ZkLayoutManager;
@@ -76,7 +77,6 @@ import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.Watcher.Event.EventType;
 import org.apache.zookeeper.Watcher.Event.KeeperState;
 import org.apache.zookeeper.ZKUtil;
-import org.apache.zookeeper.ZooDefs.Ids;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.ACL;
 import org.apache.zookeeper.data.Stat;
@@ -513,7 +513,7 @@ public class ZKRegistrationManager implements RegistrationManager {
         zk.multi(multiOps);
 
         // creates the new layout and stores in zookeeper
-        LedgerManagerFactory.newLedgerManagerFactory(conf, layoutManager);
+        AbstractZkLedgerManagerFactory.newLedgerManagerFactory(conf, layoutManager);
 
         log.info("Successfully initiated cluster. ZKServers: {} ledger root path: {} instanceId: {}", zkServers,
                 zkLedgersRootPath, instanceId);
@@ -561,7 +561,8 @@ public class ZKRegistrationManager implements RegistrationManager {
             }
         }
 
-        LedgerManagerFactory ledgerManagerFactory = LedgerManagerFactory.newLedgerManagerFactory(conf, layoutManager);
+        LedgerManagerFactory ledgerManagerFactory =
+            AbstractZkLedgerManagerFactory.newLedgerManagerFactory(conf, layoutManager);
         return ledgerManagerFactory.validateAndNukeExistingCluster(conf, layoutManager);
     }
 

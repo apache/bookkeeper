@@ -479,6 +479,7 @@ public class LedgerManagerIteratorTest extends LedgerManagerTestCase {
         }
     }
 
+    @SuppressWarnings("deprecation")
     @Test
     public void testLedgerParentNode() throws Throwable {
         /*
@@ -503,6 +504,7 @@ public class LedgerManagerIteratorTest extends LedgerManagerTestCase {
         }
     }
 
+    @SuppressWarnings("deprecation")
     @Test
     public void testLedgerManagerFormat() throws Throwable {
         /*
