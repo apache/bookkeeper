@@ -22,7 +22,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.CompletableFuture;
 import org.apache.bookkeeper.common.component.ComponentStarter.ComponentShutdownHook;
 import org.junit.Test;
 
@@ -34,21 +34,20 @@ public class TestComponentStarter {
   @Test
   public void testStartComponent() {
     LifecycleComponent component = mock(LifecycleComponent.class);
-    CountDownLatch latch = new CountDownLatch(1);
     when(component.getName()).thenReturn("test-start-component");
-    ComponentStarter.startComponent(component, latch);
+    ComponentStarter.startComponent(component);
     verify(component).start();
   }
 
   @Test
   public void testComponentShutdownHook() throws Exception {
     LifecycleComponent component = mock(LifecycleComponent.class);
-    CountDownLatch latch = new CountDownLatch(1);
     when(component.getName()).thenReturn("test-shutdown-hook");
-    ComponentShutdownHook shutdownHook = new ComponentShutdownHook(component, latch);
+    CompletableFuture<Void> future = new CompletableFuture<>();
+    ComponentShutdownHook shutdownHook = new ComponentShutdownHook(component, future);
     shutdownHook.run();
     verify(component).close();
-    latch.await();
+    future.get();
   }
 
 }

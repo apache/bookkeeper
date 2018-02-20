@@ -25,7 +25,7 @@ import java.io.File;
 import java.net.MalformedURLException;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.bookie.ExitCode;
 import org.apache.bookkeeper.common.component.ComponentStarter;
@@ -211,13 +211,14 @@ public class Main {
         }
 
         // 2. start the server
-        CountDownLatch aliveLatch = new CountDownLatch(1);
-        ComponentStarter.startComponent(server, aliveLatch);
         try {
-            aliveLatch.await();
+            ComponentStarter.startComponent(server).get();
         } catch (InterruptedException ie) {
             // the server is interrupted
             log.info("Bookie server is interrupted. Exiting ...");
+        } catch (ExecutionException ee) {
+            log.error("Error in bookie shutdown", ee.getCause());
+            return ExitCode.SERVER_EXCEPTION;
         }
         return ExitCode.OK;
     }
