@@ -60,6 +60,7 @@ import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.tls.SecurityException;
 import org.apache.bookkeeper.tls.SecurityHandlerFactory;
+import org.apache.bookkeeper.util.ByteBufList;
 import org.apache.bookkeeper.util.OrderedSafeExecutor;
 import org.apache.bookkeeper.util.SafeRunnable;
 import org.slf4j.Logger;
@@ -187,7 +188,7 @@ public class BookieClient implements PerChannelBookieClientFactory {
     }
 
     public void writeLac(final BookieSocketAddress addr, final long ledgerId, final byte[] masterKey,
-            final long lac, final ByteBuf toSend, final WriteLacCallback cb, final Object ctx) {
+            final long lac, final ByteBufList toSend, final WriteLacCallback cb, final Object ctx) {
         closeLock.readLock().lock();
         try {
             final PerChannelBookieClientPool client = lookupClient(addr);
@@ -250,7 +251,7 @@ public class BookieClient implements PerChannelBookieClientFactory {
                          final long ledgerId,
                          final byte[] masterKey,
                          final long entryId,
-                         final ByteBuf toSend,
+                         final ByteBufList toSend,
                          final WriteCallback cb,
                          final Object ctx,
                          final int options) {
@@ -300,7 +301,7 @@ public class BookieClient implements PerChannelBookieClientFactory {
         private final Handle<ChannelReadyForAddEntryCallback> recyclerHandle;
 
         private BookieClient bookieClient;
-        private ByteBuf toSend;
+        private ByteBufList toSend;
         private long ledgerId;
         private long entryId;
         private BookieSocketAddress addr;
@@ -310,7 +311,7 @@ public class BookieClient implements PerChannelBookieClientFactory {
         private byte[] masterKey;
 
         static ChannelReadyForAddEntryCallback create(
-                BookieClient bookieClient, ByteBuf toSend, long ledgerId,
+                BookieClient bookieClient, ByteBufList toSend, long ledgerId,
                 long entryId, BookieSocketAddress addr, Object ctx,
                 WriteCallback cb, int options, byte[] masterKey) {
             ChannelReadyForAddEntryCallback callback = RECYCLER.get();
@@ -619,7 +620,7 @@ public class BookieClient implements PerChannelBookieClientFactory {
 
         for (int i = 0; i < 100000; i++) {
             counter.inc();
-            bc.addEntry(addr, ledger, new byte[0], i, Unpooled.wrappedBuffer(hello), cb, counter, 0);
+            bc.addEntry(addr, ledger, new byte[0], i, ByteBufList.get(Unpooled.wrappedBuffer(hello)), cb, counter, 0);
         }
         counter.wait(0);
         System.out.println("Total = " + counter.total());

@@ -50,6 +50,7 @@ import org.apache.bookkeeper.client.BKException.MetaStoreException;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.meta.AbstractZkLedgerManagerFactory;
 import org.apache.bookkeeper.meta.LayoutManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.ZkLayoutManager;
@@ -73,7 +74,6 @@ import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.Watcher.Event.EventType;
 import org.apache.zookeeper.Watcher.Event.KeeperState;
 import org.apache.zookeeper.ZKUtil;
-import org.apache.zookeeper.ZooDefs.Ids;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.ACL;
 import org.apache.zookeeper.data.Stat;
@@ -485,18 +485,18 @@ public class ZKRegistrationManager implements RegistrationManager {
         }
 
         // Create ledgers root node
-        zk.create(zkLedgersRootPath, "".getBytes(UTF_8), Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+        zk.create(zkLedgersRootPath, "".getBytes(UTF_8), zkAcls, CreateMode.PERSISTENT);
 
         // create available bookies node
-        zk.create(zkAvailableBookiesPath, "".getBytes(UTF_8), Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+        zk.create(zkAvailableBookiesPath, "".getBytes(UTF_8), zkAcls, CreateMode.PERSISTENT);
 
         // creates the new layout and stores in zookeeper
-        LedgerManagerFactory.newLedgerManagerFactory(conf, layoutManager);
+        AbstractZkLedgerManagerFactory.newLedgerManagerFactory(conf, layoutManager);
 
         // create INSTANCEID
         String instanceId = UUID.randomUUID().toString();
         zk.create(conf.getZkLedgersRootPath() + "/" + BookKeeperConstants.INSTANCEID, instanceId.getBytes(UTF_8),
-                Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+                zkAcls, CreateMode.PERSISTENT);
 
         log.info("Successfully initiated cluster. ZKServers: {} ledger root path: {} instanceId: {}", zkServers,
                 zkLedgersRootPath, instanceId);
@@ -544,7 +544,8 @@ public class ZKRegistrationManager implements RegistrationManager {
             }
         }
 
-        LedgerManagerFactory ledgerManagerFactory = LedgerManagerFactory.newLedgerManagerFactory(conf, layoutManager);
+        LedgerManagerFactory ledgerManagerFactory =
+            AbstractZkLedgerManagerFactory.newLedgerManagerFactory(conf, layoutManager);
         return ledgerManagerFactory.validateAndNukeExistingCluster(conf, layoutManager);
     }
 

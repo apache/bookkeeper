@@ -84,7 +84,7 @@ public class TestLedgerManager extends BookKeeperClusterTestCase {
             conf.getZkLedgersRootPath(),
             ZkUtils.getACLs(conf));
 
-        LedgerManagerFactory m = LedgerManagerFactory.newLedgerManagerFactory(
+        LedgerManagerFactory m = AbstractZkLedgerManagerFactory.newLedgerManagerFactory(
             conf,
             zkLayoutManager);
         assertTrue("Ledger manager is unexpected type",
@@ -94,7 +94,7 @@ public class TestLedgerManager extends BookKeeperClusterTestCase {
         // mismatching conf
         conf.setLedgerManagerFactoryClass(LongHierarchicalLedgerManagerFactory.class);
         try {
-            LedgerManagerFactory.newLedgerManagerFactory(conf, zkLayoutManager);
+            AbstractZkLedgerManagerFactory.newLedgerManagerFactory(conf, zkLayoutManager);
             fail("Shouldn't reach here");
         } catch (Exception e) {
             LOG.error("Received exception", e);
@@ -110,7 +110,7 @@ public class TestLedgerManager extends BookKeeperClusterTestCase {
 
         conf.setLedgerManagerFactoryClassName("DoesNotExist");
         try {
-            LedgerManagerFactory f = LedgerManagerFactory.newLedgerManagerFactory(conf, zkLayoutManager);
+            AbstractZkLedgerManagerFactory.newLedgerManagerFactory(conf, zkLayoutManager);
             fail("Shouldn't reach here");
         } catch (Exception e) {
             LOG.error("Received exception", e);
@@ -142,7 +142,7 @@ public class TestLedgerManager extends BookKeeperClusterTestCase {
             conf.getZkLedgersRootPath(),
             ZkUtils.getACLs(conf));
 
-        LedgerManagerFactory m = LedgerManagerFactory.newLedgerManagerFactory(
+        LedgerManagerFactory m = AbstractZkLedgerManagerFactory.newLedgerManagerFactory(
             conf,
             zkLayoutManager);
 
@@ -152,7 +152,7 @@ public class TestLedgerManager extends BookKeeperClusterTestCase {
 
         // v2 setting doesn't effect v1
         conf.setLedgerManagerFactoryClass(HierarchicalLedgerManagerFactory.class);
-        m = LedgerManagerFactory.newLedgerManagerFactory(conf, zkLayoutManager);
+        m = AbstractZkLedgerManagerFactory.newLedgerManagerFactory(conf, zkLayoutManager);
         assertTrue("Ledger manager is unexpected type",
                    (m instanceof HierarchicalLedgerManagerFactory));
         m.close();
@@ -160,7 +160,7 @@ public class TestLedgerManager extends BookKeeperClusterTestCase {
         // mismatching conf
         conf.setLedgerManagerType(LongHierarchicalLedgerManagerFactory.NAME);
         try {
-            LedgerManagerFactory.newLedgerManagerFactory(conf, zkLayoutManager);
+            AbstractZkLedgerManagerFactory.newLedgerManagerFactory(conf, zkLayoutManager);
             fail("Shouldn't reach here");
         } catch (Exception e) {
             LOG.error("Received exception", e);
@@ -189,7 +189,7 @@ public class TestLedgerManager extends BookKeeperClusterTestCase {
         zkLayoutManager.storeLedgerLayout(layout);
 
         try {
-            LedgerManagerFactory.newLedgerManagerFactory(conf, zkLayoutManager);
+            AbstractZkLedgerManagerFactory.newLedgerManagerFactory(conf, zkLayoutManager);
             fail("Shouldn't reach here");
         } catch (Exception e) {
             LOG.error("Received exception", e);
@@ -209,7 +209,7 @@ public class TestLedgerManager extends BookKeeperClusterTestCase {
         zkLayoutManager1.storeLedgerLayout(layout1);
 
         try {
-            LedgerManagerFactory.newLedgerManagerFactory(conf, zkLayoutManager1);
+            AbstractZkLedgerManagerFactory.newLedgerManagerFactory(conf, zkLayoutManager1);
             fail("Shouldn't reach here");
         } catch (Exception e) {
             LOG.error("Received exception", e);
@@ -243,7 +243,7 @@ public class TestLedgerManager extends BookKeeperClusterTestCase {
 
             try {
                 barrier.await();
-                LedgerManagerFactory factory = LedgerManagerFactory.newLedgerManagerFactory(
+                LedgerManagerFactory factory = AbstractZkLedgerManagerFactory.newLedgerManagerFactory(
                     conf,
                     RegistrationManager
                         .instantiateRegistrationManager(new ServerConfiguration(conf)).getLayoutManager());

@@ -40,7 +40,10 @@ public interface BookKeeperClientStats {
     // Data Operations
 
     String ADD_OP = "ADD_ENTRY";
+    String ADD_OP_UR = "ADD_ENTRY_UR"; // Under Replicated during AddEntry.
     String READ_OP = "READ_ENTRY";
+    // Corrupted entry (Digest Mismatch/ Under Replication) detected during ReadEntry
+    String READ_OP_DM = "READ_ENTRY_DM";
     String WRITE_LAC_OP = "WRITE_LAC";
     String READ_LAC_OP = "READ_LAC";
     String READ_LAST_CONFIRMED_AND_ENTRY = "READ_LAST_CONFIRMED_AND_ENTRY";
@@ -66,9 +69,14 @@ public interface BookKeeperClientStats {
     String TIMEOUT_GET_BOOKIE_INFO = "TIMEOUT_GET_BOOKIE_INFO";
     String CHANNEL_START_TLS_OP = "START_TLS";
     String CHANNEL_TIMEOUT_START_TLS_OP = "TIMEOUT_START_TLS";
+
     String NETTY_EXCEPTION_CNT = "NETTY_EXCEPTION_CNT";
     String CLIENT_CONNECT_TIMER = "CLIENT_CONNECT_TIMER";
     String ADD_OP_OUTSTANDING = "ADD_OP_OUTSTANDING";
     String READ_OP_OUTSTANDING = "READ_OP_OUTSTANDING";
     String NETTY_OPS = "NETTY_OPS";
+    String ACTIVE_NON_TLS_CHANNEL_COUNTER = "ACTIVE_NON_TLS_CHANNEL_COUNTER";
+    String ACTIVE_TLS_CHANNEL_COUNTER = "ACTIVE_TLS_CHANNEL_COUNTER";
+    String FAILED_CONNECTION_COUNTER = "FAILED_CONNECTION_COUNTER";
+    String FAILED_TLS_HANDSHAKE_COUNTER = "FAILED_TLS_HANDSHAKE_COUNTER";
 }

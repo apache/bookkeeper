@@ -29,6 +29,7 @@ import java.util.Optional;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.conf.AbstractConfiguration;
+import org.apache.bookkeeper.meta.AbstractZkLedgerManagerFactory;
 import org.apache.bookkeeper.meta.HierarchicalLedgerManagerFactory;
 import org.apache.bookkeeper.meta.LayoutManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
@@ -185,7 +186,7 @@ public class ZKMetadataDriverBase implements AutoCloseable {
             throws MetadataException {
         if (null == lmFactory) {
             try {
-                lmFactory = LedgerManagerFactory.newLedgerManagerFactory(
+                lmFactory = AbstractZkLedgerManagerFactory.newLedgerManagerFactory(
                     conf,
                     layoutManager);
             } catch (IOException e) {
