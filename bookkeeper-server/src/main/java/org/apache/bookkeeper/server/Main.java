@@ -217,7 +217,7 @@ public class Main {
             // the server is interrupted
             log.info("Bookie server is interrupted. Exiting ...");
         } catch (ExecutionException ee) {
-            log.error("Error in bookie shutdown", ee);
+            log.error("Error in bookie shutdown", ee.getCause());
             return ExitCode.SERVER_EXCEPTION;
         }
         return ExitCode.OK;
