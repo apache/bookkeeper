@@ -41,6 +41,7 @@ public class MetastoreTableAsyncToSyncConverter {
             try {
                 countDownLatch.await(10, TimeUnit.SECONDS);
             } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
                 throw MSException.create(Code.InterruptedException);
             }
 

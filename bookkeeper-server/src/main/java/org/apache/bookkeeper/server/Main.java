@@ -214,6 +214,7 @@ public class Main {
         try {
             ComponentStarter.startComponent(server).get();
         } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
             // the server is interrupted
             log.info("Bookie server is interrupted. Exiting ...");
         } catch (ExecutionException ee) {

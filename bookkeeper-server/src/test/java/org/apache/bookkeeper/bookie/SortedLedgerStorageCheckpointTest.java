@@ -203,6 +203,7 @@ public class SortedLedgerStorageCheckpointTest extends LedgerStorageTestBase {
             try {
                 readyLatch.await();
             } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
             }
         });
 

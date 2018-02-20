@@ -225,6 +225,7 @@ public class BookieServer {
                     Thread.sleep(watchInterval);
                 } catch (InterruptedException ie) {
                     // do nothing
+                    Thread.currentThread().interrupt();
                 }
                 if (!isBookieRunning()) {
                     shutdown();

@@ -252,6 +252,7 @@ public class ZooKeeperClient extends ZooKeeper implements Watcher {
                 client.close();
                 throw ke;
             } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
                 client.close();
                 throw ie;
             }

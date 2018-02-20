@@ -559,6 +559,7 @@ public class BKNamespaceDriver implements NamespaceDriver {
                 }
             }
         } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
             LOG.error("Interrupted while deleting " + namespaceRootPath, ie);
             throw new IOException("Interrupted while reading " + namespaceRootPath, ie);
         } catch (KeeperException ke) {

@@ -105,9 +105,13 @@ public class BKHttpServiceProvider implements HttpServiceProvider {
             if (zk != null) {
                 zk.close();
             }
-        } catch (InterruptedException | BKException e) {
-            log.error("Error while close BKHttpServiceProvider", e);
-            throw new IOException("Error while close BKHttpServiceProvider", e);
+        } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
+            log.error("Interruption while closing BKHttpServiceProvider", ie);
+            throw new IOException("Interruption while closing BKHttpServiceProvider", ie);
+        } catch (BKException e) {
+            log.error("Error while closing BKHttpServiceProvider", e);
+            throw new IOException("Error while closing BKHttpServiceProvider", e);
         }
     }
 

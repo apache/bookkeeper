@@ -122,6 +122,7 @@ public class ZKAccessControl {
         } catch (ZooKeeperClient.ZooKeeperConnectionException e) {
             promise.completeExceptionally(e);
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             promise.completeExceptionally(e);
         } catch (IOException e) {
             promise.completeExceptionally(e);
@@ -146,6 +147,7 @@ public class ZKAccessControl {
         } catch (ZooKeeperClient.ZooKeeperConnectionException e) {
             promise.completeExceptionally(e);
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             promise.completeExceptionally(e);
         } catch (IOException e) {
             promise.completeExceptionally(e);
@@ -176,6 +178,7 @@ public class ZKAccessControl {
         } catch (ZooKeeperClient.ZooKeeperConnectionException e) {
             promise.completeExceptionally(e);
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             promise.completeExceptionally(e);
         }
         return promise;
@@ -199,6 +202,7 @@ public class ZKAccessControl {
         } catch (ZooKeeperClient.ZooKeeperConnectionException e) {
             promise.completeExceptionally(e);
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             promise.completeExceptionally(e);
         }
         return promise;

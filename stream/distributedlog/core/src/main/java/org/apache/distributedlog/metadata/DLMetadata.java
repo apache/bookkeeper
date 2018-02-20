@@ -118,6 +118,7 @@ public class DLMetadata {
             throw new IOException("Fail to update dl metadata " + new String(data, UTF_8)
                     + " to uri " + uri, e);
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             throw new IOException("Interrupted when updating dl metadata "
                     + new String(data, UTF_8) + " to uri " + uri, e);
         } finally {
@@ -169,6 +170,7 @@ public class DLMetadata {
         } catch (KeeperException ke) {
             throw new IOException("Fail to unbound dl metadata on uri " + uri, ke);
         } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
             throw new IOException("Interrupted when unbinding dl metadata on uri " + uri, ie);
         } finally {
             zkc.close();

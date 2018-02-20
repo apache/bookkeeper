@@ -649,6 +649,7 @@ public class LogSegmentMetadata {
         } catch (ZooKeeperClient.ZooKeeperConnectionException e) {
             result.completeExceptionally(Utils.zkException(e, path));
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             result.completeExceptionally(Utils.zkException(e, path));
         }
         return result;
@@ -1013,6 +1014,7 @@ public class LogSegmentMetadata {
         } catch (KeeperException.NodeExistsException nee) {
             throw nee;
         } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
             throw new DLInterruptedException("Interrupted on creating ledger znode " + zkPath, ie);
         } catch (Exception e) {
             LOG.error("Error creating ledger znode {}", zkPath, e);

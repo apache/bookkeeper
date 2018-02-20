@@ -630,6 +630,7 @@ class ReadAheadEntryReader implements
         try {
             entry = entryQueue.poll(waitTime, waitTimeUnit);
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             throw new DLInterruptedException("Interrupted on waiting next readahead entry : ", e);
         }
         try {
