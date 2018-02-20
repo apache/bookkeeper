@@ -23,7 +23,6 @@ package org.apache.bookkeeper.replication;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Map.Entry;
@@ -71,9 +70,7 @@ public class TestAutoRecoveryAlongWithBookieServers extends
 
         killBookie(replicaToKill);
 
-        int startNewBookie = startNewBookie();
-        BookieSocketAddress newBkAddr = new BookieSocketAddress(InetAddress
-                .getLocalHost().getHostAddress(), startNewBookie);
+        BookieSocketAddress newBkAddr = startNewBookieAndReturnAddress();
 
         while (ReplicationTestUtil.isLedgerInUnderReplication(zkc, lh.getId(),
                 basePath)) {
