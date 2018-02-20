@@ -68,6 +68,7 @@ public class ZKTransaction implements Transaction<Object>, AsyncCallback.MultiCa
         } catch (ZooKeeperClient.ZooKeeperConnectionException e) {
             result.completeExceptionally(Utils.zkException(e, ""));
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             result.completeExceptionally(Utils.zkException(e, ""));
         }
         return result;

@@ -620,6 +620,7 @@ public class EntryLogger {
                         } catch (CancellationException ce) {
                             throw new IOException("Task to allocate a new entry log is cancelled.", ce);
                         } catch (InterruptedException ie) {
+                            Thread.currentThread().interrupt();
                             throw new IOException("Intrrupted when waiting a new entry log to be allocated.", ie);
                         }
                     }

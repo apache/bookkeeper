@@ -101,6 +101,7 @@ public class ZKSubscriptionsStore implements SubscriptionsStore {
         } catch (ZooKeeperClient.ZooKeeperConnectionException zkce) {
             result.completeExceptionally(zkce);
         } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
             result.completeExceptionally(new DLInterruptedException("getLastCommitPositions was interrupted", ie));
         }
         return result;

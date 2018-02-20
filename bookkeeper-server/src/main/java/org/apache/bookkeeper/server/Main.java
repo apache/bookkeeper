@@ -216,6 +216,7 @@ public class Main {
         try {
             aliveLatch.await();
         } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
             // the server is interrupted
             log.info("Bookie server is interrupted. Exiting ...");
         }

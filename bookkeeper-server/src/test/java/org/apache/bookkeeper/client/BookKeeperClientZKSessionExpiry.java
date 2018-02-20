@@ -60,6 +60,7 @@ public class BookKeeperClientZKSessionExpiry extends BookKeeperClusterTestCase {
                             }
                         }
                     } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
                         return;
                     }
                 }

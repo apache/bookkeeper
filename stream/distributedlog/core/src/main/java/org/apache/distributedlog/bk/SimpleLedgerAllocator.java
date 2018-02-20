@@ -150,6 +150,7 @@ public class SimpleLedgerAllocator implements LedgerAllocator, FutureEventListen
         } catch (ZooKeeperClient.ZooKeeperConnectionException e) {
             return FutureUtils.exception(Utils.zkException(e, allocatePath));
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             return FutureUtils.exception(Utils.zkException(e, allocatePath));
         }
     }

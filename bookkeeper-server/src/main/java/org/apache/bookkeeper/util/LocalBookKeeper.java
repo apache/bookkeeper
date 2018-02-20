@@ -128,6 +128,7 @@ public class LocalBookKeeper {
             LOG.error("Exception while creating znodes", e);
             throw new IOException("Error creating znodes : ", e);
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             LOG.error("Interrupted while creating znodes", e);
             throw new IOException("Error creating znodes : ", e);
         }
@@ -153,6 +154,7 @@ public class LocalBookKeeper {
             cleanupDirectories(tempDirs);
             throw ke;
         } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
             cleanupDirectories(tempDirs);
             throw ie;
         } catch (BookieException be) {
@@ -351,6 +353,7 @@ public class LocalBookKeeper {
                     Thread.sleep(5000);
                 }
             } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
                 if (stopOnExit) {
                     lb.shutdownBookies();
 
@@ -497,6 +500,7 @@ public class LocalBookKeeper {
             try {
                 Thread.sleep(250);
             } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
                 // ignore
             }
         }

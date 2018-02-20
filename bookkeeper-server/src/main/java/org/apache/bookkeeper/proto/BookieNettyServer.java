@@ -169,6 +169,7 @@ class BookieNettyServer {
                         try {
                             Thread.sleep(10);
                         } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
                         }
                     }
                 });
@@ -406,6 +407,7 @@ class BookieNettyServer {
             try {
                 eventLoopGroup.shutdownGracefully(0, 10, TimeUnit.MILLISECONDS).await();
             } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
                 /// OK
             }
         }

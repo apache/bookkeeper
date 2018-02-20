@@ -1510,7 +1510,10 @@ public class BookKeeperAdmin implements AutoCloseable {
                 }
             }
             return false;
-        } catch (InterruptedException | ExecutionException e) {
+        } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(ie);
+        } catch (ExecutionException e) {
             if (e.getCause() != null
                     && e.getCause().getClass().equals(BKException.BKNoSuchLedgerExistsException.class)) {
                 LOG.debug("Ledger: {} has been deleted", ledgerId);
