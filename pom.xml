@@ -450,6 +450,7 @@
               <reuseForks>false</reuseForks>
               <forkedProcessTimeoutInSeconds>1800</forkedProcessTimeoutInSeconds>
               <trimStackTrace>false</trimStackTrace>
+              <rerunFailingTestsCount>0</rerunFailingTestsCount>
             </configuration>
           </plugin>
         </plugins>
