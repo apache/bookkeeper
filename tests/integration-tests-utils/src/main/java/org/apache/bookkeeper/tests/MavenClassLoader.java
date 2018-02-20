@@ -22,7 +22,11 @@ package org.apache.bookkeeper.tests;
 
 import com.google.common.collect.Lists;
 
+import groovy.lang.Closure;
+
 import java.io.File;
+import java.lang.invoke.MethodHandles;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
@@ -135,14 +139,27 @@ public class MavenClassLoader implements AutoCloseable {
         }
     }
 
-    public Object createCallback(String interfaceName, Object closure) throws Exception {
+    public Object createCallback(String interfaceName, Closure closure) throws Exception {
+        final Constructor<MethodHandles.Lookup> constructor = MethodHandles.Lookup.class.getDeclaredConstructor(
+                Class.class, int.class);
+        if (!constructor.isAccessible()) {
+            constructor.setAccessible(true);
+        }
         return Proxy.newProxyInstance(classloader,
                                       new Class<?>[]{ Class.forName(interfaceName, true, classloader) },
                                       new InvocationHandler() {
+
                                           @Override
                                           public Object invoke(Object proxy, Method m, Object[] args) throws Throwable {
-                                              Method call = closure.getClass().getMethod("call", Object[].class);
-                                              return call.invoke(closure, (Object)args);
+                                              if (args.length == closure.getMaximumNumberOfParameters()) {
+                                                  return closure.call(args);
+                                              } else {
+                                                  final Class<?> declaringClass = m.getDeclaringClass();
+                                                  return constructor.newInstance(declaringClass, MethodHandles.Lookup.PRIVATE)
+                                                      .unreflectSpecial(m, declaringClass)
+                                                      .bindTo(proxy)
+                                                      .invokeWithArguments(args);
+                                              }
                                           }
                                       });
     }
