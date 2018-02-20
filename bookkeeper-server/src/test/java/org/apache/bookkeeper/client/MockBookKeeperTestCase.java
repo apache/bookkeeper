@@ -474,9 +474,9 @@ public abstract class MockBookKeeperTestCase {
             any(BookkeeperInternalCallbacks.ReadEntryCallback.class), any());
     }
 
-    private byte[] extractEntryPayload(long ledgerId, long entryId, ByteBuf toSend)
+    private byte[] extractEntryPayload(long ledgerId, long entryId, ByteBufList toSend)
             throws BKException.BKDigestMatchException {
-        ByteBuf toSendCopy = Unpooled.copiedBuffer(toSend);
+        ByteBuf toSendCopy = Unpooled.copiedBuffer(toSend.toArray());
         toSendCopy.resetReaderIndex();
         DigestManager macManager = null;
         try {
@@ -500,7 +500,7 @@ public abstract class MockBookKeeperTestCase {
             BookieSocketAddress bookieSocketAddress = (BookieSocketAddress) args[0];
             long ledgerId = (Long) args[1];
             long entryId = (Long) args[3];
-            ByteBuf toSend = (ByteBuf) args[4];
+            ByteBufList toSend = (ByteBufList) args[4];
             Object ctx = args[6];
             int options = (int) args[7];
             boolean isRecoveryAdd =
