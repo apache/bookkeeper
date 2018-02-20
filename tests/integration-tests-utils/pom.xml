@@ -92,6 +92,12 @@
       <version>${arquillian-cube.version}</version>
     </dependency>
 
+    <dependency>
+      <groupId>org.codehaus.groovy</groupId>
+      <artifactId>groovy-all</artifactId>
+      <version>${groovy.version}</version>
+    </dependency>
+
   </dependencies>
 
   <build>
