@@ -1,4 +1,4 @@
-#BookKeeper Table Service
+# BookKeeper Table Service
 
 BookKeeper Table Service is a contrib module added to BookKeeper, providing a table (aka key/value) service as part of the stream storage for bookkeeper.
 
