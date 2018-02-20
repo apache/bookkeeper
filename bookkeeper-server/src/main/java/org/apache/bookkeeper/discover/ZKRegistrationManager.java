@@ -492,22 +492,22 @@ public class ZKRegistrationManager implements RegistrationManager {
         List<Op> multiOps = Lists.newArrayListWithExpectedSize(4);
 
         // Create ledgers root node
-        multiOps.add(Op.create(zkLedgersRootPath, EMPTY_BYTE_ARRAY, Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT));
+        multiOps.add(Op.create(zkLedgersRootPath, EMPTY_BYTE_ARRAY, zkAcls, CreateMode.PERSISTENT));
 
         // create available bookies node
-        multiOps.add(Op.create(zkAvailableBookiesPath, EMPTY_BYTE_ARRAY, Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT));
+        multiOps.add(Op.create(zkAvailableBookiesPath, EMPTY_BYTE_ARRAY, zkAcls, CreateMode.PERSISTENT));
 
         // create readonly bookies node
         multiOps.add(Op.create(
             zkReadonlyBookiesPath,
             EMPTY_BYTE_ARRAY,
-            Ids.OPEN_ACL_UNSAFE,
+            zkAcls,
             CreateMode.PERSISTENT));
 
         // create INSTANCEID
         String instanceId = UUID.randomUUID().toString();
         multiOps.add(Op.create(instanceIdPath, instanceId.getBytes(UTF_8),
-                Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT));
+                zkAcls, CreateMode.PERSISTENT));
 
         // execute the multi ops
         zk.multi(multiOps);
