@@ -142,9 +142,7 @@ public class MavenClassLoader implements AutoCloseable {
     public Object createCallback(String interfaceName, Closure closure) throws Exception {
         final Constructor<MethodHandles.Lookup> constructor = MethodHandles.Lookup.class.getDeclaredConstructor(
                 Class.class, int.class);
-        if (!constructor.isAccessible()) {
-            constructor.setAccessible(true);
-        }
+        constructor.setAccessible(true);
         return Proxy.newProxyInstance(classloader,
                                       new Class<?>[]{ Class.forName(interfaceName, true, classloader) },
                                       new InvocationHandler() {
