@@ -76,6 +76,11 @@ abstract class BKAbstractLogWriter implements Closeable, AsyncCloseable, Abortab
                 TimeUnit.MILLISECONDS.convert(dynConf.getRetentionPeriodHours(), TimeUnit.HOURS));
     }
 
+    @VisibleForTesting
+    CompletableFuture<List<LogSegmentMetadata>> getLastTruncationAttempt() {
+        return lastTruncationAttempt;
+    }
+
     // manage write handler
 
     protected synchronized BKLogWriteHandler getCachedWriteHandler() {

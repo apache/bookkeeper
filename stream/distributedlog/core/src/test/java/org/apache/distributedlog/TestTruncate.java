@@ -17,11 +17,17 @@
  */
 package org.apache.distributedlog;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
 import java.net.URI;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.distributedlog.LogSegmentMetadata.TruncationStatus;
@@ -33,9 +39,6 @@ import org.apache.distributedlog.util.Utils;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-
-
 
 /**
  * Test Cases for truncation.
@@ -105,9 +108,13 @@ public class TestTruncate extends TestDistributedLogBase {
             Utils.ioResult(writer.write(DLMTestUtil.getLogRecordInstance(txid++)));
         }
 
-        // to make sure the truncation task is executed
-        DLSN lastDLSN = Utils.ioResult(dlm.getLastDLSNAsync());
-        LOG.info("Get last dlsn of stream {} : {}", name, lastDLSN);
+        // wait until truncation task to be completed.
+        BKAsyncLogWriter bkLogWriter = (BKAsyncLogWriter) writer;
+        CompletableFuture<List<LogSegmentMetadata>> truncationAttempt = bkLogWriter.getLastTruncationAttempt();
+        while (truncationAttempt == null || !truncationAttempt.isDone()) {
+            TimeUnit.MILLISECONDS.sleep(20);
+            truncationAttempt = bkLogWriter.getLastTruncationAttempt();
+        }
 
         assertEquals(6, distributedLogManager.getLogSegments().size());
 
