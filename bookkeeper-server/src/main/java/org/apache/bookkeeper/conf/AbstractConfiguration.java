@@ -20,8 +20,11 @@ package org.apache.bookkeeper.conf;
 import static org.apache.bookkeeper.conf.ClientConfiguration.CLIENT_AUTH_PROVIDER_FACTORY_CLASS;
 
 import java.net.URL;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+
 import javax.net.ssl.SSLEngine;
 
 import org.apache.bookkeeper.feature.Feature;
@@ -30,6 +33,8 @@ import org.apache.bookkeeper.meta.HierarchicalLedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LongHierarchicalLedgerManagerFactory;
 import org.apache.bookkeeper.util.EntryFormatter;
+import org.apache.bookkeeper.util.JsonUtil;
+import org.apache.bookkeeper.util.JsonUtil.ParseJsonException;
 import org.apache.bookkeeper.util.LedgerIdFormatter;
 import org.apache.bookkeeper.util.ReflectionUtils;
 import org.apache.bookkeeper.util.StringEntryFormatter;
@@ -674,4 +679,27 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      * Trickery to allow inheritance with fluent style.
      */
     protected abstract T getThis();
+
+    /**
+     * returns the string representation of json format of this config.
+     *
+     * @return
+     * @throws ParseJsonException
+     */
+    public String asJson() throws ParseJsonException {
+        return JsonUtil.toJson(toMap());
+    }
+
+    private Map<String, Object> toMap() {
+        Map<String, Object> configMap = new HashMap<>();
+        Iterator<String> iterator = this.getKeys();
+        while (iterator.hasNext()) {
+            String key = iterator.next().toString();
+            Object property = this.getProperty(key);
+            if (property != null) {
+                configMap.put(key, property.toString());
+            }
+        }
+        return configMap;
+    }
 }
