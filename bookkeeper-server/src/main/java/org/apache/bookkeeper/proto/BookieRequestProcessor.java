@@ -40,6 +40,7 @@ import static org.apache.bookkeeper.bookie.BookKeeperServerStats.READ_LAC_REQUES
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.READ_LAST_ENTRY_NOENTRY_ERROR;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.WRITE_LAC;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.WRITE_LAC_REQUEST;
+import static org.apache.bookkeeper.proto.RequestUtils.hasFlag;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.protobuf.ByteString;
@@ -51,6 +52,7 @@ import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
 
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 
@@ -110,6 +112,12 @@ public class BookieRequestProcessor implements RequestProcessor {
     private final OrderedSafeExecutor longPollThreadPool;
 
     /**
+     * The threadpool used to execute high priority requests. It needs to be separate to
+     * the read thread, as the read thread is bounded.
+     */
+    private final ExecutorService highPriorityThreadPool;
+
+    /**
      * The Timer used to time out requests for long polling.
      */
     private final HashedWheelTimer requestTimer;
@@ -154,9 +162,15 @@ public class BookieRequestProcessor implements RequestProcessor {
                 statsLogger);
         this.longPollThreadPool = createExecutor(
                 this.serverCfg.getNumLongPollWorkerThreads(),
-                "BookieLongPollThread",
-                OrderedScheduler.NO_TASK_LIMIT,
-                statsLogger);
+                "BookieLongPollThread-" + serverCfg.getBookiePort(),
+                OrderedScheduler.NO_TASK_LIMIT, statsLogger);
+        this.highPriorityThreadPool = Executors.newCachedThreadPool(
+                new ThreadFactoryBuilder()
+                .setNameFormat("BookieHighPriorityThread-" + serverCfg.getBookiePort() + "-")
+                .setUncaughtExceptionHandler((t, ex) -> {
+                        LOG.error("Exception in fencing thread {}", t, ex);
+                    })
+                .build());
         this.requestTimer = new HashedWheelTimer(
             new ThreadFactoryBuilder().setNameFormat("BookieRequestTimer-%d").build(),
             this.serverCfg.getRequestTimerTickDurationMs(),
@@ -195,6 +209,7 @@ public class BookieRequestProcessor implements RequestProcessor {
         shutdownExecutor(writeThreadPool);
         shutdownExecutor(readThreadPool);
         shutdownExecutor(longPollThreadPool);
+        highPriorityThreadPool.shutdown();
     }
 
     private OrderedSafeExecutor createExecutor(
@@ -276,10 +291,12 @@ public class BookieRequestProcessor implements RequestProcessor {
             // process packet
             switch (r.getOpCode()) {
                 case BookieProtocol.ADDENTRY:
-                    processAddRequest(r, c);
+                    assert(r instanceof BookieProtocol.ParsedAddRequest);
+                    processAddRequest((BookieProtocol.ParsedAddRequest) r, c);
                     break;
                 case BookieProtocol.READENTRY:
-                    processReadRequest(r, c);
+                    assert(r instanceof BookieProtocol.ReadRequest);
+                    processReadRequest((BookieProtocol.ReadRequest) r, c);
                     break;
                 default:
                     LOG.error("Unknown op type {}, sending error", r.getOpCode());
@@ -312,8 +329,14 @@ public class BookieRequestProcessor implements RequestProcessor {
 
     private void processAddRequestV3(final BookkeeperProtocol.Request r, final Channel c) {
         WriteEntryProcessorV3 write = new WriteEntryProcessorV3(r, c, this);
+
+        // If it's a high priority add (usually as part of recovery process), we want to make sure it gets
+        // executed as fast as possible, so bypass the normal writeThreadPool and execute in highPriorityThreadPool
+        boolean isHighPriority = hasFlag(r.getAddRequest(), BookkeeperProtocol.AddRequest.Flag.HIGH_PRIORITY);
         if (null == writeThreadPool) {
             write.run();
+        } else if (isHighPriority) {
+            highPriorityThreadPool.submit(write);
         } else {
             try {
                 writeThreadPool.submitOrdered(r.getAddRequest().getLedgerId(), write);
@@ -337,8 +360,6 @@ public class BookieRequestProcessor implements RequestProcessor {
     }
 
     private void processReadRequestV3(final BookkeeperProtocol.Request r, final Channel c) {
-        ExecutorService fenceThreadPool =
-          null == readThreadPool ? null : readThreadPool.chooseThread(c);
         ExecutorService lpThreadPool =
           null == longPollThreadPool ? null : longPollThreadPool.chooseThread(c);
         ReadEntryProcessorV3 read;
@@ -347,7 +368,7 @@ public class BookieRequestProcessor implements RequestProcessor {
                 r,
                 c,
                 this,
-                fenceThreadPool,
+                highPriorityThreadPool,
                 lpThreadPool,
                 requestTimer);
             if (null == longPollThreadPool) {
@@ -356,9 +377,18 @@ public class BookieRequestProcessor implements RequestProcessor {
                 longPollThreadPool.submitOrdered(r.getReadRequest().getLedgerId(), read);
             }
         } else {
-            read = new ReadEntryProcessorV3(r, c, this, fenceThreadPool);
+            read = new ReadEntryProcessorV3(r, c, this, highPriorityThreadPool);
+
+            // If it's a high priority read (fencing or as part of recovery process), we want to make sure it
+            // gets executed as fast as possible, so bypass the normal readThreadPool
+            // and execute in highPriorityThreadPool
+            boolean isHighPriority = hasFlag(r.getReadRequest(), BookkeeperProtocol.ReadRequest.Flag.HIGH_PRIORITY)
+                || hasFlag(r.getReadRequest(), BookkeeperProtocol.ReadRequest.Flag.FENCE_LEDGER);
+
             if (null == readThreadPool) {
                 read.run();
+            } else if (isHighPriority) {
+                highPriorityThreadPool.submit(read);
             } else {
                 try {
                     readThreadPool.submitOrdered(r.getReadRequest().getLedgerId(), read);
@@ -435,10 +465,15 @@ public class BookieRequestProcessor implements RequestProcessor {
         }
     }
 
-    private void processAddRequest(final BookieProtocol.Request r, final Channel c) {
+    private void processAddRequest(final BookieProtocol.ParsedAddRequest r, final Channel c) {
         WriteEntryProcessor write = WriteEntryProcessor.create(r, c, this);
+
+        // If it's a high priority add (usually as part of recovery process), we want to make sure it gets
+        // executed as fast as possible, so bypass the normal writeThreadPool and execute in highPriorityThreadPool
         if (null == writeThreadPool) {
             write.run();
+        } else if (r.isHighPriority()) {
+            highPriorityThreadPool.submit(write);
         } else {
             try {
                 writeThreadPool.submitOrdered(r.getLedgerId(), write);
@@ -454,10 +489,16 @@ public class BookieRequestProcessor implements RequestProcessor {
         }
     }
 
-    private void processReadRequest(final BookieProtocol.Request r, final Channel c) {
+    private void processReadRequest(final BookieProtocol.ReadRequest r, final Channel c) {
         ReadEntryProcessor read = ReadEntryProcessor.create(r, c, this);
+
+        // If it's a high priority read (fencing or as part of recovery process), we want to make sure it
+        // gets executed as fast as possible, so bypass the normal readThreadPool
+        // and execute in highPriorityThreadPool
         if (null == readThreadPool) {
             read.run();
+        } else if (r.isHighPriority() || r.isFencing()) {
+            highPriorityThreadPool.submit(read);
         } else {
             try {
                 readThreadPool.submitOrdered(r.getLedgerId(), read);

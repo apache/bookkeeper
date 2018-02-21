@@ -90,8 +90,9 @@ message ReadRequest {
     enum Flag {
         FENCE_LEDGER = 1;
         ENTRY_PIGGYBACK = 2;
+        HIGH_PRIORITY = 3;
     }
-    optional Flag flag = 100;
+    repeated Flag flag = 100;
     required int64 ledgerId = 1;
     // entryId will be -1 for reading the LAST_ADD_CONFIRMED entry.
     required int64 entryId = 2;
@@ -106,8 +107,9 @@ message ReadRequest {
 message AddRequest {
     enum Flag {
         RECOVERY_ADD = 1;
+        HIGH_PRIORITY = 2;
     }
-    optional Flag flag = 100;
+    repeated Flag flag = 100;
     required int64 ledgerId = 1;
     required int64 entryId = 2;
     required bytes masterKey = 3;

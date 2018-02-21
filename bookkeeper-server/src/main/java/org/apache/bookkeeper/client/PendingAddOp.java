@@ -18,6 +18,9 @@
 package org.apache.bookkeeper.client;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static org.apache.bookkeeper.proto.BookieProtocol.FLAG_HIGH_PRIORITY;
+import static org.apache.bookkeeper.proto.BookieProtocol.FLAG_NONE;
+import static org.apache.bookkeeper.proto.BookieProtocol.FLAG_RECOVERY_ADD;
 
 import com.google.common.collect.ImmutableMap;
 
@@ -32,7 +35,6 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.bookkeeper.client.AsyncCallback.AddCallbackWithLatency;
 import org.apache.bookkeeper.net.BookieSocketAddress;
-import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
 import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.OpStatsLogger;
@@ -124,7 +126,7 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
     }
 
     void sendWriteRequest(int bookieIndex) {
-        int flags = isRecoveryAdd ? BookieProtocol.FLAG_RECOVERY_ADD : BookieProtocol.FLAG_NONE;
+        int flags = isRecoveryAdd ? FLAG_RECOVERY_ADD | FLAG_HIGH_PRIORITY : FLAG_NONE;
 
         lh.bk.getBookieClient().addEntry(lh.metadata.currentEnsemble.get(bookieIndex), lh.ledgerId, lh.ledgerKey,
                 entryId, toSend, this, bookieIndex, flags);

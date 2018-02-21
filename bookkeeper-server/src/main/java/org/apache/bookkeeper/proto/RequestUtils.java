@@ -25,7 +25,7 @@ import org.apache.bookkeeper.proto.BookkeeperProtocol.ReadRequest;
 class RequestUtils {
 
     public static boolean isFenceRequest(ReadRequest readRequest) {
-        return readRequest.hasFlag() && readRequest.getFlag().equals(ReadRequest.Flag.FENCE_LEDGER);
+        return hasFlag(readRequest, ReadRequest.Flag.FENCE_LEDGER);
     }
 
     public static boolean isLongPollReadRequest(ReadRequest readRequest) {
@@ -33,6 +33,25 @@ class RequestUtils {
     }
 
     public static boolean shouldPiggybackEntry(ReadRequest readRequest) {
-        return readRequest.hasFlag() && readRequest.getFlag().equals(ReadRequest.Flag.ENTRY_PIGGYBACK);
+        return hasFlag(readRequest, ReadRequest.Flag.ENTRY_PIGGYBACK);
     }
+
+    static boolean hasFlag(BookkeeperProtocol.ReadRequest request, BookkeeperProtocol.ReadRequest.Flag flag) {
+        for (BookkeeperProtocol.ReadRequest.Flag f : request.getFlagList()) {
+            if (f == flag) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    static boolean hasFlag(BookkeeperProtocol.AddRequest request, BookkeeperProtocol.AddRequest.Flag flag) {
+        for (BookkeeperProtocol.AddRequest.Flag f : request.getFlagList()) {
+            if (f == flag) {
+                return true;
+            }
+        }
+        return false;
+    }
+
 }

@@ -114,7 +114,7 @@ class WriteEntryProcessorV3 extends PacketProcessorBaseV3 {
         byte[] masterKey = addRequest.getMasterKey().toByteArray();
         ByteBuf entryToAdd = Unpooled.wrappedBuffer(addRequest.getBody().asReadOnlyByteBuffer());
         try {
-            if (addRequest.hasFlag() && addRequest.getFlag().equals(AddRequest.Flag.RECOVERY_ADD)) {
+            if (RequestUtils.hasFlag(addRequest, AddRequest.Flag.RECOVERY_ADD)) {
                 requestProcessor.bookie.recoveryAddEntry(entryToAdd, wcb, channel, masterKey);
             } else {
                 requestProcessor.bookie.addEntry(entryToAdd, ackBeforeSync, wcb, channel, masterKey);
