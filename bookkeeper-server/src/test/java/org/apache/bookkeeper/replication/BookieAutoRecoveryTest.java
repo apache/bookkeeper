@@ -25,6 +25,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.SortedMap;
@@ -36,12 +37,11 @@ import org.apache.bookkeeper.client.BookKeeperTestClient;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.LedgerHandleAdapter;
 import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.discover.RegistrationManager;
-import org.apache.bookkeeper.meta.AbstractZkLedgerManagerFactory;
-import org.apache.bookkeeper.meta.LayoutManager;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
+import org.apache.bookkeeper.meta.MetadataClientDriver;
+import org.apache.bookkeeper.meta.MetadataDrivers;
 import org.apache.bookkeeper.meta.ZkLedgerUnderreplicationManager;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieServer;
@@ -70,6 +70,7 @@ public class BookieAutoRecoveryTest extends BookKeeperClusterTestCase {
     private static final String openLedgerRereplicationGracePeriod = "3000"; // milliseconds
 
     private DigestType digestType;
+    private MetadataClientDriver metadataClientDriver;
     private LedgerManagerFactory mFactory;
     private LedgerUnderreplicationManager underReplicationManager;
     private LedgerManager ledgerManager;
@@ -96,29 +97,20 @@ public class BookieAutoRecoveryTest extends BookKeeperClusterTestCase {
         super.setUp();
         baseConf.setZkServers(zkUtil.getZooKeeperConnectString());
         baseClientConf.setZkServers(zkUtil.getZooKeeperConnectString());
-        // initialize urReplicationManager
-        LayoutManager layoutManager = RegistrationManager
-            .instantiateRegistrationManager(new ServerConfiguration(baseClientConf)).getLayoutManager();
 
-        mFactory = AbstractZkLedgerManagerFactory
-            .newLedgerManagerFactory(
-                baseClientConf,
-                layoutManager);
+        metadataClientDriver = MetadataDrivers.getClientDriver(
+            URI.create(baseClientConf.getMetadataServiceUri()));
+
+        // initialize urReplicationManager
+        mFactory = metadataClientDriver.getLedgerManagerFactory();
         underReplicationManager = mFactory.newLedgerUnderreplicationManager();
-        LedgerManagerFactory newLedgerManagerFactory = AbstractZkLedgerManagerFactory
-            .newLedgerManagerFactory(
-                baseClientConf,
-                layoutManager);
-        ledgerManager = newLedgerManagerFactory.newLedgerManager();
+        ledgerManager = mFactory.newLedgerManager();
     }
 
     @Override
     public void tearDown() throws Exception {
         super.tearDown();
-        if (null != mFactory) {
-            mFactory.close();
-            mFactory = null;
-        }
+
         if (null != underReplicationManager) {
             underReplicationManager.close();
             underReplicationManager = null;
@@ -126,6 +118,10 @@ public class BookieAutoRecoveryTest extends BookKeeperClusterTestCase {
         if (null != ledgerManager) {
             ledgerManager.close();
             ledgerManager = null;
+        }
+        if (null != metadataClientDriver) {
+            metadataClientDriver.close();
+            metadataClientDriver = null;
         }
     }
 

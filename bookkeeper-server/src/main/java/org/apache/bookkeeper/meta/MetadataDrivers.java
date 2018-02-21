@@ -23,16 +23,25 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Sets;
+import com.google.common.util.concurrent.UncheckedExecutionException;
 import java.net.URI;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ExecutionException;
+import java.util.function.Function;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.discover.RegistrationManager;
+import org.apache.bookkeeper.meta.exceptions.Code;
+import org.apache.bookkeeper.meta.exceptions.MetadataException;
+import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.util.ReflectionUtils;
+import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.lang3.StringUtils;
 
 /**
@@ -307,6 +316,62 @@ public final class MetadataDrivers {
         checkArgument(schemeParts.length > 0,
                 "Invalid metadata service scheme found : " + uri);
         return getBookieDriver(schemeParts[0]);
+    }
+
+    /**
+     * Process the provided <i>function</i> with registration manager resolved
+     * from the metadata service uri returned by {@link ServerConfiguration#getMetadataServiceUri()}.
+     *
+     * @param conf server configuration
+     * @param function function to apply with registration manager.
+     * @throws MetadataException when failed to access metadata store
+     * @throws ExecutionException exception thrown when processing <tt>consumer</tt>.
+     */
+    public static <T> T runFunctionWithRegistrationManager(ServerConfiguration conf,
+                                                           Function<RegistrationManager, T> function)
+            throws MetadataException, ExecutionException {
+        try (MetadataBookieDriver driver = MetadataDrivers.getBookieDriver(
+            URI.create(conf.getMetadataServiceUri())
+        )) {
+            driver.initialize(conf, () -> {}, NullStatsLogger.INSTANCE);
+            try {
+                return function.apply(driver.getRegistrationManager());
+            } catch (UncheckedExecutionException uee) {
+                throw new ExecutionException(uee.getMessage(), uee.getCause());
+            } catch (Exception e) {
+                throw new ExecutionException(e.getMessage(), e);
+            }
+        } catch (ConfigurationException e) {
+            throw new MetadataException(Code.INVALID_METADATA_SERVICE_URI, e);
+        }
+    }
+
+    /**
+     * Process the provided <i>function</i> with ledger manager factory resolved
+     * from the metadata service uri returned by {@link ServerConfiguration#getMetadataServiceUri()}.
+     *
+     * @param conf server configuration
+     * @param function function to apply with ledger manager factory.
+     * @throws MetadataException when failed to access metadata store
+     * @throws ExecutionException exception thrown when processing <tt>consumer</tt>.
+     */
+    public static <T> T runFunctionWithLedgerManagerFactory(ServerConfiguration conf,
+                                                            Function<LedgerManagerFactory, T> function)
+            throws MetadataException, ExecutionException {
+        try (MetadataBookieDriver driver = MetadataDrivers.getBookieDriver(
+            URI.create(conf.getMetadataServiceUri())
+        )) {
+            driver.initialize(conf, () -> {}, NullStatsLogger.INSTANCE);
+            try {
+                return function.apply(driver.getLedgerManagerFactory());
+            } catch (UncheckedExecutionException uee) {
+                throw new ExecutionException(uee.getMessage(), uee.getCause());
+            } catch (Exception e) {
+                throw new ExecutionException(e.getMessage(), e);
+            }
+        } catch (ConfigurationException e) {
+            throw new MetadataException(Code.INVALID_METADATA_SERVICE_URI, e);
+        }
     }
 
 }

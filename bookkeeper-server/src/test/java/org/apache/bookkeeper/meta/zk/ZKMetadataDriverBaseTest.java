@@ -41,6 +41,7 @@ import org.apache.bookkeeper.meta.AbstractZkLedgerManagerFactory;
 import org.apache.bookkeeper.meta.HierarchicalLedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.stats.NullStatsLogger;
+import org.apache.bookkeeper.zookeeper.RetryPolicy;
 import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
 import org.junit.Before;
 import org.junit.Test;
@@ -57,16 +58,19 @@ import org.powermock.modules.junit4.PowerMockRunner;
 public class ZKMetadataDriverBaseTest extends ZKMetadataDriverTestBase {
 
     private ZKMetadataDriverBase driver;
+    private RetryPolicy retryPolicy;
 
     @Before
     public void setup() throws Exception {
         super.setup(new ClientConfiguration());
         driver = mock(ZKMetadataDriverBase.class, CALLS_REAL_METHODS);
+        retryPolicy = mock(RetryPolicy.class);
     }
 
     @Test
     public void testInitialize() throws Exception {
-        driver.initialize(conf, NullStatsLogger.INSTANCE, Optional.empty());
+        driver.initialize(
+            conf, NullStatsLogger.INSTANCE, retryPolicy, Optional.empty());
 
         assertEquals(URI.create(metadataServiceUri), driver.metadataServiceUri);
         assertEquals(
@@ -97,7 +101,8 @@ public class ZKMetadataDriverBaseTest extends ZKMetadataDriverTestBase {
     public void testInitializeExternalZooKeeper() throws Exception {
         ZooKeeperClient anotherZk = mock(ZooKeeperClient.class);
 
-        driver.initialize(conf, NullStatsLogger.INSTANCE, Optional.of(anotherZk));
+        driver.initialize(
+            conf, NullStatsLogger.INSTANCE, retryPolicy, Optional.of(anotherZk));
 
         assertEquals(URI.create(metadataServiceUri), driver.metadataServiceUri);
         assertEquals(
@@ -126,7 +131,8 @@ public class ZKMetadataDriverBaseTest extends ZKMetadataDriverTestBase {
 
     @Test
     public void testGetLedgerManagerFactory() throws Exception {
-        driver.initialize(conf, NullStatsLogger.INSTANCE, Optional.empty());
+        driver.initialize(
+            conf, NullStatsLogger.INSTANCE, retryPolicy, Optional.empty());
 
         mockStatic(AbstractZkLedgerManagerFactory.class);
         LedgerManagerFactory factory = mock(LedgerManagerFactory.class);

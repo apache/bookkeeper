@@ -30,6 +30,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.net.URI;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -49,10 +50,10 @@ import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.LedgerHandleAdapter;
 import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.discover.RegistrationManager;
-import org.apache.bookkeeper.meta.AbstractZkLedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
+import org.apache.bookkeeper.meta.MetadataBookieDriver;
+import org.apache.bookkeeper.meta.MetadataDrivers;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
 import org.apache.bookkeeper.stats.NullStatsLogger;
@@ -73,6 +74,7 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
     private static final Logger LOG = LoggerFactory
             .getLogger(AuditorPeriodicCheckTest.class);
 
+    private MetadataBookieDriver driver;
     private HashMap<String, AuditorElector> auditorElectors = new HashMap<String, AuditorElector>();
     private List<ZooKeeper> zkClients = new LinkedList<ZooKeeper>();
 
@@ -106,11 +108,18 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
             auditorElector.start();
             LOG.debug("Starting Auditor Elector");
         }
+
+        driver = MetadataDrivers.getBookieDriver(
+            URI.create(bsConfs.get(0).getMetadataServiceUri()));
     }
 
     @After
     @Override
     public void tearDown() throws Exception {
+        if (null != driver) {
+            driver.close();
+        }
+
         for (AuditorElector e : auditorElectors.values()) {
             e.shutdown();
         }
@@ -127,9 +136,7 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
      */
     @Test
     public void testEntryLogCorruption() throws Exception {
-        LedgerManagerFactory mFactory = AbstractZkLedgerManagerFactory.newLedgerManagerFactory(
-            bsConfs.get(0),
-            RegistrationManager.instantiateRegistrationManager(bsConfs.get(0)).getLayoutManager());
+        LedgerManagerFactory mFactory = driver.getLedgerManagerFactory();
         LedgerUnderreplicationManager underReplicationManager = mFactory.newLedgerUnderreplicationManager();
         underReplicationManager.disableLedgerReplication();
 
@@ -178,9 +185,7 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
      */
     @Test
     public void testIndexCorruption() throws Exception {
-        LedgerManagerFactory mFactory = AbstractZkLedgerManagerFactory.newLedgerManagerFactory(
-            bsConfs.get(0),
-            RegistrationManager.instantiateRegistrationManager(bsConfs.get(0)).getLayoutManager());
+        LedgerManagerFactory mFactory = driver.getLedgerManagerFactory();
 
         LedgerUnderreplicationManager underReplicationManager = mFactory.newLedgerUnderreplicationManager();
 
@@ -228,9 +233,7 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
      */
     @Test
     public void testPeriodicCheckWhenDisabled() throws Exception {
-        LedgerManagerFactory mFactory = AbstractZkLedgerManagerFactory.newLedgerManagerFactory(
-            bsConfs.get(0),
-            RegistrationManager.instantiateRegistrationManager(bsConfs.get(0)).getLayoutManager());
+        LedgerManagerFactory mFactory = driver.getLedgerManagerFactory();
         final LedgerUnderreplicationManager underReplicationManager = mFactory.newLedgerUnderreplicationManager();
         final int numLedgers = 10;
         final int numMsgs = 2;
@@ -405,9 +408,7 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
      */
     @Test
     public void testFailedWriteRecovery() throws Exception {
-        LedgerManagerFactory mFactory = AbstractZkLedgerManagerFactory.newLedgerManagerFactory(
-                bsConfs.get(0),
-                RegistrationManager.instantiateRegistrationManager(bsConfs.get(0)).getLayoutManager());
+        LedgerManagerFactory mFactory = driver.getLedgerManagerFactory();
         LedgerUnderreplicationManager underReplicationManager = mFactory.newLedgerUnderreplicationManager();
         underReplicationManager.disableLedgerReplication();
 

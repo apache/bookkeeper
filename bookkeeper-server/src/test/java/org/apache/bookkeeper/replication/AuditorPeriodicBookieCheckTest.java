@@ -20,19 +20,19 @@
  */
 package org.apache.bookkeeper.replication;
 
+import static org.apache.bookkeeper.meta.MetadataDrivers.runFunctionWithLedgerManagerFactory;
 import static org.junit.Assert.assertEquals;
 
+import com.google.common.util.concurrent.UncheckedExecutionException;
 import java.util.List;
+import lombok.Cleanup;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.LedgerHandleAdapter;
 import org.apache.bookkeeper.client.LedgerMetadata;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
-import org.apache.bookkeeper.discover.RegistrationManager;
-import org.apache.bookkeeper.meta.AbstractZkLedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerManager;
-import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
@@ -97,31 +97,33 @@ public class AuditorPeriodicBookieCheckTest extends BookKeeperClusterTestCase {
     @Test
     public void testPeriodicBookieCheckInterval() throws Exception {
         bsConfs.get(0).setZkServers(zkUtil.getZooKeeperConnectString());
-        LedgerManagerFactory mFactory = AbstractZkLedgerManagerFactory.newLedgerManagerFactory(
-            bsConfs.get(0),
-            RegistrationManager.instantiateRegistrationManager(bsConfs.get(0)).getLayoutManager());
+        runFunctionWithLedgerManagerFactory(bsConfs.get(0), mFactory -> {
+            try (LedgerManager ledgerManager = mFactory.newLedgerManager()) {
+                @Cleanup final LedgerUnderreplicationManager underReplicationManager =
+                    mFactory.newLedgerUnderreplicationManager();
 
-        LedgerManager ledgerManager = mFactory.newLedgerManager();
-        final LedgerUnderreplicationManager underReplicationManager = mFactory.newLedgerUnderreplicationManager();
-        final int numLedgers = 1;
+                LedgerHandle lh = bkc.createLedger(3, 3, DigestType.CRC32, "passwd".getBytes());
+                LedgerMetadata md = LedgerHandleAdapter.getLedgerMetadata(lh);
+                List<BookieSocketAddress> ensemble = md.getEnsembles().get(0L);
+                ensemble.set(0, new BookieSocketAddress("1.1.1.1", 1000));
 
-        LedgerHandle lh = bkc.createLedger(3, 3, DigestType.CRC32, "passwd".getBytes());
-        LedgerMetadata md = LedgerHandleAdapter.getLedgerMetadata(lh);
-        List<BookieSocketAddress> ensemble = md.getEnsembles().get(0L);
-        ensemble.set(0, new BookieSocketAddress("1.1.1.1", 1000));
+                TestCallbacks.GenericCallbackFuture<Void> cb = new TestCallbacks.GenericCallbackFuture<Void>();
+                ledgerManager.writeLedgerMetadata(lh.getId(), md, cb);
+                cb.get();
 
-        TestCallbacks.GenericCallbackFuture<Void> cb = new TestCallbacks.GenericCallbackFuture<Void>();
-        ledgerManager.writeLedgerMetadata(lh.getId(), md, cb);
-        cb.get();
-
-        long underReplicatedLedger = -1;
-        for (int i = 0; i < 10; i++) {
-            underReplicatedLedger = underReplicationManager.pollLedgerToRereplicate();
-            if (underReplicatedLedger != -1) {
-                break;
+                long underReplicatedLedger = -1;
+                for (int i = 0; i < 10; i++) {
+                    underReplicatedLedger = underReplicationManager.pollLedgerToRereplicate();
+                    if (underReplicatedLedger != -1) {
+                        break;
+                    }
+                    Thread.sleep(CHECK_INTERVAL * 1000);
+                }
+                assertEquals("Ledger should be under replicated", lh.getId(), underReplicatedLedger);
+            } catch (Exception e) {
+                throw new UncheckedExecutionException(e.getMessage(), e);
             }
-            Thread.sleep(CHECK_INTERVAL * 1000);
-        }
-        assertEquals("Ledger should be under replicated", lh.getId(), underReplicatedLedger);
+            return null;
+        });
     }
 }

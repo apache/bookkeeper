@@ -20,6 +20,7 @@
  */
 package org.apache.bookkeeper.meta;
 
+import static org.apache.bookkeeper.meta.MetadataDrivers.runFunctionWithLedgerManagerFactory;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -30,7 +31,6 @@ import java.util.List;
 import java.util.concurrent.CyclicBarrier;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.discover.RegistrationManager;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.util.ZkUtils;
 import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
@@ -243,12 +243,7 @@ public class TestLedgerManager extends BookKeeperClusterTestCase {
 
             try {
                 barrier.await();
-                LedgerManagerFactory factory = AbstractZkLedgerManagerFactory.newLedgerManagerFactory(
-                    conf,
-                    RegistrationManager
-                        .instantiateRegistrationManager(new ServerConfiguration(conf)).getLayoutManager());
-                factory.close();
-
+                runFunctionWithLedgerManagerFactory(new ServerConfiguration(conf), factory -> null);
                 success = true;
             } catch (Exception e) {
                 LOG.error("Failed to create ledger manager", e);

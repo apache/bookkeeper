@@ -32,6 +32,7 @@ import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.zookeeper.KeeperException;
+import org.apache.zookeeper.ZooKeeper;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
@@ -63,7 +64,6 @@ public class StateManagerTest extends BookKeeperClusterTestCase {
     public void setUp() throws Exception {
         super.setUp();
         zkUtil.createBKEnsemble("/" + runtime.getMethodName());
-        rm = new MockZKRegistrationManager();
         File tmpDir = createTempDir("stateManger", "test");
         conf.setJournalDirName(tmpDir.getPath())
                 .setLedgerDirNames(new String[] { tmpDir.getPath() })
@@ -81,9 +81,17 @@ public class StateManagerTest extends BookKeeperClusterTestCase {
 
     private static class MockZKRegistrationManager extends ZKRegistrationManager {
         boolean registerFailed = false;
+
+        public MockZKRegistrationManager(ServerConfiguration conf,
+                                         ZooKeeper zk,
+                                         RegistrationListener listener) {
+            super(conf, zk, listener);
+        }
+
         void setRegisterFail(boolean failOrNot){
             registerFailed = failOrNot;
         }
+
         @Override
         public void registerBookie(String bookieId, boolean readOnly) throws BookieException {
             if (registerFailed) {
@@ -113,8 +121,9 @@ public class StateManagerTest extends BookKeeperClusterTestCase {
                     throws IOException, KeeperException, InterruptedException,
                     BookieException {
                 Bookie bookie = new Bookie(conf);
+                rm = new MockZKRegistrationManager(
+                    conf, zkc, () -> {});
                 rm.setRegisterFail(true);
-                rm.initialize(conf, () -> {}, NullStatsLogger.INSTANCE);
                 bookie.setRegistrationManager(rm);
                 return bookie;
             }
@@ -131,11 +140,11 @@ public class StateManagerTest extends BookKeeperClusterTestCase {
     @Test
     public void testNormalBookieTransitions() throws Exception {
         BookieStateManager stateManager = new BookieStateManager(conf, rm);
-        rm.initialize(conf, () -> {
+        rm = new MockZKRegistrationManager(conf, zkc, () -> {
             stateManager.forceToUnregistered();
             // schedule a re-register operation
             stateManager.registerBookie(false);
-        }, NullStatsLogger.INSTANCE);
+        });
 
         stateManager.initState();
         stateManager.registerBookie(true).get();
@@ -174,11 +183,14 @@ public class StateManagerTest extends BookKeeperClusterTestCase {
                 }
             }
         });
-        rm.initialize(conf, () -> {
-            stateManager.forceToUnregistered();
-            // schedule a re-register operation
-            stateManager.registerBookie(false);
-        }, NullStatsLogger.INSTANCE);
+        rm = new MockZKRegistrationManager(
+            conf,
+            zkc,
+            () -> {
+                stateManager.forceToUnregistered();
+                // schedule a re-register operation
+                stateManager.registerBookie(false);
+            });
 
         stateManager.initState();
         stateManager.registerBookie(true).get();
@@ -221,11 +233,14 @@ public class StateManagerTest extends BookKeeperClusterTestCase {
     @Test
     public void testRegistration() throws Exception {
         BookieStateManager stateManager = new BookieStateManager(conf, rm);
-        rm.initialize(conf, () -> {
-            stateManager.forceToUnregistered();
-            // schedule a re-register operation
-            stateManager.registerBookie(false);
-        }, NullStatsLogger.INSTANCE);
+        rm = new MockZKRegistrationManager(
+            conf,
+            zkc,
+            () -> {
+                stateManager.forceToUnregistered();
+                // schedule a re-register operation
+                stateManager.registerBookie(false);
+            });
         // simulate sync shutdown logic in bookie
         stateManager.setShutdownHandler(new StateManager.ShutdownHandler() {
             @Override

@@ -20,6 +20,7 @@ package org.apache.bookkeeper.meta.zk;
 
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -31,6 +32,7 @@ import org.apache.bookkeeper.discover.RegistrationManager.RegistrationListener;
 import org.apache.bookkeeper.discover.ZKRegistrationManager;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
+import org.apache.zookeeper.ZooKeeper;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -68,7 +70,14 @@ public class ZKMetadataBookieDriverTest extends ZKMetadataDriverTestBase {
         ZKRegistrationManager mockRegManager = PowerMockito.mock(ZKRegistrationManager.class);
 
         PowerMockito.whenNew(ZKRegistrationManager.class)
-            .withNoArguments()
+            .withParameterTypes(
+                ServerConfiguration.class,
+                ZooKeeper.class,
+                RegistrationListener.class)
+            .withArguments(
+                any(ServerConfiguration.class),
+                any(ZooKeeper.class),
+                any(RegistrationListener.class))
             .thenReturn(mockRegManager);
 
         RegistrationManager manager = driver.getRegistrationManager();
@@ -76,9 +85,7 @@ public class ZKMetadataBookieDriverTest extends ZKMetadataDriverTestBase {
         assertSame(mockRegManager, driver.regManager);
 
         PowerMockito.verifyNew(ZKRegistrationManager.class, times(1))
-            .withNoArguments();
-        verify(mockRegManager, times(1))
-            .initialize(
+            .withArguments(
                 same(conf),
                 same(listener),
                 same(NullStatsLogger.INSTANCE));

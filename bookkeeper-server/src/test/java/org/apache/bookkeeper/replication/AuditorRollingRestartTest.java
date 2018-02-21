@@ -20,13 +20,13 @@
  */
 package org.apache.bookkeeper.replication;
 
+import static org.apache.bookkeeper.meta.MetadataDrivers.runFunctionWithLedgerManagerFactory;
 import static org.junit.Assert.assertEquals;
 
+import com.google.common.util.concurrent.UncheckedExecutionException;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.discover.RegistrationManager;
-import org.apache.bookkeeper.meta.AbstractZkLedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
 import org.apache.bookkeeper.net.BookieSocketAddress;
@@ -50,10 +50,20 @@ public class AuditorRollingRestartTest extends BookKeeperClusterTestCase {
      */
     @Test
     public void testAuditingDuringRollingRestart() throws Exception {
-        LedgerManagerFactory mFactory = AbstractZkLedgerManagerFactory.newLedgerManagerFactory(
+        runFunctionWithLedgerManagerFactory(
             bsConfs.get(0),
-            RegistrationManager.instantiateRegistrationManager(bsConfs.get(0)).getLayoutManager());
+            mFactory -> {
+                try {
+                    testAuditingDuringRollingRestart(mFactory);
+                } catch (Exception e) {
+                    throw new UncheckedExecutionException(e.getMessage(), e);
+                }
+                return null;
+            }
+        );
+    }
 
+    private void testAuditingDuringRollingRestart(LedgerManagerFactory mFactory) throws Exception {
         final LedgerUnderreplicationManager underReplicationManager = mFactory.newLedgerUnderreplicationManager();
 
         LedgerHandle lh = bkc.createLedger(3, 3, DigestType.CRC32, "passwd".getBytes());

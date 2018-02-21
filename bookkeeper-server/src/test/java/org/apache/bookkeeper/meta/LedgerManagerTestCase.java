@@ -23,6 +23,7 @@ package org.apache.bookkeeper.meta;
 
 import io.netty.buffer.ByteBuf;
 import java.io.IOException;
+import java.net.URI;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
@@ -39,7 +40,6 @@ import org.apache.bookkeeper.bookie.LedgerDirsManager;
 import org.apache.bookkeeper.bookie.StateManager;
 import org.apache.bookkeeper.common.util.Watcher;
 import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.discover.RegistrationManager;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.util.SnapshotMap;
@@ -55,6 +55,7 @@ import org.junit.runners.Parameterized.Parameters;
 @RunWith(Parameterized.class)
 public abstract class LedgerManagerTestCase extends BookKeeperClusterTestCase {
 
+    protected MetadataClientDriver clientDriver;
     protected LedgerManagerFactory ledgerManagerFactory;
     protected LedgerManager ledgerManager = null;
     protected LedgerIdGenerator ledgerIdGenerator = null;
@@ -105,10 +106,10 @@ public abstract class LedgerManagerTestCase extends BookKeeperClusterTestCase {
     public void setUp() throws Exception {
         super.setUp();
         baseConf.setZkServers(zkUtil.getZooKeeperConnectString());
-        ledgerManagerFactory = AbstractZkLedgerManagerFactory.newLedgerManagerFactory(
-            baseConf,
-            RegistrationManager
-                .instantiateRegistrationManager(baseConf).getLayoutManager());
+
+        clientDriver = MetadataDrivers.getClientDriver(
+            URI.create(baseClientConf.getMetadataServiceUri()));
+        ledgerManagerFactory = clientDriver.getLedgerManagerFactory();
     }
 
     @After
@@ -117,7 +118,9 @@ public abstract class LedgerManagerTestCase extends BookKeeperClusterTestCase {
         if (null != ledgerManager) {
             ledgerManager.close();
         }
-        ledgerManagerFactory.close();
+        if (null != clientDriver) {
+            clientDriver.close();
+        }
         super.tearDown();
     }
 

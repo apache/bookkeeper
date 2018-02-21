@@ -19,6 +19,7 @@
 package org.apache.bookkeeper.server.http.service;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static org.apache.bookkeeper.meta.MetadataDrivers.runFunctionWithRegistrationManager;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -28,15 +29,12 @@ import java.util.concurrent.ExecutorService;
 import org.apache.bookkeeper.bookie.Cookie;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
 import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.discover.RegistrationManager;
 import org.apache.bookkeeper.http.HttpServer;
 import org.apache.bookkeeper.http.service.HttpEndpointService;
 import org.apache.bookkeeper.http.service.HttpServiceRequest;
 import org.apache.bookkeeper.http.service.HttpServiceResponse;
 import org.apache.bookkeeper.net.BookieSocketAddress;
-import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.util.JsonUtil;
-import org.apache.bookkeeper.util.ReflectionUtils;
 import org.apache.bookkeeper.versioning.Versioned;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -106,27 +104,25 @@ public class RecoveryBookieService implements HttpEndpointService {
         }
 
         if (HttpServer.Method.PUT == request.getMethod() && !requestJsonBody.bookieSrc.isEmpty()) {
-
-            Class<? extends RegistrationManager> rmClass = conf.getRegistrationManagerClass();
-            RegistrationManager rm = ReflectionUtils.newInstance(rmClass);
-            rm.initialize(conf, () -> {}, NullStatsLogger.INSTANCE);
-
-            String bookieSrcString[] = requestJsonBody.bookieSrc.get(0).split(":");
-            BookieSocketAddress bookieSrc = new BookieSocketAddress(
-              bookieSrcString[0], Integer.parseInt(bookieSrcString[1]));
-            boolean deleteCookie = requestJsonBody.deleteCookie;
-            executor.execute(() -> {
-                try {
-                    LOG.info("Start recovering bookie.");
-                    bka.recoverBookieData(bookieSrc);
-                    if (deleteCookie) {
-                        Versioned<Cookie> cookie = Cookie.readFromRegistrationManager(rm, bookieSrc);
-                        cookie.getValue().deleteFromRegistrationManager(rm, bookieSrc, cookie.getVersion());
+            runFunctionWithRegistrationManager(conf, rm -> {
+                String bookieSrcString[] = requestJsonBody.bookieSrc.get(0).split(":");
+                BookieSocketAddress bookieSrc = new BookieSocketAddress(
+                    bookieSrcString[0], Integer.parseInt(bookieSrcString[1]));
+                boolean deleteCookie = requestJsonBody.deleteCookie;
+                executor.execute(() -> {
+                    try {
+                        LOG.info("Start recovering bookie.");
+                        bka.recoverBookieData(bookieSrc);
+                        if (deleteCookie) {
+                            Versioned<Cookie> cookie = Cookie.readFromRegistrationManager(rm, bookieSrc);
+                            cookie.getValue().deleteFromRegistrationManager(rm, bookieSrc, cookie.getVersion());
+                        }
+                        LOG.info("Complete recovering bookie");
+                    } catch (Exception e) {
+                        LOG.error("Exception occurred while recovering bookie", e);
                     }
-                    LOG.info("Complete recovering bookie");
-                } catch (Exception e) {
-                    LOG.error("Exception occurred while recovering bookie", e);
-                }
+                });
+                return null;
             });
 
             response.setCode(HttpServer.StatusCode.OK);
