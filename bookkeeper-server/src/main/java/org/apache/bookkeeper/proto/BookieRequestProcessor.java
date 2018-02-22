@@ -324,9 +324,9 @@ public class BookieRequestProcessor implements RequestProcessor {
     }
 
     private void processAddRequestV3(final BookkeeperProtocol.Request r, final Channel c) {
-        OrderedSafeExecutor threadPool = null;
         WriteEntryProcessorV3 write = new WriteEntryProcessorV3(r, c, this);
 
+        final OrderedSafeExecutor threadPool;
         if (RequestUtils.isHighPriority(r.getAddRequest())) {
             threadPool = highPriorityThreadPool;
         } else {
@@ -358,10 +358,10 @@ public class BookieRequestProcessor implements RequestProcessor {
     }
 
     private void processReadRequestV3(final BookkeeperProtocol.Request r, final Channel c) {
-        OrderedSafeExecutor threadPool = null;
-        ReadEntryProcessorV3 read = null;
         ExecutorService fenceThread = null == highPriorityThreadPool ? null : highPriorityThreadPool.chooseThread(c);
 
+        final ReadEntryProcessorV3 read;
+        final OrderedSafeExecutor threadPool;
         if (RequestUtils.isLongPollReadRequest(r.getReadRequest())) {
             ExecutorService lpThread = null == longPollThreadPool ? null : longPollThreadPool.chooseThread(c);
 
@@ -460,11 +460,11 @@ public class BookieRequestProcessor implements RequestProcessor {
     }
 
     private void processAddRequest(final BookieProtocol.ParsedAddRequest r, final Channel c) {
-        OrderedSafeExecutor threadPool = null;
         WriteEntryProcessor write = WriteEntryProcessor.create(r, c, this);
 
         // If it's a high priority add (usually as part of recovery process), we want to make sure it gets
         // executed as fast as possible, so bypass the normal writeThreadPool and execute in highPriorityThreadPool
+        final OrderedSafeExecutor threadPool;
         if (r.isHighPriority()) {
             threadPool = highPriorityThreadPool;
         } else {
@@ -489,12 +489,12 @@ public class BookieRequestProcessor implements RequestProcessor {
     }
 
     private void processReadRequest(final BookieProtocol.ReadRequest r, final Channel c) {
-        OrderedSafeExecutor threadPool = null;
         ReadEntryProcessor read = ReadEntryProcessor.create(r, c, this);
 
         // If it's a high priority read (fencing or as part of recovery process), we want to make sure it
         // gets executed as fast as possible, so bypass the normal readThreadPool
         // and execute in highPriorityThreadPool
+        final OrderedSafeExecutor threadPool;
         if (r.isHighPriority() || r.isFencing()) {
             threadPool = highPriorityThreadPool;
         } else {
