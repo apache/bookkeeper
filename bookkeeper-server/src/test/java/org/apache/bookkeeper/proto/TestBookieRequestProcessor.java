@@ -36,33 +36,29 @@ public class TestBookieRequestProcessor {
     public void testFlagsV3() {
         ReadRequest read = ReadRequest.newBuilder()
             .setLedgerId(10).setEntryId(1)
-            .addFlag(ReadRequest.Flag.FENCE_LEDGER).build();
+            .setFlag(ReadRequest.Flag.FENCE_LEDGER).build();
         assertTrue(RequestUtils.hasFlag(read, ReadRequest.Flag.FENCE_LEDGER));
         assertFalse(RequestUtils.hasFlag(read, ReadRequest.Flag.ENTRY_PIGGYBACK));
-        assertFalse(RequestUtils.hasFlag(read, ReadRequest.Flag.HIGH_PRIORITY));
 
         read = ReadRequest.newBuilder()
             .setLedgerId(10).setEntryId(1)
-            .addFlag(ReadRequest.Flag.ENTRY_PIGGYBACK).build();
+            .setFlag(ReadRequest.Flag.ENTRY_PIGGYBACK).build();
         assertFalse(RequestUtils.hasFlag(read, ReadRequest.Flag.FENCE_LEDGER));
         assertTrue(RequestUtils.hasFlag(read, ReadRequest.Flag.ENTRY_PIGGYBACK));
-        assertFalse(RequestUtils.hasFlag(read, ReadRequest.Flag.HIGH_PRIORITY));
 
         read = ReadRequest.newBuilder()
             .setLedgerId(10).setEntryId(1)
             .build();
         assertFalse(RequestUtils.hasFlag(read, ReadRequest.Flag.FENCE_LEDGER));
         assertFalse(RequestUtils.hasFlag(read, ReadRequest.Flag.ENTRY_PIGGYBACK));
-        assertFalse(RequestUtils.hasFlag(read, ReadRequest.Flag.HIGH_PRIORITY));
 
         AddRequest add = AddRequest.newBuilder()
             .setLedgerId(10).setEntryId(1)
-            .addFlag(AddRequest.Flag.RECOVERY_ADD)
+            .setFlag(AddRequest.Flag.RECOVERY_ADD)
             .setMasterKey(ByteString.EMPTY)
             .setBody(ByteString.EMPTY)
             .build();
         assertTrue(RequestUtils.hasFlag(add, AddRequest.Flag.RECOVERY_ADD));
-        assertFalse(RequestUtils.hasFlag(add, AddRequest.Flag.HIGH_PRIORITY));
 
         add = AddRequest.newBuilder()
             .setLedgerId(10).setEntryId(1)
@@ -73,12 +69,10 @@ public class TestBookieRequestProcessor {
 
         add = AddRequest.newBuilder()
             .setLedgerId(10).setEntryId(1)
-            .addFlag(AddRequest.Flag.RECOVERY_ADD)
-            .addFlag(AddRequest.Flag.HIGH_PRIORITY)
+            .setFlag(AddRequest.Flag.RECOVERY_ADD)
             .setMasterKey(ByteString.EMPTY)
             .setBody(ByteString.EMPTY)
             .build();
         assertTrue(RequestUtils.hasFlag(add, AddRequest.Flag.RECOVERY_ADD));
-        assertTrue(RequestUtils.hasFlag(add, AddRequest.Flag.HIGH_PRIORITY));
     }
 }

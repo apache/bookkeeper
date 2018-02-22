@@ -20,6 +20,7 @@
  */
 package org.apache.bookkeeper.proto;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.ADD_ENTRY;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.ADD_ENTRY_REQUEST;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.CHANNEL_WRITE;
@@ -52,7 +53,6 @@ import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
 
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 
@@ -112,10 +112,9 @@ public class BookieRequestProcessor implements RequestProcessor {
     private final OrderedSafeExecutor longPollThreadPool;
 
     /**
-     * The threadpool used to execute high priority requests. It needs to be separate to
-     * the read thread, as the read thread is bounded.
+     * The threadpool used to execute high priority requests.
      */
-    private final ExecutorService highPriorityThreadPool;
+    private final OrderedSafeExecutor highPriorityThreadPool;
 
     /**
      * The Timer used to time out requests for long polling.
@@ -164,13 +163,10 @@ public class BookieRequestProcessor implements RequestProcessor {
                 this.serverCfg.getNumLongPollWorkerThreads(),
                 "BookieLongPollThread-" + serverCfg.getBookiePort(),
                 OrderedScheduler.NO_TASK_LIMIT, statsLogger);
-        this.highPriorityThreadPool = Executors.newCachedThreadPool(
-                new ThreadFactoryBuilder()
-                .setNameFormat("BookieHighPriorityThread-" + serverCfg.getBookiePort() + "-")
-                .setUncaughtExceptionHandler((t, ex) -> {
-                        LOG.error("Exception in fencing thread {}", t, ex);
-                    })
-                .build());
+        this.highPriorityThreadPool = createExecutor(
+                this.serverCfg.getNumHighPriorityWorkerThreads(),
+                "BookieHighPriorityThread-" + serverCfg.getBookiePort(),
+                OrderedScheduler.NO_TASK_LIMIT, statsLogger);
         this.requestTimer = new HashedWheelTimer(
             new ThreadFactoryBuilder().setNameFormat("BookieRequestTimer-%d").build(),
             this.serverCfg.getRequestTimerTickDurationMs(),
@@ -209,7 +205,7 @@ public class BookieRequestProcessor implements RequestProcessor {
         shutdownExecutor(writeThreadPool);
         shutdownExecutor(readThreadPool);
         shutdownExecutor(longPollThreadPool);
-        highPriorityThreadPool.shutdown();
+        shutdownExecutor(highPriorityThreadPool);
     }
 
     private OrderedSafeExecutor createExecutor(
@@ -291,11 +287,11 @@ public class BookieRequestProcessor implements RequestProcessor {
             // process packet
             switch (r.getOpCode()) {
                 case BookieProtocol.ADDENTRY:
-                    assert(r instanceof BookieProtocol.ParsedAddRequest);
+                    checkArgument(r instanceof BookieProtocol.ParsedAddRequest);
                     processAddRequest((BookieProtocol.ParsedAddRequest) r, c);
                     break;
                 case BookieProtocol.READENTRY:
-                    assert(r instanceof BookieProtocol.ReadRequest);
+                    checkArgument(r instanceof BookieProtocol.ReadRequest);
                     processReadRequest((BookieProtocol.ReadRequest) r, c);
                     break;
                 default:
@@ -328,22 +324,24 @@ public class BookieRequestProcessor implements RequestProcessor {
     }
 
     private void processAddRequestV3(final BookkeeperProtocol.Request r, final Channel c) {
+        OrderedSafeExecutor threadPool = null;
         WriteEntryProcessorV3 write = new WriteEntryProcessorV3(r, c, this);
 
-        // If it's a high priority add (usually as part of recovery process), we want to make sure it gets
-        // executed as fast as possible, so bypass the normal writeThreadPool and execute in highPriorityThreadPool
-        boolean isHighPriority = hasFlag(r.getAddRequest(), BookkeeperProtocol.AddRequest.Flag.HIGH_PRIORITY);
-        if (null == writeThreadPool) {
+        if (RequestUtils.isHighPriority(r.getAddRequest())) {
+            threadPool = highPriorityThreadPool;
+        } else {
+            threadPool = writeThreadPool;
+        }
+
+        if (null == threadPool) {
             write.run();
-        } else if (isHighPriority) {
-            highPriorityThreadPool.submit(write);
         } else {
             try {
-                writeThreadPool.submitOrdered(r.getAddRequest().getLedgerId(), write);
+                threadPool.submitOrdered(r.getAddRequest().getLedgerId(), write);
             } catch (RejectedExecutionException e) {
                 if (LOG.isDebugEnabled()) {
                     LOG.debug("Failed to process request to add entry at {}:{}. Too many pending requests",
-                            r.getAddRequest().getLedgerId(), r.getAddRequest().getEntryId());
+                              r.getAddRequest().getLedgerId(), r.getAddRequest().getEntryId());
                 }
                 BookkeeperProtocol.AddResponse.Builder addResponse = BookkeeperProtocol.AddResponse.newBuilder()
                         .setLedgerId(r.getAddRequest().getLedgerId())
@@ -360,55 +358,51 @@ public class BookieRequestProcessor implements RequestProcessor {
     }
 
     private void processReadRequestV3(final BookkeeperProtocol.Request r, final Channel c) {
-        ExecutorService lpThreadPool =
-          null == longPollThreadPool ? null : longPollThreadPool.chooseThread(c);
-        ReadEntryProcessorV3 read;
+        OrderedSafeExecutor threadPool = null;
+        ReadEntryProcessorV3 read = null;
+        ExecutorService fenceThread = null == highPriorityThreadPool ? null : highPriorityThreadPool.chooseThread(c);
+
         if (RequestUtils.isLongPollReadRequest(r.getReadRequest())) {
-            read = new LongPollReadEntryProcessorV3(
-                r,
-                c,
-                this,
-                highPriorityThreadPool,
-                lpThreadPool,
-                requestTimer);
-            if (null == longPollThreadPool) {
-                read.run();
-            } else {
-                longPollThreadPool.submitOrdered(r.getReadRequest().getLedgerId(), read);
-            }
+            ExecutorService lpThread = null == longPollThreadPool ? null : longPollThreadPool.chooseThread(c);
+
+            read = new LongPollReadEntryProcessorV3(r, c, this, fenceThread,
+                                                    lpThread, requestTimer);
+            threadPool = longPollThreadPool;
         } else {
-            read = new ReadEntryProcessorV3(r, c, this, highPriorityThreadPool);
+            read = new ReadEntryProcessorV3(r, c, this, fenceThread);
 
             // If it's a high priority read (fencing or as part of recovery process), we want to make sure it
             // gets executed as fast as possible, so bypass the normal readThreadPool
             // and execute in highPriorityThreadPool
-            boolean isHighPriority = hasFlag(r.getReadRequest(), BookkeeperProtocol.ReadRequest.Flag.HIGH_PRIORITY)
+            boolean isHighPriority = RequestUtils.isHighPriority(r.getReadRequest())
                 || hasFlag(r.getReadRequest(), BookkeeperProtocol.ReadRequest.Flag.FENCE_LEDGER);
-
-            if (null == readThreadPool) {
-                read.run();
-            } else if (isHighPriority) {
-                highPriorityThreadPool.submit(read);
+            if (isHighPriority) {
+                threadPool = highPriorityThreadPool;
             } else {
-                try {
-                    readThreadPool.submitOrdered(r.getReadRequest().getLedgerId(), read);
-                } catch (RejectedExecutionException e) {
-                    if (LOG.isDebugEnabled()) {
-                        LOG.debug("Failed to process request to read entry at {}:{}. Too many pending requests",
-                                r.getReadRequest().getLedgerId(), r.getReadRequest().getEntryId());
-                    }
-                    BookkeeperProtocol.ReadResponse.Builder readResponse =
-                            BookkeeperProtocol.ReadResponse.newBuilder()
-                                    .setLedgerId(r.getAddRequest().getLedgerId())
-                                    .setEntryId(r.getAddRequest().getEntryId())
-                                    .setStatus(BookkeeperProtocol.StatusCode.ETOOMANYREQUESTS);
-                    BookkeeperProtocol.Response.Builder response = BookkeeperProtocol.Response.newBuilder()
-                            .setHeader(read.getHeader())
-                            .setStatus(readResponse.getStatus())
-                            .setReadResponse(readResponse);
-                    BookkeeperProtocol.Response resp = response.build();
-                    read.sendResponse(readResponse.getStatus(), resp, readRequestStats);
+                threadPool = readThreadPool;
+            }
+        }
+
+        if (null == threadPool) {
+            read.run();
+        } else {
+            try {
+                threadPool.submitOrdered(r.getReadRequest().getLedgerId(), read);
+            } catch (RejectedExecutionException e) {
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Failed to process request to read entry at {}:{}. Too many pending requests",
+                              r.getReadRequest().getLedgerId(), r.getReadRequest().getEntryId());
                 }
+                BookkeeperProtocol.ReadResponse.Builder readResponse = BookkeeperProtocol.ReadResponse.newBuilder()
+                    .setLedgerId(r.getAddRequest().getLedgerId())
+                    .setEntryId(r.getAddRequest().getEntryId())
+                    .setStatus(BookkeeperProtocol.StatusCode.ETOOMANYREQUESTS);
+                BookkeeperProtocol.Response.Builder response = BookkeeperProtocol.Response.newBuilder()
+                    .setHeader(read.getHeader())
+                    .setStatus(readResponse.getStatus())
+                    .setReadResponse(readResponse);
+                BookkeeperProtocol.Response resp = response.build();
+                read.sendResponse(readResponse.getStatus(), resp, readRequestStats);
             }
         }
     }
@@ -466,17 +460,22 @@ public class BookieRequestProcessor implements RequestProcessor {
     }
 
     private void processAddRequest(final BookieProtocol.ParsedAddRequest r, final Channel c) {
+        OrderedSafeExecutor threadPool = null;
         WriteEntryProcessor write = WriteEntryProcessor.create(r, c, this);
 
         // If it's a high priority add (usually as part of recovery process), we want to make sure it gets
         // executed as fast as possible, so bypass the normal writeThreadPool and execute in highPriorityThreadPool
-        if (null == writeThreadPool) {
+        if (r.isHighPriority()) {
+            threadPool = highPriorityThreadPool;
+        } else {
+            threadPool = writeThreadPool;
+        }
+
+        if (null == threadPool) {
             write.run();
-        } else if (r.isHighPriority()) {
-            highPriorityThreadPool.submit(write);
         } else {
             try {
-                writeThreadPool.submitOrdered(r.getLedgerId(), write);
+                threadPool.submitOrdered(r.getLedgerId(), write);
             } catch (RejectedExecutionException e) {
                 if (LOG.isDebugEnabled()) {
                     LOG.debug("Failed to process request to add entry at {}:{}. Too many pending requests", r.ledgerId,
@@ -490,18 +489,23 @@ public class BookieRequestProcessor implements RequestProcessor {
     }
 
     private void processReadRequest(final BookieProtocol.ReadRequest r, final Channel c) {
+        OrderedSafeExecutor threadPool = null;
         ReadEntryProcessor read = ReadEntryProcessor.create(r, c, this);
 
         // If it's a high priority read (fencing or as part of recovery process), we want to make sure it
         // gets executed as fast as possible, so bypass the normal readThreadPool
         // and execute in highPriorityThreadPool
-        if (null == readThreadPool) {
+        if (r.isHighPriority() || r.isFencing()) {
+            threadPool = highPriorityThreadPool;
+        } else {
+            threadPool = readThreadPool;
+        }
+
+        if (null == threadPool) {
             read.run();
-        } else if (r.isHighPriority() || r.isFencing()) {
-            highPriorityThreadPool.submit(read);
         } else {
             try {
-                readThreadPool.submitOrdered(r.getLedgerId(), read);
+                threadPool.submitOrdered(r.getLedgerId(), read);
             } catch (RejectedExecutionException e) {
                 if (LOG.isDebugEnabled()) {
                     LOG.debug("Failed to process request to read entry at {}:{}. Too many pending requests", r.ledgerId,

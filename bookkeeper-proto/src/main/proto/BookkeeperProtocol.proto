@@ -90,9 +90,8 @@ message ReadRequest {
     enum Flag {
         FENCE_LEDGER = 1;
         ENTRY_PIGGYBACK = 2;
-        HIGH_PRIORITY = 3;
     }
-    repeated Flag flag = 100;
+    optional Flag flag = 100;
     required int64 ledgerId = 1;
     // entryId will be -1 for reading the LAST_ADD_CONFIRMED entry.
     required int64 entryId = 2;
@@ -102,19 +101,20 @@ message ReadRequest {
     optional int64 previousLAC = 4;
     // Used as a timeout (in milliseconds) for the long polling request
     optional int64 timeOut = 5;
+    optional uint32 priority = 6 [default = 0];
 }
 
 message AddRequest {
     enum Flag {
         RECOVERY_ADD = 1;
-        HIGH_PRIORITY = 2;
     }
-    repeated Flag flag = 100;
+    optional Flag flag = 100;
     required int64 ledgerId = 1;
     required int64 entryId = 2;
     required bytes masterKey = 3;
     required bytes body = 4;
     optional int32 writeFlags = 5;
+    optional uint32 priority = 6 [default = 0];
 }
 
 message StartTLSRequest {

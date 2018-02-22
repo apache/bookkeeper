@@ -144,7 +144,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                         BKException.Code.LedgerExistException,
                         BKException.Code.DuplicateEntryIdException,
                         BKException.Code.WriteOnReadOnlyBookieException));
-
+    private static final int DEFAULT_HIGH_PRIORITY_VALUE = 100; // We may add finer grained priority later.
     private static final AtomicLong txnIdGenerator = new AtomicLong(0);
 
     final BookieSocketAddress addr;
@@ -580,10 +580,10 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                     .setBody(ByteString.copyFrom(toSendArray));
 
             if (((short) options & BookieProtocol.FLAG_RECOVERY_ADD) == BookieProtocol.FLAG_RECOVERY_ADD) {
-                addBuilder.addFlag(AddRequest.Flag.RECOVERY_ADD);
+                addBuilder.setFlag(AddRequest.Flag.RECOVERY_ADD);
             }
             if (((short) options & BookieProtocol.FLAG_HIGH_PRIORITY) == BookieProtocol.FLAG_HIGH_PRIORITY) {
-                addBuilder.addFlag(AddRequest.Flag.HIGH_PRIORITY);
+                addBuilder.setPriority(DEFAULT_HIGH_PRIORITY_VALUE);
             }
 
 
@@ -714,12 +714,12 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                         ledgerId, entryId, null, ctx);
                     return;
                 }
-                readBuilder = readBuilder.addFlag(ReadRequest.Flag.ENTRY_PIGGYBACK);
+                readBuilder = readBuilder.setFlag(ReadRequest.Flag.ENTRY_PIGGYBACK);
             }
 
             // Only one flag can be set on the read requests
             if (((short) flags & BookieProtocol.FLAG_DO_FENCING) == BookieProtocol.FLAG_DO_FENCING) {
-                readBuilder.addFlag(ReadRequest.Flag.FENCE_LEDGER);
+                readBuilder.setFlag(ReadRequest.Flag.FENCE_LEDGER);
                 if (masterKey == null) {
                     cb.readEntryComplete(BKException.Code.IncorrectParameterException,
                                          ledgerId, entryId, null, ctx);
@@ -727,7 +727,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                 }
                 readBuilder.setMasterKey(ByteString.copyFrom(masterKey));
             } else if (((short) flags & BookieProtocol.FLAG_HIGH_PRIORITY) == BookieProtocol.FLAG_HIGH_PRIORITY) {
-                readBuilder.addFlag(ReadRequest.Flag.HIGH_PRIORITY);
+                readBuilder.setPriority(DEFAULT_HIGH_PRIORITY_VALUE);
             }
 
             request = Request.newBuilder()

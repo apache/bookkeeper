@@ -17,6 +17,7 @@
  */
 package org.apache.bookkeeper.proto;
 
+import org.apache.bookkeeper.proto.BookkeeperProtocol.AddRequest;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.ReadRequest;
 
 /**
@@ -32,26 +33,24 @@ class RequestUtils {
         return !isFenceRequest(readRequest) && readRequest.hasPreviousLAC();
     }
 
+    public static boolean isHighPriority(ReadRequest readRequest) {
+        return readRequest.getPriority() > 0;
+    }
+
+    public static boolean isHighPriority(AddRequest addRequest) {
+        return addRequest.getPriority() > 0;
+    }
+
     public static boolean shouldPiggybackEntry(ReadRequest readRequest) {
         return hasFlag(readRequest, ReadRequest.Flag.ENTRY_PIGGYBACK);
     }
 
     static boolean hasFlag(BookkeeperProtocol.ReadRequest request, BookkeeperProtocol.ReadRequest.Flag flag) {
-        for (BookkeeperProtocol.ReadRequest.Flag f : request.getFlagList()) {
-            if (f == flag) {
-                return true;
-            }
-        }
-        return false;
+        return request.hasFlag() && request.getFlag() == flag;
     }
 
     static boolean hasFlag(BookkeeperProtocol.AddRequest request, BookkeeperProtocol.AddRequest.Flag flag) {
-        for (BookkeeperProtocol.AddRequest.Flag f : request.getFlagList()) {
-            if (f == flag) {
-                return true;
-            }
-        }
-        return false;
+        return request.hasFlag() && request.getFlag() == flag;
     }
 
 }
