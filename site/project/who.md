@@ -28,6 +28,7 @@ BookKeeper's active committers are:
 
 Username | Name	| Organization | Timezone
 :--------|:-----|:-------------|:--------
+ayegorov | Andrey Yegorov | Salesforce | -8
 breed | Ben Reed | Facebook	| -8
 drusek | Dave Rusek | Twitter | -7
 eolivelli | Enrico Olivelli | Diennea | +2
@@ -43,5 +44,6 @@ reddycharan | Charan Reddy G | Salesforce | -8
 robindh	| Robin Dhamankar | Facebook | -8
 sboobna | Siddharth Boobna | Salesforce | -8
 sijie | Sijie Guo | Streamlio | -8
+sjust | Sam Just | Salesforce | -8
 umamahesh | Uma Maheswara Rao G | Intel | +5
 zhaijia	| Jia Zhai | Streamlio | +8
