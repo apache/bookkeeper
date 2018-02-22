@@ -383,9 +383,6 @@
     </profile>
     <profile>
         <id>code-coverage</id>
-        <modules>
-          <module>codecoverage</module>
-        </modules>
         <build>
           <plugins>
               <plugin>
