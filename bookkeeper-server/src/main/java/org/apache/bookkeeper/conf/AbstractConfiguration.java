@@ -96,6 +96,11 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
     // Enable authentication of the other connection end point (mutual authentication)
     protected static final String TLS_CLIENT_AUTHENTICATION = "tlsClientAuthentication";
 
+    // Default formatter classes
+    protected static final Class<? extends EntryFormatter> DEFAULT_ENTRY_FORMATTER = StringEntryFormatter.class;
+    protected static final Class<? extends LedgerIdFormatter> DEFAULT_LEDGERID_FORMATTER =
+            LedgerIdFormatter.UUIDLedgerIdFormatter.class;
+
     /**
      * This list will be passed to {@link SSLEngine#setEnabledCipherSuites(java.lang.String[]) }.
      * Please refer to official JDK JavaDocs
@@ -486,9 +491,8 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      */
     public Class<? extends LedgerIdFormatter> getLedgerIdFormatterClass()
         throws ConfigurationException {
-        return ReflectionUtils.getClass(this, LEDGERID_FORMATTER_CLASS,
-                                        null, LedgerIdFormatter.UUIDLedgerIdFormatter.class,
-                                        LedgerIdFormatter.class.getClassLoader());
+        return ReflectionUtils.getClass(this, LEDGERID_FORMATTER_CLASS, DEFAULT_LEDGERID_FORMATTER,
+                LedgerIdFormatter.class, DEFAULT_LOADER);
     }
 
     /**
@@ -508,9 +512,8 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      */
     public Class<? extends EntryFormatter> getEntryFormatterClass()
         throws ConfigurationException {
-        return ReflectionUtils.getClass(this, ENTRY_FORMATTER_CLASS,
-                                        null, StringEntryFormatter.class,
-                                        EntryFormatter.class.getClassLoader());
+        return ReflectionUtils.getClass(this, ENTRY_FORMATTER_CLASS, DEFAULT_ENTRY_FORMATTER, EntryFormatter.class,
+                DEFAULT_LOADER);
     }
 
     /**
