@@ -20,7 +20,8 @@ import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.UnknownHostException;
 import java.util.Optional;
-import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.common.component.ComponentStarter;
 import org.apache.bookkeeper.common.component.LifecycleComponent;
@@ -104,8 +105,6 @@ public class StorageServer {
         Thread.setDefaultUncaughtExceptionHandler((thread, exception) ->
             log.error("Uncaught exception in thread {}: {}", thread.getName(), exception.getMessage()));
 
-        CountDownLatch aliveLatch = new CountDownLatch(1);
-
         // parse the commandline
         ServerArguments arguments = new ServerArguments();
         JCommander jCommander = new JCommander(arguments);
@@ -139,12 +138,16 @@ public class StorageServer {
             return ExitCode.UNKNOWN_HOSTNAME.code();
         }
 
-        ComponentStarter.startComponent(storageServer, aliveLatch);
+        CompletableFuture<Void> liveFuture =
+            ComponentStarter.startComponent(storageServer);
         try {
-            aliveLatch.await();
+            liveFuture.get();
         } catch (InterruptedException e) {
             // the server is interrupted.
+            Thread.currentThread().interrupt();
             log.info("Storage server is interrupted. Exiting ...");
+        } catch (ExecutionException e) {
+            log.info("Storage server is exiting ...");
         }
         return ExitCode.OK.code();
     }
