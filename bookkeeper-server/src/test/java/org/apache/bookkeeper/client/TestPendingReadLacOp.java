@@ -22,7 +22,6 @@ package org.apache.bookkeeper.client;
 
 import static org.junit.Assert.assertEquals;
 
-import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;

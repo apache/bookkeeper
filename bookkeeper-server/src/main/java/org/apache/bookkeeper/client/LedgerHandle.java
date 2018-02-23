@@ -983,7 +983,7 @@ public class LedgerHandle implements WriteHandle {
     /**
      * Add entry asynchronously to an open ledger, using an offset and range.
      * This can be used only with {@link LedgerHandleAdv} returned through
-     * ledgers created with {@link BookKeeper#createLedgerAdv(int, int, int, DigestType, byte[])}.
+     * ledgers created with {@link createLedgerAdv(int, int, int, DigestType, byte[])}.
      *
      * @param entryId
      *            entryId of the entry to add.
@@ -1450,7 +1450,7 @@ public class LedgerHandle implements WriteHandle {
         new PendingReadLacOp(this, innercb).initiate();
     }
 
-    /**
+    /*
      * Obtains synchronously the explicit last add confirmed from a quorum of
      * bookies. This call obtains Explicit LAC value and piggy-backed LAC value (just like
      * {@Link #readLastAddConfirmed()) from each bookie in the ensemble and returns the maximum.
