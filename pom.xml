@@ -412,12 +412,14 @@
 	          <redirectTestOutputToFile>true</redirectTestOutputToFile>
 	          <reuseForks>false</reuseForks>
 	          <forkedProcessTimeoutInSeconds>1800</forkedProcessTimeoutInSeconds>
+                  <!-- we want build to complete even in case of failures -->
+                  <testFailureIgnore>true</testFailureIgnore>
                 </configuration>
              </plugin>
              <plugin>
                <groupId>org.jacoco</groupId>
                <artifactId>jacoco-maven-plugin</artifactId>
-               <version>0.7.9</version>
+               <version>0.8.0</version>
                <executions>
                  <execution>
                    <goals>
