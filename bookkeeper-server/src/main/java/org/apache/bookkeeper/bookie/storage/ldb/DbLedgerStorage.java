@@ -367,6 +367,7 @@ public class DbLedgerStorage implements CompactableLedgerStorage {
             }
 
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             throw new IOException("Interrupted when adding entry " + ledgerId + "@" + entryId);
         } finally {
             writeCacheMutex.writeLock().unlock();

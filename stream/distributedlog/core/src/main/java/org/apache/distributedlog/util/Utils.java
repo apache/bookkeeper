@@ -120,6 +120,7 @@ public class Utils {
         } catch (KeeperException ke) {
             throw ke;
         } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
             throw new DLInterruptedException("Interrupted on create zookeeper path " + path, ie);
         } catch (RuntimeException rte) {
             throw rte;
@@ -194,6 +195,7 @@ public class Utils {
             callback.processResult(DistributedLogConstants.ZK_CONNECTION_EXCEPTION_RESULT_CODE,
                     zkce.getMessage(), ctx, pathToCreate);
         } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
             callback.processResult(DistributedLogConstants.DL_INTERRUPTED_EXCEPTION_RESULT_CODE,
                     ie.getMessage(), ctx, pathToCreate);
         }
@@ -316,6 +318,7 @@ public class Utils {
         } catch (ZooKeeperClient.ZooKeeperConnectionException e) {
             return FutureUtils.exception(zkException(e, path));
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             return FutureUtils.exception(zkException(e, path));
         }
         return zkGetData(zk, path, watch);
@@ -359,6 +362,7 @@ public class Utils {
         } catch (ZooKeeperClient.ZooKeeperConnectionException e) {
             return FutureUtils.exception(zkException(e, path));
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             return FutureUtils.exception(zkException(e, path));
         }
         return zkSetData(zk, path, data, version);
@@ -402,6 +406,7 @@ public class Utils {
         } catch (ZooKeeperClient.ZooKeeperConnectionException e) {
             return FutureUtils.exception(zkException(e, path));
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             return FutureUtils.exception(zkException(e, path));
         }
         return zkDelete(zk, path, version);
@@ -455,6 +460,7 @@ public class Utils {
         } catch (ZooKeeperClient.ZooKeeperConnectionException e) {
             return FutureUtils.exception(zkException(e, path));
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             return FutureUtils.exception(zkException(e, path));
         }
         final CompletableFuture<Boolean> promise = new CompletableFuture<Boolean>();
@@ -499,6 +505,7 @@ public class Utils {
         try {
             zk = zkc.get();
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             throw new DLInterruptedException("Interrupted on checking if log " + path + " exists", e);
         }
         final CountDownLatch syncLatch = new CountDownLatch(1);
@@ -513,6 +520,7 @@ public class Utils {
         try {
             syncLatch.await();
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             throw new DLInterruptedException("Interrupted on syncing zookeeper connection", e);
         }
         if (KeeperException.Code.OK.intValue() != syncResult.get()) {

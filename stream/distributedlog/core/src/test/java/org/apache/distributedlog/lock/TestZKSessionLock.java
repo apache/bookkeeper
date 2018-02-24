@@ -325,6 +325,7 @@ public class TestZKSessionLock extends ZooKeeperClusterTestCase {
             try {
                 Thread.sleep(timeout);
             } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
             }
             return true;
         }

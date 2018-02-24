@@ -322,6 +322,7 @@ class ZKSessionLock implements SessionLock {
             throw new ZKException("Failed to get zookeeper client for lock " + lockPath,
                     KeeperException.Code.CONNECTIONLOSS);
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             throw new DLInterruptedException("Interrupted on getting zookeeper client for lock " + lockPath, e);
         }
         this.lockPath = lockPath;

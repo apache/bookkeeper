@@ -323,6 +323,7 @@ public class DLAuditor {
                 try {
                     collectLedgersFromPool(poolPath);
                 } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
                     throw new DLInterruptedException("Interrupted on collecting"
                             + " ledgers from allocation pool " + poolPath, e);
                 } catch (KeeperException e) {

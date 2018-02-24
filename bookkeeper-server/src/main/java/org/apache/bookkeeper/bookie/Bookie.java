@@ -944,6 +944,7 @@ public class Bookie extends BookieCriticalThread {
             }
             LOG.info("Journal thread(s) quit.");
         } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
             LOG.warn("Interrupted on running journal thread : ", ie);
         }
         // if the journal thread quits due to shutting down, it is ok
@@ -1035,6 +1036,7 @@ public class Bookie extends BookieCriticalThread {
                 registrationManager.close();
             }
         } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
             LOG.error("Interrupted during shutting down bookie : ", ie);
         } catch (Exception e) {
             LOG.error("Got Exception while trying to shutdown Bookie", e);

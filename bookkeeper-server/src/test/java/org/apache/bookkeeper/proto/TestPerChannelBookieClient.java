@@ -240,6 +240,7 @@ public class TestPerChannelBookieClient extends BookKeeperClusterTestCase {
                 try {
                     Thread.sleep(3000);
                 } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
                     throw new IOException("Interrupted waiting", ie);
                 }
                 return super.readEntry(ledgerId, entryId);

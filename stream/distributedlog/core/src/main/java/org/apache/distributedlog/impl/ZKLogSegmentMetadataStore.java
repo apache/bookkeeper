@@ -360,6 +360,7 @@ public class ZKLogSegmentMetadataStore implements LogSegmentMetadataStore, Watch
         } catch (ZooKeeperClient.ZooKeeperConnectionException e) {
             result.completeExceptionally(Utils.zkException(e, logSegmentsPath));
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             result.completeExceptionally(Utils.zkException(e, logSegmentsPath));
         }
         return result;

@@ -21,7 +21,6 @@ package org.apache.bookkeeper.server.http.service;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -48,8 +47,7 @@ public class ConfigurationService implements HttpEndpointService {
         HttpServiceResponse response = new HttpServiceResponse();
         // GET
         if (HttpServer.Method.GET == request.getMethod()) {
-            Map<String, Object> configMap = toMap(conf);
-            String jsonResponse = JsonUtil.toJson(configMap);
+            String jsonResponse = conf.asJson();
             response.setBody(jsonResponse);
             return response;
         } else if (HttpServer.Method.PUT == request.getMethod()) {
@@ -74,18 +72,5 @@ public class ConfigurationService implements HttpEndpointService {
             return response;
         }
 
-    }
-
-    private Map<String, Object> toMap(ServerConfiguration conf) {
-        Map<String, Object> configMap = new HashMap<>();
-        Iterator iterator = conf.getKeys();
-        while (iterator.hasNext()) {
-            String key = iterator.next().toString();
-            Object property = conf.getProperty(key);
-            if (property != null) {
-                configMap.put(key, property.toString());
-            }
-        }
-        return configMap;
     }
 }
