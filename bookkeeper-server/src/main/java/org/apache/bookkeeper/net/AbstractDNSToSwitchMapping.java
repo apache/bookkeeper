@@ -86,7 +86,7 @@ public abstract class AbstractDNSToSwitchMapping implements DNSToSwitchMapping, 
      * Get a copy of the map (for diagnostics).
      * @return a clone of the map or null for none known
      */
-    public Map<String, String> getSwitchMap() {
+    public Map<BookieSocketAddress, String> getSwitchMap() {
         return null;
     }
 
@@ -98,13 +98,13 @@ public abstract class AbstractDNSToSwitchMapping implements DNSToSwitchMapping, 
      * debug messages.
      */
     public String dumpTopology() {
-        Map<String, String> rack = getSwitchMap();
+        Map<BookieSocketAddress, String> rack = getSwitchMap();
         StringBuilder builder = new StringBuilder();
         builder.append("Mapping: ").append(toString()).append("\n");
         if (rack != null) {
             builder.append("Map:\n");
             Set<String> switches = new HashSet<String>();
-            for (Map.Entry<String, String> entry : rack.entrySet()) {
+            for (Map.Entry<BookieSocketAddress, String> entry : rack.entrySet()) {
                 builder.append("  ").append(entry.getKey()).append(" -> ").append(entry.getValue()).append("\n");
                 switches.add(entry.getValue());
             }

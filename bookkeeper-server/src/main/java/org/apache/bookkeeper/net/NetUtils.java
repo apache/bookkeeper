@@ -21,12 +21,10 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
 import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -68,18 +66,13 @@ public class NetUtils {
         return hostNames;
     }
 
-    public static String resolveNetworkLocation(DNSToSwitchMapping dnsResolver, InetSocketAddress addr) {
-        List<String> names = new ArrayList<String>(1);
-
-        if (dnsResolver.useHostName()) {
-            names.add(addr.getHostName());
-        } else {
-            names.add(addr.getAddress().getHostAddress());
-        }
-
+    public static String resolveNetworkLocation(DNSToSwitchMapping dnsResolver, BookieSocketAddress addr) {
+        List<BookieSocketAddress> bookieSocketAddresses = new ArrayList<BookieSocketAddress>(1);
+        bookieSocketAddresses.add(addr);
         // resolve network addresses
-        List<String> rNames = dnsResolver.resolve(names);
+        List<String> rNames = dnsResolver.resolve(bookieSocketAddresses);
         checkNotNull(rNames, "DNS Resolver should not return null response.");
+
         checkState(rNames.size() == 1, "Expected exactly one element");
 
         return rNames.get(0);
