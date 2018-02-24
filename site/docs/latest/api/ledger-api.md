@@ -34,35 +34,6 @@ BookKeeper uses google [protobuf](https://github.com/google/protobuf/tree/master
 a lot. If your application might include different versions of protobuf or guava introduced by other dependencies, you can choose to use the
 shaded library, which relocate classes of protobuf and guava into a different namespace to avoid conflicts.
 
-You can use the shaded artifact of `bookkeeper-server`. Please note that [maven-shade-plugin](https://maven.apache.org/plugins/maven-shade-plugin) doesn't generate
-a dependency-reduced pom file for shaded artifact using [shadedArtifactAttached](https://maven.apache.org/plugins/maven-shade-plugin/examples/attached-artifact.html). You need to manually to exclude relocated packages when using the shaded artifact. Full example of how to use this is
-showed as below.
-
-```xml
-<!-- in your <properties> block -->
-<bookkeeper.version>{{ site.latest_version }}</bookkeeper.version>
-
-<!-- in your <dependencies> block -->
-<dependency>
-  <groupId>org.apache.bookkeeper</groupId>
-  <artifactId>bookkeeper-server</artifactId>
-  <version>${bookkeeper.version}</version>
-  <classifier>shaded</classifier> <!-- specify "shaded" classifier to use shaded artifact -->
-  <exclusions>
-    <exclusion>
-      <groupId>org.apache.bookkeeper</groupId>
-      <artifactId>bookkeeper-common</artifactId>
-    </exclusion>
-    <exclusion>
-      <groupId>org.apache.bookkeeper</groupId>
-      <artifactId>bookkeeper-proto</artifactId>
-    </exclusion>
-  </exclusions>
-</dependency>
-```
-
-Or you can use a separate shaded artifact `bookkeeper-server-shaded`.
-
 ```xml
 <!-- in your <properties> block -->
 <bookkeeper.version>{{ site.latest_version }}</bookkeeper.version>
@@ -93,15 +64,6 @@ dependencies {
 Similarly as using maven, you can also configure to use the shaded jars.
 
 ```groovy
-// use the shaded artifact of `bookkeeper-server` jar
-dependencies {
-    compile ('org.apache.bookkeeper:bookkeeper-server:{{ site.latest-version }}:shaded') {
-        exclude group: 'org.apache.bookkeeper', module: "bookkeeper-common'
-        exclude group: 'org.apache.bookkeeper', module: 'bookkeeper-proto'
-    }
-}
-
-
 // use the `bookkeeper-server-shaded` jar
 dependencies {
     compile 'org.apache.bookkeeper:bookkeeper-server-shaded:{{ site.latest-version }}'

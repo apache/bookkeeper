@@ -205,6 +205,7 @@ public class ScanAndCompareGarbageCollector implements GarbageCollector{
                 try {
                     zk.close();
                 } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
                     LOG.error("Error closing zk session", e);
                 }
                 zk = null;

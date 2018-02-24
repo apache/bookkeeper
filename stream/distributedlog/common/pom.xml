@@ -37,9 +37,9 @@
       </exclusions>
     </dependency>
     <dependency>
-      <groupId>org.inferred</groupId>
-      <artifactId>freebuilder</artifactId>
-      <version>${freebuilder.version}</version>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-lang3</artifactId>
+      <version>${commons-lang3.version}</version>
     </dependency>
     <dependency>
       <groupId>com.google.guava</groupId>

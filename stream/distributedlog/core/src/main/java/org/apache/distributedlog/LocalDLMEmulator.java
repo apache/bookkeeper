@@ -147,6 +147,7 @@ public class LocalDLMEmulator {
                             numBookies, shouldStartZK, initialBookiePort, serverConf);
                     LOG.info("{} bookies are started.");
                 } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
                     // go away quietly
                 } catch (Exception e) {
                     LOG.error("Error starting local bk", e);

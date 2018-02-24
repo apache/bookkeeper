@@ -65,6 +65,7 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
     private final WriteBatch emptyBatch;
 
     private static final String ROCKSDB_LOG_LEVEL = "dbStorage_rocksDB_logLevel";
+    private static final String ROCKSDB_LZ4_COMPRESSION_ENABLED = "dbStorage_rocksDB_lz4CompressionEnabled";
     private static final String ROCKSDB_WRITE_BUFFER_SIZE_MB = "dbStorage_rocksDB_writeBufferSizeMB";
     private static final String ROCKSDB_SST_SIZE_MB = "dbStorage_rocksDB_sstSizeInMB";
     private static final String ROCKSDB_BLOCK_SIZE = "dbStorage_rocksDB_blockSize";
@@ -104,7 +105,11 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
                 int blockSize = conf.getInt(ROCKSDB_BLOCK_SIZE, 64 * 1024);
                 long blockCacheSize = conf.getLong(ROCKSDB_BLOCK_CACHE_SIZE, 256 * 1024 * 1024);
                 int bloomFilterBitsPerKey = conf.getInt(ROCKSDB_BLOOM_FILTERS_BITS_PER_KEY, 10);
+                boolean lz4CompressionEnabled = conf.getBoolean(ROCKSDB_LZ4_COMPRESSION_ENABLED, true);
 
+                if (lz4CompressionEnabled) {
+                    options.setCompressionType(CompressionType.LZ4_COMPRESSION);
+                }
                 options.setCompressionType(CompressionType.LZ4_COMPRESSION);
                 options.setWriteBufferSize(writeBufferSizeMB * 1024 * 1024);
                 options.setMaxWriteBufferNumber(4);

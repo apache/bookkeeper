@@ -122,6 +122,7 @@ public class SASLClientProviderFactory implements
             try {
                 ticketRefreshThread.join(10000);
             } catch (InterruptedException exit) {
+                Thread.currentThread().interrupt();
                 if (LOG.isDebugEnabled()) {
                     LOG.debug("interrupted while waiting for TGT reresh thread to stop", exit);
                 }

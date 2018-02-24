@@ -20,13 +20,21 @@ package org.apache.bookkeeper.conf;
 import static org.apache.bookkeeper.conf.ClientConfiguration.CLIENT_AUTH_PROVIDER_FACTORY_CLASS;
 
 import java.net.URL;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+
 import javax.net.ssl.SSLEngine;
 
 import org.apache.bookkeeper.feature.Feature;
+import org.apache.bookkeeper.meta.AbstractZkLedgerManagerFactory;
+import org.apache.bookkeeper.meta.HierarchicalLedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
+import org.apache.bookkeeper.meta.LongHierarchicalLedgerManagerFactory;
 import org.apache.bookkeeper.util.EntryFormatter;
+import org.apache.bookkeeper.util.JsonUtil;
+import org.apache.bookkeeper.util.JsonUtil.ParseJsonException;
 import org.apache.bookkeeper.util.LedgerIdFormatter;
 import org.apache.bookkeeper.util.ReflectionUtils;
 import org.apache.bookkeeper.util.StringEntryFormatter;
@@ -65,6 +73,7 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
     // Ledger Manager
     protected static final String LEDGER_MANAGER_TYPE = "ledgerManagerType";
     protected static final String LEDGER_MANAGER_FACTORY_CLASS = "ledgerManagerFactoryClass";
+    protected static final String METADATA_SERVICE_URI = "metadataServiceUri";
     protected static final String ZK_LEDGERS_ROOT_PATH = "zkLedgersRootPath";
     protected static final String ZK_REQUEST_RATE_LIMIT = "zkRequestRateLimit";
     protected static final String AVAILABLE_NODE = "available";
@@ -86,6 +95,11 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
 
     // Enable authentication of the other connection end point (mutual authentication)
     protected static final String TLS_CLIENT_AUTHENTICATION = "tlsClientAuthentication";
+
+    // Default formatter classes
+    protected static final Class<? extends EntryFormatter> DEFAULT_ENTRY_FORMATTER = StringEntryFormatter.class;
+    protected static final Class<? extends LedgerIdFormatter> DEFAULT_LEDGERID_FORMATTER =
+            LedgerIdFormatter.UUIDLedgerIdFormatter.class;
 
     /**
      * This list will be passed to {@link SSLEngine#setEnabledCipherSuites(java.lang.String[]) }.
@@ -173,6 +187,58 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
             String key = iter.next();
             setProperty(key, baseConf.getProperty(key));
         }
+    }
+
+    /**
+     * Get metadata service uri.
+     *
+     * @return metadata service uri.
+     */
+    @SuppressWarnings("deprecation")
+    public String getMetadataServiceUri() throws ConfigurationException {
+        String serviceUri = getString(METADATA_SERVICE_URI);
+        if (null == serviceUri) {
+            // no service uri is defined, fallback to old settings
+            String ledgerManagerType;
+            Class<? extends LedgerManagerFactory> factoryClass = getLedgerManagerFactoryClass();
+            if (factoryClass == null) {
+                ledgerManagerType = HierarchicalLedgerManagerFactory.NAME;
+            } else {
+                if (!AbstractZkLedgerManagerFactory.class.isAssignableFrom(factoryClass)) {
+                    // this is a non-zk implementation
+                    throw new UnsupportedOperationException("metadata service uri is not supported for "
+                        + factoryClass);
+                }
+                if (factoryClass == HierarchicalLedgerManagerFactory.class) {
+                    ledgerManagerType = HierarchicalLedgerManagerFactory.NAME;
+                } else if (factoryClass == org.apache.bookkeeper.meta.FlatLedgerManagerFactory.class) {
+                    ledgerManagerType = org.apache.bookkeeper.meta.FlatLedgerManagerFactory.NAME;
+                } else if (factoryClass == LongHierarchicalLedgerManagerFactory.class) {
+                    ledgerManagerType = LongHierarchicalLedgerManagerFactory.NAME;
+                } else {
+                    throw new IllegalArgumentException("Unknown zookeeper based ledger manager factory : "
+                        + factoryClass);
+                }
+            }
+            serviceUri = String.format(
+                "zk+%s://%s%s",
+                ledgerManagerType,
+                getZkServers(),
+                getZkLedgersRootPath());
+        }
+        return serviceUri;
+    }
+
+    /**
+     * Set the metadata service uri.
+     *
+     * @param serviceUri the metadata service uri.
+     * @return the configuration object.
+     * @throws ConfigurationException
+     */
+    public T setMetadataServiceUri(String serviceUri) throws ConfigurationException {
+        setProperty(METADATA_SERVICE_URI, serviceUri);
+        return getThis();
     }
 
     /**
@@ -425,9 +491,8 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      */
     public Class<? extends LedgerIdFormatter> getLedgerIdFormatterClass()
         throws ConfigurationException {
-        return ReflectionUtils.getClass(this, LEDGERID_FORMATTER_CLASS,
-                                        null, LedgerIdFormatter.UUIDLedgerIdFormatter.class,
-                                        LedgerIdFormatter.class.getClassLoader());
+        return ReflectionUtils.getClass(this, LEDGERID_FORMATTER_CLASS, DEFAULT_LEDGERID_FORMATTER,
+                LedgerIdFormatter.class, DEFAULT_LOADER);
     }
 
     /**
@@ -447,9 +512,8 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      */
     public Class<? extends EntryFormatter> getEntryFormatterClass()
         throws ConfigurationException {
-        return ReflectionUtils.getClass(this, ENTRY_FORMATTER_CLASS,
-                                        null, StringEntryFormatter.class,
-                                        EntryFormatter.class.getClassLoader());
+        return ReflectionUtils.getClass(this, ENTRY_FORMATTER_CLASS, DEFAULT_ENTRY_FORMATTER, EntryFormatter.class,
+                DEFAULT_LOADER);
     }
 
     /**
@@ -618,4 +682,27 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      * Trickery to allow inheritance with fluent style.
      */
     protected abstract T getThis();
+
+    /**
+     * returns the string representation of json format of this config.
+     *
+     * @return
+     * @throws ParseJsonException
+     */
+    public String asJson() throws ParseJsonException {
+        return JsonUtil.toJson(toMap());
+    }
+
+    private Map<String, Object> toMap() {
+        Map<String, Object> configMap = new HashMap<>();
+        Iterator<String> iterator = this.getKeys();
+        while (iterator.hasNext()) {
+            String key = iterator.next().toString();
+            Object property = this.getProperty(key);
+            if (property != null) {
+                configMap.put(key, property.toString());
+            }
+        }
+        return configMap;
+    }
 }

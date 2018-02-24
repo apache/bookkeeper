@@ -448,6 +448,7 @@ public class TestZooKeeperClient extends ZooKeeperClusterTestCase {
                 try {
                     latch.await();
                 } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
                 }
             }
         });

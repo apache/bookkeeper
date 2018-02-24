@@ -166,6 +166,7 @@ class TGTRefreshThread extends Thread {
                 try {
                     Thread.sleep(nextRefresh - now);
                 } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
                     LOG.warn("TGT renewal thread has been interrupted and will exit.");
                     break;
                 }
@@ -195,6 +196,7 @@ class TGTRefreshThread extends Thread {
                             try {
                                 Thread.sleep(10 * 1000);
                             } catch (InterruptedException ie) {
+                                Thread.currentThread().interrupt();
                                 LOG.error("Interrupted while renewing TGT, exiting Login thread");
                                 return;
                             }
@@ -220,6 +222,7 @@ class TGTRefreshThread extends Thread {
                             try {
                                 Thread.sleep(10 * 1000);
                             } catch (InterruptedException e) {
+                                Thread.currentThread().interrupt();
                                 LOG.error("Interrupted during login retry after LoginException:", le);
                                 throw le;
                             }

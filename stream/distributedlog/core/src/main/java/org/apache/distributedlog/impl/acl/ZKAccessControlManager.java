@@ -218,6 +218,7 @@ public class ZKAccessControlManager implements AccessControlManager, Watcher {
         } catch (ZooKeeperClient.ZooKeeperConnectionException e) {
             promise.completeExceptionally(e);
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             promise.completeExceptionally(e);
         }
     }
@@ -260,6 +261,7 @@ public class ZKAccessControlManager implements AccessControlManager, Watcher {
             promise.completeExceptionally(e);
             return;
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             promise.completeExceptionally(e);
             return;
         }

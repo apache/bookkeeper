@@ -54,6 +54,7 @@ import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.Processor;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
 import org.apache.bookkeeper.proto.checksum.DigestManager;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
+import org.apache.bookkeeper.util.ByteBufList;
 import org.apache.bookkeeper.versioning.Version;
 import org.apache.zookeeper.AsyncCallback.VoidCallback;
 import org.apache.zookeeper.KeeperException;
@@ -114,6 +115,7 @@ public class ParallelLedgerRecoveryTest extends BookKeeperClusterTestCase {
                         try {
                             cdl.await();
                         } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
                             LOG.error("Interrupted on waiting latch : ", e);
                         }
                         lm.writeLedgerMetadata(ledgerId, metadata, cb);
@@ -360,7 +362,7 @@ public class ParallelLedgerRecoveryTest extends BookKeeperClusterTestCase {
         long entryId = 14;
         long lac = 8;
         byte[] data = "recovery-on-entry-gap-gap".getBytes(UTF_8);
-        ByteBuf toSend =
+        ByteBufList toSend =
                 lh.macManager.computeDigestAndPackageForSending(
                         entryId, lac, lh.getLength() + 100, Unpooled.wrappedBuffer(data, 0, data.length));
         final CountDownLatch addLatch = new CountDownLatch(1);
@@ -479,6 +481,7 @@ public class ParallelLedgerRecoveryTest extends BookKeeperClusterTestCase {
                     try {
                         latch.await();
                     } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
                         // no-op
                     }
                 }

@@ -45,6 +45,7 @@ import org.apache.bookkeeper.client.LedgerFragment;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.meta.AbstractZkLedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
@@ -137,7 +138,7 @@ public class Auditor {
                 clientConfiguration.getClientAuthProviderFactoryClass());
             this.bkc = new BookKeeper(clientConfiguration, zkc);
 
-            LedgerManagerFactory ledgerManagerFactory = LedgerManagerFactory
+            LedgerManagerFactory ledgerManagerFactory = AbstractZkLedgerManagerFactory
                     .newLedgerManagerFactory(
                         conf,
                         bkc.getRegClient().getLayoutManager());
@@ -163,6 +164,7 @@ public class Auditor {
             throw new UnavailableException(
                     "Exception while initializing Auditor", ioe);
         } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
             throw new UnavailableException(
                     "Interrupted while initializing Auditor", ie);
         }
@@ -638,7 +640,9 @@ public class Auditor {
                     LedgerHandle lh = null;
                     try {
                         lh = admin.openLedgerNoRecovery(ledgerId);
-                        checker.checkLedger(lh, new ProcessLostFragmentsCb(lh, callback));
+                        checker.checkLedger(lh,
+                            new ProcessLostFragmentsCb(lh, callback),
+                            conf.getAuditorLedgerVerificationPercentage());
                         // we collect the following stats to get a measure of the
                         // distribution of a single ledger within the bk cluster
                         // the higher the number of fragments/bookies, the more distributed it is
@@ -707,8 +711,7 @@ public class Auditor {
      */
     public void shutdown() {
         LOG.info("Shutting down auditor");
-        submitShutdownTask();
-
+        executor.shutdown();
         try {
             while (!executor.awaitTermination(30, TimeUnit.SECONDS)) {
                 LOG.warn("Executor not shutting down, interrupting");

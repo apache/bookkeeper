@@ -197,7 +197,7 @@ public class ZKRegistrationClient implements RegistrationClient {
     public RegistrationClient initialize(ClientConfiguration conf,
                                          ScheduledExecutorService scheduler,
                                          StatsLogger statsLogger,
-                                         Optional<ZooKeeper> zkOptional)
+                                         Optional<Object> zkOptional)
             throws BKException {
         this.conf = conf;
         this.scheduler = scheduler;
@@ -208,8 +208,10 @@ public class ZKRegistrationClient implements RegistrationClient {
         this.acls = ZkUtils.getACLs(conf);
 
         // construct the zookeeper
-        if (zkOptional.isPresent()) {
-            this.zk = zkOptional.get();
+        if (zkOptional.isPresent()
+            && zkOptional.get() instanceof ZooKeeper) {
+            // if an external zookeeper is added, use the zookeeper instance
+            this.zk = (ZooKeeper) (zkOptional.get());
             this.ownZKHandle = false;
         } else {
             try {
@@ -237,6 +239,7 @@ public class ZKRegistrationClient implements RegistrationClient {
                 zke.fillInStackTrace();
                 throw zke;
             } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
                 throw new BKInterruptedException();
             }
             this.ownZKHandle = true;
@@ -257,6 +260,7 @@ public class ZKRegistrationClient implements RegistrationClient {
             try {
                 zk.close();
             } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
                 log.warn("Interrupted on closing zookeeper client", e);
             }
         }

@@ -30,7 +30,6 @@ import org.apache.bookkeeper.meta.LayoutManager;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.versioning.Versioned;
-import org.apache.zookeeper.ZooKeeper;
 
 /**
  * A registration client, which the bookkeeper client will use to interact with registration service.
@@ -55,13 +54,13 @@ public interface RegistrationClient extends AutoCloseable {
      *
      * @param conf client configuration
      * @param statsLogger stats logger
-     * @param zkOptional a supplier to supply zookeeper client.
+     * @param optionalCtx optional context is passed for initialization.
      * @return
      */
     RegistrationClient initialize(ClientConfiguration conf,
                                   ScheduledExecutorService scheduler,
                                   StatsLogger statsLogger,
-                                  Optional<ZooKeeper> zkOptional)
+                                  Optional<Object> optionalCtx)
         throws BKException;
 
     @Override

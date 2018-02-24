@@ -25,15 +25,19 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import org.apache.bookkeeper.client.BKException.Code;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieClient;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 
 /**
  * A utility class to check the complete ledger and finds the UnderReplicated fragments if any.
@@ -143,7 +147,8 @@ public class LedgerChecker {
      * @throws InvalidFragmentException
      */
     private void verifyLedgerFragment(LedgerFragment fragment,
-                                      GenericCallback<LedgerFragment> cb)
+                                      GenericCallback<LedgerFragment> cb,
+                                      Long percentageOfLedgerFragmentToBeVerified)
             throws InvalidFragmentException, BKException {
         Set<Integer> bookiesToCheck = fragment.getBookiesIndexes();
         if (bookiesToCheck.isEmpty()) {
@@ -156,7 +161,7 @@ public class LedgerChecker {
         for (Integer bookieIndex : bookiesToCheck) {
             LedgerFragmentCallback lfCb = new LedgerFragmentCallback(
                     fragment, bookieIndex, cb, badBookies, numBookies);
-            verifyLedgerFragment(fragment, bookieIndex, lfCb);
+            verifyLedgerFragment(fragment, bookieIndex, lfCb, percentageOfLedgerFragmentToBeVerified);
         }
     }
 
@@ -173,7 +178,8 @@ public class LedgerChecker {
      */
     private void verifyLedgerFragment(LedgerFragment fragment,
                                       int bookieIndex,
-                                      GenericCallback<LedgerFragment> cb)
+                                      GenericCallback<LedgerFragment> cb,
+                                      long percentageOfLedgerFragmentToBeVerified)
             throws InvalidFragmentException {
         long firstStored = fragment.getFirstStoredEntryId(bookieIndex);
         long lastStored = fragment.getLastStoredEntryId(bookieIndex);
@@ -195,10 +201,48 @@ public class LedgerChecker {
             bookieClient.readEntry(bookie, fragment
                     .getLedgerId(), firstStored, manycb, null);
         } else {
-            ReadManyEntriesCallback manycb = new ReadManyEntriesCallback(2,
+            if (lastStored <= firstStored) {
+                cb.operationComplete(Code.IncorrectParameterException, null);
+                return;
+            }
+
+            long lengthOfLedgerFragment = lastStored - firstStored + 1;
+
+            int numberOfEntriesToBeVerified =
+                (int) (lengthOfLedgerFragment * (percentageOfLedgerFragmentToBeVerified / 100.0));
+
+            TreeSet<Long> entriesToBeVerified = new TreeSet<Long>();
+
+            if (numberOfEntriesToBeVerified < lengthOfLedgerFragment) {
+                // Evenly pick random entries over the length of the fragment
+                if (numberOfEntriesToBeVerified > 0) {
+                    int lengthOfBucket = (int) (lengthOfLedgerFragment / numberOfEntriesToBeVerified);
+                    for (long index = firstStored;
+                         index < (lastStored - lengthOfBucket - 1);
+                         index += lengthOfBucket) {
+                        long potentialEntryId = ThreadLocalRandom.current().nextInt((lengthOfBucket)) + index;
+                        if (fragment.isStoredEntryId(potentialEntryId, bookieIndex)) {
+                            entriesToBeVerified.add(potentialEntryId);
+                        }
+                    }
+                }
+                entriesToBeVerified.add(firstStored);
+                entriesToBeVerified.add(lastStored);
+            } else {
+                // Verify the entire fragment
+                while (firstStored <= lastStored) {
+                    if (fragment.isStoredEntryId(firstStored, bookieIndex)) {
+                        entriesToBeVerified.add(firstStored);
+                    }
+                    firstStored++;
+                }
+            }
+            ReadManyEntriesCallback manycb = new ReadManyEntriesCallback(entriesToBeVerified.size(),
                     fragment, cb);
-            bookieClient.readEntry(bookie, fragment.getLedgerId(), firstStored, manycb, null);
-            bookieClient.readEntry(bookie, fragment.getLedgerId(), lastStored, manycb, null);
+
+            for (Long entryID: entriesToBeVerified) {
+                bookieClient.readEntry(bookie, fragment.getLedgerId(), entryID, manycb, null);
+            }
         }
     }
 
@@ -267,6 +311,12 @@ public class LedgerChecker {
      */
     public void checkLedger(final LedgerHandle lh,
                             final GenericCallback<Set<LedgerFragment>> cb) {
+        checkLedger(lh, cb, 0L);
+    }
+
+    public void checkLedger(final LedgerHandle lh,
+                            final GenericCallback<Set<LedgerFragment>> cb,
+                            long percentageOfLedgerFragmentToBeVerified) {
         // build a set of all fragment replicas
         final Set<LedgerFragment> fragments = new HashSet<LedgerFragment>();
 
@@ -285,9 +335,6 @@ public class LedgerChecker {
             curEntryId = e.getKey();
             curEnsemble = e.getValue();
         }
-
-
-
 
         /* Checking the last segment of the ledger can be complicated in some cases.
          * In the case that the ledger is closed, we can just check the fragments of
@@ -327,7 +374,8 @@ public class LedgerChecker {
                                                       if (result) {
                                                           fragments.add(lastLedgerFragment);
                                                       }
-                                                      checkFragments(fragments, cb);
+                                                      checkFragments(fragments, cb,
+                                                          percentageOfLedgerFragmentToBeVerified);
                                                   }
                                               });
 
@@ -342,12 +390,12 @@ public class LedgerChecker {
                 fragments.add(lastLedgerFragment);
             }
         }
-
-        checkFragments(fragments, cb);
+        checkFragments(fragments, cb, percentageOfLedgerFragmentToBeVerified);
     }
 
     private void checkFragments(Set<LedgerFragment> fragments,
-                                GenericCallback<Set<LedgerFragment>> cb) {
+                                GenericCallback<Set<LedgerFragment>> cb,
+                                long percentageOfLedgerFragmentToBeVerified) {
         if (fragments.size() == 0) { // no fragments to verify
             cb.operationComplete(BKException.Code.OK, fragments);
             return;
@@ -359,7 +407,7 @@ public class LedgerChecker {
         for (LedgerFragment r : fragments) {
             LOG.debug("Checking fragment {}", r);
             try {
-                verifyLedgerFragment(r, allFragmentsCb);
+                verifyLedgerFragment(r, allFragmentsCb, percentageOfLedgerFragmentToBeVerified);
             } catch (InvalidFragmentException ife) {
                 LOG.error("Invalid fragment found : {}", r);
                 allFragmentsCb.operationComplete(

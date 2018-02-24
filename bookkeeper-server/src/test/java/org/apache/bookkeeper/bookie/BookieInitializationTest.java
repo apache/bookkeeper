@@ -155,7 +155,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
         final ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
         conf.setJournalDirName(tmpDir.getPath())
             .setLedgerDirNames(new String[] { tmpDir.getPath() })
-            .setZkServers(null);
+            .setZkServers(null).setListeningInterface(null);
 
         final String bkRegPath = conf.getZkAvailableBookiesPath() + "/"
                 + InetAddress.getLocalHost().getHostAddress() + ":"
@@ -188,7 +188,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
         final ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
         conf.setJournalDirName(tmpDir.getPath())
             .setLedgerDirNames(new String[] { tmpDir.getPath() })
-            .setZkServers(null);
+            .setZkServers(null).setListeningInterface(null);
 
         final String bkRegPath = conf.getZkAvailableBookiesPath() + "/"
                 + InetAddress.getLocalHost().getHostAddress() + ":"
@@ -250,7 +250,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
 
         final ServerConfiguration conf = TestBKConfiguration.newServerConfiguration().setZkServers(null)
                 .setJournalDirName(tmpDir.getPath()).setLedgerDirNames(new String[] { tmpDir.getPath() })
-                .setUseHostNameAsBookieID(true);
+                .setUseHostNameAsBookieID(true).setListeningInterface(null);
 
         final String bkRegPath = conf.getZkAvailableBookiesPath() + "/"
                 + InetAddress.getLocalHost().getCanonicalHostName() + ":" + conf.getBookiePort();
@@ -271,7 +271,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
 
         final ServerConfiguration conf = TestBKConfiguration.newServerConfiguration().setZkServers(null)
                 .setJournalDirName(tmpDir.getPath()).setLedgerDirNames(new String[] { tmpDir.getPath() })
-                .setUseHostNameAsBookieID(true).setUseShortHostName(true);
+                .setUseHostNameAsBookieID(true).setUseShortHostName(true).setListeningInterface(null);
 
         final String bkRegPath = conf.getZkAvailableBookiesPath() + "/"
                 + (InetAddress.getLocalHost().getCanonicalHostName().split("\\.", 2)[0]) + ":" + conf.getBookiePort();
@@ -298,7 +298,8 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
         final ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
         conf.setJournalDirName(tmpDir.getPath())
             .setLedgerDirNames(new String[] { tmpDir.getPath() })
-            .setZkServers(zkUtil.getZooKeeperConnectString());
+            .setZkServers(zkUtil.getZooKeeperConnectString())
+            .setListeningInterface(null);
 
         String bkRegPath = conf.getZkAvailableBookiesPath() + "/"
                 + InetAddress.getLocalHost().getHostAddress() + ":"

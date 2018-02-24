@@ -21,6 +21,8 @@
 
 package org.apache.bookkeeper.test;
 
+import static org.junit.Assert.assertTrue;
+
 import com.google.common.base.Stopwatch;
 import java.io.File;
 import java.io.IOException;
@@ -32,6 +34,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
+import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.bookkeeper.bookie.Bookie;
@@ -85,12 +88,27 @@ public abstract class BookKeeperClusterTestCase {
     protected int numBookies;
     protected BookKeeperTestClient bkc;
 
+    /*
+     * Loopback interface is set as the listening interface and allowloopback is
+     * set to true in this server config. So bookies in this test process would
+     * bind to loopback address.
+     */
     protected final ServerConfiguration baseConf = TestBKConfiguration.newServerConfiguration();
     protected final ClientConfiguration baseClientConf = new ClientConfiguration();
 
     private final Map<BookieServer, AutoRecoveryMain> autoRecoveryProcesses = new HashMap<>();
 
     private boolean isAutoRecoveryEnabled;
+
+    SynchronousQueue<Throwable> asyncExceptions = new SynchronousQueue<>();
+    protected void captureThrowable(Runnable c) {
+        try {
+            c.run();
+        } catch (Throwable e) {
+            LOG.error("Captured error: {}", e);
+            asyncExceptions.add(e);
+        }
+    }
 
     public BookKeeperClusterTestCase(int numBookies) {
         this(numBookies, 120);
@@ -99,7 +117,6 @@ public abstract class BookKeeperClusterTestCase {
     public BookKeeperClusterTestCase(int numBookies, int testTimeoutSecs) {
         this.numBookies = numBookies;
         this.globalTimeout = Timeout.seconds(testTimeoutSecs);
-        baseConf.setAllowLoopback(true);
     }
 
     @Before
@@ -124,6 +141,12 @@ public abstract class BookKeeperClusterTestCase {
 
     @After
     public void tearDown() throws Exception {
+        boolean failed = false;
+        for (Throwable e : asyncExceptions) {
+            LOG.error("Got async exception: {}", e);
+            failed = true;
+        }
+        assertTrue("Async failure", !failed);
         Stopwatch sw = Stopwatch.createStarted();
         LOG.info("TearDown");
         Exception tearDownException = null;
@@ -561,12 +584,18 @@ public abstract class BookKeeperClusterTestCase {
      */
     public int startNewBookie()
             throws Exception {
+        return startNewBookieAndReturnAddress().getPort();
+    }
+
+    public BookieSocketAddress startNewBookieAndReturnAddress()
+            throws Exception {
         ServerConfiguration conf = newServerConfiguration();
         bsConfs.add(conf);
         LOG.info("Starting new bookie on port: {}", conf.getBookiePort());
-        bs.add(startBookie(conf));
+        BookieServer server = startBookie(conf);
+        bs.add(server);
 
-        return conf.getBookiePort();
+        return server.getLocalAddress();
     }
 
     /**

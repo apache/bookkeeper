@@ -41,5 +41,5 @@ mavenJob('bookkeeper_release_nightly_snapshot') {
   common_job_properties.setMavenConfig(delegate)
 
   // Maven build project.
-  goals('clean apache-rat:check package spotbugs:check -Dmaven.test.failure.ignore=true deploy')
+  goals('clean apache-rat:check package spotbugs:check -Dmaven.test.failure.ignore=true deploy -Ddistributedlog')
 }

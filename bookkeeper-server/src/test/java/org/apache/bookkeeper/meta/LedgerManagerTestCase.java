@@ -89,6 +89,7 @@ public abstract class LedgerManagerTestCase extends BookKeeperClusterTestCase {
         return ledgerIdGenerator;
     }
 
+    @SuppressWarnings("deprecation")
     @Parameters
     public static Collection<Object[]> configs() {
         return Arrays.asList(new Object[][] {
@@ -105,7 +106,7 @@ public abstract class LedgerManagerTestCase extends BookKeeperClusterTestCase {
     public void setUp() throws Exception {
         super.setUp();
         baseConf.setZkServers(zkUtil.getZooKeeperConnectString());
-        ledgerManagerFactory = LedgerManagerFactory.newLedgerManagerFactory(
+        ledgerManagerFactory = AbstractZkLedgerManagerFactory.newLedgerManagerFactory(
             baseConf,
             RegistrationManager
                 .instantiateRegistrationManager(baseConf).getLayoutManager());

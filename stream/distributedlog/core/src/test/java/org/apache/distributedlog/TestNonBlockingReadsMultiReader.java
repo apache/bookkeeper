@@ -75,6 +75,7 @@ public class TestNonBlockingReadsMultiReader extends TestDistributedLogBase {
             try {
                 join();
             } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
                 LOG.error("Interrupted on waiting reader thread {} exiting : ", getName(), e);
             }
         }

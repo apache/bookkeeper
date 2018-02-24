@@ -69,6 +69,7 @@ import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirExcepti
 import org.apache.bookkeeper.common.util.Watcher;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.discover.RegistrationManager;
+import org.apache.bookkeeper.meta.AbstractZkLedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.net.BookieSocketAddress;
@@ -633,7 +634,7 @@ public class Bookie extends BookieCriticalThread {
         try {
             if (registrationManager != null) {
                 // current the registration manager is zookeeper only
-                ledgerManagerFactory = LedgerManagerFactory.newLedgerManagerFactory(
+                ledgerManagerFactory = AbstractZkLedgerManagerFactory.newLedgerManagerFactory(
                     conf,
                     registrationManager.getLayoutManager());
                 LOG.info("instantiate ledger manager {}", ledgerManagerFactory.getClass().getName());
@@ -943,6 +944,7 @@ public class Bookie extends BookieCriticalThread {
             }
             LOG.info("Journal thread(s) quit.");
         } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
             LOG.warn("Interrupted on running journal thread : ", ie);
         }
         // if the journal thread quits due to shutting down, it is ok
@@ -1034,6 +1036,7 @@ public class Bookie extends BookieCriticalThread {
                 registrationManager.close();
             }
         } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
             LOG.error("Interrupted during shutting down bookie : ", ie);
         } catch (Exception e) {
             LOG.error("Got Exception while trying to shutdown Bookie", e);

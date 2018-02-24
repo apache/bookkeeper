@@ -23,11 +23,11 @@ package org.apache.bookkeeper.proto.checksum;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
+import io.netty.buffer.CompositeByteBuf;
 import io.netty.buffer.Unpooled;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.DigestType;
-import org.apache.bookkeeper.util.DoubleByteBuf;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -97,7 +97,7 @@ public class DigestTypeBenchmark {
         private DigestManager mac;
 
         private ByteBuf arrayBackedBuffer;
-        private ByteBuf notArrayBackedBuffer;
+        private CompositeByteBuf notArrayBackedBuffer;
         private ByteBuf byteBufDefaultAlloc;
 
         public ByteBuf digestBuf;
@@ -119,8 +119,9 @@ public class DigestTypeBenchmark {
             arrayBackedBuffer = Unpooled.wrappedBuffer(randomBytes(entrySize));
 
             final int headerSize = 32 + getDigestManager(digest).getMacCodeLength();
-            notArrayBackedBuffer = DoubleByteBuf.get(Unpooled.wrappedBuffer(randomBytes(headerSize)),
-                    Unpooled.wrappedBuffer((randomBytes(entrySize - headerSize))));
+            notArrayBackedBuffer = new CompositeByteBuf(ByteBufAllocator.DEFAULT, true, 2);
+            notArrayBackedBuffer.addComponent(Unpooled.wrappedBuffer(randomBytes(headerSize)));
+            notArrayBackedBuffer.addComponent(Unpooled.wrappedBuffer((randomBytes(entrySize - headerSize))));
 
             byteBufDefaultAlloc = ByteBufAllocator.DEFAULT.buffer(entrySize, entrySize);
             byteBufDefaultAlloc.writeBytes(randomBytes(entrySize));

@@ -85,7 +85,7 @@ using Google Doc.
 
 This section lists all the _bookkeeper proposals_ made to BookKeeper.
 
-*Next Proposal Number: 29*
+*Next Proposal Number: 30*
 
 ### Inprogress
 
@@ -99,7 +99,8 @@ Proposal | State
 [BP-18: LedgerType, Flags and StorageHints](https://cwiki.apache.org/confluence/display/BOOKKEEPER/BP-18%3A+LedgerType%2C+Flags+and+StorageHints) | Accepted
 [BP-26: Move distributedlog library as part of bookkeeper](../../bps/BP-26-move-distributedlog-core-library) | Accepted
 [BP-27: New BookKeeper CLI](../../bps/BP-27-new-bookkeeper-cli) | Draft
-[BP-28: use etcd as metadata store](../../bps/BP-28-etcd-as-metadata-store) | Draft
+[BP-28: use etcd as metadata store](../../bps/BP-28-etcd-as-metadata-store) | Accepted
+[BP-29: Metadata API module](../../bps/BP-29-metadata-store-api-module) | Accepted
 
 ### Adopted
 

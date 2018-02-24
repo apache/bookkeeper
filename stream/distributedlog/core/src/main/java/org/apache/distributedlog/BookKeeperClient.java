@@ -168,6 +168,7 @@ public class BookKeeperClient {
         try {
             commonInitialization(conf, ledgersPath, eventLoopGroup, statsLogger, requestTimer);
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             throw new DLInterruptedException("Interrupted on creating bookkeeper client " + name + " : ", e);
         }
 
@@ -267,6 +268,7 @@ public class BookKeeperClient {
             try {
                 bkcToClose.close();
             } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
                 LOG.warn("Interrupted on closing bookkeeper client {} : ", name, e);
                 Thread.currentThread().interrupt();
             } catch (BKException e) {
