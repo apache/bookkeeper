@@ -1,9 +1,9 @@
 
 ---
-title: "BP-31: BookKeeper Durability(Anchor)"
-issue: https://github.com/apache/bookkeeper/BP-31-durability
-state: 'Anchor BP'
-release: "x.y.z"
+title: "BP-31: BookKeeper Durability (Anchor)"
+issue: https://github.com/apache/bookkeeper/1202
+state: 'Accepted'
+release: "N/A"
 ---
 ## Motivation
 Apache BookKeeper is transitioning into a full fledged distributed storage that can keep the data for long term. Durability is paramount to achieve the status of trusted store. This Anchor BP discusses many gaps and areas of improvement.  Each issue listed here will have another issue and this BP is expected to be updated when that issue is created.
