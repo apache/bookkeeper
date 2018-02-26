@@ -4436,6 +4436,8 @@
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerFragmentReplicator.SingleFragmentCallback.html#oldBookie2NewBookie">oldBookie2NewBookie</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerFragmentReplicator.SingleFragmentCallback.html" title="class in org.apache.bookkeeper.client">LedgerFragmentReplicator.SingleFragmentCallback</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html#onBookieRackChange-java.util.List-">onBookieRackChange(List&lt;BookieSocketAddress&gt;)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html" title="class in org.apache.bookkeeper.client">RackawareEnsemblePlacementPolicyImpl</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/ReadOnlyLedgerHandle.html#onChanged-long-org.apache.bookkeeper.client.LedgerMetadata-">onChanged(long, LedgerMetadata)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/ReadOnlyLedgerHandle.html" title="class in org.apache.bookkeeper.client">ReadOnlyLedgerHandle</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/DefaultEnsemblePlacementPolicy.html#onClusterChanged-java.util.Set-java.util.Set-">onClusterChanged(Set&lt;BookieSocketAddress&gt;, Set&lt;BookieSocketAddress&gt;)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/DefaultEnsemblePlacementPolicy.html" title="class in org.apache.bookkeeper.client">DefaultEnsemblePlacementPolicy</a></dt>
@@ -4793,6 +4795,10 @@
 <dd>
 <div class="block">Decorator for any existing dsn resolver.</div>
 </dd>
+<dt><a href="org/apache/bookkeeper/client/RackChangeNotifier.html" title="interface in org.apache.bookkeeper.client"><span class="typeNameLink">RackChangeNotifier</span></a> - Interface in <a href="org/apache/bookkeeper/client/package-summary.html">org.apache.bookkeeper.client</a></dt>
+<dd>
+<div class="block">Notifier used by the RackawareEnsemblePlacementPolicy to get notified if a rack changes for a bookie.</div>
+</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html#RACKNAME_DISTANCE_FROM_LEAVES">RACKNAME_DISTANCE_FROM_LEAVES</a></span> - Static variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html" title="class in org.apache.bookkeeper.client">RackawareEnsemblePlacementPolicyImpl</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.RRTopologyAwareCoverageEnsemble.RackOrRegionDurabilityCoverageSet.html#RackOrRegionDurabilityCoverageSet--">RackOrRegionDurabilityCoverageSet()</a></span> - Constructor for class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.RRTopologyAwareCoverageEnsemble.RackOrRegionDurabilityCoverageSet.html" title="class in org.apache.bookkeeper.client">TopologyAwareEnsemblePlacementPolicy.RRTopologyAwareCoverageEnsemble.RackOrRegionDurabilityCoverageSet</a></dt>
@@ -5131,6 +5137,10 @@
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerHandle.html#registerOperationFailureOnBookie-org.apache.bookkeeper.net.BookieSocketAddress-long-">registerOperationFailureOnBookie(BookieSocketAddress, long)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/RackChangeNotifier.html#registerRackChangeListener-org.apache.bookkeeper.client.RackawareEnsemblePlacementPolicyImpl-">registerRackChangeListener(RackawareEnsemblePlacementPolicyImpl)</a></span> - Method in interface org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/RackChangeNotifier.html" title="interface in org.apache.bookkeeper.client">RackChangeNotifier</a></dt>
+<dd>
+<div class="block">Register a listener for the rack-aware placement policy.</div>
+</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/DefaultEnsemblePlacementPolicy.html#registerSlowBookie-org.apache.bookkeeper.net.BookieSocketAddress-long-">registerSlowBookie(BookieSocketAddress, long)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/DefaultEnsemblePlacementPolicy.html" title="class in org.apache.bookkeeper.client">DefaultEnsemblePlacementPolicy</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/EnsemblePlacementPolicy.html#registerSlowBookie-org.apache.bookkeeper.net.BookieSocketAddress-long-">registerSlowBookie(BookieSocketAddress, long)</a></span> - Method in interface org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/EnsemblePlacementPolicy.html" title="interface in org.apache.bookkeeper.client">EnsemblePlacementPolicy</a></dt>
