@@ -346,13 +346,6 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
         }
 
         Thread.sleep(3000);
-        // since explicitlacflush policy is not enabled for writeledgerhandle, when we try
-        // to read explicitlac for rlh, it will be LedgerHandle.INVALID_ENTRY_ID. But it
-        // wont throw some exception.
-        long explicitlac = rlh.readExplicitLastConfirmed();
-        assertTrue("Expected Explicit LAC of rlh: " + LedgerHandle.INVALID_ENTRY_ID
-                + " actual ExplicitLAC of rlh: " + explicitlac,
-                (explicitlac == LedgerHandle.INVALID_ENTRY_ID));
         assertTrue(
                 "Expected LAC of wlh: " + (2 * numOfEntries - 1) + " actual LAC of rlh: " + wlh.getLastAddConfirmed(),
                 (wlh.getLastAddConfirmed() == (2 * numOfEntries - 1)));
@@ -360,9 +353,16 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
                 "Expected LAC of rlh: " + (numOfEntries - 2) + " actual LAC of rlh: " + rlh.getLastAddConfirmed(),
                 (rlh.getLastAddConfirmed() == (numOfEntries - 2)));
 
+        // since explicitlacflush policy is not enabled for writeledgerhandle, when we try
+        // to read explicitlac for rlh, it will be reading up to the piggyback value.
+        long explicitlac = rlh.readExplicitLastConfirmed();
+        assertTrue(
+                "Expected Explicit LAC of rlh: " + (numOfEntries - 2) + " actual ExplicitLAC of rlh: " + explicitlac,
+                (explicitlac == (2 * numOfEntries - 2)));
+
         try {
-            rlh.readEntries(numOfEntries - 1, numOfEntries - 1);
-            fail("rlh readEntries beyond " + (numOfEntries - 2) + " should fail with ReadException");
+            rlh.readEntries(2 * numOfEntries - 1, 2 * numOfEntries - 1);
+            fail("rlh readEntries beyond " + (2 * numOfEntries - 2) + " should fail with ReadException");
         } catch (BKException.BKReadException readException) {
         }
 
