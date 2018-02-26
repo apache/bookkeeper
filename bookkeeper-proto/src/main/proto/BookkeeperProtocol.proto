@@ -72,6 +72,7 @@ message BKPacketHeader {
     required ProtocolVersion version = 1;
     required OperationType operation = 2;
     required uint64 txnId = 3;
+    optional uint32 priority = 4 [default = 0];
 }
 
 message Request {
@@ -101,7 +102,6 @@ message ReadRequest {
     optional int64 previousLAC = 4;
     // Used as a timeout (in milliseconds) for the long polling request
     optional int64 timeOut = 5;
-    optional uint32 priority = 6 [default = 0];
 }
 
 message AddRequest {
@@ -114,7 +114,6 @@ message AddRequest {
     required bytes masterKey = 3;
     required bytes body = 4;
     optional int32 writeFlags = 5;
-    optional uint32 priority = 6 [default = 0];
 }
 
 message StartTLSRequest {

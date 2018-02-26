@@ -17,32 +17,25 @@
  */
 package org.apache.bookkeeper.proto;
 
-import org.apache.bookkeeper.proto.BookkeeperProtocol.AddRequest;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.ReadRequest;
-
 /**
  * Utilities for requests.
  */
 class RequestUtils {
 
-    public static boolean isFenceRequest(ReadRequest readRequest) {
-        return hasFlag(readRequest, ReadRequest.Flag.FENCE_LEDGER);
+    public static boolean isFenceRequest(BookkeeperProtocol.ReadRequest readRequest) {
+        return hasFlag(readRequest, BookkeeperProtocol.ReadRequest.Flag.FENCE_LEDGER);
     }
 
-    public static boolean isLongPollReadRequest(ReadRequest readRequest) {
+    public static boolean isLongPollReadRequest(BookkeeperProtocol.ReadRequest readRequest) {
         return !isFenceRequest(readRequest) && readRequest.hasPreviousLAC();
     }
 
-    public static boolean isHighPriority(ReadRequest readRequest) {
-        return readRequest.getPriority() > 0;
+    public static boolean isHighPriority(BookkeeperProtocol.Request request) {
+        return request.getHeader().getPriority() > 0;
     }
 
-    public static boolean isHighPriority(AddRequest addRequest) {
-        return addRequest.getPriority() > 0;
-    }
-
-    public static boolean shouldPiggybackEntry(ReadRequest readRequest) {
-        return hasFlag(readRequest, ReadRequest.Flag.ENTRY_PIGGYBACK);
+    public static boolean shouldPiggybackEntry(BookkeeperProtocol.ReadRequest readRequest) {
+        return hasFlag(readRequest, BookkeeperProtocol.ReadRequest.Flag.ENTRY_PIGGYBACK);
     }
 
     static boolean hasFlag(BookkeeperProtocol.ReadRequest request, BookkeeperProtocol.ReadRequest.Flag flag) {

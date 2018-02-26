@@ -571,6 +571,9 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                     .setVersion(ProtocolVersion.VERSION_THREE)
                     .setOperation(OperationType.ADD_ENTRY)
                     .setTxnId(txnId);
+            if (((short) options & BookieProtocol.FLAG_HIGH_PRIORITY) == BookieProtocol.FLAG_HIGH_PRIORITY) {
+                headerBuilder.setPriority(DEFAULT_HIGH_PRIORITY_VALUE);
+            }
 
             byte[] toSendArray = toSend.toArray();
             AddRequest.Builder addBuilder = AddRequest.newBuilder()
@@ -581,9 +584,6 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
 
             if (((short) options & BookieProtocol.FLAG_RECOVERY_ADD) == BookieProtocol.FLAG_RECOVERY_ADD) {
                 addBuilder.setFlag(AddRequest.Flag.RECOVERY_ADD);
-            }
-            if (((short) options & BookieProtocol.FLAG_HIGH_PRIORITY) == BookieProtocol.FLAG_HIGH_PRIORITY) {
-                addBuilder.setPriority(DEFAULT_HIGH_PRIORITY_VALUE);
             }
 
 
@@ -688,6 +688,9 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                     .setVersion(ProtocolVersion.VERSION_THREE)
                     .setOperation(OperationType.READ_ENTRY)
                     .setTxnId(txnId);
+            if (((short) flags & BookieProtocol.FLAG_HIGH_PRIORITY) == BookieProtocol.FLAG_HIGH_PRIORITY) {
+                headerBuilder.setPriority(DEFAULT_HIGH_PRIORITY_VALUE);
+            }
 
             ReadRequest.Builder readBuilder = ReadRequest.newBuilder()
                     .setLedgerId(ledgerId)
@@ -726,8 +729,6 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                     return;
                 }
                 readBuilder.setMasterKey(ByteString.copyFrom(masterKey));
-            } else if (((short) flags & BookieProtocol.FLAG_HIGH_PRIORITY) == BookieProtocol.FLAG_HIGH_PRIORITY) {
-                readBuilder.setPriority(DEFAULT_HIGH_PRIORITY_VALUE);
             }
 
             request = Request.newBuilder()

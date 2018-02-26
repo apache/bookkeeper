@@ -327,7 +327,7 @@ public class BookieRequestProcessor implements RequestProcessor {
         WriteEntryProcessorV3 write = new WriteEntryProcessorV3(r, c, this);
 
         final OrderedSafeExecutor threadPool;
-        if (RequestUtils.isHighPriority(r.getAddRequest())) {
+        if (RequestUtils.isHighPriority(r)) {
             threadPool = highPriorityThreadPool;
         } else {
             threadPool = writeThreadPool;
@@ -374,7 +374,7 @@ public class BookieRequestProcessor implements RequestProcessor {
             // If it's a high priority read (fencing or as part of recovery process), we want to make sure it
             // gets executed as fast as possible, so bypass the normal readThreadPool
             // and execute in highPriorityThreadPool
-            boolean isHighPriority = RequestUtils.isHighPriority(r.getReadRequest())
+            boolean isHighPriority = RequestUtils.isHighPriority(r)
                 || hasFlag(r.getReadRequest(), BookkeeperProtocol.ReadRequest.Flag.FENCE_LEDGER);
             if (isHighPriority) {
                 threadPool = highPriorityThreadPool;
