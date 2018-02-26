@@ -20,7 +20,6 @@ package org.apache.bookkeeper.client;
 import static org.apache.bookkeeper.client.RackawareEnsemblePlacementPolicyImpl.REPP_DNS_RESOLVER_CLASS;
 import static org.apache.bookkeeper.feature.SettableFeatureProvider.DISABLE_ALL;
 
-import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
@@ -86,19 +85,20 @@ public class TestRackawarePolicyNotificationUpdates extends TestCase {
 
     @Test
     public void testNotifyRackChange() throws Exception {
-        BookieSocketAddress addr1 = new BookieSocketAddress("127.0.0.1", 3181);
-        BookieSocketAddress addr2 = new BookieSocketAddress("127.0.0.2", 3181);
-        BookieSocketAddress addr3 = new BookieSocketAddress("127.0.0.3", 3181);
-        BookieSocketAddress addr4 = new BookieSocketAddress("127.0.0.4", 3181);
+        BookieSocketAddress addr1 = new BookieSocketAddress("127.0.1.1", 3181);
+        BookieSocketAddress addr2 = new BookieSocketAddress("127.0.1.2", 3181);
+        BookieSocketAddress addr3 = new BookieSocketAddress("127.0.1.3", 3181);
+        BookieSocketAddress addr4 = new BookieSocketAddress("127.0.1.4", 3181);
+
+        // update dns mapping
+        StaticDNSResolver.addNodeToRack(addr1.getHostName(), "/default-region/rack-1");
+        StaticDNSResolver.addNodeToRack(addr2.getHostName(), "/default-region/rack-2");
+        StaticDNSResolver.addNodeToRack(addr3.getHostName(), "/default-region/rack-2");
+        StaticDNSResolver.addNodeToRack(addr4.getHostName(), "/default-region/rack-2");
 
         // Update cluster
         Set<BookieSocketAddress> addrs = Sets.newHashSet(addr1, addr2, addr3, addr4);
         repp.onClusterChanged(addrs, new HashSet<>());
-
-        // update dns mapping
-        StaticDNSResolver.changeRack(Lists.newArrayList(addr1, addr2, addr3, addr4),
-                Lists.newArrayList("/default-region/rack-1", "/default-region/rack-2", "/default-region/rack-2",
-                        "/default-region/rack-2"));
 
         ArrayList<BookieSocketAddress> ensemble = repp.newEnsemble(3, 2, 2, Collections.emptyMap(),
                 Collections.emptySet());
