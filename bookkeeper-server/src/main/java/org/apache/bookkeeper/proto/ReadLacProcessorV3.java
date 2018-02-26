@@ -65,13 +65,9 @@ class ReadLacProcessorV3 extends PacketProcessorBaseV3 implements Runnable {
         ByteBuf lastEntry = null;
         ByteBuf lac = null;
         try {
-            lastEntry = requestProcessor.bookie.readEntry(ledgerId, BookieProtocol.LAST_ADD_CONFIRMED);
             lac = requestProcessor.bookie.getExplicitLac(ledgerId);
             if (lac != null) {
                 readLacResponse.setLacBody(ByteString.copyFrom(lac.nioBuffer()));
-                readLacResponse.setLastEntryBody(ByteString.copyFrom(lastEntry.nioBuffer()));
-            } else {
-                status = StatusCode.ENOENTRY;
             }
         } catch (Bookie.NoLedgerException e) {
             status = StatusCode.ENOLEDGER;
@@ -80,8 +76,26 @@ class ReadLacProcessorV3 extends PacketProcessorBaseV3 implements Runnable {
             status = StatusCode.EIO;
             logger.error("IOException while performing readLac from ledger: {}", ledgerId);
         } finally {
-            ReferenceCountUtil.release(lastEntry);
             ReferenceCountUtil.release(lac);
+        }
+
+        try {
+            lastEntry = requestProcessor.bookie.readEntry(ledgerId, BookieProtocol.LAST_ADD_CONFIRMED);
+            if (lastEntry != null) {
+                readLacResponse.setLastEntryBody(ByteString.copyFrom(lastEntry.nioBuffer()));
+            }
+        } catch (Bookie.NoLedgerException e) {
+            status = StatusCode.ENOLEDGER;
+            logger.error("No ledger found while trying to read last entry: {}", ledgerId, e);
+        } catch (IOException e) {
+            status = StatusCode.EIO;
+            logger.error("IOException while trying to read last entry: {}", ledgerId, e);
+        } finally {
+            ReferenceCountUtil.release(lastEntry);
+        }
+
+        if ((lac == null) && (lastEntry == null)) {
+            status = StatusCode.ENOENTRY;
         }
 
         if (status == StatusCode.EOK) {
