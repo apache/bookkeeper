@@ -37,11 +37,11 @@ public class RackawareEnsemblePlacementPolicy extends RackawareEnsemblePlacement
         implements ITopologyAwareEnsemblePlacementPolicy<TopologyAwareEnsemblePlacementPolicy.BookieNode> {
     RackawareEnsemblePlacementPolicyImpl slave = null;
 
-    RackawareEnsemblePlacementPolicy() {
+    public RackawareEnsemblePlacementPolicy() {
         super();
     }
 
-    RackawareEnsemblePlacementPolicy(boolean enforceDurability) {
+    public RackawareEnsemblePlacementPolicy(boolean enforceDurability) {
         super(enforceDurability);
     }
 
