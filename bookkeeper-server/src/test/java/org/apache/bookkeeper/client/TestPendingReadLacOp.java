@@ -55,7 +55,7 @@ public class TestPendingReadLacOp extends BookKeeperClusterTestCase {
             @Override
             public void initiate() {
                 for (int i = 0; i < lh.metadata.currentEnsemble.size(); i++) {
-                    final Integer index = new Integer(i);
+                    final int index = i;
                     ByteBufList buffer = lh.getDigestManager().computeDigestAndPackageForSending(
                             2,
                             1,
@@ -91,7 +91,7 @@ public class TestPendingReadLacOp extends BookKeeperClusterTestCase {
             @Override
             public void initiate() {
                 for (int i = 0; i < lh.metadata.currentEnsemble.size(); i++) {
-                    final Integer index = new Integer(i);
+                    final int index = i;
                     ByteBufList buffer = lh.getDigestManager().computeDigestAndPackageForSendingLac(1);
                     bkc.scheduler.schedule(() -> {
                         readLacComplete(
