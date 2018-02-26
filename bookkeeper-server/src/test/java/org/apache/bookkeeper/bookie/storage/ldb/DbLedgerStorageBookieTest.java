@@ -22,15 +22,21 @@ package org.apache.bookkeeper.bookie.storage.ldb;
 
 import static org.junit.Assert.assertEquals;
 
+import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.LedgerHandle;
+import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.junit.Test;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Unit test for {@link DbLedgerStorageBookieTest}.
  */
 public class DbLedgerStorageBookieTest extends BookKeeperClusterTestCase {
+    static final Logger LOG = LoggerFactory.getLogger(DbLedgerStorageBookieTest.class);
 
     public DbLedgerStorageBookieTest() {
         super(1);
@@ -48,5 +54,22 @@ public class DbLedgerStorageBookieTest extends BookKeeperClusterTestCase {
 
         assertEquals(0, lh2.getLength());
         assertEquals(-1, lh2.getLastAddConfirmed());
+    }
+
+    @Test
+    public void testV2ReadWrite() throws Exception {
+        ClientConfiguration conf = new ClientConfiguration();
+        conf.setUseV2WireProtocol(true);
+        conf.setZkServers(zkUtil.getZooKeeperConnectString());
+
+        BookKeeper bkc = new BookKeeper(conf);
+        LedgerHandle lh1 = bkc.createLedger(1, 1, DigestType.CRC32, new byte[0]);
+        lh1.addEntry("Foobar".getBytes());
+        lh1.close();
+
+        LedgerHandle lh2 = bkc.openLedger(lh1.getId(), DigestType.CRC32, new byte[0]);
+        assertEquals(0, lh2.getLastAddConfirmed());
+        assertEquals(new String(lh2.readEntries(0, 0).nextElement().getEntry()),
+                     "Foobar");
     }
 }

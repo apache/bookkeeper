@@ -239,6 +239,7 @@ public class ZKRegistrationClient implements RegistrationClient {
                 zke.fillInStackTrace();
                 throw zke;
             } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
                 throw new BKInterruptedException();
             }
             this.ownZKHandle = true;
@@ -259,6 +260,7 @@ public class ZKRegistrationClient implements RegistrationClient {
             try {
                 zk.close();
             } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
                 log.warn("Interrupted on closing zookeeper client", e);
             }
         }

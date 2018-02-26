@@ -168,6 +168,7 @@ public class LedgerCloseTest extends BookKeeperClusterTestCase {
                         try {
                             recoverDoneLatch.await();
                         } catch (InterruptedException ie) {
+                            Thread.currentThread().interrupt();
                         }
                     }
                 }
@@ -202,6 +203,7 @@ public class LedgerCloseTest extends BookKeeperClusterTestCase {
                 try {
                     latch.await();
                 } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
                 }
                 throw BookieException.create(BookieException.Code.UnauthorizedAccessException);
             }
@@ -226,6 +228,7 @@ public class LedgerCloseTest extends BookKeeperClusterTestCase {
                 try {
                     latch.await();
                 } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
                 }
                 // simulate slow adds.
                 throw new IOException("Dead bookie");

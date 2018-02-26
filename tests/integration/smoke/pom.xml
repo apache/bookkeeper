@@ -30,7 +30,7 @@
   <groupId>org.apache.bookkeeper.tests.integration</groupId>
   <artifactId>smoke</artifactId>
   <packaging>jar</packaging>
-  <name>Apache BookKeeper :: Tests :: Backward Compatibility :: Smoke test</name>
+  <name>Apache BookKeeper :: Tests :: Integration :: Smoke test</name>
 
   <dependencies>
     <dependency>

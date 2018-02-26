@@ -147,6 +147,7 @@ public class BenchThroughputLatency implements AddCallback, Runnable {
                         }
                     } catch (InterruptedException ie) {
                         LOG.info("Caught interrupted exception, going away");
+                        Thread.currentThread().interrupt();
                     }
                 }
             };
@@ -162,6 +163,7 @@ public class BenchThroughputLatency implements AddCallback, Runnable {
                     LOG.info("Time to send first batch: {}s {}ns ", time / 1000 / 1000 / 1000, time);
                 }
             } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
                 break;
             }
 
@@ -188,6 +190,7 @@ public class BenchThroughputLatency implements AddCallback, Runnable {
             }
         } catch (InterruptedException e) {
             LOG.error("Interrupted while waiting", e);
+            Thread.currentThread().interrupt();
         }
         synchronized (this) {
             duration = System.currentTimeMillis() - start;
@@ -198,7 +201,7 @@ public class BenchThroughputLatency implements AddCallback, Runnable {
         try {
             reporter.join();
         } catch (InterruptedException ie) {
-            // ignore
+            Thread.currentThread().interrupt();
         }
         LOG.info("Finished processing in ms: " + getDuration() + " tp = " + throughput);
     }

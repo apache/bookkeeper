@@ -224,6 +224,7 @@ public class AuditorElector {
                         try {
                             zkc.delete(myVote, -1);
                         } catch (InterruptedException ie) {
+                            Thread.currentThread().interrupt();
                             LOG.warn("InterruptedException while deleting myVote: " + myVote,
                                      ie);
                         } catch (KeeperException ke) {

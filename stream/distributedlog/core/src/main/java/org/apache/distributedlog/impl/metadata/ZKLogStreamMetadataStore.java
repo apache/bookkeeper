@@ -213,6 +213,7 @@ public class ZKLogStreamMetadataStore implements LogStreamMetadataStore {
             }, null);
 
         } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
             LOG.error("Interrupted while reading {}", logSegmentsPath, ie);
             promise.completeExceptionally(new DLInterruptedException("Interrupted while checking "
                     + logSegmentsPath, ie));
@@ -616,6 +617,7 @@ public class ZKLogStreamMetadataStore implements LogStreamMetadataStore {
                     new ZKException("Encountered zookeeper connection issue on creating log "
                             + logName, KeeperException.Code.CONNECTIONLOSS));
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             return FutureUtils.exception(new DLInterruptedException("Interrupted on creating log " + logName, e));
         }
     }
@@ -660,6 +662,7 @@ public class ZKLogStreamMetadataStore implements LogStreamMetadataStore {
                     new ZKException("Encountered zookeeper issue on deleting log stream "
                             + logName, KeeperException.Code.CONNECTIONLOSS));
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             FutureUtils.completeExceptionally(promise,
                     new DLInterruptedException("Interrupted while deleting log stream " + logName));
         } catch (KeeperException e) {
@@ -872,6 +875,7 @@ public class ZKLogStreamMetadataStore implements LogStreamMetadataStore {
         } catch (ZooKeeperConnectionException e) {
             future.completeExceptionally(e);
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             future.completeExceptionally(e);
         }
         return future;
@@ -940,6 +944,7 @@ public class ZKLogStreamMetadataStore implements LogStreamMetadataStore {
         } catch (ZooKeeperConnectionException e) {
             future.completeExceptionally(e);
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             future.completeExceptionally(e);
         }
         return future;

@@ -180,6 +180,7 @@ public class TestClient {
             LOG.error("I/O exception during benchmark", ioe);
         } catch (InterruptedException ie) {
             LOG.error("Benchmark interrupted", ie);
+            Thread.currentThread().interrupt();
         } finally {
             if (bkc != null) {
                 try {
@@ -188,6 +189,7 @@ public class TestClient {
                     LOG.error("Error closing bookkeeper client", bke);
                 } catch (InterruptedException ie) {
                     LOG.warn("Interrupted closing bookkeeper client", ie);
+                    Thread.currentThread().interrupt();
                 }
             }
         }
@@ -280,6 +282,7 @@ public class TestClient {
                 LOG.error("Exception in worker thread", e);
                 return 0L;
             } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
                 LOG.error("Exception in worker thread", ie);
                 return 0L;
             }

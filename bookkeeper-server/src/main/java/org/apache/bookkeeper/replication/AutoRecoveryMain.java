@@ -208,6 +208,7 @@ public class AutoRecoveryMain {
                 try {
                     Thread.sleep(watchInterval);
                 } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
                     break;
                 }
                 // If any one service not running, then shutdown peer.

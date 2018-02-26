@@ -37,6 +37,7 @@ import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.LedgerHandleAdapter;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.discover.RegistrationManager;
+import org.apache.bookkeeper.meta.AbstractZkLedgerManagerFactory;
 import org.apache.bookkeeper.meta.LayoutManager;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
@@ -99,12 +100,12 @@ public class BookieAutoRecoveryTest extends BookKeeperClusterTestCase {
         LayoutManager layoutManager = RegistrationManager
             .instantiateRegistrationManager(new ServerConfiguration(baseClientConf)).getLayoutManager();
 
-        mFactory = LedgerManagerFactory
+        mFactory = AbstractZkLedgerManagerFactory
             .newLedgerManagerFactory(
                 baseClientConf,
                 layoutManager);
         underReplicationManager = mFactory.newLedgerUnderreplicationManager();
-        LedgerManagerFactory newLedgerManagerFactory = LedgerManagerFactory
+        LedgerManagerFactory newLedgerManagerFactory = AbstractZkLedgerManagerFactory
             .newLedgerManagerFactory(
                 baseClientConf,
                 layoutManager);

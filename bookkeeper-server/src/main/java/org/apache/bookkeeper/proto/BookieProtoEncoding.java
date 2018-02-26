@@ -167,6 +167,9 @@ public class BookieProtoEncoding {
                 // Read ledger and entry id without advancing the reader index
                 ledgerId = packet.getLong(packet.readerIndex());
                 entryId = packet.getLong(packet.readerIndex() + 8);
+                // mark the reader index so that any resets will return to the
+                // start of the payload
+                packet.markReaderIndex();
                 return BookieProtocol.ParsedAddRequest.create(
                         version, ledgerId, entryId, flags,
                         masterKey, packet.retain());
