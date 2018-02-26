@@ -85,7 +85,7 @@ using Google Doc.
 
 This section lists all the _bookkeeper proposals_ made to BookKeeper.
 
-*Next Proposal Number: 30*
+*Next Proposal Number: 32*
 
 ### Inprogress
 
@@ -101,6 +101,7 @@ Proposal | State
 [BP-27: New BookKeeper CLI](../../bps/BP-27-new-bookkeeper-cli) | Draft
 [BP-28: use etcd as metadata store](../../bps/BP-28-etcd-as-metadata-store) | Accepted
 [BP-29: Metadata API module](../../bps/BP-29-metadata-store-api-module) | Accepted
+[BP-31: BookKeeper Durability Anchor](../../bps/BP-31-durability) | Accepted
 
 ### Adopted
 
