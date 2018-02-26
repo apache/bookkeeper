@@ -70,6 +70,17 @@ groups:
     description: The bookie authentication provider factory class name. If this is null, no authentication will take place.
     default: null
 
+- name: Worker thread settings
+  - param: numAddWorkerThreads
+    description: The number of threads that handle write requests. if zero, writes are handled by [Netty threads](http://netty.io/wiki/thread-model.html) directly.
+    default: 1
+  - param: numReadWorkerThreads
+    description: The number of threads that handle read requests. If zero, reads are handled by [Netty threads](http://netty.io/wiki/thread-model.html) directly.
+    default: 8
+  - param: numHighPriorityWorkerThreads
+    description: The number of threads that should be used for high priority requests (i.e. recovery reads and adds, and fencing). If zero, reads are handled by [Netty threads](http://netty.io/wiki/thread-model.html) directly.
+    default: 8
+
 - name: Garbage collection settings
   params:
   - param: gcWaitTime
@@ -78,12 +89,6 @@ groups:
   - param: gcOverreplicatedLedgerWaitTime
     description: How long the interval to trigger next garbage collection of overreplicated ledgers, in milliseconds. This should not be run very frequently since we read the metadata for all the ledgers on the bookie from zk.
     default: 86400000
-  - param: numAddWorkerThreads
-    description: The number of threads that handle write requests. if zero, writes are handled by [Netty threads](http://netty.io/wiki/thread-model.html) directly.
-    default: 1
-  - param: numReadWorkerThreads
-    description: The umber of threads that handle read requests. If 0, reads are handled by [Netty threads](http://netty.io/wiki/thread-model.html) directly.
-    default: 1
   - param: isForceGCAllowWhenNoSpace
     description: Whether force compaction is allowed when the disk is full or almost full. Forcing GC may get some space back, but may also fill up disk space more quickly. This is because new log files are created before GC, while old garbage log files are deleted after GC.
     default: 'false'
