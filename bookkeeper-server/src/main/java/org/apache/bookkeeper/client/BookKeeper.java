@@ -458,10 +458,10 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
                 java.util.Optional.ofNullable(zkc));
             this.regClient = this.metadataDriver.getRegistrationClient();
         } catch (ConfigurationException ce) {
-            LOG.error("Failed to initialize metadata client driver", ce);
+            LOG.error("Failed to initialize metadata client driver using invalid metadata service uri", ce);
             throw new IOException("Failed to initialize metadata client driver", ce);
         } catch (MetadataException me) {
-            LOG.error("Failed to initialize metadata client driver", me);
+            LOG.error("Encountered metadata exceptions on initializing metadata client driver", me);
             throw new IOException("Failed to initialize metadata client driver", me);
         }
 
@@ -1426,7 +1426,6 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
             // which will reject any incoming metadata requests.
             ledgerManager.close();
             ledgerIdGenerator.close();
-            ledgerManagerFactory.close();
         } catch (IOException ie) {
             LOG.error("Failed to close ledger manager : ", ie);
         }
@@ -1453,7 +1452,6 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
         if (ownEventLoopGroup) {
             eventLoopGroup.shutdownGracefully();
         }
-        this.regClient.close();
         this.metadataDriver.close();
     }
 
