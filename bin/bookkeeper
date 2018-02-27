@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 #
 #/**
-# * Copyright 2007 The Apache Software Foundation
-# *
 # * Licensed to the Apache Software Foundation (ASF) under one
 # * or more contributor license agreements.  See the NOTICE file
 # * distributed with this work for additional information
@@ -53,6 +51,7 @@ BK_HOME=`cd $BINDIR/..;pwd`
 
 DEFAULT_CONF=$BK_HOME/conf/bk_server.conf
 DEFAULT_LOG_CONF=$BK_HOME/conf/log4j.properties
+SERVER_HOME=${BK_HOME}/bookkeeper-server
 
 source $BK_HOME/conf/bkenv.sh
 
@@ -94,7 +93,7 @@ else
   fi
 fi
 
-BUILT_JAR=$(find-server-jar ${BK_HOME}/target)
+BUILT_JAR=$(find-server-jar ${SERVER_HOME}/target)
 
 if [ -z "${BUILT_JAR}" ] && [ -z "${BOOKIE_JAR}" ]; then
   echo "Couldn't find bookkeeper jar."
@@ -108,7 +107,7 @@ if [ -z "${BUILT_JAR}" ] && [ -z "${BOOKIE_JAR}" ]; then
       ;;
   esac
 
-  BUILT_JAR=$(find-server-jar ${BK_HOME}/target)
+  BUILT_JAR=$(find-server-jar ${SERVER_HOME}/target)
   if [ -n "${BUILT_JAR}" ]; then
     BOOKIE_JAR=$BUILT_JAR
   fi
@@ -158,10 +157,10 @@ add_maven_deps_to_classpath() {
   # Need to generate classpath from maven pom. This is costly so generate it
   # and cache it. Save the file into our target dir so a mvn clean will get
   # clean it up and force us create a new one.
-  f="${BK_HOME}/target/cached_classpath.txt"
+  f="${SERVER_HOME}/target/cached_classpath.txt"
   if [ ! -f "${f}" ]
   then
-    ${MVN} -f "${BK_HOME}/pom.xml" dependency:build-classpath -Dmdep.outputFile="${f}" &> /dev/null
+    ${MVN} -f "${SERVER_HOME}/pom.xml" dependency:build-classpath -Dmdep.outputFile="${f}" &> /dev/null
   fi
   BOOKIE_CLASSPATH=${CLASSPATH}:`cat "${f}"`
 }
