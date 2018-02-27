@@ -54,7 +54,7 @@ import org.apache.distributedlog.ZooKeeperClientBuilder;
 import org.apache.distributedlog.api.DistributedLogManager;
 import org.apache.distributedlog.api.namespace.Namespace;
 
-import org.apache.distributedlog.common.concurrent.FutureUtils;
+import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.distributedlog.common.util.SchedulerUtils;
 
 import org.apache.distributedlog.exceptions.DLIllegalStateException;

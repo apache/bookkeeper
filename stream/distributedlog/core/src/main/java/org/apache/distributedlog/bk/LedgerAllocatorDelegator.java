@@ -21,7 +21,7 @@ import java.util.concurrent.CompletableFuture;
 
 import org.apache.bookkeeper.client.LedgerHandle;
 
-import org.apache.distributedlog.common.concurrent.FutureUtils;
+import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.distributedlog.util.Transaction;
 import org.apache.distributedlog.util.Transaction.OpListener;
 

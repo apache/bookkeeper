@@ -30,7 +30,7 @@ import org.apache.bookkeeper.feature.SettableFeature;
 import org.apache.distributedlog.api.DistributedLogManager;
 import org.apache.distributedlog.api.LogReader;
 import org.apache.distributedlog.common.annotations.DistributedLogAnnotations.FlakyTest;
-import org.apache.distributedlog.common.concurrent.FutureEventListener;
+import org.apache.bookkeeper.common.concurrent.FutureEventListener;
 import org.apache.distributedlog.feature.CoreFeatureKeys;
 import org.apache.distributedlog.impl.logsegment.BKLogSegmentEntryReader;
 import org.apache.distributedlog.util.FailpointUtils;

@@ -20,7 +20,7 @@ package org.apache.distributedlog.common.stats;
 import com.google.common.base.Stopwatch;
 import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.stats.OpStatsLogger;
-import org.apache.distributedlog.common.concurrent.FutureEventListener;
+import org.apache.bookkeeper.common.concurrent.FutureEventListener;
 
 /**
  * A {@link FutureEventListener} monitors the stats for a given operation.

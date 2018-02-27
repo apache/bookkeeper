@@ -24,7 +24,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Comparator;
 import java.util.concurrent.CompletableFuture;
-import org.apache.distributedlog.common.concurrent.FutureUtils;
+import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.distributedlog.exceptions.DLInterruptedException;
 import org.apache.distributedlog.exceptions.LogSegmentNotFoundException;
 import org.apache.distributedlog.exceptions.UnsupportedMetadataVersionException;

@@ -34,7 +34,7 @@ import org.apache.distributedlog.bk.LedgerAllocator;
 import org.apache.distributedlog.bk.LedgerAllocatorDelegator;
 import org.apache.distributedlog.bk.QuorumConfigProvider;
 import org.apache.distributedlog.bk.SimpleLedgerAllocator;
-import org.apache.distributedlog.common.concurrent.FutureUtils;
+import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.distributedlog.config.DynamicDistributedLogConfiguration;
 import org.apache.distributedlog.exceptions.BKTransmitException;
 import org.apache.distributedlog.injector.AsyncFailureInjector;

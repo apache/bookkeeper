@@ -52,8 +52,8 @@ import org.apache.distributedlog.api.LogReader;
 import org.apache.distributedlog.api.subscription.SubscriptionsStore;
 
 import org.apache.distributedlog.callback.LogSegmentListener;
-import org.apache.distributedlog.common.concurrent.FutureEventListener;
-import org.apache.distributedlog.common.concurrent.FutureUtils;
+import org.apache.bookkeeper.common.concurrent.FutureEventListener;
+import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.distributedlog.common.stats.BroadCastStatsLogger;
 
 import org.apache.distributedlog.common.util.PermitLimiter;
