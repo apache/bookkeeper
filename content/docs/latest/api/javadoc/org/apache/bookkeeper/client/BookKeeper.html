@@ -293,18 +293,23 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/BookKeeper.html
 <th class="colOne" scope="col">Constructor and Description</th>
 </tr>
 <tr class="altColor">
+<td class="colOne"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookKeeper.html#BookKeeper--">BookKeeper</a></span>()</code>
+<div class="block">Allow to extend BookKeeper for mocking in unit tests.</div>
+</td>
+</tr>
+<tr class="rowColor">
 <td class="colOne"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookKeeper.html#BookKeeper-org.apache.bookkeeper.conf.ClientConfiguration-">BookKeeper</a></span>(<a href="../../../../org/apache/bookkeeper/conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a>&nbsp;conf)</code>
 <div class="block">Create a bookkeeper client using a configuration object.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colOne"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookKeeper.html#BookKeeper-org.apache.bookkeeper.conf.ClientConfiguration-org.apache.zookeeper.ZooKeeper-">BookKeeper</a></span>(<a href="../../../../org/apache/bookkeeper/conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a>&nbsp;conf,
           org.apache.zookeeper.ZooKeeper&nbsp;zk)</code>
 <div class="block">Create a bookkeeper client but use the passed in zookeeper client instead
  of instantiating one.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colOne"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookKeeper.html#BookKeeper-org.apache.bookkeeper.conf.ClientConfiguration-org.apache.zookeeper.ZooKeeper-io.netty.channel.EventLoopGroup-">BookKeeper</a></span>(<a href="../../../../org/apache/bookkeeper/conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a>&nbsp;conf,
           org.apache.zookeeper.ZooKeeper&nbsp;zk,
           io.netty.channel.EventLoopGroup&nbsp;eventLoopGroup)</code>
@@ -312,7 +317,7 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/BookKeeper.html
  client event loop group instead of instantiating those.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colOne"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookKeeper.html#BookKeeper-org.apache.bookkeeper.conf.ClientConfiguration-org.apache.zookeeper.ZooKeeper-io.netty.channel.EventLoopGroup-org.apache.bookkeeper.stats.StatsLogger-org.apache.bookkeeper.net.DNSToSwitchMapping-io.netty.util.HashedWheelTimer-org.apache.bookkeeper.feature.FeatureProvider-">BookKeeper</a></span>(<a href="../../../../org/apache/bookkeeper/conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a>&nbsp;conf,
           org.apache.zookeeper.ZooKeeper&nbsp;zkc,
           io.netty.channel.EventLoopGroup&nbsp;eventLoopGroup,
@@ -323,7 +328,7 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/BookKeeper.html
 <div class="block">Constructor for use with the builder.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colOne"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookKeeper.html#BookKeeper-java.lang.String-">BookKeeper</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;servers)</code>
 <div class="block">Create a bookkeeper client.</div>
 </td>
@@ -1113,7 +1118,7 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/BookKeeper.html
 <a name="BookKeeper-org.apache.bookkeeper.conf.ClientConfiguration-org.apache.zookeeper.ZooKeeper-io.netty.channel.EventLoopGroup-org.apache.bookkeeper.stats.StatsLogger-org.apache.bookkeeper.net.DNSToSwitchMapping-io.netty.util.HashedWheelTimer-org.apache.bookkeeper.feature.FeatureProvider-">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>BookKeeper</h4>
 <pre>BookKeeper(<a href="../../../../org/apache/bookkeeper/conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a>&nbsp;conf,
@@ -1133,6 +1138,16 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/BookKeeper.html
 <dd><code><a href="http://docs.oracle.com/javase/8/docs/api/java/lang/InterruptedException.html?is-external=true" title="class or interface in java.lang">InterruptedException</a></code></dd>
 <dd><code><a href="../../../../org/apache/bookkeeper/client/BKException.html" title="class in org.apache.bookkeeper.client">BKException</a></code></dd>
 </dl>
+</li>
+</ul>
+<a name="BookKeeper--">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>BookKeeper</h4>
+<pre>BookKeeper()</pre>
+<div class="block">Allow to extend BookKeeper for mocking in unit tests.</div>
 </li>
 </ul>
 </li>
