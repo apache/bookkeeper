@@ -17,8 +17,9 @@
  */
 package org.apache.distributedlog.zk;
 
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.mock;
+
 import java.util.concurrent.CountDownLatch;
 import javax.annotation.Nullable;
 import org.apache.distributedlog.ZooKeeperClient;

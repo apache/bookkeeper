@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 import org.apache.bookkeeper.client.LedgerHandle;
-
 import org.apache.distributedlog.bk.LedgerAllocator;
 import org.apache.distributedlog.logsegment.LogSegmentEntryWriter;
 import org.apache.distributedlog.util.Allocator;

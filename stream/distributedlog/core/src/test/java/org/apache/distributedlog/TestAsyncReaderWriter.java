@@ -20,7 +20,13 @@ package org.apache.distributedlog;
 import static com.google.common.base.Charsets.UTF_8;
 import static org.apache.distributedlog.DLMTestUtil.validateFutureFailed;
 import static org.apache.distributedlog.LogRecord.MAX_LOGRECORD_SIZE;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.Lists;
 import io.netty.buffer.ByteBuf;
@@ -36,14 +42,14 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import junit.framework.Assert;
-
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.BookKeeperAccessor;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.LedgerMetadata;
+import org.apache.bookkeeper.common.concurrent.FutureEventListener;
+import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.feature.FixedValueFeature;
 import org.apache.bookkeeper.stats.NullStatsLogger;
-
 import org.apache.distributedlog.api.AsyncLogReader;
 import org.apache.distributedlog.api.AsyncLogWriter;
 import org.apache.distributedlog.api.DistributedLogManager;
@@ -52,11 +58,8 @@ import org.apache.distributedlog.api.LogWriter;
 import org.apache.distributedlog.api.namespace.Namespace;
 import org.apache.distributedlog.api.namespace.NamespaceBuilder;
 import org.apache.distributedlog.common.annotations.DistributedLogAnnotations;
-import org.apache.distributedlog.common.concurrent.FutureEventListener;
-import org.apache.distributedlog.common.concurrent.FutureUtils;
 import org.apache.distributedlog.common.config.ConcurrentBaseConfiguration;
 import org.apache.distributedlog.common.config.ConcurrentConstConfiguration;
-
 import org.apache.distributedlog.config.DynamicDistributedLogConfiguration;
 import org.apache.distributedlog.exceptions.BKTransmitException;
 import org.apache.distributedlog.exceptions.DLIllegalStateException;
@@ -72,10 +75,7 @@ import org.apache.distributedlog.io.CompressionCodec;
 import org.apache.distributedlog.lock.DistributedLock;
 import org.apache.distributedlog.util.FailpointUtils;
 import org.apache.distributedlog.util.SimplePermitLimiter;
-
-
 import org.apache.distributedlog.util.Utils;
-
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;

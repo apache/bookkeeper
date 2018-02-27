@@ -17,7 +17,7 @@
  */
 package org.apache.distributedlog.impl;
 
-import static org.apache.distributedlog.util.DLUtils.*;
+import static org.apache.distributedlog.util.DLUtils.isReservedStreamName;
 
 import java.net.URI;
 import java.util.ArrayList;

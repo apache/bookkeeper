@@ -21,11 +21,10 @@ import com.google.common.base.Charsets;
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
+import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.distributedlog.DLSN;
 import org.apache.distributedlog.ZooKeeperClient;
 import org.apache.distributedlog.api.subscription.SubscriptionStateStore;
-import org.apache.distributedlog.common.concurrent.FutureUtils;
-
 import org.apache.distributedlog.exceptions.DLInterruptedException;
 import org.apache.distributedlog.util.Utils;
 import org.apache.zookeeper.AsyncCallback;

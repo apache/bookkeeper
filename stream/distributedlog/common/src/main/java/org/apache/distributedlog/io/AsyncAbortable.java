@@ -19,7 +19,7 @@ package org.apache.distributedlog.io;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
-import org.apache.distributedlog.common.concurrent.FutureUtils;
+import org.apache.bookkeeper.common.concurrent.FutureUtils;
 
 /**
  * An {@code Abortable} is a source or destination of data that can be aborted.

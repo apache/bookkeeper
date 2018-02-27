@@ -17,11 +17,19 @@
  */
 package org.apache.distributedlog.lock;
 
-import static org.apache.distributedlog.lock.ZKSessionLock.*;
+import static org.apache.distributedlog.lock.ZKSessionLock.areLockWaitersInSameSession;
+import static org.apache.distributedlog.lock.ZKSessionLock.asyncParseClientID;
+import static org.apache.distributedlog.lock.ZKSessionLock.getLockIdFromPath;
+import static org.apache.distributedlog.lock.ZKSessionLock.getLockPathPrefixV1;
+import static org.apache.distributedlog.lock.ZKSessionLock.getLockPathPrefixV2;
+import static org.apache.distributedlog.lock.ZKSessionLock.getLockPathPrefixV3;
+import static org.apache.distributedlog.lock.ZKSessionLock.parseMemberID;
+import static org.apache.distributedlog.lock.ZKSessionLock.serializeClientId;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;

@@ -18,8 +18,32 @@
 package org.apache.distributedlog.config;
 
 
-import static org.apache.distributedlog.DistributedLogConfiguration.*;
-import static org.junit.Assert.*;
+import static org.apache.distributedlog.DistributedLogConfiguration.BKDL_BOOKKEEPER_ACK_QUORUM_SIZE;
+import static org.apache.distributedlog.DistributedLogConfiguration.BKDL_BOOKKEEPER_ACK_QUORUM_SIZE_DEFAULT;
+import static org.apache.distributedlog.DistributedLogConfiguration.BKDL_BOOKKEEPER_ACK_QUORUM_SIZE_OLD;
+import static org.apache.distributedlog.DistributedLogConfiguration.BKDL_BOOKKEEPER_ENSEMBLE_SIZE;
+import static org.apache.distributedlog.DistributedLogConfiguration.BKDL_BOOKKEEPER_ENSEMBLE_SIZE_DEFAULT;
+import static org.apache.distributedlog.DistributedLogConfiguration.BKDL_BOOKKEEPER_ENSEMBLE_SIZE_OLD;
+import static org.apache.distributedlog.DistributedLogConfiguration.BKDL_BOOKKEEPER_WRITE_QUORUM_SIZE;
+import static org.apache.distributedlog.DistributedLogConfiguration.BKDL_BOOKKEEPER_WRITE_QUORUM_SIZE_DEFAULT;
+import static org.apache.distributedlog.DistributedLogConfiguration.BKDL_BOOKKEEPER_WRITE_QUORUM_SIZE_OLD;
+import static org.apache.distributedlog.DistributedLogConfiguration.BKDL_IS_DURABLE_WRITE_ENABLED;
+import static org.apache.distributedlog.DistributedLogConfiguration.BKDL_OUTPUT_BUFFER_SIZE;
+import static org.apache.distributedlog.DistributedLogConfiguration.BKDL_OUTPUT_BUFFER_SIZE_DEFAULT;
+import static org.apache.distributedlog.DistributedLogConfiguration.BKDL_OUTPUT_BUFFER_SIZE_OLD;
+import static org.apache.distributedlog.DistributedLogConfiguration.BKDL_READAHEAD_BATCHSIZE;
+import static org.apache.distributedlog.DistributedLogConfiguration.BKDL_READAHEAD_BATCHSIZE_DEFAULT;
+import static org.apache.distributedlog.DistributedLogConfiguration.BKDL_READAHEAD_BATCHSIZE_OLD;
+import static org.apache.distributedlog.DistributedLogConfiguration.BKDL_READAHEAD_MAX_RECORDS;
+import static org.apache.distributedlog.DistributedLogConfiguration.BKDL_READAHEAD_MAX_RECORDS_DEFAULT;
+import static org.apache.distributedlog.DistributedLogConfiguration.BKDL_READAHEAD_MAX_RECORDS_OLD;
+import static org.apache.distributedlog.DistributedLogConfiguration.BKDL_RETENTION_PERIOD_IN_HOURS;
+import static org.apache.distributedlog.DistributedLogConfiguration.BKDL_RETENTION_PERIOD_IN_HOURS_DEFAULT;
+import static org.apache.distributedlog.DistributedLogConfiguration.BKDL_RETENTION_PERIOD_IN_HOURS_OLD;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
 import org.apache.distributedlog.DistributedLogConfiguration;
 import org.apache.distributedlog.bk.QuorumConfig;
 import org.apache.distributedlog.common.config.ConcurrentBaseConfiguration;
