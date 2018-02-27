@@ -29,21 +29,31 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.net.BindException;
 import java.net.InetAddress;
+import java.nio.ByteBuffer;
 import java.security.AccessControlException;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.bookkeeper.bookie.BookieException.DiskPartitionDuplicationException;
+import org.apache.bookkeeper.bookie.Journal.LastLogMark;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirException;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
+import org.apache.bookkeeper.client.LedgerEntry;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -621,15 +631,6 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
         } catch (NoWritableLedgerDirException e) {
             // expected
         }
-
-        conf.setIsForceGCAllowWhenNoSpace(false)
-            .setReadOnlyModeEnabled(true);
-        try {
-            new Bookie(conf);
-            fail("NoWritableLedgerDirException expected");
-        } catch (NoWritableLedgerDirException e) {
-            // expected
-        }
     }
 
     /**
@@ -751,6 +752,164 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
         assertTrue(server.getBookie().isReadOnly());
         server.shutdown();
         bkClient.close();
+    }
+
+    static class MockInterleavedLedgerStorage extends InterleavedLedgerStorage {
+        @Override
+        public void shutdown() {
+            // During BookieServer shutdown this method will be called
+            // and we want it to be noop.
+            // do nothing
+        }
+
+        @Override
+        public synchronized void flush() throws IOException {
+            // this method will be called by SyncThread.shutdown.
+            // During BookieServer shutdown we want this method to be noop
+            // do nothing
+        }
+    }
+
+    private LogMark readLastMarkFile(File lastMarkFile) throws IOException {
+        byte buff[] = new byte[16];
+        ByteBuffer bb = ByteBuffer.wrap(buff);
+        LogMark rolledLogMark = new LogMark();
+        FileInputStream fis = new FileInputStream(lastMarkFile);
+        int bytesRead = fis.read(buff);
+        fis.close();
+        if (bytesRead != 16) {
+            throw new IOException("Couldn't read enough bytes from lastMark." + " Wanted " + 16 + ", got " + bytesRead);
+        }
+        bb.clear();
+        rolledLogMark.readLogMark(bb);
+        return rolledLogMark;
+    }
+
+    @Test(timeout = 30000)
+    public void testCheckPointForEntryLoggerWithMultipleActiveEntryLogs() throws Exception {
+        File tmpDir = createTempDir("DiskCheck", "test");
+
+        final ServerConfiguration conf = TestBKConfiguration.newServerConfiguration()
+                .setZkServers(zkUtil.getZooKeeperConnectString())
+                .setZkTimeout(5000)
+                .setJournalDirName(tmpDir.getPath())
+                .setLedgerDirNames(new String[] { tmpDir.getPath() })
+                .setAutoRecoveryDaemonEnabled(false)
+                .setFlushInterval(5000)
+                .setBookiePort(PortManager.nextFreePort())
+                // entrylog per ledger is enabled
+                .setEntryLogPerLedgerEnabled(true)
+                .setLedgerStorageClass(MockInterleavedLedgerStorage.class.getName());
+        Assert.assertEquals("Number of JournalDirs", 1, conf.getJournalDirs().length);
+        // we know there is only one ledgerDir
+        File ledgerDir = Bookie.getCurrentDirectories(conf.getLedgerDirs())[0];
+        BookieServer server = new BookieServer(conf);
+        server.start();
+        ClientConfiguration clientConf = new ClientConfiguration();
+        clientConf.setZkServers(zkUtil.getZooKeeperConnectString());
+        BookKeeper bkClient = new BookKeeper(clientConf);
+
+        ExecutorService threadPool = Executors.newFixedThreadPool(30);
+        int numOfLedgers = 12;
+        int numOfEntries = 500;
+        byte[] dataBytes = "data".getBytes();
+        LedgerHandle[] handles = new LedgerHandle[numOfLedgers];
+        AtomicBoolean receivedExceptionForAdd = new AtomicBoolean(false);
+        CountDownLatch countDownLatch = new CountDownLatch(numOfLedgers * numOfEntries);
+        for (int i = 0; i < numOfLedgers; i++) {
+            int ledgerIndex = i;
+            handles[i] = bkClient.createLedgerAdv((long) i, 1, 1, 1, DigestType.CRC32, "passwd".getBytes(), null);
+            for (int j = 0; j < numOfEntries; j++) {
+                int entryIndex = j;
+                threadPool.submit(() -> {
+                    try {
+                        handles[ledgerIndex].addEntry(entryIndex, dataBytes);
+                    } catch (Exception e) {
+                        LOG.error("Got Exception while trying to addEntry for ledgerId: " + ledgerIndex + " entry: "
+                                + entryIndex, e);
+                        receivedExceptionForAdd.set(true);
+                    } finally {
+                        countDownLatch.countDown();
+                    }
+                });
+            }
+        }
+        Assert.assertTrue("It is expected add requests are supposed to be completed in 3000 secs",
+                countDownLatch.await(3000, TimeUnit.MILLISECONDS));
+        Assert.assertFalse("there shouldn't be any exceptions for addentry requests", receivedExceptionForAdd.get());
+        for (int i = 0; i < numOfLedgers; i++) {
+            handles[i].close();
+        }
+        threadPool.shutdown();
+
+        LastLogMark lastLogMarkBeforeCheckpoint = server.getBookie().journals.get(0).getLastLogMark();
+        LogMark curMarkBeforeCheckpoint = lastLogMarkBeforeCheckpoint.getCurMark();
+
+        File lastMarkFile = new File(ledgerDir, "lastMark");
+        // lastMark file should be zero, because checkpoint hasn't happenend
+        LogMark logMarkFileBeforeCheckpoint = readLastMarkFile(lastMarkFile);
+        Assert.assertEquals("lastMarkFile before checkpoint should be zero", 0,
+                logMarkFileBeforeCheckpoint.compare(new LogMark()));
+
+        Thread.sleep(conf.getFlushInterval() + 1000);
+        // since we have waited for more than flushInterval SyncThread should have checkpointed.
+        // if entrylogperledger is not enabled, then we checkpoint only when currentLog in EntryLogger
+        // is rotated. but if entrylogperledger is enabled, then we checkpoint for every flushInterval period
+        Assert.assertTrue("lastMark file must be existing, because checkpoint should have happened",
+                lastMarkFile.exists());
+
+        LastLogMark lastLogMarkAfterCheckpoint = server.getBookie().journals.get(0).getLastLogMark();
+        LogMark curMarkAfterCheckpoint = lastLogMarkAfterCheckpoint.getCurMark();
+
+        LogMark rolledLogMark = readLastMarkFile(lastMarkFile);
+        Assert.assertNotEquals("rolledLogMark should not be zero, since checkpoint has happenend", 0,
+                rolledLogMark.compare(new LogMark()));
+        // Curmark should be equal before and after checkpoint,
+        // because we didnt add new entries during this period
+        Assert.assertTrue("Curmark should be equal before and after checkpoint",
+                curMarkAfterCheckpoint.compare(curMarkBeforeCheckpoint) == 0);
+        // Curmark after checkpoint should be equal to rolled logmark,
+        // because we checkpointed
+        Assert.assertTrue("Curmark after checkpoint should be equal to rolled logmark",
+                curMarkAfterCheckpoint.compare(rolledLogMark) == 0);
+
+        // here we are calling shutdown, but MockInterleavedLedgerStorage shudown/flush
+        // methods are noop, so entrylogger is not flushed as part of this shutdown
+        // here we are trying to simulate Bookie crash, but there is no way to
+        // simulate bookie abrupt crash
+        server.shutdown();
+        bkClient.close();
+
+        // delete journal files and lastMark, to make sure that we are not reading from
+        // Journal file
+        File journalDirectory = Bookie.getCurrentDirectory(conf.getJournalDirs()[0]);
+        List<Long> journalLogsId = Journal.listJournalIds(journalDirectory, null);
+        for (long journalId : journalLogsId) {
+            File journalFile = new File(journalDirectory, Long.toHexString(journalId) + ".txn");
+            journalFile.delete();
+        }
+
+        // we know there is only one ledgerDir
+        lastMarkFile = new File(ledgerDir, "lastMark");
+        lastMarkFile.delete();
+
+        // now we are restarting BookieServer
+        server = new BookieServer(conf);
+        server.start();
+        bkClient = new BookKeeper(clientConf);
+        // since Bookie checkpointed successfully before shutdown/crash,
+        // we should be able to read from entryLogs though journal is deleted
+        for (int i = 0; i < numOfLedgers; i++) {
+            LedgerHandle lh = bkClient.openLedger(i, DigestType.CRC32, "passwd".getBytes());
+            Enumeration<LedgerEntry> entries = lh.readEntries(0, numOfEntries - 1);
+            while (entries.hasMoreElements()) {
+                LedgerEntry entry = entries.nextElement();
+                byte[] readData = entry.getEntry();
+                Assert.assertEquals("Ledger Entry Data should match", new String("data".getBytes()),
+                        new String(readData));
+            }
+        }
+        server.shutdown();
     }
 
     /**

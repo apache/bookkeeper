@@ -37,7 +37,10 @@ import java.util.List;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
+
 import org.apache.bookkeeper.bookie.Bookie.NoLedgerException;
+import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
 import org.apache.bookkeeper.bookie.FileInfoBackingCache.CachedFileInfo;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
@@ -456,19 +459,37 @@ public class LedgerCacheTest {
     static class FlushTestSortedLedgerStorage extends SortedLedgerStorage {
         final AtomicBoolean injectMemTableSizeLimitReached;
         final AtomicBoolean injectFlushException;
+        final AtomicLong injectFlushExceptionForLedger;
+        static final long FORALLLEDGERS = -1;
+
+        enum Flusher {
+            Sequential, Parallel
+        }
+
+        Flusher flusherCalled = Flusher.Sequential;
 
         public FlushTestSortedLedgerStorage() {
             super();
-            injectMemTableSizeLimitReached = new AtomicBoolean();
-            injectFlushException = new AtomicBoolean();
+            injectMemTableSizeLimitReached = new AtomicBoolean(false);
+            injectFlushException = new AtomicBoolean(false);
+            injectFlushExceptionForLedger = new AtomicLong(FORALLLEDGERS);
         }
 
         public void setInjectMemTableSizeLimitReached(boolean setValue) {
             injectMemTableSizeLimitReached.set(setValue);
         }
 
-        public void setInjectFlushException(boolean setValue) {
+        public void setInjectFlushException(boolean setValue, long ledgerId) {
             injectFlushException.set(setValue);
+            injectFlushExceptionForLedger.set(ledgerId);
+        }
+
+        public void setFlusherCalled(Flusher flusherCalled) {
+            this.flusherCalled = flusherCalled;
+        }
+
+        public Flusher getFlusherCalled() {
+            return this.flusherCalled;
         }
 
         @Override
@@ -489,17 +510,31 @@ public class LedgerCacheTest {
                 checkpointSource,
                 checkpointer,
                 statsLogger);
-            this.memTable = new EntryMemTable(conf, checkpointSource, null, statsLogger) {
+            this.memTable = new EntryMemTable(conf, checkpointSource, this.flushExecutor, statsLogger) {
                 @Override
                 boolean isSizeLimitReached() {
                     return (injectMemTableSizeLimitReached.get() || super.isSizeLimitReached());
+                }
+
+                @Override
+                long flushSnapshotSequentially(final SkipListFlusher flusher, Checkpoint checkpoint)
+                        throws IOException {
+                    setFlusherCalled(Flusher.Sequential);
+                    return super.flushSnapshotSequentially(flusher, checkpoint);
+                }
+
+                @Override
+                long flushSnapshotParallelly(final SkipListFlusher flusher, Checkpoint checkpoint) throws IOException {
+                    setFlusherCalled(Flusher.Parallel);
+                    return super.flushSnapshotParallelly(flusher, checkpoint);
                 }
             };
         }
 
         @Override
         public void process(long ledgerId, long entryId, ByteBuf buffer) throws IOException {
-            if (injectFlushException.get()) {
+            if (injectFlushException.get() && ((injectFlushExceptionForLedger.get() == FORALLLEDGERS)
+                    || (injectFlushExceptionForLedger.get() == ledgerId))) {
                 throw new IOException("Injected Exception");
             }
             super.process(ledgerId, entryId, buffer);
@@ -547,16 +582,18 @@ public class LedgerCacheTest {
 
         // set flags, so that FlushTestSortedLedgerStorage simulates FlushFailure scenario
         flushTestSortedLedgerStorage.setInjectMemTableSizeLimitReached(true);
-        flushTestSortedLedgerStorage.setInjectFlushException(true);
+        flushTestSortedLedgerStorage.setInjectFlushException(true, FlushTestSortedLedgerStorage.FORALLLEDGERS);
         flushTestSortedLedgerStorage.addEntry(generateEntry(1, 2));
         Thread.sleep(1000);
 
         // since we simulated sizeLimitReached, snapshot shouldn't be empty
         assertFalse("EntryMemTable SnapShot is not expected to be empty", memTable.snapshot.isEmpty());
+        assertEquals("Flusher called", FlushTestSortedLedgerStorage.Flusher.Sequential,
+                flushTestSortedLedgerStorage.getFlusherCalled());
 
         // set the flags to false, so flush will succeed this time
         flushTestSortedLedgerStorage.setInjectMemTableSizeLimitReached(false);
-        flushTestSortedLedgerStorage.setInjectFlushException(false);
+        flushTestSortedLedgerStorage.setInjectFlushException(false, FlushTestSortedLedgerStorage.FORALLLEDGERS);
 
         flushTestSortedLedgerStorage.addEntry(generateEntry(1, 3));
         Thread.sleep(1000);
@@ -591,7 +628,7 @@ public class LedgerCacheTest {
 
         // set flags, so that FlushTestSortedLedgerStorage simulates FlushFailure scenario
         flushTestSortedLedgerStorage.setInjectMemTableSizeLimitReached(true);
-        flushTestSortedLedgerStorage.setInjectFlushException(true);
+        flushTestSortedLedgerStorage.setInjectFlushException(true, FlushTestSortedLedgerStorage.FORALLLEDGERS);
         flushTestSortedLedgerStorage.addEntry(generateEntry(1, 2));
 
         // since we simulated sizeLimitReached, snapshot shouldn't be empty
@@ -617,5 +654,111 @@ public class LedgerCacheTest {
         bb.writeLong(entry);
         bb.writeBytes(data);
         return bb;
+    }
+
+    @Test(timeout = 60000)
+    public void testEntryMemTableParallelFlush() throws Exception {
+        int gcWaitTime = 1000;
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setGcWaitTime(gcWaitTime);
+        conf.setLedgerDirNames(createAndGetLedgerDirs(1));
+        conf.setLedgerStorageClass(FlushTestSortedLedgerStorage.class.getName());
+        // enable entrylog per ledger
+        conf.setEntryLogPerLedgerEnabled(true);
+
+        Bookie bookie = new Bookie(conf);
+        FlushTestSortedLedgerStorage flushTestSortedLedgerStorage = (FlushTestSortedLedgerStorage) bookie.ledgerStorage;
+        EntryMemTable memTable = flushTestSortedLedgerStorage.memTable;
+
+        /*
+         * this bookie.addEntry call is required. FileInfo for Ledger 1, 2, 3
+         * would be created with this call. without the fileinfo,
+         * 'flushTestSortedLedgerStorage.addEntry' calls will fail because of
+         * BOOKKEEPER-965 change.
+         */
+        bookie.addEntry(generateEntry(1, 1), false, new Bookie.NopWriteCallback(), null, "passwd".getBytes());
+        bookie.addEntry(generateEntry(2, 1), false, new Bookie.NopWriteCallback(), null, "passwd".getBytes());
+        bookie.addEntry(generateEntry(3, 1), false, new Bookie.NopWriteCallback(), null, "passwd".getBytes());
+
+        flushTestSortedLedgerStorage.addEntry(generateEntry(1, 2));
+        flushTestSortedLedgerStorage.addEntry(generateEntry(2, 2));
+        flushTestSortedLedgerStorage.addEntry(generateEntry(3, 2));
+
+        assertTrue("EntryMemTable SnapShot is expected to be empty", memTable.snapshot.isEmpty());
+        assertFalse("EntryMemTable is not expected to be empty", memTable.isEmpty());
+
+        // inject MemTableSizeLimitReached, so entrymemtable will be flushed
+        flushTestSortedLedgerStorage.setInjectMemTableSizeLimitReached(true);
+        flushTestSortedLedgerStorage.addEntry(generateEntry(1, 3));
+        Thread.sleep(1000);
+
+        // since we simulated sizeLimitReached, snapshot should have been created and flushed
+        assertTrue("EntryMemTable SnapShot is expected to be empty", memTable.snapshot.isEmpty());
+        assertEquals("Flusher called", FlushTestSortedLedgerStorage.Flusher.Parallel,
+                flushTestSortedLedgerStorage.getFlusherCalled());
+    }
+
+    @Test(timeout = 60000)
+    public void testEntryMemTableParallelFlushWithFlushException() throws Exception {
+        int gcWaitTime = 1000;
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setGcWaitTime(gcWaitTime);
+        conf.setLedgerDirNames(createAndGetLedgerDirs(1));
+        conf.setLedgerStorageClass(FlushTestSortedLedgerStorage.class.getName());
+        // enable entrylog per ledger
+        conf.setEntryLogPerLedgerEnabled(true);
+
+        Bookie bookie = new Bookie(conf);
+        FlushTestSortedLedgerStorage flushTestSortedLedgerStorage = (FlushTestSortedLedgerStorage) bookie.ledgerStorage;
+        EntryMemTable memTable = flushTestSortedLedgerStorage.memTable;
+
+        /*
+         * this bookie.addEntry call is required. FileInfo for Ledger 1, 2, 3
+         * would be created with this call. without the fileinfo,
+         * 'flushTestSortedLedgerStorage.addEntry' calls will fail because of
+         * BOOKKEEPER-965 change.
+         */
+        bookie.addEntry(generateEntry(1, 1), false, new Bookie.NopWriteCallback(), null, "passwd".getBytes());
+        bookie.addEntry(generateEntry(2, 1), false, new Bookie.NopWriteCallback(), null, "passwd".getBytes());
+        bookie.addEntry(generateEntry(3, 1), false, new Bookie.NopWriteCallback(), null, "passwd".getBytes());
+
+        flushTestSortedLedgerStorage.addEntry(generateEntry(1, 4));
+        flushTestSortedLedgerStorage.addEntry(generateEntry(2, 4));
+        flushTestSortedLedgerStorage.addEntry(generateEntry(3, 4));
+
+        // inject MemTableSizeLimitReached and FlushException, so entrymemtable flush will fail
+        flushTestSortedLedgerStorage.setInjectMemTableSizeLimitReached(true);
+        flushTestSortedLedgerStorage.setInjectFlushException(true, 1L);
+
+        flushTestSortedLedgerStorage.addEntry(generateEntry(1, 5));
+        Thread.sleep(1000);
+        // since we simulate FlushException, memtable snapshot should not be empty
+        assertFalse("EntryMemTable SnapShot is not expected to be empty", memTable.snapshot.isEmpty());
+        assertEquals("Flusher called", FlushTestSortedLedgerStorage.Flusher.Parallel,
+                flushTestSortedLedgerStorage.getFlusherCalled());
+
+        flushTestSortedLedgerStorage.setInjectFlushException(false, FlushTestSortedLedgerStorage.FORALLLEDGERS);
+        flushTestSortedLedgerStorage.addEntry(generateEntry(1, 5));
+        Thread.sleep(1000);
+        /*
+         * since MemTableSizeLimitReached is already set to true, and flush
+         * exception is disabled, this time memtable snapshot should be flushed
+         */
+        assertTrue("EntryMemTable SnapShot is expected to be empty", memTable.snapshot.isEmpty());
+        assertEquals("Flusher called", FlushTestSortedLedgerStorage.Flusher.Parallel,
+                flushTestSortedLedgerStorage.getFlusherCalled());
+    }
+
+    String[] createAndGetLedgerDirs(int numOfLedgerDirs) throws IOException {
+        File ledgerDir;
+        File curDir;
+        String[] ledgerDirsPath = new String[numOfLedgerDirs];
+        for (int i = 0; i < numOfLedgerDirs; i++) {
+            ledgerDir = createTempDir("bkTest", ".dir");
+            curDir = Bookie.getCurrentDirectory(ledgerDir);
+            Bookie.checkDirectoryStructure(curDir);
+            ledgerDirsPath[i] = ledgerDir.getAbsolutePath();
+        }
+        return ledgerDirsPath;
     }
 }
