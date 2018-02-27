@@ -138,7 +138,16 @@ public class TestReadAheadEntryReader extends TestDistributedLogBase {
 
     private void ensureOrderSchedulerEmpty(String streamName) throws Exception {
         final CompletableFuture<Void> promise = new CompletableFuture<Void>();
-        scheduler.submitOrdered(streamName, () -> FutureUtils.complete(promise, null));
+        scheduler.submitOrdered(streamName, () -> {
+            FutureUtils.complete(promise, null);
+            // the following line is needed for oraclejdk9 to avoid following exception
+            // ```
+            // incompatible types: inference variable T has incompatible bounds
+            // upper bounds: java.lang.Object
+            // lower bounds: void
+            // ```
+            return (Void) null;
+        });
         Utils.ioResult(promise);
     }
 
