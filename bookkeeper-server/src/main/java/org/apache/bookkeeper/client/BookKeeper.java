@@ -540,6 +540,37 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
         scheduleBookieHealthCheckIfEnabled();
     }
 
+    /**
+     * Allow to extend BookKeeper for mocking in unit tests.
+     */
+    @VisibleForTesting
+    BookKeeper() {
+        statsLogger = NullStatsLogger.INSTANCE;
+        scheduler = null;
+        requestTimer = null;
+        reorderReadSequence = false;
+        regClient = null;
+        readSpeculativeRequestPolicy = Optional.absent();
+        readLACSpeculativeRequestPolicy = Optional.absent();
+        placementPolicy = null;
+        ownTimer = false;
+        mainWorkerPool = null;
+        ledgerManagerFactory = null;
+        ledgerManager = null;
+        ledgerIdGenerator = null;
+        featureProvider = null;
+        explicitLacInterval = 0;
+        eventLoopGroup = null;
+        disableEnsembleChangeFeature = null;
+        delayEnsembleChange = false;
+        conf = new ClientConfiguration();
+        bookieWatcher = null;
+        bookieInfoScheduler = null;
+        bookieClient = null;
+        addEntryQuorumTimeoutNanos = 0;
+    }
+
+
     public int getExplicitLacInterval() {
         return explicitLacInterval;
     }
