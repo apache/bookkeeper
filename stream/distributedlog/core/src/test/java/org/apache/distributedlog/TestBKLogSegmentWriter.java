@@ -80,8 +80,8 @@ public class TestBKLogSegmentWriter extends TestDistributedLogBase {
     @Override
     public void setup() throws Exception {
         super.setup();
-        scheduler = OrderedScheduler.newBuilder().corePoolSize(1).build();
-        lockStateExecutor = OrderedScheduler.newBuilder().corePoolSize(1).build();
+        scheduler = OrderedScheduler.newSchedulerBuilder().numThreads(1).build();
+        lockStateExecutor = OrderedScheduler.newSchedulerBuilder().numThreads(1).build();
         // build zookeeper client
         URI uri = createDLMURI("");
         zkc = TestZooKeeperClientBuilder.newBuilder(conf)

@@ -88,9 +88,9 @@ public class TestReadAheadEntryReader extends TestDistributedLogBase {
                 .ledgersPath("/ledgers")
                 .zkServers(bkutil.getZkServers())
                 .build();
-        scheduler = OrderedScheduler.newBuilder()
+        scheduler = OrderedScheduler.newSchedulerBuilder()
                 .name("test-read-ahead-entry-reader")
-                .corePoolSize(1)
+                .numThreads(1)
                 .build();
     }
 
@@ -138,12 +138,7 @@ public class TestReadAheadEntryReader extends TestDistributedLogBase {
 
     private void ensureOrderSchedulerEmpty(String streamName) throws Exception {
         final CompletableFuture<Void> promise = new CompletableFuture<Void>();
-        scheduler.submit(streamName, new Runnable() {
-            @Override
-            public void run() {
-                FutureUtils.complete(promise, null);
-            }
-        });
+        scheduler.submitOrdered(streamName, () -> FutureUtils.complete(promise, null));
         Utils.ioResult(promise);
     }
 

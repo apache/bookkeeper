@@ -62,9 +62,9 @@ public class TestLogSegmentMetadataStoreUpdater extends ZooKeeperClusterTestCase
 
     @Before
     public void setup() throws Exception {
-        scheduler = OrderedScheduler.newBuilder()
+        scheduler = OrderedScheduler.newSchedulerBuilder()
                 .name("test-logsegment-metadata-store-updater")
-                .corePoolSize(1)
+                .numThreads(1)
                 .build();
         zkc = TestZooKeeperClientBuilder.newBuilder()
                 .uri(createURI("/"))

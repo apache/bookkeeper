@@ -1023,9 +1023,9 @@ public class TestBKDistributedLogManager extends TestDistributedLogBase {
         ZooKeeperClient zookeeperClient = TestZooKeeperClientBuilder.newBuilder()
             .uri(uri)
             .build();
-        OrderedScheduler scheduler = OrderedScheduler.newBuilder()
+        OrderedScheduler scheduler = OrderedScheduler.newSchedulerBuilder()
                 .name("test-truncation-validation")
-                .corePoolSize(1)
+                .numThreads(1)
                 .build();
         DistributedLogConfiguration confLocal = new DistributedLogConfiguration();
         confLocal.loadConf(conf);

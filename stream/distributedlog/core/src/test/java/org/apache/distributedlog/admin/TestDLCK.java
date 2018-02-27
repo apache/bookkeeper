@@ -114,9 +114,9 @@ public class TestDLCK extends TestDistributedLogBase {
                 .conf(confLocal)
                 .uri(uri)
                 .build();
-        OrderedScheduler scheduler = OrderedScheduler.newBuilder()
+        OrderedScheduler scheduler = OrderedScheduler.newSchedulerBuilder()
                 .name("dlck-tool")
-                .corePoolSize(1)
+                .numThreads(1)
                 .build();
         ExecutorService executorService = Executors.newCachedThreadPool();
 

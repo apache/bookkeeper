@@ -65,9 +65,9 @@ public class TestZKNamespaceWatcher extends TestDistributedLogBase {
                 .uri(createDLMURI("/"))
                 .sessionTimeoutMs(zkSessionTimeoutMs)
                 .build();
-        scheduler = OrderedScheduler.newBuilder()
+        scheduler = OrderedScheduler.newSchedulerBuilder()
                 .name("test-zk-namespace-watcher")
-                .corePoolSize(1)
+                .numThreads(1)
                 .build();
     }
 

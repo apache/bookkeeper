@@ -186,8 +186,8 @@ public class TestDistributedLogBase {
                 .uri(uri)
                 .conf(conf)
                 .build();
-        final OrderedScheduler scheduler = OrderedScheduler.newBuilder()
-                .corePoolSize(1)
+        final OrderedScheduler scheduler = OrderedScheduler.newSchedulerBuilder()
+                .numThreads(1)
                 .name("test-scheduler")
                 .build();
         AsyncCloseable resourcesCloseable = new AsyncCloseable() {

@@ -204,9 +204,9 @@ public class TestZKLogStreamMetadataStore extends ZooKeeperClusterTestCase {
         } catch (KeeperException.NodeExistsException nee) {
             logger.debug("The namespace uri already exists.");
         }
-        scheduler = OrderedScheduler.newBuilder()
+        scheduler = OrderedScheduler.newSchedulerBuilder()
             .name("test-scheduler")
-            .corePoolSize(1)
+            .numThreads(1)
             .build();
         metadataStore = new ZKLogStreamMetadataStore(
             "test-logstream-metadata-store",

@@ -85,9 +85,9 @@ public class TestBKLogSegmentEntryReader extends TestDistributedLogBase {
                 .ledgersPath("/ledgers")
                 .zkServers(bkutil.getZkServers())
                 .build();
-        scheduler = OrderedScheduler.newBuilder()
+        scheduler = OrderedScheduler.newSchedulerBuilder()
                 .name("test-bk-logsegment-entry-reader")
-                .corePoolSize(1)
+                .numThreads(1)
                 .build();
     }
 

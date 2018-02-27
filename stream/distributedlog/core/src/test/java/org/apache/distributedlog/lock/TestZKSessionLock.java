@@ -40,7 +40,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.bookkeeper.stats.NullStatsLogger;
-import org.apache.bookkeeper.util.SafeRunnable;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.distributedlog.DLMTestUtil;
 import org.apache.distributedlog.ZooKeeperClient;
@@ -63,10 +62,6 @@ import org.junit.Test;
 import org.junit.rules.TestName;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-
-
-
 
 /**
  * Distributed Lock Tests.
@@ -100,8 +95,8 @@ public class TestZKSessionLock extends ZooKeeperClusterTestCase {
                 .zkServers(zkServers)
                 .zkAclId(null)
                 .build();
-        lockStateExecutor = OrderedScheduler.newBuilder()
-                .corePoolSize(1)
+        lockStateExecutor = OrderedScheduler.newSchedulerBuilder()
+                .numThreads(1)
                 .build();
     }
 
@@ -784,12 +779,7 @@ public class TestZKSessionLock extends ZooKeeperClusterTestCase {
         // expire session
         ZooKeeperClientUtils.expireSession(zkc, zkServers, sessionTimeoutMs);
         // submit a runnable to lock state executor to ensure any state changes happened when session expired
-        lockStateExecutor.submit(lockPath, new SafeRunnable() {
-            @Override
-            public void safeRun() {
-                expiredLatch.countDown();
-            }
-        });
+        lockStateExecutor.submitOrdered(lockPath, () -> expiredLatch.countDown());
         expiredLatch.await();
         // no watcher was registered if never acquired lock successfully
         assertEquals(State.INIT, lock.getLockState());
@@ -1226,12 +1216,7 @@ public class TestZKSessionLock extends ZooKeeperClusterTestCase {
         } else {
             ZooKeeperClientUtils.expireSession(zkc0, zkServers, sessionTimeoutMs);
             final CountDownLatch latch = new CountDownLatch(1);
-            lockStateExecutor.submit(lockPath, new SafeRunnable() {
-                @Override
-                public void safeRun() {
-                    latch.countDown();
-                }
-            });
+            lockStateExecutor.submitOrdered(lockPath, () -> latch.countDown());
             latch.await();
             children = getLockWaiters(zkc, lockPath);
             assertEquals(0, children.size());

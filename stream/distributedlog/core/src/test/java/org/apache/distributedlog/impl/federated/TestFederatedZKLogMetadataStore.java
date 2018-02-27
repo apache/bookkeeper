@@ -131,9 +131,9 @@ public class TestFederatedZKLogMetadataStore extends TestDistributedLogBase {
                 .uri(createDLMURI("/"))
                 .sessionTimeoutMs(zkSessionTimeoutMs)
                 .build();
-        scheduler = OrderedScheduler.newBuilder()
+        scheduler = OrderedScheduler.newSchedulerBuilder()
                 .name("test-zk-logmetadata-store")
-                .corePoolSize(2)
+                .numThreads(2)
                 .build();
         DistributedLogConfiguration conf = new DistributedLogConfiguration();
         conf.addConfiguration(baseConf);

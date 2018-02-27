@@ -86,9 +86,9 @@ public class TestDistributedLock extends TestDistributedLogBase {
                 .sessionTimeoutMs(sessionTimeoutMs)
                 .zkAclId(null)
                 .build();
-        lockStateExecutor = OrderedScheduler.newBuilder()
+        lockStateExecutor = OrderedScheduler.newSchedulerBuilder()
                 .name("test-scheduer")
-                .corePoolSize(1)
+                .numThreads(1)
                 .build();
     }
 
