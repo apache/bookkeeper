@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.List;
 import java.util.Optional;
+import lombok.Getter;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.conf.AbstractConfiguration;
@@ -102,6 +103,7 @@ public class ZKMetadataDriverBase implements AutoCloseable {
 
     // zookeeper related variables
     protected List<ACL> acls;
+    @Getter
     protected ZooKeeper zk = null;
     // whether the zk handle is one we created, or is owned by whoever
     // instantiated us

@@ -184,13 +184,13 @@ public final class MetadataDrivers {
             return;
         }
         MetadataClientDriverInfo newDriverInfo = new MetadataClientDriverInfo(driver);
-        if (allowOverride) {
-            oldDriverInfo = clientDrivers.put(scheme, newDriverInfo);
-        } else {
-            oldDriverInfo = clientDrivers.putIfAbsent(scheme, newDriverInfo);
-        }
+        oldDriverInfo = clientDrivers.putIfAbsent(scheme, newDriverInfo);
         if (null != oldDriverInfo) {
             log.debug("Metadata client driver for {} is already there.", scheme);
+            if (allowOverride) {
+                log.debug("Overriding client driver for {}", scheme);
+                clientDrivers.put(scheme, newDriverInfo);
+            }
         }
     }
 
@@ -219,13 +219,13 @@ public final class MetadataDrivers {
             return;
         }
         MetadataBookieDriverInfo newDriverInfo = new MetadataBookieDriverInfo(driver);
-        if (allowOverride) {
-            oldDriverInfo = bookieDrivers.put(scheme, newDriverInfo);
-        } else {
-            oldDriverInfo = bookieDrivers.putIfAbsent(scheme, newDriverInfo);
-        }
+        oldDriverInfo = bookieDrivers.putIfAbsent(scheme, newDriverInfo);
         if (null != oldDriverInfo) {
             log.debug("Metadata bookie driver for {} is already there.", scheme);
+            if (allowOverride) {
+                log.debug("Overriding bookie driver for {}", scheme);
+                bookieDrivers.put(scheme, newDriverInfo);
+            }
         }
     }
 
