@@ -31,11 +31,11 @@
       </includes>
     </fileSet>
     <fileSet>
-      <directory>../../bookkeeper-server/conf</directory>
+      <directory>../../conf</directory>
       <outputDirectory>/conf</outputDirectory>
     </fileSet>
     <fileSet>
-      <directory>../../bookkeeper-server/bin</directory>
+      <directory>../../bin</directory>
       <fileMode>755</fileMode>
       <outputDirectory>/bin</outputDirectory>
     </fileSet>
