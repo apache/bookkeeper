@@ -317,10 +317,11 @@ public class OrderedScheduler implements ScheduledExecutorService {
     }
 
     /**
-     * schedules a one time action to execute with an ordering guarantee on the key.
+     * schedules a one time action to execute with an ordering guarantee on the <tt>orderingKey</tt>.
      *
-     * @param orderingKey
-     * @param r
+     * @param orderingKey order key to submit the task
+     * @param r task to run
+     * @return listenable future on the completion of the task
      */
     public ListenableFuture<?> submitOrdered(Object orderingKey, SafeRunnable r) {
         return chooseThread(orderingKey).submit(timedRunnable(r));

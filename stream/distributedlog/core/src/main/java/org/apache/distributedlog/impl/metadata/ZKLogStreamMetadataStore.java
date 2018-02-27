@@ -43,6 +43,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.common.concurrent.FutureEventListener;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
+import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.versioning.LongVersion;
 import org.apache.bookkeeper.versioning.Versioned;
@@ -72,7 +73,6 @@ import org.apache.distributedlog.metadata.LogMetadataForReader;
 import org.apache.distributedlog.metadata.LogMetadataForWriter;
 import org.apache.distributedlog.metadata.LogStreamMetadataStore;
 import org.apache.distributedlog.util.DLUtils;
-import org.apache.distributedlog.util.OrderedScheduler;
 import org.apache.distributedlog.util.Transaction;
 import org.apache.distributedlog.util.Utils;
 import org.apache.distributedlog.zk.LimitedPermitManager;
@@ -133,9 +133,9 @@ public class ZKLogStreamMetadataStore implements LogStreamMetadataStore {
 
     private synchronized OrderedScheduler getLockStateExecutor(boolean createIfNull) {
         if (createIfNull && null == lockStateExecutor) {
-            lockStateExecutor = OrderedScheduler.newBuilder()
+            lockStateExecutor = OrderedScheduler.newSchedulerBuilder()
                     .name("DLM-LockState")
-                    .corePoolSize(conf.getNumLockStateThreads())
+                    .numThreads(conf.getNumLockStateThreads())
                     .build();
         }
         return lockStateExecutor;
@@ -299,7 +299,7 @@ public class ZKLogStreamMetadataStore implements LogStreamMetadataStore {
                     conf.getLockTimeoutMilliSeconds(),
                     statsLogger.scope("read_lock"));
                 return lock;
-            }, scheduler.chooseExecutor(readLockPath));
+            }, scheduler.chooseThread(readLockPath));
     }
 
     //

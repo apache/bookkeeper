@@ -39,6 +39,8 @@ import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.LedgerEntry;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
+import org.apache.bookkeeper.common.util.OrderedScheduler;
+import org.apache.bookkeeper.common.util.SafeRunnable;
 import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.distributedlog.DistributedLogConfiguration;
@@ -51,18 +53,17 @@ import org.apache.distributedlog.exceptions.EndOfLogSegmentException;
 import org.apache.distributedlog.exceptions.ReadCancelledException;
 import org.apache.distributedlog.injector.AsyncFailureInjector;
 import org.apache.distributedlog.logsegment.LogSegmentEntryReader;
-import org.apache.distributedlog.util.OrderedScheduler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * BookKeeper ledger based log segment entry reader.
  */
-public class BKLogSegmentEntryReader implements Runnable, LogSegmentEntryReader, AsyncCallback.OpenCallback {
+public class BKLogSegmentEntryReader implements SafeRunnable, LogSegmentEntryReader, AsyncCallback.OpenCallback {
 
     private static final Logger logger = LoggerFactory.getLogger(BKLogSegmentEntryReader.class);
 
-    private class CacheEntry implements Runnable, AsyncCallback.ReadCallback,
+    private class CacheEntry implements SafeRunnable, AsyncCallback.ReadCallback,
             AsyncCallback.ReadLastConfirmedAndEntryCallback {
 
         protected final long entryId;
@@ -226,7 +227,7 @@ public class BKLogSegmentEntryReader implements Runnable, LogSegmentEntryReader,
                     || (isLongPoll && BKException.Code.NoSuchLedgerExistsException == rc)) {
                 int numErrors = Math.max(1, numReadErrors.incrementAndGet());
                 int nextReadBackoffTime = Math.min(numErrors * readAheadWaitTime, maxReadBackoffTime);
-                scheduler.schedule(
+                scheduler.scheduleOrdered(
                         getSegment().getLogSegmentId(),
                         this,
                         nextReadBackoffTime,
@@ -238,7 +239,7 @@ public class BKLogSegmentEntryReader implements Runnable, LogSegmentEntryReader,
         }
 
         @Override
-        public void run() {
+        public void safeRun() {
             issueRead(this);
         }
     }
@@ -480,12 +481,11 @@ public class BKLogSegmentEntryReader implements Runnable, LogSegmentEntryReader,
             return;
         }
         // the reader is still catching up, retry opening the log segment later
-        scheduler.schedule(segment.getLogSegmentId(), new Runnable() {
-            @Override
-            public void run() {
-                onLogSegmentMetadataUpdated(segment);
-            }
-        }, conf.getZKRetryBackoffStartMillis(), TimeUnit.MILLISECONDS);
+        scheduler.scheduleOrdered(
+            segment.getLogSegmentId(),
+            () -> onLogSegmentMetadataUpdated(segment),
+            conf.getZKRetryBackoffStartMillis(),
+            TimeUnit.MILLISECONDS);
     }
 
     //
@@ -684,7 +684,7 @@ public class BKLogSegmentEntryReader implements Runnable, LogSegmentEntryReader,
 
         long prevCount = scheduleCount.getAndIncrement();
         if (0 == prevCount) {
-            scheduler.submit(getSegment().getLogSegmentId(), this);
+            scheduler.submitOrdered(getSegment().getLogSegmentId(), this);
         }
     }
 
@@ -692,7 +692,7 @@ public class BKLogSegmentEntryReader implements Runnable, LogSegmentEntryReader,
      * The core function to propagate fetched entries to read requests.
      */
     @Override
-    public void run() {
+    public void safeRun() {
         long scheduleCountLocal = scheduleCount.get();
         while (true) {
             PendingReadRequest nextRequest = null;
