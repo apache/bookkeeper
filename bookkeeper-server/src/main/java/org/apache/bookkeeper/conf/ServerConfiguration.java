@@ -42,6 +42,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     protected static final String MINOR_COMPACTION_THRESHOLD = "minorCompactionThreshold";
     protected static final String MAJOR_COMPACTION_INTERVAL = "majorCompactionInterval";
     protected static final String MAJOR_COMPACTION_THRESHOLD = "majorCompactionThreshold";
+    private static final String SCHEDULE_MAJOR_COMPACTION_CRON = "scheduleMajorCompactionCron";
     protected static final String IS_THROTTLE_BY_BYTES = "isThrottleByBytes";
     protected static final String COMPACTION_MAX_OUTSTANDING_REQUESTS = "compactionMaxOutstandingRequests";
     protected static final String COMPACTION_RATE = "compactionRate";
@@ -1116,6 +1117,29 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     public ServerConfiguration setMajorCompactionThreshold(double threshold) {
         setProperty(MAJOR_COMPACTION_THRESHOLD, threshold);
         return this;
+    }
+
+    /**
+     * Set major compaction cron expression for schedule.
+     * set this value to a time intervals in which system load is low,
+     * where deeper compaction is better.
+     *
+     * @param scheduleMajorCompactionCron
+     *          specified cron expression for schedule.
+     * @return server configuration
+     */
+    public ServerConfiguration setScheduleMajorCompactionCron(String scheduleMajorCompactionCron) {
+        setProperty(SCHEDULE_MAJOR_COMPACTION_CRON, scheduleMajorCompactionCron);
+        return this;
+    }
+
+    /**
+     * Get major compaction cron expression for schedule.
+     * default is null to disable.
+     * "0 * 0-3 ? * SAT,SUN" indicates 0-3 h in Saturday and Sunday.
+     */
+    public String getScheduleMajorCompactionCron() {
+        return getString(SCHEDULE_MAJOR_COMPACTION_CRON, null);
     }
 
     /**

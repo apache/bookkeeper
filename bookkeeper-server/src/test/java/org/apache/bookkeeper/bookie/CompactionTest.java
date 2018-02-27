@@ -536,6 +536,42 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
     }
 
     @Test
+    public void testCronBasedCompactionSchedule() throws Exception {
+        // prepare data
+        LedgerHandle[] lhs = prepareData(3, true);
+
+        for (LedgerHandle lh : lhs) {
+            lh.close();
+        }
+
+
+        long lastMinorCompactionTime = getGCThread().lastMinorCompactionTime;
+        long lastMajorCompactionTime = getGCThread().lastMajorCompactionTime;
+        assertTrue(getGCThread().enableMajorCompaction);
+        assertTrue(getGCThread().enableMinorCompaction);
+
+        // remove ledger1 and ledger2
+        bkc.deleteLedger(lhs[0].getId());
+        bkc.deleteLedger(lhs[1].getId());
+        LOG.info("Finished deleting the ledgers contains less entries.");
+        // compaction should not be executed by default
+        assertTrue(getGCThread().lastMinorCompactionTime == lastMinorCompactionTime);
+        assertTrue(getGCThread().lastMajorCompactionTime == lastMajorCompactionTime);
+        // execute every second
+        String  cron = "0/1 * * * * ?";
+        baseConf.setScheduleMajorCompactionCron(cron);
+        restartBookies(baseConf);
+        // compaction should be executed
+        assertTrue(getGCThread().lastMinorCompactionTime > lastMinorCompactionTime);
+        assertTrue(getGCThread().lastMajorCompactionTime > lastMajorCompactionTime);
+        // entry logs ([0,1,2].log) should not be compacted, all remaining >= 0.7
+        for (File ledgerDirectory : tmpDirs) {
+            assertTrue("Not Found entry log file ([0,1,2].log that should have not been compacted in ledgerDirectory: "
+                    + ledgerDirectory, TestUtils.hasLogFiles(ledgerDirectory, false, 0, 1, 2));
+        }
+    }
+
+    @Test
     public void testMajorCompactionAboveThreshold() throws Exception {
         // prepare data
         LedgerHandle[] lhs = prepareData(3, false);

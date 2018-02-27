@@ -312,6 +312,9 @@ groups:
   - param: majorCompactionThreshold
     description: Threshold of major compaction. For those entry log files whose remaining size percentage reaches below  this threshold will be compacted in a major compaction.  Those entry log files whose remaining size percentage is still higher than the threshold will never be compacted. If it is set to less than zero, the minor compaction is disabled.
     default: 0.8
+  - param: scheduleMajorCompactionCron
+    description: when assign a valide cron expression to scheduleMajorCompactionCron, the majorCompaction will be executed when the major compation time belongs to the time which is expressed by scheduleMajorCompactionCron.
+    default:
   - param: majorCompactionInterval
     description: Interval to run major compaction, in seconds. If it is set to less than zero, the major compaction is disabled.
     default: 86400

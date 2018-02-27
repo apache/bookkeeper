@@ -28,11 +28,15 @@ import static org.apache.bookkeeper.bookie.BookKeeperServerStats.MINOR_COMPACTIO
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.RECLAIMED_COMPACTION_SPACE_BYTES;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.RECLAIMED_DELETION_SPACE_BYTES;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.THREAD_RUNTIME;
+import static org.quartz.CronScheduleBuilder.cronSchedule;
+import static org.quartz.JobBuilder.newJob;
+import static org.quartz.TriggerBuilder.newTrigger;
 
 import com.google.common.annotations.VisibleForTesting;
 import io.netty.util.concurrent.DefaultThreadFactory;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -54,6 +58,11 @@ import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.MathUtils;
 import org.apache.bookkeeper.util.SafeRunnable;
+import org.quartz.CronTrigger;
+import org.quartz.JobDetail;
+import org.quartz.Scheduler;
+import org.quartz.SchedulerException;
+import org.quartz.impl.StdSchedulerFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -61,14 +70,16 @@ import org.slf4j.LoggerFactory;
  * This is the garbage collector thread that runs in the background to
  * remove any entry log files that no longer contains any active ledger.
  */
-public class GarbageCollectorThread extends SafeRunnable {
+public class GarbageCollectorThread extends SafeRunnable implements Serializable{
     private static final Logger LOG = LoggerFactory.getLogger(GarbageCollectorThread.class);
     private static final int SECOND = 1000;
+    private static final long serialVersionUID = 8831216697587016042L;
 
     // Maps entry log files to the set of ledgers that comprise the file and the size usage per ledger
     private Map<Long, EntryLogMetadata> entryLogMetaMap = new ConcurrentHashMap<Long, EntryLogMetadata>();
 
     private final ScheduledExecutorService gcExecutor;
+    private Scheduler sched;
     Future<?> scheduledFuture = null;
 
     // This is how often we want to run the Garbage Collector Thread (in milliseconds).
@@ -119,6 +130,9 @@ public class GarbageCollectorThread extends SafeRunnable {
     final AtomicBoolean suspendMajorCompaction = new AtomicBoolean(false);
     // Boolean to disable minor compaction, when disk is full
     final AtomicBoolean suspendMinorCompaction = new AtomicBoolean(false);
+    // Boolean to indicate whether CronBasedCompactionSchedule is on
+    final AtomicBoolean enableCronBasedCompactionSchedule = new AtomicBoolean(true);
+    final String scheduleMajorCompactionCron;
 
     final GarbageCollector garbageCollector;
     final GarbageCleaner garbageCleaner;
@@ -139,6 +153,15 @@ public class GarbageCollectorThread extends SafeRunnable {
                                   StatsLogger statsLogger)
         throws IOException {
         gcExecutor = Executors.newSingleThreadScheduledExecutor(new DefaultThreadFactory("GarbageCollectorThread"));
+        try {
+            sched = new StdSchedulerFactory().getScheduler();
+        } catch (SchedulerException se) {
+            if (se.getUnderlyingException() instanceof IOException) {
+                throw (IOException) se.getUnderlyingException();
+            } else {
+                enableCronBasedCompactionSchedule.set(false);
+            }
+        }
         this.conf = conf;
 
         this.entryLogger = ledgerStorage.getEntryLogger();
@@ -243,6 +266,10 @@ public class GarbageCollectorThread extends SafeRunnable {
                + majorCompactionThreshold + ", interval=" + majorCompactionInterval);
 
         lastMinorCompactionTime = lastMajorCompactionTime = MathUtils.now();
+        scheduleMajorCompactionCron = conf.getScheduleMajorCompactionCron();
+        if (scheduleMajorCompactionCron == null) {
+            enableCronBasedCompactionSchedule.set(false);
+        }
     }
 
     public void enableForceGC() {
@@ -309,6 +336,23 @@ public class GarbageCollectorThread extends SafeRunnable {
             scheduledFuture.cancel(false);
         }
         scheduledFuture = gcExecutor.scheduleAtFixedRate(this, gcWaitTime, gcWaitTime, TimeUnit.MILLISECONDS);
+        if (enableCronBasedCompactionSchedule.get()) {
+            try {
+                doCronBasedSchedule();
+            } catch (SchedulerException se) {
+                LOG.error("Schedule CronBasedCompaction fail in GarbageCollectorThread", se);
+            }
+        }
+    }
+
+    private void doCronBasedSchedule() throws SchedulerException{
+        JobDetail job = newJob(CronBasedCompactionJob.class).withIdentity("gc", "group_job")
+                .build();
+        CronTrigger trigger = newTrigger().withIdentity("gc_trigger", "group_trigger")
+                .withSchedule(cronSchedule(scheduleMajorCompactionCron)).build();
+        job.getJobDataMap().put("gcThread", this);
+        sched.scheduleJob(job, trigger);
+        sched.start();
     }
 
     @Override
@@ -480,6 +524,7 @@ public class GarbageCollectorThread extends SafeRunnable {
 
         // Interrupt GC executor thread
         gcExecutor.shutdownNow();
+//        sched.shutdown(true);
     }
 
     /**
