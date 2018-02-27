@@ -18,6 +18,7 @@
 package org.apache.distributedlog.impl.metadata;
 
 import static com.google.common.base.Charsets.UTF_8;
+
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Objects;
 import java.io.IOException;
@@ -25,8 +26,6 @@ import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-
-
 import org.apache.distributedlog.DistributedLogConfiguration;
 import org.apache.distributedlog.DistributedLogConstants;
 import org.apache.distributedlog.ZooKeeperClient;

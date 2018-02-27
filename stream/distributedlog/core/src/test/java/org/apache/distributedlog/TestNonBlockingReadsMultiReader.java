@@ -17,7 +17,8 @@
  */
 package org.apache.distributedlog;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+
 import com.google.common.util.concurrent.RateLimiter;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;

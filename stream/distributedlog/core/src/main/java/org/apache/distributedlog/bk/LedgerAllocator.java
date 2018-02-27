@@ -16,9 +16,9 @@
  * limitations under the License.
  */
 package org.apache.distributedlog.bk;
+
 import java.io.IOException;
 import org.apache.bookkeeper.client.LedgerHandle;
-
 import org.apache.distributedlog.util.Allocator;
 
 

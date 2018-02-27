@@ -18,9 +18,9 @@
 package org.apache.distributedlog.api.namespace;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+
 import java.io.IOException;
 import java.net.URI;
-
 import org.apache.bookkeeper.common.annotation.InterfaceAudience.Public;
 import org.apache.bookkeeper.common.annotation.InterfaceStability.Stable;
 import org.apache.bookkeeper.feature.Feature;
@@ -42,7 +42,6 @@ import org.apache.distributedlog.util.ConfUtils;
 import org.apache.distributedlog.util.DLUtils;
 import org.apache.distributedlog.util.OrderedScheduler;
 import org.apache.distributedlog.util.SimplePermitLimiter;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

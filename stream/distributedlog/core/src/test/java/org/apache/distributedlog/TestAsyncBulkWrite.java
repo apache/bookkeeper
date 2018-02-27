@@ -22,7 +22,9 @@ import static org.apache.distributedlog.DLMTestUtil.validateFutureFailed;
 import static org.apache.distributedlog.DLMTestUtil.validateFutureSucceededAndGetResult;
 import static org.apache.distributedlog.LogRecord.MAX_LOGRECORDSET_SIZE;
 import static org.apache.distributedlog.LogRecord.MAX_LOGRECORD_SIZE;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;

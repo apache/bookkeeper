@@ -19,6 +19,7 @@ package org.apache.distributedlog.namespace;
 
 import static org.apache.distributedlog.LocalDLMEmulator.DLOG_NAMESPACE;
 import static org.junit.Assert.assertTrue;
+
 import java.net.URI;
 import org.apache.distributedlog.BKDistributedLogNamespace;
 import org.apache.distributedlog.DistributedLogConfiguration;

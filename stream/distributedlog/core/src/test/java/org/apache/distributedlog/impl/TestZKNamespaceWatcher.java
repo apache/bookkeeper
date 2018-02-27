@@ -17,9 +17,10 @@
  */
 package org.apache.distributedlog.impl;
 
-import static org.junit.Assert.*;
-import com.google.common.collect.Sets;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
+import com.google.common.collect.Sets;
 import java.net.URI;
 import java.util.Iterator;
 import java.util.Set;

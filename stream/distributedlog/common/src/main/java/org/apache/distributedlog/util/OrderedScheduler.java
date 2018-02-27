@@ -34,6 +34,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
+import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.distributedlog.common.util.MathUtil;
 
 /**
@@ -47,7 +48,9 @@ import org.apache.distributedlog.common.util.MathUtil;
  * {@link OrderedScheduler#submit(Object, Runnable)} will be submitted to a dedicated executor based on
  * the hash value of submit <i>key</i>.
  */
-public class OrderedScheduler implements ScheduledExecutorService {
+public class OrderedScheduler
+        extends org.apache.bookkeeper.common.util.OrderedScheduler
+        implements ScheduledExecutorService {
 
     /**
      * Create a builder to build scheduler.
@@ -131,6 +134,14 @@ public class OrderedScheduler implements ScheduledExecutorService {
     private OrderedScheduler(String name,
                              int corePoolSize,
                              ThreadFactory threadFactory) {
+        super(
+            name,
+            corePoolSize,
+            threadFactory,
+            NullStatsLogger.INSTANCE,
+            false,
+            Long.MAX_VALUE,
+            Integer.MAX_VALUE);
         this.name = name;
         this.corePoolSize = corePoolSize;
         this.executors = new ScheduledExecutorService[corePoolSize];

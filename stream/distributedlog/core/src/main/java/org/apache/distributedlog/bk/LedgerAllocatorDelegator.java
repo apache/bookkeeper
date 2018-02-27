@@ -16,11 +16,10 @@
  * limitations under the License.
  */
 package org.apache.distributedlog.bk;
+
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
-
 import org.apache.bookkeeper.client.LedgerHandle;
-
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.distributedlog.util.Transaction;
 import org.apache.distributedlog.util.Transaction.OpListener;
