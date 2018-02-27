@@ -18,7 +18,6 @@
 package org.apache.distributedlog.metadata;
 
 import com.google.common.base.Optional;
-
 import java.net.URI;
 
 /**

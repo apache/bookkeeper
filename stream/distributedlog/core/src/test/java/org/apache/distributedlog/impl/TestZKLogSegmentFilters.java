@@ -17,8 +17,10 @@
  */
 package org.apache.distributedlog.impl;
 
-import static org.apache.distributedlog.impl.ZKLogSegmentFilters.*;
-import static org.junit.Assert.*;
+import static org.apache.distributedlog.impl.ZKLogSegmentFilters.WRITE_HANDLE_FILTER;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 import com.google.common.collect.Sets;
 import java.util.ArrayList;
 import java.util.Collection;

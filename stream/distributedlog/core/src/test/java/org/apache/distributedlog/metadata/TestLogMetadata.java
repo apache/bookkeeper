@@ -18,8 +18,12 @@
 package org.apache.distributedlog.metadata;
 
 
-import static org.apache.distributedlog.metadata.LogMetadata.*;
-import static org.junit.Assert.*;
+import static org.apache.distributedlog.metadata.LogMetadata.ALLOCATION_PATH;
+import static org.apache.distributedlog.metadata.LogMetadata.LOCK_PATH;
+import static org.apache.distributedlog.metadata.LogMetadata.LOGSEGMENTS_PATH;
+import static org.apache.distributedlog.metadata.LogMetadata.MAX_TXID_PATH;
+import static org.junit.Assert.assertEquals;
+
 import java.net.URI;
 import org.apache.distributedlog.DLMTestUtil;
 import org.junit.Test;
