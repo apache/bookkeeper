@@ -65,8 +65,6 @@ script:
     travis_retry mvn --batch-mode clean apache-rat:check compile spotbugs:check install -DskipTests
     if [ "$TRAVIS_OS_NAME" == "linux" ]; then
         dev/check-binary-license ./bookkeeper-dist/all/target/bookkeeper-all-*-bin.tar.gz;
-    fi
-    if [ "$TRAVIS_OS_NAME" == "linux" ]; then
         dev/check-binary-license ./bookkeeper-dist/server/target/bookkeeper-server-*-bin.tar.gz;
     fi
     if [ "$DLOG_MODIFIED" == "true" ]; then
