@@ -19,6 +19,7 @@ package org.apache.bookkeeper.meta;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.apache.bookkeeper.meta.LayoutManager.LedgerLayoutExistsException;
@@ -127,7 +128,10 @@ public abstract class AbstractZkLedgerManagerFactory implements LedgerManagerFac
         try {
             factoryClass = conf.getLedgerManagerFactoryClass();
         } catch (Exception e) {
-            throw new IOException("Failed to get ledger manager factory class from configuration : ", e);
+            factoryClass = attemptToResolveShadedLedgerManagerFactory(
+                conf,
+                conf.getLedgerManagerFactoryClassName(),
+                e);
         }
         String ledgerRootPath = conf.getZkLedgersRootPath();
 
@@ -178,7 +182,9 @@ public abstract class AbstractZkLedgerManagerFactory implements LedgerManagerFac
         }
 
         // handle V2 layout case
-        if (factoryClass != null && !layout.getManagerFactoryClass().equals(factoryClass.getName())
+        if (factoryClass != null
+                && !isSameLedgerManagerFactory(
+                    conf, layout.getManagerFactoryClass(), factoryClass.getName())
                 && conf.getProperty(AbstractConfiguration.LEDGER_MANAGER_FACTORY_DISABLE_CLASS_CHECK) == null) {
                 // Disable should ONLY happen during compatibility testing.
 
@@ -194,13 +200,77 @@ public abstract class AbstractZkLedgerManagerFactory implements LedgerManagerFac
                 }
                 factoryClass = theCls.asSubclass(LedgerManagerFactory.class);
             } catch (ClassNotFoundException cnfe) {
-                throw new IOException("Failed to instantiate ledger manager factory "
-                        + layout.getManagerFactoryClass());
+                factoryClass = attemptToResolveShadedLedgerManagerFactory(
+                    conf,
+                    layout.getManagerFactoryClass(),
+                    cnfe);
             }
         }
         // instantiate a factory
         lmFactory = ReflectionUtils.newInstance(factoryClass);
         return lmFactory.initialize(conf, layoutManager, layout.getManagerVersion());
+    }
+
+    private static String normalizedLedgerManagerFactoryClassName(String factoryClass,
+                                                                  String shadedClassPrefix,
+                                                                  boolean isShadedClassAllowed) {
+        if (isShadedClassAllowed) {
+            if (null == factoryClass || null == shadedClassPrefix) {
+                return factoryClass;
+            } else {
+                return factoryClass.replace(shadedClassPrefix, "");
+            }
+        } else {
+            return factoryClass;
+        }
+    }
+
+    private static boolean isSameLedgerManagerFactory(
+            AbstractConfiguration<?> conf, String leftFactoryClass, String rightFactoryClass) {
+        leftFactoryClass = normalizedLedgerManagerFactoryClassName(
+            leftFactoryClass,
+            conf.getShadedLedgerManagerFactoryClassPrefix(),
+            conf.isShadedLedgerManagerFactoryClassAllowed());
+        rightFactoryClass = normalizedLedgerManagerFactoryClassName(
+            rightFactoryClass,
+            conf.getShadedLedgerManagerFactoryClassPrefix(),
+            conf.isShadedLedgerManagerFactoryClassAllowed());
+        return Objects.equals(leftFactoryClass, rightFactoryClass);
+    }
+
+    private static Class<? extends LedgerManagerFactory> attemptToResolveShadedLedgerManagerFactory(
+            AbstractConfiguration<?> conf, String lmfClassName, Throwable cause) throws IOException {
+        if (conf.isShadedLedgerManagerFactoryClassAllowed()) {
+            String shadedPrefix = conf.getShadedLedgerManagerFactoryClassPrefix();
+            log.warn("Failed to instantiate ledger manager factory "
+                + lmfClassName + ", trying its shaded class "
+                + shadedPrefix + lmfClassName);
+            // try shading class
+            try {
+                return resolveShadedLedgerManagerFactory(lmfClassName, shadedPrefix);
+            } catch (ClassNotFoundException cnfe) {
+                throw new IOException("Failed to instantiate ledger manager factory "
+                    + lmfClassName + " and its shaded class " + shadedPrefix + lmfClassName, cnfe);
+            }
+        } else {
+            throw new IOException("Failed to instantiate ledger manager factory "
+                + lmfClassName, cause);
+        }
+    }
+
+    private static Class<? extends LedgerManagerFactory> resolveShadedLedgerManagerFactory(String lmfClassName,
+                                                                                           String shadedClassPrefix)
+            throws ClassNotFoundException, IOException {
+        if (null == lmfClassName) {
+            return null;
+        } else {
+            // this is to address the issue when using the dlog shaded jar
+            Class<?> theCls = Class.forName(shadedClassPrefix + lmfClassName);
+            if (!LedgerManagerFactory.class.isAssignableFrom(theCls)) {
+                throw new IOException("Wrong shaded ledger manager factory : " + shadedClassPrefix + lmfClassName);
+            }
+            return theCls.asSubclass(LedgerManagerFactory.class);
+        }
     }
 
     /**
