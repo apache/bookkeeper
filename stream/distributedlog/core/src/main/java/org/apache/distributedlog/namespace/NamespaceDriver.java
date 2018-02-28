@@ -20,6 +20,7 @@ package org.apache.distributedlog.namespace;
 import java.io.Closeable;
 import java.io.IOException;
 import java.net.URI;
+import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.bookkeeper.feature.FeatureProvider;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.distributedlog.DistributedLogConfiguration;
@@ -31,7 +32,6 @@ import org.apache.distributedlog.injector.AsyncFailureInjector;
 import org.apache.distributedlog.logsegment.LogSegmentEntryStore;
 import org.apache.distributedlog.metadata.LogMetadataStore;
 import org.apache.distributedlog.metadata.LogStreamMetadataStore;
-import org.apache.distributedlog.util.OrderedScheduler;
 
 /**
  * Manager to manage all the stores required by a namespace.

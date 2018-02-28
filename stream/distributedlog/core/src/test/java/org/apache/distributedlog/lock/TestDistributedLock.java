@@ -32,6 +32,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.bookkeeper.common.concurrent.FutureEventListener;
+import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.distributedlog.TestDistributedLogBase;
@@ -42,7 +43,6 @@ import org.apache.distributedlog.exceptions.LockingException;
 import org.apache.distributedlog.exceptions.OwnershipAcquireFailedException;
 import org.apache.distributedlog.exceptions.UnexpectedException;
 import org.apache.distributedlog.util.FailpointUtils;
-import org.apache.distributedlog.util.OrderedScheduler;
 import org.apache.distributedlog.util.Utils;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.ZooDefs;
@@ -86,9 +86,9 @@ public class TestDistributedLock extends TestDistributedLogBase {
                 .sessionTimeoutMs(sessionTimeoutMs)
                 .zkAclId(null)
                 .build();
-        lockStateExecutor = OrderedScheduler.newBuilder()
+        lockStateExecutor = OrderedScheduler.newSchedulerBuilder()
                 .name("test-scheduer")
-                .corePoolSize(1)
+                .numThreads(1)
                 .build();
     }
 

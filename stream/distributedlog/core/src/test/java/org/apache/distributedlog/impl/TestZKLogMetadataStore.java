@@ -24,11 +24,11 @@ import com.google.common.base.Optional;
 import com.google.common.collect.Sets;
 import java.net.URI;
 import java.util.Set;
+import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.distributedlog.DistributedLogConfiguration;
 import org.apache.distributedlog.TestDistributedLogBase;
 import org.apache.distributedlog.TestZooKeeperClientBuilder;
 import org.apache.distributedlog.ZooKeeperClient;
-import org.apache.distributedlog.util.OrderedScheduler;
 import org.apache.distributedlog.util.Utils;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.ZooDefs;
@@ -60,9 +60,9 @@ public class TestZKLogMetadataStore extends TestDistributedLogBase {
                 .uri(createDLMURI("/"))
                 .sessionTimeoutMs(zkSessionTimeoutMs)
                 .build();
-        scheduler = OrderedScheduler.newBuilder()
+        scheduler = OrderedScheduler.newSchedulerBuilder()
                 .name("test-zk-logmetadata-store")
-                .corePoolSize(1)
+                .numThreads(1)
                 .build();
         DistributedLogConfiguration conf = new DistributedLogConfiguration();
         conf.addConfiguration(baseConf);
