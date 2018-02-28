@@ -439,10 +439,11 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.htm
 </tr>
 <tr id="i16" class="altColor">
 <td class="colFirst"><code>(package private) void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html#asyncReadEntriesInternal-long-long-org.apache.bookkeeper.client.AsyncCallback.ReadCallback-java.lang.Object-">asyncReadEntriesInternal</a></span>(long&nbsp;firstEntry,
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html#asyncReadEntriesInternal-long-long-org.apache.bookkeeper.client.AsyncCallback.ReadCallback-java.lang.Object-boolean-">asyncReadEntriesInternal</a></span>(long&nbsp;firstEntry,
                         long&nbsp;lastEntry,
                         <a href="../../../../org/apache/bookkeeper/client/AsyncCallback.ReadCallback.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.ReadCallback</a>&nbsp;cb,
-                        <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&nbsp;ctx)</code>&nbsp;</td>
+                        <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&nbsp;ctx,
+                        boolean&nbsp;isRecoveryRead)</code>&nbsp;</td>
 </tr>
 <tr id="i17" class="rowColor">
 <td class="colFirst"><code>void</code></td>
@@ -651,8 +652,9 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.htm
 </tr>
 <tr id="i50" class="altColor">
 <td class="colFirst"><code>(package private) <a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="../../../../org/apache/bookkeeper/client/api/LedgerEntries.html" title="interface in org.apache.bookkeeper.client.api">LedgerEntries</a>&gt;</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html#readEntriesInternalAsync-long-long-">readEntriesInternalAsync</a></span>(long&nbsp;firstEntry,
-                        long&nbsp;lastEntry)</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html#readEntriesInternalAsync-long-long-boolean-">readEntriesInternalAsync</a></span>(long&nbsp;firstEntry,
+                        long&nbsp;lastEntry,
+                        boolean&nbsp;isRecoveryRead)</code>&nbsp;</td>
 </tr>
 <tr id="i51" class="rowColor">
 <td class="colFirst"><code>long</code></td>
@@ -1599,7 +1601,7 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.htm
 </dl>
 </li>
 </ul>
-<a name="asyncReadEntriesInternal-long-long-org.apache.bookkeeper.client.AsyncCallback.ReadCallback-java.lang.Object-">
+<a name="asyncReadEntriesInternal-long-long-org.apache.bookkeeper.client.AsyncCallback.ReadCallback-java.lang.Object-boolean-">
 <!--   -->
 </a>
 <ul class="blockList">
@@ -1608,7 +1610,8 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.htm
 <pre>void&nbsp;asyncReadEntriesInternal(long&nbsp;firstEntry,
                               long&nbsp;lastEntry,
                               <a href="../../../../org/apache/bookkeeper/client/AsyncCallback.ReadCallback.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.ReadCallback</a>&nbsp;cb,
-                              <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&nbsp;ctx)</pre>
+                              <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&nbsp;ctx,
+                              boolean&nbsp;isRecoveryRead)</pre>
 </li>
 </ul>
 <a name="asyncReadLastEntry-org.apache.bookkeeper.client.AsyncCallback.ReadCallback-java.lang.Object-">
@@ -1637,14 +1640,15 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.htm
 </dl>
 </li>
 </ul>
-<a name="readEntriesInternalAsync-long-long-">
+<a name="readEntriesInternalAsync-long-long-boolean-">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>readEntriesInternalAsync</h4>
 <pre><a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="../../../../org/apache/bookkeeper/client/api/LedgerEntries.html" title="interface in org.apache.bookkeeper.client.api">LedgerEntries</a>&gt;&nbsp;readEntriesInternalAsync(long&nbsp;firstEntry,
-                                                          long&nbsp;lastEntry)</pre>
+                                                          long&nbsp;lastEntry,
+                                                          boolean&nbsp;isRecoveryRead)</pre>
 </li>
 </ul>
 <a name="addEntry-byte:A-">

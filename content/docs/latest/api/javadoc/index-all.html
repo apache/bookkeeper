@@ -235,6 +235,8 @@
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#ALLOW_MULTIPLEDIRS_UNDER_SAME_DISKPARTITION">ALLOW_MULTIPLEDIRS_UNDER_SAME_DISKPARTITION</a></span> - Static variable in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/AbstractConfiguration.html#ALLOW_SHADED_LEDGER_MANAGER_FACTORY_CLASS">ALLOW_SHADED_LEDGER_MANAGER_FACTORY_CLASS</a></span> - Static variable in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#ALLOW_STORAGE_EXPANSION">ALLOW_STORAGE_EXPANSION</a></span> - Static variable in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/api/WriteHandle.html#append-io.netty.buffer.ByteBuf-">append(ByteBuf)</a></span> - Method in interface org.apache.bookkeeper.client.api.<a href="org/apache/bookkeeper/client/api/WriteHandle.html" title="interface in org.apache.bookkeeper.client.api">WriteHandle</a></dt>
@@ -445,7 +447,7 @@
 <dd>
 <div class="block">Read a sequence of entries asynchronously.</div>
 </dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerHandle.html#asyncReadEntriesInternal-long-long-org.apache.bookkeeper.client.AsyncCallback.ReadCallback-java.lang.Object-">asyncReadEntriesInternal(long, long, AsyncCallback.ReadCallback, Object)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a></dt>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerHandle.html#asyncReadEntriesInternal-long-long-org.apache.bookkeeper.client.AsyncCallback.ReadCallback-java.lang.Object-boolean-">asyncReadEntriesInternal(long, long, AsyncCallback.ReadCallback, Object, boolean)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerHandle.html#asyncReadExplicitLastConfirmed-org.apache.bookkeeper.client.AsyncCallback.ReadLastConfirmedCallback-java.lang.Object-">asyncReadExplicitLastConfirmed(AsyncCallback.ReadLastConfirmedCallback, Object)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a></dt>
 <dd>
@@ -2619,6 +2621,10 @@
 <dd>
 <div class="block">Get ledger manager factory class.</div>
 </dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/AbstractConfiguration.html#getLedgerManagerFactoryClassName--">getLedgerManagerFactoryClassName()</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a></dt>
+<dd>
+<div class="block">Get Ledger Manager Factory Class Name.</div>
+</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/AbstractConfiguration.html#getLedgerManagerType--">getLedgerManagerType()</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a></dt>
 <dd>
 <div class="block"><span class="deprecatedLabel">Deprecated.</span>
@@ -2733,6 +2739,8 @@
 <dd>
 <div class="block">Describe an error code.</div>
 </dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeper.html#getMetadataClientDriver--">getMetadataClientDriver()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeper.html" title="class in org.apache.bookkeeper.client">BookKeeper</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/AbstractConfiguration.html#getMetadataServiceUri--">getMetadataServiceUri()</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a></dt>
 <dd>
 <div class="block">Get metadata service uri.</div>
@@ -2793,6 +2801,11 @@
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerHandle.html#getNumFragments--">getNumFragments()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a></dt>
 <dd>
 <div class="block">Get the number of fragments that makeup this ledger.</div>
+</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#getNumHighPriorityWorkerThreads--">getNumHighPriorityWorkerThreads()</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
+<dd>
+<div class="block">Get the number of threads that should be used for high priority requests
+ (i.e.</div>
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#getNumJournalCallbackThreads--">getNumJournalCallbackThreads()</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
 <dd>
@@ -2950,13 +2963,13 @@
 <dd>
 <div class="block">Get Recv ByteBuf allocator min buf size.</div>
 </dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeper.html#getRegClient--">getRegClient()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeper.html" title="class in org.apache.bookkeeper.client">BookKeeper</a></dt>
-<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/RegionAwareEnsemblePlacementPolicy.html#getRegion-org.apache.bookkeeper.net.BookieSocketAddress-">getRegion(BookieSocketAddress)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/RegionAwareEnsemblePlacementPolicy.html" title="class in org.apache.bookkeeper.client">RegionAwareEnsemblePlacementPolicy</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ClientConfiguration.html#getRegistrationClientClass--">getRegistrationClientClass()</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a></dt>
 <dd>
-<div class="block">Get Registration Client Class.</div>
+<div class="block"><span class="deprecatedLabel">Deprecated.</span>
+<div class="block"><span class="deprecationComment">since 4.7.0</span></div>
+</div>
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#getRegistrationManagerClass--">getRegistrationManagerClass()</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
 <dd>
@@ -2999,6 +3012,11 @@
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#getServerTcpNoDelay--">getServerTcpNoDelay()</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
 <dd>
 <div class="block">Is tcp connection no delay.</div>
+</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/AbstractConfiguration.html#getShadedLedgerManagerFactoryClassPrefix--">getShadedLedgerManagerFactoryClassPrefix()</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a></dt>
+<dd>
+<div class="block">Get the class prefix of the shaded ledger manager factory class name allowed to be used for
+ instantiating ledger manager factory.</div>
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#getSkipListArenaChunkSize--">getSkipListArenaChunkSize()</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
 <dd>
@@ -3637,6 +3655,11 @@
 <dd>
 <div class="block">If reorder read sequence enabled or not.</div>
 </dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/AbstractConfiguration.html#isShadedLedgerManagerFactoryClassAllowed--">isShadedLedgerManagerFactoryClassAllowed()</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a></dt>
+<dd>
+<div class="block">Is shaded ledger manager factory class name allowed to be used for
+ instantiating ledger manager factory.</div>
+</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#isStatisticsEnabled--">isStatisticsEnabled()</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
 <dd>
 <div class="block">Is statistics enabled.</div>
@@ -4213,6 +4236,8 @@
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/AbstractConfiguration.html#METADATA_SERVICE_URI">METADATA_SERVICE_URI</a></span> - Static variable in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeper.html#metadataDriver">metadataDriver</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeper.html" title="class in org.apache.bookkeeper.client">BookKeeper</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerRecoveryOp.html#metadataForRecovery">metadataForRecovery</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerRecoveryOp.html" title="class in org.apache.bookkeeper.client">LedgerRecoveryOp</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/ReadOnlyLedgerHandle.MetadataUpdater.html#MetadataUpdater-org.apache.bookkeeper.client.LedgerMetadata-">MetadataUpdater(LedgerMetadata)</a></span> - Constructor for class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/ReadOnlyLedgerHandle.MetadataUpdater.html" title="class in org.apache.bookkeeper.client">ReadOnlyLedgerHandle.MetadataUpdater</a></dt>
@@ -4401,6 +4426,8 @@
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#NUM_ADD_WORKER_THREADS">NUM_ADD_WORKER_THREADS</a></span> - Static variable in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ClientConfiguration.html#NUM_CHANNELS_PER_BOOKIE">NUM_CHANNELS_PER_BOOKIE</a></span> - Static variable in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a></dt>
+<dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#NUM_HIGH_PRIORITY_WORKER_THREADS">NUM_HIGH_PRIORITY_WORKER_THREADS</a></span> - Static variable in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#NUM_JOURNAL_CALLBACK_THREADS">NUM_JOURNAL_CALLBACK_THREADS</a></span> - Static variable in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
 <dd>&nbsp;</dd>
@@ -4905,7 +4932,7 @@
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerReader.html#readEntriesFromAllBookies-org.apache.bookkeeper.client.LedgerHandle-long-org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback-">readEntriesFromAllBookies(LedgerHandle, long, BookkeeperInternalCallbacks.GenericCallback&lt;Set&lt;LedgerReader.ReadResult&lt;ByteBuf&gt;&gt;&gt;)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerReader.html" title="class in org.apache.bookkeeper.client">LedgerReader</a></dt>
 <dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerHandle.html#readEntriesInternalAsync-long-long-">readEntriesInternalAsync(long, long)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a></dt>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerHandle.html#readEntriesInternalAsync-long-long-boolean-">readEntriesInternalAsync(long, long, boolean)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/PendingReadOp.html#readEntryComplete-int-long-long-io.netty.buffer.ByteBuf-java.lang.Object-">readEntryComplete(int, long, long, ByteBuf, Object)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/PendingReadOp.html" title="class in org.apache.bookkeeper.client">PendingReadOp</a></dt>
 <dd>&nbsp;</dd>
@@ -5077,8 +5104,6 @@
 <dd>
 <div class="block">Recycle write set object when not in use.</div>
 </dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeper.html#regClient">regClient</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeper.html" title="class in org.apache.bookkeeper.client">BookKeeper</a></dt>
-<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/RegionAwareEnsemblePlacementPolicy.html#REGION_AWARE_ANOMALOUS_ENSEMBLE">REGION_AWARE_ANOMALOUS_ENSEMBLE</a></span> - Static variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/RegionAwareEnsemblePlacementPolicy.html" title="class in org.apache.bookkeeper.client">RegionAwareEnsemblePlacementPolicy</a></dt>
 <dd>&nbsp;</dd>
 <dt><a href="org/apache/bookkeeper/client/RegionAwareEnsemblePlacementPolicy.html" title="class in org.apache.bookkeeper.client"><span class="typeNameLink">RegionAwareEnsemblePlacementPolicy</span></a> - Class in <a href="org/apache/bookkeeper/client/package-summary.html">org.apache.bookkeeper.client</a></dt>
@@ -5555,6 +5580,11 @@
 <dd>
 <div class="block">Configure the Bookie to allow/disallow multiple ledger/index/journal
  directories in the same filesystem diskpartition.</div>
+</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/AbstractConfiguration.html#setAllowShadedLedgerManagerFactoryClass-boolean-">setAllowShadedLedgerManagerFactoryClass(boolean)</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a></dt>
+<dd>
+<div class="block">Set the flag to allow using shaded ledger manager factory class for
+ instantiating a ledger manager factory.</div>
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#setAllowStorageExpansion-boolean-">setAllowStorageExpansion(boolean)</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
 <dd>
@@ -6035,6 +6065,11 @@
 <dd>
 <div class="block">Set num channels per bookie.</div>
 </dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#setNumHighPriorityWorkerThreads-int-">setNumHighPriorityWorkerThreads(int)</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
+<dd>
+<div class="block">Set the number of threads that should be used for high priority requests
+ (i.e.</div>
+</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#setNumJournalCallbackThreads-int-">setNumJournalCallbackThreads(int)</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
 <dd>
 <div class="block">Set the number of threads that would handle journal callbacks.</div>
@@ -6129,7 +6164,9 @@
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ClientConfiguration.html#setRegistrationClientClass-java.lang.Class-">setRegistrationClientClass(Class&lt;? extends RegistrationClient&gt;)</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a></dt>
 <dd>
-<div class="block">Set registration manager class.</div>
+<div class="block"><span class="deprecatedLabel">Deprecated.</span>
+<div class="block"><span class="deprecationComment">since 4.7.0</span></div>
+</div>
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#setRegistrationManagerClass-java.lang.Class-">setRegistrationManagerClass(Class&lt;? extends RegistrationManager&gt;)</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
 <dd>
@@ -6168,6 +6205,11 @@
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#setServerTcpNoDelay-boolean-">setServerTcpNoDelay(boolean)</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
 <dd>
 <div class="block">Set socket nodelay setting.</div>
+</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/AbstractConfiguration.html#setShadedLedgerManagerFactoryClassPrefix-java.lang.String-">setShadedLedgerManagerFactoryClassPrefix(String)</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a></dt>
+<dd>
+<div class="block">Set the class prefix of the shaded ledger manager factory class for
+ instantiating a ledger manager factory.</div>
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#setSkipListArenaChunkSize-int-">setSkipListArenaChunkSize(int)</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
 <dd>
@@ -6399,6 +6441,8 @@
 <div class="block"><span class="deprecationComment">since 4.5, use <a href="org/apache/bookkeeper/client/BookKeeper.Builder.html#zk-org.apache.zookeeper.ZooKeeper-"><code>BookKeeper.Builder.zk(ZooKeeper)</code></a></span></div>
 </div>
 </dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/AbstractConfiguration.html#SHADED_LEDGER_MANAGER_FACTORY_CLASS_PREFIX">SHADED_LEDGER_MANAGER_FACTORY_CLASS_PREFIX</a></span> - Static variable in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/twitter/ostrich/OstrichProvider.html#SHOULD_SHUTDOWN_SERVICE_TRACKER">SHOULD_SHUTDOWN_SERVICE_TRACKER</a></span> - Static variable in class org.apache.bookkeeper.stats.twitter.ostrich.<a href="org/apache/bookkeeper/stats/twitter/ostrich/OstrichProvider.html" title="class in org.apache.bookkeeper.stats.twitter.ostrich">OstrichProvider</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html#shuffleWithMask-org.apache.bookkeeper.client.DistributionSchedule.WriteSet-int-int-">shuffleWithMask(DistributionSchedule.WriteSet, int, int)</a></span> - Static method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html" title="class in org.apache.bookkeeper.client">RackawareEnsemblePlacementPolicyImpl</a></dt>

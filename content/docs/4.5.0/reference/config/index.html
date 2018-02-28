@@ -613,6 +613,42 @@ interface (the interface it uses to establish its identity). By default, loopbac
   </tbody>
 </table>
 
+<h2 id="worker-thread-settings">Worker thread settings</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Parameter</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+    
+    <tr id="numAddWorkerThreads">
+      <td><code>numAddWorkerThreads</code></td>
+      <td><p>The number of threads that handle write requests. if zero, writes are handled by <a href="http://netty.io/wiki/thread-model.html">Netty threads</a> directly.</p>
+</td>
+      <td><code>1</code></td>
+    </tr>
+    
+    <tr id="numReadWorkerThreads">
+      <td><code>numReadWorkerThreads</code></td>
+      <td><p>The number of threads that handle read requests. If zero, reads are handled by <a href="http://netty.io/wiki/thread-model.html">Netty threads</a> directly.</p>
+</td>
+      <td><code>8</code></td>
+    </tr>
+    
+    <tr id="numHighPriorityWorkerThreads">
+      <td><code>numHighPriorityWorkerThreads</code></td>
+      <td><p>The number of threads that should be used for high priority requests (i.e. recovery reads and adds, and fencing). If zero, reads are handled by <a href="http://netty.io/wiki/thread-model.html">Netty threads</a> directly.</p>
+</td>
+      <td><code>8</code></td>
+    </tr>
+     <!-- for param in group.params -->
+  </tbody>
+</table>
+
 <h2 id="garbage-collection-settings">Garbage collection settings</h2>
 
 <table>
@@ -637,20 +673,6 @@ interface (the interface it uses to establish its identity). By default, loopbac
       <td><p>How long the interval to trigger next garbage collection of overreplicated ledgers, in milliseconds. This should not be run very frequently since we read the metadata for all the ledgers on the bookie from zk.</p>
 </td>
       <td><code>86400000</code></td>
-    </tr>
-    
-    <tr id="numAddWorkerThreads">
-      <td><code>numAddWorkerThreads</code></td>
-      <td><p>The number of threads that handle write requests. if zero, writes are handled by <a href="http://netty.io/wiki/thread-model.html">Netty threads</a> directly.</p>
-</td>
-      <td><code>1</code></td>
-    </tr>
-    
-    <tr id="numReadWorkerThreads">
-      <td><code>numReadWorkerThreads</code></td>
-      <td><p>The umber of threads that handle read requests. If 0, reads are handled by <a href="http://netty.io/wiki/thread-model.html">Netty threads</a> directly.</p>
-</td>
-      <td><code>1</code></td>
     </tr>
     
     <tr id="isForceGCAllowWhenNoSpace">
@@ -1433,6 +1455,7 @@ You can disable <code class="highlighter-rouge">padding-writes</code> by setting
   <h2 class="title">BookKeeper configuration</h2>
   <ul class="section-nav">
 <li class="toc-entry toc-h2"><a href="#server-parameters">Server parameters</a></li>
+<li class="toc-entry toc-h2"><a href="#worker-thread-settings">Worker thread settings</a></li>
 <li class="toc-entry toc-h2"><a href="#garbage-collection-settings">Garbage collection settings</a></li>
 <li class="toc-entry toc-h2"><a href="#tls-settings">TLS settings</a></li>
 <li class="toc-entry toc-h2"><a href="#long-poll-request-parameter-settings">Long poll request parameter settings</a></li>
