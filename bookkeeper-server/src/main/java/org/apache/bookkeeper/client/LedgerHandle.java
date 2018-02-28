@@ -652,7 +652,7 @@ public class LedgerHandle implements WriteHandle {
             return;
         }
 
-        asyncReadEntriesInternal(firstEntry, lastEntry, cb, ctx);
+        asyncReadEntriesInternal(firstEntry, lastEntry, cb, ctx, false);
     }
 
     /**
@@ -691,7 +691,7 @@ public class LedgerHandle implements WriteHandle {
             return;
         }
 
-        asyncReadEntriesInternal(firstEntry, lastEntry, cb, ctx);
+        asyncReadEntriesInternal(firstEntry, lastEntry, cb, ctx, false);
     }
 
     /**
@@ -717,7 +717,7 @@ public class LedgerHandle implements WriteHandle {
             return FutureUtils.exception(new BKReadException());
         }
 
-        return readEntriesInternalAsync(firstEntry, lastEntry);
+        return readEntriesInternalAsync(firstEntry, lastEntry, false);
     }
 
     /**
@@ -752,12 +752,13 @@ public class LedgerHandle implements WriteHandle {
             return FutureUtils.exception(new BKIncorrectParameterException());
         }
 
-        return readEntriesInternalAsync(firstEntry, lastEntry);
+        return readEntriesInternalAsync(firstEntry, lastEntry, false);
     }
 
-    void asyncReadEntriesInternal(long firstEntry, long lastEntry, ReadCallback cb, Object ctx) {
+    void asyncReadEntriesInternal(long firstEntry, long lastEntry, ReadCallback cb,
+                                  Object ctx, boolean isRecoveryRead) {
         if (!bk.isClosed()) {
-            readEntriesInternalAsync(firstEntry, lastEntry)
+            readEntriesInternalAsync(firstEntry, lastEntry, isRecoveryRead)
                 .whenCompleteAsync(new FutureEventListener<LedgerEntries>() {
                     @Override
                     public void onSuccess(LedgerEntries entries) {
@@ -802,7 +803,7 @@ public class LedgerHandle implements WriteHandle {
             // Ledger was empty, so there is no last entry to read
             cb.readComplete(BKException.Code.NoSuchEntryException, this, null, ctx);
         } else {
-            asyncReadEntriesInternal(lastEntryId, lastEntryId, cb, ctx);
+            asyncReadEntriesInternal(lastEntryId, lastEntryId, cb, ctx, false);
         }
     }
 
@@ -821,8 +822,9 @@ public class LedgerHandle implements WriteHandle {
     }
 
     CompletableFuture<LedgerEntries> readEntriesInternalAsync(long firstEntry,
-                                                              long lastEntry) {
-        PendingReadOp op = new PendingReadOp(this, bk.getScheduler(), firstEntry, lastEntry);
+                                                              long lastEntry,
+                                                              boolean isRecoveryRead) {
+        PendingReadOp op = new PendingReadOp(this, bk.getScheduler(), firstEntry, lastEntry, isRecoveryRead);
         if (!bk.isClosed()) {
             bk.getMainWorkerPool().submitOrdered(ledgerId, op);
         } else {

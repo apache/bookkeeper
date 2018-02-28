@@ -144,7 +144,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                         BKException.Code.LedgerExistException,
                         BKException.Code.DuplicateEntryIdException,
                         BKException.Code.WriteOnReadOnlyBookieException));
-
+    private static final int DEFAULT_HIGH_PRIORITY_VALUE = 100; // We may add finer grained priority later.
     private static final AtomicLong txnIdGenerator = new AtomicLong(0);
 
     final BookieSocketAddress addr;
@@ -571,6 +571,9 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                     .setVersion(ProtocolVersion.VERSION_THREE)
                     .setOperation(OperationType.ADD_ENTRY)
                     .setTxnId(txnId);
+            if (((short) options & BookieProtocol.FLAG_HIGH_PRIORITY) == BookieProtocol.FLAG_HIGH_PRIORITY) {
+                headerBuilder.setPriority(DEFAULT_HIGH_PRIORITY_VALUE);
+            }
 
             byte[] toSendArray = toSend.toArray();
             AddRequest.Builder addBuilder = AddRequest.newBuilder()
@@ -582,6 +585,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
             if (((short) options & BookieProtocol.FLAG_RECOVERY_ADD) == BookieProtocol.FLAG_RECOVERY_ADD) {
                 addBuilder.setFlag(AddRequest.Flag.RECOVERY_ADD);
             }
+
 
             request = Request.newBuilder()
                     .setHeader(headerBuilder)
@@ -604,55 +608,12 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         }
     }
 
-    public void readEntryAndFenceLedger(final long ledgerId, byte[] masterKey,
-                                        final long entryId,
-                                        ReadEntryCallback cb, Object ctx) {
-        Object request = null;
-        CompletionKey completionKey = null;
-        if (useV2WireProtocol) {
-            completionKey = acquireV2Key(ledgerId, entryId, OperationType.READ_ENTRY);
-            request = new BookieProtocol.ReadRequest(BookieProtocol.CURRENT_PROTOCOL_VERSION, ledgerId, entryId,
-                    BookieProtocol.FLAG_DO_FENCING, masterKey);
-        } else {
-            final long txnId = getTxnId();
-            completionKey = new V3CompletionKey(txnId, OperationType.READ_ENTRY);
-
-            // Build the request and calculate the total size to be included in the packet.
-            BKPacketHeader.Builder headerBuilder = BKPacketHeader.newBuilder()
-                    .setVersion(ProtocolVersion.VERSION_THREE)
-                    .setOperation(OperationType.READ_ENTRY)
-                    .setTxnId(txnId);
-
-            ReadRequest.Builder readBuilder = ReadRequest.newBuilder()
-                    .setLedgerId(ledgerId)
-                    .setEntryId(entryId)
-                    .setMasterKey(ByteString.copyFrom(masterKey))
-                    .setFlag(ReadRequest.Flag.FENCE_LEDGER);
-
-            request = Request.newBuilder()
-                    .setHeader(headerBuilder)
-                    .setReadRequest(readBuilder)
-                    .build();
-        }
-
-        ReadCompletion readCompletion = new ReadCompletion(completionKey, cb, ctx, ledgerId, entryId);
-        CompletionValue existingValue = completionObjects.putIfAbsent(completionKey, readCompletion);
-        if (existingValue != null) {
-            // There's a pending read request on same ledger/entry. Use the multimap to track all of them
-            synchronized (completionObjectsV2Conflicts) {
-                completionObjectsV2Conflicts.put(completionKey, readCompletion);
-            }
-        }
-
-        writeAndFlush(channel, completionKey, request);
-    }
-
     public void readLac(final long ledgerId, ReadLacCallback cb, Object ctx) {
         Object request = null;
         CompletionKey completionKey = null;
         if (useV2WireProtocol) {
             request = new BookieProtocol.ReadRequest(BookieProtocol.CURRENT_PROTOCOL_VERSION,
-                    ledgerId, 0, (short) 0);
+                                                     ledgerId, 0, (short) 0, null);
             completionKey = acquireV2Key(ledgerId, 0, OperationType.READ_LAC);
         } else {
             final long txnId = getTxnId();
@@ -686,7 +647,8 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                                           final boolean piggyBackEntry,
                                           ReadEntryCallback cb,
                                           Object ctx) {
-        readEntryInternal(ledgerId, entryId, previousLAC, timeOutInMillis, piggyBackEntry, cb, ctx);
+        readEntryInternal(ledgerId, entryId, previousLAC, timeOutInMillis,
+                          piggyBackEntry, cb, ctx, (short) 0, null);
     }
 
     /**
@@ -695,8 +657,11 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
     public void readEntry(final long ledgerId,
                           final long entryId,
                           ReadEntryCallback cb,
-                          Object ctx) {
-        readEntryInternal(ledgerId, entryId, null, null, false, cb, ctx);
+                          Object ctx,
+                          int flags,
+                          byte[] masterKey) {
+        readEntryInternal(ledgerId, entryId, null, null, false,
+                          cb, ctx, (short) flags, masterKey);
     }
 
     private void readEntryInternal(final long ledgerId,
@@ -705,12 +670,14 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                                    final Long timeOutInMillis,
                                    final boolean piggyBackEntry,
                                    final ReadEntryCallback cb,
-                                   final Object ctx) {
+                                   final Object ctx,
+                                   int flags,
+                                   byte[] masterKey) {
         Object request = null;
         CompletionKey completionKey = null;
         if (useV2WireProtocol) {
             request = new BookieProtocol.ReadRequest(BookieProtocol.CURRENT_PROTOCOL_VERSION,
-                    ledgerId, entryId, (short) 0);
+                    ledgerId, entryId, (short) flags, masterKey);
             completionKey = acquireV2Key(ledgerId, entryId, OperationType.READ_ENTRY);
         } else {
             final long txnId = getTxnId();
@@ -721,6 +688,9 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                     .setVersion(ProtocolVersion.VERSION_THREE)
                     .setOperation(OperationType.READ_ENTRY)
                     .setTxnId(txnId);
+            if (((short) flags & BookieProtocol.FLAG_HIGH_PRIORITY) == BookieProtocol.FLAG_HIGH_PRIORITY) {
+                headerBuilder.setPriority(DEFAULT_HIGH_PRIORITY_VALUE);
+            }
 
             ReadRequest.Builder readBuilder = ReadRequest.newBuilder()
                     .setLedgerId(ledgerId)
@@ -748,6 +718,17 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                     return;
                 }
                 readBuilder = readBuilder.setFlag(ReadRequest.Flag.ENTRY_PIGGYBACK);
+            }
+
+            // Only one flag can be set on the read requests
+            if (((short) flags & BookieProtocol.FLAG_DO_FENCING) == BookieProtocol.FLAG_DO_FENCING) {
+                readBuilder.setFlag(ReadRequest.Flag.FENCE_LEDGER);
+                if (masterKey == null) {
+                    cb.readEntryComplete(BKException.Code.IncorrectParameterException,
+                                         ledgerId, entryId, null, ctx);
+                    return;
+                }
+                readBuilder.setMasterKey(ByteString.copyFrom(masterKey));
             }
 
             request = Request.newBuilder()

@@ -40,6 +40,7 @@ import org.apache.bookkeeper.client.impl.LedgerEntriesImpl;
 import org.apache.bookkeeper.client.impl.LedgerEntryImpl;
 import org.apache.bookkeeper.common.util.SafeRunnable;
 import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallbackCtx;
 import org.apache.bookkeeper.proto.checksum.DigestManager;
@@ -77,6 +78,7 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
 
     final int requiredBookiesMissingEntryForRecovery;
     final boolean isRecoveryRead;
+
     boolean parallelRead = false;
     final AtomicBoolean complete = new AtomicBoolean(false);
 
@@ -568,8 +570,10 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
             lh.throttler.acquire();
         }
 
+        int flags = isRecoveryRead ? BookieProtocol.FLAG_HIGH_PRIORITY : BookieProtocol.FLAG_NONE;
         lh.bk.getBookieClient().readEntry(to, lh.ledgerId, entry.entryImpl.getEntryId(),
-                                     this, new ReadContext(bookieIndex, to, entry));
+                                          this, new ReadContext(bookieIndex, to, entry),
+                                          flags);
     }
 
     @Override

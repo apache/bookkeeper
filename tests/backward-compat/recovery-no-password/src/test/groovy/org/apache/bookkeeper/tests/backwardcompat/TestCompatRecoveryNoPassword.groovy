@@ -34,6 +34,7 @@ import org.apache.bookkeeper.client.LedgerHandle
 import org.apache.bookkeeper.client.LedgerMetadata
 import org.apache.bookkeeper.conf.ClientConfiguration
 import org.apache.bookkeeper.net.BookieSocketAddress
+import org.apache.bookkeeper.proto.BookieProtocol
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback
 import org.apache.bookkeeper.tests.BookKeeperClusterUtils
 import org.apache.bookkeeper.tests.DockerUtils
@@ -125,7 +126,7 @@ class TestCompatRecoveryNoPassword {
             for (long i = startEntryId; i < endEntryId; i++) {
                 for (BookieSocketAddress addr : e.getValue()) {
                     bookkeeper.getBookieClient()
-                        .readEntry(addr, lh.getId(), i, cb, addr)
+                        .readEntry(addr, lh.getId(), i, cb, addr, BookieProtocol.FLAG_NONE)
                 }
             }
 
