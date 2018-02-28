@@ -21,6 +21,9 @@ branches:
     - asf-site
     - gh-pages
 
+services:
+  - docker
+
 matrix:
   include:
     - os: osx
@@ -77,6 +80,7 @@ script:
         make clean
         # run the docker image to build the website
         ./docker/ci.sh
+        cd ..
     fi
 
 # Disabled the tests here. Since tests are running much slower on Travis than on Jenkins
