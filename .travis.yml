@@ -56,10 +56,16 @@ before_install:
     fi
 
 script:
-  - travis_retry mvn --batch-mode clean apache-rat:check compile spotbugs:check install -DskipTests -Dstream
-  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then dev/check-binary-license ./bookkeeper-dist/all/target/bookkeeper-all-*-bin.tar.gz; fi
-  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then dev/check-binary-license ./bookkeeper-dist/server/target/bookkeeper-server-*-bin.tar.gz; fi
-  - if [ "$DLOG_MODIFIED" == "true" ]; then cd stream/distributedlog && travis_wait 60 mvn --batch-mode clean package -Ddistributedlog; fi
+- |
+    travis_retry mvn --batch-mode clean apache-rat:check compile spotbugs:check install -DskipTests -Dstream
+    if [ "$TRAVIS_OS_NAME" == "linux" ]; then
+        dev/check-binary-license ./bookkeeper-dist/all/target/bookkeeper-all-*-bin.tar.gz
+        dev/check-binary-license ./bookkeeper-dist/server/target/bookkeeper-server-*-bin.tar.gz
+    fi
+    if [ "$DLOG_MODIFIED" == "true" ]; then
+        cd stream/distributedlog
+        ./dev/ticktoc.sh "mvn --batch-mode clean package -Ddistributedlog"
+    fi
 # Disabled the tests here. Since tests are running much slower on Travis than on Jenkins
 #  - ./dev/ticktoc.sh "mvn --batch-mode clean package"
 
