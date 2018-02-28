@@ -122,6 +122,7 @@ public class DbLedgerStorageTest {
         ByteBuf entry = Unpooled.buffer(1024);
         entry.writeLong(4); // ledger id
         entry.writeLong(1); // entry id
+        entry.writeLong(0); // lac
         entry.writeBytes("entry-1".getBytes());
 
         assertEquals(false, ((DbLedgerStorage) storage).isFlushRequired());
@@ -152,6 +153,7 @@ public class DbLedgerStorageTest {
         ByteBuf entry2 = Unpooled.buffer(1024);
         entry2.writeLong(4); // ledger id
         entry2.writeLong(2); // entry id
+        entry2.writeLong(1); // lac
         entry2.writeBytes("entry-2".getBytes());
 
         storage.addEntry(entry2);
@@ -160,20 +162,27 @@ public class DbLedgerStorageTest {
         res = storage.getEntry(4, BookieProtocol.LAST_ADD_CONFIRMED);
         assertEquals(entry2, res);
 
+        // Read last add confirmed in ledger
+        assertEquals(1L, storage.getLastAddConfirmed(4));
+
         ByteBuf entry3 = Unpooled.buffer(1024);
         entry3.writeLong(4); // ledger id
         entry3.writeLong(3); // entry id
+        entry3.writeLong(2); // lac
         entry3.writeBytes("entry-3".getBytes());
         storage.addEntry(entry3);
 
         ByteBuf entry4 = Unpooled.buffer(1024);
         entry4.writeLong(4); // ledger id
         entry4.writeLong(4); // entry id
+        entry4.writeLong(3); // lac
         entry4.writeBytes("entry-4".getBytes());
         storage.addEntry(entry4);
 
         res = storage.getEntry(4, 4);
         assertEquals(entry4, res);
+
+        assertEquals(3, storage.getLastAddConfirmed(4));
 
         // Delete
         assertEquals(true, storage.ledgerExists(4));
@@ -182,10 +191,12 @@ public class DbLedgerStorageTest {
 
         // Should not throw exception event if the ledger was deleted
         storage.getEntry(4, 4);
+        assertEquals(3, storage.getLastAddConfirmed(4));
 
         storage.addEntry(Unpooled.wrappedBuffer(entry2));
         res = storage.getEntry(4, BookieProtocol.LAST_ADD_CONFIRMED);
         assertEquals(entry4, res);
+        assertEquals(3, storage.getLastAddConfirmed(4));
 
         // Get last entry from storage
         storage.flush();
