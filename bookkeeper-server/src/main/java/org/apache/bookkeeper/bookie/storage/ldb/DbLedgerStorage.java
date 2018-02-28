@@ -878,9 +878,13 @@ public class DbLedgerStorage implements CompactableLedgerStorage {
         Long lac = null != ledgerInfo ? ledgerInfo.getLastAddConfirmed() : null;
         if (null == lac) {
             ByteBuf bb = getEntry(ledgerId, BookieProtocol.LAST_ADD_CONFIRMED);
-            bb.skipBytes(2 * Long.BYTES); // skip ledger id and entry id
-            lac = bb.readLong();
-            lac = transientLedgerInfoCache.getUnchecked(ledgerId).setLastAddConfirmed(lac);
+            try {
+                bb.skipBytes(2 * Long.BYTES); // skip ledger id and entry id
+                lac = bb.readLong();
+                lac = transientLedgerInfoCache.getUnchecked(ledgerId).setLastAddConfirmed(lac);
+            } finally {
+                bb.release();
+            }
         }
         return lac;
     }
