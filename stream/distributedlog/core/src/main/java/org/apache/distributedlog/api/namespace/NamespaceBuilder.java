@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.net.URI;
 import org.apache.bookkeeper.common.annotation.InterfaceAudience.Public;
 import org.apache.bookkeeper.common.annotation.InterfaceStability.Stable;
+import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.bookkeeper.feature.Feature;
 import org.apache.bookkeeper.feature.FeatureProvider;
 import org.apache.bookkeeper.feature.SettableFeatureProvider;
@@ -40,7 +41,6 @@ import org.apache.distributedlog.namespace.NamespaceDriver;
 import org.apache.distributedlog.namespace.NamespaceDriverManager;
 import org.apache.distributedlog.util.ConfUtils;
 import org.apache.distributedlog.util.DLUtils;
-import org.apache.distributedlog.util.OrderedScheduler;
 import org.apache.distributedlog.util.SimplePermitLimiter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -230,9 +230,9 @@ public class NamespaceBuilder {
         StatsLogger perLogStatsLogger = normalizePerLogStatsLogger(_statsLogger, _perLogStatsLogger, _conf);
 
         // build the scheduler
-        OrderedScheduler scheduler = OrderedScheduler.newBuilder()
+        OrderedScheduler scheduler = OrderedScheduler.newSchedulerBuilder()
                 .name("DLM-" + normalizedUri.getPath())
-                .corePoolSize(_conf.getNumWorkerThreads())
+                .numThreads(_conf.getNumWorkerThreads())
                 .build();
 
         // initialize the namespace driver

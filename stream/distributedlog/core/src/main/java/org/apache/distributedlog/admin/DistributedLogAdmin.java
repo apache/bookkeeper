@@ -41,6 +41,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
+import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.bookkeeper.util.IOUtils;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
@@ -66,7 +67,6 @@ import org.apache.distributedlog.metadata.MetadataUpdater;
 import org.apache.distributedlog.namespace.NamespaceDriver;
 import org.apache.distributedlog.thrift.AccessControlEntry;
 import org.apache.distributedlog.tools.DistributedLogTool;
-import org.apache.distributedlog.util.OrderedScheduler;
 import org.apache.zookeeper.KeeperException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -738,9 +738,9 @@ public class DistributedLogAdmin extends DistributedLogTool {
                             getLogSegmentMetadataStore()) :
                     LogSegmentMetadataStoreUpdater.createMetadataUpdater(getConf(),
                             getLogSegmentMetadataStore());
-            OrderedScheduler scheduler = OrderedScheduler.newBuilder()
+            OrderedScheduler scheduler = OrderedScheduler.newSchedulerBuilder()
                     .name("dlck-scheduler")
-                    .corePoolSize(Runtime.getRuntime().availableProcessors())
+                    .numThreads(Runtime.getRuntime().availableProcessors())
                     .build();
             ExecutorService executorService = Executors.newCachedThreadPool();
             try {

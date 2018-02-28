@@ -49,6 +49,7 @@ import java.net.URI;
 import java.util.Collections;
 import java.util.List;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
+import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.util.ZkUtils;
 import org.apache.bookkeeper.versioning.LongVersion;
@@ -70,7 +71,6 @@ import org.apache.distributedlog.metadata.DLMetadata;
 import org.apache.distributedlog.metadata.LogMetadata;
 import org.apache.distributedlog.metadata.LogMetadataForWriter;
 import org.apache.distributedlog.util.DLUtils;
-import org.apache.distributedlog.util.OrderedScheduler;
 import org.apache.distributedlog.util.Utils;
 import org.apache.zookeeper.AsyncCallback.Children2Callback;
 import org.apache.zookeeper.AsyncCallback.StatCallback;
@@ -204,9 +204,9 @@ public class TestZKLogStreamMetadataStore extends ZooKeeperClusterTestCase {
         } catch (KeeperException.NodeExistsException nee) {
             logger.debug("The namespace uri already exists.");
         }
-        scheduler = OrderedScheduler.newBuilder()
+        scheduler = OrderedScheduler.newSchedulerBuilder()
             .name("test-scheduler")
-            .corePoolSize(1)
+            .numThreads(1)
             .build();
         metadataStore = new ZKLogStreamMetadataStore(
             "test-logstream-metadata-store",
