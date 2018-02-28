@@ -23,6 +23,7 @@ package org.apache.bookkeeper.client;
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.ListenableFuture;
 import io.netty.buffer.ByteBuf;
+
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.HashSet;
@@ -139,7 +140,6 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
             } catch (BKDigestMatchException e) {
                 readOpDmCounter.inc();
                 logErrorAndReattemptRead(bookieIndex, host, "Mac mismatch", BKException.Code.DigestMatchException);
-                buffer.release();
                 return false;
             }
 
@@ -154,7 +154,6 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
                 writeSet.recycle();
                 return true;
             } else {
-                buffer.release();
                 return false;
             }
         }
@@ -589,12 +588,15 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
         heardFromHosts.add(rctx.to);
         heardFromHostsBitSet.set(rctx.bookieIndex, true);
 
+        buffer.retain();
         if (entry.complete(rctx.bookieIndex, rctx.to, buffer)) {
             if (!isRecoveryRead) {
                 // do not advance LastAddConfirmed for recovery reads
                 lh.updateLastConfirmed(rctx.getLastAddConfirmed(), 0L);
             }
             submitCallback(BKException.Code.OK);
+        } else {
+            buffer.release();
         }
 
         if (numPendingEntries < 0) {
