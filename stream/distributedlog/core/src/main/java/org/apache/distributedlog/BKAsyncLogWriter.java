@@ -487,6 +487,7 @@ class BKAsyncLogWriter extends BKAbstractLogWriter implements AsyncLogWriter {
         synchronized (this) {
             logSegmentWriterFuture = this.rollingFuture;
         }
+        LOG.info("Close log writer with rolling future = {}", logSegmentWriterFuture);
 
         if (null == logSegmentWriterFuture) {
             return super.asyncCloseAndComplete();

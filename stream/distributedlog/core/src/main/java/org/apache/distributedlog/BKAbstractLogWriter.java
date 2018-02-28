@@ -162,6 +162,7 @@ abstract class BKAbstractLogWriter implements Closeable, AsyncCloseable, Abortab
     private CompletableFuture<Void> asyncCloseAndComplete(boolean shouldThrow) {
         BKLogSegmentWriter segmentWriter = getCachedLogWriter();
         BKLogWriteHandler writeHandler = getCachedWriteHandler();
+        LOG.info("Close : segment writer = {}, writer handler = {}", segmentWriter, writeHandler);
         if (null != segmentWriter && null != writeHandler) {
             cancelTruncation();
             CompletableFuture<Void> completePromise = new CompletableFuture<Void>();
