@@ -21,6 +21,12 @@
     <!-- imported code -->
     <Class name="~com\.scurrilous\.circe.*" />
   </Match>
+  <!-- bookkeeper-common -->
+  <Match>
+    <Class name="org.apache.bookkeeper.common.util.OrderedScheduler"/>
+    <Method name="submit" />
+    <Bug pattern="NP_PARAMETER_MUST_BE_NONNULL_BUT_MARKED_AS_NULLABLE"/>
+  </Match>
   <!-- bookkeeper-proto -->
   <Match>
     <!-- generated code, we can't be held responsible for findbugs in it //-->

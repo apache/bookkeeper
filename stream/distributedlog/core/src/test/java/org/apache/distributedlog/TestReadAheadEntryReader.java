@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
+import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.bookkeeper.stats.AlertStatsLogger;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.distributedlog.api.AsyncLogWriter;
@@ -41,7 +42,6 @@ import org.apache.distributedlog.impl.logsegment.BKLogSegmentEntryStore;
 import org.apache.distributedlog.injector.AsyncFailureInjector;
 import org.apache.distributedlog.logsegment.LogSegmentEntryStore;
 import org.apache.distributedlog.util.ConfUtils;
-import org.apache.distributedlog.util.OrderedScheduler;
 import org.apache.distributedlog.util.Utils;
 import org.junit.After;
 import org.junit.Before;
@@ -88,9 +88,9 @@ public class TestReadAheadEntryReader extends TestDistributedLogBase {
                 .ledgersPath("/ledgers")
                 .zkServers(bkutil.getZkServers())
                 .build();
-        scheduler = OrderedScheduler.newBuilder()
+        scheduler = OrderedScheduler.newSchedulerBuilder()
                 .name("test-read-ahead-entry-reader")
-                .corePoolSize(1)
+                .numThreads(1)
                 .build();
     }
 
@@ -138,11 +138,15 @@ public class TestReadAheadEntryReader extends TestDistributedLogBase {
 
     private void ensureOrderSchedulerEmpty(String streamName) throws Exception {
         final CompletableFuture<Void> promise = new CompletableFuture<Void>();
-        scheduler.submit(streamName, new Runnable() {
-            @Override
-            public void run() {
-                FutureUtils.complete(promise, null);
-            }
+        scheduler.submitOrdered(streamName, () -> {
+            FutureUtils.complete(promise, null);
+            // the following line is needed for oraclejdk9 to avoid following exception
+            // ```
+            // incompatible types: inference variable T has incompatible bounds
+            // upper bounds: java.lang.Object
+            // lower bounds: void
+            // ```
+            return (Void) null;
         });
         Utils.ioResult(promise);
     }
