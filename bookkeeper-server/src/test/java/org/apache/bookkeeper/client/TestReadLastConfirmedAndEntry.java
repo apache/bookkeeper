@@ -27,6 +27,8 @@ import static org.junit.Assert.assertNull;
 import io.netty.buffer.ByteBuf;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Enumeration;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -35,27 +37,45 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException;
+import org.apache.bookkeeper.bookie.InterleavedLedgerStorage;
+import org.apache.bookkeeper.bookie.LedgerStorage;
+import org.apache.bookkeeper.bookie.SortedLedgerStorage;
+import org.apache.bookkeeper.bookie.storage.ldb.DbLedgerStorage;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.zookeeper.KeeperException;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameters;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * Test reading the last confirmed and entry.
  */
+@RunWith(Parameterized.class)
 public class TestReadLastConfirmedAndEntry extends BookKeeperClusterTestCase {
 
     private static final Logger logger = LoggerFactory.getLogger(TestReadLastConfirmedAndEntry.class);
 
     final BookKeeper.DigestType digestType;
 
-    public TestReadLastConfirmedAndEntry() {
+    public TestReadLastConfirmedAndEntry(Class<? extends LedgerStorage> storageClass) {
         super(3);
         this.digestType = BookKeeper.DigestType.CRC32;
         this.baseConf.setAllowEphemeralPorts(false);
+        this.baseConf.setLedgerStorageClass(storageClass.getName());
+    }
+
+    @Parameters
+    public static Collection<Object[]> configs() {
+        return Arrays.asList(new Object[][] {
+            { InterleavedLedgerStorage.class },
+            { SortedLedgerStorage.class },
+            { DbLedgerStorage.class },
+        });
     }
 
     static class FakeBookie extends Bookie {

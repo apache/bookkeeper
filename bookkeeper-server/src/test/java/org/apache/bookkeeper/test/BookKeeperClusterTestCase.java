@@ -793,4 +793,5 @@ public abstract class BookKeeperClusterTestCase {
     public TestStatsProvider getStatsProvider(int index) throws Exception {
         return getStatsProvider(bs.get(index).getLocalAddress());
     }
+
 }

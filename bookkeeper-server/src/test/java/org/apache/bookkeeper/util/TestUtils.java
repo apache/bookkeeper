@@ -25,12 +25,20 @@ import java.io.File;
 import java.util.HashSet;
 import java.util.Set;
 
+import java.util.concurrent.TimeUnit;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.bookie.Bookie;
+import org.apache.bookkeeper.client.LedgerHandle;
+import org.apache.bookkeeper.client.api.ReadHandle;
 
 /**
  * Test utilities.
  */
-public class TestUtils {
+@Slf4j
+public final class TestUtils {
+
+    private TestUtils() {}
+
     public static boolean hasLogFiles(File ledgerDirectory, boolean partial, Integer... logsId) {
         boolean result = partial ? false : true;
         Set<Integer> logs = new HashSet<Integer>();
@@ -52,4 +60,21 @@ public class TestUtils {
         }
         return result;
     }
+
+    public static void waitUtilLacUpdated(ReadHandle rh, long newLac) throws Exception {
+        long lac = rh.getLastAddConfirmed();
+        while (lac < newLac) {
+            TimeUnit.MILLISECONDS.sleep(20);
+            lac = rh.readLastAddConfirmed().get();
+        }
+    }
+
+    public static long waitUtilExplicitLacUpdated(LedgerHandle rh, long newLac) throws Exception {
+        long lac;
+        while ((lac = rh.readExplicitLastConfirmed()) < newLac) {
+            TimeUnit.MILLISECONDS.sleep(20);
+        }
+        return lac;
+    }
+
 }
