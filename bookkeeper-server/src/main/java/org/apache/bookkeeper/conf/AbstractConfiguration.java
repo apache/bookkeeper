@@ -332,7 +332,7 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      * @return ledger manager factory class name.
      */
     public boolean isShadedLedgerManagerFactoryClassAllowed() {
-        return getBoolean(ALLOW_SHADED_LEDGER_MANAGER_FACTORY_CLASS);
+        return getBoolean(ALLOW_SHADED_LEDGER_MANAGER_FACTORY_CLASS, false);
     }
 
     /**
