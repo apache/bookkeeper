@@ -189,8 +189,12 @@
                 </relocation>
                 <!-- bookkeeper -->
                 <relocation>
+                  <pattern>com.scurrilous.circe</pattern>
+                  <shadedPattern>dlshade.com.scurrilous.circe</shadedPattern>
+                </relocation>
+                <relocation>
                   <pattern>org.apache.bookkeeper</pattern>
-                  <shadedPattern>org.apache.bookkeeper</shadedPattern>
+                  <shadedPattern>dlshade.org.apache.bookkeeper</shadedPattern>
                 </relocation>
                 <!-- distributedlog -->
                 <relocation>
