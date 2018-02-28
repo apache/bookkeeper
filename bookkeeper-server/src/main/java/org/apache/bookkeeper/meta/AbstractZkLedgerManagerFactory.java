@@ -242,9 +242,8 @@ public abstract class AbstractZkLedgerManagerFactory implements LedgerManagerFac
             AbstractConfiguration<?> conf, String lmfClassName, Throwable cause) throws IOException {
         if (conf.isShadedLedgerManagerFactoryClassAllowed()) {
             String shadedPrefix = conf.getShadedLedgerManagerFactoryClassPrefix();
-            log.warn("Failed to instantiate ledger manager factory "
-                + lmfClassName + ", trying its shaded class "
-                + shadedPrefix + lmfClassName);
+            log.warn("Failed to instantiate ledger manager factory {}, trying its shaded class {}{}",
+                lmfClassName, shadedPrefix, lmfClassName);
             // try shading class
             try {
                 return resolveShadedLedgerManagerFactory(lmfClassName, shadedPrefix);
