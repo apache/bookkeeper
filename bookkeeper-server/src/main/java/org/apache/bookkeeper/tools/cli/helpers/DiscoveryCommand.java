@@ -18,6 +18,7 @@
  */
 package org.apache.bookkeeper.tools.cli.helpers;
 
+import java.net.URI;
 import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -26,8 +27,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.discover.RegistrationClient;
+import org.apache.bookkeeper.meta.MetadataClientDriver;
+import org.apache.bookkeeper.meta.MetadataDrivers;
 import org.apache.bookkeeper.stats.NullStatsLogger;
-import org.apache.bookkeeper.util.ReflectionUtils;
 
 /**
  * This is a mixin for commands that talks to discovery service.
@@ -37,21 +39,16 @@ public abstract class DiscoveryCommand implements Command {
 
     @Override
     public void run(ServerConfiguration conf) throws Exception {
-        // cast the server configuration to a client configuration object.
-        ClientConfiguration clientConf = new ClientConfiguration(conf);
-        run(clientConf);
-    }
-
-    protected void run(ClientConfiguration conf) throws Exception {
-        Class<? extends RegistrationClient> regClientCls = conf.getRegistrationClientClass();
+        URI metadataServiceUri = URI.create(conf.getMetadataServiceUri());
         @Cleanup("shutdown") ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
-        try (RegistrationClient regClient = ReflectionUtils.newInstance(regClientCls)) {
-            regClient.initialize(
-                conf,
+        try (MetadataClientDriver driver = MetadataDrivers.getClientDriver(metadataServiceUri)) {
+            ClientConfiguration clientConf = new ClientConfiguration(conf);
+            driver.initialize(
+                clientConf,
                 executor,
                 NullStatsLogger.INSTANCE,
                 Optional.empty());
-            run(regClient);
+            run(driver.getRegistrationClient());
         }
     }
 

@@ -228,7 +228,10 @@ public class BookKeeperAdmin implements AutoCloseable {
      */
     public void watchWritableBookiesChanged(final RegistrationListener listener)
             throws BKException {
-        bkc.regClient.watchWritableBookies(listener);
+        bkc
+            .getMetadataClientDriver()
+            .getRegistrationClient()
+            .watchWritableBookies(listener);
     }
 
     /**
@@ -240,7 +243,10 @@ public class BookKeeperAdmin implements AutoCloseable {
      */
     public void watchReadOnlyBookiesChanged(final RegistrationListener listener)
             throws BKException {
-        bkc.regClient.watchReadOnlyBookies(listener);
+        bkc
+            .getMetadataClientDriver()
+            .getRegistrationClient()
+            .watchReadOnlyBookies(listener);
     }
 
     /**
@@ -1154,7 +1160,7 @@ public class BookKeeperAdmin implements AutoCloseable {
             }
 
             BookKeeper bkc = new BookKeeper(new ClientConfiguration(conf));
-            bkc.ledgerManagerFactory.format(conf, bkc.regClient.getLayoutManager());
+            bkc.ledgerManagerFactory.format(conf, bkc.getMetadataClientDriver().getLayoutManager());
 
             return rm.format();
         }

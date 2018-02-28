@@ -233,7 +233,10 @@ public class BookieInfoReader {
     }
 
     public void start() {
-        this.bk.regClient.watchWritableBookies(bookies -> availableBookiesChanged(bookies.getValue()));
+        this.bk
+            .getMetadataClientDriver()
+            .getRegistrationClient()
+            .watchWritableBookies(bookies -> availableBookiesChanged(bookies.getValue()));
         scheduler.scheduleAtFixedRate(new Runnable() {
             @Override
             public void run() {

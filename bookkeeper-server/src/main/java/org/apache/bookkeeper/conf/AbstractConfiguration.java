@@ -215,6 +215,8 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
                     ledgerManagerType = org.apache.bookkeeper.meta.FlatLedgerManagerFactory.NAME;
                 } else if (factoryClass == LongHierarchicalLedgerManagerFactory.class) {
                     ledgerManagerType = LongHierarchicalLedgerManagerFactory.NAME;
+                } else if (factoryClass == org.apache.bookkeeper.meta.MSLedgerManagerFactory.class) {
+                    ledgerManagerType = org.apache.bookkeeper.meta.MSLedgerManagerFactory.NAME;
                 } else {
                     throw new IllegalArgumentException("Unknown zookeeper based ledger manager factory : "
                         + factoryClass);
