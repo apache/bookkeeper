@@ -19,6 +19,7 @@ package org.apache.distributedlog;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
+
 import java.net.URI;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
@@ -26,8 +27,6 @@ import org.apache.bookkeeper.zookeeper.RetryPolicy;
 import org.apache.distributedlog.ZooKeeperClient.Credentials;
 import org.apache.distributedlog.ZooKeeperClient.DigestCredentials;
 import org.apache.distributedlog.impl.BKNamespaceDriver;
-
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

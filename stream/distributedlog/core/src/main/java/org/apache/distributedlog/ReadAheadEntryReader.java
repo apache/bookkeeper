@@ -33,11 +33,13 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
+import org.apache.bookkeeper.common.concurrent.FutureEventListener;
+import org.apache.bookkeeper.common.concurrent.FutureUtils;
+import org.apache.bookkeeper.common.util.OrderedScheduler;
+import org.apache.bookkeeper.common.util.SafeRunnable;
 import org.apache.bookkeeper.stats.AlertStatsLogger;
 import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.distributedlog.callback.LogSegmentListener;
-import org.apache.distributedlog.common.concurrent.FutureEventListener;
-import org.apache.distributedlog.common.concurrent.FutureUtils;
 import org.apache.distributedlog.exceptions.AlreadyTruncatedTransactionException;
 import org.apache.distributedlog.exceptions.DLIllegalStateException;
 import org.apache.distributedlog.exceptions.DLInterruptedException;
@@ -48,11 +50,8 @@ import org.apache.distributedlog.io.AsyncCloseable;
 import org.apache.distributedlog.logsegment.LogSegmentEntryReader;
 import org.apache.distributedlog.logsegment.LogSegmentEntryStore;
 import org.apache.distributedlog.logsegment.LogSegmentFilter;
-import org.apache.distributedlog.util.OrderedScheduler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-
 
 /**
  * New ReadAhead Reader that uses {@link org.apache.distributedlog.logsegment.LogSegmentEntryReader}.
@@ -204,7 +203,7 @@ class ReadAheadEntryReader implements
         }
     }
 
-    private abstract class CloseableRunnable implements Runnable {
+    private abstract class CloseableRunnable implements SafeRunnable {
 
         @Override
         public void run() {
@@ -219,8 +218,6 @@ class ReadAheadEntryReader implements
                 logger.error("Caught unexpected exception : ", cause);
             }
         }
-
-        abstract void safeRun();
 
     }
 
@@ -321,7 +318,7 @@ class ReadAheadEntryReader implements
 
     private ScheduledFuture<?> scheduleIdleReaderTaskIfNecessary() {
         if (idleWarnThresholdMillis < Integer.MAX_VALUE && idleWarnThresholdMillis > 0) {
-            return scheduler.scheduleAtFixedRate(streamName, () -> {
+            return scheduler.scheduleAtFixedRateOrdered(streamName, () -> {
                 if (!isReaderIdle(idleWarnThresholdMillis, TimeUnit.MILLISECONDS)) {
                     return;
                 }
@@ -390,14 +387,14 @@ class ReadAheadEntryReader implements
         return isInitialized;
     }
 
-    private void orderedSubmit(Runnable runnable) {
+    private void orderedSubmit(SafeRunnable runnable) {
         synchronized (this) {
             if (null != closePromise) {
                 return;
             }
         }
         try {
-            scheduler.submit(streamName, runnable);
+            scheduler.submitOrdered(streamName, runnable);
         } catch (RejectedExecutionException ree) {
             logger.debug("Failed to submit and execute an operation for readhead entry reader of {}",
                     streamName, ree);
@@ -414,7 +411,7 @@ class ReadAheadEntryReader implements
     private void removeClosedSegmentReaders() {
         orderedSubmit(new CloseableRunnable() {
             @Override
-            void safeRun() {
+            public void safeRun() {
                 unsafeRemoveClosedSegmentReaders();
             }
         });
@@ -452,12 +449,7 @@ class ReadAheadEntryReader implements
         // use runnable here instead of CloseableRunnable,
         // because we need this to be executed
         try {
-            scheduler.submit(streamName, new Runnable() {
-                @Override
-                public void run() {
-                    unsafeAsyncClose(closeFuture);
-                }
-            });
+            scheduler.submitOrdered(streamName, () -> unsafeAsyncClose(closeFuture));
         } catch (RejectedExecutionException ree) {
             logger.warn("Scheduler has been shutdown before closing the readahead entry reader for stream {}",
                     streamName, ree);
@@ -684,7 +676,7 @@ class ReadAheadEntryReader implements
     void processLogSegments(final List<LogSegmentMetadata> segments) {
         orderedSubmit(new CloseableRunnable() {
             @Override
-            void safeRun() {
+            public void safeRun() {
                 unsafeProcessLogSegments(segments);
             }
         });
@@ -907,7 +899,7 @@ class ReadAheadEntryReader implements
     void moveToNextLogSegment() {
         orderedSubmit(new CloseableRunnable() {
             @Override
-            void safeRun() {
+            public void safeRun() {
                 unsafeMoveToNextLogSegment();
             }
         });
@@ -957,7 +949,7 @@ class ReadAheadEntryReader implements
     void scheduleReadNext() {
         orderedSubmit(new CloseableRunnable() {
             @Override
-            void safeRun() {
+            public void safeRun() {
                 if (null == currentSegmentReader) {
                     pauseReadAheadOnNoMoreLogSegments();
                     return;

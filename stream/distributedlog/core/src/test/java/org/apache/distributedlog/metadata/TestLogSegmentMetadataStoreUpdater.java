@@ -17,10 +17,15 @@
  */
 package org.apache.distributedlog.metadata;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
+import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.distributedlog.DLMTestUtil;
 import org.apache.distributedlog.DLSN;
 import org.apache.distributedlog.DistributedLogConfiguration;
@@ -31,7 +36,6 @@ import org.apache.distributedlog.ZooKeeperClient;
 import org.apache.distributedlog.ZooKeeperClusterTestCase;
 import org.apache.distributedlog.impl.ZKLogSegmentMetadataStore;
 import org.apache.distributedlog.logsegment.LogSegmentMetadataStore;
-import org.apache.distributedlog.util.OrderedScheduler;
 import org.apache.distributedlog.util.Utils;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.ZooDefs;
@@ -58,9 +62,9 @@ public class TestLogSegmentMetadataStoreUpdater extends ZooKeeperClusterTestCase
 
     @Before
     public void setup() throws Exception {
-        scheduler = OrderedScheduler.newBuilder()
+        scheduler = OrderedScheduler.newSchedulerBuilder()
                 .name("test-logsegment-metadata-store-updater")
-                .corePoolSize(1)
+                .numThreads(1)
                 .build();
         zkc = TestZooKeeperClientBuilder.newBuilder()
                 .uri(createURI("/"))

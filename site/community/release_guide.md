@@ -472,6 +472,23 @@ Copy the source release from the `dev` repository to the `release` repository at
 
     svn move https://dist.apache.org/repos/dist/dev/bookkeeper/bookkeeper-${VERSION}-rc${RC_NUM} https://dist.apache.org/repos/dist/release/bookkeeper/bookkeeper-${VERSION}
 
+According to [ASF policy](http://www.apache.org/legal/release-policy.html#when-to-archive), `/www.apache.org/dist` should contain the latest release in each branch that
+is currently under development. We need to remove the old releases from `release` repository.
+
+For example, if 4.6.1 is a newer release, we need to remove releases older than 4.6.1.
+
+
+    ```shell
+    // go to the directory checkout from `svn co https://dist.apache.org/repos/dist/release/bookkeeper`
+    $ cd bookkeeper
+
+    // delete old releases
+    $ svn rm <old-release>
+
+    // commit the change
+    $ svn commit -m "remove bookkeeper release <old-release>"
+    ```
+
 ### Update Website
 
 1. Create the documentation for `${VERSION}`. Run the `release.sh` to generate the branch for `${VERSION}` and bump

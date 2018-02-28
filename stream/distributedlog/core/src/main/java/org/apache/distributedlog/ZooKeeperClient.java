@@ -18,8 +18,8 @@
 package org.apache.distributedlog;
 
 import static com.google.common.base.Charsets.UTF_8;
-import com.google.common.base.Stopwatch;
 
+import com.google.common.base.Stopwatch;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
@@ -40,7 +40,6 @@ import org.apache.zookeeper.Watcher.Event.KeeperState;
 import org.apache.zookeeper.ZooDefs;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.ACL;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

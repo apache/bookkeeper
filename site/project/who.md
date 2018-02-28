@@ -10,6 +10,7 @@ Username | Name	| Organization | Timezone
 :--------|:-----|:-------------|:--------
 breed | Ben Reed | Facebook	| -8
 drusek | Dave Rusek | Twitter | -7
+eolivelli | Enrico Olivelli | Diennea | +2
 fcuny | Franck Cuny | Twitter | -8
 fpj	| Flavio Junqueira | Microsoft | +1
 hsaputra | Henry Saputra | | -8
@@ -21,6 +22,7 @@ mmerli | Matteo Merli | Streamlio | -8
 rakeshr | Rakesh Radhakrishnan | Huawei | +5:30
 sijie | Sijie Guo | Streamlio | -8
 umamahesh | Uma Maheswara Rao G | Intel | +5
+zhaijia	| Jia Zhai | Streamlio | +8
 
 ## Committers
 

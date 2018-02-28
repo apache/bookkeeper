@@ -31,12 +31,14 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
+import org.apache.bookkeeper.common.concurrent.FutureEventListener;
+import org.apache.bookkeeper.common.concurrent.FutureUtils;
+import org.apache.bookkeeper.common.util.OrderedScheduler;
+import org.apache.bookkeeper.common.util.SafeRunnable;
 import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.distributedlog.api.AsyncLogReader;
-import org.apache.distributedlog.common.concurrent.FutureEventListener;
-import org.apache.distributedlog.common.concurrent.FutureUtils;
 import org.apache.distributedlog.exceptions.DLIllegalStateException;
 import org.apache.distributedlog.exceptions.DLInterruptedException;
 import org.apache.distributedlog.exceptions.EndOfStreamException;
@@ -44,7 +46,6 @@ import org.apache.distributedlog.exceptions.IdleReaderException;
 import org.apache.distributedlog.exceptions.LogNotFoundException;
 import org.apache.distributedlog.exceptions.ReadCancelledException;
 import org.apache.distributedlog.exceptions.UnexpectedException;
-import org.apache.distributedlog.util.OrderedScheduler;
 import org.apache.distributedlog.util.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -67,7 +68,7 @@ import org.slf4j.LoggerFactory;
  * <li> `async_reader`/idle_reader_error: counter. the number idle reader errors.
  * </ul>
  */
-class BKAsyncLogReader implements AsyncLogReader, Runnable, AsyncNotification {
+class BKAsyncLogReader implements AsyncLogReader, SafeRunnable, AsyncNotification {
     static final Logger LOG = LoggerFactory.getLogger(BKAsyncLogReader.class);
 
     private static final Function<List<LogRecordWithDLSN>, LogRecordWithDLSN> READ_NEXT_MAP_FUNCTION =
@@ -100,14 +101,11 @@ class BKAsyncLogReader implements AsyncLogReader, Runnable, AsyncNotification {
 
     private final boolean returnEndOfStreamRecord;
 
-    private final Runnable BACKGROUND_READ_SCHEDULER = new Runnable() {
-        @Override
-        public void run() {
-            synchronized (scheduleLock) {
-                backgroundScheduleTask = null;
-            }
-            scheduleBackgroundRead();
+    private final SafeRunnable BACKGROUND_READ_SCHEDULER = () -> {
+        synchronized (scheduleLock) {
+            backgroundScheduleTask = null;
         }
+        scheduleBackgroundRead();
     };
 
     // State
@@ -256,9 +254,9 @@ class BKAsyncLogReader implements AsyncLogReader, Runnable, AsyncNotification {
             // Except when idle reader threshold is less than a second (tests?)
             period = Math.min(period, idleErrorThresholdMillis / 5);
 
-            return scheduler.scheduleAtFixedRate(streamName, new Runnable() {
+            return scheduler.scheduleAtFixedRateOrdered(streamName, new SafeRunnable() {
                 @Override
-                public void run() {
+                public void safeRun() {
                     PendingReadRequest nextRequest = pendingRequests.peek();
 
                     idleReaderCheckCount.inc();
@@ -474,7 +472,7 @@ class BKAsyncLogReader implements AsyncLogReader, Runnable, AsyncNotification {
         long prevCount = scheduleCount.getAndIncrement();
         if (0 == prevCount) {
             scheduleDelayStopwatch.reset().start();
-            scheduler.submit(streamName, this);
+            scheduler.submitOrdered(streamName, this);
         }
     }
 
@@ -567,7 +565,7 @@ class BKAsyncLogReader implements AsyncLogReader, Runnable, AsyncNotification {
     }
 
     @Override
-    public void run() {
+    public void safeRun() {
         synchronized (scheduleLock) {
             if (scheduleDelayStopwatch.isRunning()) {
                 scheduleLatency.registerSuccessfulEvent(
@@ -674,7 +672,7 @@ class BKAsyncLogReader implements AsyncLogReader, Runnable, AsyncNotification {
                         scheduleDelayStopwatch.reset().start();
                         scheduleCount.set(0);
                         // the request could still wait for more records
-                        backgroundScheduleTask = scheduler.schedule(
+                        backgroundScheduleTask = scheduler.scheduleOrdered(
                                 streamName,
                                 BACKGROUND_READ_SCHEDULER,
                                 remainingWaitTime,

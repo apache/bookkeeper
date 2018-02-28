@@ -17,10 +17,10 @@
  */
 package org.apache.distributedlog.bk;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 import com.google.common.collect.Lists;
-
 import java.io.IOException;
 import java.net.URI;
 import java.util.HashSet;
