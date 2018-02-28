@@ -71,6 +71,7 @@ groups:
     default: null
 
 - name: Worker thread settings
+  params:
   - param: numAddWorkerThreads
     description: The number of threads that handle write requests. if zero, writes are handled by [Netty threads](http://netty.io/wiki/thread-model.html) directly.
     default: 1
