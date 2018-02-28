@@ -817,6 +817,23 @@ Then you have to create a PR and submit it for review.</p>
 <div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>svn move https://dist.apache.org/repos/dist/dev/bookkeeper/bookkeeper-${VERSION}-rc${RC_NUM} https://dist.apache.org/repos/dist/release/bookkeeper/bookkeeper-${VERSION}
 </code></pre></div></div>
 
+<p>According to <a href="http://www.apache.org/legal/release-policy.html#when-to-archive">ASF policy</a>, <code class="highlighter-rouge">/www.apache.org/dist</code> should contain the latest release in each branch that
+is currently under development. We need to remove the old releases from <code class="highlighter-rouge">release</code> repository.</p>
+
+<p>For example, if 4.6.1 is a newer release, we need to remove releases older than 4.6.1.</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>```shell
+// go to the directory checkout from `svn co https://dist.apache.org/repos/dist/release/bookkeeper`
+$ cd bookkeeper
+
+// delete old releases
+$ svn rm &lt;old-release&gt;
+
+// commit the change
+$ svn commit -m "remove bookkeeper release &lt;old-release&gt;"
+```
+</code></pre></div></div>
+
 <h3 id="update-website">Update Website</h3>
 
 <ol>
