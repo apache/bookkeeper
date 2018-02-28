@@ -212,18 +212,44 @@
           </execution>
         </executions>
       </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>license-maven-plugin</artifactId>
+        <version>1.6</version>
+        <configuration>
+          <canUpdateCopyright>false</canUpdateCopyright>
+          <roots><root>${project.basedir}</root></roots>
+        </configuration>
+        <executions>
+          <execution>
+            <id>update-pom-license</id>
+            <goals>
+              <goal>update-file-header</goal>
+            </goals>
+            <phase>package</phase>
+            <configuration>
+              <licenseName>apache_v2</licenseName>
+              <includes>
+                <include>dependency-reduced-pom.xml</include>
+              </includes>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <artifactId>maven-clean-plugin</artifactId>
+        <version>2.5</version>
+        <configuration>
+          <filesets>
+            <fileset>
+              <directory>${project.basedir}</directory>
+              <includes>
+                <include>dependency-reduced-pom.xml</include>
+              </includes>
+            </fileset>
+          </filesets>
+        </configuration>
+      </plugin>
     </plugins>
   </build>
-  <profiles>
-    <profile>
-      <id>twitter-ostrich-provider</id>
-      <dependencies>
-        <dependency>
-          <groupId>org.apache.bookkeeper.stats</groupId>
-          <artifactId>twitter-ostrich-provider</artifactId>
-          <version>${bookkeeper.version}</version>
-        </dependency>
-      </dependencies>
-    </profile>
-  </profiles>
 </project>

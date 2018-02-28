@@ -21,11 +21,16 @@
   <parent>
     <groupId>org.apache.bookkeeper</groupId>
     <artifactId>stream-storage-service-parent</artifactId>
-    <version>0.6.0-SNAPSHOT</version>
+    <version>4.7.0-SNAPSHOT</version>
     <relativePath>..</relativePath>
   </parent>
   <artifactId>stream-storage-service-impl</artifactId>
   <name>Apache BookKeeper :: Stream Storage :: Storage :: Impl</name>
+
+  <properties>
+    <!-- dependencies -->
+    <helix-core.version>0.6.7</helix-core.version>
+  </properties>
 
   <dependencies>
     <dependency>
@@ -39,28 +44,20 @@
       <version>${project.parent.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.apache.bookkeeper</groupId>
-      <artifactId>statelib</artifactId>
-      <version>${project.parent.version}</version>
-    </dependency>
-    <dependency>
       <groupId>org.apache.helix</groupId>
       <artifactId>helix-core</artifactId>
+      <version>${helix-core.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.distributedlog</groupId>
       <artifactId>distributedlog-core</artifactId>
-      <version>${distributedlog.version}</version>
+      <version>${project.parent.version}</version>
       <classifier>tests</classifier>
       <scope>test</scope>
     </dependency>
   </dependencies>
   <build>
     <plugins>
-      <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>findbugs-maven-plugin</artifactId>
-      </plugin>
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
         <version>${maven-compiler-plugin.version}</version>
