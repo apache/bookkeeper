@@ -45,6 +45,7 @@ import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
@@ -526,7 +527,8 @@ public class BookieRecoveryTest extends BookKeeperClusterTestCase {
             ReplicationVerificationCallback cb = new ReplicationVerificationCallback(numRequests);
             for (long i = startEntryId; i < endEntryId; i++) {
                 for (BookieSocketAddress addr : e.getValue()) {
-                    bkc.getBookieClient().readEntry(addr, lh.getId(), i, cb, addr);
+                    bkc.getBookieClient().readEntry(addr, lh.getId(), i,
+                                                    cb, addr, BookieProtocol.FLAG_NONE);
                 }
             }
 

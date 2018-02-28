@@ -88,6 +88,7 @@ public class MSLedgerManagerFactory extends AbstractZkLedgerManagerFactory {
     private static final int MS_CONNECT_BACKOFF_MS = 200;
 
     public static final int CUR_VERSION = 1;
+    public static final String NAME = "ms";
 
     public static final String TABLE_NAME = "LEDGER";
     public static final String META_FIELD = ".META";

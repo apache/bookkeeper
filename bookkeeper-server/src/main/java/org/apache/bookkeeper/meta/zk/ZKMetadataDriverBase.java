@@ -21,11 +21,14 @@ package org.apache.bookkeeper.meta.zk;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static org.apache.bookkeeper.util.BookKeeperConstants.AVAILABLE_NODE;
+import static org.apache.bookkeeper.util.BookKeeperConstants.EMPTY_BYTE_ARRAY;
+import static org.apache.bookkeeper.util.BookKeeperConstants.READONLY;
 
 import java.io.IOException;
 import java.net.URI;
 import java.util.List;
 import java.util.Optional;
+import lombok.Getter;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.conf.AbstractConfiguration;
@@ -80,6 +83,9 @@ public class ZKMetadataDriverBase implements AutoCloseable {
                 case LongHierarchicalLedgerManagerFactory.NAME:
                     ledgerManagerFactoryClass = LongHierarchicalLedgerManagerFactory.class;
                     break;
+                case org.apache.bookkeeper.meta.MSLedgerManagerFactory.NAME:
+                    ledgerManagerFactoryClass = org.apache.bookkeeper.meta.MSLedgerManagerFactory.class;
+                    break;
                 default:
                     throw new IllegalArgumentException("Unknown ledger manager type found '"
                         + schemeParts[1] + "' at uri : " + metadataServiceUri);
@@ -97,6 +103,7 @@ public class ZKMetadataDriverBase implements AutoCloseable {
 
     // zookeeper related variables
     protected List<ACL> acls;
+    @Getter
     protected ZooKeeper zk = null;
     // whether the zk handle is one we created, or is owned by whoever
     // instantiated us
@@ -120,7 +127,7 @@ public class ZKMetadataDriverBase implements AutoCloseable {
                               Optional<Object> optionalCtx) throws MetadataException {
         this.conf = conf;
 
-        String metadataServiceUriStr;
+        final String metadataServiceUriStr;
         try {
             metadataServiceUriStr = conf.getMetadataServiceUri();
         } catch (ConfigurationException e) {
@@ -128,15 +135,19 @@ public class ZKMetadataDriverBase implements AutoCloseable {
             throw new MetadataException(
                 Code.INVALID_METADATA_SERVICE_URI, e);
         }
+
         this.metadataServiceUri = URI.create(metadataServiceUriStr);
         ledgerManagerFactoryClass = resolveLedgerManagerFactory(metadataServiceUri);
 
         // get the initialize root path
         this.ledgersRootPath = metadataServiceUri.getPath();
-        String bookieReadonlyRegistrationPath = ledgersRootPath + "/" + AVAILABLE_NODE;
+        final String bookieRegistrationPath = ledgersRootPath + "/" + AVAILABLE_NODE;
+        final String bookieReadonlyRegistrationPath = bookieRegistrationPath + "/" + READONLY;
 
         // construct the zookeeper
-        String zkServers = getZKServersFromServiceUri(metadataServiceUri);
+        final String zkServers = getZKServersFromServiceUri(metadataServiceUri);
+        log.info("Initialize zookeeper metadata driver at metadata service uri {} :"
+            + " zkServers = {}, ledgersRootPath = {}.", metadataServiceUriStr, zkServers, ledgersRootPath);
         this.acls = ZkUtils.getACLs(conf);
         if (optionalCtx.isPresent()
             && optionalCtx.get() instanceof ZooKeeper) {
@@ -156,7 +167,7 @@ public class ZKMetadataDriverBase implements AutoCloseable {
                 if (null == zk.exists(bookieReadonlyRegistrationPath, false)) {
                     try {
                         zk.create(bookieReadonlyRegistrationPath,
-                            new byte[0],
+                            EMPTY_BYTE_ARRAY,
                             acls,
                             CreateMode.PERSISTENT);
                     } catch (KeeperException.NodeExistsException e) {
@@ -167,7 +178,8 @@ public class ZKMetadataDriverBase implements AutoCloseable {
                 log.error("Failed to create zookeeper client to {}", zkServers, e);
                 MetadataException me = new MetadataException(
                     Code.METADATA_SERVICE_ERROR,
-                    "Failed to create zookeeper client to " + zkServers);
+                    "Failed to create zookeeper client to " + zkServers,
+                    e);
                 me.fillInStackTrace();
                 throw me;
             }
@@ -179,6 +191,10 @@ public class ZKMetadataDriverBase implements AutoCloseable {
             zk,
             ledgersRootPath,
             acls);
+    }
+
+    public LayoutManager getLayoutManager() {
+        return layoutManager;
     }
 
     @SneakyThrows

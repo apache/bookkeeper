@@ -21,13 +21,11 @@ package org.apache.bookkeeper.meta.zk;
 import java.util.Optional;
 import java.util.concurrent.ScheduledExecutorService;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.discover.RegistrationClient;
 import org.apache.bookkeeper.discover.ZKRegistrationClient;
 import org.apache.bookkeeper.meta.MetadataClientDriver;
 import org.apache.bookkeeper.meta.MetadataDrivers;
-import org.apache.bookkeeper.meta.exceptions.Code;
 import org.apache.bookkeeper.meta.exceptions.MetadataException;
 import org.apache.bookkeeper.stats.StatsLogger;
 
@@ -66,21 +64,12 @@ public class ZKMetadataClientDriver
     }
 
     @Override
-    public synchronized RegistrationClient getRegistrationClient() throws MetadataException {
+    public synchronized RegistrationClient getRegistrationClient() {
         if (null == regClient) {
-            regClient = new ZKRegistrationClient();
-            try {
-                regClient.initialize(
-                    clientConf,
-                    scheduler,
-                    statsLogger,
-                    Optional.of(zk));
-            } catch (BKException e) {
-                throw new MetadataException(
-                    Code.METADATA_SERVICE_ERROR,
-                    "Failed to initialize registration client",
-                    e);
-            }
+            regClient = new ZKRegistrationClient(
+                zk,
+                ledgersRootPath,
+                scheduler);
         }
         return regClient;
     }

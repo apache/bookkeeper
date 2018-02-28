@@ -19,6 +19,7 @@
 package org.apache.bookkeeper.meta.zk;
 
 import static org.apache.bookkeeper.util.BookKeeperConstants.AVAILABLE_NODE;
+import static org.apache.bookkeeper.util.BookKeeperConstants.READONLY;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -77,7 +78,7 @@ public class ZKMetadataDriverBaseTest extends ZKMetadataDriverTestBase {
             driver.ledgersRootPath);
         assertTrue(driver.ownZKHandle);
 
-        String readonlyPath = "/path/to/ledgers/" + AVAILABLE_NODE;
+        String readonlyPath = "/path/to/ledgers/" + AVAILABLE_NODE + "/" + READONLY;
         assertSame(mockZkc, driver.zk);
         verifyStatic(ZooKeeperClient.class, times(1));
         ZooKeeperClient.newBuilder();

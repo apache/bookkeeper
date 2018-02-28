@@ -162,7 +162,7 @@ public class BookieClientTest {
         synchronized (arc) {
             arc.wait(1000);
             assertEquals(0, arc.rc);
-            bc.readEntry(addr, 1, 1, recb, arc);
+            bc.readEntry(addr, 1, 1, recb, arc, BookieProtocol.FLAG_NONE);
             arc.wait(1000);
             assertEquals(0, arc.rc);
             assertEquals(1, arc.entry.getInt());
@@ -181,63 +181,63 @@ public class BookieClientTest {
             notifyObject.wait();
         }
         synchronized (arc) {
-            bc.readEntry(addr, 1, 6, recb, arc);
+            bc.readEntry(addr, 1, 6, recb, arc, BookieProtocol.FLAG_NONE);
             arc.wait(1000);
             assertEquals(BKException.Code.NoSuchEntryException, arc.rc);
         }
         synchronized (arc) {
-            bc.readEntry(addr, 1, 7, recb, arc);
+            bc.readEntry(addr, 1, 7, recb, arc, BookieProtocol.FLAG_NONE);
             arc.wait(1000);
             assertEquals(0, arc.rc);
-            assertEquals(7, arc.entry.getInt());
+            assertEquals(7, arc.entry.getInt(), BookieProtocol.FLAG_NONE);
         }
         synchronized (arc) {
-            bc.readEntry(addr, 1, 1, recb, arc);
+            bc.readEntry(addr, 1, 1, recb, arc, BookieProtocol.FLAG_NONE);
             arc.wait(1000);
             assertEquals(0, arc.rc);
             assertEquals(1, arc.entry.getInt());
         }
         synchronized (arc) {
-            bc.readEntry(addr, 1, 2, recb, arc);
+            bc.readEntry(addr, 1, 2, recb, arc, BookieProtocol.FLAG_NONE);
             arc.wait(1000);
             assertEquals(0, arc.rc);
             assertEquals(2, arc.entry.getInt());
         }
         synchronized (arc) {
-            bc.readEntry(addr, 1, 3, recb, arc);
+            bc.readEntry(addr, 1, 3, recb, arc, BookieProtocol.FLAG_NONE);
             arc.wait(1000);
             assertEquals(0, arc.rc);
             assertEquals(3, arc.entry.getInt());
         }
         synchronized (arc) {
-            bc.readEntry(addr, 1, 4, recb, arc);
+            bc.readEntry(addr, 1, 4, recb, arc, BookieProtocol.FLAG_NONE);
             arc.wait(1000);
             assertEquals(BKException.Code.NoSuchEntryException, arc.rc);
         }
         synchronized (arc) {
-            bc.readEntry(addr, 1, 11, recb, arc);
+            bc.readEntry(addr, 1, 11, recb, arc, BookieProtocol.FLAG_NONE);
             arc.wait(1000);
             assertEquals(0, arc.rc);
             assertEquals(11, arc.entry.getInt());
         }
         synchronized (arc) {
-            bc.readEntry(addr, 1, 5, recb, arc);
+            bc.readEntry(addr, 1, 5, recb, arc, BookieProtocol.FLAG_NONE);
             arc.wait(1000);
             assertEquals(0, arc.rc);
             assertEquals(5, arc.entry.getInt());
         }
         synchronized (arc) {
-            bc.readEntry(addr, 1, 10, recb, arc);
+            bc.readEntry(addr, 1, 10, recb, arc, BookieProtocol.FLAG_NONE);
             arc.wait(1000);
             assertEquals(BKException.Code.NoSuchEntryException, arc.rc);
         }
         synchronized (arc) {
-            bc.readEntry(addr, 1, 12, recb, arc);
+            bc.readEntry(addr, 1, 12, recb, arc, BookieProtocol.FLAG_NONE);
             arc.wait(1000);
             assertEquals(BKException.Code.NoSuchEntryException, arc.rc);
         }
         synchronized (arc) {
-            bc.readEntry(addr, 1, 13, recb, arc);
+            bc.readEntry(addr, 1, 13, recb, arc, BookieProtocol.FLAG_NONE);
             arc.wait(1000);
             assertEquals(BKException.Code.NoSuchEntryException, arc.rc);
         }
@@ -259,7 +259,7 @@ public class BookieClientTest {
         BookieClient bc = new BookieClient(new ClientConfiguration(), eventLoopGroup, executor,
                                            scheduler, NullStatsLogger.INSTANCE);
         synchronized (arc) {
-            bc.readEntry(addr, 2, 13, recb, arc);
+            bc.readEntry(addr, 2, 13, recb, arc, BookieProtocol.FLAG_NONE);
             arc.wait(1000);
             assertEquals(BKException.Code.NoSuchLedgerExistsException, arc.rc);
         }
