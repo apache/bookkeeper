@@ -85,7 +85,7 @@ using Google Doc.
 
 This section lists all the _bookkeeper proposals_ made to BookKeeper.
 
-*Next Proposal Number: 30*
+*Next Proposal Number: 32*
 
 ### Inprogress
 
@@ -98,8 +98,11 @@ Proposal | State
 [BP-16: Thin Client - Remove direct metadata storage access from clients](https://cwiki.apache.org/confluence/display/BOOKKEEPER/BP-16%3A+Thin+Client+-+Remove+direct+metadata+storage+access+from+clients) | Draft
 [BP-18: LedgerType, Flags and StorageHints](https://cwiki.apache.org/confluence/display/BOOKKEEPER/BP-18%3A+LedgerType%2C+Flags+and+StorageHints) | Accepted
 [BP-26: Move distributedlog library as part of bookkeeper](../../bps/BP-26-move-distributedlog-core-library) | Accepted
-[BP-27: New BookKeeper CLI](../../bps/BP-27-new-bookkeeper-cli) | Draft
-[BP-29: Metadata API module](../../bps/BP-29-metadata-store-api-module) | Draft
+[BP-27: New BookKeeper CLI](../../bps/BP-27-new-bookkeeper-cli) | Accepted
+[BP-28: use etcd as metadata store](../../bps/BP-28-etcd-as-metadata-store) | Accepted
+[BP-29: Metadata API module](../../bps/BP-29-metadata-store-api-module) | Accepted
+[BP-30: BookKeeper Table Service](https://docs.google.com/document/d/155xAwWv5IdOitHh1NVMEwCMGgB28M3FyMiQSxEpjE-Y/edit#heading=h.56rbh52koe3f) | Accepted
+[BP-31: BookKeeper Durability Anchor](../../bps/BP-31-durability) | Accepted
 
 ### Adopted
 

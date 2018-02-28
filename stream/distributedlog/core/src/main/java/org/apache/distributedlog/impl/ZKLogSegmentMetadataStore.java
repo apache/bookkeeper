@@ -31,6 +31,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import org.apache.bookkeeper.common.concurrent.FutureEventListener;
+import org.apache.bookkeeper.common.util.OrderedScheduler;
+import org.apache.bookkeeper.common.util.SafeRunnable;
 import org.apache.bookkeeper.versioning.LongVersion;
 import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.versioning.Versioned;
@@ -38,7 +41,6 @@ import org.apache.distributedlog.DistributedLogConfiguration;
 import org.apache.distributedlog.LogSegmentMetadata;
 import org.apache.distributedlog.ZooKeeperClient;
 import org.apache.distributedlog.callback.LogSegmentNamesListener;
-import org.apache.distributedlog.common.concurrent.FutureEventListener;
 import org.apache.distributedlog.exceptions.LogNotFoundException;
 import org.apache.distributedlog.exceptions.LogSegmentNotFoundException;
 import org.apache.distributedlog.exceptions.ZKException;
@@ -46,7 +48,6 @@ import org.apache.distributedlog.logsegment.LogSegmentMetadataStore;
 import org.apache.distributedlog.metadata.LogMetadata;
 import org.apache.distributedlog.metadata.LogMetadataForWriter;
 import org.apache.distributedlog.util.DLUtils;
-import org.apache.distributedlog.util.OrderedScheduler;
 import org.apache.distributedlog.util.Transaction;
 import org.apache.distributedlog.util.Transaction.OpListener;
 import org.apache.distributedlog.util.Utils;
@@ -73,7 +74,7 @@ public class ZKLogSegmentMetadataStore implements LogSegmentMetadataStore, Watch
 
     private static final List<String> EMPTY_LIST = ImmutableList.of();
 
-    private static class ReadLogSegmentsTask implements Runnable, FutureEventListener<Versioned<List<String>>> {
+    private static class ReadLogSegmentsTask implements SafeRunnable, FutureEventListener<Versioned<List<String>>> {
 
         private final String logSegmentsPath;
         private final ZKLogSegmentMetadataStore store;
@@ -112,7 +113,7 @@ public class ZKLogSegmentMetadataStore implements LogSegmentMetadataStore, Watch
         }
 
         @Override
-        public void run() {
+        public void safeRun() {
             if (null != store.listeners.get(logSegmentsPath)) {
                 store.zkGetLogSegmentNames(logSegmentsPath, store).whenComplete(this);
             } else {
@@ -193,25 +194,25 @@ public class ZKLogSegmentMetadataStore implements LogSegmentMetadataStore, Watch
         this.skipMinVersionCheck = conf.getDLLedgerMetadataSkipMinVersionCheck();
     }
 
-    protected void scheduleTask(Object key, Runnable r, long delayMs) {
+    protected void scheduleTask(Object key, SafeRunnable r, long delayMs) {
         closeLock.readLock().lock();
         try {
             if (closed) {
                 return;
             }
-            scheduler.schedule(key, r, delayMs, TimeUnit.MILLISECONDS);
+            scheduler.scheduleOrdered(key, r, delayMs, TimeUnit.MILLISECONDS);
         } finally {
             closeLock.readLock().unlock();
         }
     }
 
-    protected void submitTask(Object key, Runnable r) {
+    protected void submitTask(Object key, SafeRunnable r) {
         closeLock.readLock().lock();
         try {
             if (closed) {
                 return;
             }
-            scheduler.submit(key, r);
+            scheduler.submitOrdered(key, r);
         } finally {
             closeLock.readLock().unlock();
         }
@@ -474,12 +475,9 @@ public class ZKLogSegmentMetadataStore implements LogSegmentMetadataStore, Watch
         if (null == listeners) {
             return;
         }
-        this.submitTask(logSegmentsPath, new Runnable() {
-            @Override
-            public void run() {
-                for (LogSegmentNamesListener listener : listeners.keySet()) {
-                    listener.onLogStreamDeleted();
-                }
+        this.submitTask(logSegmentsPath, () -> {
+            for (LogSegmentNamesListener listener : listeners.keySet()) {
+                listener.onLogStreamDeleted();
             }
         });
 
@@ -491,12 +489,9 @@ public class ZKLogSegmentMetadataStore implements LogSegmentMetadataStore, Watch
         if (null == listeners) {
             return;
         }
-        this.submitTask(logSegmentsPath, new Runnable() {
-            @Override
-            public void run() {
-                for (VersionedLogSegmentNamesListener listener : listeners.values()) {
-                    listener.onSegmentsUpdated(segments);
-                }
+        this.submitTask(logSegmentsPath, () -> {
+            for (VersionedLogSegmentNamesListener listener : listeners.values()) {
+                listener.onSegmentsUpdated(segments);
             }
         });
     }

@@ -17,7 +17,8 @@
  */
 package org.apache.distributedlog.net;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+
 import java.util.List;
 import org.apache.bookkeeper.net.DNSToSwitchMapping;
 import org.junit.Test;

@@ -24,7 +24,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import javax.annotation.Nullable;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.distributedlog.common.concurrent.FutureUtils;
+import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.distributedlog.common.functions.VoidFunctions;
 
 /**

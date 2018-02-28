@@ -17,7 +17,7 @@
  */
 package org.apache.distributedlog.impl;
 
-import static org.apache.distributedlog.util.DLUtils.*;
+import static org.apache.distributedlog.util.DLUtils.isReservedStreamName;
 
 import com.google.common.base.Optional;
 import com.google.common.collect.Lists;
@@ -25,14 +25,14 @@ import java.net.URI;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import org.apache.bookkeeper.common.concurrent.FutureUtils;
+import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.commons.lang.StringUtils;
 import org.apache.distributedlog.DistributedLogConfiguration;
 import org.apache.distributedlog.ZooKeeperClient;
 import org.apache.distributedlog.callback.NamespaceListener;
-import org.apache.distributedlog.common.concurrent.FutureUtils;
 import org.apache.distributedlog.exceptions.ZKException;
 import org.apache.distributedlog.metadata.LogMetadataStore;
-import org.apache.distributedlog.util.OrderedScheduler;
 import org.apache.zookeeper.AsyncCallback;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooKeeper;

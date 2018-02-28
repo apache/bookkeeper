@@ -1,0 +1,111 @@
+#!/usr/bin/env bash
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+# 
+#   http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+
+BINDIR=$(dirname "$0")
+SS_HOME=`cd $BINDIR/..;pwd`
+
+DEFAULT_ENDPOINT="127.0.0.1:4181"
+DEFAULT_LOG_CONF=$SS_HOME/conf/log4j.cli.properties
+
+if [ -f "$SS_HOME/conf/streamstorage_cli_env.sh" ]
+then
+    . "$SS_HOME/conf/streamstorage_cli_env.sh"
+fi
+
+# Check for the java to use
+if [[ -z $JAVA_HOME ]]; then
+    JAVA=$(which java)
+    if [ $? != 0 ]; then
+        echo "Error: JAVA_HOME not set, and no java executable found in $PATH." 1>&2
+        exit 1
+    fi
+else
+    JAVA=$JAVA_HOME/bin/java
+fi
+
+# exclude tests jar
+RELEASE_JAR=`ls $SS_HOME/stream-storage-*.jar 2> /dev/null | grep -v tests | tail -1`
+if [ $? == 0 ]; then
+    SS_JAR=$RELEASE_JAR
+fi
+
+# exclude tests jar
+BUILT_JAR=`ls $SS_HOME/cli/target/stream-storage-*.jar 2> /dev/null | grep -v tests | tail -1`
+if [ $? != 0 ] && [ ! -e "$SS_JAR" ]; then
+    echo "\nCouldn't find streamstorage jar.";
+    echo "Make sure you've run 'mvn package'\n";
+    exit 1;
+elif [ -e "$BUILT_JAR" ]; then
+    SS_JAR=$BUILT_JAR
+fi
+
+add_maven_deps_to_classpath() {
+    MVN="mvn"
+    if [ "$MAVEN_HOME" != "" ]; then
+	MVN=${MAVEN_HOME}/bin/mvn
+    fi
+    
+    # Need to generate classpath from maven pom. This is costly so generate it
+    # and cache it. Save the file into our target dir so a mvn clean will get
+    # clean it up and force us create a new one.
+    f="${SS_HOME}/cli/target/classpath.txt"
+    if [ ! -f "${f}" ]
+    then
+	${MVN} -f "${SS_HOME}/cli/pom.xml" dependency:build-classpath -Dmdep.outputFile="${f}" &> /dev/null
+    fi
+    SS_CLASSPATH=${CLASSPATH}:`cat "${f}"`
+}
+
+if [ -d "$SS_HOME/lib" ]; then
+	SS_CLASSPATH="$SS_CLASSPATH:$SS_HOME/lib/*"
+else
+    add_maven_deps_to_classpath
+fi
+
+if [ -z "$SS_ENDPOINT" ]; then
+    SS_ENDPOINT=$DEFAULT_ENDPOINT
+fi
+if [ -z "$SS_LOG_CONF" ]; then
+    SS_LOG_CONF=$DEFAULT_LOG_CONF
+fi
+
+SS_CLASSPATH="$SS_JAR:$SS_CLASSPATH:$SS_EXTRA_CLASSPATH"
+SS_CLASSPATH="`dirname $SS_LOG_CONF`:$SS_CLASSPATH"
+OPTS="$OPTS -Dlog4j.configuration=`basename $SS_LOG_CONF`"
+OPTS="$OPTS -Djava.net.preferIPv4Stack=true"
+
+OPTS="-cp $SS_CLASSPATH $OPTS"
+
+OPTS="$OPTS $SS_EXTRA_OPTS"
+
+# log directory & file
+SS_ROOT_LOGGER=${SS_ROOT_LOGGER:-"INFO,CONSOLE"}
+SS_LOG_DIR=${SS_LOG_DIR:-"$SS_HOME/logs"}
+SS_LOG_FILE=${SS_LOG_FILE:-"stream-storage-cli.log"}
+
+#Configure log configuration system properties
+OPTS="$OPTS -Dstreamstorage.root.logger=$SS_ROOT_LOGGER"
+OPTS="$OPTS -Dstreamstorage.log.dir=$SS_LOG_DIR"
+OPTS="$OPTS -Dstreamstorage.log.file=$SS_LOG_FILE"
+
+#Change to SS_HOME to support relative paths
+cd "$SS_HOME"
+    
+exec $JAVA $OPTS org.apache.bookkeeper.stream.cli.StreamStorageCli "$@"

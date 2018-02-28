@@ -17,9 +17,11 @@
  */
 package org.apache.distributedlog.tools;
 
-import static org.junit.Assert.*;
-import java.net.URI;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
+import java.net.URI;
 import org.apache.bookkeeper.client.BKException.BKNoSuchLedgerExistsException;
 import org.apache.bookkeeper.util.ReflectionUtils;
 import org.apache.distributedlog.DLMTestUtil;
@@ -42,8 +44,6 @@ import org.apache.distributedlog.tools.DistributedLogTool.ReadLastConfirmedComma
 import org.apache.distributedlog.tools.DistributedLogTool.ShowCommand;
 import org.apache.distributedlog.tools.DistributedLogTool.TruncateCommand;
 import org.apache.distributedlog.tools.DistributedLogTool.TruncateStreamCommand;
-
-
 import org.apache.zookeeper.KeeperException;
 import org.junit.BeforeClass;
 import org.junit.Test;

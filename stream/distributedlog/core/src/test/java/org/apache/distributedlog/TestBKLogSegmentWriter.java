@@ -18,7 +18,11 @@
 package org.apache.distributedlog;
 
 import static com.google.common.base.Charsets.UTF_8;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
@@ -28,10 +32,11 @@ import java.util.concurrent.CountDownLatch;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.LedgerHandle;
+import org.apache.bookkeeper.common.concurrent.FutureUtils;
+import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.bookkeeper.feature.SettableFeatureProvider;
 import org.apache.bookkeeper.stats.AlertStatsLogger;
 import org.apache.bookkeeper.stats.NullStatsLogger;
-import org.apache.distributedlog.common.concurrent.FutureUtils;
 import org.apache.distributedlog.common.util.PermitLimiter;
 import org.apache.distributedlog.exceptions.BKTransmitException;
 import org.apache.distributedlog.exceptions.EndOfStreamException;
@@ -45,7 +50,6 @@ import org.apache.distributedlog.lock.SessionLockFactory;
 import org.apache.distributedlog.lock.ZKDistributedLock;
 import org.apache.distributedlog.lock.ZKSessionLockFactory;
 import org.apache.distributedlog.util.ConfUtils;
-import org.apache.distributedlog.util.OrderedScheduler;
 import org.apache.distributedlog.util.Utils;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.ZooDefs;
@@ -76,8 +80,8 @@ public class TestBKLogSegmentWriter extends TestDistributedLogBase {
     @Override
     public void setup() throws Exception {
         super.setup();
-        scheduler = OrderedScheduler.newBuilder().corePoolSize(1).build();
-        lockStateExecutor = OrderedScheduler.newBuilder().corePoolSize(1).build();
+        scheduler = OrderedScheduler.newSchedulerBuilder().numThreads(1).build();
+        lockStateExecutor = OrderedScheduler.newSchedulerBuilder().numThreads(1).build();
         // build zookeeper client
         URI uri = createDLMURI("");
         zkc = TestZooKeeperClientBuilder.newBuilder(conf)

@@ -24,6 +24,8 @@ import static org.apache.distributedlog.LogRecord.MAX_LOGRECORD_SIZE;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Stopwatch;
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
 import io.netty.buffer.ByteBuf;
 import java.io.IOException;
 import java.util.List;
@@ -40,6 +42,9 @@ import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.AsyncCallback.CloseCallback;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.LedgerHandle;
+import org.apache.bookkeeper.common.concurrent.FutureEventListener;
+import org.apache.bookkeeper.common.concurrent.FutureUtils;
+import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.bookkeeper.feature.Feature;
 import org.apache.bookkeeper.feature.FeatureProvider;
 import org.apache.bookkeeper.stats.AlertStatsLogger;
@@ -49,8 +54,6 @@ import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.MathUtils;
 import org.apache.distributedlog.Entry.Writer;
-import org.apache.distributedlog.common.concurrent.FutureEventListener;
-import org.apache.distributedlog.common.concurrent.FutureUtils;
 import org.apache.distributedlog.common.stats.OpStatsListener;
 import org.apache.distributedlog.common.util.PermitLimiter;
 import org.apache.distributedlog.common.util.Sizable;
@@ -73,7 +76,6 @@ import org.apache.distributedlog.lock.DistributedLock;
 import org.apache.distributedlog.logsegment.LogSegmentEntryWriter;
 import org.apache.distributedlog.logsegment.LogSegmentWriter;
 import org.apache.distributedlog.util.FailpointUtils;
-import org.apache.distributedlog.util.OrderedScheduler;
 import org.apache.distributedlog.util.SimplePermitLimiter;
 import org.apache.distributedlog.util.Utils;
 import org.slf4j.Logger;
@@ -388,7 +390,7 @@ class BKLogSegmentWriter implements LogSegmentWriter, AddCallback, Runnable, Siz
 
     @VisibleForTesting
     ScheduledExecutorService getFuturePool() {
-        return scheduler.chooseExecutor(streamName);
+        return scheduler.chooseThread(streamName);
     }
 
     @VisibleForTesting
@@ -1190,7 +1192,7 @@ class BKLogSegmentWriter implements LogSegmentWriter, AddCallback, Runnable, Siz
 
         if (null != scheduler) {
             final Stopwatch queuedTime = Stopwatch.createStarted();
-            scheduler.submit(streamName, new Callable<Void>() {
+            Futures.addCallback(scheduler.submitOrdered(streamName, new Callable<Void>() {
                 @Override
                 public Void call() {
                     final Stopwatch deferredTime = Stopwatch.createStarted();
@@ -1208,7 +1210,7 @@ class BKLogSegmentWriter implements LogSegmentWriter, AddCallback, Runnable, Siz
                     return String.format("AddComplete(Stream=%s, entryId=%d, rc=%d)",
                             fullyQualifiedLogSegment, entryId, rc);
                 }
-            }).whenComplete(new FutureEventListener<Void>() {
+            }), new FutureCallback<Void>() {
                 @Override
                 public void onSuccess(Void done) {
                 }

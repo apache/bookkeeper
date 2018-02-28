@@ -18,7 +18,6 @@
 package org.apache.distributedlog.callback;
 
 import java.util.List;
-
 import org.apache.distributedlog.LogSegmentMetadata;
 
 
