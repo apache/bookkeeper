@@ -96,7 +96,7 @@ public class ExplicitLacTest extends BookKeeperClusterTestCase {
             wlh.addEntry(("foobar" + i).getBytes());
         }
 
-        TestUtils.waitUtilLacUpdated(rlh, numOfEntries - 2);
+        TestUtils.waitUntilLacUpdated(rlh, numOfEntries - 2);
 
         assertTrue(
                 "Expected LAC of wlh: " + (2 * numOfEntries - 1) + " actual LAC of rlh: " + wlh.getLastAddConfirmed(),
@@ -156,7 +156,7 @@ public class ExplicitLacTest extends BookKeeperClusterTestCase {
         // lh.getExplicitLastAddConfirmed() will be <
         // lh.getPiggyBackedLastAddConfirmed(),
         // so it wont make explicit writelac in the first run
-        TestUtils.waitUtilLacUpdated(rlh, 2 * numOfEntries - 2);
+        TestUtils.waitUntilLacUpdated(rlh, 2 * numOfEntries - 2);
 
         assertTrue(
                 "Expected LAC of wlh: " + (2 * numOfEntries - 1) + " actual LAC of wlh: " + wlh.getLastAddConfirmed(),
@@ -166,7 +166,7 @@ public class ExplicitLacTest extends BookKeeperClusterTestCase {
                 "Expected LAC of rlh: " + (2 * numOfEntries - 2) + " actual LAC of rlh: " + rlh.getLastAddConfirmed(),
                 (rlh.getLastAddConfirmed() == (2 * numOfEntries - 2)));
 
-        long explicitlac = TestUtils.waitUtilExplicitLacUpdated(rlh, 2 * numOfEntries - 1);
+        long explicitlac = TestUtils.waitUntilExplicitLacUpdated(rlh, 2 * numOfEntries - 1);
         assertTrue("Expected Explicit LAC of rlh: " + (2 * numOfEntries - 1)
                 + " actual ExplicitLAC of rlh: " + explicitlac,
                 (explicitlac == (2 * numOfEntries - 1)));

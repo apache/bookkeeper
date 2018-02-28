@@ -315,11 +315,11 @@ public class DbLedgerStorage implements CompactableLedgerStorage {
      * When a ledger is evicted from transient ledger info cache, we can just simply discard the object.
      */
     private void handleLedgerEviction(RemovalNotification<Long, TransientLedgerInfo> notification) {
-        TransientLedgerInfo fileInfo = notification.getValue();
-        if (null == fileInfo || null == notification.getKey()) {
+        TransientLedgerInfo ledgerInfo = notification.getValue();
+        if (null == ledgerInfo || null == notification.getKey()) {
             return;
         }
-        fileInfo.close();
+        ledgerInfo.close();
     }
 
     public void registerStats() {

@@ -61,7 +61,7 @@ public final class TestUtils {
         return result;
     }
 
-    public static void waitUtilLacUpdated(ReadHandle rh, long newLac) throws Exception {
+    public static void waitUntilLacUpdated(ReadHandle rh, long newLac) throws Exception {
         long lac = rh.getLastAddConfirmed();
         while (lac < newLac) {
             TimeUnit.MILLISECONDS.sleep(20);
@@ -69,7 +69,7 @@ public final class TestUtils {
         }
     }
 
-    public static long waitUtilExplicitLacUpdated(LedgerHandle rh, long newLac) throws Exception {
+    public static long waitUntilExplicitLacUpdated(LedgerHandle rh, long newLac) throws Exception {
         long lac;
         while ((lac = rh.readExplicitLastConfirmed()) < newLac) {
             TimeUnit.MILLISECONDS.sleep(20);
