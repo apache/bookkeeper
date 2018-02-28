@@ -22,13 +22,21 @@ package org.apache.bookkeeper.bookie.storage.ldb;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
+import static org.apache.bookkeeper.bookie.LastAddConfirmedUpdateNotification.WATCHER_RECYCLER;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
+import com.google.common.cache.RemovalListener;
+import com.google.common.cache.RemovalNotification;
 import com.google.common.collect.Lists;
 import com.google.protobuf.ByteString;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import io.netty.util.concurrent.DefaultThreadFactory;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.SortedMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
@@ -55,6 +63,7 @@ import org.apache.bookkeeper.bookie.StateManager;
 import org.apache.bookkeeper.bookie.storage.ldb.DbLedgerStorageDataFormats.LedgerData;
 import org.apache.bookkeeper.bookie.storage.ldb.KeyValueStorage.Batch;
 import org.apache.bookkeeper.bookie.storage.ldb.KeyValueStorageFactory.DbConfigType;
+import org.apache.bookkeeper.common.util.Watchable;
 import org.apache.bookkeeper.common.util.Watcher;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager;
@@ -74,10 +83,121 @@ import org.slf4j.LoggerFactory;
  */
 public class DbLedgerStorage implements CompactableLedgerStorage {
 
+    /**
+     * This class borrows the logic from FileInfo.
+     *
+     * <p>This class is used for holding all the transient states for a given ledger.
+     */
+    private static class TransientLedgerInfo
+            extends Watchable<LastAddConfirmedUpdateNotification>
+            implements AutoCloseable {
+
+        // lac
+        private Long lac = null;
+        // request from explicit lac requests
+        private ByteBuffer explicitLac = null;
+        // is the ledger info closed?
+        private boolean isClosed;
+
+        private final long ledgerId;
+        // reference to LedgerMetadataIndex
+        private final LedgerMetadataIndex ledgerIndex;
+
+        /**
+         * Construct an Watchable with zero watchers.
+         */
+        public TransientLedgerInfo(long ledgerId, LedgerMetadataIndex ledgerIndex) {
+            super(WATCHER_RECYCLER);
+            this.ledgerId = ledgerId;
+            this.ledgerIndex = ledgerIndex;
+        }
+
+        synchronized Long getLastAddConfirmed() {
+            return lac;
+        }
+
+        Long setLastAddConfirmed(long lac) {
+            long lacToReturn;
+            boolean changed = false;
+            synchronized (this) {
+                if (null == this.lac || this.lac < lac) {
+                    this.lac = lac;
+                    changed = true;
+                }
+                lacToReturn = this.lac;
+            }
+            if (changed) {
+                notifyWatchers(lacToReturn);
+            }
+            return lacToReturn;
+        }
+
+        synchronized boolean waitForLastAddConfirmedUpdate(long previousLAC,
+                                                           Watcher<LastAddConfirmedUpdateNotification> watcher)
+                throws IOException {
+            if ((null != lac && lac > previousLAC)
+                    || isClosed || ledgerIndex.get(ledgerId).getFenced()) {
+                return false;
+            }
+
+            addWatcher(watcher);
+            return true;
+        }
+
+        public ByteBuf getExplicitLac() {
+            ByteBuf retLac = null;
+            synchronized (this) {
+                if (explicitLac != null) {
+                    retLac = Unpooled.buffer(explicitLac.capacity());
+                    explicitLac.rewind(); //copy from the beginning
+                    retLac.writeBytes(explicitLac);
+                    explicitLac.rewind();
+                    return retLac;
+                }
+            }
+            return retLac;
+        }
+
+        public void setExplicitLac(ByteBuf lac) {
+            long explicitLacValue;
+            synchronized (this) {
+                if (explicitLac == null) {
+                    explicitLac = ByteBuffer.allocate(lac.capacity());
+                }
+                lac.readBytes(explicitLac);
+                explicitLac.rewind();
+
+                // skip the ledger id
+                explicitLac.getLong();
+                explicitLacValue = explicitLac.getLong();
+                explicitLac.rewind();
+            }
+            setLastAddConfirmed(explicitLacValue);
+        }
+
+        void notifyWatchers(long lastAddConfirmed) {
+            notifyWatchers(LastAddConfirmedUpdateNotification.FUNC, lastAddConfirmed);
+        }
+
+        @Override
+        public void close() {
+           synchronized (this) {
+               if (isClosed) {
+                   return;
+               }
+               isClosed = true;
+           }
+           // notify watchers
+            notifyWatchers(Long.MAX_VALUE);
+        }
+
+    }
+
     private EntryLogger entryLogger;
 
     private LedgerMetadataIndex ledgerIndex;
     private EntryLocationIndex entryLocationIndex;
+    private LoadingCache<Long, TransientLedgerInfo> transientLedgerInfoCache;
 
     private GarbageCollectorThread gcThread;
 
@@ -167,10 +287,39 @@ public class DbLedgerStorage implements CompactableLedgerStorage {
         ledgerIndex = new LedgerMetadataIndex(conf, KeyValueStorageRocksDB.factory, baseDir, stats);
         entryLocationIndex = new EntryLocationIndex(conf, KeyValueStorageRocksDB.factory, baseDir, stats);
 
+        // build the ledger info cache
+        int concurrencyLevel = Math.max(1, Math.max(conf.getNumAddWorkerThreads(), conf.getNumReadWorkerThreads()));
+        RemovalListener<Long, TransientLedgerInfo> ledgerInfoRemovalListener = this::handleLedgerEviction;
+        CacheBuilder<Long, TransientLedgerInfo> builder = CacheBuilder.newBuilder()
+            .initialCapacity(conf.getFileInfoCacheInitialCapacity())
+            .maximumSize(conf.getOpenFileLimit())
+            .concurrencyLevel(concurrencyLevel)
+            .removalListener(ledgerInfoRemovalListener);
+        if (conf.getFileInfoMaxIdleTime() > 0) {
+            builder.expireAfterAccess(conf.getFileInfoMaxIdleTime(), TimeUnit.SECONDS);
+        }
+        transientLedgerInfoCache = builder.build(new CacheLoader<Long, TransientLedgerInfo>() {
+            @Override
+            public TransientLedgerInfo load(Long key) throws Exception {
+                return new TransientLedgerInfo(key, ledgerIndex);
+            }
+        });
+
         entryLogger = new EntryLogger(conf, ledgerDirsManager);
         gcThread = new GarbageCollectorThread(conf, ledgerManager, this, statsLogger);
 
         registerStats();
+    }
+
+    /**
+     * When a ledger is evicted from transient ledger info cache, we can just simply discard the object.
+     */
+    private void handleLedgerEviction(RemovalNotification<Long, TransientLedgerInfo> notification) {
+        TransientLedgerInfo ledgerInfo = notification.getValue();
+        if (null == ledgerInfo || null == notification.getKey()) {
+            return;
+        }
+        ledgerInfo.close();
     }
 
     public void registerStats() {
@@ -285,7 +434,15 @@ public class DbLedgerStorage implements CompactableLedgerStorage {
         if (log.isDebugEnabled()) {
             log.debug("Set fenced. ledger: {}", ledgerId);
         }
-        return ledgerIndex.setFenced(ledgerId);
+        boolean changed = ledgerIndex.setFenced(ledgerId);
+        if (changed) {
+            // notify all the watchers if a ledger is fenced
+            TransientLedgerInfo ledgerInfo = transientLedgerInfoCache.getIfPresent(ledgerId);
+            if (null != ledgerInfo) {
+                ledgerInfo.notifyWatchers(Long.MAX_VALUE);
+            }
+        }
+        return changed;
     }
 
     @Override
@@ -310,9 +467,10 @@ public class DbLedgerStorage implements CompactableLedgerStorage {
 
         long ledgerId = entry.getLong(entry.readerIndex());
         long entryId = entry.getLong(entry.readerIndex() + 8);
+        long lac = entry.getLong(entry.readerIndex() + 16);
 
         if (log.isDebugEnabled()) {
-            log.debug("Add entry. {}@{}", ledgerId, entryId);
+            log.debug("Add entry. {}@{}, lac = {}", ledgerId, entryId, lac);
         }
 
         // Waits if the write cache is being switched for a flush
@@ -327,6 +485,10 @@ public class DbLedgerStorage implements CompactableLedgerStorage {
         if (!inserted) {
             triggerFlushAndAddEntry(ledgerId, entryId, entry);
         }
+
+        // after successfully insert the entry, update LAC and notify the watchers
+        transientLedgerInfoCache.getUnchecked(ledgerId)
+            .setLastAddConfirmed(lac);
 
         recordSuccessfulEvent(addEntryStats, startTime);
         return entryId;
@@ -712,23 +874,42 @@ public class DbLedgerStorage implements CompactableLedgerStorage {
 
     @Override
     public long getLastAddConfirmed(long ledgerId) throws IOException {
-        throw new UnsupportedOperationException();
+        TransientLedgerInfo ledgerInfo = transientLedgerInfoCache.getIfPresent(ledgerId);
+        Long lac = null != ledgerInfo ? ledgerInfo.getLastAddConfirmed() : null;
+        if (null == lac) {
+            ByteBuf bb = getEntry(ledgerId, BookieProtocol.LAST_ADD_CONFIRMED);
+            try {
+                bb.skipBytes(2 * Long.BYTES); // skip ledger id and entry id
+                lac = bb.readLong();
+                lac = transientLedgerInfoCache.getUnchecked(ledgerId).setLastAddConfirmed(lac);
+            } finally {
+                bb.release();
+            }
+        }
+        return lac;
     }
 
     @Override
     public boolean waitForLastAddConfirmedUpdate(long ledgerId, long previousLAC,
             Watcher<LastAddConfirmedUpdateNotification> watcher) throws IOException {
-        throw new UnsupportedOperationException();
+        return transientLedgerInfoCache.getUnchecked(ledgerId)
+            .waitForLastAddConfirmedUpdate(previousLAC, watcher);
     }
 
     @Override
     public void setExplicitlac(long ledgerId, ByteBuf lac) throws IOException {
-        throw new UnsupportedOperationException();
+        transientLedgerInfoCache.getUnchecked(ledgerId)
+            .setExplicitLac(lac);
     }
 
     @Override
     public ByteBuf getExplicitLac(long ledgerId) {
-        throw new UnsupportedOperationException();
+        TransientLedgerInfo ledgerInfo = transientLedgerInfoCache.getIfPresent(ledgerId);
+        if (null == ledgerInfo) {
+            return null;
+        } else {
+            return ledgerInfo.getExplicitLac();
+        }
     }
 
     @Override
