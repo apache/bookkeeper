@@ -31,16 +31,16 @@ import java.util.concurrent.TimeoutException;
 
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException;
-import org.apache.bookkeeper.proto.BookieProtocol.Request;
+import org.apache.bookkeeper.proto.BookieProtocol.ReadRequest;
 import org.apache.bookkeeper.util.MathUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-class ReadEntryProcessor extends PacketProcessorBase {
+class ReadEntryProcessor extends PacketProcessorBase<ReadRequest> {
     private static final Logger LOG = LoggerFactory.getLogger(ReadEntryProcessor.class);
 
-    public static ReadEntryProcessor create(Request request, Channel channel,
-                              BookieRequestProcessor requestProcessor) {
+    public static ReadEntryProcessor create(ReadRequest request, Channel channel,
+                                            BookieRequestProcessor requestProcessor) {
         ReadEntryProcessor rep = RECYCLER.get();
         rep.init(request, channel, requestProcessor);
         return rep;
@@ -48,9 +48,6 @@ class ReadEntryProcessor extends PacketProcessorBase {
 
     @Override
     protected void processPacket() {
-        assert (request instanceof BookieProtocol.ReadRequest);
-        BookieProtocol.ReadRequest read = (BookieProtocol.ReadRequest) request;
-
         if (LOG.isDebugEnabled()) {
             LOG.debug("Received new read request: {}", request);
         }
@@ -59,13 +56,13 @@ class ReadEntryProcessor extends PacketProcessorBase {
         ByteBuf data = null;
         try {
             Future<Boolean> fenceResult = null;
-            if (read.isFencingRequest()) {
+            if (request.isFencing()) {
                 LOG.warn("Ledger: {}  fenced by: {}", request.getLedgerId(), channel.remoteAddress());
 
-                if (read.hasMasterKey()) {
-                    fenceResult = requestProcessor.bookie.fenceLedger(read.getLedgerId(), read.getMasterKey());
+                if (request.hasMasterKey()) {
+                    fenceResult = requestProcessor.bookie.fenceLedger(request.getLedgerId(), request.getMasterKey());
                 } else {
-                    LOG.error("Password not provided, Not safe to fence {}", read.getLedgerId());
+                    LOG.error("Password not provided, Not safe to fence {}", request.getLedgerId());
                     throw BookieException.create(BookieException.Code.UnauthorizedAccessException);
                 }
             }
@@ -94,17 +91,17 @@ class ReadEntryProcessor extends PacketProcessorBase {
                     }
                 } catch (InterruptedException ie) {
                     Thread.currentThread().interrupt();
-                    LOG.error("Interrupting fence read entry {}", read, ie);
+                    LOG.error("Interrupting fence read entry {}", request, ie);
                     errorCode = BookieProtocol.EIO;
                     data.release();
                     data = null;
                 } catch (ExecutionException ee) {
-                    LOG.error("Failed to fence read entry {}", read, ee);
+                    LOG.error("Failed to fence read entry {}", request, ee);
                     errorCode = BookieProtocol.EIO;
                     data.release();
                     data = null;
                 } catch (TimeoutException te) {
-                    LOG.error("Timeout to fence read entry {}", read, te);
+                    LOG.error("Timeout to fence read entry {}", request, te);
                     errorCode = BookieProtocol.EIO;
                     data.release();
                     data = null;
@@ -114,33 +111,35 @@ class ReadEntryProcessor extends PacketProcessorBase {
             }
         } catch (Bookie.NoLedgerException e) {
             if (LOG.isDebugEnabled()) {
-                LOG.debug("Error reading {}", read, e);
+                LOG.debug("Error reading {}", request, e);
             }
             errorCode = BookieProtocol.ENOLEDGER;
         } catch (Bookie.NoEntryException e) {
             if (LOG.isDebugEnabled()) {
-                LOG.debug("Error reading {}", read, e);
+                LOG.debug("Error reading {}", request, e);
             }
             errorCode = BookieProtocol.ENOENTRY;
         } catch (IOException e) {
-            LOG.error("Error reading {}", read, e);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Error reading {}", request, e);
+            }
             errorCode = BookieProtocol.EIO;
         } catch (BookieException e) {
-            LOG.error("Unauthorized access to ledger {}", read.getLedgerId(), e);
+            LOG.error("Unauthorized access to ledger {}", request.getLedgerId(), e);
             errorCode = BookieProtocol.EUA;
         } catch (Throwable t) {
-            LOG.error("Unexpected exception reading at {}:{} : {}", read.getLedgerId(), read.getEntryId(),
-                    t.getMessage(), t);
+            LOG.error("Unexpected exception reading at {}:{} : {}", request.getLedgerId(), request.getEntryId(),
+                      t.getMessage(), t);
             errorCode = BookieProtocol.EBADREQ;
         }
 
         if (LOG.isTraceEnabled()) {
-            LOG.trace("Read entry rc = {} for {}", errorCode, read);
+            LOG.trace("Read entry rc = {} for {}", errorCode, request);
         }
         if (errorCode == BookieProtocol.EOK) {
             requestProcessor.readEntryStats.registerSuccessfulEvent(MathUtils.elapsedNanos(startTimeNanos),
                     TimeUnit.NANOSECONDS);
-            sendResponse(errorCode, ResponseBuilder.buildReadResponse(data, read),
+            sendResponse(errorCode, ResponseBuilder.buildReadResponse(data, request),
                          requestProcessor.readRequestStats);
 
         } else {
@@ -148,7 +147,7 @@ class ReadEntryProcessor extends PacketProcessorBase {
 
             requestProcessor.readEntryStats.registerFailedEvent(MathUtils.elapsedNanos(startTimeNanos),
                     TimeUnit.NANOSECONDS);
-            sendResponse(errorCode, ResponseBuilder.buildErrorResponse(errorCode, read),
+            sendResponse(errorCode, ResponseBuilder.buildErrorResponse(errorCode, request),
                          requestProcessor.readRequestStats);
         }
         recycle();

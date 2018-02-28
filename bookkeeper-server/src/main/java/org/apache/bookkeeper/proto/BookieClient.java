@@ -369,36 +369,6 @@ public class BookieClient implements PerChannelBookieClientFactory {
         }
     }
 
-    public void readEntryAndFenceLedger(final BookieSocketAddress addr,
-                                        final long ledgerId,
-                                        final byte[] masterKey,
-                                        final long entryId,
-                                        final ReadEntryCallback cb,
-                                        final Object ctx) {
-        closeLock.readLock().lock();
-        try {
-            final PerChannelBookieClientPool client = lookupClient(addr);
-            if (client == null) {
-                completeRead(getRc(BKException.Code.BookieHandleNotAvailableException),
-                             ledgerId, entryId, null, cb, ctx);
-                return;
-            }
-
-            client.obtain(new GenericCallback<PerChannelBookieClient>() {
-                @Override
-                public void operationComplete(final int rc, PerChannelBookieClient pcbc) {
-                    if (rc != BKException.Code.OK) {
-                        completeRead(rc, ledgerId, entryId, null, cb, ctx);
-                        return;
-                    }
-                    pcbc.readEntryAndFenceLedger(ledgerId, masterKey, entryId, cb, ctx);
-                }
-            }, ledgerId);
-        } finally {
-            closeLock.readLock().unlock();
-        }
-    }
-
     public void readLac(final BookieSocketAddress addr, final long ledgerId, final ReadLacCallback cb,
             final Object ctx) {
         closeLock.readLock().lock();
@@ -434,8 +404,13 @@ public class BookieClient implements PerChannelBookieClientFactory {
         }
     }
 
+    public void readEntry(BookieSocketAddress addr, long ledgerId, long entryId,
+                          ReadEntryCallback cb, Object ctx, int flags) {
+        readEntry(addr, ledgerId, entryId, cb, ctx, flags, null);
+    }
+
     public void readEntry(final BookieSocketAddress addr, final long ledgerId, final long entryId,
-                          final ReadEntryCallback cb, final Object ctx) {
+                          final ReadEntryCallback cb, final Object ctx, int flags, byte[] masterKey) {
         closeLock.readLock().lock();
         try {
             final PerChannelBookieClientPool client = lookupClient(addr);
@@ -452,7 +427,7 @@ public class BookieClient implements PerChannelBookieClientFactory {
                         completeRead(rc, ledgerId, entryId, null, cb, ctx);
                         return;
                     }
-                    pcbc.readEntry(ledgerId, entryId, cb, ctx);
+                    pcbc.readEntry(ledgerId, entryId, cb, ctx, flags, masterKey);
                 }
             }, ledgerId);
         } finally {

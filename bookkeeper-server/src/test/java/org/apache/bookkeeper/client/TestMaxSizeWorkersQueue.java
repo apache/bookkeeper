@@ -19,9 +19,18 @@ package org.apache.bookkeeper.client;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
+import com.google.common.collect.Lists;
 
 import java.util.Enumeration;
+import java.util.List;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -48,7 +57,7 @@ public class TestMaxSizeWorkersQueue extends BookKeeperClusterTestCase {
         baseConf.setMaxPendingAddRequestPerThread(1);
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testReadRejected() throws Exception {
         LedgerHandle lh = bkc.createLedger(1, 1, digestType, new byte[0]);
         byte[] content = new byte[100];
@@ -91,7 +100,7 @@ public class TestMaxSizeWorkersQueue extends BookKeeperClusterTestCase {
         assertEquals(BKException.Code.TooManyRequestsException, rcSecondReadOperation.get());
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testAddRejected() throws Exception {
         LedgerHandle lh = bkc.createLedger(1, 1, digestType, new byte[0]);
         byte[] content = new byte[100];
@@ -121,5 +130,61 @@ public class TestMaxSizeWorkersQueue extends BookKeeperClusterTestCase {
         counter.await();
 
         assertTrue(receivedTooManyRequestsException.get());
+    }
+
+    @Test
+    public void testRecoveryNotRejected() throws Exception {
+        LedgerHandle lh = bkc.createLedger(1, 1, digestType, new byte[0]);
+        byte[] content = new byte[100];
+
+        final int numEntriesToRead = 1000;
+        // Write few entries
+        for (int i = 0; i < numEntriesToRead; i++) {
+            lh.addEntry(content);
+        }
+
+        final int numLedgersToRecover = 10;
+        List<Long> ledgersToRecover = Lists.newArrayList();
+        for (int i = 0; i < numLedgersToRecover; i++) {
+            LedgerHandle lhr = bkc.createLedger(1, 1, digestType, new byte[0]);
+            lhr.addEntry(content);
+            // Leave the ledger in open state
+            ledgersToRecover.add(lhr.getId());
+        }
+
+        ExecutorService executor = Executors.newCachedThreadPool();
+        final CyclicBarrier barrier = new CyclicBarrier(1 + numLedgersToRecover);
+
+        List<Future<?>> futures = Lists.newArrayList();
+        futures.add(executor.submit(new Callable<Void>() {
+            @Override
+            public Void call() throws Exception {
+                barrier.await();
+                try {
+                    lh.readEntries(0, numEntriesToRead - 1);
+                    fail("Should have thrown exception");
+                } catch (Exception e) {
+                    // Expected
+                }
+                return null;
+            }
+        }));
+
+        for (long ledgerId : ledgersToRecover) {
+            futures.add(executor.submit(new Callable<Void>() {
+                @Override
+                public Void call() throws Exception {
+                    barrier.await();
+
+                    // Recovery should always succeed
+                    bkc.openLedger(ledgerId, digestType, new byte[0]);
+                    return null;
+                }
+            }));
+        }
+
+        for (Future<?> future : futures) {
+            future.get();
+        }
     }
 }

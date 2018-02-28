@@ -72,6 +72,7 @@ message BKPacketHeader {
     required ProtocolVersion version = 1;
     required OperationType operation = 2;
     required uint64 txnId = 3;
+    optional uint32 priority = 4 [default = 0];
 }
 
 message Request {

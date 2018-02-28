@@ -31,14 +31,14 @@ import org.slf4j.LoggerFactory;
 /**
  * A base class for bookeeper packet processors.
  */
-abstract class PacketProcessorBase extends SafeRunnable {
+abstract class PacketProcessorBase<T extends Request> extends SafeRunnable {
     private static final Logger logger = LoggerFactory.getLogger(PacketProcessorBase.class);
-    Request request;
+    T request;
     Channel channel;
     BookieRequestProcessor requestProcessor;
     long enqueueNanos;
 
-    protected void init(Request request, Channel channel, BookieRequestProcessor requestProcessor) {
+    protected void init(T request, Channel channel, BookieRequestProcessor requestProcessor) {
         this.request = request;
         this.channel = channel;
         this.requestProcessor = requestProcessor;

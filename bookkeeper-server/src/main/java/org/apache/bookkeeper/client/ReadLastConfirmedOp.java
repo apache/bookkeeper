@@ -62,17 +62,17 @@ class ReadLastConfirmedOp implements ReadEntryCallback {
             lh.bk.getBookieClient().readEntry(lh.metadata.currentEnsemble.get(i),
                                          lh.ledgerId,
                                          BookieProtocol.LAST_ADD_CONFIRMED,
-                                         this, i);
+                                         this, i, BookieProtocol.FLAG_NONE);
         }
     }
 
     public void initiateWithFencing() {
         for (int i = 0; i < lh.metadata.currentEnsemble.size(); i++) {
-            lh.bk.getBookieClient().readEntryAndFenceLedger(lh.metadata.currentEnsemble.get(i),
-                                                       lh.ledgerId,
-                                                       lh.ledgerKey,
-                                                       BookieProtocol.LAST_ADD_CONFIRMED,
-                                                       this, i);
+            lh.bk.getBookieClient().readEntry(lh.metadata.currentEnsemble.get(i),
+                                              lh.ledgerId,
+                                              BookieProtocol.LAST_ADD_CONFIRMED,
+                                              this, i, BookieProtocol.FLAG_DO_FENCING,
+                                              lh.ledgerKey);
         }
     }
 
