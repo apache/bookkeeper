@@ -26,6 +26,7 @@ import java.util.concurrent.Future;
 
 import lombok.extern.slf4j.Slf4j;
 
+import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.discover.RegistrationClient.RegistrationListener;
 import org.apache.bookkeeper.net.BookieSocketAddress;
@@ -83,7 +84,7 @@ public class BookKeeperTestClient extends BookKeeper {
      * in the other set before completing.
      */
     private Future<?> waitForBookieInSet(BookieSocketAddress b,
-                                                       boolean writable) {
+                                                       boolean writable) throws Exception {
         log.info("Wait for {} to become {}",
                  b, writable ? "writable" : "readonly");
 
@@ -103,9 +104,32 @@ public class BookKeeperTestClient extends BookKeeper {
             }
         };
 
-        regClient.watchWritableBookies(writableListener);
-        regClient.watchReadOnlyBookies(readOnlyListener);
-        return CompletableFuture.allOf(writableFuture, readOnlyFuture);
+        getMetadataClientDriver().getRegistrationClient().watchWritableBookies(writableListener);
+        getMetadataClientDriver().getRegistrationClient().watchReadOnlyBookies(readOnlyListener);
+
+        if (writable) {
+            return writableFuture
+                .thenCompose(ignored -> getMetadataClientDriver().getRegistrationClient().getReadOnlyBookies())
+                .thenCompose(readonlyBookies -> {
+                    if (readonlyBookies.getValue().contains(b)) {
+                        // if the bookie still shows up at readonly path, wait for it to disappear
+                        return readOnlyFuture;
+                    } else {
+                        return FutureUtils.Void();
+                    }
+                });
+        } else {
+            return readOnlyFuture
+                .thenCompose(ignored -> getMetadataClientDriver().getRegistrationClient().getWritableBookies())
+                .thenCompose(writableBookies -> {
+                    if (writableBookies.getValue().contains(b)) {
+                        // if the bookie still shows up at writable path, wait for it to disappear
+                        return writableFuture;
+                    } else {
+                        return FutureUtils.Void();
+                    }
+                });
+        }
     }
 
     public TestStatsProvider getTestStatsProvider() {

@@ -33,7 +33,6 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
@@ -50,7 +49,6 @@ import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BKException.BKInterruptedException;
 import org.apache.bookkeeper.client.BKException.MetaStoreException;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
-import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.AbstractZkLedgerManagerFactory;
 import org.apache.bookkeeper.meta.LayoutManager;
@@ -58,7 +56,6 @@ import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.ZkLayoutManager;
 import org.apache.bookkeeper.meta.ZkLedgerUnderreplicationManager;
 import org.apache.bookkeeper.net.BookieSocketAddress;
-import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.util.ZkUtils;
@@ -551,8 +548,11 @@ public class ZKRegistrationManager implements RegistrationManager {
 
         String availableBookiesPath = conf.getZkAvailableBookiesPath();
         boolean availableNodeExists = null != zk.exists(availableBookiesPath, false);
-        try (RegistrationClient regClient = new ZKRegistrationClient()) {
-            regClient.initialize(new ClientConfiguration(conf), null, NullStatsLogger.INSTANCE, Optional.empty());
+        try (RegistrationClient regClient = new ZKRegistrationClient(
+            zk,
+            zkLedgersRootPath,
+            null
+        )) {
             if (availableNodeExists) {
                 Collection<BookieSocketAddress> rwBookies = FutureUtils
                         .result(regClient.getWritableBookies(), EXCEPTION_FUNC).getValue();

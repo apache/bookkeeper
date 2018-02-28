@@ -167,19 +167,30 @@ public final class MetadataDrivers {
      */
     public static void registerClientDriver(String metadataBackendScheme,
                                             Class<? extends MetadataClientDriver> driver) {
+        registerClientDriver(metadataBackendScheme, driver, false);
+    }
+
+    @VisibleForTesting
+    public static void registerClientDriver(String metadataBackendScheme,
+                                            Class<? extends MetadataClientDriver> driver,
+                                            boolean allowOverride) {
         if (!initialized) {
             initialize();
         }
 
         String scheme = metadataBackendScheme.toLowerCase();
         MetadataClientDriverInfo oldDriverInfo = clientDrivers.get(scheme);
-        if (null != oldDriverInfo) {
+        if (null != oldDriverInfo && !allowOverride) {
             return;
         }
         MetadataClientDriverInfo newDriverInfo = new MetadataClientDriverInfo(driver);
         oldDriverInfo = clientDrivers.putIfAbsent(scheme, newDriverInfo);
         if (null != oldDriverInfo) {
             log.debug("Metadata client driver for {} is already there.", scheme);
+            if (allowOverride) {
+                log.debug("Overriding client driver for {}", scheme);
+                clientDrivers.put(scheme, newDriverInfo);
+            }
         }
     }
 
@@ -191,19 +202,30 @@ public final class MetadataDrivers {
      */
     public static void registerBookieDriver(String metadataBackendScheme,
                                             Class<? extends MetadataBookieDriver> driver) {
+        registerBookieDriver(metadataBackendScheme, driver, false);
+    }
+
+    @VisibleForTesting
+    public static void registerBookieDriver(String metadataBackendScheme,
+                                            Class<? extends MetadataBookieDriver> driver,
+                                            boolean allowOverride) {
         if (!initialized) {
             initialize();
         }
 
         String scheme = metadataBackendScheme.toLowerCase();
         MetadataBookieDriverInfo oldDriverInfo = bookieDrivers.get(scheme);
-        if (null != oldDriverInfo) {
+        if (null != oldDriverInfo && !allowOverride) {
             return;
         }
         MetadataBookieDriverInfo newDriverInfo = new MetadataBookieDriverInfo(driver);
         oldDriverInfo = bookieDrivers.putIfAbsent(scheme, newDriverInfo);
         if (null != oldDriverInfo) {
             log.debug("Metadata bookie driver for {} is already there.", scheme);
+            if (allowOverride) {
+                log.debug("Overriding bookie driver for {}", scheme);
+                bookieDrivers.put(scheme, newDriverInfo);
+            }
         }
     }
 

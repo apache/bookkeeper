@@ -24,17 +24,19 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.powermock.api.mockito.PowerMockito.mock;
+import static org.powermock.api.mockito.PowerMockito.when;
 
+import java.net.URI;
 import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import org.apache.bookkeeper.client.api.BookKeeper;
 import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.discover.RegistrationClient;
+import org.apache.bookkeeper.meta.MetadataClientDriver;
+import org.apache.bookkeeper.meta.MetadataDrivers;
 import org.apache.bookkeeper.stats.NullStatsLogger;
-import org.apache.bookkeeper.util.ReflectionUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -46,19 +48,20 @@ import org.powermock.modules.junit4.PowerMockRunner;
  * Unit test of {@link DiscoveryCommand}.
  */
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({ DiscoveryCommand.class, ReflectionUtils.class })
+@PrepareForTest({ DiscoveryCommand.class, MetadataDrivers.class })
 public class DiscoveryCommandTest {
 
     private DiscoveryCommand cmd;
     private ServerConfiguration serverConf;
     private ClientConfiguration clientConf;
     private RegistrationClient regClient;
+    private MetadataClientDriver clientDriver;
     private ScheduledExecutorService executor;
 
     @Before
     public void setup() throws Exception {
         PowerMockito.mockStatic(Executors.class);
-        PowerMockito.mockStatic(ReflectionUtils.class);
+        PowerMockito.mockStatic(MetadataDrivers.class);
 
         this.cmd = mock(DiscoveryCommand.class, CALLS_REAL_METHODS);
 
@@ -74,7 +77,10 @@ public class DiscoveryCommandTest {
             .thenReturn(executor);
 
         this.regClient = mock(RegistrationClient.class);
-        PowerMockito.when(ReflectionUtils.newInstance(any()))
+        this.clientDriver = mock(MetadataClientDriver.class);
+        PowerMockito.when(MetadataDrivers.getClientDriver(any(URI.class)))
+            .thenReturn(clientDriver);
+        when(clientDriver.getRegistrationClient())
             .thenReturn(regClient);
     }
 
@@ -82,9 +88,10 @@ public class DiscoveryCommandTest {
     public void testRun() throws Exception {
         cmd.run(serverConf);
         verify(cmd, times(1)).run(eq(regClient));
-        verify(regClient, times(1))
+        verify(clientDriver, times(1))
             .initialize(eq(clientConf), eq(executor), eq(NullStatsLogger.INSTANCE), eq(Optional.empty()));
-        verify(regClient, times(1)).close();
+        verify(clientDriver, times(1)).getRegistrationClient();
+        verify(clientDriver, times(1)).close();
         verify(executor, times(1)).shutdown();
     }
 
