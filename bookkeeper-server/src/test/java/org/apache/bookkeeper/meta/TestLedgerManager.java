@@ -115,7 +115,7 @@ public class TestLedgerManager extends BookKeeperClusterTestCase {
         } catch (Exception e) {
             LOG.error("Received exception", e);
             assertTrue("Invalid exception",
-                    e.getMessage().contains("Failed to get ledger manager factory class from configuration"));
+                    e.getMessage().contains("Failed to instantiate ledger manager factory DoesNotExist"));
         }
     }
 
