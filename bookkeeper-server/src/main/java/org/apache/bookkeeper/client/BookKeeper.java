@@ -552,7 +552,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
         scheduler = null;
         requestTimer = null;
         reorderReadSequence = false;
-        regClient = null;
+        metadataDriver = null;
         readSpeculativeRequestPolicy = Optional.absent();
         readLACSpeculativeRequestPolicy = Optional.absent();
         placementPolicy = null;
