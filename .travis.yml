@@ -64,7 +64,8 @@ script:
     fi
     if [ "$DLOG_MODIFIED" == "true" ]; then
         cd stream/distributedlog
-        ./dev/ticktoc.sh "mvn --batch-mode clean package -Ddistributedlog"
+        ../../dev/ticktoc.sh "mvn --batch-mode clean package -Ddistributedlog"
+        cd ../..
     fi
 # Disabled the tests here. Since tests are running much slower on Travis than on Jenkins
 #  - ./dev/ticktoc.sh "mvn --batch-mode clean package"
