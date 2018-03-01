@@ -76,7 +76,7 @@ script:
         travis_wait 60 mvn --batch-mode clean package -Ddistributedlog
         cd ../..
     fi
-    if [ "$WEBSITE_MODIFIED" == "true" ]; then
+    if [ "$TRAVIS_OS_NAME" == "linux" ] && [ "$WEBSITE_MODIFIED" == "true" ]; then
         cd site
         make clean
         # run the docker image to build the website
