@@ -26,11 +26,10 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-
 import com.google.common.base.Ticker;
 import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.Sets;
+import com.google.common.testing.FakeTicker;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import java.io.File;
@@ -40,7 +39,6 @@ import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
@@ -346,16 +344,15 @@ public class EntryLogTest {
         //since last access, expire after 1s
         conf.setReadChannelCacheExpireTimeMs(expireTime);
         conf.setEntryLogFilePreAllocationEnabled(false);
-        // below one will cost logId 0
-        Bookie bookie = new Bookie(conf);
+        LedgerDirsManager ledgerDirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs(),
+                new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()));
         // create some entries
         int numLogs = 4;
         int numEntries = 10;
         long[][] positions = new long[numLogs][];
         for (int i = 0; i < numLogs; i++) {
             positions[i] = new long[numEntries];
-            EntryLogger logger = new EntryLogger(conf,
-                    bookie.getLedgerDirsManager());
+            EntryLogger logger = new EntryLogger(conf, ledgerDirsManager);
             for (int j = 0; j < numEntries; j++) {
                 positions[i][j] = logger.addEntry(i, generateEntry(i, j).nioBuffer());
             }
@@ -365,30 +362,30 @@ public class EntryLogTest {
             logger.shutdown();
         }
 
-        for (int i = 1; i < numLogs + 1; i++) {
+        for (int i = 0; i < numLogs; i++) {
             File logFile = new File(curDir, Long.toHexString(i) + ".log");
             assertTrue(logFile.exists());
         }
 
         FakeTicker t = new FakeTicker();
-        FakeEntryLogger logger = new FakeEntryLogger(conf, bookie.getLedgerDirsManager(), t);
+        FakeEntryLogger logger = new FakeEntryLogger(conf, ledgerDirsManager, t);
         // create some read for the entry log
         ThreadLocal<Cache<Long, EntryLogger.EntryLogBufferedReadChannel>>  cacheThreadLocal = logger.logid2ReadChannel;
-        FileChannelBackingCache logid2FileChannel = logger.getFileChannelBackingCache();
+        FileChannelBackingCache logid2FileChannel = logger.fileChannelBackingCache;
         for (int j = 0; j < numEntries; j++) {
             logger.readEntry(0, j, positions[0][j]);
         }
         LOG.info("cache size is {}, content is {}", cacheThreadLocal.get().size(),
                 cacheThreadLocal.get().asMap().toString());
-        // the cache has readChannel for 1.log
-        assertNotNull(cacheThreadLocal.get().getIfPresent(1L));
+        // the cache has readChannel for 0.log
+        assertNotNull(cacheThreadLocal.get().getIfPresent(0L));
         for (int j = 0; j < numEntries; j++) {
             logger.readEntry(1, j, positions[1][j]);
         }
         LOG.info("cache size is {}, content is {}", cacheThreadLocal.get().size(),
                 cacheThreadLocal.get().asMap().toString());
-        // the cache has readChannel for 2.log
-        assertNotNull(cacheThreadLocal.get().getIfPresent(2L));
+        // the cache has readChannel for 1.log
+        assertNotNull(cacheThreadLocal.get().getIfPresent(1L));
 
         // advance expire time
         t.advance(expireTime, TimeUnit.SECONDS);
@@ -404,19 +401,19 @@ public class EntryLogTest {
         }
         LOG.info("cache size is {}, content is {}", cacheThreadLocal.get().size(),
                 cacheThreadLocal.get().asMap().toString());
+        // the cache has readChannel for 2.log
+        assertNotNull(cacheThreadLocal.get().getIfPresent(2L));
         // the cache has readChannel for 3.log
         assertNotNull(cacheThreadLocal.get().getIfPresent(3L));
-        // the cache has readChannel for 4.log
-        assertNotNull(cacheThreadLocal.get().getIfPresent(4L));
+        // the cache hasn't readChannel for 0.log
+        assertNull(cacheThreadLocal.get().getIfPresent(0L));
         // the cache hasn't readChannel for 1.log
         assertNull(cacheThreadLocal.get().getIfPresent(1L));
-        // the cache hasn't readChannel for 2.log
-        assertNull(cacheThreadLocal.get().getIfPresent(2L));
         // the corresponding file channel should be closed
+        assertNull("FileChannel should be removed from backing cache", logid2FileChannel.get(0L));
         assertNull("FileChannel should be removed from backing cache", logid2FileChannel.get(1L));
-        assertNull("FileChannel should be removed from backing cache", logid2FileChannel.get(2L));
+        assertEquals(1, logid2FileChannel.get(2L).getRefCount());
         assertEquals(1, logid2FileChannel.get(3L).getRefCount());
-        assertEquals(1, logid2FileChannel.get(4L).getRefCount());
         logger.shutdown();
     }
 
@@ -491,26 +488,6 @@ public class EntryLogTest {
     }
 
     /**
-     * Fake Ticker to advance ticker as expected.
-     */
-    class FakeTicker extends Ticker {
-
-        private final AtomicLong nanos = new AtomicLong();
-
-        /** Advances the ticker value by {@code time} in {@code timeUnit}. */
-        public FakeTicker advance(long time, TimeUnit timeUnit) {
-            nanos.addAndGet(timeUnit.toNanos(time));
-            return this;
-        }
-
-        @Override
-        public long read() {
-            long value = nanos.getAndAdd(0);
-            return value;
-        }
-    }
-
-    /**
      * Fake EntryLogger using customized cache to hide superclass'.
      */
     class FakeEntryLogger extends EntryLogger {
@@ -521,25 +498,8 @@ public class EntryLogTest {
             this.ticker = ticker;
         }
 
-        private final ThreadLocal<Cache<Long, EntryLogBufferedReadChannel>> logid2ReadChannel =
-                new ThreadLocal<Cache<Long, EntryLogBufferedReadChannel>>() {
-                    @Override
-                    public Cache<Long, EntryLogBufferedReadChannel> initialValue() {
-                        return CacheBuilder.newBuilder().concurrencyLevel(1)
-                            .expireAfterAccess(getReadChannelCacheExpireTimeMs(), TimeUnit.MILLISECONDS)
-                            //decrease the refCnt
-                            .removalListener(removal -> ((EntryLogBufferedReadChannel) removal.getValue()).release())
-                            .ticker(ticker).build();
-                    }
-                };
-
-        /**
-         * Override parend method to use mock logid2ReadChannel.
-         * @return
-         */
-        Cache<Long, EntryLogBufferedReadChannel> getThreadLocalCacheForReadChannel() {
-            return logid2ReadChannel.get();
+        Ticker getTicker() {
+            return ticker;
         }
-
     }
 }

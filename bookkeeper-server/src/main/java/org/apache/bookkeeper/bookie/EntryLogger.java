@@ -25,7 +25,7 @@ import static com.google.common.base.Charsets.UTF_8;
 import static org.apache.bookkeeper.bookie.TransactionalEntryLogCompactor.COMPACTING_SUFFIX;
 import static org.apache.bookkeeper.util.BookKeeperConstants.MAX_LOG_SIZE_LIMIT;
 
-import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Ticker;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.Sets;
@@ -354,7 +354,7 @@ public class EntryLogger {
      * When the BufferedReadChannel is removed, the underlying fileChannel's refCnt decrease 1,
      * temporally use 1h to relax replace after reading.
      */
-    private final ThreadLocal<Cache<Long, EntryLogBufferedReadChannel>> logid2ReadChannel =
+    final ThreadLocal<Cache<Long, EntryLogBufferedReadChannel>> logid2ReadChannel =
             new ThreadLocal<Cache<Long, EntryLogBufferedReadChannel>>() {
         @Override
         public Cache<Long, EntryLogBufferedReadChannel> initialValue() {
@@ -365,13 +365,12 @@ public class EntryLogger {
                     .expireAfterAccess(readChannelCacheExpireTimeMs, TimeUnit.MILLISECONDS)
                     //decrease the refCnt
                     .removalListener(removal -> ((EntryLogBufferedReadChannel) removal.getValue()).release())
-                    .build();
+                    .ticker(getTicker()).build();
         }
     };
 
-    @VisibleForTesting
-    long getReadChannelCacheExpireTimeMs() {
-        return readChannelCacheExpireTimeMs;
+    Ticker getTicker() {
+        return Ticker.systemTicker();
     }
 
     /**
@@ -379,19 +378,7 @@ public class EntryLogger {
      * and don't cause a change in the channel's position.
      * Each file channel is mapped to a log id which represents an open log file.
      */
-    private FileChannelBackingCache fileChannelBackingCache = new FileChannelBackingCache(this::findFile);
-    @VisibleForTesting
-    FileChannelBackingCache getFileChannelBackingCache() {
-        return fileChannelBackingCache;
-    }
-
-    /**
-     * Get current threadlocal cache.
-     * @return
-     */
-    Cache<Long, EntryLogBufferedReadChannel> getThreadLocalCacheForReadChannel() {
-        return logid2ReadChannel.get();
-    }
+    FileChannelBackingCache fileChannelBackingCache = new FileChannelBackingCache(this::findFile);
 
     /**
      * Get the least unflushed log id. Garbage collector thread should not process
@@ -1130,9 +1117,9 @@ public class EntryLogger {
             };
             do {
                 // Put the logId, bc pair in the cache responsible for the current thread.
-                brc = getThreadLocalCacheForReadChannel().get(entryLogId, loader);
+                brc = logid2ReadChannel.get().get(entryLogId, loader);
                 if (!brc.cachedFileChannel.tryRetain()) {
-                    if (getThreadLocalCacheForReadChannel().asMap().remove(entryLogId, brc)){
+                    if (logid2ReadChannel.get().asMap().remove(entryLogId, brc)){
                     LOG.error("Dead fileChannel({}) forced out of cache."
                             + "It must have been double-released somewhere.", brc.cachedFileChannel);
                     }
