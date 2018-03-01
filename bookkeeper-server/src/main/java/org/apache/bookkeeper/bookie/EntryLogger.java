@@ -118,7 +118,7 @@ public class EntryLogger {
     /**
      * A specialization of BufferedReadChannel which has the CachedFileChannel as a member.
      */
-    static class EntryLogBufferedReadChannel extends BufferedReadChannel {
+    static class EntryLogBufferedReadChannel extends BufferedReadChannel implements AutoCloseable {
         private final CachedFileChannel cachedFileChannel;
 
         EntryLogBufferedReadChannel(CachedFileChannel fc, int readBufferBytes)
@@ -130,6 +130,11 @@ public class EntryLogger {
         //count down the refCnt to CachedFileChannel
         void release() {
             cachedFileChannel.release();
+        }
+
+        @Override
+        public void close() {
+            release();
         }
     }
 
@@ -994,14 +999,12 @@ public class EntryLogger {
 
     public ByteBuf internalReadEntry(long ledgerId, long entryId, long location)
             throws IOException, Bookie.NoEntryException {
-        EntryLogBufferedReadChannel bc = null;
-        try {
-            long entryLogId = logIdForOffset(location);
-            long pos = location & 0xffffffffL;
-            ByteBuf sizeBuff = sizeBuffer.get();
-            sizeBuff.clear();
-            pos -= 4; // we want to get the ledgerId and length to check
-            bc = getChannelForLogId(entryLogId);
+        long entryLogId = logIdForOffset(location);
+        long pos = location & 0xffffffffL;
+        ByteBuf sizeBuff = sizeBuffer.get();
+        sizeBuff.clear();
+        pos -= 4; // we want to get the ledgerId and length to check
+        try (EntryLogBufferedReadChannel bc = getChannelForLogId(entryLogId)){
             if (readFromLogChannel(entryLogId, bc, sizeBuff, pos) != sizeBuff.capacity()) {
                 throw new Bookie.NoEntryException("Short read from entrylog " + entryLogId,
                         ledgerId, entryId);
@@ -1041,10 +1044,6 @@ public class EntryLogger {
                     + " with location " + location);
             newe.setStackTrace(e.getStackTrace());
             throw newe;
-        } finally {
-            if (null != bc) {
-                bc.release();
-            }
         }
     }
 
@@ -1073,14 +1072,11 @@ public class EntryLogger {
      * Read the header of an entry log.
      */
     private Header getHeaderForLogId(long entryLogId) throws IOException {
-        EntryLogBufferedReadChannel bc = null;
-
         // Allocate buffer to read (version, ledgersMapOffset, ledgerCount)
         ByteBuf headers = PooledByteBufAllocator.DEFAULT.directBuffer(LOGFILE_HEADER_SIZE);
-        try {
-            bc = getChannelForLogId(entryLogId);
-            bc.read(headers, 0);
 
+        try (EntryLogBufferedReadChannel bc = getChannelForLogId(entryLogId)) {
+            bc.read(headers, 0);
             // Skip marker string "BKLO"
             headers.readInt();
 
@@ -1094,9 +1090,6 @@ public class EntryLogger {
             return new Header(headerVersion, ledgersMapOffset, ledgersCount);
         } finally {
             headers.release();
-            if (bc != null) {
-                bc.release();
-            }
         }
     }
 
@@ -1196,13 +1189,10 @@ public class EntryLogger {
      * @throws IOException
      */
     public void scanEntryLog(long entryLogId, EntryLogScanner scanner) throws IOException {
-        EntryLogBufferedReadChannel bc = null;
         ByteBuf data = null;
-        try {
+        try (EntryLogBufferedReadChannel bc = getChannelForLogId(entryLogId)) {
             // Buffer where to read the entrySize (4 bytes) and the ledgerId (8 bytes)
             ByteBuf headerBuffer = Unpooled.buffer(4 + 8);
-            // Get the BufferedChannel for the current entry log file
-            bc = getChannelForLogId(entryLogId);
             // Start the read position in the current entry log file to be after
             // the header where all of the ledger entries are.
             long pos = LOGFILE_HEADER_SIZE;
@@ -1254,9 +1244,6 @@ public class EntryLogger {
             if (data != null) {
                 data.release();
             }
-            if (null != bc) {
-                bc.release();
-            }
         }
     }
 
@@ -1289,7 +1276,6 @@ public class EntryLogger {
             LOG.debug("Recovering ledgers maps for log {} at offset: {}", entryLogId, header.ledgersMapOffset);
         }
 
-        EntryLogBufferedReadChannel bc = null;
         // There can be multiple entries containing the various components of the serialized ledgers map
         long offset = header.ledgersMapOffset;
         EntryLogMetadata meta = new EntryLogMetadata(entryLogId);
@@ -1297,8 +1283,7 @@ public class EntryLogger {
         final int maxMapSize = LEDGERS_MAP_HEADER_SIZE + LEDGERS_MAP_ENTRY_SIZE * LEDGERS_MAP_MAX_BATCH_SIZE;
         ByteBuf ledgersMap = ByteBufAllocator.DEFAULT.directBuffer(maxMapSize);
 
-        try {
-            bc = getChannelForLogId(entryLogId);
+        try (EntryLogBufferedReadChannel bc = getChannelForLogId(entryLogId)) {
             while (offset < bc.size()) {
                 // Read ledgers map size
                 sizeBuffer.get().clear();
@@ -1346,9 +1331,6 @@ public class EntryLogger {
             throw new IOException(e);
         } finally {
             ledgersMap.release();
-            if (null != bc) {
-                bc.release();
-            }
         }
 
         if (meta.getLedgersMap().size() != header.ledgersCount) {
