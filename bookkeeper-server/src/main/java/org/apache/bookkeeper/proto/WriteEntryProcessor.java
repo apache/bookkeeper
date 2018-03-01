@@ -27,7 +27,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.net.BookieSocketAddress;
-import org.apache.bookkeeper.proto.BookieProtocol.Request;
+import org.apache.bookkeeper.proto.BookieProtocol.ParsedAddRequest;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
 import org.apache.bookkeeper.util.MathUtils;
 import org.slf4j.Logger;
@@ -36,7 +36,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Processes add entry requests.
  */
-class WriteEntryProcessor extends PacketProcessorBase implements WriteCallback {
+class WriteEntryProcessor extends PacketProcessorBase<ParsedAddRequest> implements WriteCallback {
 
     private static final Logger LOG = LoggerFactory.getLogger(WriteEntryProcessor.class);
 
@@ -47,8 +47,8 @@ class WriteEntryProcessor extends PacketProcessorBase implements WriteCallback {
         startTimeNanos = -1L;
     }
 
-    public static WriteEntryProcessor create(Request request, Channel channel,
-                               BookieRequestProcessor requestProcessor) {
+    public static WriteEntryProcessor create(ParsedAddRequest request, Channel channel,
+                                             BookieRequestProcessor requestProcessor) {
         WriteEntryProcessor wep = RECYCLER.get();
         wep.init(request, channel, requestProcessor);
         return wep;
@@ -56,40 +56,38 @@ class WriteEntryProcessor extends PacketProcessorBase implements WriteCallback {
 
     @Override
     protected void processPacket() {
-        assert (request instanceof BookieProtocol.ParsedAddRequest);
-        BookieProtocol.ParsedAddRequest add = (BookieProtocol.ParsedAddRequest) request;
-
         if (requestProcessor.bookie.isReadOnly()) {
             LOG.warn("BookieServer is running in readonly mode,"
                     + " so rejecting the request from the client!");
             sendResponse(BookieProtocol.EREADONLY,
-                         ResponseBuilder.buildErrorResponse(BookieProtocol.EREADONLY, add),
+                         ResponseBuilder.buildErrorResponse(BookieProtocol.EREADONLY, request),
                          requestProcessor.addRequestStats);
-            add.release();
-            add.recycle();
+            request.release();
+            request.recycle();
             return;
         }
 
         startTimeNanos = MathUtils.nowInNano();
         int rc = BookieProtocol.EOK;
-        ByteBuf addData = add.getData();
+        ByteBuf addData = request.getData();
         try {
-            if (add.isRecoveryAdd()) {
-                requestProcessor.bookie.recoveryAddEntry(addData, this, channel, add.getMasterKey());
+            if (request.isRecoveryAdd()) {
+                requestProcessor.bookie.recoveryAddEntry(addData, this, channel, request.getMasterKey());
             } else {
-                requestProcessor.bookie.addEntry(addData, false, this, channel, add.getMasterKey());
+                requestProcessor.bookie.addEntry(addData, false, this, channel, request.getMasterKey());
             }
         } catch (IOException e) {
-            LOG.error("Error writing " + add, e);
+            LOG.error("Error writing {}", request, e);
             rc = BookieProtocol.EIO;
         } catch (BookieException.LedgerFencedException lfe) {
             LOG.error("Attempt to write to fenced ledger", lfe);
             rc = BookieProtocol.EFENCED;
         } catch (BookieException e) {
-            LOG.error("Unauthorized access to ledger " + add.getLedgerId(), e);
+            LOG.error("Unauthorized access to ledger {}", request.getLedgerId(), e);
             rc = BookieProtocol.EUA;
         } catch (Throwable t) {
-            LOG.error("Unexpected exception while writing {}@{} : {}", add.ledgerId, add.entryId, t.getMessage(), t);
+            LOG.error("Unexpected exception while writing {}@{} : {}",
+                      request.ledgerId, request.entryId, t.getMessage(), t);
             // some bad request which cause unexpected exception
             rc = BookieProtocol.EBADREQ;
         } finally {
@@ -100,9 +98,9 @@ class WriteEntryProcessor extends PacketProcessorBase implements WriteCallback {
             requestProcessor.addEntryStats.registerFailedEvent(MathUtils.elapsedNanos(startTimeNanos),
                     TimeUnit.NANOSECONDS);
             sendResponse(rc,
-                         ResponseBuilder.buildErrorResponse(rc, add),
+                         ResponseBuilder.buildErrorResponse(rc, request),
                          requestProcessor.addRequestStats);
-            add.recycle();
+            request.recycle();
         }
     }
 

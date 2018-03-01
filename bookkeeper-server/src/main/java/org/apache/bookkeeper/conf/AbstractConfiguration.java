@@ -73,6 +73,8 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
     // Ledger Manager
     protected static final String LEDGER_MANAGER_TYPE = "ledgerManagerType";
     protected static final String LEDGER_MANAGER_FACTORY_CLASS = "ledgerManagerFactoryClass";
+    protected static final String ALLOW_SHADED_LEDGER_MANAGER_FACTORY_CLASS = "allowShadedLedgerManagerFactoryClass";
+    protected static final String SHADED_LEDGER_MANAGER_FACTORY_CLASS_PREFIX = "shadedLedgerManagerFactoryClassPrefix";
     protected static final String METADATA_SERVICE_URI = "metadataServiceUri";
     protected static final String ZK_LEDGERS_ROOT_PATH = "zkLedgersRootPath";
     protected static final String ZK_REQUEST_RATE_LIMIT = "zkRequestRateLimit";
@@ -215,6 +217,8 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
                     ledgerManagerType = org.apache.bookkeeper.meta.FlatLedgerManagerFactory.NAME;
                 } else if (factoryClass == LongHierarchicalLedgerManagerFactory.class) {
                     ledgerManagerType = LongHierarchicalLedgerManagerFactory.NAME;
+                } else if (factoryClass == org.apache.bookkeeper.meta.MSLedgerManagerFactory.class) {
+                    ledgerManagerType = org.apache.bookkeeper.meta.MSLedgerManagerFactory.NAME;
                 } else {
                     throw new IllegalArgumentException("Unknown zookeeper based ledger manager factory : "
                         + factoryClass);
@@ -311,6 +315,60 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
     }
 
     /**
+     * Set the flag to allow using shaded ledger manager factory class for
+     * instantiating a ledger manager factory.
+     *
+     * @param allowed
+     *          the flag to allow/disallow using shaded ledger manager factory class
+     * @return configuration instance.
+     */
+    public T setAllowShadedLedgerManagerFactoryClass(boolean allowed) {
+        setProperty(ALLOW_SHADED_LEDGER_MANAGER_FACTORY_CLASS, allowed);
+        return getThis();
+    }
+
+    /**
+     * Is shaded ledger manager factory class name allowed to be used for
+     * instantiating ledger manager factory.
+     *
+     * @return ledger manager factory class name.
+     */
+    public boolean isShadedLedgerManagerFactoryClassAllowed() {
+        return getBoolean(ALLOW_SHADED_LEDGER_MANAGER_FACTORY_CLASS, false);
+    }
+
+    /**
+     * Set the class prefix of the shaded ledger manager factory class for
+     * instantiating a ledger manager factory.
+     *
+     * <p>This setting only takes effects when {@link #isShadedLedgerManagerFactoryClassAllowed()}
+     * returns true.
+     *
+     * @param classPrefix
+     *          the class prefix of shaded ledger manager factory class
+     * @return configuration instance.
+     * @see #setAllowLedgerManagerFactoryClass(boolean)
+     */
+    public T setShadedLedgerManagerFactoryClassPrefix(String classPrefix) {
+        setProperty(SHADED_LEDGER_MANAGER_FACTORY_CLASS_PREFIX, classPrefix);
+        return getThis();
+    }
+
+    /**
+     * Get the class prefix of the shaded ledger manager factory class name allowed to be used for
+     * instantiating ledger manager factory.
+     *
+     * <p>This setting only takes effects when {@link #isShadedLedgerManagerFactoryClassAllowed()}
+     * returns true
+     *
+     * @return ledger manager factory class name.
+     * @see #isShadedLedgerManagerFactoryClassAllowed()
+     */
+    public String getShadedLedgerManagerFactoryClassPrefix() {
+        return getString(SHADED_LEDGER_MANAGER_FACTORY_CLASS_PREFIX, "dlshade.");
+    }
+
+    /**
      * Set Ledger Manager Factory Class Name.
      *
      * @param factoryClassName
@@ -318,6 +376,15 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      */
     public void setLedgerManagerFactoryClassName(String factoryClassName) {
         setProperty(LEDGER_MANAGER_FACTORY_CLASS, factoryClassName);
+    }
+
+    /**
+     * Get Ledger Manager Factory Class Name.
+     *
+     * @return ledger manager factory class name.
+     */
+    public String getLedgerManagerFactoryClassName() {
+        return getString(LEDGER_MANAGER_FACTORY_CLASS);
     }
 
     /**

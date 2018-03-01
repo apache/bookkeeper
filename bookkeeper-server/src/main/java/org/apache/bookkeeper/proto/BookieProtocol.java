@@ -182,6 +182,7 @@ public interface BookieProtocol {
     short FLAG_NONE = 0x0;
     short FLAG_DO_FENCING = 0x0001;
     short FLAG_RECOVERY_ADD = 0x0002;
+    short FLAG_HIGH_PRIORITY = 0x0004;
 
     /**
      * A Bookie request object.
@@ -231,6 +232,10 @@ public interface BookieProtocol {
         byte[] getMasterKey() {
             assert hasMasterKey();
             return masterKey;
+        }
+
+        boolean isHighPriority() {
+            return (flags & FLAG_HIGH_PRIORITY) == FLAG_HIGH_PRIORITY;
         }
 
         @Override
@@ -352,16 +357,12 @@ public interface BookieProtocol {
      * A Request that reads data.
      */
     class ReadRequest extends Request {
-        ReadRequest(byte protocolVersion, long ledgerId, long entryId, short flags) {
-            init(protocolVersion, READENTRY, ledgerId, entryId, flags, null);
-        }
-
         ReadRequest(byte protocolVersion, long ledgerId, long entryId,
                     short flags, byte[] masterKey) {
             init(protocolVersion, READENTRY, ledgerId, entryId, flags, masterKey);
         }
 
-        boolean isFencingRequest() {
+        boolean isFencing() {
             return (flags & FLAG_DO_FENCING) == FLAG_DO_FENCING;
         }
     }
