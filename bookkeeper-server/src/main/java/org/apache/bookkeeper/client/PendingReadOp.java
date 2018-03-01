@@ -23,7 +23,6 @@ package org.apache.bookkeeper.client;
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.ListenableFuture;
 import io.netty.buffer.ByteBuf;
-
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.HashSet;
