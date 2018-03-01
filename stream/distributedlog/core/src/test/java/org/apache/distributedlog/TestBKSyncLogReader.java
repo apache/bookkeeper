@@ -184,8 +184,9 @@ public class TestBKSyncLogReader extends TestDistributedLogBase {
 
         logger.info("Write another 10 records");
 
-        // wait until readahead move on
-        while (reader.getReadAheadReader().getNextEntryPosition().getEntryId() < 21) {
+        // wait until readahead move on: entry [0 - 19] are the log records, while 20 is a control record.
+        // when we got control record (entryId = 20), it means the readahead reader is caught up.
+        while (reader.getReadAheadReader().getNextEntryPosition().getEntryId() < 20) {
             TimeUnit.MILLISECONDS.sleep(20);
         }
 
