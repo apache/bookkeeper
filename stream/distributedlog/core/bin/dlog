@@ -70,3 +70,4 @@ case "${COMMAND}" in
     exec java $OPTS $COMMAND $@
     ;;
 esac
+
