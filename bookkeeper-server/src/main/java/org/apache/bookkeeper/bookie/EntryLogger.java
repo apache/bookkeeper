@@ -28,6 +28,7 @@ import static org.apache.bookkeeper.util.BookKeeperConstants.MAX_LOG_SIZE_LIMIT;
 import com.google.common.base.Ticker;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.RemovalListener;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import io.netty.buffer.ByteBuf;
@@ -57,6 +58,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -351,6 +353,9 @@ public class EntryLogger {
         return channel.read(buff, pos);
     }
 
+    final ConcurrentLinkedQueue<Cache<Long, EntryLogBufferedReadChannel>> readChannelCaches =
+            new ConcurrentLinkedQueue<>();
+
     /**
      * A thread-local variable that wraps a mapping of log ids to bufferedchannels
      * These channels should be used only for reading. logChannel is the one
@@ -366,11 +371,14 @@ public class EntryLogger {
             // Since this is thread local there only one modifier
             // We dont really need the concurrency, but we need to use
             // the weak values. Therefore using the concurrency level of 1
-            return CacheBuilder.newBuilder().concurrencyLevel(1)
+            Cache<Long, EntryLogBufferedReadChannel> cache =
+                    CacheBuilder.newBuilder().concurrencyLevel(1)
                     .expireAfterAccess(readChannelCacheExpireTimeMs, TimeUnit.MILLISECONDS)
                     //decrease the refCnt
-                    .removalListener(removal -> ((EntryLogBufferedReadChannel) removal.getValue()).release())
-                    .ticker(getTicker()).build();
+                    .removalListener(( RemovalListener<Long, EntryLogBufferedReadChannel>) removal
+                    -> removal.getValue().release()).ticker(getTicker()).build();
+            readChannelCaches.add(cache);
+            return cache;
         }
     };
 
@@ -709,7 +717,10 @@ public class EntryLogger {
      *          Entry Log File Id
      */
     protected boolean removeEntryLog(long entryLogId) {
-        fileChannelBackingCache.removeFromChannelsAndClose(entryLogId);
+        // invalidate corresponding readChannel in each thread's cache caches to trigger closing fileChannel
+        for (Cache<Long, EntryLogBufferedReadChannel> cache: readChannelCaches){
+            cache.invalidate(entryLogId);
+        }
         File entryLogFile;
         try {
             entryLogFile = findFile(entryLogId);
@@ -1371,8 +1382,10 @@ public class EntryLogger {
         // since logChannel is buffered channel, do flush when shutting down
         LOG.info("Stopping EntryLogger");
         try {
-            //close corresponding fileChannels for read
-            fileChannelBackingCache.closeAllFileChannels();
+            // invalidate caches to trigger fileChannel closing
+            for (Cache<Long, EntryLogBufferedReadChannel> cache: readChannelCaches){
+                cache.invalidateAll();
+            }
             flush();
             // close current writing log file
             closeFileChannel(logChannel);

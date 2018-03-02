@@ -336,16 +336,15 @@ public class EntryLogTest {
         File curDir = Bookie.getCurrentDirectory(tmpDir);
         Bookie.checkDirectoryStructure(curDir);
 
-        int gcWaitTime = 1000;
         int expireTime = 1000;
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
-        conf.setGcWaitTime(gcWaitTime);
         conf.setLedgerDirNames(new String[] {tmpDir.toString()});
         //since last access, expire after 1s
         conf.setReadChannelCacheExpireTimeMs(expireTime);
         conf.setEntryLogFilePreAllocationEnabled(false);
+        // try to avoid failure when the disk is over 95% full
         LedgerDirsManager ledgerDirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs(),
-                new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()));
+                new DiskChecker(0.99f, 0.99f));
         // create some entries
         int numLogs = 4;
         int numEntries = 10;

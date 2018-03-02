@@ -27,7 +27,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.channels.FileChannel;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -104,30 +103,6 @@ class FileChannelBackingCache {
             }
         } finally {
             lock.writeLock().unlock();
-        }
-    }
-
-    /**
-     * Remove all entries for this log file in each thread's cache.
-     * @param logId
-     */
-    public void removeFromChannelsAndClose(long logId) {
-        //remove the fileChannel from FileChannelBackingCache and close it
-        CachedFileChannel fileChannel = fileChannels.remove(logId);
-        fileChannel.release();
-        try {
-            fileChannel.fileChannel.close();
-        } catch (IOException e) {
-            LOG.warn("Exception occurred in CachedFileChannel"
-                    + " while closing channel for log file: {}", logId);
-        } finally {
-            IOUtils.close(LOG, fileChannel.fileChannel);
-        }
-    }
-
-    void closeAllFileChannels() throws IOException {
-        for (Map.Entry<Long, CachedFileChannel> entry : fileChannels.entrySet()) {
-            entry.getValue().fileChannel.close();
         }
     }
 
