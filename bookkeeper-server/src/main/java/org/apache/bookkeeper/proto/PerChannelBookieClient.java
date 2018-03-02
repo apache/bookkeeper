@@ -1105,6 +1105,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                 LOG.debug("Unexpected response received from bookie : " + addr + " for type : " + operationType
                         + " and ledger:entry : " + response.ledgerId + ":" + response.entryId);
             }
+            response.release();
         } else {
             long orderingKey = completionValue.ledgerId;
             executor.submitOrdered(orderingKey,
@@ -1582,11 +1583,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                 return;
             }
             BookieProtocol.ReadResponse readResponse = (BookieProtocol.ReadResponse) response;
-            ByteBuf data = null;
-            if (readResponse.hasData()) {
-                data = readResponse.getData();
-            }
-            handleReadResponse(ledgerId, entryId, status, data,
+            handleReadResponse(ledgerId, entryId, status, readResponse.getData(),
                                INVALID_ENTRY_ID, -1L);
         }
 
@@ -1611,6 +1608,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
             handleReadResponse(readResponse.getLedgerId(),
                                readResponse.getEntryId(),
                                status, buffer, maxLAC, lacUpdateTimestamp);
+            buffer.release(); // meaningless using unpooled, but client may expect to hold the last reference
         }
 
         private void handleReadResponse(long ledgerId,
@@ -1619,23 +1617,20 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                                         ByteBuf buffer,
                                         long maxLAC, // max known lac piggy-back from bookies
                                         long lacUpdateTimestamp) { // the timestamp when the lac is updated.
-            int readableBytes = buffer == null ? 0 : buffer.readableBytes();
+            int readableBytes = buffer.readableBytes();
             int rc = logAndConvertStatus(status,
                                          BKException.Code.ReadException,
                                          "ledger", ledgerId,
                                          "entry", entryId,
                                          "entryLength", readableBytes);
 
-            if (buffer != null) {
-                buffer = buffer.slice();
-            }
             if (maxLAC > INVALID_ENTRY_ID && (ctx instanceof ReadEntryCallbackCtx)) {
                 ((ReadEntryCallbackCtx) ctx).setLastAddConfirmed(maxLAC);
             }
             if (lacUpdateTimestamp > -1L && (ctx instanceof ReadLastConfirmedAndEntryContext)) {
                 ((ReadLastConfirmedAndEntryContext) ctx).setLacUpdateTimestamp(lacUpdateTimestamp);
             }
-            cb.readEntryComplete(rc, ledgerId, entryId, buffer, ctx);
+            cb.readEntryComplete(rc, ledgerId, entryId, buffer.slice(), ctx);
         }
     }
 
