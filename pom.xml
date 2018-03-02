@@ -113,7 +113,7 @@
     <jcommander.version>1.48</jcommander.version>
     <jmh.version>1.19</jmh.version>
     <junit.version>4.12</junit.version>
-    <lombok.version>1.16.18</lombok.version>
+    <lombok.version>1.16.20</lombok.version>
     <mockito.version>2.13.0</mockito.version>
     <netty.version>4.1.12.Final</netty.version>
     <netty-boringssl.version>2.0.3.Final</netty-boringssl.version>
