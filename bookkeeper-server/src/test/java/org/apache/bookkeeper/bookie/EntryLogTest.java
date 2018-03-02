@@ -38,6 +38,11 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
@@ -107,12 +112,16 @@ public class EntryLogTest {
     }
 
     private ByteBuf generateEntry(long ledger, long entry) {
-        byte[] data = ("ledger-" + ledger + "-" + entry).getBytes();
+        byte[] data = generateDataString(ledger, entry).getBytes();
         ByteBuf bb = Unpooled.buffer(8 + 8 + data.length);
         bb.writeLong(ledger);
         bb.writeLong(entry);
         bb.writeBytes(data);
         return bb;
+    }
+
+    private String generateDataString(long ledger, long entry) {
+        return new String("ledger-" + ledger + "-" + entry);
     }
 
     @Test
@@ -390,5 +399,138 @@ public class EntryLogTest {
         logger.flushRotatedLogs();
 
         assertEquals(Sets.newHashSet(0L, 1L, 2L, 3L), logger.getEntryLogsSet());
+    }
+
+    class LedgerStorageWriteTask implements Callable<Boolean> {
+        long ledgerId;
+        int entryId;
+        LedgerStorage ledgerStorage;
+
+        LedgerStorageWriteTask(long ledgerId, int entryId, LedgerStorage ledgerStorage) {
+            this.ledgerId = ledgerId;
+            this.entryId = entryId;
+            this.ledgerStorage = ledgerStorage;
+        }
+
+        @Override
+        public Boolean call() {
+            try {
+                ledgerStorage.addEntry(generateEntry(ledgerId, entryId));
+            } catch (IOException e) {
+                LOG.error("Got Exception for AddEntry call. LedgerId: " + ledgerId + " entryId: " + entryId, e);
+                return false;
+            }
+            return true;
+        }
+    }
+
+    class LedgerStorageReadTask implements Callable<Boolean> {
+        long ledgerId;
+        int entryId;
+        LedgerStorage ledgerStorage;
+
+        LedgerStorageReadTask(long ledgerId, int entryId, LedgerStorage ledgerStorage) {
+            this.ledgerId = ledgerId;
+            this.entryId = entryId;
+            this.ledgerStorage = ledgerStorage;
+        }
+
+        @Override
+        public Boolean call() {
+            try {
+                String expectedValue = generateDataString(ledgerId, entryId);
+                ByteBuf byteBuf = ledgerStorage.getEntry(ledgerId, entryId);
+                long actualLedgerId = byteBuf.readLong();
+                long actualEntryId = byteBuf.readLong();
+                byte[] data = new byte[byteBuf.readableBytes()];
+                byteBuf.readBytes(data);
+                if (ledgerId != actualLedgerId) {
+                    LOG.error("For ledgerId: {} entryId: {} readRequest, actual ledgerId: {}", ledgerId, entryId,
+                            actualLedgerId);
+                    return false;
+                }
+                if (entryId != actualEntryId) {
+                    LOG.error("For ledgerId: {} entryId: {} readRequest, actual entryId: {}", ledgerId, entryId,
+                            actualEntryId);
+                    return false;
+                }
+                if (!expectedValue.equals(new String(data))) {
+                    LOG.error("For ledgerId: {} entryId: {} readRequest, actual Data: {}", ledgerId, entryId,
+                            new String(data));
+                    return false;
+                }
+            } catch (IOException e) {
+                LOG.error("Got Exception for GetEntry call. LedgerId: " + ledgerId + " entryId: " + entryId, e);
+                return false;
+            }
+            return true;
+        }
+    }
+
+    /**
+     * test concurrent write operations and then concurrent read
+     * operations using InterleavedLedgerStorage.
+     */
+    @Test
+    public void testConcurrentWriteAndReadCallsOfInterleavedLedgerStorage() throws Exception {
+        File ledgerDir = createTempDir("bkTest", ".dir");
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setJournalDirName(ledgerDir.toString());
+        conf.setLedgerDirNames(new String[] { ledgerDir.getAbsolutePath()});
+        conf.setLedgerStorageClass(InterleavedLedgerStorage.class.getName());
+        Bookie bookie = new Bookie(conf);
+        InterleavedLedgerStorage ledgerStorage = ((InterleavedLedgerStorage) bookie.ledgerStorage);
+
+        int numOfLedgers = 70;
+        int numEntries = 3000;
+        // Create ledgers
+        for (int i = 0; i < numOfLedgers; i++) {
+            ledgerStorage.setMasterKey(i, "key".getBytes());
+        }
+
+        ExecutorService executor = Executors.newFixedThreadPool(40);
+        List<LedgerStorageWriteTask> writeTasks = new ArrayList<LedgerStorageWriteTask>();
+        for (int j = 0; j < numEntries; j++) {
+            for (int i = 0; i < numOfLedgers; i++) {
+                writeTasks.add(new LedgerStorageWriteTask(i, j, ledgerStorage));
+            }
+        }
+
+        // invoke all those write tasks all at once concurrently and set timeout
+        // 6 seconds for them to complete
+        List<Future<Boolean>> writeTasksFutures = executor.invokeAll(writeTasks, 6, TimeUnit.SECONDS);
+        for (int i = 0; i < writeTasks.size(); i++) {
+            Future<Boolean> future = writeTasksFutures.get(i);
+            LedgerStorageWriteTask writeTask = writeTasks.get(i);
+            long ledgerId = writeTask.ledgerId;
+            int entryId = writeTask.entryId;
+            Assert.assertTrue(
+                    "WriteTask should have been completed successfully ledgerId: " + ledgerId + " entryId: " + entryId,
+                    future.isDone() && (!future.isCancelled()));
+            Assert.assertTrue("Position for ledgerId: " + ledgerId + " entryId: " + entryId + " should have been set",
+                    future.get());
+
+        }
+
+        List<LedgerStorageReadTask> readTasks = new ArrayList<LedgerStorageReadTask>();
+        for (int j = 0; j < numEntries; j++) {
+            for (int i = 0; i < numOfLedgers; i++) {
+                readTasks.add(new LedgerStorageReadTask(i, j, ledgerStorage));
+            }
+        }
+
+        // invoke all those readtasks all at once concurrently and set timeout
+        // 6 seconds for them to complete
+        List<Future<Boolean>> readTasksFutures = executor.invokeAll(readTasks, 6, TimeUnit.SECONDS);
+        for (int i = 0; i < numOfLedgers * numEntries; i++) {
+            Future<Boolean> future = readTasksFutures.get(i);
+            long ledgerId = readTasks.get(i).ledgerId;
+            int entryId = readTasks.get(i).entryId;
+            Assert.assertTrue(
+                    "ReadTask should have been completed successfully ledgerId: " + ledgerId + " entryId: " + entryId,
+                    future.isDone() && (!future.isCancelled()));
+            Assert.assertTrue("ReadEntry of ledgerId: " + ledgerId + " entryId: " + entryId
+                    + " should have been completed successfully", future.get());
+        }
     }
 }
