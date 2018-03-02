@@ -38,32 +38,11 @@ matrix:
       dist: trusty
       env: CUSTOM_JDK="openjdk8"
 
-before_install:
-- |
-    echo "MAVEN_OPTS='-Xmx3072m -XX:MaxPermSize=512m'" > ~/.mavenrc
-    if [ "$TRAVIS_OS_NAME" == "osx" ]; then
-        export JAVA_HOME=$(/usr/libexec/java_home);
-    fi
-    if [ "$TRAVIS_OS_NAME" == "linux" ]; then
-        jdk_switcher use "$CUSTOM_JDK";
-    fi
-    echo "TRAVIS_PULL_REQUEST=${TRAVIS_PULL_REQUEST}"
-    if [ "$TRAVIS_PULL_REQUEST" == "false" ]; then
-        export DLOG_MODIFIED="true"  
-        echo "Enable testing distributedlog modules since they are not pull requests."
-    else
-        if [ `git diff --name-only $TRAVIS_COMMIT_RANGE | grep "^stream\/distributedlog" | wc -l` -gt 0 ]; then
-            export DLOG_MODIFIED="true"  
-            echo "Enable testing distributedlog modules if this pull request modifies files under directory `stream/distributedlog`."
-        fi
-        if [ `git diff --name-only $TRAVIS_COMMIT_RANGE | grep "^site\/" | wc -l` -gt 0 ]; then
-            # building the website to ensure the changes don't break
-            export WEBSITE_MODIFIED="true"
-            echo "Enable building website modules if this pull request modifies files under directory `site`."
-        fi
-    fi
+before_install: .travis_scripts/before_install.sh
 
-script: ./dev/travis_build.sh
+install: true
+
+script: .travis_scripts/build.sh
 
 cache:
   directories:

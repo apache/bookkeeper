@@ -22,14 +22,14 @@ set -ev
 BINDIR=`dirname "$0"`
 BK_HOME=`cd $BINDIR/..;pwd`
 
-travis_retry mvn --batch-mode clean apache-rat:check compile spotbugs:check install -DskipTests
+mvn --batch-mode clean apache-rat:check compile spotbugs:check install -DskipTests
 if [ "$TRAVIS_OS_NAME" == "linux" ]; then
     $BK_HOME/dev/check-binary-license ./bookkeeper-dist/all/target/bookkeeper-all-*-bin.tar.gz;
     $BK_HOME/dev/check-binary-license ./bookkeeper-dist/server/target/bookkeeper-server-*-bin.tar.gz;
 fi
 if [ "$DLOG_MODIFIED" == "true" ]; then
     cd $BK_HOME/stream/distributedlog
-    travis_wait 60 mvn --batch-mode clean package -Ddistributedlog
+    mvn --batch-mode clean package -Ddistributedlog
 fi
 if [ "$TRAVIS_OS_NAME" == "linux" ] && [ "$WEBSITE_MODIFIED" == "true" ]; then
     cd $BK_HOME/site
