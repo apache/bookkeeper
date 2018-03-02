@@ -300,6 +300,9 @@ groups:
   - param: writeBufferSizeBytes
     description: The number of bytes used as capacity for the write buffer.
     default: 65536
+  - param: readChannelCacheExpireTimeMs
+    description: The expire time of read channel cache.
+    default: 3600000
 
 - name: Entry log compaction settings
   params:
