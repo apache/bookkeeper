@@ -111,7 +111,7 @@ public class EntryLogTest {
         assertTrue(meta.getLedgersMap().containsKey(3L));
     }
 
-    private ByteBuf generateEntry(long ledger, long entry) {
+    private static ByteBuf generateEntry(long ledger, long entry) {
         byte[] data = generateDataString(ledger, entry).getBytes();
         ByteBuf bb = Unpooled.buffer(8 + 8 + data.length);
         bb.writeLong(ledger);
@@ -120,8 +120,8 @@ public class EntryLogTest {
         return bb;
     }
 
-    private String generateDataString(long ledger, long entry) {
-        return new String("ledger-" + ledger + "-" + entry);
+    private static String generateDataString(long ledger, long entry) {
+        return ("ledger-" + ledger + "-" + entry);
     }
 
     @Test
@@ -401,7 +401,7 @@ public class EntryLogTest {
         assertEquals(Sets.newHashSet(0L, 1L, 2L, 3L), logger.getEntryLogsSet());
     }
 
-    class LedgerStorageWriteTask implements Callable<Boolean> {
+    static class LedgerStorageWriteTask implements Callable<Boolean> {
         long ledgerId;
         int entryId;
         LedgerStorage ledgerStorage;
@@ -424,7 +424,7 @@ public class EntryLogTest {
         }
     }
 
-    class LedgerStorageReadTask implements Callable<Boolean> {
+    static class LedgerStorageReadTask implements Callable<Boolean> {
         long ledgerId;
         int entryId;
         LedgerStorage ledgerStorage;
@@ -482,13 +482,13 @@ public class EntryLogTest {
         InterleavedLedgerStorage ledgerStorage = ((InterleavedLedgerStorage) bookie.ledgerStorage);
 
         int numOfLedgers = 70;
-        int numEntries = 3000;
+        int numEntries = 2000;
         // Create ledgers
         for (int i = 0; i < numOfLedgers; i++) {
             ledgerStorage.setMasterKey(i, "key".getBytes());
         }
 
-        ExecutorService executor = Executors.newFixedThreadPool(40);
+        ExecutorService executor = Executors.newFixedThreadPool(10);
         List<LedgerStorageWriteTask> writeTasks = new ArrayList<LedgerStorageWriteTask>();
         for (int j = 0; j < numEntries; j++) {
             for (int i = 0; i < numOfLedgers; i++) {
@@ -504,11 +504,10 @@ public class EntryLogTest {
             LedgerStorageWriteTask writeTask = writeTasks.get(i);
             long ledgerId = writeTask.ledgerId;
             int entryId = writeTask.entryId;
-            Assert.assertTrue(
-                    "WriteTask should have been completed successfully ledgerId: " + ledgerId + " entryId: " + entryId,
-                    future.isDone() && (!future.isCancelled()));
-            Assert.assertTrue("Position for ledgerId: " + ledgerId + " entryId: " + entryId + " should have been set",
-                    future.get());
+            Assert.assertTrue("WriteTask should have been completed successfully, but it is cancelled. ledgerId: "
+                    + ledgerId + " entryId: " + entryId, !future.isCancelled());
+            Assert.assertTrue("WriteTask should have been completed successfully. ledgerId: " + ledgerId + " entryId: "
+                    + entryId, future.get());
 
         }
 
@@ -526,9 +525,8 @@ public class EntryLogTest {
             Future<Boolean> future = readTasksFutures.get(i);
             long ledgerId = readTasks.get(i).ledgerId;
             int entryId = readTasks.get(i).entryId;
-            Assert.assertTrue(
-                    "ReadTask should have been completed successfully ledgerId: " + ledgerId + " entryId: " + entryId,
-                    future.isDone() && (!future.isCancelled()));
+            Assert.assertTrue("ReadTask should have been completed successfully, but it is cancelled. ledgerId: "
+                    + ledgerId + " entryId: " + entryId, (!future.isCancelled()));
             Assert.assertTrue("ReadEntry of ledgerId: " + ledgerId + " entryId: " + entryId
                     + " should have been completed successfully", future.get());
         }

@@ -76,7 +76,7 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
     GarbageCollectorThread gcThread;
 
     // this indicates that a write has happened since the last flush
-    private AtomicBoolean somethingWritten = new AtomicBoolean(false);
+    private final AtomicBoolean somethingWritten = new AtomicBoolean(false);
 
     // Expose Stats
     private OpStatsLogger getOffsetStats;
@@ -362,10 +362,9 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
 
     @Override
     public synchronized void flush() throws IOException {
-        if (!somethingWritten.get()) {
+        if (!somethingWritten.compareAndSet(true, false)) {
             return;
         }
-        somethingWritten.set(false);
         flushOrCheckpoint(false);
     }
 
