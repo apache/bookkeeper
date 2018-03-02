@@ -23,9 +23,6 @@ echo "MAVEN_OPTS='-Xmx3072m -XX:MaxPermSize=512m'" > ~/.mavenrc
 if [ "$TRAVIS_OS_NAME" == "osx" ]; then
     export JAVA_HOME=$(/usr/libexec/java_home);
 fi
-if [ "$TRAVIS_OS_NAME" == "linux" ]; then
-    jdk_switcher use "$CUSTOM_JDK";
-fi
 echo "TRAVIS_PULL_REQUEST=${TRAVIS_PULL_REQUEST}"
 if [ "$TRAVIS_PULL_REQUEST" == "false" ]; then
     export DLOG_MODIFIED="true"  

@@ -38,7 +38,12 @@ matrix:
       dist: trusty
       env: CUSTOM_JDK="openjdk8"
 
-before_install: .travis_scripts/before_install.sh
+before_install: 
+- |
+    if [ "$TRAVIS_OS_NAME" == "linux" ]; then
+        jdk_switcher use "$CUSTOM_JDK";
+    fi
+    .travis_scripts/before_install.sh
 
 install: true
 
