@@ -65,7 +65,6 @@ before_install:
 
 script:
 - |
-    set -e
     travis_wait 60 mvn --batch-mode clean apache-rat:check compile spotbugs:check install -DskipTests
     if [ "$TRAVIS_OS_NAME" == "linux" ]; then
         dev/check-binary-license ./bookkeeper-dist/all/target/bookkeeper-all-*-bin.tar.gz;
