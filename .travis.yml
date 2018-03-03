@@ -38,7 +38,7 @@ matrix:
       dist: trusty
       env: CUSTOM_JDK="openjdk8"
 
-before_install:
+before_install: 
 - |
     echo "MAVEN_OPTS='-Xmx3072m -XX:MaxPermSize=512m'" > ~/.mavenrc
     if [ "$TRAVIS_OS_NAME" == "osx" ]; then
@@ -54,38 +54,18 @@ before_install:
     else
         if [ `git diff --name-only $TRAVIS_COMMIT_RANGE | grep "^stream\/distributedlog" | wc -l` -gt 0 ]; then
             export DLOG_MODIFIED="true"  
-            echo "Enable testing distributedlog modules if this pull request modifies files under directory `stream/distributedlog`."
+            echo "Enable testing distributedlog modules if this pull request modifies files under directory 'stream/distributedlog'."
         fi
         if [ `git diff --name-only $TRAVIS_COMMIT_RANGE | grep "^site\/" | wc -l` -gt 0 ]; then
             # building the website to ensure the changes don't break
             export WEBSITE_MODIFIED="true"
-            echo "Enable building website modules if this pull request modifies files under directory `site`."
+            echo "Enable building website modules if this pull request modifies files under directory 'site'."
         fi
     fi
 
-script:
-- |
-    set -e
-    mvn --batch-mode clean apache-rat:check compile spotbugs:check install -DskipTests
-    if [ "$TRAVIS_OS_NAME" == "linux" ]; then
-        dev/check-binary-license ./bookkeeper-dist/all/target/bookkeeper-all-*-bin.tar.gz;
-        dev/check-binary-license ./bookkeeper-dist/server/target/bookkeeper-server-*-bin.tar.gz;
-    fi
-    if [ "$DLOG_MODIFIED" == "true" ]; then
-        cd stream/distributedlog
-        travis_wait 60 mvn --batch-mode clean package -Ddistributedlog
-        cd ../..
-    fi
-    if [ "$TRAVIS_OS_NAME" == "linux" ] && [ "$WEBSITE_MODIFIED" == "true" ]; then
-        cd site
-        make clean
-        # run the docker image to build the website
-        ./docker/ci.sh
-        cd ..
-    fi
+install: true
 
-# Disabled the tests here. Since tests are running much slower on Travis than on Jenkins
-#  - ./dev/ticktoc.sh "mvn --batch-mode clean package"
+script: .travis_scripts/build.sh
 
 cache:
   directories:
