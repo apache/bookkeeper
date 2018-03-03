@@ -184,26 +184,19 @@ public class TestBKSyncLogReader extends TestDistributedLogBase {
 
         logger.info("Write another 10 records");
 
-        // wait until readahead move on
-        while (reader.getReadAheadReader().getNextEntryPosition().getEntryId() < 21) {
-            TimeUnit.MILLISECONDS.sleep(20);
-        }
-
-        logger.info("ReadAhead is caught up with another 10 records");
-
-        // resume reading from sync reader. so it should be able to read all 20 records
-        // and return null to claim it as caughtup
-        LogRecord record = reader.readNext(false);
-        int numReads = 0;
+        // resume reading from sync reader util it consumes 20 records
         long expectedTxId = 1L;
-        while (null != record) {
-            ++numReads;
+        for (int i = 0; i < 20; i++) {
+            LogRecord record = reader.readNext(false);
+            while (null == record) {
+                record = reader.readNext(false);
+            }
             assertEquals(expectedTxId, record.getTransactionId());
             DLMTestUtil.verifyLogRecord(record);
             ++expectedTxId;
-            record = reader.readNext(false);
         }
-        assertEquals(20, numReads);
+        // after read 20 records, it should return null
+        assertNull(reader.readNext(false));
 
         out.close();
         reader.close();
