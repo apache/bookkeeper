@@ -26,45 +26,11 @@
   <groupId>org.apache.bookkeeper.stats</groupId>
   <artifactId>prometheus-metrics-provider</artifactId>
   <name>Apache BookKeeper :: Stats Providers :: Prometheus</name>
-
-  <properties>
-    <prometheus.version>0.0.21</prometheus.version>
-  </properties>
-
   <build>
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-checkstyle-plugin</artifactId>
-        <version>${maven-checkstyle-plugin.version}</version>
-        <dependencies>
-          <dependency>
-            <groupId>com.puppycrawl.tools</groupId>
-            <artifactId>checkstyle</artifactId>
-            <version>${puppycrawl.checkstyle.version}</version>
-          </dependency>
-          <dependency>
-            <groupId>org.apache.bookkeeper</groupId>
-            <artifactId>buildtools</artifactId>
-            <version>${project.parent.version}</version>
-          </dependency>
-        </dependencies>
-        <configuration>
-          <configLocation>bookkeeper/checkstyle.xml</configLocation>
-          <suppressionsLocation>bookkeeper/suppressions.xml</suppressionsLocation>
-          <encoding>UTF-8</encoding>
-          <consoleOutput>true</consoleOutput>
-          <failsOnError>true</failsOnError>
-        </configuration>
-        <executions>
-          <execution>
-            <id>checkstyle</id>
-            <phase>validate</phase>
-            <goals>
-              <goal>check</goal>
-            </goals>
-          </execution>
-        </executions>
       </plugin>
     </plugins>
   </build>
@@ -79,31 +45,26 @@
     <dependency>
       <groupId>io.prometheus</groupId>
       <artifactId>simpleclient</artifactId>
-      <version>${prometheus.version}</version>
     </dependency>
 
     <dependency>
       <groupId>io.prometheus</groupId>
       <artifactId>simpleclient_hotspot</artifactId>
-      <version>${prometheus.version}</version>
     </dependency>
 
     <dependency>
       <groupId>io.prometheus</groupId>
       <artifactId>simpleclient_servlet</artifactId>
-      <version>${prometheus.version}</version>
     </dependency>
 
     <dependency>
       <groupId>org.eclipse.jetty</groupId>
       <artifactId>jetty-servlet</artifactId>
-      <version>9.4.5.v20170502</version>
     </dependency>
 
     <dependency>
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
-      <version>${guava.version}</version>
     </dependency>
 
   </dependencies>

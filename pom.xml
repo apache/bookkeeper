@@ -103,29 +103,52 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <!-- dependencies -->
+    <codahale.metrics.version>3.0.1</codahale.metrics.version>
+    <commons-cli.version>1.2</commons-cli.version>
+    <commons-collections4.version>4.1</commons-collections4.version>
+    <commons-codec.version>1.6</commons-codec.version>
     <commons-configuration.version>1.10</commons-configuration.version>
+    <commons-lang.version>2.6</commons-lang.version>
     <commons-lang3.version>3.3.2</commons-lang3.version>
+    <commons-io.version>2.4</commons-io.version>
+    <dropwizard.version>3.1.0</dropwizard.version>
+    <finagle.version>6.34.0</finagle.version>
     <google.code.version>3.0.2</google.code.version>
     <google.errorprone.version>2.1.2</google.errorprone.version>
     <guava.version>20.0</guava.version>
+    <hadoop.version>2.7.3</hadoop.version>
     <hamcrest.version>1.3</hamcrest.version>
+    <jackson.version>2.8.9</jackson.version>
     <jcommander.version>1.48</jcommander.version>
+    <jetty.version>9.4.5.v20170502</jetty.version>
     <jmh.version>1.19</jmh.version>
+    <jmock.version>2.8.2</jmock.version>
+    <jna.version>3.2.7</jna.version>
     <junit.version>4.12</junit.version>
+    <libthrift.version>0.5.0-1</libthrift.version>
     <lombok.version>1.16.18</lombok.version>
+    <lz4.version>1.3.0</lz4.version>
     <mockito.version>2.13.0</mockito.version>
     <netty.version>4.1.12.Final</netty.version>
     <netty-boringssl.version>2.0.3.Final</netty-boringssl.version>
+    <ostrich.version>9.1.3</ostrich.version>
     <powermock.version>2.0.0-beta.5</powermock.version>
+    <prometheus.version>0.0.21</prometheus.version>
     <protobuf.version>3.4.0</protobuf.version>
     <rocksdb.version>5.8.6</rocksdb.version>
     <slf4j.version>1.7.25</slf4j.version>
     <spotbugs-annotations.version>3.1.1</spotbugs-annotations.version>
+    <twitter-server.version>1.29.0</twitter-server.version>
+    <vertx.version>3.4.1</vertx.version>
     <zookeeper.version>3.5.3-beta</zookeeper.version>
     <!-- plugin dependencies -->
-    <spotbugs-maven-plugin.version>3.1.0-RC6</spotbugs-maven-plugin.version>
-    <puppycrawl.checkstyle.version>6.19</puppycrawl.checkstyle.version>
+    <apache-rat-plugin.version>0.12</apache-rat-plugin.version>
+    <cobertura-maven-plugin.version>2.7</cobertura-maven-plugin.version>
+    <coveralls-maven-plugin.version>4.3.0</coveralls-maven-plugin.version>
+    <maven-assembly-plugin.version>2.2.1</maven-assembly-plugin.version>
+    <maven-bundle-plugin.version>3.2.0</maven-bundle-plugin.version>
     <maven-checkstyle-plugin.version>2.17</maven-checkstyle-plugin.version>
+    <maven-clean-plugin.version>2.5</maven-clean-plugin.version>
     <maven-compiler-plugin.version>3.7.0</maven-compiler-plugin.version>
     <maven-deploy-plugin.version>2.7</maven-deploy-plugin.version>
     <maven-jar-plugin.version>2.2</maven-jar-plugin.version>
@@ -133,15 +156,324 @@
     <maven-shade-plugin.version>3.1.0</maven-shade-plugin.version>
     <maven-source-plugin.version>2.2.1</maven-source-plugin.version>
     <maven-surefire-plugin.version>2.20.1</maven-surefire-plugin.version>
-    <maven-assembly-plugin.version>2.2.1</maven-assembly-plugin.version>
+    <os-maven-plugin.version>1.4.1.Final</os-maven-plugin.version>
+    <protobuf-maven-plugin.version>0.5.0</protobuf-maven-plugin.version>
+    <puppycrawl.checkstyle.version>6.19</puppycrawl.checkstyle.version>
+    <spotbugs-maven-plugin.version>3.1.0-RC6</spotbugs-maven-plugin.version>
   </properties>
 
   <dependencyManagement>
     <dependencies>
+      <!-- provided dependencies -->
+      <dependency>
+        <groupId>com.github.spotbugs</groupId>
+        <artifactId>spotbugs-annotations</artifactId>
+        <version>${spotbugs-annotations.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.google.code.findbugs</groupId>
+        <artifactId>jsr305</artifactId>
+        <version>${google.code.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.google.errorprone</groupId>
+        <artifactId>error_prone_annotations</artifactId>
+        <version>${google.errorprone.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.projectlombok</groupId>
+        <artifactId>lombok</artifactId>
+        <version>${lombok.version}</version>
+      </dependency>
+
+      <!-- logging dependencies -->
+      <dependency>
+        <groupId>org.slf4j</groupId>
+        <artifactId>slf4j-api</artifactId>
+        <version>${slf4j.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.slf4j</groupId>
+        <artifactId>slf4j-log4j12</artifactId>
+        <version>${slf4j.version}</version>
+      </dependency>
+
+      <!-- commons dependencies -->
+      <dependency>
+        <groupId>commons-cli</groupId>
+        <artifactId>commons-cli</artifactId>
+        <version>${commons-cli.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>commons-codec</groupId>
+        <artifactId>commons-codec</artifactId>
+        <version>${commons-codec.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>commons-configuration</groupId>
+        <artifactId>commons-configuration</artifactId>
+        <version>${commons-configuration.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>commons-io</groupId>
+        <artifactId>commons-io</artifactId>
+        <version>${commons-io.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.google.guava</groupId>
+        <artifactId>guava</artifactId>
+        <version>${guava.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.commons</groupId>
+        <artifactId>commons-collections4</artifactId>
+        <version>${commons-collections4.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.commons</groupId>
+        <artifactId>commons-lang3</artifactId>
+        <version>${commons-lang3.version}</version>
+      </dependency>
+
+      <!-- JNA -->
+      <dependency>
+        <groupId>net.java.dev.jna</groupId>
+        <artifactId>jna</artifactId>
+        <version>${jna.version}</version>
+      </dependency>
+
+      <!-- jackson dependencies -->
+      <dependency>
+        <groupId>com.fasterxml.jackson.core</groupId>
+        <artifactId>jackson-core</artifactId>
+        <version>${jackson.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.fasterxml.jackson.core</groupId>
+        <artifactId>jackson-databind</artifactId>
+        <version>${jackson.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.fasterxml.jackson.core</groupId>
+        <artifactId>jackson-annotations</artifactId>
+        <version>${jackson.version}</version>
+      </dependency>
+
+      <!-- protobuf dependencies -->
+      <dependency>
+        <groupId>com.google.protobuf</groupId>
+        <artifactId>protobuf-java</artifactId>
+        <version>${protobuf.version}</version>
+      </dependency>
+
+      <!-- netty dependencies -->
+      <dependency>
+        <groupId>io.netty</groupId>
+        <artifactId>netty-common</artifactId>
+        <version>${netty.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.netty</groupId>
+        <artifactId>netty-all</artifactId>
+        <version>${netty.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.netty</groupId>
+        <artifactId>netty-tcnative-boringssl-static</artifactId>
+        <version>${netty-boringssl.version}</version>
+      </dependency>
+
+      <!-- finagle dependencies -->
+      <dependency>
+          <groupId>com.twitter</groupId>
+          <artifactId>finagle-core_2.11</artifactId>
+          <version>${finagle.version}</version>
+        </dependency>
+
+      <!-- rocksdb dependencies -->
+      <dependency>
+        <groupId>org.rocksdb</groupId>
+        <artifactId>rocksdbjni</artifactId>
+        <version>${rocksdb.version}</version>
+      </dependency>
+
+      <!-- zookeeper dependencies -->
+      <dependency>
+        <groupId>org.apache.zookeeper</groupId>
+        <artifactId>zookeeper</artifactId>
+        <version>${zookeeper.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>net.java.dev.javacc</groupId>
+            <artifactId>javacc</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-log4j12</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>log4j</groupId>
+            <artifactId>log4j</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>io.netty</groupId>
+            <artifactId>netty</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.zookeeper</groupId>
+        <artifactId>zookeeper</artifactId>
+        <version>${zookeeper.version}</version>
+        <type>test-jar</type>
+        <exclusions>
+          <exclusion>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-log4j12</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>log4j</groupId>
+            <artifactId>log4j</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>io.netty</groupId>
+            <artifactId>netty</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+
+      <!-- http server dependencies -->
+      <dependency>
+        <groupId>com.twitter</groupId>
+        <artifactId>twitter-server_2.11</artifactId>
+        <version>${twitter-server.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>javax.servlet</groupId>
+            <artifactId>servlet-api</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>io.vertx</groupId>
+        <artifactId>vertx-core</artifactId>
+        <version>${vertx.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-core</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-annotations</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>io.vertx</groupId>
+        <artifactId>vertx-web</artifactId>
+        <version>${vertx.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.eclipse.jetty</groupId>
+        <artifactId>jetty-server</artifactId>
+        <version>${jetty.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.eclipse.jetty</groupId>
+        <artifactId>jetty-servlet</artifactId>
+        <version>${jetty.version}</version>
+      </dependency>
+
+      <!-- stats dependencies -->
+      <!-- dropwizard metrics -->
+      <dependency>
+        <groupId>io.dropwizard.metrics</groupId>
+        <artifactId>metrics-core</artifactId>
+        <version>${dropwizard.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.dropwizard.metrics</groupId>
+        <artifactId>metrics-jvm</artifactId>
+        <version>${dropwizard.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.dropwizard.metrics</groupId>
+        <artifactId>metrics-graphite</artifactId>
+        <version>${dropwizard.version}</version>
+      </dependency>
+      <!-- prometheus -->
+      <dependency>
+        <groupId>io.prometheus</groupId>
+        <artifactId>simpleclient</artifactId>
+        <version>${prometheus.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.prometheus</groupId>
+        <artifactId>simpleclient_hotspot</artifactId>
+        <version>${prometheus.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.prometheus</groupId>
+        <artifactId>simpleclient_servlet</artifactId>
+        <version>${prometheus.version}</version>
+      </dependency>
+      <!-- ostrich -->
+      <dependency>
+        <groupId>com.twitter</groupId>
+        <artifactId>ostrich_2.9.2</artifactId>
+        <version>${ostrich.version}</version>
+      </dependency>
+
+      <!-- tools dependencies -->
       <dependency>
         <groupId>com.beust</groupId>
         <artifactId>jcommander</artifactId>
         <version>${jcommander.version}</version>
+      </dependency>
+
+      <!-- test dependencies -->
+      <dependency>
+        <groupId>junit</groupId>
+        <artifactId>junit</artifactId>
+        <version>${junit.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.hamcrest</groupId>
+        <artifactId>hamcrest-all</artifactId>
+        <version>${hamcrest.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.mockito</groupId>
+        <artifactId>mockito-core</artifactId>
+        <version>${mockito.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.powermock</groupId>
+        <artifactId>powermock-api-mockito2</artifactId>
+        <version>${powermock.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.powermock</groupId>
+        <artifactId>powermock-module-junit4</artifactId>
+        <version>${powermock.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.hadoop</groupId>
+        <artifactId>hadoop-minikdc</artifactId>
+        <version>${hadoop.version}</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
@@ -152,61 +484,51 @@
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-api</artifactId>
-      <version>${slf4j.version}</version>
     </dependency>
     <dependency>
       <groupId>org.projectlombok</groupId>
       <artifactId>lombok</artifactId>
-      <version>${lombok.version}</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>com.github.spotbugs</groupId>
       <artifactId>spotbugs-annotations</artifactId>
-      <version>${spotbugs-annotations.version}</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>commons-configuration</groupId>
       <artifactId>commons-configuration</artifactId>
-      <version>${commons-configuration.version}</version>
     </dependency>
     <!-- test dependencies -->
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
-      <version>${junit.version}</version>
       <scope>test</scope>
     </dependency>
     <!-- Needed by junit -->
     <dependency>
       <groupId>org.hamcrest</groupId>
       <artifactId>hamcrest-all</artifactId>
-      <version>${hamcrest.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-log4j12</artifactId>
-      <version>${slf4j.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.mockito</groupId>
       <artifactId>mockito-core</artifactId>
-      <version>${mockito.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.powermock</groupId>
       <artifactId>powermock-api-mockito2</artifactId>
-      <version>${powermock.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.powermock</groupId>
       <artifactId>powermock-module-junit4</artifactId>
-      <version>${powermock.version}</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
@@ -216,9 +538,48 @@
       <extension>
         <groupId>kr.motd.maven</groupId>
         <artifactId>os-maven-plugin</artifactId>
-        <version>1.4.1.Final</version>
+        <version>${os-maven-plugin.version}</version>
       </extension>
     </extensions>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-checkstyle-plugin</artifactId>
+          <version>${maven-checkstyle-plugin.version}</version>
+          <dependencies>
+            <dependency>
+              <groupId>com.puppycrawl.tools</groupId>
+              <artifactId>checkstyle</artifactId>
+              <version>${puppycrawl.checkstyle.version}</version>
+            </dependency>
+            <dependency>
+              <groupId>org.apache.bookkeeper</groupId>
+              <artifactId>buildtools</artifactId>
+              <version>${project.version}</version>
+            </dependency>
+          </dependencies>
+          <configuration>
+            <configLocation>bookkeeper/checkstyle.xml</configLocation>
+            <suppressionsLocation>bookkeeper/suppressions.xml</suppressionsLocation>
+            <encoding>UTF-8</encoding>
+            <consoleOutput>true</consoleOutput>
+            <failOnViolation>true</failOnViolation>
+            <includeResources>false</includeResources>
+            <includeTestSourceDirectory>true</includeTestSourceDirectory>
+          </configuration>
+          <executions>
+            <execution>
+              <id>checkstyle</id>
+              <phase>validate</phase>
+              <goals>
+                <goal>check</goal>
+              </goals>
+            </execution>
+          </executions>
+        </plugin>
+      </plugins>
+    </pluginManagement>
     <plugins>
       <plugin>
         <groupId>com.github.spotbugs</groupId>
@@ -240,7 +601,7 @@
             <compilerArg>-Xlint:unchecked</compilerArg>
             <!-- https://issues.apache.org/jira/browse/MCOMPILER-205 -->
             <compilerArg>-Xpkginfo:always</compilerArg>
-	  </compilerArgs>
+	      </compilerArgs>
         </configuration>
       </plugin>
       <plugin>
@@ -313,124 +674,91 @@
       <plugin>
         <groupId>org.apache.rat</groupId>
         <artifactId>apache-rat-plugin</artifactId>
-        <version>0.12</version>
+        <version>${apache-rat-plugin.version}</version>
         <configuration>
           <excludes>
+            <!-- Git -->
             <exclude>.git/**/*</exclude>
             <exclude>.github/**/*</exclude>
-            <exclude>**/target/**/*</exclude>
+            <exclude>**/.gitignore</exclude>
+
+            <!-- SVN -->
             <exclude>**/.svn/**/*</exclude>
-            <exclude>CHANGES.txt</exclude>
+
+            <!-- Built directory -->
+            <exclude>**/target/**/*</exclude>
+
+            <!-- Project files -->
             <exclude>**/README.md</exclude>
             <exclude>**/apidocs/*</exclude>
-            <exclude>test-patch/**/*</exclude>
+            <exclude>**/src/main/resources/deps/**</exclude>
+            <exclude>**/META-INF/**</exclude>
+
+            <!-- IDE files (eclipse & intellij) -->
             <exclude>**/.classpath</exclude>
-            <exclude>**/.gitignore</exclude>
             <exclude>**/.project</exclude>
             <exclude>**/.checkstyle</exclude>
             <exclude>**/.settings/*</exclude>
             <exclude>**/*.iml</exclude>
-            <exclude>site/**</exclude>
+            <exclude>**/*.iws</exclude>
+            <exclude>**/*.ipr</exclude>
+
+            <!-- Maven (CI Builds) -->
             <exclude>.repository/**</exclude>
-            <exclude>**/src/main/resources/deps/**</exclude>
-            <exclude>**/META-INF/**</exclude>
+
+            <!-- Website -->
+            <exclude>site/**</exclude>
+
+            <!-- Thrift generated files -->
+            <exclude>**/org/apache/distributedlog/thrift/*</exclude>
           </excludes>
           <consoleOutput>true</consoleOutput>
         </configuration>
       </plugin>
     </plugins>
   </build>
-  <reporting>
-    <plugins>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-jxr-plugin</artifactId>
-        <version>2.1</version>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-pmd-plugin</artifactId>
-        <version>2.3</version>
-        <configuration>
-          <linkXref>true</linkXref>
-          <targetJdk>1.6</targetJdk>
-        </configuration>
-      </plugin>
-    </plugins>
-  </reporting>
   <profiles>
     <profile>
-      <!-- Used only when cutting a full release.  Configures the deploy plugin to mark
-          each artifact as a release (especially important for the archetype). Signs each
-          file deployed (it actually signs way too many files and we have to clean up a bit
-          once deployed). -->
-      <id>deploy</id>
+      <!-- profile used by jenkins CI -->
+      <id>code-coverage</id>
       <build>
         <plugins>
           <plugin>
+            <groupId>org.eluder.coveralls</groupId>
+            <artifactId>coveralls-maven-plugin</artifactId>
+            <version>${coveralls-maven-plugin.version}</version>
+          </plugin>
+          <plugin>
             <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-gpg-plugin</artifactId>
+            <artifactId>maven-surefire-plugin</artifactId>
+            <version>${maven-surefire-plugin.version}</version>
             <configuration>
-              <useAgent>true</useAgent>
+              <!-- @{argLine} is a variable injected by JaCoCo-->
+              <argLine>@{argLine} -Xmx2G -Djava.net.preferIPv4Stack=true</argLine>
+              <redirectTestOutputToFile>true</redirectTestOutputToFile>
+              <reuseForks>false</reuseForks>
+              <forkedProcessTimeoutInSeconds>1800</forkedProcessTimeoutInSeconds>
+              <!-- we want build to complete even in case of failures -->
+              <testFailureIgnore>true</testFailureIgnore>
             </configuration>
+          </plugin>
+          <plugin>
+            <groupId>org.jacoco</groupId>
+            <artifactId>jacoco-maven-plugin</artifactId>
+            <version>0.8.0</version>
             <executions>
               <execution>
-                <id>sign-artifacts</id>
-                <phase>verify</phase>
                 <goals>
-                  <goal>sign</goal>
+                  <goal>prepare-agent</goal>
                 </goals>
               </execution>
             </executions>
           </plugin>
         </plugins>
       </build>
-      <properties>
-        <update-release-info>true</update-release-info>
-        <!--  Don't re-run tests as part of the deploy build.
-              Note we use skipTests, not maven.test.skip, since the latter skips
-              compilation too and we want to deploy tests. -->
-        <skipTests>true</skipTests>
-      </properties>
     </profile>
-    <profile>
-        <id>code-coverage</id>
-        <build>
-          <plugins>
-              <plugin>
-                <groupId>org.eluder.coveralls</groupId>
-                <artifactId>coveralls-maven-plugin</artifactId>
-                <version>4.3.0</version>
-              </plugin>
-              <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <version>${maven-surefire-plugin.version}</version>
-                <configuration>
-                  <!-- @{argLine} is a variable injected by JaCoCo-->
-                  <argLine>@{argLine} -Xmx2G -Djava.net.preferIPv4Stack=true</argLine>
-	          <redirectTestOutputToFile>true</redirectTestOutputToFile>
-	          <reuseForks>false</reuseForks>
-	          <forkedProcessTimeoutInSeconds>1800</forkedProcessTimeoutInSeconds>
-                  <!-- we want build to complete even in case of failures -->
-                  <testFailureIgnore>true</testFailureIgnore>
-                </configuration>
-             </plugin>
-             <plugin>
-               <groupId>org.jacoco</groupId>
-               <artifactId>jacoco-maven-plugin</artifactId>
-               <version>0.8.0</version>
-               <executions>
-                 <execution>
-                   <goals>
-                   <goal>prepare-agent</goal>
-                   </goals>
-                 </execution>
-                </executions>
-             </plugin>
-         </plugins>
-        </build>
-    </profile>
+
+    <!-- the profiles below are only for development purpose -->
     <profile>
       <id>dev</id>
       <build>

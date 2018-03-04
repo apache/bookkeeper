@@ -35,38 +35,12 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-checkstyle-plugin</artifactId>
-        <version>${maven-checkstyle-plugin.version}</version>
-        <dependencies>
-          <dependency>
-            <groupId>com.puppycrawl.tools</groupId>
-            <artifactId>checkstyle</artifactId>
-            <version>${puppycrawl.checkstyle.version}</version>
-          </dependency>
-          <dependency>
-            <groupId>org.apache.bookkeeper</groupId>
-            <artifactId>buildtools</artifactId>
-            <version>${project.parent.version}</version>
-          </dependency>
-        </dependencies>
-        <configuration>
-          <configLocation>bookkeeper/checkstyle.xml</configLocation>
-          <suppressionsLocation>bookkeeper/suppressions.xml</suppressionsLocation>
-          <encoding>UTF-8</encoding>
-          <consoleOutput>true</consoleOutput>
-          <failsOnError>true</failsOnError>
-        </configuration>
-        <executions>
-          <execution>
-            <id>checkstyle</id>
-            <phase>validate</phase>
-            <goals>
-              <goal>check</goal>
-            </goals>
-          </execution>
-        </executions>
       </plugin>
     </plugins>
   </build>
+  <!--
+    keep twitter specific dependencies defined in this profile only.
+   -->
   <dependencies>
     <dependency>
       <groupId>org.apache.bookkeeper.stats</groupId>
@@ -105,12 +79,10 @@
     <dependency>
       <groupId>org.eclipse.jetty</groupId>
       <artifactId>jetty-server</artifactId>
-      <version>9.0.7.v20131107</version>
     </dependency>
     <dependency>
       <groupId>org.eclipse.jetty</groupId>
       <artifactId>jetty-servlet</artifactId>
-      <version>9.0.7.v20131107</version>
     </dependency>
   </dependencies>
   <repositories>

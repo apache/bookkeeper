@@ -24,15 +24,10 @@
   </parent>
   <artifactId>bookkeeper-proto</artifactId>
   <name>Apache BookKeeper :: Protocols</name>
-  <properties>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-  </properties>
   <dependencies>
     <dependency>
       <groupId>com.google.protobuf</groupId>
       <artifactId>protobuf-java</artifactId>
-      <version>${protobuf.version}</version>
-      <scope>compile</scope>
     </dependency>
   </dependencies>
   <build>
@@ -53,9 +48,9 @@
       <plugin>
         <groupId>org.xolstice.maven.plugins</groupId>
         <artifactId>protobuf-maven-plugin</artifactId>
-        <version>0.5.0</version>
+        <version>${protobuf-maven-plugin.version}</version>
         <configuration>
-          <protocArtifact>com.google.protobuf:protoc:3.4.0:exe:${os.detected.classifier}</protocArtifact>
+          <protocArtifact>com.google.protobuf:protoc:${protobuf.version}:exe:${os.detected.classifier}</protocArtifact>
           <checkStaleness>true</checkStaleness>
         </configuration>
         <executions>

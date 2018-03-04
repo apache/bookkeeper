@@ -27,44 +27,11 @@
   <artifactId>codahale-metrics-provider</artifactId>
   <name>Apache BookKeeper :: Stats Providers :: Codahale Metrics</name>
   <url>http://maven.apache.org</url>
-  <properties>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <project.libdir>${basedir}/lib</project.libdir>
-  </properties>
   <build>
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-checkstyle-plugin</artifactId>
-        <version>${maven-checkstyle-plugin.version}</version>
-        <dependencies>
-          <dependency>
-            <groupId>com.puppycrawl.tools</groupId>
-            <artifactId>checkstyle</artifactId>
-            <version>${puppycrawl.checkstyle.version}</version>
-          </dependency>
-          <dependency>
-            <groupId>org.apache.bookkeeper</groupId>
-            <artifactId>buildtools</artifactId>
-            <version>${project.parent.version}</version>
-          </dependency>
-        </dependencies>
-        <configuration>
-          <configLocation>bookkeeper/checkstyle.xml</configLocation>
-          <suppressionsLocation>bookkeeper/suppressions.xml</suppressionsLocation>
-          <encoding>UTF-8</encoding>
-          <consoleOutput>true</consoleOutput>
-          <failsOnError>true</failsOnError>
-        </configuration>
-        <executions>
-          <execution>
-            <id>checkstyle</id>
-            <phase>validate</phase>
-            <goals>
-              <goal>check</goal>
-            </goals>
-          </execution>
-        </executions>
       </plugin>
     </plugins>
   </build>
@@ -74,28 +41,21 @@
       <artifactId>bookkeeper-stats-api</artifactId>
       <version>${project.parent.version}</version>
     </dependency>
-    <!-- https://mvnrepository.com/artifact/io.dropwizard.metrics/metrics-core -->
     <dependency>
       <groupId>io.dropwizard.metrics</groupId>
       <artifactId>metrics-core</artifactId>
-      <version>3.1.0</version>
     </dependency>
-    <!-- https://mvnrepository.com/artifact/io.dropwizard.metrics/metrics-jvm -->
     <dependency>
       <groupId>io.dropwizard.metrics</groupId>
       <artifactId>metrics-jvm</artifactId>
-      <version>3.1.0</version>
     </dependency>
-    <!-- https://mvnrepository.com/artifact/io.dropwizard.metrics/metrics-graphite -->
     <dependency>
       <groupId>io.dropwizard.metrics</groupId>
       <artifactId>metrics-graphite</artifactId>
-      <version>3.1.0</version>
     </dependency>
     <dependency>
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
-      <version>${guava.version}</version>
     </dependency>
   </dependencies>
 </project>
