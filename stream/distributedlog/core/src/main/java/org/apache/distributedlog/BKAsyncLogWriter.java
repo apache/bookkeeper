@@ -92,6 +92,7 @@ class BKAsyncLogWriter extends BKAbstractLogWriter implements AsyncLogWriter {
         public void onFailure(Throwable cause) {
             promise.completeExceptionally(cause);
             encounteredError = true;
+            LOG.info("Fail the pending log record {}", record, cause);
         }
     }
 
@@ -380,6 +381,7 @@ class BKAsyncLogWriter extends BKAbstractLogWriter implements AsyncLogWriter {
 
     @VisibleForTesting
     void errorOutPendingRequests(Throwable cause, boolean errorOutWriter) {
+        LOG.info("Error out pending requests : ", cause);
         final List<PendingLogRecord> pendingRequestsSnapshot;
         synchronized (this) {
             pendingRequestsSnapshot = pendingRequests;
