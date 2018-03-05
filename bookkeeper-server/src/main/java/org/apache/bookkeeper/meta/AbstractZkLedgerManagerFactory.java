@@ -199,11 +199,11 @@ public abstract class AbstractZkLedgerManagerFactory implements LedgerManagerFac
                     throw new IOException("Wrong ledger manager factory " + layout.getManagerFactoryClass());
                 }
                 factoryClass = theCls.asSubclass(LedgerManagerFactory.class);
-            } catch (ClassNotFoundException cnfe) {
+            } catch (ClassNotFoundException | IOException e) {
                 factoryClass = attemptToResolveShadedLedgerManagerFactory(
                     conf,
                     layout.getManagerFactoryClass(),
-                    cnfe);
+                    e);
             }
         }
         // instantiate a factory
