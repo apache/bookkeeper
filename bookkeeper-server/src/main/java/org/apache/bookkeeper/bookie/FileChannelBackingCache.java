@@ -21,7 +21,6 @@
 
 package org.apache.bookkeeper.bookie;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import com.google.common.annotations.VisibleForTesting;
 import java.io.File;
 import java.io.IOException;
@@ -58,7 +57,9 @@ class FileChannelBackingCache {
             CachedFileChannel cachedFileChannel = fileChannels.get(logId);
             if (cachedFileChannel != null) {
                 boolean retained = cachedFileChannel.tryRetain();
-                checkArgument(retained);
+                if (!retained) {
+                    throw new IOException("tryRetain CachedFileChannel fail, it must be released by other thread");
+                }
                 return cachedFileChannel;
             }
         } finally {
@@ -74,7 +75,9 @@ class FileChannelBackingCache {
             CachedFileChannel cachedFileChannel = new CachedFileChannel(logId, newFc);
             fileChannels.put(logId, cachedFileChannel);
             boolean retained = cachedFileChannel.tryRetain();
-            checkArgument(retained);
+            if (!retained) {
+                throw new IOException("tryRetain CachedFileChannel fail under writeLock");
+            }
             return cachedFileChannel;
         } finally {
             lock.writeLock().unlock();

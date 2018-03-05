@@ -27,7 +27,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import com.google.common.base.Ticker;
-import com.google.common.cache.Cache;
+import com.google.common.cache.LoadingCache;
 import com.google.common.collect.Sets;
 import com.google.common.testing.FakeTicker;
 import io.netty.buffer.ByteBuf;
@@ -369,7 +369,8 @@ public class EntryLogTest {
         FakeTicker t = new FakeTicker();
         FakeEntryLogger logger = new FakeEntryLogger(conf, ledgerDirsManager, t);
         // create some read for the entry log
-        ThreadLocal<Cache<Long, EntryLogger.EntryLogBufferedReadChannel>>  cacheThreadLocal = logger.logid2ReadChannel;
+        ThreadLocal<LoadingCache<Long, EntryLogger.EntryLogBufferedReadChannel>>  cacheThreadLocal =
+                logger.logid2ReadChannel;
         FileChannelBackingCache logid2FileChannel = logger.fileChannelBackingCache;
         for (int j = 0; j < numEntries; j++) {
             logger.readEntry(0, j, positions[0][j]);

@@ -28,6 +28,8 @@ import static org.apache.bookkeeper.util.BookKeeperConstants.MAX_LOG_SIZE_LIMIT;
 import com.google.common.base.Ticker;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import com.google.common.cache.RemovalListener;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.UncheckedExecutionException;
@@ -56,7 +58,6 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -364,23 +365,36 @@ public class EntryLogger {
      * When the BufferedReadChannel is removed, the underlying fileChannel's refCnt decrease 1,
      * temporally use 1h to relax replace after reading.
      */
-    final ThreadLocal<Cache<Long, EntryLogBufferedReadChannel>> logid2ReadChannel =
-            new ThreadLocal<Cache<Long, EntryLogBufferedReadChannel>>() {
+    final ThreadLocal<LoadingCache<Long, EntryLogBufferedReadChannel>> logid2ReadChannel =
+            new ThreadLocal<LoadingCache<Long, EntryLogBufferedReadChannel>>() {
         @Override
-        public Cache<Long, EntryLogBufferedReadChannel> initialValue() {
+        public LoadingCache<Long, EntryLogBufferedReadChannel> initialValue() {
             // Since this is thread local there only one modifier
             // We dont really need the concurrency, but we need to use
             // the weak values. Therefore using the concurrency level of 1
-            Cache<Long, EntryLogBufferedReadChannel> cache =
+            LoadingCache<Long, EntryLogBufferedReadChannel> cache =
                     CacheBuilder.newBuilder().concurrencyLevel(1)
                     .expireAfterAccess(readChannelCacheExpireTimeMs, TimeUnit.MILLISECONDS)
                     //decrease the refCnt
-                    .removalListener(( RemovalListener<Long, EntryLogBufferedReadChannel>) removal
-                    -> removal.getValue().release()).ticker(getTicker()).build();
+                    .removalListener((RemovalListener<Long, EntryLogBufferedReadChannel>) removal ->
+                        removal.getValue().release()
+                    )
+                    .ticker(getTicker())
+                    .build(readChannelLoader);
             readChannelCaches.add(cache);
             return cache;
         }
     };
+
+    private final CacheLoader<Long, EntryLogBufferedReadChannel> readChannelLoader =
+            new CacheLoader<Long, EntryLogBufferedReadChannel> () {
+                public EntryLogBufferedReadChannel load(Long entryLogId) throws Exception {
+                    CachedFileChannel cachedFileChannel = fileChannelBackingCache.loadFileChannel(entryLogId);
+                    // We set the position of the write buffer of this buffered channel to Long.MAX_VALUE
+                    // so that there are no overlaps with the write buffer while reading
+                    return new EntryLogBufferedReadChannel(cachedFileChannel, conf.getReadBufferBytes());
+                }
+            };
 
     Ticker getTicker() {
         return Ticker.systemTicker();
@@ -391,7 +405,7 @@ public class EntryLogger {
      * and don't cause a change in the channel's position.
      * Each file channel is mapped to a log id which represents an open log file.
      */
-    FileChannelBackingCache fileChannelBackingCache = new FileChannelBackingCache(this::findFile);
+    final FileChannelBackingCache fileChannelBackingCache = new FileChannelBackingCache(this::findFile);
 
     /**
      * Get the least unflushed log id. Garbage collector thread should not process
@@ -1025,8 +1039,7 @@ public class EntryLogger {
 
             // entrySize does not include the ledgerId
             if (entrySize > maxSaneEntrySize) {
-                LOG.warn("Sanity check failed for entry size of " + entrySize + " at location " + pos + " in "
-                        + entryLogId);
+                LOG.warn("Sanity check failed for entry size of {} at location {} in {}", entrySize, pos, entryLogId);
             }
             if (entrySize < MIN_SANE_ENTRY_SIZE) {
                 LOG.error("Read invalid entry length {}", entrySize);
@@ -1113,21 +1126,15 @@ public class EntryLogger {
     private EntryLogBufferedReadChannel getChannelForLogId(long entryLogId) throws IOException {
         try {
             EntryLogBufferedReadChannel brc;
-            Callable<EntryLogBufferedReadChannel> loader = () -> {
-                CachedFileChannel cachedFileChannel = fileChannelBackingCache.loadFileChannel(entryLogId);
-                // We set the position of the write buffer of this buffered channel to Long.MAX_VALUE
-                // so that there are no overlaps with the write buffer while reading
-                return new EntryLogBufferedReadChannel(cachedFileChannel, conf.getReadBufferBytes());
-            };
             do {
                 // Put the logId, bc pair in the cache responsible for the current thread.
-                brc = logid2ReadChannel.get().get(entryLogId, loader);
+                brc = logid2ReadChannel.get().get(entryLogId);
                 if (!brc.cachedFileChannel.tryRetain()) {
                     if (logid2ReadChannel.get().asMap().remove(entryLogId, brc)){
-                    LOG.error("Dead fileChannel({}) forced out of cache."
+                        LOG.error("Dead fileChannel({}) forced out of cache."
                             + "It must have been double-released somewhere.", brc.cachedFileChannel);
                     }
-                brc = null;
+                    brc = null;
                 }
             } while (brc == null);
             return brc;
