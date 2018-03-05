@@ -23,6 +23,7 @@ package org.apache.bookkeeper.client;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.util.List;
 import java.util.Set;
@@ -210,6 +211,71 @@ public class SlowBookieTest extends BookKeeperClusterTestCase {
                     checklatch.countDown();
                 }
             });
+        checklatch.await();
+        assertEquals("There should be no missing fragments", 0, numFragments.get());
+    }
+
+    @Test
+    public void testBookieFailure() throws Exception {
+        ClientConfiguration conf = new ClientConfiguration();
+        conf.setReadTimeout(5)
+            .setAddEntryQuorumTimeout(5)
+            .setAddEntryQuorumTimeout(10)
+            .setZkServers(zkUtil.getZooKeeperConnectString());
+
+        BookKeeper bkc = new BookKeeper(conf);
+
+        byte[] pwd = new byte[] {};
+        final LedgerHandle lh = bkc.createLedger(4, 4, 3, BookKeeper.DigestType.CRC32, pwd);
+        final AtomicBoolean finished = new AtomicBoolean(false);
+        final AtomicBoolean failTest = new AtomicBoolean(false);
+        final AtomicBoolean unexpectedFailure = new AtomicBoolean(false);
+        final byte[] entry = "Test Entry".getBytes();
+
+        Thread t = new Thread(() -> {
+            try {
+                while (!finished.get()) {
+                    lh.asyncAddEntry(entry, (rc, lh1, entryId, ctx) -> {
+                        if (rc != BKException.Code.OK) {
+                            failTest.set(true);
+                            finished.set(true);
+                        }
+                    }, null);
+                }
+            } catch (Exception e) {
+                LOG.error("Exception in add entry thread", e);
+                unexpectedFailure.set(true);
+            }
+        });
+
+        killBookie(0);
+
+        t.start();
+
+        Thread.sleep(2_000);
+
+        finished.set(true);
+        t.join();
+
+        assertTrue(failTest.get());
+        assertFalse(unexpectedFailure.get());
+
+        lh.close();
+
+        LedgerHandle lh2 = bkc.openLedger(lh.getId(), BookKeeper.DigestType.CRC32, pwd);
+        LedgerChecker lc = new LedgerChecker(bkc);
+        final CountDownLatch checklatch = new CountDownLatch(1);
+        final AtomicInteger numFragments = new AtomicInteger(-1);
+        lc.checkLedger(lh2, new GenericCallback<Set<LedgerFragment>>() {
+            public void operationComplete(int rc, Set<LedgerFragment> fragments) {
+                LOG.debug("Checked ledgers returned {} {}", rc, fragments);
+                if (rc == BKException.Code.OK) {
+                    numFragments.set(fragments.size());
+                    LOG.error("Checked ledgers returned {} {}", rc, fragments);
+                }
+                checklatch.countDown();
+            }
+        });
         checklatch.await();
         assertEquals("There should be no missing fragments", 0, numFragments.get());
     }
