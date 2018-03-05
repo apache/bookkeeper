@@ -530,5 +530,7 @@ public class EntryLogTest {
             Assert.assertTrue("ReadEntry of ledgerId: " + ledgerId + " entryId: " + entryId
                     + " should have been completed successfully", future.get());
         }
+
+        executor.shutdownNow();
     }
 }
