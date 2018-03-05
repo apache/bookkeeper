@@ -229,22 +229,16 @@ public class SlowBookieTest extends BookKeeperClusterTestCase {
         final LedgerHandle lh = bkc.createLedger(4, 4, 3, BookKeeper.DigestType.CRC32, pwd);
         final AtomicBoolean finished = new AtomicBoolean(false);
         final AtomicBoolean failTest = new AtomicBoolean(false);
-        final AtomicBoolean unexpectedFailure = new AtomicBoolean(false);
         final byte[] entry = "Test Entry".getBytes();
 
         Thread t = new Thread(() -> {
-            try {
-                while (!finished.get()) {
-                    lh.asyncAddEntry(entry, (rc, lh1, entryId, ctx) -> {
-                        if (rc != BKException.Code.OK) {
-                            failTest.set(true);
-                            finished.set(true);
-                        }
-                    }, null);
-                }
-            } catch (Exception e) {
-                LOG.error("Exception in add entry thread", e);
-                unexpectedFailure.set(true);
+            while (!finished.get()) {
+                lh.asyncAddEntry(entry, (rc, lh1, entryId, ctx) -> {
+                    if (rc != BKException.Code.OK) {
+                        failTest.set(true);
+                        finished.set(true);
+                    }
+                }, null);
             }
         });
 
@@ -258,7 +252,6 @@ public class SlowBookieTest extends BookKeeperClusterTestCase {
         t.join();
 
         assertTrue(failTest.get());
-        assertFalse(unexpectedFailure.get());
 
         lh.close();
 
