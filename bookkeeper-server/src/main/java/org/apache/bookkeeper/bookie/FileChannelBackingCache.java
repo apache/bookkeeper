@@ -25,6 +25,7 @@ import com.google.common.annotations.VisibleForTesting;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.io.UncheckedIOException;
 import java.nio.channels.FileChannel;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -52,9 +53,23 @@ class FileChannelBackingCache {
     final ConcurrentHashMap<Long, CachedFileChannel> fileChannels = new ConcurrentHashMap<>();
 
     CachedFileChannel loadFileChannel(long logId) throws IOException {
+        CachedFileChannel cachedFileChannel = null;
         lock.readLock().lock();
         try {
-            CachedFileChannel cachedFileChannel = fileChannels.get(logId);
+            fileChannels.computeIfAbsent(logId, logFileId -> {
+                CachedFileChannel cfc = null;
+                try {
+                    File file = fileLoader.load(logFileId);
+                    // get channel is used to open an existing entry log file
+                    // it would be better to open using read mode
+                    FileChannel newFc = new RandomAccessFile(file, "r").getChannel();
+                    cfc = new CachedFileChannel(logFileId, newFc);
+                } catch (IOException ioe){
+                    throw new UncheckedIOException(ioe);
+                }
+                return cfc;
+            });
+            cachedFileChannel = fileChannels.get(logId);
             if (cachedFileChannel != null) {
                 boolean retained = cachedFileChannel.tryRetain();
                 if (!retained) {
@@ -65,23 +80,7 @@ class FileChannelBackingCache {
         } finally {
             lock.readLock().unlock();
         }
-
-        lock.writeLock().lock();
-        try {
-            File file = fileLoader.load(logId);
-            // get channel is used to open an existing entry log file
-            // it would be better to open using read mode
-            FileChannel newFc = new RandomAccessFile(file, "r").getChannel();
-            CachedFileChannel cachedFileChannel = new CachedFileChannel(logId, newFc);
-            fileChannels.put(logId, cachedFileChannel);
-            boolean retained = cachedFileChannel.tryRetain();
-            if (!retained) {
-                throw new IOException("tryRetain CachedFileChannel fail under writeLock");
-            }
-            return cachedFileChannel;
-        } finally {
-            lock.writeLock().unlock();
-        }
+        return cachedFileChannel;
     }
 
     /**
@@ -93,19 +92,22 @@ class FileChannelBackingCache {
         lock.writeLock().lock();
         try {
             if (cachedFileChannel.markDead()) {
-                try {
-                    cachedFileChannel.fileChannel.close();
-                } catch (IOException e) {
-                    LOG.warn("Exception occurred in ReferenceCountedFileChannel"
-                            + " while closing channel for log file: {}", cachedFileChannel);
-                } finally {
-                    IOUtils.close(LOG, cachedFileChannel.fileChannel);
-                }
                 // to guarantee the removed cachedFileChannel is what we want to remove.
                 fileChannels.remove(logId, cachedFileChannel);
             }
         } finally {
             lock.writeLock().unlock();
+        }
+        // close corresponding fileChannel
+        if (cachedFileChannel.getRefCount() == FileChannelBackingCache.DEAD_REF){
+            try {
+                cachedFileChannel.fileChannel.close();
+            } catch (IOException e) {
+                LOG.warn("Exception occurred in ReferenceCountedFileChannel"
+                        + " while closing channel for log file: {}", cachedFileChannel);
+            } finally {
+                IOUtils.close(LOG, cachedFileChannel.fileChannel);
+            }
         }
     }
 
@@ -168,7 +170,6 @@ class FileChannelBackingCache {
             }
         }
 
-        @VisibleForTesting
         int getRefCount() {
             return refCount.get();
         }
