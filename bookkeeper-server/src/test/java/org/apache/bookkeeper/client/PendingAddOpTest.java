@@ -19,6 +19,7 @@
 package org.apache.bookkeeper.client;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.mockito.Mockito.mock;
@@ -26,7 +27,6 @@ import static org.mockito.Mockito.when;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.bookkeeper.client.BKException.Code;
 import org.apache.bookkeeper.stats.NullStatsLogger;
@@ -60,11 +60,9 @@ public class PendingAddOpTest {
     @Test
     public void testExecuteAfterCancelled() {
         AtomicInteger rcHolder = new AtomicInteger(-0xdead);
-        CountDownLatch latch = new CountDownLatch(1);
         PendingAddOp op = PendingAddOp.create(
             lh, payload, (rc, handle, entryId, qwcLatency, ctx) -> {
                 rcHolder.set(rc);
-                latch.countDown();
             }, null);
         assertSame(lh, op.lh);
 
@@ -72,6 +70,7 @@ public class PendingAddOpTest {
         op.submitCallback(Code.NotEnoughBookiesException);
         // if a op is cancelled, it is not recycled until it has been run.
         assertSame(lh, op.lh);
+        assertEquals(Code.NotEnoughBookiesException, rcHolder.get());
 
         op.run();
         // after the op is run, the object is recycled.
