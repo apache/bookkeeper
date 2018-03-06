@@ -82,6 +82,8 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
     private OpStatsLogger getOffsetStats;
     private OpStatsLogger getEntryStats;
 
+    protected boolean entryLogPerLedgerEnabled;
+
     @VisibleForTesting
     public InterleavedLedgerStorage() {
         activeLedgers = new SnapshotMap<Long, Boolean>();
@@ -99,7 +101,7 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
             throws IOException {
         checkNotNull(checkpointSource, "invalid null checkpoint source");
         checkNotNull(checkpointer, "invalid null checkpointer");
-
+        this.entryLogPerLedgerEnabled = conf.isEntryLogPerLedgerEnabled();
         this.checkpointSource = checkpointSource;
         this.checkpointer = checkpointer;
         entryLogger = new EntryLogger(conf, ledgerDirsManager, this);
@@ -333,9 +335,16 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
         }
 
         try {
-            // if it is just a checkpoint flush, we just flush rotated entry log files
-            // in entry logger.
-            if (isCheckpointFlush) {
+            /*
+             * if it is just a checkpoint flush and if entryLogPerLedger is not
+             * enabled, then we just flush rotated entry log files in entry
+             * logger.
+             *
+             * In the case of entryLogPerLedgerEnabled we need to flush both
+             * rotatedlogs and currentlogs. Hence we call entryLogger.flush in
+             * the case of entrylogperledgerenabled.
+             */
+            if (isCheckpointFlush && !entryLogPerLedgerEnabled) {
                 entryLogger.checkpoint();
             } else {
                 entryLogger.flush();

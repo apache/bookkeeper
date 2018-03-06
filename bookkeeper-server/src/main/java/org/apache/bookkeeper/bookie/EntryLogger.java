@@ -131,7 +131,7 @@ public class EntryLogger {
      * The maximum size of a entry logger file.
      */
     final long logSizeLimit;
-    private List<BufferedLogChannel> logChannelsToFlush;
+    List<BufferedLogChannel> logChannelsToFlush;
     private volatile BufferedLogChannel logChannel;
     private volatile BufferedLogChannel compactionLogChannel;
 

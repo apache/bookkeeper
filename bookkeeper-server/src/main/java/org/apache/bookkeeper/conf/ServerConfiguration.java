@@ -179,6 +179,11 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     // Stats
     protected static final String ENABLE_TASK_EXECUTION_STATS = "enableTaskExecutionStats";
 
+    /*
+     * config specifying if the entrylog per ledger is enabled or not.
+     */
+    protected static final String ENTRY_LOG_PERLEDGER_ENABLED = "entryLogPerLedgerEnabled";
+
     /**
      * Construct a default configuration object.
      */
@@ -2631,6 +2636,23 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
 
     @Override
     protected ServerConfiguration getThis() {
+        return this;
+    }
+
+    /*
+     * specifies if entryLog per ledger is enabled. If it is enabled, then there
+     * would be a active entrylog for each ledger
+     */
+    public boolean isEntryLogPerLedgerEnabled() {
+        return this.getBoolean(ENTRY_LOG_PERLEDGER_ENABLED, false);
+    }
+
+    /*
+     * enables/disables entrylog per ledger feature.
+     *
+     */
+    public ServerConfiguration setEntryLogPerLedgerEnabled(boolean entryLogPerLedgerEnabled) {
+        this.setProperty(ENTRY_LOG_PERLEDGER_ENABLED, Boolean.toString(entryLogPerLedgerEnabled));
         return this;
     }
 }

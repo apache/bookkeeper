@@ -112,6 +112,7 @@ public class Bookie extends BookieCriticalThread {
     final List<Journal> journals;
 
     final HandleFactory handles;
+    final boolean entryLogPerLedgerEnabled;
 
     static final long METAENTRY_ID_LEDGER_KEY = -0x1000;
     static final long METAENTRY_ID_FENCE_KEY  = -0x2000;
@@ -688,6 +689,7 @@ public class Bookie extends BookieCriticalThread {
                          conf, ledgerDirsManager, statsLogger.scope(JOURNAL_SCOPE + "_" + i)));
         }
 
+        this.entryLogPerLedgerEnabled = conf.isEntryLogPerLedgerEnabled();
         CheckpointSource checkpointSource = new CheckpointSourceList(journals);
 
         // Instantiate the ledger storage implementation
@@ -696,6 +698,21 @@ public class Bookie extends BookieCriticalThread {
         ledgerStorage = LedgerStorageFactory.createLedgerStorage(ledgerStorageClass);
         syncThread = new SyncThread(conf, getLedgerDirsListener(), ledgerStorage, checkpointSource);
 
+        Checkpointer checkpointer;
+        /*
+         * with this change https://github.com/apache/bookkeeper/pull/677,
+         * LedgerStorage drives the checkpoint logic. But with multiple entry
+         * logs, checkpoint logic based on a entry log is not possible, hence it
+         * needs to be timebased recurring thing and it is driven by SyncThread.
+         * SyncThread.start does that and it is started in Bookie.start method.
+         */
+        if (entryLogPerLedgerEnabled) {
+            checkpointer = (checkpoint) -> {
+            };
+        } else {
+            checkpointer = syncThread;
+        }
+
         ledgerStorage.initialize(
             conf,
             ledgerManager,
@@ -703,7 +720,7 @@ public class Bookie extends BookieCriticalThread {
             indexDirsManager,
             stateManager,
             checkpointSource,
-            syncThread,
+            checkpointer,
             statsLogger);
 
 
@@ -822,6 +839,16 @@ public class Bookie extends BookieCriticalThread {
             shutdown(ExitCode.BOOKIE_EXCEPTION);
         }
         LOG.info("Finished reading journal, starting bookie");
+
+
+        /*
+         * start sync thread first, so during replaying journals, we could do
+         * checkpoint which reduce the chance that we need to replay journals
+         * again if bookie restarted again before finished journal replays.
+         */
+        if (entryLogPerLedgerEnabled) {
+            syncThread.start();
+        }
 
         // start bookie thread
         super.start();
