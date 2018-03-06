@@ -32,31 +32,10 @@
   <dependencies>
     <dependency>
       <groupId>org.apache.bookkeeper</groupId>
-      <artifactId>bookkeeper-server-shaded</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.bookkeeper</groupId>
       <artifactId>bookkeeper-server</artifactId>
       <type>test-jar</type>
       <version>${project.version}</version>
       <exclusions>
-        <exclusion>
-          <groupId>org.apache.bookkeeper</groupId>
-          <artifactId>bookkeeper-common</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>org.apache.bookkeeper</groupId>
-          <artifactId>bookkeeper-proto</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>org.apache.bookkeeper</groupId>
-          <artifactId>bookkeeper-server</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>org.apache.bookkeeper.stats</groupId>
-          <artifactId>bookkeeper-stats-api</artifactId>
-        </exclusion>
         <exclusion>
           <groupId>org.slf4j</groupId>
           <artifactId>slf4j-log4j12</artifactId>
@@ -86,10 +65,18 @@
               <minimizeJar>false</minimizeJar>
               <artifactSet>
                 <includes>
+                  <include>com.google.guava:guava</include>
+                  <include>com.google.protobuf:protobuf-java</include>
+                  <include>org.apache.bookkeeper:bookkeeper-common</include>
+                  <include>org.apache.bookkeeper:bookkeeper-proto</include>
+                  <include>org.apache.bookkeeper:bookkeeper-server</include>
                   <include>org.apache.bookkeeper:bookkeeper-server:test-jar:tests</include>
+                  <include>org.apache.bookkeeper:circe-checksum</include>
+                  <include>org.apache.bookkeeper.stats:bookkeeper-stats-api</include>
                 </includes>
               </artifactSet>
               <relocations>
+                <!-- make the relocation rules consistent with `bookkeeper-server-shaded` -->
                 <relocation>
                   <pattern>com.google</pattern>
                   <shadedPattern>org.apache.bookkeeper.shaded.com.google</shadedPattern>
