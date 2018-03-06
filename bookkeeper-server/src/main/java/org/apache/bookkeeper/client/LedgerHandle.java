@@ -223,6 +223,10 @@ public class LedgerHandle implements WriteHandle {
         }
     }
 
+    BookKeeper getBk() {
+        return bk;
+    }
+
     protected void initializeExplicitLacFlushPolicy() {
         if (!metadata.isClosed() && !(this instanceof ReadOnlyLedgerHandle) && bk.getExplicitLacInterval() > 0) {
             explicitLacFlushPolicy = new ExplicitLacFlushPolicy.ExplicitLacFlushPolicyImpl(this);
