@@ -213,5 +213,4 @@ public class SlowBookieTest extends BookKeeperClusterTestCase {
         checklatch.await();
         assertEquals("There should be no missing fragments", 0, numFragments.get());
     }
-
 }
