@@ -92,10 +92,10 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
         op.entryLength = payload.readableBytes();
 
         op.completed = false;
-        op.ackSet = lh.distributionSchedule.getAckSet();
-        op.addOpLogger = lh.bk.getAddOpLogger();
-        op.addOpUrCounter = lh.bk.getAddOpUrCounter();
-        op.timeoutNanos = lh.bk.addEntryQuorumTimeoutNanos;
+        op.ackSet = lh.getDistributionSchedule().getAckSet();
+        op.addOpLogger = lh.getBk().getAddOpLogger();
+        op.addOpUrCounter = lh.getBk().getAddOpUrCounter();
+        op.timeoutNanos = lh.getBk().getAddEntryQuorumTimeoutNanos();
         op.pendingWriteRequests = 0;
         op.callbackTriggered = false;
         op.hasRun = false;
@@ -422,7 +422,8 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
             ReferenceCountUtil.release(toSend);
             toSend = null;
         }
-        if (toSend == null && pendingWriteRequests == 0) {
+        // only recycle a pending add op after it has been run.
+        if (hasRun && toSend == null && pendingWriteRequests == 0) {
             recyclePendAddOpObject();
         }
     }
