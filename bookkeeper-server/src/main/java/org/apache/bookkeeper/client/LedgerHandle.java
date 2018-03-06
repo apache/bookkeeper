@@ -51,8 +51,6 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import lombok.AccessLevel;
-import lombok.Getter;
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.AsyncCallback.AddCallbackWithLatency;
 import org.apache.bookkeeper.client.AsyncCallback.CloseCallback;
@@ -100,7 +98,6 @@ public class LedgerHandle implements WriteHandle {
 
     final byte[] ledgerKey;
     LedgerMetadata metadata;
-    @Getter(AccessLevel.PACKAGE)
     final BookKeeper bk;
     final long ledgerId;
     long lastAddPushed;
@@ -108,7 +105,6 @@ public class LedgerHandle implements WriteHandle {
 
     long length;
     final DigestManager macManager;
-    @Getter(AccessLevel.PACKAGE)
     final DistributionSchedule distributionSchedule;
     final RateLimiter throttler;
     final LoadingCache<BookieSocketAddress, Long> bookieFailureHistory;
@@ -225,6 +221,10 @@ public class LedgerHandle implements WriteHandle {
                                                                   bk.getConf().getTimeoutMonitorIntervalSec(),
                                                                   TimeUnit.SECONDS);
         }
+    }
+
+    BookKeeper getBk() {
+        return bk;
     }
 
     protected void initializeExplicitLacFlushPolicy() {
