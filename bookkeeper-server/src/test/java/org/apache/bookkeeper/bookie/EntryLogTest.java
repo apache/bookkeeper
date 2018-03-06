@@ -36,8 +36,10 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -413,12 +415,32 @@ public class EntryLogTest {
         }
 
         @Override
-        public Boolean call() {
+        public Boolean call() throws IOException {
             try {
                 ledgerStorage.addEntry(generateEntry(ledgerId, entryId));
             } catch (IOException e) {
                 LOG.error("Got Exception for AddEntry call. LedgerId: " + ledgerId + " entryId: " + entryId, e);
-                return false;
+                throw new IOException("Got Exception for AddEntry call. LedgerId: " + ledgerId + " entryId: " + entryId,
+                        e);
+            }
+            return true;
+        }
+    }
+
+    static class LedgerStorageFlushTask implements Callable<Boolean> {
+        LedgerStorage ledgerStorage;
+
+        LedgerStorageFlushTask(LedgerStorage ledgerStorage) {
+            this.ledgerStorage = ledgerStorage;
+        }
+
+        @Override
+        public Boolean call() throws IOException {
+            try {
+                ledgerStorage.flush();
+            } catch (IOException e) {
+                LOG.error("Got Exception for flush call", e);
+                throw new IOException("Got Exception for Flush call", e);
             }
             return true;
         }
@@ -436,32 +458,20 @@ public class EntryLogTest {
         }
 
         @Override
-        public Boolean call() {
+        public Boolean call() throws IOException {
             try {
-                String expectedValue = generateDataString(ledgerId, entryId);
-                ByteBuf byteBuf = ledgerStorage.getEntry(ledgerId, entryId);
-                long actualLedgerId = byteBuf.readLong();
-                long actualEntryId = byteBuf.readLong();
-                byte[] data = new byte[byteBuf.readableBytes()];
-                byteBuf.readBytes(data);
-                if (ledgerId != actualLedgerId) {
-                    LOG.error("For ledgerId: {} entryId: {} readRequest, actual ledgerId: {}", ledgerId, entryId,
-                            actualLedgerId);
-                    return false;
-                }
-                if (entryId != actualEntryId) {
-                    LOG.error("For ledgerId: {} entryId: {} readRequest, actual entryId: {}", ledgerId, entryId,
-                            actualEntryId);
-                    return false;
-                }
-                if (!expectedValue.equals(new String(data))) {
-                    LOG.error("For ledgerId: {} entryId: {} readRequest, actual Data: {}", ledgerId, entryId,
-                            new String(data));
-                    return false;
+                ByteBuf expectedByteBuf = generateEntry(ledgerId, entryId);
+                ByteBuf actualByteBuf = ledgerStorage.getEntry(ledgerId, entryId);
+                if (!expectedByteBuf.equals(actualByteBuf)) {
+                    LOG.error("Expected Entry: {} Actual Entry: {}", expectedByteBuf.toString(Charset.defaultCharset()),
+                            actualByteBuf.toString(Charset.defaultCharset()));
+                    throw new IOException("Expected Entry: " + expectedByteBuf.toString(Charset.defaultCharset())
+                            + " Actual Entry: " + actualByteBuf.toString(Charset.defaultCharset()));
                 }
             } catch (IOException e) {
                 LOG.error("Got Exception for GetEntry call. LedgerId: " + ledgerId + " entryId: " + entryId, e);
-                return false;
+                throw new IOException("Got Exception for GetEntry call. LedgerId: " + ledgerId + " entryId: " + entryId,
+                        e);
             }
             return true;
         }
@@ -480,6 +490,7 @@ public class EntryLogTest {
         conf.setLedgerStorageClass(InterleavedLedgerStorage.class.getName());
         Bookie bookie = new Bookie(conf);
         InterleavedLedgerStorage ledgerStorage = ((InterleavedLedgerStorage) bookie.ledgerStorage);
+        Random rand = new Random();
 
         int numOfLedgers = 70;
         int numEntries = 2000;
@@ -489,48 +500,76 @@ public class EntryLogTest {
         }
 
         ExecutorService executor = Executors.newFixedThreadPool(10);
-        List<LedgerStorageWriteTask> writeTasks = new ArrayList<LedgerStorageWriteTask>();
+        List<Callable<Boolean>> writeAndFlushTasks = new ArrayList<Callable<Boolean>>();
         for (int j = 0; j < numEntries; j++) {
             for (int i = 0; i < numOfLedgers; i++) {
-                writeTasks.add(new LedgerStorageWriteTask(i, j, ledgerStorage));
+                writeAndFlushTasks.add(new LedgerStorageWriteTask(i, j, ledgerStorage));
             }
+        }
+
+        /*
+         * add some flush tasks to the list of writetasks list.
+         */
+        for (int i = 0; i < (numOfLedgers * numEntries) / 500; i++) {
+            writeAndFlushTasks.add(rand.nextInt(writeAndFlushTasks.size()), new LedgerStorageFlushTask(ledgerStorage));
         }
 
         // invoke all those write tasks all at once concurrently and set timeout
         // 6 seconds for them to complete
-        List<Future<Boolean>> writeTasksFutures = executor.invokeAll(writeTasks, 6, TimeUnit.SECONDS);
-        for (int i = 0; i < writeTasks.size(); i++) {
+        List<Future<Boolean>> writeTasksFutures = executor.invokeAll(writeAndFlushTasks, 6, TimeUnit.SECONDS);
+        for (int i = 0; i < writeAndFlushTasks.size(); i++) {
             Future<Boolean> future = writeTasksFutures.get(i);
-            LedgerStorageWriteTask writeTask = writeTasks.get(i);
-            long ledgerId = writeTask.ledgerId;
-            int entryId = writeTask.entryId;
-            Assert.assertTrue("WriteTask should have been completed successfully, but it is cancelled. ledgerId: "
-                    + ledgerId + " entryId: " + entryId, !future.isCancelled());
-            Assert.assertTrue("WriteTask should have been completed successfully. ledgerId: " + ledgerId + " entryId: "
-                    + entryId, future.get());
-
+            Callable<Boolean> task = writeAndFlushTasks.get(i);
+            if (task instanceof LedgerStorageWriteTask) {
+                LedgerStorageWriteTask writeTask = (LedgerStorageWriteTask) task;
+                long ledgerId = writeTask.ledgerId;
+                int entryId = writeTask.entryId;
+                Assert.assertTrue("WriteTask should have been completed successfully, but it is cancelled. ledgerId: "
+                        + ledgerId + " entryId: " + entryId, !future.isCancelled());
+                Assert.assertTrue("WriteTask should have been completed successfully. ledgerId: " + ledgerId
+                        + " entryId: " + entryId, future.get());
+            } else if (task instanceof LedgerStorageFlushTask) {
+                Assert.assertTrue("FlushTask should have been completed successfully, but it is cancelled",
+                        !future.isCancelled());
+                Assert.assertTrue("Flush should have been completed successfully.", future.get());
+            }
         }
 
-        List<LedgerStorageReadTask> readTasks = new ArrayList<LedgerStorageReadTask>();
+        List<Callable<Boolean>> readAndFlushTasks = new ArrayList<Callable<Boolean>>();
         for (int j = 0; j < numEntries; j++) {
             for (int i = 0; i < numOfLedgers; i++) {
-                readTasks.add(new LedgerStorageReadTask(i, j, ledgerStorage));
+                readAndFlushTasks.add(new LedgerStorageReadTask(i, j, ledgerStorage));
             }
+        }
+
+        /*
+         * add some flush tasks to the list of readtasks list.
+         */
+        for (int i = 0; i < (numOfLedgers * numEntries) / 500; i++) {
+            readAndFlushTasks.add(rand.nextInt(readAndFlushTasks.size()), new LedgerStorageFlushTask(ledgerStorage));
         }
 
         // invoke all those readtasks all at once concurrently and set timeout
         // 6 seconds for them to complete
-        List<Future<Boolean>> readTasksFutures = executor.invokeAll(readTasks, 6, TimeUnit.SECONDS);
-        for (int i = 0; i < numOfLedgers * numEntries; i++) {
-            Future<Boolean> future = readTasksFutures.get(i);
-            long ledgerId = readTasks.get(i).ledgerId;
-            int entryId = readTasks.get(i).entryId;
-            Assert.assertTrue("ReadTask should have been completed successfully, but it is cancelled. ledgerId: "
-                    + ledgerId + " entryId: " + entryId, (!future.isCancelled()));
-            Assert.assertTrue("ReadEntry of ledgerId: " + ledgerId + " entryId: " + entryId
-                    + " should have been completed successfully", future.get());
-        }
+        List<Future<Boolean>> readAndFlushFutures = executor.invokeAll(readAndFlushTasks, 6, TimeUnit.SECONDS);
+        for (int i = 0; i < readAndFlushTasks.size(); i++) {
+            Future<Boolean> future = readAndFlushFutures.get(i);
+            Callable<Boolean> task = readAndFlushTasks.get(i);
 
+            if (task instanceof LedgerStorageReadTask) {
+                LedgerStorageReadTask readTask = (LedgerStorageReadTask) task;
+                long ledgerId = readTask.ledgerId;
+                int entryId = readTask.entryId;
+                Assert.assertTrue("ReadTask should have been completed successfully, but it is cancelled. ledgerId: "
+                        + ledgerId + " entryId: " + entryId, (!future.isCancelled()));
+                Assert.assertTrue("ReadEntry of ledgerId: " + ledgerId + " entryId: " + entryId
+                        + " should have been completed successfully", future.get());
+            } else if (task instanceof LedgerStorageFlushTask) {
+                Assert.assertTrue("FlushTask should have been completed successfully, but it is cancelled",
+                        !future.isCancelled());
+                Assert.assertTrue("Flush should have been completed successfully.", future.get());
+            }
+        }
         executor.shutdownNow();
     }
 }
