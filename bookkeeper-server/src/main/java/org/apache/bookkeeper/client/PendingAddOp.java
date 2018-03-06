@@ -25,7 +25,6 @@ import io.netty.util.ReferenceCountUtil;
 import io.netty.util.Timeout;
 import io.netty.util.TimerTask;
 
-import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -37,7 +36,6 @@ import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.util.MathUtils;
 import org.apache.bookkeeper.util.SafeRunnable;
-import org.apache.commons.lang3.ArrayUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.util.concurrent.RejectedExecutionException;
@@ -89,13 +87,13 @@ class PendingAddOp extends SafeRunnable implements WriteCallback, TimerTask {
         op.entryLength = payload.readableBytes();
 
         op.completed = false;
-        op.ackSet = lh.distributionSchedule.getAckSet();
-        op.addOpLogger = lh.bk.getAddOpLogger();
+        op.ackSet = lh.getDistributionSchedule().getAckSet();
+        op.addOpLogger = lh.getBk().getAddOpLogger();
         if (op.timeout != null) {
             op.timeout.cancel();
         }
         op.timeout = null;
-        op.timeoutSec = lh.bk.getConf().getAddEntryQuorumTimeout();
+        op.timeoutSec = lh.getBk().getConf().getAddEntryQuorumTimeout();
         op.pendingWriteRequests = 0;
         op.callbackTriggered = false;
         op.hasRun = false;
@@ -420,7 +418,8 @@ class PendingAddOp extends SafeRunnable implements WriteCallback, TimerTask {
             ReferenceCountUtil.release(toSend);
             toSend = null;
         }
-        if (toSend == null && pendingWriteRequests == 0) {
+        // only recycle a pending add op after it has been run.
+        if (hasRun && toSend == null && pendingWriteRequests == 0) {
             recyclePendAddOpObject();
         }
     }
