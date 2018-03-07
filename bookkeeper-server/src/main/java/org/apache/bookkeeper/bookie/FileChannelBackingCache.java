@@ -54,8 +54,7 @@ class FileChannelBackingCache {
 
     CachedFileChannel loadFileChannel(long logId) throws IOException {
         CachedFileChannel cachedFileChannel = null;
-        lock.readLock().lock();
-        try {
+        do {
             fileChannels.computeIfAbsent(logId, logFileId -> {
                 CachedFileChannel cfc = null;
                 try {
@@ -69,17 +68,17 @@ class FileChannelBackingCache {
                 }
                 return cfc;
             });
+            // race condition between releasing thread will end until it remove it from map,
+            // so this operation should be quick
             cachedFileChannel = fileChannels.get(logId);
             if (cachedFileChannel != null) {
                 boolean retained = cachedFileChannel.tryRetain();
+                // it maybe released already
                 if (!retained) {
-                    throw new IOException("tryRetain CachedFileChannel fail, it must be released by other thread");
+                    cachedFileChannel = null;
                 }
-                return cachedFileChannel;
             }
-        } finally {
-            lock.readLock().unlock();
-        }
+        } while(cachedFileChannel == null);
         return cachedFileChannel;
     }
 
@@ -89,17 +88,10 @@ class FileChannelBackingCache {
      * @param cachedFileChannel
      */
     private void releaseFileChannel(long logId, CachedFileChannel cachedFileChannel) {
-        lock.writeLock().lock();
-        try {
-            if (cachedFileChannel.markDead()) {
-                // to guarantee the removed cachedFileChannel is what we want to remove.
-                fileChannels.remove(logId, cachedFileChannel);
-            }
-        } finally {
-            lock.writeLock().unlock();
-        }
-        // close corresponding fileChannel
-        if (cachedFileChannel.getRefCount() == FileChannelBackingCache.DEAD_REF){
+        if (cachedFileChannel.markDead()) {
+            // to guarantee the removed cachedFileChannel is what we want to remove.
+            fileChannels.remove(logId, cachedFileChannel);
+            // close corresponding fileChannel
             try {
                 cachedFileChannel.fileChannel.close();
             } catch (IOException e) {
