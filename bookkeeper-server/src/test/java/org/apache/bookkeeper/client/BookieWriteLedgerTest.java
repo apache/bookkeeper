@@ -42,7 +42,6 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import org.apache.bookkeeper.bookie.Bookie;
@@ -586,14 +585,14 @@ public class BookieWriteLedgerTest extends
     public void testLedgerCreateAdvWithLedgerIdInLoop() throws Exception {
         int ledgerCount = 40;
 
-        long maxId = Long.MAX_VALUE;
-        if (!baseConf.getLedgerManagerFactoryClass().equals(LongHierarchicalLedgerManagerFactory.class)) {
+        long maxId = 9999999999L;
+        if (baseConf.getLedgerManagerFactoryClass().equals(LongHierarchicalLedgerManagerFactory.class)) {
             // since LongHierarchicalLedgerManager supports ledgerIds of decimal length upto 19 digits but other
             // LedgerManagers only upto 10 decimals
-            maxId = 9999999999L;
+            maxId = Long.MAX_VALUE;
         }
 
-        rng.longs(ledgerCount, 1, maxId) // generate a stream of ledger ids
+        rng.longs(ledgerCount, 0, maxId) // generate a stream of ledger ids
             .mapToObj(ledgerId -> { // create a ledger for each ledger id
                     LOG.info("Creating adv ledger with id {}", ledgerId);
                     return bkc.newCreateLedgerOp()
@@ -604,15 +603,21 @@ public class BookieWriteLedgerTest extends
                         .thenApply(writer -> { // Add entries to ledger when created
                                 LOG.info("Writing stream of {} entries to {}",
                                          numEntriesToWrite, ledgerId);
-                                List<Integer> entries = rng.ints(numEntriesToWrite, 0, maxInt)
-                                    .mapToObj(Integer::valueOf)
+                                List<ByteBuf> entries = rng.ints(numEntriesToWrite, 0, maxInt)
+                                    .mapToObj(i -> {
+                                            ByteBuf entry = Unpooled.buffer(4);
+                                            entry.retain();
+                                            entry.writeInt(i);
+                                            return entry;
+                                        })
                                     .collect(Collectors.toList());
                                 CompletableFuture<?> lastRequest = null;
-                                for (int i = 0; i < entries.size(); i++) {
-                                    ByteBuf entry = Unpooled.buffer(4);
-                                    entry.writeInt(entries.get(i));
-                                    LOG.info("Writing {}:{} as {}", ledgerId, i, entries.get(i));
-                                    lastRequest = writer.write(i, entry);
+                                int i = 0;
+                                for (ByteBuf entry : entries) {
+                                    long entryId = i++;
+                                    LOG.info("Writing {}:{} as {}",
+                                             ledgerId, entryId, entry.slice().readInt());
+                                    lastRequest = writer.write(entryId, entry);
                                 }
                                 lastRequest.join();
                                 return Pair.of(writer, entries);
@@ -622,9 +627,9 @@ public class BookieWriteLedgerTest extends
             .forEach(e -> { // check that each set of adds succeeded
                     try {
                         WriteAdvHandle handle = e.getLeft();
-                        List<Integer> entries = e.getRight();
+                        List<ByteBuf> entries = e.getRight();
                         // Read and verify
-                        LOG.info("Read entries for ledger: {}", handle);
+                        LOG.info("Read entries for ledger: {}", handle.getId());
                         readEntries(handle, entries);
                         handle.close();
                         bkc.deleteLedger(handle.getId());
@@ -1209,14 +1214,17 @@ public class BookieWriteLedgerTest extends
         }
     }
 
-    private void readEntries(ReadHandle reader, List<Integer> entries) throws Exception {
-        AtomicInteger index = new AtomicInteger(0);
-        try (LedgerEntries readEntries = reader.read(0, numEntriesToWrite - 1).join()) {
-            readEntries.forEach(e -> {
-                    int origEntry = entries.get(index.getAndIncrement());
-                    int readEntry = e.getEntryBuffer().readInt();
-                    assertEquals(origEntry, readEntry);
-                });
+    private void readEntries(ReadHandle reader, List<ByteBuf> entries) throws Exception {
+        assertEquals("Not enough entries in ledger " + reader.getId(),
+                     reader.getLastAddConfirmed(), entries.size() - 1);
+        try (LedgerEntries readEntries = reader.read(0, reader.getLastAddConfirmed()).join()) {
+            int i = 0;
+            for (org.apache.bookkeeper.client.api.LedgerEntry e : readEntries) {
+                int entryId = i++;
+                ByteBuf origEntry = entries.get(entryId);
+                ByteBuf readEntry = e.getEntryBuffer();
+                assertEquals("Unexpected contents in " + reader.getId() + ":" + entryId, origEntry, readEntry);
+            }
         }
     }
 
