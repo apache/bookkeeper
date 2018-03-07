@@ -28,6 +28,7 @@ import com.google.common.collect.Lists;
 import java.io.File;
 import java.io.OutputStream;
 import java.nio.file.NoSuchFileException;
+import java.util.Collections;
 import java.util.List;
 import org.junit.Before;
 import org.junit.Rule;
@@ -79,8 +80,10 @@ public class FSCheckpointManagerTest {
             expectedFiles.add(filename);
             new File(testDir, filename).mkdir();
         }
+        List<String> files = cm.listFiles(runtime.getMethodName());
+        Collections.sort(files);
 
-        assertEquals(expectedFiles, cm.listFiles(runtime.getMethodName()));
+        assertEquals(expectedFiles, files);
     }
 
     @Test

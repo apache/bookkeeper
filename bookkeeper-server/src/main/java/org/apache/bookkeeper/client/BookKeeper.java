@@ -573,6 +573,10 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
         addEntryQuorumTimeoutNanos = 0;
     }
 
+    long getAddEntryQuorumTimeoutNanos() {
+        return addEntryQuorumTimeoutNanos;
+    }
+
 
     public int getExplicitLacInterval() {
         return explicitLacInterval;

@@ -210,7 +210,7 @@ Apache Software License, Version 2.
 - lib/com.fasterxml.jackson.core-jackson-databind-2.8.9.jar [3]
 - lib/com.fasterxml.jackson.module-jackson-module-paranamer-2.8.4.jar [4]
 - lib/com.fasterxml.jackson.module-jackson-module-scala_2.11-2.8.4.jar [5]
-- lib/com.google.guava-guava-20.0.jar [6]
+- lib/com.google.guava-guava-21.0.jar [6]
 - lib/commons-cli-commons-cli-1.2.jar [7]
 - lib/commons-codec-commons-codec-1.6.jar [8]
 - lib/commons-collections-commons-collections-3.2.2.jar [9]
@@ -277,7 +277,7 @@ Apache Software License, Version 2.
 [3] Source available at https://github.com/FasterXML/jackson-databind/tree/jackson-databind-2.8.9
 [4] Source available at https://github.com/FasterXML/jackson-modules-base/tree/jackson-modules-base-2.8.4
 [5] Source available at https://github.com/FasterXML/jackson-module-scala/tree/f9e099
-[6] Source available at https://github.com/google/guava/tree/v20.0
+[6] Source available at https://github.com/google/guava/tree/v21.0
 [7] Source available at https://git-wip-us.apache.org/repos/asf?p=commons-cli.git;a=tag;h=bc8f0e
 [8] Source available at http://svn.apache.org/viewvc/commons/proper/codec/tags/1_6/
 [9] Source available at https://git-wip-us.apache.org/repos/asf?p=commons-collections.git;a=tag;h=092ff4
