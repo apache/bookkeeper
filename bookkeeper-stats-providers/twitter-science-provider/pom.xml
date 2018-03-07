@@ -26,10 +26,6 @@
   <groupId>org.apache.bookkeeper.stats</groupId>
   <artifactId>twitter-science-provider</artifactId>
   <name>Apache BookKeeper :: Stats Providers :: Twitter Science Stats</name>
-  <properties>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <project.libdir>${basedir}/lib</project.libdir>
-  </properties>
   <build>
     <plugins>
       <plugin>

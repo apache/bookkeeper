@@ -79,6 +79,13 @@
           <forkedProcessTimeoutInSeconds>1800</forkedProcessTimeoutInSeconds>
         </configuration>
       </plugin>
+      <plugin>
+        <groupId>com.github.spotbugs</groupId>
+        <artifactId>spotbugs-maven-plugin</artifactId>
+        <configuration>
+          <excludeFilterFile>${session.executionRootDirectory}/buildtools/src/main/resources/distributedlog/findbugsExclude.xml</excludeFilterFile>
+        </configuration>
+      </plugin>
     </plugins>
   </build>
   <profiles>

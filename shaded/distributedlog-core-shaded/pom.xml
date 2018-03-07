@@ -210,7 +210,7 @@
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>license-maven-plugin</artifactId>
-        <version>1.6</version>
+        <version>${license-maven-plugin.version}</version>
         <configuration>
           <canUpdateCopyright>false</canUpdateCopyright>
           <roots><root>${project.basedir}</root></roots>
@@ -233,9 +233,9 @@
       </plugin>
       <plugin>
         <artifactId>maven-clean-plugin</artifactId>
-        <version>2.5</version>
-	<configuration>
-	  <filesets>
+        <version>${maven-clean-plugin.version}</version>
+        <configuration>
+          <filesets>
             <fileset>
               <directory>${project.basedir}</directory>
               <includes>
@@ -243,7 +243,7 @@
               </includes>
             </fileset>
           </filesets>
-	</configuration>
+        </configuration>
       </plugin>
     </plugins>
   </build>

@@ -57,7 +57,7 @@
           <plugin>
             <groupId>com.spotify</groupId>
             <artifactId>dockerfile-maven-plugin</artifactId>
-            <version>1.3.7</version>
+            <version>${dockerfile-maven-plugin.version}</version>
             <executions>
               <execution>
                 <id>default</id>
@@ -89,6 +89,7 @@
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-dependency-plugin</artifactId>
+            <version>${maven-dependency-plugin.version}</version>
             <executions>
               <execution>
                 <id>copy-tarball</id>
