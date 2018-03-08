@@ -631,6 +631,7 @@ public class BookieWriteLedgerTest extends
                         // Read and verify
                         LOG.info("Read entries for ledger: {}", handle.getId());
                         readEntries(handle, entries);
+                        entries.forEach(ByteBuf::release);
                         handle.close();
                         bkc.deleteLedger(handle.getId());
                     } catch (InterruptedException ie) {
