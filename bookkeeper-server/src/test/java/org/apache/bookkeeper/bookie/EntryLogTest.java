@@ -43,8 +43,6 @@ import java.util.Random;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
@@ -490,10 +488,10 @@ public class EntryLogTest {
         conf.setLedgerStorageClass(InterleavedLedgerStorage.class.getName());
         Bookie bookie = new Bookie(conf);
         InterleavedLedgerStorage ledgerStorage = ((InterleavedLedgerStorage) bookie.ledgerStorage);
-        Random rand = new Random();
+        Random rand = new Random(0);
 
         int numOfLedgers = 70;
-        int numEntries = 2000;
+        int numEntries = 1500;
         // Create ledgers
         for (int i = 0; i < numOfLedgers; i++) {
             ledgerStorage.setMasterKey(i, "key".getBytes());
@@ -514,26 +512,19 @@ public class EntryLogTest {
             writeAndFlushTasks.add(rand.nextInt(writeAndFlushTasks.size()), new LedgerStorageFlushTask(ledgerStorage));
         }
 
-        // invoke all those write tasks all at once concurrently and set timeout
-        // 6 seconds for them to complete
-        List<Future<Boolean>> writeTasksFutures = executor.invokeAll(writeAndFlushTasks, 6, TimeUnit.SECONDS);
-        for (int i = 0; i < writeAndFlushTasks.size(); i++) {
-            Future<Boolean> future = writeTasksFutures.get(i);
-            Callable<Boolean> task = writeAndFlushTasks.get(i);
-            if (task instanceof LedgerStorageWriteTask) {
-                LedgerStorageWriteTask writeTask = (LedgerStorageWriteTask) task;
-                long ledgerId = writeTask.ledgerId;
-                int entryId = writeTask.entryId;
-                Assert.assertTrue("WriteTask should have been completed successfully, but it is cancelled. ledgerId: "
-                        + ledgerId + " entryId: " + entryId, !future.isCancelled());
-                Assert.assertTrue("WriteTask should have been completed successfully. ledgerId: " + ledgerId
-                        + " entryId: " + entryId, future.get());
-            } else if (task instanceof LedgerStorageFlushTask) {
-                Assert.assertTrue("FlushTask should have been completed successfully, but it is cancelled",
-                        !future.isCancelled());
-                Assert.assertTrue("Flush should have been completed successfully.", future.get());
+        // invoke all those write/flush tasks all at once concurrently
+        executor.invokeAll(writeAndFlushTasks).forEach((future) -> {
+            try {
+                future.get();
+            } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
+                LOG.error("Write/Flush task failed because of InterruptedException", ie);
+                Assert.fail("Write/Flush task interrupted");
+            } catch (Exception ex) {
+                LOG.error("Write/Flush task failed because of  exception", ex);
+                Assert.fail("Write/Flush task failed " + ex.getMessage());
             }
-        }
+        });
 
         List<Callable<Boolean>> readAndFlushTasks = new ArrayList<Callable<Boolean>>();
         for (int j = 0; j < numEntries; j++) {
@@ -549,27 +540,20 @@ public class EntryLogTest {
             readAndFlushTasks.add(rand.nextInt(readAndFlushTasks.size()), new LedgerStorageFlushTask(ledgerStorage));
         }
 
-        // invoke all those readtasks all at once concurrently and set timeout
-        // 6 seconds for them to complete
-        List<Future<Boolean>> readAndFlushFutures = executor.invokeAll(readAndFlushTasks, 6, TimeUnit.SECONDS);
-        for (int i = 0; i < readAndFlushTasks.size(); i++) {
-            Future<Boolean> future = readAndFlushFutures.get(i);
-            Callable<Boolean> task = readAndFlushTasks.get(i);
-
-            if (task instanceof LedgerStorageReadTask) {
-                LedgerStorageReadTask readTask = (LedgerStorageReadTask) task;
-                long ledgerId = readTask.ledgerId;
-                int entryId = readTask.entryId;
-                Assert.assertTrue("ReadTask should have been completed successfully, but it is cancelled. ledgerId: "
-                        + ledgerId + " entryId: " + entryId, (!future.isCancelled()));
-                Assert.assertTrue("ReadEntry of ledgerId: " + ledgerId + " entryId: " + entryId
-                        + " should have been completed successfully", future.get());
-            } else if (task instanceof LedgerStorageFlushTask) {
-                Assert.assertTrue("FlushTask should have been completed successfully, but it is cancelled",
-                        !future.isCancelled());
-                Assert.assertTrue("Flush should have been completed successfully.", future.get());
+        // invoke all those read/flush tasks all at once concurrently
+        executor.invokeAll(readAndFlushTasks).forEach((future) -> {
+            try {
+                future.get();
+            } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
+                LOG.error("Read/Flush task failed because of InterruptedException", ie);
+                Assert.fail("Read/Flush task interrupted");
+            } catch (Exception ex) {
+                LOG.error("Read/Flush task failed because of  exception", ex);
+                Assert.fail("Read/Flush task failed " + ex.getMessage());
             }
-        }
+        });
+
         executor.shutdownNow();
     }
 }
