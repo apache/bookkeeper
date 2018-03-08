@@ -37,6 +37,8 @@ import org.junit.Test;
 public class BufferedChannelTest {
 
     private static Random rand = new Random();
+    private static final int INTERNAL_BUFFER_WRITE_CAPACITY = 65536;
+    private static final int INTERNAL_BUFFER_READ_CAPACITY = 512;
 
     @Test
     public void testBufferedChannelWithNoBoundOnUnpersistedBytes() throws Exception {
@@ -59,6 +61,11 @@ public class BufferedChannelTest {
     }
 
     @Test
+    public void testBufferedChannelForceWriteNoFlush() throws Exception {
+        testBufferedChannel(5000, 30, 0, false, true);
+    }
+
+    @Test
     public void testBufferedChannelFlushForceWrite() throws Exception {
         testBufferedChannel(5000, 30, 0, true, true);
     }
@@ -69,7 +76,8 @@ public class BufferedChannelTest {
         newLogFile.deleteOnExit();
         FileChannel fileChannel = new RandomAccessFile(newLogFile, "rw").getChannel();
 
-        BufferedChannel logChannel = new BufferedChannel(fileChannel, 65536, 512, unpersistedBytesBound);
+        BufferedChannel logChannel = new BufferedChannel(fileChannel, INTERNAL_BUFFER_WRITE_CAPACITY,
+                INTERNAL_BUFFER_READ_CAPACITY, unpersistedBytesBound);
 
         ByteBuf dataBuf = generateEntry(byteBufLength);
         dataBuf.markReaderIndex();
@@ -81,8 +89,12 @@ public class BufferedChannelTest {
             dataBuf.resetWriterIndex();
         }
 
-        if (flush) {
-            logChannel.flush(shouldForceWrite);
+        if (flush && shouldForceWrite) {
+            logChannel.flushAndForceWrite(false);
+        } else if (flush) {
+            logChannel.flush();
+        } else if (shouldForceWrite) {
+            logChannel.forceWrite(false);
         }
 
         int expectedNumOfUnpersistedBytes = 0;
@@ -93,6 +105,16 @@ public class BufferedChannelTest {
              * then expectedNumOfUnpersistedBytes should be zero.
              */
             expectedNumOfUnpersistedBytes = 0;
+        } else if (!flush && shouldForceWrite) {
+            /*
+             * if flush is not called then internal write buffer is not flushed,
+             * but while adding entries to BufferedChannel if writeBuffer has
+             * reached its capacity then it will call flush method, and the data
+             * gets added to the file buffer. So though explicitly we are not
+             * calling flush method, implicitly flush gets called when
+             * writeBuffer reaches its capacity.
+             */
+            expectedNumOfUnpersistedBytes = (byteBufLength * numOfWrites) % INTERNAL_BUFFER_WRITE_CAPACITY;
         } else {
             expectedNumOfUnpersistedBytes = (byteBufLength * numOfWrites) - unpersistedBytesBound;
         }

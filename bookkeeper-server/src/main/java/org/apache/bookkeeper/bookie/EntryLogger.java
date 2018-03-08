@@ -477,7 +477,7 @@ public class EntryLogger {
 
             // flush the internal buffer back to filesystem but not sync disk
             // so the readers could access the data from filesystem.
-            logChannel.flush(false);
+            logChannel.flush();
 
             // Append ledgers map at the end of entry log
             appendLedgersMap(logChannel);
@@ -566,7 +566,7 @@ public class EntryLogger {
         }
         // Flush the ledger's map out before we write the header.
         // Otherwise the header might point to something that is not fully written
-        entryLogChannel.flush(false);
+        entryLogChannel.flush();
 
         // Update the headers with the map offset and count of ledgers
         ByteBuffer mapInfo = ByteBuffer.allocate(8 + 4);
@@ -813,7 +813,7 @@ public class EntryLogger {
         while (chIter.hasNext()) {
             BufferedLogChannel channel = chIter.next();
             try {
-                channel.flush(true);
+                channel.flushAndForceWrite(false);
             } catch (IOException ioe) {
                 // rescue from flush exception, add unflushed channels back
                 synchronized (this) {
@@ -847,7 +847,7 @@ public class EntryLogger {
 
     synchronized void flushCurrentLog() throws IOException {
         if (logChannel != null) {
-            logChannel.flush(true);
+            logChannel.flushAndForceWrite(false);
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Flush and sync current entry logger {}.", logChannel.getLogId());
             }
@@ -918,7 +918,7 @@ public class EntryLogger {
     void flushCompactionLog() throws IOException {
         synchronized (compactionLogLock) {
             if (compactionLogChannel != null) {
-                compactionLogChannel.flush(true);
+                compactionLogChannel.flushAndForceWrite(false);
                 LOG.info("Flushed compaction log file {} with logId.",
                     compactionLogChannel.getLogFile(),
                     compactionLogChannel.getLogId());

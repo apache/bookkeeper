@@ -986,7 +986,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                                 writePaddingBytes(logFile, paddingBuff, journalAlignmentSize);
                             }
                             journalFlushWatcher.reset().start();
-                            bc.flush(false);
+                            bc.flush();
 
                             for (int i = 0; i < toFlush.size(); i++) {
                                 QueueEntry entry = toFlush.get(i);

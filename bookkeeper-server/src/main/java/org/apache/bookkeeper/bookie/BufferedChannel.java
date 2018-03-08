@@ -109,14 +109,14 @@ public class BufferedChannel extends BufferedReadChannel implements Closeable {
                 // if we have run out of buffer space, we should flush to the
                 // file
                 if (!writeBuffer.isWritable()) {
-                    flushInternal();
+                    flush();
                 }
             }
             position.addAndGet(copied);
             unpersistedBytes.addAndGet(copied);
             if (unpersistedBytesBound > 0) {
                 if (unpersistedBytes.get() >= unpersistedBytesBound) {
-                    flushInternal();
+                    flush();
                     shouldForceWrite = true;
                 }
             }
@@ -142,32 +142,27 @@ public class BufferedChannel extends BufferedReadChannel implements Closeable {
         return writeBufferStartPosition.get();
     }
 
-
     /**
-     * Write any data in the buffer to the file. If sync is set to true, force a sync operation so that
-     * data is persisted to the disk.
-     * @param shouldForceWrite
-     * @throws IOException if the write or sync operation fails.
+     * calls both flush and forceWrite methods.
+     *
+     * @param forceMetadata
+     *            - If true then this method is required to force changes to
+     *            both the file's content and metadata to be written to storage;
+     *            otherwise, it need only force content changes to be written
+     * @throws IOException
      */
-    public void flush(boolean shouldForceWrite) throws IOException {
-        flush(shouldForceWrite, false);
-    }
-
-    public void flush(boolean shouldForceWrite, boolean forceMetadata) throws IOException {
-        synchronized (this) {
-            flushInternal();
-        }
-        if (shouldForceWrite) {
-            forceWrite(forceMetadata);
-        }
+    public void flushAndForceWrite(boolean forceMetadata) throws IOException {
+        flush();
+        forceWrite(forceMetadata);
     }
 
     /**
      * Write any data in the buffer to the file and advance the writeBufferPosition.
      * Callers are expected to synchronize appropriately
+     *
      * @throws IOException if the write fails.
      */
-    private void flushInternal() throws IOException {
+    public synchronized void flush() throws IOException {
         ByteBuffer toWrite = writeBuffer.internalNioBuffer(0, writeBuffer.writerIndex());
         do {
             fileChannel.write(toWrite);
@@ -176,6 +171,9 @@ public class BufferedChannel extends BufferedReadChannel implements Closeable {
         writeBufferStartPosition.set(fileChannel.position());
     }
 
+    /*
+     * force a sync operation so that data is persisted to the disk.
+     */
     public long forceWrite(boolean forceMetadata) throws IOException {
         // This is the point up to which we had flushed to the file system page cache
         // before issuing this force write hence is guaranteed to be made durable by
@@ -191,6 +189,10 @@ public class BufferedChannel extends BufferedReadChannel implements Closeable {
          * filechannel (system filecache) will be persisted to the disk. So we
          * dont need to consider those bytes for setting value to
          * unpersistedBytes.
+         *
+         * In this method fileChannel.force is not called in synchronized block, so
+         * we are doing best efforts to not overcount or undercount unpersistedBytes.
+         * Hence setting writeBuffer.readableBytes() to unpersistedBytes.
          *
          */
         synchronized (this) {
