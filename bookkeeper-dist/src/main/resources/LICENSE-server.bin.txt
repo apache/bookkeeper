@@ -223,7 +223,7 @@ Apache Software License, Version 2.
 - lib/io.vertx-vertx-auth-common-3.4.1.jar [13]
 - lib/io.vertx-vertx-core-3.4.1.jar [14]
 - lib/io.vertx-vertx-web-3.4.1.jar [15]
-- lib/log4j-log4j-1.2.15.jar [16]
+- lib/log4j-log4j-1.2.17.jar [16]
 - lib/net.java.dev.jna-jna-3.2.7.jar [17]
 - lib/org.apache.commons-commons-collections4-4.1.jar [18]
 - lib/org.apache.commons-commons-lang3-3.3.2.jar [19]
