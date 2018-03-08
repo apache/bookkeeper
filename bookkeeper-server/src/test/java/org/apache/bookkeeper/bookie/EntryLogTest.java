@@ -36,8 +36,13 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
@@ -106,13 +111,17 @@ public class EntryLogTest {
         assertTrue(meta.getLedgersMap().containsKey(3L));
     }
 
-    private ByteBuf generateEntry(long ledger, long entry) {
-        byte[] data = ("ledger-" + ledger + "-" + entry).getBytes();
+    private static ByteBuf generateEntry(long ledger, long entry) {
+        byte[] data = generateDataString(ledger, entry).getBytes();
         ByteBuf bb = Unpooled.buffer(8 + 8 + data.length);
         bb.writeLong(ledger);
         bb.writeLong(entry);
         bb.writeBytes(data);
         return bb;
+    }
+
+    private static String generateDataString(long ledger, long entry) {
+        return ("ledger-" + ledger + "-" + entry);
     }
 
     @Test
@@ -390,5 +399,161 @@ public class EntryLogTest {
         logger.flushRotatedLogs();
 
         assertEquals(Sets.newHashSet(0L, 1L, 2L, 3L), logger.getEntryLogsSet());
+    }
+
+    static class LedgerStorageWriteTask implements Callable<Boolean> {
+        long ledgerId;
+        int entryId;
+        LedgerStorage ledgerStorage;
+
+        LedgerStorageWriteTask(long ledgerId, int entryId, LedgerStorage ledgerStorage) {
+            this.ledgerId = ledgerId;
+            this.entryId = entryId;
+            this.ledgerStorage = ledgerStorage;
+        }
+
+        @Override
+        public Boolean call() throws IOException {
+            try {
+                ledgerStorage.addEntry(generateEntry(ledgerId, entryId));
+            } catch (IOException e) {
+                LOG.error("Got Exception for AddEntry call. LedgerId: " + ledgerId + " entryId: " + entryId, e);
+                throw new IOException("Got Exception for AddEntry call. LedgerId: " + ledgerId + " entryId: " + entryId,
+                        e);
+            }
+            return true;
+        }
+    }
+
+    static class LedgerStorageFlushTask implements Callable<Boolean> {
+        LedgerStorage ledgerStorage;
+
+        LedgerStorageFlushTask(LedgerStorage ledgerStorage) {
+            this.ledgerStorage = ledgerStorage;
+        }
+
+        @Override
+        public Boolean call() throws IOException {
+            try {
+                ledgerStorage.flush();
+            } catch (IOException e) {
+                LOG.error("Got Exception for flush call", e);
+                throw new IOException("Got Exception for Flush call", e);
+            }
+            return true;
+        }
+    }
+
+    static class LedgerStorageReadTask implements Callable<Boolean> {
+        long ledgerId;
+        int entryId;
+        LedgerStorage ledgerStorage;
+
+        LedgerStorageReadTask(long ledgerId, int entryId, LedgerStorage ledgerStorage) {
+            this.ledgerId = ledgerId;
+            this.entryId = entryId;
+            this.ledgerStorage = ledgerStorage;
+        }
+
+        @Override
+        public Boolean call() throws IOException {
+            try {
+                ByteBuf expectedByteBuf = generateEntry(ledgerId, entryId);
+                ByteBuf actualByteBuf = ledgerStorage.getEntry(ledgerId, entryId);
+                if (!expectedByteBuf.equals(actualByteBuf)) {
+                    LOG.error("Expected Entry: {} Actual Entry: {}", expectedByteBuf.toString(Charset.defaultCharset()),
+                            actualByteBuf.toString(Charset.defaultCharset()));
+                    throw new IOException("Expected Entry: " + expectedByteBuf.toString(Charset.defaultCharset())
+                            + " Actual Entry: " + actualByteBuf.toString(Charset.defaultCharset()));
+                }
+            } catch (IOException e) {
+                LOG.error("Got Exception for GetEntry call. LedgerId: " + ledgerId + " entryId: " + entryId, e);
+                throw new IOException("Got Exception for GetEntry call. LedgerId: " + ledgerId + " entryId: " + entryId,
+                        e);
+            }
+            return true;
+        }
+    }
+
+    /**
+     * test concurrent write operations and then concurrent read
+     * operations using InterleavedLedgerStorage.
+     */
+    @Test
+    public void testConcurrentWriteAndReadCallsOfInterleavedLedgerStorage() throws Exception {
+        File ledgerDir = createTempDir("bkTest", ".dir");
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setJournalDirName(ledgerDir.toString());
+        conf.setLedgerDirNames(new String[] { ledgerDir.getAbsolutePath()});
+        conf.setLedgerStorageClass(InterleavedLedgerStorage.class.getName());
+        Bookie bookie = new Bookie(conf);
+        InterleavedLedgerStorage ledgerStorage = ((InterleavedLedgerStorage) bookie.ledgerStorage);
+        Random rand = new Random(0);
+
+        int numOfLedgers = 70;
+        int numEntries = 1500;
+        // Create ledgers
+        for (int i = 0; i < numOfLedgers; i++) {
+            ledgerStorage.setMasterKey(i, "key".getBytes());
+        }
+
+        ExecutorService executor = Executors.newFixedThreadPool(10);
+        List<Callable<Boolean>> writeAndFlushTasks = new ArrayList<Callable<Boolean>>();
+        for (int j = 0; j < numEntries; j++) {
+            for (int i = 0; i < numOfLedgers; i++) {
+                writeAndFlushTasks.add(new LedgerStorageWriteTask(i, j, ledgerStorage));
+            }
+        }
+
+        /*
+         * add some flush tasks to the list of writetasks list.
+         */
+        for (int i = 0; i < (numOfLedgers * numEntries) / 500; i++) {
+            writeAndFlushTasks.add(rand.nextInt(writeAndFlushTasks.size()), new LedgerStorageFlushTask(ledgerStorage));
+        }
+
+        // invoke all those write/flush tasks all at once concurrently
+        executor.invokeAll(writeAndFlushTasks).forEach((future) -> {
+            try {
+                future.get();
+            } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
+                LOG.error("Write/Flush task failed because of InterruptedException", ie);
+                Assert.fail("Write/Flush task interrupted");
+            } catch (Exception ex) {
+                LOG.error("Write/Flush task failed because of  exception", ex);
+                Assert.fail("Write/Flush task failed " + ex.getMessage());
+            }
+        });
+
+        List<Callable<Boolean>> readAndFlushTasks = new ArrayList<Callable<Boolean>>();
+        for (int j = 0; j < numEntries; j++) {
+            for (int i = 0; i < numOfLedgers; i++) {
+                readAndFlushTasks.add(new LedgerStorageReadTask(i, j, ledgerStorage));
+            }
+        }
+
+        /*
+         * add some flush tasks to the list of readtasks list.
+         */
+        for (int i = 0; i < (numOfLedgers * numEntries) / 500; i++) {
+            readAndFlushTasks.add(rand.nextInt(readAndFlushTasks.size()), new LedgerStorageFlushTask(ledgerStorage));
+        }
+
+        // invoke all those read/flush tasks all at once concurrently
+        executor.invokeAll(readAndFlushTasks).forEach((future) -> {
+            try {
+                future.get();
+            } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
+                LOG.error("Read/Flush task failed because of InterruptedException", ie);
+                Assert.fail("Read/Flush task interrupted");
+            } catch (Exception ex) {
+                LOG.error("Read/Flush task failed because of  exception", ex);
+                Assert.fail("Read/Flush task failed " + ex.getMessage());
+            }
+        });
+
+        executor.shutdownNow();
     }
 }
