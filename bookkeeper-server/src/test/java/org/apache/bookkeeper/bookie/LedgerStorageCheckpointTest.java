@@ -374,13 +374,13 @@ public class LedgerStorageCheckpointTest extends BookKeeperClusterTestCase {
                 .setJournalDirName(tmpDir.getPath())
                 .setLedgerDirNames(new String[] { tmpDir.getPath() })
                 .setAutoRecoveryDaemonEnabled(false)
-                //set very high period for flushInterval
-                .setFlushInterval(30000)
+                //set flushInterval
+                .setFlushInterval(3000)
                 .setBookiePort(PortManager.nextFreePort())
                 // entrylog per ledger is enabled
                 .setEntryLogPerLedgerEnabled(true)
                 .setLedgerStorageClass(InterleavedLedgerStorage.class.getName())
-                // set flushInterval to some very high number
+                // set setFlushIntervalInBytes to some very high number
                 .setFlushIntervalInBytes(10000000);
 
         Assert.assertEquals("Number of JournalDirs", 1, conf.getJournalDirs().length);
@@ -426,8 +426,15 @@ public class LedgerStorageCheckpointTest extends BookKeeperClusterTestCase {
                 entryLogger.bytesWrittenSinceLastFlush);
         Assert.assertNotEquals("There should be logChannelsToFlush", 0, entryLogger.logChannelsToFlush.size());
 
-        ledgerStorage.checkpoint(ledgerStorage.checkpointSource.newCheckpoint());
+        /*
+         * wait for atleast flushInterval period, so that checkpoint can happen.
+         */
+        Thread.sleep(conf.getFlushInterval() + 500);
 
+        /*
+         * since checkpoint happenend, there shouldn't be any logChannelsToFlush
+         * and bytesWrittenSinceLastFlush should be zero.
+         */
         Assert.assertTrue("There shouldn't be logChannelsToFlush",
                 ((entryLogger.logChannelsToFlush == null) || (entryLogger.logChannelsToFlush.size() == 0)));
 
