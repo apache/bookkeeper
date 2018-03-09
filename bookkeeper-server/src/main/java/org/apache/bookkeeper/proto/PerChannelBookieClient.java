@@ -459,8 +459,12 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         return isWritable;
     }
 
+    public void setWritable(boolean val) {
+        isWritable = val;
+    }
+
     private void makeWritable() {
-        isWritable = true;
+        setWritable(true);
     }
 
     void connectIfNeededAndDoOp(GenericCallback<PerChannelBookieClient> op) {
@@ -930,14 +934,16 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
             return;
         }
 
-        if (isWritable != channel.isWritable()) {
+        final boolean isChannelWritable = channel.isWritable();
+        if (isWritable != isChannelWritable) {
             // isWritable is volatile so simple "isWritable = channel.isWritable()" would be slower
-            isWritable = !isWritable;
+            isWritable = isChannelWritable;
         }
 
         if (allowFastFail && !isWritable) {
             LOG.warn("Operation {} failed: TooManyRequestsException",
                     requestToString(request));
+
             errorOut(key, BKException.Code.TooManyRequestsException);
             return;
         }

@@ -213,7 +213,7 @@ public class LedgerHandleAdv extends LedgerHandle implements WriteAdvHandle {
 
         if (!waitForWritable(distributionSchedule.getWriteSet(op.getEntryId()),
                 op.getEntryId(), 0, waitForWriteSetMs)) {
-            op.allowFastFailOnBlockedServer();
+            op.allowFailFastOnUnwritableChannel();
         }
 
         try {

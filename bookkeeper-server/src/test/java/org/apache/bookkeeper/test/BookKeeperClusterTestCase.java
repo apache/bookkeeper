@@ -112,7 +112,6 @@ public abstract class BookKeeperClusterTestCase {
         InMemoryMetaStore.reset();
         setMetastoreImplClass(baseConf);
         setMetastoreImplClass(baseClientConf);
-        baseClientConf.setWaitTimeoutOnBackpressureMillis(50);
 
         Stopwatch sw = Stopwatch.createStarted();
         try {

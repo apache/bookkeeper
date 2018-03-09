@@ -805,10 +805,10 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
      * @return timeout value
      *        negative value disables the feature
      *        0 to allow request to fail immediately
-     *        Default is 500
+     *        Default is -1 (disabled)
      */
     public long getWaitTimeoutOnBackpressureMillis() {
-        return getLong(WAIT_TIMEOUT_ON_BACKPRESSURE, 500);
+        return getLong(WAIT_TIMEOUT_ON_BACKPRESSURE, -1);
     }
 
     /**
@@ -818,7 +818,8 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
      * @param value
      *        negative value disables the feature
      *        0 to allow request to fail immediately
-     *        Default is 500
+     *        Default is -1 (disabled)
+     * @return client configuration.
      */
     public ClientConfiguration setWaitTimeoutOnBackpressureMillis(long value) {
         setProperty(WAIT_TIMEOUT_ON_BACKPRESSURE, value);

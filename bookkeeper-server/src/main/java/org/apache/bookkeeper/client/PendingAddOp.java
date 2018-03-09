@@ -74,7 +74,7 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
     boolean callbackTriggered;
     boolean hasRun;
 
-    boolean allowFastFail = false;
+    boolean allowFailFast = false;
 
     static PendingAddOp create(LedgerHandle lh, ByteBuf payload, AddCallback cb, Object ctx) {
         PendingAddOp op = RECYCLER.get();
@@ -95,7 +95,7 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
         op.callbackTriggered = false;
         op.hasRun = false;
         op.requestTimeNanos = Long.MAX_VALUE;
-        op.allowFastFail = false;
+        op.allowFailFast = false;
         return op;
     }
 
@@ -108,8 +108,8 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
         return this;
     }
 
-    PendingAddOp allowFastFailOnBlockedServer() {
-        allowFastFail = true;
+    PendingAddOp allowFailFastOnUnwritableChannel() {
+        allowFailFast = true;
         return this;
     }
 
@@ -129,7 +129,7 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
         int flags = isRecoveryAdd ? BookieProtocol.FLAG_RECOVERY_ADD : BookieProtocol.FLAG_NONE;
 
         lh.bk.getBookieClient().addEntry(lh.metadata.currentEnsemble.get(bookieIndex), lh.ledgerId, lh.ledgerKey,
-                entryId, toSend, this, bookieIndex, flags, allowFastFail);
+                entryId, toSend, this, bookieIndex, flags, allowFailFast);
         ++pendingWriteRequests;
     }
 
@@ -416,7 +416,7 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
             ReferenceCountUtil.release(toSend);
             toSend = null;
         }
-        if (toSend == null && pendingWriteRequests == 0) {
+        if (hasRun && toSend == null && pendingWriteRequests == 0) {
             recyclePendAddOpObject();
         }
     }
@@ -436,7 +436,7 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
         pendingWriteRequests = 0;
         callbackTriggered = false;
         hasRun = false;
-        allowFastFail = false;
+        allowFailFast = false;
 
         recyclerHandle.recycle(this);
     }

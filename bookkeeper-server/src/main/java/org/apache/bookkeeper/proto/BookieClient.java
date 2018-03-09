@@ -152,7 +152,7 @@ public class BookieClient implements PerChannelBookieClientFactory {
 
     public boolean isWritable(BookieSocketAddress address, long key) {
         final PerChannelBookieClientPool pcbcPool = lookupClient(address);
-        // let write fail with whatever error it produces
+        // if null, let the write initiate connect of fail with whatever error it produces
         return pcbcPool == null || pcbcPool.isWritable(key);
     }
 

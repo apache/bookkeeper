@@ -23,6 +23,7 @@ package org.apache.bookkeeper.client;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.util.List;
 import java.util.Set;
@@ -45,6 +46,8 @@ import org.slf4j.LoggerFactory;
 @SuppressWarnings("deprecation")
 public class SlowBookieTest extends BookKeeperClusterTestCase {
     private static final Logger LOG = LoggerFactory.getLogger(SlowBookieTest.class);
+
+    final byte[] entry = "Test Entry".getBytes();
 
     public SlowBookieTest() {
         super(4);
@@ -109,7 +112,6 @@ public class SlowBookieTest extends BookKeeperClusterTestCase {
         final LedgerHandle lh = bkc.createLedger(4, 3, 2, BookKeeper.DigestType.CRC32, pwd);
         final AtomicBoolean finished = new AtomicBoolean(false);
         final AtomicBoolean failTest = new AtomicBoolean(false);
-        final byte[] entry = "Test Entry".getBytes();
         Thread t = new Thread() {
                 public void run() {
                     try {
@@ -124,10 +126,13 @@ public class SlowBookieTest extends BookKeeperClusterTestCase {
             };
         t.start();
         final CountDownLatch b0latch = new CountDownLatch(1);
+
         startNewBookie();
         sleepBookie(getBookie(0), b0latch);
+
         Thread.sleep(10000);
         b0latch.countDown();
+
         finished.set(true);
         t.join();
 
@@ -153,6 +158,148 @@ public class SlowBookieTest extends BookKeeperClusterTestCase {
     }
 
     @Test
+    public void testSlowBookieAndBackpressureOn() throws Exception {
+        final ClientConfiguration conf = new ClientConfiguration();
+        conf.setReadTimeout(5)
+                .setAddEntryTimeout(1)
+                .setAddEntryQuorumTimeout(1)
+                .setNumChannelsPerBookie(1)
+                .setZkServers(zkUtil.getZooKeeperConnectString())
+                .setClientWriteBufferLowWaterMark(1)
+                .setClientWriteBufferHighWaterMark(entry.length - 1)
+                .setWaitTimeoutOnBackpressureMillis(5000);
+
+        final boolean expectWriteError = false;
+        final boolean expectFailedTest = false;
+
+        LedgerHandle lh = doBackpressureTest(entry, conf, expectWriteError, expectFailedTest, 2000);
+        assertTrue(lh.readLastConfirmed() < 5);
+    }
+
+    @Test
+    public void testSlowBookieAndFastFailOn() throws Exception {
+        final ClientConfiguration conf = new ClientConfiguration();
+        conf.setReadTimeout(5)
+                .setAddEntryTimeout(1)
+                .setAddEntryQuorumTimeout(1)
+                .setNumChannelsPerBookie(1)
+                .setZkServers(zkUtil.getZooKeeperConnectString())
+                .setClientWriteBufferLowWaterMark(1)
+                .setClientWriteBufferHighWaterMark(2)
+                .setWaitTimeoutOnBackpressureMillis(0);
+
+        final boolean expectWriteError = true;
+        final boolean expectFailedTest = false;
+
+        LedgerHandle lh = doBackpressureTest(entry, conf, expectWriteError, expectFailedTest, 1000);
+        assertTrue(lh.readLastConfirmed() < 5);
+    }
+
+    @Test
+    public void testSlowBookieAndNoBackpressure() throws Exception {
+        final ClientConfiguration conf = new ClientConfiguration();
+        conf.setReadTimeout(5)
+                .setAddEntryTimeout(1)
+                .setAddEntryQuorumTimeout(1)
+                .setNumChannelsPerBookie(1)
+                .setZkServers(zkUtil.getZooKeeperConnectString())
+                .setClientWriteBufferLowWaterMark(1)
+                .setClientWriteBufferHighWaterMark(entry.length - 1)
+                .setWaitTimeoutOnBackpressureMillis(-1);
+
+        final boolean expectWriteError = false;
+        final boolean expectFailedTest = false;
+
+        LedgerHandle lh = doBackpressureTest(entry, conf, expectWriteError, expectFailedTest, 4000);
+
+        assertTrue(lh.readLastConfirmed() > 90);
+    }
+
+    private LedgerHandle doBackpressureTest(byte[] entry, ClientConfiguration conf,
+                                    boolean expectWriteError, boolean expectFailedTest,
+                                    long sleepInMillis) throws Exception {
+        BookKeeper bkc = new BookKeeper(conf);
+
+        byte[] pwd = new byte[] {};
+        final LedgerHandle lh = bkc.createLedger(4, 3, 1, BookKeeper.DigestType.CRC32, pwd);
+        lh.addEntry(entry);
+
+        final AtomicBoolean finished = new AtomicBoolean(false);
+        final AtomicBoolean failTest = new AtomicBoolean(false);
+        final AtomicBoolean writeError = new AtomicBoolean(false);
+        Thread t = new Thread(() -> {
+            try {
+                int count = 0;
+                while (!finished.get()) {
+                    lh.asyncAddEntry(entry, (rc, lh1, entryId, ctx) -> {
+                        if (rc != BKException.Code.OK) {
+                            finished.set(true);
+                            writeError.set(true);
+                        }
+                    }, null);
+                    if (++count > 100) {
+                        finished.set(true);
+                    }
+                }
+            } catch (Exception e) {
+                LOG.error("Exception in add entry thread", e);
+                failTest.set(true);
+            }
+        });
+        final CountDownLatch b0latch = new CountDownLatch(1);
+        final CountDownLatch b0latch2 = new CountDownLatch(1);
+
+
+        sleepBookie(getBookie(0), b0latch);
+        sleepBookie(getBookie(1), b0latch2);
+
+        setTargetChannelState(bkc, getBookie(0), 0, false);
+        setTargetChannelState(bkc, getBookie(1), 0, false);
+
+        t.start();
+
+        Thread.sleep(sleepInMillis);
+
+        finished.set(true);
+
+        b0latch.countDown();
+        b0latch2.countDown();
+        setTargetChannelState(bkc, getBookie(0), 0, true);
+        setTargetChannelState(bkc, getBookie(1), 0, true);
+
+        t.join();
+
+        assertEquals("write error", expectWriteError, writeError.get());
+        assertEquals("test failure", expectFailedTest, failTest.get());
+
+        lh.close();
+
+        LedgerHandle lh2 = bkc.openLedger(lh.getId(), BookKeeper.DigestType.CRC32, pwd);
+        LedgerChecker lc = new LedgerChecker(bkc);
+        final CountDownLatch checklatch = new CountDownLatch(1);
+        final AtomicInteger numFragments = new AtomicInteger(-1);
+        lc.checkLedger(lh2, (rc, fragments) -> {
+            LOG.debug("Checked ledgers returned {} {}", rc, fragments);
+            if (rc == BKException.Code.OK) {
+                numFragments.set(fragments.size());
+                LOG.error("Checked ledgers returned {} {}", rc, fragments);
+            }
+            checklatch.countDown();
+        });
+        checklatch.await();
+        assertEquals("There should be no missing fragments", 0, numFragments.get());
+
+        return lh2;
+    }
+
+    private void setTargetChannelState(BookKeeper bkc, BookieSocketAddress address,
+                                       long key, boolean state) throws Exception {
+        bkc.getBookieClient().lookupClient(address).obtain((rc, pcbc) -> {
+            pcbc.setWritable(state);
+        }, key);
+    }
+
+    @Test
     public void testManyBookieFailureWithSlowBookies() throws Exception {
         ClientConfiguration conf = new ClientConfiguration();
         conf.setReadTimeout(5).setZkServers(zkUtil.getZooKeeperConnectString());
@@ -163,7 +310,6 @@ public class SlowBookieTest extends BookKeeperClusterTestCase {
         final LedgerHandle lh = bkc.createLedger(4, 3, 1, BookKeeper.DigestType.CRC32, pwd);
         final AtomicBoolean finished = new AtomicBoolean(false);
         final AtomicBoolean failTest = new AtomicBoolean(false);
-        final byte[] entry = "Test Entry".getBytes();
         Thread t = new Thread() {
                 public void run() {
                     try {

@@ -35,9 +35,6 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import java.security.GeneralSecurityException;
 import java.security.NoSuchAlgorithmException;
-import java.time.Duration;
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumSet;
@@ -801,15 +798,25 @@ public class LedgerHandle implements WriteHandle {
                                                               long lastEntry) {
         PendingReadOp op = new PendingReadOp(this, bk.getScheduler(), firstEntry, lastEntry);
         if (!bk.isClosed()) {
-            // waiting on the first one.
-            // not very helpful if there are multiple ensembles or if bookie goes into unresponsive
+            // Waiting on the first one.
+            // This is not very helpful if there are multiple ensembles or if bookie goes into unresponsive
             // state later after N requests sent.
-            // unfortunately it seems that alternatives are:
-            // - send reads one-by-one (our case anyway)
+            // Unfortunately it seems that alternatives are:
+            // - send reads one-by-one (up to the app)
+            // - rework LedgerHandle to send requests one-by-one (maybe later, potential perf impact)
             // - block worker pool (not good)
+            // Even with this implementation one should be more concerned about OOME when all read responses arrive
+            // or about overloading bookies with these requests then about submission of many small requests.
+            // Naturally one of the solutions would be to submit smaller batches and in this case
+            // current implementation will prevent next batch from starting when bookie is
+            // unresponsive thus helpful enough.
             DistributionSchedule.WriteSet ws = distributionSchedule.getWriteSet(firstEntry);
-            if (!waitForWritable(ws, firstEntry, ws.size() - 1, waitForWriteSetMs)) {
-                op.allowFastFailOnBlockedServer();
+            try {
+                if (!waitForWritable(ws, firstEntry, ws.size() - 1, waitForWriteSetMs)) {
+                    op.allowFailFastOnUnwritableChannel();
+                }
+            } finally {
+                ws.recycle();
             }
 
             bk.getMainWorkerPool().submitOrdered(ledgerId, op);
@@ -1044,34 +1051,40 @@ public class LedgerHandle implements WriteHandle {
         }
 
         final long startTime = MathUtils.nowInNano();
-        boolean success = true;
+        boolean success = isWritesetWritable(writeSet, key, allowedNonWritableCount);
 
-        if (durationMs == 0) {
-            success = isWritesetWritable(writeSet, key, allowedNonWritableCount);
-        } else {
+        if (!success && durationMs > 0) {
             int backoff = 1;
-            final Instant deadline = Instant.now().plus(durationMs, ChronoUnit.MILLIS);
+            final int maxBackoff = 4;
+            final long deadline = startTime + TimeUnit.MILLISECONDS.toNanos(durationMs);
 
             while (!isWritesetWritable(writeSet, key, allowedNonWritableCount)) {
-                if (Instant.now().isBefore(deadline)) {
-                    long maxSleep = Duration.between(Instant.now(), deadline).toMillis();
+                if (MathUtils.nowInNano() < deadline) {
+                    long maxSleep = MathUtils.elapsedMSec(startTime);
                     if (maxSleep < 0) {
                         maxSleep = 1;
                     }
                     long sleepMs = Math.min(backoff, maxSleep);
 
                     try {
-                        Thread.sleep(sleepMs);
+                        TimeUnit.MILLISECONDS.sleep(sleepMs);
                     } catch (InterruptedException e) {
                         Thread.currentThread().interrupt();
                         success = isWritesetWritable(writeSet, key, allowedNonWritableCount);
                         break;
                     }
-                    backoff = backoff * 2;
+                    if (backoff <= maxBackoff) {
+                        backoff++;
+                    }
                 } else {
                     success = false;
                     break;
                 }
+            }
+            if (backoff > 1) {
+                LOG.info("Spent {} ms waiting for {} writable channels",
+                        MathUtils.elapsedMSec(startTime),
+                        writeSet.size() - allowedNonWritableCount);
             }
         }
 
@@ -1127,9 +1140,13 @@ public class LedgerHandle implements WriteHandle {
             return;
         }
 
-        if (!waitForWritable(distributionSchedule.getWriteSet(op.getEntryId()), op.getEntryId(),
-                0, waitForWriteSetMs)) {
-            op.allowFastFailOnBlockedServer();
+        DistributionSchedule.WriteSet ws = distributionSchedule.getWriteSet(op.getEntryId());
+        try {
+            if (!waitForWritable(ws, op.getEntryId(), 0, waitForWriteSetMs)) {
+                op.allowFailFastOnUnwritableChannel();
+            }
+        } finally {
+            ws.recycle();
         }
 
         try {
@@ -1177,6 +1194,7 @@ public class LedgerHandle implements WriteHandle {
             cb.readLastConfirmedComplete(BKException.Code.OK, lastEntryId, ctx);
             return;
         }
+
         ReadLastConfirmedOp.LastConfirmedDataCallback innercb = new ReadLastConfirmedOp.LastConfirmedDataCallback() {
                 @Override
                 public void readLastConfirmedDataComplete(int rc, DigestManager.RecoveryData data) {
@@ -1188,6 +1206,7 @@ public class LedgerHandle implements WriteHandle {
                     }
                 }
             };
+
         new ReadLastConfirmedOp(this, innercb).initiate();
     }
 
