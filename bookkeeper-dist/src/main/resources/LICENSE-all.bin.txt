@@ -210,6 +210,7 @@ Apache Software License, Version 2.
 - lib/com.fasterxml.jackson.core-jackson-databind-2.8.9.jar [3]
 - lib/com.fasterxml.jackson.module-jackson-module-paranamer-2.8.4.jar [4]
 - lib/com.fasterxml.jackson.module-jackson-module-scala_2.11-2.8.4.jar [5]
+- lib/com.github.ben-manes.caffeine-caffeine-2.3.4.jar [9]
 - lib/com.google.guava-guava-21.0.jar [6]
 - lib/commons-cli-commons-cli-1.2.jar [7]
 - lib/commons-codec-commons-codec-1.6.jar [8]
@@ -242,6 +243,7 @@ Apache Software License, Version 2.
 - lib/com.twitter-util-lint_2.11-6.43.0.jar [19]
 - lib/com.twitter-util-logging_2.11-6.43.0.jar [19]
 - lib/com.twitter-util-registry_2.11-6.43.0.jar [19]
+- lib/com.twitter-util-security_2.11-6.43.0.jar [19]
 - lib/com.twitter-util-stats_2.11-6.43.0.jar [19]
 - lib/com.twitter-util-tunable_2.11-6.43.0.jar [20]
 - lib/io.dropwizard.metrics-metrics-core-3.1.0.jar [21]
@@ -278,6 +280,7 @@ Apache Software License, Version 2.
 [6] Source available at https://github.com/google/guava/tree/v21.0
 [7] Source available at https://git-wip-us.apache.org/repos/asf?p=commons-cli.git;a=tag;h=bc8f0e
 [8] Source available at http://svn.apache.org/viewvc/commons/proper/codec/tags/1_6/
+[9] Source available at https://github.com/ben-manes/caffeine/tree/v2.3.4
 [10] Source available at http://svn.apache.org/viewvc/commons/proper/configuration/tags/CONFIGURATION_1_10/
 [11] Source available at https://git-wip-us.apache.org/repos/asf?p=commons-io.git;a=tag;h=603579
 [12] Source available at https://git-wip-us.apache.org/repos/asf?p=commons-lang.git;a=tag;h=375459
