@@ -16,11 +16,16 @@
  */
 package org.apache.bookkeeper.stats;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
+import org.junit.Test;
+
+/**
+ * Unit test of {@link CodahaleOpStatsLogger}.
+ */
 public class CodahaleOpStatsTest {
 
-    @org.junit.Test
+    @Test
     public void testToOpStatsData() {
         OpStatsLogger logger = new CodahaleMetricsProvider().getStatsLogger("test").getOpStatsLogger("testLogger");
         logger.registerSuccessfulValue(1);

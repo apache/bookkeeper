@@ -27,9 +27,6 @@
   <groupId>org.apache.bookkeeper</groupId>
   <artifactId>stream-storage-api</artifactId>
   <name>Apache BookKeeper :: Stream Storage :: API</name>
-  <properties>
-    <freebuilder.version>1.12.3</freebuilder.version>
-  </properties>
   <dependencies>
     <dependency>
       <groupId>org.apache.bookkeeper</groupId>
@@ -48,7 +45,6 @@
     <dependency>
       <groupId>org.inferred</groupId>
       <artifactId>freebuilder</artifactId>
-      <version>${freebuilder.version}</version>
     </dependency>
   </dependencies>
 </project>

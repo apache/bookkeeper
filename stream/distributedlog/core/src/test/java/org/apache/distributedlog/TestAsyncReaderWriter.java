@@ -41,7 +41,6 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
-import junit.framework.Assert;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.BookKeeperAccessor;
 import org.apache.bookkeeper.client.LedgerHandle;
@@ -76,15 +75,13 @@ import org.apache.distributedlog.lock.DistributedLock;
 import org.apache.distributedlog.util.FailpointUtils;
 import org.apache.distributedlog.util.SimplePermitLimiter;
 import org.apache.distributedlog.util.Utils;
+import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-
-
 
 /**
  * Test Cases for AsyncReaderWriter.
