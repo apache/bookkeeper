@@ -158,8 +158,6 @@ public class BookieProtoEncoding {
             long ledgerId = -1;
             long entryId = BookieProtocol.INVALID_ENTRY_ID;
 
-            ServerStats.getInstance().incrementPacketsReceived();
-
             switch (opCode) {
             case BookieProtocol.ADDENTRY: {
                 byte[] masterKey = readMasterKey(packet);
@@ -241,7 +239,6 @@ public class BookieProtoEncoding {
             ByteBuf buf = allocator.buffer(24);
             buf.writeInt(PacketHeader.toInt(r.getProtocolVersion(), r.getOpCode(), (short) 0));
 
-            ServerStats.getInstance().incrementPacketsSent();
             try {
                 if (msg instanceof BookieProtocol.ReadResponse) {
                     buf.writeInt(r.getErrorCode());
