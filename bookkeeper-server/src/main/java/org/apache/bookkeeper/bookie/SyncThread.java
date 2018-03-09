@@ -61,7 +61,6 @@ import org.apache.bookkeeper.util.MathUtils;
 class SyncThread implements Checkpointer {
 
     final ScheduledExecutorService executor;
-    final int flushInterval;
     final LedgerStorage ledgerStorage;
     final LedgerDirsListener dirsListener;
     final CheckpointSource checkpointSource;
@@ -78,10 +77,6 @@ class SyncThread implements Checkpointer {
         this.ledgerStorage = ledgerStorage;
         this.checkpointSource = checkpointSource;
         this.executor = Executors.newSingleThreadScheduledExecutor(new DefaultThreadFactory("SyncThread"));
-        flushInterval = conf.getFlushInterval();
-        if (log.isDebugEnabled()) {
-            log.debug("Flush Interval : {}", flushInterval);
-        }
     }
 
     @Override
@@ -119,7 +114,7 @@ class SyncThread implements Checkpointer {
         });
     }
 
-    void start() {
+    void scheduleCheckpointAtFixedRate(int flushInterval) {
         executor.scheduleWithFixedDelay(() -> {
             startCheckpoint(checkpointSource.newCheckpoint());
         }, flushInterval, flushInterval, TimeUnit.MILLISECONDS);

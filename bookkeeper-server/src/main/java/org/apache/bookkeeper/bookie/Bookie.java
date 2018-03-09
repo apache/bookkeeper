@@ -847,7 +847,7 @@ public class Bookie extends BookieCriticalThread {
          * again if bookie restarted again before finished journal replays.
          */
         if (entryLogPerLedgerEnabled) {
-            syncThread.start();
+            syncThread.scheduleCheckpointAtFixedRate(conf.getFlushInterval());
         }
 
         // start bookie thread
