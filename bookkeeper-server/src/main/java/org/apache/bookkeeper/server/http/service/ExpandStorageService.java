@@ -83,7 +83,7 @@ public class ExpandStorageService implements HttpEndpointService {
                 URI.create(conf.getMetadataServiceUri())
             )) {
                 driver.initialize(conf, () -> { }, NullStatsLogger.INSTANCE);
-                Bookie.checkEnvironmentWithStorageExpansion(conf, driver.getRegistrationManager(),
+                Bookie.checkEnvironmentWithStorageExpansion(conf, driver,
                   Lists.newArrayList(journalDirectories), allLedgerDirs);
             } catch (BookieException e) {
                 LOG.error("Exception occurred while updating cookie for storage expansion", e);

@@ -125,8 +125,7 @@ public class Bookie extends BookieCriticalThread {
     LedgerDirsMonitor idxMonitor;
 
     // Registration Manager for managing registration
-    private final MetadataBookieDriver metadataDriver;
-    RegistrationManager registrationManager;
+    protected final MetadataBookieDriver metadataDriver;
 
     private int exitCode = ExitCode.OK;
 
@@ -227,30 +226,20 @@ public class Bookie extends BookieCriticalThread {
         }
     }
 
-    @VisibleForTesting
-    public synchronized void setRegistrationManager(RegistrationManager rm) {
-            this.registrationManager = rm;
-            this.getStateManager().setRegistrationManager(rm);
-    }
-
-    @VisibleForTesting
-    public synchronized RegistrationManager getRegistrationManager() {
-        return this.registrationManager;
-    }
-
     /**
      * Check that the environment for the bookie is correct.
      * This means that the configuration has stayed the same as the
      * first run and the filesystem structure is up to date.
      */
-    private void checkEnvironment(RegistrationManager rm) throws BookieException, IOException {
+    private void checkEnvironment(MetadataBookieDriver metadataDriver)
+            throws BookieException, IOException {
         List<File> allLedgerDirs = new ArrayList<File>(ledgerDirsManager.getAllLedgerDirs().size()
                                                      + indexDirsManager.getAllLedgerDirs().size());
         allLedgerDirs.addAll(ledgerDirsManager.getAllLedgerDirs());
         if (indexDirsManager != ledgerDirsManager) {
             allLedgerDirs.addAll(indexDirsManager.getAllLedgerDirs());
         }
-        if (rm == null) { // exists only for testing, just make sure directories are correct
+        if (metadataDriver == null) { // exists only for testing, just make sure directories are correct
 
             for (File journalDirectory : journalDirectories) {
                 checkDirectoryStructure(journalDirectory);
@@ -262,7 +251,7 @@ public class Bookie extends BookieCriticalThread {
             return;
         }
 
-        checkEnvironmentWithStorageExpansion(conf, rm, journalDirectories, allLedgerDirs);
+        checkEnvironmentWithStorageExpansion(conf, metadataDriver, journalDirectories, allLedgerDirs);
 
         checkIfDirsOnSameDiskPartition(allLedgerDirs);
         checkIfDirsOnSameDiskPartition(journalDirectories);
@@ -402,9 +391,10 @@ public class Bookie extends BookieCriticalThread {
 
     public static void checkEnvironmentWithStorageExpansion(
             ServerConfiguration conf,
-            RegistrationManager rm,
+            MetadataBookieDriver metadataDriver,
             List<File> journalDirectories,
             List<File> allLedgerDirs) throws BookieException {
+        RegistrationManager rm = metadataDriver.getRegistrationManager();
         try {
             // 1. retrieve the instance id
             String instanceId = rm.getClusterInstanceId();
@@ -632,10 +622,9 @@ public class Bookie extends BookieCriticalThread {
 
         // instantiate zookeeper client to initialize ledger manager
         this.metadataDriver = instantiateMetadataDriver(conf);
-        this.registrationManager = this.metadataDriver.getRegistrationManager();
-        checkEnvironment(this.registrationManager);
+        checkEnvironment(this.metadataDriver);
         try {
-            if (registrationManager != null) {
+            if (this.metadataDriver != null) {
                 // current the registration manager is zookeeper only
                 ledgerManagerFactory = metadataDriver.getLedgerManagerFactory();
                 LOG.info("instantiate ledger manager {}", ledgerManagerFactory.getClass().getName());
@@ -647,7 +636,7 @@ public class Bookie extends BookieCriticalThread {
         } catch (MetadataException e) {
             throw new MetadataStoreException("Failed to initialize ledger manager", e);
         }
-        stateManager = new BookieStateManager(conf, statsLogger, registrationManager, ledgerDirsManager);
+        stateManager = new BookieStateManager(conf, statsLogger, metadataDriver, ledgerDirsManager);
         // register shutdown handler using trigger mode
         stateManager.setShutdownHandler(exitCode -> triggerBookieShutdown(exitCode));
         // Initialise ledgerDirMonitor. This would look through all the
@@ -903,8 +892,13 @@ public class Bookie extends BookieCriticalThread {
      */
     private MetadataBookieDriver instantiateMetadataDriver(ServerConfiguration conf) throws BookieException {
         try {
+            String metadataServiceUriStr = conf.getMetadataServiceUri();
+            if (null == metadataServiceUriStr) {
+                return null;
+            }
+
             MetadataBookieDriver driver = MetadataDrivers.getBookieDriver(
-                URI.create(conf.getMetadataServiceUri()));
+                URI.create(metadataServiceUriStr));
             driver.initialize(
                 conf,
                 () -> {
@@ -1036,8 +1030,8 @@ public class Bookie extends BookieCriticalThread {
 
             }
             // Shutdown the ZK client
-            if (registrationManager != null) {
-                registrationManager.close();
+            if (metadataDriver != null) {
+                metadataDriver.close();
             }
         } catch (InterruptedException ie) {
             Thread.currentThread().interrupt();

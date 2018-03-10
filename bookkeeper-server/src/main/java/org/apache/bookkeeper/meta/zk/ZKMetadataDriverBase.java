@@ -29,6 +29,7 @@ import java.net.URI;
 import java.util.List;
 import java.util.Optional;
 import lombok.Getter;
+import lombok.Setter;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.conf.AbstractConfiguration;
@@ -104,6 +105,7 @@ public class ZKMetadataDriverBase implements AutoCloseable {
     // zookeeper related variables
     protected List<ACL> acls;
     @Getter
+    @Setter
     protected ZooKeeper zk = null;
     // whether the zk handle is one we created, or is owned by whoever
     // instantiated us
@@ -173,6 +175,8 @@ public class ZKMetadataDriverBase implements AutoCloseable {
                             CreateMode.PERSISTENT);
                     } catch (KeeperException.NodeExistsException e) {
                         // this node is just now created by someone.
+                    } catch (KeeperException.NoNodeException e) {
+                        // the cluster hasn't been initialized
                     }
                 }
             } catch (IOException | KeeperException e) {

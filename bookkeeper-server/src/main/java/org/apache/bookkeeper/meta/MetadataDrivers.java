@@ -327,6 +327,36 @@ public final class MetadataDrivers {
     }
 
     /**
+     * Process the provided <i>function</i> with metadata bookie driver resolved
+     * from the metadata service uri returned by {@link ServerConfiguration#getMetadataServiceUri()}.
+     *
+     * @param conf server configuration
+     * @param function function to apply with metadata bookie driver.
+     * @throws MetadataException when failed to access metadata store
+     * @throws ExecutionException exception thrown when processing <tt>function</tt>.
+     */
+    public static <T> T runFunctionWithMetadataBookieDriver(ServerConfiguration conf,
+                                                            Function<MetadataBookieDriver, T> function)
+            throws MetadataException, ExecutionException {
+        try (MetadataBookieDriver driver = MetadataDrivers.getBookieDriver(
+            URI.create(conf.getMetadataServiceUri())
+        )) {
+            driver.initialize(conf, () -> {}, NullStatsLogger.INSTANCE);
+            try {
+                return function.apply(driver);
+            } catch (Exception uee) {
+                if (uee.getCause() instanceof MetadataException) {
+                    throw (MetadataException) uee.getCause();
+                } else {
+                    throw new ExecutionException(uee.getMessage(), uee.getCause());
+                }
+            }
+        } catch (ConfigurationException e) {
+            throw new MetadataException(Code.INVALID_METADATA_SERVICE_URI, e);
+        }
+    }
+
+    /**
      * Process the provided <i>function</i> with registration manager resolved
      * from the metadata service uri returned by {@link ServerConfiguration#getMetadataServiceUri()}.
      *
@@ -338,20 +368,7 @@ public final class MetadataDrivers {
     public static <T> T runFunctionWithRegistrationManager(ServerConfiguration conf,
                                                            Function<RegistrationManager, T> function)
             throws MetadataException, ExecutionException {
-        try (MetadataBookieDriver driver = MetadataDrivers.getBookieDriver(
-            URI.create(conf.getMetadataServiceUri())
-        )) {
-            driver.initialize(conf, () -> {}, NullStatsLogger.INSTANCE);
-            try {
-                return function.apply(driver.getRegistrationManager());
-            } catch (UncheckedExecutionException uee) {
-                throw new ExecutionException(uee.getMessage(), uee.getCause());
-            } catch (Exception e) {
-                throw new ExecutionException(e.getMessage(), e);
-            }
-        } catch (ConfigurationException e) {
-            throw new MetadataException(Code.INVALID_METADATA_SERVICE_URI, e);
-        }
+        return runFunctionWithMetadataBookieDriver(conf, driver -> function.apply(driver.getRegistrationManager()));
     }
 
     /**
@@ -366,20 +383,13 @@ public final class MetadataDrivers {
     public static <T> T runFunctionWithLedgerManagerFactory(ServerConfiguration conf,
                                                             Function<LedgerManagerFactory, T> function)
             throws MetadataException, ExecutionException {
-        try (MetadataBookieDriver driver = MetadataDrivers.getBookieDriver(
-            URI.create(conf.getMetadataServiceUri())
-        )) {
-            driver.initialize(conf, () -> {}, NullStatsLogger.INSTANCE);
+        return runFunctionWithMetadataBookieDriver(conf, driver -> {
             try {
                 return function.apply(driver.getLedgerManagerFactory());
-            } catch (UncheckedExecutionException uee) {
-                throw new ExecutionException(uee.getMessage(), uee.getCause());
-            } catch (Exception e) {
-                throw new ExecutionException(e.getMessage(), e);
+            } catch (MetadataException me) {
+                throw new UncheckedExecutionException(me.getMessage(), me);
             }
-        } catch (ConfigurationException e) {
-            throw new MetadataException(Code.INVALID_METADATA_SERVICE_URI, e);
-        }
+        });
     }
 
 }

@@ -224,11 +224,14 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
                         + factoryClass);
                 }
             }
-            serviceUri = String.format(
-                "zk+%s://%s%s",
-                ledgerManagerType,
-                getZkServers(),
-                getZkLedgersRootPath());
+            String zkServers = getZkServers();
+            if (null != zkServers) {
+                serviceUri = String.format(
+                    "zk+%s://%s%s",
+                    ledgerManagerType,
+                    getZkServers(),
+                    getZkLedgersRootPath());
+            }
         }
         return serviceUri;
     }
@@ -373,9 +376,7 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      *
      * @param factoryClassName
      *          Ledger Manager Factory Class Name
-     * @deprecated since 4.7.0
      */
-    @Deprecated
     public void setLedgerManagerFactoryClassName(String factoryClassName) {
         setProperty(LEDGER_MANAGER_FACTORY_CLASS, factoryClassName);
     }
@@ -394,9 +395,7 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      *
      * @param factoryClass
      *          Ledger Manager Factory Class
-     * @deprecated since 4.7.0
      */
-    @Deprecated
     public void setLedgerManagerFactoryClass(Class<? extends LedgerManagerFactory> factoryClass) {
         setProperty(LEDGER_MANAGER_FACTORY_CLASS, factoryClass.getName());
     }
@@ -405,9 +404,7 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      * Get ledger manager factory class.
      *
      * @return ledger manager factory class
-     * @deprecated since 4.7.0
      */
-    @Deprecated
     public Class<? extends LedgerManagerFactory> getLedgerManagerFactoryClass()
         throws ConfigurationException {
         return ReflectionUtils.getClass(this, LEDGER_MANAGER_FACTORY_CLASS,
@@ -474,9 +471,7 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      * Get the node under which available bookies are stored.
      *
      * @return Node under which available bookies are stored.
-     * @deprecated since 4.7.0
      */
-    @Deprecated
     public String getZkAvailableBookiesPath() {
         return getZkLedgersRootPath() + "/" + AVAILABLE_NODE;
     }

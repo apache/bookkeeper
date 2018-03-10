@@ -40,6 +40,7 @@ public abstract class AbstractZkLedgerManagerFactory implements LedgerManagerFac
 
     protected ZooKeeper zk;
 
+    @SuppressWarnings("deprecation")
     @Override
     public void format(AbstractConfiguration<?> conf, LayoutManager layoutManager)
             throws InterruptedException, KeeperException, IOException {

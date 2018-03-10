@@ -20,6 +20,7 @@ package org.apache.bookkeeper.bookie;
 
 import static com.google.common.base.Charsets.UTF_8;
 import static org.apache.bookkeeper.meta.MetadataDrivers.runFunctionWithLedgerManagerFactory;
+import static org.apache.bookkeeper.meta.MetadataDrivers.runFunctionWithMetadataBookieDriver;
 import static org.apache.bookkeeper.meta.MetadataDrivers.runFunctionWithRegistrationManager;
 import static org.apache.bookkeeper.tools.cli.helpers.CommandHelpers.getBookieSocketAddrStringRepresentation;
 
@@ -2027,7 +2028,7 @@ public class BookieShell implements Tool {
         }
 
         private int expandStorage() throws Exception {
-            return runFunctionWithRegistrationManager(bkConf, rm -> {
+            return runFunctionWithMetadataBookieDriver(bkConf, driver -> {
                 List<File> allLedgerDirs = Lists.newArrayList();
                 allLedgerDirs.addAll(Arrays.asList(ledgerDirectories));
                 if (indexDirectories != ledgerDirectories) {
@@ -2036,7 +2037,7 @@ public class BookieShell implements Tool {
 
                 try {
                     Bookie.checkEnvironmentWithStorageExpansion(
-                        bkConf, rm, Arrays.asList(journalDirectories), allLedgerDirs);
+                        bkConf, driver, Arrays.asList(journalDirectories), allLedgerDirs);
                     return 0;
                 } catch (BookieException e) {
                     LOG.error("Exception while updating cookie for storage expansion", e);
