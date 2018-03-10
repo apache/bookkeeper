@@ -36,7 +36,7 @@ import org.apache.bookkeeper.stats.Counter;
  * Servlet used to export metrics in prometheus text format.
  */
 public class PrometheusServlet extends HttpServlet {
-    private final PrometheusMetricsProvider provider;
+    private final transient PrometheusMetricsProvider provider;
 
     public PrometheusServlet(PrometheusMetricsProvider provider) {
         this.provider = provider;
