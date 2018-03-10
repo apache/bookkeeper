@@ -467,7 +467,7 @@ public class BookieProtoEncoding {
             buffer.markReaderIndex();
 
             if (!usingV2Protocol) {
-                out.add(REP_PREV3.decode(buffer));
+                out.add(REP_V3.decode(buffer));
             } else {
                 // If in the same connection we already got preV3 messages, don't try again to decode V3 messages
                 out.add(REP_PREV3.decode(buffer));
