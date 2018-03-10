@@ -20,6 +20,8 @@
  */
 package org.apache.bookkeeper.http.twitter;
 
+import static org.junit.Assert.assertEquals;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -28,13 +30,14 @@ import java.net.URL;
 
 import org.apache.bookkeeper.http.HttpRouter;
 import org.apache.bookkeeper.http.HttpServer;
-import org.apache.bookkeeper.http.NullHttpServiceProvider;
 import org.apache.bookkeeper.http.HttpServiceProvider;
+import org.apache.bookkeeper.http.NullHttpServiceProvider;
 import org.apache.bookkeeper.http.service.HeartbeatService;
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
-
+/**
+ * Unit teset {@link TwitterHttpServer}.
+ */
 public class TestTwitterHttpServer {
 
     private int port = 8080;
