@@ -47,17 +47,15 @@ import org.apache.bookkeeper.proto.BookieProtocol.ReadRequest;
 import org.apache.bookkeeper.proto.BookieProtocol.Request;
 import org.apache.bookkeeper.proto.BookieProtocol.Response;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessage;
+import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.util.OrderedSafeExecutor;
 import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Test backward compatibility.
  */
 public class TestBackwardCompatCMS42 extends BookKeeperClusterTestCase {
-    static final Logger LOG = LoggerFactory.getLogger(TestBackwardCompatCMS42.class);
 
     private static final byte[] SUCCESS_RESPONSE = {1};
     private static final byte[] FAILURE_RESPONSE = {2};
@@ -181,7 +179,9 @@ public class TestBackwardCompatCMS42 extends BookKeeperClusterTestCase {
     }
 
     CompatClient42 newCompatClient(BookieSocketAddress addr) throws Exception {
-        return new CompatClient42(executor, eventLoopGroup, addr, authProvider, extRegistry);
+        ClientConfiguration conf = new ClientConfiguration();
+        conf.setUseV2WireProtocol(true);
+        return new CompatClient42(conf, executor, eventLoopGroup, addr, authProvider, extRegistry);
     }
 
     // extending PerChannelBookieClient to get the pipeline factory
@@ -190,11 +190,21 @@ public class TestBackwardCompatCMS42 extends BookKeeperClusterTestCase {
         Channel channel;
         final CountDownLatch connected = new CountDownLatch(1);
 
-        CompatClient42(OrderedSafeExecutor executor, EventLoopGroup eventLoopGroup,
+        CompatClient42(ClientConfiguration conf,
+                       OrderedSafeExecutor executor,
+                       EventLoopGroup eventLoopGroup,
                        BookieSocketAddress addr,
                        ClientAuthProvider.Factory authProviderFactory,
                        ExtensionRegistry extRegistry) throws Exception {
-            super(executor, eventLoopGroup, addr, authProviderFactory, extRegistry);
+            super(
+                conf,
+                executor,
+                eventLoopGroup,
+                addr,
+                NullStatsLogger.INSTANCE,
+                authProviderFactory,
+                extRegistry,
+                null);
 
             state = ConnectionState.CONNECTING;
             ChannelFuture future = connect();
