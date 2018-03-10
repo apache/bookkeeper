@@ -28,13 +28,13 @@ import static org.junit.Assert.fail;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.net.InetAddress;
 import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicLong;
 import javax.security.auth.login.Configuration;
 
+import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BKException.BKUnauthorizedAccessException;
 import org.apache.bookkeeper.client.BookKeeper;
@@ -82,7 +82,9 @@ public class GSSAPIBookKeeperTest extends BookKeeperClusterTestCase {
         kdc = new MiniKdc(conf, kdcDir.getRoot());
         kdc.start();
 
-        String localhostName = InetAddress.getLocalHost().getHostName();
+        ServerConfiguration bookieConf = newServerConfiguration();
+        bookieConf.setUseHostNameAsBookieID(true);
+        String localhostName = Bookie.getBookieAddress(bookieConf).getHostName();
 
         String principalServerNoRealm = "bookkeeper/" + localhostName;
         String principalServer = "bookkeeper/" + localhostName + "@" + kdc.getRealm();
@@ -172,12 +174,12 @@ public class GSSAPIBookKeeperTest extends BookKeeperClusterTestCase {
     /**
      * check if the entry exists. Restart the bookie to allow access
      */
-    private int entryCount(long ledgerId, ServerConfiguration bookieConf,
-        ClientConfiguration clientConf) throws Exception {
+    private int entryCount(long ledgerId, ClientConfiguration clientConf)
+            throws Exception {
         LOG.info("Counting entries in {}", ledgerId);
         for (ServerConfiguration conf : bsConfs) {
-            bookieConf.setUseHostNameAsBookieID(true);
-            bookieConf.setBookieAuthProviderFactoryClass(
+            conf.setUseHostNameAsBookieID(true);
+            conf.setBookieAuthProviderFactoryClass(
                 SASLBookieAuthProviderFactory.class.getName());
         }
         clientConf.setClientAuthProviderFactoryClass(
@@ -222,7 +224,7 @@ public class GSSAPIBookKeeperTest extends BookKeeperClusterTestCase {
         connectAndWriteToBookie(clientConf, ledgerId); // should succeed
 
         assertFalse(ledgerId.get() == -1);
-        assertEquals("Should have entry", 1, entryCount(ledgerId.get(), bookieConf, clientConf));
+        assertEquals("Should have entry", 1, entryCount(ledgerId.get(), clientConf));
     }
 
     @Test

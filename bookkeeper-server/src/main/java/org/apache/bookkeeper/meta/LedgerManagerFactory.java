@@ -94,7 +94,7 @@ public interface LedgerManagerFactory extends AutoCloseable {
      * @param lm
      *            Layout manager
      */
-    void format(final AbstractConfiguration<?> conf, final LayoutManager lm)
+    void format(AbstractConfiguration<?> conf, LayoutManager lm)
             throws InterruptedException, KeeperException, IOException;
 
     /**

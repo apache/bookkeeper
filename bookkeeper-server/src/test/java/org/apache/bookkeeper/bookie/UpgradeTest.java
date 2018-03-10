@@ -105,7 +105,7 @@ public class UpgradeTest extends BookKeeperClusterTestCase {
             bc.write(packet);
             packet.release();
         }
-        bc.flush(true);
+        bc.flushAndForceWrite(false);
 
         return jc;
     }

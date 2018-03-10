@@ -104,11 +104,12 @@ public class BookKeeperTestClient extends BookKeeper {
             }
         };
 
-        regClient.watchWritableBookies(writableListener);
-        regClient.watchReadOnlyBookies(readOnlyListener);
+        getMetadataClientDriver().getRegistrationClient().watchWritableBookies(writableListener);
+        getMetadataClientDriver().getRegistrationClient().watchReadOnlyBookies(readOnlyListener);
 
         if (writable) {
-            return writableFuture.thenCompose(ignored -> regClient.getReadOnlyBookies())
+            return writableFuture
+                .thenCompose(ignored -> getMetadataClientDriver().getRegistrationClient().getReadOnlyBookies())
                 .thenCompose(readonlyBookies -> {
                     if (readonlyBookies.getValue().contains(b)) {
                         // if the bookie still shows up at readonly path, wait for it to disappear
@@ -118,7 +119,8 @@ public class BookKeeperTestClient extends BookKeeper {
                     }
                 });
         } else {
-            return readOnlyFuture.thenCompose(ignored -> regClient.getWritableBookies())
+            return readOnlyFuture
+                .thenCompose(ignored -> getMetadataClientDriver().getRegistrationClient().getWritableBookies())
                 .thenCompose(writableBookies -> {
                     if (writableBookies.getValue().contains(b)) {
                         // if the bookie still shows up at writable path, wait for it to disappear

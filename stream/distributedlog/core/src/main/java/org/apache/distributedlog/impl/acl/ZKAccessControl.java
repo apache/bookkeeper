@@ -16,15 +16,14 @@
  * limitations under the License.
  */
 package org.apache.distributedlog.impl.acl;
+
 import static com.google.common.base.Charsets.UTF_8;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Objects;
-
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.concurrent.CompletableFuture;
-
 import org.apache.distributedlog.ZooKeeperClient;
 import org.apache.distributedlog.thrift.AccessControlEntry;
 import org.apache.thrift.TException;
@@ -122,6 +121,7 @@ public class ZKAccessControl {
         } catch (ZooKeeperClient.ZooKeeperConnectionException e) {
             promise.completeExceptionally(e);
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             promise.completeExceptionally(e);
         } catch (IOException e) {
             promise.completeExceptionally(e);
@@ -146,6 +146,7 @@ public class ZKAccessControl {
         } catch (ZooKeeperClient.ZooKeeperConnectionException e) {
             promise.completeExceptionally(e);
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             promise.completeExceptionally(e);
         } catch (IOException e) {
             promise.completeExceptionally(e);
@@ -176,6 +177,7 @@ public class ZKAccessControl {
         } catch (ZooKeeperClient.ZooKeeperConnectionException e) {
             promise.completeExceptionally(e);
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             promise.completeExceptionally(e);
         }
         return promise;
@@ -199,6 +201,7 @@ public class ZKAccessControl {
         } catch (ZooKeeperClient.ZooKeeperConnectionException e) {
             promise.completeExceptionally(e);
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             promise.completeExceptionally(e);
         }
         return promise;

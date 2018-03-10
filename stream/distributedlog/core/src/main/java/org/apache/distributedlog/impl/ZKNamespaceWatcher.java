@@ -17,7 +17,7 @@
  */
 package org.apache.distributedlog.impl;
 
-import static org.apache.distributedlog.util.DLUtils.*;
+import static org.apache.distributedlog.util.DLUtils.isReservedStreamName;
 
 import java.net.URI;
 import java.util.ArrayList;
@@ -25,11 +25,11 @@ import java.util.List;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.distributedlog.DistributedLogConfiguration;
 import org.apache.distributedlog.ZooKeeperClient;
 import org.apache.distributedlog.callback.NamespaceListener;
 import org.apache.distributedlog.namespace.NamespaceWatcher;
-import org.apache.distributedlog.util.OrderedScheduler;
 import org.apache.zookeeper.AsyncCallback;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
@@ -94,6 +94,7 @@ public class ZKNamespaceWatcher extends NamespaceWatcher
         } catch (ZooKeeperClient.ZooKeeperConnectionException e) {
             scheduleTask(this, conf.getZKSessionTimeoutMilliseconds());
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             logger.warn("Interrupted on watching namespace changes for {} : ", uri, e);
             scheduleTask(this, conf.getZKSessionTimeoutMilliseconds());
         }

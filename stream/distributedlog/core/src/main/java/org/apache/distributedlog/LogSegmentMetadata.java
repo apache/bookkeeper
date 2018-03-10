@@ -18,13 +18,14 @@
 package org.apache.distributedlog;
 
 import static com.google.common.base.Charsets.UTF_8;
+
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Objects;
 import java.io.File;
 import java.io.IOException;
 import java.util.Comparator;
 import java.util.concurrent.CompletableFuture;
-import org.apache.distributedlog.common.concurrent.FutureUtils;
+import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.distributedlog.exceptions.DLInterruptedException;
 import org.apache.distributedlog.exceptions.LogSegmentNotFoundException;
 import org.apache.distributedlog.exceptions.UnsupportedMetadataVersionException;
@@ -649,6 +650,7 @@ public class LogSegmentMetadata {
         } catch (ZooKeeperClient.ZooKeeperConnectionException e) {
             result.completeExceptionally(Utils.zkException(e, path));
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             result.completeExceptionally(Utils.zkException(e, path));
         }
         return result;
@@ -1013,6 +1015,7 @@ public class LogSegmentMetadata {
         } catch (KeeperException.NodeExistsException nee) {
             throw nee;
         } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
             throw new DLInterruptedException("Interrupted on creating ledger znode " + zkPath, ie);
         } catch (Exception e) {
             LOG.error("Error creating ledger znode {}", zkPath, e);

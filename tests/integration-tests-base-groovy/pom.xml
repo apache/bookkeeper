@@ -35,7 +35,6 @@
   <name>Apache BookKeeper :: Tests :: Base module for Arquillian based integration tests using groovy</name>
 
   <properties>
-    <groovy.version>2.4.13</groovy.version>
     <groovy-eclipse-compiler.version>2.9.2-04</groovy-eclipse-compiler.version>
     <groovy-eclipse-batch.version>2.4.13-02</groovy-eclipse-batch.version>
   </properties>
@@ -46,8 +45,8 @@
         <artifactId>maven-compiler-plugin</artifactId>
         <configuration combine.self="override">
           <!-- combine.self="override" stops compilerArgs from parent pom being merged //-->
-          <source>1.8</source>
-          <target>1.8</target>
+          <source>${javac.target}</source>
+          <target>${javac.target}</target>
           <compilerId>groovy-eclipse-compiler</compilerId>
         </configuration>
         <dependencies>
@@ -106,7 +105,6 @@
     <dependency>
       <groupId>org.codehaus.groovy</groupId>
       <artifactId>groovy-all</artifactId>
-      <version>${groovy.version}</version>
     </dependency>
   </dependencies>
   <pluginRepositories>

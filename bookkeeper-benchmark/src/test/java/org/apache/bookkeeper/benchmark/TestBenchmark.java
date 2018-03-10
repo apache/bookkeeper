@@ -19,19 +19,21 @@
  */
 package org.apache.bookkeeper.benchmark;
 
+import java.util.Arrays;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
-import org.junit.Test;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Arrays;
-import java.util.concurrent.atomic.AtomicBoolean;
-
+/**
+ * Test benchmarks.
+ */
 public class TestBenchmark extends BookKeeperClusterTestCase {
     protected static final Logger LOG = LoggerFactory.getLogger(TestBenchmark.class);
 
@@ -91,7 +93,7 @@ public class TestBenchmark extends BookKeeperClusterTestCase {
 
         Thread.sleep(10000);
         byte data[] = new byte[1024];
-        Arrays.fill(data, (byte)'x');
+        Arrays.fill(data, (byte) 'x');
 
         long lastLedgerId = 0;
         Assert.assertTrue("Thread should be running", t.isAlive());

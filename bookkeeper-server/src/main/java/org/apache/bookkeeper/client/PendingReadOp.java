@@ -40,6 +40,7 @@ import org.apache.bookkeeper.client.impl.LedgerEntriesImpl;
 import org.apache.bookkeeper.client.impl.LedgerEntryImpl;
 import org.apache.bookkeeper.common.util.SafeRunnable;
 import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallbackCtx;
 import org.apache.bookkeeper.proto.checksum.DigestManager;
@@ -77,6 +78,7 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
 
     final int requiredBookiesMissingEntryForRecovery;
     final boolean isRecoveryRead;
+
     boolean parallelRead = false;
     final AtomicBoolean complete = new AtomicBoolean(false);
 
@@ -137,7 +139,6 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
             } catch (BKDigestMatchException e) {
                 readOpDmCounter.inc();
                 logErrorAndReattemptRead(bookieIndex, host, "Mac mismatch", BKException.Code.DigestMatchException);
-                buffer.release();
                 return false;
             }
 
@@ -152,7 +153,6 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
                 writeSet.recycle();
                 return true;
             } else {
-                buffer.release();
                 return false;
             }
         }
@@ -568,8 +568,10 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
             lh.throttler.acquire();
         }
 
+        int flags = isRecoveryRead ? BookieProtocol.FLAG_HIGH_PRIORITY : BookieProtocol.FLAG_NONE;
         lh.bk.getBookieClient().readEntry(to, lh.ledgerId, entry.entryImpl.getEntryId(),
-                                     this, new ReadContext(bookieIndex, to, entry));
+                                          this, new ReadContext(bookieIndex, to, entry),
+                                          flags);
     }
 
     @Override
@@ -585,12 +587,15 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
         heardFromHosts.add(rctx.to);
         heardFromHostsBitSet.set(rctx.bookieIndex, true);
 
+        buffer.retain();
         if (entry.complete(rctx.bookieIndex, rctx.to, buffer)) {
             if (!isRecoveryRead) {
                 // do not advance LastAddConfirmed for recovery reads
                 lh.updateLastConfirmed(rctx.getLastAddConfirmed(), 0L);
             }
             submitCallback(BKException.Code.OK);
+        } else {
+            buffer.release();
         }
 
         if (numPendingEntries < 0) {

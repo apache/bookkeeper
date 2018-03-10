@@ -753,6 +753,7 @@ public class TestLedgerUnderreplicationManager {
         } catch (KeeperException e) {
             LOG.error("Exception while reading data from znode :" + znode);
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             LOG.error("Exception while reading data from znode :" + znode);
         }
         return "";

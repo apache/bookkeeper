@@ -24,10 +24,6 @@
   </parent>
   <artifactId>bookkeeper-tools</artifactId>
   <name>Apache BookKeeper :: Tools</name>
-  <properties>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <project.libdir>${basedir}/lib</project.libdir>
-  </properties>
   <dependencies>
     <dependency>
       <groupId>org.apache.bookkeeper</groupId>

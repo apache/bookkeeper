@@ -59,8 +59,6 @@ import org.apache.bookkeeper.client.api.OpenBuilder;
 import org.apache.bookkeeper.client.api.WriteFlag;
 import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.apache.bookkeeper.conf.ClientConfiguration;
-import org.apache.bookkeeper.discover.RegistrationClient;
-import org.apache.bookkeeper.discover.ZKRegistrationClient;
 import org.apache.bookkeeper.feature.Feature;
 import org.apache.bookkeeper.feature.FeatureProvider;
 import org.apache.bookkeeper.feature.SettableFeatureProvider;
@@ -71,6 +69,7 @@ import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.MetadataClientDriver;
 import org.apache.bookkeeper.meta.MetadataDrivers;
 import org.apache.bookkeeper.meta.exceptions.MetadataException;
+import org.apache.bookkeeper.meta.zk.ZKMetadataClientDriver;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.net.DNSToSwitchMapping;
 import org.apache.bookkeeper.proto.BookieClient;
@@ -146,8 +145,6 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
     final Feature disableEnsembleChangeFeature;
 
     final MetadataClientDriver metadataDriver;
-    // Registration client to discover bookies
-    final RegistrationClient regClient;
     // Ledger manager responsible for how to store ledger meta data
     final LedgerManagerFactory ledgerManagerFactory;
     final LedgerManager ledgerManager;
@@ -456,12 +453,11 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
                 scheduler,
                 statsLogger,
                 java.util.Optional.ofNullable(zkc));
-            this.regClient = this.metadataDriver.getRegistrationClient();
         } catch (ConfigurationException ce) {
-            LOG.error("Failed to initialize metadata client driver", ce);
+            LOG.error("Failed to initialize metadata client driver using invalid metadata service uri", ce);
             throw new IOException("Failed to initialize metadata client driver", ce);
         } catch (MetadataException me) {
-            LOG.error("Failed to initialize metadata client driver", me);
+            LOG.error("Encountered metadata exceptions on initializing metadata client driver", me);
             throw new IOException("Failed to initialize metadata client driver", me);
         }
 
@@ -512,7 +508,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
         this.bookieClient = new BookieClient(conf, this.eventLoopGroup, this.mainWorkerPool,
                                              scheduler, statsLogger);
         this.bookieWatcher = new BookieWatcher(
-                conf, this.placementPolicy, regClient,
+                conf, this.placementPolicy, metadataDriver.getRegistrationClient(),
                 this.statsLogger.scope(WATCHER_SCOPE));
         if (conf.getDiskWeightBasedPlacementEnabled()) {
             LOG.info("Weighted ledger placement enabled");
@@ -546,6 +542,41 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
         this.addEntryQuorumTimeoutNanos = TimeUnit.SECONDS.toNanos(conf.getAddEntryQuorumTimeout());
         scheduleBookieHealthCheckIfEnabled();
     }
+
+    /**
+     * Allow to extend BookKeeper for mocking in unit tests.
+     */
+    @VisibleForTesting
+    BookKeeper() {
+        statsLogger = NullStatsLogger.INSTANCE;
+        scheduler = null;
+        requestTimer = null;
+        reorderReadSequence = false;
+        metadataDriver = null;
+        readSpeculativeRequestPolicy = Optional.absent();
+        readLACSpeculativeRequestPolicy = Optional.absent();
+        placementPolicy = null;
+        ownTimer = false;
+        mainWorkerPool = null;
+        ledgerManagerFactory = null;
+        ledgerManager = null;
+        ledgerIdGenerator = null;
+        featureProvider = null;
+        explicitLacInterval = 0;
+        eventLoopGroup = null;
+        disableEnsembleChangeFeature = null;
+        delayEnsembleChange = false;
+        conf = new ClientConfiguration();
+        bookieWatcher = null;
+        bookieInfoScheduler = null;
+        bookieClient = null;
+        addEntryQuorumTimeoutNanos = 0;
+    }
+
+    long getAddEntryQuorumTimeoutNanos() {
+        return addEntryQuorumTimeoutNanos;
+    }
+
 
     public int getExplicitLacInterval() {
         return explicitLacInterval;
@@ -707,7 +738,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
     }
 
     ZooKeeper getZkHandle() {
-        return ((ZKRegistrationClient) regClient).getZk();
+        return ((ZKMetadataClientDriver) metadataDriver).getZk();
     }
 
     protected ClientConfiguration getConf() {
@@ -1426,7 +1457,6 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
             // which will reject any incoming metadata requests.
             ledgerManager.close();
             ledgerIdGenerator.close();
-            ledgerManagerFactory.close();
         } catch (IOException ie) {
             LOG.error("Failed to close ledger manager : ", ie);
         }
@@ -1453,7 +1483,6 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
         if (ownEventLoopGroup) {
             eventLoopGroup.shutdownGracefully();
         }
-        this.regClient.close();
         this.metadataDriver.close();
     }
 

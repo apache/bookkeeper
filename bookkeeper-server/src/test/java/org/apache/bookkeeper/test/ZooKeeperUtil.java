@@ -86,7 +86,6 @@ public class ZooKeeperUtil {
     public void startServer() throws Exception {
         // create a ZooKeeper server(dataDir, dataLogDir, port)
         LOG.debug("Running ZK server");
-        // ServerStats.registerAsConcrete();
         ClientBase.setupTestEnv();
         zkTmpDir = IOUtils.createTempDir("zookeeper", "test");
 
@@ -189,7 +188,6 @@ public class ZooKeeperUtil {
 
     public void killServer() throws Exception {
         stopServer();
-        // ServerStats.unregister();
         FileUtils.deleteDirectory(zkTmpDir);
     }
 }

@@ -17,11 +17,18 @@
  */
 package org.apache.distributedlog.impl.logsegment;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import com.google.common.collect.Lists;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.distributedlog.BookKeeperClient;
 import org.apache.distributedlog.BookKeeperClientBuilder;
@@ -42,7 +49,6 @@ import org.apache.distributedlog.exceptions.ReadCancelledException;
 import org.apache.distributedlog.injector.AsyncFailureInjector;
 import org.apache.distributedlog.logsegment.LogSegmentEntryStore;
 import org.apache.distributedlog.util.ConfUtils;
-import org.apache.distributedlog.util.OrderedScheduler;
 import org.apache.distributedlog.util.Utils;
 import org.junit.After;
 import org.junit.Before;
@@ -79,9 +85,9 @@ public class TestBKLogSegmentEntryReader extends TestDistributedLogBase {
                 .ledgersPath("/ledgers")
                 .zkServers(bkutil.getZkServers())
                 .build();
-        scheduler = OrderedScheduler.newBuilder()
+        scheduler = OrderedScheduler.newSchedulerBuilder()
                 .name("test-bk-logsegment-entry-reader")
-                .corePoolSize(1)
+                .numThreads(1)
                 .build();
     }
 

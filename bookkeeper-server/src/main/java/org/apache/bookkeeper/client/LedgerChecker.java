@@ -33,6 +33,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.apache.bookkeeper.client.BKException.Code;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieClient;
+import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
 import org.slf4j.Logger;
@@ -198,8 +199,8 @@ public class LedgerChecker {
         } else if (firstStored == lastStored) {
             ReadManyEntriesCallback manycb = new ReadManyEntriesCallback(1,
                     fragment, cb);
-            bookieClient.readEntry(bookie, fragment
-                    .getLedgerId(), firstStored, manycb, null);
+            bookieClient.readEntry(bookie, fragment.getLedgerId(), firstStored,
+                                   manycb, null, BookieProtocol.FLAG_NONE);
         } else {
             if (lastStored <= firstStored) {
                 cb.operationComplete(Code.IncorrectParameterException, null);
@@ -239,9 +240,8 @@ public class LedgerChecker {
             }
             ReadManyEntriesCallback manycb = new ReadManyEntriesCallback(entriesToBeVerified.size(),
                     fragment, cb);
-
             for (Long entryID: entriesToBeVerified) {
-                bookieClient.readEntry(bookie, fragment.getLedgerId(), entryID, manycb, null);
+                bookieClient.readEntry(bookie, fragment.getLedgerId(), entryID, manycb, null, BookieProtocol.FLAG_NONE);
             }
         }
     }
@@ -382,7 +382,8 @@ public class LedgerChecker {
                 DistributionSchedule.WriteSet writeSet = lh.getDistributionSchedule().getWriteSet(entryToRead);
                 for (int i = 0; i < writeSet.size(); i++) {
                     BookieSocketAddress addr = curEnsemble.get(writeSet.get(i));
-                    bookieClient.readEntry(addr, lh.getId(), entryToRead, eecb, null);
+                    bookieClient.readEntry(addr, lh.getId(), entryToRead,
+                                           eecb, null, BookieProtocol.FLAG_NONE);
                 }
                 writeSet.recycle();
                 return;

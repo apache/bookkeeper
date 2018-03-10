@@ -27,12 +27,12 @@ import java.io.OutputStream;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.bookkeeper.common.concurrent.FutureEventListener;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.distributedlog.DLSN;
 import org.apache.distributedlog.LogRecord;
 import org.apache.distributedlog.api.AsyncLogWriter;
 import org.apache.distributedlog.api.DistributedLogManager;
-import org.apache.distributedlog.common.concurrent.FutureEventListener;
 import org.apache.distributedlog.exceptions.UnexpectedException;
 import org.apache.distributedlog.util.Utils;
 

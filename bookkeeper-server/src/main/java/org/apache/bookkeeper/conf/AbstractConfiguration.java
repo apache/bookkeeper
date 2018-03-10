@@ -20,8 +20,11 @@ package org.apache.bookkeeper.conf;
 import static org.apache.bookkeeper.conf.ClientConfiguration.CLIENT_AUTH_PROVIDER_FACTORY_CLASS;
 
 import java.net.URL;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+
 import javax.net.ssl.SSLEngine;
 
 import org.apache.bookkeeper.feature.Feature;
@@ -30,6 +33,8 @@ import org.apache.bookkeeper.meta.HierarchicalLedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LongHierarchicalLedgerManagerFactory;
 import org.apache.bookkeeper.util.EntryFormatter;
+import org.apache.bookkeeper.util.JsonUtil;
+import org.apache.bookkeeper.util.JsonUtil.ParseJsonException;
 import org.apache.bookkeeper.util.LedgerIdFormatter;
 import org.apache.bookkeeper.util.ReflectionUtils;
 import org.apache.bookkeeper.util.StringEntryFormatter;
@@ -68,6 +73,8 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
     // Ledger Manager
     protected static final String LEDGER_MANAGER_TYPE = "ledgerManagerType";
     protected static final String LEDGER_MANAGER_FACTORY_CLASS = "ledgerManagerFactoryClass";
+    protected static final String ALLOW_SHADED_LEDGER_MANAGER_FACTORY_CLASS = "allowShadedLedgerManagerFactoryClass";
+    protected static final String SHADED_LEDGER_MANAGER_FACTORY_CLASS_PREFIX = "shadedLedgerManagerFactoryClassPrefix";
     protected static final String METADATA_SERVICE_URI = "metadataServiceUri";
     protected static final String ZK_LEDGERS_ROOT_PATH = "zkLedgersRootPath";
     protected static final String ZK_REQUEST_RATE_LIMIT = "zkRequestRateLimit";
@@ -90,6 +97,11 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
 
     // Enable authentication of the other connection end point (mutual authentication)
     protected static final String TLS_CLIENT_AUTHENTICATION = "tlsClientAuthentication";
+
+    // Default formatter classes
+    protected static final Class<? extends EntryFormatter> DEFAULT_ENTRY_FORMATTER = StringEntryFormatter.class;
+    protected static final Class<? extends LedgerIdFormatter> DEFAULT_LEDGERID_FORMATTER =
+            LedgerIdFormatter.UUIDLedgerIdFormatter.class;
 
     /**
      * This list will be passed to {@link SSLEngine#setEnabledCipherSuites(java.lang.String[]) }.
@@ -303,13 +315,78 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
     }
 
     /**
+     * Set the flag to allow using shaded ledger manager factory class for
+     * instantiating a ledger manager factory.
+     *
+     * @param allowed
+     *          the flag to allow/disallow using shaded ledger manager factory class
+     * @return configuration instance.
+     */
+    public T setAllowShadedLedgerManagerFactoryClass(boolean allowed) {
+        setProperty(ALLOW_SHADED_LEDGER_MANAGER_FACTORY_CLASS, allowed);
+        return getThis();
+    }
+
+    /**
+     * Is shaded ledger manager factory class name allowed to be used for
+     * instantiating ledger manager factory.
+     *
+     * @return ledger manager factory class name.
+     */
+    public boolean isShadedLedgerManagerFactoryClassAllowed() {
+        return getBoolean(ALLOW_SHADED_LEDGER_MANAGER_FACTORY_CLASS, false);
+    }
+
+    /**
+     * Set the class prefix of the shaded ledger manager factory class for
+     * instantiating a ledger manager factory.
+     *
+     * <p>This setting only takes effects when {@link #isShadedLedgerManagerFactoryClassAllowed()}
+     * returns true.
+     *
+     * @param classPrefix
+     *          the class prefix of shaded ledger manager factory class
+     * @return configuration instance.
+     * @see #setAllowLedgerManagerFactoryClass(boolean)
+     */
+    public T setShadedLedgerManagerFactoryClassPrefix(String classPrefix) {
+        setProperty(SHADED_LEDGER_MANAGER_FACTORY_CLASS_PREFIX, classPrefix);
+        return getThis();
+    }
+
+    /**
+     * Get the class prefix of the shaded ledger manager factory class name allowed to be used for
+     * instantiating ledger manager factory.
+     *
+     * <p>This setting only takes effects when {@link #isShadedLedgerManagerFactoryClassAllowed()}
+     * returns true
+     *
+     * @return ledger manager factory class name.
+     * @see #isShadedLedgerManagerFactoryClassAllowed()
+     */
+    public String getShadedLedgerManagerFactoryClassPrefix() {
+        return getString(SHADED_LEDGER_MANAGER_FACTORY_CLASS_PREFIX, "dlshade.");
+    }
+
+    /**
      * Set Ledger Manager Factory Class Name.
      *
      * @param factoryClassName
      *          Ledger Manager Factory Class Name
+     * @deprecated since 4.7.0
      */
+    @Deprecated
     public void setLedgerManagerFactoryClassName(String factoryClassName) {
         setProperty(LEDGER_MANAGER_FACTORY_CLASS, factoryClassName);
+    }
+
+    /**
+     * Get Ledger Manager Factory Class Name.
+     *
+     * @return ledger manager factory class name.
+     */
+    public String getLedgerManagerFactoryClassName() {
+        return getString(LEDGER_MANAGER_FACTORY_CLASS);
     }
 
     /**
@@ -317,7 +394,9 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      *
      * @param factoryClass
      *          Ledger Manager Factory Class
+     * @deprecated since 4.7.0
      */
+    @Deprecated
     public void setLedgerManagerFactoryClass(Class<? extends LedgerManagerFactory> factoryClass) {
         setProperty(LEDGER_MANAGER_FACTORY_CLASS, factoryClass.getName());
     }
@@ -326,7 +405,9 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      * Get ledger manager factory class.
      *
      * @return ledger manager factory class
+     * @deprecated since 4.7.0
      */
+    @Deprecated
     public Class<? extends LedgerManagerFactory> getLedgerManagerFactoryClass()
         throws ConfigurationException {
         return ReflectionUtils.getClass(this, LEDGER_MANAGER_FACTORY_CLASS,
@@ -393,7 +474,9 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      * Get the node under which available bookies are stored.
      *
      * @return Node under which available bookies are stored.
+     * @deprecated since 4.7.0
      */
+    @Deprecated
     public String getZkAvailableBookiesPath() {
         return getZkLedgersRootPath() + "/" + AVAILABLE_NODE;
     }
@@ -483,9 +566,8 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      */
     public Class<? extends LedgerIdFormatter> getLedgerIdFormatterClass()
         throws ConfigurationException {
-        return ReflectionUtils.getClass(this, LEDGERID_FORMATTER_CLASS,
-                                        null, LedgerIdFormatter.UUIDLedgerIdFormatter.class,
-                                        LedgerIdFormatter.class.getClassLoader());
+        return ReflectionUtils.getClass(this, LEDGERID_FORMATTER_CLASS, DEFAULT_LEDGERID_FORMATTER,
+                LedgerIdFormatter.class, DEFAULT_LOADER);
     }
 
     /**
@@ -505,9 +587,8 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      */
     public Class<? extends EntryFormatter> getEntryFormatterClass()
         throws ConfigurationException {
-        return ReflectionUtils.getClass(this, ENTRY_FORMATTER_CLASS,
-                                        null, StringEntryFormatter.class,
-                                        EntryFormatter.class.getClassLoader());
+        return ReflectionUtils.getClass(this, ENTRY_FORMATTER_CLASS, DEFAULT_ENTRY_FORMATTER, EntryFormatter.class,
+                DEFAULT_LOADER);
     }
 
     /**
@@ -676,4 +757,27 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      * Trickery to allow inheritance with fluent style.
      */
     protected abstract T getThis();
+
+    /**
+     * returns the string representation of json format of this config.
+     *
+     * @return
+     * @throws ParseJsonException
+     */
+    public String asJson() throws ParseJsonException {
+        return JsonUtil.toJson(toMap());
+    }
+
+    private Map<String, Object> toMap() {
+        Map<String, Object> configMap = new HashMap<>();
+        Iterator<String> iterator = this.getKeys();
+        while (iterator.hasNext()) {
+            String key = iterator.next().toString();
+            Object property = this.getProperty(key);
+            if (property != null) {
+                configMap.put(key, property.toString());
+            }
+        }
+        return configMap;
+    }
 }

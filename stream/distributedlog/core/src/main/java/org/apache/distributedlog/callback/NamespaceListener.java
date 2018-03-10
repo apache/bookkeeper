@@ -18,7 +18,6 @@
 package org.apache.distributedlog.callback;
 
 import com.google.common.annotations.Beta;
-
 import java.util.Iterator;
 
 /**

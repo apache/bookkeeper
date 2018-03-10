@@ -158,8 +158,6 @@ public class BookieProtoEncoding {
             long ledgerId = -1;
             long entryId = BookieProtocol.INVALID_ENTRY_ID;
 
-            ServerStats.getInstance().incrementPacketsReceived();
-
             switch (opCode) {
             case BookieProtocol.ADDENTRY: {
                 byte[] masterKey = readMasterKey(packet);
@@ -184,7 +182,7 @@ public class BookieProtoEncoding {
                     byte[] masterKey = readMasterKey(packet);
                     return new BookieProtocol.ReadRequest(version, ledgerId, entryId, flags, masterKey);
                 } else {
-                    return new BookieProtocol.ReadRequest(version, ledgerId, entryId, flags);
+                    return new BookieProtocol.ReadRequest(version, ledgerId, entryId, flags, null);
                 }
             case BookieProtocol.AUTH:
                 BookkeeperProtocol.AuthMessage.Builder builder = BookkeeperProtocol.AuthMessage.newBuilder();
@@ -241,7 +239,6 @@ public class BookieProtoEncoding {
             ByteBuf buf = allocator.buffer(24);
             buf.writeInt(PacketHeader.toInt(r.getProtocolVersion(), r.getOpCode(), (short) 0));
 
-            ServerStats.getInstance().incrementPacketsSent();
             try {
                 if (msg instanceof BookieProtocol.ReadResponse) {
                     buf.writeInt(r.getErrorCode());
@@ -292,12 +289,8 @@ public class BookieProtoEncoding {
                 ledgerId = buffer.readLong();
                 entryId = buffer.readLong();
 
-                if (rc == BookieProtocol.EOK) {
-                    return new BookieProtocol.ReadResponse(version, rc,
-                                                           ledgerId, entryId, buffer.retainedSlice());
-                } else {
-                    return new BookieProtocol.ReadResponse(version, rc, ledgerId, entryId);
-                }
+                return new BookieProtocol.ReadResponse(
+                        version, rc, ledgerId, entryId, buffer.retainedSlice());
             case BookieProtocol.AUTH:
                 ByteBufInputStream bufStream = new ByteBufInputStream(buffer);
                 BookkeeperProtocol.AuthMessage.Builder builder = BookkeeperProtocol.AuthMessage.newBuilder();

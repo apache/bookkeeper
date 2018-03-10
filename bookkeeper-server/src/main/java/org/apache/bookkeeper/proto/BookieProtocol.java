@@ -182,6 +182,7 @@ public interface BookieProtocol {
     short FLAG_NONE = 0x0;
     short FLAG_DO_FENCING = 0x0001;
     short FLAG_RECOVERY_ADD = 0x0002;
+    short FLAG_HIGH_PRIORITY = 0x0004;
 
     /**
      * A Bookie request object.
@@ -231,6 +232,10 @@ public interface BookieProtocol {
         byte[] getMasterKey() {
             assert hasMasterKey();
             return masterKey;
+        }
+
+        boolean isHighPriority() {
+            return (flags & FLAG_HIGH_PRIORITY) == FLAG_HIGH_PRIORITY;
         }
 
         @Override
@@ -352,16 +357,12 @@ public interface BookieProtocol {
      * A Request that reads data.
      */
     class ReadRequest extends Request {
-        ReadRequest(byte protocolVersion, long ledgerId, long entryId, short flags) {
-            init(protocolVersion, READENTRY, ledgerId, entryId, flags, null);
-        }
-
         ReadRequest(byte protocolVersion, long ledgerId, long entryId,
                     short flags, byte[] masterKey) {
             init(protocolVersion, READENTRY, ledgerId, entryId, flags, masterKey);
         }
 
-        boolean isFencingRequest() {
+        boolean isFencing() {
             return (flags & FLAG_DO_FENCING) == FLAG_DO_FENCING;
         }
     }
@@ -427,7 +428,14 @@ public interface BookieProtocol {
                                  opCode, ledgerId, entryId, errorCode);
         }
 
-        abstract void recycle();
+        void retain() {
+        }
+
+        void release() {
+        }
+
+        void recycle() {
+        }
     }
 
     /**
@@ -437,8 +445,7 @@ public interface BookieProtocol {
         final ByteBuf data;
 
         ReadResponse(byte protocolVersion, int errorCode, long ledgerId, long entryId) {
-            init(protocolVersion, READENTRY, errorCode, ledgerId, entryId);
-            this.data = Unpooled.EMPTY_BUFFER;
+            this(protocolVersion, errorCode, ledgerId, entryId, Unpooled.EMPTY_BUFFER);
         }
 
         ReadResponse(byte protocolVersion, int errorCode, long ledgerId, long entryId, ByteBuf data) {
@@ -454,7 +461,14 @@ public interface BookieProtocol {
             return data;
         }
 
-        void recycle() {
+        @Override
+        public void retain() {
+            data.retain();
+        }
+
+        @Override
+        public void release() {
+            data.release();
         }
     }
 
@@ -479,6 +493,7 @@ public interface BookieProtocol {
             }
         };
 
+        @Override
         public void recycle() {
             recyclerHandle.recycle(this);
         }
@@ -491,9 +506,6 @@ public interface BookieProtocol {
         ErrorResponse(byte protocolVersion, byte opCode, int errorCode,
                       long ledgerId, long entryId) {
             init(protocolVersion, opCode, errorCode, ledgerId, entryId);
-        }
-
-        void recycle() {
         }
     }
 
@@ -510,9 +522,6 @@ public interface BookieProtocol {
 
         AuthMessage getAuthMessage() {
             return authMessage;
-        }
-
-        void recycle() {
         }
     }
 

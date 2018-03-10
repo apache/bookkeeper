@@ -96,6 +96,7 @@ import org.apache.bookkeeper.meta.LedgerManager.LedgerRangeIterator;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieClient;
+import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.replication.AuditorElector;
 import org.apache.bookkeeper.replication.ReplicationException;
@@ -842,7 +843,7 @@ public class BookieShell implements Tool {
 
                                 buffer.release();
                                 future.complete(null);
-                            }, null);
+                                }, null, BookieProtocol.FLAG_NONE);
 
                         try {
                             future.get();

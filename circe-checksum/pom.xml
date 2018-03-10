@@ -45,13 +45,11 @@
     <dependency>
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
-      <version>${guava.version}</version>
     </dependency>
 
     <dependency>
       <groupId>io.netty</groupId>
       <artifactId>netty-buffer</artifactId>
-      <version>${netty.version}</version>
     </dependency>
 
   </dependencies>
@@ -61,38 +59,9 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-checkstyle-plugin</artifactId>
-        <version>${maven-checkstyle-plugin.version}</version>
-        <dependencies>
-          <dependency>
-            <groupId>com.puppycrawl.tools</groupId>
-            <artifactId>checkstyle</artifactId>
-            <version>${puppycrawl.checkstyle.version}</version>
-          </dependency>
-          <dependency>
-            <groupId>org.apache.bookkeeper</groupId>
-            <artifactId>buildtools</artifactId>
-            <version>${project.parent.version}</version>
-          </dependency>
-        </dependencies>
-        <configuration>
-          <configLocation>bookkeeper/checkstyle.xml</configLocation>
-          <suppressionsLocation>bookkeeper/suppressions.xml</suppressionsLocation>
-          <consoleOutput>true</consoleOutput>
-          <failOnViolation>true</failOnViolation>
-          <includeResources>false</includeResources>
-          <includeTestSourceDirectory>true</includeTestSourceDirectory>
-        </configuration>
-        <executions>
-          <execution>
-            <id>checkstyle</id>
-            <phase>validate</phase>
-            <goals>
-              <goal>check</goal>
-            </goals>
-          </execution>
-        </executions>
       </plugin>
       <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
         <version>${maven-compiler-plugin.version}</version>
         <configuration>
@@ -105,19 +74,19 @@
             <compilerArg>-Xlint:unchecked</compilerArg>
             <!-- https://issues.apache.org/jira/browse/MCOMPILER-205 -->
             <compilerArg>-Xpkginfo:always</compilerArg>
-	  </compilerArgs>
+          </compilerArgs>
         </configuration>
       </plugin>
       <plugin>
         <groupId>com.github.maven-nar</groupId>
         <artifactId>nar-maven-plugin</artifactId>
-        <version>3.1.0</version>
+        <version>${nar-maven-plugin.version}</version>
         <extensions>true</extensions>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-assembly-plugin</artifactId>
-        <version>2.4.1</version>
+        <version>${maven-assembly-plugin.version}</version>
         <configuration>
           <descriptors>
             <descriptor>src/main/assembly/assembly.xml</descriptor>
@@ -134,6 +103,17 @@
           </execution>
         </executions>
       </plugin>
+      <plugin>
+        <groupId>org.jacoco</groupId>
+        <artifactId>jacoco-maven-plugin</artifactId>
+        <version>${jacoco-maven-plugin.version}</version>
+        <configuration>
+            <excludes>
+                <!-- this class is generated -->
+                <exclude>com/scurrilous/circe/checksum/NarSystem*</exclude>
+            </excludes>
+        </configuration>
+       </plugin>
     </plugins>
   </build>
 
@@ -150,7 +130,7 @@
           <plugin>
             <groupId>com.github.maven-nar</groupId>
             <artifactId>nar-maven-plugin</artifactId>
-            <version>3.1.0</version>
+            <version>${nar-maven-plugin.version}</version>
             <extensions>true</extensions>
             <configuration>
               <runtime>${nar.runtime}</runtime>
@@ -184,7 +164,7 @@
           <plugin>
             <groupId>com.github.maven-nar</groupId>
             <artifactId>nar-maven-plugin</artifactId>
-            <version>3.1.0</version>
+            <version>${nar-maven-plugin.version}</version>
             <extensions>true</extensions>
             <configuration>
               <runtime>${nar.runtime}</runtime>

@@ -188,6 +188,7 @@ public class ReplicationWorker implements Runnable {
         try {
             Thread.sleep(backoffMs);
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
         }
     }
 

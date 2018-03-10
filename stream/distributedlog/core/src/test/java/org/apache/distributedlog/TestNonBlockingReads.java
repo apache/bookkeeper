@@ -18,8 +18,13 @@
 package org.apache.distributedlog;
 
 
-import static org.apache.distributedlog.NonBlockingReadsTestUtil.*;
-import static org.junit.Assert.*;
+import static org.apache.distributedlog.NonBlockingReadsTestUtil.DEFAULT_SEGMENT_SIZE;
+import static org.apache.distributedlog.NonBlockingReadsTestUtil.readNonBlocking;
+import static org.apache.distributedlog.NonBlockingReadsTestUtil.writeRecordsForNonBlockingReads;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;

@@ -122,6 +122,7 @@ public class ParallelLedgerRecoveryTest extends BookKeeperClusterTestCase {
                         try {
                             cdl.await();
                         } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
                             LOG.error("Interrupted on waiting latch : ", e);
                         }
                         lm.writeLedgerMetadata(ledgerId, metadata, cb);
@@ -543,6 +544,7 @@ public class ParallelLedgerRecoveryTest extends BookKeeperClusterTestCase {
                     try {
                         latch.await();
                     } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
                         // no-op
                     }
                 }

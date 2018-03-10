@@ -17,12 +17,15 @@
  */
 package org.apache.distributedlog;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
 import java.util.List;
 import java.util.concurrent.LinkedBlockingQueue;
+import org.apache.bookkeeper.common.concurrent.FutureEventListener;
 import org.apache.distributedlog.LogSegmentMetadata.LogSegmentMetadataVersion;
 import org.apache.distributedlog.api.AsyncLogReader;
-import org.apache.distributedlog.common.concurrent.FutureEventListener;
 import org.apache.distributedlog.util.Utils;
 import org.junit.Test;
 import org.slf4j.Logger;

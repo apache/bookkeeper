@@ -189,6 +189,7 @@ public class AsyncLedgerOpsTest extends BookKeeperClusterTestCase
             assertTrue("Checking number of read entries", i == numEntriesToWrite);
             lh.close();
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             LOG.error("Interrupted", e);
             fail("InterruptedException");
         } // catch (NoSuchAlgorithmException e) {

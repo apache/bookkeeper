@@ -235,24 +235,24 @@ public class ZKRegistrationClient implements RegistrationClient {
 
     @Override
     public synchronized CompletableFuture<Void> watchWritableBookies(RegistrationListener listener) {
-        CompletableFuture<Void> f = new CompletableFuture<>();
+        CompletableFuture<Void> f;
         if (null == watchWritableBookiesTask) {
+            f = new CompletableFuture<>();
             watchWritableBookiesTask = new WatchTask(bookieRegistrationPath, f);
+            f = f.whenComplete((value, cause) -> {
+                if (null != cause) {
+                    unwatchWritableBookies(listener);
+                }
+            });
         } else {
-            FutureUtils.proxyTo(
-                watchWritableBookiesTask.firstRunFuture,
-                f);
+            f = watchWritableBookiesTask.firstRunFuture;
         }
 
         watchWritableBookiesTask.addListener(listener);
         if (watchWritableBookiesTask.getNumListeners() == 1) {
             watchWritableBookiesTask.watch();
         }
-        return f.whenComplete((value, cause) -> {
-            if (null != cause) {
-                unwatchWritableBookies(listener);
-            }
-        });
+        return f;
     }
 
     @Override
@@ -270,24 +270,24 @@ public class ZKRegistrationClient implements RegistrationClient {
 
     @Override
     public synchronized CompletableFuture<Void> watchReadOnlyBookies(RegistrationListener listener) {
-        CompletableFuture<Void> f = new CompletableFuture<>();
+        CompletableFuture<Void> f;
         if (null == watchReadOnlyBookiesTask) {
+            f = new CompletableFuture<>();
             watchReadOnlyBookiesTask = new WatchTask(bookieReadonlyRegistrationPath, f);
+            f = f.whenComplete((value, cause) -> {
+                if (null != cause) {
+                    unwatchReadOnlyBookies(listener);
+                }
+            });
         } else {
-            FutureUtils.proxyTo(
-                watchReadOnlyBookiesTask.firstRunFuture,
-                f);
+            f = watchReadOnlyBookiesTask.firstRunFuture;
         }
 
         watchReadOnlyBookiesTask.addListener(listener);
         if (watchReadOnlyBookiesTask.getNumListeners() == 1) {
             watchReadOnlyBookiesTask.watch();
         }
-        return f.whenComplete((value, cause) -> {
-            if (null != cause) {
-                unwatchReadOnlyBookies(listener);
-            }
-        });
+        return f;
     }
 
     @Override

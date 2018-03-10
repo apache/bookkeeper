@@ -167,6 +167,7 @@ class FileInfo extends Watchable<LastAddConfirmedUpdateNotification> {
     }
 
     public void setExplicitLac(ByteBuf lac) {
+        long explicitLacValue;
         synchronized (this) {
             if (explicitLac == null) {
                 explicitLac = ByteBuffer.allocate(lac.capacity());
@@ -176,13 +177,13 @@ class FileInfo extends Watchable<LastAddConfirmedUpdateNotification> {
 
             // skip the ledger id
             explicitLac.getLong();
-            long explicitLacValue = explicitLac.getLong();
-            setLastAddConfirmed(explicitLacValue);
+            explicitLacValue = explicitLac.getLong();
             explicitLac.rewind();
             if (LOG.isDebugEnabled()) {
                 LOG.debug("fileInfo:SetLac: {}", explicitLac);
             }
         }
+        setLastAddConfirmed(explicitLacValue);
     }
 
     public synchronized void readHeader() throws IOException {

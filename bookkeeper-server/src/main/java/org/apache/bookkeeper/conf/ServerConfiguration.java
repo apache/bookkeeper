@@ -127,6 +127,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     protected static final String MAX_PENDING_READ_REQUESTS_PER_THREAD = "maxPendingReadRequestsPerThread";
     protected static final String MAX_PENDING_ADD_REQUESTS_PER_THREAD = "maxPendingAddRequestsPerThread";
     protected static final String NUM_LONG_POLL_WORKER_THREADS = "numLongPollWorkerThreads";
+    protected static final String NUM_HIGH_PRIORITY_WORKER_THREADS = "numHighPriorityWorkerThreads";
 
     // Long poll parameters
     protected static final String REQUEST_TIMER_TICK_DURATION_MILLISEC = "requestTimerTickDurationMs";
@@ -1287,6 +1288,29 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     public int getNumLongPollWorkerThreads() {
         return getInt(NUM_LONG_POLL_WORKER_THREADS, 10);
     }
+
+    /**
+     * Set the number of threads that should be used for high priority requests
+     * (i.e. recovery reads and adds, and fencing)
+     *
+     * @param numThreads
+     *          number of threads to handle high priority requests.
+     * @return server configuration
+     */
+    public ServerConfiguration setNumHighPriorityWorkerThreads(int numThreads) {
+        setProperty(NUM_HIGH_PRIORITY_WORKER_THREADS, numThreads);
+        return this;
+    }
+
+    /**
+     * Get the number of threads that should be used for high priority requests
+     * (i.e. recovery reads and adds, and fencing)
+     * @return
+     */
+    public int getNumHighPriorityWorkerThreads() {
+        return getInt(NUM_HIGH_PRIORITY_WORKER_THREADS, 8);
+    }
+
 
     /**
      * Set the number of threads that would handle read requests.

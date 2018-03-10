@@ -31,17 +31,8 @@
   </Match>
   <!-- distributedlog-common -->
   <Match>
-    <Class name="org.apache.distributedlog.common.concurrent.FutureUtils"/>
-    <Bug pattern="NP_NULL_PARAM_DEREF_NONVIRTUAL" />
-  </Match>
-  <Match>
-    <Class name="org.apache.distributedlog.common.concurrent.FutureUtils$2"/>
-    <Bug pattern="NP_NONNULL_PARAM_VIOLATION" />
-  </Match>
-  <Match>
-    <Class name="org.apache.distributedlog.common.concurrent.FutureUtils"/>
-    <Method name="Void" />
-    <Bug pattern="NM_METHOD_NAMING_CONVENTION" />
+    <Class name="org.apache.distributedlog.util.OrderedScheduler"/>
+    <Bug pattern="NM_SAME_SIMPLE_NAME_AS_SUPERCLASS" />
   </Match>
   <!-- distributedlog-core -->
   <Match>

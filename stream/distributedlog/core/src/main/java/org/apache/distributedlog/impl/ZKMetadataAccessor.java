@@ -18,24 +18,22 @@
 package org.apache.distributedlog.impl;
 
 import static org.apache.distributedlog.impl.BKNamespaceDriver.getZKServersFromDLUri;
-import com.google.common.annotations.VisibleForTesting;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.io.IOException;
 import java.net.URI;
-
 import java.util.concurrent.CompletableFuture;
+import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.zookeeper.BoundExponentialBackoffRetryPolicy;
 import org.apache.bookkeeper.zookeeper.RetryPolicy;
 import org.apache.distributedlog.DistributedLogConfiguration;
 import org.apache.distributedlog.ZooKeeperClient;
 import org.apache.distributedlog.ZooKeeperClientBuilder;
-import org.apache.distributedlog.common.concurrent.FutureUtils;
 import org.apache.distributedlog.exceptions.AlreadyClosedException;
 import org.apache.distributedlog.exceptions.DLInterruptedException;
 import org.apache.distributedlog.impl.metadata.BKDLConfig;
 import org.apache.distributedlog.util.Utils;
-
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.data.Stat;
 import org.slf4j.Logger;
@@ -171,6 +169,7 @@ public class ZKMetadataAccessor implements org.apache.distributedlog.api.Metadat
                 writerZKC.get().setData(zkPath, metadata, currentStat.getVersion());
             }
         } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
             throw new DLInterruptedException("Interrupted on creating or updating container metadata", ie);
         } catch (Exception exc) {
             throw new IOException("Exception creating or updating container metadata", exc);
@@ -206,6 +205,7 @@ public class ZKMetadataAccessor implements org.apache.distributedlog.api.Metadat
                 return readerZKC.get().getData(zkPath, false, currentStat);
             }
         } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
             throw new DLInterruptedException("Error reading the max tx id from zk", ie);
         } catch (Exception e) {
             throw new IOException("Error reading the max tx id from zk", e);

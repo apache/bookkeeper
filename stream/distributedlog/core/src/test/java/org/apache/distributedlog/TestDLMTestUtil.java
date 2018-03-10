@@ -18,14 +18,12 @@
 package org.apache.distributedlog;
 
 import java.io.File;
-
 import org.apache.bookkeeper.shims.zk.ZooKeeperServerShim;
 import org.apache.bookkeeper.util.IOUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

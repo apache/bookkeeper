@@ -23,11 +23,12 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import org.apache.bookkeeper.common.concurrent.FutureUtils;
+import org.apache.bookkeeper.common.util.OrderedScheduler;
+import org.apache.bookkeeper.common.util.SafeRunnable;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.distributedlog.ZooKeeperClient;
-import org.apache.distributedlog.common.concurrent.FutureUtils;
 import org.apache.distributedlog.exceptions.DLInterruptedException;
-import org.apache.distributedlog.util.OrderedScheduler;
 
 /**
  * Factory to create zookeeper based locks.
@@ -88,9 +89,9 @@ public class ZKSessionLockFactory implements SessionLockFactory {
                     final AtomicInteger numRetries,
                     final CompletableFuture<SessionLock> createPromise,
                     final long delayMs) {
-        lockStateExecutor.schedule(lockPath, new Runnable() {
+        lockStateExecutor.scheduleOrdered(lockPath, new SafeRunnable() {
             @Override
-            public void run() {
+            public void safeRun() {
                 if (null != interruptedException.get()) {
                     createPromise.completeExceptionally(interruptedException.get());
                     return;

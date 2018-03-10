@@ -191,7 +191,7 @@ class ReadOnlyLedgerHandle extends LedgerHandle implements LedgerMetadataListene
                         // Ledger was empty, so there is no last entry to read
                         cb.readComplete(BKException.Code.NoSuchEntryException, ReadOnlyLedgerHandle.this, null, ctx);
                     } else {
-                        asyncReadEntriesInternal(lastConfirmed, lastConfirmed, cb, ctx);
+                        asyncReadEntriesInternal(lastConfirmed, lastConfirmed, cb, ctx, false);
                     }
                 } else {
                     LOG.error("ReadException in asyncReadLastEntry, ledgerId: {}, lac: {}, rc:{}",

@@ -27,6 +27,11 @@
   <groupId>org.apache.bookkeeper.tests</groupId>
   <artifactId>tests-parent</artifactId>
   <name>Apache BookKeeper :: Tests</name>
+
+  <properties>
+    <groovy.version>2.4.13</groovy.version>
+  </properties>
+
   <modules>
     <module>shaded</module>
     <module>docker-images</module>

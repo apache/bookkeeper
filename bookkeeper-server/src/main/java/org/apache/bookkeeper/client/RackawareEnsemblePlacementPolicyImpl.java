@@ -72,7 +72,7 @@ import org.slf4j.LoggerFactory;
  *
  * <p>Make most of the class and methods as protected, so it could be extended to implement other algorithms.
  */
-class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsemblePlacementPolicy {
+public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsemblePlacementPolicy {
 
     static final Logger LOG = LoggerFactory.getLogger(RackawareEnsemblePlacementPolicyImpl.class);
     boolean isWeighted;
@@ -305,6 +305,10 @@ class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsemblePlacemen
                 if (dnsResolver instanceof Configurable) {
                     ((Configurable) dnsResolver).setConf(conf);
                 }
+
+                if (dnsResolver instanceof RackChangeNotifier) {
+                    ((RackChangeNotifier) dnsResolver).registerRackChangeListener(this);
+                }
             } catch (RuntimeException re) {
                 LOG.info("Failed to initialize DNS Resolver {}, used default subnet resolver.", dnsResolverName, re);
                 dnsResolver = new DefaultResolver(() -> this.getDefaultRack());
@@ -335,6 +339,22 @@ class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsemblePlacemen
 
     protected String resolveNetworkLocation(BookieSocketAddress addr) {
         return NetUtils.resolveNetworkLocation(dnsResolver, addr.getSocketAddress());
+    }
+
+    public void onBookieRackChange(List<BookieSocketAddress> bookieAddressList) {
+        rwLock.writeLock().lock();
+        try {
+            for (BookieSocketAddress bookieAddress : bookieAddressList) {
+                BookieNode node = knownBookies.get(bookieAddress);
+                if (node != null) {
+                    // refresh the rack info if its a known bookie
+                    topology.remove(node);
+                    topology.add(createBookieNode(bookieAddress));
+                }
+            }
+        } finally {
+            rwLock.writeLock().unlock();
+        }
     }
 
     @Override

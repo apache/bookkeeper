@@ -59,6 +59,7 @@ public class ZkMetadataResolver implements MetadataResolver {
             } catch (KeeperException ke) {
                 throw new IOException("Fail to resolve dl path : " + pathToResolve);
             } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
                 throw new IOException("Interrupted when resolving dl path : " + pathToResolve);
             }
             if (null == data || data.length == 0) {

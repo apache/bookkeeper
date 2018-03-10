@@ -164,6 +164,7 @@ public class Auditor {
             throw new UnavailableException(
                     "Exception while initializing Auditor", ioe);
         } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
             throw new UnavailableException(
                     "Interrupted while initializing Auditor", ie);
         }

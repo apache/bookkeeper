@@ -28,6 +28,9 @@ import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.junit.Test;
 
+/**
+ * Unit test of {@link PrometheusMetricsProvider}.
+ */
 public class TestPrometheusMetricsProvider {
 
     private final CollectorRegistry registry = new CollectorRegistry();

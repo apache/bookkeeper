@@ -37,7 +37,7 @@ import org.powermock.modules.junit4.PowerMockRunner;
  * A test base for discovery related commands.
  */
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({ DiscoveryCommand.class, ReflectionUtils.class })
+@PrepareForTest({ DiscoveryCommand.class })
 public abstract class DiscoveryCommandTestBase extends ClientCommandTestBase {
 
     protected RegistrationClient regClient;
@@ -48,14 +48,13 @@ public abstract class DiscoveryCommandTestBase extends ClientCommandTestBase {
         super.setup();
 
         PowerMockito.mockStatic(Executors.class);
-        PowerMockito.mockStatic(ReflectionUtils.class);
 
         this.executor = mock(ScheduledExecutorService.class);
         PowerMockito.when(Executors.newSingleThreadScheduledExecutor())
             .thenReturn(executor);
 
         this.regClient = mock(RegistrationClient.class);
-        PowerMockito.when(ReflectionUtils.newInstance(any()))
+        PowerMockito.when(metadataClientDriver.getRegistrationClient())
             .thenReturn(regClient);
     }
 

@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 #
 #/**
-# * Copyright 2007 The Apache Software Foundation
-# *
 # * Licensed to the Apache Software Foundation (ASF) under one
 # * or more contributor license agreements.  See the NOTICE file
 # * distributed with this work for additional information
@@ -20,12 +18,12 @@
 # * limitations under the License.
 # */
 
+# BookKeeper CLI (experimental)
+
 BINDIR=`dirname "$0"`
 BK_HOME=`cd $BINDIR/..;pwd`
 
-# TODO: change the default conf after moving conf to root module
-#       {@link https://github.com/apache/bookkeeper/issues/1147}
-DEFAULT_CONF=$BK_HOME/bookkeeper-server/conf/bk_server.conf
+DEFAULT_CONF=$BK_HOME/conf/bk_server.conf
 DEFAULT_LOG_CONF=$BK_HOME/conf/log4j.cli.properties
 TOOLS_HOME=${BK_HOME}/bookkeeper-tools
 

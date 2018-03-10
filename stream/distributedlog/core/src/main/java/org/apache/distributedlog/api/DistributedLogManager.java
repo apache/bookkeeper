@@ -23,14 +23,12 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import org.apache.bookkeeper.common.annotation.InterfaceAudience.Public;
 import org.apache.bookkeeper.common.annotation.InterfaceStability.Evolving;
-
 import org.apache.distributedlog.AppendOnlyStreamReader;
 import org.apache.distributedlog.AppendOnlyStreamWriter;
 import org.apache.distributedlog.DLSN;
 import org.apache.distributedlog.LogRecordWithDLSN;
 import org.apache.distributedlog.LogSegmentMetadata;
 import org.apache.distributedlog.api.subscription.SubscriptionsStore;
-
 import org.apache.distributedlog.callback.LogSegmentListener;
 import org.apache.distributedlog.io.AsyncCloseable;
 import org.apache.distributedlog.namespace.NamespaceDriver;

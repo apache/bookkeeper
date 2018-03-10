@@ -223,6 +223,10 @@ public class LedgerHandle implements WriteHandle {
         }
     }
 
+    BookKeeper getBk() {
+        return bk;
+    }
+
     protected void initializeExplicitLacFlushPolicy() {
         if (!metadata.isClosed() && !(this instanceof ReadOnlyLedgerHandle) && bk.getExplicitLacInterval() > 0) {
             explicitLacFlushPolicy = new ExplicitLacFlushPolicy.ExplicitLacFlushPolicyImpl(this);
@@ -652,7 +656,7 @@ public class LedgerHandle implements WriteHandle {
             return;
         }
 
-        asyncReadEntriesInternal(firstEntry, lastEntry, cb, ctx);
+        asyncReadEntriesInternal(firstEntry, lastEntry, cb, ctx, false);
     }
 
     /**
@@ -691,7 +695,7 @@ public class LedgerHandle implements WriteHandle {
             return;
         }
 
-        asyncReadEntriesInternal(firstEntry, lastEntry, cb, ctx);
+        asyncReadEntriesInternal(firstEntry, lastEntry, cb, ctx, false);
     }
 
     /**
@@ -717,7 +721,7 @@ public class LedgerHandle implements WriteHandle {
             return FutureUtils.exception(new BKReadException());
         }
 
-        return readEntriesInternalAsync(firstEntry, lastEntry);
+        return readEntriesInternalAsync(firstEntry, lastEntry, false);
     }
 
     /**
@@ -752,12 +756,13 @@ public class LedgerHandle implements WriteHandle {
             return FutureUtils.exception(new BKIncorrectParameterException());
         }
 
-        return readEntriesInternalAsync(firstEntry, lastEntry);
+        return readEntriesInternalAsync(firstEntry, lastEntry, false);
     }
 
-    void asyncReadEntriesInternal(long firstEntry, long lastEntry, ReadCallback cb, Object ctx) {
+    void asyncReadEntriesInternal(long firstEntry, long lastEntry, ReadCallback cb,
+                                  Object ctx, boolean isRecoveryRead) {
         if (!bk.isClosed()) {
-            readEntriesInternalAsync(firstEntry, lastEntry)
+            readEntriesInternalAsync(firstEntry, lastEntry, isRecoveryRead)
                 .whenCompleteAsync(new FutureEventListener<LedgerEntries>() {
                     @Override
                     public void onSuccess(LedgerEntries entries) {
@@ -802,7 +807,7 @@ public class LedgerHandle implements WriteHandle {
             // Ledger was empty, so there is no last entry to read
             cb.readComplete(BKException.Code.NoSuchEntryException, this, null, ctx);
         } else {
-            asyncReadEntriesInternal(lastEntryId, lastEntryId, cb, ctx);
+            asyncReadEntriesInternal(lastEntryId, lastEntryId, cb, ctx, false);
         }
     }
 
@@ -821,8 +826,9 @@ public class LedgerHandle implements WriteHandle {
     }
 
     CompletableFuture<LedgerEntries> readEntriesInternalAsync(long firstEntry,
-                                                              long lastEntry) {
-        PendingReadOp op = new PendingReadOp(this, bk.getScheduler(), firstEntry, lastEntry);
+                                                              long lastEntry,
+                                                              boolean isRecoveryRead) {
+        PendingReadOp op = new PendingReadOp(this, bk.getScheduler(), firstEntry, lastEntry, isRecoveryRead);
         if (!bk.isClosed()) {
             bk.getMainWorkerPool().submitOrdered(ledgerId, op);
         } else {
@@ -983,7 +989,7 @@ public class LedgerHandle implements WriteHandle {
     /**
      * Add entry asynchronously to an open ledger, using an offset and range.
      * This can be used only with {@link LedgerHandleAdv} returned through
-     * ledgers created with {@link BookKeeper#createLedgerAdv(int, int, int, DigestType, byte[])}.
+     * ledgers created with {@link createLedgerAdv(int, int, int, DigestType, byte[])}.
      *
      * @param entryId
      *            entryId of the entry to add.
@@ -1404,11 +1410,12 @@ public class LedgerHandle implements WriteHandle {
 
     /**
      * Obtains asynchronously the explicit last add confirmed from a quorum of
-     * bookies. This call obtains the the explicit last add confirmed each
-     * bookie has received for this ledger and returns the maximum. If in the
-     * write LedgerHandle, explicitLAC feature is not enabled then this will
-     * return {@link #INVALID_ENTRY_ID INVALID_ENTRY_ID}. If the read explicit
-     * lastaddconfirmed is greater than getLastAddConfirmed, then it updates the
+     * bookies. This call obtains Explicit LAC value and piggy-backed LAC value (just like
+     * {@Link #asyncReadLastConfirmed(ReadLastConfirmedCallback, Object)}) from each
+     * bookie in the ensemble and returns the maximum.
+     * If in the write LedgerHandle, explicitLAC feature is not enabled then this call behavior
+     * will be similar to {@Link #asyncReadLastConfirmed(ReadLastConfirmedCallback, Object)}.
+     * If the read explicit lastaddconfirmed is greater than getLastAddConfirmed, then it updates the
      * lastAddConfirmed of this ledgerhandle. If the ledger has been closed, it
      * returns the value of the last add confirmed from the metadata.
      *
@@ -1449,13 +1456,13 @@ public class LedgerHandle implements WriteHandle {
         new PendingReadLacOp(this, innercb).initiate();
     }
 
-    /**
+    /*
      * Obtains synchronously the explicit last add confirmed from a quorum of
-     * bookies. This call obtains the the explicit last add confirmed each
-     * bookie has received for this ledger and returns the maximum. If in the
-     * write LedgerHandle, explicitLAC feature is not enabled then this will
-     * return {@link #INVALID_ENTRY_ID INVALID_ENTRY_ID}. If the read explicit
-     * lastaddconfirmed is greater than getLastAddConfirmed, then it updates the
+     * bookies. This call obtains Explicit LAC value and piggy-backed LAC value (just like
+     * {@Link #readLastAddConfirmed()) from each bookie in the ensemble and returns the maximum.
+     * If in the write LedgerHandle, explicitLAC feature is not enabled then this call behavior
+     * will be similar to {@Link #readLastAddConfirmed()}.
+     * If the read explicit lastaddconfirmed is greater than getLastAddConfirmed, then it updates the
      * lastAddConfirmed of this ledgerhandle. If the ledger has been closed, it
      * returns the value of the last add confirmed from the metadata.
      *
@@ -1463,8 +1470,7 @@ public class LedgerHandle implements WriteHandle {
      *
      * @return The entry id of the explicit last confirmed write or
      *         {@link #INVALID_ENTRY_ID INVALID_ENTRY_ID} if no entry has been
-     *         confirmed or if explicitLAC feature is not enabled in write
-     *         LedgerHandle.
+     *         confirmed.
      * @throws InterruptedException
      * @throws BKException
      */

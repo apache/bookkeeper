@@ -182,6 +182,7 @@ public class MSLedgerManagerFactory extends AbstractZkLedgerManagerFactory {
                     wait();
                 }
             } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
             }
         }
 

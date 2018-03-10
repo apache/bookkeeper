@@ -19,8 +19,8 @@ package org.apache.distributedlog;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
-import org.apache.distributedlog.common.concurrent.FutureEventListener;
-import org.apache.distributedlog.common.concurrent.FutureUtils;
+import org.apache.bookkeeper.common.concurrent.FutureEventListener;
+import org.apache.bookkeeper.common.concurrent.FutureUtils;
 
 class BKTransmitPacket {
 

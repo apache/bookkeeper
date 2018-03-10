@@ -22,32 +22,52 @@ package org.apache.bookkeeper.client;
 
 import static org.junit.Assert.assertEquals;
 
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Enumeration;
 
+import org.apache.bookkeeper.bookie.InterleavedLedgerStorage;
+import org.apache.bookkeeper.bookie.LedgerStorage;
+import org.apache.bookkeeper.bookie.SortedLedgerStorage;
+import org.apache.bookkeeper.bookie.storage.ldb.DbLedgerStorage;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameters;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * Test a piggyback LAC.
  */
+@RunWith(Parameterized.class)
 public class TestPiggybackLAC extends BookKeeperClusterTestCase {
 
     private static final Logger LOG = LoggerFactory.getLogger(TestPiggybackLAC.class);
 
     final DigestType digestType;
 
-    public TestPiggybackLAC() {
-        super(3);
+    public TestPiggybackLAC(Class<? extends LedgerStorage> storageClass) {
+        super(1);
         this.digestType = DigestType.CRC32;
+        baseConf.setLedgerStorageClass(storageClass.getName());
+    }
+
+    @Parameters
+    public static Collection<Object[]> configs() {
+        return Arrays.asList(new Object[][] {
+            { InterleavedLedgerStorage.class },
+            { SortedLedgerStorage.class },
+            { DbLedgerStorage.class },
+        });
     }
 
     @Test
     public void testPiggybackLAC() throws Exception {
         int numEntries = 10;
-        LedgerHandle lh = bkc.createLedger(3, 3, 3, digestType, "".getBytes());
+        LedgerHandle lh = bkc.createLedger(1, 1, 1, digestType, "".getBytes());
         // tried to add entries
         for (int i = 0; i < numEntries; i++) {
             lh.addEntry(("data" + i).getBytes());

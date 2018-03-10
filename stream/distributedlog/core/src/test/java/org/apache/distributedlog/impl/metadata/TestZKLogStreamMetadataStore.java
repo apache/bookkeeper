@@ -19,8 +19,20 @@ package org.apache.distributedlog.impl.metadata;
 
 import static com.google.common.base.Charsets.UTF_8;
 import static org.apache.distributedlog.DistributedLogConstants.EMPTY_BYTES;
-import static org.apache.distributedlog.impl.metadata.ZKLogStreamMetadataStore.*;
-import static org.apache.distributedlog.metadata.LogMetadata.*;
+import static org.apache.distributedlog.impl.metadata.ZKLogStreamMetadataStore.checkLogMetadataPaths;
+import static org.apache.distributedlog.impl.metadata.ZKLogStreamMetadataStore.getLog;
+import static org.apache.distributedlog.impl.metadata.ZKLogStreamMetadataStore.getLogSegments;
+import static org.apache.distributedlog.impl.metadata.ZKLogStreamMetadataStore.getMissingPaths;
+import static org.apache.distributedlog.impl.metadata.ZKLogStreamMetadataStore.intToBytes;
+import static org.apache.distributedlog.impl.metadata.ZKLogStreamMetadataStore.pathExists;
+import static org.apache.distributedlog.metadata.LogMetadata.ALLOCATION_PATH;
+import static org.apache.distributedlog.metadata.LogMetadata.LAYOUT_VERSION;
+import static org.apache.distributedlog.metadata.LogMetadata.LOCK_PATH;
+import static org.apache.distributedlog.metadata.LogMetadata.LOGSEGMENTS_PATH;
+import static org.apache.distributedlog.metadata.LogMetadata.MAX_TXID_PATH;
+import static org.apache.distributedlog.metadata.LogMetadata.READ_LOCK_PATH;
+import static org.apache.distributedlog.metadata.LogMetadata.VERSION_PATH;
+import static org.apache.distributedlog.metadata.LogMetadata.getLogRootPath;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -36,6 +48,8 @@ import com.google.common.collect.Lists;
 import java.net.URI;
 import java.util.Collections;
 import java.util.List;
+import org.apache.bookkeeper.common.concurrent.FutureUtils;
+import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.util.ZkUtils;
 import org.apache.bookkeeper.versioning.LongVersion;
@@ -49,7 +63,6 @@ import org.apache.distributedlog.ZooKeeperClient;
 import org.apache.distributedlog.ZooKeeperClusterTestCase;
 import org.apache.distributedlog.api.namespace.Namespace;
 import org.apache.distributedlog.api.namespace.NamespaceBuilder;
-import org.apache.distributedlog.common.concurrent.FutureUtils;
 import org.apache.distributedlog.exceptions.LockingException;
 import org.apache.distributedlog.exceptions.LogExistsException;
 import org.apache.distributedlog.exceptions.LogNotFoundException;
@@ -58,7 +71,6 @@ import org.apache.distributedlog.metadata.DLMetadata;
 import org.apache.distributedlog.metadata.LogMetadata;
 import org.apache.distributedlog.metadata.LogMetadataForWriter;
 import org.apache.distributedlog.util.DLUtils;
-import org.apache.distributedlog.util.OrderedScheduler;
 import org.apache.distributedlog.util.Utils;
 import org.apache.zookeeper.AsyncCallback.Children2Callback;
 import org.apache.zookeeper.AsyncCallback.StatCallback;
@@ -192,9 +204,9 @@ public class TestZKLogStreamMetadataStore extends ZooKeeperClusterTestCase {
         } catch (KeeperException.NodeExistsException nee) {
             logger.debug("The namespace uri already exists.");
         }
-        scheduler = OrderedScheduler.newBuilder()
+        scheduler = OrderedScheduler.newSchedulerBuilder()
             .name("test-scheduler")
-            .corePoolSize(1)
+            .numThreads(1)
             .build();
         metadataStore = new ZKLogStreamMetadataStore(
             "test-logstream-metadata-store",
