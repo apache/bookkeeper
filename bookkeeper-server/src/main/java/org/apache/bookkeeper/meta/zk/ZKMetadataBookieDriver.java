@@ -21,6 +21,7 @@ package org.apache.bookkeeper.meta.zk;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.BOOKIE_SCOPE;
 
 import java.util.Optional;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.discover.RegistrationManager;
@@ -48,6 +49,7 @@ public class ZKMetadataBookieDriver
     }
 
     ServerConfiguration serverConf;
+    @Setter
     RegistrationManager regManager;
     RegistrationListener listener;
 

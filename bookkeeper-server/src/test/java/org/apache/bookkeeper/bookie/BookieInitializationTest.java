@@ -27,6 +27,11 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -41,6 +46,7 @@ import java.util.Random;
 
 import java.util.concurrent.ExecutionException;
 import org.apache.bookkeeper.bookie.BookieException.DiskPartitionDuplicationException;
+import org.apache.bookkeeper.bookie.BookieException.MetadataStoreException;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirException;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
@@ -49,6 +55,7 @@ import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
+import org.apache.bookkeeper.discover.RegistrationManager;
 import org.apache.bookkeeper.meta.MetadataBookieDriver;
 import org.apache.bookkeeper.meta.zk.ZKMetadataBookieDriver;
 import org.apache.bookkeeper.proto.BookieServer;
@@ -62,7 +69,6 @@ import org.apache.bookkeeper.tls.SecurityException;
 import org.apache.bookkeeper.util.DiskChecker;
 import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
 import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.Stat;
 import org.junit.Assert;
 import org.junit.Rule;
@@ -118,6 +124,11 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
             .setLedgerDirNames(new String[] { tmpDir.getPath() })
             .setZkServers(zkUtil.getZooKeeperConnectString());
 
+        RegistrationManager rm = mock(RegistrationManager.class);
+        doThrow(new MetadataStoreException("mocked exception"))
+            .when(rm)
+            .registerBookie(anyString(), anyBoolean());
+
         // simulating ZooKeeper exception by assigning a closed zk client to bk
         BookieServer bkServer = new BookieServer(conf) {
             protected Bookie newBookie(ServerConfiguration conf)
@@ -125,10 +136,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
                     BookieException {
                 Bookie bookie = new Bookie(conf);
                 MetadataBookieDriver driver = Whitebox.getInternalState(bookie, "metadataDriver");
-                ((ZKMetadataBookieDriver) driver).getZk().close();
-                ZooKeeper newZk = new ZooKeeper(zkUtil.getZooKeeperConnectString(), 100, null);
-                newZk.close();
-                ((ZKMetadataBookieDriver) driver).setZk(newZk);
+                ((ZKMetadataBookieDriver) driver).setRegManager(rm);
                 return bookie;
             }
         };
