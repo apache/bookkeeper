@@ -876,17 +876,18 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         try {
             final long startTime = MathUtils.nowInNano();
             ChannelFuture future = channel.writeAndFlush(request);
-            future.addListener(new ChannelFutureListener() {
-                @Override
-                public void operationComplete(ChannelFuture future) throws Exception {
-                    if (future.isSuccess()) {
-                        nettyOpLogger.registerSuccessfulEvent(MathUtils.elapsedNanos(startTime),
-                                TimeUnit.NANOSECONDS);
-                        completionObjects.get(key).setOutstanding();
-                    } else {
-                        nettyOpLogger.registerFailedEvent(MathUtils.elapsedNanos(startTime),
-                                TimeUnit.NANOSECONDS);
+            future.addListener(future1 -> {
+                if (future1.isSuccess()) {
+                    nettyOpLogger.registerSuccessfulEvent(MathUtils.elapsedNanos(startTime),
+                            TimeUnit.NANOSECONDS);
+                    CompletionValue completion = completionObjects.get(key);
+                    if (completion != null) {
+                        completion.setOutstanding();
                     }
+
+                } else {
+                    nettyOpLogger.registerFailedEvent(MathUtils.elapsedNanos(startTime),
+                            TimeUnit.NANOSECONDS);
                 }
             });
         } catch (Throwable e) {
