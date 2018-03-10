@@ -178,9 +178,10 @@ public class BookieProtoEncoding {
                     = BookkeeperProtocol.AuthMessage.newBuilder();
                 builder.mergeFrom(new ByteBufInputStream(packet), extensionRegistry);
                 return new BookieProtocol.AuthRequest(version, builder.build());
-            }
 
-            return packet;
+            default:
+                throw new IllegalStateException("Received unknown request op code = " + opCode);
+            }
         }
 
         private static byte[] readMasterKey(ByteBuf packet) {
@@ -446,12 +447,12 @@ public class BookieProtoEncoding {
     public static class ResponseDecoder extends MessageToMessageDecoder<Object> {
         final EnDecoder REP_PREV3;
         final EnDecoder REP_V3;
-        boolean usingV3Protocol;
+        boolean usingV2Protocol;
 
-        ResponseDecoder(ExtensionRegistry extensionRegistry) {
+        ResponseDecoder(ExtensionRegistry extensionRegistry, boolean useV2Protocol) {
             REP_PREV3 = new ResponseEnDeCoderPreV3(extensionRegistry);
             REP_V3 = new ResponseEnDecoderV3(extensionRegistry);
-            usingV3Protocol = true;
+            usingV2Protocol = useV2Protocol;
         }
 
         @Override
@@ -465,14 +466,8 @@ public class BookieProtoEncoding {
             ByteBuf buffer = (ByteBuf) msg;
             buffer.markReaderIndex();
 
-            if (usingV3Protocol) {
-                try {
-                    out.add(REP_V3.decode(buffer));
-                } catch (InvalidProtocolBufferException e) {
-                    usingV3Protocol = false;
-                    buffer.resetReaderIndex();
-                    out.add(REP_PREV3.decode(buffer));
-                }
+            if (!usingV2Protocol) {
+                out.add(REP_PREV3.decode(buffer));
             } else {
                 // If in the same connection we already got preV3 messages, don't try again to decode V3 messages
                 out.add(REP_PREV3.decode(buffer));
