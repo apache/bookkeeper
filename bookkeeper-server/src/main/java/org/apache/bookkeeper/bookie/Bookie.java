@@ -63,6 +63,7 @@ import org.apache.bookkeeper.bookie.BookieException.DiskPartitionDuplicationExce
 import org.apache.bookkeeper.bookie.BookieException.InvalidCookieException;
 import org.apache.bookkeeper.bookie.BookieException.MetadataStoreException;
 import org.apache.bookkeeper.bookie.BookieException.UnknownBookieIdException;
+import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
 import org.apache.bookkeeper.bookie.Journal.JournalScanner;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.LedgerDirsListener;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirException;
@@ -696,9 +697,7 @@ public class Bookie extends BookieCriticalThread {
         String ledgerStorageClass = conf.getLedgerStorageClass();
         LOG.info("Using ledger storage: {}", ledgerStorageClass);
         ledgerStorage = LedgerStorageFactory.createLedgerStorage(ledgerStorageClass);
-        syncThread = new SyncThread(conf, getLedgerDirsListener(), ledgerStorage, checkpointSource);
 
-        Checkpointer checkpointer;
         /*
          * with this change https://github.com/apache/bookkeeper/pull/677,
          * LedgerStorage drives the checkpoint logic. But with multiple entry
@@ -707,10 +706,26 @@ public class Bookie extends BookieCriticalThread {
          * SyncThread.start does that and it is started in Bookie.start method.
          */
         if (entryLogPerLedgerEnabled) {
-            checkpointer = (checkpoint) -> {
+            syncThread = new SyncThread(conf, getLedgerDirsListener(), ledgerStorage, checkpointSource) {
+                @Override
+                public void startCheckpoint(Checkpoint checkpoint) {
+                    /*
+                     * in the case of entryLogPerLedgerEnabled, LedgerStorage
+                     * dont drive checkpoint logic, but instead it is done
+                     * periodically by SyncThread. So startCheckpoint which
+                     * will be called by LedgerStorage will be no-op.
+                     */
+                }
+
+                @Override
+                public void start() {
+                    executor.scheduleAtFixedRate(() -> {
+                        doCheckpoint(checkpointSource.newCheckpoint());
+                    }, conf.getFlushInterval(), conf.getFlushInterval(), TimeUnit.MILLISECONDS);
+                }
             };
         } else {
-            checkpointer = syncThread;
+            syncThread = new SyncThread(conf, getLedgerDirsListener(), ledgerStorage, checkpointSource);
         }
 
         ledgerStorage.initialize(
@@ -720,7 +735,7 @@ public class Bookie extends BookieCriticalThread {
             indexDirsManager,
             stateManager,
             checkpointSource,
-            checkpointer,
+            syncThread,
             statsLogger);
 
 
@@ -846,9 +861,7 @@ public class Bookie extends BookieCriticalThread {
          * checkpoint which reduce the chance that we need to replay journals
          * again if bookie restarted again before finished journal replays.
          */
-        if (entryLogPerLedgerEnabled) {
-            syncThread.scheduleCheckpointAtFixedRate(conf.getFlushInterval());
-        }
+        syncThread.start();
 
         // start bookie thread
         super.start();

@@ -2494,6 +2494,11 @@ public class BookieShell implements Tool {
                 public void startCheckpoint(Checkpoint checkpoint) {
                     // No-op
                 }
+
+                @Override
+                public void start() {
+                    // no-op
+                }
             };
 
             interleavedStorage.initialize(conf, null, ledgerDirsManager, ledgerIndexManager,
@@ -2583,6 +2588,11 @@ public class BookieShell implements Tool {
                 @Override
                 public void startCheckpoint(Checkpoint checkpoint) {
                     // No-op
+                }
+
+                @Override
+                public void start() {
+                    // no-op
                 }
             };
 

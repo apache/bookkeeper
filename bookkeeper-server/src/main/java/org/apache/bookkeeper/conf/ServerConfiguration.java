@@ -182,7 +182,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     /*
      * config specifying if the entrylog per ledger is enabled or not.
      */
-    protected static final String ENTRY_LOG_PERLEDGER_ENABLED = "entryLogPerLedgerEnabled";
+    protected static final String ENTRY_LOG_PER_LEDGER_ENABLED = "entryLogPerLedgerEnabled";
 
     /**
      * Construct a default configuration object.
@@ -2644,7 +2644,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * would be a active entrylog for each ledger
      */
     public boolean isEntryLogPerLedgerEnabled() {
-        return this.getBoolean(ENTRY_LOG_PERLEDGER_ENABLED, false);
+        return this.getBoolean(ENTRY_LOG_PER_LEDGER_ENABLED, false);
     }
 
     /*
@@ -2652,7 +2652,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      *
      */
     public ServerConfiguration setEntryLogPerLedgerEnabled(boolean entryLogPerLedgerEnabled) {
-        this.setProperty(ENTRY_LOG_PERLEDGER_ENABLED, Boolean.toString(entryLogPerLedgerEnabled));
+        this.setProperty(ENTRY_LOG_PER_LEDGER_ENABLED, Boolean.toString(entryLogPerLedgerEnabled));
         return this;
     }
 }
