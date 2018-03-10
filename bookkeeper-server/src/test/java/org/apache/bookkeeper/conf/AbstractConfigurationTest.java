@@ -39,6 +39,8 @@ public class AbstractConfigurationTest {
         "zk+flat://127.0.0.1/path/to/ledgers";
     private static final String LONGHIERARCHICAL_METADATA_SERVICE_URI =
         "zk+longhierarchical://127.0.0.1/path/to/ledgers";
+    private static final String MS_METADATA_SERVICE_URI =
+        "zk+ms://127.0.0.1/path/to/ledgers";
 
     private AbstractConfiguration conf;
 
@@ -92,6 +94,16 @@ public class AbstractConfigurationTest {
         conf.setLedgerManagerFactoryClass(LongHierarchicalLedgerManagerFactory.class);
         assertEquals(
             LONGHIERARCHICAL_METADATA_SERVICE_URI,
+            conf.getMetadataServiceUri());
+    }
+
+    @SuppressWarnings({ "unchecked", "deprecation" })
+    @Test
+    public void testMsLedgerManagerUri() throws Exception {
+        conf.setLedgerManagerFactoryClass(
+            org.apache.bookkeeper.meta.MSLedgerManagerFactory.class);
+        assertEquals(
+            MS_METADATA_SERVICE_URI,
             conf.getMetadataServiceUri());
     }
 

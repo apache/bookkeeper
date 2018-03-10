@@ -32,6 +32,7 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.util.HashedWheelTimer;
 import io.netty.util.concurrent.DefaultThreadFactory;
 import java.io.IOException;
+import java.net.URI;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
@@ -58,8 +59,6 @@ import org.apache.bookkeeper.client.api.OpenBuilder;
 import org.apache.bookkeeper.client.api.WriteFlag;
 import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.apache.bookkeeper.conf.ClientConfiguration;
-import org.apache.bookkeeper.discover.RegistrationClient;
-import org.apache.bookkeeper.discover.ZKRegistrationClient;
 import org.apache.bookkeeper.feature.Feature;
 import org.apache.bookkeeper.feature.FeatureProvider;
 import org.apache.bookkeeper.feature.SettableFeatureProvider;
@@ -68,6 +67,10 @@ import org.apache.bookkeeper.meta.CleanupLedgerManager;
 import org.apache.bookkeeper.meta.LedgerIdGenerator;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
+import org.apache.bookkeeper.meta.MetadataClientDriver;
+import org.apache.bookkeeper.meta.MetadataDrivers;
+import org.apache.bookkeeper.meta.exceptions.MetadataException;
+import org.apache.bookkeeper.meta.zk.ZKMetadataClientDriver;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.net.DNSToSwitchMapping;
 import org.apache.bookkeeper.proto.BookieClient;
@@ -102,7 +105,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
 
     static final Logger LOG = LoggerFactory.getLogger(BookKeeper.class);
 
-    final RegistrationClient regClient;
+
     final EventLoopGroup eventLoopGroup;
 
     // The stats logger for this client.
@@ -121,6 +124,9 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
     private OpStatsLogger recoverReadEntriesStats;
 
     private Counter speculativeReadCounter;
+    private Counter readOpDmCounter;
+    private Counter addOpUrCounter;
+
 
     // whether the event loop group is one we created, or is owned by whoever
     // instantiated us
@@ -139,6 +145,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
     // Features
     final Feature disableEnsembleChangeFeature;
 
+    final MetadataClientDriver metadataDriver;
     // Ledger manager responsible for how to store ledger meta data
     final LedgerManagerFactory ledgerManagerFactory;
     final LedgerManager ledgerManager;
@@ -438,21 +445,21 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
         this.disableEnsembleChangeFeature =
             this.featureProvider.getFeature(conf.getDisableEnsembleChangeFeatureName());
 
-        // initialize registration client
+        // initialize metadata driver
         try {
-            Class<? extends RegistrationClient> regClientCls = conf.getRegistrationClientClass();
-            this.regClient = ReflectionUtils.newInstance(regClientCls);
-            this.regClient.initialize(
+            this.metadataDriver = MetadataDrivers.getClientDriver(
+                URI.create(conf.getMetadataServiceUri()));
+            this.metadataDriver.initialize(
                 conf,
                 scheduler,
                 statsLogger,
                 java.util.Optional.ofNullable(zkc));
         } catch (ConfigurationException ce) {
-            LOG.error("Failed to initialize registration client", ce);
-            throw new IOException("Failed to initialize registration client", ce);
-        } catch (BKException be) {
-            LOG.error("Failed to initialize registration client", be);
-            throw new IOException("Failed to initialize registration client", be);
+            LOG.error("Failed to initialize metadata client driver using invalid metadata service uri", ce);
+            throw new IOException("Failed to initialize metadata client driver", ce);
+        } catch (MetadataException me) {
+            LOG.error("Encountered metadata exceptions on initializing metadata client driver", me);
+            throw new IOException("Failed to initialize metadata client driver", me);
         }
 
         // initialize event loop group
@@ -502,7 +509,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
         this.bookieClient = new BookieClient(conf, this.eventLoopGroup, this.mainWorkerPool,
                                              scheduler, statsLogger);
         this.bookieWatcher = new BookieWatcher(
-                conf, this.placementPolicy, regClient,
+                conf, this.placementPolicy, metadataDriver.getRegistrationClient(),
                 this.statsLogger.scope(WATCHER_SCOPE));
         if (conf.getDiskWeightBasedPlacementEnabled()) {
             LOG.info("Weighted ledger placement enabled");
@@ -522,9 +529,9 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
         // initialize ledger manager
         try {
             this.ledgerManagerFactory =
-                AbstractZkLedgerManagerFactory.newLedgerManagerFactory(conf, regClient.getLayoutManager());
-        } catch (IOException | InterruptedException e) {
-            throw e;
+                this.metadataDriver.getLedgerManagerFactory();
+        } catch (MetadataException e) {
+            throw new IOException("Failed to initialize ledger manager factory", e);
         }
         this.ledgerManager = new CleanupLedgerManager(ledgerManagerFactory.newLedgerManager());
         this.ledgerIdGenerator = ledgerManagerFactory.newLedgerIdGenerator();
@@ -536,6 +543,41 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
         this.addEntryQuorumTimeoutNanos = TimeUnit.SECONDS.toNanos(conf.getAddEntryQuorumTimeout());
         scheduleBookieHealthCheckIfEnabled();
     }
+
+    /**
+     * Allow to extend BookKeeper for mocking in unit tests.
+     */
+    @VisibleForTesting
+    BookKeeper() {
+        statsLogger = NullStatsLogger.INSTANCE;
+        scheduler = null;
+        requestTimer = null;
+        reorderReadSequence = false;
+        metadataDriver = null;
+        readSpeculativeRequestPolicy = Optional.absent();
+        readLACSpeculativeRequestPolicy = Optional.absent();
+        placementPolicy = null;
+        ownTimer = false;
+        mainWorkerPool = null;
+        ledgerManagerFactory = null;
+        ledgerManager = null;
+        ledgerIdGenerator = null;
+        featureProvider = null;
+        explicitLacInterval = 0;
+        eventLoopGroup = null;
+        disableEnsembleChangeFeature = null;
+        delayEnsembleChange = false;
+        conf = new ClientConfiguration();
+        bookieWatcher = null;
+        bookieInfoScheduler = null;
+        bookieClient = null;
+        addEntryQuorumTimeoutNanos = 0;
+    }
+
+    long getAddEntryQuorumTimeoutNanos() {
+        return addEntryQuorumTimeoutNanos;
+    }
+
 
     public int getExplicitLacInterval() {
         return explicitLacInterval;
@@ -646,8 +688,8 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
     }
 
     @VisibleForTesting
-    public RegistrationClient getRegClient() {
-        return regClient;
+    public MetadataClientDriver getMetadataClientDriver() {
+        return metadataDriver;
     }
 
     /**
@@ -659,9 +701,12 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
      * The CRC32C, which use SSE processor instruction, has better performance than CRC32.
      * Legacy DigestType for backward compatibility. If we want to add new DigestType,
      * we should add it in here, client.api.DigestType and DigestType in DataFormats.proto.
+     * If the digest type is set/passed in as DUMMY, a dummy digest is added/checked.
+     * This DUMMY digest is mostly for test purposes or in situations/use-cases
+     * where digest is considered a overhead.
      */
     public enum DigestType {
-        MAC, CRC32, CRC32C;
+        MAC, CRC32, CRC32C, DUMMY;
 
         public static DigestType fromApiDigestType(org.apache.bookkeeper.client.api.DigestType digestType) {
             switch (digestType) {
@@ -671,6 +716,8 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
                     return DigestType.CRC32;
                 case CRC32C:
                     return DigestType.CRC32C;
+                case DUMMY:
+                    return DigestType.DUMMY;
                 default:
                     throw new IllegalArgumentException("Unable to convert digest type " + digestType);
             }
@@ -683,6 +730,8 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
                     return DataFormats.LedgerMetadataFormat.DigestType.CRC32;
                 case CRC32C:
                     return DataFormats.LedgerMetadataFormat.DigestType.CRC32C;
+                case DUMMY:
+                    return DataFormats.LedgerMetadataFormat.DigestType.DUMMY;
                 default:
                     throw new IllegalArgumentException("Unable to convert digest type " + digestType);
             }
@@ -690,7 +739,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
     }
 
     ZooKeeper getZkHandle() {
-        return ((ZKRegistrationClient) regClient).getZk();
+        return ((ZKMetadataClientDriver) metadataDriver).getZk();
     }
 
     protected ClientConfiguration getConf() {
@@ -1409,7 +1458,6 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
             // which will reject any incoming metadata requests.
             ledgerManager.close();
             ledgerIdGenerator.close();
-            ledgerManagerFactory.close();
         } catch (IOException ie) {
             LOG.error("Failed to close ledger manager : ", ie);
         }
@@ -1436,7 +1484,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
         if (ownEventLoopGroup) {
             eventLoopGroup.shutdownGracefully();
         }
-        this.regClient.close();
+        this.metadataDriver.close();
     }
 
     private void initOpLoggers(StatsLogger stats) {
@@ -1445,10 +1493,12 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
         openOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.OPEN_OP);
         recoverOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.RECOVER_OP);
         readOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.READ_OP);
+        readOpDmCounter = stats.getCounter(BookKeeperClientStats.READ_OP_DM);
         readLacAndEntryOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.READ_LAST_CONFIRMED_AND_ENTRY);
         readLacAndEntryRespLogger = stats.getOpStatsLogger(
                 BookKeeperClientStats.READ_LAST_CONFIRMED_AND_ENTRY_RESPONSE);
         addOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.ADD_OP);
+        addOpUrCounter = stats.getCounter(BookKeeperClientStats.ADD_OP_UR);
         writeLacOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.WRITE_LAC_OP);
         readLacOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.READ_LAC_OP);
         recoverAddEntriesStats = stats.getOpStatsLogger(BookKeeperClientStats.LEDGER_RECOVER_ADD_ENTRIES);
@@ -1493,7 +1543,12 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
     OpStatsLogger getRecoverReadCountLogger() {
         return recoverReadEntriesStats;
     }
-
+    Counter getReadOpDmCounter() {
+        return readOpDmCounter;
+    }
+    Counter getAddOpUrCounter() {
+        return addOpUrCounter;
+    }
     static EventLoopGroup getDefaultEventLoopGroup() {
         ThreadFactory threadFactory = new DefaultThreadFactory("bookkeeper-io");
         final int numThreads = Runtime.getRuntime().availableProcessors() * 2;

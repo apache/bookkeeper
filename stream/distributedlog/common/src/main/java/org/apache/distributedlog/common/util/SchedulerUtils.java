@@ -35,6 +35,7 @@ public class SchedulerUtils {
         try {
             service.awaitTermination(timeout, timeUnit);
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             log.warn("Interrupted when shutting down scheduler : ", e);
         }
         service.shutdownNow();

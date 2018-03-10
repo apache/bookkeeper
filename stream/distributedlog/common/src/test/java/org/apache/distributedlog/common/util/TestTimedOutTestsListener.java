@@ -22,7 +22,6 @@ import java.io.StringWriter;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.notification.Failure;

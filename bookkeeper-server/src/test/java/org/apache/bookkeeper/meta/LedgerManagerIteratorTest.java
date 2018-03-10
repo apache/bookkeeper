@@ -420,6 +420,7 @@ public class LedgerManagerIteratorTest extends LedgerManagerTestCase {
                 try {
                     latch.await();
                 } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
                     fail("Checker interrupted");
                 }
                 while (MathUtils.elapsedNanos(start) < runtime) {
@@ -448,6 +449,7 @@ public class LedgerManagerIteratorTest extends LedgerManagerTestCase {
                 try {
                     latch.await();
                 } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
                     fail("Checker interrupted");
                     e.printStackTrace();
                 }

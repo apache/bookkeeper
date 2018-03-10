@@ -58,9 +58,9 @@ import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieClient;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks;
-import org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.DigestType;
 import org.apache.bookkeeper.proto.checksum.DigestManager;
 import org.apache.bookkeeper.stats.NullStatsLogger;
+import org.apache.bookkeeper.util.ByteBufList;
 import org.apache.bookkeeper.util.OrderedSafeExecutor;
 import org.junit.After;
 import org.junit.Before;
@@ -181,6 +181,16 @@ public abstract class MockBookKeeperTestCase {
         when(bk.getRecoverAddCountLogger()).thenReturn(nullStatsLogger.getOpStatsLogger("mock"));
         when(bk.getRecoverReadCountLogger()).thenReturn(nullStatsLogger.getOpStatsLogger("mock"));
         return nullStatsLogger;
+    }
+
+    private DigestManager getDigestType(long ledgerId) throws GeneralSecurityException {
+        LedgerMetadata metadata = mockLedgerMetadataRegistry.get(ledgerId);
+        return DigestManager.instantiate(
+                ledgerId,
+                metadata.getPassword(),
+                org.apache.bookkeeper.client.BookKeeper.DigestType.toProtoDigestType(
+                        org.apache.bookkeeper.client.BookKeeper.DigestType.fromApiDigestType(
+                                metadata.getDigestType())));
     }
 
     @After
@@ -380,60 +390,19 @@ public abstract class MockBookKeeperTestCase {
 
     @SuppressWarnings("unchecked")
     protected void setupBookieClientReadEntry() {
-        doAnswer(invokation -> {
-            Object[] args = invokation.getArguments();
-            BookkeeperInternalCallbacks.ReadEntryCallback callback =
-                (BookkeeperInternalCallbacks.ReadEntryCallback) args[4];
-            BookieSocketAddress bookieSocketAddress = (BookieSocketAddress) args[0];
-            long ledgerId = (Long) args[1];
-            long entryId = (Long) args[3];
-
-            executor.submitOrdered(ledgerId, () -> {
-                DigestManager macManager = null;
-                try {
-                    macManager = DigestManager.instantiate(ledgerId, new byte[2], DigestType.CRC32);
-                } catch (GeneralSecurityException gse){
-                    LOG.error("Initialize macManager fail", gse);
-                }
-                fencedLedgers.add(ledgerId);
-                MockEntry mockEntry = null;
-                try {
-                    mockEntry = getMockLedgerEntry(ledgerId, bookieSocketAddress, entryId);
-                } catch (BKException bke) {
-                    LOG.info("readEntryAndFenceLedger - occur BKException {}@{} at {}", entryId, ledgerId,
-                            bookieSocketAddress);
-                    callback.readEntryComplete(bke.getCode(), ledgerId, entryId, null, args[5]);
-                }
-                if (mockEntry != null) {
-                    LOG.info("readEntryAndFenceLedger - found mock entry {}@{} at {}", entryId, ledgerId,
-                            bookieSocketAddress);
-                    ByteBuf entry = macManager.computeDigestAndPackageForSending(entryId, mockEntry.lastAddConfirmed,
-                        mockEntry.payload.length, Unpooled.wrappedBuffer(mockEntry.payload));
-                    callback.readEntryComplete(BKException.Code.OK, ledgerId, entryId, Unpooled.copiedBuffer(entry),
-                            args[5]);
-                    entry.release();
-                } else {
-                    LOG.info("readEntryAndFenceLedger - no such mock entry {}@{} at {}", entryId, ledgerId,
-                            bookieSocketAddress);
-                    callback.readEntryComplete(BKException.Code.NoSuchEntryException, ledgerId, entryId, null, args[5]);
-                }
-            });
-            return null;
-        }).when(bookieClient).readEntryAndFenceLedger(any(), anyLong(), any(), anyLong(),
-            any(BookkeeperInternalCallbacks.ReadEntryCallback.class), any());
-
-        doAnswer(invokation -> {
+        Answer<Void> answer = invokation -> {
             Object[] args = invokation.getArguments();
             BookieSocketAddress bookieSocketAddress = (BookieSocketAddress) args[0];
             long ledgerId = (Long) args[1];
             long entryId = (Long) args[2];
             BookkeeperInternalCallbacks.ReadEntryCallback callback =
                 (BookkeeperInternalCallbacks.ReadEntryCallback) args[3];
+            boolean fenced = (((Integer) args[5]) & BookieProtocol.FLAG_DO_FENCING) == BookieProtocol.FLAG_DO_FENCING;
 
             executor.submitOrdered(ledgerId, () -> {
                 DigestManager macManager = null;
                 try {
-                    macManager = DigestManager.instantiate(ledgerId, new byte[2], DigestType.CRC32);
+                    macManager = getDigestType(ledgerId);
                 } catch (GeneralSecurityException gse){
                     LOG.error("Initialize macManager fail", gse);
                 }
@@ -445,12 +414,17 @@ public abstract class MockBookKeeperTestCase {
                             bookieSocketAddress);
                     callback.readEntryComplete(bke.getCode(), ledgerId, entryId, null, args[5]);
                 }
+
+                if (fenced) {
+                    fencedLedgers.add(ledgerId);
+                }
+
                 if (mockEntry != null) {
                     LOG.info("readEntry - found mock entry {}@{} at {}", entryId, ledgerId, bookieSocketAddress);
-                    ByteBuf entry = macManager.computeDigestAndPackageForSending(entryId,
+                    ByteBufList entry = macManager.computeDigestAndPackageForSending(entryId,
                         mockEntry.lastAddConfirmed, mockEntry.payload.length,
                         Unpooled.wrappedBuffer(mockEntry.payload));
-                    callback.readEntryComplete(BKException.Code.OK, ledgerId, entryId, Unpooled.copiedBuffer(entry),
+                    callback.readEntryComplete(BKException.Code.OK, ledgerId, entryId, ByteBufList.coalesce(entry),
                             args[4]);
                     entry.release();
                 } else {
@@ -459,17 +433,22 @@ public abstract class MockBookKeeperTestCase {
                 }
             });
             return null;
-        }).when(bookieClient).readEntry(any(), anyLong(), anyLong(),
-            any(BookkeeperInternalCallbacks.ReadEntryCallback.class), any());
+        };
+        doAnswer(answer).when(bookieClient).readEntry(any(), anyLong(), anyLong(),
+                any(BookkeeperInternalCallbacks.ReadEntryCallback.class),
+                any(), anyInt());
+        doAnswer(answer).when(bookieClient).readEntry(any(), anyLong(), anyLong(),
+                any(BookkeeperInternalCallbacks.ReadEntryCallback.class),
+                any(), anyInt(), any());
     }
 
-    private static byte[] extractEntryPayload(long ledgerId, long entryId, ByteBuf toSend)
+    private byte[] extractEntryPayload(long ledgerId, long entryId, ByteBufList toSend)
             throws BKException.BKDigestMatchException {
-        ByteBuf toSendCopy = Unpooled.copiedBuffer(toSend);
+        ByteBuf toSendCopy = Unpooled.copiedBuffer(toSend.toArray());
         toSendCopy.resetReaderIndex();
         DigestManager macManager = null;
         try {
-            macManager = DigestManager.instantiate(ledgerId, new byte[2], DigestType.CRC32);
+            macManager = getDigestType(ledgerId);
         } catch (GeneralSecurityException gse){
             LOG.error("Initialize macManager fail", gse);
         }
@@ -489,7 +468,7 @@ public abstract class MockBookKeeperTestCase {
             BookieSocketAddress bookieSocketAddress = (BookieSocketAddress) args[0];
             long ledgerId = (Long) args[1];
             long entryId = (Long) args[3];
-            ByteBuf toSend = (ByteBuf) args[4];
+            ByteBufList toSend = (ByteBufList) args[4];
             Object ctx = args[6];
             int options = (int) args[7];
             boolean isRecoveryAdd =
@@ -523,7 +502,7 @@ public abstract class MockBookKeeperTestCase {
             return null;
         }).when(bookieClient).addEntry(any(BookieSocketAddress.class),
             anyLong(), any(byte[].class),
-            anyLong(), any(ByteBuf.class),
+            anyLong(), any(ByteBufList.class),
             any(BookkeeperInternalCallbacks.WriteCallback.class),
             any(), anyInt());
     }

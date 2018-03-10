@@ -17,7 +17,8 @@
  */
 package org.apache.distributedlog.util;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.configuration.Configuration;
 import org.junit.Test;

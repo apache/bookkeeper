@@ -267,6 +267,7 @@ class LegacyHierarchicalLedgerManager extends AbstractHierarchicalLedgerManager 
                  * return an empty list. */
                 ledgerNodes = new ArrayList<>();
             } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
                 throw new IOException("Error when get child nodes from zk", e);
             }
             NavigableSet<Long> zkActiveLedgers = ledgerListToSet(ledgerNodes, nodePath);

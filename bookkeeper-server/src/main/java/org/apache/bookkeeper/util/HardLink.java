@@ -434,6 +434,7 @@ public class HardLink {
         throw new IOException(errMsg + inpMsg);
       }
     } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
       throw new IOException(e);
     } finally {
       process.destroy();
@@ -526,6 +527,7 @@ public class HardLink {
         throw new IOException(errMsg + inpMsg);
       }
     } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
       throw new IOException(e);
     } finally {
       process.destroy();
@@ -574,6 +576,7 @@ public class HardLink {
     } catch (NumberFormatException e) {
       throw createIOException(fileName, inpMsg, errMsg, exitValue, e);
     } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
       throw createIOException(fileName, inpMsg, errMsg, exitValue, e);
     } finally {
       process.destroy();
@@ -660,6 +663,7 @@ public class HardLink {
         r = new BufferedReader(new InputStreamReader(p.getInputStream(), UTF_8));
         return r.readLine();
       } catch (InterruptedException ie) {
+        Thread.currentThread().interrupt();
         throw new IOException("Couldn't resolve path " + filename, ie);
       } finally {
         if (r != null) {

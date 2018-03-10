@@ -64,8 +64,7 @@ public interface MetadataClientDriver extends AutoCloseable {
      *
      * @return the registration client used for discovering registered bookies.
      */
-    RegistrationClient getRegistrationClient()
-        throws MetadataException;
+    RegistrationClient getRegistrationClient();
 
     /**
      * Return the ledger manager factory used for accessing ledger metadata.
@@ -74,6 +73,13 @@ public interface MetadataClientDriver extends AutoCloseable {
      */
     LedgerManagerFactory getLedgerManagerFactory()
         throws MetadataException;
+
+    /**
+     * Return the layout manager.
+     *
+     * @return the layout manager.
+     */
+    LayoutManager getLayoutManager();
 
     @Override
     void close();

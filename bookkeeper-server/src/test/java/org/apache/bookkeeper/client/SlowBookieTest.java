@@ -140,10 +140,10 @@ public class SlowBookieTest extends BookKeeperClusterTestCase {
         final CountDownLatch checklatch = new CountDownLatch(1);
         final AtomicInteger numFragments = new AtomicInteger(-1);
         lc.checkLedger(lh2, new GenericCallback<Set<LedgerFragment>>() {
-                public void operationComplete(int rc, Set<LedgerFragment> fragments) {
-                    LOG.debug("Checked ledgers returned {} {}", rc, fragments);
+                public void operationComplete(int rc, Set<LedgerFragment> badFragments) {
+                    LOG.debug("Checked ledgers returned {} {}", rc, badFragments);
                     if (rc == BKException.Code.OK) {
-                        numFragments.set(fragments.size());
+                        numFragments.set(badFragments.size());
                     }
                     checklatch.countDown();
                 }

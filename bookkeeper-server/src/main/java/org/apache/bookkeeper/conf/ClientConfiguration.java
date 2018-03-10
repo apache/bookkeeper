@@ -1718,7 +1718,9 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
      *
      * @param regClientClass
      *            ClientClass
+     * @deprecated since 4.7.0
      */
+    @Deprecated
     public ClientConfiguration setRegistrationClientClass(
             Class<? extends RegistrationClient> regClientClass) {
         setProperty(REGISTRATION_CLIENT_CLASS, regClientClass);
@@ -1729,7 +1731,9 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
      * Get Registration Client Class.
      *
      * @return registration manager class.
+     * @deprecated since 4.7.0
      */
+    @Deprecated
     public Class<? extends RegistrationClient> getRegistrationClientClass()
             throws ConfigurationException {
         return ReflectionUtils.getClass(this, REGISTRATION_CLIENT_CLASS,

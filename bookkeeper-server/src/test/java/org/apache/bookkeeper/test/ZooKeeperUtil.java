@@ -21,6 +21,8 @@
 
 package org.apache.bookkeeper.test;
 
+import static org.apache.bookkeeper.util.BookKeeperConstants.AVAILABLE_NODE;
+import static org.apache.bookkeeper.util.BookKeeperConstants.READONLY;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
@@ -84,7 +86,6 @@ public class ZooKeeperUtil {
     public void startServer() throws Exception {
         // create a ZooKeeper server(dataDir, dataLogDir, port)
         LOG.debug("Running ZK server");
-        // ServerStats.registerAsConcrete();
         ClientBase.setupTestEnv();
         zkTmpDir = IOUtils.createTempDir("zookeeper", "test");
 
@@ -98,7 +99,10 @@ public class ZooKeeperUtil {
     public void createBKEnsemble(String ledgersPath) throws KeeperException, InterruptedException {
         Transaction txn = zkc.transaction();
         txn.create(ledgersPath, new byte[0], Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-        txn.create(ledgersPath + "/available", new byte[0], Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+        txn.create(ledgersPath + "/" + AVAILABLE_NODE,
+            new byte[0], Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+        txn.create(ledgersPath + "/" + AVAILABLE_NODE + "/" + READONLY,
+            new byte[0], Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
         txn.commit();
     }
 
@@ -184,7 +188,6 @@ public class ZooKeeperUtil {
 
     public void killServer() throws Exception {
         stopServer();
-        // ServerStats.unregister();
         FileUtils.deleteDirectory(zkTmpDir);
     }
 }

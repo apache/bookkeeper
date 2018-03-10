@@ -20,6 +20,7 @@
  */
 package org.apache.bookkeeper.client;
 
+import static org.apache.bookkeeper.bookie.BookieException.Code.OK;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -31,7 +32,6 @@ import java.util.Collection;
 import java.util.Enumeration;
 import java.util.Random;
 
-import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.junit.Before;
@@ -48,7 +48,7 @@ import org.slf4j.LoggerFactory;
  */
 @RunWith(Parameterized.class)
 public class BookieWriteLedgersWithDifferentDigestsTest extends
-    BookKeeperClusterTestCase implements AddCallback {
+    BookKeeperClusterTestCase implements AsyncCallback.AddCallbackWithLatency {
 
     private static final Logger LOG = LoggerFactory
             .getLogger(BookieWriteLedgersWithDifferentDigestsTest.class);
@@ -192,8 +192,11 @@ public class BookieWriteLedgersWithDifferentDigestsTest extends
     }
 
     @Override
-    public void addComplete(int rc, LedgerHandle lh, long entryId, Object ctx) {
+    public void addCompleteWithLatency(int rc, LedgerHandle lh, long entryId, long qwcLatency, Object ctx) {
         SyncObj x = (SyncObj) ctx;
+        captureThrowable(() -> {
+            assertTrue("Successful write should have non-zero latency", rc != OK || qwcLatency > 0);
+        });
         synchronized (x) {
             x.rc = rc;
             x.counter++;

@@ -116,6 +116,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     // Replication parameters
     protected static final String AUDITOR_PERIODIC_CHECK_INTERVAL = "auditorPeriodicCheckInterval";
     protected static final String AUDITOR_PERIODIC_BOOKIE_CHECK_INTERVAL = "auditorPeriodicBookieCheckInterval";
+    protected static final String AUDITOR_LEDGER_VERIFICATION_PERCENTAGE = "auditorLedgerVerificationPercentage";
     protected static final String AUTO_RECOVERY_DAEMON_ENABLED = "autoRecoveryDaemonEnabled";
     protected static final String LOST_BOOKIE_RECOVERY_DELAY = "lostBookieRecoveryDelay";
     protected static final String RW_REREPLICATE_BACKOFF_MS = "rwRereplicateBackoffMs";
@@ -126,6 +127,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     protected static final String MAX_PENDING_READ_REQUESTS_PER_THREAD = "maxPendingReadRequestsPerThread";
     protected static final String MAX_PENDING_ADD_REQUESTS_PER_THREAD = "maxPendingAddRequestsPerThread";
     protected static final String NUM_LONG_POLL_WORKER_THREADS = "numLongPollWorkerThreads";
+    protected static final String NUM_HIGH_PRIORITY_WORKER_THREADS = "numHighPriorityWorkerThreads";
 
     // Long poll parameters
     protected static final String REQUEST_TIMER_TICK_DURATION_MILLISEC = "requestTimerTickDurationMs";
@@ -1288,6 +1290,29 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     }
 
     /**
+     * Set the number of threads that should be used for high priority requests
+     * (i.e. recovery reads and adds, and fencing)
+     *
+     * @param numThreads
+     *          number of threads to handle high priority requests.
+     * @return server configuration
+     */
+    public ServerConfiguration setNumHighPriorityWorkerThreads(int numThreads) {
+        setProperty(NUM_HIGH_PRIORITY_WORKER_THREADS, numThreads);
+        return this;
+    }
+
+    /**
+     * Get the number of threads that should be used for high priority requests
+     * (i.e. recovery reads and adds, and fencing)
+     * @return
+     */
+    public int getNumHighPriorityWorkerThreads() {
+        return getInt(NUM_HIGH_PRIORITY_WORKER_THREADS, 8);
+    }
+
+
+    /**
      * Set the number of threads that would handle read requests.
      *
      * @param numThreads
@@ -1802,6 +1827,28 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      */
     public long getAuditorPeriodicBookieCheckInterval() {
         return getLong(AUDITOR_PERIODIC_BOOKIE_CHECK_INTERVAL, 86400);
+    }
+
+    /**
+     * Set what percentage of a ledger (fragment)'s entries will be verified.
+     * 0 - only the first and last entry of each ledger fragment would be verified
+     * 100 - the entire ledger fragment would be verified
+     * anything else - randomly picked entries from over the fragment would be verifiec
+     * @param auditorLedgerVerificationPercentage The verification proportion as a percentage
+     * @return ServerConfiguration
+     */
+    public ServerConfiguration setAuditorLedgerVerificationPercentage(long auditorLedgerVerificationPercentage) {
+        setProperty(AUDITOR_LEDGER_VERIFICATION_PERCENTAGE, auditorLedgerVerificationPercentage);
+        return this;
+    }
+
+    /**
+     * Get what percentage of a ledger (fragment)'s entries will be verified.
+     * @see #setAuditorLedgerVerificationPercentage(long)
+     * @return percentage of a ledger (fragment)'s entries will be verified. Default is 0.
+     */
+    public long getAuditorLedgerVerificationPercentage() {
+        return getLong(AUDITOR_LEDGER_VERIFICATION_PERCENTAGE, 0);
     }
 
     /**

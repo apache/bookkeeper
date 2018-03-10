@@ -141,7 +141,7 @@ public class Auditor {
             LedgerManagerFactory ledgerManagerFactory = AbstractZkLedgerManagerFactory
                     .newLedgerManagerFactory(
                         conf,
-                        bkc.getRegClient().getLayoutManager());
+                        bkc.getMetadataClientDriver().getLayoutManager());
             ledgerManager = ledgerManagerFactory.newLedgerManager();
             this.bookieLedgerIndexer = new BookieLedgerIndexer(ledgerManager);
 
@@ -164,6 +164,7 @@ public class Auditor {
             throw new UnavailableException(
                     "Exception while initializing Auditor", ioe);
         } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
             throw new UnavailableException(
                     "Interrupted while initializing Auditor", ie);
         }
@@ -639,7 +640,9 @@ public class Auditor {
                     LedgerHandle lh = null;
                     try {
                         lh = admin.openLedgerNoRecovery(ledgerId);
-                        checker.checkLedger(lh, new ProcessLostFragmentsCb(lh, callback));
+                        checker.checkLedger(lh,
+                            new ProcessLostFragmentsCb(lh, callback),
+                            conf.getAuditorLedgerVerificationPercentage());
                         // we collect the following stats to get a measure of the
                         // distribution of a single ledger within the bk cluster
                         // the higher the number of fragments/bookies, the more distributed it is
@@ -708,8 +711,7 @@ public class Auditor {
      */
     public void shutdown() {
         LOG.info("Shutting down auditor");
-        submitShutdownTask();
-
+        executor.shutdown();
         try {
             while (!executor.awaitTermination(30, TimeUnit.SECONDS)) {
                 LOG.warn("Executor not shutting down, interrupting");

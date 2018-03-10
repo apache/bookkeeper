@@ -389,16 +389,7 @@ public class GarbageCollectorThread extends SafeRunnable {
 
         // Loop through all of the entry logs and remove the non-active ledgers.
         entryLogMetaMap.forEach((entryLogId, meta) -> {
-            meta.removeLedgerIf((entryLogLedger) -> {
-                // Remove the entry log ledger from the set if it isn't active.
-               try {
-                   return !ledgerStorage.ledgerExists(entryLogLedger);
-               } catch (IOException e) {
-                   LOG.error("Error reading from ledger storage", e);
-                   return false;
-               }
-           });
-
+           removeIfLedgerNotExists(meta);
            if (meta.isEmpty()) {
                // This means the entry log is not associated with any active ledgers anymore.
                // We can remove this entry log file now.
@@ -412,6 +403,18 @@ public class GarbageCollectorThread extends SafeRunnable {
 
         this.totalEntryLogSize = totalEntryLogSizeAcc.get();
         this.numActiveEntryLogs = entryLogMetaMap.keySet().size();
+    }
+
+    private void removeIfLedgerNotExists(EntryLogMetadata meta) {
+        meta.removeLedgerIf((entryLogLedger) -> {
+            // Remove the entry log ledger from the set if it isn't active.
+            try {
+                return !ledgerStorage.ledgerExists(entryLogLedger);
+            } catch (IOException e) {
+                LOG.error("Error reading from ledger storage", e);
+                return false;
+            }
+        });
     }
 
     /**
@@ -546,7 +549,12 @@ public class GarbageCollectorThread extends SafeRunnable {
             try {
                 // Read through the entry log file and extract the entry log meta
                 EntryLogMetadata entryLogMeta = entryLogger.getEntryLogMetadata(entryLogId);
-                entryLogMetaMap.put(entryLogId, entryLogMeta);
+                removeIfLedgerNotExists(entryLogMeta);
+                if (entryLogMeta.isEmpty()) {
+                    entryLogger.removeEntryLog(entryLogId);
+                } else {
+                    entryLogMetaMap.put(entryLogId, entryLogMeta);
+                }
             } catch (IOException e) {
                 hasExceptionWhenScan = true;
                 LOG.warn("Premature exception when processing " + entryLogId

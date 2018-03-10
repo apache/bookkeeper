@@ -175,7 +175,10 @@ public class WriteCacheTest {
             executor.submit(() -> {
                 try {
                     barrier.await();
-                } catch (InterruptedException | BrokenBarrierException e) {
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    throw new RuntimeException(ie);
+                } catch (BrokenBarrierException e) {
                     throw new RuntimeException(e);
                 }
 

@@ -20,7 +20,6 @@ package org.apache.distributedlog.config;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.common.base.Optional;
-
 import com.google.common.collect.Lists;
 import java.io.File;
 import java.net.MalformedURLException;
@@ -30,13 +29,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-
-
-
-
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.distributedlog.DistributedLogConfiguration;
-
 import org.apache.distributedlog.common.config.ConcurrentBaseConfiguration;
 import org.apache.distributedlog.common.config.ConcurrentConstConfiguration;
 import org.apache.distributedlog.common.config.ConfigurationSubscription;

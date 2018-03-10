@@ -93,6 +93,7 @@ public class BookieShutdownTest extends BookKeeperClusterTestCase {
                 LOG.error("Caught BKException", e);
                 fail(e.toString());
             } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
                 LOG.error("Caught InterruptedException", e);
                 fail(e.toString());
             }
@@ -127,6 +128,7 @@ public class BookieShutdownTest extends BookKeeperClusterTestCase {
                 try {
                     latch.await();
                 } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
                     // Ignore
                 }
                 triggerBookieShutdown(ExitCode.BOOKIE_EXCEPTION);

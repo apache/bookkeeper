@@ -38,12 +38,14 @@ import org.powermock.api.mockito.PowerMockito;
 public abstract class ZKMetadataDriverTestBase {
 
     protected AbstractConfiguration<?> conf;
+    protected String ledgersRootPath;
     protected String metadataServiceUri;
     protected ZooKeeperClient.Builder mockZkBuilder;
     protected ZooKeeperClient mockZkc;
 
     public void setup(AbstractConfiguration<?> conf) throws Exception {
-        metadataServiceUri = "zk://127.0.0.1/path/to/ledgers";
+        ledgersRootPath = "/path/to/ledgers";
+        metadataServiceUri = "zk://127.0.0.1" + ledgersRootPath;
         this.conf = conf;
         conf.setMetadataServiceUri(metadataServiceUri);
 

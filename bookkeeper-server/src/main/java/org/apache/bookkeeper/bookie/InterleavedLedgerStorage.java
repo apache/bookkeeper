@@ -34,6 +34,8 @@ import java.util.Map;
 import java.util.NavigableMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import org.apache.bookkeeper.bookie.Bookie.NoLedgerException;
 import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
 import org.apache.bookkeeper.bookie.EntryLogger.EntryLogListener;
@@ -74,7 +76,7 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
     GarbageCollectorThread gcThread;
 
     // this indicates that a write has happened since the last flush
-    private volatile boolean somethingWritten = false;
+    private final AtomicBoolean somethingWritten = new AtomicBoolean(false);
 
     // Expose Stats
     private OpStatsLogger getOffsetStats;
@@ -242,10 +244,13 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
             if (null == bb) {
                 return BookieProtocol.INVALID_ENTRY_ID;
             } else {
-                bb.readLong(); // ledger id
-                bb.readLong(); // entry id
-                lac = bb.readLong();
-                lac = ledgerCache.updateLastAddConfirmed(ledgerId, lac);
+                try {
+                    bb.skipBytes(2 * Long.BYTES); // skip ledger & entry id
+                    lac = bb.readLong();
+                    lac = ledgerCache.updateLastAddConfirmed(ledgerId, lac);
+                } finally {
+                    bb.release();
+                }
             }
         }
         return lac;
@@ -261,7 +266,7 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
 
 
     @Override
-    public synchronized long addEntry(ByteBuf entry) throws IOException {
+    public long addEntry(ByteBuf entry) throws IOException {
         long ledgerId = entry.getLong(entry.readerIndex() + 0);
         long entryId = entry.getLong(entry.readerIndex() + 8);
         long lac = entry.getLong(entry.readerIndex() + 16);
@@ -357,10 +362,9 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
 
     @Override
     public synchronized void flush() throws IOException {
-        if (!somethingWritten) {
+        if (!somethingWritten.compareAndSet(true, false)) {
             return;
         }
-        somethingWritten = false;
         flushOrCheckpoint(false);
     }
 
@@ -416,12 +420,12 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
         processEntry(ledgerId, entryId, entry, true);
     }
 
-    protected synchronized void processEntry(long ledgerId, long entryId, ByteBuf entry, boolean rollLog)
+    protected void processEntry(long ledgerId, long entryId, ByteBuf entry, boolean rollLog)
             throws IOException {
         /*
          * Touch dirty flag
          */
-        somethingWritten = true;
+        somethingWritten.set(true);
 
         /*
          * Log the entry

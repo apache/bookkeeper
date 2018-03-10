@@ -20,8 +20,9 @@ package org.apache.bookkeeper.meta.zk;
 
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -33,6 +34,7 @@ import org.apache.bookkeeper.discover.RegistrationClient;
 import org.apache.bookkeeper.discover.ZKRegistrationClient;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
+import org.apache.zookeeper.ZooKeeper;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -70,7 +72,8 @@ public class ZKMetadataClientDriverTest extends ZKMetadataDriverTestBase {
         ZKRegistrationClient mockRegClient = PowerMockito.mock(ZKRegistrationClient.class);
 
         PowerMockito.whenNew(ZKRegistrationClient.class)
-            .withNoArguments()
+            .withParameterTypes(ZooKeeper.class, String.class, ScheduledExecutorService.class)
+            .withArguments(any(ZooKeeper.class), anyString(), any(ScheduledExecutorService.class))
             .thenReturn(mockRegClient);
 
         RegistrationClient client = driver.getRegistrationClient();
@@ -78,13 +81,7 @@ public class ZKMetadataClientDriverTest extends ZKMetadataDriverTestBase {
         assertSame(mockRegClient, driver.regClient);
 
         PowerMockito.verifyNew(ZKRegistrationClient.class, times(1))
-            .withNoArguments();
-        verify(mockRegClient, times(1))
-            .initialize(
-                same(conf),
-                same(mockExecutor),
-                same(NullStatsLogger.INSTANCE),
-                eq(Optional.of(driver.zk)));
+            .withArguments(eq(mockZkc), eq(ledgersRootPath), eq(mockExecutor));
 
         driver.close();
         verify(mockRegClient, times(1)).close();

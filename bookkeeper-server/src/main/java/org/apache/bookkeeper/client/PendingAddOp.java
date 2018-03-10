@@ -18,6 +18,9 @@
 package org.apache.bookkeeper.client;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static org.apache.bookkeeper.proto.BookieProtocol.FLAG_HIGH_PRIORITY;
+import static org.apache.bookkeeper.proto.BookieProtocol.FLAG_NONE;
+import static org.apache.bookkeeper.proto.BookieProtocol.FLAG_RECOVERY_ADD;
 
 import com.google.common.collect.ImmutableMap;
 
@@ -30,11 +33,12 @@ import java.util.Map;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
+import org.apache.bookkeeper.client.AsyncCallback.AddCallbackWithLatency;
 import org.apache.bookkeeper.net.BookieSocketAddress;
-import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
+import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.OpStatsLogger;
+import org.apache.bookkeeper.util.ByteBufList;
 import org.apache.bookkeeper.util.MathUtils;
 import org.apache.bookkeeper.util.SafeRunnable;
 import org.slf4j.Logger;
@@ -53,8 +57,8 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
     private static final Logger LOG = LoggerFactory.getLogger(PendingAddOp.class);
 
     ByteBuf payload;
-    ByteBuf toSend;
-    AddCallback cb;
+    ByteBufList toSend;
+    AddCallbackWithLatency cb;
     Object ctx;
     long entryId;
     int entryLength;
@@ -65,16 +69,18 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
     LedgerHandle lh;
     boolean isRecoveryAdd = false;
     long requestTimeNanos;
+    long qwcLatency; // Quorum Write Completion Latency after response from quorum bookies.
 
     long timeoutNanos;
 
     OpStatsLogger addOpLogger;
+    Counter addOpUrCounter;
     long currentLedgerLength;
     int pendingWriteRequests;
     boolean callbackTriggered;
     boolean hasRun;
 
-    static PendingAddOp create(LedgerHandle lh, ByteBuf payload, AddCallback cb, Object ctx) {
+    static PendingAddOp create(LedgerHandle lh, ByteBuf payload, AddCallbackWithLatency cb, Object ctx) {
         PendingAddOp op = RECYCLER.get();
         op.lh = lh;
         op.isRecoveryAdd = false;
@@ -86,13 +92,15 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
         op.entryLength = payload.readableBytes();
 
         op.completed = false;
-        op.ackSet = lh.distributionSchedule.getAckSet();
-        op.addOpLogger = lh.bk.getAddOpLogger();
-        op.timeoutNanos = lh.bk.addEntryQuorumTimeoutNanos;
+        op.ackSet = lh.getDistributionSchedule().getAckSet();
+        op.addOpLogger = lh.getBk().getAddOpLogger();
+        op.addOpUrCounter = lh.getBk().getAddOpUrCounter();
+        op.timeoutNanos = lh.getBk().getAddEntryQuorumTimeoutNanos();
         op.pendingWriteRequests = 0;
         op.callbackTriggered = false;
         op.hasRun = false;
         op.requestTimeNanos = Long.MAX_VALUE;
+        op.qwcLatency = 0;
         return op;
     }
 
@@ -118,7 +126,7 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
     }
 
     void sendWriteRequest(int bookieIndex) {
-        int flags = isRecoveryAdd ? BookieProtocol.FLAG_RECOVERY_ADD : BookieProtocol.FLAG_NONE;
+        int flags = isRecoveryAdd ? FLAG_RECOVERY_ADD | FLAG_HIGH_PRIORITY : FLAG_NONE;
 
         lh.bk.getBookieClient().addEntry(lh.metadata.currentEnsemble.get(bookieIndex), lh.ledgerId, lh.ledgerKey,
                 entryId, toSend, this, bookieIndex, flags);
@@ -256,6 +264,11 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
         }
 
         if (completed) {
+            if (rc != BKException.Code.OK) {
+                // Got an error after satisfying AQ. This means we are under replicated at the create itself.
+                // Update the stat to reflect it.
+                addOpUrCounter.inc();
+            }
             // even the add operation is completed, but because we don't reset completed flag back to false when
             // #unsetSuccessAndSendWriteRequest doesn't break ack quorum constraint. we still have current pending
             // add op is completed but never callback. so do a check here to complete again.
@@ -322,6 +335,7 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
 
         if (ackQuorum && !completed) {
             completed = true;
+            this.qwcLatency = MathUtils.elapsedNanos(requestTimeNanos);
 
             sendAddSuccessCallbacks();
         }
@@ -344,7 +358,7 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
         } else {
             addOpLogger.registerSuccessfulEvent(latencyNanos, TimeUnit.NANOSECONDS);
         }
-        cb.addComplete(rc, lh, entryId, ctx);
+        cb.addCompleteWithLatency(rc, lh, entryId, qwcLatency, ctx);
         callbackTriggered = true;
 
         maybeRecycle();
@@ -408,7 +422,8 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
             ReferenceCountUtil.release(toSend);
             toSend = null;
         }
-        if (toSend == null && pendingWriteRequests == 0) {
+        // only recycle a pending add op after it has been run.
+        if (hasRun && toSend == null && pendingWriteRequests == 0) {
             recyclePendAddOpObject();
         }
     }
@@ -424,6 +439,7 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
         lh = null;
         isRecoveryAdd = false;
         addOpLogger = null;
+        addOpUrCounter = null;
         completed = false;
         pendingWriteRequests = 0;
         callbackTriggered = false;

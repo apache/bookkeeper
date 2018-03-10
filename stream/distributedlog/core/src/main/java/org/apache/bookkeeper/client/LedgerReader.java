@@ -34,6 +34,7 @@ import org.apache.bookkeeper.client.impl.LedgerEntryImpl;
 import org.apache.bookkeeper.common.concurrent.FutureEventListener;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieClient;
+import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
 import org.apache.bookkeeper.proto.checksum.DigestManager;
@@ -122,7 +123,8 @@ public class LedgerReader {
         ArrayList<BookieSocketAddress> ensemble = lh.getLedgerMetadata().getEnsemble(eid);
         for (int i = 0; i < writeSet.size(); i++) {
             int idx = writeSet.get(i);
-            bookieClient.readEntry(ensemble.get(idx), lh.getId(), eid, readEntryCallback, ensemble.get(idx));
+            bookieClient.readEntry(ensemble.get(idx), lh.getId(), eid, readEntryCallback,
+                                   ensemble.get(idx), BookieProtocol.FLAG_NONE);
         }
     }
 
@@ -226,7 +228,8 @@ public class LedgerReader {
         ArrayList<BookieSocketAddress> ensemble = lh.getLedgerMetadata().getEnsemble(eid);
         for (int i = 0; i < writeSet.size(); i++) {
             int idx = writeSet.get(i);
-            bookieClient.readEntry(ensemble.get(idx), lh.getId(), eid, readEntryCallback, ensemble.get(idx));
+            bookieClient.readEntry(ensemble.get(idx), lh.getId(), eid, readEntryCallback,
+                                   ensemble.get(idx), BookieProtocol.FLAG_NONE);
         }
     }
 }

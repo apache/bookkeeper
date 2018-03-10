@@ -22,11 +22,12 @@ package org.apache.bookkeeper.client;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
-
+import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
@@ -91,14 +92,10 @@ public class TestLedgerChecker extends BookKeeperClusterTestCase {
         for (LedgerFragment r : result) {
             LOG.info("unreplicated fragment: {}", r);
         }
+
         assertEquals("Should have one missing fragment", 1, result.size());
-        assertEquals("There should be 1 fragments. But returned fragments are "
-            + result, 1, result.size());
-        LedgerFragment lf = result.iterator().next();
-        assertEquals("There should be 1 failed bookies in first fragment " + lf,
-            1, lf.getBookiesIndexes().size());
-        assertEquals("Fragment should be missing from first replica",
-            lf.getAddress(0), replicaToKill);
+        assertTrue("Fragment should be missing from first replica",
+            result.iterator().next().getAddresses().contains(replicaToKill));
 
         BookieSocketAddress replicaToKill2 = lh.getLedgerMetadata()
                 .getEnsembles().get(0L).get(1);
@@ -110,16 +107,10 @@ public class TestLedgerChecker extends BookKeeperClusterTestCase {
         for (LedgerFragment r : result) {
             LOG.info("unreplicated fragment: {}", r);
         }
-        assertEquals("Should have two missing fragments", 2, result.size());
-        for (LedgerFragment fragment : result) {
-            if (fragment.getFirstEntryId() == 0L) {
-                assertEquals("There should be 2 failed bookies in first fragment",
-                    2, fragment.getBookiesIndexes().size());
-            } else {
-                assertEquals("There should be 1 failed bookies in second fragment",
-                    1, fragment.getBookiesIndexes().size());
-            }
-        }
+
+        AtomicInteger number = new AtomicInteger();
+        result.forEach(ledgerFragment -> number.addAndGet(ledgerFragment.getAddresses().size()));
+        assertEquals("Should have three missing fragments", 3, number.get());
     }
 
     /**

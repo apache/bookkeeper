@@ -17,6 +17,7 @@
  */
 package org.apache.bookkeeper.meta;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Optional;
 
 import io.netty.util.concurrent.DefaultThreadFactory;
@@ -67,7 +68,8 @@ public abstract class AbstractZkLedgerManager implements LedgerManager, Watcher 
 
     private static final Logger LOG = LoggerFactory.getLogger(AbstractZkLedgerManager.class);
 
-    private static final int ZK_CONNECT_BACKOFF_MS = 200;
+    @VisibleForTesting
+    static final int ZK_CONNECT_BACKOFF_MS = 200;
 
     protected final AbstractConfiguration conf;
     protected final ZooKeeper zk;
@@ -131,6 +133,13 @@ public abstract class AbstractZkLedgerManager implements LedgerManager, Watcher 
                         LOG.debug("Removed ledger metadata listener set on ledger {} as its ledger is deleted : {}",
                                 ledgerId, listenerSet.size());
                     }
+                    // notify `null` as indicator that a ledger is deleted
+                    // make this behavior consistent with `NodeDeleted` watched event.
+                    synchronized (listenerSet) {
+                        for (LedgerMetadataListener listener : listenerSet) {
+                            listener.onChanged(ledgerId, null);
+                        }
+                    }
                 }
             } else {
                 LOG.warn("Failed on read ledger metadata of ledger {} : {}", ledgerId, rc);
@@ -179,8 +188,16 @@ public abstract class AbstractZkLedgerManager implements LedgerManager, Watcher 
 
     @Override
     public void process(WatchedEvent event) {
-        LOG.info("Received watched event {} from zookeeper based ledger manager.", event);
+        LOG.debug("Received watched event {} from zookeeper based ledger manager.", event);
         if (Event.EventType.None == event.getType()) {
+            if (Event.KeeperState.Expired == event.getState()) {
+                LOG.info("ZooKeeper client expired on ledger manager.");
+                Set<Long> keySet = new HashSet<Long>(listeners.keySet());
+                for (Long lid : keySet) {
+                    scheduler.submit(new ReadLedgerMetadataTask(lid));
+                    LOG.info("Re-read ledger metadata for {} after zookeeper session expired.", lid);
+                }
+            }
             return;
         }
         String path = event.getPath();
@@ -409,7 +426,7 @@ public abstract class AbstractZkLedgerManager implements LedgerManager, Watcher 
     public void writeLedgerMetadata(final long ledgerId, final LedgerMetadata metadata,
                                     final GenericCallback<Void> cb) {
         Version v = metadata.getVersion();
-        if (Version.NEW == v || !(v instanceof LongVersion)) {
+        if (!(v instanceof LongVersion)) {
             cb.operationComplete(BKException.Code.MetadataVersionException, null);
             return;
         }
