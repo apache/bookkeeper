@@ -45,6 +45,14 @@ public final class RecyclableArrayList<T> extends ArrayList<T> {
 
     private final Handle<RecyclableArrayList<T>> handle;
 
+    /**
+     * Default non-pooled instance.
+     */
+    public RecyclableArrayList() {
+        super();
+        this.handle = null;
+    }
+
     private RecyclableArrayList(Handle<RecyclableArrayList<T>> handle, int initialCapacity) {
         super(initialCapacity);
         this.handle = handle;
@@ -52,6 +60,8 @@ public final class RecyclableArrayList<T> extends ArrayList<T> {
 
     public void recycle() {
         clear();
-        handle.recycle(this);
+        if (handle != null) {
+            handle.recycle(this);
+        }
     }
 }
