@@ -37,9 +37,9 @@ import static org.powermock.api.mockito.PowerMockito.verifyNew;
 import static org.powermock.api.mockito.PowerMockito.whenNew;
 
 import com.google.common.collect.Maps;
-import java.net.URI;
 import java.util.Set;
 import java.util.SortedMap;
+import java.util.function.Function;
 import org.apache.bookkeeper.bookie.BookieShell.MyCommand;
 import org.apache.bookkeeper.bookie.BookieShell.RecoverCmd;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
@@ -47,10 +47,8 @@ import org.apache.bookkeeper.client.LedgerMetadata;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.discover.RegistrationManager;
-import org.apache.bookkeeper.discover.RegistrationManager.RegistrationListener;
 import org.apache.bookkeeper.meta.MetadataBookieDriver;
 import org.apache.bookkeeper.meta.MetadataDrivers;
-import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.tools.cli.commands.bookie.LastMarkCommand;
 import org.apache.bookkeeper.tools.cli.commands.client.SimpleTestCommand;
 import org.apache.bookkeeper.tools.cli.commands.cluster.ListBookiesCommand;
@@ -116,6 +114,7 @@ public class BookieShellTest {
             .withArguments(any(ClientConfiguration.class))
             .thenReturn(admin);
         this.clientConf = new ClientConfiguration();
+        this.clientConf.setMetadataServiceUri("zk://127.0.0.1/path/to/ledgers");
         when(admin.getConf()).thenReturn(this.clientConf);
         this.rm = PowerMockito.mock(RegistrationManager.class);
         this.cookie = Cookie.newBuilder()
@@ -130,13 +129,20 @@ public class BookieShellTest {
             .thenReturn(new Versioned<>(cookie.toString().getBytes(UTF_8), version));
 
         this.driver = mock(MetadataBookieDriver.class);
-        PowerMockito.mockStatic(MetadataDrivers.class);
-        PowerMockito.when(
-            MetadataDrivers.getBookieDriver(any(URI.class)))
-            .thenReturn(driver);
-
         when(driver.getRegistrationManager())
             .thenReturn(rm);
+
+        PowerMockito.mockStatic(MetadataDrivers.class);
+        PowerMockito.doAnswer(invocationOnMock -> {
+            Function<RegistrationManager, Object> function = invocationOnMock.getArgument(1);
+            function.apply(rm);
+            return null;
+        }).when(
+            MetadataDrivers.class,
+            "runFunctionWithRegistrationManager",
+            any(ServerConfiguration.class),
+            any(Function.class)
+        );
     }
 
     private static CommandLine parseCommandLine(MyCommand cmd, String... args) throws ParseException {
@@ -239,14 +245,12 @@ public class BookieShellTest {
         verify(admin, times(1)).close();
         if (removeCookies) {
             PowerMockito.verifyStatic(MetadataDrivers.class);
-            MetadataDrivers.getBookieDriver(any(URI.class));
-            verify(driver, times(1)).initialize(
-                any(ServerConfiguration.class), any(RegistrationListener.class), eq(NullStatsLogger.INSTANCE));
-            verify(driver, times(1)).getRegistrationManager();
+            MetadataDrivers.runFunctionWithRegistrationManager(any(ServerConfiguration.class), any(Function.class));
             verify(rm, times(1)).readCookie(anyString());
             verify(rm, times(1)).removeCookie(anyString(), eq(version));
         } else {
-            verify(driver, times(0)).getRegistrationManager();
+            verify(rm, times(0)).readCookie(anyString());
+            verify(rm, times(0)).removeCookie(anyString(), eq(version));
         }
     }
 
@@ -306,14 +310,12 @@ public class BookieShellTest {
         verify(admin, times(1)).close();
         if (removeCookies) {
             PowerMockito.verifyStatic(MetadataDrivers.class);
-            MetadataDrivers.getBookieDriver(any(URI.class));
-            verify(driver, times(1)).initialize(
-                any(ServerConfiguration.class), any(RegistrationListener.class), eq(NullStatsLogger.INSTANCE));
-            verify(driver, times(1)).getRegistrationManager();
+            MetadataDrivers.runFunctionWithRegistrationManager(any(ServerConfiguration.class), any(Function.class));
             verify(rm, times(1)).readCookie(anyString());
             verify(rm, times(1)).removeCookie(anyString(), eq(version));
         } else {
-            verify(driver, times(0)).getRegistrationManager();
+            verify(rm, times(0)).readCookie(anyString());
+            verify(rm, times(0)).removeCookie(anyString(), eq(version));
         }
     }
 
