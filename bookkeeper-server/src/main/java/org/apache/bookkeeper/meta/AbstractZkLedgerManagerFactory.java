@@ -135,11 +135,24 @@ public abstract class AbstractZkLedgerManagerFactory implements LedgerManagerFac
             throw new IOException(
                 "Failed to retrieve metadata service uri from configuration", e);
         }
-        URI metadataServiceUri = URI.create(metadataServiceUriStr);
 
-        Class<? extends LedgerManagerFactory> factoryClass =
-            ZKMetadataDriverBase.resolveLedgerManagerFactory(metadataServiceUri);
-        String ledgerRootPath = metadataServiceUri.getPath();
+        Class<? extends LedgerManagerFactory> factoryClass;
+        String ledgerRootPath;
+        // `metadataServiceUri` can be null when constructing bookkeeper client using an external zookeeper client.
+        if (null == metadataServiceUriStr) { //
+            try {
+                factoryClass = conf.getLedgerManagerFactoryClass();
+            } catch (ConfigurationException e) {
+                log.error("Failed to get ledger manager factory class when using an external zookeeper client", e);
+                throw new IOException(
+                    "Failed to get ledger manager factory class when using an external zookeeper client", e);
+            }
+            ledgerRootPath = conf.getZkLedgersRootPath();
+        } else {
+            URI metadataServiceUri = URI.create(metadataServiceUriStr);
+            factoryClass = ZKMetadataDriverBase.resolveLedgerManagerFactory(metadataServiceUri);
+            ledgerRootPath = metadataServiceUri.getPath();
+        }
 
         if (null == ledgerRootPath || ledgerRootPath.length() == 0) {
             throw new IOException("Empty Ledger Root Path.");

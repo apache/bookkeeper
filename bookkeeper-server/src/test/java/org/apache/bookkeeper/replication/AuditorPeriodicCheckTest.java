@@ -111,6 +111,10 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
 
         driver = MetadataDrivers.getBookieDriver(
             URI.create(bsConfs.get(0).getMetadataServiceUri()));
+        driver.initialize(
+            bsConfs.get(0),
+            () -> {},
+            NullStatsLogger.INSTANCE);
     }
 
     @After

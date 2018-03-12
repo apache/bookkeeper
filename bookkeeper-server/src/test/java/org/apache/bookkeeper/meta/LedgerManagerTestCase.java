@@ -28,6 +28,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
 import java.util.NavigableMap;
+import java.util.Optional;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.CheckpointSource;
 import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
@@ -38,8 +39,10 @@ import org.apache.bookkeeper.bookie.EntryLogger;
 import org.apache.bookkeeper.bookie.LastAddConfirmedUpdateNotification;
 import org.apache.bookkeeper.bookie.LedgerDirsManager;
 import org.apache.bookkeeper.bookie.StateManager;
+import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.bookkeeper.common.util.Watcher;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.util.SnapshotMap;
@@ -60,6 +63,7 @@ public abstract class LedgerManagerTestCase extends BookKeeperClusterTestCase {
     protected LedgerManager ledgerManager = null;
     protected LedgerIdGenerator ledgerIdGenerator = null;
     protected SnapshotMap<Long, Boolean> activeLedgers = null;
+    protected OrderedScheduler scheduler;
 
     public LedgerManagerTestCase(Class<? extends LedgerManagerFactory> lmFactoryCls) {
         this(lmFactoryCls, 0);
@@ -107,8 +111,18 @@ public abstract class LedgerManagerTestCase extends BookKeeperClusterTestCase {
         super.setUp();
         baseConf.setZkServers(zkUtil.getZooKeeperConnectString());
 
+        scheduler = OrderedScheduler.newSchedulerBuilder()
+            .name("test-scheduler")
+            .numThreads(1)
+            .build();
+
         clientDriver = MetadataDrivers.getClientDriver(
             URI.create(baseClientConf.getMetadataServiceUri()));
+        clientDriver.initialize(
+            baseClientConf,
+            scheduler,
+            NullStatsLogger.INSTANCE,
+            Optional.empty());
         ledgerManagerFactory = clientDriver.getLedgerManagerFactory();
     }
 
@@ -120,6 +134,9 @@ public abstract class LedgerManagerTestCase extends BookKeeperClusterTestCase {
         }
         if (null != clientDriver) {
             clientDriver.close();
+        }
+        if (null != scheduler) {
+            scheduler.shutdown();
         }
         super.tearDown();
     }

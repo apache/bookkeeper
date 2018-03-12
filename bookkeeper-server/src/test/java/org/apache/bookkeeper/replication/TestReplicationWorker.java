@@ -27,6 +27,7 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.Set;
 import lombok.Cleanup;
 import org.apache.bookkeeper.client.BKException;
@@ -35,6 +36,7 @@ import org.apache.bookkeeper.client.ClientUtil;
 import org.apache.bookkeeper.client.LedgerEntry;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.LedgerHandleAdapter;
+import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
@@ -42,6 +44,7 @@ import org.apache.bookkeeper.meta.MetadataBookieDriver;
 import org.apache.bookkeeper.meta.MetadataClientDriver;
 import org.apache.bookkeeper.meta.MetadataDrivers;
 import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
@@ -65,6 +68,7 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
     private LedgerManagerFactory mFactory;
     private LedgerUnderreplicationManager underReplicationManager;
     private static byte[] data = "TestReplicationWorker".getBytes();
+    private OrderedScheduler scheduler;
 
     public TestReplicationWorker() {
         this("org.apache.bookkeeper.meta.HierarchicalLedgerManagerFactory");
@@ -90,8 +94,18 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
     public void setUp() throws Exception {
         super.setUp();
         baseConf.setZkServers(zkUtil.getZooKeeperConnectString());
+
+        this.scheduler = OrderedScheduler.newSchedulerBuilder()
+            .name("test-scheduler")
+            .numThreads(1)
+            .build();
+
         this.driver = MetadataDrivers.getBookieDriver(
             URI.create(baseConf.getMetadataServiceUri()));
+        this.driver.initialize(
+            baseConf,
+            () -> {},
+            NullStatsLogger.INSTANCE);
         // initialize urReplicationManager
         mFactory = driver.getLedgerManagerFactory();
         underReplicationManager = mFactory.newLedgerUnderreplicationManager();
@@ -404,6 +418,8 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
 
         @Cleanup MetadataClientDriver clientDriver = MetadataDrivers.getClientDriver(
             URI.create(baseClientConf.getMetadataServiceUri()));
+        clientDriver.initialize(baseClientConf, scheduler, NullStatsLogger.INSTANCE, Optional.empty());
+
         LedgerManagerFactory mFactory = clientDriver.getLedgerManagerFactory();
 
         LedgerUnderreplicationManager underReplicationManager = mFactory
@@ -466,6 +482,7 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
 
         @Cleanup MetadataClientDriver driver = MetadataDrivers.getClientDriver(
             URI.create(baseClientConf.getMetadataServiceUri()));
+        driver.initialize(baseClientConf, scheduler, NullStatsLogger.INSTANCE, Optional.empty());
 
         LedgerManagerFactory mFactory = driver.getLedgerManagerFactory();
 

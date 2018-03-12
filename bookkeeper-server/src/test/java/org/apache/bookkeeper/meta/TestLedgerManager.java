@@ -115,7 +115,7 @@ public class TestLedgerManager extends BookKeeperClusterTestCase {
         } catch (Exception e) {
             LOG.error("Received exception", e);
             assertTrue("Invalid exception",
-                    e.getMessage().contains("Failed to instantiate ledger manager factory DoesNotExist"));
+                    e.getMessage().contains("Failed to retrieve metadata service uri from configuration"));
         }
     }
 

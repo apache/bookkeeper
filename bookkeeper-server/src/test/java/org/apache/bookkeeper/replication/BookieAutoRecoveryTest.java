@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.SortedMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -36,6 +37,7 @@ import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.BookKeeperTestClient;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.LedgerHandleAdapter;
+import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
@@ -47,6 +49,7 @@ import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.replication.ReplicationException.CompatibilityException;
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
+import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
@@ -74,6 +77,7 @@ public class BookieAutoRecoveryTest extends BookKeeperClusterTestCase {
     private LedgerManagerFactory mFactory;
     private LedgerUnderreplicationManager underReplicationManager;
     private LedgerManager ledgerManager;
+    private OrderedScheduler scheduler;
 
     private final String underreplicatedPath = baseClientConf
             .getZkLedgersRootPath() + "/underreplication/ledgers";
@@ -98,8 +102,18 @@ public class BookieAutoRecoveryTest extends BookKeeperClusterTestCase {
         baseConf.setZkServers(zkUtil.getZooKeeperConnectString());
         baseClientConf.setZkServers(zkUtil.getZooKeeperConnectString());
 
+        scheduler = OrderedScheduler.newSchedulerBuilder()
+            .name("test-scheduler")
+            .numThreads(1)
+            .build();
+
         metadataClientDriver = MetadataDrivers.getClientDriver(
             URI.create(baseClientConf.getMetadataServiceUri()));
+        metadataClientDriver.initialize(
+            baseClientConf,
+            scheduler,
+            NullStatsLogger.INSTANCE,
+            Optional.empty());
 
         // initialize urReplicationManager
         mFactory = metadataClientDriver.getLedgerManagerFactory();
@@ -122,6 +136,9 @@ public class BookieAutoRecoveryTest extends BookKeeperClusterTestCase {
         if (null != metadataClientDriver) {
             metadataClientDriver.close();
             metadataClientDriver = null;
+        }
+        if (null != scheduler) {
+            scheduler.shutdown();
         }
     }
 

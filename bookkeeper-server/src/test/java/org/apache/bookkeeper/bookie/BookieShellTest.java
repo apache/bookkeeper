@@ -48,7 +48,6 @@ import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.discover.RegistrationManager;
 import org.apache.bookkeeper.discover.RegistrationManager.RegistrationListener;
-import org.apache.bookkeeper.discover.ZKRegistrationManager;
 import org.apache.bookkeeper.meta.MetadataBookieDriver;
 import org.apache.bookkeeper.meta.MetadataDrivers;
 import org.apache.bookkeeper.stats.NullStatsLogger;
@@ -75,7 +74,7 @@ import org.powermock.modules.junit4.PowerMockRunner;
  * Unit test for {@link BookieShell}.
  */
 @RunWith(PowerMockRunner.class)
-@PrepareForTest(BookieShell.class)
+@PrepareForTest({ BookieShell.class, MetadataDrivers.class })
 public class BookieShellTest {
 
     private ClientConfiguration clientConf;
@@ -247,9 +246,7 @@ public class BookieShellTest {
             verify(rm, times(1)).readCookie(anyString());
             verify(rm, times(1)).removeCookie(anyString(), eq(version));
         } else {
-            PowerMockito
-                .verifyNew(ZKRegistrationManager.class, never())
-                .withNoArguments();
+            verify(driver, times(0)).getRegistrationManager();
         }
     }
 
@@ -316,9 +313,7 @@ public class BookieShellTest {
             verify(rm, times(1)).readCookie(anyString());
             verify(rm, times(1)).removeCookie(anyString(), eq(version));
         } else {
-            PowerMockito
-                .verifyNew(ZKRegistrationManager.class, never())
-                .withNoArguments();
+            verify(driver, times(0)).getRegistrationManager();
         }
     }
 

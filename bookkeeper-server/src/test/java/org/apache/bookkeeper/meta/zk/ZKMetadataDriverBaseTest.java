@@ -35,11 +35,9 @@ import static org.mockito.Mockito.verify;
 import static org.powermock.api.mockito.PowerMockito.mockStatic;
 import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 
-import java.net.URI;
 import java.util.Optional;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.meta.AbstractZkLedgerManagerFactory;
-import org.apache.bookkeeper.meta.HierarchicalLedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.zookeeper.RetryPolicy;
@@ -73,10 +71,6 @@ public class ZKMetadataDriverBaseTest extends ZKMetadataDriverTestBase {
         driver.initialize(
             conf, NullStatsLogger.INSTANCE, retryPolicy, Optional.empty());
 
-        assertEquals(URI.create(metadataServiceUri), driver.metadataServiceUri);
-        assertEquals(
-            HierarchicalLedgerManagerFactory.class,
-            driver.ledgerManagerFactoryClass);
         assertEquals(
             "/path/to/ledgers",
             driver.ledgersRootPath);
@@ -105,12 +99,8 @@ public class ZKMetadataDriverBaseTest extends ZKMetadataDriverTestBase {
         driver.initialize(
             conf, NullStatsLogger.INSTANCE, retryPolicy, Optional.of(anotherZk));
 
-        assertEquals(URI.create(metadataServiceUri), driver.metadataServiceUri);
         assertEquals(
-            HierarchicalLedgerManagerFactory.class,
-            driver.ledgerManagerFactoryClass);
-        assertEquals(
-            "/path/to/ledgers",
+            "/ledgers",
             driver.ledgersRootPath);
         assertFalse(driver.ownZKHandle);
 

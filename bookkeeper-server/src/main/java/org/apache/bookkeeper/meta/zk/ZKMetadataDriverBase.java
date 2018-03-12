@@ -98,7 +98,6 @@ public class ZKMetadataDriverBase implements AutoCloseable {
     }
 
     // URI
-    protected URI metadataServiceUri;
     protected AbstractConfiguration<?> conf;
     protected StatsLogger statsLogger;
 
@@ -117,7 +116,6 @@ public class ZKMetadataDriverBase implements AutoCloseable {
     // managers
     protected LayoutManager layoutManager;
     protected LedgerManagerFactory lmFactory;
-    protected Class<? extends LedgerManagerFactory> ledgerManagerFactoryClass = null;
 
     public String getScheme() {
         return SCHEME;
@@ -129,35 +127,39 @@ public class ZKMetadataDriverBase implements AutoCloseable {
                               RetryPolicy zkRetryPolicy,
                               Optional<Object> optionalCtx) throws MetadataException {
         this.conf = conf;
-
-        final String metadataServiceUriStr;
-        try {
-            metadataServiceUriStr = conf.getMetadataServiceUri();
-        } catch (ConfigurationException e) {
-            log.error("Failed to retrieve metadata service uri from configuration", e);
-            throw new MetadataException(
-                Code.INVALID_METADATA_SERVICE_URI, e);
-        }
-
-        this.metadataServiceUri = URI.create(metadataServiceUriStr);
-        ledgerManagerFactoryClass = resolveLedgerManagerFactory(metadataServiceUri);
-
-        // get the initialize root path
-        this.ledgersRootPath = metadataServiceUri.getPath();
-        final String bookieRegistrationPath = ledgersRootPath + "/" + AVAILABLE_NODE;
-        final String bookieReadonlyRegistrationPath = bookieRegistrationPath + "/" + READONLY;
-
-        // construct the zookeeper
-        final String zkServers = getZKServersFromServiceUri(metadataServiceUri);
-        log.info("Initialize zookeeper metadata driver at metadata service uri {} :"
-            + " zkServers = {}, ledgersRootPath = {}.", metadataServiceUriStr, zkServers, ledgersRootPath);
         this.acls = ZkUtils.getACLs(conf);
+
         if (optionalCtx.isPresent()
             && optionalCtx.get() instanceof ZooKeeper) {
+            this.ledgersRootPath = conf.getZkLedgersRootPath();
+
+            log.info("Initialize zookeeper metadata driver with external zookeeper client : ledgersRootPath = {}.",
+                ledgersRootPath);
+
             // if an external zookeeper is added, use the zookeeper instance
             this.zk = (ZooKeeper) (optionalCtx.get());
             this.ownZKHandle = false;
         } else {
+            final String metadataServiceUriStr;
+            try {
+                metadataServiceUriStr = conf.getMetadataServiceUri();
+            } catch (ConfigurationException e) {
+                log.error("Failed to retrieve metadata service uri from configuration", e);
+                throw new MetadataException(
+                    Code.INVALID_METADATA_SERVICE_URI, e);
+            }
+
+            URI metadataServiceUri = URI.create(metadataServiceUriStr);
+            // get the initialize root path
+            this.ledgersRootPath = metadataServiceUri.getPath();
+            final String bookieRegistrationPath = ledgersRootPath + "/" + AVAILABLE_NODE;
+            final String bookieReadonlyRegistrationPath = bookieRegistrationPath + "/" + READONLY;
+
+            // construct the zookeeper
+            final String zkServers = getZKServersFromServiceUri(metadataServiceUri);
+            log.info("Initialize zookeeper metadata driver at metadata service uri {} :"
+                + " zkServers = {}, ledgersRootPath = {}.", metadataServiceUriStr, zkServers, ledgersRootPath);
+
             try {
                 this.zk = ZooKeeperClient.newBuilder()
                     .connectString(zkServers)

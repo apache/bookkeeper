@@ -87,8 +87,8 @@ public class ZKMetadataBookieDriverTest extends ZKMetadataDriverTestBase {
         PowerMockito.verifyNew(ZKRegistrationManager.class, times(1))
             .withArguments(
                 same(conf),
-                same(listener),
-                same(NullStatsLogger.INSTANCE));
+                same(mockZkc),
+                same(listener));
 
         driver.close();
         verify(mockRegManager, times(1)).close();

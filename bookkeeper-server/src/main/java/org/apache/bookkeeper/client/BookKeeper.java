@@ -446,8 +446,13 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
 
         // initialize metadata driver
         try {
-            this.metadataDriver = MetadataDrivers.getClientDriver(
-                URI.create(conf.getMetadataServiceUri()));
+            String metadataServiceUriStr = conf.getMetadataServiceUri();
+            if (null != metadataServiceUriStr) {
+                this.metadataDriver = MetadataDrivers.getClientDriver(URI.create(metadataServiceUriStr));
+            } else {
+                checkNotNull(zkc, "No external zookeeper provided when no metadata service uri is found");
+                this.metadataDriver = MetadataDrivers.getClientDriver("zk");
+            }
             this.metadataDriver.initialize(
                 conf,
                 scheduler,

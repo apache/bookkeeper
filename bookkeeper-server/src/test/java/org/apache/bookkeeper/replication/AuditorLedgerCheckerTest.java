@@ -20,15 +20,14 @@
  */
 package org.apache.bookkeeper.replication;
 
-import static org.apache.bookkeeper.meta.MetadataDrivers.runFunctionWithLedgerManagerFactory;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import com.google.common.util.concurrent.UncheckedExecutionException;
 import java.io.IOException;
+import java.net.URI;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -37,6 +36,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -45,20 +45,25 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
+import lombok.Cleanup;
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.LedgerMetadata;
+import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager;
+import org.apache.bookkeeper.meta.MetadataClientDriver;
+import org.apache.bookkeeper.meta.MetadataDrivers;
 import org.apache.bookkeeper.meta.ZkLedgerUnderreplicationManager;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.proto.DataFormats.UnderreplicatedLedgerFormat;
 import org.apache.bookkeeper.replication.ReplicationException.CompatibilityException;
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
+import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.commons.lang.mutable.MutableInt;
 import org.apache.zookeeper.KeeperException;
@@ -127,6 +132,7 @@ public class AuditorLedgerCheckerTest extends BookKeeperClusterTestCase {
         urLedgerList = new HashSet<Long>();
         ledgerList = new ArrayList<Long>(2);
         baseClientConf.setZkServers(zkUtil.getZooKeeperConnectString());
+        baseConf.setZkServers(zkUtil.getZooKeeperConnectString());
     }
 
     @Override
@@ -520,6 +526,14 @@ public class AuditorLedgerCheckerTest extends BookKeeperClusterTestCase {
                 "lostBookieRecoveryDelayBeforeChange of Auditor should be equal to BaseConf's lostBookieRecoveryDelay",
                 lostBookieRecoveryDelayConfValue, lostBookieRecoveryDelayBeforeChange);
 
+        @Cleanup("shutdown") OrderedScheduler scheduler = OrderedScheduler.newSchedulerBuilder()
+            .name("test-scheduler")
+            .numThreads(1)
+            .build();
+        @Cleanup MetadataClientDriver driver =
+            MetadataDrivers.getClientDriver(URI.create(baseClientConf.getMetadataServiceUri()));
+        driver.initialize(baseClientConf, scheduler, NullStatsLogger.INSTANCE, Optional.of(zkc));
+
         // there is no easy way to validate if the Auditor has executed Audit process (Auditor.startAudit),
         // without shuttingdown Bookie. To test if by resetting LostBookieRecoveryDelay it does Auditing
         // even when there is no pending AuditTask, following approach is needed.
@@ -541,18 +555,13 @@ public class AuditorLedgerCheckerTest extends BookKeeperClusterTestCase {
             CountDownLatch latch = new CountDownLatch(1);
             long ledgerId = (Math.abs(rand.nextLong())) % 100000000;
 
-            runFunctionWithLedgerManagerFactory(baseConf, lmf -> {
-                try (LedgerManager lm = lmf.newLedgerManager()) {
-                    lm.createLedgerMetadata(ledgerId, metadata,
-                        (rc, result) -> {
-                            ledgerCreateRC.setValue(rc);
-                            latch.countDown();
-                        });
-                } catch (IOException ioe) {
-                    throw new UncheckedExecutionException(ioe.getMessage(), ioe);
-                }
-                return null;
-            });
+            try (LedgerManager lm = driver.getLedgerManagerFactory().newLedgerManager()) {
+                lm.createLedgerMetadata(ledgerId, metadata,
+                    (rc, result) -> {
+                        ledgerCreateRC.setValue(rc);
+                        latch.countDown();
+                    });
+            }
 
             Assert.assertTrue("Ledger creation should complete within 2 secs",
                     latch.await(2000, TimeUnit.MILLISECONDS));
