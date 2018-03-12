@@ -141,7 +141,7 @@ public class PrometheusServlet extends HttpServlet {
 
     private static void writeQuantile(Writer w, DataSketchesOpStatsLogger opStat, String name, Boolean success,
             double quantile) throws IOException {
-        w.append(name).append("{success=\"").append(success.toString()).append(",quantile=\"")
+        w.append(name).append("{success=\"").append(success.toString()).append("\",quantile=\"")
                 .append(Double.toString(quantile)).append("\"} ")
                 .append(Double.toString(opStat.getQuantileValue(success, quantile))).append('\n');
     }
