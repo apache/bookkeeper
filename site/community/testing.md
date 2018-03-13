@@ -53,3 +53,15 @@ Any jenkins changes should be made in these files and reviewed by the community.
 
 For Travis CI jobs, they are defined in [.travis.yml](https://github.com/apache/bookkeeper/blob/master/.travis.yml).
 Any travis CI changes should be made in this file and reviewed by the community.
+
+#### Testing Jenkins DSL scripts
+
+Changes to the Jenkins DSL scripts should be tested before submission to avoid having to send multiple PRs for a single change.
+There is a [Jenkins testing seed job](https://builds.apache.org/job/bookkeeper-jenkins-testing/job/seed/) which can be used for testing DSL scripts.
+
+To test a DSL script, create it in ```.test-infra/jenkins``` with a filename with the pattern ```jenkins_testing_job_<something>.groovy```. Commit this to a branch, and push the branch to your own fork on github. Then kick off the testing seed job, specifying your fork and the branch as parameters. This will generate jobs under the ```bookkeeper-jenkins-testing``` folder in Jenkins.
+
+Run your job a couple of times to makes sure it works and is stable. Once you're satisfied with the job, rename the file to the pattern ```job_<something>.groovy```, and create a PR.
+
+> NOTE: Kicking off the testing seed job requires a jenkins account, which is only available to committer. <br/>
+> **WARN: Don't put triggers in your testing job, as you could mess up outstanding PRs approvals. Add them later.**
