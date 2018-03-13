@@ -65,6 +65,7 @@ public class CheckpointOnNewLedgersTest {
         conf = TestBKConfiguration.newServerConfiguration();
         conf.setGcWaitTime(gcWaitTime);
         conf.setLedgerStorageClass(InterleavedLedgerStorage.class.getName());
+        conf.setJournalDirsName(new String[] { bkDir.toString() });
         conf.setLedgerDirNames(new String[] { bkDir.toString() });
         conf.setEntryLogSizeLimit(10 * 1024);
 
@@ -176,6 +177,14 @@ public class CheckpointOnNewLedgersTest {
         // construct a new bookie to simulate "bookie restart from crash"
         Bookie newBookie = new Bookie(conf);
         newBookie.start();
+
+        for (int i = 0; i < numEntries; i++) {
+            ByteBuf entry = newBookie.readEntry(l2, i);
+            assertNotNull(entry);
+            assertEquals(l2, entry.readLong());
+            assertEquals((long) i, entry.readLong());
+            entry.release();
+        }
 
         ByteBuf entry = newBookie.readEntry(l1, 0L);
         assertNotNull(entry);
