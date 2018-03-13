@@ -12,7 +12,7 @@ The site is built using Jekyll and Sass.
 
 In order to run the site locally, you need to have the following installed:
 
-* Ruby 2.4.1 and Rubygems
+* Ruby 2.3.1 and Rubygems
 * The Javadoc CLI tool
 
 ## Setup
