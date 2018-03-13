@@ -113,7 +113,6 @@ public class SortedLedgerStorageCheckpointTest extends LedgerStorageTestBase {
         this.checkpointer = new Checkpointer() {
             @Override
             public void startCheckpoint(Checkpoint checkpoint) {
-                // TODO Auto-generated method stub
                 storage.getScheduler().submit(() -> {
                     log.info("Checkpoint the storage at {}", checkpoint);
                     try {
