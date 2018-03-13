@@ -684,7 +684,7 @@ public class Bookie extends BookieCriticalThread {
         // instantiate the journals
         journals = Lists.newArrayList();
         for (int i = 0; i < journalDirectories.size(); i++) {
-            journals.add(new Journal(journalDirectories.get(i),
+            journals.add(new Journal(i, journalDirectories.get(i),
                          conf, ledgerDirsManager, statsLogger.scope(JOURNAL_SCOPE + "_" + i)));
         }
 

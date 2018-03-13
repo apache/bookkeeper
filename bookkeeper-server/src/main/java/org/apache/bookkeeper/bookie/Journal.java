@@ -182,7 +182,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
             List<File> writableLedgerDirs = ledgerDirsManager
                     .getWritableLedgerDirs();
             for (File dir : writableLedgerDirs) {
-                File file = new File(dir, "lastMark");
+                File file = new File(dir, lastMarkFileName);
                 FileOutputStream fos = null;
                 try {
                     fos = new FileOutputStream(file);
@@ -211,7 +211,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
             ByteBuffer bb = ByteBuffer.wrap(buff);
             LogMark mark = new LogMark();
             for (File dir: ledgerDirsManager.getAllLedgerDirs()) {
-                File file = new File(dir, "lastMark");
+                File file = new File(dir, lastMarkFileName);
                 try {
                     try (FileInputStream fis = new FileInputStream(file)) {
                         int bytesRead = fis.read(buff);
@@ -576,6 +576,10 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
 
     private final LastLogMark lastLogMark = new LastLogMark(0, 0);
 
+    private static final String LAST_MARK_DEFAULT_NAME = "lastMark";
+
+    private final String lastMarkFileName;
+
     /**
      * The thread pool used to handle callback.
      */
@@ -606,12 +610,13 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
     private final Counter flushEmptyQueueCounter;
     private final Counter journalWriteBytes;
 
-    public Journal(File journalDirectory, ServerConfiguration conf, LedgerDirsManager ledgerDirsManager) {
-        this(journalDirectory, conf, ledgerDirsManager, NullStatsLogger.INSTANCE);
+    public Journal(int journalIndex, File journalDirectory, ServerConfiguration conf,
+            LedgerDirsManager ledgerDirsManager) {
+        this(journalIndex, journalDirectory, conf, ledgerDirsManager, NullStatsLogger.INSTANCE);
     }
 
-    public Journal(File journalDirectory, ServerConfiguration conf, LedgerDirsManager ledgerDirsManager,
-                   StatsLogger statsLogger) {
+    public Journal(int journalIndex, File journalDirectory, ServerConfiguration conf,
+            LedgerDirsManager ledgerDirsManager, StatsLogger statsLogger) {
         super("BookieJournal-" + conf.getBookiePort());
         this.ledgerDirsManager = ledgerDirsManager;
         this.conf = conf;
@@ -634,6 +639,11 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
 
         this.removePagesFromCache = conf.getJournalRemovePagesFromCache();
         // read last log mark
+        if (conf.getJournalDirs().length == 1) {
+            lastMarkFileName = LAST_MARK_DEFAULT_NAME;
+        } else {
+            lastMarkFileName = LAST_MARK_DEFAULT_NAME + "." + journalIndex;
+        }
         lastLogMark.readLog();
         if (LOG.isDebugEnabled()) {
             LOG.debug("Last Log Mark : {}", lastLogMark.getCurMark());

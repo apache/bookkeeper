@@ -19,8 +19,9 @@
 package org.apache.bookkeeper.tools.cli.commands.bookie;
 
 import com.beust.jcommander.Parameters;
-import com.google.common.collect.Lists;
-import java.util.List;
+
+import java.io.File;
+
 import org.apache.bookkeeper.bookie.Journal;
 import org.apache.bookkeeper.bookie.LedgerDirsManager;
 import org.apache.bookkeeper.bookie.LogMark;
@@ -44,14 +45,10 @@ public class LastMarkCommand extends BookieCommand {
         LedgerDirsManager dirsManager = new LedgerDirsManager(
             conf, conf.getJournalDirs(),
             new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()));
-        List<Journal> journals = Lists.transform(
-            Lists.newArrayList(conf.getJournalDirs()),
-            dir -> new Journal(
-                dir,
-                conf,
-                dirsManager)
-        );
-        for (Journal journal : journals) {
+        File[] journalDirs = conf.getJournalDirs();
+
+        for (int idx = 0; idx < journalDirs.length; idx++) {
+            Journal journal = new Journal(idx, journalDirs[idx], conf, dirsManager);
             LogMark lastLogMark = journal.getLastLogMark().getCurMark();
             System.out.println("LastLogMark : Journal Id - " + lastLogMark.getLogFileId() + "("
                 + Long.toHexString(lastLogMark.getLogFileId()) + ".txn), Pos - "
