@@ -87,6 +87,11 @@ public class ZKMetadataDriverBase implements AutoCloseable {
                 case org.apache.bookkeeper.meta.MSLedgerManagerFactory.NAME:
                     ledgerManagerFactoryClass = org.apache.bookkeeper.meta.MSLedgerManagerFactory.class;
                     break;
+                case "null":
+                    // the ledger manager factory class is not set, so the client will be using the class that is
+                    // recorded in ledger manager layout.
+                    ledgerManagerFactoryClass = null;
+                    break;
                 default:
                     throw new IllegalArgumentException("Unknown ledger manager type found '"
                         + schemeParts[1] + "' at uri : " + metadataServiceUri);

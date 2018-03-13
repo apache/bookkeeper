@@ -204,7 +204,8 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
             String ledgerManagerType;
             Class<? extends LedgerManagerFactory> factoryClass = getLedgerManagerFactoryClass();
             if (factoryClass == null) {
-                ledgerManagerType = HierarchicalLedgerManagerFactory.NAME;
+                // set the ledger manager type to "null", so the driver implementation knows that the type is not set.
+                ledgerManagerType = "null";
             } else {
                 if (!AbstractZkLedgerManagerFactory.class.isAssignableFrom(factoryClass)) {
                     // this is a non-zk implementation
@@ -243,7 +244,7 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      * @return the configuration object.
      * @throws ConfigurationException
      */
-    public T setMetadataServiceUri(String serviceUri) throws ConfigurationException {
+    public T setMetadataServiceUri(String serviceUri) {
         setProperty(METADATA_SERVICE_URI, serviceUri);
         return getThis();
     }
