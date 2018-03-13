@@ -70,6 +70,11 @@ public class ConversionRollbackTest {
         public void startCheckpoint(Checkpoint checkpoint) {
             // No-op
         }
+
+        @Override
+        public void start() {
+            // no-op
+        }
     };
 
     @Test
