@@ -687,7 +687,7 @@ public class Bookie extends BookieCriticalThread {
         journals = Lists.newArrayList();
         for (int i = 0; i < journalDirectories.size(); i++) {
             journals.add(new Journal(journalDirectories.get(i),
-                         conf, ledgerDirsManager, statsLogger.scope(JOURNAL_SCOPE + "_" + i)));
+                         conf, ledgerDirsManager, statsLogger.scope(JOURNAL_SCOPE)));
         }
 
         this.entryLogPerLedgerEnabled = conf.isEntryLogPerLedgerEnabled();
