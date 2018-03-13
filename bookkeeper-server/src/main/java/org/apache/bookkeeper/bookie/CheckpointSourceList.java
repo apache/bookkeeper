@@ -23,14 +23,10 @@ import com.google.common.base.Objects;
 import com.google.common.collect.Lists;
 import java.io.IOException;
 import java.util.List;
-import lombok.EqualsAndHashCode;
-import lombok.ToString;
 
 /**
  * A {@code CheckpointSourceList} manages a list of {@link CheckpointSource}s.
  */
-@ToString
-@EqualsAndHashCode
 public class CheckpointSourceList implements CheckpointSource {
 
     private final List<? extends CheckpointSource> checkpointSourcesList;
@@ -57,8 +53,6 @@ public class CheckpointSourceList implements CheckpointSource {
         checkpointList.checkpointComplete(compact);
     }
 
-    @ToString
-    @EqualsAndHashCode
     private static class CheckpointList implements Checkpoint {
         private final CheckpointSourceList source;
         private final List<Checkpoint> checkpoints;
