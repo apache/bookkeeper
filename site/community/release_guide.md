@@ -532,6 +532,7 @@ For example, if 4.6.1 is a newer release, we need to remove releases older than 
 ### Update DC/OS BookKeeper package
 
 Once we have new version of BookKeeper docker image available at [docker hub](https://hub.docker.com/r/apache/bookkeeper/), We could update DC/OS BookKeeper package in [mesosphere universe](https://github.com/mesosphere/universe). A new pull request is needed in it. 
+
 It is easy if only version need be bump.
 
 1. Clone repo [mesosphere universe](https://github.com/mesosphere/universe).
