@@ -23,11 +23,13 @@ package org.apache.bookkeeper.bookie;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Stopwatch;
+import com.google.common.util.concurrent.MoreExecutors;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.util.Recycler;
 import io.netty.util.Recycler.Handle;
+import io.netty.util.concurrent.DefaultThreadFactory;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -50,7 +52,6 @@ import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
-import org.apache.bookkeeper.util.DaemonThreadFactory;
 import org.apache.bookkeeper.util.IOUtils;
 import org.apache.bookkeeper.util.MathUtils;
 import org.apache.bookkeeper.util.collections.GrowableArrayBlockingQueue;
@@ -625,8 +626,12 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
         this.maxGroupWaitInNanos = TimeUnit.MILLISECONDS.toNanos(conf.getJournalMaxGroupWaitMSec());
         this.bufferedWritesThreshold = conf.getJournalBufferedWritesThreshold();
         this.bufferedEntriesThreshold = conf.getJournalBufferedEntriesThreshold();
-        this.cbThreadPool = Executors.newFixedThreadPool(conf.getNumJournalCallbackThreads(),
-                                                         new DaemonThreadFactory());
+        if (conf.getNumJournalCallbackThreads() > 0) {
+            this.cbThreadPool = Executors.newFixedThreadPool(conf.getNumJournalCallbackThreads(),
+                                                         new DefaultThreadFactory("bookie-journal-callback"));
+        } else {
+            this.cbThreadPool = MoreExecutors.newDirectExecutorService();
+        }
 
         // Unless there is a cap on the max wait (which requires group force writes)
         // we cannot skip flushing for queue empty
