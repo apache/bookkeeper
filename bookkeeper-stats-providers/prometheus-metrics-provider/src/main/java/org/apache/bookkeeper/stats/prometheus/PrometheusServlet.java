@@ -30,6 +30,8 @@ import javax.servlet.http.HttpServletResponse;
  * Servlet used to export metrics in prometheus text format.
  */
 public class PrometheusServlet extends HttpServlet {
+    private static final long serialVersionUID = 1L;
+
     private final transient PrometheusMetricsProvider provider;
 
     public PrometheusServlet(PrometheusMetricsProvider provider) {
