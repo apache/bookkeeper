@@ -341,7 +341,7 @@ groups:
     default: true
   - param: statsProviderClass
     description: Stats provider class.
-    default: org.apache.bookkeeper.stats.CodahaleMetricsProvider
+    default: org.apache.bookkeeper.stats.codahale.CodahaleMetricsProvider
 
 - name: Read-only mode support
   params:

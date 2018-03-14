@@ -14,7 +14,7 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package org.apache.bookkeeper.stats;
+package org.apache.bookkeeper.stats.codahale;
 
 import com.codahale.metrics.CsvReporter;
 import com.codahale.metrics.JmxReporter;
@@ -33,6 +33,8 @@ import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import org.apache.bookkeeper.stats.StatsLogger;
+import org.apache.bookkeeper.stats.StatsProvider;
 import org.apache.commons.configuration.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,7 +42,6 @@ import org.slf4j.LoggerFactory;
 /**
  * A {@link StatsProvider} implemented based on <i>Codahale</i> metrics library.
  */
-@Deprecated
 @SuppressWarnings("deprecation")
 public class CodahaleMetricsProvider implements StatsProvider {
 
