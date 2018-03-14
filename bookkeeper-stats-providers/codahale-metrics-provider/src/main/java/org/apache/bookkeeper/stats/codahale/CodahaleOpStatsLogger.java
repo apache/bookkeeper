@@ -14,14 +14,15 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package org.apache.bookkeeper.stats;
+package org.apache.bookkeeper.stats.codahale;
 
 import com.codahale.metrics.Snapshot;
 import com.codahale.metrics.Timer;
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
+import org.apache.bookkeeper.stats.OpStatsData;
+import org.apache.bookkeeper.stats.OpStatsLogger;
 
-@Deprecated
 class CodahaleOpStatsLogger implements OpStatsLogger {
     final Timer success;
     final Timer fail;
