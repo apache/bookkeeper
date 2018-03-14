@@ -271,6 +271,7 @@
       <li><a href="#deploy-source-release-to-distapacheorg" id="markdown-toc-deploy-source-release-to-distapacheorg">Deploy source release to dist.apache.org</a></li>
       <li><a href="#update-website" id="markdown-toc-update-website">Update Website</a></li>
       <li><a href="#update-dockerfile" id="markdown-toc-update-dockerfile">Update Dockerfile</a></li>
+      <li><a href="#update-dcos-bookkeeper-package" id="markdown-toc-update-dcos-bookkeeper-package">Update DC/OS BookKeeper package</a></li>
       <li><a href="#mark-the-version-as-released-in-jira-and-github" id="markdown-toc-mark-the-version-as-released-in-jira-and-github">Mark the version as released in JIRA and Github</a></li>
       <li><a href="#update-release-schedule" id="markdown-toc-update-release-schedule">Update Release Schedule</a></li>
       <li><a href="#checklist-to-proceed-to-the-next-step-4" id="markdown-toc-checklist-to-proceed-to-the-next-step-4">Checklist to proceed to the next step</a></li>
@@ -881,6 +882,74 @@ $ svn commit -m "remove bookkeeper release &lt;old-release&gt;"
   </li>
   <li>
     <p>Verify the <a href="https://hub.docker.com/r/apache/bookkeeper/">docker hub</a> to see if a new build for the given tag is build.</p>
+  </li>
+</ol>
+
+<h3 id="update-dcos-bookkeeper-package">Update DC/OS BookKeeper package</h3>
+
+<p>Once we have new version of BookKeeper docker image available at <a href="https://hub.docker.com/r/apache/bookkeeper/">docker hub</a>, We could update DC/OS BookKeeper package in <a href="https://github.com/mesosphere/universe">mesosphere universe</a>. A new pull request is needed in it.</p>
+
+<p>It is easy if only version need be bump.</p>
+
+<ol>
+  <li>
+    <p>Clone repo <a href="https://github.com/mesosphere/universe">mesosphere universe</a>.</p>
+
+    <div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code> <span class="nv">$ </span>git clone https://github.com/mesosphere/universe
+</code></pre></div>    </div>
+  </li>
+  <li>
+    <p>cd into the repo, Checkout a branch for the changes.</p>
+
+    <div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code> <span class="nv">$ </span><span class="nb">cd </span>universe
+ <span class="nv">$ </span>git checkout <span class="nt">-b</span> bookkeeper_new_version
+</code></pre></div>    </div>
+  </li>
+  <li>
+    <p>Make a copy of latest code of BookKeeper package.</p>
+
+    <div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code> <span class="nv">$ </span><span class="nb">cp</span> <span class="nt">-rf</span> repo/packages/B/bookkeeper/1 repo/packages/B/bookkeeper/2
+ <span class="nv">$ </span>git add repo/packages/B/bookkeeper/2
+ <span class="nv">$ </span>git commit <span class="nt">-m</span> <span class="s2">"copy old version"</span>
+</code></pre></div>    </div>
+  </li>
+  <li>
+    <p>Bump the version of BookKeeper docker image in file <a href="https://github.com/mesosphere/universe/blob/version-3.x/repo/packages/B/bookkeeper/1/resource.json#L5">resource.json</a> and <a href="https://github.com/mesosphere/universe/blob/version-3.x/repo/packages/B/bookkeeper/1/package.json#L4">package.json</a>.</p>
+
+    <div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code> diff --git repo/packages/B/bookkeeper/2/package.json repo/packages/B/bookkeeper/2/package.json
+ index 07199d56..75f4aa81 100644
+ --- repo/packages/B/bookkeeper/2/package.json
+ +++ repo/packages/B/bookkeeper/2/package.json
+ @@ -1,7 +1,7 @@
+  {
+    "packagingVersion": "3.0",
+    "name": "bookkeeper",
+ -  "version": "4.5.1",
+ +  "version": "4.7.0",
+    "scm": "https://github.com/apache/bookkeeper",
+    "maintainer": "zhaijia@apache.org",
+    "description": "BookKeeper is A scalable, fault-tolerant, and low-latency storage service optimized for real-time workloads.Further information can be found here: http://bookkeeper.apache.org/",
+ diff --git repo/packages/B/bookkeeper/2/resource.json repo/packages/B/bookkeeper/2/resource.json
+ index 3801750e..72690ea0 100644
+ --- repo/packages/B/bookkeeper/2/resource.json
+ +++ repo/packages/B/bookkeeper/2/resource.json
+ @@ -2,7 +2,7 @@
+    "assets": {
+      "container": {
+        "docker": {
+ -        "bookkeeper": "apache/bookkeeper:4.5.1"
+ +        "bookkeeper": "apache/bookkeeper:4.7.0"
+        }
+      }
+    },
+</code></pre></div>    </div>
+  </li>
+  <li>
+    <p>Commit the change, create a pull request and wait for it to be approved and merged.</p>
+
+    <div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code> <span class="nv">$ </span>git add repo/packages/B/bookkeeper/2
+ <span class="nv">$ </span>git commit <span class="nt">-m</span> <span class="s2">"new bookkeeper version"</span>
+</code></pre></div>    </div>
   </li>
 </ol>
 
