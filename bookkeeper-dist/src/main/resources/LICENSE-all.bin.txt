@@ -271,6 +271,8 @@ Apache Software License, Version 2.
 - lib/org.eclipse.jetty-jetty-util-9.4.5.v20170502.jar [34]
 - lib/org.rocksdb-rocksdbjni-5.8.6.jar [35]
 - lib/com.beust-jcommander-1.48.jar [36]
+- lib/com.yahoo.datasketches-memory-0.8.3.jar [37]
+- lib/com.yahoo.datasketches-sketches-core-0.8.3.jar [37]
 
 [1] Source available at https://github.com/FasterXML/jackson-annotations/tree/jackson-annotations-2.8.9
 [2] Source available at https://github.com/FasterXML/jackson-core/tree/jackson-core-2.8.9
@@ -307,6 +309,7 @@ Apache Software License, Version 2.
 [34] Source available at https://github.com/eclipse/jetty.project/tree/jetty-9.4.5.v20170502
 [35] Source available at https://github.com/facebook/rocksdb/tree/v5.8.6
 [36] Source available at https://github.com/cbeust/jcommander/tree/jcommander-1.48
+[37] Source available at https://github.com/DataSketches/sketches-core/tree/sketches-0.8.3
 
 ------------------------------------------------------------------------------------
 lib/io.netty-netty-3.10.1.Final.jar contains the extensions to Java Collections Framework which has
