@@ -22,7 +22,6 @@ package org.apache.bookkeeper.client.api;
 
 import static com.google.common.base.Charsets.UTF_8;
 import static org.apache.bookkeeper.common.concurrent.FutureUtils.result;
-import static org.apache.bookkeeper.common.concurrent.FutureUtils.whenCompleteAsync;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasProperty;
