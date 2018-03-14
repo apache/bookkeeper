@@ -227,7 +227,10 @@
   <li><a href="#testing-scenarios" id="markdown-toc-testing-scenarios">Testing Scenarios</a>    <ul>
       <li><a href="#precommit" id="markdown-toc-precommit">Precommit</a></li>
       <li><a href="#postcommit" id="markdown-toc-postcommit">Postcommit</a></li>
-      <li><a href="#configuration" id="markdown-toc-configuration">Configuration</a></li>
+      <li><a href="#configuration" id="markdown-toc-configuration">Configuration</a>        <ul>
+          <li><a href="#testing-jenkins-dsl-scripts" id="markdown-toc-testing-jenkins-dsl-scripts">Testing Jenkins DSL scripts</a></li>
+        </ul>
+      </li>
     </ul>
   </li>
 </ul>
@@ -280,6 +283,20 @@ Any jenkins changes should be made in these files and reviewed by the community.
 
 <p>For Travis CI jobs, they are defined in <a href="https://github.com/apache/bookkeeper/blob/master/.travis.yml">.travis.yml</a>.
 Any travis CI changes should be made in this file and reviewed by the community.</p>
+
+<h4 id="testing-jenkins-dsl-scripts">Testing Jenkins DSL scripts</h4>
+
+<p>Changes to the Jenkins DSL scripts should be tested before submission to avoid having to send multiple PRs for a single change.
+There is a <a href="https://builds.apache.org/job/bookkeeper-jenkins-testing/job/seed/">Jenkins testing seed job</a> which can be used for testing DSL scripts.</p>
+
+<p>To test a DSL script, create it in <code class="highlighter-rouge">.test-infra/jenkins</code> with a filename with the pattern <code class="highlighter-rouge">jenkins_testing_job_&lt;something&gt;.groovy</code>. Commit this to a branch, and push the branch to your own fork on github. Then kick off the testing seed job, specifying your fork and the branch as parameters. This will generate jobs under the <code class="highlighter-rouge">bookkeeper-jenkins-testing</code> folder in Jenkins.</p>
+
+<p>Run your job a couple of times to makes sure it works and is stable. Once you’re satisfied with the job, rename the file to the pattern <code class="highlighter-rouge">job_&lt;something&gt;.groovy</code>, and create a PR.</p>
+
+<blockquote>
+  <p>NOTE: Kicking off the testing seed job requires a jenkins account, which is only available to committer. <br />
+<strong>WARN: Don’t put triggers in your testing job, as you could mess up outstanding PRs approvals. Add them later.</strong></p>
+</blockquote>
 
         </section>
 
