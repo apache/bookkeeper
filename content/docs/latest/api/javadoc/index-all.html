@@ -525,8 +525,12 @@
 <dl>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/DefaultSpeculativeRequestExecutionPolicy.html#backoffMultiplier">backoffMultiplier</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/DefaultSpeculativeRequestExecutionPolicy.html" title="class in org.apache.bookkeeper.client">DefaultSpeculativeRequestExecutionPolicy</a></dt>
 <dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/CodahaleStatsLogger.html#basename">basename</a></span> - Variable in class org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/CodahaleStatsLogger.html" title="class in org.apache.bookkeeper.stats">CodahaleStatsLogger</a></dt>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/codahale/CodahaleStatsLogger.html#basename">basename</a></span> - Variable in class org.apache.bookkeeper.stats.codahale.<a href="org/apache/bookkeeper/stats/codahale/CodahaleStatsLogger.html" title="class in org.apache.bookkeeper.stats.codahale">CodahaleStatsLogger</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/CodahaleStatsLogger.html#basename">basename</a></span> - Variable in class org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/CodahaleStatsLogger.html" title="class in org.apache.bookkeeper.stats">CodahaleStatsLogger</a></dt>
+<dd>
+<div class="block"><span class="deprecatedLabel">Deprecated.</span></div>
+&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerCreateOp.html#bk">bk</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerCreateOp.html" title="class in org.apache.bookkeeper.client">LedgerCreateOp</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerDeleteOp.html#bk">bk</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerDeleteOp.html" title="class in org.apache.bookkeeper.client">LedgerDeleteOp</a></dt>
@@ -1033,8 +1037,12 @@
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.RRTopologyAwareCoverageEnsemble.html#chosenNodes">chosenNodes</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.RRTopologyAwareCoverageEnsemble.html" title="class in org.apache.bookkeeper.client">TopologyAwareEnsemblePlacementPolicy.RRTopologyAwareCoverageEnsemble</a></dt>
 <dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/CodahaleOpStatsLogger.html#clear--">clear()</a></span> - Method in class org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/CodahaleOpStatsLogger.html" title="class in org.apache.bookkeeper.stats">CodahaleOpStatsLogger</a></dt>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/codahale/CodahaleOpStatsLogger.html#clear--">clear()</a></span> - Method in class org.apache.bookkeeper.stats.codahale.<a href="org/apache/bookkeeper/stats/codahale/CodahaleOpStatsLogger.html" title="class in org.apache.bookkeeper.stats.codahale">CodahaleOpStatsLogger</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/CodahaleOpStatsLogger.html#clear--">clear()</a></span> - Method in class org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/CodahaleOpStatsLogger.html" title="class in org.apache.bookkeeper.stats">CodahaleOpStatsLogger</a></dt>
+<dd>
+<div class="block"><span class="deprecatedLabel">Deprecated.</span></div>
+&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/Counter.html#clear--">clear()</a></span> - Method in interface org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a></dt>
 <dd>
 <div class="block">Clear this stat.</div>
@@ -1197,22 +1205,46 @@
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeper.html#closeLock">closeLock</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeper.html" title="class in org.apache.bookkeeper.client">BookKeeper</a></dt>
 <dd>&nbsp;</dd>
-<dt><a href="org/apache/bookkeeper/stats/CodahaleMetricsProvider.html" title="class in org.apache.bookkeeper.stats"><span class="typeNameLink">CodahaleMetricsProvider</span></a> - Class in <a href="org/apache/bookkeeper/stats/package-summary.html">org.apache.bookkeeper.stats</a></dt>
+<dt><a href="org/apache/bookkeeper/stats/codahale/CodahaleMetricsProvider.html" title="class in org.apache.bookkeeper.stats.codahale"><span class="typeNameLink">CodahaleMetricsProvider</span></a> - Class in <a href="org/apache/bookkeeper/stats/codahale/package-summary.html">org.apache.bookkeeper.stats.codahale</a></dt>
 <dd>
 <div class="block">A <a href="org/apache/bookkeeper/stats/StatsProvider.html" title="interface in org.apache.bookkeeper.stats"><code>StatsProvider</code></a> implemented based on <i>Codahale</i> metrics library.</div>
 </dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/codahale/CodahaleMetricsProvider.html#CodahaleMetricsProvider--">CodahaleMetricsProvider()</a></span> - Constructor for class org.apache.bookkeeper.stats.codahale.<a href="org/apache/bookkeeper/stats/codahale/CodahaleMetricsProvider.html" title="class in org.apache.bookkeeper.stats.codahale">CodahaleMetricsProvider</a></dt>
+<dd>&nbsp;</dd>
+<dt><a href="org/apache/bookkeeper/stats/CodahaleMetricsProvider.html" title="class in org.apache.bookkeeper.stats"><span class="typeNameLink">CodahaleMetricsProvider</span></a> - Class in <a href="org/apache/bookkeeper/stats/package-summary.html">org.apache.bookkeeper.stats</a></dt>
+<dd>
+<div class="block"><span class="deprecatedLabel">Deprecated.</span></div>
+</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/CodahaleMetricsProvider.html#CodahaleMetricsProvider--">CodahaleMetricsProvider()</a></span> - Constructor for class org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/CodahaleMetricsProvider.html" title="class in org.apache.bookkeeper.stats">CodahaleMetricsProvider</a></dt>
+<dd>
+<div class="block"><span class="deprecatedLabel">Deprecated.</span></div>
+&nbsp;</dd>
+<dt><a href="org/apache/bookkeeper/stats/codahale/CodahaleOpStatsLogger.html" title="class in org.apache.bookkeeper.stats.codahale"><span class="typeNameLink">CodahaleOpStatsLogger</span></a> - Class in <a href="org/apache/bookkeeper/stats/codahale/package-summary.html">org.apache.bookkeeper.stats.codahale</a></dt>
+<dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/codahale/CodahaleOpStatsLogger.html#CodahaleOpStatsLogger-com.codahale.metrics.Timer-com.codahale.metrics.Timer-">CodahaleOpStatsLogger(Timer, Timer)</a></span> - Constructor for class org.apache.bookkeeper.stats.codahale.<a href="org/apache/bookkeeper/stats/codahale/CodahaleOpStatsLogger.html" title="class in org.apache.bookkeeper.stats.codahale">CodahaleOpStatsLogger</a></dt>
 <dd>&nbsp;</dd>
 <dt><a href="org/apache/bookkeeper/stats/CodahaleOpStatsLogger.html" title="class in org.apache.bookkeeper.stats"><span class="typeNameLink">CodahaleOpStatsLogger</span></a> - Class in <a href="org/apache/bookkeeper/stats/package-summary.html">org.apache.bookkeeper.stats</a></dt>
-<dd>&nbsp;</dd>
+<dd>
+<div class="block"><span class="deprecatedLabel">Deprecated.</span></div>
+</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/CodahaleOpStatsLogger.html#CodahaleOpStatsLogger-com.codahale.metrics.Timer-com.codahale.metrics.Timer-">CodahaleOpStatsLogger(Timer, Timer)</a></span> - Constructor for class org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/CodahaleOpStatsLogger.html" title="class in org.apache.bookkeeper.stats">CodahaleOpStatsLogger</a></dt>
-<dd>&nbsp;</dd>
-<dt><a href="org/apache/bookkeeper/stats/CodahaleStatsLogger.html" title="class in org.apache.bookkeeper.stats"><span class="typeNameLink">CodahaleStatsLogger</span></a> - Class in <a href="org/apache/bookkeeper/stats/package-summary.html">org.apache.bookkeeper.stats</a></dt>
+<dd>
+<div class="block"><span class="deprecatedLabel">Deprecated.</span></div>
+&nbsp;</dd>
+<dt><a href="org/apache/bookkeeper/stats/codahale/CodahaleStatsLogger.html" title="class in org.apache.bookkeeper.stats.codahale"><span class="typeNameLink">CodahaleStatsLogger</span></a> - Class in <a href="org/apache/bookkeeper/stats/codahale/package-summary.html">org.apache.bookkeeper.stats.codahale</a></dt>
 <dd>
 <div class="block">A <a href="org/apache/bookkeeper/stats/StatsLogger.html" title="interface in org.apache.bookkeeper.stats"><code>StatsLogger</code></a> implemented based on <i>Codahale</i> metrics library.</div>
 </dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/CodahaleStatsLogger.html#CodahaleStatsLogger-com.codahale.metrics.MetricRegistry-java.lang.String-">CodahaleStatsLogger(MetricRegistry, String)</a></span> - Constructor for class org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/CodahaleStatsLogger.html" title="class in org.apache.bookkeeper.stats">CodahaleStatsLogger</a></dt>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/codahale/CodahaleStatsLogger.html#CodahaleStatsLogger-com.codahale.metrics.MetricRegistry-java.lang.String-">CodahaleStatsLogger(MetricRegistry, String)</a></span> - Constructor for class org.apache.bookkeeper.stats.codahale.<a href="org/apache/bookkeeper/stats/codahale/CodahaleStatsLogger.html" title="class in org.apache.bookkeeper.stats.codahale">CodahaleStatsLogger</a></dt>
 <dd>&nbsp;</dd>
+<dt><a href="org/apache/bookkeeper/stats/CodahaleStatsLogger.html" title="class in org.apache.bookkeeper.stats"><span class="typeNameLink">CodahaleStatsLogger</span></a> - Class in <a href="org/apache/bookkeeper/stats/package-summary.html">org.apache.bookkeeper.stats</a></dt>
+<dd>
+<div class="block"><span class="deprecatedLabel">Deprecated.</span></div>
+</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/CodahaleStatsLogger.html#CodahaleStatsLogger-com.codahale.metrics.MetricRegistry-java.lang.String-">CodahaleStatsLogger(MetricRegistry, String)</a></span> - Constructor for class org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/CodahaleStatsLogger.html" title="class in org.apache.bookkeeper.stats">CodahaleStatsLogger</a></dt>
+<dd>
+<div class="block"><span class="deprecatedLabel">Deprecated.</span></div>
+&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/api/BKException.html#code">code</a></span> - Variable in exception org.apache.bookkeeper.client.api.<a href="org/apache/bookkeeper/client/api/BKException.html" title="class in org.apache.bookkeeper.client.api">BKException</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/api/BKException.html#codeLogger-int-">codeLogger(int)</a></span> - Static method in exception org.apache.bookkeeper.client.api.<a href="org/apache/bookkeeper/client/api/BKException.html" title="class in org.apache.bookkeeper.client.api">BKException</a></dt>
@@ -1767,8 +1799,12 @@
 <dd>
 <div class="block">Fail the request with given result code <i>rc</i>.</div>
 </dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/CodahaleOpStatsLogger.html#fail">fail</a></span> - Variable in class org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/CodahaleOpStatsLogger.html" title="class in org.apache.bookkeeper.stats">CodahaleOpStatsLogger</a></dt>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/codahale/CodahaleOpStatsLogger.html#fail">fail</a></span> - Variable in class org.apache.bookkeeper.stats.codahale.<a href="org/apache/bookkeeper/stats/codahale/CodahaleOpStatsLogger.html" title="class in org.apache.bookkeeper.stats.codahale">CodahaleOpStatsLogger</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/CodahaleOpStatsLogger.html#fail">fail</a></span> - Variable in class org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/CodahaleOpStatsLogger.html" title="class in org.apache.bookkeeper.stats">CodahaleOpStatsLogger</a></dt>
+<dd>
+<div class="block"><span class="deprecatedLabel">Deprecated.</span></div>
+&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/DistributionSchedule.AckSet.html#failBookieAndCheck-int-org.apache.bookkeeper.net.BookieSocketAddress-">failBookieAndCheck(int, BookieSocketAddress)</a></span> - Method in interface org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/DistributionSchedule.AckSet.html" title="interface in org.apache.bookkeeper.client">DistributionSchedule.AckSet</a></dt>
 <dd>
 <div class="block">Received failure response from a bookie and check if ack quorum
@@ -2145,8 +2181,12 @@
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/CachingStatsLogger.html#getCounter-java.lang.String-">getCounter(String)</a></span> - Method in class org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/CachingStatsLogger.html" title="class in org.apache.bookkeeper.stats">CachingStatsLogger</a></dt>
 <dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/CodahaleStatsLogger.html#getCounter-java.lang.String-">getCounter(String)</a></span> - Method in class org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/CodahaleStatsLogger.html" title="class in org.apache.bookkeeper.stats">CodahaleStatsLogger</a></dt>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/codahale/CodahaleStatsLogger.html#getCounter-java.lang.String-">getCounter(String)</a></span> - Method in class org.apache.bookkeeper.stats.codahale.<a href="org/apache/bookkeeper/stats/codahale/CodahaleStatsLogger.html" title="class in org.apache.bookkeeper.stats.codahale">CodahaleStatsLogger</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/CodahaleStatsLogger.html#getCounter-java.lang.String-">getCounter(String)</a></span> - Method in class org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/CodahaleStatsLogger.html" title="class in org.apache.bookkeeper.stats">CodahaleStatsLogger</a></dt>
+<dd>
+<div class="block"><span class="deprecatedLabel">Deprecated.</span></div>
+&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/NullStatsLogger.html#getCounter-java.lang.String-">getCounter(String)</a></span> - Method in class org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/NullStatsLogger.html" title="class in org.apache.bookkeeper.stats">NullStatsLogger</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/prometheus/PrometheusStatsLogger.html#getCounter-java.lang.String-">getCounter(String)</a></span> - Method in class org.apache.bookkeeper.stats.prometheus.<a href="org/apache/bookkeeper/stats/prometheus/PrometheusStatsLogger.html" title="class in org.apache.bookkeeper.stats.prometheus">PrometheusStatsLogger</a></dt>
@@ -2759,8 +2799,12 @@
 <dd>
 <div class="block">Get max entries per scan in metastore.</div>
 </dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/CodahaleMetricsProvider.html#getMetrics--">getMetrics()</a></span> - Method in class org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/CodahaleMetricsProvider.html" title="class in org.apache.bookkeeper.stats">CodahaleMetricsProvider</a></dt>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/codahale/CodahaleMetricsProvider.html#getMetrics--">getMetrics()</a></span> - Method in class org.apache.bookkeeper.stats.codahale.<a href="org/apache/bookkeeper/stats/codahale/CodahaleMetricsProvider.html" title="class in org.apache.bookkeeper.stats.codahale">CodahaleMetricsProvider</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/CodahaleMetricsProvider.html#getMetrics--">getMetrics()</a></span> - Method in class org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/CodahaleMetricsProvider.html" title="class in org.apache.bookkeeper.stats">CodahaleMetricsProvider</a></dt>
+<dd>
+<div class="block"><span class="deprecatedLabel">Deprecated.</span></div>
+&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#getMinorCompactionInterval--">getMinorCompactionInterval()</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
 <dd>
 <div class="block">Get interval to run minor compaction, in seconds.</div>
@@ -2845,8 +2889,12 @@
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/CachingStatsLogger.html#getOpStatsLogger-java.lang.String-">getOpStatsLogger(String)</a></span> - Method in class org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/CachingStatsLogger.html" title="class in org.apache.bookkeeper.stats">CachingStatsLogger</a></dt>
 <dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/CodahaleStatsLogger.html#getOpStatsLogger-java.lang.String-">getOpStatsLogger(String)</a></span> - Method in class org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/CodahaleStatsLogger.html" title="class in org.apache.bookkeeper.stats">CodahaleStatsLogger</a></dt>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/codahale/CodahaleStatsLogger.html#getOpStatsLogger-java.lang.String-">getOpStatsLogger(String)</a></span> - Method in class org.apache.bookkeeper.stats.codahale.<a href="org/apache/bookkeeper/stats/codahale/CodahaleStatsLogger.html" title="class in org.apache.bookkeeper.stats.codahale">CodahaleStatsLogger</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/CodahaleStatsLogger.html#getOpStatsLogger-java.lang.String-">getOpStatsLogger(String)</a></span> - Method in class org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/CodahaleStatsLogger.html" title="class in org.apache.bookkeeper.stats">CodahaleStatsLogger</a></dt>
+<dd>
+<div class="block"><span class="deprecatedLabel">Deprecated.</span></div>
+&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/NullStatsLogger.html#getOpStatsLogger-java.lang.String-">getOpStatsLogger(String)</a></span> - Method in class org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/NullStatsLogger.html" title="class in org.apache.bookkeeper.stats">NullStatsLogger</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/prometheus/PrometheusStatsLogger.html#getOpStatsLogger-java.lang.String-">getOpStatsLogger(String)</a></span> - Method in class org.apache.bookkeeper.stats.prometheus.<a href="org/apache/bookkeeper/stats/prometheus/PrometheusStatsLogger.html" title="class in org.apache.bookkeeper.stats.prometheus">PrometheusStatsLogger</a></dt>
@@ -3067,8 +3115,12 @@
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/CachingStatsProvider.html#getStatsLogger-java.lang.String-">getStatsLogger(String)</a></span> - Method in class org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/CachingStatsProvider.html" title="class in org.apache.bookkeeper.stats">CachingStatsProvider</a></dt>
 <dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/CodahaleMetricsProvider.html#getStatsLogger-java.lang.String-">getStatsLogger(String)</a></span> - Method in class org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/CodahaleMetricsProvider.html" title="class in org.apache.bookkeeper.stats">CodahaleMetricsProvider</a></dt>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/codahale/CodahaleMetricsProvider.html#getStatsLogger-java.lang.String-">getStatsLogger(String)</a></span> - Method in class org.apache.bookkeeper.stats.codahale.<a href="org/apache/bookkeeper/stats/codahale/CodahaleMetricsProvider.html" title="class in org.apache.bookkeeper.stats.codahale">CodahaleMetricsProvider</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/CodahaleMetricsProvider.html#getStatsLogger-java.lang.String-">getStatsLogger(String)</a></span> - Method in class org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/CodahaleMetricsProvider.html" title="class in org.apache.bookkeeper.stats">CodahaleMetricsProvider</a></dt>
+<dd>
+<div class="block"><span class="deprecatedLabel">Deprecated.</span></div>
+&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/NullStatsProvider.html#getStatsLogger-java.lang.String-">getStatsLogger(String)</a></span> - Method in class org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/NullStatsProvider.html" title="class in org.apache.bookkeeper.stats">NullStatsProvider</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/prometheus/PrometheusMetricsProvider.html#getStatsLogger-java.lang.String-">getStatsLogger(String)</a></span> - Method in class org.apache.bookkeeper.stats.prometheus.<a href="org/apache/bookkeeper/stats/prometheus/PrometheusMetricsProvider.html" title="class in org.apache.bookkeeper.stats.prometheus">PrometheusMetricsProvider</a></dt>
@@ -3486,8 +3538,12 @@
 <dd>
 <div class="block">Inititates the ledger open operation without recovery.</div>
 </dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/CodahaleMetricsProvider.html#initIfNecessary--">initIfNecessary()</a></span> - Method in class org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/CodahaleMetricsProvider.html" title="class in org.apache.bookkeeper.stats">CodahaleMetricsProvider</a></dt>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/codahale/CodahaleMetricsProvider.html#initIfNecessary--">initIfNecessary()</a></span> - Method in class org.apache.bookkeeper.stats.codahale.<a href="org/apache/bookkeeper/stats/codahale/CodahaleMetricsProvider.html" title="class in org.apache.bookkeeper.stats.codahale">CodahaleMetricsProvider</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/CodahaleMetricsProvider.html#initIfNecessary--">initIfNecessary()</a></span> - Method in class org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/CodahaleMetricsProvider.html" title="class in org.apache.bookkeeper.stats">CodahaleMetricsProvider</a></dt>
+<dd>
+<div class="block"><span class="deprecatedLabel">Deprecated.</span></div>
+&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeperAdmin.html#initNewCluster-org.apache.bookkeeper.conf.ServerConfiguration-">initNewCluster(ServerConfiguration)</a></span> - Static method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeperAdmin.html" title="class in org.apache.bookkeeper.client">BookKeeperAdmin</a></dt>
 <dd>
 <div class="block">Intializes new cluster by creating required znodes for the cluster.</div>
@@ -3726,8 +3782,12 @@
 <dl>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/twitter/science/HTTPStatsExporter.html#jettyServer">jettyServer</a></span> - Variable in class org.apache.bookkeeper.stats.twitter.science.<a href="org/apache/bookkeeper/stats/twitter/science/HTTPStatsExporter.html" title="class in org.apache.bookkeeper.stats.twitter.science">HTTPStatsExporter</a></dt>
 <dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/CodahaleMetricsProvider.html#jmx">jmx</a></span> - Variable in class org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/CodahaleMetricsProvider.html" title="class in org.apache.bookkeeper.stats">CodahaleMetricsProvider</a></dt>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/codahale/CodahaleMetricsProvider.html#jmx">jmx</a></span> - Variable in class org.apache.bookkeeper.stats.codahale.<a href="org/apache/bookkeeper/stats/codahale/CodahaleMetricsProvider.html" title="class in org.apache.bookkeeper.stats.codahale">CodahaleMetricsProvider</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/CodahaleMetricsProvider.html#jmx">jmx</a></span> - Variable in class org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/CodahaleMetricsProvider.html" title="class in org.apache.bookkeeper.stats">CodahaleMetricsProvider</a></dt>
+<dd>
+<div class="block"><span class="deprecatedLabel">Deprecated.</span></div>
+&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#JOURNAL_ADAPTIVE_GROUP_WRITES">JOURNAL_ADAPTIVE_GROUP_WRITES</a></span> - Static variable in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#JOURNAL_ALIGNMENT_SIZE">JOURNAL_ALIGNMENT_SIZE</a></span> - Static variable in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
@@ -4118,8 +4178,12 @@
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/WeightedRandomSelection.html#LOG">LOG</a></span> - Static variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/WeightedRandomSelection.html" title="class in org.apache.bookkeeper.client">WeightedRandomSelection</a></dt>
 <dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/CodahaleMetricsProvider.html#LOG">LOG</a></span> - Static variable in class org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/CodahaleMetricsProvider.html" title="class in org.apache.bookkeeper.stats">CodahaleMetricsProvider</a></dt>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/codahale/CodahaleMetricsProvider.html#LOG">LOG</a></span> - Static variable in class org.apache.bookkeeper.stats.codahale.<a href="org/apache/bookkeeper/stats/codahale/CodahaleMetricsProvider.html" title="class in org.apache.bookkeeper.stats.codahale">CodahaleMetricsProvider</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/CodahaleMetricsProvider.html#LOG">LOG</a></span> - Static variable in class org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/CodahaleMetricsProvider.html" title="class in org.apache.bookkeeper.stats">CodahaleMetricsProvider</a></dt>
+<dd>
+<div class="block"><span class="deprecatedLabel">Deprecated.</span></div>
+&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/Stats.html#LOG">LOG</a></span> - Static variable in class org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/Stats.html" title="class in org.apache.bookkeeper.stats">Stats</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/twitter/ostrich/OpStatsLoggerImpl.html#LOG">LOG</a></span> - Static variable in class org.apache.bookkeeper.stats.twitter.ostrich.<a href="org/apache/bookkeeper/stats/twitter/ostrich/OpStatsLoggerImpl.html" title="class in org.apache.bookkeeper.stats.twitter.ostrich">OpStatsLoggerImpl</a></dt>
@@ -4264,10 +4328,18 @@
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BKException.MetaStoreException.html#MetaStoreException--">MetaStoreException()</a></span> - Constructor for exception org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BKException.MetaStoreException.html" title="class in org.apache.bookkeeper.client">BKException.MetaStoreException</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/codahale/CodahaleMetricsProvider.html#metrics">metrics</a></span> - Variable in class org.apache.bookkeeper.stats.codahale.<a href="org/apache/bookkeeper/stats/codahale/CodahaleMetricsProvider.html" title="class in org.apache.bookkeeper.stats.codahale">CodahaleMetricsProvider</a></dt>
+<dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/codahale/CodahaleStatsLogger.html#metrics">metrics</a></span> - Variable in class org.apache.bookkeeper.stats.codahale.<a href="org/apache/bookkeeper/stats/codahale/CodahaleStatsLogger.html" title="class in org.apache.bookkeeper.stats.codahale">CodahaleStatsLogger</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/CodahaleMetricsProvider.html#metrics">metrics</a></span> - Variable in class org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/CodahaleMetricsProvider.html" title="class in org.apache.bookkeeper.stats">CodahaleMetricsProvider</a></dt>
-<dd>&nbsp;</dd>
+<dd>
+<div class="block"><span class="deprecatedLabel">Deprecated.</span></div>
+&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/CodahaleStatsLogger.html#metrics">metrics</a></span> - Variable in class org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/CodahaleStatsLogger.html" title="class in org.apache.bookkeeper.stats">CodahaleStatsLogger</a></dt>
-<dd>&nbsp;</dd>
+<dd>
+<div class="block"><span class="deprecatedLabel">Deprecated.</span></div>
+&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#MIN_USABLESIZE_FOR_INDEXFILE_CREATION">MIN_USABLESIZE_FOR_INDEXFILE_CREATION</a></span> - Static variable in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/RegionAwareEnsemblePlacementPolicy.html#MINIMUM_REGIONS_FOR_DURABILITY_DEFAULT">MINIMUM_REGIONS_FOR_DURABILITY_DEFAULT</a></span> - Static variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/RegionAwareEnsemblePlacementPolicy.html" title="class in org.apache.bookkeeper.client">RegionAwareEnsemblePlacementPolicy</a></dt>
@@ -4607,6 +4679,10 @@
 <dt><a href="org/apache/bookkeeper/stats/package-summary.html">org.apache.bookkeeper.stats</a> - package org.apache.bookkeeper.stats</dt>
 <dd>
 <div class="block">A lightweight stats library used for exporting bookkeeper stats.</div>
+</dd>
+<dt><a href="org/apache/bookkeeper/stats/codahale/package-summary.html">org.apache.bookkeeper.stats.codahale</a> - package org.apache.bookkeeper.stats.codahale</dt>
+<dd>
+<div class="block">A lightweight stats library implemention based on <i>Codahale</i> metrics library.</div>
 </dd>
 <dt><a href="org/apache/bookkeeper/stats/prometheus/package-summary.html">org.apache.bookkeeper.stats.prometheus</a> - package org.apache.bookkeeper.stats.prometheus</dt>
 <dd>
@@ -5122,8 +5198,12 @@
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/RegionAwareEnsemblePlacementPolicy.html#REGIONID_DISTANCE_FROM_LEAVES">REGIONID_DISTANCE_FROM_LEAVES</a></span> - Static variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/RegionAwareEnsemblePlacementPolicy.html" title="class in org.apache.bookkeeper.client">RegionAwareEnsemblePlacementPolicy</a></dt>
 <dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/CodahaleOpStatsLogger.html#registerFailedEvent-long-java.util.concurrent.TimeUnit-">registerFailedEvent(long, TimeUnit)</a></span> - Method in class org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/CodahaleOpStatsLogger.html" title="class in org.apache.bookkeeper.stats">CodahaleOpStatsLogger</a></dt>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/codahale/CodahaleOpStatsLogger.html#registerFailedEvent-long-java.util.concurrent.TimeUnit-">registerFailedEvent(long, TimeUnit)</a></span> - Method in class org.apache.bookkeeper.stats.codahale.<a href="org/apache/bookkeeper/stats/codahale/CodahaleOpStatsLogger.html" title="class in org.apache.bookkeeper.stats.codahale">CodahaleOpStatsLogger</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/CodahaleOpStatsLogger.html#registerFailedEvent-long-java.util.concurrent.TimeUnit-">registerFailedEvent(long, TimeUnit)</a></span> - Method in class org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/CodahaleOpStatsLogger.html" title="class in org.apache.bookkeeper.stats">CodahaleOpStatsLogger</a></dt>
+<dd>
+<div class="block"><span class="deprecatedLabel">Deprecated.</span></div>
+&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/NullStatsLogger.NullOpStatsLogger.html#registerFailedEvent-long-java.util.concurrent.TimeUnit-">registerFailedEvent(long, TimeUnit)</a></span> - Method in class org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/NullStatsLogger.NullOpStatsLogger.html" title="class in org.apache.bookkeeper.stats">NullStatsLogger.NullOpStatsLogger</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/OpStatsLogger.html#registerFailedEvent-long-java.util.concurrent.TimeUnit-">registerFailedEvent(long, TimeUnit)</a></span> - Method in interface org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></dt>
@@ -5138,8 +5218,12 @@
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/twitter/science/OpStatsLoggerImpl.html#registerFailedEvent-long-java.util.concurrent.TimeUnit-">registerFailedEvent(long, TimeUnit)</a></span> - Method in class org.apache.bookkeeper.stats.twitter.science.<a href="org/apache/bookkeeper/stats/twitter/science/OpStatsLoggerImpl.html" title="class in org.apache.bookkeeper.stats.twitter.science">OpStatsLoggerImpl</a></dt>
 <dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/CodahaleOpStatsLogger.html#registerFailedValue-long-">registerFailedValue(long)</a></span> - Method in class org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/CodahaleOpStatsLogger.html" title="class in org.apache.bookkeeper.stats">CodahaleOpStatsLogger</a></dt>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/codahale/CodahaleOpStatsLogger.html#registerFailedValue-long-">registerFailedValue(long)</a></span> - Method in class org.apache.bookkeeper.stats.codahale.<a href="org/apache/bookkeeper/stats/codahale/CodahaleOpStatsLogger.html" title="class in org.apache.bookkeeper.stats.codahale">CodahaleOpStatsLogger</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/CodahaleOpStatsLogger.html#registerFailedValue-long-">registerFailedValue(long)</a></span> - Method in class org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/CodahaleOpStatsLogger.html" title="class in org.apache.bookkeeper.stats">CodahaleOpStatsLogger</a></dt>
+<dd>
+<div class="block"><span class="deprecatedLabel">Deprecated.</span></div>
+&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/NullStatsLogger.NullOpStatsLogger.html#registerFailedValue-long-">registerFailedValue(long)</a></span> - Method in class org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/NullStatsLogger.NullOpStatsLogger.html" title="class in org.apache.bookkeeper.stats">NullStatsLogger.NullOpStatsLogger</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/OpStatsLogger.html#registerFailedValue-long-">registerFailedValue(long)</a></span> - Method in interface org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></dt>
@@ -5156,8 +5240,12 @@
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/CachingStatsLogger.html#registerGauge-java.lang.String-org.apache.bookkeeper.stats.Gauge-">registerGauge(String, Gauge&lt;T&gt;)</a></span> - Method in class org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/CachingStatsLogger.html" title="class in org.apache.bookkeeper.stats">CachingStatsLogger</a></dt>
 <dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/CodahaleStatsLogger.html#registerGauge-java.lang.String-org.apache.bookkeeper.stats.Gauge-">registerGauge(String, Gauge&lt;T&gt;)</a></span> - Method in class org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/CodahaleStatsLogger.html" title="class in org.apache.bookkeeper.stats">CodahaleStatsLogger</a></dt>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/codahale/CodahaleStatsLogger.html#registerGauge-java.lang.String-org.apache.bookkeeper.stats.Gauge-">registerGauge(String, Gauge&lt;T&gt;)</a></span> - Method in class org.apache.bookkeeper.stats.codahale.<a href="org/apache/bookkeeper/stats/codahale/CodahaleStatsLogger.html" title="class in org.apache.bookkeeper.stats.codahale">CodahaleStatsLogger</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/CodahaleStatsLogger.html#registerGauge-java.lang.String-org.apache.bookkeeper.stats.Gauge-">registerGauge(String, Gauge&lt;T&gt;)</a></span> - Method in class org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/CodahaleStatsLogger.html" title="class in org.apache.bookkeeper.stats">CodahaleStatsLogger</a></dt>
+<dd>
+<div class="block"><span class="deprecatedLabel">Deprecated.</span></div>
+&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/NullStatsLogger.html#registerGauge-java.lang.String-org.apache.bookkeeper.stats.Gauge-">registerGauge(String, Gauge&lt;T&gt;)</a></span> - Method in class org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/NullStatsLogger.html" title="class in org.apache.bookkeeper.stats">NullStatsLogger</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/prometheus/PrometheusStatsLogger.html#registerGauge-java.lang.String-org.apache.bookkeeper.stats.Gauge-">registerGauge(String, Gauge&lt;T&gt;)</a></span> - Method in class org.apache.bookkeeper.stats.prometheus.<a href="org/apache/bookkeeper/stats/prometheus/PrometheusStatsLogger.html" title="class in org.apache.bookkeeper.stats.prometheus">PrometheusStatsLogger</a></dt>
@@ -5186,8 +5274,12 @@
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html#registerSlowBookie-org.apache.bookkeeper.net.BookieSocketAddress-long-">registerSlowBookie(BookieSocketAddress, long)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html" title="class in org.apache.bookkeeper.client">RackawareEnsemblePlacementPolicyImpl</a></dt>
 <dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/CodahaleOpStatsLogger.html#registerSuccessfulEvent-long-java.util.concurrent.TimeUnit-">registerSuccessfulEvent(long, TimeUnit)</a></span> - Method in class org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/CodahaleOpStatsLogger.html" title="class in org.apache.bookkeeper.stats">CodahaleOpStatsLogger</a></dt>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/codahale/CodahaleOpStatsLogger.html#registerSuccessfulEvent-long-java.util.concurrent.TimeUnit-">registerSuccessfulEvent(long, TimeUnit)</a></span> - Method in class org.apache.bookkeeper.stats.codahale.<a href="org/apache/bookkeeper/stats/codahale/CodahaleOpStatsLogger.html" title="class in org.apache.bookkeeper.stats.codahale">CodahaleOpStatsLogger</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/CodahaleOpStatsLogger.html#registerSuccessfulEvent-long-java.util.concurrent.TimeUnit-">registerSuccessfulEvent(long, TimeUnit)</a></span> - Method in class org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/CodahaleOpStatsLogger.html" title="class in org.apache.bookkeeper.stats">CodahaleOpStatsLogger</a></dt>
+<dd>
+<div class="block"><span class="deprecatedLabel">Deprecated.</span></div>
+&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/NullStatsLogger.NullOpStatsLogger.html#registerSuccessfulEvent-long-java.util.concurrent.TimeUnit-">registerSuccessfulEvent(long, TimeUnit)</a></span> - Method in class org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/NullStatsLogger.NullOpStatsLogger.html" title="class in org.apache.bookkeeper.stats">NullStatsLogger.NullOpStatsLogger</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/OpStatsLogger.html#registerSuccessfulEvent-long-java.util.concurrent.TimeUnit-">registerSuccessfulEvent(long, TimeUnit)</a></span> - Method in interface org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></dt>
@@ -5202,8 +5294,12 @@
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/twitter/science/OpStatsLoggerImpl.html#registerSuccessfulEvent-long-java.util.concurrent.TimeUnit-">registerSuccessfulEvent(long, TimeUnit)</a></span> - Method in class org.apache.bookkeeper.stats.twitter.science.<a href="org/apache/bookkeeper/stats/twitter/science/OpStatsLoggerImpl.html" title="class in org.apache.bookkeeper.stats.twitter.science">OpStatsLoggerImpl</a></dt>
 <dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/CodahaleOpStatsLogger.html#registerSuccessfulValue-long-">registerSuccessfulValue(long)</a></span> - Method in class org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/CodahaleOpStatsLogger.html" title="class in org.apache.bookkeeper.stats">CodahaleOpStatsLogger</a></dt>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/codahale/CodahaleOpStatsLogger.html#registerSuccessfulValue-long-">registerSuccessfulValue(long)</a></span> - Method in class org.apache.bookkeeper.stats.codahale.<a href="org/apache/bookkeeper/stats/codahale/CodahaleOpStatsLogger.html" title="class in org.apache.bookkeeper.stats.codahale">CodahaleOpStatsLogger</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/CodahaleOpStatsLogger.html#registerSuccessfulValue-long-">registerSuccessfulValue(long)</a></span> - Method in class org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/CodahaleOpStatsLogger.html" title="class in org.apache.bookkeeper.stats">CodahaleOpStatsLogger</a></dt>
+<dd>
+<div class="block"><span class="deprecatedLabel">Deprecated.</span></div>
+&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/NullStatsLogger.NullOpStatsLogger.html#registerSuccessfulValue-long-">registerSuccessfulValue(long)</a></span> - Method in class org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/NullStatsLogger.NullOpStatsLogger.html" title="class in org.apache.bookkeeper.stats">NullStatsLogger.NullOpStatsLogger</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/OpStatsLogger.html#registerSuccessfulValue-long-">registerSuccessfulValue(long)</a></span> - Method in interface org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></dt>
@@ -5240,8 +5336,12 @@
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/CachingStatsLogger.html#removeScope-java.lang.String-org.apache.bookkeeper.stats.StatsLogger-">removeScope(String, StatsLogger)</a></span> - Method in class org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/CachingStatsLogger.html" title="class in org.apache.bookkeeper.stats">CachingStatsLogger</a></dt>
 <dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/CodahaleStatsLogger.html#removeScope-java.lang.String-org.apache.bookkeeper.stats.StatsLogger-">removeScope(String, StatsLogger)</a></span> - Method in class org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/CodahaleStatsLogger.html" title="class in org.apache.bookkeeper.stats">CodahaleStatsLogger</a></dt>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/codahale/CodahaleStatsLogger.html#removeScope-java.lang.String-org.apache.bookkeeper.stats.StatsLogger-">removeScope(String, StatsLogger)</a></span> - Method in class org.apache.bookkeeper.stats.codahale.<a href="org/apache/bookkeeper/stats/codahale/CodahaleStatsLogger.html" title="class in org.apache.bookkeeper.stats.codahale">CodahaleStatsLogger</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/CodahaleStatsLogger.html#removeScope-java.lang.String-org.apache.bookkeeper.stats.StatsLogger-">removeScope(String, StatsLogger)</a></span> - Method in class org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/CodahaleStatsLogger.html" title="class in org.apache.bookkeeper.stats">CodahaleStatsLogger</a></dt>
+<dd>
+<div class="block"><span class="deprecatedLabel">Deprecated.</span></div>
+&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/NullStatsLogger.html#removeScope-java.lang.String-org.apache.bookkeeper.stats.StatsLogger-">removeScope(String, StatsLogger)</a></span> - Method in class org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/NullStatsLogger.html" title="class in org.apache.bookkeeper.stats">NullStatsLogger</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/prometheus/PrometheusStatsLogger.html#removeScope-java.lang.String-org.apache.bookkeeper.stats.StatsLogger-">removeScope(String, StatsLogger)</a></span> - Method in class org.apache.bookkeeper.stats.prometheus.<a href="org/apache/bookkeeper/stats/prometheus/PrometheusStatsLogger.html" title="class in org.apache.bookkeeper.stats.prometheus">PrometheusStatsLogger</a></dt>
@@ -5327,8 +5427,12 @@
 <dd>
 <div class="block">Generic exception code used to propagate in replication pipeline.</div>
 </dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/CodahaleMetricsProvider.html#reporters">reporters</a></span> - Variable in class org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/CodahaleMetricsProvider.html" title="class in org.apache.bookkeeper.stats">CodahaleMetricsProvider</a></dt>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/codahale/CodahaleMetricsProvider.html#reporters">reporters</a></span> - Variable in class org.apache.bookkeeper.stats.codahale.<a href="org/apache/bookkeeper/stats/codahale/CodahaleMetricsProvider.html" title="class in org.apache.bookkeeper.stats.codahale">CodahaleMetricsProvider</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/CodahaleMetricsProvider.html#reporters">reporters</a></span> - Variable in class org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/CodahaleMetricsProvider.html" title="class in org.apache.bookkeeper.stats">CodahaleMetricsProvider</a></dt>
+<dd>
+<div class="block"><span class="deprecatedLabel">Deprecated.</span></div>
+&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/RegionAwareEnsemblePlacementPolicy.html#REPP_DISABLE_DURABILITY_ENFORCEMENT_FEATURE">REPP_DISABLE_DURABILITY_ENFORCEMENT_FEATURE</a></span> - Static variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/RegionAwareEnsemblePlacementPolicy.html" title="class in org.apache.bookkeeper.client">RegionAwareEnsemblePlacementPolicy</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/RegionAwareEnsemblePlacementPolicy.html#REPP_DISABLE_DURABILITY_FEATURE_NAME">REPP_DISABLE_DURABILITY_FEATURE_NAME</a></span> - Static variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/RegionAwareEnsemblePlacementPolicy.html" title="class in org.apache.bookkeeper.client">RegionAwareEnsemblePlacementPolicy</a></dt>
@@ -5450,8 +5554,12 @@
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/CachingStatsLogger.html#scope-java.lang.String-">scope(String)</a></span> - Method in class org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/CachingStatsLogger.html" title="class in org.apache.bookkeeper.stats">CachingStatsLogger</a></dt>
 <dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/CodahaleStatsLogger.html#scope-java.lang.String-">scope(String)</a></span> - Method in class org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/CodahaleStatsLogger.html" title="class in org.apache.bookkeeper.stats">CodahaleStatsLogger</a></dt>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/codahale/CodahaleStatsLogger.html#scope-java.lang.String-">scope(String)</a></span> - Method in class org.apache.bookkeeper.stats.codahale.<a href="org/apache/bookkeeper/stats/codahale/CodahaleStatsLogger.html" title="class in org.apache.bookkeeper.stats.codahale">CodahaleStatsLogger</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/CodahaleStatsLogger.html#scope-java.lang.String-">scope(String)</a></span> - Method in class org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/CodahaleStatsLogger.html" title="class in org.apache.bookkeeper.stats">CodahaleStatsLogger</a></dt>
+<dd>
+<div class="block"><span class="deprecatedLabel">Deprecated.</span></div>
+&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/NullStatsLogger.html#scope-java.lang.String-">scope(String)</a></span> - Method in class org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/NullStatsLogger.html" title="class in org.apache.bookkeeper.stats">NullStatsLogger</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/prometheus/PrometheusStatsLogger.html#scope-java.lang.String-">scope(String)</a></span> - Method in class org.apache.bookkeeper.stats.prometheus.<a href="org/apache/bookkeeper/stats/prometheus/PrometheusStatsLogger.html" title="class in org.apache.bookkeeper.stats.prometheus">PrometheusStatsLogger</a></dt>
@@ -6515,8 +6623,12 @@
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/CachingStatsProvider.html#start-org.apache.commons.configuration.Configuration-">start(Configuration)</a></span> - Method in class org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/CachingStatsProvider.html" title="class in org.apache.bookkeeper.stats">CachingStatsProvider</a></dt>
 <dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/CodahaleMetricsProvider.html#start-org.apache.commons.configuration.Configuration-">start(Configuration)</a></span> - Method in class org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/CodahaleMetricsProvider.html" title="class in org.apache.bookkeeper.stats">CodahaleMetricsProvider</a></dt>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/codahale/CodahaleMetricsProvider.html#start-org.apache.commons.configuration.Configuration-">start(Configuration)</a></span> - Method in class org.apache.bookkeeper.stats.codahale.<a href="org/apache/bookkeeper/stats/codahale/CodahaleMetricsProvider.html" title="class in org.apache.bookkeeper.stats.codahale">CodahaleMetricsProvider</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/CodahaleMetricsProvider.html#start-org.apache.commons.configuration.Configuration-">start(Configuration)</a></span> - Method in class org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/CodahaleMetricsProvider.html" title="class in org.apache.bookkeeper.stats">CodahaleMetricsProvider</a></dt>
+<dd>
+<div class="block"><span class="deprecatedLabel">Deprecated.</span></div>
+&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/NullStatsProvider.html#start-org.apache.commons.configuration.Configuration-">start(Configuration)</a></span> - Method in class org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/NullStatsProvider.html" title="class in org.apache.bookkeeper.stats">NullStatsProvider</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/prometheus/PrometheusMetricsProvider.html#start-org.apache.commons.configuration.Configuration-">start(Configuration)</a></span> - Method in class org.apache.bookkeeper.stats.prometheus.<a href="org/apache/bookkeeper/stats/prometheus/PrometheusMetricsProvider.html" title="class in org.apache.bookkeeper.stats.prometheus">PrometheusMetricsProvider</a></dt>
@@ -6589,8 +6701,12 @@
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/CachingStatsProvider.html#stop--">stop()</a></span> - Method in class org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/CachingStatsProvider.html" title="class in org.apache.bookkeeper.stats">CachingStatsProvider</a></dt>
 <dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/CodahaleMetricsProvider.html#stop--">stop()</a></span> - Method in class org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/CodahaleMetricsProvider.html" title="class in org.apache.bookkeeper.stats">CodahaleMetricsProvider</a></dt>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/codahale/CodahaleMetricsProvider.html#stop--">stop()</a></span> - Method in class org.apache.bookkeeper.stats.codahale.<a href="org/apache/bookkeeper/stats/codahale/CodahaleMetricsProvider.html" title="class in org.apache.bookkeeper.stats.codahale">CodahaleMetricsProvider</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/CodahaleMetricsProvider.html#stop--">stop()</a></span> - Method in class org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/CodahaleMetricsProvider.html" title="class in org.apache.bookkeeper.stats">CodahaleMetricsProvider</a></dt>
+<dd>
+<div class="block"><span class="deprecatedLabel">Deprecated.</span></div>
+&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/NullStatsProvider.html#stop--">stop()</a></span> - Method in class org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/NullStatsProvider.html" title="class in org.apache.bookkeeper.stats">NullStatsProvider</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/prometheus/PrometheusMetricsProvider.html#stop--">stop()</a></span> - Method in class org.apache.bookkeeper.stats.prometheus.<a href="org/apache/bookkeeper/stats/prometheus/PrometheusMetricsProvider.html" title="class in org.apache.bookkeeper.stats.prometheus">PrometheusMetricsProvider</a></dt>
@@ -6625,8 +6741,12 @@
 <dd>
 <div class="block">Return a ledger fragment contains subset of bookies.</div>
 </dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/CodahaleOpStatsLogger.html#success">success</a></span> - Variable in class org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/CodahaleOpStatsLogger.html" title="class in org.apache.bookkeeper.stats">CodahaleOpStatsLogger</a></dt>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/codahale/CodahaleOpStatsLogger.html#success">success</a></span> - Variable in class org.apache.bookkeeper.stats.codahale.<a href="org/apache/bookkeeper/stats/codahale/CodahaleOpStatsLogger.html" title="class in org.apache.bookkeeper.stats.codahale">CodahaleOpStatsLogger</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/CodahaleOpStatsLogger.html#success">success</a></span> - Variable in class org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/CodahaleOpStatsLogger.html" title="class in org.apache.bookkeeper.stats">CodahaleOpStatsLogger</a></dt>
+<dd>
+<div class="block"><span class="deprecatedLabel">Deprecated.</span></div>
+&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerOpenOp.html#suggestedDigestType">suggestedDigestType</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerOpenOp.html" title="class in org.apache.bookkeeper.client">LedgerOpenOp</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/SyncCallbackUtils.SyncAddCallback.html#SyncAddCallback--">SyncAddCallback()</a></span> - Constructor for class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/SyncCallbackUtils.SyncAddCallback.html" title="class in org.apache.bookkeeper.client">SyncCallbackUtils.SyncAddCallback</a></dt>
@@ -6755,8 +6875,13 @@
 <dd>
 <div class="block">Operations failed due to too many requests in the queue.</div>
 </dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/codahale/CodahaleOpStatsLogger.html#toOpStatsData--">toOpStatsData()</a></span> - Method in class org.apache.bookkeeper.stats.codahale.<a href="org/apache/bookkeeper/stats/codahale/CodahaleOpStatsLogger.html" title="class in org.apache.bookkeeper.stats.codahale">CodahaleOpStatsLogger</a></dt>
+<dd>
+<div class="block">This function should go away soon (hopefully).</div>
+</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/CodahaleOpStatsLogger.html#toOpStatsData--">toOpStatsData()</a></span> - Method in class org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/CodahaleOpStatsLogger.html" title="class in org.apache.bookkeeper.stats">CodahaleOpStatsLogger</a></dt>
 <dd>
+<div class="block"><span class="deprecatedLabel">Deprecated.</span></div>
 <div class="block">This function should go away soon (hopefully).</div>
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/NullStatsLogger.NullOpStatsLogger.html#toOpStatsData--">toOpStatsData()</a></span> - Method in class org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/NullStatsLogger.NullOpStatsLogger.html" title="class in org.apache.bookkeeper.stats">NullStatsLogger.NullOpStatsLogger</a></dt>
@@ -6923,8 +7048,12 @@
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/CachingStatsLogger.html#unregisterGauge-java.lang.String-org.apache.bookkeeper.stats.Gauge-">unregisterGauge(String, Gauge&lt;T&gt;)</a></span> - Method in class org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/CachingStatsLogger.html" title="class in org.apache.bookkeeper.stats">CachingStatsLogger</a></dt>
 <dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/CodahaleStatsLogger.html#unregisterGauge-java.lang.String-org.apache.bookkeeper.stats.Gauge-">unregisterGauge(String, Gauge&lt;T&gt;)</a></span> - Method in class org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/CodahaleStatsLogger.html" title="class in org.apache.bookkeeper.stats">CodahaleStatsLogger</a></dt>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/codahale/CodahaleStatsLogger.html#unregisterGauge-java.lang.String-org.apache.bookkeeper.stats.Gauge-">unregisterGauge(String, Gauge&lt;T&gt;)</a></span> - Method in class org.apache.bookkeeper.stats.codahale.<a href="org/apache/bookkeeper/stats/codahale/CodahaleStatsLogger.html" title="class in org.apache.bookkeeper.stats.codahale">CodahaleStatsLogger</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/CodahaleStatsLogger.html#unregisterGauge-java.lang.String-org.apache.bookkeeper.stats.Gauge-">unregisterGauge(String, Gauge&lt;T&gt;)</a></span> - Method in class org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/CodahaleStatsLogger.html" title="class in org.apache.bookkeeper.stats">CodahaleStatsLogger</a></dt>
+<dd>
+<div class="block"><span class="deprecatedLabel">Deprecated.</span></div>
+&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/NullStatsLogger.html#unregisterGauge-java.lang.String-org.apache.bookkeeper.stats.Gauge-">unregisterGauge(String, Gauge&lt;T&gt;)</a></span> - Method in class org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/NullStatsLogger.html" title="class in org.apache.bookkeeper.stats">NullStatsLogger</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/prometheus/PrometheusStatsLogger.html#unregisterGauge-java.lang.String-org.apache.bookkeeper.stats.Gauge-">unregisterGauge(String, Gauge&lt;T&gt;)</a></span> - Method in class org.apache.bookkeeper.stats.prometheus.<a href="org/apache/bookkeeper/stats/prometheus/PrometheusStatsLogger.html" title="class in org.apache.bookkeeper.stats.prometheus">PrometheusStatsLogger</a></dt>
