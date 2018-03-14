@@ -16,6 +16,8 @@
  */
 package org.apache.bookkeeper.stats.prometheus;
 
+import com.google.common.annotations.VisibleForTesting;
+
 import io.netty.util.concurrent.DefaultThreadFactory;
 //CHECKSTYLE.OFF: IllegalImport
 import io.netty.util.internal.PlatformDependent;
@@ -29,6 +31,8 @@ import io.prometheus.client.hotspot.MemoryPoolsExports;
 import io.prometheus.client.hotspot.StandardExports;
 import io.prometheus.client.hotspot.ThreadExports;
 
+import java.io.IOException;
+import java.io.Writer;
 import java.lang.reflect.Field;
 import java.net.InetSocketAddress;
 import java.util.concurrent.ConcurrentMap;
@@ -136,10 +140,7 @@ public class PrometheusMetricsProvider implements StatsProvider {
                 DEFAULT_PROMETHEUS_STATS_LATENCY_ROLLOVER_SECONDS);
 
         executor.scheduleAtFixedRate(() -> {
-            opStats.forEach((name, metric) -> {
-                metric.rotateLatencyCollection();
-            });
-
+            rotateLatencyCollection();
         }, 1, latencyRolloverSeconds, TimeUnit.SECONDS);
 
         log.info("Started Prometheus stats endpoint at {}", httpEndpoint);
@@ -159,6 +160,22 @@ public class PrometheusMetricsProvider implements StatsProvider {
     @Override
     public StatsLogger getStatsLogger(String scope) {
         return this.cachingStatsProvider.getStatsLogger(scope);
+    }
+
+    @VisibleForTesting
+    void writeAllMetrics(Writer writer) throws IOException {
+        PrometheusTextFormatUtil.writeMetricsCollectedByPrometheusClient(writer, registry);
+
+        gauges.forEach((name, gauge) -> PrometheusTextFormatUtil.writeGauge(writer, name, gauge));
+        counters.forEach((name, counter) -> PrometheusTextFormatUtil.writeCounter(writer, name, counter));
+        opStats.forEach((name, opStatLogger) -> PrometheusTextFormatUtil.writeOpStat(writer, name, opStatLogger));
+    }
+
+    @VisibleForTesting
+    void rotateLatencyCollection() {
+        opStats.forEach((name, metric) -> {
+            metric.rotateLatencyCollection();
+        });
     }
 
     private static final Logger log = LoggerFactory.getLogger(PrometheusMetricsProvider.class);
