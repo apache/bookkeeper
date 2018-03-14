@@ -22,23 +22,21 @@
 package org.apache.bookkeeper.bookie;
 
 import com.google.common.annotations.VisibleForTesting;
-
 import io.netty.util.concurrent.DefaultThreadFactory;
-
 import java.io.IOException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import lombok.AccessLevel;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-
 import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.LedgerDirsListener;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.util.MathUtils;
-
 
 /**
  * SyncThread is a background thread which help checkpointing ledger storage
@@ -60,8 +58,8 @@ import org.apache.bookkeeper.util.MathUtils;
 @Slf4j
 class SyncThread implements Checkpointer {
 
+    @Getter(AccessLevel.PACKAGE)
     final ScheduledExecutorService executor;
-    final int flushInterval;
     final LedgerStorage ledgerStorage;
     final LedgerDirsListener dirsListener;
     final CheckpointSource checkpointSource;
@@ -78,14 +76,14 @@ class SyncThread implements Checkpointer {
         this.ledgerStorage = ledgerStorage;
         this.checkpointSource = checkpointSource;
         this.executor = Executors.newSingleThreadScheduledExecutor(new DefaultThreadFactory("SyncThread"));
-        flushInterval = conf.getFlushInterval();
-        if (log.isDebugEnabled()) {
-            log.debug("Flush Interval : {}", flushInterval);
-        }
     }
 
     @Override
     public void startCheckpoint(Checkpoint checkpoint) {
+        doCheckpoint(checkpoint);
+    }
+
+    protected void doCheckpoint(Checkpoint checkpoint) {
         executor.submit(() -> {
             try {
                 synchronized (suspensionLock) {
@@ -108,14 +106,13 @@ class SyncThread implements Checkpointer {
         });
     }
 
-    public Future<Void> requestFlush() {
+    public Future requestFlush() {
         return executor.submit(() -> {
             try {
                 flush();
             } catch (Throwable t) {
                 log.error("Exception flushing ledgers ", t);
             }
-            return null;
         });
     }
 
@@ -171,6 +168,11 @@ class SyncThread implements Checkpointer {
         }
     }
 
+    @Override
+    public void start() {
+        // no-op
+    }
+
     /**
      * Suspend sync thread. (for testing)
      */
@@ -201,6 +203,7 @@ class SyncThread implements Checkpointer {
     void shutdown() throws InterruptedException {
         log.info("Shutting down SyncThread");
         requestFlush();
+
         executor.shutdown();
         long start = MathUtils.now();
         while (!executor.awaitTermination(5, TimeUnit.MINUTES)) {
