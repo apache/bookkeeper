@@ -28,6 +28,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+
+import lombok.AccessLevel;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.LedgerDirsListener;
@@ -55,6 +58,7 @@ import org.apache.bookkeeper.util.MathUtils;
 @Slf4j
 class SyncThread implements Checkpointer {
 
+    @Getter(AccessLevel.PACKAGE)
     final ScheduledExecutorService executor;
     final int flushInterval;
     final LedgerStorage ledgerStorage;
