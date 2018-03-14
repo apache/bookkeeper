@@ -52,7 +52,7 @@ public class BookieStatus {
 
     private int layoutVersion;
     private long lastUpdateTime;
-    private BookieMode bookieMode;
+    private volatile BookieMode bookieMode;
 
 
     BookieStatus() {
@@ -61,11 +61,11 @@ public class BookieStatus {
         this.lastUpdateTime = INVALID_UPDATE_TIME;
     }
 
-    private synchronized BookieMode getBookieMode() {
+    private BookieMode getBookieMode() {
         return bookieMode;
     }
 
-    public synchronized boolean isInWritable() {
+    public boolean isInWritable() {
         return bookieMode.equals(BookieMode.READ_WRITE);
     }
 
@@ -78,7 +78,7 @@ public class BookieStatus {
         return false;
     }
 
-    synchronized boolean isInReadOnlyMode() {
+    boolean isInReadOnlyMode() {
         return bookieMode.equals(BookieMode.READ_ONLY);
     }
 
