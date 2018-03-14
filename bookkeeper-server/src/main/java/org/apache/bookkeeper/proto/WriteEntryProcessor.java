@@ -28,6 +28,7 @@ import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieProtocol.ParsedAddRequest;
+import org.apache.bookkeeper.proto.BookieProtocol.Response;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
 import org.apache.bookkeeper.util.MathUtils;
 import org.slf4j.Logger;
@@ -114,9 +115,10 @@ class WriteEntryProcessor extends PacketProcessorBase<ParsedAddRequest> implemen
             requestProcessor.addEntryStats.registerFailedEvent(MathUtils.elapsedNanos(startTimeNanos),
                     TimeUnit.NANOSECONDS);
         }
-        sendResponse(rc,
-                     ResponseBuilder.buildAddResponse(request),
-                     requestProcessor.addRequestStats);
+
+        Response response = ResponseBuilder.buildAddResponse(request);
+        sendResponse(rc, response, requestProcessor.addRequestStats);
+        response.recycle();
         request.recycle();
         recycle();
     }
