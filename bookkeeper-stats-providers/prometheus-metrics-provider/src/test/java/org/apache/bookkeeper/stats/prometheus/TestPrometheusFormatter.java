@@ -38,6 +38,9 @@ import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.junit.Test;
 
+/**
+ * Test for {@link PrometheusMetricsProvider}.
+ */
 public class TestPrometheusFormatter {
 
     @Test

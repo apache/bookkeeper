@@ -17,9 +17,9 @@
 package org.apache.bookkeeper.stats.prometheus;
 
 import io.prometheus.client.Collector;
-import io.prometheus.client.CollectorRegistry;
 import io.prometheus.client.Collector.MetricFamilySamples;
 import io.prometheus.client.Collector.MetricFamilySamples.Sample;
+import io.prometheus.client.CollectorRegistry;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -27,6 +27,9 @@ import java.util.Enumeration;
 
 import org.apache.bookkeeper.stats.Counter;
 
+/**
+ * Logic to write metrics in Prometheus text format.
+ */
 public class PrometheusTextFormatUtil {
     static void writeGauge(Writer w, String name, SimpleGauge<? extends Number> gauge) {
         // Example:
