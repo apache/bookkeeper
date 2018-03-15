@@ -277,8 +277,8 @@
 <tbody>
 <tr class="altColor">
 <td class="colFirst"><code>class&nbsp;</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/stats/prometheus/PrometheusCounter.html" title="class in org.apache.bookkeeper.stats.prometheus">PrometheusCounter</a></span></code>
-<div class="block">A <a href="../../../../../org/apache/bookkeeper/stats/Counter.html" title="interface in org.apache.bookkeeper.stats"><code>Counter</code></a> implementation based on <i>Prometheus</i> metrics library.</div>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/stats/prometheus/LongAdderCounter.html" title="class in org.apache.bookkeeper.stats.prometheus">LongAdderCounter</a></span></code>
+<div class="block"><a href="../../../../../org/apache/bookkeeper/stats/Counter.html" title="interface in org.apache.bookkeeper.stats"><code>Counter</code></a> implementation based on <a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/atomic/LongAdder.html?is-external=true" title="class or interface in java.util.concurrent.atomic"><code>LongAdder</code></a>.</div>
 </td>
 </tr>
 </tbody>
@@ -293,6 +293,21 @@
 <tr class="altColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/stats/Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a></code></td>
 <td class="colLast"><span class="typeNameLabel">PrometheusStatsLogger.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/stats/prometheus/PrometheusStatsLogger.html#getCounter-java.lang.String-">getCounter</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;name)</code>&nbsp;</td>
+</tr>
+</tbody>
+</table>
+<table class="useSummary" border="0" cellpadding="3" cellspacing="0" summary="Use table, listing methods, and an explanation">
+<caption><span>Methods in <a href="../../../../../org/apache/bookkeeper/stats/prometheus/package-summary.html">org.apache.bookkeeper.stats.prometheus</a> with parameters of type <a href="../../../../../org/apache/bookkeeper/stats/Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colLast" scope="col">Method and Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>(package private) static void</code></td>
+<td class="colLast"><span class="typeNameLabel">PrometheusTextFormatUtil.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/stats/prometheus/PrometheusTextFormatUtil.html#writeCounter-java.io.Writer-java.lang.String-org.apache.bookkeeper.stats.Counter-">writeCounter</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/io/Writer.html?is-external=true" title="class or interface in java.io">Writer</a>&nbsp;w,
+            <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;name,
+            <a href="../../../../../org/apache/bookkeeper/stats/Counter.html" title="interface in org.apache.bookkeeper.stats">Counter</a>&nbsp;counter)</code>&nbsp;</td>
 </tr>
 </tbody>
 </table>

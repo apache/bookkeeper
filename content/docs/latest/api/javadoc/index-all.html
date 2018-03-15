@@ -96,7 +96,7 @@
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/NullStatsLogger.NullCounter.html#add-long-">add(long)</a></span> - Method in class org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/NullStatsLogger.NullCounter.html" title="class in org.apache.bookkeeper.stats">NullStatsLogger.NullCounter</a></dt>
 <dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/prometheus/PrometheusCounter.html#add-long-">add(long)</a></span> - Method in class org.apache.bookkeeper.stats.prometheus.<a href="org/apache/bookkeeper/stats/prometheus/PrometheusCounter.html" title="class in org.apache.bookkeeper.stats.prometheus">PrometheusCounter</a></dt>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/prometheus/LongAdderCounter.html#add-long-">add(long)</a></span> - Method in class org.apache.bookkeeper.stats.prometheus.<a href="org/apache/bookkeeper/stats/prometheus/LongAdderCounter.html" title="class in org.apache.bookkeeper.stats.prometheus">LongAdderCounter</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/twitter/finagle/CounterImpl.html#add-long-">add(long)</a></span> - Method in class org.apache.bookkeeper.stats.twitter.finagle.<a href="org/apache/bookkeeper/stats/twitter/finagle/CounterImpl.html" title="class in org.apache.bookkeeper.stats.twitter.finagle">CounterImpl</a></dt>
 <dd>&nbsp;</dd>
@@ -1055,9 +1055,9 @@
 <dd>
 <div class="block">Clear stats for this operation.</div>
 </dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/prometheus/PrometheusCounter.html#clear--">clear()</a></span> - Method in class org.apache.bookkeeper.stats.prometheus.<a href="org/apache/bookkeeper/stats/prometheus/PrometheusCounter.html" title="class in org.apache.bookkeeper.stats.prometheus">PrometheusCounter</a></dt>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/prometheus/DataSketchesOpStatsLogger.html#clear--">clear()</a></span> - Method in class org.apache.bookkeeper.stats.prometheus.<a href="org/apache/bookkeeper/stats/prometheus/DataSketchesOpStatsLogger.html" title="class in org.apache.bookkeeper.stats.prometheus">DataSketchesOpStatsLogger</a></dt>
 <dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/prometheus/PrometheusOpStatsLogger.html#clear--">clear()</a></span> - Method in class org.apache.bookkeeper.stats.prometheus.<a href="org/apache/bookkeeper/stats/prometheus/PrometheusOpStatsLogger.html" title="class in org.apache.bookkeeper.stats.prometheus">PrometheusOpStatsLogger</a></dt>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/prometheus/LongAdderCounter.html#clear--">clear()</a></span> - Method in class org.apache.bookkeeper.stats.prometheus.<a href="org/apache/bookkeeper/stats/prometheus/LongAdderCounter.html" title="class in org.apache.bookkeeper.stats.prometheus">LongAdderCounter</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/twitter/finagle/CounterImpl.html#clear--">clear()</a></span> - Method in class org.apache.bookkeeper.stats.twitter.finagle.<a href="org/apache/bookkeeper/stats/twitter/finagle/CounterImpl.html" title="class in org.apache.bookkeeper.stats.twitter.finagle">CounterImpl</a></dt>
 <dd>&nbsp;</dd>
@@ -1334,6 +1334,8 @@
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/CachingStatsLogger.html#counters">counters</a></span> - Variable in class org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/CachingStatsLogger.html" title="class in org.apache.bookkeeper.stats">CachingStatsLogger</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/prometheus/PrometheusMetricsProvider.html#counters">counters</a></span> - Variable in class org.apache.bookkeeper.stats.prometheus.<a href="org/apache/bookkeeper/stats/prometheus/PrometheusMetricsProvider.html" title="class in org.apache.bookkeeper.stats.prometheus">PrometheusMetricsProvider</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/PendingReadLacOp.html#coverageSet">coverageSet</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/PendingReadLacOp.html" title="class in org.apache.bookkeeper.client">PendingReadLacOp</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/ReadLastConfirmedOp.html#coverageSet">coverageSet</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/ReadLastConfirmedOp.html" title="class in org.apache.bookkeeper.client">ReadLastConfirmedOp</a></dt>
@@ -1440,6 +1442,12 @@
 <dl>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerEntry.html#data">data</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerEntry.html" title="class in org.apache.bookkeeper.client">LedgerEntry</a></dt>
 <dd>&nbsp;</dd>
+<dt><a href="org/apache/bookkeeper/stats/prometheus/DataSketchesOpStatsLogger.html" title="class in org.apache.bookkeeper.stats.prometheus"><span class="typeNameLink">DataSketchesOpStatsLogger</span></a> - Class in <a href="org/apache/bookkeeper/stats/prometheus/package-summary.html">org.apache.bookkeeper.stats.prometheus</a></dt>
+<dd>
+<div class="block">OpStatsLogger implementation that uses DataSketches library to calculate the approximated latency quantiles.</div>
+</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/prometheus/DataSketchesOpStatsLogger.html#DataSketchesOpStatsLogger--">DataSketchesOpStatsLogger()</a></span> - Constructor for class org.apache.bookkeeper.stats.prometheus.<a href="org/apache/bookkeeper/stats/prometheus/DataSketchesOpStatsLogger.html" title="class in org.apache.bookkeeper.stats.prometheus">DataSketchesOpStatsLogger</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#DEATH_WATCH_INTERVAL">DEATH_WATCH_INTERVAL</a></span> - Static variable in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/SyncCounter.html#dec--">dec()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/SyncCounter.html" title="class in org.apache.bookkeeper.client">SyncCounter</a></dt>
@@ -1450,7 +1458,7 @@
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/NullStatsLogger.NullCounter.html#dec--">dec()</a></span> - Method in class org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/NullStatsLogger.NullCounter.html" title="class in org.apache.bookkeeper.stats">NullStatsLogger.NullCounter</a></dt>
 <dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/prometheus/PrometheusCounter.html#dec--">dec()</a></span> - Method in class org.apache.bookkeeper.stats.prometheus.<a href="org/apache/bookkeeper/stats/prometheus/PrometheusCounter.html" title="class in org.apache.bookkeeper.stats.prometheus">PrometheusCounter</a></dt>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/prometheus/LongAdderCounter.html#dec--">dec()</a></span> - Method in class org.apache.bookkeeper.stats.prometheus.<a href="org/apache/bookkeeper/stats/prometheus/LongAdderCounter.html" title="class in org.apache.bookkeeper.stats.prometheus">LongAdderCounter</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/twitter/finagle/CounterImpl.html#dec--">dec()</a></span> - Method in class org.apache.bookkeeper.stats.twitter.finagle.<a href="org/apache/bookkeeper/stats/twitter/finagle/CounterImpl.html" title="class in org.apache.bookkeeper.stats.twitter.finagle">CounterImpl</a></dt>
 <dd>&nbsp;</dd>
@@ -1608,6 +1616,10 @@
  additional parameter which is the return code to hand to all the pending
  add ops.</div>
 </dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/prometheus/PrometheusServlet.html#doGet-javax.servlet.http.HttpServletRequest-javax.servlet.http.HttpServletResponse-">doGet(HttpServletRequest, HttpServletResponse)</a></span> - Method in class org.apache.bookkeeper.stats.prometheus.<a href="org/apache/bookkeeper/stats/prometheus/PrometheusServlet.html" title="class in org.apache.bookkeeper.stats.prometheus">PrometheusServlet</a></dt>
+<dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/prometheus/PrometheusServlet.html#doPost-javax.servlet.http.HttpServletRequest-javax.servlet.http.HttpServletResponse-">doPost(HttpServletRequest, HttpServletResponse)</a></span> - Method in class org.apache.bookkeeper.stats.prometheus.<a href="org/apache/bookkeeper/stats/prometheus/PrometheusServlet.html" title="class in org.apache.bookkeeper.stats.prometheus">PrometheusServlet</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerOpenOp.html#doRecovery">doRecovery</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerOpenOp.html" title="class in org.apache.bookkeeper.client">LedgerOpenOp</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerHandle.html#drainPendingAddsToErrorOut--">drainPendingAddsToErrorOut()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a></dt>
@@ -1924,6 +1936,8 @@
 <dd>
 <div class="block">A guage is a value that has only one value at a specific point in time.</div>
 </dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/prometheus/PrometheusMetricsProvider.html#gauges">gauges</a></span> - Variable in class org.apache.bookkeeper.stats.prometheus.<a href="org/apache/bookkeeper/stats/prometheus/PrometheusMetricsProvider.html" title="class in org.apache.bookkeeper.stats.prometheus">PrometheusMetricsProvider</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#GC_OVERREPLICATED_LEDGER_WAIT_TIME">GC_OVERREPLICATED_LEDGER_WAIT_TIME</a></span> - Static variable in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#GC_WAIT_TIME">GC_WAIT_TIME</a></span> - Static variable in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
@@ -1942,7 +1956,7 @@
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/NullStatsLogger.NullCounter.html#get--">get()</a></span> - Method in class org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/NullStatsLogger.NullCounter.html" title="class in org.apache.bookkeeper.stats">NullStatsLogger.NullCounter</a></dt>
 <dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/prometheus/PrometheusCounter.html#get--">get()</a></span> - Method in class org.apache.bookkeeper.stats.prometheus.<a href="org/apache/bookkeeper/stats/prometheus/PrometheusCounter.html" title="class in org.apache.bookkeeper.stats.prometheus">PrometheusCounter</a></dt>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/prometheus/LongAdderCounter.html#get--">get()</a></span> - Method in class org.apache.bookkeeper.stats.prometheus.<a href="org/apache/bookkeeper/stats/prometheus/LongAdderCounter.html" title="class in org.apache.bookkeeper.stats.prometheus">LongAdderCounter</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/Stats.html#get--">get()</a></span> - Static method in class org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/Stats.html" title="class in org.apache.bookkeeper.stats">Stats</a></dt>
 <dd>&nbsp;</dd>
@@ -2179,6 +2193,8 @@
 <dd>
 <div class="block">Return the configuration used by this object.</div>
 </dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/prometheus/DataSketchesOpStatsLogger.html#getCount-boolean-">getCount(boolean)</a></span> - Method in class org.apache.bookkeeper.stats.prometheus.<a href="org/apache/bookkeeper/stats/prometheus/DataSketchesOpStatsLogger.html" title="class in org.apache.bookkeeper.stats.prometheus">DataSketchesOpStatsLogger</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/CachingStatsLogger.html#getCounter-java.lang.String-">getCounter(String)</a></span> - Method in class org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/CachingStatsLogger.html" title="class in org.apache.bookkeeper.stats">CachingStatsLogger</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/codahale/CodahaleStatsLogger.html#getCounter-java.lang.String-">getCounter(String)</a></span> - Method in class org.apache.bookkeeper.stats.codahale.<a href="org/apache/bookkeeper/stats/codahale/CodahaleStatsLogger.html" title="class in org.apache.bookkeeper.stats.codahale">CodahaleStatsLogger</a></dt>
@@ -2943,6 +2959,8 @@
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeper.html#getPlacementPolicy--">getPlacementPolicy()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeper.html" title="class in org.apache.bookkeeper.client">BookKeeper</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/prometheus/DataSketchesOpStatsLogger.html#getQuantileValue-boolean-double-">getQuantileValue(boolean, double)</a></span> - Method in class org.apache.bookkeeper.stats.prometheus.<a href="org/apache/bookkeeper/stats/prometheus/DataSketchesOpStatsLogger.html" title="class in org.apache.bookkeeper.stats.prometheus">DataSketchesOpStatsLogger</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerHandle.LastConfirmedCtx.html#getRC--">getRC()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerHandle.LastConfirmedCtx.html" title="class in org.apache.bookkeeper.client">LedgerHandle.LastConfirmedCtx</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/PendingReadOp.LedgerEntryRequest.html#getRc--">getRc()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/PendingReadOp.LedgerEntryRequest.html" title="class in org.apache.bookkeeper.client">PendingReadOp.LedgerEntryRequest</a></dt>
@@ -3051,6 +3069,8 @@
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/Gauge.html#getSample--">getSample()</a></span> - Method in interface org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/Gauge.html" title="interface in org.apache.bookkeeper.stats">Gauge</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/prometheus/SimpleGauge.html#getSample--">getSample()</a></span> - Method in class org.apache.bookkeeper.stats.prometheus.<a href="org/apache/bookkeeper/stats/prometheus/SimpleGauge.html" title="class in org.apache.bookkeeper.stats.prometheus">SimpleGauge</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeper.html#getScheduler--">getScheduler()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeper.html" title="class in org.apache.bookkeeper.client">BookKeeper</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/SyncCounter.html#getSequence--">getSequence()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/SyncCounter.html" title="class in org.apache.bookkeeper.client">SyncCounter</a></dt>
@@ -3144,6 +3164,8 @@
 <div class="block">Return the flag that indicates whether client is using system time as the ledger creation time when
  creating ledgers.</div>
 </dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/prometheus/DataSketchesOpStatsLogger.html#getSum-boolean-">getSum(boolean)</a></span> - Method in class org.apache.bookkeeper.stats.prometheus.<a href="org/apache/bookkeeper/stats/prometheus/DataSketchesOpStatsLogger.html" title="class in org.apache.bookkeeper.stats.prometheus">DataSketchesOpStatsLogger</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ClientConfiguration.html#getTaskExecutionWarnTimeMicros--">getTaskExecutionWarnTimeMicros()</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a></dt>
 <dd>
 <div class="block">Get task execution duration which triggers a warning.</div>
@@ -3447,7 +3469,7 @@
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/NullStatsLogger.NullCounter.html#inc--">inc()</a></span> - Method in class org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/NullStatsLogger.NullCounter.html" title="class in org.apache.bookkeeper.stats">NullStatsLogger.NullCounter</a></dt>
 <dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/prometheus/PrometheusCounter.html#inc--">inc()</a></span> - Method in class org.apache.bookkeeper.stats.prometheus.<a href="org/apache/bookkeeper/stats/prometheus/PrometheusCounter.html" title="class in org.apache.bookkeeper.stats.prometheus">PrometheusCounter</a></dt>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/prometheus/LongAdderCounter.html#inc--">inc()</a></span> - Method in class org.apache.bookkeeper.stats.prometheus.<a href="org/apache/bookkeeper/stats/prometheus/LongAdderCounter.html" title="class in org.apache.bookkeeper.stats.prometheus">LongAdderCounter</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/twitter/finagle/CounterImpl.html#inc--">inc()</a></span> - Method in class org.apache.bookkeeper.stats.twitter.finagle.<a href="org/apache/bookkeeper/stats/twitter/finagle/CounterImpl.html" title="class in org.apache.bookkeeper.stats.twitter.finagle">CounterImpl</a></dt>
 <dd>&nbsp;</dd>
@@ -4206,6 +4228,12 @@
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/ReadLastConfirmedAndEntryOp.SequenceReadRequest.html#logErrorAndReattemptRead-int-org.apache.bookkeeper.net.BookieSocketAddress-java.lang.String-int-">logErrorAndReattemptRead(int, BookieSocketAddress, String, int)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/ReadLastConfirmedAndEntryOp.SequenceReadRequest.html" title="class in org.apache.bookkeeper.client">ReadLastConfirmedAndEntryOp.SequenceReadRequest</a></dt>
 <dd>&nbsp;</dd>
+<dt><a href="org/apache/bookkeeper/stats/prometheus/LongAdderCounter.html" title="class in org.apache.bookkeeper.stats.prometheus"><span class="typeNameLink">LongAdderCounter</span></a> - Class in <a href="org/apache/bookkeeper/stats/prometheus/package-summary.html">org.apache.bookkeeper.stats.prometheus</a></dt>
+<dd>
+<div class="block"><a href="org/apache/bookkeeper/stats/Counter.html" title="interface in org.apache.bookkeeper.stats"><code>Counter</code></a> implementation based on <a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/atomic/LongAdder.html?is-external=true" title="class or interface in java.util.concurrent.atomic"><code>LongAdder</code></a>.</div>
+</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/prometheus/LongAdderCounter.html#LongAdderCounter--">LongAdderCounter()</a></span> - Constructor for class org.apache.bookkeeper.stats.prometheus.<a href="org/apache/bookkeeper/stats/prometheus/LongAdderCounter.html" title="class in org.apache.bookkeeper.stats.prometheus">LongAdderCounter</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#LOST_BOOKIE_RECOVERY_DELAY">LOST_BOOKIE_RECOVERY_DELAY</a></span> - Static variable in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerMetadata.html#LOWEST_COMPAT_METADATA_FORMAT_VERSION">LOWEST_COMPAT_METADATA_FORMAT_VERSION</a></span> - Static variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a></dt>
@@ -4620,6 +4648,8 @@
 <dd>
 <div class="block">Implements Open Ledger Callback.</div>
 </dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/prometheus/PrometheusMetricsProvider.html#opStats">opStats</a></span> - Variable in class org.apache.bookkeeper.stats.prometheus.<a href="org/apache/bookkeeper/stats/prometheus/PrometheusMetricsProvider.html" title="class in org.apache.bookkeeper.stats.prometheus">PrometheusMetricsProvider</a></dt>
+<dd>&nbsp;</dd>
 <dt><a href="org/apache/bookkeeper/stats/OpStatsData.html" title="class in org.apache.bookkeeper.stats"><span class="typeNameLink">OpStatsData</span></a> - Class in <a href="org/apache/bookkeeper/stats/package-summary.html">org.apache.bookkeeper.stats</a></dt>
 <dd>
 <div class="block">This class provides a read view of operation specific stats.</div>
@@ -4826,35 +4856,29 @@
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerFragmentReplicator.SingleFragmentCallback.html#processResult-int-java.lang.String-java.lang.Object-">processResult(int, String, Object)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerFragmentReplicator.SingleFragmentCallback.html" title="class in org.apache.bookkeeper.client">LedgerFragmentReplicator.SingleFragmentCallback</a></dt>
 <dd>&nbsp;</dd>
-<dt><a href="org/apache/bookkeeper/stats/prometheus/PrometheusCounter.html" title="class in org.apache.bookkeeper.stats.prometheus"><span class="typeNameLink">PrometheusCounter</span></a> - Class in <a href="org/apache/bookkeeper/stats/prometheus/package-summary.html">org.apache.bookkeeper.stats.prometheus</a></dt>
-<dd>
-<div class="block">A <a href="org/apache/bookkeeper/stats/Counter.html" title="interface in org.apache.bookkeeper.stats"><code>Counter</code></a> implementation based on <i>Prometheus</i> metrics library.</div>
-</dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/prometheus/PrometheusCounter.html#PrometheusCounter-io.prometheus.client.CollectorRegistry-java.lang.String-">PrometheusCounter(CollectorRegistry, String)</a></span> - Constructor for class org.apache.bookkeeper.stats.prometheus.<a href="org/apache/bookkeeper/stats/prometheus/PrometheusCounter.html" title="class in org.apache.bookkeeper.stats.prometheus">PrometheusCounter</a></dt>
-<dd>&nbsp;</dd>
 <dt><a href="org/apache/bookkeeper/stats/prometheus/PrometheusMetricsProvider.html" title="class in org.apache.bookkeeper.stats.prometheus"><span class="typeNameLink">PrometheusMetricsProvider</span></a> - Class in <a href="org/apache/bookkeeper/stats/prometheus/package-summary.html">org.apache.bookkeeper.stats.prometheus</a></dt>
 <dd>
 <div class="block">A <i>Prometheus</i> based <a href="org/apache/bookkeeper/stats/StatsProvider.html" title="interface in org.apache.bookkeeper.stats"><code>StatsProvider</code></a> implementation.</div>
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/prometheus/PrometheusMetricsProvider.html#PrometheusMetricsProvider--">PrometheusMetricsProvider()</a></span> - Constructor for class org.apache.bookkeeper.stats.prometheus.<a href="org/apache/bookkeeper/stats/prometheus/PrometheusMetricsProvider.html" title="class in org.apache.bookkeeper.stats.prometheus">PrometheusMetricsProvider</a></dt>
 <dd>&nbsp;</dd>
-<dt><a href="org/apache/bookkeeper/stats/prometheus/PrometheusOpStatsLogger.html" title="class in org.apache.bookkeeper.stats.prometheus"><span class="typeNameLink">PrometheusOpStatsLogger</span></a> - Class in <a href="org/apache/bookkeeper/stats/prometheus/package-summary.html">org.apache.bookkeeper.stats.prometheus</a></dt>
+<dt><a href="org/apache/bookkeeper/stats/prometheus/PrometheusServlet.html" title="class in org.apache.bookkeeper.stats.prometheus"><span class="typeNameLink">PrometheusServlet</span></a> - Class in <a href="org/apache/bookkeeper/stats/prometheus/package-summary.html">org.apache.bookkeeper.stats.prometheus</a></dt>
 <dd>
-<div class="block">A <code>Prometheus</code> based <a href="org/apache/bookkeeper/stats/OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats"><code>OpStatsLogger</code></a> implementation.</div>
+<div class="block">Servlet used to export metrics in prometheus text format.</div>
 </dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/prometheus/PrometheusOpStatsLogger.html#PrometheusOpStatsLogger-io.prometheus.client.CollectorRegistry-java.lang.String-">PrometheusOpStatsLogger(CollectorRegistry, String)</a></span> - Constructor for class org.apache.bookkeeper.stats.prometheus.<a href="org/apache/bookkeeper/stats/prometheus/PrometheusOpStatsLogger.html" title="class in org.apache.bookkeeper.stats.prometheus">PrometheusOpStatsLogger</a></dt>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/prometheus/PrometheusServlet.html#PrometheusServlet-org.apache.bookkeeper.stats.prometheus.PrometheusMetricsProvider-">PrometheusServlet(PrometheusMetricsProvider)</a></span> - Constructor for class org.apache.bookkeeper.stats.prometheus.<a href="org/apache/bookkeeper/stats/prometheus/PrometheusServlet.html" title="class in org.apache.bookkeeper.stats.prometheus">PrometheusServlet</a></dt>
 <dd>&nbsp;</dd>
 <dt><a href="org/apache/bookkeeper/stats/prometheus/PrometheusStatsLogger.html" title="class in org.apache.bookkeeper.stats.prometheus"><span class="typeNameLink">PrometheusStatsLogger</span></a> - Class in <a href="org/apache/bookkeeper/stats/prometheus/package-summary.html">org.apache.bookkeeper.stats.prometheus</a></dt>
 <dd>
 <div class="block">A <code>Prometheus</code> based <a href="org/apache/bookkeeper/stats/StatsLogger.html" title="interface in org.apache.bookkeeper.stats"><code>StatsLogger</code></a> implementation.</div>
 </dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/prometheus/PrometheusStatsLogger.html#PrometheusStatsLogger-io.prometheus.client.CollectorRegistry-java.lang.String-">PrometheusStatsLogger(CollectorRegistry, String)</a></span> - Constructor for class org.apache.bookkeeper.stats.prometheus.<a href="org/apache/bookkeeper/stats/prometheus/PrometheusStatsLogger.html" title="class in org.apache.bookkeeper.stats.prometheus">PrometheusStatsLogger</a></dt>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/prometheus/PrometheusStatsLogger.html#PrometheusStatsLogger-org.apache.bookkeeper.stats.prometheus.PrometheusMetricsProvider-java.lang.String-">PrometheusStatsLogger(PrometheusMetricsProvider, String)</a></span> - Constructor for class org.apache.bookkeeper.stats.prometheus.<a href="org/apache/bookkeeper/stats/prometheus/PrometheusStatsLogger.html" title="class in org.apache.bookkeeper.stats.prometheus">PrometheusStatsLogger</a></dt>
 <dd>&nbsp;</dd>
-<dt><a href="org/apache/bookkeeper/stats/prometheus/PrometheusUtil.html" title="class in org.apache.bookkeeper.stats.prometheus"><span class="typeNameLink">PrometheusUtil</span></a> - Class in <a href="org/apache/bookkeeper/stats/prometheus/package-summary.html">org.apache.bookkeeper.stats.prometheus</a></dt>
+<dt><a href="org/apache/bookkeeper/stats/prometheus/PrometheusTextFormatUtil.html" title="class in org.apache.bookkeeper.stats.prometheus"><span class="typeNameLink">PrometheusTextFormatUtil</span></a> - Class in <a href="org/apache/bookkeeper/stats/prometheus/package-summary.html">org.apache.bookkeeper.stats.prometheus</a></dt>
 <dd>
-<div class="block">Container for Prometheus utility methods.</div>
+<div class="block">Logic to write metrics in Prometheus text format.</div>
 </dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/prometheus/PrometheusUtil.html#PrometheusUtil--">PrometheusUtil()</a></span> - Constructor for class org.apache.bookkeeper.stats.prometheus.<a href="org/apache/bookkeeper/stats/prometheus/PrometheusUtil.html" title="class in org.apache.bookkeeper.stats.prometheus">PrometheusUtil</a></dt>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/prometheus/PrometheusTextFormatUtil.html#PrometheusTextFormatUtil--">PrometheusTextFormatUtil()</a></span> - Constructor for class org.apache.bookkeeper.stats.prometheus.<a href="org/apache/bookkeeper/stats/prometheus/PrometheusTextFormatUtil.html" title="class in org.apache.bookkeeper.stats.prometheus">PrometheusTextFormatUtil</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/api/BKException.Code.html#ProtocolVersionException">ProtocolVersionException</a></span> - Static variable in interface org.apache.bookkeeper.client.api.<a href="org/apache/bookkeeper/client/api/BKException.Code.html" title="interface in org.apache.bookkeeper.client.api">BKException.Code</a></dt>
 <dd>
@@ -5210,7 +5234,7 @@
 <dd>
 <div class="block">Increment the failed op counter with the given eventLatency.</div>
 </dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/prometheus/PrometheusOpStatsLogger.html#registerFailedEvent-long-java.util.concurrent.TimeUnit-">registerFailedEvent(long, TimeUnit)</a></span> - Method in class org.apache.bookkeeper.stats.prometheus.<a href="org/apache/bookkeeper/stats/prometheus/PrometheusOpStatsLogger.html" title="class in org.apache.bookkeeper.stats.prometheus">PrometheusOpStatsLogger</a></dt>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/prometheus/DataSketchesOpStatsLogger.html#registerFailedEvent-long-java.util.concurrent.TimeUnit-">registerFailedEvent(long, TimeUnit)</a></span> - Method in class org.apache.bookkeeper.stats.prometheus.<a href="org/apache/bookkeeper/stats/prometheus/DataSketchesOpStatsLogger.html" title="class in org.apache.bookkeeper.stats.prometheus">DataSketchesOpStatsLogger</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/twitter/finagle/OpStatsLoggerImpl.html#registerFailedEvent-long-java.util.concurrent.TimeUnit-">registerFailedEvent(long, TimeUnit)</a></span> - Method in class org.apache.bookkeeper.stats.twitter.finagle.<a href="org/apache/bookkeeper/stats/twitter/finagle/OpStatsLoggerImpl.html" title="class in org.apache.bookkeeper.stats.twitter.finagle">OpStatsLoggerImpl</a></dt>
 <dd>&nbsp;</dd>
@@ -5230,7 +5254,7 @@
 <dd>
 <div class="block">An operation with the given value failed.</div>
 </dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/prometheus/PrometheusOpStatsLogger.html#registerFailedValue-long-">registerFailedValue(long)</a></span> - Method in class org.apache.bookkeeper.stats.prometheus.<a href="org/apache/bookkeeper/stats/prometheus/PrometheusOpStatsLogger.html" title="class in org.apache.bookkeeper.stats.prometheus">PrometheusOpStatsLogger</a></dt>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/prometheus/DataSketchesOpStatsLogger.html#registerFailedValue-long-">registerFailedValue(long)</a></span> - Method in class org.apache.bookkeeper.stats.prometheus.<a href="org/apache/bookkeeper/stats/prometheus/DataSketchesOpStatsLogger.html" title="class in org.apache.bookkeeper.stats.prometheus">DataSketchesOpStatsLogger</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/twitter/finagle/OpStatsLoggerImpl.html#registerFailedValue-long-">registerFailedValue(long)</a></span> - Method in class org.apache.bookkeeper.stats.twitter.finagle.<a href="org/apache/bookkeeper/stats/twitter/finagle/OpStatsLoggerImpl.html" title="class in org.apache.bookkeeper.stats.twitter.finagle">OpStatsLoggerImpl</a></dt>
 <dd>&nbsp;</dd>
@@ -5286,7 +5310,7 @@
 <dd>
 <div class="block">An operation succeeded with the given eventLatency.</div>
 </dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/prometheus/PrometheusOpStatsLogger.html#registerSuccessfulEvent-long-java.util.concurrent.TimeUnit-">registerSuccessfulEvent(long, TimeUnit)</a></span> - Method in class org.apache.bookkeeper.stats.prometheus.<a href="org/apache/bookkeeper/stats/prometheus/PrometheusOpStatsLogger.html" title="class in org.apache.bookkeeper.stats.prometheus">PrometheusOpStatsLogger</a></dt>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/prometheus/DataSketchesOpStatsLogger.html#registerSuccessfulEvent-long-java.util.concurrent.TimeUnit-">registerSuccessfulEvent(long, TimeUnit)</a></span> - Method in class org.apache.bookkeeper.stats.prometheus.<a href="org/apache/bookkeeper/stats/prometheus/DataSketchesOpStatsLogger.html" title="class in org.apache.bookkeeper.stats.prometheus">DataSketchesOpStatsLogger</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/twitter/finagle/OpStatsLoggerImpl.html#registerSuccessfulEvent-long-java.util.concurrent.TimeUnit-">registerSuccessfulEvent(long, TimeUnit)</a></span> - Method in class org.apache.bookkeeper.stats.twitter.finagle.<a href="org/apache/bookkeeper/stats/twitter/finagle/OpStatsLoggerImpl.html" title="class in org.apache.bookkeeper.stats.twitter.finagle">OpStatsLoggerImpl</a></dt>
 <dd>&nbsp;</dd>
@@ -5306,7 +5330,7 @@
 <dd>
 <div class="block">An operation with the given value succeeded.</div>
 </dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/prometheus/PrometheusOpStatsLogger.html#registerSuccessfulValue-long-">registerSuccessfulValue(long)</a></span> - Method in class org.apache.bookkeeper.stats.prometheus.<a href="org/apache/bookkeeper/stats/prometheus/PrometheusOpStatsLogger.html" title="class in org.apache.bookkeeper.stats.prometheus">PrometheusOpStatsLogger</a></dt>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/prometheus/DataSketchesOpStatsLogger.html#registerSuccessfulValue-long-">registerSuccessfulValue(long)</a></span> - Method in class org.apache.bookkeeper.stats.prometheus.<a href="org/apache/bookkeeper/stats/prometheus/DataSketchesOpStatsLogger.html" title="class in org.apache.bookkeeper.stats.prometheus">DataSketchesOpStatsLogger</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/twitter/finagle/OpStatsLoggerImpl.html#registerSuccessfulValue-long-">registerSuccessfulValue(long)</a></span> - Method in class org.apache.bookkeeper.stats.twitter.finagle.<a href="org/apache/bookkeeper/stats/twitter/finagle/OpStatsLoggerImpl.html" title="class in org.apache.bookkeeper.stats.twitter.finagle">OpStatsLoggerImpl</a></dt>
 <dd>&nbsp;</dd>
@@ -5317,6 +5341,8 @@
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ClientConfiguration.html#REGISTRATION_CLIENT_CLASS">REGISTRATION_CLIENT_CLASS</a></span> - Static variable in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#REGISTRATION_MANAGER_CLASS">REGISTRATION_MANAGER_CLASS</a></span> - Static variable in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
+<dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/prometheus/PrometheusMetricsProvider.html#registry">registry</a></span> - Variable in class org.apache.bookkeeper.stats.prometheus.<a href="org/apache/bookkeeper/stats/prometheus/PrometheusMetricsProvider.html" title="class in org.apache.bookkeeper.stats.prometheus">PrometheusMetricsProvider</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.DefaultResolver.html#reloadCachedMappings--">reloadCachedMappings()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.DefaultResolver.html" title="class in org.apache.bookkeeper.client">RackawareEnsemblePlacementPolicyImpl.DefaultResolver</a></dt>
 <dd>&nbsp;</dd>
@@ -5497,6 +5523,10 @@
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeperAdmin.ResultCallBack.html#ResultCallBack-java.util.concurrent.CompletableFuture-">ResultCallBack(CompletableFuture&lt;Void&gt;)</a></span> - Constructor for class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeperAdmin.ResultCallBack.html" title="class in org.apache.bookkeeper.client">BookKeeperAdmin.ResultCallBack</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/prometheus/DataSketchesOpStatsLogger.html#rotateLatencyCollection--">rotateLatencyCollection()</a></span> - Method in class org.apache.bookkeeper.stats.prometheus.<a href="org/apache/bookkeeper/stats/prometheus/DataSketchesOpStatsLogger.html" title="class in org.apache.bookkeeper.stats.prometheus">DataSketchesOpStatsLogger</a></dt>
+<dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/prometheus/PrometheusMetricsProvider.html#rotateLatencyCollection--">rotateLatencyCollection()</a></span> - Method in class org.apache.bookkeeper.stats.prometheus.<a href="org/apache/bookkeeper/stats/prometheus/PrometheusMetricsProvider.html" title="class in org.apache.bookkeeper.stats.prometheus">PrometheusMetricsProvider</a></dt>
+<dd>&nbsp;</dd>
 <dt><a href="org/apache/bookkeeper/client/RoundRobinDistributionSchedule.html" title="class in org.apache.bookkeeper.client"><span class="typeNameLink">RoundRobinDistributionSchedule</span></a> - Class in <a href="org/apache/bookkeeper/client/package-summary.html">org.apache.bookkeeper.client</a></dt>
 <dd>
 <div class="block">A specific <a href="org/apache/bookkeeper/client/DistributionSchedule.html" title="interface in org.apache.bookkeeper.client"><code>DistributionSchedule</code></a> that places entries in round-robin
@@ -5528,8 +5558,6 @@
 <dd>
 <div class="block">Implements Delete Callback.</div>
 </dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/prometheus/PrometheusUtil.html#safeRegister-io.prometheus.client.CollectorRegistry-T-">safeRegister(CollectorRegistry, T)</a></span> - Static method in class org.apache.bookkeeper.stats.prometheus.<a href="org/apache/bookkeeper/stats/prometheus/PrometheusUtil.html" title="class in org.apache.bookkeeper.stats.prometheus">PrometheusUtil</a></dt>
-<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/PendingAddOp.html#safeRun--">safeRun()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/PendingAddOp.html" title="class in org.apache.bookkeeper.client">PendingAddOp</a></dt>
 <dd>
 <div class="block">Initiate the add operation.</div>
@@ -6569,6 +6597,12 @@
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/twitter/science/HTTPStatsExporter.html#shutDownRegistry">shutDownRegistry</a></span> - Variable in class org.apache.bookkeeper.stats.twitter.science.<a href="org/apache/bookkeeper/stats/twitter/science/HTTPStatsExporter.html" title="class in org.apache.bookkeeper.stats.twitter.science">HTTPStatsExporter</a></dt>
 <dd>&nbsp;</dd>
+<dt><a href="org/apache/bookkeeper/stats/prometheus/SimpleGauge.html" title="class in org.apache.bookkeeper.stats.prometheus"><span class="typeNameLink">SimpleGauge</span></a>&lt;<a href="org/apache/bookkeeper/stats/prometheus/SimpleGauge.html" title="type parameter in SimpleGauge">T</a> extends <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Number.html?is-external=true" title="class or interface in java.lang">Number</a>&gt; - Class in <a href="org/apache/bookkeeper/stats/prometheus/package-summary.html">org.apache.bookkeeper.stats.prometheus</a></dt>
+<dd>
+<div class="block">A <a href="org/apache/bookkeeper/stats/Gauge.html" title="interface in org.apache.bookkeeper.stats"><code>Gauge</code></a> implementation that forwards on the value supplier.</div>
+</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/prometheus/SimpleGauge.html#SimpleGauge-org.apache.bookkeeper.stats.Gauge-">SimpleGauge(Gauge&lt;T&gt;)</a></span> - Constructor for class org.apache.bookkeeper.stats.prometheus.<a href="org/apache/bookkeeper/stats/prometheus/SimpleGauge.html" title="class in org.apache.bookkeeper.stats.prometheus">SimpleGauge</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerFragmentReplicator.SingleFragmentCallback.html#SingleFragmentCallback-org.apache.zookeeper.AsyncCallback.VoidCallback-org.apache.bookkeeper.client.LedgerHandle-long-java.util.Map-">SingleFragmentCallback(AsyncCallback.VoidCallback, LedgerHandle, long, Map&lt;BookieSocketAddress, BookieSocketAddress&gt;)</a></span> - Constructor for class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerFragmentReplicator.SingleFragmentCallback.html" title="class in org.apache.bookkeeper.client">LedgerFragmentReplicator.SingleFragmentCallback</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/DistributionSchedule.WriteSet.html#size--">size()</a></span> - Method in interface org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/DistributionSchedule.WriteSet.html" title="interface in org.apache.bookkeeper.client">DistributionSchedule.WriteSet</a></dt>
@@ -6888,7 +6922,7 @@
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/OpStatsLogger.html#toOpStatsData--">toOpStatsData()</a></span> - Method in interface org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></dt>
 <dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/prometheus/PrometheusOpStatsLogger.html#toOpStatsData--">toOpStatsData()</a></span> - Method in class org.apache.bookkeeper.stats.prometheus.<a href="org/apache/bookkeeper/stats/prometheus/PrometheusOpStatsLogger.html" title="class in org.apache.bookkeeper.stats.prometheus">PrometheusOpStatsLogger</a></dt>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/prometheus/DataSketchesOpStatsLogger.html#toOpStatsData--">toOpStatsData()</a></span> - Method in class org.apache.bookkeeper.stats.prometheus.<a href="org/apache/bookkeeper/stats/prometheus/DataSketchesOpStatsLogger.html" title="class in org.apache.bookkeeper.stats.prometheus">DataSketchesOpStatsLogger</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/twitter/finagle/OpStatsLoggerImpl.html#toOpStatsData--">toOpStatsData()</a></span> - Method in class org.apache.bookkeeper.stats.twitter.finagle.<a href="org/apache/bookkeeper/stats/twitter/finagle/OpStatsLoggerImpl.html" title="class in org.apache.bookkeeper.stats.twitter.finagle">OpStatsLoggerImpl</a></dt>
 <dd>
@@ -7312,9 +7346,13 @@ the order they are declared.</div>
 <dd>
 <div class="block">Provide write access to a ledger.</div>
 </dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/prometheus/PrometheusMetricsProvider.html#writeAllMetrics-java.io.Writer-">writeAllMetrics(Writer)</a></span> - Method in class org.apache.bookkeeper.stats.prometheus.<a href="org/apache/bookkeeper/stats/prometheus/PrometheusMetricsProvider.html" title="class in org.apache.bookkeeper.stats.prometheus">PrometheusMetricsProvider</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/PendingAddOp.html#writeComplete-int-long-long-org.apache.bookkeeper.net.BookieSocketAddress-java.lang.Object-">writeComplete(int, long, long, BookieSocketAddress, Object)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/PendingAddOp.html" title="class in org.apache.bookkeeper.client">PendingAddOp</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerRecoveryOp.html#writeCount">writeCount</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerRecoveryOp.html" title="class in org.apache.bookkeeper.client">LedgerRecoveryOp</a></dt>
+<dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/prometheus/PrometheusTextFormatUtil.html#writeCounter-java.io.Writer-java.lang.String-org.apache.bookkeeper.stats.Counter-">writeCounter(Writer, String, Counter)</a></span> - Static method in class org.apache.bookkeeper.stats.prometheus.<a href="org/apache/bookkeeper/stats/prometheus/PrometheusTextFormatUtil.html" title="class in org.apache.bookkeeper.stats.prometheus">PrometheusTextFormatUtil</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/api/BKException.Code.html#WriteException">WriteException</a></span> - Static variable in interface org.apache.bookkeeper.client.api.<a href="org/apache/bookkeeper/client/api/BKException.Code.html" title="interface in org.apache.bookkeeper.client.api">BKException.Code</a></dt>
 <dd>
@@ -7328,6 +7366,8 @@ the order they are declared.</div>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerHandle.html#writeFlags">writeFlags</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/prometheus/PrometheusTextFormatUtil.html#writeGauge-java.io.Writer-java.lang.String-org.apache.bookkeeper.stats.prometheus.SimpleGauge-">writeGauge(Writer, String, SimpleGauge&lt;? extends Number&gt;)</a></span> - Static method in class org.apache.bookkeeper.stats.prometheus.<a href="org/apache/bookkeeper/stats/prometheus/PrometheusTextFormatUtil.html" title="class in org.apache.bookkeeper.stats.prometheus">PrometheusTextFormatUtil</a></dt>
+<dd>&nbsp;</dd>
 <dt><a href="org/apache/bookkeeper/client/api/WriteHandle.html" title="interface in org.apache.bookkeeper.client.api"><span class="typeNameLink">WriteHandle</span></a> - Interface in <a href="org/apache/bookkeeper/client/api/package-summary.html">org.apache.bookkeeper.client.api</a></dt>
 <dd>
 <div class="block">Provide write access to a ledger.</div>
@@ -7336,10 +7376,14 @@ the order they are declared.</div>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerHandle.html#writeLedgerConfig-org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback-">writeLedgerConfig(BookkeeperInternalCallbacks.GenericCallback&lt;Void&gt;)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/prometheus/PrometheusTextFormatUtil.html#writeMetricsCollectedByPrometheusClient-java.io.Writer-io.prometheus.client.CollectorRegistry-">writeMetricsCollectedByPrometheusClient(Writer, CollectorRegistry)</a></span> - Static method in class org.apache.bookkeeper.stats.prometheus.<a href="org/apache/bookkeeper/stats/prometheus/PrometheusTextFormatUtil.html" title="class in org.apache.bookkeeper.stats.prometheus">PrometheusTextFormatUtil</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/api/BKException.Code.html#WriteOnReadOnlyBookieException">WriteOnReadOnlyBookieException</a></span> - Static variable in interface org.apache.bookkeeper.client.api.<a href="org/apache/bookkeeper/client/api/BKException.Code.html" title="interface in org.apache.bookkeeper.client.api">BKException.Code</a></dt>
 <dd>
 <div class="block">Write operations failed due to bookies are readonly.</div>
 </dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/prometheus/PrometheusTextFormatUtil.html#writeOpStat-java.io.Writer-java.lang.String-org.apache.bookkeeper.stats.prometheus.DataSketchesOpStatsLogger-">writeOpStat(Writer, String, DataSketchesOpStatsLogger)</a></span> - Static method in class org.apache.bookkeeper.stats.prometheus.<a href="org/apache/bookkeeper/stats/prometheus/PrometheusTextFormatUtil.html" title="class in org.apache.bookkeeper.stats.prometheus">PrometheusTextFormatUtil</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.RRTopologyAwareCoverageEnsemble.html#writeQuorumSize">writeQuorumSize</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.RRTopologyAwareCoverageEnsemble.html" title="class in org.apache.bookkeeper.client">TopologyAwareEnsemblePlacementPolicy.RRTopologyAwareCoverageEnsemble</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/PendingReadOp.LedgerEntryRequest.html#writeSet">writeSet</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/PendingReadOp.LedgerEntryRequest.html" title="class in org.apache.bookkeeper.client">PendingReadOp.LedgerEntryRequest</a></dt>
