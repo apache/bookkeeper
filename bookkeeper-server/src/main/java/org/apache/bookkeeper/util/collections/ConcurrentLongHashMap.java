@@ -57,7 +57,7 @@ public class ConcurrentLongHashMap<V> {
      *
      * @param <V>
      */
-    public static interface LongObjectPredicate<V> {
+    public interface LongObjectPredicate<V> {
         boolean test(long key, V value);
     }
 
