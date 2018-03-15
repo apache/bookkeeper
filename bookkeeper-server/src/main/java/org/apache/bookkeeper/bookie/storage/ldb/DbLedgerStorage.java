@@ -828,7 +828,9 @@ public class DbLedgerStorage implements CompactableLedgerStorage {
 
     @Override
     public void flush() throws IOException {
-        checkpoint(Checkpoint.MAX);
+        Checkpoint cp = checkpointSource.newCheckpoint();
+        checkpoint(cp);
+        checkpointSource.checkpointComplete(cp, true);
     }
 
     @Override

@@ -67,6 +67,11 @@ public class LocationsIndexRebuildTest {
         public void startCheckpoint(Checkpoint checkpoint) {
             // No-op
         }
+
+        @Override
+        public void start() {
+            // no-op
+        }
     };
 
     @Test

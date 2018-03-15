@@ -99,7 +99,6 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
             throws IOException {
         checkNotNull(checkpointSource, "invalid null checkpoint source");
         checkNotNull(checkpointer, "invalid null checkpointer");
-
         this.checkpointSource = checkpointSource;
         this.checkpointer = checkpointer;
         entryLogger = new EntryLogger(conf, ledgerDirsManager, this);

@@ -750,12 +750,13 @@
             <group>
               <title>Bookkeeper Stats API</title>
               <!-- currently codahale is placed under `stats` package unfortunately.
-                   we might consider rename them to their own packages in future. {@link https://github.com/apache/bookkeeper/issues/762} -->
+                   we have done a copy to its own package in future in 4.7.0, will remove it in 4.8.0.
+                   {@link https://github.com/apache/bookkeeper/issues/762} -->
               <packages>org.apache.bookkeeper.stats</packages>
             </group>
             <group>
               <title>Bookkeeper Stats Providers</title>
-              <packages>org.apache.bookkeeper.stats.twitter.finagle:org.apache.bookkeeper.stats.twitter.ostrich:org.apache.bookkeeper.stats.twitter.science:org.apache.bookkeeper.stats.prometheus</packages>
+              <packages>org.apache.bookkeeper.stats.codahale:org.apache.bookkeeper.stats.twitter.finagle:org.apache.bookkeeper.stats.twitter.ostrich:org.apache.bookkeeper.stats.twitter.science:org.apache.bookkeeper.stats.prometheus</packages>
             </group>
           </groups>
           <doctitle>BookKeeper Java API (version ${project.version})</doctitle>
