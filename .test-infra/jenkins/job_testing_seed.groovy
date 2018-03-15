@@ -16,35 +16,38 @@
  * limitations under the License.
  */
 
-import common_job_properties
+job('bookkeeper-jenkins-testing/seed') {
+  description('Seed job, which allows DSL jobs to be tested before being pushed for review')
 
-// Defines the seed job, which creates or updates all other Jenkins projects.
-job('bookkeeper-seed') {
-  description('Automatically configures all Apache BookKeeper Jenkins projects based' +
-              ' on Jenkins DSL groovy files checked into the code repository.')
+  // Source code management.
+  scm {
+    git {
+      remote {
+        url('${gitrepo}')
+        refspec('+refs/heads/*:refs/remotes/origin/*')
+      }
+      branch('${sha1}')
+      extensions {
+        cleanAfterCheckout()
+      }
+    }
+  }
 
-  // Set common parameters.
-  common_job_properties.setTopLevelMainJobProperties(delegate)
+  parameters {
+    stringParam(
+      'gitrepo', 'https://github.com/apache/bookkeeper/', 'Repo to clone')
 
-  // This is a post-commit job that runs once per day, not for every push.
-  common_job_properties.setPostCommit(
-      delegate,
-      'H 6 * * *',
-      false,
-      'issues@bookkeeper.apache.org')
-
-  // Allows triggering this build against pull requests.
-  common_job_properties.enablePhraseTriggeringFromPullRequest(
-    delegate,
-    'Seed Job',
-    '/seed')
+    stringParam(
+      'sha1',
+      'master',
+      'Commit id or refname (eg: origin/pr/9/head) you want to build.')
+  }
 
   steps {
-    folder('bookkeeper-jenkins-testing')
     dsl {
       // A list or a glob of other groovy files to process.
-      external('.test-infra/jenkins/job_*.groovy')
-
+      external('.test-infra/jenkins/jenkins_testing_job_*.groovy')
+      lookupStrategy('SEED_JOB')
       // If a job is removed from the script, delete it
       removeAction('DELETE')
     }

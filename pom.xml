@@ -141,6 +141,7 @@
     <ostrich.version>9.1.3</ostrich.version>
     <powermock.version>2.0.0-beta.5</powermock.version>
     <prometheus.version>0.0.21</prometheus.version>
+    <datasketches.version>0.8.3</datasketches.version>
     <protobuf.version>3.4.0</protobuf.version>
     <protoc-gen-grpc-java.version>1.0.0</protoc-gen-grpc-java.version>
     <rocksdb.version>5.8.6</rocksdb.version>
@@ -492,6 +493,13 @@
         <artifactId>simpleclient_servlet</artifactId>
         <version>${prometheus.version}</version>
       </dependency>
+      <!-- data-sketches -->
+      <dependency>
+        <groupId>com.yahoo.datasketches</groupId>
+        <artifactId>sketches-core</artifactId>
+        <version>${datasketches.version}</version>
+      </dependency>
+
       <!-- ostrich -->
       <dependency>
         <groupId>com.twitter</groupId>
@@ -742,12 +750,13 @@
             <group>
               <title>Bookkeeper Stats API</title>
               <!-- currently codahale is placed under `stats` package unfortunately.
-                   we might consider rename them to their own packages in future. {@link https://github.com/apache/bookkeeper/issues/762} -->
+                   we have done a copy to its own package in future in 4.7.0, will remove it in 4.8.0.
+                   {@link https://github.com/apache/bookkeeper/issues/762} -->
               <packages>org.apache.bookkeeper.stats</packages>
             </group>
             <group>
               <title>Bookkeeper Stats Providers</title>
-              <packages>org.apache.bookkeeper.stats.twitter.finagle:org.apache.bookkeeper.stats.twitter.ostrich:org.apache.bookkeeper.stats.twitter.science:org.apache.bookkeeper.stats.prometheus</packages>
+              <packages>org.apache.bookkeeper.stats.codahale:org.apache.bookkeeper.stats.twitter.finagle:org.apache.bookkeeper.stats.twitter.ostrich:org.apache.bookkeeper.stats.twitter.science:org.apache.bookkeeper.stats.prometheus</packages>
             </group>
           </groups>
           <doctitle>BookKeeper Java API (version ${project.version})</doctitle>

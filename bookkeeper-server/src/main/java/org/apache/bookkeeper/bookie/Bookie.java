@@ -1096,11 +1096,31 @@ public class Bookie extends BookieCriticalThread {
      *
      * @throws BookieException if masterKey does not match the master key of the ledger
      */
-    private LedgerDescriptor getLedgerForEntry(ByteBuf entry, final byte[] masterKey)
+    @VisibleForTesting
+    LedgerDescriptor getLedgerForEntry(ByteBuf entry, final byte[] masterKey)
             throws IOException, BookieException {
         final long ledgerId = entry.getLong(entry.readerIndex());
 
-        LedgerDescriptor l = handles.getHandle(ledgerId, masterKey);
+        return handles.getHandle(ledgerId, masterKey);
+    }
+
+    private Journal getJournal(long ledgerId) {
+        return journals.get(MathUtils.signSafeMod(ledgerId, journals.size()));
+    }
+
+    /**
+     * Add an entry to a ledger as specified by handle.
+     */
+    private void addEntryInternal(LedgerDescriptor handle, ByteBuf entry,
+                                  boolean ackBeforeSync, WriteCallback cb, Object ctx, byte[] masterKey)
+            throws IOException, BookieException {
+        long ledgerId = handle.getLedgerId();
+        long entryId = handle.addEntry(entry);
+
+        writeBytes.add(entry.readableBytes());
+
+        // journal `addEntry` should happen after the entry is added to ledger storage.
+        // otherwise the journal entry can potentially be rolled before the ledger is created in ledger storage.
         if (masterKeyCache.get(ledgerId) == null) {
             // Force the load into masterKey cache
             byte[] oldValue = masterKeyCache.putIfAbsent(ledgerId, masterKey);
@@ -1116,24 +1136,6 @@ public class Bookie extends BookieCriticalThread {
                 getJournal(ledgerId).logAddEntry(bb, false /* ackBeforeSync */, new NopWriteCallback(), null);
             }
         }
-
-        return l;
-    }
-
-    private Journal getJournal(long ledgerId) {
-        return journals.get(MathUtils.signSafeMod(ledgerId, journals.size()));
-    }
-
-    /**
-     * Add an entry to a ledger as specified by handle.
-     */
-    private void addEntryInternal(LedgerDescriptor handle, ByteBuf entry,
-                                  boolean ackBeforeSync, WriteCallback cb, Object ctx)
-            throws IOException, BookieException {
-        long ledgerId = handle.getLedgerId();
-        long entryId = handle.addEntry(entry);
-
-        writeBytes.add(entry.readableBytes());
 
         if (LOG.isTraceEnabled()) {
             LOG.trace("Adding {}@{}", entryId, ledgerId);
@@ -1156,7 +1158,7 @@ public class Bookie extends BookieCriticalThread {
             LedgerDescriptor handle = getLedgerForEntry(entry, masterKey);
             synchronized (handle) {
                 entrySize = entry.readableBytes();
-                addEntryInternal(handle, entry, false /* ackBeforeSync */, cb, ctx);
+                addEntryInternal(handle, entry, false /* ackBeforeSync */, cb, ctx, masterKey);
             }
             success = true;
         } catch (NoWritableLedgerDirException e) {
@@ -1216,7 +1218,7 @@ public class Bookie extends BookieCriticalThread {
                             .create(BookieException.Code.LedgerFencedException);
                 }
                 entrySize = entry.readableBytes();
-                addEntryInternal(handle, entry, ackBeforeSync, cb, ctx);
+                addEntryInternal(handle, entry, ackBeforeSync, cb, ctx, masterKey);
             }
             success = true;
         } catch (NoWritableLedgerDirException e) {

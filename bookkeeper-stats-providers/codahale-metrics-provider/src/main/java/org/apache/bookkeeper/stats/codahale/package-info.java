@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
  * work for additional information regarding copyright ownership. The ASF
@@ -14,23 +14,7 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package org.apache.bookkeeper.stats;
-
-import static org.junit.Assert.assertEquals;
-
-import org.junit.Test;
-
 /**
- * Unit test of {@link CodahaleOpStatsLogger}.
+ * A lightweight stats library implemention based on <i>Codahale</i> metrics library.
  */
-public class CodahaleOpStatsTest {
-
-    @Test
-    public void testToOpStatsData() {
-        OpStatsLogger logger = new CodahaleMetricsProvider().getStatsLogger("test").getOpStatsLogger("testLogger");
-        logger.registerSuccessfulValue(1);
-        // the following should not throw any exception
-        OpStatsData statsData = logger.toOpStatsData();
-        assertEquals(1, statsData.getNumSuccessfulEvents());
-    }
-}
+package org.apache.bookkeeper.stats.codahale;
