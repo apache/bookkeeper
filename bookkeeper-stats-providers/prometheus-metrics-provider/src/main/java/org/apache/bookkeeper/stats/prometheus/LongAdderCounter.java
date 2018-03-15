@@ -16,46 +16,41 @@
  */
 package org.apache.bookkeeper.stats.prometheus;
 
-import io.prometheus.client.Collector;
-import io.prometheus.client.CollectorRegistry;
-import io.prometheus.client.Gauge;
+import java.util.concurrent.atomic.LongAdder;
+
 import org.apache.bookkeeper.stats.Counter;
 
 /**
- * A {@link Counter} implementation based on <i>Prometheus</i> metrics library.
+ * {@link Counter} implementation based on {@link LongAdder}.
+ *
+ * <p>LongAdder keeps a counter per-thread and then aggregates to get the result, in order to avoid contention between
+ * multiple threads.
  */
-public class PrometheusCounter implements Counter {
-
-    private final Gauge gauge;
-
-    public PrometheusCounter(CollectorRegistry registry, String name) {
-        this.gauge = PrometheusUtil.safeRegister(registry,
-                Gauge.build().name(Collector.sanitizeMetricName(name)).help("-").create());
-    }
+public class LongAdderCounter implements Counter {
+    private final LongAdder counter = new LongAdder();
 
     @Override
     public void clear() {
-        gauge.clear();
+        counter.reset();
     }
 
     @Override
     public void inc() {
-        gauge.inc();
+        counter.increment();
     }
 
     @Override
     public void dec() {
-        gauge.dec();
+        counter.decrement();
     }
 
     @Override
     public void add(long delta) {
-        gauge.inc(delta);
+        counter.add(delta);
     }
 
     @Override
     public Long get() {
-        return (long) gauge.get();
+        return counter.sum();
     }
-
 }
