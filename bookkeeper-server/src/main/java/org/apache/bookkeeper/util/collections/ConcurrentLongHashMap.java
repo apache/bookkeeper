@@ -52,6 +52,11 @@ public class ConcurrentLongHashMap<V> {
     private static final int DefaultExpectedItems = 256;
     private static final int DefaultConcurrencyLevel = 16;
 
+    /**
+     * Predicate specialization for (long, V) types.
+     *
+     * @param <V>
+     */
     public static interface LongObjectPredicate<V> {
         boolean test(long key, V value);
     }
