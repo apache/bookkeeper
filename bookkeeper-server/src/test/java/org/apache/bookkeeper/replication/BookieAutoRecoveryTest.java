@@ -25,8 +25,10 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.SortedMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -35,18 +37,19 @@ import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.BookKeeperTestClient;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.LedgerHandleAdapter;
+import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.discover.RegistrationManager;
-import org.apache.bookkeeper.meta.AbstractZkLedgerManagerFactory;
-import org.apache.bookkeeper.meta.LayoutManager;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
+import org.apache.bookkeeper.meta.MetadataClientDriver;
+import org.apache.bookkeeper.meta.MetadataDrivers;
 import org.apache.bookkeeper.meta.ZkLedgerUnderreplicationManager;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.replication.ReplicationException.CompatibilityException;
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
+import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
@@ -70,9 +73,11 @@ public class BookieAutoRecoveryTest extends BookKeeperClusterTestCase {
     private static final String openLedgerRereplicationGracePeriod = "3000"; // milliseconds
 
     private DigestType digestType;
+    private MetadataClientDriver metadataClientDriver;
     private LedgerManagerFactory mFactory;
     private LedgerUnderreplicationManager underReplicationManager;
     private LedgerManager ledgerManager;
+    private OrderedScheduler scheduler;
 
     private final String underreplicatedPath = baseClientConf
             .getZkLedgersRootPath() + "/underreplication/ledgers";
@@ -96,29 +101,30 @@ public class BookieAutoRecoveryTest extends BookKeeperClusterTestCase {
         super.setUp();
         baseConf.setZkServers(zkUtil.getZooKeeperConnectString());
         baseClientConf.setZkServers(zkUtil.getZooKeeperConnectString());
-        // initialize urReplicationManager
-        LayoutManager layoutManager = RegistrationManager
-            .instantiateRegistrationManager(new ServerConfiguration(baseClientConf)).getLayoutManager();
 
-        mFactory = AbstractZkLedgerManagerFactory
-            .newLedgerManagerFactory(
-                baseClientConf,
-                layoutManager);
+        scheduler = OrderedScheduler.newSchedulerBuilder()
+            .name("test-scheduler")
+            .numThreads(1)
+            .build();
+
+        metadataClientDriver = MetadataDrivers.getClientDriver(
+            URI.create(baseClientConf.getMetadataServiceUri()));
+        metadataClientDriver.initialize(
+            baseClientConf,
+            scheduler,
+            NullStatsLogger.INSTANCE,
+            Optional.empty());
+
+        // initialize urReplicationManager
+        mFactory = metadataClientDriver.getLedgerManagerFactory();
         underReplicationManager = mFactory.newLedgerUnderreplicationManager();
-        LedgerManagerFactory newLedgerManagerFactory = AbstractZkLedgerManagerFactory
-            .newLedgerManagerFactory(
-                baseClientConf,
-                layoutManager);
-        ledgerManager = newLedgerManagerFactory.newLedgerManager();
+        ledgerManager = mFactory.newLedgerManager();
     }
 
     @Override
     public void tearDown() throws Exception {
         super.tearDown();
-        if (null != mFactory) {
-            mFactory.close();
-            mFactory = null;
-        }
+
         if (null != underReplicationManager) {
             underReplicationManager.close();
             underReplicationManager = null;
@@ -126,6 +132,13 @@ public class BookieAutoRecoveryTest extends BookKeeperClusterTestCase {
         if (null != ledgerManager) {
             ledgerManager.close();
             ledgerManager = null;
+        }
+        if (null != metadataClientDriver) {
+            metadataClientDriver.close();
+            metadataClientDriver = null;
+        }
+        if (null != scheduler) {
+            scheduler.shutdown();
         }
     }
 

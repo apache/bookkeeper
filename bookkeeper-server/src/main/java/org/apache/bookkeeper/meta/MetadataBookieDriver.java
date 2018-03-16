@@ -54,8 +54,7 @@ public interface MetadataBookieDriver extends AutoCloseable {
      *
      * @return the registration manager used for registering/unregistering bookies.
      */
-    RegistrationManager getRegistrationManager()
-        throws MetadataException;
+    RegistrationManager getRegistrationManager();
 
     /**
      * Return the ledger manager factory used for accessing ledger metadata.

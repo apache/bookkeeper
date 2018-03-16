@@ -114,6 +114,7 @@ public class LocalBookKeeper {
         return server;
     }
 
+    @SuppressWarnings("deprecation")
     private void initializeZookeeper(AbstractConfiguration conf, String zkHost, int zkPort) throws IOException {
         LOG.info("Instantiate ZK Client");
         //initialize the zk client with values

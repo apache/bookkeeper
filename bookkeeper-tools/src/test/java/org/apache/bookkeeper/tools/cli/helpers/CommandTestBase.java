@@ -50,6 +50,7 @@ public class CommandTestBase {
 
     public CommandTestBase() {
         this.conf = new ServerConfiguration();
+        this.conf.setMetadataServiceUri("zk://127.0.0.1/path/to/ledgers");
     }
 
 }

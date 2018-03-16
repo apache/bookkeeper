@@ -66,6 +66,7 @@ public class DiscoveryCommandTest {
         this.cmd = mock(DiscoveryCommand.class, CALLS_REAL_METHODS);
 
         this.serverConf = new ServerConfiguration();
+        this.serverConf.setMetadataServiceUri("zk://127.0.0.1/path/to/ledgers");
         this.clientConf = new ClientConfiguration(serverConf);
         PowerMockito.whenNew(ClientConfiguration.class)
             .withParameterTypes(AbstractConfiguration.class)
