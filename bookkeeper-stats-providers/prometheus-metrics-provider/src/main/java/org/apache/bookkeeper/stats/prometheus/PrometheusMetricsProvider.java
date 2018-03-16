@@ -125,7 +125,7 @@ public class PrometheusMetricsProvider implements StatsProvider {
             public double get() {
                 return directMemoryUsage != null ? directMemoryUsage.longValue() : Double.NaN;
             }
-        }).register(CollectorRegistry.defaultRegistry);
+        }).register(registry);
 
         Gauge.build("jvm_memory_direct_bytes_max", "-").create().setChild(new Child() {
             @Override
