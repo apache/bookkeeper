@@ -83,6 +83,8 @@ import org.slf4j.LoggerFactory;
  */
 public class DbLedgerStorage implements CompactableLedgerStorage {
 
+    private static final long NOT_ASSIGNED_LAC = Long.MIN_VALUE;
+
     /**
      * This class borrows the logic from FileInfo.
      *
@@ -93,7 +95,7 @@ public class DbLedgerStorage implements CompactableLedgerStorage {
             implements AutoCloseable {
 
         // lac
-        private volatile long lac = -1;
+        private volatile long lac = NOT_ASSIGNED_LAC;
         // request from explicit lac requests
         private ByteBuffer explicitLac = null;
         // is the ledger info closed?
@@ -103,7 +105,7 @@ public class DbLedgerStorage implements CompactableLedgerStorage {
         // reference to LedgerMetadataIndex
         private final LedgerMetadataIndex ledgerIndex;
 
-        private long lastUpdated;
+        private long lastAccessed;
 
         /**
          * Construct an Watchable with zero watchers.
@@ -112,7 +114,7 @@ public class DbLedgerStorage implements CompactableLedgerStorage {
             super(WATCHER_RECYCLER);
             this.ledgerId = ledgerId;
             this.ledgerIndex = ledgerIndex;
-            this.lastUpdated = System.currentTimeMillis();
+            this.lastAccessed = System.currentTimeMillis();
         }
 
         long getLastAddConfirmed() {
@@ -123,10 +125,10 @@ public class DbLedgerStorage implements CompactableLedgerStorage {
             long lacToReturn;
             boolean changed = false;
             synchronized (this) {
-                if (this.lac == -1 || this.lac < lac) {
+                if (this.lac == NOT_ASSIGNED_LAC || this.lac < lac) {
                     this.lac = lac;
                     changed = true;
-                    lastUpdated = System.currentTimeMillis();
+                    lastAccessed = System.currentTimeMillis();
                 }
                 lacToReturn = this.lac;
             }
@@ -139,8 +141,8 @@ public class DbLedgerStorage implements CompactableLedgerStorage {
         synchronized boolean waitForLastAddConfirmedUpdate(long previousLAC,
                                                            Watcher<LastAddConfirmedUpdateNotification> watcher)
                 throws IOException {
-            lastUpdated = System.currentTimeMillis();
-            if ((lac != -1 && lac > previousLAC) || isClosed || ledgerIndex.get(ledgerId).getFenced()) {
+            lastAccessed = System.currentTimeMillis();
+            if ((lac != NOT_ASSIGNED_LAC && lac > previousLAC) || isClosed || ledgerIndex.get(ledgerId).getFenced()) {
                 return false;
             }
 
@@ -176,13 +178,13 @@ public class DbLedgerStorage implements CompactableLedgerStorage {
                 explicitLacValue = explicitLac.getLong();
                 explicitLac.rewind();
 
-                lastUpdated = System.currentTimeMillis();
+                lastAccessed = System.currentTimeMillis();
             }
             setLastAddConfirmed(explicitLacValue);
         }
 
         boolean isStale() {
-            return (lastUpdated + TimeUnit.MINUTES.toMillis(LEDGER_INFO_CACHING_TIME_MINUTES)) < System
+            return (lastAccessed + TimeUnit.MINUTES.toMillis(LEDGER_INFO_CACHING_TIME_MINUTES)) < System
                     .currentTimeMillis();
         }
 
@@ -884,8 +886,8 @@ public class DbLedgerStorage implements CompactableLedgerStorage {
     @Override
     public long getLastAddConfirmed(long ledgerId) throws IOException {
         TransientLedgerInfo ledgerInfo = transientLedgerInfoCache.get(ledgerId);
-        long lac = null != ledgerInfo ? ledgerInfo.getLastAddConfirmed() : -1;
-        if (lac == -1) {
+        long lac = null != ledgerInfo ? ledgerInfo.getLastAddConfirmed() : NOT_ASSIGNED_LAC;
+        if (lac == NOT_ASSIGNED_LAC) {
             ByteBuf bb = getEntry(ledgerId, BookieProtocol.LAST_ADD_CONFIRMED);
             try {
                 bb.skipBytes(2 * Long.BYTES); // skip ledger id and entry id
@@ -926,7 +928,12 @@ public class DbLedgerStorage implements CompactableLedgerStorage {
         } else {
             TransientLedgerInfo newTli = new TransientLedgerInfo(ledgerId, ledgerIndex);
             tli = transientLedgerInfoCache.putIfAbsent(ledgerId, newTli);
-            return tli != null ? tli : newTli;
+            if (tli != null) {
+                newTli.close();
+                return tli;
+            } else {
+                return newTli;
+            }
         }
     }
 
