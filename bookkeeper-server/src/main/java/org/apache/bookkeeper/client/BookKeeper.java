@@ -741,8 +741,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
         return ((ZKMetadataClientDriver) metadataDriver).getZk();
     }
 
-    @VisibleForTesting
-    public ClientConfiguration getConf() {
+    protected ClientConfiguration getConf() {
         return conf;
     }
 
