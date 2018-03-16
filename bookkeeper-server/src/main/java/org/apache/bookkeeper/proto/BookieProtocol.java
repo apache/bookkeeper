@@ -24,6 +24,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.util.Recycler;
 import io.netty.util.Recycler.Handle;
+import io.netty.util.ReferenceCountUtil;
 
 import org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessage;
 import org.apache.bookkeeper.util.ByteBufList;
@@ -275,10 +276,6 @@ public interface BookieProtocol {
             return (flags & FLAG_RECOVERY_ADD) == FLAG_RECOVERY_ADD;
         }
 
-        void release() {
-            data.release();
-        }
-
         private final Handle<AddRequest> recyclerHandle;
         private AddRequest(Handle<AddRequest> recyclerHandle) {
             this.recyclerHandle = recyclerHandle;
@@ -295,6 +292,7 @@ public interface BookieProtocol {
             ledgerId = -1;
             entryId = -1;
             masterKey = null;
+            ReferenceCountUtil.safeRelease(data);
             data = null;
             recyclerHandle.recycle(this);
         }
