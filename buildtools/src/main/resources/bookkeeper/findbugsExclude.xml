@@ -33,9 +33,6 @@
     <Class name="~org\.apache\.bookkeeper\.proto\.DataFormats.*" />
   </Match>
   <Match>
-    <Class name="~org\.apache\.bookkeeper\.proto\.checksum\.generated.*" />
-  </Match>
-  <Match>
     <!-- generated code, we can't be held responsible for findbugs in it //-->
     <Class name="~org\.apache\.bookkeeper\.proto\.BookkeeperProtocol.*" />
   </Match>
@@ -114,6 +111,19 @@
     <Class name="org.apache.bookkeeper.client.BKException$Code" />
     <Bug pattern="NM_SAME_SIMPLE_NAME_AS_INTERFACE"/>
   </And>
+
+  <!-- microbenchmarks -->
+  <!-- jmh generated code -->
+  <Match>
+    <Class name="~org\.apache\.bookkeeper\.proto\.generated.*" />
+  </Match>
+  <Match>
+    <Class name="~org\.apache\.bookkeeper\.proto\.checksum\.generated.*" />
+  </Match>
+  <Match>
+    <Class name="~org\.apache\.bookkeeper\.stats\.generated.*" />
+  </Match>
+
   <!-- modules under stream/ -->
 
   <!-- common -->
