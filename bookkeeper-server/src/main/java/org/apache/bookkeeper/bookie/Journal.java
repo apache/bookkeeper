@@ -854,7 +854,6 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
     public void logAddEntry(ByteBuf entry, boolean ackBeforeSync, WriteCallback cb, Object ctx) {
         long ledgerId = entry.getLong(entry.readerIndex() + 0);
         long entryId = entry.getLong(entry.readerIndex() + 8);
-        journalQueueSize.inc();
         logAddEntry(ledgerId, entryId, entry, ackBeforeSync, cb, ctx);
     }
 
@@ -864,6 +863,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
         //Retain entry until it gets written to journal
         entry.retain();
 
+        journalQueueSize.inc();
         queue.add(QueueEntry.create(
                 entry, ackBeforeSync,  ledgerId, entryId, cb, ctx, MathUtils.nowInNano(),
                 journalAddEntryStats, journalQueueSize));
