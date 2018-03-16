@@ -88,7 +88,7 @@ public class FileSystemUpgrade {
 
             public boolean accept(File dir, String name) {
                 if (name.endsWith(".txn") || name.endsWith(".log")
-                    || name.equals("lastId") || name.equals("lastMark")) {
+                    || name.equals("lastId") || name.startsWith("lastMark")) {
                     return true;
                 }
                 if (containsIndexFiles(dir, name)) {

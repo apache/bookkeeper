@@ -77,8 +77,9 @@ public class GetLastLogMarkService implements HttpEndpointService {
                 Map<String, String> output = Maps.newHashMap();
 
                 List<Journal> journals = Lists.newArrayListWithCapacity(conf.getJournalDirs().length);
+                int idx = 0;
                 for (File journalDir : conf.getJournalDirs()) {
-                    journals.add(new Journal(journalDir, conf, new LedgerDirsManager(conf, conf.getLedgerDirs(),
+                    journals.add(new Journal(idx++, journalDir, conf, new LedgerDirsManager(conf, conf.getLedgerDirs(),
                       new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()))));
                 }
                 for (Journal journal : journals) {
