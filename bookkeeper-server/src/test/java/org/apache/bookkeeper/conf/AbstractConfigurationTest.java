@@ -23,6 +23,7 @@ import static org.mockito.Mockito.CALLS_REAL_METHODS;
 import static org.mockito.Mockito.mock;
 
 import org.apache.bookkeeper.meta.AbstractZkLedgerManagerFactory;
+import org.apache.bookkeeper.meta.HierarchicalLedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LongHierarchicalLedgerManagerFactory;
 import org.junit.Before;
@@ -34,6 +35,8 @@ import org.junit.Test;
 public class AbstractConfigurationTest {
 
     private static final String DEFAULT_METADATA_SERVICE_URI =
+        "zk+null://127.0.0.1/path/to/ledgers";
+    private static final String HIERARCHICAL_METADATA_SERVICE_URI =
         "zk+hierarchical://127.0.0.1/path/to/ledgers";
     private static final String FLAT_METADATA_SERVICE_URI =
         "zk+flat://127.0.0.1/path/to/ledgers";
@@ -85,6 +88,15 @@ public class AbstractConfigurationTest {
         conf.setLedgerManagerFactoryClass(org.apache.bookkeeper.meta.FlatLedgerManagerFactory.class);
         assertEquals(
             FLAT_METADATA_SERVICE_URI,
+            conf.getMetadataServiceUri());
+    }
+
+    @SuppressWarnings({ "unchecked" })
+    @Test
+    public void testHierarchicalLedgerManagerUri() throws Exception {
+        conf.setLedgerManagerFactoryClass(HierarchicalLedgerManagerFactory.class);
+        assertEquals(
+            HIERARCHICAL_METADATA_SERVICE_URI,
             conf.getMetadataServiceUri());
     }
 

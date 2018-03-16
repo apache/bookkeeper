@@ -22,8 +22,10 @@
 package org.apache.bookkeeper.bookie;
 
 import static com.google.common.base.Charsets.UTF_8;
+import static org.apache.bookkeeper.meta.MetadataDrivers.runFunctionWithRegistrationManager;
 
 import com.google.common.collect.Lists;
+import com.google.common.util.concurrent.UncheckedExecutionException;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
@@ -35,12 +37,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Scanner;
+import java.util.concurrent.ExecutionException;
+import org.apache.bookkeeper.bookie.BookieException.UpgradeException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.discover.RegistrationManager;
-import org.apache.bookkeeper.stats.NullStatsLogger;
+import org.apache.bookkeeper.meta.exceptions.MetadataException;
 import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.util.HardLink;
-import org.apache.bookkeeper.util.ReflectionUtils;
 import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.commons.cli.BasicParser;
@@ -124,18 +127,6 @@ public class FileSystemUpgrade {
         }
     }
 
-    private static RegistrationManager newRegistrationManager(final ServerConfiguration conf)
-            throws BookieException.UpgradeException {
-
-        try {
-            Class<? extends RegistrationManager> rmClass = conf.getRegistrationManagerClass();
-            RegistrationManager rm = ReflectionUtils.newInstance(rmClass);
-            return rm.initialize(conf, () -> {}, NullStatsLogger.INSTANCE);
-        } catch (Exception e) {
-            throw new BookieException.UpgradeException(e);
-        }
-    }
-
     private static void linkIndexDirectories(File srcPath, File targetPath) throws IOException {
         String[] files = srcPath.list();
         if (files == null) {
@@ -166,7 +157,27 @@ public class FileSystemUpgrade {
             throws BookieException.UpgradeException, InterruptedException {
         LOG.info("Upgrading...");
 
-        try (RegistrationManager rm = newRegistrationManager(conf)) {
+        try {
+            runFunctionWithRegistrationManager(conf, rm -> {
+                try {
+                    upgrade(conf, rm);
+                } catch (UpgradeException e) {
+                    throw new UncheckedExecutionException(e.getMessage(), e);
+                }
+                return null;
+            });
+        } catch (MetadataException e) {
+            throw new UpgradeException(e);
+        } catch (ExecutionException e) {
+            throw new UpgradeException(e.getCause());
+        }
+
+        LOG.info("Done");
+    }
+
+    private static void upgrade(ServerConfiguration conf,
+                                RegistrationManager rm) throws UpgradeException {
+        try {
             Map<File, File> deferredMoves = new HashMap<File, File>();
             Cookie.Builder cookieBuilder = Cookie.generateCookie(conf);
             Cookie c = cookieBuilder.build();
@@ -225,7 +236,6 @@ public class FileSystemUpgrade {
         } catch (IOException ioe) {
             throw new BookieException.UpgradeException(ioe);
         }
-        LOG.info("Done");
     }
 
     public static void finalizeUpgrade(ServerConfiguration conf)
@@ -269,35 +279,54 @@ public class FileSystemUpgrade {
     public static void rollback(ServerConfiguration conf)
             throws BookieException.UpgradeException, InterruptedException {
         LOG.info("Rolling back upgrade...");
-        try (RegistrationManager rm = newRegistrationManager(conf)) {
-            for (File d : getAllDirectories(conf)) {
-                LOG.info("Rolling back {}", d);
-                try {
-                    // ensure there is a previous version before rollback
-                    int version = detectPreviousVersion(d);
 
-                    if (version <= Cookie.CURRENT_COOKIE_LAYOUT_VERSION) {
-                        File curDir = new File(d,
-                                BookKeeperConstants.CURRENT_DIR);
-                        FileUtils.deleteDirectory(curDir);
-                    } else {
-                        throw new BookieException.UpgradeException(
-                                "Cannot rollback as previous data does not exist");
-                    }
-                } catch (IOException ioe) {
-                    LOG.error("Error rolling back {}", d);
-                    throw new BookieException.UpgradeException(ioe);
+        try {
+            runFunctionWithRegistrationManager(conf, rm -> {
+                try {
+                    rollback(conf, rm);
+                } catch (UpgradeException e) {
+                    throw new UncheckedExecutionException(e.getMessage(), e);
                 }
-            }
+                return null;
+            });
+        } catch (MetadataException e) {
+            throw new UpgradeException(e);
+        } catch (ExecutionException e) {
+            throw new UpgradeException(e.getCause());
+        }
+
+        LOG.info("Done");
+    }
+
+    private static void rollback(ServerConfiguration conf,
+                                 RegistrationManager rm)
+            throws BookieException.UpgradeException {
+        for (File d : getAllDirectories(conf)) {
+            LOG.info("Rolling back {}", d);
             try {
-                Versioned<Cookie> cookie = Cookie.readFromRegistrationManager(rm, conf);
-                cookie.getValue().deleteFromRegistrationManager(rm, conf, cookie.getVersion());
-            } catch (BookieException ke) {
-                LOG.error("Error deleting cookie from Registration Manager");
-                throw new BookieException.UpgradeException(ke);
+                // ensure there is a previous version before rollback
+                int version = detectPreviousVersion(d);
+
+                if (version <= Cookie.CURRENT_COOKIE_LAYOUT_VERSION) {
+                    File curDir = new File(d,
+                            BookKeeperConstants.CURRENT_DIR);
+                    FileUtils.deleteDirectory(curDir);
+                } else {
+                    throw new BookieException.UpgradeException(
+                            "Cannot rollback as previous data does not exist");
+                }
+            } catch (IOException ioe) {
+                LOG.error("Error rolling back {}", d);
+                throw new BookieException.UpgradeException(ioe);
             }
         }
-        LOG.info("Done");
+        try {
+            Versioned<Cookie> cookie = Cookie.readFromRegistrationManager(rm, conf);
+            cookie.getValue().deleteFromRegistrationManager(rm, conf, cookie.getVersion());
+        } catch (BookieException ke) {
+            LOG.error("Error deleting cookie from Registration Manager");
+            throw new BookieException.UpgradeException(ke);
+        }
     }
 
     private static void printHelp(Options opts) {

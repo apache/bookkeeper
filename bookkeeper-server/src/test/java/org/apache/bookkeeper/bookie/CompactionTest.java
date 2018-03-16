@@ -28,10 +28,13 @@ import static org.apache.bookkeeper.bookie.BookKeeperServerStats.RECLAIMED_COMPA
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.RECLAIMED_DELETION_SPACE_BYTES;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.THREAD_RUNTIME;
 import static org.apache.bookkeeper.bookie.TransactionalEntryLogCompactor.COMPACTED_SUFFIX;
+import static org.apache.bookkeeper.meta.MetadataDrivers.runFunctionWithLedgerManagerFactory;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+
+import com.google.common.util.concurrent.UncheckedExecutionException;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import java.io.File;
@@ -54,8 +57,6 @@ import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.LedgerMetadata;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
-import org.apache.bookkeeper.discover.RegistrationManager;
-import org.apache.bookkeeper.meta.AbstractZkLedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
@@ -249,31 +250,34 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
         for (File dir : dirManager.getAllLedgerDirs()) {
             Bookie.checkDirectoryStructure(dir);
         }
-        InterleavedLedgerStorage storage = new InterleavedLedgerStorage();
-        storage.initialize(
-            conf,
-            AbstractZkLedgerManagerFactory
-                .newLedgerManagerFactory(
+        runFunctionWithLedgerManagerFactory(conf, lmf -> {
+            try (LedgerManager lm = lmf.newLedgerManager()) {
+                InterleavedLedgerStorage storage = new InterleavedLedgerStorage();
+                storage.initialize(
                     conf,
-                    RegistrationManager.instantiateRegistrationManager(conf).getLayoutManager())
-                .newLedgerManager(),
-            dirManager,
-            dirManager,
-            null,
-            cp,
-            Checkpointer.NULL,
-            NullStatsLogger.INSTANCE);
-        storage.start();
-        long startTime = MathUtils.now();
-        storage.gcThread.enableForceGC();
-        storage.gcThread.triggerGC().get(); //major
-        storage.gcThread.triggerGC().get(); //minor
-        // Minor and Major compaction times should be larger than when we started
-        // this test.
-        assertTrue("Minor or major compaction did not trigger even on forcing.",
-                storage.gcThread.lastMajorCompactionTime > startTime
-                && storage.gcThread.lastMinorCompactionTime > startTime);
-        storage.shutdown();
+                    lm,
+                    dirManager,
+                    dirManager,
+                    null,
+                    cp,
+                    Checkpointer.NULL,
+                    NullStatsLogger.INSTANCE);
+                storage.start();
+                long startTime = MathUtils.now();
+                storage.gcThread.enableForceGC();
+                storage.gcThread.triggerGC().get(); //major
+                storage.gcThread.triggerGC().get(); //minor
+                // Minor and Major compaction times should be larger than when we started
+                // this test.
+                assertTrue("Minor or major compaction did not trigger even on forcing.",
+                    storage.gcThread.lastMajorCompactionTime > startTime
+                        && storage.gcThread.lastMinorCompactionTime > startTime);
+                storage.shutdown();
+            } catch (Exception e) {
+                throw new UncheckedExecutionException(e.getMessage(), e);
+            }
+            return null;
+        });
     }
 
     @Test
@@ -924,6 +928,18 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
         conf.setGcWaitTime(500);
         conf.setMinorCompactionInterval(1);
         conf.setMajorCompactionInterval(2);
+        runFunctionWithLedgerManagerFactory(conf, lmf -> {
+            try (LedgerManager lm = lmf.newLedgerManager()) {
+                testSuspendGarbageCollection(conf, lm);
+            } catch (Exception e) {
+                throw new UncheckedExecutionException(e.getMessage(), e);
+            }
+            return null;
+        });
+    }
+
+    private void testSuspendGarbageCollection(ServerConfiguration conf,
+                                              LedgerManager lm) throws Exception {
         LedgerDirsManager dirManager = new LedgerDirsManager(conf, conf.getLedgerDirs(),
                 new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()));
         CheckpointSource cp = new CheckpointSource() {
@@ -949,11 +965,7 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
         TestStatsProvider stats = new TestStatsProvider();
         storage.initialize(
             conf,
-            AbstractZkLedgerManagerFactory
-                .newLedgerManagerFactory(
-                    conf,
-                    RegistrationManager.instantiateRegistrationManager(conf).getLayoutManager())
-                .newLedgerManager(),
+            lm,
             dirManager,
             dirManager,
             null,
