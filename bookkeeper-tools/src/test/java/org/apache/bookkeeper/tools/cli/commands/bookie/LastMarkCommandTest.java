@@ -19,6 +19,7 @@
 package org.apache.bookkeeper.tools.cli.commands.bookie;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyObject;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -77,10 +78,12 @@ public class LastMarkCommandTest extends BookieCommandTestBase {
         when(journal.getLastLogMark()).thenReturn(lastLogMark);
         PowerMockito.whenNew(Journal.class)
             .withParameterTypes(
+                int.class,
                 File.class,
                 ServerConfiguration.class,
                 LedgerDirsManager.class)
             .withArguments(
+                any(int.class),
                 any(File.class),
                 eq(conf),
                 any(LedgerDirsManager.class))
@@ -96,7 +99,7 @@ public class LastMarkCommandTest extends BookieCommandTestBase {
         PowerMockito.verifyNew(LedgerDirsManager.class, times(1))
             .withArguments(eq(conf), any(File[].class), any(DiskChecker.class));
         PowerMockito.verifyNew(Journal.class, times(3))
-            .withArguments(any(File.class), eq(conf), any(LedgerDirsManager.class));
+            .withArguments(any(int.class), any(File.class), eq(conf), any(LedgerDirsManager.class));
         verify(journal, times(3)).getLastLogMark();
         verify(lastLogMark, times(3)).getCurMark();
         verify(logMark, times(3 * 2)).getLogFileId();

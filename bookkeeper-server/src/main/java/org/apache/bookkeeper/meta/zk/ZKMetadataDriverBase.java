@@ -29,6 +29,7 @@ import java.net.URI;
 import java.util.List;
 import java.util.Optional;
 import lombok.Getter;
+import lombok.Setter;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.conf.AbstractConfiguration;
@@ -42,7 +43,7 @@ import org.apache.bookkeeper.meta.exceptions.Code;
 import org.apache.bookkeeper.meta.exceptions.MetadataException;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.ZkUtils;
-import org.apache.bookkeeper.zookeeper.BoundExponentialBackoffRetryPolicy;
+import org.apache.bookkeeper.zookeeper.RetryPolicy;
 import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.lang3.StringUtils;
@@ -64,7 +65,7 @@ public class ZKMetadataDriverBase implements AutoCloseable {
     }
 
     @SuppressWarnings("deprecation")
-    protected static Class<? extends LedgerManagerFactory> resolveLedgerManagerFactory(URI metadataServiceUri) {
+    public static Class<? extends LedgerManagerFactory> resolveLedgerManagerFactory(URI metadataServiceUri) {
         checkNotNull(metadataServiceUri, "Metadata service uri is null");
         String scheme = metadataServiceUri.getScheme();
         checkNotNull(scheme, "Invalid metadata service : " + metadataServiceUri);
@@ -86,6 +87,11 @@ public class ZKMetadataDriverBase implements AutoCloseable {
                 case org.apache.bookkeeper.meta.MSLedgerManagerFactory.NAME:
                     ledgerManagerFactoryClass = org.apache.bookkeeper.meta.MSLedgerManagerFactory.class;
                     break;
+                case "null":
+                    // the ledger manager factory class is not set, so the client will be using the class that is
+                    // recorded in ledger manager layout.
+                    ledgerManagerFactoryClass = null;
+                    break;
                 default:
                     throw new IllegalArgumentException("Unknown ledger manager type found '"
                         + schemeParts[1] + "' at uri : " + metadataServiceUri);
@@ -97,13 +103,13 @@ public class ZKMetadataDriverBase implements AutoCloseable {
     }
 
     // URI
-    protected URI metadataServiceUri;
     protected AbstractConfiguration<?> conf;
     protected StatsLogger statsLogger;
 
     // zookeeper related variables
     protected List<ACL> acls;
     @Getter
+    @Setter
     protected ZooKeeper zk = null;
     // whether the zk handle is one we created, or is owned by whoever
     // instantiated us
@@ -115,7 +121,6 @@ public class ZKMetadataDriverBase implements AutoCloseable {
     // managers
     protected LayoutManager layoutManager;
     protected LedgerManagerFactory lmFactory;
-    protected Class<? extends LedgerManagerFactory> ledgerManagerFactoryClass = null;
 
     public String getScheme() {
         return SCHEME;
@@ -124,43 +129,48 @@ public class ZKMetadataDriverBase implements AutoCloseable {
     @SneakyThrows(InterruptedException.class)
     protected void initialize(AbstractConfiguration<?> conf,
                               StatsLogger statsLogger,
+                              RetryPolicy zkRetryPolicy,
                               Optional<Object> optionalCtx) throws MetadataException {
         this.conf = conf;
-
-        final String metadataServiceUriStr;
-        try {
-            metadataServiceUriStr = conf.getMetadataServiceUri();
-        } catch (ConfigurationException e) {
-            log.error("Failed to retrieve metadata service uri from configuration", e);
-            throw new MetadataException(
-                Code.INVALID_METADATA_SERVICE_URI, e);
-        }
-
-        this.metadataServiceUri = URI.create(metadataServiceUriStr);
-        ledgerManagerFactoryClass = resolveLedgerManagerFactory(metadataServiceUri);
-
-        // get the initialize root path
-        this.ledgersRootPath = metadataServiceUri.getPath();
-        final String bookieRegistrationPath = ledgersRootPath + "/" + AVAILABLE_NODE;
-        final String bookieReadonlyRegistrationPath = bookieRegistrationPath + "/" + READONLY;
-
-        // construct the zookeeper
-        final String zkServers = getZKServersFromServiceUri(metadataServiceUri);
-        log.info("Initialize zookeeper metadata driver at metadata service uri {} :"
-            + " zkServers = {}, ledgersRootPath = {}.", metadataServiceUriStr, zkServers, ledgersRootPath);
         this.acls = ZkUtils.getACLs(conf);
+
         if (optionalCtx.isPresent()
             && optionalCtx.get() instanceof ZooKeeper) {
+            this.ledgersRootPath = conf.getZkLedgersRootPath();
+
+            log.info("Initialize zookeeper metadata driver with external zookeeper client : ledgersRootPath = {}.",
+                ledgersRootPath);
+
             // if an external zookeeper is added, use the zookeeper instance
             this.zk = (ZooKeeper) (optionalCtx.get());
             this.ownZKHandle = false;
         } else {
+            final String metadataServiceUriStr;
+            try {
+                metadataServiceUriStr = conf.getMetadataServiceUri();
+            } catch (ConfigurationException e) {
+                log.error("Failed to retrieve metadata service uri from configuration", e);
+                throw new MetadataException(
+                    Code.INVALID_METADATA_SERVICE_URI, e);
+            }
+
+            URI metadataServiceUri = URI.create(metadataServiceUriStr);
+            // get the initialize root path
+            this.ledgersRootPath = metadataServiceUri.getPath();
+            final String bookieRegistrationPath = ledgersRootPath + "/" + AVAILABLE_NODE;
+            final String bookieReadonlyRegistrationPath = bookieRegistrationPath + "/" + READONLY;
+
+            // construct the zookeeper
+            final String zkServers = getZKServersFromServiceUri(metadataServiceUri);
+            log.info("Initialize zookeeper metadata driver at metadata service uri {} :"
+                + " zkServers = {}, ledgersRootPath = {}.", metadataServiceUriStr, zkServers, ledgersRootPath);
+
             try {
                 this.zk = ZooKeeperClient.newBuilder()
                     .connectString(zkServers)
                     .sessionTimeoutMs(conf.getZkTimeout())
-                    .operationRetryPolicy(new BoundExponentialBackoffRetryPolicy(conf.getZkTimeout(),
-                        conf.getZkTimeout(), 0))
+                    .operationRetryPolicy(zkRetryPolicy)
+                    .requestRateLimit(conf.getZkRequestRateLimit())
                     .statsLogger(statsLogger)
                     .build();
 
@@ -172,6 +182,8 @@ public class ZKMetadataDriverBase implements AutoCloseable {
                             CreateMode.PERSISTENT);
                     } catch (KeeperException.NodeExistsException e) {
                         // this node is just now created by someone.
+                    } catch (KeeperException.NoNodeException e) {
+                        // the cluster hasn't been initialized
                     }
                 }
             } catch (IOException | KeeperException e) {

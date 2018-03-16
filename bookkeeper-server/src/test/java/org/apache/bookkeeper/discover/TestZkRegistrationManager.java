@@ -18,56 +18,8 @@
  */
 package org.apache.bookkeeper.discover;
 
-import static org.junit.Assert.assertEquals;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
-import org.apache.bookkeeper.meta.LayoutManager;
-import org.apache.bookkeeper.meta.LedgerLayout;
-import org.junit.Test;
-
 /**
  * Unit test of {@link RegistrationManager}.
  */
 public class TestZkRegistrationManager {
-    private final LedgerLayout ledgerLayout;
-    private final LayoutManager layoutManager;
-    private final ZKRegistrationManager zkRegistrationManager;
-
-    public TestZkRegistrationManager() {
-        this.ledgerLayout = mock(LedgerLayout.class);
-        this.layoutManager = mock(LayoutManager.class);
-        this.zkRegistrationManager = new ZKRegistrationManager();
-        zkRegistrationManager.setLayoutManager(layoutManager);
-    }
-
-    @Test
-    public void testGetLayoutManager() throws Exception {
-        assertEquals(layoutManager, zkRegistrationManager.getLayoutManager());
-    }
-
-    @Test
-    public void testReadLedgerLayout() throws Exception {
-        when(layoutManager.readLedgerLayout()).thenReturn(ledgerLayout);
-        assertEquals(ledgerLayout, zkRegistrationManager.getLayoutManager().readLedgerLayout());
-    }
-
-    @Test
-    public void testStoreLedgerLayout() throws Exception {
-        zkRegistrationManager.getLayoutManager().storeLedgerLayout(ledgerLayout);
-
-        verify(layoutManager, times(1))
-            .storeLedgerLayout(eq(ledgerLayout));
-    }
-
-    @Test
-    public void testDeleteLedgerLayout() throws Exception {
-        zkRegistrationManager.getLayoutManager().deleteLedgerLayout();
-
-        verify(layoutManager, times(1))
-            .deleteLedgerLayout();
-    }
 }

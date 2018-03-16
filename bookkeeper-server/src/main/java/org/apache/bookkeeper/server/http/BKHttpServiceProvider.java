@@ -33,7 +33,6 @@ import org.apache.bookkeeper.http.HttpServiceProvider;
 import org.apache.bookkeeper.http.service.ErrorHttpService;
 import org.apache.bookkeeper.http.service.HeartbeatService;
 import org.apache.bookkeeper.http.service.HttpEndpointService;
-import org.apache.bookkeeper.meta.LayoutManager;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.replication.Auditor;
 import org.apache.bookkeeper.replication.AutoRecoveryMain;
@@ -68,7 +67,6 @@ public class BKHttpServiceProvider implements HttpServiceProvider {
     private final BookieServer bookieServer;
     private final AutoRecoveryMain autoRecovery;
     private final ServerConfiguration serverConf;
-    private final LayoutManager layoutManager;
     private final ZooKeeper zk;
     private final BookKeeperAdmin bka;
     private final ExecutorService executor;
@@ -81,7 +79,6 @@ public class BKHttpServiceProvider implements HttpServiceProvider {
         this.bookieServer = bookieServer;
         this.autoRecovery = autoRecovery;
         this.serverConf = serverConf;
-        this.layoutManager = bookieServer.getBookie().getRegistrationManager().getLayoutManager();
         this.zk = ZooKeeperClient.newBuilder()
           .connectString(serverConf.getZkServers())
           .sessionTimeoutMs(serverConf.getZkTimeout())

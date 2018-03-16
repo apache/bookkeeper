@@ -27,7 +27,7 @@ import org.apache.bookkeeper.replication.ReplicationException;
 /**
  * Interface for marking ledgers which need to be rereplicated.
  */
-public interface LedgerUnderreplicationManager {
+public interface LedgerUnderreplicationManager extends AutoCloseable {
     /**
      * Mark a ledger as underreplicated. The replication should
      * then check which fragments are underreplicated and rereplicate them
