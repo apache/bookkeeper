@@ -30,6 +30,7 @@ import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.InterleavedLedgerStorage;
 import org.apache.bookkeeper.bookie.LedgerDirsManager;
+import org.apache.bookkeeper.bookie.LedgerDirsManager.LedgerDirsListener;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.LedgerEntry;
@@ -71,8 +72,12 @@ public class ReadOnlyBookieTest extends BookKeeperClusterTestCase {
             ledger.addEntry("data".getBytes());
         }
 
-        // Now add the current ledger dir to filled dirs list
-        ledgerDirsManager.addToFilledDirs(new File(ledgerDirs[0], "current"));
+        // simulate allDisksFull
+        for (LedgerDirsListener ledgerDirsListener : ledgerDirsManager.getListeners()){
+            ledgerDirsListener.allDisksFull(true);
+        }
+        // sleep for transition to RO complete
+        Thread.sleep(1000);
 
         try {
             ledger.addEntry("data".getBytes());
@@ -116,8 +121,12 @@ public class ReadOnlyBookieTest extends BookKeeperClusterTestCase {
 
         File testDir = new File(ledgerDirs[0], "current");
 
-        // Now add the current ledger dir to filled dirs list
-        ledgerDirsManager.addToFilledDirs(testDir);
+        // simulate allDisksFull
+        for (LedgerDirsListener ledgerDirsListener : ledgerDirsManager.getListeners()){
+            ledgerDirsListener.allDisksFull(true);
+        }
+        // sleep for transition to RO complete
+        Thread.sleep(1000);
 
         try {
             ledger.addEntry("data".getBytes());
@@ -142,7 +151,9 @@ public class ReadOnlyBookieTest extends BookKeeperClusterTestCase {
         }
 
         // Now add the current ledger dir back to writable dirs list
-        ledgerDirsManager.addToWritableDirs(testDir, true);
+        for (LedgerDirsListener ledgerDirsListener : ledgerDirsManager.getListeners()){
+            ledgerDirsListener.diskWritable(testDir);
+        }
 
         bkc.waitForWritableBookie(Bookie.getBookieAddress(bsConfs.get(1)))
             .get(30, TimeUnit.SECONDS);
@@ -183,8 +194,12 @@ public class ReadOnlyBookieTest extends BookKeeperClusterTestCase {
             ledger.addEntry("data".getBytes());
         }
 
-        // Now add the current ledger dir to filled dirs list
-        ledgerDirsManager.addToFilledDirs(new File(ledgerDirs[0], "current"));
+        // simulate allDisksFull
+        for (LedgerDirsListener ledgerDirsListener : ledgerDirsManager.getListeners()){
+            ledgerDirsListener.allDisksFull(true);
+        }
+        // sleep for transition to RO complete
+        Thread.sleep(1000);
 
         try {
             ledger.addEntry("data".getBytes());

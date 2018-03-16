@@ -48,6 +48,7 @@ public class SortedLedgerStorage extends InterleavedLedgerStorage
     EntryMemTable memTable;
     private ScheduledExecutorService scheduler;
     private StateManager stateManager;
+    private boolean isTransactionalCompactionEnabled;
 
     public SortedLedgerStorage() {
         super();
@@ -78,6 +79,7 @@ public class SortedLedgerStorage extends InterleavedLedgerStorage
                 .setNameFormat("SortedLedgerStorage-%d")
                 .setPriority((Thread.NORM_PRIORITY + Thread.MAX_PRIORITY) / 2).build());
         this.stateManager = stateManager;
+        this.isTransactionalCompactionEnabled = conf.getUseTransactionalCompaction();
     }
 
     @VisibleForTesting
@@ -173,7 +175,7 @@ public class SortedLedgerStorage extends InterleavedLedgerStorage
             // it means bytes might live at current active entry log, we need
             // roll current entry log and then issue checkpoint to underlying
             // interleaved ledger storage.
-            entryLogger.rollLog();
+            entryLogger.rollLogs();
         }
         super.checkpoint(checkpoint);
     }
@@ -209,16 +211,9 @@ public class SortedLedgerStorage extends InterleavedLedgerStorage
             public void run() {
                 try {
                     LOG.info("Started flushing mem table.");
-                    long logIdBeforeFlush = entryLogger.getCurrentLogId();
+                    entryLogger.prepareEntryMemTableFlush();
                     memTable.flush(SortedLedgerStorage.this);
-                    long logIdAfterFlush = entryLogger.getCurrentLogId();
-                    // in any case that an entry log reaches the limit, we roll the log and start checkpointing.
-                    // if a memory table is flushed spanning over two entry log files, we also roll log. this is
-                    // for performance consideration: since we don't wanna checkpoint a new log file that ledger
-                    // storage is writing to.
-                    if (entryLogger.reachEntryLogLimit(0) || logIdAfterFlush != logIdBeforeFlush) {
-                        LOG.info("Rolling entry logger since it reached size limitation");
-                        entryLogger.rollLog();
+                    if (entryLogger.commitEntryMemTableFlush()) {
                         checkpointer.startCheckpoint(cp);
                     }
                 } catch (IOException e) {

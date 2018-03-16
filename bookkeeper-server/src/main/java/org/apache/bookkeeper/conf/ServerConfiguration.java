@@ -2262,6 +2262,10 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
         if (0 == getBookiePort() && !getAllowEphemeralPorts()) {
             throw new ConfigurationException("Invalid port specified, using ephemeral ports accidentally?");
         }
+        if (isEntryLogPerLedgerEnabled() && getUseTransactionalCompaction()) {
+            throw new ConfigurationException(
+                    "When entryLogPerLedger is enabled , it is unnecessary to use transactional compaction");
+        }
     }
 
     /**
