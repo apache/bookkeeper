@@ -236,6 +236,10 @@ class ReadEntryProcessorV3 extends PacketProcessorBaseV3 {
         } catch (IOException e) {
             LOG.error("IOException while reading entry: {} from ledger {} ", entryId, ledgerId, e);
             return buildResponse(readResponse, StatusCode.EIO, startTimeSw);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            LOG.error("InterruptedException while reading entry: {} from ledger {} ", entryId, ledgerId, e);
+            return buildResponse(readResponse, StatusCode.EIO, startTimeSw);
         } catch (BookieException e) {
             LOG.error(
                 "Unauthorized access to ledger:{} while reading entry:{} in request from address: {}",
