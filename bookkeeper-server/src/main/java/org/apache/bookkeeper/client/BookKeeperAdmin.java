@@ -21,6 +21,7 @@
 package org.apache.bookkeeper.client;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static org.apache.bookkeeper.meta.MetadataDrivers.runFunctionWithMetadataBookieDriver;
 import static org.apache.bookkeeper.meta.MetadataDrivers.runFunctionWithRegistrationManager;
 
 import com.google.common.collect.Lists;
@@ -1133,9 +1134,9 @@ public class BookKeeperAdmin implements AutoCloseable {
      */
     public static boolean format(ServerConfiguration conf,
             boolean isInteractive, boolean force) throws Exception {
-        return runFunctionWithRegistrationManager(conf, rm -> {
+        return runFunctionWithMetadataBookieDriver(conf, driver -> {
             try {
-                boolean ledgerRootExists = rm.prepareFormat();
+                boolean ledgerRootExists = driver.getRegistrationManager().prepareFormat();
 
                 // If old data was there then confirm with admin.
                 boolean doFormat = true;
@@ -1160,11 +1161,11 @@ public class BookKeeperAdmin implements AutoCloseable {
                     return false;
                 }
 
-                try (BookKeeper bkc = new BookKeeper(new ClientConfiguration(conf))) {
-                    bkc.ledgerManagerFactory.format(conf, bkc.getMetadataClientDriver().getLayoutManager());
-                }
+                driver.getLedgerManagerFactory().format(
+                    conf,
+                    driver.getLayoutManager());
 
-                return rm.format();
+                return driver.getRegistrationManager().format();
             } catch (Exception e) {
                 throw new UncheckedExecutionException(e.getMessage(), e);
             }
