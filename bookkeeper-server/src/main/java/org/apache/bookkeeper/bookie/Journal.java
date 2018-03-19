@@ -904,6 +904,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
         paddingBuff.writeZero(paddingBuff.capacity());
         final int journalFormatVersionToWrite = conf.getJournalFormatVersionToWrite();
         final int journalAlignmentSize = conf.getJournalAlignmentSize();
+        BufferedChannel bc = null;
         JournalChannel logFile = null;
         forceWriteThread.start();
         Stopwatch journalCreationWatcher = Stopwatch.createUnstarted();
@@ -915,7 +916,6 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
             // could only be used to measure elapsed time.
             // http://docs.oracle.com/javase/1.5.0/docs/api/java/lang/System.html#nanoTime%28%29
             long logId = journalIds.isEmpty() ? System.currentTimeMillis() : journalIds.get(journalIds.size() - 1);
-            BufferedChannel bc = null;
             long lastFlushPosition = 0;
             boolean groupWhenTimeout = false;
 
@@ -1053,6 +1053,10 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                             batchSize = 0L;
                             // check whether journal file is over file limit
                             if (shouldRolloverJournal) {
+                                // if the journal file is rolled over, the journal file will be closed after last
+                                // entry is force written to disk. the `bc` is not used anymore, so close it to release
+                                // the buffers in `bc`.
+                                IOUtils.close(LOG, bc);
                                 logFile = null;
                                 continue;
                             }
@@ -1089,8 +1093,6 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                 numEntriesToFlush++;
                 qe = null;
             }
-            logFile.close();
-            logFile = null;
         } catch (IOException ioe) {
             LOG.error("I/O exception in Journal thread!", ioe);
         } catch (InterruptedException ie) {
@@ -1102,6 +1104,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
             // the bookie. If we execute this as a part of graceful shutdown,
             // close will flush the file system cache making any previous
             // cached writes durable so this is fine as well.
+            IOUtils.close(LOG, bc);
             IOUtils.close(LOG, logFile);
         }
         LOG.info("Journal exited loop!");
