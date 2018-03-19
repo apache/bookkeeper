@@ -100,7 +100,7 @@ public interface LedgerStorage {
      *
      * @return the entry id of the entry added
      */
-    long addEntry(ByteBuf entry) throws IOException;
+    long addEntry(ByteBuf entry) throws IOException, BookieException;
 
     /**
      * Read an entry from storage.
