@@ -23,7 +23,9 @@ import static org.junit.Assert.fail;
 
 import com.google.common.collect.Lists;
 
-import java.util.Enumeration;
+import com.google.common.util.concurrent.UncheckedExecutionException;
+import io.netty.buffer.ByteBuf;
+import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
@@ -34,20 +36,25 @@ import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import lombok.extern.slf4j.Slf4j;
+import org.apache.bookkeeper.bookie.Bookie;
+import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
-import org.apache.bookkeeper.client.AsyncCallback.ReadCallback;
+import org.apache.bookkeeper.client.BKException.Code;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
+import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.junit.Test;
 
 /**
  * Test the maximum size of a worker queue.
  */
+@Slf4j
 public class TestMaxSizeWorkersQueue extends BookKeeperClusterTestCase {
     DigestType digestType = DigestType.CRC32;
 
     public TestMaxSizeWorkersQueue() {
-        super(1);
+        super(0);
 
         baseConf.setNumReadWorkerThreads(1);
         baseConf.setNumAddWorkerThreads(1);
@@ -55,14 +62,49 @@ public class TestMaxSizeWorkersQueue extends BookKeeperClusterTestCase {
         // Configure very small queue sizes
         baseConf.setMaxPendingReadRequestPerThread(1);
         baseConf.setMaxPendingAddRequestPerThread(1);
+
+        baseClientConf.setReadEntryTimeout(Integer.MAX_VALUE);
     }
 
     @Test
     public void testReadRejected() throws Exception {
+        final CountDownLatch readLatch = new CountDownLatch(1);
+        final CountDownLatch readReceivedLatch = new CountDownLatch(1);
+
+        ServerConfiguration conf = newServerConfiguration();
+        conf.setNumReadWorkerThreads(1);
+        conf.setMaxPendingReadRequestPerThread(1);
+        bsConfs.add(conf);
+        bs.add(startBookie(conf, () -> {
+            try {
+                return new Bookie(conf) {
+                    @Override
+                    public ByteBuf readEntry(long ledgerId, long entryId) throws IOException, NoLedgerException {
+                        readReceivedLatch.countDown();
+                        try {
+                            readLatch.await();
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                            log.warn("Interrupted on reading entry {}-{}",
+                                ledgerId, entryId, e);
+                        }
+                        return super.readEntry(ledgerId, entryId);
+                    }
+                };
+            } catch (IOException | BookieException e) {
+                log.warn("Fail to construct bookie", e);
+                throw new UncheckedExecutionException(e);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                log.warn("Interrupt on constructing bookie", e);
+                throw new UncheckedExecutionException(e);
+            }
+        }));
+
         LedgerHandle lh = bkc.createLedger(1, 1, digestType, new byte[0]);
         byte[] content = new byte[100];
 
-        final int n = 1000;
+        final int n = 3;
         // Write few entries
         for (int i = 0; i < n; i++) {
             lh.addEntry(content);
@@ -72,32 +114,33 @@ public class TestMaxSizeWorkersQueue extends BookKeeperClusterTestCase {
         // - 1st read must always succeed
         // - Subsequent reads may fail, depending on timing
         // - At least few, we expect to fail with TooManyRequestException
-        final CountDownLatch counter = new CountDownLatch(2);
+        final CountDownLatch firstReadLatch = new CountDownLatch(1);
+
 
         final AtomicInteger rcFirstReadOperation = new AtomicInteger();
 
-        lh.asyncReadEntries(0, 0, new ReadCallback() {
-            @Override
-            public void readComplete(int rc, LedgerHandle lh, Enumeration<LedgerEntry> seq, Object ctx) {
-                rcFirstReadOperation.set(rc);
-                counter.countDown();
-            }
+        lh.asyncReadEntries(0, 0, (rc, lh1, seq, ctx) -> {
+            rcFirstReadOperation.set(rc);
+            firstReadLatch.countDown();
         }, lh);
+        readReceivedLatch.await();
 
         final AtomicInteger rcSecondReadOperation = new AtomicInteger();
+        final CountDownLatch secondReadLatch = new CountDownLatch(1);
 
-        lh.asyncReadEntries(0, n - 1, new ReadCallback() {
-            @Override
-            public void readComplete(int rc, LedgerHandle lh, Enumeration<LedgerEntry> seq, Object ctx) {
-                rcSecondReadOperation.set(rc);
-                counter.countDown();
-            }
+        lh.asyncReadEntries(1, 1, (rc, lh12, seq, ctx) -> {
+            rcSecondReadOperation.set(rc);
+            secondReadLatch.countDown();
         }, lh);
 
-        counter.await();
-
-        assertEquals(BKException.Code.OK, rcFirstReadOperation.get());
+        // second read should fail with too many requests exception
+        secondReadLatch.await();
         assertEquals(BKException.Code.TooManyRequestsException, rcSecondReadOperation.get());
+
+        // let first read go through
+        readLatch.countDown();
+        firstReadLatch.await();
+        assertEquals(BKException.Code.OK, rcFirstReadOperation.get());
 
         lh.close();
     }
@@ -113,6 +156,7 @@ public class TestMaxSizeWorkersQueue extends BookKeeperClusterTestCase {
         // because when we get the TooManyRequestException, the client will try to form a new ensemble and that
         // operation will fail since we only have 1 bookie available
         final CountDownLatch counter = new CountDownLatch(n);
+        final AtomicBoolean receivedException = new AtomicBoolean(false);
         final AtomicBoolean receivedTooManyRequestsException = new AtomicBoolean();
 
         // Write few entries
@@ -120,6 +164,9 @@ public class TestMaxSizeWorkersQueue extends BookKeeperClusterTestCase {
             lh.asyncAddEntry(content, new AddCallback() {
                 @Override
                 public void addComplete(int rc, LedgerHandle lh, long entryId, Object ctx) {
+                    if (rc != Code.OK) {
+                        receivedException.set(true);
+                    }
                     if (rc == BKException.Code.NotEnoughBookiesException) {
                         receivedTooManyRequestsException.set(true);
                     }
@@ -131,6 +178,7 @@ public class TestMaxSizeWorkersQueue extends BookKeeperClusterTestCase {
 
         counter.await();
 
+        assertTrue(receivedException.get());
         assertTrue(receivedTooManyRequestsException.get());
 
         lh.close();

@@ -37,6 +37,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.TimeUnit;
 
+import java.util.function.Supplier;
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.client.BookKeeperTestClient;
@@ -642,11 +643,20 @@ public abstract class BookKeeperClusterTestCase {
      */
     protected BookieServer startBookie(ServerConfiguration conf, final Bookie b)
             throws Exception {
+        return startBookie(conf, () -> b);
+    }
+    /**
+     * Start a bookie with the given bookie instance. Also, starts the auto
+     * recovery for this bookie, if isAutoRecoveryEnabled is true.
+     */
+    protected BookieServer startBookie(ServerConfiguration conf,
+                                       final Supplier<Bookie> bookieSupplier)
+            throws Exception {
         TestStatsProvider provider = new TestStatsProvider();
         BookieServer server = new BookieServer(conf, provider.getStatsLogger("")) {
             @Override
             protected Bookie newBookie(ServerConfiguration conf) {
-                return b;
+                return bookieSupplier.get();
             }
         };
 
@@ -661,6 +671,7 @@ public abstract class BookKeeperClusterTestCase {
         server.start();
         bsLoggers.put(server.getLocalAddress(), provider);
 
+        LOG.info("Waiting bookie '{}' to be created.", address);
         waitForBookie.get(30, TimeUnit.SECONDS);
         LOG.info("New bookie '{}' has been created.", address);
 
