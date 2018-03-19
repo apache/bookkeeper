@@ -20,7 +20,6 @@
  */
 package org.apache.bookkeeper.proto;
 
-import com.google.protobuf.CodedOutputStream;
 import com.google.protobuf.ExtensionRegistry;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.MessageLite;
@@ -356,7 +355,7 @@ public class BookieProtoEncoding {
         ByteBuf buf = allocator.heapBuffer(size, size);
 
         try {
-            msg.writeTo(CodedOutputStream.newInstance(buf.array(), buf.arrayOffset() + buf.writerIndex(), size));
+            msg.writeTo(new ByteBufOutputStream(buf));
         } catch (IOException e) {
             // This is in-memory serialization, should not fail
             throw new RuntimeException(e);
