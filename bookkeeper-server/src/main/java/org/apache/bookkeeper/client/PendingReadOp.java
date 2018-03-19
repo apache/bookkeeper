@@ -135,7 +135,7 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
         boolean complete(int bookieIndex, BookieSocketAddress host, final ByteBuf buffer) {
             ByteBuf content;
             try {
-                content = lh.macManager.verifyDigestAndReturnData(entryImpl.getEntryId(), buffer);
+                content = lh.macManager.verifyDigestAndReturnData(eId, buffer);
             } catch (BKDigestMatchException e) {
                 readOpDmCounter.inc();
                 logErrorAndReattemptRead(bookieIndex, host, "Mac mismatch", BKException.Code.DigestMatchException);
@@ -205,12 +205,12 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
                 ++numBookiesMissingEntry;
                 if (LOG.isDebugEnabled()) {
                     LOG.debug("No such entry found on bookie.  L{} E{} bookie: {}",
-                            lh.ledgerId, entryImpl.getEntryId(), host);
+                            lh.ledgerId, eId, host);
                 }
             } else {
                 if (LOG.isDebugEnabled()) {
                     LOG.debug(errMsg + " while reading L{} E{} from bookie: {}",
-                            lh.ledgerId, entryImpl.getEntryId(), host);
+                            lh.ledgerId, eId, host);
                 }
             }
         }
@@ -245,7 +245,7 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
 
         @Override
         public String toString() {
-            return String.format("L%d-E%d", entryImpl.getLedgerId(), entryImpl.getEntryId());
+            return String.format("L%d-E%d", lh.getId(), eId);
         }
 
         /**
@@ -569,7 +569,7 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
         }
 
         int flags = isRecoveryRead ? BookieProtocol.FLAG_HIGH_PRIORITY : BookieProtocol.FLAG_NONE;
-        lh.bk.getBookieClient().readEntry(to, lh.ledgerId, entry.entryImpl.getEntryId(),
+        lh.bk.getBookieClient().readEntry(to, lh.ledgerId, entry.eId,
                                           this, new ReadContext(bookieIndex, to, entry),
                                           flags);
     }
@@ -624,7 +624,7 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
             long firstUnread = LedgerHandle.INVALID_ENTRY_ID;
             for (LedgerEntryRequest req : seq) {
                 if (!req.isComplete()) {
-                    firstUnread = req.entryImpl.getEntryId();
+                    firstUnread = req.eId;
                     break;
                 }
             }
