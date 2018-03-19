@@ -152,7 +152,7 @@ public abstract class MockBookKeeperTestCase {
         when(bk.getBookieClient()).thenReturn(bookieClient);
         when(bk.getScheduler()).thenReturn(scheduler);
         when(bk.getReadSpeculativeRequestPolicy()).thenReturn(Optional.absent());
-        when(bk.getConf()).thenReturn(new ClientConfiguration());
+        mockBookKeeperGetConf(new ClientConfiguration());
         when(bk.getStatsLogger()).thenReturn(nullStatsLogger);
         when(bk.getLedgerManager()).thenReturn(ledgerManager);
         when(bk.getLedgerIdGenerator()).thenReturn(ledgerIdGenerator);
@@ -168,6 +168,10 @@ public abstract class MockBookKeeperTestCase {
         setupBookieWatcherForEnsembleChange();
         setupBookieClientReadEntry();
         setupBookieClientAddEntry();
+    }
+
+    protected void mockBookKeeperGetConf(ClientConfiguration conf) {
+        when(bk.getConf()).thenReturn(conf);
     }
 
     protected NullStatsLogger setupLoggers() {

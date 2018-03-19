@@ -105,9 +105,19 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
      * it provides the wrong password or wrong digest.
      */
     @Test
-    public void testBookkeeperPassword() throws Exception {
+    public void testBookkeeperDigestPasswordWithAutoDetection() throws Exception {
+        testBookkeeperDigestPassword(true);
+    }
+
+    @Test
+    public void testBookkeeperDigestPasswordWithoutAutoDetection() throws Exception {
+        testBookkeeperDigestPassword(false);
+    }
+
+    void testBookkeeperDigestPassword(boolean autodetection) throws Exception {
         ClientConfiguration conf = new ClientConfiguration();
         conf.setZkServers(zkUtil.getZooKeeperConnectString());
+        conf.setEnableDigestTypeAutodetection(autodetection);
         BookKeeper bkc = new BookKeeper(conf);
 
         DigestType digestCorrect = digestType;
@@ -136,9 +146,14 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
             // try open with bad digest
             try {
                 bkc.openLedger(id, digestBad, passwdCorrect);
-                fail("Shouldn't be able to open with bad digest");
+                if (!autodetection) {
+                    fail("Shouldn't be able to open with bad digest");
+                }
             } catch (BKException.BKDigestMatchException bke) {
                 // correct behaviour
+                if (autodetection) {
+                    fail("Should not throw digest match exception if `autodetection` is enabled");
+                }
             }
 
             // try open with both bad
