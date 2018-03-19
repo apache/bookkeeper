@@ -160,6 +160,10 @@ public class BookieJournalRollingTest extends BookKeeperClusterTestCase {
                 end = start + read - 1;
             }
         }
+
+        for (LedgerHandle lh : lhs) {
+            lh.close();
+        }
     }
 
     /**
