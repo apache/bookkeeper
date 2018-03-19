@@ -361,8 +361,6 @@ public class BookieProtoEncoding {
             throw new RuntimeException(e);
         }
 
-        // Advance writer idx
-        buf.writerIndex(buf.capacity());
         return buf;
     }
 
