@@ -22,8 +22,8 @@
 package org.apache.bookkeeper.bookie;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufAllocator;
 
+import io.netty.buffer.Unpooled;
 import java.io.Closeable;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -78,7 +78,7 @@ public class BufferedChannel extends BufferedReadChannel implements Closeable {
         this.writeCapacity = writeCapacity;
         this.position = new AtomicLong(fc.position());
         this.writeBufferStartPosition.set(position.get());
-        this.writeBuffer = ByteBufAllocator.DEFAULT.directBuffer(writeCapacity);
+        this.writeBuffer = Unpooled.directBuffer(writeCapacity);
         this.unpersistedBytes = new AtomicLong(0);
         this.unpersistedBytesBound = unpersistedBytesBound;
     }
