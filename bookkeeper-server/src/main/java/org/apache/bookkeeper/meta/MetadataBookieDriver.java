@@ -64,6 +64,13 @@ public interface MetadataBookieDriver extends AutoCloseable {
     LedgerManagerFactory getLedgerManagerFactory()
         throws MetadataException;
 
+    /**
+     * Return the layout manager.
+     *
+     * @return the layout manager.
+     */
+    LayoutManager getLayoutManager();
+
     @Override
     void close();
 

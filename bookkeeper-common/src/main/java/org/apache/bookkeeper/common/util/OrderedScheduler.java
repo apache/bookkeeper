@@ -22,13 +22,15 @@ import static com.google.common.base.Preconditions.checkArgument;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningScheduledExecutorService;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+
+import io.netty.util.concurrent.DefaultThreadFactory;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -134,7 +136,7 @@ public class OrderedScheduler implements ScheduledExecutorService {
         @SuppressWarnings("unchecked")
         public T build() {
             if (null == threadFactory) {
-                threadFactory = Executors.defaultThreadFactory();
+                threadFactory = new DefaultThreadFactory(name);
             }
             return (T) new OrderedScheduler(
                 name,

@@ -30,6 +30,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import io.netty.buffer.Unpooled;
 import java.nio.ByteBuffer;
@@ -43,6 +44,7 @@ import org.apache.bookkeeper.client.BKException.BKLedgerFencedException;
 import org.apache.bookkeeper.client.BKException.BKNoSuchLedgerExistsException;
 import org.apache.bookkeeper.client.BKException.BKUnauthorizedAccessException;
 import org.apache.bookkeeper.client.MockBookKeeperTestCase;
+import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.util.LoggerOutput;
 import org.junit.Rule;
 import org.junit.Test;
@@ -197,8 +199,21 @@ public class BookKeeperApiTest extends MockBookKeeperTestCase {
     }
 
 
-    @Test(expected = BKDigestMatchException.class)
-    public void testOpenLedgerDigestUnmatched() throws Exception {
+    @Test
+    public void testOpenLedgerDigestUnmatchedWhenAutoDetectionEnabled() throws Exception {
+        testOpenLedgerDigestUnmatched(true);
+    }
+
+    @Test
+    public void testOpenLedgerDigestUnmatchedWhenAutoDetectionDisabled() throws Exception {
+        testOpenLedgerDigestUnmatched(false);
+    }
+
+    private void testOpenLedgerDigestUnmatched(boolean autodetection) throws Exception {
+        ClientConfiguration conf = new ClientConfiguration();
+        conf.setEnableDigestTypeAutodetection(autodetection);
+        mockBookKeeperGetConf(conf);
+
         long lId;
         try (WriteHandle writer = result(newCreateLedgerOp()
                 .withAckQuorumSize(1)
@@ -215,6 +230,13 @@ public class BookKeeperApiTest extends MockBookKeeperTestCase {
             .withPassword(password)
             .withLedgerId(lId)
             .execute())) {
+            if (!autodetection) {
+                fail("Should fail to open read handle if digest type auto detection is disabled.");
+            }
+        } catch (BKDigestMatchException bme) {
+            if (autodetection) {
+                fail("Should not fail to open read handle if digest type auto detection is enabled.");
+            }
         }
     }
 

@@ -51,7 +51,7 @@ import org.junit.Test;
  */
 public class MetadataDriversTest {
 
-    static class ClientDriver1 implements MetadataClientDriver {
+    abstract static class TestClientDriver implements MetadataClientDriver {
 
         @Override
         public MetadataClientDriver initialize(ClientConfiguration conf,
@@ -59,11 +59,6 @@ public class MetadataDriversTest {
                                                StatsLogger statsLogger,
                                                Optional<Object> ctx) throws MetadataException {
             return this;
-        }
-
-        @Override
-        public String getScheme() {
-            return "driver1";
         }
 
         @Override
@@ -86,24 +81,35 @@ public class MetadataDriversTest {
         }
     }
 
-    static class ClientDriver2 implements MetadataClientDriver {
+    static class ClientDriver1 extends TestClientDriver {
 
         @Override
-        public MetadataClientDriver initialize(ClientConfiguration conf,
-                                               ScheduledExecutorService scheduler,
-                                               StatsLogger statsLogger,
-                                               Optional<Object> ctx) throws MetadataException {
-            return this;
+        public String getScheme() {
+            return "driver1";
         }
+
+    }
+
+    static class ClientDriver2 extends TestClientDriver {
 
         @Override
         public String getScheme() {
             return "driver2";
         }
 
+    }
+
+    abstract static class TestBookieDriver implements MetadataBookieDriver {
         @Override
-        public RegistrationClient getRegistrationClient() {
-            return mock(RegistrationClient.class);
+        public MetadataBookieDriver initialize(ServerConfiguration conf,
+                                               RegistrationListener listener,
+                                               StatsLogger statsLogger) throws MetadataException {
+            return this;
+        }
+
+        @Override
+        public RegistrationManager getRegistrationManager() {
+            return mock(RegistrationManager.class);
         }
 
         @Override
@@ -118,65 +124,26 @@ public class MetadataDriversTest {
 
         @Override
         public void close() {
+
         }
     }
 
-    static class BookieDriver1 implements MetadataBookieDriver {
-
-        @Override
-        public MetadataBookieDriver initialize(ServerConfiguration conf,
-                                               RegistrationListener listener,
-                                               StatsLogger statsLogger) throws MetadataException {
-            return this;
-        }
+    static class BookieDriver1 extends TestBookieDriver {
 
         @Override
         public String getScheme() {
             return "driver1";
         }
 
-        @Override
-        public RegistrationManager getRegistrationManager() {
-            return mock(RegistrationManager.class);
-        }
-
-        @Override
-        public LedgerManagerFactory getLedgerManagerFactory() throws MetadataException {
-            return mock(LedgerManagerFactory.class);
-        }
-
-        @Override
-        public void close() {
-        }
     }
 
-    static class BookieDriver2 implements MetadataBookieDriver {
-
-        @Override
-        public MetadataBookieDriver initialize(ServerConfiguration conf,
-                                               RegistrationListener listener,
-                                               StatsLogger statsLogger) throws MetadataException {
-            return this;
-        }
+    static class BookieDriver2 extends TestBookieDriver {
 
         @Override
         public String getScheme() {
             return "driver2";
         }
 
-        @Override
-        public RegistrationManager getRegistrationManager() {
-            return mock(RegistrationManager.class);
-        }
-
-        @Override
-        public LedgerManagerFactory getLedgerManagerFactory() throws MetadataException {
-            return mock(LedgerManagerFactory.class);
-        }
-
-        @Override
-        public void close() {
-        }
     }
 
     private Map<String, MetadataClientDriverInfo> savedClientDrivers;

@@ -239,10 +239,12 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
      * <p>Ignores provided digestType, if enabled and uses one from ledger metadata instead.
      * Incompatible with ledger created by bookie versions < 4.2
      *
+     * <p>It is turned on by default since 4.7.
+     *
      * @return flag to enable/disable autodetection of digest type.
      */
     public boolean getEnableDigestTypeAutodetection() {
-        return getBoolean(ENABLE_DIGEST_TYPE_AUTODETECTION, false);
+        return getBoolean(ENABLE_DIGEST_TYPE_AUTODETECTION, true);
     }
 
     /**

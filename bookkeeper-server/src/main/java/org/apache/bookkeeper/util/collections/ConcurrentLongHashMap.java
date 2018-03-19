@@ -52,6 +52,15 @@ public class ConcurrentLongHashMap<V> {
     private static final int DefaultExpectedItems = 256;
     private static final int DefaultConcurrencyLevel = 16;
 
+    /**
+     * Predicate specialization for (long, V) types.
+     *
+     * @param <V>
+     */
+    public interface LongObjectPredicate<V> {
+        boolean test(long key, V value);
+    }
+
     private final Section<V>[] sections;
 
     public ConcurrentLongHashMap() {
@@ -147,6 +156,17 @@ public class ConcurrentLongHashMap<V> {
         checkNotNull(value);
         long h = hash(key);
         return getSection(h).remove(key, value, (int) h) != null;
+    }
+
+    public int removeIf(LongObjectPredicate<V> predicate) {
+        checkNotNull(predicate);
+
+        int removedCount = 0;
+        for (Section<V> s : sections) {
+            removedCount += s.removeIf(predicate);
+        }
+
+        return removedCount;
     }
 
     private Section<V> getSection(long hash) {
@@ -370,6 +390,40 @@ public class ConcurrentLongHashMap<V> {
                     ++bucket;
                 }
 
+            } finally {
+                unlockWrite(stamp);
+            }
+        }
+
+        int removeIf(LongObjectPredicate<V> filter) {
+            long stamp = writeLock();
+
+            int removedCount = 0;
+            try {
+                // Go through all the buckets for this section
+                int capacity = this.capacity;
+                for (int bucket = 0; bucket < capacity; bucket++) {
+                    long storedKey = keys[bucket];
+                    V storedValue = values[bucket];
+
+                    if (storedValue != EmptyValue && storedValue != DeletedValue) {
+                        if (filter.test(storedKey, storedValue)) {
+                            // Removing item
+                            --size;
+                            ++removedCount;
+
+                            V nextValueInArray = values[signSafeMod(bucket + 1, capacity)];
+                            if (nextValueInArray == EmptyValue) {
+                                values[bucket] = (V) EmptyValue;
+                                --usedBuckets;
+                            } else {
+                                values[bucket] = (V) DeletedValue;
+                            }
+                        }
+                    }
+                }
+
+                return removedCount;
             } finally {
                 unlockWrite(stamp);
             }

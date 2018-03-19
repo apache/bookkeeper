@@ -42,9 +42,9 @@ import java.util.concurrent.TimeoutException;
  */
 public class BoundedScheduledExecutorService extends ForwardingListeningExecutorService
         implements ListeningScheduledExecutorService {
-    BlockingQueue<Runnable> queue;
-    ListeningScheduledExecutorService thread;
-    int maxTasksInQueue;
+    private final BlockingQueue<Runnable> queue;
+    private final ListeningScheduledExecutorService thread;
+    private final int maxTasksInQueue;
 
     public BoundedScheduledExecutorService(ScheduledThreadPoolExecutor thread, int maxTasksInQueue) {
         this.queue = thread.getQueue();

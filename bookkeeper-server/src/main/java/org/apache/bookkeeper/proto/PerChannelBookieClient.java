@@ -1138,6 +1138,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         @Override
         public void safeRun() {
             completionValue.handleV2Response(ledgerId, entryId, status, response);
+            response.release();
             response.recycle();
             recycle();
         }

@@ -130,7 +130,11 @@ class LedgerOpenOp implements GenericCallback<LedgerMetadata> {
         }
 
         final byte[] passwd;
-        DigestType digestType = enableDigestAutodetection
+
+        // we should use digest type from metadata *ONLY* when:
+        // 1) digest type is stored in metadata
+        // 2) `autodetection` is enabled
+        DigestType digestType = enableDigestAutodetection && metadata.hasPassword()
                                     ? fromApiDigestType(metadata.getDigestType())
                                     : suggestedDigestType;
 
@@ -149,7 +153,9 @@ class LedgerOpenOp implements GenericCallback<LedgerMetadata> {
                     openComplete(BKException.Code.UnauthorizedAccessException, null);
                     return;
                 }
-                if (digestType != fromApiDigestType(metadata.getDigestType())) {
+                // if `digest auto detection` is enabled, ignore the suggested digest type, this allows digest type
+                // changes. e.g. moving from `crc32` to `crc32c`.
+                if (suggestedDigestType != fromApiDigestType(metadata.getDigestType()) && !enableDigestAutodetection) {
                     LOG.error("Provided digest does not match that in metadata");
                     openComplete(BKException.Code.DigestMatchException, null);
                     return;
