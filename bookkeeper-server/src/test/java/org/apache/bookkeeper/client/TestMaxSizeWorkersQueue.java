@@ -98,6 +98,8 @@ public class TestMaxSizeWorkersQueue extends BookKeeperClusterTestCase {
 
         assertEquals(BKException.Code.OK, rcFirstReadOperation.get());
         assertEquals(BKException.Code.TooManyRequestsException, rcSecondReadOperation.get());
+
+        lh.close();
     }
 
     @Test
@@ -130,6 +132,8 @@ public class TestMaxSizeWorkersQueue extends BookKeeperClusterTestCase {
         counter.await();
 
         assertTrue(receivedTooManyRequestsException.get());
+
+        lh.close();
     }
 
     @Test
@@ -186,5 +190,7 @@ public class TestMaxSizeWorkersQueue extends BookKeeperClusterTestCase {
         for (Future<?> future : futures) {
             future.get();
         }
+
+        lh.close();
     }
 }
