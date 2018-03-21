@@ -94,7 +94,7 @@ public class WriteCache implements Closeable {
         this.maxCacheSize = maxCacheSize;
         this.maxSegmentSize = (int) maxSegmentSize;
         this.segmentOffsetMask = maxSegmentSize - 1;
-        this.segmentOffsetBits = 64 - Long.numberOfLeadingZeros(maxSegmentSize);
+        this.segmentOffsetBits = 63 - Long.numberOfLeadingZeros(maxSegmentSize);
 
         this.segmentsCount = 1 + (int) (maxCacheSize / maxSegmentSize);
 
