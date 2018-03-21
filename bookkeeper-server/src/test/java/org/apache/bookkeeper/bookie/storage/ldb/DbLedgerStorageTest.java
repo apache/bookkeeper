@@ -220,7 +220,8 @@ public class DbLedgerStorageTest {
         storage.addEntry(entry3);
 
         // Simulate bookie compaction
-        EntryLogger entryLogger = ((DbLedgerStorage) storage).getEntryLogger();
+        SingleDirectoryDbLedgerStorage singleDirStorage = ((DbLedgerStorage) storage).getLedgerStorageList().get(0);
+        EntryLogger entryLogger = singleDirStorage.getEntryLogger();
         // Rewrite entry-3
         ByteBuf newEntry3 = Unpooled.buffer(1024);
         newEntry3.writeLong(4); // ledger id
@@ -229,7 +230,7 @@ public class DbLedgerStorageTest {
         long location = entryLogger.addEntry(4, newEntry3, false);
 
         List<EntryLocation> locations = Lists.newArrayList(new EntryLocation(4, 3, location));
-        storage.updateEntriesLocations(locations);
+        singleDirStorage.updateEntriesLocations(locations);
 
         ByteBuf res = storage.getEntry(4, 3);
         System.out.println("res:       " + ByteBufUtil.hexDump(res));

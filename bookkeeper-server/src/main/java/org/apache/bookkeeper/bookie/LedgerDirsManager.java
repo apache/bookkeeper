@@ -62,8 +62,7 @@ public class LedgerDirsManager {
         this(conf, dirs, diskChecker, NullStatsLogger.INSTANCE);
     }
 
-    @VisibleForTesting
-    LedgerDirsManager(ServerConfiguration conf, File[] dirs, DiskChecker diskChecker, StatsLogger statsLogger) {
+    public LedgerDirsManager(ServerConfiguration conf, File[] dirs, DiskChecker diskChecker, StatsLogger statsLogger) {
         this.ledgerDirectories = Arrays.asList(Bookie
                 .getCurrentDirectories(dirs));
         this.writableLedgerDirectories = new ArrayList<File>(ledgerDirectories);
@@ -350,6 +349,10 @@ public class LedgerDirsManager {
         if (listener != null) {
             listeners.add(listener);
         }
+    }
+
+    public DiskChecker getDiskChecker() {
+        return diskChecker;
     }
 
     /**
