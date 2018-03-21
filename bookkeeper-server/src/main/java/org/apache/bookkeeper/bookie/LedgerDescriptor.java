@@ -73,7 +73,7 @@ public abstract class LedgerDescriptor {
      */
     abstract SettableFuture<Boolean> fenceAndLogInJournal(Journal journal) throws IOException;
 
-    abstract long addEntry(ByteBuf entry) throws IOException;
+    abstract long addEntry(ByteBuf entry) throws IOException, BookieException;
     abstract ByteBuf readEntry(long entryId) throws IOException;
 
     abstract long getLastAddConfirmed() throws IOException;
