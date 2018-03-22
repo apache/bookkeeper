@@ -55,7 +55,6 @@ import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieConnectionPeer;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.proto.ClientConnectionPeer;
-import org.apache.bookkeeper.proto.TestPerChannelBookieClient;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.test.TestStatsProvider;
 import org.apache.bookkeeper.tls.TLSContextFactory.KeyStoreType;
@@ -75,7 +74,7 @@ import org.slf4j.LoggerFactory;
 @RunWith(Parameterized.class)
 public class TestTLS extends BookKeeperClusterTestCase {
 
-    private static final Logger LOG = LoggerFactory.getLogger(TestPerChannelBookieClient.class);
+    private static final Logger LOG = LoggerFactory.getLogger(TestTLS.class);
 
     private static boolean secureClientSideChannel = false;
     private static Collection<Object> secureClientSideChannelPrincipals = null;
