@@ -20,12 +20,12 @@ package org.apache.bookkeeper.proto;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.util.Recycler;
-import io.netty.util.Recycler.Handle;
 
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.bookkeeper.bookie.BookieException;
+import org.apache.bookkeeper.bookie.BookieException.OperationRejectedException;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieProtocol.ParsedAddRequest;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
@@ -76,6 +76,13 @@ class WriteEntryProcessor extends PacketProcessorBase<ParsedAddRequest> implemen
             } else {
                 requestProcessor.bookie.addEntry(addData, false, this, channel, request.getMasterKey());
             }
+        } catch (OperationRejectedException e) {
+            // Avoid to log each occurence of this exception as this can happen when the ledger storage is
+            // unable to keep up with the write rate.
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Operation rejected while writing {}", request, e);
+            }
+            rc = BookieProtocol.EIO;
         } catch (IOException e) {
             LOG.error("Error writing {}", request, e);
             rc = BookieProtocol.EIO;

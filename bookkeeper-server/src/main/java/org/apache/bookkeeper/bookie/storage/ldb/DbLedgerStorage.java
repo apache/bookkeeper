@@ -42,13 +42,13 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.concurrent.locks.StampedLock;
 
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.Bookie.NoEntryException;
 import org.apache.bookkeeper.bookie.BookieException;
+import org.apache.bookkeeper.bookie.BookieException.OperationRejectedException;
 import org.apache.bookkeeper.bookie.CheckpointSource;
 import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
 import org.apache.bookkeeper.bookie.Checkpointer;
@@ -67,6 +67,7 @@ import org.apache.bookkeeper.common.util.Watcher;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.proto.BookieProtocol;
+import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.Gauge;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.OpStatsLogger;
@@ -78,8 +79,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Implementation of LedgerStorage that uses RocksDB to keep the indexes for
- * entries stored in EntryLogs.
+ * Implementation of LedgerStorage that uses RocksDB to keep the indexes for entries stored in EntryLogs.
  */
 public class DbLedgerStorage implements CompactableLedgerStorage {
 
@@ -90,8 +90,7 @@ public class DbLedgerStorage implements CompactableLedgerStorage {
      *
      * <p>This class is used for holding all the transient states for a given ledger.
      */
-    private static class TransientLedgerInfo
-            extends Watchable<LastAddConfirmedUpdateNotification>
+    private static class TransientLedgerInfo extends Watchable<LastAddConfirmedUpdateNotification>
             implements AutoCloseable {
 
         // lac
@@ -139,8 +138,7 @@ public class DbLedgerStorage implements CompactableLedgerStorage {
         }
 
         synchronized boolean waitForLastAddConfirmedUpdate(long previousLAC,
-                                                           Watcher<LastAddConfirmedUpdateNotification> watcher)
-                throws IOException {
+                Watcher<LastAddConfirmedUpdateNotification> watcher) throws IOException {
             lastAccessed = System.currentTimeMillis();
             if ((lac != NOT_ASSIGNED_LAC && lac > previousLAC) || isClosed || ledgerIndex.get(ledgerId).getFenced()) {
                 return false;
@@ -155,7 +153,7 @@ public class DbLedgerStorage implements CompactableLedgerStorage {
             synchronized (this) {
                 if (explicitLac != null) {
                     retLac = Unpooled.buffer(explicitLac.capacity());
-                    explicitLac.rewind(); //copy from the beginning
+                    explicitLac.rewind(); // copy from the beginning
                     retLac.writeBytes(explicitLac);
                     explicitLac.rewind();
                     return retLac;
@@ -194,13 +192,13 @@ public class DbLedgerStorage implements CompactableLedgerStorage {
 
         @Override
         public void close() {
-           synchronized (this) {
-               if (isClosed) {
-                   return;
-               }
-               isClosed = true;
-           }
-           // notify watchers
+            synchronized (this) {
+                if (isClosed) {
+                    return;
+                }
+                isClosed = true;
+            }
+            // notify watchers
             notifyWatchers(Long.MAX_VALUE);
         }
 
@@ -217,16 +215,15 @@ public class DbLedgerStorage implements CompactableLedgerStorage {
     private GarbageCollectorThread gcThread;
 
     // Write cache where all new entries are inserted into
-    protected WriteCache writeCache;
+    protected volatile WriteCache writeCache;
 
     // Write cache that is used to swap with writeCache during flushes
-    protected WriteCache writeCacheBeingFlushed;
+    protected volatile WriteCache writeCacheBeingFlushed;
 
     // Cache where we insert entries for speculative reading
     private ReadCache readCache;
 
-    private final ReentrantReadWriteLock writeCacheMutex = new ReentrantReadWriteLock();
-    private final Condition flushWriteCacheCondition = writeCacheMutex.writeLock().newCondition();
+    private final StampedLock writeCacheRotationLock = new StampedLock();
 
     protected final ReentrantLock flushMutex = new ReentrantLock();
 
@@ -243,9 +240,13 @@ public class DbLedgerStorage implements CompactableLedgerStorage {
     static final String READ_AHEAD_CACHE_BATCH_SIZE = "dbStorage_readAheadCacheBatchSize";
     static final String READ_AHEAD_CACHE_MAX_SIZE_MB = "dbStorage_readAheadCacheMaxSizeMb";
 
+    static final String MAX_THROTTLE_TIME_MILLIS = "dbStorage_maxThrottleTimeMs";
+
     private static final long DEFAULT_WRITE_CACHE_MAX_SIZE_MB = 16;
     private static final long DEFAULT_READ_CACHE_MAX_SIZE_MB = 16;
     private static final int DEFAULT_READ_AHEAD_CACHE_BATCH_SIZE = 100;
+
+    private static final long DEFAUL_MAX_THROTTLE_TIME_MILLIS = TimeUnit.SECONDS.toMillis(10);
 
     private static final int MB = 1024 * 1024;
 
@@ -260,6 +261,8 @@ public class DbLedgerStorage implements CompactableLedgerStorage {
     private long readCacheMaxSize;
     private int readAheadCacheBatchSize;
 
+    private long maxThrottleTimeNanos;
+
     private StatsLogger stats;
 
     private OpStatsLogger addEntryStats;
@@ -271,10 +274,13 @@ public class DbLedgerStorage implements CompactableLedgerStorage {
     private OpStatsLogger flushStats;
     private OpStatsLogger flushSizeStats;
 
+    private Counter throttledWriteRequests;
+    private Counter rejectedWriteRequests;
+
     @Override
     public void initialize(ServerConfiguration conf, LedgerManager ledgerManager, LedgerDirsManager ledgerDirsManager,
-        LedgerDirsManager indexDirsManager, StateManager stateManager, CheckpointSource checkpointSource,
-                           Checkpointer checkpointer, StatsLogger statsLogger) throws IOException {
+            LedgerDirsManager indexDirsManager, StateManager stateManager, CheckpointSource checkpointSource,
+            Checkpointer checkpointer, StatsLogger statsLogger) throws IOException {
         checkArgument(ledgerDirsManager.getAllLedgerDirs().size() == 1,
                 "Db implementation only allows for one storage dir");
 
@@ -289,6 +295,9 @@ public class DbLedgerStorage implements CompactableLedgerStorage {
 
         readCacheMaxSize = conf.getLong(READ_AHEAD_CACHE_MAX_SIZE_MB, DEFAULT_READ_CACHE_MAX_SIZE_MB) * MB;
         readAheadCacheBatchSize = conf.getInt(READ_AHEAD_CACHE_BATCH_SIZE, DEFAULT_READ_AHEAD_CACHE_BATCH_SIZE);
+
+        long maxThrottleTimeMillis = conf.getLong(MAX_THROTTLE_TIME_MILLIS, DEFAUL_MAX_THROTTLE_TIME_MILLIS);
+        maxThrottleTimeNanos = TimeUnit.MILLISECONDS.toNanos(maxThrottleTimeMillis);
 
         readCache = new ReadCache(readCacheMaxSize);
 
@@ -381,6 +390,9 @@ public class DbLedgerStorage implements CompactableLedgerStorage {
         readAheadBatchSizeStats = stats.getOpStatsLogger("readahead-batch-size");
         flushStats = stats.getOpStatsLogger("flush");
         flushSizeStats = stats.getOpStatsLogger("flush-size");
+
+        throttledWriteRequests = stats.getCounter("throttled-write-requests");
+        rejectedWriteRequests = stats.getCounter("rejected-write-requests");
     }
 
     @Override
@@ -467,7 +479,7 @@ public class DbLedgerStorage implements CompactableLedgerStorage {
     }
 
     @Override
-    public long addEntry(ByteBuf entry) throws IOException {
+    public long addEntry(ByteBuf entry) throws IOException, BookieException {
         long startTime = MathUtils.nowInNano();
 
         long ledgerId = entry.getLong(entry.readerIndex());
@@ -478,13 +490,23 @@ public class DbLedgerStorage implements CompactableLedgerStorage {
             log.debug("Add entry. {}@{}, lac = {}", ledgerId, entryId, lac);
         }
 
-        // Waits if the write cache is being switched for a flush
-        writeCacheMutex.readLock().lock();
-        boolean inserted;
-        try {
-            inserted = writeCache.put(ledgerId, entryId, entry);
-        } finally {
-            writeCacheMutex.readLock().unlock();
+        // First we try to do an optimistic locking to get access to the current write cache.
+        // This is based on the fact that the write cache is only being rotated (swapped) every 1 minute. During the
+        // rest of the time, we can have multiple thread using the optimistic lock here without interfering.
+        long stamp = writeCacheRotationLock.tryOptimisticRead();
+        boolean inserted = false;
+
+        inserted = writeCache.put(ledgerId, entryId, entry);
+        if (!writeCacheRotationLock.validate(stamp)) {
+            // The write cache was rotated while we were inserting. We need to acquire the proper read lock and repeat
+            // the operation because we might have inserted in a write cache that was already being flushed and cleared,
+            // without being sure about this last entry being flushed or not.
+            stamp = writeCacheRotationLock.readLock();
+            try {
+                inserted = writeCache.put(ledgerId, entryId, entry);
+            } finally {
+                 writeCacheRotationLock.unlockRead(stamp);
+            }
         }
 
         if (!inserted) {
@@ -498,46 +520,49 @@ public class DbLedgerStorage implements CompactableLedgerStorage {
         return entryId;
     }
 
-    private void triggerFlushAndAddEntry(long ledgerId, long entryId, ByteBuf entry) throws IOException {
+    private void triggerFlushAndAddEntry(long ledgerId, long entryId, ByteBuf entry)
+            throws IOException, BookieException {
         // Write cache is full, we need to trigger a flush so that it gets rotated
-        writeCacheMutex.writeLock().lock();
-
-        try {
-            // If the flush has already been triggered or flush has already switched the
-            // cache, we don't need to
-            // trigger another flush
-            if (!isFlushOngoing.get() && hasFlushBeenTriggered.compareAndSet(false, true)) {
-                // Trigger an early flush in background
-                log.info("Write cache is full, triggering flush");
-                executor.execute(() -> {
-                    try {
-                        flush();
-                    } catch (IOException e) {
-                        log.error("Error during flush", e);
-                    }
-                });
-            }
-
-            long timeoutNs = TimeUnit.MILLISECONDS.toNanos(100);
-            while (hasFlushBeenTriggered.get()) {
-                if (timeoutNs <= 0L) {
-                    throw new IOException("Write cache was not trigger within the timeout, cannot add entry " + ledgerId
-                            + "@" + entryId);
+        // If the flush has already been triggered or flush has already switched the
+        // cache, we don't need to trigger another flush
+        if (!isFlushOngoing.get() && hasFlushBeenTriggered.compareAndSet(false, true)) {
+            // Trigger an early flush in background
+            log.info("Write cache is full, triggering flush");
+            executor.execute(() -> {
+                try {
+                    flush();
+                } catch (IOException e) {
+                    log.error("Error during flush", e);
                 }
-                timeoutNs = flushWriteCacheCondition.awaitNanos(timeoutNs);
-            }
-
-            if (!writeCache.put(ledgerId, entryId, entry)) {
-                // Still wasn't able to cache entry
-                throw new IOException("Error while inserting entry in write cache" + ledgerId + "@" + entryId);
-            }
-
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new IOException("Interrupted when adding entry " + ledgerId + "@" + entryId);
-        } finally {
-            writeCacheMutex.writeLock().unlock();
+            });
         }
+
+        throttledWriteRequests.inc();
+        long absoluteTimeoutNanos = System.nanoTime() + maxThrottleTimeNanos;
+
+        while (System.nanoTime() < absoluteTimeoutNanos) {
+            long stamp = writeCacheRotationLock.readLock();
+            try {
+                if (writeCache.put(ledgerId, entryId, entry)) {
+                    // We succeeded in putting the entry in write cache in the
+                    return;
+                }
+            } finally {
+                 writeCacheRotationLock.unlockRead(stamp);
+            }
+
+            // Wait some time and try again
+            try {
+                Thread.sleep(1);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new IOException("Interrupted when adding entry " + ledgerId + "@" + entryId);
+            }
+        }
+
+        // Timeout expired and we weren't able to insert in write cache
+        rejectedWriteRequests.inc();
+        throw new OperationRejectedException();
     }
 
     @Override
@@ -551,29 +576,41 @@ public class DbLedgerStorage implements CompactableLedgerStorage {
             return getLastEntry(ledgerId);
         }
 
-        writeCacheMutex.readLock().lock();
-        try {
-            // First try to read from the write cache of recent entries
-            ByteBuf entry = writeCache.get(ledgerId, entryId);
-            if (entry != null) {
-                recordSuccessfulEvent(readCacheHitStats, startTime);
-                recordSuccessfulEvent(readEntryStats, startTime);
-                return entry;
+        // We need to try to read from both write caches, since recent entries could be found in either of the two. The
+        // write caches are already thread safe on their own, here we just need to make sure we get references to both
+        // of them. Using an optimistic lock since the read lock is always free, unless we're swapping the caches.
+        long stamp = writeCacheRotationLock.tryOptimisticRead();
+        WriteCache localWriteCache = writeCache;
+        WriteCache localWriteCacheBeingFlushed = writeCacheBeingFlushed;
+        if (!writeCacheRotationLock.validate(stamp)) {
+            // Fallback to regular read lock approach
+            stamp = writeCacheRotationLock.readLock();
+            try {
+                localWriteCache = writeCache;
+                localWriteCacheBeingFlushed = writeCacheBeingFlushed;
+            } finally {
+                writeCacheRotationLock.unlockRead(stamp);
             }
+        }
 
-            // If there's a flush going on, the entry might be in the flush buffer
-            entry = writeCacheBeingFlushed.get(ledgerId, entryId);
-            if (entry != null) {
-                recordSuccessfulEvent(readCacheHitStats, startTime);
-                recordSuccessfulEvent(readEntryStats, startTime);
-                return entry;
-            }
-        } finally {
-            writeCacheMutex.readLock().unlock();
+        // First try to read from the write cache of recent entries
+        ByteBuf entry = localWriteCache.get(ledgerId, entryId);
+        if (entry != null) {
+            recordSuccessfulEvent(readCacheHitStats, startTime);
+            recordSuccessfulEvent(readEntryStats, startTime);
+            return entry;
+        }
+
+        // If there's a flush going on, the entry might be in the flush buffer
+        entry = localWriteCacheBeingFlushed.get(ledgerId, entryId);
+        if (entry != null) {
+            recordSuccessfulEvent(readCacheHitStats, startTime);
+            recordSuccessfulEvent(readEntryStats, startTime);
+            return entry;
         }
 
         // Try reading from read-ahead cache
-        ByteBuf entry = readCache.get(ledgerId, entryId);
+        entry = readCache.get(ledgerId, entryId);
         if (entry != null) {
             recordSuccessfulEvent(readCacheHitStats, startTime);
             recordSuccessfulEvent(readEntryStats, startTime);
@@ -650,7 +687,7 @@ public class DbLedgerStorage implements CompactableLedgerStorage {
     public ByteBuf getLastEntry(long ledgerId) throws IOException {
         long startTime = MathUtils.nowInNano();
 
-        writeCacheMutex.readLock().lock();
+        long stamp = writeCacheRotationLock.readLock();
         try {
             // First try to read from the write cache of recent entries
             ByteBuf entry = writeCache.getLastEntry(ledgerId);
@@ -687,7 +724,7 @@ public class DbLedgerStorage implements CompactableLedgerStorage {
                 return entry;
             }
         } finally {
-            writeCacheMutex.readLock().unlock();
+            writeCacheRotationLock.unlockRead(stamp);
         }
 
         // Search the last entry in storage
@@ -706,11 +743,11 @@ public class DbLedgerStorage implements CompactableLedgerStorage {
 
     @VisibleForTesting
     boolean isFlushRequired() {
-        writeCacheMutex.readLock().lock();
+        long stamp = writeCacheRotationLock.readLock();
         try {
             return !writeCache.isEmpty();
         } finally {
-            writeCacheMutex.readLock().unlock();
+            writeCacheRotationLock.unlockRead(stamp);
         }
     }
 
@@ -810,7 +847,7 @@ public class DbLedgerStorage implements CompactableLedgerStorage {
      * Swap the current write cache with the replacement cache.
      */
     private void swapWriteCache() {
-        writeCacheMutex.writeLock().lock();
+        long stamp = writeCacheRotationLock.writeLock();
         try {
             // First, swap the current write-cache map with an empty one so that writes will
             // go on unaffected. Only a single flush is happening at the same time
@@ -820,12 +857,11 @@ public class DbLedgerStorage implements CompactableLedgerStorage {
 
             // since the cache is switched, we can allow flush to be triggered
             hasFlushBeenTriggered.set(false);
-            flushWriteCacheCondition.signalAll();
         } finally {
             try {
                 isFlushOngoing.set(true);
             } finally {
-                writeCacheMutex.writeLock().unlock();
+                writeCacheRotationLock.unlockWrite(stamp);
             }
         }
     }
@@ -844,11 +880,11 @@ public class DbLedgerStorage implements CompactableLedgerStorage {
         }
 
         // Delete entries from this ledger that are still in the write cache
-        writeCacheMutex.readLock().lock();
+        long stamp = writeCacheRotationLock.readLock();
         try {
             writeCache.deleteLedger(ledgerId);
         } finally {
-            writeCacheMutex.readLock().unlock();
+            writeCacheRotationLock.unlockRead(stamp);
         }
 
         entryLocationIndex.delete(ledgerId);
@@ -944,7 +980,6 @@ public class DbLedgerStorage implements CompactableLedgerStorage {
         }
     }
 
-
     @Override
     public void flushEntriesLocationsIndex() throws IOException {
         // No-op. Location index is already flushed in updateEntriesLocations() call
@@ -953,8 +988,7 @@ public class DbLedgerStorage implements CompactableLedgerStorage {
     /**
      * Add an already existing ledger to the index.
      *
-     * <p>This method is only used as a tool to help the migration from
-     * InterleaveLedgerStorage to DbLedgerStorage
+     * <p>This method is only used as a tool to help the migration from InterleaveLedgerStorage to DbLedgerStorage
      *
      * @param ledgerId
      *            the ledger id
@@ -988,6 +1022,7 @@ public class DbLedgerStorage implements CompactableLedgerStorage {
 
         return numberOfEntries.get();
     }
+
     @Override
     public void registerLedgerDeletionListener(LedgerDeletionListener listener) {
         ledgerDeletionListeners.add(listener);
@@ -1020,7 +1055,7 @@ public class DbLedgerStorage implements CompactableLedgerStorage {
         checkNotNull(processor, "LedgerLoggger info processor can't null");
 
         LedgerDirsManager ledgerDirsManager = new LedgerDirsManager(serverConf, serverConf.getLedgerDirs(),
-            new DiskChecker(serverConf.getDiskUsageThreshold(), serverConf.getDiskUsageWarnThreshold()));
+                new DiskChecker(serverConf.getDiskUsageThreshold(), serverConf.getDiskUsageWarnThreshold()));
         String ledgerBasePath = ledgerDirsManager.getAllLedgerDirs().get(0).toString();
 
         EntryLocationIndex entryLocationIndex = new EntryLocationIndex(serverConf,

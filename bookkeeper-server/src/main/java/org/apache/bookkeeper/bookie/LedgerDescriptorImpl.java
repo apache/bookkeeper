@@ -138,7 +138,7 @@ public class LedgerDescriptorImpl extends LedgerDescriptor {
     }
 
     @Override
-    long addEntry(ByteBuf entry) throws IOException {
+    long addEntry(ByteBuf entry) throws IOException, BookieException {
         long ledgerId = entry.getLong(entry.readerIndex());
 
         if (ledgerId != this.ledgerId) {
