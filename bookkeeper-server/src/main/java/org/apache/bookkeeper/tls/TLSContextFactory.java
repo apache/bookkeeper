@@ -76,7 +76,8 @@ public class TLSContextFactory implements SecurityHandlerFactory {
     private static final String TLSCONTEXT_HANDLER_NAME = "tls";
     private String[] protocols;
     private String[] ciphers;
-    private SslContext sslContext;
+    private AbstractConfiguration conf;
+    private NodeType nodeType;
 
     public String getHandlerName() {
         return TLSCONTEXT_HANDLER_NAME;
@@ -100,7 +101,7 @@ public class TLSContextFactory implements SecurityHandlerFactory {
         return SslProvider.JDK;
     }
 
-    private void createClientContext(AbstractConfiguration conf)
+    private SslContext createClientContext(AbstractConfiguration conf)
             throws SecurityException, KeyStoreException, NoSuchAlgorithmException, CertificateException, IOException,
             UnrecoverableKeyException, InvalidKeySpecException, InvalidAlgorithmParameterException, KeyException,
             NoSuchPaddingException {
@@ -197,10 +198,10 @@ public class TLSContextFactory implements SecurityHandlerFactory {
             }
         }
 
-        sslContext = sslContextBuilder.build();
+        return sslContextBuilder.build();
     }
 
-    private void createServerContext(AbstractConfiguration conf) throws SecurityException, KeyStoreException,
+    private SslContext createServerContext(AbstractConfiguration conf) throws SecurityException, KeyStoreException,
             NoSuchAlgorithmException, CertificateException, IOException, UnrecoverableKeyException,
             InvalidKeySpecException, InvalidAlgorithmParameterException, KeyException, NoSuchPaddingException {
         final SslContextBuilder sslContextBuilder;
@@ -293,35 +294,38 @@ public class TLSContextFactory implements SecurityHandlerFactory {
             }
         }
 
-        sslContext = sslContextBuilder.build();
+        return sslContextBuilder.build();
     }
 
     @Override
-    public synchronized void init(NodeType type, AbstractConfiguration conf) throws SecurityException {
+    public synchronized void init(NodeType type, AbstractConfiguration conf) {
+        this.conf = conf;
+        this.nodeType = type;
+
         final String enabledProtocols;
         final String enabledCiphers;
 
         enabledCiphers = conf.getTLSEnabledCipherSuites();
         enabledProtocols = conf.getTLSEnabledProtocols();
 
+        if (enabledProtocols != null && !enabledProtocols.isEmpty()) {
+            protocols = enabledProtocols.split(",");
+        }
+
+        if (enabledCiphers != null && !enabledCiphers.isEmpty()) {
+            ciphers = enabledCiphers.split(",");
+        }
+    }
+
+    private SslContext createSSLContext()  throws SecurityException {
         try {
-            switch (type) {
+            switch (nodeType) {
             case Client:
-                createClientContext(conf);
-                break;
+                return createClientContext(conf);
             case Server:
-                createServerContext(conf);
-                break;
+                return createServerContext(conf);
             default:
                 throw new SecurityException(new IllegalArgumentException("Invalid NodeType"));
-            }
-
-            if (enabledProtocols != null && !enabledProtocols.isEmpty()) {
-                protocols = enabledProtocols.split(",");
-            }
-
-            if (enabledCiphers != null && !enabledCiphers.isEmpty()) {
-                ciphers = enabledCiphers.split(",");
             }
         } catch (KeyStoreException e) {
             throw new RuntimeException("Standard keystore type missing", e);
@@ -342,6 +346,14 @@ public class TLSContextFactory implements SecurityHandlerFactory {
 
     @Override
     public SslHandler newTLSHandler() {
+        SslContext sslContext;
+        try {
+            sslContext = createSSLContext();
+        } catch (SecurityException e) {
+            LOG.error("Failed to create SSL Context: ", e);
+            return null;
+        }
+
         SslHandler sslHandler = sslContext.newHandler(PooledByteBufAllocator.DEFAULT);
 
         if (protocols != null && protocols.length != 0) {

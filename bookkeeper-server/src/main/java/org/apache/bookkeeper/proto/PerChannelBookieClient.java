@@ -1324,6 +1324,12 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         // create TLS handler
         PerChannelBookieClient parentObj = PerChannelBookieClient.this;
         SslHandler handler = parentObj.shFactory.newTLSHandler();
+        if (handler == null) {
+            LOG.error("failed to get TLS handler");
+            failTLS(BKException.Code.SecurityException);
+            return;
+        }
+
         channel.pipeline().addFirst(parentObj.shFactory.getHandlerName(), handler);
         handler.handshakeFuture().addListener(new GenericFutureListener<Future<Channel>>() {
                 @Override

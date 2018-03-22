@@ -222,16 +222,18 @@ public class TestTLS extends BookKeeperClusterTestCase {
     }
 
     /**
-     * Verify that a server will not start if tls is enabled but no cert is specified.
+     * Verify that ledger write fails when key store is not provided.
      */
     @Test
     public void testStartTLSServerNoKeyStore() throws Exception {
-        ServerConfiguration bookieConf = newServerConfiguration().setTLSKeyStore(null);
-
+        ServerConfiguration bookieConf = new ServerConfiguration(baseConf);
+        bookieConf.setTLSKeyStore("");
+        ClientConfiguration conf = new ClientConfiguration(baseClientConf);
         try {
-            bs.add(startBookie(bookieConf));
-            fail("Shouldn't have been able to start");
-        } catch (SecurityException se) {
+            restartBookies(bookieConf);
+            testClient(conf, numBookies);
+            fail("Writing to ledger should have failed");
+        } catch (BKException.BKNotEnoughBookiesException se) {
             assertTrue(true);
         }
     }
@@ -273,15 +275,18 @@ public class TestTLS extends BookKeeperClusterTestCase {
     }
 
     /**
-     * Verify that a server will not start if ssl is enabled but the cert password is incorrect.
+     * Verify that ledger writes fail when bookie key password is wrong.
      */
     @Test
     public void testStartTLSServerBadPassword() throws Exception {
-        ServerConfiguration bookieConf = newServerConfiguration().setTLSKeyStorePasswordPath("badpassword");
+        ServerConfiguration bookieConf = new ServerConfiguration(baseConf);
+        bookieConf.setTLSKeyStorePasswordPath("badpassword");
+        ClientConfiguration conf = new ClientConfiguration(baseClientConf);
         try {
-            bs.add(startBookie(bookieConf));
-            fail("Shouldn't have been able to start");
-        } catch (SecurityException se) {
+            restartBookies(bookieConf);
+            testClient(conf, numBookies);
+            fail("Writing to ledger should have failed");
+        } catch (BKException.BKNotEnoughBookiesException se) {
             assertTrue(true);
         }
     }
