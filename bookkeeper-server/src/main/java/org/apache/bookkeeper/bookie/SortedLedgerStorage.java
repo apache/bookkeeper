@@ -159,16 +159,16 @@ public class SortedLedgerStorage extends InterleavedLedgerStorage
             buffToRet = super.getEntry(ledgerId, entryId);
         } catch (Bookie.NoEntryException nee) {
             EntryKeyValue kv = memTable.getEntry(ledgerId, entryId);
-            try {
-                if (null == kv) {
-                    // The entry might have been flushed since we last checked, so query the ledger cache again.
-                    // If the entry truly doesn't exist, then this will throw a NoEntryException
-                    buffToRet = super.getEntry(ledgerId, entryId);
-                } else {
+            if (null == kv) {
+                // The entry might have been flushed since we last checked, so query the ledger cache again.
+                // If the entry truly doesn't exist, then this will throw a NoEntryException
+                buffToRet = super.getEntry(ledgerId, entryId);
+            } else {
+                try {
                     buffToRet = kv.getValueAsByteBuffer();
+                } finally {
+                    kv.release();
                 }
-            } finally {
-                kv.release();
             }
         }
         // buffToRet will not be null when we reach here.
