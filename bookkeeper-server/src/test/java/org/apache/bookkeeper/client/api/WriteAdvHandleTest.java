@@ -59,10 +59,10 @@ public class WriteAdvHandleTest {
             ByteBuf buf = invocationOnMock.getArgument(1);
             entryQueue.add(buf);
             return FutureUtils.value(-1L);
-        }).when(handle).write(anyLong(), any(ByteBuf.class));
-        when(handle.write(anyLong(), any(byte[].class))).thenCallRealMethod();
-        when(handle.write(anyLong(), any(byte[].class), anyInt(), anyInt())).thenCallRealMethod();
-        when(handle.write(anyLong(), any(ByteBuffer.class))).thenCallRealMethod();
+        }).when(handle).writeAsync(anyLong(), any(ByteBuf.class));
+        when(handle.writeAsync(anyLong(), any(byte[].class))).thenCallRealMethod();
+        when(handle.writeAsync(anyLong(), any(byte[].class), anyInt(), anyInt())).thenCallRealMethod();
+        when(handle.writeAsync(anyLong(), any(ByteBuffer.class))).thenCallRealMethod();
     }
 
     @Test

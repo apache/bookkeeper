@@ -53,7 +53,7 @@ public class TestMaxEnsembleChangeNum extends MockBookKeeperTestCase {
             lId = writer.getId();
             //first fragment
             for (int i = 0; i < numEntries; i++) {
-                result(writer.append(ByteBuffer.wrap(data)));
+                writer.append(ByteBuffer.wrap(data));
             }
             assertEquals("There should be zero ensemble change",
                     1, getLedgerMetadata(lId).getEnsembles().size());
@@ -65,7 +65,7 @@ public class TestMaxEnsembleChangeNum extends MockBookKeeperTestCase {
             killBookie(writer.getLedgerMetadata().getEnsembleAt(writer.getLastAddConfirmed()).get(0));
             // add failure
             try {
-                result(writer.append(ByteBuffer.wrap(data)));
+                writer.append(ByteBuffer.wrap(data));
                 fail("should not come to here");
             } catch (BKException exception){
                 assertEquals(exception.getCode(), WriteException);
@@ -82,7 +82,7 @@ public class TestMaxEnsembleChangeNum extends MockBookKeeperTestCase {
 
             killBookie(writer.getLedgerMetadata().getEnsembleAt(writer.getLastAddConfirmed()).get(0));
             for (int i = 0; i < numEntries; i++) {
-                result(writer.append(ByteBuffer.wrap(data)));
+                writer.append(ByteBuffer.wrap(data));
             }
             // ensure there is a ensemble changed
             assertEquals("There should be one ensemble change",
