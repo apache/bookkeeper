@@ -22,22 +22,33 @@ package org.apache.bookkeeper.bookie;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.io.UncheckedIOException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.bookkeeper.util.collections.ConcurrentLongHashMap;
 
 @Slf4j
 class FileInfoBackingCache {
     static final int DEAD_REF = -0xdead;
 
     final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
-    final ConcurrentHashMap<Long, CachedFileInfo> fileInfos = new ConcurrentHashMap<>();
+    final ConcurrentLongHashMap<CachedFileInfo> fileInfos = new ConcurrentLongHashMap<>();
     final FileLoader fileLoader;
 
     FileInfoBackingCache(FileLoader fileLoader) {
         this.fileLoader = fileLoader;
+    }
+
+    /**
+     * This method should be under `lock` of FileInfoBackingCache.
+     */
+    private static CachedFileInfo tryRetainFileInfo(CachedFileInfo fi) throws IOException {
+        boolean retained = fi.tryRetain();
+        if (!retained) {
+            throw new IOException("FileInfo " + fi + " is already marked dead");
+        }
+        return fi;
     }
 
     CachedFileInfo loadFileInfo(long ledgerId, byte[] masterKey) throws IOException {
@@ -52,25 +63,29 @@ class FileInfoBackingCache {
                 // have been able to get a reference to it here.
                 // The caller of loadFileInfo owns the refence, and is
                 // responsible for calling the corresponding #release().
-                boolean retained = fi.tryRetain();
-                assert(retained);
-                return fi;
+                return tryRetainFileInfo(fi);
             }
         } finally {
             lock.readLock().unlock();
         }
 
+        File backingFile = fileLoader.load(ledgerId, masterKey != null);
+        CachedFileInfo newFi = new CachedFileInfo(ledgerId, backingFile, masterKey);
+
         // else FileInfo not found, create it under write lock
         lock.writeLock().lock();
         try {
-            File backingFile = fileLoader.load(ledgerId, masterKey != null);
-            CachedFileInfo fi = new CachedFileInfo(ledgerId, backingFile, masterKey);
-            fileInfos.put(ledgerId, fi);
+            CachedFileInfo fi = fileInfos.get(ledgerId);
+            if (fi != null) {
+                // someone is already putting a fileinfo here, so use the existing one and recycle the new one
+                newFi.recycle();
+            } else {
+                fileInfos.put(ledgerId, newFi);
+                fi = newFi;
+            }
 
             // see comment above for why we assert
-            boolean retained = fi.tryRetain();
-            assert(retained);
-            return fi;
+            return tryRetainFileInfo(fi);
         } finally {
             lock.writeLock().unlock();
         }
@@ -92,8 +107,16 @@ class FileInfoBackingCache {
     }
 
     void closeAllWithoutFlushing() throws IOException {
-        for (Map.Entry<Long, CachedFileInfo> entry : fileInfos.entrySet()) {
-            entry.getValue().close(false);
+        try {
+            fileInfos.forEach((key, fileInfo) -> {
+                try {
+                    fileInfo.close(false);
+                } catch (IOException e) {
+                    throw new UncheckedIOException(e);
+                }
+            });
+        } catch (UncheckedIOException uioe) {
+            throw uioe.getCause();
         }
     }
 
