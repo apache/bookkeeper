@@ -23,7 +23,7 @@ package org.apache.bookkeeper.bookie;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import org.apache.bookkeeper.util.ZeroBuffer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,13 +37,19 @@ public class LedgerEntryPage {
     private static final Logger LOG = LoggerFactory.getLogger(LedgerEntryPage.class);
 
     private static final int indexEntrySize = 8;
-    private final int pageSize;
     private final int entriesPerPage;
     private volatile EntryKey entryKey = EntryKeyImpl.deadKey();
     private final ByteBuffer page;
     private volatile boolean clean = true;
-    private final AtomicInteger useCount = new AtomicInteger(0);
-    private final AtomicInteger version = new AtomicInteger(0);
+
+    private static final AtomicIntegerFieldUpdater<LedgerEntryPage> useCountUpdater =
+        AtomicIntegerFieldUpdater.newUpdater(LedgerEntryPage.class, "useCount");
+    private volatile int useCount = 0;
+
+    private static final AtomicIntegerFieldUpdater<LedgerEntryPage> versionUpdater =
+        AtomicIntegerFieldUpdater.newUpdater(LedgerEntryPage.class, "version");
+    private volatile int version = 0;
+
     private volatile int last = -1; // Last update position
     private final LEPStateChangeCallback callback;
 
@@ -56,7 +62,6 @@ public class LedgerEntryPage {
     }
 
     public LedgerEntryPage(int pageSize, int entriesPerPage, LEPStateChangeCallback callback) {
-        this.pageSize = pageSize;
         this.entriesPerPage = entriesPerPage;
         page = ByteBuffer.allocateDirect(pageSize);
         this.callback = callback;
@@ -73,12 +78,12 @@ public class LedgerEntryPage {
         last = -1;
         setEntryKey(EntryKeyImpl.deadKey());
         clean = true;
-        useCount.set(0);
+
+        useCountUpdater.set(this, 0);
         if (null != this.callback) {
             callback.onResetInUse(this);
         }
     }
-
 
     @Override
     public String toString() {
@@ -87,12 +92,12 @@ public class LedgerEntryPage {
         sb.append('@');
         sb.append(getFirstEntry());
         sb.append(clean ? " clean " : " dirty ");
-        sb.append(useCount.get());
+        sb.append(useCountUpdater.get(this));
         return sb.toString();
     }
 
     public void usePage() {
-        int oldVal = useCount.getAndIncrement();
+        int oldVal = useCountUpdater.getAndIncrement(this);
         if ((0 == oldVal) && (null != callback)) {
             callback.onSetInUse(this);
         }
@@ -107,7 +112,7 @@ public class LedgerEntryPage {
     }
 
     private void releasePageInternal(boolean shouldCallback) {
-        int newUseCount = useCount.decrementAndGet();
+        int newUseCount = useCountUpdater.decrementAndGet(this);
         if (newUseCount < 0) {
             throw new IllegalStateException("Use count has gone below 0");
         }
@@ -117,7 +122,7 @@ public class LedgerEntryPage {
     }
 
     private void checkPage() {
-        if (useCount.get() <= 0) {
+        if (useCountUpdater.get(this) <= 0) {
             throw new IllegalStateException("Page not marked in use");
         }
     }
@@ -138,7 +143,7 @@ public class LedgerEntryPage {
     }
 
     void setClean(int versionOfCleaning) {
-        this.clean = (versionOfCleaning == version.get());
+        this.clean = (versionOfCleaning == versionUpdater.get(this));
 
         if ((null != callback) && clean) {
             callback.onSetClean(this);
@@ -152,7 +157,7 @@ public class LedgerEntryPage {
     public void setOffset(long offset, int position) {
         checkPage();
         page.putLong(position, offset);
-        version.incrementAndGet();
+        versionUpdater.incrementAndGet(this);
         if (last < position / getIndexEntrySize()) {
             last = position / getIndexEntrySize();
         }
@@ -214,7 +219,7 @@ public class LedgerEntryPage {
     }
 
     int getVersion() {
-        return version.get();
+        return versionUpdater.get(this);
     }
 
     public EntryKey getEntryKey() {
@@ -248,7 +253,7 @@ public class LedgerEntryPage {
     }
 
     public boolean inUse() {
-        return useCount.get() > 0;
+        return useCountUpdater.get(this) > 0;
     }
 
     private int getLastEntryIndex() {
