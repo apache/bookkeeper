@@ -413,7 +413,7 @@ public class BookieProtoEncoding {
             usingV3Protocol = true;
         }
 
-         @Override
+        @Override
         public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
             if (LOG.isTraceEnabled()) {
                 LOG.trace("Received request {} from channel {} to decode.", msg, ctx.channel());
