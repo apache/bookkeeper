@@ -20,9 +20,9 @@
  */
 package org.apache.bookkeeper.bookie;
 
-import com.google.common.util.concurrent.UncheckedExecutionException;
 import java.io.File;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import lombok.extern.slf4j.Slf4j;
@@ -112,15 +112,11 @@ class FileInfoBackingCache {
                 try {
                     fileInfo.close(false);
                 } catch (IOException e) {
-                    throw new UncheckedExecutionException(e);
+                    throw new UncheckedIOException(e);
                 }
             });
-        } catch (UncheckedExecutionException uee) {
-            if (uee.getCause() instanceof IOException) {
-                throw (IOException) uee.getCause();
-            } else {
-                throw new IOException("Unknown exception is thrown on closing all file infos", uee.getCause());
-            }
+        } catch (UncheckedIOException uioe) {
+            throw uioe.getCause();
         }
     }
 
