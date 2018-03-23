@@ -24,7 +24,6 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
-import org.apache.bookkeeper.client.impl.BKExceptionHandler;
 import org.apache.bookkeeper.common.annotation.InterfaceAudience.Public;
 import org.apache.bookkeeper.common.annotation.InterfaceStability.Unstable;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
@@ -132,6 +131,6 @@ public interface WriteAdvHandle extends ReadHandle {
      * @return the same value of param entryId
      */
     default long write(long entryId, ByteBuf data) throws BKException, InterruptedException {
-        return FutureUtils.<Long, BKException>result(writeAsync(entryId, data), BKExceptionHandler.HANDLER);
+        return FutureUtils.<Long, BKException>result(writeAsync(entryId, data), BKException.HANDLER);
     }
 }

@@ -21,7 +21,6 @@
 package org.apache.bookkeeper.client.api;
 
 import java.util.concurrent.CompletableFuture;
-import org.apache.bookkeeper.client.impl.BKExceptionHandler;
 import org.apache.bookkeeper.common.annotation.InterfaceAudience.Public;
 import org.apache.bookkeeper.common.annotation.InterfaceStability.Unstable;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
@@ -51,7 +50,7 @@ public interface Handle extends AutoCloseable {
      */
     @Override
     default void close() throws BKException, InterruptedException {
-        FutureUtils.<Void, BKException>result(closeAsync(), BKExceptionHandler.HANDLER);
+        FutureUtils.<Void, BKException>result(closeAsync(), BKException.HANDLER);
     }
 
     /**

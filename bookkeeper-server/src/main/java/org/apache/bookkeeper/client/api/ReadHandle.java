@@ -21,7 +21,6 @@
 package org.apache.bookkeeper.client.api;
 
 import java.util.concurrent.CompletableFuture;
-import org.apache.bookkeeper.client.impl.BKExceptionHandler;
 import org.apache.bookkeeper.common.annotation.InterfaceAudience.Public;
 import org.apache.bookkeeper.common.annotation.InterfaceStability.Unstable;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
@@ -57,7 +56,7 @@ public interface ReadHandle extends Handle {
      */
     default LedgerEntries read(long firstEntry, long lastEntry) throws BKException, InterruptedException {
         return FutureUtils.<LedgerEntries, BKException>result(readAsync(firstEntry, lastEntry),
-                                                              BKExceptionHandler.HANDLER);
+                                                              BKException.HANDLER);
     }
 
     /**
@@ -99,7 +98,7 @@ public interface ReadHandle extends Handle {
     default LedgerEntries readUnconfirmed(long firstEntry, long lastEntry)
             throws BKException, InterruptedException {
         return FutureUtils.<LedgerEntries, BKException>result(readUnconfirmedAsync(firstEntry, lastEntry),
-                                                              BKExceptionHandler.HANDLER);
+                                                              BKException.HANDLER);
     }
 
     /**
@@ -124,7 +123,7 @@ public interface ReadHandle extends Handle {
      */
     default long readLastAddConfirmed() throws BKException, InterruptedException {
         return FutureUtils.<Long, BKException>result(readLastAddConfirmedAsync(),
-                                                     BKExceptionHandler.HANDLER);
+                                                     BKException.HANDLER);
     }
 
 
@@ -146,7 +145,7 @@ public interface ReadHandle extends Handle {
      */
     default long tryReadLastAddConfirmed() throws BKException, InterruptedException {
         return FutureUtils.<Long, BKException>result(tryReadLastAddConfirmedAsync(),
-                                                     BKExceptionHandler.HANDLER);
+                                                     BKException.HANDLER);
     }
 
     /**
@@ -221,7 +220,7 @@ public interface ReadHandle extends Handle {
             throws BKException, InterruptedException {
         return FutureUtils.<LastConfirmedAndEntry, BKException>result(
                 readLastAddConfirmedAndEntryAsync(entryId, timeOutInMillis, parallel),
-                BKExceptionHandler.HANDLER);
+                BKException.HANDLER);
     }
 
 }

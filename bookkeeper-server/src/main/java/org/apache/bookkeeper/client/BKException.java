@@ -212,11 +212,6 @@ public abstract class BKException extends org.apache.bookkeeper.client.api.BKExc
         public BKUnexpectedConditionException() {
             super(Code.UnexpectedConditionException);
         }
-
-        public BKUnexpectedConditionException(Throwable cause) {
-            this();
-            initCause(cause);
-        }
     }
 
     /**
