@@ -31,6 +31,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
 
+import lombok.Cleanup;
 import org.apache.bookkeeper.bookie.Bookie.NoLedgerException;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.stats.NullStatsLogger;
@@ -95,6 +96,7 @@ public class TestEntryMemTable implements CacheCallback, SkipListFlusher, Checkp
         assertTrue(kv.getLedgerId() == ledgerId);
         assertTrue(kv.getEntryId() == entryId);
         assertTrue(kv.getValueAsByteBuffer().nioBuffer().equals(buf));
+        kv.release();
         memTable.flush(this);
     }
 
@@ -129,11 +131,12 @@ public class TestEntryMemTable implements CacheCallback, SkipListFlusher, Checkp
 
         for (EntryKeyValue kv : keyValues) {
             assertTrue(memTable.getEntry(kv.getLedgerId(), kv.getEntryId()).equals(kv));
+            kv.release();
         }
         memTable.flush(this, Checkpoint.MAX);
     }
 
-    private class KVFLusher implements SkipListFlusher {
+    private class KVFLusher implements SkipListFlusher, AutoCloseable {
         final HashSet<EntryKeyValue> keyValues;
 
         KVFLusher(final HashSet<EntryKeyValue> keyValues) {
@@ -143,7 +146,12 @@ public class TestEntryMemTable implements CacheCallback, SkipListFlusher, Checkp
         @Override
         public void process(long ledgerId, long entryId, ByteBuf entry) throws IOException {
             assertTrue(ledgerId + ":" + entryId + " is duplicate in store!",
-                    keyValues.add(new EntryKeyValue(ledgerId, entryId, entry.array())));
+                    keyValues.add(EntryKeyValue.of(ledgerId, entryId, entry.array())));
+        }
+
+        @Override
+        public void close() {
+            keyValues.forEach(kv -> kv.release());
         }
     }
 
@@ -161,7 +169,7 @@ public class TestEntryMemTable implements CacheCallback, SkipListFlusher, Checkp
     @Test
     public void testFlushLogMark() throws IOException {
         HashSet<EntryKeyValue> flushedKVs = new HashSet<EntryKeyValue>();
-        KVFLusher flusher = new KVFLusher(flushedKVs);
+        @Cleanup KVFLusher flusher = new KVFLusher(flushedKVs);
 
         curCheckpoint.setCheckPoint(2, 2);
 
@@ -196,7 +204,7 @@ public class TestEntryMemTable implements CacheCallback, SkipListFlusher, Checkp
     public void testFlushSnapshot() throws IOException {
         HashSet<EntryKeyValue> keyValues = new HashSet<EntryKeyValue>();
         HashSet<EntryKeyValue> flushedKVs = new HashSet<EntryKeyValue>();
-        KVFLusher flusher = new KVFLusher(flushedKVs);
+        @Cleanup KVFLusher flusher = new KVFLusher(flushedKVs);
 
         byte[] data = new byte[10];
         for (long entryId = 1; entryId < 100; entryId++) {
@@ -219,6 +227,7 @@ public class TestEntryMemTable implements CacheCallback, SkipListFlusher, Checkp
         memTable.flush(flusher, Checkpoint.MAX);
         for (EntryKeyValue kv : keyValues) {
             assertTrue("kv " + kv.toString() + " was not flushed!", flushedKVs.contains(kv));
+            kv.release();
         }
     }
 

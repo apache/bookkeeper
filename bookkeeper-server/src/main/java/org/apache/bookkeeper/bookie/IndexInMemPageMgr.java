@@ -156,7 +156,12 @@ class IndexInMemPageMgr {
                 for (Map.Entry<Long, LedgerEntryPage> pageEntry: lPages.entrySet()) {
                     long entryId = pageEntry.getKey();
                     synchronized (lruCleanPageMap) {
-                        lruCleanPageMap.remove(new EntryKey(ledgerId, entryId));
+                        EntryKey key = EntryKeyImpl.of(ledgerId, entryId);
+                        try {
+                            lruCleanPageMap.remove(key);
+                        } finally {
+                            key.release();
+                        }
                     }
 
                     LedgerEntryPage lep = pageEntry.getValue();

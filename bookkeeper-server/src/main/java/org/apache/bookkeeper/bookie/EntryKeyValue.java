@@ -19,20 +19,70 @@
  */
 package org.apache.bookkeeper.bookie;
 
+import static org.apache.bookkeeper.util.BookKeeperConstants.DEAD_ID;
+
+import com.google.common.base.MoreObjects;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
-import java.nio.ByteBuffer;
+import io.netty.util.AbstractReferenceCounted;
+import io.netty.util.Recycler;
+import io.netty.util.Recycler.Handle;
+import io.netty.util.ReferenceCounted;
 
 /**
  * An entry Key/Value.
  * EntryKeyValue wraps a byte array and takes offsets and lengths into the array to
  * interpret the content as entry blob.
  */
-public class EntryKeyValue extends EntryKey {
-    private final byte [] bytes;
+class EntryKeyValue extends AbstractReferenceCounted implements EntryKey {
+
+    private static final Recycler<EntryKeyValue> RECYCLER = new Recycler<EntryKeyValue>() {
+        @Override
+        protected EntryKeyValue newObject(Handle<EntryKeyValue> handle) {
+            return new EntryKeyValue(handle);
+        }
+    };
+
+    /**
+     * Creates a EntryKeyValue from the start of the specified byte array.
+     * Presumes <code>bytes</code> content contains the value portion of a EntryKeyValue.
+     * @param bytes byte array
+     */
+    public static EntryKeyValue of(long ledgerId, long entryId, final byte [] bytes) {
+        return of(ledgerId, entryId, bytes, 0, bytes.length);
+    }
+
+    /**
+     * Creates a EntryKeyValue from the start of the specified byte array.
+     * Presumes <code>bytes</code> content contains the value portion of a EntryKeyValue.
+     * @param bytes byte array
+     * @param offset offset in bytes as start of blob
+     * @param length of blob
+     */
+    public static EntryKeyValue of(long ledgerId, long entryId, final byte [] bytes, int offset, int length) {
+        EntryKeyValue kv = RECYCLER.get();
+        kv.setRefCnt(1);
+
+        kv.ledgerId = ledgerId;
+        kv.entryId = entryId;
+        kv.bytes = bytes;
+        kv.offset = offset;
+        kv.length = length;
+
+        return kv;
+    }
+
+    private final Handle<EntryKeyValue> handle;
+    private long ledgerId;
+    private long entryId;
+    private byte [] bytes;
     private int offset = 0; // start offset of entry blob
     private int length = 0; // length of entry blob
+
+    private EntryKeyValue(Handle<EntryKeyValue> handle) {
+        this.handle = handle;
+    }
 
     /**
     * @return The byte array backing this EntryKeyValue.
@@ -56,29 +106,6 @@ public class EntryKeyValue extends EntryKey {
     }
 
     /**
-     * Creates a EntryKeyValue from the start of the specified byte array.
-     * Presumes <code>bytes</code> content contains the value portion of a EntryKeyValue.
-     * @param bytes byte array
-     */
-    public EntryKeyValue(long ledgerId, long entryId, final byte [] bytes) {
-        this(ledgerId, entryId, bytes, 0, bytes.length);
-    }
-
-    /**
-     * Creates a EntryKeyValue from the start of the specified byte array.
-     * Presumes <code>bytes</code> content contains the value portion of a EntryKeyValue.
-     * @param bytes byte array
-     * @param offset offset in bytes as start of blob
-     * @param length of blob
-     */
-    public EntryKeyValue(long ledgerId, long entryId, final byte [] bytes, int offset, int length) {
-        super(ledgerId, entryId);
-        this.bytes = bytes;
-        this.offset = offset;
-        this.length = length;
-    }
-
-    /**
     * Returns the blob wrapped in a new <code>ByteBuffer</code>.
     *
     * @return the value
@@ -87,44 +114,47 @@ public class EntryKeyValue extends EntryKey {
         return Unpooled.wrappedBuffer(getBuffer(), getOffset(), getLength());
     }
 
-    /**
-    * Write EntryKeyValue blob into the provided byte buffer.
-    *
-    * @param dst the bytes buffer to use
-    *
-    * @return The number of useful bytes in the buffer.
-    *
-    * @throws IllegalArgumentException an illegal value was passed or there is insufficient space
-    * remaining in the buffer
-    */
-    int writeToByteBuffer(ByteBuffer dst) {
-        if (dst.remaining() < getLength()) {
-            throw new IllegalArgumentException("Buffer size " + dst.remaining() + " < " + getLength());
-        }
-
-        dst.put(getBuffer(), getOffset(), getLength());
-        return getLength();
+    @Override
+    public long getLedgerId() {
+        return ledgerId;
     }
 
-    /**
-    * String representation.
-    */
-    public String toString() {
-        return ledgerId + ":" + entryId;
+    @Override
+    public long getEntryId() {
+        return entryId;
     }
 
     @Override
     public boolean equals(Object other) {
-        // since this entry is identified by (lid, eid)
-        // so just use {@link org.apache.bookkeeper.bookie.EntryKey#equals}.
-        return super.equals(other);
+        if (!(other instanceof EntryKey)) {
+          return false;
+        }
+        EntryKey key = (EntryKey) other;
+        return getLedgerId() == key.getLedgerId() && getEntryId() == key.getEntryId();
     }
 
     @Override
     public int hashCode() {
-        // since this entry is identified by (lid, eid)
-        // so just use {@link org.apache.bookkeeper.bookie.EntryKey#hashCode} as the hash code.
-        return super.hashCode();
+        return (int) (getLedgerId() * 13 ^ getEntryId() * 17);
     }
 
+    @Override
+    public String toString() {
+        return MoreObjects.toStringHelper(EntryKey.class)
+            .add("lid", getLedgerId())
+            .add("eid", getEntryId())
+            .toString();
+    }
+
+    @Override
+    protected void deallocate() {
+        this.ledgerId = DEAD_ID;
+        this.entryId = DEAD_ID;
+        handle.recycle(this);
+    }
+
+    @Override
+    public ReferenceCounted touch(Object hint) {
+        return this;
+    }
 }

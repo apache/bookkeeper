@@ -57,4 +57,6 @@ public class BookKeeperConstants {
     public static final String FEATURE_DISABLE_ENSEMBLE_CHANGE = "disable_ensemble_change";
 
     public static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
+
+    public static final long DEAD_ID = -0xdead;
 }

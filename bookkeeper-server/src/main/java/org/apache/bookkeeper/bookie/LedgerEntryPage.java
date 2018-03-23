@@ -24,7 +24,6 @@ package org.apache.bookkeeper.bookie;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.util.ZeroBuffer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,7 +39,7 @@ public class LedgerEntryPage {
     private static final int indexEntrySize = 8;
     private final int pageSize;
     private final int entriesPerPage;
-    private volatile EntryKey entryKey = new EntryKey(-1, BookieProtocol.INVALID_ENTRY_ID);
+    private volatile EntryKey entryKey = EntryKeyImpl.deadKey();
     private final ByteBuffer page;
     private volatile boolean clean = true;
     private final AtomicInteger useCount = new AtomicInteger(0);
@@ -72,7 +71,7 @@ public class LedgerEntryPage {
         page.clear();
         ZeroBuffer.put(page);
         last = -1;
-        entryKey = new EntryKey(-1, BookieProtocol.INVALID_ENTRY_ID);
+        setEntryKey(EntryKeyImpl.deadKey());
         clean = true;
         useCount.set(0);
         if (null != this.callback) {
@@ -222,11 +221,19 @@ public class LedgerEntryPage {
         return entryKey;
     }
 
+    private void setEntryKey(EntryKey newEntryKey) {
+        if (null != entryKey) {
+            entryKey.release();
+            entryKey = null;
+        }
+        this.entryKey = newEntryKey;
+    }
+
     void setLedgerAndFirstEntry(long ledgerId, long firstEntry) {
         if (firstEntry % entriesPerPage != 0) {
             throw new IllegalArgumentException(firstEntry + " is not a multiple of " + entriesPerPage);
         }
-        this.entryKey = new EntryKey(ledgerId, firstEntry);
+        setEntryKey(EntryKeyImpl.of(ledgerId, firstEntry));
     }
     long getFirstEntry() {
         return entryKey.getEntryId();
