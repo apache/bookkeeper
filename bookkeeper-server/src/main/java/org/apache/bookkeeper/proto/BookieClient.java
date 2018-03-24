@@ -189,40 +189,35 @@ public class BookieClient implements PerChannelBookieClientFactory {
 
     public void writeLac(final BookieSocketAddress addr, final long ledgerId, final byte[] masterKey,
             final long lac, final ByteBufList toSend, final WriteLacCallback cb, final Object ctx) {
-        closeLock.readLock().lock();
-        try {
-            final PerChannelBookieClientPool client = lookupClient(addr);
-            if (client == null) {
-                cb.writeLacComplete(getRc(BKException.Code.BookieHandleNotAvailableException),
-                                  ledgerId, addr, ctx);
-                return;
-            }
-
-            toSend.retain();
-            client.obtain(new GenericCallback<PerChannelBookieClient>() {
-                @Override
-                public void operationComplete(final int rc, PerChannelBookieClient pcbc) {
-                    if (rc != BKException.Code.OK) {
-                        try {
-                            executor.submitOrdered(ledgerId, new SafeRunnable() {
-                                @Override
-                                public void safeRun() {
-                                    cb.writeLacComplete(rc, ledgerId, addr, ctx);
-                                }
-                            });
-                        } catch (RejectedExecutionException re) {
-                            cb.writeLacComplete(getRc(BKException.Code.InterruptedException), ledgerId, addr, ctx);
-                        }
-                    } else {
-                        pcbc.writeLac(ledgerId, masterKey, lac, toSend, cb, ctx);
-                    }
-
-                    toSend.release();
-                }
-            }, ledgerId);
-        } finally {
-            closeLock.readLock().unlock();
+        final PerChannelBookieClientPool client = lookupClient(addr);
+        if (client == null) {
+            cb.writeLacComplete(getRc(BKException.Code.BookieHandleNotAvailableException),
+                              ledgerId, addr, ctx);
+            return;
         }
+
+        toSend.retain();
+        client.obtain(new GenericCallback<PerChannelBookieClient>() {
+            @Override
+            public void operationComplete(final int rc, PerChannelBookieClient pcbc) {
+                if (rc != BKException.Code.OK) {
+                    try {
+                        executor.submitOrdered(ledgerId, new SafeRunnable() {
+                            @Override
+                            public void safeRun() {
+                                cb.writeLacComplete(rc, ledgerId, addr, ctx);
+                            }
+                        });
+                    } catch (RejectedExecutionException re) {
+                        cb.writeLacComplete(getRc(BKException.Code.InterruptedException), ledgerId, addr, ctx);
+                    }
+                } else {
+                    pcbc.writeLac(ledgerId, masterKey, lac, toSend, cb, ctx);
+                }
+
+                toSend.release();
+            }
+        }, ledgerId);
     }
 
     private void completeAdd(final int rc,
@@ -255,26 +250,21 @@ public class BookieClient implements PerChannelBookieClientFactory {
                          final WriteCallback cb,
                          final Object ctx,
                          final int options) {
-        closeLock.readLock().lock();
-        try {
-            final PerChannelBookieClientPool client = lookupClient(addr);
-            if (client == null) {
-                completeAdd(getRc(BKException.Code.BookieHandleNotAvailableException),
-                            ledgerId, entryId, addr, cb, ctx);
-                return;
-            }
-
-            // Retain the buffer, since the connection could be obtained after
-            // the PendingApp might have already failed
-            toSend.retain();
-
-            client.obtain(ChannelReadyForAddEntryCallback.create(
-                                  this, toSend, ledgerId, entryId, addr,
-                                  ctx, cb, options, masterKey),
-                          ledgerId);
-        } finally {
-            closeLock.readLock().unlock();
+        final PerChannelBookieClientPool client = lookupClient(addr);
+        if (client == null) {
+            completeAdd(getRc(BKException.Code.BookieHandleNotAvailableException),
+                        ledgerId, entryId, addr, cb, ctx);
+            return;
         }
+
+        // Retain the buffer, since the connection could be obtained after
+        // the PendingApp might have already failed
+        toSend.retain();
+
+        client.obtain(ChannelReadyForAddEntryCallback.create(
+                              this, toSend, ledgerId, entryId, addr,
+                              ctx, cb, options, masterKey),
+                      ledgerId);
     }
 
     private void completeRead(final int rc,
@@ -371,37 +361,32 @@ public class BookieClient implements PerChannelBookieClientFactory {
 
     public void readLac(final BookieSocketAddress addr, final long ledgerId, final ReadLacCallback cb,
             final Object ctx) {
-        closeLock.readLock().lock();
-        try {
-            final PerChannelBookieClientPool client = lookupClient(addr);
-            if (client == null) {
-                cb.readLacComplete(getRc(BKException.Code.BookieHandleNotAvailableException), ledgerId, null, null,
-                        ctx);
-                return;
-            }
-            client.obtain(new GenericCallback<PerChannelBookieClient>() {
-                @Override
-                public void operationComplete(final int rc, PerChannelBookieClient pcbc) {
-                    if (rc != BKException.Code.OK) {
-                        try {
-                            executor.submitOrdered(ledgerId, new SafeRunnable() {
-                                @Override
-                                public void safeRun() {
-                                    cb.readLacComplete(rc, ledgerId, null, null, ctx);
-                                }
-                            });
-                        } catch (RejectedExecutionException re) {
-                            cb.readLacComplete(getRc(BKException.Code.InterruptedException),
-                                    ledgerId, null, null, ctx);
-                        }
-                        return;
-                    }
-                    pcbc.readLac(ledgerId, cb, ctx);
-                }
-            }, ledgerId);
-        } finally {
-            closeLock.readLock().unlock();
+        final PerChannelBookieClientPool client = lookupClient(addr);
+        if (client == null) {
+            cb.readLacComplete(getRc(BKException.Code.BookieHandleNotAvailableException), ledgerId, null, null,
+                    ctx);
+            return;
         }
+        client.obtain(new GenericCallback<PerChannelBookieClient>() {
+            @Override
+            public void operationComplete(final int rc, PerChannelBookieClient pcbc) {
+                if (rc != BKException.Code.OK) {
+                    try {
+                        executor.submitOrdered(ledgerId, new SafeRunnable() {
+                            @Override
+                            public void safeRun() {
+                                cb.readLacComplete(rc, ledgerId, null, null, ctx);
+                            }
+                        });
+                    } catch (RejectedExecutionException re) {
+                        cb.readLacComplete(getRc(BKException.Code.InterruptedException),
+                                ledgerId, null, null, ctx);
+                    }
+                    return;
+                }
+                pcbc.readLac(ledgerId, cb, ctx);
+            }
+        }, ledgerId);
     }
 
     public void readEntry(BookieSocketAddress addr, long ledgerId, long entryId,
@@ -411,28 +396,23 @@ public class BookieClient implements PerChannelBookieClientFactory {
 
     public void readEntry(final BookieSocketAddress addr, final long ledgerId, final long entryId,
                           final ReadEntryCallback cb, final Object ctx, int flags, byte[] masterKey) {
-        closeLock.readLock().lock();
-        try {
-            final PerChannelBookieClientPool client = lookupClient(addr);
-            if (client == null) {
-                cb.readEntryComplete(getRc(BKException.Code.BookieHandleNotAvailableException),
-                                     ledgerId, entryId, null, ctx);
-                return;
-            }
-
-            client.obtain(new GenericCallback<PerChannelBookieClient>() {
-                @Override
-                public void operationComplete(final int rc, PerChannelBookieClient pcbc) {
-                    if (rc != BKException.Code.OK) {
-                        completeRead(rc, ledgerId, entryId, null, cb, ctx);
-                        return;
-                    }
-                    pcbc.readEntry(ledgerId, entryId, cb, ctx, flags, masterKey);
-                }
-            }, ledgerId);
-        } finally {
-            closeLock.readLock().unlock();
+        final PerChannelBookieClientPool client = lookupClient(addr);
+        if (client == null) {
+            cb.readEntryComplete(getRc(BKException.Code.BookieHandleNotAvailableException),
+                                 ledgerId, entryId, null, ctx);
+            return;
         }
+
+        client.obtain(new GenericCallback<PerChannelBookieClient>() {
+            @Override
+            public void operationComplete(final int rc, PerChannelBookieClient pcbc) {
+                if (rc != BKException.Code.OK) {
+                    completeRead(rc, ledgerId, entryId, null, cb, ctx);
+                    return;
+                }
+                pcbc.readEntry(ledgerId, entryId, cb, ctx, flags, masterKey);
+            }
+        }, ledgerId);
     }
 
 
@@ -444,65 +424,55 @@ public class BookieClient implements PerChannelBookieClientFactory {
                                           final boolean piggyBackEntry,
                                           final ReadEntryCallback cb,
                                           final Object ctx) {
-        closeLock.readLock().lock();
-        try {
-            final PerChannelBookieClientPool client = lookupClient(addr);
-            if (client == null) {
-                completeRead(BKException.Code.BookieHandleNotAvailableException,
-                        ledgerId, entryId, null, cb, ctx);
-                return;
-            }
-
-            client.obtain(new GenericCallback<PerChannelBookieClient>() {
-                @Override
-                public void operationComplete(final int rc, PerChannelBookieClient pcbc) {
-
-                    if (rc != BKException.Code.OK) {
-                        completeRead(rc, ledgerId, entryId, null, cb, ctx);
-                        return;
-                    }
-                    pcbc.readEntryWaitForLACUpdate(ledgerId, entryId, previousLAC, timeOutInMillis, piggyBackEntry, cb,
-                            ctx);
-                }
-            }, ledgerId);
-        } finally {
-            closeLock.readLock().unlock();
+        final PerChannelBookieClientPool client = lookupClient(addr);
+        if (client == null) {
+            completeRead(BKException.Code.BookieHandleNotAvailableException,
+                    ledgerId, entryId, null, cb, ctx);
+            return;
         }
+
+        client.obtain(new GenericCallback<PerChannelBookieClient>() {
+            @Override
+            public void operationComplete(final int rc, PerChannelBookieClient pcbc) {
+
+                if (rc != BKException.Code.OK) {
+                    completeRead(rc, ledgerId, entryId, null, cb, ctx);
+                    return;
+                }
+                pcbc.readEntryWaitForLACUpdate(ledgerId, entryId, previousLAC, timeOutInMillis, piggyBackEntry, cb,
+                        ctx);
+            }
+        }, ledgerId);
     }
 
     public void getBookieInfo(final BookieSocketAddress addr, final long requested, final GetBookieInfoCallback cb,
             final Object ctx) {
-        closeLock.readLock().lock();
-        try {
-            final PerChannelBookieClientPool client = lookupClient(addr);
-            if (client == null) {
-                cb.getBookieInfoComplete(getRc(BKException.Code.BookieHandleNotAvailableException), new BookieInfo(),
-                        ctx);
-                return;
-            }
-            client.obtain(new GenericCallback<PerChannelBookieClient>() {
-                @Override
-                public void operationComplete(final int rc, PerChannelBookieClient pcbc) {
-                    if (rc != BKException.Code.OK) {
-                        try {
-                            executor.submit(new SafeRunnable() {
-                                @Override
-                                public void safeRun() {
-                                    cb.getBookieInfoComplete(rc, new BookieInfo(), ctx);
-                                }
-                            });
-                        } catch (RejectedExecutionException re) {
-                            cb.getBookieInfoComplete(getRc(BKException.Code.InterruptedException),
-                                    new BookieInfo(), ctx);
-                        }
-                        return;
-                    }
-                    pcbc.getBookieInfo(requested, cb, ctx);
-                }
-            }, requested);
-        } finally {
-            closeLock.readLock().unlock();
+        final PerChannelBookieClientPool client = lookupClient(addr);
+        if (client == null) {
+            cb.getBookieInfoComplete(getRc(BKException.Code.BookieHandleNotAvailableException), new BookieInfo(),
+                    ctx);
+            return;
         }
+        client.obtain(new GenericCallback<PerChannelBookieClient>() {
+            @Override
+            public void operationComplete(final int rc, PerChannelBookieClient pcbc) {
+                if (rc != BKException.Code.OK) {
+                    try {
+                        executor.submit(new SafeRunnable() {
+                            @Override
+                            public void safeRun() {
+                                cb.getBookieInfoComplete(rc, new BookieInfo(), ctx);
+                            }
+                        });
+                    } catch (RejectedExecutionException re) {
+                        cb.getBookieInfoComplete(getRc(BKException.Code.InterruptedException),
+                                new BookieInfo(), ctx);
+                    }
+                    return;
+                }
+                pcbc.getBookieInfo(requested, cb, ctx);
+            }
+        }, requested);
     }
 
     private void monitorPendingOperations() {
