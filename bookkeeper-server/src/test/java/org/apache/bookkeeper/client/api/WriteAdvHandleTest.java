@@ -68,38 +68,38 @@ public class WriteAdvHandleTest {
     @Test
     public void testAppendBytes() throws Exception {
         byte[] testData = runtime.getMethodName().getBytes(UTF_8);
-        handle.write(entryId, testData);
+        handle.writeAsync(entryId, testData);
 
         ByteBuf buffer = entryQueue.take();
         byte[] bufferData = ByteBufUtil.getBytes(buffer);
         assertArrayEquals(testData, bufferData);
-        verify(handle, times(1)).write(eq(entryId), any(ByteBuf.class));
+        verify(handle, times(1)).writeAsync(eq(entryId), any(ByteBuf.class));
     }
 
     @Test
     public void testAppendBytes2() throws Exception {
         byte[] testData = runtime.getMethodName().getBytes(UTF_8);
-        handle.write(entryId, testData, 1, testData.length / 2);
+        handle.writeAsync(entryId, testData, 1, testData.length / 2);
         byte[] expectedData = new byte[testData.length / 2];
         System.arraycopy(testData, 1, expectedData, 0, testData.length / 2);
 
         ByteBuf buffer = entryQueue.take();
         byte[] bufferData = ByteBufUtil.getBytes(buffer);
         assertArrayEquals(expectedData, bufferData);
-        verify(handle, times(1)).write(eq(entryId), any(ByteBuf.class));
+        verify(handle, times(1)).writeAsync(eq(entryId), any(ByteBuf.class));
     }
 
     @Test
     public void testAppendByteBuffer() throws Exception {
         byte[] testData = runtime.getMethodName().getBytes(UTF_8);
-        handle.write(entryId, ByteBuffer.wrap(testData, 1, testData.length / 2));
+        handle.writeAsync(entryId, ByteBuffer.wrap(testData, 1, testData.length / 2));
         byte[] expectedData = new byte[testData.length / 2];
         System.arraycopy(testData, 1, expectedData, 0, testData.length / 2);
 
         ByteBuf buffer = entryQueue.take();
         byte[] bufferData = ByteBufUtil.getBytes(buffer);
         assertArrayEquals(expectedData, bufferData);
-        verify(handle, times(1)).write(eq(entryId), any(ByteBuf.class));
+        verify(handle, times(1)).writeAsync(eq(entryId), any(ByteBuf.class));
     }
 
 }
