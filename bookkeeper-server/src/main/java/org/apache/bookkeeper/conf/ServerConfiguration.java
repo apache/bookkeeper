@@ -465,7 +465,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return minimum size of initial file info cache.
      */
     public int getFileInfoCacheInitialCapacity() {
-        return getInt(FILEINFO_CACHE_INITIAL_CAPACITY, 64);
+        return getInt(FILEINFO_CACHE_INITIAL_CAPACITY, Math.max(getOpenFileLimit() / 4, 64));
     }
 
     /**
@@ -2062,7 +2062,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      */
     @Beta
     public boolean getJournalRemovePagesFromCache() {
-        return getBoolean(JOURNAL_REMOVE_FROM_PAGE_CACHE, false);
+        return getBoolean(JOURNAL_REMOVE_FROM_PAGE_CACHE, true);
     }
 
     /**
