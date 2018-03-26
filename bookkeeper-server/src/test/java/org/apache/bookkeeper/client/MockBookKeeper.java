@@ -24,6 +24,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -34,6 +35,8 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.apache.bookkeeper.client.AsyncCallback.CreateCallback;
 import org.apache.bookkeeper.client.AsyncCallback.DeleteCallback;
 import org.apache.bookkeeper.client.AsyncCallback.OpenCallback;
+import org.apache.bookkeeper.client.api.OpenBuilder;
+import org.apache.bookkeeper.client.api.ReadHandle;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.zookeeper.ZooKeeper;
 import org.slf4j.Logger;
@@ -208,6 +211,66 @@ public class MockBookKeeper extends BookKeeper {
     public void close() throws InterruptedException, BKException {
         checkProgrammedFail();
         shutdown();
+    }
+
+    @Override
+    public OpenBuilder newOpenLedgerOp() {
+        return new OpenBuilder() {
+            long ledgerId;
+            byte[] password;
+            org.apache.bookkeeper.client.api.DigestType digestType;
+
+            @Override
+            public OpenBuilder withLedgerId(long ledgerId) {
+                this.ledgerId = ledgerId;
+                return this;
+            }
+
+            @Override
+            public OpenBuilder withRecovery(boolean recovery) {
+                return this;
+            }
+
+            @Override
+            public OpenBuilder withPassword(byte[] password) {
+                this.password = password;
+                return this;
+            }
+
+            @Override
+            public OpenBuilder withDigestType(org.apache.bookkeeper.client.api.DigestType digestType) {
+                this.digestType = digestType;
+                return this;
+            }
+
+            @Override
+            public CompletableFuture<ReadHandle> execute() {
+                CompletableFuture<ReadHandle> promise = new CompletableFuture<ReadHandle>();
+
+                if (getProgrammedFailStatus()) {
+                    if (failReturnCode != BkTimeoutOperation) {
+                        promise.completeExceptionally(BKException.create(failReturnCode));
+                    }
+                    return promise;
+                } else if (stopped.get()) {
+                    promise.completeExceptionally(BKException.create(BKException.Code.WriteException));
+                    return promise;
+                }
+
+                MockLedgerHandle lh = ledgers.get(ledgerId);
+                if (lh == null) {
+                    promise.completeExceptionally(BKException.create(BKException.Code.NoSuchLedgerExistsException));
+                } else if (lh.digest != DigestType.fromApiDigestType(digestType)) {
+                    promise.completeExceptionally(BKException.create(BKException.Code.DigestMatchException));
+                } else if (!Arrays.equals(lh.passwd, password)) {
+                    promise.completeExceptionally(BKException.create(BKException.Code.UnauthorizedAccessException));
+                } else {
+                    promise.complete(new MockReadHandle(MockBookKeeper.this, ledgerId,
+                                                        lh.getLedgerMetadata(), lh.entries));
+                }
+                return promise;
+            }
+        };
     }
 
     public void shutdown() {
