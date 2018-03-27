@@ -617,7 +617,7 @@ public class BookieWriteLedgerTest extends
                                     long entryId = i++;
                                     LOG.info("Writing {}:{} as {}",
                                              ledgerId, entryId, entry.slice().readInt());
-                                    lastRequest = writer.write(entryId, entry);
+                                    lastRequest = writer.writeAsync(entryId, entry);
                                 }
                                 lastRequest.join();
                                 return Pair.of(writer, entries);
@@ -1218,7 +1218,7 @@ public class BookieWriteLedgerTest extends
     private void readEntries(ReadHandle reader, List<ByteBuf> entries) throws Exception {
         assertEquals("Not enough entries in ledger " + reader.getId(),
                      reader.getLastAddConfirmed(), entries.size() - 1);
-        try (LedgerEntries readEntries = reader.read(0, reader.getLastAddConfirmed()).join()) {
+        try (LedgerEntries readEntries = reader.read(0, reader.getLastAddConfirmed())) {
             int i = 0;
             for (org.apache.bookkeeper.client.api.LedgerEntry e : readEntries) {
                 int entryId = i++;

@@ -389,14 +389,14 @@ public class LedgerHandle implements WriteHandle {
     @Override
     public void close()
             throws InterruptedException, BKException {
-        SyncCallbackUtils.waitForResult(asyncClose());
+        SyncCallbackUtils.waitForResult(closeAsync());
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public CompletableFuture<Void> asyncClose() {
+    public CompletableFuture<Void> closeAsync() {
         CompletableFuture<Void> result = new CompletableFuture<>();
         SyncCloseCallback callback = new SyncCloseCallback(result);
         asyncClose(callback, null);
@@ -707,7 +707,7 @@ public class LedgerHandle implements WriteHandle {
      *          id of last entry of sequence
      */
     @Override
-    public CompletableFuture<LedgerEntries> read(long firstEntry, long lastEntry) {
+    public CompletableFuture<LedgerEntries> readAsync(long firstEntry, long lastEntry) {
         // Little sanity check
         if (firstEntry < 0 || firstEntry > lastEntry) {
             LOG.error("IncorrectParameterException on ledgerId:{} firstEntry:{} lastEntry:{}",
@@ -748,7 +748,7 @@ public class LedgerHandle implements WriteHandle {
      * @see #readUnconfirmedEntries(long, long)
      */
     @Override
-    public CompletableFuture<LedgerEntries> readUnconfirmed(long firstEntry, long lastEntry) {
+    public CompletableFuture<LedgerEntries> readUnconfirmedAsync(long firstEntry, long lastEntry) {
         // Little sanity check
         if (firstEntry < 0 || firstEntry > lastEntry) {
             LOG.error("IncorrectParameterException on ledgerId:{} firstEntry:{} lastEntry:{}",
@@ -852,7 +852,7 @@ public class LedgerHandle implements WriteHandle {
      * {@inheritDoc}
      */
     @Override
-    public CompletableFuture<Long> append(ByteBuf data) {
+    public CompletableFuture<Long> appendAsync(ByteBuf data) {
         SyncAddCallback callback = new SyncAddCallback();
         asyncAddEntry(data, callback, null);
         return callback;
@@ -1206,7 +1206,7 @@ public class LedgerHandle implements WriteHandle {
      * {@inheritDoc}
      */
     @Override
-    public CompletableFuture<Long> tryReadLastAddConfirmed() {
+    public CompletableFuture<Long> tryReadLastAddConfirmedAsync() {
         FutureReadLastConfirmed result = new FutureReadLastConfirmed();
         asyncTryReadLastConfirmed(result, null);
         return result;
@@ -1216,7 +1216,7 @@ public class LedgerHandle implements WriteHandle {
      * {@inheritDoc}
      */
     @Override
-    public CompletableFuture<Long> readLastAddConfirmed() {
+    public CompletableFuture<Long> readLastAddConfirmedAsync() {
         FutureReadLastConfirmed result = new FutureReadLastConfirmed();
         asyncReadLastConfirmed(result, null);
         return result;
@@ -1226,9 +1226,9 @@ public class LedgerHandle implements WriteHandle {
      * {@inheritDoc}
      */
     @Override
-    public CompletableFuture<LastConfirmedAndEntry> readLastAddConfirmedAndEntry(long entryId,
-                                                                                 long timeOutInMillis,
-                                                                                 boolean parallel) {
+    public CompletableFuture<LastConfirmedAndEntry> readLastAddConfirmedAndEntryAsync(long entryId,
+                                                                                      long timeOutInMillis,
+                                                                                      boolean parallel) {
         FutureReadLastConfirmedAndEntry result = new FutureReadLastConfirmedAndEntry();
         asyncReadLastConfirmedAndEntry(entryId, timeOutInMillis, parallel, result, null);
         return result;

@@ -65,7 +65,7 @@ public final class TestUtils {
         long lac = rh.getLastAddConfirmed();
         while (lac < newLac) {
             TimeUnit.MILLISECONDS.sleep(20);
-            lac = rh.readLastAddConfirmed().get();
+            lac = rh.readLastAddConfirmed();
         }
     }
 

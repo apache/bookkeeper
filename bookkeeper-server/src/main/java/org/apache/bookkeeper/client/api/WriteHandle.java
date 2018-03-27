@@ -24,8 +24,10 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
+
 import org.apache.bookkeeper.common.annotation.InterfaceAudience.Public;
 import org.apache.bookkeeper.common.annotation.InterfaceStability.Unstable;
+import org.apache.bookkeeper.common.concurrent.FutureUtils;
 
 /**
  * Provide write access to a ledger.
@@ -45,7 +47,18 @@ public interface WriteHandle extends ReadHandle {
      *             completable future is returned
      * @return an handle to the result, in case of success it will return the id of the newly appended entry
      */
-    CompletableFuture<Long> append(ByteBuf data);
+    CompletableFuture<Long> appendAsync(ByteBuf data);
+
+    /**
+     * Add entry synchronously to an open ledger.
+     *
+     * @param data a bytebuf to be written. The bytebuf's reference count will be decremented by 1 after the
+     *             call completes.
+     * @return the id of the newly appended entry
+     */
+    default long append(ByteBuf data) throws BKException, InterruptedException {
+        return FutureUtils.<Long, BKException>result(appendAsync(data), BKException.HANDLER);
+    }
 
     /**
      * Add entry asynchronously to an open ledger.
@@ -53,7 +66,17 @@ public interface WriteHandle extends ReadHandle {
      * @param data array of bytes to be written
      * @return an handle to the result, in case of success it will return the id of the newly appended entry
      */
-    default CompletableFuture<Long> append(ByteBuffer data) {
+    default CompletableFuture<Long> appendAsync(ByteBuffer data) {
+        return appendAsync(Unpooled.wrappedBuffer(data));
+    }
+
+    /**
+     * Add entry synchronously to an open ledger.
+     *
+     * @param data array of bytes to be written
+     * @return the id of the newly appended entry
+     */
+    default long append(ByteBuffer data) throws BKException, InterruptedException {
         return append(Unpooled.wrappedBuffer(data));
     }
 
@@ -64,7 +87,17 @@ public interface WriteHandle extends ReadHandle {
      * @return a completable future represents the add result, in case of success the future returns the entry id
      *         of this newly appended entry
      */
-    default CompletableFuture<Long> append(byte[] data) {
+    default CompletableFuture<Long> appendAsync(byte[] data) {
+        return appendAsync(Unpooled.wrappedBuffer(data));
+    }
+
+    /**
+     * Add an entry synchronously to an open ledger.
+     *
+     * @param data array of bytes to be written
+     * @return the entry id of this newly appended entry
+     */
+    default long append(byte[] data) throws BKException, InterruptedException {
         return append(Unpooled.wrappedBuffer(data));
     }
 
@@ -77,7 +110,19 @@ public interface WriteHandle extends ReadHandle {
      * @return a completable future represents the add result, in case of success the future returns the entry id
      *         of this newly appended entry
      */
-    default CompletableFuture<Long> append(byte[] data, int offset, int length) {
+    default CompletableFuture<Long> appendAsync(byte[] data, int offset, int length) {
+        return appendAsync(Unpooled.wrappedBuffer(data, offset, length));
+    }
+
+    /**
+     * Add an entry synchronously to an open ledger.
+     *
+     * @param data array of bytes to be written
+     * @param offset the offset in the bytes array
+     * @param length the length of the bytes to be appended
+     * @return the entry id of this newly appended entry
+     */
+    default long append(byte[] data, int offset, int length) throws BKException, InterruptedException {
         return append(Unpooled.wrappedBuffer(data, offset, length));
     }
 
@@ -89,4 +134,27 @@ public interface WriteHandle extends ReadHandle {
      */
     long getLastAddPushed();
 
+    /**
+     * Asynchronous close the write handle, any adds in flight will return errors.
+     *
+     * <p>Closing a ledger will ensure that all clients agree on what the last
+     * entry of the ledger is. Once the ledger has been closed, all reads from the
+     * ledger will return the same set of entries.
+     *
+     * @return an handle to access the result of the operation
+     */
+    @Override
+    CompletableFuture<Void> closeAsync();
+
+    /**
+     * Synchronous close the write handle, any adds in flight will return errors.
+     *
+     * <p>Closing a ledger will ensure that all clients agree on what the last
+     * entry of the ledger is. Once the ledger has been closed, all reads from the
+     * ledger will return the same set of entries.
+     */
+    @Override
+    default void close() throws BKException, InterruptedException {
+        FutureUtils.<Void, BKException>result(closeAsync(), BKException.HANDLER);
+    }
 }
