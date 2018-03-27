@@ -28,6 +28,7 @@ import java.util.LinkedHashSet;
 import java.util.Vector;
 
 import javax.naming.NamingException;
+import javax.naming.directory.Attribute;
 import javax.naming.directory.Attributes;
 import javax.naming.directory.DirContext;
 import javax.naming.directory.InitialDirContext;
@@ -87,7 +88,20 @@ public class DNS {
             ictx.close();
         }
 
-        return attribute.get("PTR").get().toString();
+        if (null == attribute) {
+            throw new NamingException("No attribute is found");
+        }
+
+        Attribute ptrAttr = attribute.get("PTR");
+        if (null == ptrAttr) {
+            throw new NamingException("No PTR attribute is found");
+        }
+
+        if (null == ptrAttr.get()) {
+            throw new NamingException("PTR attribute value is null");
+        }
+
+        return ptrAttr.get().toString();
     }
 
     /**
