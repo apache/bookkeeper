@@ -30,6 +30,7 @@ import java.io.File;
 import java.io.IOException;
 
 import org.apache.bookkeeper.bookie.Bookie;
+import org.apache.bookkeeper.bookie.BookieException.OperationRejectedException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.junit.After;
@@ -85,6 +86,7 @@ public class DbLedgerStorageWriteCacheTest {
         conf.setGcWaitTime(gcWaitTime);
         conf.setLedgerStorageClass(MockedDbLedgerStorage.class.getName());
         conf.setProperty(DbLedgerStorage.WRITE_CACHE_MAX_SIZE_MB, 1);
+        conf.setProperty(DbLedgerStorage.MAX_THROTTLE_TIME_MILLIS, 1000);
         conf.setLedgerDirNames(new String[] { tmpDir.toString() });
         Bookie bookie = new Bookie(conf);
 
@@ -131,7 +133,7 @@ public class DbLedgerStorageWriteCacheTest {
         try {
             storage.addEntry(entry);
             fail("Should have thrown exception");
-        } catch (IOException e) {
+        } catch (OperationRejectedException e) {
             // Expected
         }
     }

@@ -413,7 +413,7 @@ public class EntryLogTest {
         }
 
         @Override
-        public Boolean call() throws IOException {
+        public Boolean call() throws IOException, BookieException {
             try {
                 ledgerStorage.addEntry(generateEntry(ledgerId, entryId));
             } catch (IOException e) {
