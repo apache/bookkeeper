@@ -350,7 +350,7 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.htm
 </tr>
 <tr id="i5" class="rowColor">
 <td class="colFirst"><code><a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>&gt;</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html#append-io.netty.buffer.ByteBuf-">append</a></span>(io.netty.buffer.ByteBuf&nbsp;data)</code>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html#appendAsync-io.netty.buffer.ByteBuf-">appendAsync</a></span>(io.netty.buffer.ByteBuf&nbsp;data)</code>
 <div class="block">Add entry asynchronously to an open ledger.</div>
 </td>
 </tr>
@@ -410,25 +410,19 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.htm
 </td>
 </tr>
 <tr id="i12" class="altColor">
-<td class="colFirst"><code><a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Void.html?is-external=true" title="class or interface in java.lang">Void</a>&gt;</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html#asyncClose--">asyncClose</a></span>()</code>
-<div class="block">Asynchronous close, any adds in flight will return errors.</div>
-</td>
-</tr>
-<tr id="i13" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html#asyncClose-org.apache.bookkeeper.client.AsyncCallback.CloseCallback-java.lang.Object-">asyncClose</a></span>(<a href="../../../../org/apache/bookkeeper/client/AsyncCallback.CloseCallback.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.CloseCallback</a>&nbsp;cb,
           <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&nbsp;ctx)</code>
 <div class="block">Asynchronous close, any adds in flight will return errors.</div>
 </td>
 </tr>
-<tr id="i14" class="altColor">
+<tr id="i13" class="rowColor">
 <td class="colFirst"><code>(package private) void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html#asyncCloseInternal-org.apache.bookkeeper.client.AsyncCallback.CloseCallback-java.lang.Object-int-">asyncCloseInternal</a></span>(<a href="../../../../org/apache/bookkeeper/client/AsyncCallback.CloseCallback.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.CloseCallback</a>&nbsp;cb,
                   <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&nbsp;ctx,
                   int&nbsp;rc)</code>&nbsp;</td>
 </tr>
-<tr id="i15" class="rowColor">
+<tr id="i14" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html#asyncReadEntries-long-long-org.apache.bookkeeper.client.AsyncCallback.ReadCallback-java.lang.Object-">asyncReadEntries</a></span>(long&nbsp;firstEntry,
                 long&nbsp;lastEntry,
@@ -437,7 +431,7 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.htm
 <div class="block">Read a sequence of entries asynchronously.</div>
 </td>
 </tr>
-<tr id="i16" class="altColor">
+<tr id="i15" class="rowColor">
 <td class="colFirst"><code>(package private) void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html#asyncReadEntriesInternal-long-long-org.apache.bookkeeper.client.AsyncCallback.ReadCallback-java.lang.Object-boolean-">asyncReadEntriesInternal</a></span>(long&nbsp;firstEntry,
                         long&nbsp;lastEntry,
@@ -445,7 +439,7 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.htm
                         <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&nbsp;ctx,
                         boolean&nbsp;isRecoveryRead)</code>&nbsp;</td>
 </tr>
-<tr id="i17" class="rowColor">
+<tr id="i16" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html#asyncReadExplicitLastConfirmed-org.apache.bookkeeper.client.AsyncCallback.ReadLastConfirmedCallback-java.lang.Object-">asyncReadExplicitLastConfirmed</a></span>(<a href="../../../../org/apache/bookkeeper/client/AsyncCallback.ReadLastConfirmedCallback.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.ReadLastConfirmedCallback</a>&nbsp;cb,
                               <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&nbsp;ctx)</code>
@@ -453,14 +447,14 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.htm
  bookies.</div>
 </td>
 </tr>
-<tr id="i18" class="altColor">
+<tr id="i17" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html#asyncReadLastConfirmed-org.apache.bookkeeper.client.AsyncCallback.ReadLastConfirmedCallback-java.lang.Object-">asyncReadLastConfirmed</a></span>(<a href="../../../../org/apache/bookkeeper/client/AsyncCallback.ReadLastConfirmedCallback.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.ReadLastConfirmedCallback</a>&nbsp;cb,
                       <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&nbsp;ctx)</code>
 <div class="block">Obtains asynchronously the last confirmed write from a quorum of bookies.</div>
 </td>
 </tr>
-<tr id="i19" class="rowColor">
+<tr id="i18" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html#asyncReadLastConfirmedAndEntry-long-long-boolean-org.apache.bookkeeper.client.AsyncCallback.ReadLastConfirmedAndEntryCallback-java.lang.Object-">asyncReadLastConfirmedAndEntry</a></span>(long&nbsp;entryId,
                               long&nbsp;timeOutInMillis,
@@ -470,12 +464,12 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.htm
 <div class="block">Asynchronous read next entry and the latest last add confirmed.</div>
 </td>
 </tr>
-<tr id="i20" class="altColor">
+<tr id="i19" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html#asyncReadLastEntry-org.apache.bookkeeper.client.AsyncCallback.ReadCallback-java.lang.Object-">asyncReadLastEntry</a></span>(<a href="../../../../org/apache/bookkeeper/client/AsyncCallback.ReadCallback.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.ReadCallback</a>&nbsp;cb,
                   <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&nbsp;ctx)</code>&nbsp;</td>
 </tr>
-<tr id="i21" class="rowColor">
+<tr id="i20" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html#asyncReadUnconfirmedEntries-long-long-org.apache.bookkeeper.client.AsyncCallback.ReadCallback-java.lang.Object-">asyncReadUnconfirmedEntries</a></span>(long&nbsp;firstEntry,
                            long&nbsp;lastEntry,
@@ -484,7 +478,7 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.htm
 <div class="block">Read a sequence of entries asynchronously, allowing to read after the LastAddConfirmed range.</div>
 </td>
 </tr>
-<tr id="i22" class="altColor">
+<tr id="i21" class="rowColor">
 <td class="colFirst"><code>(package private) void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html#asyncRecoveryAddEntry-byte:A-int-int-org.apache.bookkeeper.client.AsyncCallback.AddCallback-java.lang.Object-">asyncRecoveryAddEntry</a></span>(byte[]&nbsp;data,
                      int&nbsp;offset,
@@ -494,17 +488,23 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.htm
 <div class="block">Make a recovery add entry request.</div>
 </td>
 </tr>
-<tr id="i23" class="rowColor">
+<tr id="i22" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html#asyncTryReadLastConfirmed-org.apache.bookkeeper.client.AsyncCallback.ReadLastConfirmedCallback-java.lang.Object-">asyncTryReadLastConfirmed</a></span>(<a href="../../../../org/apache/bookkeeper/client/AsyncCallback.ReadLastConfirmedCallback.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.ReadLastConfirmedCallback</a>&nbsp;cb,
                          <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&nbsp;ctx)</code>
 <div class="block">Obtains asynchronously the last confirmed write from a quorum of bookies.</div>
 </td>
 </tr>
-<tr id="i24" class="altColor">
+<tr id="i23" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html#close--">close</a></span>()</code>
-<div class="block">Close this ledger synchronously.</div>
+<div class="block">Synchronous close the write handle, any adds in flight will return errors.</div>
+</td>
+</tr>
+<tr id="i24" class="altColor">
+<td class="colFirst"><code><a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Void.html?is-external=true" title="class or interface in java.lang">Void</a>&gt;</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html#closeAsync--">closeAsync</a></span>()</code>
+<div class="block">Asynchronous close the write handle, any adds in flight will return errors.</div>
 </td>
 </tr>
 <tr id="i25" class="rowColor">
@@ -642,8 +642,8 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.htm
 </tr>
 <tr id="i49" class="rowColor">
 <td class="colFirst"><code><a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="../../../../org/apache/bookkeeper/client/api/LedgerEntries.html" title="interface in org.apache.bookkeeper.client.api">LedgerEntries</a>&gt;</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html#read-long-long-">read</a></span>(long&nbsp;firstEntry,
-    long&nbsp;lastEntry)</code>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html#readAsync-long-long-">readAsync</a></span>(long&nbsp;firstEntry,
+         long&nbsp;lastEntry)</code>
 <div class="block">Read a sequence of entries asynchronously.</div>
 </td>
 </tr>
@@ -665,17 +665,17 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.htm
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html#readExplicitLastConfirmed--">readExplicitLastConfirmed</a></span>()</code>&nbsp;</td>
 </tr>
 <tr id="i53" class="rowColor">
-<td class="colFirst"><code><a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>&gt;</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html#readLastAddConfirmed--">readLastAddConfirmed</a></span>()</code>
-<div class="block">Obtains asynchronously the last confirmed write from a quorum of bookies.</div>
+<td class="colFirst"><code><a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="../../../../org/apache/bookkeeper/client/api/LastConfirmedAndEntry.html" title="interface in org.apache.bookkeeper.client.api">LastConfirmedAndEntry</a>&gt;</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html#readLastAddConfirmedAndEntryAsync-long-long-boolean-">readLastAddConfirmedAndEntryAsync</a></span>(long&nbsp;entryId,
+                                 long&nbsp;timeOutInMillis,
+                                 boolean&nbsp;parallel)</code>
+<div class="block">Asynchronous read specific entry and the latest last add confirmed.</div>
 </td>
 </tr>
 <tr id="i54" class="altColor">
-<td class="colFirst"><code><a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="../../../../org/apache/bookkeeper/client/api/LastConfirmedAndEntry.html" title="interface in org.apache.bookkeeper.client.api">LastConfirmedAndEntry</a>&gt;</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html#readLastAddConfirmedAndEntry-long-long-boolean-">readLastAddConfirmedAndEntry</a></span>(long&nbsp;entryId,
-                            long&nbsp;timeOutInMillis,
-                            boolean&nbsp;parallel)</code>
-<div class="block">Asynchronous read specific entry and the latest last add confirmed.</div>
+<td class="colFirst"><code><a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>&gt;</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html#readLastAddConfirmedAsync--">readLastAddConfirmedAsync</a></span>()</code>
+<div class="block">Obtains asynchronously the last confirmed write from a quorum of bookies.</div>
 </td>
 </tr>
 <tr id="i55" class="rowColor">
@@ -690,8 +690,8 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.htm
 </tr>
 <tr id="i57" class="rowColor">
 <td class="colFirst"><code><a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="../../../../org/apache/bookkeeper/client/api/LedgerEntries.html" title="interface in org.apache.bookkeeper.client.api">LedgerEntries</a>&gt;</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html#readUnconfirmed-long-long-">readUnconfirmed</a></span>(long&nbsp;firstEntry,
-               long&nbsp;lastEntry)</code>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html#readUnconfirmedAsync-long-long-">readUnconfirmedAsync</a></span>(long&nbsp;firstEntry,
+                    long&nbsp;lastEntry)</code>
 <div class="block">Read a sequence of entries asynchronously, allowing to read after the LastAddConfirmed range.</div>
 </td>
 </tr>
@@ -740,7 +740,7 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.htm
 </tr>
 <tr id="i66" class="altColor">
 <td class="colFirst"><code><a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>&gt;</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html#tryReadLastAddConfirmed--">tryReadLastAddConfirmed</a></span>()</code>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html#tryReadLastAddConfirmedAsync--">tryReadLastAddConfirmedAsync</a></span>()</code>
 <div class="block">Obtains asynchronously the last confirmed write from a quorum of bookies
  but it doesn't wait all the responses from the quorum.</div>
 </td>
@@ -777,7 +777,14 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.htm
 <!--   -->
 </a>
 <h3>Methods inherited from interface&nbsp;org.apache.bookkeeper.client.api.<a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.html" title="interface in org.apache.bookkeeper.client.api">WriteHandle</a></h3>
-<code><a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.html#append-byte:A-">append</a>, <a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.html#append-byte:A-int-int-">append</a>, <a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.html#append-java.nio.ByteBuffer-">append</a></code></li>
+<code><a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.html#append-byte:A-">append</a>, <a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.html#append-byte:A-int-int-">append</a>, <a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.html#append-io.netty.buffer.ByteBuf-">append</a>, <a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.html#append-java.nio.ByteBuffer-">append</a>, <a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.html#appendAsync-byte:A-">appendAsync</a>, <a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.html#appendAsync-byte:A-int-int-">appendAsync</a>, <a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.html#appendAsync-java.nio.ByteBuffer-">appendAsync</a></code></li>
+</ul>
+<ul class="blockList">
+<li class="blockList"><a name="methods.inherited.from.class.org.apache.bookkeeper.client.api.ReadHandle">
+<!--   -->
+</a>
+<h3>Methods inherited from interface&nbsp;org.apache.bookkeeper.client.api.<a href="../../../../org/apache/bookkeeper/client/api/ReadHandle.html" title="interface in org.apache.bookkeeper.client.api">ReadHandle</a></h3>
+<code><a href="../../../../org/apache/bookkeeper/client/api/ReadHandle.html#read-long-long-">read</a>, <a href="../../../../org/apache/bookkeeper/client/api/ReadHandle.html#readLastAddConfirmed--">readLastAddConfirmed</a>, <a href="../../../../org/apache/bookkeeper/client/api/ReadHandle.html#readLastAddConfirmedAndEntry-long-long-boolean-">readLastAddConfirmedAndEntry</a>, <a href="../../../../org/apache/bookkeeper/client/api/ReadHandle.html#readUnconfirmed-long-long-">readUnconfirmed</a>, <a href="../../../../org/apache/bookkeeper/client/api/ReadHandle.html#tryReadLastAddConfirmed--">tryReadLastAddConfirmed</a></code></li>
 </ul>
 </li>
 </ul>
@@ -1344,39 +1351,45 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.htm
 <pre>public&nbsp;void&nbsp;close()
            throws <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/InterruptedException.html?is-external=true" title="class or interface in java.lang">InterruptedException</a>,
                   <a href="../../../../org/apache/bookkeeper/client/BKException.html" title="class in org.apache.bookkeeper.client">BKException</a></pre>
-<div class="block">Close this ledger synchronously.</div>
+<div class="block">Synchronous close the write handle, any adds in flight will return errors.
+
+ <p>Closing a ledger will ensure that all clients agree on what the last
+ entry of the ledger is. Once the ledger has been closed, all reads from the
+ ledger will return the same set of entries.</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
 <dd><code><a href="http://docs.oracle.com/javase/8/docs/api/java/lang/AutoCloseable.html?is-external=true#close--" title="class or interface in java.lang">close</a></code>&nbsp;in interface&nbsp;<code><a href="http://docs.oracle.com/javase/8/docs/api/java/lang/AutoCloseable.html?is-external=true" title="class or interface in java.lang">AutoCloseable</a></code></dd>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
 <dd><code><a href="../../../../org/apache/bookkeeper/client/api/Handle.html#close--">close</a></code>&nbsp;in interface&nbsp;<code><a href="../../../../org/apache/bookkeeper/client/api/Handle.html" title="interface in org.apache.bookkeeper.client.api">Handle</a></code></dd>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.html#close--">close</a></code>&nbsp;in interface&nbsp;<code><a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.html" title="interface in org.apache.bookkeeper.client.api">WriteHandle</a></code></dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
 <dd><code><a href="http://docs.oracle.com/javase/8/docs/api/java/lang/InterruptedException.html?is-external=true" title="class or interface in java.lang">InterruptedException</a></code></dd>
 <dd><code><a href="../../../../org/apache/bookkeeper/client/BKException.html" title="class in org.apache.bookkeeper.client">BKException</a></code></dd>
 <dt><span class="seeLabel">See Also:</span></dt>
-<dd><a href="../../../../org/apache/bookkeeper/client/api/Handle.html#asyncClose--"><code>Handle.asyncClose()</code></a></dd>
+<dd><a href="../../../../org/apache/bookkeeper/client/api/Handle.html#closeAsync--"><code>Handle.closeAsync()</code></a></dd>
 </dl>
 </li>
 </ul>
-<a name="asyncClose--">
+<a name="closeAsync--">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
-<h4>asyncClose</h4>
-<pre>public&nbsp;<a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Void.html?is-external=true" title="class or interface in java.lang">Void</a>&gt;&nbsp;asyncClose()</pre>
-<div class="block">Asynchronous close, any adds in flight will return errors.
+<h4>closeAsync</h4>
+<pre>public&nbsp;<a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Void.html?is-external=true" title="class or interface in java.lang">Void</a>&gt;&nbsp;closeAsync()</pre>
+<div class="block">Asynchronous close the write handle, any adds in flight will return errors.
 
  <p>Closing a ledger will ensure that all clients agree on what the last
- entry of the ledger is. This ensures that, once the ledger has been closed,
- all reads from the ledger will return the same set of entries.</div>
+ entry of the ledger is. Once the ledger has been closed, all reads from the
+ ledger will return the same set of entries.</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code><a href="../../../../org/apache/bookkeeper/client/api/Handle.html#asyncClose--">asyncClose</a></code>&nbsp;in interface&nbsp;<code><a href="../../../../org/apache/bookkeeper/client/api/Handle.html" title="interface in org.apache.bookkeeper.client.api">Handle</a></code></dd>
+<dd><code><a href="../../../../org/apache/bookkeeper/client/api/Handle.html#closeAsync--">closeAsync</a></code>&nbsp;in interface&nbsp;<code><a href="../../../../org/apache/bookkeeper/client/api/Handle.html" title="interface in org.apache.bookkeeper.client.api">Handle</a></code></dd>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.html#closeAsync--">closeAsync</a></code>&nbsp;in interface&nbsp;<code><a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.html" title="interface in org.apache.bookkeeper.client.api">WriteHandle</a></code></dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>an handle to access the result of the operation</dd>
-<dt><span class="seeLabel">See Also:</span></dt>
-<dd><code>to have a simple method to access the result</code></dd>
 </dl>
 </li>
 </ul>
@@ -1409,7 +1422,7 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.htm
 <pre>public&nbsp;boolean&nbsp;isClosed()</pre>
 <div class="block">Returns whether the ledger is sealed or not.
 
- <p>A ledger is sealed when either the client explicitly closes it (<a href="../../../../org/apache/bookkeeper/client/api/Handle.html#close--"><code>Handle.close()</code></a> or
+ <p>A ledger is sealed when either the client explicitly closes it (<a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.html#close--"><code>WriteHandle.close()</code></a> or
  <a href="../../../../org/apache/bookkeeper/client/api/Handle.html#close--"><code>Handle.close()</code></a>) or another client explicitly open and recovery it
  <a href="../../../../org/apache/bookkeeper/client/api/OpenBuilder.html#withRecovery-boolean-"><code>OpenBuilder.withRecovery(boolean)</code></a>.
 
@@ -1559,18 +1572,18 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.htm
 </dl>
 </li>
 </ul>
-<a name="read-long-long-">
+<a name="readAsync-long-long-">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
-<h4>read</h4>
-<pre>public&nbsp;<a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="../../../../org/apache/bookkeeper/client/api/LedgerEntries.html" title="interface in org.apache.bookkeeper.client.api">LedgerEntries</a>&gt;&nbsp;read(long&nbsp;firstEntry,
-                                             long&nbsp;lastEntry)</pre>
+<h4>readAsync</h4>
+<pre>public&nbsp;<a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="../../../../org/apache/bookkeeper/client/api/LedgerEntries.html" title="interface in org.apache.bookkeeper.client.api">LedgerEntries</a>&gt;&nbsp;readAsync(long&nbsp;firstEntry,
+                                                  long&nbsp;lastEntry)</pre>
 <div class="block">Read a sequence of entries asynchronously.</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code><a href="../../../../org/apache/bookkeeper/client/api/ReadHandle.html#read-long-long-">read</a></code>&nbsp;in interface&nbsp;<code><a href="../../../../org/apache/bookkeeper/client/api/ReadHandle.html" title="interface in org.apache.bookkeeper.client.api">ReadHandle</a></code></dd>
+<dd><code><a href="../../../../org/apache/bookkeeper/client/api/ReadHandle.html#readAsync-long-long-">readAsync</a></code>&nbsp;in interface&nbsp;<code><a href="../../../../org/apache/bookkeeper/client/api/ReadHandle.html" title="interface in org.apache.bookkeeper.client.api">ReadHandle</a></code></dd>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>firstEntry</code> - id of first entry of sequence</dd>
 <dd><code>lastEntry</code> - id of last entry of sequence</dd>
@@ -1579,14 +1592,14 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.htm
 </dl>
 </li>
 </ul>
-<a name="readUnconfirmed-long-long-">
+<a name="readUnconfirmedAsync-long-long-">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
-<h4>readUnconfirmed</h4>
-<pre>public&nbsp;<a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="../../../../org/apache/bookkeeper/client/api/LedgerEntries.html" title="interface in org.apache.bookkeeper.client.api">LedgerEntries</a>&gt;&nbsp;readUnconfirmed(long&nbsp;firstEntry,
-                                                        long&nbsp;lastEntry)</pre>
+<h4>readUnconfirmedAsync</h4>
+<pre>public&nbsp;<a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="../../../../org/apache/bookkeeper/client/api/LedgerEntries.html" title="interface in org.apache.bookkeeper.client.api">LedgerEntries</a>&gt;&nbsp;readUnconfirmedAsync(long&nbsp;firstEntry,
+                                                             long&nbsp;lastEntry)</pre>
 <div class="block">Read a sequence of entries asynchronously, allowing to read after the LastAddConfirmed range.
  <br>This is the same of
  <code>#asyncReadEntries(long, long, ReadCallback, Object) </code>
@@ -1601,7 +1614,7 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.htm
  the expected consistency will be as described above for each subrange of ids.</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code><a href="../../../../org/apache/bookkeeper/client/api/ReadHandle.html#readUnconfirmed-long-long-">readUnconfirmed</a></code>&nbsp;in interface&nbsp;<code><a href="../../../../org/apache/bookkeeper/client/api/ReadHandle.html" title="interface in org.apache.bookkeeper.client.api">ReadHandle</a></code></dd>
+<dd><code><a href="../../../../org/apache/bookkeeper/client/api/ReadHandle.html#readUnconfirmedAsync-long-long-">readUnconfirmedAsync</a></code>&nbsp;in interface&nbsp;<code><a href="../../../../org/apache/bookkeeper/client/api/ReadHandle.html" title="interface in org.apache.bookkeeper.client.api">ReadHandle</a></code></dd>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>firstEntry</code> - id of first entry of sequence</dd>
 <dd><code>lastEntry</code> - id of last entry of sequence</dd>
@@ -1685,17 +1698,17 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.htm
 </dl>
 </li>
 </ul>
-<a name="append-io.netty.buffer.ByteBuf-">
+<a name="appendAsync-io.netty.buffer.ByteBuf-">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
-<h4>append</h4>
-<pre>public&nbsp;<a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>&gt;&nbsp;append(io.netty.buffer.ByteBuf&nbsp;data)</pre>
+<h4>appendAsync</h4>
+<pre>public&nbsp;<a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>&gt;&nbsp;appendAsync(io.netty.buffer.ByteBuf&nbsp;data)</pre>
 <div class="block">Add entry asynchronously to an open ledger.</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code><a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.html#append-io.netty.buffer.ByteBuf-">append</a></code>&nbsp;in interface&nbsp;<code><a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.html" title="interface in org.apache.bookkeeper.client.api">WriteHandle</a></code></dd>
+<dd><code><a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.html#appendAsync-io.netty.buffer.ByteBuf-">appendAsync</a></code>&nbsp;in interface&nbsp;<code><a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.html" title="interface in org.apache.bookkeeper.client.api">WriteHandle</a></code></dd>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>data</code> - a bytebuf to be written. The bytebuf's reference count will be decremented by 1 after the
              completable future is returned</dd>
@@ -1997,33 +2010,31 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.htm
 </dl>
 </li>
 </ul>
-<a name="tryReadLastAddConfirmed--">
+<a name="tryReadLastAddConfirmedAsync--">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
-<h4>tryReadLastAddConfirmed</h4>
-<pre>public&nbsp;<a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>&gt;&nbsp;tryReadLastAddConfirmed()</pre>
+<h4>tryReadLastAddConfirmedAsync</h4>
+<pre>public&nbsp;<a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>&gt;&nbsp;tryReadLastAddConfirmedAsync()</pre>
 <div class="block">Obtains asynchronously the last confirmed write from a quorum of bookies
  but it doesn't wait all the responses from the quorum. It would callback
  immediately if it received a LAC which is larger than current LAC.</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code><a href="../../../../org/apache/bookkeeper/client/api/ReadHandle.html#tryReadLastAddConfirmed--">tryReadLastAddConfirmed</a></code>&nbsp;in interface&nbsp;<code><a href="../../../../org/apache/bookkeeper/client/api/ReadHandle.html" title="interface in org.apache.bookkeeper.client.api">ReadHandle</a></code></dd>
+<dd><code><a href="../../../../org/apache/bookkeeper/client/api/ReadHandle.html#tryReadLastAddConfirmedAsync--">tryReadLastAddConfirmedAsync</a></code>&nbsp;in interface&nbsp;<code><a href="../../../../org/apache/bookkeeper/client/api/ReadHandle.html" title="interface in org.apache.bookkeeper.client.api">ReadHandle</a></code></dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>an handle to the result of the operation</dd>
-<dt><span class="seeLabel">See Also:</span></dt>
-<dd><a href="../../../../org/apache/bookkeeper/client/api/ReadHandle.html#tryReadLastAddConfirmed--"><code>ReadHandle.tryReadLastAddConfirmed()</code></a></dd>
 </dl>
 </li>
 </ul>
-<a name="readLastAddConfirmed--">
+<a name="readLastAddConfirmedAsync--">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
-<h4>readLastAddConfirmed</h4>
-<pre>public&nbsp;<a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>&gt;&nbsp;readLastAddConfirmed()</pre>
+<h4>readLastAddConfirmedAsync</h4>
+<pre>public&nbsp;<a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>&gt;&nbsp;readLastAddConfirmedAsync()</pre>
 <div class="block">Obtains asynchronously the last confirmed write from a quorum of bookies. This
  call obtains the the last add confirmed each bookie has received for this ledger
  and returns the maximum. If the ledger has been closed, the value returned by this
@@ -2033,7 +2044,7 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.htm
  of the ledger handle.</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code><a href="../../../../org/apache/bookkeeper/client/api/ReadHandle.html#readLastAddConfirmed--">readLastAddConfirmed</a></code>&nbsp;in interface&nbsp;<code><a href="../../../../org/apache/bookkeeper/client/api/ReadHandle.html" title="interface in org.apache.bookkeeper.client.api">ReadHandle</a></code></dd>
+<dd><code><a href="../../../../org/apache/bookkeeper/client/api/ReadHandle.html#readLastAddConfirmedAsync--">readLastAddConfirmedAsync</a></code>&nbsp;in interface&nbsp;<code><a href="../../../../org/apache/bookkeeper/client/api/ReadHandle.html" title="interface in org.apache.bookkeeper.client.api">ReadHandle</a></code></dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>an handle to the result of the operation</dd>
 <dt><span class="seeLabel">See Also:</span></dt>
@@ -2041,22 +2052,22 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.htm
 </dl>
 </li>
 </ul>
-<a name="readLastAddConfirmedAndEntry-long-long-boolean-">
+<a name="readLastAddConfirmedAndEntryAsync-long-long-boolean-">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
-<h4>readLastAddConfirmedAndEntry</h4>
-<pre>public&nbsp;<a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="../../../../org/apache/bookkeeper/client/api/LastConfirmedAndEntry.html" title="interface in org.apache.bookkeeper.client.api">LastConfirmedAndEntry</a>&gt;&nbsp;readLastAddConfirmedAndEntry(long&nbsp;entryId,
-                                                                             long&nbsp;timeOutInMillis,
-                                                                             boolean&nbsp;parallel)</pre>
+<h4>readLastAddConfirmedAndEntryAsync</h4>
+<pre>public&nbsp;<a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="../../../../org/apache/bookkeeper/client/api/LastConfirmedAndEntry.html" title="interface in org.apache.bookkeeper.client.api">LastConfirmedAndEntry</a>&gt;&nbsp;readLastAddConfirmedAndEntryAsync(long&nbsp;entryId,
+                                                                                  long&nbsp;timeOutInMillis,
+                                                                                  boolean&nbsp;parallel)</pre>
 <div class="block">Asynchronous read specific entry and the latest last add confirmed.
  If the next entryId is less than known last add confirmed, the call will read next entry directly.
  If the next entryId is ahead of known last add confirmed, the call will issue a long poll read
  to wait for the next entry <i>entryId</i>.</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code><a href="../../../../org/apache/bookkeeper/client/api/ReadHandle.html#readLastAddConfirmedAndEntry-long-long-boolean-">readLastAddConfirmedAndEntry</a></code>&nbsp;in interface&nbsp;<code><a href="../../../../org/apache/bookkeeper/client/api/ReadHandle.html" title="interface in org.apache.bookkeeper.client.api">ReadHandle</a></code></dd>
+<dd><code><a href="../../../../org/apache/bookkeeper/client/api/ReadHandle.html#readLastAddConfirmedAndEntryAsync-long-long-boolean-">readLastAddConfirmedAndEntryAsync</a></code>&nbsp;in interface&nbsp;<code><a href="../../../../org/apache/bookkeeper/client/api/ReadHandle.html" title="interface in org.apache.bookkeeper.client.api">ReadHandle</a></code></dd>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>entryId</code> - next entry id to read</dd>
 <dd><code>timeOutInMillis</code> - timeout period to wait for the entry id to be available (for long poll only)

@@ -327,6 +327,19 @@
 <!--   -->
 </a>
 <h3>Uses of <a href="../../../../../../org/apache/bookkeeper/client/api/BKException.html" title="class in org.apache.bookkeeper.client.api">BKException</a> in <a href="../../../../../../org/apache/bookkeeper/client/api/package-summary.html">org.apache.bookkeeper.client.api</a></h3>
+<table class="useSummary" border="0" cellpadding="3" cellspacing="0" summary="Use table, listing fields, and an explanation">
+<caption><span>Fields in <a href="../../../../../../org/apache/bookkeeper/client/api/package-summary.html">org.apache.bookkeeper.client.api</a> with type parameters of type <a href="../../../../../../org/apache/bookkeeper/client/api/BKException.html" title="class in org.apache.bookkeeper.client.api">BKException</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colLast" scope="col">Field and Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>(package private) static <a href="http://docs.oracle.com/javase/8/docs/api/java/util/function/Function.html?is-external=true" title="class or interface in java.util.function">Function</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Throwable.html?is-external=true" title="class or interface in java.lang">Throwable</a>,<a href="../../../../../../org/apache/bookkeeper/client/api/BKException.html" title="class in org.apache.bookkeeper.client.api">BKException</a>&gt;</code></td>
+<td class="colLast"><span class="typeNameLabel">BKException.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/bookkeeper/client/api/BKException.html#HANDLER">HANDLER</a></span></code>&nbsp;</td>
+</tr>
+</tbody>
+</table>
 <table class="useSummary" border="0" cellpadding="3" cellspacing="0" summary="Use table, listing methods, and an explanation">
 <caption><span>Methods in <a href="../../../../../../org/apache/bookkeeper/client/api/package-summary.html">org.apache.bookkeeper.client.api</a> that throw <a href="../../../../../../org/apache/bookkeeper/client/api/BKException.html" title="class in org.apache.bookkeeper.client.api">BKException</a></span><span class="tabEnd">&nbsp;</span></caption>
 <tr>
@@ -334,6 +347,32 @@
 <th class="colLast" scope="col">Method and Description</th>
 </tr>
 <tbody>
+<tr class="altColor">
+<td class="colFirst"><code>default long</code></td>
+<td class="colLast"><span class="typeNameLabel">WriteHandle.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/bookkeeper/client/api/WriteHandle.html#append-byte:A-">append</a></span>(byte[]&nbsp;data)</code>
+<div class="block">Add an entry synchronously to an open ledger.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>default long</code></td>
+<td class="colLast"><span class="typeNameLabel">WriteHandle.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/bookkeeper/client/api/WriteHandle.html#append-byte:A-int-int-">append</a></span>(byte[]&nbsp;data,
+      int&nbsp;offset,
+      int&nbsp;length)</code>
+<div class="block">Add an entry synchronously to an open ledger.</div>
+</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>default long</code></td>
+<td class="colLast"><span class="typeNameLabel">WriteHandle.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/bookkeeper/client/api/WriteHandle.html#append-io.netty.buffer.ByteBuf-">append</a></span>(io.netty.buffer.ByteBuf&nbsp;data)</code>
+<div class="block">Add entry synchronously to an open ledger.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>default long</code></td>
+<td class="colLast"><span class="typeNameLabel">WriteHandle.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/bookkeeper/client/api/WriteHandle.html#append-java.nio.ByteBuffer-">append</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/nio/ByteBuffer.html?is-external=true" title="class or interface in java.nio">ByteBuffer</a>&nbsp;data)</code>
+<div class="block">Add entry synchronously to an open ledger.</div>
+</td>
+</tr>
 <tr class="altColor">
 <td class="colFirst"><code><a href="../../../../../../org/apache/bookkeeper/client/api/BookKeeper.html" title="interface in org.apache.bookkeeper.client.api">BookKeeper</a></code></td>
 <td class="colLast"><span class="typeNameLabel">BookKeeperBuilder.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/bookkeeper/client/api/BookKeeperBuilder.html#build--">build</a></span>()</code>
@@ -348,8 +387,79 @@
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>default void</code></td>
+<td class="colLast"><span class="typeNameLabel">WriteHandle.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/bookkeeper/client/api/WriteHandle.html#close--">close</a></span>()</code>
+<div class="block">Synchronous close the write handle, any adds in flight will return errors.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>default void</code></td>
 <td class="colLast"><span class="typeNameLabel">Handle.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/bookkeeper/client/api/Handle.html#close--">close</a></span>()</code>
-<div class="block">Close this ledger synchronously.</div>
+<div class="block">Close this handle synchronously.</div>
+</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>default <a href="../../../../../../org/apache/bookkeeper/client/api/LedgerEntries.html" title="interface in org.apache.bookkeeper.client.api">LedgerEntries</a></code></td>
+<td class="colLast"><span class="typeNameLabel">ReadHandle.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/bookkeeper/client/api/ReadHandle.html#read-long-long-">read</a></span>(long&nbsp;firstEntry,
+    long&nbsp;lastEntry)</code>
+<div class="block">Read a sequence of entries synchronously.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>default long</code></td>
+<td class="colLast"><span class="typeNameLabel">ReadHandle.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/bookkeeper/client/api/ReadHandle.html#readLastAddConfirmed--">readLastAddConfirmed</a></span>()</code>
+<div class="block">Obtains asynchronously the last confirmed write from a quorum of bookies.</div>
+</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>default <a href="../../../../../../org/apache/bookkeeper/client/api/LastConfirmedAndEntry.html" title="interface in org.apache.bookkeeper.client.api">LastConfirmedAndEntry</a></code></td>
+<td class="colLast"><span class="typeNameLabel">ReadHandle.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/bookkeeper/client/api/ReadHandle.html#readLastAddConfirmedAndEntry-long-long-boolean-">readLastAddConfirmedAndEntry</a></span>(long&nbsp;entryId,
+                            long&nbsp;timeOutInMillis,
+                            boolean&nbsp;parallel)</code>
+<div class="block">Asynchronous read specific entry and the latest last add confirmed.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>default <a href="../../../../../../org/apache/bookkeeper/client/api/LedgerEntries.html" title="interface in org.apache.bookkeeper.client.api">LedgerEntries</a></code></td>
+<td class="colLast"><span class="typeNameLabel">ReadHandle.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/bookkeeper/client/api/ReadHandle.html#readUnconfirmed-long-long-">readUnconfirmed</a></span>(long&nbsp;firstEntry,
+               long&nbsp;lastEntry)</code>
+<div class="block">Read a sequence of entries synchronously.</div>
+</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>default long</code></td>
+<td class="colLast"><span class="typeNameLabel">ReadHandle.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/bookkeeper/client/api/ReadHandle.html#tryReadLastAddConfirmed--">tryReadLastAddConfirmed</a></span>()</code>
+<div class="block">Obtains asynchronously the last confirmed write from a quorum of bookies
+ but it doesn't wait all the responses from the quorum.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>default long</code></td>
+<td class="colLast"><span class="typeNameLabel">WriteAdvHandle.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/bookkeeper/client/api/WriteAdvHandle.html#write-long-byte:A-">write</a></span>(long&nbsp;entryId,
+     byte[]&nbsp;data)</code>
+<div class="block">Add entry synchronously to an open ledger.</div>
+</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>default long</code></td>
+<td class="colLast"><span class="typeNameLabel">WriteAdvHandle.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/bookkeeper/client/api/WriteAdvHandle.html#write-long-byte:A-int-int-">write</a></span>(long&nbsp;entryId,
+     byte[]&nbsp;data,
+     int&nbsp;offset,
+     int&nbsp;length)</code>
+<div class="block">Add entry synchronously to an open ledger.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>default long</code></td>
+<td class="colLast"><span class="typeNameLabel">WriteAdvHandle.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/bookkeeper/client/api/WriteAdvHandle.html#write-long-io.netty.buffer.ByteBuf-">write</a></span>(long&nbsp;entryId,
+     io.netty.buffer.ByteBuf&nbsp;data)</code>
+<div class="block">Add entry asynchronously to an open ledger.</div>
+</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>default long</code></td>
+<td class="colLast"><span class="typeNameLabel">WriteAdvHandle.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/bookkeeper/client/api/WriteAdvHandle.html#write-long-java.nio.ByteBuffer-">write</a></span>(long&nbsp;entryId,
+     <a href="http://docs.oracle.com/javase/8/docs/api/java/nio/ByteBuffer.html?is-external=true" title="class or interface in java.nio">ByteBuffer</a>&nbsp;data)</code>
+<div class="block">Add entry synchronously to an open ledger.</div>
 </td>
 </tr>
 </tbody>

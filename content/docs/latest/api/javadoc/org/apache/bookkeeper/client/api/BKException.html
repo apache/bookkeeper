@@ -129,7 +129,7 @@ var activeTableTab = "activeTableTab";
 <br>
 <pre><a href="../../../../../org/apache/bookkeeper/common/annotation/InterfaceAudience.Public.html" title="annotation in org.apache.bookkeeper.common.annotation">@InterfaceAudience.Public</a>
  <a href="../../../../../org/apache/bookkeeper/common/annotation/InterfaceStability.Unstable.html" title="annotation in org.apache.bookkeeper.common.annotation">@InterfaceStability.Unstable</a>
-public abstract class <span class="typeNameLabel">BKException</span>
+public class <span class="typeNameLabel">BKException</span>
 extends <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Exception.html?is-external=true" title="class or interface in java.lang">Exception</a></pre>
 <div class="block">Super class for all errors which occur using BookKeeper client.</div>
 <dl>
@@ -180,6 +180,10 @@ extends <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Exception.ht
 <tr class="altColor">
 <td class="colFirst"><code>protected int</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/api/BKException.html#code">code</a></span></code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>(package private) static <a href="http://docs.oracle.com/javase/8/docs/api/java/util/function/Function.html?is-external=true" title="class or interface in java.util.function">Function</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Throwable.html?is-external=true" title="class or interface in java.lang">Throwable</a>,<a href="../../../../../org/apache/bookkeeper/client/api/BKException.html" title="class in org.apache.bookkeeper.client.api">BKException</a>&gt;</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/api/BKException.html#HANDLER">HANDLER</a></span></code>&nbsp;</td>
 </tr>
 </table>
 </li>
@@ -262,6 +266,15 @@ extends <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Exception.ht
 <!--   -->
 </a>
 <h3>Field Detail</h3>
+<a name="HANDLER">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>HANDLER</h4>
+<pre>static final&nbsp;<a href="http://docs.oracle.com/javase/8/docs/api/java/util/function/Function.html?is-external=true" title="class or interface in java.util.function">Function</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Throwable.html?is-external=true" title="class or interface in java.lang">Throwable</a>,<a href="../../../../../org/apache/bookkeeper/client/api/BKException.html" title="class in org.apache.bookkeeper.client.api">BKException</a>&gt; HANDLER</pre>
+</li>
+</ul>
 <a name="code">
 <!--   -->
 </a>
