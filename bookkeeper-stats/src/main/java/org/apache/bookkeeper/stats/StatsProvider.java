@@ -28,18 +28,18 @@ public interface StatsProvider {
      * @param conf
      *          Configuration to configure the stats provider.
      */
-    public void start(Configuration conf);
+    void start(Configuration conf);
 
     /**
-     * Close the stats provider
+     * Close the stats provider.
      */
-    public void stop();
+    void stop();
 
     /**
-     * Return the stats logger to a given <i>scope</i>
+     * Return the stats logger to a given <i>scope</i>.
      * @param scope
      *          Scope for the given stats
      * @return stats logger for the given <i>scope</i>
      */
-    public StatsLogger getStatsLogger(String scope);
+    StatsLogger getStatsLogger(String scope);
 }

@@ -20,28 +20,42 @@
  */
 package org.apache.bookkeeper.proto;
 
-import com.google.protobuf.ByteString;
+import com.google.protobuf.CodedOutputStream;
 import com.google.protobuf.ExtensionRegistry;
 import com.google.protobuf.InvalidProtocolBufferException;
+import com.google.protobuf.MessageLite;
 
-import org.jboss.netty.buffer.ChannelBufferFactory;
-import org.jboss.netty.buffer.ChannelBufferInputStream;
-import org.jboss.netty.buffer.ChannelBufferOutputStream;
-import org.jboss.netty.buffer.ChannelBuffers;
-import org.jboss.netty.buffer.ChannelBuffer;
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelHandlerContext;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
+import io.netty.buffer.ByteBufInputStream;
+import io.netty.buffer.ByteBufOutputStream;
+import io.netty.buffer.Unpooled;
+import io.netty.channel.ChannelHandler.Sharable;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.channel.ChannelOutboundHandlerAdapter;
+import io.netty.channel.ChannelPromise;
+import io.netty.util.ReferenceCountUtil;
+
+import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
+
 import org.apache.bookkeeper.proto.BookieProtocol.PacketHeader;
-import org.jboss.netty.handler.codec.oneone.OneToOneEncoder;
-import org.jboss.netty.handler.codec.oneone.OneToOneDecoder;
+import org.apache.bookkeeper.proto.checksum.MacDigestManager;
+import org.apache.bookkeeper.util.ByteBufList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * A class for encoding and decoding the Bookkeeper protocol.
+ */
 public class BookieProtoEncoding {
-    private final static Logger LOG = LoggerFactory.getLogger(BookieProtoEncoding.class);
+    private static final Logger LOG = LoggerFactory.getLogger(BookieProtoEncoding.class);
 
-    static interface EnDecoder {
-
+    /**
+     * An encoder/decoder interface for the Bookkeeper protocol.
+     */
+    public interface EnDecoder {
         /**
          * Encode a <i>object</i> into channel buffer.
          *
@@ -50,7 +64,7 @@ public class BookieProtoEncoding {
          * @return encode buffer.
          * @throws Exception
          */
-        public Object encode(Object object, ChannelBufferFactory factory) throws Exception;
+        Object encode(Object object, ByteBufAllocator allocator) throws Exception;
 
         /**
          * Decode a <i>packet</i> into an object.
@@ -60,32 +74,48 @@ public class BookieProtoEncoding {
          * @return parsed object.
          * @throws Exception
          */
-        public Object decode(ChannelBuffer packet) throws Exception;
+        Object decode(ByteBuf packet) throws Exception;
 
     }
 
-    static class RequestEnDeCoderPreV3 implements EnDecoder {
+    /**
+     * An encoder/decoder for the Bookkeeper protocol before version 3.
+     */
+    public static class RequestEnDeCoderPreV3 implements EnDecoder {
         final ExtensionRegistry extensionRegistry;
 
-        RequestEnDeCoderPreV3(ExtensionRegistry extensionRegistry) {
+        //This empty master key is used when an empty password is provided which is the hash of an empty string
+        private static final byte[] emptyPasswordMasterKey;
+        static {
+            try {
+                emptyPasswordMasterKey = MacDigestManager.genDigest("ledger", new byte[0]);
+            } catch (NoSuchAlgorithmException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        public RequestEnDeCoderPreV3(ExtensionRegistry extensionRegistry) {
             this.extensionRegistry = extensionRegistry;
         }
 
         @Override
-        public Object encode(Object msg, ChannelBufferFactory bufferFactory)
+        public Object encode(Object msg, ByteBufAllocator allocator)
                 throws Exception {
             if (!(msg instanceof BookieProtocol.Request)) {
                 return msg;
             }
-            BookieProtocol.Request r = (BookieProtocol.Request)msg;
+            BookieProtocol.Request r = (BookieProtocol.Request) msg;
             if (r instanceof BookieProtocol.AddRequest) {
-                BookieProtocol.AddRequest ar = (BookieProtocol.AddRequest)r;
+                BookieProtocol.AddRequest ar = (BookieProtocol.AddRequest) r;
                 int totalHeaderSize = 4 // for the header
                     + BookieProtocol.MASTER_KEY_LENGTH; // for the master key
-                ChannelBuffer buf = bufferFactory.getBuffer(totalHeaderSize);
-                buf.writeInt(new PacketHeader(r.getProtocolVersion(), r.getOpCode(), r.getFlags()).toInt());
+                ByteBuf buf = allocator.buffer(totalHeaderSize);
+                buf.writeInt(PacketHeader.toInt(r.getProtocolVersion(), r.getOpCode(), r.getFlags()));
                 buf.writeBytes(r.getMasterKey(), 0, BookieProtocol.MASTER_KEY_LENGTH);
-                return ChannelBuffers.wrappedBuffer(buf, ar.getData());
+                ByteBufList data = ar.getData();
+                ar.recycle();
+                data.prepend(buf);
+                return data;
             } else if (r instanceof BookieProtocol.ReadRequest) {
                 int totalHeaderSize = 4 // for request type
                     + 8 // for ledgerId
@@ -94,8 +124,8 @@ public class BookieProtoEncoding {
                     totalHeaderSize += BookieProtocol.MASTER_KEY_LENGTH;
                 }
 
-                ChannelBuffer buf = bufferFactory.getBuffer(totalHeaderSize);
-                buf.writeInt(new PacketHeader(r.getProtocolVersion(), r.getOpCode(), r.getFlags()).toInt());
+                ByteBuf buf = allocator.buffer(totalHeaderSize);
+                buf.writeInt(PacketHeader.toInt(r.getProtocolVersion(), r.getOpCode(), r.getFlags()));
                 buf.writeLong(r.getLedgerId());
                 buf.writeLong(r.getEntryId());
                 if (r.hasMasterKey()) {
@@ -104,14 +134,12 @@ public class BookieProtoEncoding {
 
                 return buf;
             } else if (r instanceof BookieProtocol.AuthRequest) {
-                BookkeeperProtocol.AuthMessage am = ((BookieProtocol.AuthRequest)r).getAuthMessage();
+                BookkeeperProtocol.AuthMessage am = ((BookieProtocol.AuthRequest) r).getAuthMessage();
                 int totalHeaderSize = 4; // for request type
                 int totalSize = totalHeaderSize + am.getSerializedSize();
-                ChannelBuffer buf = bufferFactory.getBuffer(totalSize);
-                buf.writeInt(new PacketHeader(r.getProtocolVersion(),
-                                              r.getOpCode(),
-                                              r.getFlags()).toInt());
-                ChannelBufferOutputStream bufStream = new ChannelBufferOutputStream(buf);
+                ByteBuf buf = allocator.buffer(totalSize);
+                buf.writeInt(PacketHeader.toInt(r.getProtocolVersion(), r.getOpCode(), r.getFlags()));
+                ByteBufOutputStream bufStream = new ByteBufOutputStream(buf);
                 am.writeTo(bufStream);
                 return buf;
             } else {
@@ -120,297 +148,360 @@ public class BookieProtoEncoding {
         }
 
         @Override
-        public Object decode(ChannelBuffer packet)
+        public Object decode(ByteBuf packet)
                 throws Exception {
-            PacketHeader h = PacketHeader.fromInt(packet.readInt());
+            int packetHeader = packet.readInt();
+            byte version = PacketHeader.getVersion(packetHeader);
+            byte opCode = PacketHeader.getOpCode(packetHeader);
+            short flags = PacketHeader.getFlags(packetHeader);
 
             // packet format is different between ADDENTRY and READENTRY
             long ledgerId = -1;
             long entryId = BookieProtocol.INVALID_ENTRY_ID;
-            byte[] masterKey = null;
-            short flags = h.getFlags();
 
-            ServerStats.getInstance().incrementPacketsReceived();
+            switch (opCode) {
+            case BookieProtocol.ADDENTRY: {
+                byte[] masterKey = readMasterKey(packet);
 
-            switch (h.getOpCode()) {
-            case BookieProtocol.ADDENTRY:
-                // first read master key
-                masterKey = new byte[BookieProtocol.MASTER_KEY_LENGTH];
-                packet.readBytes(masterKey, 0, BookieProtocol.MASTER_KEY_LENGTH);
+                // Read ledger and entry id without advancing the reader index
+                ledgerId = packet.getLong(packet.readerIndex());
+                entryId = packet.getLong(packet.readerIndex() + 8);
+                // mark the reader index so that any resets will return to the
+                // start of the payload
+                packet.markReaderIndex();
+                return BookieProtocol.ParsedAddRequest.create(
+                        version, ledgerId, entryId, flags,
+                        masterKey, packet.retain());
+            }
 
-                ChannelBuffer bb = packet.duplicate();
-
-                ledgerId = bb.readLong();
-                entryId = bb.readLong();
-                return new BookieProtocol.AddRequest(h.getVersion(), ledgerId, entryId,
-                        flags, masterKey, packet.slice());
             case BookieProtocol.READENTRY:
                 ledgerId = packet.readLong();
                 entryId = packet.readLong();
 
                 if ((flags & BookieProtocol.FLAG_DO_FENCING) == BookieProtocol.FLAG_DO_FENCING
-                    && h.getVersion() >= 2) {
-                    masterKey = new byte[BookieProtocol.MASTER_KEY_LENGTH];
-                    packet.readBytes(masterKey, 0, BookieProtocol.MASTER_KEY_LENGTH);
-                    return new BookieProtocol.ReadRequest(h.getVersion(), ledgerId, entryId, flags, masterKey);
+                    && version >= 2) {
+                    byte[] masterKey = readMasterKey(packet);
+                    return new BookieProtocol.ReadRequest(version, ledgerId, entryId, flags, masterKey);
                 } else {
-                    return new BookieProtocol.ReadRequest(h.getVersion(), ledgerId, entryId, flags);
+                    return new BookieProtocol.ReadRequest(version, ledgerId, entryId, flags, null);
                 }
             case BookieProtocol.AUTH:
-                BookkeeperProtocol.AuthMessage.Builder builder
-                    = BookkeeperProtocol.AuthMessage.newBuilder();
-                builder.mergeFrom(new ChannelBufferInputStream(packet), extensionRegistry);
-                return new BookieProtocol.AuthRequest(h.getVersion(), builder.build());
+                BookkeeperProtocol.AuthMessage.Builder builder = BookkeeperProtocol.AuthMessage.newBuilder();
+                builder.mergeFrom(new ByteBufInputStream(packet), extensionRegistry);
+                return new BookieProtocol.AuthRequest(version, builder.build());
+
+            default:
+                throw new IllegalStateException("Received unknown request op code = " + opCode);
             }
-            return packet;
+        }
+
+        private static byte[] readMasterKey(ByteBuf packet) {
+            byte[] masterKey = null;
+
+            // check if the master key is an empty master key
+            boolean isEmptyKey = true;
+            for (int i = 0; i < BookieProtocol.MASTER_KEY_LENGTH; i++) {
+                if (packet.getByte(packet.readerIndex() + i) != emptyPasswordMasterKey[i]) {
+                    isEmptyKey = false;
+                    break;
+                }
+            }
+
+            if (isEmptyKey) {
+                // avoid new allocations if incoming master key is empty and use the static master key
+                masterKey = emptyPasswordMasterKey;
+                packet.readerIndex(packet.readerIndex() + BookieProtocol.MASTER_KEY_LENGTH);
+            } else {
+                // Master key is set, we need to copy and check it
+                masterKey = new byte[BookieProtocol.MASTER_KEY_LENGTH];
+                packet.readBytes(masterKey, 0, BookieProtocol.MASTER_KEY_LENGTH);
+            }
+
+            return masterKey;
         }
     }
 
-    static class ResponseEnDeCoderPreV3 implements EnDecoder {
+    /**
+     * A response encoder/decoder for the Bookkeeper protocol before version 3.
+     */
+    public static class ResponseEnDeCoderPreV3 implements EnDecoder {
         final ExtensionRegistry extensionRegistry;
 
-        ResponseEnDeCoderPreV3(ExtensionRegistry extensionRegistry) {
+        public ResponseEnDeCoderPreV3(ExtensionRegistry extensionRegistry) {
             this.extensionRegistry = extensionRegistry;
         }
 
         @Override
-        public Object encode(Object msg, ChannelBufferFactory bufferFactory)
+        public Object encode(Object msg, ByteBufAllocator allocator)
                 throws Exception {
             if (!(msg instanceof BookieProtocol.Response)) {
                 return msg;
             }
-            BookieProtocol.Response r = (BookieProtocol.Response)msg;
-            ChannelBuffer buf = bufferFactory.getBuffer(24);
-            buf.writeInt(new PacketHeader(r.getProtocolVersion(),
-                                          r.getOpCode(), (short)0).toInt());
+            BookieProtocol.Response r = (BookieProtocol.Response) msg;
+            ByteBuf buf = allocator.buffer(24);
+            buf.writeInt(PacketHeader.toInt(r.getProtocolVersion(), r.getOpCode(), (short) 0));
 
-            ServerStats.getInstance().incrementPacketsSent();
-            if (msg instanceof BookieProtocol.ReadResponse) {
-                buf.writeInt(r.getErrorCode());
-                buf.writeLong(r.getLedgerId());
-                buf.writeLong(r.getEntryId());
+            try {
+                if (msg instanceof BookieProtocol.ReadResponse) {
+                    buf.writeInt(r.getErrorCode());
+                    buf.writeLong(r.getLedgerId());
+                    buf.writeLong(r.getEntryId());
 
-                BookieProtocol.ReadResponse rr = (BookieProtocol.ReadResponse)r;
-                if (rr.hasData()) {
-                    return ChannelBuffers.wrappedBuffer(buf,
-                            ChannelBuffers.wrappedBuffer(rr.getData()));
-                } else {
+                    BookieProtocol.ReadResponse rr = (BookieProtocol.ReadResponse) r;
+                    if (rr.hasData()) {
+                        return ByteBufList.get(buf, rr.getData());
+                    } else {
+                        return buf;
+                    }
+                } else if (msg instanceof BookieProtocol.AddResponse) {
+                    buf.writeInt(r.getErrorCode());
+                    buf.writeLong(r.getLedgerId());
+                    buf.writeLong(r.getEntryId());
+
                     return buf;
+                } else if (msg instanceof BookieProtocol.AuthResponse) {
+                    BookkeeperProtocol.AuthMessage am = ((BookieProtocol.AuthResponse) r).getAuthMessage();
+                    return ByteBufList.get(buf, Unpooled.wrappedBuffer(am.toByteArray()));
+                } else {
+                    LOG.error("Cannot encode unknown response type {}", msg.getClass().getName());
+                    return msg;
                 }
-            } else if (msg instanceof BookieProtocol.AddResponse) {
-                buf.writeInt(r.getErrorCode());
-                buf.writeLong(r.getLedgerId());
-                buf.writeLong(r.getEntryId());
-
-                return buf;
-            } else if (msg instanceof BookieProtocol.AuthResponse) {
-                BookkeeperProtocol.AuthMessage am = ((BookieProtocol.AuthResponse)r).getAuthMessage();
-                return ChannelBuffers.wrappedBuffer(buf,
-                        ChannelBuffers.wrappedBuffer(am.toByteArray()));
-            } else {
-                LOG.error("Cannot encode unknown response type {}", msg.getClass().getName());
-                return msg;
+            } finally {
+                r.recycle();
             }
         }
         @Override
-        public Object decode(ChannelBuffer buffer)
+        public Object decode(ByteBuf buffer)
                 throws Exception {
             int rc;
             long ledgerId, entryId;
-            final PacketHeader header;
 
-            header = PacketHeader.fromInt(buffer.readInt());
+            int packetHeader = buffer.readInt();
+            byte version = PacketHeader.getVersion(packetHeader);
+            byte opCode = PacketHeader.getOpCode(packetHeader);
 
-            switch (header.getOpCode()) {
+            switch (opCode) {
             case BookieProtocol.ADDENTRY:
                 rc = buffer.readInt();
                 ledgerId = buffer.readLong();
                 entryId = buffer.readLong();
-                return new BookieProtocol.AddResponse(header.getVersion(), rc, ledgerId, entryId);
+                return BookieProtocol.AddResponse.create(version, rc, ledgerId, entryId);
             case BookieProtocol.READENTRY:
                 rc = buffer.readInt();
                 ledgerId = buffer.readLong();
                 entryId = buffer.readLong();
 
-                if (rc == BookieProtocol.EOK) {
-                    return new BookieProtocol.ReadResponse(header.getVersion(), rc,
-                                                           ledgerId, entryId, buffer.slice());
-                } else {
-                    return new BookieProtocol.ReadResponse(header.getVersion(), rc,
-                                                           ledgerId, entryId);
-                }
+                return new BookieProtocol.ReadResponse(
+                        version, rc, ledgerId, entryId, buffer.retainedSlice());
             case BookieProtocol.AUTH:
-                ChannelBufferInputStream bufStream = new ChannelBufferInputStream(buffer);
-                BookkeeperProtocol.AuthMessage.Builder builder
-                    = BookkeeperProtocol.AuthMessage.newBuilder();
+                ByteBufInputStream bufStream = new ByteBufInputStream(buffer);
+                BookkeeperProtocol.AuthMessage.Builder builder = BookkeeperProtocol.AuthMessage.newBuilder();
                 builder.mergeFrom(bufStream, extensionRegistry);
                 BookkeeperProtocol.AuthMessage am = builder.build();
-                return new BookieProtocol.AuthResponse(header.getVersion(), am);
+                return new BookieProtocol.AuthResponse(version, am);
             default:
-                return buffer;
+                throw new IllegalStateException("Received unknown response : op code = " + opCode);
             }
         }
     }
 
-    static class RequestEnDecoderV3 implements EnDecoder {
+    /**
+     * A request encoder/decoder for the Bookkeeper protocol version 3.
+     */
+    public static class RequestEnDecoderV3 implements EnDecoder {
         final ExtensionRegistry extensionRegistry;
 
-        RequestEnDecoderV3(ExtensionRegistry extensionRegistry) {
+        public RequestEnDecoderV3(ExtensionRegistry extensionRegistry) {
             this.extensionRegistry = extensionRegistry;
         }
 
         @Override
-        public Object decode(ChannelBuffer packet) throws Exception {
-            return BookkeeperProtocol.Request.parseFrom(new ChannelBufferInputStream(packet),
-                                                        extensionRegistry);
+        public Object decode(ByteBuf packet) throws Exception {
+            return BookkeeperProtocol.Request.parseFrom(new ByteBufInputStream(packet), extensionRegistry);
         }
 
         @Override
-        public Object encode(Object msg, ChannelBufferFactory factory) throws Exception {
+        public Object encode(Object msg, ByteBufAllocator allocator) throws Exception {
             BookkeeperProtocol.Request request = (BookkeeperProtocol.Request) msg;
-            return ChannelBuffers.wrappedBuffer(request.toByteArray());
+            return serializeProtobuf(request, allocator);
         }
 
     }
 
-    static class ResponseEnDecoderV3 implements EnDecoder {
+    /**
+     * A response encoder/decoder for the Bookkeeper protocol version 3.
+     */
+    public static class ResponseEnDecoderV3 implements EnDecoder {
         final ExtensionRegistry extensionRegistry;
 
-        ResponseEnDecoderV3(ExtensionRegistry extensionRegistry) {
+        public ResponseEnDecoderV3(ExtensionRegistry extensionRegistry) {
             this.extensionRegistry = extensionRegistry;
         }
 
         @Override
-        public Object decode(ChannelBuffer packet) throws Exception {
-            return BookkeeperProtocol.Response.parseFrom(new ChannelBufferInputStream(packet),
+        public Object decode(ByteBuf packet) throws Exception {
+            return BookkeeperProtocol.Response.parseFrom(new ByteBufInputStream(packet),
                                                          extensionRegistry);
         }
 
         @Override
-        public Object encode(Object msg, ChannelBufferFactory factory) throws Exception {
+        public Object encode(Object msg, ByteBufAllocator allocator) throws Exception {
             BookkeeperProtocol.Response response = (BookkeeperProtocol.Response) msg;
-            return ChannelBuffers.wrappedBuffer(response.toByteArray());
+            return serializeProtobuf(response, allocator);
         }
 
     }
 
-    public static class RequestEncoder extends OneToOneEncoder {
+    private static ByteBuf serializeProtobuf(MessageLite msg, ByteBufAllocator allocator) {
+        int size = msg.getSerializedSize();
+        ByteBuf buf = allocator.heapBuffer(size, size);
 
-        final EnDecoder REQ_PREV3;
-        final EnDecoder REQ_V3;
+        try {
+            msg.writeTo(CodedOutputStream.newInstance(buf.array(), buf.arrayOffset() + buf.writerIndex(), size));
+        } catch (IOException e) {
+            // This is in-memory serialization, should not fail
+            throw new RuntimeException(e);
+        }
 
-        RequestEncoder(ExtensionRegistry extensionRegistry) {
-            REQ_PREV3 = new RequestEnDeCoderPreV3(extensionRegistry);
-            REQ_V3 = new RequestEnDecoderV3(extensionRegistry);
+        // Advance writer idx
+        buf.writerIndex(buf.capacity());
+        return buf;
+    }
+
+    /**
+     * A request message encoder.
+     */
+    @Sharable
+    public static class RequestEncoder extends ChannelOutboundHandlerAdapter {
+
+        final EnDecoder reqPreV3;
+        final EnDecoder reqV3;
+
+        public RequestEncoder(ExtensionRegistry extensionRegistry) {
+            reqPreV3 = new RequestEnDeCoderPreV3(extensionRegistry);
+            reqV3 = new RequestEnDecoderV3(extensionRegistry);
         }
 
         @Override
-        protected Object encode(ChannelHandlerContext ctx, Channel channel, Object msg)
-                throws Exception {
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Encode request {} to channel {}.", msg, channel);
+        public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
+            if (LOG.isTraceEnabled()) {
+                LOG.trace("Encode request {} to channel {}.", msg, ctx.channel());
             }
             if (msg instanceof BookkeeperProtocol.Request) {
-                return REQ_V3.encode(msg, ctx.getChannel().getConfig().getBufferFactory());
+                ctx.write(reqV3.encode(msg, ctx.alloc()), promise);
             } else if (msg instanceof BookieProtocol.Request) {
-                return REQ_PREV3.encode(msg, ctx.getChannel().getConfig().getBufferFactory());
+                ctx.write(reqPreV3.encode(msg, ctx.alloc()), promise);
             } else {
-                LOG.error("Invalid request to encode to {}: {}", channel, msg.getClass().getName());
-                return msg;
+                LOG.error("Invalid request to encode to {}: {}", ctx.channel(), msg.getClass().getName());
+                ctx.write(msg, promise);
             }
         }
     }
 
-    public static class RequestDecoder extends OneToOneDecoder {
-        final EnDecoder REQ_PREV3;
-        final EnDecoder REQ_V3;
+    /**
+     * A request message decoder.
+     */
+    @Sharable
+    public static class RequestDecoder extends ChannelInboundHandlerAdapter {
+        final EnDecoder reqPreV3;
+        final EnDecoder reqV3;
+        boolean usingV3Protocol;
 
         RequestDecoder(ExtensionRegistry extensionRegistry) {
-            REQ_PREV3 = new RequestEnDeCoderPreV3(extensionRegistry);
-            REQ_V3 = new RequestEnDecoderV3(extensionRegistry);
+            reqPreV3 = new RequestEnDeCoderPreV3(extensionRegistry);
+            reqV3 = new RequestEnDecoderV3(extensionRegistry);
+            usingV3Protocol = true;
         }
 
         @Override
-        protected Object decode(ChannelHandlerContext ctx, Channel channel, Object msg)
-                throws Exception {
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Received request {} from channel {} to decode.", msg, channel);
+        public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+            if (LOG.isTraceEnabled()) {
+                LOG.trace("Received request {} from channel {} to decode.", msg, ctx.channel());
             }
-            if (!(msg instanceof ChannelBuffer)) {
-                return msg;
-            }
-            ChannelBuffer buffer = (ChannelBuffer) msg;
             try {
-                buffer.markReaderIndex();
-                try {
-                    return REQ_V3.decode(buffer);
-                } catch (InvalidProtocolBufferException e) {
-                    buffer.resetReaderIndex();
-                    return REQ_PREV3.decode(buffer);
+                if (!(msg instanceof ByteBuf)) {
+                    LOG.error("Received invalid request {} from channel {} to decode.", msg, ctx.channel());
+                    ctx.fireChannelRead(msg);
+                    return;
                 }
-            } catch (Exception e) {
-                LOG.error("Failed to decode a request from {} : ", channel, e);
-                throw e;
+                ByteBuf buffer = (ByteBuf) msg;
+                buffer.markReaderIndex();
+                Object result;
+                if (usingV3Protocol) {
+                    try {
+                        result = reqV3.decode(buffer);
+                    } catch (InvalidProtocolBufferException e) {
+                        usingV3Protocol = false;
+                        buffer.resetReaderIndex();
+                        result = reqPreV3.decode(buffer);
+                    }
+                } else {
+                    result = reqPreV3.decode(buffer);
+                }
+                ctx.fireChannelRead(result);
+            } finally {
+                ReferenceCountUtil.release(msg);
             }
         }
     }
 
-    public static class ResponseEncoder extends OneToOneEncoder {
-        final EnDecoder REP_PREV3;
-        final EnDecoder REP_V3;
+    /**
+     * A response message encoder.
+     */
+    @Sharable
+    public static class ResponseEncoder extends ChannelOutboundHandlerAdapter {
+        final EnDecoder repPreV3;
+        final EnDecoder repV3;
 
         ResponseEncoder(ExtensionRegistry extensionRegistry) {
-            REP_PREV3 = new ResponseEnDeCoderPreV3(extensionRegistry);
-            REP_V3 = new ResponseEnDecoderV3(extensionRegistry);
+            repPreV3 = new ResponseEnDeCoderPreV3(extensionRegistry);
+            repV3 = new ResponseEnDecoderV3(extensionRegistry);
         }
 
         @Override
-        protected Object encode(ChannelHandlerContext ctx, Channel channel, Object msg)
-                throws Exception {
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Encode response {} to channel {}.", msg, channel);
+        public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
+            if (LOG.isTraceEnabled()) {
+                LOG.trace("Encode response {} to channel {}.", msg, ctx.channel());
             }
             if (msg instanceof BookkeeperProtocol.Response) {
-                return REP_V3.encode(msg, ctx.getChannel().getConfig().getBufferFactory());
+                ctx.write(repV3.encode(msg, ctx.alloc()), promise);
             } else if (msg instanceof BookieProtocol.Response) {
-                return REP_PREV3.encode(msg, ctx.getChannel().getConfig().getBufferFactory());
+                ctx.write(repPreV3.encode(msg, ctx.alloc()), promise);
             } else {
-                LOG.error("Invalid response to encode to {}: {}", channel, msg.getClass().getName());
-                return msg;
+                LOG.error("Invalid response to encode to {}: {}", ctx.channel(), msg.getClass().getName());
+                ctx.write(msg, promise);
             }
         }
     }
 
-    public static class ResponseDecoder extends OneToOneDecoder {
-        final EnDecoder REP_PREV3;
-        final EnDecoder REP_V3;
+    /**
+     * A response message decoder.
+     */
+    @Sharable
+    public static class ResponseDecoder extends ChannelInboundHandlerAdapter {
+        final EnDecoder rep;
 
-        ResponseDecoder(ExtensionRegistry extensionRegistry) {
-            REP_PREV3 = new ResponseEnDeCoderPreV3(extensionRegistry);
-            REP_V3 = new ResponseEnDecoderV3(extensionRegistry);
+        ResponseDecoder(ExtensionRegistry extensionRegistry, boolean useV2Protocol) {
+            rep = useV2Protocol
+                    ? new ResponseEnDeCoderPreV3(extensionRegistry) : new ResponseEnDecoderV3(extensionRegistry);
         }
 
         @Override
-        protected Object decode(ChannelHandlerContext ctx, Channel channel, Object msg)
-                throws Exception {
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Received response {} from channel {} to decode.", msg, channel);
+        public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+            if (LOG.isTraceEnabled()) {
+                LOG.trace("Received response {} from channel {} to decode.", msg, ctx.channel());
             }
-            if (!(msg instanceof ChannelBuffer)) {
-                return msg;
-            }
-            ChannelBuffer buffer = (ChannelBuffer) msg;
             try {
-                buffer.markReaderIndex();
-                try {
-                    return REP_V3.decode(buffer);
-                } catch (InvalidProtocolBufferException e) {
-                    buffer.resetReaderIndex();
-                    return REP_PREV3.decode(buffer);
+                if (!(msg instanceof ByteBuf)) {
+                    LOG.error("Received invalid response {} from channel {} to decode.", msg, ctx.channel());
+                    ctx.fireChannelRead(msg);
+                    return;
                 }
-            } catch (Exception e) {
-                LOG.error("Failed to decode a response from channel {} : ", channel, e);
-                throw e;
+                ByteBuf buffer = (ByteBuf) msg;
+                buffer.markReaderIndex();
+                ctx.fireChannelRead(rep.decode(buffer));
+            } finally {
+                ReferenceCountUtil.release(msg);
             }
         }
     }

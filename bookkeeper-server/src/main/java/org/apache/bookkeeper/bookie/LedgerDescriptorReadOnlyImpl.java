@@ -21,8 +21,9 @@
 
 package org.apache.bookkeeper.bookie;
 
+import io.netty.buffer.ByteBuf;
+
 import java.io.IOException;
-import java.nio.ByteBuffer;
 /**
  * Implements a ledger inside a bookie. In particular, it implements operations
  * to write entries to a ledger and read entries from a ledger.
@@ -39,7 +40,7 @@ public class LedgerDescriptorReadOnlyImpl extends LedgerDescriptorImpl {
     }
 
     @Override
-    long addEntry(ByteBuffer entry) throws IOException {
+    long addEntry(ByteBuf entry) throws IOException {
         assert false;
         throw new IOException("Invalid action on read only descriptor");
     }

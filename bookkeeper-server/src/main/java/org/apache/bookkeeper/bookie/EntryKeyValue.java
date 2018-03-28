@@ -19,6 +19,9 @@
  */
 package org.apache.bookkeeper.bookie;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+
 import java.nio.ByteBuffer;
 
 /**
@@ -27,7 +30,7 @@ import java.nio.ByteBuffer;
  * interpret the content as entry blob.
  */
 public class EntryKeyValue extends EntryKey {
-    final private byte [] bytes;
+    private final byte [] bytes;
     private int offset = 0; // start offset of entry blob
     private int length = 0; // length of entry blob
 
@@ -53,7 +56,6 @@ public class EntryKeyValue extends EntryKey {
     }
 
     /**
-     *
      * Creates a EntryKeyValue from the start of the specified byte array.
      * Presumes <code>bytes</code> content contains the value portion of a EntryKeyValue.
      * @param bytes byte array
@@ -63,7 +65,6 @@ public class EntryKeyValue extends EntryKey {
     }
 
     /**
-     *
      * Creates a EntryKeyValue from the start of the specified byte array.
      * Presumes <code>bytes</code> content contains the value portion of a EntryKeyValue.
      * @param bytes byte array
@@ -82,8 +83,8 @@ public class EntryKeyValue extends EntryKey {
     *
     * @return the value
     */
-    public ByteBuffer getValueAsByteBuffer() {
-        return ByteBuffer.wrap(getBuffer(), getOffset(), getLength());
+    public ByteBuf getValueAsByteBuffer() {
+        return Unpooled.wrappedBuffer(getBuffer(), getOffset(), getLength());
     }
 
     /**
@@ -106,7 +107,7 @@ public class EntryKeyValue extends EntryKey {
     }
 
     /**
-    * String representation
+    * String representation.
     */
     public String toString() {
         return ledgerId + ":" + entryId;

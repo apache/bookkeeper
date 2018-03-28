@@ -21,39 +21,48 @@
 
 package org.apache.bookkeeper.client;
 
-import java.util.List;
-import java.util.Set;
-import java.util.HashSet;
+import static org.apache.bookkeeper.client.RoundRobinDistributionSchedule.writeSetFromValues;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
 import com.google.common.collect.Sets;
 
-import org.junit.Test;
-import static org.junit.Assert.*;
+import java.util.HashSet;
+import java.util.Set;
 
+import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Test a round-robin distribution schedule.
+ */
 public class RoundRobinDistributionScheduleTest {
-    private final static Logger LOG = LoggerFactory.getLogger(RoundRobinDistributionScheduleTest.class);
+    private static final Logger LOG = LoggerFactory.getLogger(RoundRobinDistributionScheduleTest.class);
 
-    @Test(timeout=60000)
+    @Test
     public void testDistributionSchedule() throws Exception {
         RoundRobinDistributionSchedule schedule = new RoundRobinDistributionSchedule(3, 2, 5);
 
-        List<Integer> wSet = schedule.getWriteSet(1);
+        DistributionSchedule.WriteSet wSet = schedule.getWriteSet(1);
         assertEquals("Write set is wrong size", wSet.size(), 3);
-
         DistributionSchedule.AckSet ackSet = schedule.getAckSet();
-        assertFalse("Shouldn't ack yet", ackSet.addBookieAndCheck(wSet.get(0)));
-        assertFalse("Shouldn't ack yet", ackSet.addBookieAndCheck(wSet.get(0)));
-        assertTrue("Should ack after 2 unique", ackSet.addBookieAndCheck(wSet.get(2)));
-        assertTrue("Should still be acking", ackSet.addBookieAndCheck(wSet.get(1)));
+        assertFalse("Shouldn't ack yet",
+                    ackSet.completeBookieAndCheck(wSet.get(0)));
+        assertFalse("Shouldn't ack yet",
+                    ackSet.completeBookieAndCheck(wSet.get(0)));
+        assertTrue("Should ack after 2 unique",
+                   ackSet.completeBookieAndCheck(wSet.get(2)));
+        assertTrue("Should still be acking",
+                   ackSet.completeBookieAndCheck(wSet.get(1)));
     }
 
     /**
      * Test that coverage sets only respond as covered when it has
      * heard from enough bookies that no ack quorum can exist without these bookies.
      */
-    @Test(timeout=60000)
+    @Test
     public void testCoverageSets() {
         int errors = 0;
         for (int e = 6; e > 0; e--) {
@@ -84,13 +93,13 @@ public class RoundRobinDistributionScheduleTest {
 
     /**
      * Check whether it is possible for a write to reach
-     * a quorum with a given set of nodes available
+     * a quorum with a given set of nodes available.
      */
     boolean canGetAckQuorum(int ensemble, int writeQuorum, int ackQuorum, boolean[] available) {
         for (int i = 0; i < ensemble; i++) {
             int count = 0;
             for (int j = 0; j < writeQuorum; j++) {
-                if (available[(i+j)%ensemble]) {
+                if (available[(i + j) % ensemble]) {
                     count++;
                 }
             }
@@ -113,20 +122,43 @@ public class RoundRobinDistributionScheduleTest {
         int errors = 0;
         for (Set<Integer> subset : subsets) {
             DistributionSchedule.QuorumCoverageSet covSet = schedule.getCoverageSet();
-            boolean covSetSays = false;
             for (Integer i : subset) {
-                covSetSays = covSet.addBookieAndCheckCovered(i);
+                covSet.addBookie(i, BKException.Code.OK);
             }
+            boolean covSetSays = covSet.checkCovered();
 
             boolean[] nodesAvailable = buildAvailable(ensemble, subset);
             boolean canGetAck = canGetAckQuorum(ensemble, writeQuorum, ackQuorum, nodesAvailable);
             if (canGetAck == covSetSays) {
                 LOG.error("e{}:w{}:a{} available {}    canGetAck {} covSetSays {}",
-                          new Object[] { ensemble, writeQuorum, ackQuorum,
-                                         nodesAvailable, canGetAck, covSetSays });
+                        ensemble, writeQuorum, ackQuorum,
+                        nodesAvailable, canGetAck, covSetSays);
                 errors++;
             }
         }
         return errors;
+    }
+
+    @Test
+    public void testMoveAndShift() {
+        DistributionSchedule.WriteSet w = writeSetFromValues(1, 2, 3, 4, 5);
+        w.moveAndShift(3, 1);
+        assertEquals(w, writeSetFromValues(1, 4, 2, 3, 5));
+
+        w = writeSetFromValues(1, 2, 3, 4, 5);
+        w.moveAndShift(1, 3);
+        assertEquals(w, writeSetFromValues(1, 3, 4, 2, 5));
+
+        w = writeSetFromValues(1, 2, 3, 4, 5);
+        w.moveAndShift(0, 4);
+        assertEquals(w, writeSetFromValues(2, 3, 4, 5, 1));
+
+        w = writeSetFromValues(1, 2, 3, 4, 5);
+        w.moveAndShift(0, 0);
+        assertEquals(w, writeSetFromValues(1, 2, 3, 4, 5));
+
+        w = writeSetFromValues(1, 2, 3, 4, 5);
+        w.moveAndShift(4, 4);
+        assertEquals(w, writeSetFromValues(1, 2, 3, 4, 5));
     }
 }

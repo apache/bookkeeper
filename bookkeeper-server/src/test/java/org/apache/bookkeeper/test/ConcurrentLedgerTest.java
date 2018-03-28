@@ -21,19 +21,24 @@
 
 package org.apache.bookkeeper.test;
 
+import static org.junit.Assert.assertEquals;
+
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.concurrent.Semaphore;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
+import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
 import org.junit.After;
 import org.junit.Before;
@@ -41,13 +46,11 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.junit.Assert.*;
-
 /**
- * Tests writing to concurrent ledgers
+ * Tests writing to concurrent ledgers.
  */
 public class ConcurrentLedgerTest {
-    private final static Logger LOG = LoggerFactory.getLogger(ConcurrentLedgerTest.class);
+    private static final Logger LOG = LoggerFactory.getLogger(ConcurrentLedgerTest.class);
 
     Bookie bookie;
     File txnDir, ledgerDir;
@@ -74,10 +77,10 @@ public class ConcurrentLedgerTest {
             ledgerDir = new File(ledgerDirName);
         }
         File tmpFile = createTempDir("book", ".txn", txnDir);
-        txnDir = new File(tmpFile.getParent(), tmpFile.getName()+".dir");
+        txnDir = new File(tmpFile.getParent(), tmpFile.getName() + ".dir");
         txnDir.mkdirs();
         tmpFile = createTempDir("book", ".ledger", ledgerDir);
-        ledgerDir = new File(tmpFile.getParent(), tmpFile.getName()+".dir");
+        ledgerDir = new File(tmpFile.getParent(), tmpFile.getName() + ".dir");
         ledgerDir.mkdirs();
 
         conf.setBookiePort(5000);
@@ -92,7 +95,7 @@ public class ConcurrentLedgerTest {
         if (f.isFile()) {
             f.delete();
         } else {
-            for(File i: f.listFiles()) {
+            for (File i: f.listFiles()) {
                 recursiveDelete(i);
             }
             f.delete();
@@ -122,7 +125,7 @@ public class ConcurrentLedgerTest {
             iterationStep = Integer.parseInt(iterationsString);
         }
     }
-    @Test(timeout=60000)
+    @Test
     public void testConcurrentWrite() throws IOException, InterruptedException, BookieException {
         int size = 1024;
         int totalwrites = 128;
@@ -132,12 +135,12 @@ public class ConcurrentLedgerTest {
         LOG.info("Running up to " + iterations + " iterations");
         LOG.info("Total writes = " + totalwrites);
         int ledgers;
-        for(ledgers = 1; ledgers <= iterations; ledgers += iterationStep) {
+        for (ledgers = 1; ledgers <= iterations; ledgers += iterationStep) {
             long duration = doWrites(ledgers, size, totalwrites);
             LOG.info(totalwrites + " on " + ledgers + " took " + duration + " ms");
         }
         LOG.info("ledgers " + ledgers);
-        for(ledgers = 1; ledgers <= iterations; ledgers += iterationStep) {
+        for (ledgers = 1; ledgers <= iterations; ledgers += iterationStep) {
             long duration = doReads(ledgers, size, totalwrites);
             LOG.info(ledgers + " read " + duration + " ms");
         }
@@ -146,14 +149,14 @@ public class ConcurrentLedgerTest {
     private long doReads(int ledgers, int size, int totalwrites)
             throws IOException, InterruptedException, BookieException {
         long start = System.currentTimeMillis();
-        for(int i = 1; i <= totalwrites/ledgers; i++) {
-            for(int j = 1; j <= ledgers; j++) {
-                ByteBuffer entry = bookie.readEntry(j, i);
+        for (int i = 1; i <= totalwrites / ledgers; i++) {
+            for (int j = 1; j <= ledgers; j++) {
+                ByteBuf entry = bookie.readEntry(j, i);
                 // skip the ledger id and the entry id
-                entry.getLong();
-                entry.getLong();
-                assertEquals(j + "@" + i, j+2, entry.getLong());
-                assertEquals(j + "@" + i, i+3, entry.getLong());
+                entry.readLong();
+                entry.readLong();
+                assertEquals(j + "@" + i, j + 2, entry.readLong());
+                assertEquals(j + "@" + i, i + 3, entry.readLong());
             }
         }
         long finish = System.currentTimeMillis();
@@ -166,25 +169,25 @@ public class ConcurrentLedgerTest {
             @Override
             public void writeComplete(int rc, long ledgerId, long entryId,
                     BookieSocketAddress addr, Object ctx) {
-                AtomicInteger counter = (AtomicInteger)ctx;
+                AtomicInteger counter = (AtomicInteger) ctx;
                 counter.getAndIncrement();
                 throttle.release();
             }
         };
         AtomicInteger counter = new AtomicInteger();
         long start = System.currentTimeMillis();
-        for(int i = 1; i <= totalwrites/ledgers; i++) {
-            for(int j = 1; j <= ledgers; j++) {
+        for (int i = 1; i <= totalwrites / ledgers; i++) {
+            for (int j = 1; j <= ledgers; j++) {
                 ByteBuffer bytes = ByteBuffer.allocate(size);
                 bytes.putLong(j);
                 bytes.putLong(i);
-                bytes.putLong(j+2);
-                bytes.putLong(i+3);
+                bytes.putLong(j + 2);
+                bytes.putLong(i + 3);
                 bytes.put(("This is ledger " + j + " entry " + i).getBytes());
                 bytes.position(0);
                 bytes.limit(bytes.capacity());
                 throttle.acquire();
-                bookie.addEntry(bytes, cb, counter, zeros);
+                bookie.addEntry(Unpooled.wrappedBuffer(bytes), false, cb, counter, zeros);
             }
         }
         long finish = System.currentTimeMillis();

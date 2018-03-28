@@ -17,50 +17,59 @@
  */
 package org.apache.bookkeeper.client;
 
-import org.apache.bookkeeper.net.BookieSocketAddress;
-import org.apache.bookkeeper.net.Node;
-
 import java.util.ArrayList;
 import java.util.Set;
 
+import org.apache.bookkeeper.common.annotation.InterfaceAudience;
+import org.apache.bookkeeper.common.annotation.InterfaceStability;
+import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.net.Node;
+
 /**
  * Interface for topology aware ensemble placement policy.
+ *
+ * <p>All the implementations of this interface are using {@link org.apache.bookkeeper.net.NetworkTopology}
+ *    for placing ensembles.
+ *
+ * @see EnsemblePlacementPolicy
  */
+@InterfaceAudience.Private
+@InterfaceStability.Evolving
 public interface ITopologyAwareEnsemblePlacementPolicy<T extends Node> extends EnsemblePlacementPolicy {
     /**
      * Predicate used when choosing an ensemble.
      */
-    public static interface Predicate<T extends Node> {
+    interface Predicate<T extends Node> {
         boolean apply(T candidate, Ensemble<T> chosenBookies);
     }
 
     /**
      * Ensemble used to hold the result of an ensemble selected for placement.
      */
-    public static interface Ensemble<T extends Node> {
+    interface Ensemble<T extends Node> {
 
         /**
          * Append the new bookie node to the ensemble only if the ensemble doesnt
-         * already contain the same bookie
+         * already contain the same bookie.
          *
          * @param node
          *          new candidate bookie node.
          * @return
          *          true if the node was added
          */
-        public boolean addNode(T node);
+        boolean addNode(T node);
 
         /**
          * @return list of addresses representing the ensemble
          */
-        public ArrayList<BookieSocketAddress> toList();
+        ArrayList<BookieSocketAddress> toList();
 
         /**
-         * Validates if an ensemble is valid
+         * Validates if an ensemble is valid.
          *
          * @return true if the ensemble is valid; false otherwise
          */
-        public boolean validate();
+        boolean validate();
 
     }
 
@@ -118,7 +127,7 @@ public interface ITopologyAwareEnsemblePlacementPolicy<T extends Node> extends E
     void handleBookiesThatLeft(Set<BookieSocketAddress> leftBookies);
 
     /**
-     * Handle bookies that joined
+     * Handle bookies that joined.
      *
      * @param joinedBookies
      *          bookies that joined.

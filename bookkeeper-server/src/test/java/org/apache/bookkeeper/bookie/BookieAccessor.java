@@ -21,16 +21,15 @@
 package org.apache.bookkeeper.bookie;
 
 import java.io.IOException;
-import java.util.concurrent.Future;
 
 import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
 
 /**
- * Accessor class to avoid making Bookie internals public
+ * Accessor class to avoid making Bookie internals public.
  */
 public class BookieAccessor {
     /**
-     * Force a bookie to flush its ledger storage
+     * Force a bookie to flush its ledger storage.
      */
     public static void forceFlush(Bookie b) throws IOException {
         CheckpointSourceList source = new CheckpointSourceList(b.journals);

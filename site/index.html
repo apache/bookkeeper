@@ -1,0 +1,57 @@
+---
+title: Home
+---
+
+<!DOCTYPE html>
+<html>
+  <head>
+    {% include head.html %}
+  </head>
+  <body class="body">
+    <main class="main">
+      <section class="hero is-fullheight">
+        <div class="hero-head">
+          {% include navbar.html %}
+        </div>
+
+        <div class="hero-body">
+          <div class="container">
+            <div class="columns level">
+              <div class="column is-6">
+                <h1 class="bk-title">
+                  {{ site.title }}
+                </h1>
+                <h2 class="bk-subtitle">
+                  {{ site.subtitle }}
+                </h2>
+                <nav class="level is-mobile">
+                  <div class="level-left">
+                    <div class="level-item">
+                      <a class="button is-primary is-large" href="{{ site.baseurl }}docs/latest/getting-started/installation">
+                        <span class="icon">
+                          <i class="fa fa-download"></i>
+                        </span>
+                        <span>Get started</span>
+                      </a>
+                    </div>
+                    <div class="level-item">
+                      {% include javadoc-button.html %}
+                    </div>
+                  </div>
+                </nav>
+              </div>
+              <div class="column is-6">
+                <div class="container">
+                  <img src="{{ site.baseurl }}img/logos/bk-logo.png">
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    {% include footer.html %}
+    {% include javascript.html %}
+  </body>
+</html>

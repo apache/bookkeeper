@@ -17,8 +17,13 @@
  */
 package org.apache.bookkeeper.client;
 
+import static com.google.common.base.Charsets.UTF_8;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
+
+import io.netty.buffer.ByteBuf;
+
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -43,16 +48,13 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.junit.Assert.*;
-import static com.google.common.base.Charsets.UTF_8;
-
 /**
  * This class tests the ledger close logic.
  */
 @SuppressWarnings("deprecation")
 public class LedgerCloseTest extends BookKeeperClusterTestCase {
 
-    private final static Logger LOG = LoggerFactory.getLogger(LedgerCloseTest.class);
+    private static final Logger LOG = LoggerFactory.getLogger(LedgerCloseTest.class);
 
     static final int READ_TIMEOUT = 1;
 
@@ -66,10 +68,11 @@ public class LedgerCloseTest extends BookKeeperClusterTestCase {
         baseConf.setGcWaitTime(999999);
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testLedgerCloseWithConsistentLength() throws Exception {
         ClientConfiguration conf = new ClientConfiguration();
-        conf.setZkServers(zkUtil.getZooKeeperConnectString()).setReadTimeout(1);
+        conf.setZkServers(zkUtil.getZooKeeperConnectString());
+        conf.setReadTimeout(1);
 
         BookKeeper bkc = new BookKeeper(conf);
         LedgerHandle lh = bkc.createLedger(6, 3, DigestType.CRC32, new byte[] {});
@@ -94,14 +97,14 @@ public class LedgerCloseTest extends BookKeeperClusterTestCase {
         assertEquals(LedgerHandle.INVALID_ENTRY_ID, newLh.getLastAddConfirmed());
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testLedgerCloseDuringUnrecoverableErrors() throws Exception {
         int numEntries = 3;
         LedgerHandle lh = bkc.createLedger(3, 3, 3, digestType, "".getBytes());
         verifyMetadataConsistency(numEntries, lh);
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testLedgerCheckerShouldnotSelectInvalidLastFragments() throws Exception {
         int numEntries = 10;
         LedgerHandle lh = bkc.createLedger(3, 3, 3, digestType, "".getBytes());
@@ -165,6 +168,7 @@ public class LedgerCloseTest extends BookKeeperClusterTestCase {
                         try {
                             recoverDoneLatch.await();
                         } catch (InterruptedException ie) {
+                            Thread.currentThread().interrupt();
                         }
                     }
                 }
@@ -194,17 +198,18 @@ public class LedgerCloseTest extends BookKeeperClusterTestCase {
             throws Exception {
         Bookie sBookie = new Bookie(conf) {
             @Override
-            public void addEntry(ByteBuffer entry, WriteCallback cb, Object ctx, byte[] masterKey)
+            public void addEntry(ByteBuf entry, boolean ackBeforeSync, WriteCallback cb, Object ctx, byte[] masterKey)
                     throws IOException, BookieException {
                 try {
                     latch.await();
                 } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
                 }
                 throw BookieException.create(BookieException.Code.UnauthorizedAccessException);
             }
 
             @Override
-            public void recoveryAddEntry(ByteBuffer entry, WriteCallback cb, Object ctx, byte[] masterKey)
+            public void recoveryAddEntry(ByteBuf entry, WriteCallback cb, Object ctx, byte[] masterKey)
                     throws IOException, BookieException {
                 throw new IOException("Dead bookie for recovery adds.");
             }
@@ -218,11 +223,12 @@ public class LedgerCloseTest extends BookKeeperClusterTestCase {
     private void startDeadBookie(ServerConfiguration conf, final CountDownLatch latch) throws Exception {
         Bookie dBookie = new Bookie(conf) {
             @Override
-            public void addEntry(ByteBuffer entry, WriteCallback cb, Object ctx, byte[] masterKey)
+            public void addEntry(ByteBuf entry, boolean ackBeforeSync, WriteCallback cb, Object ctx, byte[] masterKey)
                     throws IOException, BookieException {
                 try {
                     latch.await();
                 } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
                 }
                 // simulate slow adds.
                 throw new IOException("Dead bookie");
@@ -232,7 +238,7 @@ public class LedgerCloseTest extends BookKeeperClusterTestCase {
         bs.add(startBookie(conf, dBookie));
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testAllWritesAreCompletedOnClosedLedger() throws Exception {
         for (int i = 0; i < 100; i++) {
             LOG.info("Iteration {}", i);

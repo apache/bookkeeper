@@ -28,10 +28,18 @@ import java.io.IOException;
 public class StringUtils {
 
     // Ledger Node Prefix
-    static public final String LEDGER_NODE_PREFIX = "L";
+    public static final String LEDGER_NODE_PREFIX = "L";
+    // Ledger znode in flatledgermanager layout will be "L" (prefix) +"%010d" (id in 10 digits)
+    public static final String FLAT_LEDGER_NODE_REGEX = StringUtils.LEDGER_NODE_PREFIX + "\\d{10}";
+    // top level znode in legacyhierarchicalledgermanger will be just 2 digits
+    public static final String LEGACYHIERARCHICAL_LEDGER_PARENT_NODE_REGEX = "\\d{2}";
+    // top level znode in longhierarchicalledgermanger will be just 3 digits
+    public static final String LONGHIERARCHICAL_LEDGER_PARENT_NODE_REGEX = "\\d{3}";
+    // top level znode in hierarchicalledgermanger will be just 2 digits
+    public static final String HIERARCHICAL_LEDGER_PARENT_NODE_REGEX = "\\d{2,3}";
 
     /**
-     * Formats ledger ID according to ZooKeeper rules
+     * Formats ledger ID according to ZooKeeper rules.
      *
      * @param id
      *            znode id
@@ -41,7 +49,7 @@ public class StringUtils {
     }
 
     /**
-     * Formats ledger ID according to ZooKeeper rules
+     * Formats ledger ID according to ZooKeeper rules.
      *
      * @param id
      *            znode id
@@ -49,15 +57,15 @@ public class StringUtils {
     public static String getZKStringIdForLongHierarchical(long id) {
         return String.format("%019d", id);
     }
-    
+
     /**
-     * Get the hierarchical ledger path according to the ledger id
+     * Get the hierarchical ledger path according to the ledger id.
      *
      * @param ledgerId
      *          ledger id
      * @return the hierarchical path
      */
-    public static String getHierarchicalLedgerPath(long ledgerId) {
+    public static String getShortHierarchicalLedgerPath(long ledgerId) {
         String ledgerIdStr = getZKStringId(ledgerId);
         // do 2-4-4 split
         StringBuilder sb = new StringBuilder();
@@ -70,7 +78,7 @@ public class StringUtils {
     }
 
     /**
-     * Get the long hierarchical ledger path according to the ledger id
+     * Get the long hierarchical ledger path according to the ledger id.
      *
      * @param ledgerId
      *          ledger id
@@ -89,9 +97,16 @@ public class StringUtils {
           .append(ledgerIdStr.substring(15, 19));
         return sb.toString();
     }
-    
+
+    public static String getHybridHierarchicalLedgerPath(long ledgerId) {
+        if (ledgerId < Integer.MAX_VALUE) {
+            return getShortHierarchicalLedgerPath(ledgerId);
+        }
+        return getLongHierarchicalLedgerPath(ledgerId);
+    }
+
     /**
-     * Parse the hierarchical ledger path to its ledger id
+     * Parse the hierarchical ledger path to its ledger id.
      *
      * @param hierarchicalLedgerPath
      * @return the ledger id
@@ -109,7 +124,7 @@ public class StringUtils {
     }
 
     /**
-     * Parse the long hierarchical ledger path to its ledger id
+     * Parse the long hierarchical ledger path to its ledger id.
      *
      * @param longHierarchicalLedgerPaths
      * @return the ledger id
@@ -119,15 +134,15 @@ public class StringUtils {
             throws IOException {
         String[] longHierarchicalParts = longHierarchicalLedgerPath.split("/");
         if (longHierarchicalParts.length != 5) {
-            throw new IOException("it is not a valid hierarchical path name : " + longHierarchicalLedgerPath);
+            return stringToHierarchicalLedgerId(longHierarchicalLedgerPath);
         }
         longHierarchicalParts[4] =
                 longHierarchicalParts[4].substring(LEDGER_NODE_PREFIX.length());
         return stringToHierarchicalLedgerId(longHierarchicalParts);
     }
-    
+
     /**
-     * Get ledger id
+     * Get ledger id.
      *
      * @param levelNodes
      *          level of the ledger path

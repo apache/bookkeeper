@@ -15,7 +15,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.bookkeeper.net;
 
 import java.util.HashSet;
@@ -26,13 +25,13 @@ import org.apache.bookkeeper.conf.Configurable;
 import org.apache.commons.configuration.Configuration;
 
 /**
- * This is a base class for DNS to Switch mappings. <p/> It is not mandatory to
- * derive {@link DNSToSwitchMapping} implementations from it, but it is strongly
+ * This is a base class for DNS to Switch mappings.
+ *
+ * <p>It is not mandatory to derive {@link DNSToSwitchMapping} implementations from it, but it is strongly
  * recommended, as it makes it easy for the Hadoop developers to add new methods
  * to this base class that are automatically picked up by all implementations.
- * <p/>
  *
- * This class does not extend the <code>Configured</code>
+ * <p>This class does not extend the <code>Configured</code>
  * base class, and should not be changed to do so, as it causes problems
  * for subclasses. The constructor of the <code>Configured</code> calls
  * the  {@link #setConf(Configuration)} method, which will call into the
@@ -44,7 +43,7 @@ public abstract class AbstractDNSToSwitchMapping implements DNSToSwitchMapping, 
     private Configuration conf;
 
     /**
-     * Create an unconfigured instance
+     * Create an unconfigured instance.
      */
     protected AbstractDNSToSwitchMapping() {
     }
@@ -73,12 +72,9 @@ public abstract class AbstractDNSToSwitchMapping implements DNSToSwitchMapping, 
      * multi-rack. Subclasses may override this with methods that are more aware
      * of their topologies.
      *
-     * <p/>
-     *
-     * This method is used when parts of Hadoop need know whether to apply
+     * <p>This method is used when parts of Hadoop need know whether to apply
      * single rack vs multi-rack policies, such as during block placement.
      * Such algorithms behave differently if they are on multi-switch systems.
-     * </p>
      *
      * @return true if the mapping thinks that it is on a single switch
      */
@@ -87,7 +83,7 @@ public abstract class AbstractDNSToSwitchMapping implements DNSToSwitchMapping, 
     }
 
     /**
-     * Get a copy of the map (for diagnostics)
+     * Get a copy of the map (for diagnostics).
      * @return a clone of the map or null for none known
      */
     public Map<String, String> getSwitchMap() {
@@ -127,9 +123,10 @@ public abstract class AbstractDNSToSwitchMapping implements DNSToSwitchMapping, 
     /**
      * Query for a {@link DNSToSwitchMapping} instance being on a single
      * switch.
-     * <p/>
-     * This predicate simply assumes that all mappings not derived from
+     *
+     * <p>This predicate simply assumes that all mappings not derived from
      * this class are multi-switch.
+     *
      * @param mapping the mapping to query
      * @return true if the base class says it is single switch, or the mapping
      * is not derived from this class.

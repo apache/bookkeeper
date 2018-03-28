@@ -1,0 +1,22 @@
+# Eclipse
+.classpath
+.project
+.settings/
+.recommenders/
+
+# Intellij
+.idea/
+*.iml
+*.iws
+
+# NetBeans
+/**/nb-configuration.xml
+
+# Mac
+.DS_Store
+
+# Maven
+lib/
+log/
+target/
+dependency-reduced-pom.xml

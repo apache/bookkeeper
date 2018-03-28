@@ -21,6 +21,8 @@
 
 package org.apache.bookkeeper.bookie;
 
+import com.google.common.collect.Lists;
+
 import java.io.IOException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
@@ -31,21 +33,22 @@ import java.util.SortedMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-
 import org.apache.bookkeeper.bookie.GarbageCollector.GarbageCleaner;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.LedgerMetadata;
 import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.meta.FlatLedgerManagerFactory;
+import org.apache.bookkeeper.meta.HierarchicalLedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerManagerTestCase;
 import org.apache.bookkeeper.meta.ZkLedgerUnderreplicationManager;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
+import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.util.SnapshotMap;
+import org.apache.zookeeper.ZooDefs;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -53,9 +56,9 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
-import com.google.common.collect.Lists;
-import org.apache.zookeeper.ZooDefs;
-
+/**
+ * Test GC-overreplicated ledger.
+ */
 @RunWith(Parameterized.class)
 public class TestGcOverreplicatedLedger extends LedgerManagerTestCase {
 
@@ -73,10 +76,10 @@ public class TestGcOverreplicatedLedger extends LedgerManagerTestCase {
 
     @Parameters
     public static Collection<Object[]> configs() {
-        return Arrays.asList(new Object[][] { { FlatLedgerManagerFactory.class } });
+        return Arrays.asList(new Object[][] { { HierarchicalLedgerManagerFactory.class } });
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testGcOverreplicatedLedger() throws Exception {
         LedgerHandle lh = bkc.createLedger(2, 2, DigestType.MAC, "".getBytes());
         activeLedgers.put(lh.getId(), true);
@@ -105,7 +108,7 @@ public class TestGcOverreplicatedLedger extends LedgerManagerTestCase {
 
         final CompactableLedgerStorage mockLedgerStorage = new MockLedgerStorage();
         final GarbageCollector garbageCollector = new ScanAndCompareGarbageCollector(ledgerManager, mockLedgerStorage,
-                bkConf);
+                bkConf, NullStatsLogger.INSTANCE);
         Thread.sleep(bkConf.getGcOverreplicatedLedgerWaitTimeMillis() + 1);
         garbageCollector.gc(new GarbageCleaner() {
 
@@ -123,7 +126,7 @@ public class TestGcOverreplicatedLedger extends LedgerManagerTestCase {
         Assert.assertFalse(activeLedgers.containsKey(lh.getId()));
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testNoGcOfLedger() throws Exception {
         LedgerHandle lh = bkc.createLedger(2, 2, DigestType.MAC, "".getBytes());
         activeLedgers.put(lh.getId(), true);
@@ -156,7 +159,7 @@ public class TestGcOverreplicatedLedger extends LedgerManagerTestCase {
 
         final CompactableLedgerStorage mockLedgerStorage = new MockLedgerStorage();
         final GarbageCollector garbageCollector = new ScanAndCompareGarbageCollector(ledgerManager, mockLedgerStorage,
-                bkConf);
+                bkConf, NullStatsLogger.INSTANCE);
         Thread.sleep(bkConf.getGcOverreplicatedLedgerWaitTimeMillis() + 1);
         garbageCollector.gc(new GarbageCleaner() {
 
@@ -174,7 +177,7 @@ public class TestGcOverreplicatedLedger extends LedgerManagerTestCase {
         Assert.assertTrue(activeLedgers.containsKey(lh.getId()));
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testNoGcIfLedgerBeingReplicated() throws Exception {
         LedgerHandle lh = bkc.createLedger(2, 2, DigestType.MAC, "".getBytes());
         activeLedgers.put(lh.getId(), true);
@@ -206,7 +209,7 @@ public class TestGcOverreplicatedLedger extends LedgerManagerTestCase {
 
         final CompactableLedgerStorage mockLedgerStorage = new MockLedgerStorage();
         final GarbageCollector garbageCollector = new ScanAndCompareGarbageCollector(ledgerManager, mockLedgerStorage,
-                bkConf);
+                bkConf, NullStatsLogger.INSTANCE);
         Thread.sleep(bkConf.getGcOverreplicatedLedgerWaitTimeMillis() + 1);
         garbageCollector.gc(new GarbageCleaner() {
 
@@ -231,9 +234,7 @@ public class TestGcOverreplicatedLedger extends LedgerManagerTestCase {
         }
         SortedMap<Long, ArrayList<BookieSocketAddress>> ensembles = ledgerMetadata.getEnsembles();
         for (ArrayList<BookieSocketAddress> fragmentEnsembles : ensembles.values()) {
-            for (BookieSocketAddress ensemble : fragmentEnsembles) {
-                allAddresses.remove(ensemble);
-            }
+            allAddresses.removeAll(fragmentEnsembles);
         }
         Assert.assertEquals(allAddresses.size(), 1);
         return allAddresses.get(0);

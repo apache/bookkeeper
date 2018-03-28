@@ -28,7 +28,6 @@ import org.apache.zookeeper.AsyncCallback;
 import org.apache.zookeeper.AsyncCallback.StringCallback;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.ZooDefs.Ids;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.ACL;
 import org.slf4j.Logger;
@@ -47,7 +46,6 @@ public class ZkLedgerIdGenerator implements LedgerIdGenerator {
     static final String LEDGER_ID_GEN_PREFIX = "ID-";
 
     final ZooKeeper zk;
-    final String ledgerIdGenPath;
     final String ledgerPrefix;
     final List<ACL> zkAcls;
 
@@ -56,17 +54,27 @@ public class ZkLedgerIdGenerator implements LedgerIdGenerator {
                                String idGenZnodeName,
                                List<ACL> zkAcls) {
         this.zk = zk;
+        ledgerPrefix = createLedgerPrefix(ledgersPath, idGenZnodeName);
         this.zkAcls = zkAcls;
+    }
+
+    public static String createLedgerPrefix(String ledgersPath, String idGenZnodeName) {
+        String ledgerIdGenPath = null;
         if (StringUtils.isBlank(idGenZnodeName)) {
-            this.ledgerIdGenPath = ledgersPath;
+            ledgerIdGenPath = ledgersPath;
         } else {
-            this.ledgerIdGenPath = ledgersPath + "/" + idGenZnodeName;
+            ledgerIdGenPath = ledgersPath + "/" + idGenZnodeName;
         }
-        this.ledgerPrefix = this.ledgerIdGenPath + "/" + LEDGER_ID_GEN_PREFIX;
+        return ledgerIdGenPath + "/" + LEDGER_ID_GEN_PREFIX;
     }
 
     @Override
     public void generateLedgerId(final GenericCallback<Long> cb) {
+        generateLedgerIdImpl(cb, zk, ledgerPrefix, zkAcls);
+    }
+
+    public static void generateLedgerIdImpl(final GenericCallback<Long> cb, ZooKeeper zk, String ledgerPrefix,
+            List<ACL> zkAcls) {
         ZkUtils.asyncCreateFullPathOptimistic(zk, ledgerPrefix, new byte[0], zkAcls,
                 CreateMode.EPHEMERAL_SEQUENTIAL,
                 new StringCallback() {
@@ -84,8 +92,12 @@ public class ZkLedgerIdGenerator implements LedgerIdGenerator {
                          */
                         long ledgerId;
                         try {
-                            ledgerId = getLedgerIdFromGenPath(idPathName);
-                            cb.operationComplete(BKException.Code.OK, ledgerId);
+                            ledgerId = getLedgerIdFromGenPath(idPathName, ledgerPrefix);
+                            if (ledgerId < 0 || ledgerId >= Integer.MAX_VALUE) {
+                                cb.operationComplete(BKException.Code.LedgerIdOverflowException, null);
+                            } else {
+                                cb.operationComplete(BKException.Code.OK, ledgerId);
+                            }
                         } catch (IOException e) {
                             LOG.error("Could not extract ledger-id from id gen path:" + path, e);
                             cb.operationComplete(BKException.Code.ZKException, null);
@@ -100,7 +112,9 @@ public class ZkLedgerIdGenerator implements LedgerIdGenerator {
                                     LOG.warn("Exception during deleting znode for id generation : ",
                                             KeeperException.create(KeeperException.Code.get(rc), path));
                                 } else {
-                                    LOG.debug("Deleting znode for id generation : {}", idPathName);
+                                    if (LOG.isDebugEnabled()) {
+                                        LOG.debug("Deleting znode for id generation : {}", idPathName);
+                                    }
                                 }
                             }
                         }, null);
@@ -109,7 +123,7 @@ public class ZkLedgerIdGenerator implements LedgerIdGenerator {
     }
 
     // get ledger id from generation path
-    private long getLedgerIdFromGenPath(String nodeName) throws IOException {
+    private static long getLedgerIdFromGenPath(String nodeName, String ledgerPrefix) throws IOException {
         long ledgerId;
         try {
             String parts[] = nodeName.split(ledgerPrefix);

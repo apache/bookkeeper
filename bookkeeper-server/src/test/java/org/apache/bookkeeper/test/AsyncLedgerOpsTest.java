@@ -1,5 +1,3 @@
-package org.apache.bookkeeper.test;
-
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -20,6 +18,10 @@ package org.apache.bookkeeper.test;
  * under the License.
  *
  */
+package org.apache.bookkeeper.test;
+
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -29,20 +31,18 @@ import java.util.Random;
 import java.util.Set;
 
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
-import org.apache.bookkeeper.client.LedgerEntry;
 import org.apache.bookkeeper.client.AsyncCallback.CloseCallback;
 import org.apache.bookkeeper.client.AsyncCallback.CreateCallback;
 import org.apache.bookkeeper.client.AsyncCallback.OpenCallback;
-import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.AsyncCallback.ReadCallback;
-import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.BKException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.bookkeeper.client.BookKeeper.DigestType;
+import org.apache.bookkeeper.client.LedgerEntry;
+import org.apache.bookkeeper.client.LedgerHandle;
 import org.junit.Before;
 import org.junit.Test;
-
-import static org.junit.Assert.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This test tests read and write, synchronous and asynchronous, strings and
@@ -50,16 +50,17 @@ import static org.junit.Assert.*;
  * and three BookKeepers.
  *
  */
-public class AsyncLedgerOpsTest extends MultiLedgerManagerMultiDigestTestCase
+public class AsyncLedgerOpsTest extends BookKeeperClusterTestCase
     implements AddCallback, ReadCallback, CreateCallback,
     CloseCallback, OpenCallback {
-    private final static Logger LOG = LoggerFactory.getLogger(AsyncLedgerOpsTest.class);
+    private static final Logger LOG = LoggerFactory.getLogger(AsyncLedgerOpsTest.class);
 
-    DigestType digestType;
+    private final DigestType digestType;
 
-    public AsyncLedgerOpsTest(String ledgerManagerFactory, DigestType digestType) {
+    public AsyncLedgerOpsTest() {
         super(3);
-        this.digestType = digestType;
+        this.digestType = DigestType.CRC32;
+        String ledgerManagerFactory = "org.apache.bookkeeper.meta.HierarchicalLedgerManagerFactory";
         // set ledger manager type
         baseConf.setLedgerManagerFactoryClassName(ledgerManagerFactory);
         baseClientConf.setLedgerManagerFactoryClassName(ledgerManagerFactory);
@@ -103,7 +104,7 @@ public class AsyncLedgerOpsTest extends MultiLedgerManagerMultiDigestTestCase
         }
     }
 
-    @Test(timeout=60000)
+    @Test
     public void testAsyncCreateClose() throws IOException, BKException {
         try {
 
@@ -161,7 +162,7 @@ public class AsyncLedgerOpsTest extends MultiLedgerManagerMultiDigestTestCase
             lh.asyncReadEntries(0, numEntriesToWrite - 1, this, sync);
 
             synchronized (sync) {
-                while (sync.value == false) {
+                while (!sync.value) {
                     sync.wait();
                 }
             }
@@ -188,6 +189,7 @@ public class AsyncLedgerOpsTest extends MultiLedgerManagerMultiDigestTestCase
             assertTrue("Checking number of read entries", i == numEntriesToWrite);
             lh.close();
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             LOG.error("Interrupted", e);
             fail("InterruptedException");
         } // catch (NoSuchAlgorithmException e) {

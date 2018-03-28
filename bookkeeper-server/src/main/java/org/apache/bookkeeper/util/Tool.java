@@ -18,20 +18,20 @@
 
 package org.apache.bookkeeper.util;
 
-import org.apache.commons.configuration.Configuration;
+import org.apache.commons.configuration.CompositeConfiguration;
 
 /**
  * A tool interface that supports handling of generic command-line options.
  */
 public interface Tool {
     /**
-     * Exectue the command with given arguments
+     * Exectue the command with given arguments.
      *
      * @param args command specific arguments
      * @return exit code.
      * @throws Exception
      */
-    public int run(String[] args) throws Exception;
+    int run(String[] args) throws Exception;
 
     /**
      * Passe a configuration object to the tool.
@@ -39,5 +39,5 @@ public interface Tool {
      * @param conf configuration object
      * @throws Exception
      */
-    public void setConf(Configuration conf) throws Exception;
+    void setConf(CompositeConfiguration conf) throws Exception;
 }

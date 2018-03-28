@@ -25,7 +25,7 @@ import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 /**
  * An interface to manage channel pooling for bookie client.
  */
-interface PerChannelBookieClientPool {
+public interface PerChannelBookieClientPool {
 
     /**
      * intialize the pool. the implementation should not be blocked.
@@ -38,12 +38,18 @@ interface PerChannelBookieClientPool {
      * @param callback
      *          callback to return channel from channel pool.
      */
-    void obtain(GenericCallback<PerChannelBookieClient> callback);
+    void obtain(GenericCallback<PerChannelBookieClient> callback, long key);
 
     /**
-     * record any read/write error on {@link PerChannelBookieClientPool}
+     * record any read/write error on {@link PerChannelBookieClientPool}.
      */
     void recordError();
+
+    /**
+     * Check if any ops on any channel needs to be timed out.
+     * This is called on all channels, even if the channel is not yet connected.
+     */
+    void checkTimeoutOnPendingOperations();
 
     /**
      * Disconnect the connections in the pool.
@@ -61,4 +67,8 @@ interface PerChannelBookieClientPool {
      */
     void close(boolean wait);
 
+    /**
+     * Get the number of pending completion requests in the channel.
+     */
+    long getNumPendingCompletionRequests();
 }

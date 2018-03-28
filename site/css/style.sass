@@ -1,0 +1,186 @@
+---
+---
+
+$fa-font-path: "../fonts"
+@import vendor/font-awesome/font-awesome
+@import vendor/bulma/sass/utilities/initial-variables
+@import variables
+@import mixins
+@import navbar
+@import syntax
+@import typography
+@import vendor/bulma/bulma
+
+img.bk-javadoc-icon
+  margin-right: 1.5rem
+
+.bk-level
+  height: 4rem
+
+  img
+    height: 4rem
+
+span.bk-javadoc-icon
+  margin-right: .5rem
+
+span.tag
+  margin-left: 1em
+
+nav.pagination
+  margin-top: 5rem
+
+@media (max-width: 767px)
+  .bk-docs-container
+    margin-top: 1rem !important
+
+@media (min-width: 768px)
+  .bk-docs-container .bk-docs-block
+    padding: 0 5% !important
+
+.bk-twitter span
+  color: $twitter-blue
+
+em
+  margin-right: $em-right-margin
+
+table
+  tbody
+    td
+      max-width: 300px
+      white-space: normal
+      overflow-x: scroll
+
+.fa-stack-overflow
+  &:hover
+    color: #f48024
+
+.javadoc-button
+  span + span
+    margin-left: .5rem
+
+ul, li
+  margin: 0
+  padding: 0
+
+span.pop
+  color: $blue
+
++sticky-footer
+
+$base-font-size: .8rem
+$footer-height: 20rem
+
+footer.footer
+  z-index: 10
+  height: $footer-height
+
+// Popovers
+.popover-template
+  display: none
+
+.toc
+  overflow-y: scroll
+  bottom: 0
+  top: $navbar-height + 5rem
+  $toc-base-font-size: 1.2rem
+  position: fixed
+  max-width: 20rem
+  padding: 0 0 5% 0
+
+  .section-nav
+    .toc-entry
+      &.toc-h2
+        font-size: $toc-base-font-size
+
+      &.toc-h3
+        padding-left: 10px
+        font-size: $toc-base-font-size * .8
+
+      &.toc-h4
+        padding-left: 20px
+        font-size: $toc-base-font-size * .6
+
+      &.toc-h4, &.toc-h5
+        display: none
+
+      a
+        &:hover
+          color: darken($tan, 20%)
+    
+      & + .toc-entry
+        margin-top: $toc-base-font-size
+
+body
+  font-size: 1.25em
+
+h1.bk-title
+  font-size: $base-font-size * 4.25
+  margin-bottom: 1.5rem
+
+h2.bk-subtitle
+  font-size: $base-font-size * 2
+  margin-bottom: 1.5rem
+
+.bk-docs-container, .bk-community-container
+  margin: $docs-container-vertical-margin auto $docs-container-vertical-margin * 2 auto
+
+  hr
+    height: 2px
+
+  & + .pagination
+    margin-top: 2rem
+
+  .bk-docs-block
+    .docs-title
+      h1.title
+        font-size: 2.4rem
+        width: 100%
+
+      .title + .subtitle
+        padding-top: .75rem
+        font-size: $base-font-size * 1.2
+
+.bk-main-content
+  ol ol, ol ul
+    margin: .5rem 0 .5rem .75rem
+
+  ul, li, ol
+    margin-left: .75rem
+  
+  ul li
+    list-style-type: square
+
+.bk-docs-container
+  width: 80%
+
+  .bk-main-content
+    min-height: 70vh
+
+.bk-community-container
+  width: 60%
+
+aside.sidebar
+  width: 15rem
+  position: fixed
+  overflow-y: scroll
+  bottom: 0
+  top: $navbar-height + 5rem
+  padding: 0 0 5% 0
+
+  p + ul.sidebar-items
+    margin-top: .2rem
+
+  ul.sidebar-items
+    margin-bottom: 1rem
+
+    li
+      padding: .2rem 0 .2rem 1rem
+      font-size: 1rem
+      width: 100%
+
+      &.active
+        background-color: $tan
+        border-radius: 3px
+
+        a
+          color: white

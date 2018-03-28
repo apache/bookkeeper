@@ -21,23 +21,27 @@
 
 package org.apache.bookkeeper.bookie;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.STORAGE_GET_ENTRY;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.STORAGE_GET_OFFSET;
+
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.Lists;
+import io.netty.buffer.ByteBuf;
 import java.io.File;
 import java.io.IOException;
-import java.nio.ByteBuffer;
+import java.util.Map;
+import java.util.NavigableMap;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.bookkeeper.bookie.Bookie.NoLedgerException;
 import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
 import org.apache.bookkeeper.bookie.EntryLogger.EntryLogListener;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.LedgerDirsListener;
-
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.TimeUnit;
-
-import java.util.Map;
-import java.util.NavigableMap;
-
+import org.apache.bookkeeper.common.util.Watcher;
 import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.jmx.BKMBeanInfo;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.stats.OpStatsLogger;
@@ -47,45 +51,21 @@ import org.apache.bookkeeper.util.SnapshotMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.collect.Lists;
-
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.STORAGE_GET_ENTRY;
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.STORAGE_GET_OFFSET;
-
 /**
- * Interleave ledger storage
- * This ledger storage implementation stores all entries in a single
+ * Interleave ledger storage.
+ *
+ * <p>This ledger storage implementation stores all entries in a single
  * file and maintains an index file for each ledger.
  */
 public class InterleavedLedgerStorage implements CompactableLedgerStorage, EntryLogListener {
-    private final static Logger LOG = LoggerFactory.getLogger(InterleavedLedgerStorage.class);
-
-    // Hold the last checkpoint
-    protected static class CheckpointHolder {
-        Checkpoint lastCheckpoint = Checkpoint.MAX;
-
-        protected synchronized void setNextCheckpoint(Checkpoint cp) {
-            if (Checkpoint.MAX.equals(lastCheckpoint) || lastCheckpoint.compareTo(cp) < 0) {
-                lastCheckpoint = cp;
-            }
-        }
-
-        protected synchronized void clearLastCheckpoint(Checkpoint done) {
-            if (0 == lastCheckpoint.compareTo(done)) {
-                lastCheckpoint = Checkpoint.MAX;
-            }
-        }
-
-        protected synchronized Checkpoint getLastCheckpoint() {
-            return lastCheckpoint;
-        }
-    }
+    private static final Logger LOG = LoggerFactory.getLogger(InterleavedLedgerStorage.class);
 
     EntryLogger entryLogger;
     LedgerCache ledgerCache;
-    private CheckpointSource checkpointSource;
-    protected final CheckpointHolder checkpointHolder = new CheckpointHolder();
-    private final CopyOnWriteArrayList<LedgerDeletionListener> ledgerDeletionListeners = Lists.newCopyOnWriteArrayList();
+    protected CheckpointSource checkpointSource;
+    protected Checkpointer checkpointer;
+    private final CopyOnWriteArrayList<LedgerDeletionListener> ledgerDeletionListeners =
+            Lists.newCopyOnWriteArrayList();
 
     // A sorted map to stored all active ledger ids
     protected final SnapshotMap<Long, Boolean> activeLedgers;
@@ -96,27 +76,35 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
     GarbageCollectorThread gcThread;
 
     // this indicates that a write has happened since the last flush
-    private volatile boolean somethingWritten = false;
+    private final AtomicBoolean somethingWritten = new AtomicBoolean(false);
 
     // Expose Stats
     private OpStatsLogger getOffsetStats;
     private OpStatsLogger getEntryStats;
 
-    InterleavedLedgerStorage() {
+    @VisibleForTesting
+    public InterleavedLedgerStorage() {
         activeLedgers = new SnapshotMap<Long, Boolean>();
     }
 
     @Override
-    public void initialize(ServerConfiguration conf, LedgerManager ledgerManager,
-                           LedgerDirsManager ledgerDirsManager, LedgerDirsManager indexDirsManager,
-                           CheckpointSource checkpointSource, StatsLogger statsLogger)
+    public void initialize(ServerConfiguration conf,
+                           LedgerManager ledgerManager,
+                           LedgerDirsManager ledgerDirsManager,
+                           LedgerDirsManager indexDirsManager,
+                           StateManager stateManager,
+                           CheckpointSource checkpointSource,
+                           Checkpointer checkpointer,
+                           StatsLogger statsLogger)
             throws IOException {
-
+        checkNotNull(checkpointSource, "invalid null checkpoint source");
+        checkNotNull(checkpointer, "invalid null checkpointer");
         this.checkpointSource = checkpointSource;
+        this.checkpointer = checkpointer;
         entryLogger = new EntryLogger(conf, ledgerDirsManager, this);
         ledgerCache = new LedgerCacheImpl(conf, activeLedgers,
                 null == indexDirsManager ? ledgerDirsManager : indexDirsManager, statsLogger);
-        gcThread = new GarbageCollectorThread(conf, ledgerManager, this);
+        gcThread = new GarbageCollectorThread(conf, ledgerManager, this, statsLogger.scope("gc"));
         ledgerDirsManager.addLedgerDirsListener(getLedgerDirsListener());
         // Expose Stats
         getOffsetStats = statsLogger.getOpStatsLogger(STORAGE_GET_OFFSET);
@@ -200,13 +188,16 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
         // shut down gc thread, which depends on zookeeper client
         // also compaction will write entries again to entry log file
         LOG.info("Shutting down InterleavedLedgerStorage");
+        LOG.info("Shutting down GC thread");
         gcThread.shutdown();
+        LOG.info("Shutting down entry logger");
         entryLogger.shutdown();
         try {
             ledgerCache.close();
         } catch (IOException e) {
             LOG.error("Error while closing the ledger cache", e);
         }
+        LOG.info("Complete shutting down Ledger Storage");
     }
 
     @Override
@@ -219,11 +210,13 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
         return ledgerCache.isFenced(ledgerId);
     }
 
-    public void setExplicitlac(long ledgerId, ByteBuffer lac) throws IOException {
+    @Override
+    public void setExplicitlac(long ledgerId, ByteBuf lac) throws IOException {
         ledgerCache.setExplicitLac(ledgerId, lac);
     }
 
-    public ByteBuffer getExplicitLac(long ledgerId) {
+    @Override
+    public ByteBuf getExplicitLac(long ledgerId) {
         return ledgerCache.getExplicitLac(ledgerId);
     }
 
@@ -246,35 +239,45 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
     public long getLastAddConfirmed(long ledgerId) throws IOException {
         Long lac = ledgerCache.getLastAddConfirmed(ledgerId);
         if (lac == null) {
-            ByteBuffer bb = getEntry(ledgerId, BookieProtocol.LAST_ADD_CONFIRMED);
+            ByteBuf bb = getEntry(ledgerId, BookieProtocol.LAST_ADD_CONFIRMED);
             if (null == bb) {
                 return BookieProtocol.INVALID_ENTRY_ID;
             } else {
-                bb.getLong(); // ledger id
-                bb.getLong(); // entry id
-                lac = bb.getLong();
-                lac = ledgerCache.updateLastAddConfirmed(ledgerId, lac);
+                try {
+                    bb.skipBytes(2 * Long.BYTES); // skip ledger & entry id
+                    lac = bb.readLong();
+                    lac = ledgerCache.updateLastAddConfirmed(ledgerId, lac);
+                } finally {
+                    bb.release();
+                }
             }
         }
         return lac;
     }
 
     @Override
-    synchronized public long addEntry(ByteBuffer entry) throws IOException {
-        long ledgerId = entry.getLong();
-        long entryId = entry.getLong();
-        long lac = entry.getLong();
-        entry.rewind();
+    public boolean waitForLastAddConfirmedUpdate(long ledgerId,
+                                                 long previousLAC,
+                                                 Watcher<LastAddConfirmedUpdateNotification> watcher)
+            throws IOException {
+        return ledgerCache.waitForLastAddConfirmedUpdate(ledgerId, previousLAC, watcher);
+    }
+
+
+    @Override
+    public long addEntry(ByteBuf entry) throws IOException {
+        long ledgerId = entry.getLong(entry.readerIndex() + 0);
+        long entryId = entry.getLong(entry.readerIndex() + 8);
+        long lac = entry.getLong(entry.readerIndex() + 16);
 
         processEntry(ledgerId, entryId, entry);
 
         ledgerCache.updateLastAddConfirmed(ledgerId, lac);
-
         return entryId;
     }
 
     @Override
-    public ByteBuffer getEntry(long ledgerId, long entryId) throws IOException {
+    public ByteBuf getEntry(long ledgerId, long entryId) throws IOException {
         long offset;
         /*
          * If entryId is BookieProtocol.LAST_ADD_CONFIRMED, then return the last written.
@@ -303,9 +306,9 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
         startTimeNanos = MathUtils.nowInNano();
         success = false;
         try {
-            byte[] retBytes = entryLogger.readEntry(ledgerId, entryId, offset);
+            ByteBuf retBytes = entryLogger.readEntry(ledgerId, entryId, offset);
             success = true;
-            return ByteBuffer.wrap(retBytes);
+            return retBytes;
         } finally {
             if (success) {
                 getEntryStats.registerSuccessfulEvent(MathUtils.elapsedNanos(startTimeNanos), TimeUnit.NANOSECONDS);
@@ -348,29 +351,19 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
     }
 
     @Override
-    public Checkpoint checkpoint(Checkpoint checkpoint) throws IOException {
-        Checkpoint lastCheckpoint = checkpointHolder.getLastCheckpoint();
-        // if checkpoint is less than last checkpoint, we don't need to do checkpoint again.
-        if (lastCheckpoint.compareTo(checkpoint) > 0) {
-            return lastCheckpoint;
-        }
+    public void checkpoint(Checkpoint checkpoint) throws IOException {
         // we don't need to check somethingwritten since checkpoint
         // is scheduled when rotate an entry logger file. and we could
         // not set somethingWritten to false after checkpoint, since
         // current entry logger file isn't flushed yet.
         flushOrCheckpoint(true);
-        // after the ledger storage finished checkpointing, try to clear the done checkpoint
-
-        checkpointHolder.clearLastCheckpoint(lastCheckpoint);
-        return lastCheckpoint;
     }
 
     @Override
-    synchronized public void flush() throws IOException {
-        if (!somethingWritten) {
+    public synchronized void flush() throws IOException {
+        if (!somethingWritten.compareAndSet(true, false)) {
             return;
         }
-        somethingWritten = false;
         flushOrCheckpoint(false);
     }
 
@@ -418,25 +411,20 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
     }
 
     @Override
-    public BKMBeanInfo getJMXBean() {
-        return ledgerCache.getJMXBean();
-    }
-
-    @Override
     public void registerLedgerDeletionListener(LedgerDeletionListener listener) {
         ledgerDeletionListeners.add(listener);
     }
 
-    protected void processEntry(long ledgerId, long entryId, ByteBuffer entry) throws IOException {
+    protected void processEntry(long ledgerId, long entryId, ByteBuf entry) throws IOException {
         processEntry(ledgerId, entryId, entry, true);
     }
 
-    synchronized protected void processEntry(long ledgerId, long entryId, ByteBuffer entry, boolean rollLog)
+    protected void processEntry(long ledgerId, long entryId, ByteBuf entry, boolean rollLog)
             throws IOException {
         /*
          * Touch dirty flag
          */
-        somethingWritten = true;
+        somethingWritten.set(true);
 
         /*
          * Log the entry
@@ -456,7 +444,8 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
         // in ledger storage and ready to be synced to disk.
         // TODO: we could consider remove checkpointSource and checkpointSouce#newCheckpoint
         // later if we provide kind of LSN (Log/Journal Squeuence Number)
-        // mechanism when adding entry.
-        checkpointHolder.setNextCheckpoint(checkpointSource.newCheckpoint());
+        // mechanism when adding entry. {@link https://github.com/apache/bookkeeper/issues/279}
+        Checkpoint checkpoint = checkpointSource.newCheckpoint();
+        checkpointer.startCheckpoint(checkpoint);
     }
 }

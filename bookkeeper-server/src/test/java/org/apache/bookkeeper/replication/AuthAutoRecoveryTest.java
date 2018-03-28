@@ -20,29 +20,27 @@
  */
 package org.apache.bookkeeper.replication;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 import org.apache.bookkeeper.auth.AuthCallbacks;
 import org.apache.bookkeeper.auth.AuthToken;
 import org.apache.bookkeeper.auth.ClientAuthProvider;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.conf.ClientConfiguration;
-
-
 import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks;
+import org.apache.bookkeeper.proto.ClientConnectionPeer;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.junit.Assert.*;
-import org.apache.bookkeeper.client.ClientConnectionPeer;
-
 /**
- * This test verifies the auditor bookie scenarios from the auth point-of-view
+ * This test verifies the auditor bookie scenarios from the auth point-of-view.
  */
 public class AuthAutoRecoveryTest extends BookKeeperClusterTestCase {
 
-    private final static Logger LOG = LoggerFactory
+    private static final Logger LOG = LoggerFactory
         .getLogger(AuthAutoRecoveryTest.class);
 
     public static final String TEST_AUTH_PROVIDER_PLUGIN_NAME = "TestAuthProviderPlugin";
@@ -67,7 +65,6 @@ public class AuthAutoRecoveryTest extends BookKeeperClusterTestCase {
             final AuthCallbacks.GenericCallback<Void> completeCb) {
             return new ClientAuthProvider() {
                 public void init(AuthCallbacks.GenericCallback<AuthToken> cb) {
-
                     completeCb.operationComplete(BKException.Code.OK, null);
                 }
 
@@ -90,7 +87,7 @@ public class AuthAutoRecoveryTest extends BookKeeperClusterTestCase {
     /*
      * test the client role of the auditor
      */
-    @Test(timeout = 60000)
+    @Test
     public void testAuthClientRole() throws Exception {
         ServerConfiguration config = bsConfs.get(0);
         assertEquals(AuditorClientAuthInterceptorFactory.class.getName(), config.getClientAuthProviderFactoryClass());

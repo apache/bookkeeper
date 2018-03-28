@@ -1,0 +1,62 @@
+---
+layout: default
+---
+
+<div class="bk-docs-container">
+  <div class="columns is-gapless">
+    <div class="column is-2 is-hidden-mobile">
+      <div class="container">
+        {% include sidebar.html %}
+      </div>
+    </div>
+
+    <div class="column is-8 bk-docs-block">
+      <header class="docs-title">
+        <nav class="level bk-level">
+          <div class="level-left">
+            <div class="level-item">
+              <h1 class="title">{{ page.title }}</h1>
+            </div>
+          </div>
+          {% if page.logo %}
+          <div class="level-right">
+            <div class="level-item">
+              <img src="{{ site.baseurl }}{{ page.logo }}">
+            </div>
+          </div>
+          {% endif %}
+        </nav>
+
+        {% if page.subtitle %}<h2 class="subtitle">{{ page.subtitle }}</h2>{% endif %}
+      </header>
+
+      <hr />
+
+      <div class="content">
+        <section class="bk-main-content">
+          {{ content }}
+        </section>
+
+        {% if page.next or page.prev %}
+        <nav class="pagination is-centered">
+          {% if page.prev %}
+          <a class="pagination-previous" href="{{ page.prev }}">Previous</a>
+          {% endif %}
+          {% if page.next %}
+          <a class="pagination-next" href="{{ page.next }}">Next</a>
+          {% endif %}
+          <ul class="pagination-list"></ul>
+        </nav>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="column is-2 is-hidden-mobile">
+      {% unless page.toc_disable %}
+      {% include table-of-contents.html %}
+      {% endunless %}
+    </div>
+  </div>
+</div>
+
+{% include popovers.html %}

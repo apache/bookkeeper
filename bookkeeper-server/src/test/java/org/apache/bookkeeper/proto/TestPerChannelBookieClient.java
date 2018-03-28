@@ -20,12 +20,27 @@
  */
 package org.apache.bookkeeper.proto;
 
-import org.apache.bookkeeper.auth.ClientAuthProvider;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
+import com.google.protobuf.ExtensionRegistry;
+
+import io.netty.buffer.ByteBuf;
+import io.netty.channel.Channel;
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.nio.NioEventLoopGroup;
+
+import java.io.IOException;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import org.apache.bookkeeper.auth.AuthProviderFactoryFactory;
+import org.apache.bookkeeper.auth.ClientAuthProvider;
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.client.BKException;
-import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.ClientConfiguration;
+import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
@@ -33,31 +48,16 @@ import org.apache.bookkeeper.proto.PerChannelBookieClient.ConnectionState;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.util.OrderedSafeExecutor;
 import org.apache.bookkeeper.util.SafeRunnable;
-import org.jboss.netty.buffer.ChannelBuffer;
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
-import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.google.protobuf.ExtensionRegistry;
-
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-
-import static org.junit.Assert.*;
 
 /**
  * Tests for PerChannelBookieClient. Historically, this class has
  * had a few race conditions, so this is what these tests focus on.
  */
 public class TestPerChannelBookieClient extends BookKeeperClusterTestCase {
-    private final static Logger LOG = LoggerFactory.getLogger(TestPerChannelBookieClient.class);
+    private static final Logger LOG = LoggerFactory.getLogger(TestPerChannelBookieClient.class);
 
     ExtensionRegistry extRegistry = ExtensionRegistry.newInstance();
     ClientAuthProvider.Factory authProvider;
@@ -76,16 +76,14 @@ public class TestPerChannelBookieClient extends BookKeeperClusterTestCase {
      * This specific race was found in
      * {@link https://issues.apache.org/jira/browse/BOOKKEEPER-485}.
      */
-    @Test(timeout=60000)
+    @Test
     public void testConnectCloseRace() throws Exception {
-        ClientSocketChannelFactory channelFactory
-            = new NioClientSocketChannelFactory(Executors.newCachedThreadPool(),
-                                                Executors.newCachedThreadPool());
+        EventLoopGroup eventLoopGroup = new NioEventLoopGroup();
         OrderedSafeExecutor executor = getOrderedSafeExecutor();
 
         BookieSocketAddress addr = getBookie(0);
         for (int i = 0; i < 1000; i++) {
-            PerChannelBookieClient client = new PerChannelBookieClient(executor, channelFactory, addr,
+            PerChannelBookieClient client = new PerChannelBookieClient(executor, eventLoopGroup, addr,
                     authProvider, extRegistry);
             client.connectIfNeededAndDoOp(new GenericCallback<PerChannelBookieClient>() {
                     @Override
@@ -96,7 +94,7 @@ public class TestPerChannelBookieClient extends BookKeeperClusterTestCase {
                 });
             client.close();
         }
-        channelFactory.releaseExternalResources();
+        eventLoopGroup.shutdownGracefully();
         executor.shutdown();
     }
 
@@ -114,7 +112,7 @@ public class TestPerChannelBookieClient extends BookKeeperClusterTestCase {
      * where multiple clients try to connect a channel simultaneously. If not synchronised
      * correctly, this causes the netty channel to get orphaned.
      */
-    @Test(timeout=60000)
+    @Test
     public void testConnectRace() throws Exception {
         GenericCallback<PerChannelBookieClient> nullop = new GenericCallback<PerChannelBookieClient>() {
             @Override
@@ -123,21 +121,19 @@ public class TestPerChannelBookieClient extends BookKeeperClusterTestCase {
                 // we just want to trigger it connecting.
             }
         };
-        ClientSocketChannelFactory channelFactory
-            = new NioClientSocketChannelFactory(Executors.newCachedThreadPool(),
-                                                Executors.newCachedThreadPool());
+        EventLoopGroup eventLoopGroup = new NioEventLoopGroup();
         OrderedSafeExecutor executor = getOrderedSafeExecutor();
 
         BookieSocketAddress addr = getBookie(0);
         for (int i = 0; i < 100; i++) {
-            PerChannelBookieClient client = new PerChannelBookieClient(executor, channelFactory, addr,
+            PerChannelBookieClient client = new PerChannelBookieClient(executor, eventLoopGroup, addr,
                                                                        authProvider, extRegistry);
             for (int j = i; j < 10; j++) {
                 client.connectIfNeededAndDoOp(nullop);
             }
             client.close();
         }
-        channelFactory.releaseExternalResources();
+        eventLoopGroup.shutdownGracefully();
         executor.shutdown();
     }
 
@@ -147,7 +143,7 @@ public class TestPerChannelBookieClient extends BookKeeperClusterTestCase {
      *
      * {@link https://issues.apache.org/jira/browse/BOOKKEEPER-620}
      */
-    @Test(timeout=60000)
+    @Test
     public void testDisconnectRace() throws Exception {
         final GenericCallback<PerChannelBookieClient> nullop = new GenericCallback<PerChannelBookieClient>() {
             @Override
@@ -156,17 +152,14 @@ public class TestPerChannelBookieClient extends BookKeeperClusterTestCase {
                 // we just want to trigger it connecting.
             }
         };
-        final int ITERATIONS = 100000;
-        ClientSocketChannelFactory channelFactory
-            = new NioClientSocketChannelFactory(Executors.newCachedThreadPool(),
-                                                Executors.newCachedThreadPool());
+        final int iterations = 100000;
+        EventLoopGroup eventLoopGroup = new NioEventLoopGroup();
         OrderedSafeExecutor executor = getOrderedSafeExecutor();
         BookieSocketAddress addr = getBookie(0);
 
-        final PerChannelBookieClient client = new PerChannelBookieClient(executor, channelFactory,
+        final PerChannelBookieClient client = new PerChannelBookieClient(executor, eventLoopGroup,
                 addr, authProvider, extRegistry);
         final AtomicBoolean shouldFail = new AtomicBoolean(false);
-        final AtomicBoolean inconsistent = new AtomicBoolean(false);
         final AtomicBoolean running = new AtomicBoolean(true);
         final CountDownLatch disconnectRunning = new CountDownLatch(1);
         Thread connectThread = new Thread() {
@@ -181,7 +174,7 @@ public class TestPerChannelBookieClient extends BookKeeperClusterTestCase {
                         Thread.currentThread().interrupt();
                         running.set(false);
                     }
-                    for (int i = 0; i < ITERATIONS && running.get(); i++) {
+                    for (int i = 0; i < iterations && running.get(); i++) {
                         client.connectIfNeededAndDoOp(nullop);
                     }
                     running.set(false);
@@ -206,12 +199,12 @@ public class TestPerChannelBookieClient extends BookKeeperClusterTestCase {
 
                             if ((state == ConnectionState.CONNECTED
                                  && (channel == null
-                                     || !channel.isConnected()))
+                                     || !channel.isActive()))
                                 || (state != ConnectionState.CONNECTED
                                     && channel != null
-                                    && channel.isConnected())) {
+                                    && channel.isActive())) {
                                 LOG.error("State({}) and channel({}) inconsistent " + channel,
-                                          state, channel == null ? null : channel.isConnected());
+                                          state, channel == null ? null : channel.isActive());
                                 shouldFail.set(true);
                                 running.set(false);
                             }
@@ -228,25 +221,26 @@ public class TestPerChannelBookieClient extends BookKeeperClusterTestCase {
         checkThread.join();
         assertFalse("Failure in threads, check logs", shouldFail.get());
         client.close();
-        channelFactory.releaseExternalResources();
+        eventLoopGroup.shutdownGracefully();
         executor.shutdown();
     }
 
     /**
      * Test that requests are completed even if the channel is disconnected
-     * {@link https://issues.apache.org/jira/browse/BOOKKEEPER-668}
+     * {@link https://issues.apache.org/jira/browse/BOOKKEEPER-668}.
      */
-    @Test(timeout=60000)
+    @Test
     public void testRequestCompletesAfterDisconnectRace() throws Exception {
         ServerConfiguration conf = killBookie(0);
 
         Bookie delayBookie = new Bookie(conf) {
             @Override
-            public ByteBuffer readEntry(long ledgerId, long entryId)
+            public ByteBuf readEntry(long ledgerId, long entryId)
                     throws IOException, NoLedgerException {
                 try {
                     Thread.sleep(3000);
                 } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
                     throw new IOException("Interrupted waiting", ie);
                 }
                 return super.readEntry(ledgerId, entryId);
@@ -255,19 +249,17 @@ public class TestPerChannelBookieClient extends BookKeeperClusterTestCase {
         bsConfs.add(conf);
         bs.add(startBookie(conf, delayBookie));
 
-        ClientSocketChannelFactory channelFactory
-            = new NioClientSocketChannelFactory(Executors.newCachedThreadPool(),
-                                                Executors.newCachedThreadPool());
+        EventLoopGroup eventLoopGroup = new NioEventLoopGroup();
         final OrderedSafeExecutor executor = getOrderedSafeExecutor();
         BookieSocketAddress addr = getBookie(0);
 
-        final PerChannelBookieClient client = new PerChannelBookieClient(executor, channelFactory,
+        final PerChannelBookieClient client = new PerChannelBookieClient(executor, eventLoopGroup,
                 addr, authProvider, extRegistry);
         final CountDownLatch completion = new CountDownLatch(1);
         final ReadEntryCallback cb = new ReadEntryCallback() {
                 @Override
                 public void readEntryComplete(int rc, long ledgerId, long entryId,
-                                              ChannelBuffer buffer, Object ctx) {
+                    ByteBuf buffer, Object ctx) {
                     completion.countDown();
                 }
             };
@@ -285,16 +277,17 @@ public class TestPerChannelBookieClient extends BookKeeperClusterTestCase {
                     return;
                 }
 
-                client.readEntryAndFenceLedger(1, "00000111112222233333".getBytes(), 1, cb, null);
+                client.readEntry(1, 1, cb, null, BookieProtocol.FLAG_DO_FENCING, "00000111112222233333".getBytes());
             }
         });
 
         Thread.sleep(1000);
         client.disconnect();
         client.close();
-        channelFactory.releaseExternalResources();
-        executor.shutdown();
 
         assertTrue("Request should have completed", completion.await(5, TimeUnit.SECONDS));
+
+        eventLoopGroup.shutdownGracefully();
+        executor.shutdown();
     }
 }

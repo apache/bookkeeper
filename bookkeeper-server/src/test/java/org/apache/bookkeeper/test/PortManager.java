@@ -21,7 +21,6 @@
 package org.apache.bookkeeper.test;
 
 import java.net.ServerSocket;
-import java.io.IOException;
 /**
  * Port manager allows a base port to be specified on the commandline.
  * Tests will then use ports, counting up from this base port.
@@ -30,20 +29,19 @@ import java.io.IOException;
 public class PortManager {
     private static int nextPort = getBasePort();
 
-    public synchronized static int nextFreePort() {
+    public static synchronized int nextFreePort() {
+        int exceptionCount = 0;
         while (true) {
-            ServerSocket ss = null;
-            try {
-                int port = nextPort++;
-                ss = new ServerSocket(port);
-                ss.setReuseAddress(true);
+            int port = nextPort++;
+            try (ServerSocket ss = new ServerSocket(port)) {
+                ss.close();
+                //Give it some time to truly close the connection
+                Thread.sleep(100);
                 return port;
-            } catch (IOException ioe) {
-            } finally {
-                if (ss != null) {
-                    try {
-                        ss.close();
-                    } catch (IOException ioe) {}
+            } catch (Exception e) {
+                exceptionCount++;
+                if (exceptionCount > 5) {
+                    throw new RuntimeException(e);
                 }
             }
         }

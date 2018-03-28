@@ -20,12 +20,13 @@
  */
 package org.apache.bookkeeper.replication;
 
-import java.net.InetAddress;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Map.Entry;
 import java.util.Set;
-
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.LedgerEntry;
 import org.apache.bookkeeper.client.LedgerHandle;
@@ -35,8 +36,9 @@ import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.junit.Test;
 
-import static org.junit.Assert.*;
-
+/**
+ * Test auto recovery.
+ */
 public class TestAutoRecoveryAlongWithBookieServers extends
         BookKeeperClusterTestCase {
 
@@ -44,14 +46,16 @@ public class TestAutoRecoveryAlongWithBookieServers extends
 
     public TestAutoRecoveryAlongWithBookieServers() {
         super(3);
-        baseConf.setAutoRecoveryDaemonEnabled(true);
+        setAutoRecoveryEnabled(true);
         basePath = baseClientConf.getZkLedgersRootPath() + '/'
                 + BookKeeperConstants.UNDER_REPLICATION_NODE
                 + BookKeeperConstants.DEFAULT_ZK_LEDGERS_ROOT_PATH;
     }
 
-    /** Tests that the auto recovery service along with Bookie servers itself */
-    @Test(timeout = 60000)
+    /**
+     * Tests that the auto recovery service along with Bookie servers itself.
+     */
+    @Test
     public void testAutoRecoveryAlongWithBookieServers() throws Exception {
         LedgerHandle lh = bkc.createLedger(3, 3, BookKeeper.DigestType.CRC32,
                 "testpasswd".getBytes());
@@ -66,9 +70,7 @@ public class TestAutoRecoveryAlongWithBookieServers extends
 
         killBookie(replicaToKill);
 
-        int startNewBookie = startNewBookie();
-        BookieSocketAddress newBkAddr = new BookieSocketAddress(InetAddress
-                .getLocalHost().getHostAddress(), startNewBookie);
+        BookieSocketAddress newBkAddr = startNewBookieAndReturnAddress();
 
         while (ReplicationTestUtil.isLedgerInUnderReplication(zkc, lh.getId(),
                 basePath)) {

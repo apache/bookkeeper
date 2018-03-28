@@ -21,22 +21,24 @@
 
 package org.apache.bookkeeper.bookie;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 
 /**
  * A Buffered channel without a write buffer. Only reads are buffered.
  */
-public class BufferedReadChannel extends BufferedChannelBase {
-    private static Logger LOG = LoggerFactory.getLogger(BufferedReadChannel.class);
+public class BufferedReadChannel extends BufferedChannelBase  {
+
     // The capacity of the read buffer.
     protected final int readCapacity;
+
     // The buffer for read operations.
-    protected ByteBuffer readBuffer;
+    protected final ByteBuf readBuffer;
+
     // The starting position of the data currently in the read buffer.
     protected long readBufferStartPosition = Long.MIN_VALUE;
 
@@ -46,8 +48,7 @@ public class BufferedReadChannel extends BufferedChannelBase {
     public BufferedReadChannel(FileChannel fileChannel, int readCapacity) throws IOException {
         super(fileChannel);
         this.readCapacity = readCapacity;
-        this.readBuffer = ByteBuffer.allocateDirect(readCapacity);
-        this.readBuffer.limit(0);
+        this.readBuffer = Unpooled.buffer(readCapacity);
     }
 
     /**
@@ -56,10 +57,15 @@ public class BufferedReadChannel extends BufferedChannelBase {
      * depending on the implementation..
      * @param dest
      * @param pos
-     * @return The total number of bytes read. -1 if the given position is greater than or equal to the file's current size.
+     * @return The total number of bytes read.
+     *         -1 if the given position is greater than or equal to the file's current size.
      * @throws IOException if I/O error occurs
      */
-    synchronized public int read(ByteBuffer dest, long pos) throws IOException {
+    public int read(ByteBuf dest, long pos) throws IOException {
+        return read(dest, pos, dest.writableBytes());
+    }
+
+    public synchronized int read(ByteBuf dest, long pos, int length) throws IOException {
         invocationCount++;
         long currentPosition = pos;
         long eof = validateAndGetFileChannel().size();
@@ -67,37 +73,35 @@ public class BufferedReadChannel extends BufferedChannelBase {
         if (pos >= eof) {
             return -1;
         }
-        while (dest.remaining() > 0) {
+        while (length > 0) {
             // Check if the data is in the buffer, if so, copy it.
-            if (readBufferStartPosition <= currentPosition && currentPosition < readBufferStartPosition + readBuffer.limit()) {
-                long posInBuffer = currentPosition - readBufferStartPosition;
-                long bytesToCopy = Math.min(dest.remaining(), readBuffer.limit() - posInBuffer);
-                ByteBuffer rbDup = readBuffer.duplicate();
-                rbDup.position((int)posInBuffer);
-                rbDup.limit((int)(posInBuffer + bytesToCopy));
-                dest.put(rbDup);
+            if (readBufferStartPosition <= currentPosition
+                    && currentPosition < readBufferStartPosition + readBuffer.readableBytes()) {
+                int posInBuffer = (int) (currentPosition - readBufferStartPosition);
+                int bytesToCopy = Math.min(length, readBuffer.readableBytes() - posInBuffer);
+                dest.writeBytes(readBuffer, posInBuffer, bytesToCopy);
                 currentPosition += bytesToCopy;
+                length -= bytesToCopy;
                 cacheHitCount++;
             } else if (currentPosition >= eof) {
                 // here we reached eof.
                 break;
             } else {
                 // We don't have it in the buffer, so put necessary data in the buffer
-                readBuffer.clear();
                 readBufferStartPosition = currentPosition;
                 int readBytes = 0;
-                if ((readBytes = validateAndGetFileChannel().read(readBuffer, currentPosition)) <= 0) {
+                if ((readBytes = validateAndGetFileChannel().read(readBuffer.internalNioBuffer(0, readCapacity),
+                        currentPosition)) <= 0) {
                     throw new IOException("Reading from filechannel returned a non-positive value. Short read.");
                 }
-                readBuffer.limit(readBytes);
+                readBuffer.writerIndex(readBytes);
             }
         }
-        return (int)(currentPosition - pos);
+        return (int) (currentPosition - pos);
     }
 
-    synchronized public void clear() {
+    public synchronized void clear() {
         readBuffer.clear();
-        readBuffer.limit(0);
     }
 
 }

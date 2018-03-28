@@ -17,22 +17,26 @@
  */
 package org.apache.bookkeeper.client;
 
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import org.apache.bookkeeper.net.BookieSocketAddress;
-import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
+
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.junit.Before;
 import org.junit.Test;
 
+/**
+ * Testing a generic ensemble placement policy.
+ */
 public class GenericEnsemblePlacementPolicyTest extends BookKeeperClusterTestCase {
 
     private BookKeeper.DigestType digestType = BookKeeper.DigestType.CRC32;
@@ -47,11 +51,14 @@ public class GenericEnsemblePlacementPolicyTest extends BookKeeperClusterTestCas
         baseClientConf.setEnsemblePlacementPolicy(CustomEnsemblePlacementPolicy.class);
     }
 
+    /**
+     * A custom ensemble placement policy.
+     */
     public static final class CustomEnsemblePlacementPolicy extends DefaultEnsemblePlacementPolicy {
 
         @Override
         public BookieSocketAddress replaceBookie(int ensembleSize, int writeQuorumSize,
-            int ackQuorumSize, Map<String, byte[]> customMetadata, Collection<BookieSocketAddress> currentEnsemble,
+            int ackQuorumSize, Map<String, byte[]> customMetadata, Set<BookieSocketAddress> currentEnsemble,
             BookieSocketAddress bookieToReplace, Set<BookieSocketAddress> excludeBookies)
             throws BKException.BKNotEnoughBookiesException {
             new Exception("replaceBookie " + ensembleSize + "," + customMetadata).printStackTrace();
@@ -69,7 +76,6 @@ public class GenericEnsemblePlacementPolicyTest extends BookKeeperClusterTestCas
             customMetadataOnNewEnsembleStack.add(customMetadata);
             return super.newEnsemble(ensembleSize, quorumSize, ackQuorumSize, customMetadata, excludeBookies);
         }
-        
     }
 
     @Before
@@ -78,14 +84,14 @@ public class GenericEnsemblePlacementPolicyTest extends BookKeeperClusterTestCas
         customMetadataOnReplaceBookieStack.clear();
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testNewEnsemble() throws Exception {
         numBookies = 1;
         startBKCluster();
         try {
             Map<String, byte[]> customMetadata = new HashMap<>();
             customMetadata.put(property, value);
-            try (BookKeeper bk = new BookKeeper(baseClientConf, zkc);) {
+            try (BookKeeper bk = new BookKeeper(baseClientConf, zkc)) {
                 bk.createLedger(1, 1, 1, digestType, PASSWORD.getBytes(), customMetadata);
             }
             assertEquals(1, customMetadataOnNewEnsembleStack.size());
@@ -95,14 +101,14 @@ public class GenericEnsemblePlacementPolicyTest extends BookKeeperClusterTestCas
         }
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testNewEnsembleWithNotEnoughtBookies() throws Exception {
         numBookies = 0;
         try {
             startBKCluster();
             Map<String, byte[]> customMetadata = new HashMap<>();
             customMetadata.put(property, value);
-            try (BookKeeper bk = new BookKeeper(baseClientConf, zkc);) {
+            try (BookKeeper bk = new BookKeeper(baseClientConf, zkc)) {
                 bk.createLedger(1, 1, 1, digestType, PASSWORD.getBytes(), customMetadata);
                 fail("creation should fail");
             } catch (BKException.BKNotEnoughBookiesException bneb) {
@@ -115,15 +121,15 @@ public class GenericEnsemblePlacementPolicyTest extends BookKeeperClusterTestCas
         }
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testReplaceBookie() throws Exception {
         numBookies = 3;
         startBKCluster();
         try {
             Map<String, byte[]> customMetadata = new HashMap<>();
             customMetadata.put(property, value);
-            try (BookKeeper bk = new BookKeeper(baseClientConf, zkc);) {
-                try (LedgerHandle lh = bk.createLedger(2, 2, 2, digestType, PASSWORD.getBytes(), customMetadata);) {
+            try (BookKeeper bk = new BookKeeper(baseClientConf, zkc)) {
+                try (LedgerHandle lh = bk.createLedger(2, 2, 2, digestType, PASSWORD.getBytes(), customMetadata)) {
                     lh.addEntry(value);
                     long lId = lh.getId();
                     ArrayList<BookieSocketAddress> ensembleAtFirstEntry = lh.getLedgerMetadata().getEnsemble(lId);

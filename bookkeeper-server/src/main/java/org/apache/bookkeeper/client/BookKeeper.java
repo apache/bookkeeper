@@ -20,93 +20,116 @@
  */
 package org.apache.bookkeeper.client;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.WATCHER_SCOPE;
+
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Optional;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.epoll.EpollEventLoopGroup;
+import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.util.HashedWheelTimer;
+import io.netty.util.concurrent.DefaultThreadFactory;
 import java.io.IOException;
+import java.net.URI;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-
-import com.google.common.base.Optional;
-import com.google.common.base.Preconditions;
-
 import org.apache.bookkeeper.client.AsyncCallback.CreateCallback;
 import org.apache.bookkeeper.client.AsyncCallback.DeleteCallback;
-import org.apache.bookkeeper.client.AsyncCallback.OpenCallback;
 import org.apache.bookkeeper.client.AsyncCallback.IsClosedCallback;
+import org.apache.bookkeeper.client.AsyncCallback.OpenCallback;
 import org.apache.bookkeeper.client.BookieInfoReader.BookieInfo;
+import org.apache.bookkeeper.client.SyncCallbackUtils.SyncCreateAdvCallback;
+import org.apache.bookkeeper.client.SyncCallbackUtils.SyncCreateCallback;
+import org.apache.bookkeeper.client.SyncCallbackUtils.SyncDeleteCallback;
+import org.apache.bookkeeper.client.SyncCallbackUtils.SyncOpenCallback;
+import org.apache.bookkeeper.client.api.BookKeeperBuilder;
+import org.apache.bookkeeper.client.api.CreateBuilder;
+import org.apache.bookkeeper.client.api.DeleteBuilder;
+import org.apache.bookkeeper.client.api.OpenBuilder;
+import org.apache.bookkeeper.client.api.WriteFlag;
+import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.apache.bookkeeper.conf.ClientConfiguration;
+import org.apache.bookkeeper.feature.Feature;
 import org.apache.bookkeeper.feature.FeatureProvider;
 import org.apache.bookkeeper.feature.SettableFeatureProvider;
 import org.apache.bookkeeper.meta.CleanupLedgerManager;
 import org.apache.bookkeeper.meta.LedgerIdGenerator;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
+import org.apache.bookkeeper.meta.MetadataClientDriver;
+import org.apache.bookkeeper.meta.MetadataDrivers;
+import org.apache.bookkeeper.meta.exceptions.MetadataException;
+import org.apache.bookkeeper.meta.zk.ZKMetadataClientDriver;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.net.DNSToSwitchMapping;
 import org.apache.bookkeeper.proto.BookieClient;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
+import org.apache.bookkeeper.proto.DataFormats;
+import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.NullStatsLogger;
-import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.stats.OpStatsLogger;
+import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.OrderedSafeExecutor;
 import org.apache.bookkeeper.util.ReflectionUtils;
 import org.apache.bookkeeper.util.SafeRunnable;
-import org.apache.bookkeeper.zookeeper.BoundExponentialBackoffRetryPolicy;
-import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
 import org.apache.commons.configuration.ConfigurationException;
+import org.apache.commons.lang.SystemUtils;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooKeeper;
-import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
-import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
-import org.jboss.netty.util.HashedWheelTimer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
-
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-
 /**
- * BookKeeper client. We assume there is one single writer to a ledger at any
- * time.
+ * BookKeeper client.
  *
- * There are four possible operations: start a new ledger, write to a ledger,
+ * <p>We assume there is one single writer to a ledger at any time.
+ *
+ * <p>There are four possible operations: start a new ledger, write to a ledger,
  * read from a ledger and delete a ledger.
  *
- * The exceptions resulting from synchronous calls and error code resulting from
+ * <p>The exceptions resulting from synchronous calls and error code resulting from
  * asynchronous calls can be found in the class {@link BKException}.
- *
- *
  */
-
-public class BookKeeper implements AutoCloseable {
+public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
 
     static final Logger LOG = LoggerFactory.getLogger(BookKeeper.class);
 
-    final ZooKeeper zk;
-    final ClientSocketChannelFactory channelFactory;
+
+    final EventLoopGroup eventLoopGroup;
 
     // The stats logger for this client.
     private final StatsLogger statsLogger;
     private OpStatsLogger createOpLogger;
     private OpStatsLogger openOpLogger;
     private OpStatsLogger deleteOpLogger;
+    private OpStatsLogger recoverOpLogger;
     private OpStatsLogger readOpLogger;
+    private OpStatsLogger readLacAndEntryOpLogger;
+    private OpStatsLogger readLacAndEntryRespLogger;
     private OpStatsLogger addOpLogger;
     private OpStatsLogger writeLacOpLogger;
     private OpStatsLogger readLacOpLogger;
+    private OpStatsLogger recoverAddEntriesStats;
+    private OpStatsLogger recoverReadEntriesStats;
+
+    private Counter speculativeReadCounter;
+    private Counter readOpDmCounter;
+    private Counter addOpUrCounter;
 
 
-    // whether the socket factory is one we created, or is owned by whoever
+    // whether the event loop group is one we created, or is owned by whoever
     // instantiated us
-    boolean ownChannelFactory = false;
-    // whether the zk handle is one we created, or is owned by whoever
-    // instantiated us
-    boolean ownZKHandle = false;
+    boolean ownEventLoopGroup = false;
 
     final BookieClient bookieClient;
     final BookieWatcher bookieWatcher;
@@ -116,8 +139,12 @@ public class BookKeeper implements AutoCloseable {
     final HashedWheelTimer requestTimer;
     final boolean ownTimer;
     final FeatureProvider featureProvider;
-    ScheduledExecutorService bookieInfoScheduler;
+    final ScheduledExecutorService bookieInfoScheduler;
 
+    // Features
+    final Feature disableEnsembleChangeFeature;
+
+    final MetadataClientDriver metadataDriver;
     // Ledger manager responsible for how to store ledger meta data
     final LedgerManagerFactory ledgerManagerFactory;
     final LedgerManager ledgerManager;
@@ -129,16 +156,27 @@ public class BookKeeper implements AutoCloseable {
 
     final ClientConfiguration conf;
     final int explicitLacInterval;
+    final boolean delayEnsembleChange;
+    final boolean reorderReadSequence;
+    final long addEntryQuorumTimeoutNanos;
+
+    final Optional<SpeculativeRequestExecutionPolicy> readSpeculativeRequestPolicy;
+    final Optional<SpeculativeRequestExecutionPolicy> readLACSpeculativeRequestPolicy;
 
     // Close State
     boolean closed = false;
     final ReentrantReadWriteLock closeLock = new ReentrantReadWriteLock();
 
+    /**
+     * BookKeeper Client Builder to build client instances.
+     *
+     * @see BookKeeperBuilder
+     */
     public static class Builder {
         final ClientConfiguration conf;
 
         ZooKeeper zk = null;
-        ClientSocketChannelFactory channelFactory = null;
+        EventLoopGroup eventLoopGroup = null;
         StatsLogger statsLogger = NullStatsLogger.INSTANCE;
         DNSToSwitchMapping dnsResolver = null;
         HashedWheelTimer requestTimer = null;
@@ -148,40 +186,125 @@ public class BookKeeper implements AutoCloseable {
             this.conf = conf;
         }
 
-        public Builder setChannelFactory(ClientSocketChannelFactory f) {
-            channelFactory = f;
+        /**
+         * Configure the bookkeeper client with a provided {@link EventLoopGroup}.
+         *
+         * @param f an external {@link EventLoopGroup} to use by the bookkeeper client.
+         * @return client builder.
+         * @deprecated since 4.5, use {@link #eventLoopGroup(EventLoopGroup)}
+         * @see #eventLoopGroup(EventLoopGroup)
+         */
+        @Deprecated
+        public Builder setEventLoopGroup(EventLoopGroup f) {
+            eventLoopGroup = f;
             return this;
         }
 
+        /**
+         * Configure the bookkeeper client with a provided {@link ZooKeeper} client.
+         *
+         * @param zk an external {@link ZooKeeper} client to use by the bookkeeper client.
+         * @return client builder.
+         * @deprecated since 4.5, use {@link #zk(ZooKeeper)}
+         * @see #zk(ZooKeeper)
+         */
+        @Deprecated
         public Builder setZookeeper(ZooKeeper zk) {
             this.zk = zk;
             return this;
         }
 
+        /**
+         * Configure the bookkeeper client with a provided {@link StatsLogger}.
+         *
+         * @param statsLogger an {@link StatsLogger} to use by the bookkeeper client to collect stats generated
+         *                    by the client.
+         * @return client builder.
+         * @deprecated since 4.5, use {@link #statsLogger(StatsLogger)}
+         * @see #statsLogger(StatsLogger)
+         */
+        @Deprecated
         public Builder setStatsLogger(StatsLogger statsLogger) {
             this.statsLogger = statsLogger;
             return this;
         }
 
+        /**
+         * Configure the bookkeeper client with a provided {@link EventLoopGroup}.
+         *
+         * @param f an external {@link EventLoopGroup} to use by the bookkeeper client.
+         * @return client builder.
+         * @since 4.5
+         */
+        public Builder eventLoopGroup(EventLoopGroup f) {
+            eventLoopGroup = f;
+            return this;
+        }
 
+        /**
+         * Configure the bookkeeper client with a provided {@link ZooKeeper} client.
+         *
+         * @param zk an external {@link ZooKeeper} client to use by the bookkeeper client.
+         * @return client builder.
+         * @since 4.5
+         */
+        @Deprecated
+        public Builder zk(ZooKeeper zk) {
+            this.zk = zk;
+            return this;
+        }
+
+        /**
+         * Configure the bookkeeper client with a provided {@link StatsLogger}.
+         *
+         * @param statsLogger an {@link StatsLogger} to use by the bookkeeper client to collect stats generated
+         *                    by the client.
+         * @return client builder.
+         * @since 4.5
+         */
+        public Builder statsLogger(StatsLogger statsLogger) {
+            this.statsLogger = statsLogger;
+            return this;
+        }
+
+        /**
+         * Configure the bookkeeper client to use the provided dns resolver {@link DNSToSwitchMapping}.
+         *
+         * @param dnsResolver dns resolver for placement policy to use for resolving network locations.
+         * @return client builder
+         * @since 4.5
+         */
         public Builder dnsResolver(DNSToSwitchMapping dnsResolver) {
             this.dnsResolver = dnsResolver;
             return this;
         }
 
+        /**
+         * Configure the bookkeeper client to use a provided {@link HashedWheelTimer}.
+         *
+         * @param requestTimer request timer for client to manage timer related tasks.
+         * @return client builder
+         * @since 4.5
+         */
         public Builder requestTimer(HashedWheelTimer requestTimer) {
             this.requestTimer = requestTimer;
             return this;
         }
 
+        /**
+         * Feature Provider.
+         *
+         * @param featureProvider
+         * @return
+         */
         public Builder featureProvider(FeatureProvider featureProvider) {
             this.featureProvider = featureProvider;
             return this;
         }
 
-        public BookKeeper build() throws IOException, InterruptedException, KeeperException {
-            Preconditions.checkNotNull(statsLogger, "No stats logger provided");
-            return new BookKeeper(conf, zk, channelFactory, statsLogger, dnsResolver, requestTimer, featureProvider);
+        public BookKeeper build() throws IOException, InterruptedException, BKException {
+            checkNotNull(statsLogger, "No stats logger provided");
+            return new BookKeeper(conf, zk, eventLoopGroup, statsLogger, dnsResolver, requestTimer, featureProvider);
         }
     }
 
@@ -190,26 +313,26 @@ public class BookKeeper implements AutoCloseable {
     }
 
     /**
-     * Create a bookkeeper client. A zookeeper client and a client socket factory
+     * Create a bookkeeper client. A zookeeper client and a client event loop group
      * will be instantiated as part of this constructor.
      *
      * @param servers
      *          A list of one of more servers on which zookeeper is running. The
      *          client assumes that the running bookies have been registered with
      *          zookeeper under the path
-     *          {@link BookieWatcher#bookieRegistrationPath}
+     *          {@link AbstractConfiguration#getZkAvailableBookiesPath()}
      * @throws IOException
      * @throws InterruptedException
      * @throws KeeperException
      */
     public BookKeeper(String servers) throws IOException, InterruptedException,
-        KeeperException {
+        BKException {
         this(new ClientConfiguration().setZkServers(servers));
     }
 
     /**
      * Create a bookkeeper client using a configuration object.
-     * A zookeeper client and a client socket factory will be
+     * A zookeeper client and a client event loop group will be
      * instantiated as part of this constructor.
      *
      * @param conf
@@ -219,20 +342,24 @@ public class BookKeeper implements AutoCloseable {
      * @throws KeeperException
      */
     public BookKeeper(final ClientConfiguration conf)
-            throws IOException, InterruptedException, KeeperException {
+            throws IOException, InterruptedException, BKException {
         this(conf, null, null, NullStatsLogger.INSTANCE,
                 null, null, null);
     }
 
-    private static ZooKeeper validateZooKeeper(ZooKeeper zk) throws NullPointerException {
-        Preconditions.checkNotNull(zk, "No zookeeper instance provided");
+    private static ZooKeeper validateZooKeeper(ZooKeeper zk) throws NullPointerException, IOException {
+        checkNotNull(zk, "No zookeeper instance provided");
+        if (!zk.getState().isConnected()) {
+            LOG.error("Unconnected zookeeper handle passed to bookkeeper");
+            throw new IOException(KeeperException.create(KeeperException.Code.CONNECTIONLOSS));
+        }
         return zk;
     }
 
-    private static ClientSocketChannelFactory validateChannelFactory(ClientSocketChannelFactory factory)
+    private static EventLoopGroup validateEventLoopGroup(EventLoopGroup eventLoopGroup)
             throws NullPointerException {
-        Preconditions.checkNotNull(factory, "No Channel Factory provided");
-        return factory;
+        checkNotNull(eventLoopGroup, "No Event Loop Group provided");
+        return eventLoopGroup;
     }
 
     /**
@@ -250,14 +377,13 @@ public class BookKeeper implements AutoCloseable {
      * @throws KeeperException
      */
     public BookKeeper(ClientConfiguration conf, ZooKeeper zk)
-            throws IOException, InterruptedException, KeeperException {
-
+            throws IOException, InterruptedException, BKException {
         this(conf, validateZooKeeper(zk), null, NullStatsLogger.INSTANCE, null, null, null);
     }
 
     /**
      * Create a bookkeeper client but use the passed in zookeeper client and
-     * client socket channel factory instead of instantiating those.
+     * client event loop group instead of instantiating those.
      *
      * @param conf
      *          Client Configuration Object
@@ -266,62 +392,87 @@ public class BookKeeper implements AutoCloseable {
      *          Zookeeper client instance connected to the zookeeper with which
      *          the bookies have registered. The ZooKeeper client must be connected
      *          before it is passed to BookKeeper. Otherwise a KeeperException is thrown.
-     * @param channelFactory
-     *          A factory that will be used to create connections to the bookies
+     * @param eventLoopGroup
+     *          An event loop group that will be used to create connections to the bookies
      * @throws IOException
      * @throws InterruptedException
-     * @throws KeeperException if the passed zk handle is not connected
+     * @throws BKException in the event of a bookkeeper connection error
      */
-    public BookKeeper(ClientConfiguration conf, ZooKeeper zk, ClientSocketChannelFactory channelFactory)
-            throws IOException, InterruptedException, KeeperException {
-        this(conf, validateZooKeeper(zk), validateChannelFactory(channelFactory), NullStatsLogger.INSTANCE,
+    public BookKeeper(ClientConfiguration conf, ZooKeeper zk, EventLoopGroup eventLoopGroup)
+            throws IOException, InterruptedException, BKException {
+        this(conf, validateZooKeeper(zk), validateEventLoopGroup(eventLoopGroup), NullStatsLogger.INSTANCE,
                 null, null, null);
     }
 
     /**
      * Constructor for use with the builder. Other constructors also use it.
      */
-    private BookKeeper(ClientConfiguration conf,
+    @VisibleForTesting
+    BookKeeper(ClientConfiguration conf,
                        ZooKeeper zkc,
-                       ClientSocketChannelFactory channelFactory,
+                       EventLoopGroup eventLoopGroup,
                        StatsLogger statsLogger,
                        DNSToSwitchMapping dnsResolver,
                        HashedWheelTimer requestTimer,
                        FeatureProvider featureProvider)
-            throws IOException, InterruptedException, KeeperException {
+            throws IOException, InterruptedException, BKException {
         this.conf = conf;
+        this.delayEnsembleChange = conf.getDelayEnsembleChange();
+        this.reorderReadSequence = conf.isReorderReadSequenceEnabled();
 
-        // initialize zookeeper client
-        if (zkc == null) {
-            this.zk = ZooKeeperClient.newBuilder()
-                    .connectString(conf.getZkServers())
-                    .sessionTimeoutMs(conf.getZkTimeout())
-                    .operationRetryPolicy(new BoundExponentialBackoffRetryPolicy(conf.getZkTimeout(),
-                            conf.getZkTimeout(), 0))
-                    .statsLogger(statsLogger)
-                    .build();
-            this.ownZKHandle = true;
+        // initialize resources
+        this.scheduler = Executors
+                .newSingleThreadScheduledExecutor(new DefaultThreadFactory("BookKeeperClientScheduler"));
+        this.mainWorkerPool = OrderedSafeExecutor.newBuilder()
+                .name("BookKeeperClientWorker")
+                .numThreads(conf.getNumWorkerThreads())
+                .statsLogger(statsLogger)
+                .traceTaskExecution(conf.getEnableTaskExecutionStats())
+                .traceTaskWarnTimeMicroSec(conf.getTaskExecutionWarnTimeMicros())
+                .build();
+
+        // initialize stats logger
+        this.statsLogger = statsLogger.scope(BookKeeperClientStats.CLIENT_SCOPE);
+        initOpLoggers(this.statsLogger);
+
+        // initialize feature provider
+        if (null == featureProvider) {
+            this.featureProvider = SettableFeatureProvider.DISABLE_ALL;
         } else {
-            if (!zkc.getState().isConnected()) {
-                LOG.error("Unconnected zookeeper handle passed to bookkeeper");
-                throw KeeperException.create(KeeperException.Code.CONNECTIONLOSS);
+            this.featureProvider = featureProvider;
+        }
+        this.disableEnsembleChangeFeature =
+            this.featureProvider.getFeature(conf.getDisableEnsembleChangeFeatureName());
+
+        // initialize metadata driver
+        try {
+            String metadataServiceUriStr = conf.getMetadataServiceUri();
+            if (null != metadataServiceUriStr) {
+                this.metadataDriver = MetadataDrivers.getClientDriver(URI.create(metadataServiceUriStr));
+            } else {
+                checkNotNull(zkc, "No external zookeeper provided when no metadata service uri is found");
+                this.metadataDriver = MetadataDrivers.getClientDriver("zk");
             }
-            this.zk = zkc;
-            this.ownZKHandle = false;
+            this.metadataDriver.initialize(
+                conf,
+                scheduler,
+                statsLogger,
+                java.util.Optional.ofNullable(zkc));
+        } catch (ConfigurationException ce) {
+            LOG.error("Failed to initialize metadata client driver using invalid metadata service uri", ce);
+            throw new IOException("Failed to initialize metadata client driver", ce);
+        } catch (MetadataException me) {
+            LOG.error("Encountered metadata exceptions on initializing metadata client driver", me);
+            throw new IOException("Failed to initialize metadata client driver", me);
         }
 
-        // initialize channel factory
-        if (null == channelFactory) {
-            ThreadFactoryBuilder tfb = new ThreadFactoryBuilder();
-            this.channelFactory = new NioClientSocketChannelFactory(
-                    Executors.newCachedThreadPool(tfb.setNameFormat(
-                            "BookKeeper-NIOBoss-%d").build()),
-                    Executors.newCachedThreadPool(tfb.setNameFormat(
-                            "BookKeeper-NIOWorker-%d").build()));
-            this.ownChannelFactory = true;
+        // initialize event loop group
+        if (null == eventLoopGroup) {
+            this.eventLoopGroup = getDefaultEventLoopGroup();
+            this.ownEventLoopGroup = true;
         } else {
-            this.channelFactory = channelFactory;
-            this.ownChannelFactory = false;
+            this.eventLoopGroup = eventLoopGroup;
+            this.ownEventLoopGroup = false;
         }
 
         if (null == requestTimer) {
@@ -335,61 +486,102 @@ public class BookKeeper implements AutoCloseable {
             this.ownTimer = false;
         }
 
-        if (null == featureProvider) {
-            this.featureProvider = SettableFeatureProvider.DISABLE_ALL;
-        } else {
-            this.featureProvider = featureProvider;
-        }
-
-        // initialize scheduler
-        ThreadFactoryBuilder tfb = new ThreadFactoryBuilder().setNameFormat(
-                "BookKeeperClientScheduler-%d");
-        this.scheduler = Executors
-                .newSingleThreadScheduledExecutor(tfb.build());
-
-        // initialize stats logger
-        this.statsLogger = statsLogger.scope(BookKeeperClientStats.CLIENT_SCOPE);
-        initOpLoggers(this.statsLogger);
-
         // initialize the ensemble placement
         this.placementPolicy = initializeEnsemblePlacementPolicy(conf,
                 dnsResolver, this.requestTimer, this.featureProvider, this.statsLogger);
 
-        // initialize main worker pool
-        this.mainWorkerPool = OrderedSafeExecutor.newBuilder()
-                .name("BookKeeperClientWorker")
-                .numThreads(conf.getNumWorkerThreads())
-                .statsLogger(statsLogger)
-                .traceTaskExecution(conf.getEnableTaskExecutionStats())
-                .traceTaskWarnTimeMicroSec(conf.getTaskExecutionWarnTimeMicros())
-                .build();
+        if (conf.getFirstSpeculativeReadTimeout() > 0) {
+            this.readSpeculativeRequestPolicy =
+                    Optional.of(new DefaultSpeculativeRequestExecutionPolicy(
+                        conf.getFirstSpeculativeReadTimeout(),
+                        conf.getMaxSpeculativeReadTimeout(),
+                        conf.getSpeculativeReadTimeoutBackoffMultiplier()));
+        } else {
+            this.readSpeculativeRequestPolicy = Optional.<SpeculativeRequestExecutionPolicy>absent();
+        }
 
+        if (conf.getFirstSpeculativeReadLACTimeout() > 0) {
+            this.readLACSpeculativeRequestPolicy =
+                    Optional.of((SpeculativeRequestExecutionPolicy) (new DefaultSpeculativeRequestExecutionPolicy(
+                        conf.getFirstSpeculativeReadLACTimeout(),
+                        conf.getMaxSpeculativeReadLACTimeout(),
+                        conf.getSpeculativeReadLACTimeoutBackoffMultiplier())));
+        } else {
+            this.readLACSpeculativeRequestPolicy = Optional.<SpeculativeRequestExecutionPolicy>absent();
+        }
         // initialize bookie client
-        this.bookieClient = new BookieClient(conf, this.channelFactory, this.mainWorkerPool, statsLogger);
-        this.bookieWatcher = new BookieWatcher(conf, this.scheduler, this.placementPolicy, this);
+        this.bookieClient = new BookieClient(conf, this.eventLoopGroup, this.mainWorkerPool,
+                                             scheduler, statsLogger);
+        this.bookieWatcher = new BookieWatcher(
+                conf, this.placementPolicy, metadataDriver.getRegistrationClient(),
+                this.statsLogger.scope(WATCHER_SCOPE));
         if (conf.getDiskWeightBasedPlacementEnabled()) {
             LOG.info("Weighted ledger placement enabled");
             ThreadFactoryBuilder tFBuilder = new ThreadFactoryBuilder()
                     .setNameFormat("BKClientMetaDataPollScheduler-%d");
             this.bookieInfoScheduler = Executors.newSingleThreadScheduledExecutor(tFBuilder.build());
             this.bookieInfoReader = new BookieInfoReader(this, conf, this.bookieInfoScheduler);
-            this.bookieWatcher.readBookiesBlocking();
+            this.bookieWatcher.initialBlockingBookieRead();
             this.bookieInfoReader.start();
         } else {
             LOG.info("Weighted ledger placement is not enabled");
+            this.bookieInfoScheduler = null;
             this.bookieInfoReader = new BookieInfoReader(this, conf, null);
-            this.bookieWatcher.readBookiesBlocking();
+            this.bookieWatcher.initialBlockingBookieRead();
         }
 
         // initialize ledger manager
-        this.ledgerManagerFactory = LedgerManagerFactory.newLedgerManagerFactory(conf, this.zk);
+        try {
+            this.ledgerManagerFactory =
+                this.metadataDriver.getLedgerManagerFactory();
+        } catch (MetadataException e) {
+            throw new IOException("Failed to initialize ledger manager factory", e);
+        }
         this.ledgerManager = new CleanupLedgerManager(ledgerManagerFactory.newLedgerManager());
         this.ledgerIdGenerator = ledgerManagerFactory.newLedgerIdGenerator();
         this.explicitLacInterval = conf.getExplictLacInterval();
-        LOG.debug("Explicit LAC Interval : {}", this.explicitLacInterval);
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Explicit LAC Interval : {}", this.explicitLacInterval);
+        }
 
+        this.addEntryQuorumTimeoutNanos = TimeUnit.SECONDS.toNanos(conf.getAddEntryQuorumTimeout());
         scheduleBookieHealthCheckIfEnabled();
     }
+
+    /**
+     * Allow to extend BookKeeper for mocking in unit tests.
+     */
+    @VisibleForTesting
+    BookKeeper() {
+        statsLogger = NullStatsLogger.INSTANCE;
+        scheduler = null;
+        requestTimer = null;
+        reorderReadSequence = false;
+        metadataDriver = null;
+        readSpeculativeRequestPolicy = Optional.absent();
+        readLACSpeculativeRequestPolicy = Optional.absent();
+        placementPolicy = null;
+        ownTimer = false;
+        mainWorkerPool = null;
+        ledgerManagerFactory = null;
+        ledgerManager = null;
+        ledgerIdGenerator = null;
+        featureProvider = null;
+        explicitLacInterval = 0;
+        eventLoopGroup = null;
+        disableEnsembleChangeFeature = null;
+        delayEnsembleChange = false;
+        conf = new ClientConfiguration();
+        bookieWatcher = null;
+        bookieInfoScheduler = null;
+        bookieClient = null;
+        addEntryQuorumTimeoutNanos = 0;
+    }
+
+    long getAddEntryQuorumTimeoutNanos() {
+        return addEntryQuorumTimeoutNanos;
+    }
+
 
     public int getExplicitLacInterval() {
         return explicitLacInterval;
@@ -403,7 +595,7 @@ public class BookKeeper implements AutoCloseable {
         throws IOException {
         try {
             Class<? extends EnsemblePlacementPolicy> policyCls = conf.getEnsemblePlacementPolicy();
-            return ReflectionUtils.newInstance(policyCls).initialize(conf, Optional.fromNullable(dnsResolver),
+            return ReflectionUtils.newInstance(policyCls).initialize(conf, java.util.Optional.ofNullable(dnsResolver),
                     timer, featureProvider, statsLogger);
         } catch (ConfigurationException e) {
             throw new IOException("Failed to initialize ensemble placement policy : ", e);
@@ -442,27 +634,116 @@ public class BookKeeper implements AutoCloseable {
         }
     }
 
-    LedgerManager getLedgerManager() {
+    /**
+     * Returns ref to speculative read counter, needed in PendingReadOp.
+     */
+    Counter getSpeculativeReadCounter() {
+        return speculativeReadCounter;
+    }
+
+    @VisibleForTesting
+    public LedgerManager getLedgerManager() {
         return ledgerManager;
     }
 
+    @VisibleForTesting
+    LedgerManager getUnderlyingLedgerManager() {
+        return ((CleanupLedgerManager) ledgerManager).getUnderlying();
+    }
+
+    @VisibleForTesting
     LedgerIdGenerator getLedgerIdGenerator() {
         return ledgerIdGenerator;
     }
 
+    @VisibleForTesting
+    ReentrantReadWriteLock getCloseLock() {
+        return closeLock;
+    }
+
+    @VisibleForTesting
+    boolean isClosed() {
+        return closed;
+    }
+
+    @VisibleForTesting
+    BookieWatcher getBookieWatcher() {
+        return bookieWatcher;
+    }
+
+    @VisibleForTesting
+    OrderedSafeExecutor getMainWorkerPool() {
+        return mainWorkerPool;
+    }
+
+    @VisibleForTesting
+    ScheduledExecutorService getScheduler() {
+        return scheduler;
+    }
+
+    @VisibleForTesting
+    EnsemblePlacementPolicy getPlacementPolicy() {
+        return placementPolicy;
+    }
+
+    @VisibleForTesting
+    boolean isReorderReadSequence() {
+        return reorderReadSequence;
+    }
+
+    @VisibleForTesting
+    public MetadataClientDriver getMetadataClientDriver() {
+        return metadataDriver;
+    }
+
     /**
-     * There are 2 digest types that can be used for verification. The CRC32 is
+     * There are 3 digest types that can be used for verification. The CRC32 is
      * cheap to compute but does not protect against byzantine bookies (i.e., a
      * bookie might report fake bytes and a matching CRC32). The MAC code is more
      * expensive to compute, but is protected by a password, i.e., a bookie can't
-     * report fake bytes with a mathching MAC unless it knows the password
+     * report fake bytes with a mathching MAC unless it knows the password.
+     * The CRC32C, which use SSE processor instruction, has better performance than CRC32.
+     * Legacy DigestType for backward compatibility. If we want to add new DigestType,
+     * we should add it in here, client.api.DigestType and DigestType in DataFormats.proto.
+     * If the digest type is set/passed in as DUMMY, a dummy digest is added/checked.
+     * This DUMMY digest is mostly for test purposes or in situations/use-cases
+     * where digest is considered a overhead.
      */
     public enum DigestType {
-        MAC, CRC32
+        MAC, CRC32, CRC32C, DUMMY;
+
+        public static DigestType fromApiDigestType(org.apache.bookkeeper.client.api.DigestType digestType) {
+            switch (digestType) {
+                case MAC:
+                    return DigestType.MAC;
+                case CRC32:
+                    return DigestType.CRC32;
+                case CRC32C:
+                    return DigestType.CRC32C;
+                case DUMMY:
+                    return DigestType.DUMMY;
+                default:
+                    throw new IllegalArgumentException("Unable to convert digest type " + digestType);
+            }
+        }
+        public static DataFormats.LedgerMetadataFormat.DigestType toProtoDigestType(DigestType digestType) {
+            switch (digestType) {
+                case MAC:
+                    return DataFormats.LedgerMetadataFormat.DigestType.HMAC;
+                case CRC32:
+                    return DataFormats.LedgerMetadataFormat.DigestType.CRC32;
+                case CRC32C:
+                    return DataFormats.LedgerMetadataFormat.DigestType.CRC32C;
+                case DUMMY:
+                    return DataFormats.LedgerMetadataFormat.DigestType.DUMMY;
+                default:
+                    throw new IllegalArgumentException("Unable to convert digest type " + digestType);
+            }
+        }
     }
 
     ZooKeeper getZkHandle() {
-        return zk;
+        return ((ZKMetadataClientDriver) metadataDriver).getZk();
     }
 
     protected ClientConfiguration getConf() {
@@ -471,6 +752,23 @@ public class BookKeeper implements AutoCloseable {
 
     StatsLogger getStatsLogger() {
         return statsLogger;
+    }
+
+    public Optional<SpeculativeRequestExecutionPolicy> getReadSpeculativeRequestPolicy() {
+        return readSpeculativeRequestPolicy;
+    }
+
+    public Optional<SpeculativeRequestExecutionPolicy> getReadLACSpeculativeRequestPolicy() {
+        return readLACSpeculativeRequestPolicy;
+    }
+
+    /**
+     * Get the disableEnsembleChangeFeature.
+     *
+     * @return disableEnsembleChangeFeature for the BookKeeper instance.
+     */
+    Feature getDisableEnsembleChangeFeature() {
+        return disableEnsembleChangeFeature;
     }
 
     /**
@@ -523,8 +821,7 @@ public class BookKeeper implements AutoCloseable {
     public void asyncCreateLedger(final int ensSize,
                                   final int writeQuorumSize,
                                   final DigestType digestType,
-                                  final byte[] passwd, final CreateCallback cb, final Object ctx)
-    {
+                                  final byte[] passwd, final CreateCallback cb, final Object ctx) {
         asyncCreateLedger(ensSize, writeQuorumSize, writeQuorumSize, digestType, passwd, cb, ctx, null);
     }
 
@@ -533,13 +830,13 @@ public class BookKeeper implements AutoCloseable {
      * a separate write quorum and ack quorum size. The write quorum must be larger than
      * the ack quorum.
      *
-     * Separating the write and the ack quorum allows the BookKeeper client to continue
+     * <p>Separating the write and the ack quorum allows the BookKeeper client to continue
      * writing when a bookie has failed but the failure has not yet been detected. Detecting
      * a bookie has failed can take a number of seconds, as configured by the read timeout
      * {@link ClientConfiguration#getReadTimeout()}. Once the bookie failure is detected,
      * that bookie will be removed from the ensemble.
      *
-     * The other parameters match those of {@link #asyncCreateLedger(int, int, DigestType, byte[],
+     * <p>The other parameters match those of {@link #asyncCreateLedger(int, int, DigestType, byte[],
      *                                      AsyncCallback.CreateCallback, Object)}
      *
      * @param ensSize
@@ -573,7 +870,8 @@ public class BookKeeper implements AutoCloseable {
                 return;
             }
             new LedgerCreateOp(BookKeeper.this, ensSize, writeQuorumSize,
-                               ackQuorumSize, digestType, passwd, cb, ctx, customMetadata)
+                               ackQuorumSize, digestType, passwd, cb, ctx,
+                               customMetadata, EnumSet.noneOf(WriteFlag.class), getStatsLogger())
                 .initiate();
         } finally {
             closeLock.readLock().unlock();
@@ -654,15 +952,16 @@ public class BookKeeper implements AutoCloseable {
     public LedgerHandle createLedger(int ensSize, int writeQuorumSize, int ackQuorumSize,
                                      DigestType digestType, byte passwd[], final Map<String, byte[]> customMetadata)
             throws InterruptedException, BKException {
-        CompletableFuture<LedgerHandle> counter = new CompletableFuture<>();
+        CompletableFuture<LedgerHandle> future = new CompletableFuture<>();
+        SyncCreateCallback result = new SyncCreateCallback(future);
 
         /*
          * Calls asynchronous version
          */
         asyncCreateLedger(ensSize, writeQuorumSize, ackQuorumSize, digestType, passwd,
-                          new SyncCreateCallback(), counter, customMetadata);
+                          result, null, customMetadata);
 
-        LedgerHandle lh = SynchCallbackUtils.waitForResult(counter);
+        LedgerHandle lh = SyncCallbackUtils.waitForResult(future);
         if (lh == null) {
             LOG.error("Unexpected condition : no ledger handle returned for a success ledger creation");
             throw BKException.create(BKException.Code.UnexpectedConditionException);
@@ -682,7 +981,7 @@ public class BookKeeper implements AutoCloseable {
      * @param ackQuorumSize
      * @param digestType
      * @param passwd
-     * @param customMetadata
+     *
      * @return a handle to the newly created ledger
      * @throws InterruptedException
      * @throws BKException
@@ -713,15 +1012,16 @@ public class BookKeeper implements AutoCloseable {
     public LedgerHandle createLedgerAdv(int ensSize, int writeQuorumSize, int ackQuorumSize,
                                         DigestType digestType, byte passwd[], final Map<String, byte[]> customMetadata)
             throws InterruptedException, BKException {
-        CompletableFuture<LedgerHandle> counter = new CompletableFuture<>();
+        CompletableFuture<LedgerHandleAdv> future = new CompletableFuture<>();
+        SyncCreateAdvCallback result = new SyncCreateAdvCallback(future);
 
         /*
          * Calls asynchronous version
          */
         asyncCreateLedgerAdv(ensSize, writeQuorumSize, ackQuorumSize, digestType, passwd,
-                             new SyncCreateCallback(), counter, customMetadata);
+                             result, null, customMetadata);
 
-        LedgerHandle lh = SynchCallbackUtils.waitForResult(counter);
+        LedgerHandle lh = SyncCallbackUtils.waitForResult(future);
         if (lh == null) {
             LOG.error("Unexpected condition : no ledger handle returned for a success ledger creation");
             throw BKException.create(BKException.Code.UnexpectedConditionException);
@@ -735,13 +1035,13 @@ public class BookKeeper implements AutoCloseable {
      * a separate write quorum and ack quorum size. The write quorum must be larger than
      * the ack quorum.
      *
-     * Separating the write and the ack quorum allows the BookKeeper client to continue
+     * <p>Separating the write and the ack quorum allows the BookKeeper client to continue
      * writing when a bookie has failed but the failure has not yet been detected. Detecting
      * a bookie has failed can take a number of seconds, as configured by the read timeout
      * {@link ClientConfiguration#getReadTimeout()}. Once the bookie failure is detected,
      * that bookie will be removed from the ensemble.
      *
-     * The other parameters match those of {@link #asyncCreateLedger(int, int, DigestType, byte[],
+     * <p>The other parameters match those of {@link #asyncCreateLedger(int, int, DigestType, byte[],
      *                                      AsyncCallback.CreateCallback, Object)}
      *
      * @param ensSize
@@ -774,7 +1074,9 @@ public class BookKeeper implements AutoCloseable {
                 return;
             }
             new LedgerCreateOp(BookKeeper.this, ensSize, writeQuorumSize,
-                               ackQuorumSize, digestType, passwd, cb, ctx, customMetadata).initiateAdv((long)(-1));
+                               ackQuorumSize, digestType, passwd, cb, ctx,
+                               customMetadata, EnumSet.noneOf(WriteFlag.class), getStatsLogger())
+                                       .initiateAdv(-1L);
         } finally {
             closeLock.readLock().unlock();
         }
@@ -803,16 +1105,18 @@ public class BookKeeper implements AutoCloseable {
                                         int ackQuorumSize,
                                         DigestType digestType,
                                         byte passwd[],
-                                        final Map<String, byte[]> customMetadata) throws InterruptedException, BKException{
-        CompletableFuture<LedgerHandle> counter = new CompletableFuture<>();
+                                        final Map<String, byte[]> customMetadata)
+            throws InterruptedException, BKException {
+        CompletableFuture<LedgerHandleAdv> future = new CompletableFuture<>();
+        SyncCreateAdvCallback result = new SyncCreateAdvCallback(future);
 
         /*
          * Calls asynchronous version
          */
         asyncCreateLedgerAdv(ledgerId, ensSize, writeQuorumSize, ackQuorumSize, digestType, passwd,
-                             new SyncCreateCallback(), counter, customMetadata);
+                             result, null, customMetadata);
 
-        LedgerHandle lh = SynchCallbackUtils.waitForResult(counter);
+        LedgerHandle lh = SyncCallbackUtils.waitForResult(future);
         if (lh == null) {
             LOG.error("Unexpected condition : no ledger handle returned for a success ledger creation");
             throw BKException.create(BKException.Code.UnexpectedConditionException);
@@ -834,13 +1138,13 @@ public class BookKeeper implements AutoCloseable {
      * a separate write quorum and ack quorum size. The write quorum must be larger than
      * the ack quorum.
      *
-     * Separating the write and the ack quorum allows the BookKeeper client to continue
+     * <p>Separating the write and the ack quorum allows the BookKeeper client to continue
      * writing when a bookie has failed but the failure has not yet been detected. Detecting
      * a bookie has failed can take a number of seconds, as configured by the read timeout
      * {@link ClientConfiguration#getReadTimeout()}. Once the bookie failure is detected,
      * that bookie will be removed from the ensemble.
      *
-     * The other parameters match those of {@link #asyncCreateLedger(long, int, int, DigestType, byte[],
+     * <p>The other parameters match those of {@link #asyncCreateLedger(long, int, int, DigestType, byte[],
      *                                      AsyncCallback.CreateCallback, Object)}
      *
      * @param ledgerId
@@ -881,7 +1185,9 @@ public class BookKeeper implements AutoCloseable {
                 return;
             }
             new LedgerCreateOp(BookKeeper.this, ensSize, writeQuorumSize,
-                               ackQuorumSize, digestType, passwd, cb, ctx, customMetadata).initiateAdv(ledgerId);
+                               ackQuorumSize, digestType, passwd, cb, ctx,
+                               customMetadata, EnumSet.noneOf(WriteFlag.class), getStatsLogger())
+                    .initiateAdv(ledgerId);
         } finally {
             closeLock.readLock().unlock();
         }
@@ -890,17 +1196,17 @@ public class BookKeeper implements AutoCloseable {
     /**
      * Open existing ledger asynchronously for reading.
      *
-     * Opening a ledger with this method invokes fencing and recovery on the ledger
+     * <p>Opening a ledger with this method invokes fencing and recovery on the ledger
      * if the ledger has not been closed. Fencing will block all other clients from
      * writing to the ledger. Recovery will make sure that the ledger is closed
      * before reading from it.
      *
-     * Recovery also makes sure that any entries which reached one bookie, but not a
+     * <p>Recovery also makes sure that any entries which reached one bookie, but not a
      * quorum, will be replicated to a quorum of bookies. This occurs in cases were
      * the writer of a ledger crashes after sending a write request to one bookie but
      * before being able to send it to the rest of the bookies in the quorum.
      *
-     * If the ledger is already closed, neither fencing nor recovery will be applied.
+     * <p>If the ledger is already closed, neither fencing nor recovery will be applied.
      *
      * @see LedgerHandle#asyncClose
      *
@@ -935,14 +1241,14 @@ public class BookKeeper implements AutoCloseable {
      * of the writer and the ledger is not open in a safe manner, invoking the
      * recovery procedure.
      *
-     * Opening a ledger without recovery does not fence the ledger. As such, other
+     * <p>Opening a ledger without recovery does not fence the ledger. As such, other
      * clients can continue to write to the ledger.
      *
-     * This method returns a read only ledger handle. It will not be possible
+     * <p>This method returns a read only ledger handle. It will not be possible
      * to add entries to the ledger. Any attempt to add entries will throw an
      * exception.
      *
-     * Reads from the returned ledger will be able to read entries up until
+     * <p>Reads from the returned ledger will be able to read entries up until
      * the lastConfirmedEntry at the point in time at which the ledger was opened.
      * If an attempt is made to read beyond the ledger handle's LAC, an attempt is made
      * to get the latest LAC from bookies or metadata, and if the entry_id of the read request
@@ -973,7 +1279,7 @@ public class BookKeeper implements AutoCloseable {
 
 
     /**
-     * Synchronous open ledger call
+     * Synchronous open ledger call.
      *
      * @see #asyncOpenLedger
      * @param lId
@@ -986,21 +1292,21 @@ public class BookKeeper implements AutoCloseable {
      * @throws InterruptedException
      * @throws BKException
      */
-
     public LedgerHandle openLedger(long lId, DigestType digestType, byte passwd[])
             throws BKException, InterruptedException {
-        CompletableFuture<LedgerHandle> counter = new CompletableFuture<>();
+        CompletableFuture<LedgerHandle> future = new CompletableFuture<>();
+        SyncOpenCallback result = new SyncOpenCallback(future);
 
         /*
          * Calls async open ledger
          */
-        asyncOpenLedger(lId, digestType, passwd, new SyncOpenCallback(), counter);
+        asyncOpenLedger(lId, digestType, passwd, result, null);
 
-        return SynchCallbackUtils.waitForResult(counter);
+        return SyncCallbackUtils.waitForResult(future);
     }
 
     /**
-     * Synchronous, unsafe open ledger call
+     * Synchronous, unsafe open ledger call.
      *
      * @see #asyncOpenLedgerNoRecovery
      * @param lId
@@ -1013,18 +1319,18 @@ public class BookKeeper implements AutoCloseable {
      * @throws InterruptedException
      * @throws BKException
      */
-
     public LedgerHandle openLedgerNoRecovery(long lId, DigestType digestType, byte passwd[])
             throws BKException, InterruptedException {
-        CompletableFuture<LedgerHandle> counter = new CompletableFuture<>();
+        CompletableFuture<LedgerHandle> future = new CompletableFuture<>();
+        SyncOpenCallback result = new SyncOpenCallback(future);
 
         /*
          * Calls async open ledger
          */
         asyncOpenLedgerNoRecovery(lId, digestType, passwd,
-                                  new SyncOpenCallback(), counter);
+                                  result, null);
 
-        return SynchCallbackUtils.waitForResult(counter);
+        return SyncCallbackUtils.waitForResult(future);
     }
 
     /**
@@ -1058,15 +1364,16 @@ public class BookKeeper implements AutoCloseable {
      * @param lId
      *            ledgerId
      * @throws InterruptedException
-     * @throws BKException.BKNoSuchLedgerExistsException if the ledger doesn't exist
      * @throws BKException
      */
+    @SuppressWarnings("unchecked")
     public void deleteLedger(long lId) throws InterruptedException, BKException {
-        CompletableFuture<Void> counter = new CompletableFuture<>();
+        CompletableFuture<Void> future = new CompletableFuture<>();
+        SyncDeleteCallback result = new SyncDeleteCallback(future);
         // Call asynchronous version
-        asyncDeleteLedger(lId, new SyncDeleteCallback(), counter);
+        asyncDeleteLedger(lId, result, null);
 
-        SynchCallbackUtils.waitForResult(counter);
+        SyncCallbackUtils.waitForResult(future);
     }
 
     /**
@@ -1135,7 +1442,8 @@ public class BookKeeper implements AutoCloseable {
      * Shuts down client.
      *
      */
-    public void close() throws InterruptedException, BKException {
+    @Override
+    public void close() throws BKException, InterruptedException {
         closeLock.writeLock().lock();
         try {
             if (closed) {
@@ -1154,7 +1462,6 @@ public class BookKeeper implements AutoCloseable {
             // which will reject any incoming metadata requests.
             ledgerManager.close();
             ledgerIdGenerator.close();
-            ledgerManagerFactory.uninitialize();
         } catch (IOException ie) {
             LOG.error("Failed to close ledger manager : ", ie);
         }
@@ -1178,81 +1485,103 @@ public class BookKeeper implements AutoCloseable {
         if (ownTimer) {
             requestTimer.stop();
         }
-        if (ownChannelFactory) {
-            channelFactory.releaseExternalResources();
+        if (ownEventLoopGroup) {
+            eventLoopGroup.shutdownGracefully();
         }
-        if (ownZKHandle) {
-            zk.close();
-        }
+        this.metadataDriver.close();
     }
 
-    private static class SyncCreateCallback implements CreateCallback {
-        /**
-         * Create callback implementation for synchronous create call.
-         *
-         * @param rc
-         *          return code
-         * @param lh
-         *          ledger handle object
-         * @param ctx
-         *          optional control object
-         */
-        @Override
-        @SuppressWarnings("unchecked")
-        public void createComplete(int rc, LedgerHandle lh, Object ctx) {
-            SynchCallbackUtils.finish(rc, lh, (CompletableFuture<LedgerHandle>) ctx);
-        }
-    }
-
-    static class SyncOpenCallback implements OpenCallback {
-        /**
-         * Callback method for synchronous open operation
-         *
-         * @param rc
-         *          return code
-         * @param lh
-         *          ledger handle
-         * @param ctx
-         *          optional control object
-         */
-        @Override
-        @SuppressWarnings("unchecked")
-        public void openComplete(int rc, LedgerHandle lh, Object ctx) {
-            SynchCallbackUtils.finish(rc, lh, (CompletableFuture<LedgerHandle>) ctx);
-        }
-    }
-
-    private static class SyncDeleteCallback implements DeleteCallback {
-        /**
-         * Delete callback implementation for synchronous delete call.
-         *
-         * @param rc
-         *            return code
-         * @param ctx
-         *            optional control object
-         */
-        @Override
-        @SuppressWarnings("unchecked")
-        public void deleteComplete(int rc, Object ctx) {
-            SynchCallbackUtils.finish(rc, null, (CompletableFuture<Void>) ctx);
-        }
-    }
-
-    private final void initOpLoggers(StatsLogger stats) {
+    private void initOpLoggers(StatsLogger stats) {
         createOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.CREATE_OP);
         deleteOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.DELETE_OP);
         openOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.OPEN_OP);
+        recoverOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.RECOVER_OP);
         readOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.READ_OP);
+        readOpDmCounter = stats.getCounter(BookKeeperClientStats.READ_OP_DM);
+        readLacAndEntryOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.READ_LAST_CONFIRMED_AND_ENTRY);
+        readLacAndEntryRespLogger = stats.getOpStatsLogger(
+                BookKeeperClientStats.READ_LAST_CONFIRMED_AND_ENTRY_RESPONSE);
         addOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.ADD_OP);
+        addOpUrCounter = stats.getCounter(BookKeeperClientStats.ADD_OP_UR);
         writeLacOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.WRITE_LAC_OP);
         readLacOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.READ_LAC_OP);
+        recoverAddEntriesStats = stats.getOpStatsLogger(BookKeeperClientStats.LEDGER_RECOVER_ADD_ENTRIES);
+        recoverReadEntriesStats = stats.getOpStatsLogger(BookKeeperClientStats.LEDGER_RECOVER_READ_ENTRIES);
+
+        speculativeReadCounter = stats.getCounter(BookKeeperClientStats.SPECULATIVE_READ_COUNT);
     }
 
-    OpStatsLogger getCreateOpLogger() { return createOpLogger; }
-    OpStatsLogger getOpenOpLogger() { return openOpLogger; }
-    OpStatsLogger getDeleteOpLogger() { return deleteOpLogger; }
-    OpStatsLogger getReadOpLogger() { return readOpLogger; }
-    OpStatsLogger getAddOpLogger() { return addOpLogger; }
-    OpStatsLogger getWriteLacOpLogger() { return writeLacOpLogger; }
-    OpStatsLogger getReadLacOpLogger() { return readLacOpLogger; }
+    OpStatsLogger getCreateOpLogger() {
+        return createOpLogger;
+    }
+    OpStatsLogger getOpenOpLogger() {
+        return openOpLogger;
+    }
+    OpStatsLogger getDeleteOpLogger() {
+        return deleteOpLogger;
+    }
+    OpStatsLogger getRecoverOpLogger() {
+        return recoverOpLogger;
+    }
+    OpStatsLogger getReadOpLogger() {
+        return readOpLogger;
+    }
+    OpStatsLogger getReadLacAndEntryOpLogger() {
+        return readLacAndEntryOpLogger;
+    }
+    OpStatsLogger getReadLacAndEntryRespLogger() {
+        return readLacAndEntryRespLogger;
+    }
+    OpStatsLogger getAddOpLogger() {
+        return addOpLogger;
+    }
+    OpStatsLogger getWriteLacOpLogger() {
+        return writeLacOpLogger;
+    }
+    OpStatsLogger getReadLacOpLogger() {
+        return readLacOpLogger;
+    }
+    OpStatsLogger getRecoverAddCountLogger() {
+        return recoverAddEntriesStats;
+    }
+    OpStatsLogger getRecoverReadCountLogger() {
+        return recoverReadEntriesStats;
+    }
+    Counter getReadOpDmCounter() {
+        return readOpDmCounter;
+    }
+    Counter getAddOpUrCounter() {
+        return addOpUrCounter;
+    }
+    static EventLoopGroup getDefaultEventLoopGroup() {
+        ThreadFactory threadFactory = new DefaultThreadFactory("bookkeeper-io");
+        final int numThreads = Runtime.getRuntime().availableProcessors() * 2;
+
+        if (SystemUtils.IS_OS_LINUX) {
+            try {
+                return new EpollEventLoopGroup(numThreads, threadFactory);
+            } catch (Throwable t) {
+                LOG.warn("Could not use Netty Epoll event loop for bookie server: {}", t.getMessage());
+                return new NioEventLoopGroup(numThreads, threadFactory);
+            }
+        } else {
+            return new NioEventLoopGroup(numThreads, threadFactory);
+        }
+    }
+
+    @Override
+    public CreateBuilder newCreateLedgerOp() {
+        return new LedgerCreateOp.CreateBuilderImpl(this);
+    }
+
+    @Override
+    public OpenBuilder newOpenLedgerOp() {
+        return new LedgerOpenOp.OpenBuilderImpl(this);
+    }
+
+    @Override
+    public DeleteBuilder newDeleteLedgerOp() {
+        return new LedgerDeleteOp.DeleteBuilderImpl(this);
+    }
+
 }

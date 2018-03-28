@@ -22,6 +22,11 @@ package org.apache.bookkeeper.bookie;
 import java.io.Serializable;
 import java.util.Comparator;
 
+/**
+ * An {@code EntryKey} represents an entry in a ledger, identified by {@code ledgerId} and {@code entryId}.
+ *
+ * <p>This class is mainly used in {@code SortedLedgerStorage} for managing and sorting the entries in the memtable.
+ */
 public class EntryKey {
     long ledgerId;
     long entryId;
@@ -44,7 +49,7 @@ public class EntryKey {
     }
 
     /**
-    * Comparator for the key portion
+    * Comparator for the key portion.
     */
     public static final KeyComparator COMPARATOR = new KeyComparator();
 
@@ -54,14 +59,13 @@ public class EntryKey {
         if (!(other instanceof EntryKey)) {
           return false;
         }
-        EntryKey key = (EntryKey)other;
-        return ledgerId == key.ledgerId &&
-            entryId == key.entryId;
+        EntryKey key = (EntryKey) other;
+        return ledgerId == key.ledgerId && entryId == key.entryId;
     }
 
     @Override
     public int hashCode() {
-        return (int)(ledgerId * 13 ^ entryId * 17);
+        return (int) (ledgerId * 13 ^ entryId * 17);
     }
 }
 
@@ -78,6 +82,6 @@ class KeyComparator implements Comparator<EntryKey>, Serializable {
         if (ret == 0) {
             ret = left.entryId - right.entryId;
         }
-        return (ret < 0)? -1 : ((ret > 0)? 1 : 0);
+        return (ret < 0) ? -1 : ((ret > 0) ? 1 : 0);
     }
 }

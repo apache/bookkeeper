@@ -17,15 +17,14 @@
  */
 package org.apache.bookkeeper.client;
 
-import org.apache.bookkeeper.client.DigestManager.RecoveryData;
+import io.netty.buffer.ByteBuf;
+
 import org.apache.bookkeeper.client.ReadLastConfirmedOp.LastConfirmedDataCallback;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
-import org.jboss.netty.buffer.ChannelBuffer;
+import org.apache.bookkeeper.proto.checksum.DigestManager.RecoveryData;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.List;
 
 /**
  * This op is try to read last confirmed without involving quorum coverage checking.
@@ -52,18 +51,18 @@ class TryReadLastConfirmedOp implements ReadEntryCallback {
 
     public void initiate() {
         for (int i = 0; i < lh.metadata.currentEnsemble.size(); i++) {
-            lh.bk.bookieClient.readEntry(lh.metadata.currentEnsemble.get(i),
+            lh.bk.getBookieClient().readEntry(lh.metadata.currentEnsemble.get(i),
                                          lh.ledgerId,
                                          BookieProtocol.LAST_ADD_CONFIRMED,
-                                         this, i);
+                                         this, i, BookieProtocol.FLAG_NONE);
         }
     }
 
     @Override
-    public void readEntryComplete(int rc, long ledgerId, long entryId, ChannelBuffer buffer, Object ctx) {
+    public void readEntryComplete(int rc, long ledgerId, long entryId, ByteBuf buffer, Object ctx) {
         if (LOG.isTraceEnabled()) {
             LOG.trace("TryReadLastConfirmed received response for (lid={}, eid={}) : {}",
-                    new Object[] { ledgerId, entryId, rc });
+                    ledgerId, entryId, rc);
         }
 
         int bookieIndex = (Integer) ctx;
@@ -73,9 +72,9 @@ class TryReadLastConfirmedOp implements ReadEntryCallback {
                 RecoveryData recoveryData = lh.macManager.verifyDigestAndReturnLastConfirmed(buffer);
                 if (LOG.isTraceEnabled()) {
                     LOG.trace("Received lastAddConfirmed (lac={}, length={}) from bookie({}) for (lid={}).",
-                            new Object[] { recoveryData.lastAddConfirmed, recoveryData.length, bookieIndex, ledgerId });
+                            recoveryData.getLastAddConfirmed(), recoveryData.getLength(), bookieIndex, ledgerId);
                 }
-                if (recoveryData.lastAddConfirmed > maxRecoveredData.lastAddConfirmed) {
+                if (recoveryData.getLastAddConfirmed() > maxRecoveredData.getLastAddConfirmed()) {
                     maxRecoveredData = recoveryData;
                     // callback immediately
                     cb.readLastConfirmedDataComplete(BKException.Code.OK, maxRecoveredData);
@@ -89,8 +88,7 @@ class TryReadLastConfirmedOp implements ReadEntryCallback {
         } else if (BKException.Code.UnauthorizedAccessException == rc && !completed) {
             cb.readLastConfirmedDataComplete(rc, maxRecoveredData);
             completed = true;
-        } else if (BKException.Code.NoSuchLedgerExistsException == rc ||
-                   BKException.Code.NoSuchEntryException == rc) {
+        } else if (BKException.Code.NoSuchLedgerExistsException == rc || BKException.Code.NoSuchEntryException == rc) {
             hasValidResponse = true;
         }
         if (numResponsesPending == 0 && !completed) {

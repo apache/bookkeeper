@@ -20,6 +20,9 @@
  */
 package org.apache.bookkeeper.test;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 import java.io.File;
 import java.util.Enumeration;
 
@@ -33,14 +36,13 @@ import org.junit.Test;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import static org.junit.Assert.*;
 
 /**
- * Test to verify force start readonly bookie
+ * Test to verify force start readonly bookie.
  */
 public class ForceReadOnlyBookieTest extends BookKeeperClusterTestCase {
 
-    private final static Logger LOG = LoggerFactory.getLogger(ForceReadOnlyBookieTest.class);
+    private static final Logger LOG = LoggerFactory.getLogger(ForceReadOnlyBookieTest.class);
     public ForceReadOnlyBookieTest() {
         super(2);
         baseConf.setLedgerStorageClass(InterleavedLedgerStorage.class.getName());
@@ -48,9 +50,9 @@ public class ForceReadOnlyBookieTest extends BookKeeperClusterTestCase {
     }
 
     /**
-     * Check force start readonly bookie
+     * Check force start readonly bookie.
      */
-    @Test(timeout = 60000)
+    @Test
     public void testBookieForceStartAsReadOnly() throws Exception {
         // create ledger, add entries
         LedgerHandle ledger = bkc.createLedger(2, 2, DigestType.MAC,

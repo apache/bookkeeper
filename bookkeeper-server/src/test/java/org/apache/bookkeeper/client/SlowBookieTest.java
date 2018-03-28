@@ -21,12 +21,15 @@
 
 package org.apache.bookkeeper.client;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.net.BookieSocketAddress;
@@ -36,11 +39,12 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.junit.Assert.*;
-
+/**
+ * Test a slow bookie.
+ */
 @SuppressWarnings("deprecation")
 public class SlowBookieTest extends BookKeeperClusterTestCase {
-    private final static Logger LOG = LoggerFactory.getLogger(SlowBookieTest.class);
+    private static final Logger LOG = LoggerFactory.getLogger(SlowBookieTest.class);
 
     public SlowBookieTest() {
         super(4);
@@ -48,10 +52,10 @@ public class SlowBookieTest extends BookKeeperClusterTestCase {
         baseConf.setNumReadWorkerThreads(0);
     }
 
-    @Test(timeout=60000)
+    @Test
     public void testSlowBookie() throws Exception {
         ClientConfiguration conf = new ClientConfiguration();
-        conf.setZkServers(zkUtil.getZooKeeperConnectString()).setReadTimeout(360);
+        conf.setReadTimeout(360).setZkServers(zkUtil.getZooKeeperConnectString());
 
         BookKeeper bkc = new BookKeeper(conf);
 
@@ -94,10 +98,10 @@ public class SlowBookieTest extends BookKeeperClusterTestCase {
         }
     }
 
-    @Test(timeout=60000)
+    @Test
     public void testBookieFailureWithSlowBookie() throws Exception {
         ClientConfiguration conf = new ClientConfiguration();
-        conf.setZkServers(zkUtil.getZooKeeperConnectString()).setReadTimeout(5);
+        conf.setReadTimeout(5).setZkServers(zkUtil.getZooKeeperConnectString());
 
         BookKeeper bkc = new BookKeeper(conf);
 
@@ -136,10 +140,10 @@ public class SlowBookieTest extends BookKeeperClusterTestCase {
         final CountDownLatch checklatch = new CountDownLatch(1);
         final AtomicInteger numFragments = new AtomicInteger(-1);
         lc.checkLedger(lh2, new GenericCallback<Set<LedgerFragment>>() {
-                public void operationComplete(int rc, Set<LedgerFragment> fragments) {
-                    LOG.debug("Checked ledgers returned {} {}", rc, fragments);
+                public void operationComplete(int rc, Set<LedgerFragment> badFragments) {
+                    LOG.debug("Checked ledgers returned {} {}", rc, badFragments);
                     if (rc == BKException.Code.OK) {
-                        numFragments.set(fragments.size());
+                        numFragments.set(badFragments.size());
                     }
                     checklatch.countDown();
                 }
@@ -148,10 +152,10 @@ public class SlowBookieTest extends BookKeeperClusterTestCase {
         assertEquals("There should be no missing fragments", 0, numFragments.get());
     }
 
-    @Test(timeout=60000)
+    @Test
     public void testManyBookieFailureWithSlowBookies() throws Exception {
         ClientConfiguration conf = new ClientConfiguration();
-        conf.setZkServers(zkUtil.getZooKeeperConnectString()).setReadTimeout(5);
+        conf.setReadTimeout(5).setZkServers(zkUtil.getZooKeeperConnectString());
 
         BookKeeper bkc = new BookKeeper(conf);
 
@@ -165,6 +169,7 @@ public class SlowBookieTest extends BookKeeperClusterTestCase {
                     try {
                         while (!finished.get()) {
                             lh.addEntry(entry);
+                            Thread.sleep(1);
                         }
                     } catch (Exception e) {
                         LOG.error("Exception in add entry thread", e);

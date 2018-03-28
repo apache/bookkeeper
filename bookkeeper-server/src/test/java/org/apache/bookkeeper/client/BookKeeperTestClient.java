@@ -1,5 +1,3 @@
-package org.apache.bookkeeper.client;
-
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -20,34 +18,42 @@ package org.apache.bookkeeper.client;
  * under the License.
  *
  */
+package org.apache.bookkeeper.client;
 
 import java.io.IOException;
-import java.util.concurrent.Executors;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Future;
 
+import lombok.extern.slf4j.Slf4j;
+
+import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.conf.ClientConfiguration;
-import org.apache.bookkeeper.client.AsyncCallback.CreateCallback;
-import org.apache.bookkeeper.client.AsyncCallback.DeleteCallback;
-import org.apache.bookkeeper.client.AsyncCallback.OpenCallback;
-import org.apache.bookkeeper.client.BKException.Code;
+import org.apache.bookkeeper.discover.RegistrationClient.RegistrationListener;
+import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieClient;
-import org.apache.bookkeeper.util.OrderedSafeExecutor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.WatchedEvent;
-import org.apache.zookeeper.Watcher;
+import org.apache.bookkeeper.stats.NullStatsLogger;
+import org.apache.bookkeeper.test.TestStatsProvider;
 import org.apache.zookeeper.ZooKeeper;
-import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
-import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 
 /**
  * Test BookKeeperClient which allows access to members we don't
  * wish to expose in the public API.
  */
+@Slf4j
 public class BookKeeperTestClient extends BookKeeper {
+    TestStatsProvider statsProvider;
+
+    public BookKeeperTestClient(ClientConfiguration conf, TestStatsProvider statsProvider)
+            throws IOException, InterruptedException, BKException {
+        super(conf, null, null,
+              statsProvider == null ? NullStatsLogger.INSTANCE : statsProvider.getStatsLogger(""),
+              null, null, null);
+        this.statsProvider = statsProvider;
+    }
+
     public BookKeeperTestClient(ClientConfiguration conf)
-            throws IOException, InterruptedException, KeeperException {
-        super(conf);
+            throws InterruptedException, BKException, IOException {
+        this(conf, null);
     }
 
     public ZooKeeper getZkHandle() {
@@ -58,14 +64,75 @@ public class BookKeeperTestClient extends BookKeeper {
         return super.getConf();
     }
 
+    public BookieClient getBookieClient() {
+        return bookieClient;
+    }
+
+    public Future<?> waitForReadOnlyBookie(BookieSocketAddress b)
+            throws Exception {
+        return waitForBookieInSet(b, false);
+    }
+
+    public Future<?> waitForWritableBookie(BookieSocketAddress b)
+            throws Exception {
+        return waitForBookieInSet(b, true);
+    }
+
     /**
-     * Force a read to zookeeper to get list of bookies.
-     *
-     * @throws InterruptedException
-     * @throws KeeperException
+     * Wait for bookie to appear in either the writable set of bookies,
+     * or the read only set of bookies. Also ensure that it doesn't exist
+     * in the other set before completing.
      */
-    public void readBookiesBlocking()
-            throws InterruptedException, KeeperException {
-        bookieWatcher.readBookiesBlocking();
+    private Future<?> waitForBookieInSet(BookieSocketAddress b,
+                                                       boolean writable) throws Exception {
+        log.info("Wait for {} to become {}",
+                 b, writable ? "writable" : "readonly");
+
+        CompletableFuture<Void> readOnlyFuture = new CompletableFuture<>();
+        CompletableFuture<Void> writableFuture = new CompletableFuture<>();
+
+        RegistrationListener readOnlyListener = (bookies) -> {
+            boolean contains = bookies.getValue().contains(b);
+            if ((!writable && contains) || (writable && !contains)) {
+                readOnlyFuture.complete(null);
+            }
+        };
+        RegistrationListener writableListener = (bookies) -> {
+            boolean contains = bookies.getValue().contains(b);
+            if ((writable && contains) || (!writable && !contains)) {
+                writableFuture.complete(null);
+            }
+        };
+
+        getMetadataClientDriver().getRegistrationClient().watchWritableBookies(writableListener);
+        getMetadataClientDriver().getRegistrationClient().watchReadOnlyBookies(readOnlyListener);
+
+        if (writable) {
+            return writableFuture
+                .thenCompose(ignored -> getMetadataClientDriver().getRegistrationClient().getReadOnlyBookies())
+                .thenCompose(readonlyBookies -> {
+                    if (readonlyBookies.getValue().contains(b)) {
+                        // if the bookie still shows up at readonly path, wait for it to disappear
+                        return readOnlyFuture;
+                    } else {
+                        return FutureUtils.Void();
+                    }
+                });
+        } else {
+            return readOnlyFuture
+                .thenCompose(ignored -> getMetadataClientDriver().getRegistrationClient().getWritableBookies())
+                .thenCompose(writableBookies -> {
+                    if (writableBookies.getValue().contains(b)) {
+                        // if the bookie still shows up at writable path, wait for it to disappear
+                        return writableFuture;
+                    } else {
+                        return FutureUtils.Void();
+                    }
+                });
+        }
+    }
+
+    public TestStatsProvider getTestStatsProvider() {
+        return statsProvider;
     }
 }

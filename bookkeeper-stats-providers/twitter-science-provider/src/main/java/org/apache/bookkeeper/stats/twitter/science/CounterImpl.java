@@ -18,11 +18,11 @@ package org.apache.bookkeeper.stats.twitter.science;
 
 import com.twitter.common.stats.Rate;
 import com.twitter.common.stats.Stats;
+import java.util.concurrent.atomic.AtomicLong;
 import org.apache.bookkeeper.stats.Counter;
 
-import java.util.concurrent.atomic.AtomicLong;
 /**
- * This will export the value and the rate (per sec) to {@link org.apache.bookkeeper.stats.Stats}
+ * This will export the value and the rate (per sec) to {@link org.apache.bookkeeper.stats.Stats}.
  */
 public class CounterImpl implements Counter {
     // The name used to export this stat

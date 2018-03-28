@@ -28,7 +28,7 @@ public class OpStatsData {
     // All latency values are in Milliseconds.
     private final double avgLatencyMillis;
     // 10.0 50.0, 90.0, 99.0, 99.9, 99.99 in that order.
-    // TODO(Aniruddha): Figure out if we can use a Map
+    // TODO: Figure out if we can use a Map
     private final long[] percentileLatenciesMillis;
     public OpStatsData (long numSuccessfulEvents, long numFailedEvents,
                         double avgLatencyMillis, long[] percentileLatenciesMillis) {

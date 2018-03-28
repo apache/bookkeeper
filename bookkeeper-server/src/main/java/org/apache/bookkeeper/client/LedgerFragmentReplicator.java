@@ -19,13 +19,20 @@
  */
 package org.apache.bookkeeper.client;
 
+import static org.apache.bookkeeper.client.LedgerHandle.INVALID_ENTRY_ID;
+
+import io.netty.buffer.Unpooled;
+
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.bookkeeper.client.AsyncCallback.ReadCallback;
 import org.apache.bookkeeper.net.BookieSocketAddress;
@@ -38,16 +45,15 @@ import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
+import org.apache.bookkeeper.util.ByteBufList;
 import org.apache.bookkeeper.util.OrderedSafeExecutor.OrderedSafeGenericCallback;
 import org.apache.zookeeper.AsyncCallback;
-import org.apache.zookeeper.KeeperException.Code;
-import org.jboss.netty.buffer.ChannelBuffer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * This is the helper class for replicating the fragments from one bookie to
- * another
+ * another.
  */
 public class LedgerFragmentReplicator {
 
@@ -72,13 +78,13 @@ public class LedgerFragmentReplicator {
         this(bkc, NullStatsLogger.INSTANCE);
     }
 
-    private final static Logger LOG = LoggerFactory
+    private static final Logger LOG = LoggerFactory
             .getLogger(LedgerFragmentReplicator.class);
 
     private void replicateFragmentInternal(final LedgerHandle lh,
             final LedgerFragment lf,
             final AsyncCallback.VoidCallback ledgerFragmentMcb,
-            final BookieSocketAddress newBookie) throws InterruptedException {
+            final Set<BookieSocketAddress> newBookies) throws InterruptedException {
         if (!lf.isClosed()) {
             LOG.error("Trying to replicate an unclosed fragment;"
                       + " This is not safe {}", lf);
@@ -93,13 +99,13 @@ public class LedgerFragmentReplicator {
              * Ideally this should never happen if bookie failure is taken care
              * of properly. Nothing we can do though in this case.
              */
-            LOG.warn("Dead bookie (" + lf.getAddress()
+            LOG.warn("Dead bookie (" + lf.getAddresses()
                     + ") is still part of the current"
                     + " active ensemble for ledgerId: " + lh.getId());
             ledgerFragmentMcb.processResult(BKException.Code.OK, null, null);
             return;
         }
-        if (startEntryId > endEntryId) {
+        if (startEntryId > endEntryId || endEntryId <= INVALID_ENTRY_ID) {
             // for open ledger which there is no entry, the start entry id is 0,
             // the end entry id is -1.
             // we can return immediately to trigger forward read
@@ -125,7 +131,7 @@ public class LedgerFragmentReplicator {
                 BKException.Code.LedgerRecoveryException);
         for (final Long entryId : entriesToReplicate) {
             recoverLedgerFragmentEntry(entryId, lh, ledgerFragmentEntryMcb,
-                    newBookie);
+                    newBookies);
         }
     }
 
@@ -137,7 +143,7 @@ public class LedgerFragmentReplicator {
      * then it re-replicates that batched entry fragments one by one. After
      * re-replication of all batched entry fragments, it will update the
      * ensemble info with new Bookie once
-     * 
+     *
      * @param lh
      *            LedgerHandle for the ledger
      * @param lf
@@ -145,27 +151,29 @@ public class LedgerFragmentReplicator {
      * @param ledgerFragmentMcb
      *            MultiCallback to invoke once we've recovered the current
      *            ledger fragment.
-     * @param targetBookieAddress
-     *            New bookie we want to use to recover and replicate the ledger
+     * @param targetBookieAddresses
+     *            New bookies we want to use to recover and replicate the ledger
      *            entries that were stored on the failed bookie.
      */
     void replicate(final LedgerHandle lh, final LedgerFragment lf,
             final AsyncCallback.VoidCallback ledgerFragmentMcb,
-            final BookieSocketAddress targetBookieAddress)
+            final Set<BookieSocketAddress> targetBookieAddresses)
             throws InterruptedException {
         Set<LedgerFragment> partionedFragments = splitIntoSubFragments(lh, lf,
                 bkc.getConf().getRereplicationEntryBatchSize());
-        LOG.info("Fragment :" + lf + " is split into sub fragments :"
-                + partionedFragments);
+        LOG.info("Replicating fragment {} in {} sub fragments.",
+                lf, partionedFragments.size());
         replicateNextBatch(lh, partionedFragments.iterator(),
-                ledgerFragmentMcb, targetBookieAddress);
+                ledgerFragmentMcb, targetBookieAddresses);
     }
 
-    /** Replicate the batched entry fragments one after other */
+    /**
+     * Replicate the batched entry fragments one after other.
+     */
     private void replicateNextBatch(final LedgerHandle lh,
             final Iterator<LedgerFragment> fragments,
             final AsyncCallback.VoidCallback ledgerFragmentMcb,
-            final BookieSocketAddress targetBookieAddress) {
+            final Set<BookieSocketAddress> targetBookieAddresses) {
         if (fragments.hasNext()) {
             try {
                 replicateFragmentInternal(lh, fragments.next(),
@@ -178,11 +186,11 @@ public class LedgerFragmentReplicator {
                                 } else {
                                     replicateNextBatch(lh, fragments,
                                             ledgerFragmentMcb,
-                                            targetBookieAddress);
+                                            targetBookieAddresses);
                                 }
                             }
 
-                        }, targetBookieAddress);
+                        }, targetBookieAddresses);
             } catch (InterruptedException e) {
                 ledgerFragmentMcb.processResult(
                         BKException.Code.InterruptedException, null, null);
@@ -196,7 +204,7 @@ public class LedgerFragmentReplicator {
     /**
      * Split the full fragment into batched entry fragments by keeping
      * rereplicationEntryBatchSize of entries in each one and can treat them as
-     * sub fragments
+     * sub fragments.
      */
     static Set<LedgerFragment> splitIntoSubFragments(LedgerHandle lh,
             LedgerFragment ledgerFragment, long rereplicationEntryBatchSize) {
@@ -223,7 +231,7 @@ public class LedgerFragmentReplicator {
         for (int i = 0; i < splitsWithFullEntries; i++) {
             fragmentSplitLastEntry = (firstEntryId + rereplicationEntryBatchSize) - 1;
             fragments.add(new LedgerFragment(lh, firstEntryId,
-                    fragmentSplitLastEntry, ledgerFragment.getBookiesIndex()));
+                    fragmentSplitLastEntry, ledgerFragment.getBookiesIndexes()));
             firstEntryId = fragmentSplitLastEntry + 1;
         }
 
@@ -232,7 +240,7 @@ public class LedgerFragmentReplicator {
         if (lastSplitWithPartialEntries > 0) {
             fragments.add(new LedgerFragment(lh, firstEntryId, firstEntryId
                     + lastSplitWithPartialEntries - 1, ledgerFragment
-                    .getBookiesIndex()));
+                    .getBookiesIndexes()));
         }
         return fragments;
     }
@@ -241,7 +249,7 @@ public class LedgerFragmentReplicator {
      * This method asynchronously recovers a specific ledger entry by reading
      * the values via the BookKeeper Client (which would read it from the other
      * replicas) and then writing it to the chosen new bookie.
-     * 
+     *
      * @param entryId
      *            Ledger Entry ID to recover.
      * @param lh
@@ -249,14 +257,40 @@ public class LedgerFragmentReplicator {
      * @param ledgerFragmentEntryMcb
      *            MultiCallback to invoke once we've recovered the current
      *            ledger entry.
-     * @param newBookie
-     *            New bookie we want to use to recover and replicate the ledger
+     * @param newBookies
+     *            New bookies we want to use to recover and replicate the ledger
      *            entries that were stored on the failed bookie.
      */
     private void recoverLedgerFragmentEntry(final Long entryId,
             final LedgerHandle lh,
             final AsyncCallback.VoidCallback ledgerFragmentEntryMcb,
-            final BookieSocketAddress newBookie) throws InterruptedException {
+            final Set<BookieSocketAddress> newBookies) throws InterruptedException {
+        final AtomicInteger numCompleted = new AtomicInteger(0);
+        final AtomicBoolean completed = new AtomicBoolean(false);
+        final WriteCallback multiWriteCallback = new WriteCallback() {
+            @Override
+            public void writeComplete(int rc, long ledgerId, long entryId, BookieSocketAddress addr, Object ctx) {
+                if (rc != BKException.Code.OK) {
+                    LOG.error("BK error writing entry for ledgerId: {}, entryId: {}, bookie: {}",
+                            ledgerId, entryId, addr, BKException.create(rc));
+                    if (completed.compareAndSet(false, true)) {
+                        ledgerFragmentEntryMcb.processResult(rc, null, null);
+                    }
+                } else {
+                    numEntriesWritten.inc();
+                    if (ctx instanceof Long) {
+                        numBytesWritten.registerSuccessfulValue((Long) ctx);
+                    }
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("Success writing ledger id {}, entry id {} to a new bookie {}!",
+                                ledgerId, entryId, addr);
+                    }
+                    if (numCompleted.incrementAndGet() == newBookies.size() && completed.compareAndSet(false, true)) {
+                        ledgerFragmentEntryMcb.processResult(rc, null, null);
+                    }
+                }
+            }
+        };
         /*
          * Read the ledger entry using the LedgerHandle. This will allow us to
          * read the entry from one of the other replicated bookies other than
@@ -281,46 +315,20 @@ public class LedgerFragmentReplicator {
                 final long dataLength = data.length;
                 numEntriesRead.inc();
                 numBytesRead.registerSuccessfulValue(dataLength);
-                ChannelBuffer toSend = lh.getDigestManager()
+                ByteBufList toSend = lh.getDigestManager()
                         .computeDigestAndPackageForSending(entryId,
                                 lh.getLastAddConfirmed(), entry.getLength(),
-                                data, 0, data.length);
-                bkc.getBookieClient().addEntry(newBookie, lh.getId(),
-                        lh.getLedgerKey(), entryId, toSend,
-                        new WriteCallback() {
-                            @Override
-                            public void writeComplete(int rc, long ledgerId,
-                                    long entryId, BookieSocketAddress addr,
-                                    Object ctx) {
-                                if (rc != BKException.Code.OK) {
-                                    LOG.error(
-                                            "BK error writing entry for ledgerId: "
-                                                    + ledgerId + ", entryId: "
-                                                    + entryId + ", bookie: "
-                                                    + addr, BKException
-                                                    .create(rc));
-                                } else {
-                                    numEntriesWritten.inc();
-                                    numBytesWritten.registerSuccessfulValue(dataLength);
-                                    if (LOG.isDebugEnabled()) {
-                                        LOG.debug("Success writing ledger id "
-                                                + ledgerId + ", entry id "
-                                                + entryId + " to a new bookie "
-                                                + addr + "!");
-                                    }
-                                }
-                                /*
-                                 * Pass the return code result up the chain with
-                                 * the parent callback.
-                                 */
-                                ledgerFragmentEntryMcb.processResult(rc, null,
-                                        null);
-                            }
-                        }, null, BookieProtocol.FLAG_RECOVERY_ADD);
+                                Unpooled.wrappedBuffer(data, 0, data.length));
+                for (BookieSocketAddress newBookie : newBookies) {
+                    bkc.getBookieClient().addEntry(newBookie, lh.getId(),
+                            lh.getLedgerKey(), entryId, ByteBufList.clone(toSend),
+                            multiWriteCallback, dataLength, BookieProtocol.FLAG_RECOVERY_ADD);
+                }
+                toSend.release();
             }
         }, null);
     }
-    
+
     /**
      * Callback for recovery of a single ledger fragment. Once the fragment has
      * had all entries replicated, update the ensemble in zookeeper. Once
@@ -331,17 +339,15 @@ public class LedgerFragmentReplicator {
         final AsyncCallback.VoidCallback ledgerFragmentsMcb;
         final LedgerHandle lh;
         final long fragmentStartId;
-        final BookieSocketAddress oldBookie;
-        final BookieSocketAddress newBookie;
+        final Map<BookieSocketAddress, BookieSocketAddress> oldBookie2NewBookie;
 
         SingleFragmentCallback(AsyncCallback.VoidCallback ledgerFragmentsMcb,
                 LedgerHandle lh, long fragmentStartId,
-                BookieSocketAddress oldBookie, BookieSocketAddress newBookie) {
+                Map<BookieSocketAddress, BookieSocketAddress> oldBookie2NewBookie) {
             this.ledgerFragmentsMcb = ledgerFragmentsMcb;
             this.lh = lh;
             this.fragmentStartId = fragmentStartId;
-            this.newBookie = newBookie;
-            this.oldBookie = oldBookie;
+            this.oldBookie2NewBookie = oldBookie2NewBookie;
         }
 
         @Override
@@ -352,39 +358,34 @@ public class LedgerFragmentReplicator {
                 ledgerFragmentsMcb.processResult(rc, null, null);
                 return;
             }
-            updateEnsembleInfo(ledgerFragmentsMcb, fragmentStartId, lh,
-                                        oldBookie, newBookie);
+            updateEnsembleInfo(ledgerFragmentsMcb, fragmentStartId, lh, oldBookie2NewBookie);
         }
     }
 
-    /** Updates the ensemble with newBookie and notify the ensembleUpdatedCb */
+    /**
+     * Updates the ensemble with newBookie and notify the ensembleUpdatedCb.
+     */
     private static void updateEnsembleInfo(
             AsyncCallback.VoidCallback ensembleUpdatedCb, long fragmentStartId,
-            LedgerHandle lh, BookieSocketAddress oldBookie,
-            BookieSocketAddress newBookie) {
+            LedgerHandle lh, Map<BookieSocketAddress, BookieSocketAddress> oldBookie2NewBookie) {
         /*
          * Update the ledger metadata's ensemble info to point to the new
          * bookie.
          */
         ArrayList<BookieSocketAddress> ensemble = lh.getLedgerMetadata()
                 .getEnsembles().get(fragmentStartId);
-        int deadBookieIndex = ensemble.indexOf(oldBookie);
-
-        /*
-         * An update to the ensemble info might happen after re-reading ledger metadata.
-         * Such an update might reflect a change to the ensemble membership such that 
-         * it might not be necessary to replace the bookie.
-         */
-        if (deadBookieIndex >= 0) {
-            ensemble.remove(deadBookieIndex);
-            ensemble.add(deadBookieIndex, newBookie);
-            lh.writeLedgerConfig(new UpdateEnsembleCb(ensembleUpdatedCb,
-                        fragmentStartId, lh, oldBookie, newBookie));
+        for (Map.Entry<BookieSocketAddress, BookieSocketAddress> entry : oldBookie2NewBookie.entrySet()) {
+            int deadBookieIndex = ensemble.indexOf(entry.getKey());
+            // update ensemble info might happen after re-read ledger metadata, so the ensemble might already
+            // change. if ensemble is already changed, skip replacing the bookie doesn't exist.
+            if (deadBookieIndex >= 0) {
+                ensemble.set(deadBookieIndex, entry.getValue());
+            } else {
+                LOG.info("Bookie {} doesn't exist in ensemble {} anymore.", entry.getKey(), ensemble);
+            }
         }
-        else {
-            LOG.warn("Bookie {} doesn't exist in ensemble {} anymore.", oldBookie, ensemble);
-            ensembleUpdatedCb.processResult(BKException.Code.UnexpectedConditionException, null, null);
-        }
+        lh.writeLedgerConfig(new UpdateEnsembleCb(ensembleUpdatedCb,
+                fragmentStartId, lh, oldBookie2NewBookie));
     }
 
     /**
@@ -396,17 +397,15 @@ public class LedgerFragmentReplicator {
         final AsyncCallback.VoidCallback ensembleUpdatedCb;
         final LedgerHandle lh;
         final long fragmentStartId;
-        final BookieSocketAddress oldBookie;
-        final BookieSocketAddress newBookie;
+        final Map<BookieSocketAddress, BookieSocketAddress> oldBookie2NewBookie;
 
         public UpdateEnsembleCb(AsyncCallback.VoidCallback ledgerFragmentsMcb,
                 long fragmentStartId, LedgerHandle lh,
-                BookieSocketAddress oldBookie, BookieSocketAddress newBookie) {
+                Map<BookieSocketAddress, BookieSocketAddress> oldBookie2NewBookie) {
             this.ensembleUpdatedCb = ledgerFragmentsMcb;
             this.lh = lh;
             this.fragmentStartId = fragmentStartId;
-            this.newBookie = newBookie;
-            this.oldBookie = oldBookie;
+            this.oldBookie2NewBookie = oldBookie2NewBookie;
         }
 
         @Override
@@ -417,8 +416,7 @@ public class LedgerFragmentReplicator {
                 // try again, the previous success (with which this has
                 // conflicted) will have updated the stat other operations
                 // such as (addEnsemble) would update it too.
-                lh
-                        .rereadMetadata(new OrderedSafeGenericCallback<LedgerMetadata>(
+                lh.rereadMetadata(new OrderedSafeGenericCallback<LedgerMetadata>(
                                 lh.bk.mainWorkerPool, lh.getId()) {
                             @Override
                             public void safeOperationComplete(int rc,
@@ -432,8 +430,7 @@ public class LedgerFragmentReplicator {
                                 } else {
                                     lh.metadata = newMeta;
                                     updateEnsembleInfo(ensembleUpdatedCb,
-                                            fragmentStartId, lh, oldBookie,
-                                            newBookie);
+                                            fragmentStartId, lh, oldBookie2NewBookie);
                                 }
                             }
                             @Override
@@ -443,13 +440,13 @@ public class LedgerFragmentReplicator {
                         });
                 return;
             } else if (rc != BKException.Code.OK) {
-                LOG.error("Error updating ledger config metadata for ledgerId "
-                        + lh.getId() + " : " + BKException.getMessage(rc));
+                LOG.error("Error updating ledger config metadata for ledgerId {} : {}",
+                        lh.getId(), BKException.codeLogger(rc));
             } else {
                 LOG.info("Updated ZK for ledgerId: (" + lh.getId() + " : "
                         + fragmentStartId
-                        + ") to point ledger fragments from old dead bookie: ("
-                        + oldBookie + ") to new bookie: (" + newBookie + ")");
+                        + ") to point ledger fragments from old bookies to new bookies: "
+                        + oldBookie2NewBookie);
             }
             /*
              * Pass the return code result up the chain with the parent

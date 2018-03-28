@@ -1,0 +1,8 @@
+_site/
+javadoc/
+vendor/bundle/
+.jekyll-metadata
+.bundle/
+.sass-cache/
+local-generated/
+generated_site/

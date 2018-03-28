@@ -20,13 +20,14 @@
  */
 package org.apache.bookkeeper.client;
 
+import static org.junit.Assert.fail;
+
 import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
-import org.apache.bookkeeper.zookeeper.BoundExponentialBackoffRetryPolicy;
 import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
@@ -35,8 +36,10 @@ import org.apache.zookeeper.Watcher.Event.EventType;
 import org.apache.zookeeper.Watcher.Event.KeeperState;
 import org.apache.zookeeper.ZooKeeper;
 import org.junit.Test;
-import static org.junit.Assert.*;
 
+/**
+ * Test a bookie watcher.
+ */
 public class TestBookieWatcher extends BookKeeperClusterTestCase {
 
     public TestBookieWatcher() {
@@ -51,8 +54,7 @@ public class TestBookieWatcher extends BookKeeperClusterTestCase {
 
             @Override
             public void process(WatchedEvent event) {
-                if (event.getType() == EventType.None &&
-                        event.getState() == KeeperState.SyncConnected) {
+                if (event.getType() == EventType.None && event.getState() == KeeperState.SyncConnected) {
                     latch.countDown();
                 }
             }
@@ -64,38 +66,32 @@ public class TestBookieWatcher extends BookKeeperClusterTestCase {
         newZk.close();
     }
 
-    @Test(timeout=10000)
+    @Test
     public void testBookieWatcherSurviveWhenSessionExpired() throws Exception {
         final int timeout = 2000;
-        ZooKeeper zk = ZooKeeperClient.newBuilder()
+        try (ZooKeeper zk = ZooKeeperClient.newBuilder()
                 .connectString(zkUtil.getZooKeeperConnectString())
                 .sessionTimeoutMs(timeout)
-                .build();
-        try {
+                .build()) {
             runBookieWatcherWhenSessionExpired(zk, timeout, true);
-        } finally {
-            zk.close();
         }
     }
 
-    @Test(timeout=10000)
+    @Test
     public void testBookieWatcherDieWhenSessionExpired() throws Exception {
         final int timeout = 2000;
         final CountDownLatch connectLatch = new CountDownLatch(1);
-        ZooKeeper zk = new ZooKeeper(zkUtil.getZooKeeperConnectString(), timeout, new Watcher() {
+        try (ZooKeeper zk = new ZooKeeper(zkUtil.getZooKeeperConnectString(), timeout, new Watcher() {
             @Override
             public void process(WatchedEvent watchedEvent) {
-                if (EventType.None == watchedEvent.getType() &&
-                        KeeperState.SyncConnected == watchedEvent.getState()) {
+                if (EventType.None == watchedEvent.getType()
+                        && KeeperState.SyncConnected == watchedEvent.getState()) {
                     connectLatch.countDown();
                 }
             }
-        });
-        connectLatch.await();
-        try {
+        })) {
+            connectLatch.await();
             runBookieWatcherWhenSessionExpired(zk, timeout, false);
-        } finally {
-            zk.close();
         }
     }
 
@@ -113,11 +109,11 @@ public class TestBookieWatcher extends BookKeeperClusterTestCase {
         }
 
         // make zookeeper session expired
-        expireZooKeeperSession(bkc.zk, timeout);
+        expireZooKeeperSession(bkc.getZkHandle(), timeout);
         TimeUnit.MILLISECONDS.sleep(3 * timeout);
 
         // start four new bookies
-        for (int i=0; i<2; i++) {
+        for (int i = 0; i < 2; i++) {
             startNewBookie();
         }
 

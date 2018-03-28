@@ -20,12 +20,12 @@
  */
 package org.apache.bookkeeper.replication;
 
-import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
-import org.apache.bookkeeper.test.TestCallbacks;
+import static org.apache.bookkeeper.meta.MetadataDrivers.runFunctionWithLedgerManagerFactory;
+import static org.junit.Assert.assertEquals;
 
+import com.google.common.util.concurrent.UncheckedExecutionException;
 import java.util.List;
-import org.apache.bookkeeper.net.BookieSocketAddress;
-import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
+import lombok.Cleanup;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.LedgerHandleAdapter;
@@ -33,29 +33,30 @@ import org.apache.bookkeeper.client.LedgerMetadata;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager;
-import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
+import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
+import org.apache.bookkeeper.test.TestCallbacks;
+import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
 import org.apache.zookeeper.ZooKeeper;
-import org.junit.Before;
 import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
-import static org.junit.Assert.assertEquals;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * This test verifies that the period check on the auditor
- * will pick up on missing data in the client
+ * will pick up on missing data in the client.
  */
 public class AuditorPeriodicBookieCheckTest extends BookKeeperClusterTestCase {
-    private final static Logger LOG = LoggerFactory
+    private static final Logger LOG = LoggerFactory
             .getLogger(AuditorPeriodicBookieCheckTest.class);
 
     private AuditorElector auditorElector = null;
     private ZooKeeper auditorZookeeper = null;
 
-    private final static int CHECK_INTERVAL = 1; // run every second
+    private static final int CHECK_INTERVAL = 1; // run every second
 
     public AuditorPeriodicBookieCheckTest() {
         super(3);
@@ -91,32 +92,38 @@ public class AuditorPeriodicBookieCheckTest extends BookKeeperClusterTestCase {
     }
 
     /**
-     * Test that the periodic bookie checker works
+     * Test that the periodic bookie checker works.
      */
-    @Test(timeout=30000)
+    @Test
     public void testPeriodicBookieCheckInterval() throws Exception {
-        LedgerManagerFactory mFactory = LedgerManagerFactory.newLedgerManagerFactory(bsConfs.get(0), zkc);
-        LedgerManager ledgerManager = mFactory.newLedgerManager();
-        final LedgerUnderreplicationManager underReplicationManager = mFactory.newLedgerUnderreplicationManager();
-        final int numLedgers = 1;
+        bsConfs.get(0).setZkServers(zkUtil.getZooKeeperConnectString());
+        runFunctionWithLedgerManagerFactory(bsConfs.get(0), mFactory -> {
+            try (LedgerManager ledgerManager = mFactory.newLedgerManager()) {
+                @Cleanup final LedgerUnderreplicationManager underReplicationManager =
+                    mFactory.newLedgerUnderreplicationManager();
 
-        LedgerHandle lh = bkc.createLedger(3, 3, DigestType.CRC32, "passwd".getBytes());
-        LedgerMetadata md = LedgerHandleAdapter.getLedgerMetadata(lh);
-        List<BookieSocketAddress> ensemble = md.getEnsembles().get(0L);
-        ensemble.set(0, new BookieSocketAddress("1.1.1.1", 1000));
+                LedgerHandle lh = bkc.createLedger(3, 3, DigestType.CRC32, "passwd".getBytes());
+                LedgerMetadata md = LedgerHandleAdapter.getLedgerMetadata(lh);
+                List<BookieSocketAddress> ensemble = md.getEnsembles().get(0L);
+                ensemble.set(0, new BookieSocketAddress("1.1.1.1", 1000));
 
-        TestCallbacks.GenericCallbackFuture<Void> cb = new TestCallbacks.GenericCallbackFuture<Void>();
-        ledgerManager.writeLedgerMetadata(lh.getId(), md, cb);
-        cb.get();
+                TestCallbacks.GenericCallbackFuture<Void> cb = new TestCallbacks.GenericCallbackFuture<Void>();
+                ledgerManager.writeLedgerMetadata(lh.getId(), md, cb);
+                cb.get();
 
-        long underReplicatedLedger = -1;
-        for (int i = 0; i < 10; i++) {
-            underReplicatedLedger = underReplicationManager.pollLedgerToRereplicate();
-            if (underReplicatedLedger != -1) {
-                break;
+                long underReplicatedLedger = -1;
+                for (int i = 0; i < 10; i++) {
+                    underReplicatedLedger = underReplicationManager.pollLedgerToRereplicate();
+                    if (underReplicatedLedger != -1) {
+                        break;
+                    }
+                    Thread.sleep(CHECK_INTERVAL * 1000);
+                }
+                assertEquals("Ledger should be under replicated", lh.getId(), underReplicatedLedger);
+            } catch (Exception e) {
+                throw new UncheckedExecutionException(e.getMessage(), e);
             }
-            Thread.sleep(CHECK_INTERVAL*1000);
-        }
-        assertEquals("Ledger should be under replicated", lh.getId(), underReplicatedLedger);
+            return null;
+        });
     }
 }

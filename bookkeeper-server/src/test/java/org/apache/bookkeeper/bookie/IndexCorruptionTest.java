@@ -1,5 +1,3 @@
-package org.apache.bookkeeper.bookie;
-
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -20,27 +18,28 @@ package org.apache.bookkeeper.bookie;
  * under the License.
  *
  */
+package org.apache.bookkeeper.bookie;
+
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 import java.util.Enumeration;
 
+import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.LedgerEntry;
 import org.apache.bookkeeper.client.LedgerHandle;
-import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
-
+import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.junit.Assert;
-import org.junit.Test;
-
-import static org.junit.Assert.*;
-
 /**
- * This class tests that index corruption cases
+ * This class tests that index corruption cases.
  */
 public class IndexCorruptionTest extends BookKeeperClusterTestCase {
-    private final static Logger LOG = LoggerFactory.getLogger(IndexCorruptionTest.class);
+    private static final Logger LOG = LoggerFactory.getLogger(IndexCorruptionTest.class);
 
     DigestType digestType;
 
@@ -52,7 +51,7 @@ public class IndexCorruptionTest extends BookKeeperClusterTestCase {
         baseConf.setPageSize(pageSize);
     }
 
-    @Test(timeout=60000)
+    @Test
     public void testNoSuchLedger() throws Exception {
         LOG.debug("Testing NoSuchLedger");
 
@@ -68,7 +67,7 @@ public class IndexCorruptionTest extends BookKeeperClusterTestCase {
         String dummyMsg = "NoSuchLedger";
         int numMsgs = 3;
         LedgerHandle wlh = bkc.createLedger(1, 1, digestType, "".getBytes());
-        for (int i=0; i<numMsgs; i++) {
+        for (int i = 0; i < numMsgs; i++) {
             wlh.addEntry(dummyMsg.getBytes());
         }
 
@@ -81,19 +80,19 @@ public class IndexCorruptionTest extends BookKeeperClusterTestCase {
         restartBookies();
 
         Enumeration<LedgerEntry> seq = wlh.readEntries(0, numMsgs - 1);
-        assertTrue("Enumeration of ledger entries has no element", seq.hasMoreElements() == true);
+        assertTrue("Enumeration of ledger entries has no element", seq.hasMoreElements());
         int entryId = 0;
         while (seq.hasMoreElements()) {
             LedgerEntry e = seq.nextElement();
             assertEquals(entryId, e.getEntryId());
 
-            Assert.assertArrayEquals(dummyMsg.getBytes(), e.getEntry());
+            assertArrayEquals(dummyMsg.getBytes(), e.getEntry());
             ++entryId;
         }
         assertEquals(entryId, numMsgs);
     }
 
-    @Test(timeout=60000)
+    @Test
     public void testEmptyIndexPage() throws Exception {
         LOG.debug("Testing EmptyIndexPage");
 
@@ -110,7 +109,7 @@ public class IndexCorruptionTest extends BookKeeperClusterTestCase {
         // write two page entries to ledger 2
         int numMsgs = 2 * pageSize / 8;
         LedgerHandle lh2 = bkc.createLedger(1, 1, digestType, "".getBytes());
-        for (int i=0; i<numMsgs; i++) {
+        for (int i = 0; i < numMsgs; i++) {
             lh2.addEntry(dummyMsg.getBytes());
         }
 
@@ -125,7 +124,7 @@ public class IndexCorruptionTest extends BookKeeperClusterTestCase {
         LedgerHandle newLh1 = bkc.openLedger(lh1.getId(), digestType, "".getBytes());
 
         // write another 3 entries to ledger 2
-        for (int i=0; i<3; i++) {
+        for (int i = 0; i < 3; i++) {
             lh2.addEntry(dummyMsg.getBytes());
         }
 
@@ -139,13 +138,13 @@ public class IndexCorruptionTest extends BookKeeperClusterTestCase {
 
         numMsgs += 3;
         Enumeration<LedgerEntry> seq = lh2.readEntries(0, numMsgs - 1);
-        assertTrue("Enumeration of ledger entries has no element", seq.hasMoreElements() == true);
+        assertTrue("Enumeration of ledger entries has no element", seq.hasMoreElements());
         int entryId = 0;
         while (seq.hasMoreElements()) {
             LedgerEntry e = seq.nextElement();
             assertEquals(entryId, e.getEntryId());
 
-            Assert.assertArrayEquals(dummyMsg.getBytes(), e.getEntry());
+            assertArrayEquals(dummyMsg.getBytes(), e.getEntry());
             ++entryId;
         }
         assertEquals(entryId, numMsgs);

@@ -19,30 +19,28 @@
 
 package org.apache.bookkeeper.bookie;
 
-import org.apache.bookkeeper.bookie.Bookie.NoLedgerException;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.SKIP_LIST_FLUSH_BYTES;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.SKIP_LIST_GET_ENTRY;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.SKIP_LIST_PUT_ENTRY;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.SKIP_LIST_SNAPSHOT;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.SKIP_LIST_THROTTLING;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.concurrent.ConcurrentSkipListMap;
-import java.util.concurrent.TimeUnit;
-
+import org.apache.bookkeeper.bookie.Bookie.NoLedgerException;
+import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
+import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.MathUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
-import org.apache.bookkeeper.conf.ServerConfiguration;
-
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.SKIP_LIST_FLUSH_BYTES;
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.SKIP_LIST_GET_ENTRY;
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.SKIP_LIST_PUT_ENTRY;
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.SKIP_LIST_SNAPSHOT;
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.SKIP_LIST_THROTTLING;
 
 /**
  * The EntryMemTable holds in-memory representation to the entries not-yet flushed.
@@ -51,10 +49,10 @@ import static org.apache.bookkeeper.bookie.BookKeeperServerStats.SKIP_LIST_THROT
  * flusher reports in that the flush succeeded. At that point we let the snapshot go.
  */
 public class EntryMemTable {
-    private static Logger Logger = LoggerFactory.getLogger(Journal.class);
+    private static Logger logger = LoggerFactory.getLogger(Journal.class);
 
     /**
-     * Entry skip list
+     * Entry skip list.
      */
     static class EntrySkipList extends ConcurrentSkipListMap<EntryKey, EntryKeyValue> {
         final Checkpoint cp;
@@ -107,7 +105,7 @@ public class EntryMemTable {
     final long skipListSizeLimit;
 
     SkipListArena allocator;
-    
+
     // flag indicating the status of the previous flush call
     private final AtomicBoolean previousFlushSucceeded;
 
@@ -148,10 +146,10 @@ public class EntryMemTable {
 
     void dump() {
         for (EntryKey key: this.kvmap.keySet()) {
-            Logger.info(key.toString());
+            logger.info(key.toString());
         }
         for (EntryKey key: this.snapshot.keySet()) {
-            Logger.info(key.toString());
+            logger.info(key.toString());
         }
     }
 
@@ -171,8 +169,7 @@ public class EntryMemTable {
     Checkpoint snapshot(Checkpoint oldCp) throws IOException {
         Checkpoint cp = null;
         // No-op if snapshot currently has entries
-        if (this.snapshot.isEmpty() &&
-                this.kvmap.compareTo(oldCp) < 0) {
+        if (this.snapshot.isEmpty() && this.kvmap.compareTo(oldCp) < 0) {
             final long startTimeNanos = MathUtils.nowInNano();
             this.lock.writeLock().lock();
             try {
@@ -246,7 +243,7 @@ public class EntryMemTable {
                 EntrySkipList keyValues = this.snapshot;
                 if (keyValues.compareTo(checkpoint) < 0) {
                     for (EntryKey key : keyValues.keySet()) {
-                        EntryKeyValue kv = (EntryKeyValue)key;
+                        EntryKeyValue kv = (EntryKeyValue) key;
                         size += kv.getLength();
                         ledger = kv.getLedgerId();
                         if (ledgerGC != ledger) {
@@ -285,7 +282,7 @@ public class EntryMemTable {
     }
 
     /**
-     * Throttling writer w/ 1 ms delay
+     * Throttling writer w/ 1 ms delay.
      */
     private void throttleWriters() {
         try {
@@ -297,11 +294,12 @@ public class EntryMemTable {
     }
 
     /**
-    * Write an update
-    * @param entry
-    * @return approximate size of the passed key and value.
-     * @throws IOException 
-    */
+     * Write an update.
+     *
+     * @param entry
+     * @return approximate size of the passed key and value.
+     * @throws IOException
+     */
     public long addEntry(long ledgerId, long entryId, final ByteBuffer entry, final CacheCallback cb)
             throws IOException {
         long size = 0;
@@ -311,7 +309,7 @@ public class EntryMemTable {
             if (isSizeLimitReached() || (!previousFlushSucceeded.get())) {
                 Checkpoint cp = snapshot();
                 if ((null != cp) || (!previousFlushSucceeded.get())) {
-                    cb.onSizeLimitReached();
+                    cb.onSizeLimitReached(cp);
                 } else {
                     throttleWriters();
                 }
@@ -338,7 +336,6 @@ public class EntryMemTable {
     /**
     * Internal version of add() that doesn't clone KVs with the
     * allocator, and doesn't take the lock.
-    *
     * Callers should ensure they already have the read lock taken
     */
     private long internalAdd(final EntryKeyValue toAdd) throws IOException {
@@ -358,8 +355,7 @@ public class EntryMemTable {
         if (entry.hasArray()) {
             buf = entry.array();
             offset = entry.arrayOffset();
-        }
-        else {
+        } else {
             buf = new byte[length];
             entry.get(buf);
         }
@@ -381,7 +377,7 @@ public class EntryMemTable {
     }
 
     /**
-     * Find the entry with given key
+     * Find the entry with given key.
      * @param ledgerId
      * @param entryId
      * @return the entry kv or null if none found.
@@ -411,7 +407,7 @@ public class EntryMemTable {
     }
 
     /**
-     * Find the last entry with the given ledger key
+     * Find the last entry with the given ledger key.
      * @param ledgerId
      * @return the entry kv or null if none found.
      */
@@ -439,18 +435,18 @@ public class EntryMemTable {
         if (result == null || result.getLedgerId() != ledgerId) {
             return null;
         }
-        return (EntryKeyValue)result;
+        return (EntryKeyValue) result;
     }
 
     /**
-     * Check if the entire heap usage for this EntryMemTable exceeds limit
+     * Check if the entire heap usage for this EntryMemTable exceeds limit.
      */
     boolean isSizeLimitReached() {
         return size.get() >= skipListSizeLimit;
     }
 
     /**
-     * Check if there is data in the mem-table
+     * Check if there is data in the mem-table.
      * @return
      */
     boolean isEmpty() {

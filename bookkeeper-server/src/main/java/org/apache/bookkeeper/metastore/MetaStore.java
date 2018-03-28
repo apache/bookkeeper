@@ -28,14 +28,14 @@ public interface MetaStore {
      *
      * @return the plugin name.
      */
-    public String getName();
+    String getName();
 
     /**
      * Get the plugin verison.
      *
      * @return the plugin version.
      */
-    public int getVersion();
+    int getVersion();
 
     /**
      * Initialize the meta store.
@@ -46,13 +46,12 @@ public interface MetaStore {
      *          Version to initialize the metastore
      * @throws MetastoreException when failed to initialize
      */
-    public void init(Configuration config, int msVersion)
-    throws MetastoreException;
+    void init(Configuration config, int msVersion) throws MetastoreException;
 
     /**
      * Close the meta store.
      */
-    public void close();
+    void close();
 
     /**
      * Create a metastore table.
@@ -62,8 +61,7 @@ public interface MetaStore {
      * @return a metastore table
      * @throws MetastoreException when failed to create the metastore table.
      */
-    public MetastoreTable createTable(String name)
-    throws MetastoreException;
+    MetastoreTable createTable(String name) throws MetastoreException;
 
     /**
      * Create a scannable metastore table.
@@ -73,7 +71,6 @@ public interface MetaStore {
      * @return a metastore scannable table
      * @throws MetastoreException when failed to create the metastore table.
      */
-    public MetastoreScannableTable createScannableTable(String name)
-    throws MetastoreException;
+    MetastoreScannableTable createScannableTable(String name) throws MetastoreException;
 
 }

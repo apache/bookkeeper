@@ -24,8 +24,8 @@ package org.apache.bookkeeper.bookie;
  * Callback interface when state of ledger entry page changed.
  */
 interface LEPStateChangeCallback {
-    public void onSetInUse(LedgerEntryPage lep);
-    public void onResetInUse(LedgerEntryPage lep);
-    public void onSetClean(LedgerEntryPage lep);
-    public void onSetDirty(LedgerEntryPage lep);
+    void onSetInUse(LedgerEntryPage lep);
+    void onResetInUse(LedgerEntryPage lep);
+    void onSetClean(LedgerEntryPage lep);
+    void onSetDirty(LedgerEntryPage lep);
 }

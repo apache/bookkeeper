@@ -21,27 +21,31 @@
 
 package org.apache.bookkeeper.bookie;
 
-import org.apache.bookkeeper.proto.BookieProtocol;
-import org.apache.bookkeeper.util.ZeroBuffer;
-
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.apache.bookkeeper.proto.BookieProtocol;
+import org.apache.bookkeeper.util.ZeroBuffer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This is a page in the LedgerCache. It holds the locations
  * (entrylogfile, offset) for entry ids.
  */
 public class LedgerEntryPage {
-    private final static int indexEntrySize = 8;
+
+    private static final Logger LOG = LoggerFactory.getLogger(LedgerEntryPage.class);
+
+    private static final int indexEntrySize = 8;
     private final int pageSize;
     private final int entriesPerPage;
-    volatile private EntryKey entryKey = new EntryKey(-1, BookieProtocol.INVALID_ENTRY_ID);
+    private volatile EntryKey entryKey = new EntryKey(-1, BookieProtocol.INVALID_ENTRY_ID);
     private final ByteBuffer page;
-    volatile private boolean clean = true;
-    private final AtomicInteger useCount = new AtomicInteger();
+    private volatile boolean clean = true;
+    private final AtomicInteger useCount = new AtomicInteger(0);
     private final AtomicInteger version = new AtomicInteger(0);
-    volatile private int last = -1; // Last update position
+    private volatile int last = -1; // Last update position
     private final LEPStateChangeCallback callback;
 
     public static int getIndexEntrySize() {
@@ -62,6 +66,21 @@ public class LedgerEntryPage {
         }
     }
 
+    // Except for not allocating a new direct byte buffer; this should do everything that
+    // the constructor does
+    public void resetPage() {
+        page.clear();
+        ZeroBuffer.put(page);
+        last = -1;
+        entryKey = new EntryKey(-1, BookieProtocol.INVALID_ENTRY_ID);
+        clean = true;
+        useCount.set(0);
+        if (null != this.callback) {
+            callback.onResetInUse(this);
+        }
+    }
+
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
@@ -80,12 +99,20 @@ public class LedgerEntryPage {
         }
     }
 
+    public void releasePageNoCallback() {
+        releasePageInternal(false);
+    }
+
     public void releasePage() {
+        releasePageInternal(true);
+    }
+
+    private void releasePageInternal(boolean shouldCallback) {
         int newUseCount = useCount.decrementAndGet();
         if (newUseCount < 0) {
             throw new IllegalStateException("Use count has gone below 0");
         }
-        if ((null != callback) && (newUseCount == 0)) {
+        if (shouldCallback && (null != callback) && (newUseCount == 0)) {
             callback.onResetInUse(this);
         }
     }
@@ -108,7 +135,7 @@ public class LedgerEntryPage {
 
     @Override
     public int hashCode() {
-        return (int)getLedger() ^ (int)(getFirstEntry());
+        return (int) getLedger() ^ (int) (getFirstEntry());
     }
 
     void setClean(int versionOfCleaning) {
@@ -127,8 +154,8 @@ public class LedgerEntryPage {
         checkPage();
         page.putLong(position, offset);
         version.incrementAndGet();
-        if (last < position/getIndexEntrySize()) {
-            last = position/getIndexEntrySize();
+        if (last < position / getIndexEntrySize()) {
+            last = position / getIndexEntrySize();
         }
         this.clean = false;
 
@@ -153,11 +180,24 @@ public class LedgerEntryPage {
     public void readPage(FileInfo fi) throws IOException {
         checkPage();
         page.clear();
-        while(page.remaining() != 0) {
-            if (fi.read(page, getFirstEntryPosition()) <= 0) {
-                throw new IOException("Short page read of ledger " + getLedger()
-                                + " tried to get " + page.capacity() + " from position " + getFirstEntryPosition()
-                                + " still need " + page.remaining());
+        try {
+            fi.read(page, getFirstEntryPosition(), true);
+        } catch (ShortReadException sre) {
+            throw new ShortReadException("Short page read of ledger " + getLedger()
+                    + " tried to get " + page.capacity() + " from position "
+                    + getFirstEntryPosition() + " still need " + page.remaining(), sre);
+        } catch (IllegalArgumentException iae) {
+            LOG.error("IllegalArgumentException when trying to read ledger {} from position {}",
+                    getLedger(), getFirstEntryPosition(), iae);
+            throw iae;
+        }
+        // make sure we don't include partial index entry
+        if (page.remaining() != 0) {
+            LOG.info("Short page read of ledger {} : tried to read {} bytes from position {}, but only {} bytes read.",
+                    getLedger(), page.capacity(), getFirstEntryPosition(), page.position());
+            if (page.position() % indexEntrySize != 0) {
+                int partialIndexEntryStart = page.position() - page.position() % indexEntrySize;
+                page.putLong(partialIndexEntryStart, 0L);
             }
         }
         last = getLastEntryIndex();
@@ -205,8 +245,8 @@ public class LedgerEntryPage {
     }
 
     private int getLastEntryIndex() {
-        for(int i = entriesPerPage - 1; i >= 0; i--) {
-            if (getOffset(i*getIndexEntrySize()) > 0) {
+        for (int i = entriesPerPage - 1; i >= 0; i--) {
+            if (getOffset(i * getIndexEntrySize()) > 0) {
                 return i;
             }
         }

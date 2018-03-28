@@ -26,7 +26,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-
 import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
@@ -112,23 +111,28 @@ public class ZooKeeperWatcherBase implements Watcher {
     public void process(WatchedEvent event) {
         // If event type is NONE, this is a connection status change
         if (event.getType() != EventType.None) {
-            LOG.debug("Received event: {}, path: {} from ZooKeeper server",
-                    event.getType(), event.getPath());
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Received event: {}, path: {} from ZooKeeper server", event.getType(), event.getPath());
+            }
             getEventCounter(event.getType()).inc();
             // notify the child watchers
             notifyEvent(event);
             return;
         }
         getStateCounter(event.getState()).inc();
-        LOG.debug("Received {} from ZooKeeper server", event.getState());
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Received {} from ZooKeeper server", event.getState());
+        }
         // TODO: Needs to handle AuthFailed, SaslAuthenticated events
+        //       {@link https://github.com/apache/bookkeeper/issues/284}
         switch (event.getState()) {
         case SyncConnected:
             LOG.info("ZooKeeper client is connected now.");
             clientConnectLatch.countDown();
             break;
         case Disconnected:
-            LOG.info("ZooKeeper client is disconnected from zookeeper now, but it is OK unless we received EXPIRED event.");
+            LOG.info("ZooKeeper client is disconnected from zookeeper now,"
+                + " but it is OK unless we received EXPIRED event.");
             break;
         case Expired:
             clientConnectLatch = new CountDownLatch(1);
@@ -143,7 +147,7 @@ public class ZooKeeperWatcherBase implements Watcher {
     }
 
     /**
-     * Waiting for the SyncConnected event from the ZooKeeper server
+     * Waiting for the SyncConnected event from the ZooKeeper server.
      *
      * @throws KeeperException
      *             when there is no connection
@@ -157,7 +161,7 @@ public class ZooKeeperWatcherBase implements Watcher {
     }
 
     /**
-     * Return zookeeper session time out
+     * Return zookeeper session time out.
      */
     public int getZkSessionTimeOut() {
         return zkSessionTimeOut;

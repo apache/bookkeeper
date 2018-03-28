@@ -1,5 +1,3 @@
-package org.apache.bookkeeper.client;
-
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -20,31 +18,35 @@ package org.apache.bookkeeper.client;
  * under the License.
  *
  */
+package org.apache.bookkeeper.client;
 
-import java.io.IOException;
+import static com.google.common.base.Preconditions.checkState;
+
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufInputStream;
+
 import java.io.InputStream;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.jboss.netty.buffer.ChannelBufferInputStream;
+import org.apache.bookkeeper.client.impl.LedgerEntryImpl;
+import org.apache.bookkeeper.conf.ClientConfiguration;
 
 /**
  * Ledger entry. Its a simple tuple containing the ledger id, the entry-id, and
  * the entry content.
  *
  */
-
 public class LedgerEntry {
-    private final static Logger LOG = LoggerFactory.getLogger(LedgerEntry.class);
 
-    long ledgerId;
-    long entryId;
-    long length;
-    ChannelBufferInputStream entryDataStream;
+    final long ledgerId;
+    final long entryId;
+    final long length;
+    ByteBuf data;
 
-    LedgerEntry(long lId, long eId) {
-        this.ledgerId = lId;
-        this.entryId = eId;
+    LedgerEntry(LedgerEntryImpl entry) {
+        this.ledgerId = entry.getLedgerId();
+        this.entryId = entry.getEntryId();
+        this.length = entry.getLength();
+        this.data = entry.getEntryBuffer().retain();
     }
 
     public long getLedgerId() {
@@ -59,24 +61,52 @@ public class LedgerEntry {
         return length;
     }
 
+    /**
+     * Returns the content of the entry.
+     * This method can be called only once. While using v2 wire protocol this method will automatically release
+     * the internal ByteBuf
+     *
+     * @return the content of the entry
+     * @throws IllegalStateException if this method is called twice
+     */
     public byte[] getEntry() {
-        try {
-            // In general, you can't rely on the available() method of an input
-            // stream, but ChannelBufferInputStream is backed by a byte[] so it
-            // accurately knows the # bytes available
-            byte[] ret = new byte[entryDataStream.available()];
-            entryDataStream.readFully(ret);
-            return ret;
-        } catch (IOException e) {
-            // The channelbufferinput stream doesnt really throw the
-            // ioexceptions, it just has to be in the signature because
-            // InputStream says so. Hence this code, should never be reached.
-            LOG.error("Unexpected IOException while reading from channel buffer", e);
-            return new byte[0];
-        }
+        checkState(null != data, "entry content can be accessed only once");
+        byte[] entry = new byte[data.readableBytes()];
+        data.readBytes(entry);
+        data.release();
+        data = null;
+        return entry;
     }
 
+    /**
+     * Returns the content of the entry.
+     * This method can be called only once. While using v2 wire protocol this method will automatically release
+     * the internal ByteBuf when calling the close
+     * method of the returned InputStream
+     *
+     * @return an InputStream which gives access to the content of the entry
+     * @throws IllegalStateException if this method is called twice
+     */
     public InputStream getEntryInputStream() {
-        return entryDataStream;
+        checkState(null != data, "entry content can be accessed only once");
+        ByteBufInputStream res = new ByteBufInputStream(data);
+        data = null;
+        return res;
+    }
+
+    /**
+     * Return the internal buffer that contains the entry payload.
+     *
+     * <p>Note: Using v2 wire protocol it is responsibility of the caller to ensure to release the buffer after usage.
+     *
+     * @return a ByteBuf which contains the data
+     *
+     * @see ClientConfiguration#setNettyUsePooledBuffers(boolean)
+     * @throws IllegalStateException if the entry has been retrieved by {@link #getEntry()}
+     * or {@link #getEntryInputStream()}.
+     */
+    public ByteBuf getEntryBuffer() {
+        checkState(null != data, "entry content has been retrieved by #getEntry or #getEntryInputStream");
+        return data;
     }
 }

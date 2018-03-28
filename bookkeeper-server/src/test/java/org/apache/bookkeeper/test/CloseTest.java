@@ -1,5 +1,3 @@
-package org.apache.bookkeeper.test;
-
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -20,29 +18,27 @@ package org.apache.bookkeeper.test;
  * under the License.
  *
  */
+package org.apache.bookkeeper.test;
 
-import org.junit.*;
-import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.bookkeeper.client.LedgerHandle;
+import org.junit.Test;
 
 /**
  * This unit test tests closing ledgers sequentially. It creates 4 ledgers, then
  * write 1000 entries to each ledger and close it.
  *
  */
+public class CloseTest extends BookKeeperClusterTestCase  {
 
-public class CloseTest extends BaseTestCase {
-    private final static Logger LOG = LoggerFactory.getLogger(CloseTest.class);
-    DigestType digestType;
+    private final DigestType digestType;
 
-    public CloseTest(DigestType digestType) {
+    public CloseTest() {
         super(3);
-        this.digestType = digestType;
+        this.digestType = DigestType.CRC32;
     }
 
-    @Test(timeout=60000)
+    @Test
     public void testClose() throws Exception {
 
         /*
@@ -73,7 +69,7 @@ public class CloseTest extends BaseTestCase {
         }
     }
 
-    @Test(timeout=60000)
+    @Test
     public void testCloseByOthers() throws Exception {
 
         int numLedgers = 1;

@@ -54,6 +54,11 @@ public class TwitterStatsLoggerImpl implements StatsLogger {
         });
     }
 
+    @Override
+    public <T extends Number> void unregisterGauge(String name, Gauge<T> gauge) {
+        // no-op
+    }
+
     private String getStatName(String statName) {
         return (name + "_" + statName).toLowerCase();
     }
@@ -69,4 +74,8 @@ public class TwitterStatsLoggerImpl implements StatsLogger {
         return new TwitterStatsLoggerImpl(scopeName);
     }
 
+    @Override
+    public void removeScope(String name, StatsLogger statsLogger) {
+        // no-op
+    }
 }

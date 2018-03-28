@@ -23,7 +23,7 @@ package org.apache.bookkeeper.auth;
 import java.util.Objects;
 
 /**
- * A Principal is the user bound to the connection
+ * A Principal is the user bound to the connection.
  */
 public class BookKeeperPrincipal {
 

@@ -28,7 +28,7 @@ public interface Version {
     /**
      * Initial version.
      */
-    public static final Version NEW = new Version() {
+    Version NEW = new Version() {
         @Override
         public Occurred compare(Version v) {
             if (null == v) {
@@ -44,19 +44,19 @@ public interface Version {
     /**
      * Match any version.
      */
-    public static final Version ANY = new Version() {
-        @Override
-        public Occurred compare(Version v) {
-            if (null == v) {
-                throw new NullPointerException("Version is not allowed to be null.");
-            }
-            return Occurred.CONCURRENTLY;
+    Version ANY = v -> {
+        if (null == v) {
+            throw new NullPointerException("Version is not allowed to be null.");
         }
+        return Occurred.CONCURRENTLY;
     };
 
-    public static enum Occurred {
+    /**
+     * Define the sequence of versions.
+     */
+    enum Occurred {
         BEFORE, AFTER, CONCURRENTLY
     }
 
-    public Occurred compare(Version v);
+    Occurred compare(Version v);
 }

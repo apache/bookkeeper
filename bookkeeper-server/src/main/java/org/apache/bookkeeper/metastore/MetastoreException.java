@@ -17,6 +17,9 @@
  */
 package org.apache.bookkeeper.metastore;
 
+/**
+ * A marker for Metastore exceptions.
+ */
 @SuppressWarnings("serial")
 public class MetastoreException extends Exception {
 

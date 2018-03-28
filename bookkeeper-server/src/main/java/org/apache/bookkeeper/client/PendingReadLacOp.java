@@ -17,27 +17,25 @@
  */
 package org.apache.bookkeeper.client;
 
+import io.netty.buffer.ByteBuf;
+
 import org.apache.bookkeeper.client.BKException.BKDigestMatchException;
-import org.apache.bookkeeper.client.DigestManager.RecoveryData;
-import org.apache.bookkeeper.net.BookieSocketAddress;
-import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
-import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadLacCallback;
+import org.apache.bookkeeper.proto.checksum.DigestManager.RecoveryData;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.jboss.netty.buffer.ChannelBuffer;
 
 /**
  * This represents a pending ReadLac operation.
  *
- * LAC is stored in two places on bookies.
+ * <p>LAC is stored in two places on bookies.
  * 1. WriteLac operation sends Explicit LAC and is stored in memory on each bookie.
  * 2. Each AddEntry operation piggy-backs LAC which is stored on bookie's disk.
  *
- * This operation returns both of those entries and we pick the latest LAC out of
+ * <p>This operation returns both of those entries and we pick the latest LAC out of
  * available answers.
  *
- * This is an optional protocol operations to facilitate tailing readers
+ * <p>This is an optional protocol operations to facilitate tailing readers
  * to be up to date with the writer. This is best effort to get latest LAC
  * from bookies, and doesn't affect the correctness of the protocol.
  */
@@ -56,7 +54,7 @@ class PendingReadLacOp implements ReadLacCallback {
      * Wrapper to get Lac from the request
      */
     interface LacCallback {
-        public void getLacComplete(int rc, long lac);
+        void getLacComplete(int rc, long lac);
     }
 
     PendingReadLacOp(LedgerHandle lh, LacCallback cb) {
@@ -68,14 +66,19 @@ class PendingReadLacOp implements ReadLacCallback {
 
     public void initiate() {
         for (int i = 0; i < lh.metadata.currentEnsemble.size(); i++) {
-            lh.bk.bookieClient.readLac(lh.metadata.currentEnsemble.get(i),
+            lh.bk.getBookieClient().readLac(lh.metadata.currentEnsemble.get(i),
                     lh.ledgerId, this, i);
         }
     }
 
     @Override
-    public void readLacComplete(int rc, long ledgerId, final ChannelBuffer lacBuffer, final ChannelBuffer lastEntryBuffer, Object ctx) {
+    public void readLacComplete(int rc, long ledgerId, final ByteBuf lacBuffer, final ByteBuf lastEntryBuffer,
+            Object ctx) {
         int bookieIndex = (Integer) ctx;
+
+        // add the response to coverage set
+        coverageSet.addBookie(bookieIndex, rc);
+
         numResponsesPending--;
         boolean heardValidResponse = false;
 
@@ -91,16 +94,23 @@ class PendingReadLacOp implements ReadLacCallback {
                 // This routine picks both of them and compares to return
                 // the latest Lac.
 
-                // Extract lac from FileInfo on the ledger.
-                long lac = lh.macManager.verifyDigestAndReturnLac(lacBuffer);
-                if (lac > maxLac) {
-                    maxLac = lac;
-                }
+                // lacBuffer and lastEntryBuffer are optional in the protocol.
+                // So check if they exist before processing them.
 
+                // Extract lac from FileInfo on the ledger.
+                if (lacBuffer != null && lacBuffer.readableBytes() > 0) {
+                    long lac = lh.macManager.verifyDigestAndReturnLac(lacBuffer);
+                    if (lac > maxLac) {
+                        maxLac = lac;
+                    }
+                }
                 // Extract lac from last entry on the disk
-                RecoveryData recoveryData = lh.macManager.verifyDigestAndReturnLastConfirmed(lastEntryBuffer);
-                if (recoveryData.lastAddConfirmed > maxLac) {
-                    maxLac = recoveryData.lastAddConfirmed;
+                if (lastEntryBuffer != null && lastEntryBuffer.readableBytes() > 0) {
+                    RecoveryData recoveryData = lh.macManager.verifyDigestAndReturnLastConfirmed(lastEntryBuffer);
+                    long recoveredLac = recoveryData.getLastAddConfirmed();
+                    if (recoveredLac > maxLac) {
+                        maxLac = recoveredLac;
+                    }
                 }
                 heardValidResponse = true;
             } catch (BKDigestMatchException e) {
@@ -128,11 +138,12 @@ class PendingReadLacOp implements ReadLacCallback {
 
         // We don't consider a success until we have coverage set responses.
         if (heardValidResponse
-                && coverageSet.addBookieAndCheckCovered(bookieIndex)
+                && coverageSet.checkCovered()
                 && !completed) {
             completed = true;
-            LOG.debug("Read LAC complete with enough validResponse for ledger: {} LAC: {}",
-                    ledgerId, maxLac);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Read LAC complete with enough validResponse for ledger: {} LAC: {}", ledgerId, maxLac);
+            }
             cb.getLacComplete(BKException.Code.OK, maxLac);
             return;
         }

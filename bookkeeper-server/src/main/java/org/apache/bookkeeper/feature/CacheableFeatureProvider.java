@@ -1,5 +1,3 @@
-package org.apache.bookkeeper.feature;
-
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -20,14 +18,14 @@ package org.apache.bookkeeper.feature;
  * under the License.
  *
  */
-
-import org.apache.commons.lang.StringUtils;
+package org.apache.bookkeeper.feature;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import org.apache.commons.lang.StringUtils;
 
 /**
- * Cacheable Feature Provider
+ * Cacheable Feature Provider.
  */
 public abstract class CacheableFeatureProvider<T extends Feature> implements FeatureProvider {
 

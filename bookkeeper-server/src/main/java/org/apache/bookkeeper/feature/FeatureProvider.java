@@ -1,5 +1,3 @@
-package org.apache.bookkeeper.feature;
-
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -20,6 +18,7 @@ package org.apache.bookkeeper.feature;
  * under the License.
  *
  */
+package org.apache.bookkeeper.feature;
 
 /**
  * Provider to provide features.

@@ -1,5 +1,3 @@
-package org.apache.bookkeeper.feature;
-
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -20,13 +18,14 @@ package org.apache.bookkeeper.feature;
  * under the License.
  *
  */
+package org.apache.bookkeeper.feature;
 
 /**
  * A provider will provide settable features.
  */
 public class SettableFeatureProvider extends CacheableFeatureProvider<SettableFeature> {
 
-    public final static FeatureProvider DISABLE_ALL = new SettableFeatureProvider("", 0);
+    public static final FeatureProvider DISABLE_ALL = new SettableFeatureProvider("", 0);
 
     protected final int availability;
 

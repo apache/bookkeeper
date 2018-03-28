@@ -19,7 +19,7 @@
 package org.apache.bookkeeper.replication;
 
 /**
- * Exceptions for use within the replication service
+ * Exceptions for use within the replication service.
  */
 public abstract class ReplicationException extends Exception {
     protected ReplicationException(String message, Throwable cause) {
@@ -31,7 +31,7 @@ public abstract class ReplicationException extends Exception {
     }
 
     /**
-     * The replication service has become unavailable
+     * The replication service has become unavailable.
      */
     public static class UnavailableException extends ReplicationException {
         private static final long serialVersionUID = 31872209L;
@@ -62,9 +62,9 @@ public abstract class ReplicationException extends Exception {
     }
 
     /**
-     * Exception while auditing bookie-ledgers
+     * Exception while auditing bookie-ledgers.
     */
-    static class BKAuditException extends ReplicationException {
+    public static class BKAuditException extends ReplicationException {
         private static final long serialVersionUID = 95551905L;
 
         BKAuditException(String message, Throwable cause) {

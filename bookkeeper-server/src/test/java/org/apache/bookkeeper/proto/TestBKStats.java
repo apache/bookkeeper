@@ -25,14 +25,16 @@ import static org.junit.Assert.assertEquals;
 import org.apache.bookkeeper.proto.BKStats.OpStats;
 import org.junit.Test;
 
-/** Tests that Statistics updation in Bookie Server */
+/**
+ * Tests that Statistics updation in Bookie Server.
+ */
 public class TestBKStats {
 
     /**
      * Tests that updatLatency should not fail with
      * ArrayIndexOutOfBoundException when latency time coming as negative.
      */
-    @Test(timeout=60000)
+    @Test
     public void testUpdateLatencyShouldNotFailWithAIOBEWithNegativeLatency()
             throws Exception {
         OpStats opStat = new OpStats();

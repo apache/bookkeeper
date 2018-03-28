@@ -22,7 +22,11 @@ package org.apache.bookkeeper.bookie;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 
 import java.io.File;
 import java.io.IOException;
@@ -30,8 +34,8 @@ import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Random;
 
 import org.apache.bookkeeper.client.ClientUtil;
@@ -39,16 +43,17 @@ import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.util.IOUtils;
-import org.apache.bookkeeper.util.ZeroBuffer;
 import org.apache.commons.io.FileUtils;
+import org.junit.After;
+import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.junit.Test;
-import org.junit.After;
-import static org.junit.Assert.*;
 
+/**
+ * Test the bookie journal.
+ */
 public class BookieJournalTest {
-    private final static Logger LOG = LoggerFactory.getLogger(BookieJournalTest.class);
+    private static final Logger LOG = LoggerFactory.getLogger(BookieJournalTest.class);
 
     final Random r = new Random(System.currentTimeMillis());
 
@@ -103,26 +108,24 @@ public class BookieJournalTest {
     }
 
     /**
-     * Generate fence entry
+     * Generate fence entry.
      */
-    private ByteBuffer generateFenceEntry(long ledgerId) {
-        ByteBuffer bb = ByteBuffer.allocate(8 + 8);
-        bb.putLong(ledgerId);
-        bb.putLong(Bookie.METAENTRY_ID_FENCE_KEY);
-        bb.flip();
+    private ByteBuf generateFenceEntry(long ledgerId) {
+        ByteBuf bb = Unpooled.buffer();
+        bb.writeLong(ledgerId);
+        bb.writeLong(Bookie.METAENTRY_ID_FENCE_KEY);
         return bb;
     }
 
     /**
-     * Generate meta entry with given master key
+     * Generate meta entry with given master key.
      */
-    private ByteBuffer generateMetaEntry(long ledgerId, byte[] masterKey) {
-        ByteBuffer bb = ByteBuffer.allocate(8 + 8 + 4 + masterKey.length);
-        bb.putLong(ledgerId);
-        bb.putLong(Bookie.METAENTRY_ID_LEDGER_KEY);
-        bb.putInt(masterKey.length);
-        bb.put(masterKey);
-        bb.flip();
+    private ByteBuf generateMetaEntry(long ledgerId, byte[] masterKey) {
+        ByteBuf bb = Unpooled.buffer();
+        bb.writeLong(ledgerId);
+        bb.writeLong(Bookie.METAENTRY_ID_LEDGER_KEY);
+        bb.writeInt(masterKey.length);
+        bb.writeBytes(masterKey);
         return bb;
     }
 
@@ -133,7 +136,7 @@ public class BookieJournalTest {
         FileChannel fc = new RandomAccessFile(fn, "rw").getChannel();
 
         ByteBuffer zeros = ByteBuffer.allocate(512);
-        fc.write(zeros, 4*1024*1024);
+        fc.write(zeros, 4 * 1024 * 1024);
         fc.position(0);
 
         for (int i = 1; i <= 10; i++) {
@@ -148,26 +151,27 @@ public class BookieJournalTest {
         FileChannel fc = new RandomAccessFile(fn, "rw").getChannel();
 
         ByteBuffer zeros = ByteBuffer.allocate(512);
-        fc.write(zeros, 4*1024*1024);
+        fc.write(zeros, 4 * 1024 * 1024);
         fc.position(0);
 
         byte[] data = "JournalTestData".getBytes();
         long lastConfirmed = LedgerHandle.INVALID_ENTRY_ID;
         for (int i = 1; i <= numEntries; i++) {
-            ByteBuffer packet = ClientUtil.generatePacket(1, i, lastConfirmed, i*data.length, data).toByteBuffer();
+            ByteBuf packet = ClientUtil.generatePacket(1, i, lastConfirmed, i * data.length, data);
             lastConfirmed = i;
             ByteBuffer lenBuff = ByteBuffer.allocate(4);
-            lenBuff.putInt(packet.remaining());
+            lenBuff.putInt(packet.readableBytes());
             lenBuff.flip();
 
             fc.write(lenBuff);
-            fc.write(packet);
+            fc.write(packet.nioBuffer());
+            packet.release();
         }
     }
 
     private static void moveToPosition(JournalChannel jc, long pos) throws IOException {
         jc.fc.position(pos);
-        jc.bc.position = pos;
+        jc.bc.position.set(pos);
         jc.bc.writeBufferStartPosition.set(pos);
     }
 
@@ -194,19 +198,20 @@ public class BookieJournalTest {
         BufferedChannel bc = jc.getBufferedChannel();
 
         byte[] data = new byte[1024];
-        Arrays.fill(data, (byte)'X');
+        Arrays.fill(data, (byte) 'X');
         long lastConfirmed = LedgerHandle.INVALID_ENTRY_ID;
         for (int i = 1; i <= numEntries; i++) {
-            ByteBuffer packet = ClientUtil.generatePacket(1, i, lastConfirmed, i*data.length, data).toByteBuffer();
+            ByteBuf packet = ClientUtil.generatePacket(1, i, lastConfirmed, i * data.length, data);
             lastConfirmed = i;
             ByteBuffer lenBuff = ByteBuffer.allocate(4);
-            lenBuff.putInt(packet.remaining());
+            lenBuff.putInt(packet.readableBytes());
             lenBuff.flip();
 
-            bc.write(lenBuff);
+            bc.write(Unpooled.wrappedBuffer(lenBuff));
             bc.write(packet);
+            packet.release();
         }
-        bc.flush(true);
+        bc.flushAndForceWrite(false);
 
         updateJournalVersion(jc, JournalChannel.V2);
 
@@ -222,24 +227,25 @@ public class BookieJournalTest {
         BufferedChannel bc = jc.getBufferedChannel();
 
         byte[] data = new byte[1024];
-        Arrays.fill(data, (byte)'X');
+        Arrays.fill(data, (byte) 'X');
         long lastConfirmed = LedgerHandle.INVALID_ENTRY_ID;
         for (int i = 0; i <= numEntries; i++) {
-            ByteBuffer packet;
+            ByteBuf packet;
             if (i == 0) {
                 packet = generateMetaEntry(1, masterKey);
             } else {
-                packet = ClientUtil.generatePacket(1, i, lastConfirmed, i*data.length, data).toByteBuffer();
+                packet = ClientUtil.generatePacket(1, i, lastConfirmed, i * data.length, data);
             }
             lastConfirmed = i;
             ByteBuffer lenBuff = ByteBuffer.allocate(4);
-            lenBuff.putInt(packet.remaining());
+            lenBuff.putInt(packet.readableBytes());
             lenBuff.flip();
 
-            bc.write(lenBuff);
+            bc.write(Unpooled.wrappedBuffer(lenBuff));
             bc.write(packet);
+            packet.release();
         }
-        bc.flush(true);
+        bc.flushAndForceWrite(false);
 
         updateJournalVersion(jc, JournalChannel.V3);
 
@@ -255,30 +261,30 @@ public class BookieJournalTest {
         BufferedChannel bc = jc.getBufferedChannel();
 
         byte[] data = new byte[1024];
-        Arrays.fill(data, (byte)'X');
+        Arrays.fill(data, (byte) 'X');
         long lastConfirmed = LedgerHandle.INVALID_ENTRY_ID;
         for (int i = 0; i <= numEntries; i++) {
-            ByteBuffer packet;
+            ByteBuf packet;
             if (i == 0) {
                 packet = generateMetaEntry(1, masterKey);
             } else {
-                packet = ClientUtil.generatePacket(1, i, lastConfirmed, i * data.length, data).toByteBuffer();
+                packet = ClientUtil.generatePacket(1, i, lastConfirmed, i * data.length, data);
             }
             lastConfirmed = i;
             ByteBuffer lenBuff = ByteBuffer.allocate(4);
-            lenBuff.putInt(packet.remaining());
+            lenBuff.putInt(packet.readableBytes());
             lenBuff.flip();
-            bc.write(lenBuff);
+            bc.write(Unpooled.wrappedBuffer(lenBuff));
             bc.write(packet);
+            packet.release();
         }
         // write fence key
-        ByteBuffer packet = generateFenceEntry(1);
-        ByteBuffer lenBuf = ByteBuffer.allocate(4);
-        lenBuf.putInt(packet.remaining());
-        lenBuf.flip();
+        ByteBuf packet = generateFenceEntry(1);
+        ByteBuf lenBuf = Unpooled.buffer();
+        lenBuf.writeInt(packet.readableBytes());
         bc.write(lenBuf);
         bc.write(packet);
-        bc.flush(true);
+        bc.flushAndForceWrite(false);
         updateJournalVersion(jc, JournalChannel.V4);
         return jc;
     }
@@ -289,38 +295,36 @@ public class BookieJournalTest {
 
         BufferedChannel bc = jc.getBufferedChannel();
 
-        ByteBuffer paddingBuff = ByteBuffer.allocateDirect(2 * JournalChannel.SECTOR_SIZE);
-        ZeroBuffer.put(paddingBuff);
+        ByteBuf paddingBuff = Unpooled.buffer();
+        paddingBuff.writeZero(2 * JournalChannel.SECTOR_SIZE);
         byte[] data = new byte[4 * 1024 * 1024];
-        Arrays.fill(data, (byte)'X');
+        Arrays.fill(data, (byte) 'X');
         long lastConfirmed = LedgerHandle.INVALID_ENTRY_ID;
         long length = 0;
         for (int i = 0; i <= numEntries; i++) {
-            ByteBuffer packet;
+            ByteBuf packet;
             if (i == 0) {
                 packet = generateMetaEntry(1, masterKey);
             } else {
-                packet = ClientUtil.generatePacket(1, i, lastConfirmed,
-                        length, data, 0, i).toByteBuffer();
+                packet = ClientUtil.generatePacket(1, i, lastConfirmed, length, data, 0, i);
             }
             lastConfirmed = i;
             length += i;
-            ByteBuffer lenBuff = ByteBuffer.allocate(4);
-            lenBuff.putInt(packet.remaining());
-            lenBuff.flip();
+            ByteBuf lenBuff = Unpooled.buffer();
+            lenBuff.writeInt(packet.readableBytes());
             bc.write(lenBuff);
             bc.write(packet);
+            packet.release();
             Journal.writePaddingBytes(jc, paddingBuff, JournalChannel.SECTOR_SIZE);
         }
         // write fence key
-        ByteBuffer packet = generateFenceEntry(1);
-        ByteBuffer lenBuf = ByteBuffer.allocate(4);
-        lenBuf.putInt(packet.remaining());
-        lenBuf.flip();
+        ByteBuf packet = generateFenceEntry(1);
+        ByteBuf lenBuf = Unpooled.buffer();
+        lenBuf.writeInt(packet.readableBytes());
         bc.write(lenBuf);
         bc.write(packet);
         Journal.writePaddingBytes(jc, paddingBuff, JournalChannel.SECTOR_SIZE);
-        bc.flush(true);
+        bc.flushAndForceWrite(false);
         updateJournalVersion(jc, JournalChannel.V5);
         return jc;
     }
@@ -330,7 +334,7 @@ public class BookieJournalTest {
      * word at the start. This is for versions of bookkeeper before
      * the magic word was introduced
      */
-    @Test(timeout=60000)
+    @Test
     public void testPreV2Journal() throws Exception {
         File journalDir = createTempDir("bookie", "journal");
         Bookie.checkDirectoryStructure(Bookie.getCurrentDirectory(journalDir));
@@ -341,10 +345,10 @@ public class BookieJournalTest {
         writePreV2Journal(Bookie.getCurrentDirectory(journalDir), 100);
         writeIndexFileForLedger(Bookie.getCurrentDirectory(ledgerDir), 1, "testPasswd".getBytes());
 
-        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration()
-            .setZkServers(null)
-            .setJournalDirName(journalDir.getPath())
-            .setLedgerDirNames(new String[] { ledgerDir.getPath() });
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setJournalDirName(journalDir.getPath())
+            .setLedgerDirNames(new String[] { ledgerDir.getPath() })
+            .setZkServers(null);
 
         Bookie b = new Bookie(conf);
         b.readJournal();
@@ -370,10 +374,10 @@ public class BookieJournalTest {
 
         writeV4Journal(Bookie.getCurrentDirectory(journalDir), 100, "testPasswd".getBytes());
 
-        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration()
-            .setZkServers(null)
-            .setJournalDirName(journalDir.getPath())
-            .setLedgerDirNames(new String[] { ledgerDir.getPath() });
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setJournalDirName(journalDir.getPath())
+            .setLedgerDirNames(new String[] { ledgerDir.getPath() })
+            .setZkServers(null);
 
         Bookie b = new Bookie(conf);
         b.readJournal();
@@ -397,14 +401,14 @@ public class BookieJournalTest {
 
         File ledgerDir = createTempDir("bookie", "ledger");
         Bookie.checkDirectoryStructure(Bookie.getCurrentDirectory(ledgerDir));
-        
+
         writeV5Journal(Bookie.getCurrentDirectory(journalDir), 2 * JournalChannel.SECTOR_SIZE,
                 "testV5Journal".getBytes());
 
-        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration()
-                .setZkServers(null)
-                .setJournalDirName(journalDir.getPath())
-                .setLedgerDirNames(new String[] { ledgerDir.getPath() });
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setJournalDirName(journalDir.getPath())
+            .setLedgerDirNames(new String[] { ledgerDir.getPath() })
+            .setZkServers(null);
 
         Bookie b = new Bookie(conf);
         b.readJournal();
@@ -428,7 +432,7 @@ public class BookieJournalTest {
      * start the bookie. An admin should look to see what has
      * happened in this case
      */
-    @Test(timeout=60000)
+    @Test
     public void testAllJunkJournal() throws Exception {
         File journalDir = createTempDir("bookie", "journal");
         Bookie.checkDirectoryStructure(Bookie.getCurrentDirectory(journalDir));
@@ -438,10 +442,11 @@ public class BookieJournalTest {
 
         writeJunkJournal(Bookie.getCurrentDirectory(journalDir));
 
-        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration()
-            .setZkServers(null)
-            .setJournalDirName(journalDir.getPath())
-            .setLedgerDirNames(new String[] { ledgerDir.getPath() });
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setJournalDirName(journalDir.getPath())
+            .setLedgerDirNames(new String[] { ledgerDir.getPath() })
+            .setZkServers(null);
+
         Bookie b = null;
         try {
             b = new Bookie(conf);
@@ -462,7 +467,7 @@ public class BookieJournalTest {
      * the magic word existed, if the bookie started but nothing was
      * ever written.
      */
-    @Test(timeout=60000)
+    @Test
     public void testEmptyJournal() throws Exception {
         File journalDir = createTempDir("bookie", "journal");
         Bookie.checkDirectoryStructure(Bookie.getCurrentDirectory(journalDir));
@@ -472,10 +477,10 @@ public class BookieJournalTest {
 
         writePreV2Journal(Bookie.getCurrentDirectory(journalDir), 0);
 
-        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration()
-            .setZkServers(null)
-            .setJournalDirName(journalDir.getPath())
-            .setLedgerDirNames(new String[] { ledgerDir.getPath() });
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setJournalDirName(journalDir.getPath())
+            .setLedgerDirNames(new String[] { ledgerDir.getPath() })
+            .setZkServers(null);
 
         Bookie b = new Bookie(conf);
     }
@@ -484,7 +489,7 @@ public class BookieJournalTest {
      * Test that a journal can load if only the magic word and
      * version are there.
      */
-    @Test(timeout=60000)
+    @Test
     public void testHeaderOnlyJournal() throws Exception {
         File journalDir = createTempDir("bookie", "journal");
         Bookie.checkDirectoryStructure(Bookie.getCurrentDirectory(journalDir));
@@ -494,10 +499,10 @@ public class BookieJournalTest {
 
         writeV2Journal(Bookie.getCurrentDirectory(journalDir), 0);
 
-        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration()
-            .setZkServers(null)
-            .setJournalDirName(journalDir.getPath())
-            .setLedgerDirNames(new String[] { ledgerDir.getPath() });
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setJournalDirName(journalDir.getPath())
+            .setLedgerDirNames(new String[] { ledgerDir.getPath() })
+            .setZkServers(null);
 
         Bookie b = new Bookie(conf);
     }
@@ -506,7 +511,7 @@ public class BookieJournalTest {
      * Test that if a journal has junk at the end, it does not load.
      * If the journal is corrupt like this, admin intervention is needed
      */
-    @Test(timeout=60000)
+    @Test
     public void testJunkEndedJournal() throws Exception {
         File journalDir = createTempDir("bookie", "journal");
         Bookie.checkDirectoryStructure(Bookie.getCurrentDirectory(journalDir));
@@ -515,15 +520,15 @@ public class BookieJournalTest {
         Bookie.checkDirectoryStructure(Bookie.getCurrentDirectory(ledgerDir));
 
         JournalChannel jc = writeV2Journal(Bookie.getCurrentDirectory(journalDir), 0);
-        jc.getBufferedChannel().write(ByteBuffer.wrap("JunkJunkJunk".getBytes()));
-        jc.getBufferedChannel().flush(true);
+        jc.getBufferedChannel().write(Unpooled.wrappedBuffer("JunkJunkJunk".getBytes()));
+        jc.getBufferedChannel().flushAndForceWrite(false);
 
         writeIndexFileForLedger(ledgerDir, 1, "testPasswd".getBytes());
 
-        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration()
-            .setZkServers(null)
-            .setJournalDirName(journalDir.getPath())
-            .setLedgerDirNames(new String[] { ledgerDir.getPath() });
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setJournalDirName(journalDir.getPath())
+            .setLedgerDirNames(new String[] { ledgerDir.getPath() })
+            .setZkServers(null);
 
         Bookie b = null;
         try {
@@ -537,11 +542,11 @@ public class BookieJournalTest {
      * Test that if the bookie crashes while writing the length
      * of an entry, that we can recover.
      *
-     * This is currently not the case, which is bad as recovery
+     * <p>This is currently not the case, which is bad as recovery
      * should be fine here. The bookie has crashed while writing
      * but so the client has not be notified of success.
      */
-    @Test(timeout=60000)
+    @Test
     public void testTruncatedInLenJournal() throws Exception {
         File journalDir = createTempDir("bookie", "journal");
         Bookie.checkDirectoryStructure(Bookie.getCurrentDirectory(journalDir));
@@ -560,10 +565,10 @@ public class BookieJournalTest {
         writeIndexFileForLedger(Bookie.getCurrentDirectory(ledgerDir),
                                 1, "testPasswd".getBytes());
 
-        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration()
-            .setZkServers(null)
-            .setJournalDirName(journalDir.getPath())
-            .setLedgerDirNames(new String[] { ledgerDir.getPath() });
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setJournalDirName(journalDir.getPath())
+            .setLedgerDirNames(new String[] { ledgerDir.getPath() })
+            .setZkServers(null);
 
         Bookie b = new Bookie(conf);
         b.readJournal();
@@ -585,7 +590,7 @@ public class BookieJournalTest {
      * This is ok, as the client will disregard the entry after looking
      * at its checksum.
      */
-    @Test(timeout=60000)
+    @Test
     public void testTruncatedInEntryJournal() throws Exception {
         File journalDir = createTempDir("bookie", "journal");
         Bookie.checkDirectoryStructure(Bookie.getCurrentDirectory(journalDir));
@@ -604,26 +609,26 @@ public class BookieJournalTest {
         writeIndexFileForLedger(Bookie.getCurrentDirectory(ledgerDir),
                                 1, "testPasswd".getBytes());
 
-        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration()
-            .setZkServers(null)
-            .setJournalDirName(journalDir.getPath())
-            .setLedgerDirNames(new String[] { ledgerDir.getPath() });
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setJournalDirName(journalDir.getPath())
+            .setLedgerDirNames(new String[] { ledgerDir.getPath() })
+            .setZkServers(null);
 
         Bookie b = new Bookie(conf);
         b.readJournal();
         b.readEntry(1, 99);
 
         // still able to read last entry, but it's junk
-        ByteBuffer buf = b.readEntry(1, 100);
-        assertEquals("Ledger Id is wrong", buf.getLong(), 1);
-        assertEquals("Entry Id is wrong", buf.getLong(), 100);
-        assertEquals("Last confirmed is wrong", buf.getLong(), 99);
-        assertEquals("Length is wrong", buf.getLong(), 100*1024);
-        buf.getLong(); // skip checksum
+        ByteBuf buf = b.readEntry(1, 100);
+        assertEquals("Ledger Id is wrong", buf.readLong(), 1);
+        assertEquals("Entry Id is wrong", buf.readLong(), 100);
+        assertEquals("Last confirmed is wrong", buf.readLong(), 99);
+        assertEquals("Length is wrong", buf.readLong(), 100 * 1024);
+        buf.readLong(); // skip checksum
         boolean allX = true;
         for (int i = 0; i < 1024; i++) {
-            byte x = buf.get();
-            allX = allX && x == (byte)'X';
+            byte x = buf.readByte();
+            allX = allX && x == (byte) 'X';
         }
         assertFalse("Some of buffer should have been zeroed", allX);
 
@@ -636,17 +641,17 @@ public class BookieJournalTest {
     }
 
     /**
-     * Test partial index (truncate master key) with pre-v3 journals
+     * Test partial index (truncate master key) with pre-v3 journals.
      */
-    @Test(timeout=60000)
+    @Test
     public void testPartialFileInfoPreV3Journal1() throws Exception {
         testPartialFileInfoPreV3Journal(true);
     }
 
     /**
-     * Test partial index with pre-v3 journals
+     * Test partial index with pre-v3 journals.
      */
-    @Test(timeout=60000)
+    @Test
     public void testPartialFileInfoPreV3Journal2() throws Exception {
         testPartialFileInfoPreV3Journal(false);
     }
@@ -666,10 +671,10 @@ public class BookieJournalTest {
         writePartialIndexFileForLedger(Bookie.getCurrentDirectory(ledgerDir),
                                        1, "testPasswd".getBytes(), truncateMasterKey);
 
-        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration()
-            .setZkServers(null)
-            .setJournalDirName(journalDir.getPath())
-            .setLedgerDirNames(new String[] { ledgerDir.getPath() });
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setJournalDirName(journalDir.getPath())
+            .setLedgerDirNames(new String[] { ledgerDir.getPath() })
+            .setZkServers(null);
 
         if (truncateMasterKey) {
             try {
@@ -692,17 +697,17 @@ public class BookieJournalTest {
     }
 
     /**
-     * Test partial index (truncate master key) with post-v3 journals
+     * Test partial index (truncate master key) with post-v3 journals.
      */
-    @Test(timeout=60000)
+    @Test
     public void testPartialFileInfoPostV3Journal1() throws Exception {
         testPartialFileInfoPostV3Journal(true);
     }
 
     /**
-     * Test partial index with post-v3 journals
+     * Test partial index with post-v3 journals.
      */
-    @Test(timeout=60000)
+    @Test
     public void testPartialFileInfoPostV3Journal2() throws Exception {
         testPartialFileInfoPostV3Journal(false);
     }
@@ -724,10 +729,10 @@ public class BookieJournalTest {
         writePartialIndexFileForLedger(Bookie.getCurrentDirectory(ledgerDir), 1, masterKey,
                                        truncateMasterKey);
 
-        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration()
-            .setZkServers(null)
-            .setJournalDirName(journalDir.getPath())
-            .setLedgerDirNames(new String[] { ledgerDir.getPath() });
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setJournalDirName(journalDir.getPath())
+            .setLedgerDirNames(new String[] { ledgerDir.getPath() })
+            .setZkServers(null);
 
         Bookie b = new Bookie(conf);
         b.readJournal();

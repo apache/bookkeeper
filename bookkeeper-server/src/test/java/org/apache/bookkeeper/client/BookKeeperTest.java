@@ -1,73 +1,74 @@
+/*
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ *
+ */
 package org.apache.bookkeeper.client;
 
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
+import io.netty.util.IllegalReferenceCountException;
+
+import java.io.IOException;
+import java.util.Collections;
 import java.util.Enumeration;
-
-/*
-*
-* Licensed to the Apache Software Foundation (ASF) under one
-* or more contributor license agreements.  See the NOTICE file
-* distributed with this work for additional information
-* regarding copyright ownership.  The ASF licenses this file
-* to you under the Apache License, Version 2.0 (the
-* "License"); you may not use this file except in compliance
-* with the License.  You may obtain a copy of the License at
-*
-*   http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing,
-* software distributed under the License is distributed on an
-* "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-* KIND, either express or implied.  See the License for the
-* specific language governing permissions and limitations
-* under the License.
-*
-*/
-
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
-import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.AsyncCallback.ReadCallback;
 import org.apache.bookkeeper.client.BKException.BKBookieHandleNotAvailableException;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
-import org.apache.bookkeeper.test.BaseTestCase;
+import org.apache.bookkeeper.conf.ClientConfiguration;
+import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
+import org.apache.zookeeper.KeeperException.ConnectionLossException;
 import org.apache.zookeeper.ZooKeeper;
-import org.apache.zookeeper.Watcher;
-import org.apache.zookeeper.WatchedEvent;
-import org.apache.zookeeper.KeeperException;
-
-import org.junit.Assert;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.junit.Assert.*;
-
 /**
- * Tests of the main BookKeeper client
+ * Tests of the main BookKeeper client.
  */
-public class BookKeeperTest extends BaseTestCase {
-    private final static Logger LOG = LoggerFactory.getLogger(BookKeeperTest.class);
+public class BookKeeperTest extends BookKeeperClusterTestCase {
+    private static final Logger LOG = LoggerFactory.getLogger(BookKeeperTest.class);
 
-    DigestType digestType;
+    private final DigestType digestType;
 
-    public BookKeeperTest(DigestType digestType) {
+    public BookKeeperTest() {
         super(4);
-
-        this.digestType = digestType;
+        this.digestType = DigestType.CRC32;
     }
 
     @Test
     public void testConstructionZkDelay() throws Exception {
-        ClientConfiguration conf = new ClientConfiguration()
-            .setZkServers(zkUtil.getZooKeeperConnectString())
+        ClientConfiguration conf = new ClientConfiguration();
+        conf.setZkServers(zkUtil.getZooKeeperConnectString())
             .setZkTimeout(20000);
 
         CountDownLatch l = new CountDownLatch(1);
-        zkUtil.sleepServer(5, l);
+        zkUtil.sleepServer(200, TimeUnit.MILLISECONDS, l);
         l.await();
 
         BookKeeper bkc = new BookKeeper(conf);
@@ -77,37 +78,46 @@ public class BookKeeperTest extends BaseTestCase {
 
     @Test
     public void testConstructionNotConnectedExplicitZk() throws Exception {
-        ClientConfiguration conf = new ClientConfiguration()
-            .setZkServers(zkUtil.getZooKeeperConnectString())
+        ClientConfiguration conf = new ClientConfiguration();
+        conf.setZkServers(zkUtil.getZooKeeperConnectString())
             .setZkTimeout(20000);
 
         CountDownLatch l = new CountDownLatch(1);
-        zkUtil.sleepServer(5, l);
+        zkUtil.sleepServer(200, TimeUnit.MILLISECONDS, l);
         l.await();
 
-        ZooKeeper zk = new ZooKeeper(zkUtil.getZooKeeperConnectString(), 10000,
-                            new Watcher() {
-                                @Override
-                                public void process(WatchedEvent event) {
-                                }
-                            });
+        ZooKeeper zk = new ZooKeeper(
+            zkUtil.getZooKeeperConnectString(),
+            50,
+            event -> {});
         assertFalse("ZK shouldn't have connected yet", zk.getState().isConnected());
         try {
             BookKeeper bkc = new BookKeeper(conf, zk);
             fail("Shouldn't be able to construct with unconnected zk");
-        } catch (KeeperException.ConnectionLossException cle) {
+        } catch (IOException cle) {
             // correct behaviour
+            assertTrue(cle.getCause() instanceof ConnectionLossException);
         }
     }
 
     /**
      * Test that bookkeeper is not able to open ledgers if
-     * it provides the wrong password or wrong digest
+     * it provides the wrong password or wrong digest.
      */
-    @Test(timeout=60000)
-    public void testBookkeeperPassword() throws Exception {
-        ClientConfiguration conf = new ClientConfiguration()
-            .setZkServers(zkUtil.getZooKeeperConnectString());
+    @Test
+    public void testBookkeeperDigestPasswordWithAutoDetection() throws Exception {
+        testBookkeeperDigestPassword(true);
+    }
+
+    @Test
+    public void testBookkeeperDigestPasswordWithoutAutoDetection() throws Exception {
+        testBookkeeperDigestPassword(false);
+    }
+
+    void testBookkeeperDigestPassword(boolean autodetection) throws Exception {
+        ClientConfiguration conf = new ClientConfiguration();
+        conf.setZkServers(zkUtil.getZooKeeperConnectString());
+        conf.setEnableDigestTypeAutodetection(autodetection);
         BookKeeper bkc = new BookKeeper(conf);
 
         DigestType digestCorrect = digestType;
@@ -136,9 +146,14 @@ public class BookKeeperTest extends BaseTestCase {
             // try open with bad digest
             try {
                 bkc.openLedger(id, digestBad, passwdCorrect);
-                fail("Shouldn't be able to open with bad digest");
+                if (!autodetection) {
+                    fail("Shouldn't be able to open with bad digest");
+                }
             } catch (BKException.BKDigestMatchException bke) {
                 // correct behaviour
+                if (autodetection) {
+                    fail("Should not throw digest match exception if `autodetection` is enabled");
+                }
             }
 
             // try open with both bad
@@ -164,7 +179,7 @@ public class BookKeeperTest extends BaseTestCase {
      * a callback error and not an InterruptedException.
      * @throws Exception
      */
-    @Test(timeout=60000)
+    @Test
     public void testAsyncReadWithError() throws Exception {
         LedgerHandle lh = bkc.createLedger(3, 3, DigestType.CRC32, "testPasswd".getBytes());
         bkc.close();
@@ -182,18 +197,18 @@ public class BookKeeperTest extends BaseTestCase {
 
         counter.await();
 
-        Assert.assertTrue(result.get() != 0);
+        assertTrue(result.get() != 0);
     }
 
     /**
      * Test that bookkeeper will close cleanly if close is issued
      * while another operation is in progress.
      */
-    @Test(timeout=60000)
+    @Test
     public void testCloseDuringOp() throws Exception {
-        ClientConfiguration conf = new ClientConfiguration()
-            .setZkServers(zkUtil.getZooKeeperConnectString());
-        for (int i = 0; i < 100; i++) {
+        ClientConfiguration conf = new ClientConfiguration();
+        conf.setZkServers(zkUtil.getZooKeeperConnectString());
+        for (int i = 0; i < 10; i++) {
             final BookKeeper client = new BookKeeper(conf);
             final CountDownLatch l = new CountDownLatch(1);
             final AtomicBoolean success = new AtomicBoolean(false);
@@ -225,10 +240,10 @@ public class BookKeeperTest extends BaseTestCase {
         }
     }
 
-    @Test(timeout=60000)
+    @Test
     public void testIsClosed() throws Exception {
-        ClientConfiguration conf = new ClientConfiguration()
-        .setZkServers(zkUtil.getZooKeeperConnectString());
+        ClientConfiguration conf = new ClientConfiguration();
+        conf.setZkServers(zkUtil.getZooKeeperConnectString());
 
         BookKeeper bkc = new BookKeeper(conf);
         LedgerHandle lh = bkc.createLedger(digestType, "testPasswd".getBytes());
@@ -236,18 +251,19 @@ public class BookKeeperTest extends BaseTestCase {
 
         lh.addEntry("000".getBytes());
         boolean result = bkc.isClosed(lId);
-        Assert.assertTrue("Ledger shouldn't be flagged as closed!",!result);
+        assertTrue("Ledger shouldn't be flagged as closed!", !result);
 
         lh.close();
         result = bkc.isClosed(lId);
-        Assert.assertTrue("Ledger should be flagged as closed!",result);
+        assertTrue("Ledger should be flagged as closed!", result);
 
         bkc.close();
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testReadFailureCallback() throws Exception {
-        ClientConfiguration conf = new ClientConfiguration().setZkServers(zkUtil.getZooKeeperConnectString());
+        ClientConfiguration conf = new ClientConfiguration();
+        conf.setZkServers(zkUtil.getZooKeeperConnectString());
 
         BookKeeper bkc = new BookKeeper(conf);
         LedgerHandle lh = bkc.createLedger(digestType, "testPasswd".getBytes());
@@ -291,146 +307,478 @@ public class BookKeeperTest extends BaseTestCase {
         startBKCluster();
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testAutoCloseableBookKeeper() throws Exception {
-        ClientConfiguration conf = new ClientConfiguration()
-                .setZkServers(zkUtil.getZooKeeperConnectString());
-        BookKeeper _bkc;
-        try (BookKeeper bkc = new BookKeeper(conf);) {
-            _bkc = bkc;
+        ClientConfiguration conf = new ClientConfiguration();
+        conf.setZkServers(zkUtil.getZooKeeperConnectString());
+        BookKeeper bkc2;
+        try (BookKeeper bkc = new BookKeeper(conf)) {
+            bkc2 = bkc;
             long ledgerId;
-            try (LedgerHandle lh = bkc.createLedger(digestType, "testPasswd".getBytes());) {
+            try (LedgerHandle lh = bkc.createLedger(digestType, "testPasswd".getBytes())) {
                 ledgerId = lh.getId();
                 for (int i = 0; i < 100; i++) {
                     lh.addEntry("foobar".getBytes());
                 }
             }
-            Assert.assertTrue("Ledger should be closed!", bkc.isClosed(ledgerId));
+            assertTrue("Ledger should be closed!", bkc.isClosed(ledgerId));
         }
-        Assert.assertTrue("BookKeeper should be closed!", _bkc.closed);
+        assertTrue("BookKeeper should be closed!", bkc2.closed);
     }
 
-    @Test(timeout = 60000)
-    public void testReadHandleWithNoExplicitLAC() throws Exception {
-        ClientConfiguration confWithNoExplicitLAC = new ClientConfiguration()
-                .setZkServers(zkUtil.getZooKeeperConnectString());
-        confWithNoExplicitLAC.setExplictLacInterval(0);
+    @Test
+    public void testReadAfterLastAddConfirmed() throws Exception {
 
-        BookKeeper bkcWithNoExplicitLAC = new BookKeeper(confWithNoExplicitLAC);
+        ClientConfiguration clientConfiguration = new ClientConfiguration();
+        clientConfiguration.setZkServers(zkUtil.getZooKeeperConnectString());
 
-        LedgerHandle wlh = bkcWithNoExplicitLAC.createLedger(digestType, "testPasswd".getBytes());
-        long ledgerId = wlh.getId();
-        int numOfEntries = 5;
-        for (int i = 0; i < numOfEntries; i++) {
-            wlh.addEntry(("foobar" + i).getBytes());
+        try (BookKeeper bkWriter = new BookKeeper(clientConfiguration)) {
+            LedgerHandle writeLh = bkWriter.createLedger(digestType, "testPasswd".getBytes());
+            long ledgerId = writeLh.getId();
+            int numOfEntries = 5;
+            for (int i = 0; i < numOfEntries; i++) {
+                writeLh.addEntry(("foobar" + i).getBytes());
+            }
+
+            try (BookKeeper bkReader = new BookKeeper(clientConfiguration);
+                LedgerHandle rlh = bkReader.openLedgerNoRecovery(ledgerId, digestType, "testPasswd".getBytes())) {
+                assertTrue(
+                    "Expected LAC of rlh: " + (numOfEntries - 2) + " actual LAC of rlh: " + rlh.getLastAddConfirmed(),
+                    (rlh.getLastAddConfirmed() == (numOfEntries - 2)));
+
+                assertFalse(writeLh.isClosed());
+
+                // with readUnconfirmedEntries we are able to read all of the entries
+                Enumeration<LedgerEntry> entries = rlh.readUnconfirmedEntries(0, numOfEntries - 1);
+                int entryId = 0;
+                while (entries.hasMoreElements()) {
+                    LedgerEntry entry = entries.nextElement();
+                    String entryString = new String(entry.getEntry());
+                    assertTrue("Expected entry String: " + ("foobar" + entryId)
+                        + " actual entry String: " + entryString,
+                        entryString.equals("foobar" + entryId));
+                    entryId++;
+                }
+            }
+
+            try (BookKeeper bkReader = new BookKeeper(clientConfiguration);
+                LedgerHandle rlh = bkReader.openLedgerNoRecovery(ledgerId, digestType, "testPasswd".getBytes())) {
+                assertTrue(
+                    "Expected LAC of rlh: " + (numOfEntries - 2) + " actual LAC of rlh: " + rlh.getLastAddConfirmed(),
+                    (rlh.getLastAddConfirmed() == (numOfEntries - 2)));
+
+                assertFalse(writeLh.isClosed());
+
+                // without readUnconfirmedEntries we are not able to read all of the entries
+                try {
+                    rlh.readEntries(0, numOfEntries - 1);
+                    fail("shoud not be able to read up to " + (numOfEntries - 1) + " with readEntries");
+                } catch (BKException.BKReadException expected) {
+                }
+
+                // read all entries within the 0..LastAddConfirmed range with readEntries
+                assertEquals(rlh.getLastAddConfirmed() + 1,
+                    Collections.list(rlh.readEntries(0, rlh.getLastAddConfirmed())).size());
+
+                // assert local LAC does not change after reads
+                assertTrue(
+                    "Expected LAC of rlh: " + (numOfEntries - 2) + " actual LAC of rlh: " + rlh.getLastAddConfirmed(),
+                    (rlh.getLastAddConfirmed() == (numOfEntries - 2)));
+
+                // read all entries within the 0..LastAddConfirmed range with readUnconfirmedEntries
+                assertEquals(rlh.getLastAddConfirmed() + 1,
+                    Collections.list(rlh.readUnconfirmedEntries(0, rlh.getLastAddConfirmed())).size());
+
+                // assert local LAC does not change after reads
+                assertTrue(
+                    "Expected LAC of rlh: " + (numOfEntries - 2) + " actual LAC of rlh: " + rlh.getLastAddConfirmed(),
+                    (rlh.getLastAddConfirmed() == (numOfEntries - 2)));
+
+                // read all entries within the LastAddConfirmed..numOfEntries - 1 range with readUnconfirmedEntries
+                assertEquals(numOfEntries - rlh.getLastAddConfirmed(),
+                    Collections.list(rlh.readUnconfirmedEntries(rlh.getLastAddConfirmed(), numOfEntries - 1)).size());
+
+                // assert local LAC does not change after reads
+                assertTrue(
+                    "Expected LAC of rlh: " + (numOfEntries - 2) + " actual LAC of rlh: " + rlh.getLastAddConfirmed(),
+                    (rlh.getLastAddConfirmed() == (numOfEntries - 2)));
+
+                try {
+                    // read all entries within the LastAddConfirmed..numOfEntries range  with readUnconfirmedEntries
+                    // this is an error, we are going outside the range of existing entries
+                    rlh.readUnconfirmedEntries(rlh.getLastAddConfirmed(), numOfEntries);
+                    fail("the read tried to access data for unexisting entry id " + numOfEntries);
+                } catch (BKException.BKNoSuchEntryException expected) {
+                    // expecting a BKNoSuchEntryException, as the entry does not exist on bookies
+                }
+
+                try {
+                    // read all entries within the LastAddConfirmed..numOfEntries range with readEntries
+                    // this is an error, we are going outside the range of existing entries
+                    rlh.readEntries(rlh.getLastAddConfirmed(), numOfEntries);
+                    fail("the read tries to access data for unexisting entry id " + numOfEntries);
+                } catch (BKException.BKReadException expected) {
+                    // expecting a BKReadException, as the client rejected the request to access entries
+                    // after local LastAddConfirmed
+                }
+
+            }
+
+            // ensure that after restarting every bookie entries are not lost
+            // even entries after the LastAddConfirmed
+            restartBookies();
+
+            try (BookKeeper bkReader = new BookKeeper(clientConfiguration);
+                LedgerHandle rlh = bkReader.openLedgerNoRecovery(ledgerId, digestType, "testPasswd".getBytes())) {
+                assertTrue(
+                    "Expected LAC of rlh: " + (numOfEntries - 2) + " actual LAC of rlh: " + rlh.getLastAddConfirmed(),
+                    (rlh.getLastAddConfirmed() == (numOfEntries - 2)));
+
+                assertFalse(writeLh.isClosed());
+
+                // with readUnconfirmedEntries we are able to read all of the entries
+                Enumeration<LedgerEntry> entries = rlh.readUnconfirmedEntries(0, numOfEntries - 1);
+                int entryId = 0;
+                while (entries.hasMoreElements()) {
+                    LedgerEntry entry = entries.nextElement();
+                    String entryString = new String(entry.getEntry());
+                    assertTrue("Expected entry String: " + ("foobar" + entryId)
+                        + " actual entry String: " + entryString,
+                        entryString.equals("foobar" + entryId));
+                    entryId++;
+                }
+            }
+
+            try (BookKeeper bkReader = new BookKeeper(clientConfiguration);
+                LedgerHandle rlh = bkReader.openLedgerNoRecovery(ledgerId, digestType, "testPasswd".getBytes())) {
+                assertTrue(
+                    "Expected LAC of rlh: " + (numOfEntries - 2) + " actual LAC of rlh: " + rlh.getLastAddConfirmed(),
+                    (rlh.getLastAddConfirmed() == (numOfEntries - 2)));
+
+                assertFalse(writeLh.isClosed());
+
+                // without readUnconfirmedEntries we are not able to read all of the entries
+                try {
+                    rlh.readEntries(0, numOfEntries - 1);
+                    fail("shoud not be able to read up to " + (numOfEntries - 1) + " with readEntries");
+                } catch (BKException.BKReadException expected) {
+                }
+
+                // read all entries within the 0..LastAddConfirmed range with readEntries
+                assertEquals(rlh.getLastAddConfirmed() + 1,
+                    Collections.list(rlh.readEntries(0, rlh.getLastAddConfirmed())).size());
+
+                // assert local LAC does not change after reads
+                assertTrue(
+                    "Expected LAC of rlh: " + (numOfEntries - 2) + " actual LAC of rlh: " + rlh.getLastAddConfirmed(),
+                    (rlh.getLastAddConfirmed() == (numOfEntries - 2)));
+
+                // read all entries within the 0..LastAddConfirmed range with readUnconfirmedEntries
+                assertEquals(rlh.getLastAddConfirmed() + 1,
+                    Collections.list(rlh.readUnconfirmedEntries(0, rlh.getLastAddConfirmed())).size());
+
+                // assert local LAC does not change after reads
+                assertTrue(
+                    "Expected LAC of rlh: " + (numOfEntries - 2) + " actual LAC of rlh: " + rlh.getLastAddConfirmed(),
+                    (rlh.getLastAddConfirmed() == (numOfEntries - 2)));
+
+                // read all entries within the LastAddConfirmed..numOfEntries - 1 range with readUnconfirmedEntries
+                assertEquals(numOfEntries - rlh.getLastAddConfirmed(),
+                    Collections.list(rlh.readUnconfirmedEntries(rlh.getLastAddConfirmed(), numOfEntries - 1)).size());
+
+                // assert local LAC does not change after reads
+                assertTrue(
+                    "Expected LAC of rlh: " + (numOfEntries - 2) + " actual LAC of rlh: " + rlh.getLastAddConfirmed(),
+                    (rlh.getLastAddConfirmed() == (numOfEntries - 2)));
+
+                try {
+                    // read all entries within the LastAddConfirmed..numOfEntries range  with readUnconfirmedEntries
+                    // this is an error, we are going outside the range of existing entries
+                    rlh.readUnconfirmedEntries(rlh.getLastAddConfirmed(), numOfEntries);
+                    fail("the read tried to access data for unexisting entry id " + numOfEntries);
+                } catch (BKException.BKNoSuchEntryException expected) {
+                    // expecting a BKNoSuchEntryException, as the entry does not exist on bookies
+                }
+
+                try {
+                    // read all entries within the LastAddConfirmed..numOfEntries range with readEntries
+                    // this is an error, we are going outside the range of existing entries
+                    rlh.readEntries(rlh.getLastAddConfirmed(), numOfEntries);
+                    fail("the read tries to access data for unexisting entry id " + numOfEntries);
+                } catch (BKException.BKReadException expected) {
+                    // expecting a BKReadException, as the client rejected the request to access entries
+                    // after local LastAddConfirmed
+                }
+
+            }
+
+            // open ledger with fencing, this will repair the ledger and make the last entry readable
+            try (BookKeeper bkReader = new BookKeeper(clientConfiguration);
+                LedgerHandle rlh = bkReader.openLedger(ledgerId, digestType, "testPasswd".getBytes())) {
+                assertTrue(
+                    "Expected LAC of rlh: " + (numOfEntries - 1) + " actual LAC of rlh: " + rlh.getLastAddConfirmed(),
+                    (rlh.getLastAddConfirmed() == (numOfEntries - 1)));
+
+                assertFalse(writeLh.isClosed());
+
+                // without readUnconfirmedEntries we are not able to read all of the entries
+                Enumeration<LedgerEntry> entries = rlh.readEntries(0, numOfEntries - 1);
+                int entryId = 0;
+                while (entries.hasMoreElements()) {
+                    LedgerEntry entry = entries.nextElement();
+                    String entryString = new String(entry.getEntry());
+                    assertTrue("Expected entry String: " + ("foobar" + entryId)
+                        + " actual entry String: " + entryString,
+                        entryString.equals("foobar" + entryId));
+                    entryId++;
+                }
+            }
+
+            try {
+                writeLh.close();
+                fail("should not be able to close the first LedgerHandler as a recovery has been performed");
+            } catch (BKException.BKMetadataVersionException expected) {
+            }
+
         }
-
-        LedgerHandle rlh = bkcWithNoExplicitLAC.openLedgerNoRecovery(ledgerId, digestType, "testPasswd".getBytes());
-        Assert.assertTrue(
-                "Expected LAC of rlh: " + (numOfEntries - 2) + " actual LAC of rlh: " + rlh.getLastAddConfirmed(),
-                (rlh.getLastAddConfirmed() == (numOfEntries - 2)));
-
-        Enumeration<LedgerEntry> entries = rlh.readEntries(0, numOfEntries - 2);
-        int entryId = 0;
-        while (entries.hasMoreElements()) {
-            LedgerEntry entry = entries.nextElement();
-            String entryString = new String(entry.getEntry());
-            Assert.assertTrue("Expected entry String: " + ("foobar" + entryId) + " actual entry String: " + entryString,
-                    entryString.equals("foobar" + entryId));
-            entryId++;
-        }
-
-        for (int i = numOfEntries; i < 2 * numOfEntries; i++) {
-            wlh.addEntry(("foobar" + i).getBytes());
-        }
-
-        Thread.sleep(3000);
-        // since explicitlacflush policy is not enabled for writeledgerhandle, when we try
-        // to read explicitlac for rlh, it will be LedgerHandle.INVALID_ENTRY_ID. But it
-        // wont throw some exception.
-        long explicitlac = rlh.readExplicitLastConfirmed();
-        Assert.assertTrue(
-                "Expected Explicit LAC of rlh: " + LedgerHandle.INVALID_ENTRY_ID + " actual ExplicitLAC of rlh: " + explicitlac,
-                (explicitlac == LedgerHandle.INVALID_ENTRY_ID));
-        Assert.assertTrue(
-                "Expected LAC of wlh: " + (2 * numOfEntries - 1) + " actual LAC of rlh: " + wlh.getLastAddConfirmed(),
-                (wlh.getLastAddConfirmed() == (2 * numOfEntries - 1)));
-        Assert.assertTrue(
-                "Expected LAC of rlh: " + (numOfEntries - 2) + " actual LAC of rlh: " + rlh.getLastAddConfirmed(),
-                (rlh.getLastAddConfirmed() == (numOfEntries - 2)));
-
-        try {
-            rlh.readEntries(numOfEntries - 1, numOfEntries - 1);
-            fail("rlh readEntries beyond " + (numOfEntries - 2) + " should fail with ReadException");
-        } catch (BKException.BKReadException readException) {
-        }
-
-        rlh.close();
-        wlh.close();
-        bkcWithNoExplicitLAC.close();
     }
 
-    @Test(timeout = 60000)
-    public void testReadHandleWithExplicitLAC() throws Exception {
-        ClientConfiguration confWithExplicitLAC = new ClientConfiguration()
-                .setZkServers(zkUtil.getZooKeeperConnectString());
-        int explicitLacIntervalMillis = 1000;
-        confWithExplicitLAC.setExplictLacInterval(explicitLacIntervalMillis);
+    @Test
+    public void testReadWriteWithV2WireProtocol() throws Exception {
+        ClientConfiguration conf = new ClientConfiguration().setUseV2WireProtocol(true);
+        conf.setZkServers(zkUtil.getZooKeeperConnectString());
+        int numEntries = 100;
+        byte[] data = "foobar".getBytes();
+        try (BookKeeper bkc = new BookKeeper(conf)) {
 
-        BookKeeper bkcWithExplicitLAC = new BookKeeper(confWithExplicitLAC);
+            // basic read/write
+            {
+                long ledgerId;
+                try (LedgerHandle lh = bkc.createLedger(digestType, "testPasswd".getBytes())) {
+                    ledgerId = lh.getId();
+                    for (int i = 0; i < numEntries; i++) {
+                        lh.addEntry(data);
+                    }
+                }
+                try (LedgerHandle lh = bkc.openLedger(ledgerId, digestType, "testPasswd".getBytes())) {
+                    assertEquals(numEntries - 1, lh.readLastConfirmed());
+                    for (Enumeration<LedgerEntry> readEntries = lh.readEntries(0, numEntries - 1);
+                        readEntries.hasMoreElements();) {
+                        LedgerEntry entry = readEntries.nextElement();
+                        assertArrayEquals(data, entry.getEntry());
+                    }
+                }
+            }
 
-        LedgerHandle wlh = bkcWithExplicitLAC.createLedger(digestType, "testPasswd".getBytes());
-        long ledgerId = wlh.getId();
-        int numOfEntries = 5;
-        for (int i = 0; i < numOfEntries; i++) {
-            wlh.addEntry(("foobar" + i).getBytes());
+            // basic fencing
+            {
+                long ledgerId;
+                try (LedgerHandle lh2 = bkc.createLedger(digestType, "testPasswd".getBytes())) {
+                    ledgerId = lh2.getId();
+                    lh2.addEntry(data);
+                    try (LedgerHandle lh2Fence = bkc.openLedger(ledgerId, digestType, "testPasswd".getBytes())) {
+                    }
+                    try {
+                        lh2.addEntry(data);
+                        fail("ledger should be fenced");
+                    } catch (BKException.BKLedgerFencedException ex){
+                    }
+                }
+            }
+        }
+    }
+
+    @Test
+    public void testReadEntryReleaseByteBufs() throws Exception {
+        ClientConfiguration confWriter = new ClientConfiguration();
+        confWriter.setZkServers(zkUtil.getZooKeeperConnectString());
+        int numEntries = 10;
+        byte[] data = "foobar".getBytes();
+        long ledgerId;
+        try (BookKeeper bkc = new BookKeeper(confWriter)) {
+            try (LedgerHandle lh = bkc.createLedger(digestType, "testPasswd".getBytes())) {
+                ledgerId = lh.getId();
+                for (int i = 0; i < numEntries; i++) {
+                    lh.addEntry(data);
+                }
+            }
         }
 
-        LedgerHandle rlh = bkcWithExplicitLAC.openLedgerNoRecovery(ledgerId, digestType, "testPasswd".getBytes());
+        // v2 protocol, using pooled buffers
+        ClientConfiguration confReader1 = new ClientConfiguration()
+            .setUseV2WireProtocol(true)
+            .setNettyUsePooledBuffers(true);
+        confReader1.setZkServers(zkUtil.getZooKeeperConnectString());
 
-        Assert.assertTrue(
-                "Expected LAC of rlh: " + (numOfEntries - 2) + " actual LAC of rlh: " + rlh.getLastAddConfirmed(),
-                (rlh.getLastAddConfirmed() == (numOfEntries - 2)));
-
-        for (int i = numOfEntries; i < 2 * numOfEntries; i++) {
-            wlh.addEntry(("foobar" + i).getBytes());
+        try (BookKeeper bkc = new BookKeeper(confReader1)) {
+            try (LedgerHandle lh = bkc.openLedger(ledgerId, digestType, "testPasswd".getBytes())) {
+                assertEquals(numEntries - 1, lh.readLastConfirmed());
+                for (Enumeration<LedgerEntry> readEntries = lh.readEntries(0, numEntries - 1);
+                    readEntries.hasMoreElements();) {
+                    LedgerEntry entry = readEntries.nextElement();
+                    try {
+                        entry.data.release();
+                    } catch (IllegalReferenceCountException ok) {
+                        fail("ByteBuf already released");
+                    }
+                }
+            }
         }
 
-        // we need to wait for atleast 2 explicitlacintervals,
-        // since in writehandle for the first call
-        // lh.getExplicitLastAddConfirmed() will be <
-        // lh.getPiggyBackedLastAddConfirmed(),
-        // so it wont make explicit writelac in the first run
-        Thread.sleep((2 * explicitLacIntervalMillis/1000 + 1) * 1000);
-        Assert.assertTrue(
-                "Expected LAC of wlh: " + (2 * numOfEntries - 1) + " actual LAC of wlh: " + wlh.getLastAddConfirmed(),
-                (wlh.getLastAddConfirmed() == (2 * numOfEntries - 1)));
-        // readhandle's lastaddconfirmed wont be updated until readExplicitLastConfirmed call is made   
-        Assert.assertTrue(
-                "Expected LAC of rlh: " + (numOfEntries - 2) + " actual LAC of rlh: " + rlh.getLastAddConfirmed(),
-                (rlh.getLastAddConfirmed() == (numOfEntries - 2)));
-        
-        long explicitlac = rlh.readExplicitLastConfirmed();
-        Assert.assertTrue(
-                "Expected Explicit LAC of rlh: " + (2 * numOfEntries - 1) + " actual ExplicitLAC of rlh: " + explicitlac,
-                (explicitlac == (2 * numOfEntries - 1)));
-        // readExplicitLastConfirmed updates the lac of rlh.
-        Assert.assertTrue(
-                "Expected LAC of rlh: " + (2 * numOfEntries - 1) + " actual LAC of rlh: " + rlh.getLastAddConfirmed(),
-                (rlh.getLastAddConfirmed() == (2 * numOfEntries - 1)));
-        
-        Enumeration<LedgerEntry> entries = rlh.readEntries(numOfEntries, 2 * numOfEntries - 1);
-        int entryId = numOfEntries;
-        while (entries.hasMoreElements()) {
-            LedgerEntry entry = entries.nextElement();
-            String entryString = new String(entry.getEntry());
-            Assert.assertTrue("Expected entry String: " + ("foobar" + entryId) + " actual entry String: " + entryString,
-                    entryString.equals("foobar" + entryId));
-            entryId++;
+        // v2 protocol, not using pooled buffers
+        ClientConfiguration confReader2 = new ClientConfiguration()
+            .setUseV2WireProtocol(true)
+            .setNettyUsePooledBuffers(false);
+        confReader2.setZkServers(zkUtil.getZooKeeperConnectString());
+
+        try (BookKeeper bkc = new BookKeeper(confReader2)) {
+            try (LedgerHandle lh = bkc.openLedger(ledgerId, digestType, "testPasswd".getBytes())) {
+                assertEquals(numEntries - 1, lh.readLastConfirmed());
+                for (Enumeration<LedgerEntry> readEntries = lh.readEntries(0, numEntries - 1);
+                    readEntries.hasMoreElements();) {
+                    LedgerEntry entry = readEntries.nextElement();
+                    try {
+                        entry.data.release();
+                    } catch (IllegalReferenceCountException e) {
+                        fail("ByteBuf already released");
+                    }
+                }
+            }
         }
 
-        rlh.close();
-        wlh.close();
-        bkcWithExplicitLAC.close();
-    }	
+        // v3 protocol, not using pooled buffers
+        ClientConfiguration confReader3 = new ClientConfiguration()
+            .setUseV2WireProtocol(false)
+            .setNettyUsePooledBuffers(false);
+        confReader3.setZkServers(zkUtil.getZooKeeperConnectString());
+        try (BookKeeper bkc = new BookKeeper(confReader3)) {
+            try (LedgerHandle lh = bkc.openLedger(ledgerId, digestType, "testPasswd".getBytes())) {
+                assertEquals(numEntries - 1, lh.readLastConfirmed());
+                for (Enumeration<LedgerEntry> readEntries = lh.readEntries(0, numEntries - 1);
+                    readEntries.hasMoreElements();) {
+                    LedgerEntry entry = readEntries.nextElement();
+                    assertTrue("Can't release entry " + entry.getEntryId() + ": ref = " + entry.data.refCnt(),
+                        entry.data.release());
+                    try {
+                        assertFalse(entry.data.release());
+                        fail("ByteBuf already released");
+                    } catch (IllegalReferenceCountException ok) {
+                    }
+                }
+            }
+        }
+
+        // v3 protocol, using pooled buffers
+        // v3 protocol from 4.5 always "wraps" buffers returned by protobuf
+        ClientConfiguration confReader4 = new ClientConfiguration()
+            .setUseV2WireProtocol(false)
+            .setNettyUsePooledBuffers(true);
+        confReader4.setZkServers(zkUtil.getZooKeeperConnectString());
+
+        try (BookKeeper bkc = new BookKeeper(confReader4)) {
+            try (LedgerHandle lh = bkc.openLedger(ledgerId, digestType, "testPasswd".getBytes())) {
+                assertEquals(numEntries - 1, lh.readLastConfirmed());
+                for (Enumeration<LedgerEntry> readEntries = lh.readEntries(0, numEntries - 1);
+                    readEntries.hasMoreElements();) {
+                    LedgerEntry entry = readEntries.nextElement();
+                    // ButeBufs not reference counter
+                    assertTrue("Can't release entry " + entry.getEntryId() + ": ref = " + entry.data.refCnt(),
+                        entry.data.release());
+                    try {
+                        assertFalse(entry.data.release());
+                        fail("ByteBuf already released");
+                    } catch (IllegalReferenceCountException ok) {
+                    }
+                }
+            }
+        }
+
+        // cannot read twice an entry
+        ClientConfiguration confReader5 = new ClientConfiguration();
+        confReader5.setZkServers(zkUtil.getZooKeeperConnectString());
+        try (BookKeeper bkc = new BookKeeper(confReader5)) {
+            try (LedgerHandle lh = bkc.openLedger(ledgerId, digestType, "testPasswd".getBytes())) {
+                assertEquals(numEntries - 1, lh.readLastConfirmed());
+                for (Enumeration<LedgerEntry> readEntries = lh.readEntries(0, numEntries - 1);
+                    readEntries.hasMoreElements();) {
+                    LedgerEntry entry = readEntries.nextElement();
+                    entry.getEntry();
+                    try {
+                        entry.getEntry();
+                        fail("entry data accessed twice");
+                    } catch (IllegalStateException ok){
+                    }
+                    try {
+                        entry.getEntryInputStream();
+                        fail("entry data accessed twice");
+                    } catch (IllegalStateException ok){
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Tests that issuing multiple reads for the same entry at the same time works as expected.
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testDoubleRead() throws Exception {
+        LedgerHandle lh = bkc.createLedger(digestType, "".getBytes());
+
+        lh.addEntry("test".getBytes());
+
+        // Read the same entry more times asynchronously
+        final int n = 10;
+        final CountDownLatch latch = new CountDownLatch(n);
+        for (int i = 0; i < n; i++) {
+            lh.asyncReadEntries(0, 0, new ReadCallback() {
+                public void readComplete(int rc, LedgerHandle lh,
+                                         Enumeration<LedgerEntry> seq, Object ctx) {
+                    if (rc == BKException.Code.OK) {
+                        latch.countDown();
+                    } else {
+                        fail("Read fail");
+                    }
+                }
+            }, null);
+        }
+
+        latch.await();
+    }
+
+    /**
+     * Tests that issuing multiple reads for the same entry at the same time works as expected.
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testDoubleReadWithV2Protocol() throws Exception {
+        ClientConfiguration conf = new ClientConfiguration(baseClientConf);
+        conf.setUseV2WireProtocol(true);
+        BookKeeperTestClient bkc = new BookKeeperTestClient(conf);
+        LedgerHandle lh = bkc.createLedger(digestType, "".getBytes());
+
+        lh.addEntry("test".getBytes());
+
+        // Read the same entry more times asynchronously
+        final int n = 10;
+        final CountDownLatch latch = new CountDownLatch(n);
+        for (int i = 0; i < n; i++) {
+            lh.asyncReadEntries(0, 0, new ReadCallback() {
+                public void readComplete(int rc, LedgerHandle lh,
+                                         Enumeration<LedgerEntry> seq, Object ctx) {
+                    if (rc == BKException.Code.OK) {
+                        latch.countDown();
+                    } else {
+                        fail("Read fail");
+                    }
+                }
+            }, null);
+        }
+
+        latch.await();
+        bkc.close();
+    }
 }

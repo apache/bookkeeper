@@ -22,7 +22,6 @@
 package org.apache.bookkeeper.bookie;
 
 import java.io.IOException;
-
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.zookeeper.KeeperException;
@@ -31,36 +30,38 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Implements a read only bookie.
- * 
+ * <p>
  * ReadOnlyBookie is force started as readonly, and will not change to writable.
- *
+ * </p>
  */
 public class ReadOnlyBookie extends Bookie {
 
-    private final static Logger LOG = LoggerFactory.getLogger(ReadOnlyBookie.class);
+    private static final Logger LOG = LoggerFactory.getLogger(ReadOnlyBookie.class);
 
     public ReadOnlyBookie(ServerConfiguration conf, StatsLogger statsLogger)
             throws IOException, KeeperException, InterruptedException, BookieException {
         super(conf, statsLogger);
+        stateManager = new BookieStateManager(conf, statsLogger, metadataDriver, getLedgerDirsManager()) {
+
+            @Override
+            public void doTransitionToWritableMode() {
+                // no-op
+                LOG.info("Skip transition to writable mode for readonly bookie");
+            }
+
+            @Override
+            public void doTransitionToReadOnlyMode() {
+                // no-op
+                LOG.info("Skip transition to readonly mode for readonly bookie");
+            }
+        };
         if (conf.isReadOnlyModeEnabled()) {
-            readOnly.set(true);
+            stateManager.forceToReadOnly();
         } else {
             String err = "Try to init ReadOnly Bookie, while ReadOnly mode is not enabled";
             LOG.error(err);
             throw new IOException(err);
         }
-        LOG.info("Running bookie in readonly mode.");
-    }
-
-    @Override
-    public void doTransitionToWritableMode() {
-        // no-op
-        LOG.info("Skip transition to writable mode for readonly bookie");
-    }
-
-    @Override
-    public void doTransitionToReadOnlyMode() {
-        // no-op
-        LOG.info("Skip transition to readonly mode for readonly bookie");
+        LOG.info("Running bookie in force readonly mode.");
     }
 }

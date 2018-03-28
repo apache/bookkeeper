@@ -20,45 +20,34 @@
  */
 package org.apache.bookkeeper.test;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.Random;
-import java.util.concurrent.Semaphore;
-import java.util.concurrent.atomic.AtomicInteger;
+import static org.junit.Assert.fail;
 
-import org.apache.bookkeeper.conf.ClientConfiguration;
-import org.apache.bookkeeper.bookie.Bookie;
-import org.apache.bookkeeper.client.BookKeeperTestClient;
+import java.io.IOException;
+
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper;
-import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
-import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
+import org.apache.bookkeeper.client.BookKeeperTestClient;
+import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.zookeeper.KeeperException;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static org.junit.Assert.*;
 
 /**
  * Tests conditional set of the ledger metadata znode.
  */
-public class ConditionalSetTest extends BaseTestCase {
-    private final static Logger LOG = LoggerFactory.getLogger(ConditionalSetTest.class);
+public class ConditionalSetTest extends BookKeeperClusterTestCase {
+    private static final Logger LOG = LoggerFactory.getLogger(ConditionalSetTest.class);
 
     byte[] entry;
-    DigestType digestType;
+    private final DigestType digestType;
     BookKeeper bkcReader;
 
-    public ConditionalSetTest(DigestType digestType) {
+    public ConditionalSetTest() {
         super(3);
-        this.digestType = digestType;
+        this.digestType = DigestType.CRC32;
     }
 
     @Override
@@ -81,7 +70,7 @@ public class ConditionalSetTest extends BaseTestCase {
      * @throws KeeperException
      */
 
-    @Test(timeout=60000)
+    @Test
     public void testConditionalSet() throws IOException, InterruptedException,
                                     BKException, KeeperException {
         LedgerHandle lhWrite = bkc.createLedger(digestType, new byte[] { 'a',
@@ -105,7 +94,7 @@ public class ConditionalSetTest extends BaseTestCase {
         /*
          * Writer tries to close the ledger, and if should fail.
          */
-        try{
+        try {
             lhWrite.close();
             fail("Should have received an exception when trying to close the ledger.");
         } catch (BKException e) {

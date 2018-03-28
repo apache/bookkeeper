@@ -17,6 +17,15 @@
  */
 package org.apache.bookkeeper.client;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
@@ -24,16 +33,12 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import static org.junit.Assert.*;
-
+/**
+ * Test try read last confirmed.
+ */
 public class TestTryReadLastConfirmed extends BookKeeperClusterTestCase {
 
-    static final Logger logger = LoggerFactory.getLogger(TestTryReadLastConfirmed.class);
+    private static final Logger logger = LoggerFactory.getLogger(TestTryReadLastConfirmed.class);
 
     final DigestType digestType;
 
@@ -42,7 +47,7 @@ public class TestTryReadLastConfirmed extends BookKeeperClusterTestCase {
         this.digestType = DigestType.CRC32;
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testTryReadLACWhenAllBookiesUp() throws Exception {
         final int numEntries = 3;
 
@@ -99,7 +104,7 @@ public class TestTryReadLastConfirmed extends BookKeeperClusterTestCase {
         readLh.close();
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testTryReadLaCWhenSomeBookiesDown() throws Exception {
         final int numEntries = 3;
         final int ensembleSize = 3;
@@ -147,7 +152,7 @@ public class TestTryReadLastConfirmed extends BookKeeperClusterTestCase {
         readLh.close();
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testTryReadLACWhenAllBookiesDown() throws Exception {
         final int numEntries = 2;
         final int ensembleSize = 3;

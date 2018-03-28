@@ -26,6 +26,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import com.google.protobuf.TextFormat;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -42,17 +43,19 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
+import org.apache.bookkeeper.meta.AbstractZkLedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
+import org.apache.bookkeeper.meta.ZkLayoutManager;
 import org.apache.bookkeeper.meta.ZkLedgerUnderreplicationManager;
 import org.apache.bookkeeper.proto.DataFormats.UnderreplicatedLedgerFormat;
 import org.apache.bookkeeper.replication.ReplicationException.CompatibilityException;
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
 import org.apache.bookkeeper.test.ZooKeeperUtil;
 import org.apache.bookkeeper.util.BookKeeperConstants;
+import org.apache.bookkeeper.util.ZkUtils;
 import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
 import org.apache.commons.lang.StringUtils;
 import org.apache.zookeeper.KeeperException;
@@ -66,10 +69,8 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.protobuf.TextFormat;
-
 /**
- * Test the zookeeper implementation of the ledger replication manager
+ * Test the zookeeper implementation of the ledger replication manager.
  */
 public class TestLedgerUnderreplicationManager {
     static final Logger LOG = LoggerFactory.getLogger(TestLedgerUnderreplicationManager.class);
@@ -92,7 +93,8 @@ public class TestLedgerUnderreplicationManager {
         zkUtil = new ZooKeeperUtil();
         zkUtil.startServer();
 
-        conf = TestBKConfiguration.newServerConfiguration().setZkServers(zkUtil.getZooKeeperConnectString());
+        conf = TestBKConfiguration.newServerConfiguration();
+        conf.setZkServers(zkUtil.getZooKeeperConnectString());
 
         executor = Executors.newCachedThreadPool();
 
@@ -104,12 +106,25 @@ public class TestLedgerUnderreplicationManager {
                 .connectString(zkUtil.getZooKeeperConnectString())
                 .sessionTimeoutMs(10000)
                 .build();
-        lmf1 = LedgerManagerFactory.newLedgerManagerFactory(conf, zkc1);
-        lmf2 = LedgerManagerFactory.newLedgerManagerFactory(conf, zkc2);
+
         basePath = conf.getZkLedgersRootPath() + '/'
                 + BookKeeperConstants.UNDER_REPLICATION_NODE;
         urLedgerPath = basePath
                 + BookKeeperConstants.DEFAULT_ZK_LEDGERS_ROOT_PATH;
+
+        lmf1 = AbstractZkLedgerManagerFactory.newLedgerManagerFactory(
+            conf,
+            new ZkLayoutManager(
+                zkc1,
+                conf.getZkLedgersRootPath(),
+                ZkUtils.getACLs(conf)));
+        lmf2 = AbstractZkLedgerManagerFactory.newLedgerManagerFactory(
+            conf,
+            new ZkLayoutManager(
+                zkc2,
+                conf.getZkLedgersRootPath(),
+                ZkUtils.getACLs(conf)));
+
     }
 
     @After
@@ -130,11 +145,11 @@ public class TestLedgerUnderreplicationManager {
             zkc2 = null;
         }
         if (lmf1 != null) {
-            lmf1.uninitialize();
+            lmf1.close();
             lmf1 = null;
         }
         if (lmf2 != null) {
-            lmf2.uninitialize();
+            lmf2.close();
             lmf2 = null;
         }
     }
@@ -159,7 +174,7 @@ public class TestLedgerUnderreplicationManager {
      * Ensure that getLedgerToReplicate will block until it a ledger
      * becomes available.
      */
-    @Test(timeout=60000)
+    @Test
     public void testBasicInteraction() throws Exception {
         Set<Long> ledgers = new HashSet<Long>();
         ledgers.add(0xdeadbeefL);
@@ -205,7 +220,7 @@ public class TestLedgerUnderreplicationManager {
      * client shouldn't be able to get it. If the first client dies
      * however, the second client should be able to get it.
      */
-    @Test(timeout=60000)
+    @Test
     public void testLocking() throws Exception {
         String missingReplica = "localhost:3181";
 
@@ -242,7 +257,7 @@ public class TestLedgerUnderreplicationManager {
      * acquire a ledger, and that it's not the one that was previously
      * marked as replicated.
      */
-    @Test(timeout=60000)
+    @Test
     public void testMarkingAsReplicated() throws Exception {
         String missingReplica = "localhost:3181";
 
@@ -286,7 +301,7 @@ public class TestLedgerUnderreplicationManager {
      * When a client releases a previously acquired ledger, another
      * client should then be able to acquire it.
      */
-    @Test(timeout=60000)
+    @Test
     public void testRelease() throws Exception {
         String missingReplica = "localhost:3181";
 
@@ -328,7 +343,7 @@ public class TestLedgerUnderreplicationManager {
      * under replicated ledger list when first rereplicating client marks
      * it as replicated.
      */
-    @Test(timeout=60000)
+    @Test
     public void testManyFailures() throws Exception {
         String missingReplica1 = "localhost:3181";
         String missingReplica2 = "localhost:3182";
@@ -358,7 +373,7 @@ public class TestLedgerUnderreplicationManager {
      * the same missing replica twice, only marking as replicated
      * will be enough to remove it from the list.
      */
-    @Test(timeout=60000)
+    @Test
     public void test2reportSame() throws Exception {
         String missingReplica1 = "localhost:3181";
 
@@ -399,9 +414,9 @@ public class TestLedgerUnderreplicationManager {
 
     /**
      * Test that multiple LedgerUnderreplicationManagers should be able to take
-     * lock and release for same ledger
+     * lock and release for same ledger.
      */
-    @Test(timeout = 30000)
+    @Test
     public void testMultipleManagersShouldBeAbleToTakeAndReleaseLock()
             throws Exception {
         String missingReplica1 = "localhost:3181";
@@ -448,15 +463,15 @@ public class TestLedgerUnderreplicationManager {
     /**
      * Test verifies failures of bookies which are resembling each other.
      *
-     * BK servers named like*********************************************
+     * <p>BK servers named like*********************************************
      * 1.cluster.com, 2.cluster.com, 11.cluster.com, 12.cluster.com
      * *******************************************************************
      *
-     * BKserver IP:HOST like*********************************************
+     * <p>BKserver IP:HOST like*********************************************
      * localhost:3181, localhost:318, localhost:31812
      * *******************************************************************
      */
-    @Test(timeout=60000)
+    @Test
     public void testMarkSimilarMissingReplica() throws Exception {
         List<String> missingReplica = new ArrayList<String>();
         missingReplica.add("localhost:3181");
@@ -473,7 +488,7 @@ public class TestLedgerUnderreplicationManager {
      * Test multiple bookie failures for a ledger and marked as underreplicated
      * one after another.
      */
-    @Test(timeout=60000)
+    @Test
     public void testManyFailuresInAnEnsemble() throws Exception {
         List<String> missingReplica = new ArrayList<String>();
         missingReplica.add("localhost:3181");
@@ -486,7 +501,7 @@ public class TestLedgerUnderreplicationManager {
      * able to getLedgerToRereplicate(). This calls will enter into infinite
      * waiting until enabling rereplication process
      */
-    @Test(timeout = 20000)
+    @Test
     public void testDisableLedegerReplication() throws Exception {
         final LedgerUnderreplicationManager replicaMgr = lmf1
                 .newLedgerUnderreplicationManager();
@@ -523,7 +538,7 @@ public class TestLedgerUnderreplicationManager {
      * Test enabling the ledger re-replication. After enableLedegerReplication,
      * should continue getLedgerToRereplicate() task
      */
-    @Test(timeout = 20000)
+    @Test
     public void testEnableLedgerReplication() throws Exception {
         isLedgerReplicationDisabled = true;
         final LedgerUnderreplicationManager replicaMgr = lmf1
@@ -555,7 +570,7 @@ public class TestLedgerUnderreplicationManager {
                     LOG.debug("Recieved node creation event for the zNodePath:"
                             + event.getPath());
                 }
-                
+
             }});
         // getLedgerToRereplicate is waiting until enable rereplication
         Thread thread1 = new Thread() {
@@ -596,9 +611,9 @@ public class TestLedgerUnderreplicationManager {
 
     /**
      * Test that the hierarchy gets cleaned up as ledgers
-     * are marked as fully replicated
+     * are marked as fully replicated.
      */
-    @Test(timeout=60000)
+    @Test
     public void testHierarchyCleanup() throws Exception {
         final LedgerUnderreplicationManager replicaMgr = lmf1
             .newLedgerUnderreplicationManager();
@@ -638,9 +653,9 @@ public class TestLedgerUnderreplicationManager {
 
     /**
      * Test that as the hierarchy gets cleaned up, it doesn't interfere
-     * with the marking of other ledgers as underreplicated
+     * with the marking of other ledgers as underreplicated.
      */
-    @Test(timeout = 90000)
+    @Test
     public void testHierarchyCleanupInterference() throws Exception {
         final LedgerUnderreplicationManager replicaMgr1 = lmf1
             .newLedgerUnderreplicationManager();
@@ -738,6 +753,7 @@ public class TestLedgerUnderreplicationManager {
         } catch (KeeperException e) {
             LOG.error("Exception while reading data from znode :" + znode);
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             LOG.error("Exception while reading data from znode :" + znode);
         }
         return "";

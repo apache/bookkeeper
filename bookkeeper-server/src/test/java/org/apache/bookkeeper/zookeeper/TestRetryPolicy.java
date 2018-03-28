@@ -20,9 +20,13 @@
  */
 package org.apache.bookkeeper.zookeeper;
 
-import org.junit.Test;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertTrue;
 
+import org.junit.Test;
+
+/**
+ * Test the retry policy.
+ */
 public class TestRetryPolicy {
 
     private static void assertTimeRange(long waitTime, long minTime, long maxTime) {
@@ -30,7 +34,7 @@ public class TestRetryPolicy {
         assertTrue(waitTime <= maxTime);
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testExponentialBackoffRetryPolicy() throws Exception {
         RetryPolicy policy = new ExponentialBackoffRetryPolicy(1000, Integer.MAX_VALUE);
         assertTimeRange(policy.nextRetryWaitTime(30, 2000), 1000L, (long) (1000 * Math.pow(2, 31)));
@@ -41,7 +45,7 @@ public class TestRetryPolicy {
         assertTimeRange(policy.nextRetryWaitTime(129, 2000), 1000L, 4000L);
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testBoundExponentialBackoffRetryPolicy() throws Exception {
         RetryPolicy policy = new BoundExponentialBackoffRetryPolicy(1000, 2000, Integer.MAX_VALUE);
         assertTimeRange(policy.nextRetryWaitTime(30, 2000), 1000L, 2000L);

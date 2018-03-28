@@ -20,6 +20,21 @@
  */
 package org.apache.bookkeeper.client;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
+import com.google.common.util.concurrent.SettableFuture;
+
+import io.netty.buffer.ByteBuf;
+
+import java.io.IOException;
+import java.util.Enumeration;
+import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
@@ -37,21 +52,9 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.util.concurrent.SettableFuture;
-
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.util.Enumeration;
-import java.util.Set;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import static org.junit.Assert.*;
-
 /**
  * This unit test verifies the behavior of bookkeeper apis, where the operations
- * are being executed through a closed bookkeeper client
+ * are being executed through a closed bookkeeper client.
  */
 public class BookKeeperCloseTest extends BookKeeperClusterTestCase {
 
@@ -72,7 +75,7 @@ public class BookKeeperCloseTest extends BookKeeperClusterTestCase {
 
         Bookie delayBookie = new Bookie(conf) {
                 @Override
-                public void recoveryAddEntry(ByteBuffer entry, WriteCallback cb,
+                public void recoveryAddEntry(ByteBuf entry, WriteCallback cb,
                                              Object ctx, byte[] masterKey)
                         throws IOException, BookieException {
                     try {
@@ -86,7 +89,7 @@ public class BookKeeperCloseTest extends BookKeeperClusterTestCase {
                 }
 
                 @Override
-                public void addEntry(ByteBuffer entry, WriteCallback cb,
+                public void addEntry(ByteBuf entry, boolean ackBeforeSync, WriteCallback cb,
                                      Object ctx, byte[] masterKey)
                         throws IOException, BookieException {
                     try {
@@ -96,11 +99,11 @@ public class BookKeeperCloseTest extends BookKeeperClusterTestCase {
                         // and an exception would spam the logs
                         Thread.currentThread().interrupt();
                     }
-                    super.addEntry(entry, cb, ctx, masterKey);
+                    super.addEntry(entry, ackBeforeSync, cb, ctx, masterKey);
                 }
 
                 @Override
-                public ByteBuffer readEntry(long ledgerId, long entryId)
+                public ByteBuf readEntry(long ledgerId, long entryId)
                         throws IOException, NoLedgerException {
                     try {
                         Thread.sleep(5000);
@@ -118,9 +121,9 @@ public class BookKeeperCloseTest extends BookKeeperClusterTestCase {
 
     /**
      * Test that createledger using bookkeeper client which is closed should
-     * throw ClientClosedException
+     * throw ClientClosedException.
      */
-    @Test(timeout = 60000)
+    @Test
     public void testCreateLedger() throws Exception {
         BookKeeper bk = new BookKeeper(baseClientConf, zkc);
         LOG.info("Closing bookkeeper client");
@@ -155,9 +158,9 @@ public class BookKeeperCloseTest extends BookKeeperClusterTestCase {
 
     /**
      * Test that opening a ledger using bookkeeper client which is closed should
-     * throw ClientClosedException
+     * throw ClientClosedException.
      */
-    @Test(timeout = 60000)
+    @Test
     public void testFenceLedger() throws Exception {
         BookKeeper bk = new BookKeeper(baseClientConf, zkc);
         LOG.info("Create ledger and add entries to it");
@@ -202,9 +205,9 @@ public class BookKeeperCloseTest extends BookKeeperClusterTestCase {
 
     /**
      * Test that deleting a ledger using bookkeeper client which is closed
-     * should throw ClientClosedException
+     * should throw ClientClosedException.
      */
-    @Test(timeout = 60000)
+    @Test
     public void testDeleteLedger() throws Exception {
         BookKeeper bk = new BookKeeper(baseClientConf, zkc);
         LOG.info("Create ledger and add entries to it");
@@ -238,9 +241,9 @@ public class BookKeeperCloseTest extends BookKeeperClusterTestCase {
 
     /**
      * Test that adding entry to a ledger using bookkeeper client which is
-     * closed should throw ClientClosedException
+     * closed should throw ClientClosedException.
      */
-    @Test(timeout = 60000)
+    @Test
     public void testAddLedgerEntry() throws Exception {
         BookKeeper bk = new BookKeeper(baseClientConf, zkc);
         LOG.info("Create ledger and add entries to it");
@@ -278,9 +281,9 @@ public class BookKeeperCloseTest extends BookKeeperClusterTestCase {
 
     /**
      * Test that closing a ledger using bookkeeper client which is closed should
-     * throw ClientClosedException
+     * throw ClientClosedException.
      */
-    @Test(timeout = 60000)
+    @Test
     public void testCloseLedger() throws Exception {
         BookKeeper bk = new BookKeeper(baseClientConf, zkc);
         LOG.info("Create ledger and add entries to it");
@@ -316,9 +319,9 @@ public class BookKeeperCloseTest extends BookKeeperClusterTestCase {
 
     /**
      * Test that reading entry from a ledger using bookkeeper client which is
-     * closed should throw ClientClosedException
+     * closed should throw ClientClosedException.
      */
-    @Test(timeout = 60000)
+    @Test
     public void testReadLedgerEntry() throws Exception {
         BookKeeper bk = new BookKeeper(baseClientConf, zkc);
         LOG.info("Create ledger and add entries to it");
@@ -359,9 +362,9 @@ public class BookKeeperCloseTest extends BookKeeperClusterTestCase {
 
     /**
      * Test that readlastconfirmed entry from a ledger using bookkeeper client
-     * which is closed should throw ClientClosedException
+     * which is closed should throw ClientClosedException.
      */
-    @Test(timeout = 60000)
+    @Test
     public void testReadLastConfirmed() throws Exception {
         BookKeeper bk = new BookKeeper(baseClientConf, zkc);
         LOG.info("Create ledger and add entries to it");
@@ -405,9 +408,9 @@ public class BookKeeperCloseTest extends BookKeeperClusterTestCase {
 
     /**
      * Test that checking a ledger using a closed BK client will
-     * throw a ClientClosedException
+     * throw a ClientClosedException.
      */
-    @Test(timeout = 60000)
+    @Test
     public void testLedgerCheck() throws Exception {
         BookKeeper bk = new BookKeeper(baseClientConf, zkc);
         LOG.info("Create ledger and add entries to it");
@@ -462,12 +465,12 @@ public class BookKeeperCloseTest extends BookKeeperClusterTestCase {
     }
     /**
      * Test that BookKeeperAdmin operationg using a closed BK client will
-     * throw a ClientClosedException
+     * throw a ClientClosedException.
      */
-    @Test(timeout = 60000)
+    @Test
     public void testBookKeeperAdmin() throws Exception {
         BookKeeper bk = new BookKeeper(baseClientConf, zkc);
-        try (BookKeeperAdmin bkadmin = new BookKeeperAdmin(bk);) {
+        try (BookKeeperAdmin bkadmin = new BookKeeperAdmin(bk)) {
 
             LOG.info("Create ledger and add entries to it");
             LedgerHandle lh1 = createLedgerWithEntries(bk, 100);
@@ -478,7 +481,6 @@ public class BookKeeperCloseTest extends BookKeeperClusterTestCase {
             BookieSocketAddress bookieToKill = getBookie(0);
             killBookie(bookieToKill);
             startNewBookie();
-            BookieSocketAddress newBookie = getBookie(2);
 
             CheckerCb checkercb = new CheckerCb();
             LedgerChecker lc = new LedgerChecker(bk);
@@ -509,7 +511,7 @@ public class BookKeeperCloseTest extends BookKeeperClusterTestCase {
             }
 
             try {
-                bkadmin.recoverBookieData(bookieToKill, newBookie);
+                bkadmin.recoverBookieData(bookieToKill);
                 fail("Shouldn't be able to recover with a closed client");
             } catch (BKException.BKClientClosedException cce) {
                 // correct behaviour
@@ -517,7 +519,7 @@ public class BookKeeperCloseTest extends BookKeeperClusterTestCase {
 
             try {
                 bkadmin.replicateLedgerFragment(lh3,
-                        checkercb.getResult(10, TimeUnit.SECONDS).iterator().next(), newBookie);
+                        checkercb.getResult(10, TimeUnit.SECONDS).iterator().next());
                 fail("Shouldn't be able to replicate with a closed client");
             } catch (BKException.BKClientClosedException cce) {
                 // correct behaviour
@@ -529,7 +531,7 @@ public class BookKeeperCloseTest extends BookKeeperClusterTestCase {
      * Test that the bookkeeper client doesn't leave any threads hanging around.
      * See {@link https://issues.apache.org/jira/browse/BOOKKEEPER-804}
      */
-    @Test(timeout = 60000)
+    @Test
     public void testBookKeeperCloseThreads() throws Exception {
         ThreadGroup group = new ThreadGroup("test-group");
         final SettableFuture<Void> future = SettableFuture.<Void>create();

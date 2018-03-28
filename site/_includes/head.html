@@ -1,0 +1,20 @@
+<title>{{ site.title }} - {{ page.title }}</title>
+
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<link rel="stylesheet" href="{{ site.baseurl }}css/normalize.css">
+<link rel="stylesheet" href="{{ site.baseurl }}css/tippy.css">
+<link rel="stylesheet" href="{{ site.baseurl }}css/style.css">
+
+<link rel="shortcut icon" href="{{ site.baseurl }}img/favicon.ico">
+
+<script src="{{ site.baseurl }}js/tippy.min.js"></script>
+
+<script type="text/javascript">
+  var shiftWindow = function() { scrollBy(0, -25); };
+  window.addEventListener("hashchange", shiftWindow);
+  window.addEventListener("pageshow", shiftWindow);
+  function load() { if (window.location.hash) shiftWindow(); }
+</script>

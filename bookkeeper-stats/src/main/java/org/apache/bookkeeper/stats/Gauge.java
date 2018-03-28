@@ -23,6 +23,6 @@ package org.apache.bookkeeper.stats;
  * some numeric type.
  */
 public interface Gauge<T extends Number> {
-    public T getDefaultValue();
-    public T getSample();
+    T getDefaultValue();
+    T getSample();
 }

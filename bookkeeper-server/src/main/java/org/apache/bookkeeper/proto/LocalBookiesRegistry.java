@@ -24,23 +24,23 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 
 /**
- * Local registry for embedded Bookies
+ * Local registry for embedded Bookies.
  */
 public class LocalBookiesRegistry {
-    
-    private final static ConcurrentHashMap<BookieSocketAddress,Boolean> localBookiesRegistry
-            = new ConcurrentHashMap<>();
-    
-    static void registerLocalBookieAddress(BookieSocketAddress address) {        
-        localBookiesRegistry.put(address,Boolean.TRUE);
+
+    private static final ConcurrentHashMap<BookieSocketAddress, Boolean> localBookiesRegistry =
+        new ConcurrentHashMap<>();
+
+    static void registerLocalBookieAddress(BookieSocketAddress address) {
+        localBookiesRegistry.put(address, Boolean.TRUE);
     }
     static void unregisterLocalBookieAddress(BookieSocketAddress address) {
-        if (address!= null) {
+        if (address != null) {
             localBookiesRegistry.remove(address);
         }
     }
-    public static boolean isLocalBookie(BookieSocketAddress address) {        
+    public static boolean isLocalBookie(BookieSocketAddress address) {
         return localBookiesRegistry.containsKey(address);
     }
-    
+
 }

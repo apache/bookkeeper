@@ -20,42 +20,44 @@
  */
 package org.apache.bookkeeper.client;
 
-import org.apache.bookkeeper.client.BookKeeper.DigestType;
-import org.apache.bookkeeper.meta.FlatLedgerManagerFactory;
-import org.apache.bookkeeper.meta.HierarchicalLedgerManagerFactory;
-import org.apache.bookkeeper.meta.LedgerIdGenerator;
-import org.apache.bookkeeper.meta.LedgerManager;
-import org.apache.bookkeeper.meta.LedgerManagerFactory;
-import org.apache.bookkeeper.meta.LongHierarchicalLedgerManagerFactory;
-import org.apache.bookkeeper.meta.MSLedgerManagerFactory;
-import org.apache.bookkeeper.net.BookieSocketAddress;
-import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks;
-import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
-import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.LedgerMetadataListener;
-import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
-import org.apache.bookkeeper.util.ReflectionUtils;
-import org.apache.bookkeeper.versioning.Version;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-import org.junit.runners.Parameterized.Parameters;
+import static org.apache.bookkeeper.meta.MetadataDrivers.runFunctionWithLedgerManagerFactory;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import com.google.common.util.concurrent.UncheckedExecutionException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import lombok.Cleanup;
+import org.apache.bookkeeper.client.BookKeeper.DigestType;
+import org.apache.bookkeeper.meta.HierarchicalLedgerManagerFactory;
+import org.apache.bookkeeper.meta.LedgerIdGenerator;
+import org.apache.bookkeeper.meta.LedgerManager;
+import org.apache.bookkeeper.meta.LedgerManagerFactory;
+import org.apache.bookkeeper.meta.LongHierarchicalLedgerManagerFactory;
+import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks;
+import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
+import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.LedgerMetadataListener;
+import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
+import org.apache.bookkeeper.versioning.Version;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameters;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import static org.junit.Assert.*;
-
+/**
+ * Test an EnsembleChange watcher.
+ */
 @RunWith(Parameterized.class)
 public class TestWatchEnsembleChange extends BookKeeperClusterTestCase {
 
-    static Logger LOG = LoggerFactory.getLogger(TestWatchEnsembleChange.class);
+    static final Logger LOG = LoggerFactory.getLogger(TestWatchEnsembleChange.class);
 
     final DigestType digestType;
     final Class<? extends LedgerManagerFactory> lmFactoryCls;
@@ -68,21 +70,22 @@ public class TestWatchEnsembleChange extends BookKeeperClusterTestCase {
         baseConf.setLedgerManagerFactoryClass(lmFactoryCls);
     }
 
+    @SuppressWarnings("deprecation")
     @Parameters
     public static Collection<Object[]> configs() {
         return Arrays.asList(new Object[][] {
-                { FlatLedgerManagerFactory.class },
+                { org.apache.bookkeeper.meta.FlatLedgerManagerFactory.class },
                 { HierarchicalLedgerManagerFactory.class },
                 { LongHierarchicalLedgerManagerFactory.class },
-                { MSLedgerManagerFactory.class },
+                { org.apache.bookkeeper.meta.MSLedgerManagerFactory.class },
         });
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testWatchEnsembleChange() throws Exception {
         int numEntries = 10;
         LedgerHandle lh = bkc.createLedger(3, 3, 3, digestType, "".getBytes());
-        for (int i=0; i<numEntries; i++) {
+        for (int i = 0; i < numEntries; i++) {
             lh.addEntry(("data" + i).getBytes());
             LOG.info("Added entry {}.", i);
         }
@@ -95,7 +98,7 @@ public class TestWatchEnsembleChange extends BookKeeperClusterTestCase {
             killBookie(addr);
         }
         // write another batch of entries, which will trigger ensemble change
-        for (int i=0; i<numEntries; i++) {
+        for (int i = 0; i < numEntries; i++) {
             lh.addEntry(("data" + (numEntries + i)).getBytes());
             LOG.info("Added entry {}.", (numEntries + i));
         }
@@ -106,12 +109,22 @@ public class TestWatchEnsembleChange extends BookKeeperClusterTestCase {
         lh.close();
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testWatchMetadataRemoval() throws Exception {
-        LedgerManagerFactory factory = ReflectionUtils.newInstance(lmFactoryCls);
-        factory.initialize(baseConf, super.zkc, factory.getCurrentVersion());
-        final LedgerManager manager = factory.newLedgerManager();
-        LedgerIdGenerator idGenerator = factory.newLedgerIdGenerator();
+        baseConf.setZkServers(zkUtil.getZooKeeperConnectString());
+        runFunctionWithLedgerManagerFactory(baseConf, factory -> {
+            try {
+                testWatchMetadataRemoval(factory);
+            } catch (Exception e) {
+                throw new UncheckedExecutionException(e.getMessage(), e);
+            }
+            return null;
+        });
+    }
+
+    private void testWatchMetadataRemoval(LedgerManagerFactory factory) throws Exception {
+        @Cleanup final LedgerManager manager = factory.newLedgerManager();
+        @Cleanup LedgerIdGenerator idGenerator = factory.newLedgerIdGenerator();
 
         final ByteBuffer bbLedgerId = ByteBuffer.allocate(8);
         final CountDownLatch createLatch = new CountDownLatch(1);
@@ -137,18 +150,18 @@ public class TestWatchEnsembleChange extends BookKeeperClusterTestCase {
         assertTrue(createLatch.await(2000, TimeUnit.MILLISECONDS));
         final long createdLid = bbLedgerId.getLong();
 
-        manager.registerLedgerMetadataListener( createdLid,
+        manager.registerLedgerMetadataListener(createdLid,
                 new LedgerMetadataListener() {
 
             @Override
-            public void onChanged( long ledgerId, LedgerMetadata metadata ) {
+            public void onChanged(long ledgerId, LedgerMetadata metadata) {
                 assertEquals(ledgerId, createdLid);
                 assertEquals(metadata, null);
                 removeLatch.countDown();
             }
         });
 
-        manager.removeLedgerMetadata( createdLid, Version.ANY,
+        manager.removeLedgerMetadata(createdLid, Version.ANY,
                 new BookkeeperInternalCallbacks.GenericCallback<Void>() {
 
             @Override

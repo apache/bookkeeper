@@ -20,16 +20,20 @@
  */
 package org.apache.bookkeeper.proto;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
+import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
+import org.apache.bookkeeper.tls.SecurityException;
+import org.apache.bookkeeper.tls.SecurityHandlerFactory;
+import org.apache.bookkeeper.tls.SecurityProviderFactoryFactory;
 import org.apache.bookkeeper.util.MathUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.concurrent.atomic.AtomicInteger;
-import com.google.common.base.Preconditions;
 
 /**
  *  Provide a simple round-robin style channel pool. We could improve it later to do more
@@ -38,23 +42,33 @@ import com.google.common.base.Preconditions;
 class DefaultPerChannelBookieClientPool implements PerChannelBookieClientPool,
         GenericCallback<PerChannelBookieClient> {
 
-    static final Logger logger = LoggerFactory.getLogger(DefaultPerChannelBookieClientPool.class);
+    static final Logger LOG = LoggerFactory.getLogger(DefaultPerChannelBookieClientPool.class);
 
     final PerChannelBookieClientFactory factory;
     final BookieSocketAddress address;
+
     final PerChannelBookieClient[] clients;
+
+    final ClientConfiguration conf;
+    SecurityHandlerFactory shFactory;
+
     final AtomicInteger counter = new AtomicInteger(0);
     final AtomicLong errorCounter = new AtomicLong(0);
 
-    DefaultPerChannelBookieClientPool(PerChannelBookieClientFactory factory,
+    DefaultPerChannelBookieClientPool(ClientConfiguration conf, PerChannelBookieClientFactory factory,
                                       BookieSocketAddress address,
-                                      int coreSize) {
-        Preconditions.checkArgument(coreSize > 0);
+                                      int coreSize) throws SecurityException {
+        checkArgument(coreSize > 0);
         this.factory = factory;
         this.address = address;
+        this.conf = conf;
+
+        this.shFactory = SecurityProviderFactoryFactory
+                .getSecurityProviderFactory(conf.getTLSProviderFactoryClass());
+
         this.clients = new PerChannelBookieClient[coreSize];
         for (int i = 0; i < coreSize; i++) {
-            this.clients[i] = factory.create(address, this);
+            this.clients[i] = factory.create(address, this, shFactory);
         }
     }
 
@@ -71,13 +85,20 @@ class DefaultPerChannelBookieClientPool implements PerChannelBookieClientPool,
     }
 
     @Override
-    public void obtain(GenericCallback<PerChannelBookieClient> callback) {
+    public void obtain(GenericCallback<PerChannelBookieClient> callback, long key) {
         if (1 == clients.length) {
             clients[0].connectIfNeededAndDoOp(callback);
             return;
         }
-        int idx = MathUtils.signSafeMod(counter.getAndIncrement(), clients.length);
+        int idx = MathUtils.signSafeMod(key, clients.length);
         clients[idx].connectIfNeededAndDoOp(callback);
+    }
+
+    @Override
+    public void checkTimeoutOnPendingOperations() {
+        for (int i = 0; i < clients.length; i++) {
+            clients[i].checkTimeoutOnPendingOperations();
+        }
     }
 
     @Override
@@ -97,5 +118,14 @@ class DefaultPerChannelBookieClientPool implements PerChannelBookieClientPool,
         for (PerChannelBookieClient pcbc : clients) {
             pcbc.close(wait);
         }
+    }
+
+    @Override
+    public long getNumPendingCompletionRequests() {
+        long numPending = 0;
+        for (PerChannelBookieClient pcbc : clients) {
+            numPending += pcbc.getNumPendingCompletionRequests();
+        }
+        return numPending;
     }
 }

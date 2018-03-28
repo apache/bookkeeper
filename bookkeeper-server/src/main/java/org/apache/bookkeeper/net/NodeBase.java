@@ -17,27 +17,36 @@
  */
 package org.apache.bookkeeper.net;
 
-/** A base class that implements interface Node
- *
+/**
+ * A base class that implements interface Node.
  */
 public class NodeBase implements Node {
-    /** Path separator {@value} */
-    public final static char PATH_SEPARATOR = '/';
-    /** Path separator as a string {@value} */
-    public final static String PATH_SEPARATOR_STR = "/";
-    /** string representation of root {@value} */
-    public final static String ROOT = "";
+    /**
+     * Path separator {@value}.
+     */
+    public static final char PATH_SEPARATOR = '/';
+    /**
+     * Path separator as a string {@value}.
+     */
+    public static final String PATH_SEPARATOR_STR = "/";
+    /**
+     * String representation of root {@value}.
+     */
+    public static final String ROOT = "";
 
     protected String name; //host:port#
     protected String location; //string representation of this node's location
     protected int level; //which level of the tree the node resides
     protected Node parent; //its parent
 
-    /** Default constructor */
+    /**
+     * Default constructor.
+     */
     public NodeBase() {
     }
 
-    /** Construct a node from its path
+    /**
+     * Construct a node from its path.
      * @param path
      *   a concatenation of this node's location, the path seperator, and its name
      */
@@ -51,7 +60,8 @@ public class NodeBase implements Node {
         }
     }
 
-    /** Construct a node from its name and its location
+    /**
+     * Construct a node from its name and its location.
      * @param name this node's name (can be null, must not contain {@link #PATH_SEPARATOR})
      * @param location this node's location
      */
@@ -59,7 +69,8 @@ public class NodeBase implements Node {
         set(name, normalize(location));
     }
 
-    /** Construct a node from its name and its location
+    /**
+     * Construct a node from its name and its location.
      * @param name this node's name (can be null, must not contain {@link #PATH_SEPARATOR})
      * @param location this node's location
      * @param parent this node's parent node
@@ -72,13 +83,14 @@ public class NodeBase implements Node {
     }
 
     /**
-     * set this node's name and location
+     * Set this node's name and location.
      * @param name the (nullable) name -which cannot contain the {@link #PATH_SEPARATOR}
      * @param location the location
      */
     private void set(String name, String location) {
-        if (name != null && name.contains(PATH_SEPARATOR_STR))
+        if (name != null && name.contains(PATH_SEPARATOR_STR)) {
             throw new IllegalArgumentException("Network location name contains /: " + name);
+        }
         this.name = (name == null) ? "" : name;
         this.location = location;
     }
@@ -95,7 +107,8 @@ public class NodeBase implements Node {
         return location;
     }
 
-    /** Set this node's network location
+    /**
+     * Set this node's network location.
      * @param location the location
      */
     @Override
@@ -104,7 +117,7 @@ public class NodeBase implements Node {
     }
 
     /**
-     * Get the path of a node
+     * Get the path of a node.
      * @param node a non-null node
      * @return the path of a node
      */
@@ -118,7 +131,8 @@ public class NodeBase implements Node {
         return getPath(this);
     }
 
-    /** Normalize a path by stripping off any trailing {@link #PATH_SEPARATOR}
+    /**
+     * Normalize a path by stripping off any trailing {@link #PATH_SEPARATOR}.
      * @param path path to normalize.
      * @return the normalised path
      * If <i>path</i>is null or empty {@link #ROOT} is returned
@@ -126,8 +140,9 @@ public class NodeBase implements Node {
      * is not {@link #PATH_SEPARATOR}
      */
     public static String normalize(String path) {
-        if (path == null || path.length() == 0)
+        if (path == null || path.length() == 0) {
             return ROOT;
+        }
 
         if (path.charAt(0) != PATH_SEPARATOR) {
             throw new IllegalArgumentException("Network Location path does not start with " + PATH_SEPARATOR_STR + ": "
@@ -147,7 +162,8 @@ public class NodeBase implements Node {
         return parent;
     }
 
-    /** Set this node's parent
+    /**
+     * Set this node's parent.
      * @param parent the parent
      */
     @Override
@@ -163,7 +179,8 @@ public class NodeBase implements Node {
         return level;
     }
 
-    /** Set this node's level in the tree
+    /**
+     * Set this node's level in the tree.
      * @param level the level
      */
     @Override

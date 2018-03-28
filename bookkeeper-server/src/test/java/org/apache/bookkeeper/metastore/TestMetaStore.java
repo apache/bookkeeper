@@ -21,8 +21,18 @@ import static org.apache.bookkeeper.metastore.MetastoreScannableTable.EMPTY_END_
 import static org.apache.bookkeeper.metastore.MetastoreScannableTable.EMPTY_START_KEY;
 import static org.apache.bookkeeper.metastore.MetastoreTable.ALL_FIELDS;
 import static org.apache.bookkeeper.metastore.MetastoreTable.NON_FIELDS;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
-import java.util.Arrays;
+import com.google.common.collect.MapDifference;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
+
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
@@ -42,19 +52,16 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.collect.MapDifference;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
-
-import static org.junit.Assert.*;
-
+/**
+ * Test the metastore.
+ */
 public class TestMetaStore {
-    private final static Logger logger = LoggerFactory.getLogger(TestMetaStore.class);
+    private static final Logger logger = LoggerFactory.getLogger(TestMetaStore.class);
 
-    protected final static String TABLE = "myTable";
-    protected final static String RECORDID = "test";
-    protected final static String FIELD_NAME = "name";
-    protected final static String FIELD_COUNTER = "counter";
+    protected static final String TABLE = "myTable";
+    protected static final String RECORDID = "test";
+    protected static final String FIELD_NAME = "name";
+    protected static final String FIELD_COUNTER = "counter";
 
     protected String getFieldFromValue(Value value, String field) {
         byte[] v = value.getField(field);
@@ -75,6 +82,9 @@ public class TestMetaStore {
         return data;
     }
 
+    /**
+     * A metastore record.
+     */
     protected class Record {
         String name;
         Integer counter;
@@ -100,7 +110,7 @@ public class TestMetaStore {
             name = getFieldFromValue(value, FIELD_NAME);
             String c = getFieldFromValue(value, FIELD_COUNTER);
             if (c != null) {
-                counter = new Integer(c);
+                counter = Integer.parseInt(c);
             }
         }
 
@@ -219,7 +229,7 @@ public class TestMetaStore {
     }
 
     protected Integer getRandom() {
-        return (int)(Math.random()*65536);
+        return (int) (Math.random() * 65536);
     }
 
     protected Versioned<Value> getRecord(String recordId) throws Exception {
@@ -240,7 +250,7 @@ public class TestMetaStore {
     }
 
     /**
-     * put and check fields
+     * put and check fields.
      */
     protected void putAndCheck(String recordId, String name,
                                       Integer counter, Version version,
@@ -293,7 +303,7 @@ public class TestMetaStore {
     /**
      * Test (get, get partial field, remove) on non-existent element.
      */
-    @Test(timeout=60000)
+    @Test
     public void testNonExistent() throws Exception {
         // get
         try {
@@ -304,7 +314,7 @@ public class TestMetaStore {
 
         // get partial field
         Set<String> fields =
-            new HashSet<String>(Arrays.asList(new String[] { FIELD_COUNTER }));
+            new HashSet<String>(Collections.singletonList(FIELD_COUNTER));
         try {
             myTable.get(RECORDID, fields);
             fail("Should fail to get a non-existent key with specified fields");
@@ -322,12 +332,12 @@ public class TestMetaStore {
     /**
      * Test usage of get operation on (full and partial) fields.
      */
-    @Test(timeout=60000)
+    @Test
     public void testGet() throws Exception {
         Versioned<Value> vv;
 
         final Set<String> fields =
-            new HashSet<String>(Arrays.asList(new String[] { FIELD_NAME }));
+            new HashSet<String>(Collections.singletonList(FIELD_NAME));
 
         final String name = "get";
         final Integer counter = getRandom();
@@ -369,7 +379,7 @@ public class TestMetaStore {
     /**
      * Test usage of put operation with (full and partial) fields.
      */
-    @Test(timeout=60000)
+    @Test
     public void testPut() throws Exception {
         final Integer counter = getRandom();
         final String name = "put";
@@ -460,7 +470,7 @@ public class TestMetaStore {
      * Test usage of (unconditional remove, BadVersion remove, CorrectVersion
      * remove) operation.
      */
-    @Test(timeout=60000)
+    @Test
     public void testRemove() throws Exception {
         final Integer counter = getRandom();
         final String name = "remove";
@@ -516,10 +526,8 @@ public class TestMetaStore {
                              Order order, Set<String> fields,
                              Iterator<Map.Entry<String, Value>> expectedValues,
                              int numEntriesPerScan) throws Exception {
-        MetastoreCursor cursor = myTable.openCursor(firstKey, firstInclusive,
-                                                    lastKey, lastInclusive,
-                                                    order, fields);
-        try {
+        try (MetastoreCursor cursor =
+                     myTable.openCursor(firstKey, firstInclusive, lastKey, lastInclusive, order, fields)) {
             while (cursor.hasMoreEntries()) {
                 Iterator<MetastoreTableItem> iter = cursor.readEntries(numEntriesPerScan);
                 while (iter.hasNext()) {
@@ -531,15 +539,13 @@ public class TestMetaStore {
                 }
             }
             assertFalse(expectedValues.hasNext());
-        } finally {
-            cursor.close();
         }
     }
 
     /**
      * Test usage of (scan) operation on (full and partial) fields.
      */
-    @Test(timeout=60000)
+    @Test
     public void testOpenCursor() throws Exception {
 
         TreeMap<String, Value> allValues = Maps.newTreeMap();
@@ -548,8 +554,8 @@ public class TestMetaStore {
 
         Set<String> counterFields = Sets.newHashSet(FIELD_COUNTER);
 
-        for (int i=5; i<24; i++) {
-            char c = (char)('a' + i);
+        for (int i = 5; i < 24; i++) {
+            char c = (char) ('a' + i);
             String key = String.valueOf(c);
             Value v = makeValue("value" + i, i);
             Value cv = v.project(counterFields);

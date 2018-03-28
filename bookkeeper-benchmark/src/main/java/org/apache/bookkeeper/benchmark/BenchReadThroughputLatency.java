@@ -19,34 +19,36 @@
  */
 package org.apache.bookkeeper.benchmark;
 
-import org.apache.bookkeeper.conf.ClientConfiguration;
+import static com.google.common.base.Charsets.UTF_8;
+
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.Enumeration;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.apache.bookkeeper.client.BookKeeper;
-import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.LedgerEntry;
-import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.cli.Options;
+import org.apache.bookkeeper.client.LedgerHandle;
+import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.Options;
 import org.apache.commons.cli.PosixParser;
-import org.apache.zookeeper.ZooKeeper;
-import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.WatchedEvent;
+import org.apache.zookeeper.Watcher;
+import org.apache.zookeeper.ZooKeeper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Enumeration;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Set;
-import java.util.regex.Pattern;
-import java.util.regex.Matcher;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import static com.google.common.base.Charsets.UTF_8;
-
+/**
+ * A benchmark that benchmarks the read throughput and latency.
+ */
 public class BenchReadThroughputLatency {
     static final Logger LOG = LoggerFactory.getLogger(BenchReadThroughputLatency.class);
 
@@ -101,7 +103,7 @@ public class BenchReadThroughputLatency {
                 while (lastRead < lastConfirmed) {
                     long nextLimit = lastRead + 100000;
                     long readTo = Math.min(nextLimit, lastConfirmed);
-                    Enumeration<LedgerEntry> entries = lh.readEntries(lastRead+1, readTo);
+                    Enumeration<LedgerEntry> entries = lh.readEntries(lastRead + 1, readTo);
                     lastRead = readTo;
                     while (entries.hasMoreElements()) {
                         LedgerEntry e = entries.nextElement();
@@ -119,11 +121,11 @@ public class BenchReadThroughputLatency {
                 Thread.sleep(1000);
             }
         } catch (InterruptedException ie) {
-            // ignore
-        } catch (Exception e ) {
+            Thread.currentThread().interrupt();
+        } catch (Exception e) {
             LOG.error("Exception in reader", e);
         } finally {
-            LOG.info("Read {} in {}ms", entriesRead, time/1000/1000);
+            LOG.info("Read {} in {}ms", entriesRead, time / 1000 / 1000);
 
             try {
                 if (lh != null) {
@@ -190,17 +192,15 @@ public class BenchReadThroughputLatency {
         final ClientConfiguration conf = new ClientConfiguration();
         conf.setReadTimeout(sockTimeout).setZkServers(servers);
 
-
-        final ZooKeeper zk = new ZooKeeper(servers, 3000, new Watcher() {
+        try (ZooKeeper zk = new ZooKeeper(servers, 3000, new Watcher() {
                 public void process(WatchedEvent event) {
                     if (event.getState() == Event.KeeperState.SyncConnected
                             && event.getType() == Event.EventType.None) {
                         connectedLatch.countDown();
                     }
                 }
-            });
-        final Set<String> processedLedgers = new HashSet<String>();
-        try {
+        })) {
+            final Set<String> processedLedgers = new HashSet<String>();
             zk.register(new Watcher() {
                     public void process(WatchedEvent event) {
                         try {
@@ -267,8 +267,6 @@ public class BenchReadThroughputLatency {
             }
             shutdownLatch.await();
             LOG.info("Shutting down");
-        } finally {
-            zk.close();
         }
     }
 }

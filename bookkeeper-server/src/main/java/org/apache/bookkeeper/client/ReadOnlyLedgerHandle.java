@@ -21,16 +21,20 @@
 package org.apache.bookkeeper.client;
 
 import java.security.GeneralSecurityException;
+import java.util.EnumSet;
+import java.util.Map;
+import java.util.concurrent.RejectedExecutionException;
 
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.AsyncCallback.CloseCallback;
+import org.apache.bookkeeper.client.AsyncCallback.ReadCallback;
+import org.apache.bookkeeper.client.AsyncCallback.ReadLastConfirmedCallback;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
+import org.apache.bookkeeper.client.api.WriteFlag;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.LedgerMetadataListener;
 import org.apache.bookkeeper.util.SafeRunnable;
 import org.apache.bookkeeper.versioning.Version;
-
-import java.util.concurrent.RejectedExecutionException;
 
 /**
  * Read only ledger handle. This ledger handle allows you to
@@ -53,7 +57,7 @@ class ReadOnlyLedgerHandle extends LedgerHandle implements LedgerMetadataListene
             Version.Occurred occurred =
                     ReadOnlyLedgerHandle.this.metadata.getVersion().compare(this.m.getVersion());
             if (Version.Occurred.BEFORE == occurred) {
-                LOG.info("Updated ledger metadata for ledger {} to {}.", ledgerId, this.m);
+                LOG.info("Updated ledger metadata for ledger {} to {}.", ledgerId, this.m.toSafeString());
                 synchronized (ReadOnlyLedgerHandle.this) {
                     if (this.m.isClosed()) {
                             ReadOnlyLedgerHandle.this.lastAddConfirmed = this.m.getLastEntryId();
@@ -73,7 +77,7 @@ class ReadOnlyLedgerHandle extends LedgerHandle implements LedgerMetadataListene
     ReadOnlyLedgerHandle(BookKeeper bk, long ledgerId, LedgerMetadata metadata,
                          DigestType digestType, byte[] password, boolean watch)
             throws GeneralSecurityException, NumberFormatException {
-        super(bk, ledgerId, metadata, digestType, password);
+        super(bk, ledgerId, metadata, digestType, password, EnumSet.noneOf(WriteFlag.class));
         if (watch) {
             bk.getLedgerManager().registerLedgerMetadataListener(ledgerId, this);
         }
@@ -118,23 +122,19 @@ class ReadOnlyLedgerHandle extends LedgerHandle implements LedgerMetadataListene
     }
 
     @Override
-    void handleBookieFailure(final BookieSocketAddress addr, final int bookieIndex) {
+    void handleBookieFailure(final Map<Integer, BookieSocketAddress> failedBookies) {
         blockAddCompletions.incrementAndGet();
         synchronized (metadata) {
             try {
-                if (!metadata.currentEnsemble.get(bookieIndex).equals(addr)) {
-                    // ensemble has already changed, failure of this addr is immaterial
-                    LOG.debug("Write did not succeed to {}, bookieIndex {},"
-                              +" but we have already fixed it.", addr, bookieIndex);
+                EnsembleInfo ensembleInfo = replaceBookieInMetadata(failedBookies,
+                        numEnsembleChanges.incrementAndGet());
+                if (ensembleInfo.replacedBookies.isEmpty()) {
                     blockAddCompletions.decrementAndGet();
                     return;
                 }
-
-                replaceBookieInMetadata(addr, bookieIndex);
-
                 blockAddCompletions.decrementAndGet();
                 // the failed bookie has been replaced
-                unsetSuccessAndSendWriteRequest(bookieIndex);
+                unsetSuccessAndSendWriteRequest(ensembleInfo.replacedBookies);
             } catch (BKException.BKNotEnoughBookiesException e) {
                 LOG.error("Could not get additional bookie to "
                           + "remake ensemble, closing ledger: " + ledgerId);
@@ -159,11 +159,11 @@ class ReadOnlyLedgerHandle extends LedgerHandle implements LedgerMetadataListene
                 this.metadata.getVersion().compare(newMetadata.getVersion());
         if (LOG.isDebugEnabled()) {
             LOG.debug("Try to update metadata from {} to {} : {}",
-                    new Object[] { this.metadata, newMetadata, occurred });
+                    this.metadata, newMetadata, occurred);
         }
         if (Version.Occurred.BEFORE == occurred) { // the metadata is updated
             try {
-                bk.mainWorkerPool.submitOrdered(ledgerId, new MetadataUpdater(newMetadata));
+                bk.getMainWorkerPool().submitOrdered(ledgerId, new MetadataUpdater(newMetadata));
             } catch (RejectedExecutionException ree) {
                 LOG.error("Failed on submitting updater to update ledger metadata on ledger {} : {}",
                         ledgerId, newMetadata);
@@ -179,5 +179,26 @@ class ReadOnlyLedgerHandle extends LedgerHandle implements LedgerMetadataListene
     @Override
     protected void initializeExplicitLacFlushPolicy() {
         explicitLacFlushPolicy = ExplicitLacFlushPolicy.VOID_EXPLICITLAC_FLUSH_POLICY;
+    }
+
+    @Override
+    public void asyncReadLastEntry(ReadCallback cb, Object ctx) {
+        asyncReadLastConfirmed(new ReadLastConfirmedCallback() {
+            @Override
+            public void readLastConfirmedComplete(int rc, long lastConfirmed, Object ctx) {
+                if (rc == BKException.Code.OK) {
+                    if (lastConfirmed < 0) {
+                        // Ledger was empty, so there is no last entry to read
+                        cb.readComplete(BKException.Code.NoSuchEntryException, ReadOnlyLedgerHandle.this, null, ctx);
+                    } else {
+                        asyncReadEntriesInternal(lastConfirmed, lastConfirmed, cb, ctx, false);
+                    }
+                } else {
+                    LOG.error("ReadException in asyncReadLastEntry, ledgerId: {}, lac: {}, rc:{}",
+                        lastConfirmed, ledgerId, rc);
+                    cb.readComplete(rc, ReadOnlyLedgerHandle.this, null, ctx);
+                }
+            }
+        }, ctx);
     }
 }

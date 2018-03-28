@@ -17,9 +17,9 @@
  */
 package org.apache.bookkeeper.net;
 
-import java.util.List;
-
 import com.google.common.annotations.Beta;
+
+import java.util.List;
 
 /**
  * An interface that must be implemented to allow pluggable
@@ -38,23 +38,33 @@ public interface DNSToSwitchMapping {
      * Note the hostname/ip-address is not part of the returned path.
      * The network topology of the cluster would determine the number of
      * components in the network path.
-     * <p/>
      *
-     * If a name cannot be resolved to a rack, the implementation
-     * should return {@link NetworkTopology#DEFAULT_RACK}. This
+     * <p>If a name cannot be resolved to a rack, the implementation
+     * should return {@link NetworkTopology#DEFAULT_REGION_AND_RACK}. This
      * is what the bundled implementations do, though it is not a formal requirement
      *
      * @param names the list of hosts to resolve (can be empty)
      * @return list of resolved network paths.
      * If <i>names</i> is empty, the returned list is also empty
      */
-    public List<String> resolve(List<String> names);
+    List<String> resolve(List<String> names);
 
     /**
      * Reload all of the cached mappings.
      *
-     * If there is a cache, this method will clear it, so that future accesses
+     * <p>If there is a cache, this method will clear it, so that future accesses
      * will get a chance to see the new data.
      */
-    public void reloadCachedMappings();
+    void reloadCachedMappings();
+
+    /**
+     * Hints what to use with implementation when InetSocketAddress is converted
+     * to String:
+     * hostname (addr.getHostName(), default)
+     * or IP address (addr.getAddress().getHostAddress()).
+     * @return true if hostname, false if IP address. Default is true.
+      */
+    default boolean useHostName() {
+        return true;
+    }
 }

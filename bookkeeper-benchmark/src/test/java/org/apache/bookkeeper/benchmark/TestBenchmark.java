@@ -19,18 +19,21 @@
  */
 package org.apache.bookkeeper.benchmark;
 
+import java.util.Arrays;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
-import org.junit.Test;
 import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Arrays;
-import java.util.concurrent.atomic.AtomicBoolean;
-
+/**
+ * Test benchmarks.
+ */
 public class TestBenchmark extends BookKeeperClusterTestCase {
     protected static final Logger LOG = LoggerFactory.getLogger(TestBenchmark.class);
 
@@ -38,7 +41,14 @@ public class TestBenchmark extends BookKeeperClusterTestCase {
         super(5);
     }
 
-    @Test(timeout=60000)
+    @Before
+    public void setUp() throws Exception {
+        baseConf.setLedgerManagerFactoryClassName("org.apache.bookkeeper.meta.FlatLedgerManagerFactory");
+        baseClientConf.setLedgerManagerFactoryClassName("org.apache.bookkeeper.meta.FlatLedgerManagerFactory");
+        super.setUp();
+    }
+
+    @Test
     public void testThroughputLatency() throws Exception {
         String latencyFile = System.getProperty("test.latency.file", "latencyDump.dat");
         BenchThroughputLatency.main(new String[] {
@@ -51,17 +61,20 @@ public class TestBenchmark extends BookKeeperClusterTestCase {
             });
     }
 
-    @Test(timeout=60000)
+    @Test
     public void testBookie() throws Exception {
         BookieSocketAddress bookie = getBookie(0);
         BenchBookie.main(new String[] {
                 "--host", bookie.getSocketAddress().getHostName(),
                 "--port", String.valueOf(bookie.getPort()),
-                "--zookeeper", zkUtil.getZooKeeperConnectString()
+                "--zookeeper", zkUtil.getZooKeeperConnectString(),
+                "--warmupCount", "10",
+                "--latencyCount", "100",
+                "--throughputCount", "100"
                 });
     }
 
-    @Test(timeout=60000)
+    @Test
     public void testReadThroughputLatency() throws Exception {
         final AtomicBoolean threwException = new AtomicBoolean(false);
         Thread t = new Thread() {
@@ -80,7 +93,7 @@ public class TestBenchmark extends BookKeeperClusterTestCase {
 
         Thread.sleep(10000);
         byte data[] = new byte[1024];
-        Arrays.fill(data, (byte)'x');
+        Arrays.fill(data, (byte) 'x');
 
         long lastLedgerId = 0;
         Assert.assertTrue("Thread should be running", t.isAlive());

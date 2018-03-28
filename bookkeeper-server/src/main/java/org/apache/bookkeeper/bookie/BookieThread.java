@@ -17,15 +17,17 @@
  */
 package org.apache.bookkeeper.bookie;
 
+import io.netty.util.concurrent.FastThreadLocalThread;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/*
-* Wrapper that wraps bookie threads
-* Any common handing that we require for all bookie threads
-* should be implemented here
-*/
-public class BookieThread extends Thread implements
+/**
+ * Wrapper that wraps bookie threads.
+ * Any common handing that we require for all bookie threads
+ * should be implemented here
+ */
+public class BookieThread extends FastThreadLocalThread implements
         Thread.UncaughtExceptionHandler {
 
     private static final Logger LOG = LoggerFactory
@@ -47,7 +49,7 @@ public class BookieThread extends Thread implements
     }
 
     /**
-     * Handles uncaught exception occurred in thread
+     * Handles uncaught exception occurred in thread.
      */
     protected void handleException(Thread t, Throwable e) {
         LOG.error("Uncaught exception in thread {}", t.getName(), e);

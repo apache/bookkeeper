@@ -1,0 +1,25 @@
+{% assign configs = site.data.config[include.id] %}
+{% for group in configs.groups %}
+<h2 id="{{ group.name | slugify }}">{{ group.name }}</h2>
+
+{% if group.description %}{{ group.description | markdownify }}{% endif %}
+
+<table>
+  <thead>
+    <tr>
+      <th>Parameter</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for param in group.params %}
+    <tr id="{{ param.param }}">
+      <td><code>{{ param.param }}</code></td>
+      <td>{{ param.description | markdownify }}</td>
+      <td>{% if param.default %}<code>{{ param.default }}</code>{% endif %}</td>
+    </tr>
+    {% endfor %} <!-- for param in group.params -->
+  </tbody>
+</table>
+{% endfor %} <!-- for group in configs.groups -->

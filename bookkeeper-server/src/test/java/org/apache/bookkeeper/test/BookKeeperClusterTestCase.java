@@ -21,15 +21,20 @@
 
 package org.apache.bookkeeper.test;
 
+import static org.junit.Assert.assertTrue;
+
+import com.google.common.base.Stopwatch;
 import java.io.File;
 import java.io.IOException;
-import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Future;
+import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.bookkeeper.bookie.Bookie;
@@ -42,8 +47,8 @@ import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.metastore.InMemoryMetaStore;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieServer;
-import org.apache.bookkeeper.replication.AutoRecoveryMain;
 import org.apache.bookkeeper.replication.Auditor;
+import org.apache.bookkeeper.replication.AutoRecoveryMain;
 import org.apache.bookkeeper.replication.ReplicationException.CompatibilityException;
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
 import org.apache.bookkeeper.util.IOUtils;
@@ -52,6 +57,9 @@ import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooKeeper;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
+import org.junit.rules.TestName;
+import org.junit.rules.Timeout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -62,27 +70,53 @@ public abstract class BookKeeperClusterTestCase {
 
     static final Logger LOG = LoggerFactory.getLogger(BookKeeperClusterTestCase.class);
 
+    @Rule
+    public final TestName runtime = new TestName();
+
+    @Rule
+    public final Timeout globalTimeout;
+
     // ZooKeeper related variables
-    protected ZooKeeperUtil zkUtil = new ZooKeeperUtil();
+    protected final ZooKeeperUtil zkUtil = new ZooKeeperUtil();
     protected ZooKeeper zkc;
 
     // BookKeeper related variables
-    protected List<File> tmpDirs = new LinkedList<File>();
-    protected List<BookieServer> bs = new LinkedList<BookieServer>();
-    protected List<ServerConfiguration> bsConfs = new LinkedList<ServerConfiguration>();
+    protected final List<File> tmpDirs = new LinkedList<File>();
+    protected final List<BookieServer> bs = new LinkedList<BookieServer>();
+    protected final List<ServerConfiguration> bsConfs = new LinkedList<ServerConfiguration>();
+    private final Map<BookieSocketAddress, TestStatsProvider> bsLoggers = new HashMap<>();
     protected int numBookies;
     protected BookKeeperTestClient bkc;
 
-    protected ServerConfiguration baseConf = TestBKConfiguration.newServerConfiguration();
-    protected ClientConfiguration baseClientConf = new ClientConfiguration();
+    /*
+     * Loopback interface is set as the listening interface and allowloopback is
+     * set to true in this server config. So bookies in this test process would
+     * bind to loopback address.
+     */
+    protected final ServerConfiguration baseConf = TestBKConfiguration.newServerConfiguration();
+    protected final ClientConfiguration baseClientConf = new ClientConfiguration();
 
-    private Map<BookieServer, AutoRecoveryMain> autoRecoveryProcesses = new HashMap<BookieServer, AutoRecoveryMain>();
+    private final Map<BookieServer, AutoRecoveryMain> autoRecoveryProcesses = new HashMap<>();
 
     private boolean isAutoRecoveryEnabled;
 
+    SynchronousQueue<Throwable> asyncExceptions = new SynchronousQueue<>();
+    protected void captureThrowable(Runnable c) {
+        try {
+            c.run();
+        } catch (Throwable e) {
+            LOG.error("Captured error: {}", e);
+            asyncExceptions.add(e);
+        }
+    }
+
     public BookKeeperClusterTestCase(int numBookies) {
+        this(numBookies, 120);
+    }
+
+    public BookKeeperClusterTestCase(int numBookies, int testTimeoutSecs) {
         this.numBookies = numBookies;
-        baseConf.setAllowLoopback(true);
+        this.globalTimeout = Timeout.seconds(testTimeoutSecs);
     }
 
     @Before
@@ -92,11 +126,13 @@ public abstract class BookKeeperClusterTestCase {
         setMetastoreImplClass(baseConf);
         setMetastoreImplClass(baseClientConf);
 
+        Stopwatch sw = Stopwatch.createStarted();
         try {
             // start zookeeper service
             startZKCluster();
             // start bookkeeper service
             startBKCluster();
+            LOG.info("Setup testcase {} in {} ms.", runtime.getMethodName(), sw.elapsed(TimeUnit.MILLISECONDS));
         } catch (Exception e) {
             LOG.error("Error setting up", e);
             throw e;
@@ -105,14 +141,40 @@ public abstract class BookKeeperClusterTestCase {
 
     @After
     public void tearDown() throws Exception {
+        boolean failed = false;
+        for (Throwable e : asyncExceptions) {
+            LOG.error("Got async exception: {}", e);
+            failed = true;
+        }
+        assertTrue("Async failure", !failed);
+        Stopwatch sw = Stopwatch.createStarted();
         LOG.info("TearDown");
+        Exception tearDownException = null;
         // stop bookkeeper service
-        stopBKCluster();
+        try {
+            stopBKCluster();
+        } catch (Exception e) {
+            LOG.error("Got Exception while trying to stop BKCluster", e);
+            tearDownException = e;
+        }
         // stop zookeeper service
-        stopZKCluster();
+        try {
+            stopZKCluster();
+        } catch (Exception e) {
+            LOG.error("Got Exception while trying to stop ZKCluster", e);
+            tearDownException = e;
+        }
         // cleanup temp dirs
-        cleanupTempDirs();
-        LOG.info("Tearing down test {}", getClass());
+        try {
+            cleanupTempDirs();
+        } catch (Exception e) {
+            LOG.error("Got Exception while trying to cleanupTempDirs", e);
+            tearDownException = e;
+        }
+        LOG.info("Tearing down test {} in {} ms.", runtime.getMethodName(), sw.elapsed(TimeUnit.MILLISECONDS));
+        if (tearDownException != null) {
+            throw tearDownException;
+        }
     }
 
     protected File createTempDir(String prefix, String suffix) throws IOException {
@@ -122,7 +184,7 @@ public abstract class BookKeeperClusterTestCase {
     }
 
     /**
-     * Start zookeeper cluster
+     * Start zookeeper cluster.
      *
      * @throws Exception
      */
@@ -132,7 +194,7 @@ public abstract class BookKeeperClusterTestCase {
     }
 
     /**
-     * Stop zookeeper cluster
+     * Stop zookeeper cluster.
      *
      * @throws Exception
      */
@@ -149,7 +211,7 @@ public abstract class BookKeeperClusterTestCase {
     protected void startBKCluster() throws Exception {
         baseClientConf.setZkServers(zkUtil.getZooKeeperConnectString());
         if (numBookies > 0) {
-            bkc = new BookKeeperTestClient(baseClientConf);
+            bkc = new BookKeeperTestClient(baseClientConf, new TestStatsProvider());
         }
 
         // Create Bookie Servers (B1, B2, B3)
@@ -166,7 +228,7 @@ public abstract class BookKeeperClusterTestCase {
      */
     protected void stopBKCluster() throws Exception {
         if (bkc != null) {
-            bkc.close();;
+            bkc.close();
         }
 
         for (BookieServer server : bs) {
@@ -179,6 +241,7 @@ public abstract class BookKeeperClusterTestCase {
             }
         }
         bs.clear();
+        bsLoggers.clear();
     }
 
     protected void cleanupTempDirs() throws Exception {
@@ -190,7 +253,12 @@ public abstract class BookKeeperClusterTestCase {
     protected ServerConfiguration newServerConfiguration() throws Exception {
         File f = createTempDir("bookie", "test");
 
-        int port = PortManager.nextFreePort();
+        int port;
+        if (baseConf.isEnableLocalTransport() || !baseConf.getAllowEphemeralPorts()) {
+            port = PortManager.nextFreePort();
+        } else {
+            port = 0;
+        }
         return newServerConfiguration(port, zkUtil.getZooKeeperConnectString(),
                                       f, new File[] { f });
     }
@@ -199,21 +267,41 @@ public abstract class BookKeeperClusterTestCase {
         return new ClientConfiguration(baseConf);
     }
 
-    protected ServerConfiguration newServerConfiguration(int port, String zkServers, File journalDir, File[] ledgerDirs) {
+    protected ServerConfiguration newServerConfiguration(int port, String zkServers, File journalDir,
+            File[] ledgerDirs) {
         ServerConfiguration conf = new ServerConfiguration(baseConf);
         conf.setBookiePort(port);
         conf.setZkServers(zkServers);
         conf.setJournalDirName(journalDir.getPath());
         String[] ledgerDirNames = new String[ledgerDirs.length];
-        for (int i=0; i<ledgerDirs.length; i++) {
+        for (int i = 0; i < ledgerDirs.length; i++) {
             ledgerDirNames[i] = ledgerDirs[i].getPath();
         }
         conf.setLedgerDirNames(ledgerDirNames);
+        conf.setEnableTaskExecutionStats(true);
         return conf;
     }
 
+    protected void stopAllBookies() throws Exception {
+        for (BookieServer server : bs) {
+            server.shutdown();
+        }
+        bsConfs.clear();
+        bs.clear();
+        if (bkc != null) {
+            bkc.close();
+            bkc = null;
+        }
+    }
+
+    protected void startAllBookies() throws Exception {
+        for (ServerConfiguration conf : bsConfs) {
+            bs.add(startBookie(conf));
+        }
+    }
+
     /**
-     * Get bookie address for bookie at index
+     * Get bookie address for bookie at index.
      */
     public BookieSocketAddress getBookie(int index) throws Exception {
         if (bs.size() <= index || index < 0) {
@@ -224,7 +312,7 @@ public abstract class BookKeeperClusterTestCase {
     }
 
     /**
-     * Get bookie configuration for bookie
+     * Get bookie configuration for bookie.
      */
     public ServerConfiguration getBkConf(BookieSocketAddress addr) throws Exception {
         int bkIndex = 0;
@@ -263,9 +351,26 @@ public abstract class BookKeeperClusterTestCase {
         if (toRemove != null) {
             stopAutoRecoveryService(toRemove);
             bs.remove(toRemove);
+            bsLoggers.remove(addr);
             return bsConfs.remove(toRemoveIndex);
         }
         return null;
+    }
+
+    /**
+     * Set the bookie identified by its socket address to readonly.
+     *
+     * @param addr
+     *          Socket Address
+     * @throws InterruptedException
+     */
+    public void setBookieToReadOnly(BookieSocketAddress addr) throws InterruptedException, UnknownHostException {
+        for (BookieServer server : bs) {
+            if (server.getLocalAddress().equals(addr)) {
+                server.getBookie().getStateManager().doTransitionToReadOnlyMode();
+                break;
+            }
+        }
     }
 
     /**
@@ -286,11 +391,32 @@ public abstract class BookKeeperClusterTestCase {
         server.shutdown();
         stopAutoRecoveryService(server);
         bs.remove(server);
+        bsLoggers.remove(server.getLocalAddress());
         return bsConfs.remove(index);
     }
 
     /**
-     * Sleep a bookie
+     * Kill bookie by index and verify that it's stopped.
+     *
+     * @param index index of bookie to kill
+     *
+     * @return configuration of killed bookie
+     */
+    public ServerConfiguration killBookieAndWaitForZK(int index) throws Exception {
+        if (index >= bs.size()) {
+            throw new IOException("Bookie does not exist");
+        }
+        BookieServer server = bs.get(index);
+        ServerConfiguration ret = killBookie(index);
+        while (zkc.exists(baseConf.getZkAvailableBookiesPath() + "/"
+                + server.getLocalAddress().toString(), false) != null) {
+            Thread.sleep(500);
+        }
+        return ret;
+    }
+
+    /**
+     * Sleep a bookie.
      *
      * @param addr
      *          Socket Address
@@ -312,7 +438,7 @@ public abstract class BookKeeperClusterTestCase {
                                 bookie.suspendProcessing();
                                 LOG.info("bookie {} is asleep", bookie.getLocalAddress());
                                 l.countDown();
-                                Thread.sleep(seconds*1000);
+                                Thread.sleep(seconds * 1000);
                                 bookie.resumeProcessing();
                                 LOG.info("bookie {} is awake", bookie.getLocalAddress());
                             } catch (Exception e) {
@@ -328,7 +454,7 @@ public abstract class BookKeeperClusterTestCase {
     }
 
     /**
-     * Sleep a bookie until I count down the latch
+     * Sleep a bookie until I count down the latch.
      *
      * @param addr
      *          Socket Address
@@ -338,13 +464,25 @@ public abstract class BookKeeperClusterTestCase {
      * @throws IOException
      */
     public void sleepBookie(BookieSocketAddress addr, final CountDownLatch l)
-            throws Exception {
+            throws InterruptedException, IOException {
+        final CountDownLatch suspendLatch = new CountDownLatch(1);
+        sleepBookie(addr, l, suspendLatch);
+        suspendLatch.await();
+    }
+
+    public void sleepBookie(BookieSocketAddress addr, final CountDownLatch l, final CountDownLatch suspendLatch)
+            throws InterruptedException, IOException {
         for (final BookieServer bookie : bs) {
             if (bookie.getLocalAddress().equals(addr)) {
-                bookie.suspendProcessing();
+                LOG.info("Sleep bookie {}.", addr);
                 Thread sleeper = new Thread() {
+                    @Override
                     public void run() {
                         try {
+                            bookie.suspendProcessing();
+                            if (null != suspendLatch) {
+                                suspendLatch.countDown();
+                            }
                             l.await();
                             bookie.resumeProcessing();
                         } catch (Exception e) {
@@ -376,7 +514,7 @@ public abstract class BookKeeperClusterTestCase {
     /**
      * Restart a bookie. Also restart the respective auto recovery process,
      * if isAutoRecoveryEnabled is true.
-     * 
+     *
      * @param addr
      * @throws InterruptedException
      * @throws IOException
@@ -388,16 +526,14 @@ public abstract class BookKeeperClusterTestCase {
         int toRemoveIndex = 0;
         for (BookieServer server : bs) {
             if (server.getLocalAddress().equals(addr)) {
-                server.shutdown();
                 toRemove = server;
                 break;
             }
             ++toRemoveIndex;
         }
         if (toRemove != null) {
-            stopAutoRecoveryService(toRemove);
-            bs.remove(toRemove);
-            ServerConfiguration newConfig = bsConfs.remove(toRemoveIndex);
+            ServerConfiguration newConfig = bsConfs.get(toRemoveIndex);
+            killBookie(toRemoveIndex);
             Thread.sleep(1000);
             bs.add(startBookie(newConfig));
             bsConfs.add(newConfig);
@@ -425,12 +561,16 @@ public abstract class BookKeeperClusterTestCase {
             stopAutoRecoveryService(server);
         }
         bs.clear();
+        bsLoggers.clear();
         Thread.sleep(1000);
         // restart them to ensure we can't
         for (ServerConfiguration conf : bsConfs) {
+            // ensure the bookie port is loaded correctly
+            int port = conf.getBookiePort();
             if (null != newConf) {
                 conf.loadConf(newConf);
             }
+            conf.setBookiePort(port);
             bs.add(startBookie(conf));
         }
     }
@@ -444,11 +584,18 @@ public abstract class BookKeeperClusterTestCase {
      */
     public int startNewBookie()
             throws Exception {
+        return startNewBookieAndReturnAddress().getPort();
+    }
+
+    public BookieSocketAddress startNewBookieAndReturnAddress()
+            throws Exception {
         ServerConfiguration conf = newServerConfiguration();
         bsConfs.add(conf);
-        bs.add(startBookie(conf));
+        LOG.info("Starting new bookie on port: {}", conf.getBookiePort());
+        BookieServer server = startBookie(conf);
+        bs.add(server);
 
-        return conf.getBookiePort();
+        return server.getLocalAddress();
     }
 
     /**
@@ -461,29 +608,23 @@ public abstract class BookKeeperClusterTestCase {
      */
     protected BookieServer startBookie(ServerConfiguration conf)
             throws Exception {
-        BookieServer server = new BookieServer(conf);
-        server.start();
+        TestStatsProvider provider = new TestStatsProvider();
+        BookieServer server = new BookieServer(conf, provider.getStatsLogger(""));
+        BookieSocketAddress address = Bookie.getBookieAddress(conf);
+        bsLoggers.put(address, provider);
 
         if (bkc == null) {
-            bkc = new BookKeeperTestClient(baseClientConf);
+            bkc = new BookKeeperTestClient(baseClientConf, new TestStatsProvider());
         }
 
-        int port = conf.getBookiePort();
-        String host = InetAddress.getLocalHost().getHostAddress();
-        if (conf.getUseHostNameAsBookieID()) {
-            host = InetAddress.getLocalHost().getCanonicalHostName();
-        }
-        
-        while ( (!conf.isForceReadOnlyBookie() && (bkc.getZkHandle().exists(
-                    "/ledgers/available/" + host + ":" + port, false) == null)) ||
-                ( conf.isForceReadOnlyBookie() && ((bkc.getZkHandle().exists(
-                    "/ledgers/available/readonly/" + host + ":" + port, false) == null)))
-              ) {
-            Thread.sleep(500);
-        }
+        Future<?> waitForBookie = conf.isForceReadOnlyBookie()
+            ? bkc.waitForReadOnlyBookie(address)
+            : bkc.waitForWritableBookie(address);
 
-        bkc.readBookiesBlocking();
-        LOG.info("New bookie on port " + port + " has been created.");
+        server.start();
+
+        waitForBookie.get(30, TimeUnit.SECONDS);
+        LOG.info("New bookie '{}' has been created.", address);
 
         try {
             startAutoRecovery(server, conf);
@@ -501,26 +642,28 @@ public abstract class BookKeeperClusterTestCase {
      */
     protected BookieServer startBookie(ServerConfiguration conf, final Bookie b)
             throws Exception {
-        BookieServer server = new BookieServer(conf) {
+        TestStatsProvider provider = new TestStatsProvider();
+        BookieServer server = new BookieServer(conf, provider.getStatsLogger("")) {
             @Override
             protected Bookie newBookie(ServerConfiguration conf) {
                 return b;
             }
         };
+
+        BookieSocketAddress address = Bookie.getBookieAddress(conf);
+        if (bkc == null) {
+            bkc = new BookKeeperTestClient(baseClientConf, new TestStatsProvider());
+        }
+        Future<?> waitForBookie = conf.isForceReadOnlyBookie()
+            ? bkc.waitForReadOnlyBookie(address)
+            : bkc.waitForWritableBookie(address);
+
         server.start();
+        bsLoggers.put(server.getLocalAddress(), provider);
 
-        int port = conf.getBookiePort();
-        String host = InetAddress.getLocalHost().getHostAddress();
-        if (conf.getUseHostNameAsBookieID()) {
-            host = InetAddress.getLocalHost().getCanonicalHostName();
-        }
-        while (bkc.getZkHandle().exists(
-                "/ledgers/available/" + host + ":" + port, false) == null) {
-            Thread.sleep(500);
-        }
+        waitForBookie.get(30, TimeUnit.SECONDS);
+        LOG.info("New bookie '{}' has been created.", address);
 
-        bkc.readBookiesBlocking();
-        LOG.info("New bookie on port " + port + " has been created.");
         try {
             startAutoRecovery(server, conf);
         } catch (CompatibilityException ce) {
@@ -597,7 +740,7 @@ public abstract class BookKeeperClusterTestCase {
      * isAutoRecoveryEnabled is true.
      */
     public void stopReplicationService() throws Exception{
-        if(false == isAutoRecoveryEnabled()){
+        if (!isAutoRecoveryEnabled()){
             return;
         }
         for (Entry<BookieServer, AutoRecoveryMain> autoRecoveryProcess : autoRecoveryProcesses
@@ -636,4 +779,19 @@ public abstract class BookKeeperClusterTestCase {
     public static boolean isCreatedFromIp(BookieSocketAddress addr) {
         return addr.getSocketAddress().toString().startsWith("/");
     }
+
+    public void resetBookieOpLoggers() {
+        for (TestStatsProvider provider : bsLoggers.values()) {
+            provider.clear();
+        }
+    }
+
+    public TestStatsProvider getStatsProvider(BookieSocketAddress addr) {
+        return bsLoggers.get(addr);
+    }
+
+    public TestStatsProvider getStatsProvider(int index) throws Exception {
+        return getStatsProvider(bs.get(index).getLocalAddress());
+    }
+
 }

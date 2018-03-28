@@ -17,28 +17,28 @@
  */
 package org.apache.bookkeeper.client;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
+
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.net.NetworkTopology;
 import org.apache.bookkeeper.net.NodeBase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-abstract class TopologyAwareEnsemblePlacementPolicy implements ITopologyAwareEnsemblePlacementPolicy<TopologyAwareEnsemblePlacementPolicy.BookieNode> {
+abstract class TopologyAwareEnsemblePlacementPolicy implements
+        ITopologyAwareEnsemblePlacementPolicy<TopologyAwareEnsemblePlacementPolicy.BookieNode> {
     static final Logger LOG = LoggerFactory.getLogger(TopologyAwareEnsemblePlacementPolicy.class);
 
     protected static class TruePredicate implements Predicate<BookieNode> {
 
-        public static final TruePredicate instance = new TruePredicate();
+        public static final TruePredicate INSTANCE = new TruePredicate();
 
         @Override
         public boolean apply(BookieNode candidate, Ensemble chosenNodes) {
@@ -49,7 +49,8 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements ITopologyAwareEns
 
     protected static class EnsembleForReplacementWithNoConstraints implements Ensemble<BookieNode> {
 
-        public static final EnsembleForReplacementWithNoConstraints instance = new EnsembleForReplacementWithNoConstraints();
+        public static final EnsembleForReplacementWithNoConstraints INSTANCE =
+            new EnsembleForReplacementWithNoConstraints();
         static final ArrayList<BookieSocketAddress> EMPTY_LIST = new ArrayList<BookieSocketAddress>(0);
 
         @Override
@@ -64,7 +65,7 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements ITopologyAwareEns
         }
 
         /**
-         * Validates if an ensemble is valid
+         * Validates if an ensemble is valid.
          *
          * @return true if the ensemble is valid; false otherwise
          */
@@ -118,7 +119,7 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements ITopologyAwareEns
         protected interface CoverageSet {
             boolean apply(BookieNode candidate);
             void addBookie(BookieNode candidate);
-            public CoverageSet duplicate();
+            CoverageSet duplicate();
         }
 
         protected class RackQuorumCoverageSet implements CoverageSet {
@@ -134,7 +135,8 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements ITopologyAwareEns
                 }
 
                 if (seenBookies + 1 == writeQuorumSize) {
-                    return racksOrRegionsInQuorum.size() > (racksOrRegionsInQuorum.contains(candidate.getNetworkLocation(distanceFromLeaves)) ? 1 : 0);
+                    return racksOrRegionsInQuorum.size()
+                        > (racksOrRegionsInQuorum.contains(candidate.getNetworkLocation(distanceFromLeaves)) ? 1 : 0);
                 }
                 return true;
             }
@@ -176,14 +178,17 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements ITopologyAwareEns
                             int maxAllowedSum) {
                 if (remainingRacksOrRegions.isEmpty() || (subsetSize <= 0)) {
                     if (maxAllowedSum < 0) {
-                        LOG.trace("CHECK FAILED: RacksOrRegions Included {} Remaining {}, subsetSize {}, maxAllowedSum {}", new Object[]{
-                            includedRacksOrRegions, remainingRacksOrRegions, subsetSize, maxAllowedSum
-                        });
+                        if (LOG.isTraceEnabled()) {
+                            LOG.trace(
+                                    "CHECK FAILED: RacksOrRegions Included {} Remaining {}, subsetSize {}, "
+                                    + "maxAllowedSum {}",
+                                    includedRacksOrRegions, remainingRacksOrRegions, subsetSize, maxAllowedSum);
+                        }
                     }
                     return (maxAllowedSum >= 0);
                 }
 
-                for(String rackOrRegion: remainingRacksOrRegions) {
+                for (String rackOrRegion: remainingRacksOrRegions) {
                     Integer currentAllocation = allocationToRacksOrRegions.get(rackOrRegion);
                     if (currentAllocation == null) {
                         allocationToRacksOrRegions.put(rackOrRegion, 0);
@@ -191,9 +196,12 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements ITopologyAwareEns
                     }
 
                     if (currentAllocation > maxAllowedSum) {
-                        LOG.trace("CHECK FAILED: RacksOrRegions Included {} Candidate {}, subsetSize {}, maxAllowedSum {}", new Object[]{
-                            includedRacksOrRegions, rackOrRegion, subsetSize, maxAllowedSum
-                        });
+                        if (LOG.isTraceEnabled()) {
+                            LOG.trace(
+                                    "CHECK FAILED: RacksOrRegions Included {} Candidate {}, subsetSize {}, "
+                                    + "maxAllowedSum {}",
+                                    includedRacksOrRegions, rackOrRegion, subsetSize, maxAllowedSum);
+                        }
                         return false;
                     } else {
                         Set<String> remainingElements = new HashSet<String>(remainingRacksOrRegions);
@@ -219,7 +227,8 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements ITopologyAwareEns
                 }
 
                 String candidateRackOrRegion = candidate.getNetworkLocation(distanceFromLeaves);
-                candidateRackOrRegion = candidateRackOrRegion.startsWith(NodeBase.PATH_SEPARATOR_STR) ? candidateRackOrRegion.substring(1) : candidateRackOrRegion;
+                candidateRackOrRegion = candidateRackOrRegion.startsWith(NodeBase.PATH_SEPARATOR_STR)
+                    ? candidateRackOrRegion.substring(1) : candidateRackOrRegion;
                 final Set<String> remainingRacksOrRegions = new HashSet<String>(racksOrRegions);
                 remainingRacksOrRegions.remove(candidateRackOrRegion);
                 final Set<String> includedRacksOrRegions = new HashSet<String>();
@@ -249,7 +258,8 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements ITopologyAwareEns
             @Override
             public void addBookie(BookieNode candidate) {
                 String candidateRackOrRegion = candidate.getNetworkLocation(distanceFromLeaves);
-                candidateRackOrRegion = candidateRackOrRegion.startsWith(NodeBase.PATH_SEPARATOR_STR) ? candidateRackOrRegion.substring(1) : candidateRackOrRegion;
+                candidateRackOrRegion = candidateRackOrRegion.startsWith(NodeBase.PATH_SEPARATOR_STR)
+                    ? candidateRackOrRegion.substring(1) : candidateRackOrRegion;
                 int oldCount = 0;
                 if (null != allocationToRacksOrRegions.get(candidateRackOrRegion)) {
                     oldCount = allocationToRacksOrRegions.get(candidateRackOrRegion);
@@ -421,7 +431,7 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements ITopologyAwareEns
         }
 
         /**
-         * Validates if an ensemble is valid
+         * Validates if an ensemble is valid.
          *
          * @return true if the ensemble is valid; false otherwise
          */
@@ -437,8 +447,8 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements ITopologyAwareEns
                 racksOrRegions.add(bn.getNetworkLocation(distanceFromLeaves));
             }
 
-            return ((minRacksOrRegionsForDurability == 0) ||
-                    (racksOrRegions.size() >= minRacksOrRegionsForDurability));
+            return ((minRacksOrRegionsForDurability == 0)
+                    || (racksOrRegions.size() >= minRacksOrRegionsForDurability));
         }
 
         @Override
@@ -448,20 +458,21 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements ITopologyAwareEns
     }
 
     @Override
-    public List<Integer> reorderReadSequence(ArrayList<BookieSocketAddress> ensemble, List<Integer> writeSet, Map<BookieSocketAddress, Long> bookieFailureHistory) {
+    public DistributionSchedule.WriteSet reorderReadSequence(
+            ArrayList<BookieSocketAddress> ensemble,
+            BookiesHealthInfo bookiesHealthInfo,
+            DistributionSchedule.WriteSet writeSet) {
         return writeSet;
     }
 
     @Override
-    public List<Integer> reorderReadLACSequence(ArrayList<BookieSocketAddress> ensemble, List<Integer> writeSet, Map<BookieSocketAddress, Long> bookieFailureHistory) {
-        List<Integer> retList = new ArrayList<Integer>(reorderReadSequence(ensemble, writeSet, bookieFailureHistory));
-        if (retList.size() < ensemble.size()) {
-            for (int i = 0; i < ensemble.size(); i++) {
-                if (!retList.contains(i)) {
-                    retList.add(i);
-                }
-            }
-        }
+    public DistributionSchedule.WriteSet reorderReadLACSequence(
+            ArrayList<BookieSocketAddress> ensemble,
+            BookiesHealthInfo bookiesHealthInfo,
+            DistributionSchedule.WriteSet writeSet) {
+        DistributionSchedule.WriteSet retList = reorderReadSequence(
+                ensemble, bookiesHealthInfo, writeSet);
+        retList.addMissingIndices(ensemble.size());
         return retList;
     }
 }

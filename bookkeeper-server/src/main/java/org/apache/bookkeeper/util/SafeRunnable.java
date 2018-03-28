@@ -1,5 +1,3 @@
-package org.apache.bookkeeper.util;
-
 /**
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -17,23 +15,67 @@ package org.apache.bookkeeper.util;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.bookkeeper.util;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.util.function.Consumer;
 
-public abstract class SafeRunnable implements Runnable {
+/**
+ * A SafeRunnable implementation.
+ */
+public abstract class SafeRunnable implements org.apache.bookkeeper.common.util.SafeRunnable {
 
-    static final Logger logger = LoggerFactory.getLogger(SafeRunnable.class);
-
-    @Override
-    public void run() {
-        try {
-            safeRun();
-        } catch(Throwable t) {
-            logger.error("Unexpected throwable caught ", t);
-        }
+    /**
+     * Utility method to use SafeRunnable from lambdas.
+     *
+     * <p>Eg:
+     * <pre>
+     * <code>
+     * executor.submit(SafeRunnable.safeRun(() -> {
+     *    // My not-safe code
+     * });
+     * </code>
+     * </pre>
+     */
+    public static SafeRunnable safeRun(Runnable runnable) {
+        return new SafeRunnable() {
+            @Override
+            public void safeRun() {
+                runnable.run();
+            }
+        };
     }
 
-    public abstract void safeRun();
-
+    /**
+     * Utility method to use SafeRunnable from lambdas with
+     * a custom exception handler.
+     *
+     * <p>Eg:
+     * <pre>
+     * <code>
+     * executor.submit(SafeRunnable.safeRun(() -> {
+     *    // My not-safe code
+     * }, exception -> {
+     *    // Handle exception
+     * );
+     * </code>
+     * </pre>
+     *
+     * @param runnable
+     * @param exceptionHandler
+     *            handler that will be called when there are any exception
+     * @return
+     */
+    public static SafeRunnable safeRun(Runnable runnable, Consumer<Throwable> exceptionHandler) {
+        return new SafeRunnable() {
+            @Override
+            public void safeRun() {
+                try {
+                    runnable.run();
+                } catch (Throwable t) {
+                    exceptionHandler.accept(t);
+                    throw t;
+                }
+            }
+        };
+    }
 }

@@ -21,18 +21,20 @@
 
 package org.apache.bookkeeper.bookie;
 
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.util.Arrays;
+import static org.apache.bookkeeper.bookie.Bookie.METAENTRY_ID_FENCE_KEY;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.google.common.util.concurrent.SettableFuture;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+import java.io.IOException;
+import org.apache.bookkeeper.common.util.Watcher;
 
 /**
  * Implements a ledger inside a bookie. In particular, it implements operations
  * to write entries to a ledger and read entries from a ledger.
  */
 public abstract class LedgerDescriptor {
+
     static LedgerDescriptor create(byte[] masterKey,
                                    long ledgerId,
                                    LedgerStorage ledgerStorage) throws IOException {
@@ -50,19 +52,36 @@ public abstract class LedgerDescriptor {
         return new LedgerDescriptorReadOnlyImpl(ledgerId, ledgerStorage);
     }
 
+    static ByteBuf createLedgerFenceEntry(Long ledgerId) {
+        ByteBuf bb = Unpooled.buffer(8 + 8);
+        bb.writeLong(ledgerId);
+        bb.writeLong(METAENTRY_ID_FENCE_KEY);
+        return bb;
+    }
+
     abstract void checkAccess(byte masterKey[]) throws BookieException, IOException;
 
     abstract long getLedgerId();
 
     abstract boolean setFenced() throws IOException;
     abstract boolean isFenced() throws IOException;
+    /**
+     * When we fence a ledger, we need to first set ledger to fenced state in memory and
+     * then log the fence entry in Journal so that we can rebuild the state.
+     *
+     * <p>We should satisfy the future only after we complete logging fence entry in Journal
+     */
+    abstract SettableFuture<Boolean> fenceAndLogInJournal(Journal journal) throws IOException;
 
-    abstract long addEntry(ByteBuffer entry) throws IOException;
-    abstract ByteBuffer readEntry(long entryId) throws IOException;
+    abstract long addEntry(ByteBuf entry) throws IOException, BookieException;
+    abstract ByteBuf readEntry(long entryId) throws IOException;
 
     abstract long getLastAddConfirmed() throws IOException;
+    abstract boolean waitForLastAddConfirmedUpdate(long previousLAC,
+                                                   Watcher<LastAddConfirmedUpdateNotification> watcher)
+        throws IOException;
 
-    abstract void setExplicitLac(ByteBuffer entry) throws IOException;
+    abstract void setExplicitLac(ByteBuf entry) throws IOException;
 
-    abstract  ByteBuffer getExplicitLac();
+    abstract  ByteBuf getExplicitLac();
 }

@@ -17,21 +17,27 @@
  */
 package org.apache.bookkeeper.metastore;
 
+/**
+ * A metastore watched event.
+ */
 public class MSWatchedEvent {
-    public enum EventType {CHANGED, REMOVED};
-    
+    /**
+     * The metastore event type.
+     */
+    public enum EventType {CHANGED, REMOVED}
+
     String key;
     EventType type;
-    
+
     public MSWatchedEvent(String key, EventType type) {
         this.key = key;
         this.type = type;
     }
-    
+
     public EventType getType() {
         return type;
     }
-    
+
     public String getKey(){
         return key;
     }

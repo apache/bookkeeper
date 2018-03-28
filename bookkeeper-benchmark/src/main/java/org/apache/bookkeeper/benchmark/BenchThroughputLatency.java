@@ -19,25 +19,24 @@
  */
 package org.apache.bookkeeper.benchmark;
 
+import static com.google.common.base.Charsets.UTF_8;
+
 import java.io.BufferedOutputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Random;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.Timer;
-import java.util.TimerTask;
-
+import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.LedgerHandle;
-import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -49,15 +48,16 @@ import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
-import org.apache.zookeeper.ZooDefs;
-import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.Watcher.Event.EventType;
 import org.apache.zookeeper.Watcher.Event.KeeperState;
+import org.apache.zookeeper.ZooDefs;
+import org.apache.zookeeper.ZooKeeper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static com.google.common.base.Charsets.UTF_8;
-
+/**
+ * A benchmark that benchmarks write throughput and latency.
+ */
 public class BenchThroughputLatency implements AddCallback, Runnable {
     static final Logger LOG = LoggerFactory.getLogger(BenchThroughputLatency.class);
 
@@ -82,17 +82,17 @@ public class BenchThroughputLatency implements AddCallback, Runnable {
 
     public BenchThroughputLatency(int ensemble, int writeQuorumSize, int ackQuorumSize, byte[] passwd,
             int numberOfLedgers, int sendLimit, ClientConfiguration conf)
-            throws KeeperException, IOException, InterruptedException {
+            throws BKException, IOException, InterruptedException {
         this.sem = new Semaphore(conf.getThrottleValue());
         bk = new BookKeeper(conf);
         this.counter = new AtomicLong(0);
         this.numberOfLedgers = numberOfLedgers;
         this.sendLimit = sendLimit;
         this.latencies = new long[sendLimit];
-        try{
+        try {
             lh = new LedgerHandle[this.numberOfLedgers];
 
-            for(int i = 0; i < this.numberOfLedgers; i++) {
+            for (int i = 0; i < this.numberOfLedgers; i++) {
                 lh[i] = bk.createLedger(ensemble, writeQuorumSize,
                                         ackQuorumSize,
                                         BookKeeper.DigestType.CRC32,
@@ -106,7 +106,7 @@ public class BenchThroughputLatency implements AddCallback, Runnable {
 
     Random rand = new Random();
     public void close() throws InterruptedException, BKException {
-        for(int i = 0; i < numberOfLedgers; i++) {
+        for (int i = 0; i < numberOfLedgers; i++) {
             lh[i].close();
         }
         bk.close();
@@ -128,7 +128,7 @@ public class BenchThroughputLatency implements AddCallback, Runnable {
     AtomicLong completedRequests = new AtomicLong(0);
 
     long duration = -1;
-    synchronized public long getDuration() {
+    public synchronized long getDuration() {
         return duration;
     }
 
@@ -141,28 +141,29 @@ public class BenchThroughputLatency implements AddCallback, Runnable {
         Thread reporter = new Thread() {
                 public void run() {
                     try {
-                        while(true) {
+                        while (true) {
                             Thread.sleep(1000);
                             LOG.info("ms: {} req: {}", System.currentTimeMillis(), completedRequests.getAndSet(0));
                         }
                     } catch (InterruptedException ie) {
                         LOG.info("Caught interrupted exception, going away");
+                        Thread.currentThread().interrupt();
                     }
                 }
             };
         reporter.start();
         long beforeSend = System.nanoTime();
 
-        while(!Thread.currentThread().isInterrupted() && sent < sendLimit) {
+        while (!Thread.currentThread().isInterrupted() && sent < sendLimit) {
             try {
                 sem.acquire();
                 if (sent == 10000) {
                     long afterSend = System.nanoTime();
                     long time = afterSend - beforeSend;
-                    LOG.info("Time to send first batch: {}s {}ns ",
-                             time/1000/1000/1000, time);
+                    LOG.info("Time to send first batch: {}s {}ns ", time / 1000 / 1000 / 1000, time);
                 }
             } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
                 break;
             }
 
@@ -180,26 +181,27 @@ public class BenchThroughputLatency implements AddCallback, Runnable {
         LOG.info("Sent: "  + sent);
         try {
             int i = 0;
-            while(this.counter.get() > 0) {
+            while (this.counter.get() > 0) {
                 Thread.sleep(1000);
                 i++;
                 if (i > 30) {
                     break;
                 }
             }
-        } catch(InterruptedException e) {
+        } catch (InterruptedException e) {
             LOG.error("Interrupted while waiting", e);
+            Thread.currentThread().interrupt();
         }
-        synchronized(this) {
+        synchronized (this) {
             duration = System.currentTimeMillis() - start;
         }
-        throughput = sent*1000/getDuration();
+        throughput = sent * 1000 / getDuration();
 
         reporter.interrupt();
         try {
             reporter.join();
         } catch (InterruptedException ie) {
-            // ignore
+            Thread.currentThread().interrupt();
         }
         LOG.info("Finished processing in ms: " + getDuration() + " tp = " + throughput);
     }
@@ -225,7 +227,7 @@ public class BenchThroughputLatency implements AddCallback, Runnable {
         counter.decrementAndGet();
 
         if (rc == 0) {
-            latencies[(int)entryId] = newTime;
+            latencies[(int) entryId] = newTime;
             completedRequests.incrementAndGet();
         }
     }
@@ -293,21 +295,21 @@ public class BenchThroughputLatency implements AddCallback, Runnable {
                 }, timeout);
         }
 
-        LOG.warn("(Parameters received) running time: " + runningTime +
-                ", entry size: " + entrysize + ", ensemble size: " + ensemble +
-                ", quorum size: " + quorum +
-                ", throttle: " + throttle +
-                ", number of ledgers: " + ledgers +
-                ", zk servers: " + servers +
-                ", latency file: " + latencyFile);
+        LOG.warn("(Parameters received) running time: " + runningTime
+                + ", entry size: " + entrysize + ", ensemble size: " + ensemble
+                + ", quorum size: " + quorum
+                + ", throttle: " + throttle
+                + ", number of ledgers: " + ledgers
+                + ", zk servers: " + servers
+                + ", latency file: " + latencyFile);
 
-        long totalTime = runningTime*1000;
+        long totalTime = runningTime * 1000;
 
         // Do a warmup run
         Thread thread;
 
         byte data[] = new byte[entrysize];
-        Arrays.fill(data, (byte)'x');
+        Arrays.fill(data, (byte) 'x');
 
         ClientConfiguration conf = new ClientConfiguration();
         conf.setThrottleValue(throttle).setReadTimeout(sockTimeout).setZkServers(servers);
@@ -366,7 +368,7 @@ public class BenchThroughputLatency implements AddCallback, Runnable {
         LOG.info("Calculating percentiles");
 
         int numlat = 0;
-        for(int i = 0; i < bench.latencies.length; i++) {
+        for (int i = 0; i < bench.latencies.length; i++) {
             if (bench.latencies[i] > 0) {
                 numlat++;
             }
@@ -374,15 +376,15 @@ public class BenchThroughputLatency implements AddCallback, Runnable {
         int numcompletions = numlat;
         numlat = Math.min(bench.sendLimit, numlat);
         long[] latency = new long[numlat];
-        int j =0;
-        for(int i = 0; i < bench.latencies.length && j < numlat; i++) {
+        int j = 0;
+        for (int i = 0; i < bench.latencies.length && j < numlat; i++) {
             if (bench.latencies[i] > 0) {
                 latency[j++] = bench.latencies[i];
             }
         }
         Arrays.sort(latency);
 
-        long tp = (long)((double)(numcompletions*1000.0)/(double)bench.getDuration());
+        long tp = (long) ((double) (numcompletions * 1000.0) / (double) bench.getDuration());
 
         LOG.info(numcompletions + " completions in " + bench.getDuration() + " milliseconds: " + tp + " ops/sec");
 
@@ -396,8 +398,8 @@ public class BenchThroughputLatency implements AddCallback, Runnable {
         // dump the latencies for later debugging (it will be sorted by entryid)
         OutputStream fos = new BufferedOutputStream(new FileOutputStream(latencyFile));
 
-        for(Long l: latency) {
-            fos.write((Long.toString(l)+"\t"+(l/1000000)+ "ms\n").getBytes(UTF_8));
+        for (Long l: latency) {
+            fos.write((Long.toString(l) + "\t" + (l / 1000000) + "ms\n").getBytes(UTF_8));
         }
         fos.flush();
         fos.close();
@@ -415,11 +417,11 @@ public class BenchThroughputLatency implements AddCallback, Runnable {
         int sampleSize = (size * percentile) / 100;
         long total = 0;
         int count = 0;
-        for(int i = 0; i < sampleSize; i++) {
+        for (int i = 0; i < sampleSize; i++) {
             total += latency[i];
             count++;
         }
-        return ((double)total/(double)count)/1000000.0;
+        return ((double) total / (double) count) / 1000000.0;
     }
 
     private static long warmUp(byte[] data, int ledgers, int ensemble, int qSize,
@@ -442,7 +444,7 @@ public class BenchThroughputLatency implements AddCallback, Runnable {
                 LOG.error("Couldn't connect to zookeeper at " + servers);
                 throw new IOException("Couldn't connect to zookeeper " + servers);
             }
-            bookies = zk.getChildren(bookieRegistrationPath, false).size();
+            bookies = zk.getChildren(bookieRegistrationPath, false).size() - 1;
         } finally {
             if (zk != null) {
                 zk.close();

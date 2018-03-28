@@ -22,19 +22,19 @@
 package org.apache.bookkeeper.bookie;
 
 /**
- * Exit code used to exit bookie server
+ * Exit code used to exit bookie server.
  */
 public class ExitCode {
     // normal quit
-    public final static int OK                  = 0;
+    public static final int OK                  = 0;
     // invalid configuration
-    public final static int INVALID_CONF        = 1;
+    public static final int INVALID_CONF        = 1;
     // exception running bookie server
-    public final static int SERVER_EXCEPTION    = 2;
+    public static final int SERVER_EXCEPTION    = 2;
     // zookeeper is expired
-    public final static int ZK_EXPIRED          = 3;
+    public static final int ZK_EXPIRED          = 3;
     // register bookie on zookeeper failed
-    public final static int ZK_REG_FAIL         = 4;
+    public static final int ZK_REG_FAIL         = 4;
     // exception running bookie
-    public final static int BOOKIE_EXCEPTION    = 5;
+    public static final int BOOKIE_EXCEPTION    = 5;
 }

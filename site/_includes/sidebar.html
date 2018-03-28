@@ -1,0 +1,24 @@
+{% unless page.no_sidebar %}
+<aside class="sidebar">
+  {% assign doc_version = page.url | replace:'/',' ' | truncatewords: 2 | remove:'...' | replace:'docs','' | lstrip %}
+  <a class="button is-info">
+    Version: {{ doc_version }}
+  </a>
+  <hr />
+  {% for group in site.data.sidebar.groups %}{% assign docs = group.docs %}
+  <p>
+    {{ group.name }}
+  </p>
+  <ul class="sidebar-items">
+    {% for doc in docs %}
+    {% capture doc_url %}../../{{ group.dir }}/{{ doc.endpoint }}/{% endcapture %}
+    <li{% if doc_url == page.url %} class="active"{% endif %}>
+      <a href="../../{{ group.dir }}/{{ doc.endpoint }}">
+      {{ doc.name }}
+      </a>
+    </li>
+    {% endfor %}
+  </ul>
+  {% endfor %}
+</aside>
+{% endunless %}

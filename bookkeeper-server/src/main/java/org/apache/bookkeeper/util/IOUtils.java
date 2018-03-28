@@ -25,7 +25,6 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.WritableByteChannel;
 
-import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 
 /**
@@ -117,7 +116,25 @@ public class IOUtils {
      */
     public static File createTempDir(String prefix, String suffix)
             throws IOException {
-        File tmpDir = File.createTempFile(prefix, suffix);
+        return createTempDir(prefix, suffix, null);
+    }
+
+    /**
+     * Create a temp directory with given <i>prefix</i> and <i>suffix</i> in the specified <i>dir</i>.
+     *
+     * @param prefix
+     *          prefix of the directory name
+     * @param suffix
+     *          suffix of the directory name
+     * @param dir
+     *          The directory in which the file is to be created,
+     *          or null if the default temporary-file directory is to be used
+     * @return directory created
+     * @throws IOException
+     */
+    public static File createTempDir(String prefix, String suffix, File dir)
+            throws IOException {
+        File tmpDir = File.createTempFile(prefix, suffix, dir);
         if (!tmpDir.delete()) {
             throw new IOException("Couldn't delete directory " + tmpDir);
         }

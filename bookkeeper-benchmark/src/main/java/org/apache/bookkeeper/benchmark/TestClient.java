@@ -20,6 +20,8 @@
  */
 package org.apache.bookkeeper.benchmark;
 
+import static com.google.common.base.Charsets.UTF_8;
+
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -34,12 +36,11 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
-
+import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper;
-import org.apache.bookkeeper.client.LedgerHandle;
-import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
+import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -47,22 +48,13 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.cli.PosixParser;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FSDataOutputStream;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
-import org.apache.zookeeper.KeeperException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static com.google.common.base.Charsets.UTF_8;
 
 /**
  * This is a simple test program to compare the performance of writing to
  * BookKeeper and to the local file system.
- *
  */
-
 public class TestClient {
     private static final Logger LOG = LoggerFactory.getLogger(TestClient.class);
 
@@ -102,7 +94,7 @@ public class TestClient {
         long runfor = Long.parseLong(cmd.getOptionValue("runfor", "60")) * 1000;
 
         StringBuilder sb = new StringBuilder();
-        while(length-- > 0) {
+        while (length-- > 0) {
             sb.append('a');
         }
 
@@ -144,19 +136,6 @@ public class TestClient {
                 for (int i = 0; i < numFiles; i++) {
                     clients.add(new BKClient(handles, data, runfor, cmd.hasOption("sync")));
                 }
-            } else if (target.equals("hdfs")) {
-                FileSystem fs = FileSystem.get(new Configuration());
-                LOG.info("Default replication for HDFS: {}", fs.getDefaultReplication());
-
-                List<FSDataOutputStream> streams = new ArrayList<FSDataOutputStream>();
-                for (int i = 0; i < numFiles; i++) {
-                    String path = cmd.getOptionValue("path", "/foobar");
-                    streams.add(fs.create(new Path(path + runid + "_" + i)));
-                }
-
-                for (int i = 0; i < numThreads; i++) {
-                    clients.add(new HDFSClient(streams, data, runfor));
-                }
             } else if (target.equals("fs")) {
                 List<FileOutputStream> streams = new ArrayList<FileOutputStream>();
                 for (int i = 0; i < numFiles; i++) {
@@ -190,20 +169,18 @@ public class TestClient {
                 }
                 count += c;
             }
-            long time = end-start;
-            LOG.info("Finished processing writes (ms): {} TPT: {} op/s",
-                     time, count/((double)time/1000));
+            long time = end - start;
+            LOG.info("Finished processing writes (ms): {} TPT: {} op/s", time, count / ((double) time / 1000));
             executor.shutdown();
         } catch (ExecutionException ee) {
             LOG.error("Exception in worker", ee);
-        }  catch (KeeperException ke) {
-            LOG.error("Error accessing zookeeper", ke);
         } catch (BKException e) {
             LOG.error("Error accessing bookkeeper", e);
         } catch (IOException ioe) {
             LOG.error("I/O exception during benchmark", ioe);
         } catch (InterruptedException ie) {
             LOG.error("Benchmark interrupted", ie);
+            Thread.currentThread().interrupt();
         } finally {
             if (bkc != null) {
                 try {
@@ -212,49 +189,11 @@ public class TestClient {
                     LOG.error("Error closing bookkeeper client", bke);
                 } catch (InterruptedException ie) {
                     LOG.warn("Interrupted closing bookkeeper client", ie);
+                    Thread.currentThread().interrupt();
                 }
             }
         }
         timeouter.cancel();
-    }
-
-    static class HDFSClient implements Callable<Long> {
-        final List<FSDataOutputStream> streams;
-        final byte[] data;
-        final long time;
-        final Random r;
-
-        HDFSClient(List<FSDataOutputStream> streams, byte[] data, long time) {
-            this.streams = streams;
-            this.data = data;
-            this.time = time;
-            this.r = new Random(System.identityHashCode(this));
-        }
-
-        public Long call() {
-            try {
-                long count = 0;
-                long start = System.currentTimeMillis();
-                long stopat = start + time;
-                while(System.currentTimeMillis() < stopat) {
-                    FSDataOutputStream stream = streams.get(r.nextInt(streams.size()));
-                    synchronized(stream) {
-                        stream.write(data);
-                        stream.flush();
-                        stream.hflush();
-                    }
-                    count++;
-                }
-
-                long time = (System.currentTimeMillis() - start);
-                LOG.info("Worker finished processing writes (ms): {} TPT: {} op/s",
-                         time, count/((double)time/1000));
-                return count;
-            } catch(IOException ioe) {
-                LOG.error("Exception in worker thread", ioe);
-                return 0L;
-            }
-        }
     }
 
     static class FileClient implements Callable<Long> {
@@ -276,9 +215,9 @@ public class TestClient {
                 long start = System.currentTimeMillis();
 
                 long stopat = start + time;
-                while(System.currentTimeMillis() < stopat) {
+                while (System.currentTimeMillis() < stopat) {
                     FileOutputStream stream = streams.get(r.nextInt(streams.size()));
-                    synchronized(stream) {
+                    synchronized (stream) {
                         stream.write(data);
                         stream.flush();
                         stream.getChannel().force(false);
@@ -287,9 +226,10 @@ public class TestClient {
                 }
 
                 long time = (System.currentTimeMillis() - start);
-                LOG.info("Worker finished processing writes (ms): {} TPT: {} op/s", time, count/((double)time/1000));
+                LOG.info("Worker finished processing writes (ms): {} TPT: {} op/s", time,
+                         count / ((double) time / 1000));
                 return count;
-            } catch(IOException ioe) {
+            } catch (IOException ioe) {
                 LOG.error("Exception in worker thread", ioe);
                 return 0L;
             }
@@ -318,7 +258,7 @@ public class TestClient {
                 long start = System.currentTimeMillis();
 
                 long stopat = start + time;
-                while(System.currentTimeMillis() < stopat) {
+                while (System.currentTimeMillis() < stopat) {
                     LedgerHandle lh = handles.get(r.nextInt(handles.size()));
                     if (sync) {
                         lh.addEntry(data);
@@ -335,13 +275,14 @@ public class TestClient {
                 }
 
                 long time = (System.currentTimeMillis() - start);
-                LOG.info("Worker finished processing writes (ms): {} TPT: {} op/s",
-                         time, success.get()/((double)time/1000));
+                LOG.info("Worker finished processing writes (ms): {} TPT: {} op/s", time,
+                         success.get() / ((double) time / 1000));
                 return success.get();
             } catch (BKException e) {
                 LOG.error("Exception in worker thread", e);
                 return 0L;
             } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
                 LOG.error("Exception in worker thread", ie);
                 return 0L;
             }

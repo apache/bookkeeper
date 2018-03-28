@@ -18,6 +18,9 @@ package org.apache.bookkeeper.stats;
 
 import org.apache.commons.configuration.Configuration;
 
+/**
+ * A <i>no-op</i> stats provider implementation.
+ */
 public class NullStatsProvider implements StatsProvider {
 
     final StatsLogger nullStatsLogger = new NullStatsLogger();

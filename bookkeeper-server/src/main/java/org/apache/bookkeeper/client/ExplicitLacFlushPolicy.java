@@ -24,9 +24,9 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.bookkeeper.client.LedgerHandle.LastAddConfirmedCallback;
+import org.apache.bookkeeper.client.SyncCallbackUtils.LastAddConfirmedCallback;
+import org.apache.bookkeeper.util.ByteBufList;
 import org.apache.bookkeeper.util.SafeRunnable;
-import org.jboss.netty.buffer.ChannelBuffer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,7 +35,7 @@ interface ExplicitLacFlushPolicy {
 
     void updatePiggyBackedLac(long piggyBackedLac);
 
-    static final ExplicitLacFlushPolicy VOID_EXPLICITLAC_FLUSH_POLICY = new ExplicitLacFlushPolicy() {
+    ExplicitLacFlushPolicy VOID_EXPLICITLAC_FLUSH_POLICY = new ExplicitLacFlushPolicy() {
         @Override
         public void stopExplicitLacFlush() {
             // void method
@@ -48,7 +48,7 @@ interface ExplicitLacFlushPolicy {
     };
 
     class ExplicitLacFlushPolicyImpl implements ExplicitLacFlushPolicy {
-        final static Logger LOG = LoggerFactory.getLogger(ExplicitLacFlushPolicyImpl.class);
+        static final Logger LOG = LoggerFactory.getLogger(ExplicitLacFlushPolicyImpl.class);
 
         volatile long piggyBackedLac = LedgerHandle.INVALID_ENTRY_ID;
         volatile long explicitLac = LedgerHandle.INVALID_ENTRY_ID;
@@ -58,7 +58,9 @@ interface ExplicitLacFlushPolicy {
         ExplicitLacFlushPolicyImpl(LedgerHandle lh) {
             this.lh = lh;
             scheduleExplictLacFlush();
-            LOG.debug("Scheduled Explicit Last Add Confirmed Update");
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Scheduled Explicit Last Add Confirmed Update");
+            }
         }
 
         private long getExplicitLac() {
@@ -86,20 +88,25 @@ interface ExplicitLacFlushPolicy {
                     // Piggyback, so no need to send an explicit LAC update to
                     // bookies.
                     if (getExplicitLac() < getPiggyBackedLac()) {
-                        LOG.debug("ledgerid: {}", lh.getId());
-                        LOG.debug("explicitLac:{} piggybackLac:{}", getExplicitLac(),
-                                getPiggyBackedLac());
+                        if (LOG.isDebugEnabled()) {
+                            LOG.debug("ledgerid: {}", lh.getId());
+                            LOG.debug("explicitLac:{} piggybackLac:{}", getExplicitLac(), getPiggyBackedLac());
+                        }
                         setExplicitLac(getPiggyBackedLac());
                         return;
                     }
 
                     if (lh.getLastAddConfirmed() > getExplicitLac()) {
                         // Send Explicit LAC
-                        LOG.debug("ledgerid: {}", lh.getId());
+                        if (LOG.isDebugEnabled()) {
+                            LOG.debug("ledgerid: {}", lh.getId());
+                        }
                         asyncExplicitLacFlush(lh.getLastAddConfirmed());
                         setExplicitLac(lh.getLastAddConfirmed());
-                        LOG.debug("After sending explict LAC lac: {}  explicitLac:{}", lh.getLastAddConfirmed(),
-                                getExplicitLac());
+                        if (LOG.isDebugEnabled()) {
+                            LOG.debug("After sending explict LAC lac: {}  explicitLac:{}", lh.getLastAddConfirmed(),
+                                    getExplicitLac());
+                        }
                     }
                 }
 
@@ -109,7 +116,7 @@ interface ExplicitLacFlushPolicy {
                 }
             };
             try {
-                scheduledFuture = lh.bk.mainWorkerPool.scheduleAtFixedRateOrdered(lh.getId(), updateLacTask,
+                scheduledFuture = lh.bk.getMainWorkerPool().scheduleAtFixedRateOrdered(lh.getId(), updateLacTask,
                         explicitLacIntervalInMs, explicitLacIntervalInMs, TimeUnit.MILLISECONDS);
             } catch (RejectedExecutionException re) {
                 LOG.error("Scheduling of ExplictLastAddConfirmedFlush for ledger: {} has failed because of {}",
@@ -125,11 +132,13 @@ interface ExplicitLacFlushPolicy {
             final PendingWriteLacOp op = new PendingWriteLacOp(lh, cb, null);
             op.setLac(explicitLac);
             try {
-                LOG.debug("Sending Explicit LAC: {}", explicitLac);
-                lh.bk.mainWorkerPool.submit(new SafeRunnable() {
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Sending Explicit LAC: {}", explicitLac);
+                }
+                lh.bk.getMainWorkerPool().submit(new SafeRunnable() {
                     @Override
                     public void safeRun() {
-                        ChannelBuffer toSend = lh.macManager
+                        ByteBufList toSend = lh.macManager
                                 .computeDigestAndPackageForSendingLac(lh.getLastAddConfirmed());
                         op.initiate(toSend);
                     }

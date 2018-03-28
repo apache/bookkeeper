@@ -1,5 +1,3 @@
-package org.apache.bookkeeper.client;
-
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -20,25 +18,22 @@ package org.apache.bookkeeper.client;
  * under the License.
  *
  */
-
-import java.lang.Exception;
+package org.apache.bookkeeper.client;
 
 /**
- * Class the enumerates all the possible error conditions
+ * Class the enumerates all the possible error conditions.
  *
+ * <P>This class is going to be deprecate soon, please use the new class {@link BKException}
  */
-
 @SuppressWarnings("serial")
-public abstract class BKException extends Exception {
-
-    private int code;
+public abstract class BKException extends org.apache.bookkeeper.client.api.BKException {
 
     BKException(int code) {
-        this.code = code;
+        super(code);
     }
 
     /**
-     * Create an exception from an error code
+     * Create an exception from an error code.
      * @param code return error code
      * @return corresponding exception
      */
@@ -88,6 +83,8 @@ public abstract class BKException extends Exception {
             return new BKUnclosedFragmentException();
         case Code.WriteOnReadOnlyBookieException:
             return new BKWriteOnReadOnlyBookieException();
+        case Code.TooManyRequestsException:
+            return new BKTooManyRequestsException();
         case Code.ReplicationException:
             return new BKReplicationException();
         case Code.ClientClosedException:
@@ -102,306 +99,316 @@ public abstract class BKException extends Exception {
             return new BKDuplicateEntryIdException();
         case Code.TimeoutException:
             return new BKTimeoutException();
+        case Code.LedgerIdOverflowException:
+            return new BKLedgerIdOverflowException();
+        case Code.SecurityException:
+            return new BKSecurityException();
         default:
             return new BKUnexpectedConditionException();
         }
     }
 
     /**
-     * List of return codes
-     *
+     * Legacy interface which holds constants for BookKeeper error codes.
+     * The list has been moved to {@link BKException}
      */
-    public interface Code {
-        int OK = 0;
-        int ReadException = -1;
-        int QuorumException = -2;
-        int NoBookieAvailableException = -3;
-        int DigestNotInitializedException = -4;
-        int DigestMatchException = -5;
-        int NotEnoughBookiesException = -6;
-        int NoSuchLedgerExistsException = -7;
-        int BookieHandleNotAvailableException = -8;
-        int ZKException = -9;
-        int LedgerRecoveryException = -10;
-        int LedgerClosedException = -11;
-        int WriteException = -12;
-        int NoSuchEntryException = -13;
-        int IncorrectParameterException = -14;
-        int InterruptedException = -15;
-        int ProtocolVersionException = -16;
-        int MetadataVersionException = -17;
-        int MetaStoreException = -18;
-        int ClientClosedException = -19;
-        int LedgerExistException = -20;
-        int AddEntryQuorumTimeoutException = -21;
-        int DuplicateEntryIdException = -22;
-        int TimeoutException = -23;
-
-        int IllegalOpException = -100;
-        int LedgerFencedException = -101;
-        int UnauthorizedAccessException = -102;
-        int UnclosedFragmentException = -103;
-        int WriteOnReadOnlyBookieException = -104;
-
-        // generic exception code used to propagate in replication pipeline
-        int ReplicationException = -200;
-
-        // For all unexpected error conditions
-        int UnexpectedConditionException = -999;
+    public interface Code extends org.apache.bookkeeper.client.api.BKException.Code {
     }
 
-    public void setCode(int code) {
-        this.code = code;
-    }
-
-    public int getCode() {
-        return this.code;
-    }
-
-    public static String getMessage(int code) {
-        switch (code) {
-        case Code.OK:
-            return "No problem";
-        case Code.ReadException:
-            return "Error while reading ledger";
-        case Code.QuorumException:
-            return "Invalid quorum size on ensemble size";
-        case Code.NoBookieAvailableException:
-            return "Invalid quorum size on ensemble size";
-        case Code.DigestNotInitializedException:
-            return "Digest engine not initialized";
-        case Code.DigestMatchException:
-            return "Entry digest does not match";
-        case Code.NotEnoughBookiesException:
-            return "Not enough non-faulty bookies available";
-        case Code.NoSuchLedgerExistsException:
-            return "No such ledger exists";
-        case Code.BookieHandleNotAvailableException:
-            return "Bookie handle is not available";
-        case Code.ZKException:
-            return "Error while using ZooKeeper";
-        case Code.MetaStoreException:
-            return "Error while using MetaStore";
-        case Code.LedgerExistException:
-            return "Ledger existed";
-        case Code.LedgerRecoveryException:
-            return "Error while recovering ledger";
-        case Code.LedgerClosedException:
-            return "Attempt to write to a closed ledger";
-        case Code.WriteException:
-            return "Write failed on bookie";
-        case Code.NoSuchEntryException:
-            return "No such entry";
-        case Code.IncorrectParameterException:
-            return "Incorrect parameter input";
-        case Code.InterruptedException:
-            return "Interrupted while waiting for permit";
-        case Code.ProtocolVersionException:
-            return "Bookie protocol version on server is incompatible with client";
-        case Code.MetadataVersionException:
-            return "Bad ledger metadata version";
-        case Code.DuplicateEntryIdException:
-            return "Attempted to add Duplicate entryId";
-        case Code.LedgerFencedException:
-            return "Ledger has been fenced off. Some other client must have opened it to read";
-        case Code.UnauthorizedAccessException:
-            return "Attempted to access ledger using the wrong password";
-        case Code.UnclosedFragmentException:
-            return "Attempting to use an unclosed fragment; This is not safe";
-        case Code.WriteOnReadOnlyBookieException:
-            return "Attempting to write on ReadOnly bookie";
-        case Code.ReplicationException:
-            return "Errors in replication pipeline";
-        case Code.ClientClosedException:
-            return "BookKeeper client is closed";
-        case Code.IllegalOpException:
-            return "Invalid operation";
-        case Code.AddEntryQuorumTimeoutException:
-            return "Add entry quorum wait timed out";
-        case Code.TimeoutException:
-            return "Bookie operation timeout";
-        default:
-            return "Unexpected condition";
+    /**
+     * Bookkeeper security exception.
+     */
+    public static class BKSecurityException extends BKException {
+        public BKSecurityException() {
+            super(Code.SecurityException);
         }
     }
 
+    /**
+     * Bookkeeper read exception.
+     */
     public static class BKReadException extends BKException {
         public BKReadException() {
             super(Code.ReadException);
         }
     }
 
+    /**
+     * Bookkeeper no such entry exception.
+     */
     public static class BKNoSuchEntryException extends BKException {
         public BKNoSuchEntryException() {
             super(Code.NoSuchEntryException);
         }
     }
 
+    /**
+     * Bookkeeper quorum exception.
+     */
     public static class BKQuorumException extends BKException {
         public BKQuorumException() {
             super(Code.QuorumException);
         }
     }
 
+    /**
+     * Bookkeeper bookie exception.
+     */
     public static class BKBookieException extends BKException {
         public BKBookieException() {
             super(Code.NoBookieAvailableException);
         }
     }
 
+    /**
+     * Bookkeeper digest not initialized exception.
+     */
     public static class BKDigestNotInitializedException extends BKException {
         public BKDigestNotInitializedException() {
             super(Code.DigestNotInitializedException);
         }
     }
 
+    /**
+     * Bookkeeper digest match exception.
+     */
     public static class BKDigestMatchException extends BKException {
         public BKDigestMatchException() {
             super(Code.DigestMatchException);
         }
     }
 
+    /**
+     * Bookkeeper illegal operation exception.
+     */
     public static class BKIllegalOpException extends BKException {
         public BKIllegalOpException() {
             super(Code.IllegalOpException);
         }
     }
 
+    /**
+     * Bookkeeper add entry quorum timeout exception.
+     */
     public static class BKAddEntryQuorumTimeoutException extends BKException {
         public BKAddEntryQuorumTimeoutException() {
             super(Code.AddEntryQuorumTimeoutException);
         }
     }
 
+    /**
+     * Bookkeeper duplicate entry id exception.
+     */
     public static class BKDuplicateEntryIdException extends BKException {
         public BKDuplicateEntryIdException() {
             super(Code.DuplicateEntryIdException);
         }
     }
 
+    /**
+     * Bookkeeper unexpected condition exception.
+     */
     public static class BKUnexpectedConditionException extends BKException {
         public BKUnexpectedConditionException() {
             super(Code.UnexpectedConditionException);
         }
     }
 
+    /**
+     * Bookkeeper not enough bookies exception.
+     */
     public static class BKNotEnoughBookiesException extends BKException {
         public BKNotEnoughBookiesException() {
             super(Code.NotEnoughBookiesException);
         }
     }
 
+    /**
+     * Bookkeeper write exception.
+     */
     public static class BKWriteException extends BKException {
         public BKWriteException() {
             super(Code.WriteException);
         }
     }
 
+    /**
+     * Bookkeeper protocol version exception.
+     */
     public static class BKProtocolVersionException extends BKException {
         public BKProtocolVersionException() {
             super(Code.ProtocolVersionException);
         }
     }
 
+    /**
+     * Bookkeeper metadata version exception.
+     */
     public static class BKMetadataVersionException extends BKException {
         public BKMetadataVersionException() {
             super(Code.MetadataVersionException);
         }
     }
 
+    /**
+     * Bookkeeper no such ledger exists exception.
+     */
     public static class BKNoSuchLedgerExistsException extends BKException {
         public BKNoSuchLedgerExistsException() {
             super(Code.NoSuchLedgerExistsException);
         }
     }
 
+    /**
+     * Bookkeeper bookie handle not available exception.
+     */
     public static class BKBookieHandleNotAvailableException extends BKException {
         public BKBookieHandleNotAvailableException() {
             super(Code.BookieHandleNotAvailableException);
         }
     }
 
+    /**
+     * Zookeeper exception.
+     */
     public static class ZKException extends BKException {
         public ZKException() {
             super(Code.ZKException);
         }
     }
 
+    /**
+     * Metastore exception.
+     */
     public static class MetaStoreException extends BKException {
         public MetaStoreException() {
             super(Code.MetaStoreException);
         }
     }
 
+    /**
+     * Bookkeeper ledger exist exception.
+     */
     public static class BKLedgerExistException extends BKException {
         public BKLedgerExistException() {
             super(Code.LedgerExistException);
         }
     }
 
+    /**
+     * Bookkeeper ledger recovery exception.
+     */
     public static class BKLedgerRecoveryException extends BKException {
         public BKLedgerRecoveryException() {
             super(Code.LedgerRecoveryException);
         }
     }
 
+    /**
+     * Bookkeeper ledger closed exception.
+     */
     public static class BKLedgerClosedException extends BKException {
         public BKLedgerClosedException() {
             super(Code.LedgerClosedException);
         }
     }
 
+    /**
+     * Bookkeeper incorrect parameter exception.
+     */
     public static class BKIncorrectParameterException extends BKException {
         public BKIncorrectParameterException() {
             super(Code.IncorrectParameterException);
         }
     }
 
+    /**
+     * Bookkeeper interrupted exception.
+     */
     public static class BKInterruptedException extends BKException {
         public BKInterruptedException() {
             super(Code.InterruptedException);
         }
     }
 
+    /**
+     * Bookkeeper ledger fenced exception.
+     */
     public static class BKLedgerFencedException extends BKException {
         public BKLedgerFencedException() {
             super(Code.LedgerFencedException);
         }
     }
 
+    /**
+     * Bookkeeper unauthorized access exception.
+     */
     public static class BKUnauthorizedAccessException extends BKException {
         public BKUnauthorizedAccessException() {
             super(Code.UnauthorizedAccessException);
         }
     }
 
+    /**
+     * Bookkeeper unclosed fragment exception.
+     */
     public static class BKUnclosedFragmentException extends BKException {
         public BKUnclosedFragmentException() {
             super(Code.UnclosedFragmentException);
         }
     }
 
+    /**
+     * Bookkeeper write on readonly bookie exception.
+     */
     public static class BKWriteOnReadOnlyBookieException extends BKException {
         public BKWriteOnReadOnlyBookieException() {
             super(Code.WriteOnReadOnlyBookieException);
         }
     }
 
+    /**
+     * Bookkeeper too many requests exception.
+     */
+    public static class BKTooManyRequestsException extends BKException {
+        public BKTooManyRequestsException() {
+            super(Code.TooManyRequestsException);
+        }
+    }
+
+    /**
+     * Bookkeeper replication exception.
+     */
     public static class BKReplicationException extends BKException {
         public BKReplicationException() {
             super(Code.ReplicationException);
         }
     }
 
+    /**
+     * Bookkeeper client closed exception.
+     */
     public static class BKClientClosedException extends BKException {
         public BKClientClosedException() {
             super(Code.ClientClosedException);
         }
     }
 
+    /**
+     * Bookkeeper timeout exception.
+     */
     public static class BKTimeoutException extends BKException {
         public BKTimeoutException() {
             super(Code.TimeoutException);
+        }
+    }
+
+    /**
+     * Bookkeeper ledger id overflow exception.
+     */
+    public static class BKLedgerIdOverflowException extends BKException {
+        public BKLedgerIdOverflowException() {
+            super(Code.LedgerIdOverflowException);
         }
     }
 }

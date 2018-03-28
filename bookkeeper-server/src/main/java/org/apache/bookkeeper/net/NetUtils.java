@@ -17,6 +17,9 @@
  */
 package org.apache.bookkeeper.net;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkState;
+
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
@@ -27,6 +30,9 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Network Utilities.
+ */
 public class NetUtils {
     private static final Logger logger = LoggerFactory.getLogger(NetUtils.class);
 
@@ -64,22 +70,19 @@ public class NetUtils {
 
     public static String resolveNetworkLocation(DNSToSwitchMapping dnsResolver, InetSocketAddress addr) {
         List<String> names = new ArrayList<String>(1);
-        if (dnsResolver instanceof CachedDNSToSwitchMapping) {
-            names.add(addr.getAddress().getHostAddress());
-        } else {
+
+        if (dnsResolver.useHostName()) {
             names.add(addr.getHostName());
+        } else {
+            names.add(addr.getAddress().getHostAddress());
         }
+
         // resolve network addresses
         List<String> rNames = dnsResolver.resolve(names);
-        String netLoc;
-        if (null == rNames) {
-            logger.warn("Failed to resolve network location for {}, using default rack for them : {}.", names,
-                NetworkTopology.DEFAULT_RACK);
-            netLoc = NetworkTopology.DEFAULT_RACK;
-        } else {
-            netLoc = rNames.get(0);
-        }
-        return netLoc;
+        checkNotNull(rNames, "DNS Resolver should not return null response.");
+        checkState(rNames.size() == 1, "Expected exactly one element");
+
+        return rNames.get(0);
     }
 
 }

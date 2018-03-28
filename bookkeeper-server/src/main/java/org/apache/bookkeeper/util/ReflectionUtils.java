@@ -23,17 +23,40 @@ package org.apache.bookkeeper.util;
 import java.lang.reflect.Constructor;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
 
 /**
- * General Class Reflection Utils
+ * General Class Reflection Utils.
  */
 public class ReflectionUtils {
 
     private static final Map<Class<?>, Constructor<?>> constructorCache =
             new ConcurrentHashMap<Class<?>, Constructor<?>>();
+
+    /**
+     * Returns the {@code Class} object object associated with the class or interface
+     * with the given string name, which is a subclass of {@code xface}.
+     *
+     * @param className class name
+     * @param xface class interface
+     * @return the class object associated with the class or interface with the given string name.
+     */
+    public static <T> Class<? extends T> forName(String className,
+                                                 Class<T> xface) {
+
+        // Construct the class
+        Class<?> theCls;
+        try {
+            theCls = Class.forName(className);
+        } catch (ClassNotFoundException cnfe) {
+            throw new RuntimeException(cnfe);
+        }
+        if (!xface.isAssignableFrom(theCls)) {
+            throw new RuntimeException(className + " not " + xface.getName());
+        }
+        return theCls.asSubclass(xface);
+    }
 
     /**
      * Get the value of the <code>name</code> property as a <code>Class</code>.
@@ -68,9 +91,9 @@ public class ReflectionUtils {
      * Get the value of the <code>name</code> property as a <code>Class</code> implementing
      * the interface specified by <code>xface</code>.
      *
-     * If no such property is specified, then <code>defaultValue</code> is returned.
+     * <p>If no such property is specified, then <code>defaultValue</code> is returned.
      *
-     * An exception is thrown if the returned class does not implement the named interface.
+     * <p>An exception is thrown if the returned class does not implement the named interface.
      *
      * @param conf
      *          Configuration Object.
@@ -85,9 +108,9 @@ public class ReflectionUtils {
      * @return property value as a <code>Class</code>, or <code>defaultValue</code>.
      * @throws ConfigurationException
      */
-    public static <U> Class<? extends U> getClass(Configuration conf,
-                                                  String name, Class<? extends U> defaultValue,
-                                                  Class<U> xface, ClassLoader classLoader)
+    public static <T> Class<? extends T> getClass(Configuration conf,
+                                                  String name, Class<? extends T> defaultValue,
+                                                  Class<T> xface, ClassLoader classLoader)
         throws ConfigurationException {
         try {
             Class<?> theCls = getClass(conf, name, defaultValue, classLoader);

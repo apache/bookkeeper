@@ -17,6 +17,9 @@
  */
 package org.apache.bookkeeper.meta;
 
+/**
+ * LongHierarchical Ledger Manager Factory.
+ */
 public class LongHierarchicalLedgerManagerFactory extends HierarchicalLedgerManagerFactory {
 
     public static final String NAME = "longhierarchical";

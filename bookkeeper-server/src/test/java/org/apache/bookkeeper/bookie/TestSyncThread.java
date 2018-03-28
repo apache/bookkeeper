@@ -20,38 +20,38 @@
  */
 package org.apache.bookkeeper.bookie;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
+import io.netty.buffer.ByteBuf;
 import java.io.File;
 import java.io.IOException;
-import java.nio.ByteBuffer;
-
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import org.apache.bookkeeper.conf.TestBKConfiguration;
-import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.meta.LedgerManager;
-import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.LedgerDirsListener;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirException;
-
-import org.apache.bookkeeper.jmx.BKMBeanInfo;
-
+import org.apache.bookkeeper.common.util.Watcher;
+import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.conf.TestBKConfiguration;
+import org.apache.bookkeeper.meta.LedgerManager;
+import org.apache.bookkeeper.stats.StatsLogger;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.junit.Test;
-import org.junit.Before;
-import org.junit.After;
-
-import static org.junit.Assert.*;
-
+/**
+ * Test a synchronization thread.
+ */
 public class TestSyncThread {
     private static final Logger LOG = LoggerFactory.getLogger(TestSyncThread.class);
 
@@ -75,7 +75,7 @@ public class TestSyncThread {
      * the sync thread will not shutdown until it
      * has finished.
      */
-    @Test(timeout=60000)
+    @Test
     public void testSyncThreadLongShutdown() throws Exception {
         int flushInterval = 100;
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
@@ -103,7 +103,7 @@ public class TestSyncThread {
                 }
 
                 @Override
-                public Checkpoint checkpoint(Checkpoint checkpoint)
+                public void checkpoint(Checkpoint checkpoint)
                         throws IOException {
                     checkpointCalledLatch.countDown();
                     try {
@@ -113,27 +113,24 @@ public class TestSyncThread {
                         LOG.error("Interrupted in checkpoint thread", ie);
                         failedSomewhere.set(true);
                     }
-                    return checkpoint;
                 }
             };
 
         final SyncThread t = new SyncThread(conf, listener, storage, checkpointSource);
-        t.start();
+        t.startCheckpoint(Checkpoint.MAX);
         assertTrue("Checkpoint should have been called",
                    checkpointCalledLatch.await(10, TimeUnit.SECONDS));
-        Future<Boolean> done = executor.submit(new Callable<Boolean>() {
-                public Boolean call() {
-                    try {
-                        t.shutdown();
-                    } catch (InterruptedException ie) {
-                        Thread.currentThread().interrupt();
-                        LOG.error("Interrupted shutting down sync thread", ie);
-                        failedSomewhere.set(true);
-                        return false;
-                    }
-                    return true;
-                }
-            });
+        Future<Boolean> done = executor.submit(() -> {
+            try {
+                t.shutdown();
+            } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
+                LOG.error("Interrupted shutting down sync thread", ie);
+                failedSomewhere.set(true);
+                return false;
+            }
+            return true;
+        });
         checkpointLatch.countDown();
         assertFalse("Shutdown shouldn't have finished", done.isDone());
         assertTrue("Flush should have been called",
@@ -151,7 +148,7 @@ public class TestSyncThread {
      * i.e. when we suspend the syncthread, nothing
      * will be synced.
      */
-    @Test(timeout=60000)
+    @Test
     public void testSyncThreadSuspension() throws Exception {
         int flushInterval = 100;
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
@@ -162,14 +159,13 @@ public class TestSyncThread {
         final AtomicInteger checkpointCount = new AtomicInteger(0);
         LedgerStorage storage = new DummyLedgerStorage() {
                 @Override
-                public Checkpoint checkpoint(Checkpoint checkpoint)
+                public void checkpoint(Checkpoint checkpoint)
                         throws IOException {
                     checkpointCount.incrementAndGet();
-                    return checkpoint;
                 }
             };
         final SyncThread t = new SyncThread(conf, listener, storage, checkpointSource);
-        t.start();
+        t.startCheckpoint(Checkpoint.MAX);
         while (checkpointCount.get() == 0) {
             Thread.sleep(flushInterval);
         }
@@ -177,6 +173,7 @@ public class TestSyncThread {
         Thread.sleep(flushInterval);
         int count = checkpointCount.get();
         for (int i = 0; i < 10; i++) {
+            t.startCheckpoint(Checkpoint.MAX);
             assertEquals("Checkpoint count shouldn't change", count, checkpointCount.get());
         }
         t.resumeSync();
@@ -196,7 +193,7 @@ public class TestSyncThread {
      * runtime exception, the bookie will be told
      * to shutdown.
      */
-    @Test(timeout=60000)
+    @Test
     public void testSyncThreadShutdownOnError() throws Exception {
         int flushInterval = 100;
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
@@ -212,13 +209,13 @@ public class TestSyncThread {
 
         LedgerStorage storage = new DummyLedgerStorage() {
                 @Override
-                public Checkpoint checkpoint(Checkpoint checkpoint)
+                public void checkpoint(Checkpoint checkpoint)
                         throws IOException {
                     throw new RuntimeException("Fatal error in sync thread");
                 }
             };
         final SyncThread t = new SyncThread(conf, listener, storage, checkpointSource);
-        t.start();
+        t.startCheckpoint(Checkpoint.MAX);
         assertTrue("Should have called fatal error", fatalLatch.await(10, TimeUnit.SECONDS));
         t.shutdown();
     }
@@ -228,7 +225,7 @@ public class TestSyncThread {
      * a disk full exception, the owner of the sync
      * thread will be notified.
      */
-    @Test(timeout=60000)
+    @Test
     public void testSyncThreadDisksFull() throws Exception {
         int flushInterval = 100;
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
@@ -244,13 +241,13 @@ public class TestSyncThread {
 
         LedgerStorage storage = new DummyLedgerStorage() {
                 @Override
-                public Checkpoint checkpoint(Checkpoint checkpoint)
+                public void checkpoint(Checkpoint checkpoint)
                         throws IOException {
                     throw new NoWritableLedgerDirException("Disk full error in sync thread");
                 }
             };
         final SyncThread t = new SyncThread(conf, listener, storage, checkpointSource);
-        t.start();
+        t.startCheckpoint(Checkpoint.MAX);
         assertTrue("Should have disk full error", diskFullLatch.await(10, TimeUnit.SECONDS));
         t.shutdown();
     }
@@ -269,9 +266,15 @@ public class TestSyncThread {
 
     private static class DummyLedgerStorage implements LedgerStorage {
         @Override
-        public void initialize(ServerConfiguration conf, LedgerManager ledgerManager,
-                LedgerDirsManager ledgerDirsManager, LedgerDirsManager indexDirsManager,
-                CheckpointSource checkpointSource, StatsLogger statsLogger)
+        public void initialize(
+            ServerConfiguration conf,
+            LedgerManager ledgerManager,
+            LedgerDirsManager ledgerDirsManager,
+            LedgerDirsManager indexDirsManager,
+            StateManager stateManager,
+            CheckpointSource checkpointSource,
+            Checkpointer checkpointer,
+            StatsLogger statsLogger)
                 throws IOException {
         }
 
@@ -314,12 +317,12 @@ public class TestSyncThread {
         }
 
         @Override
-        public long addEntry(ByteBuffer entry) throws IOException {
+        public long addEntry(ByteBuf entry) throws IOException {
             return 1L;
         }
 
         @Override
-        public ByteBuffer getEntry(long ledgerId, long entryId)
+        public ByteBuf getEntry(long ledgerId, long entryId)
                 throws IOException {
             return null;
         }
@@ -334,22 +337,26 @@ public class TestSyncThread {
         }
 
         @Override
-        public void setExplicitlac(long ledgerId, ByteBuffer lac) {
+        public void setExplicitlac(long ledgerId, ByteBuf lac) {
         }
 
         @Override
-        public ByteBuffer getExplicitLac(long ledgerId) {
+        public ByteBuf getExplicitLac(long ledgerId) {
             return null;
         }
 
         @Override
-        public Checkpoint checkpoint(Checkpoint checkpoint)
+        public boolean waitForLastAddConfirmedUpdate(long ledgerId,
+                                                     long previousLAC,
+                                                     Watcher<LastAddConfirmedUpdateNotification> watcher)
                 throws IOException {
-            return checkpoint;
+            return false;
         }
 
         @Override
-        public BKMBeanInfo getJMXBean() { return null; }
+        public void checkpoint(Checkpoint checkpoint)
+                throws IOException {
+        }
 
         @Override
         public void registerLedgerDeletionListener(LedgerDeletionListener listener) {

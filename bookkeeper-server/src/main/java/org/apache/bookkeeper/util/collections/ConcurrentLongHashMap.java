@@ -23,19 +23,19 @@ package org.apache.bookkeeper.util.collections;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import com.google.common.collect.Lists;
+
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.locks.StampedLock;
 import java.util.function.LongFunction;
 
-import com.google.common.collect.Lists;
-
 /**
  * Map from long to an Object.
- * 
- * Provides similar methods as a ConcurrentMap<long,Object> with 2 differences:
+ *
+ * <p>Provides similar methods as a {@code ConcurrentMap<long,Object>} with 2 differences:
  * <ol>
- * <li>No boxing/unboxing from long -> Long
+ * <li>No boxing/unboxing from long -&gt; Long
  * <li>Open hash map with linear probing, no node allocations to store the values
  * </ol>
  *
@@ -51,6 +51,15 @@ public class ConcurrentLongHashMap<V> {
 
     private static final int DefaultExpectedItems = 256;
     private static final int DefaultConcurrencyLevel = 16;
+
+    /**
+     * Predicate specialization for (long, V) types.
+     *
+     * @param <V>
+     */
+    public interface LongObjectPredicate<V> {
+        boolean test(long key, V value);
+    }
 
     private final Section<V>[] sections;
 
@@ -149,6 +158,17 @@ public class ConcurrentLongHashMap<V> {
         return getSection(h).remove(key, value, (int) h) != null;
     }
 
+    public int removeIf(LongObjectPredicate<V> predicate) {
+        checkNotNull(predicate);
+
+        int removedCount = 0;
+        for (Section<V> s : sections) {
+            removedCount += s.removeIf(predicate);
+        }
+
+        return removedCount;
+    }
+
     private Section<V> getSection(long hash) {
         // Use 32 msb out of long to get the section
         final int sectionIdx = (int) (hash >>> 32) & (sections.length - 1);
@@ -182,7 +202,10 @@ public class ConcurrentLongHashMap<V> {
         return values;
     }
 
-    public static interface EntryProcessor<V> {
+    /**
+     * An entry processor.
+     */
+    public interface EntryProcessor<V> {
         void accept(long key, V value);
     }
 
@@ -372,6 +395,40 @@ public class ConcurrentLongHashMap<V> {
             }
         }
 
+        int removeIf(LongObjectPredicate<V> filter) {
+            long stamp = writeLock();
+
+            int removedCount = 0;
+            try {
+                // Go through all the buckets for this section
+                int capacity = this.capacity;
+                for (int bucket = 0; bucket < capacity; bucket++) {
+                    long storedKey = keys[bucket];
+                    V storedValue = values[bucket];
+
+                    if (storedValue != EmptyValue && storedValue != DeletedValue) {
+                        if (filter.test(storedKey, storedValue)) {
+                            // Removing item
+                            --size;
+                            ++removedCount;
+
+                            V nextValueInArray = values[signSafeMod(bucket + 1, capacity)];
+                            if (nextValueInArray == EmptyValue) {
+                                values[bucket] = (V) EmptyValue;
+                                --usedBuckets;
+                            } else {
+                                values[bucket] = (V) DeletedValue;
+                            }
+                        }
+                    }
+                }
+
+                return removedCount;
+            } finally {
+                unlockWrite(stamp);
+            }
+        }
+
         void clear() {
             long stamp = writeLock();
 
@@ -474,7 +531,7 @@ public class ConcurrentLongHashMap<V> {
         }
     }
 
-    private static final long HashMixer = 0xc6a4a7935bd1e995l;
+    private static final long HashMixer = 0xc6a4a7935bd1e995L;
     private static final int R = 47;
 
     static final long hash(long key) {
@@ -484,11 +541,11 @@ public class ConcurrentLongHashMap<V> {
         return hash;
     }
 
-    static final int signSafeMod(long n, int Max) {
-        return (int) n & (Max - 1);
+    static final int signSafeMod(long n, int max) {
+        return (int) n & (max - 1);
     }
 
-    private static final int alignToPowerOfTwo(int n) {
+    private static int alignToPowerOfTwo(int n) {
         return (int) Math.pow(2, 32 - Integer.numberOfLeadingZeros(n - 1));
     }
 }

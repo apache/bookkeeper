@@ -1,5 +1,3 @@
-package org.apache.bookkeeper.meta;
-
 /**
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -17,6 +15,7 @@ package org.apache.bookkeeper.meta;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.bookkeeper.meta;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -24,13 +23,12 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
-import org.apache.zookeeper.AsyncCallback;
-import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.LedgerMetadata;
-import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.LedgerMetadataListener;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
+import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.LedgerMetadataListener;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.Processor;
 import org.apache.bookkeeper.versioning.Version;
+import org.apache.zookeeper.AsyncCallback;
 
 /**
  * LedgerManager takes responsibility of ledger management in client side.
@@ -42,7 +40,7 @@ import org.apache.bookkeeper.versioning.Version;
 public interface LedgerManager extends Closeable {
 
     /**
-     * Create a new ledger with provided ledger id and metadata
+     * Create a new ledger with provided ledger id and metadata.
      *
      * @param ledgerId
      *            Ledger id provided to be created
@@ -56,7 +54,7 @@ public interface LedgerManager extends Closeable {
      *                 for other issue</li>
      *            </ul>
      */
-    public void createLedgerMetadata(long ledgerId, LedgerMetadata metadata, GenericCallback<Void> cb);
+    void createLedgerMetadata(long ledgerId, LedgerMetadata metadata, GenericCallback<Void> cb);
 
     /**
      * Remove a specified ledger metadata by ledgerId and version.
@@ -73,7 +71,7 @@ public interface LedgerManager extends Closeable {
      *          <li>{@link BKException.Code.ZKException} for other issue</li>
      *          </ul>
      */
-    public void removeLedgerMetadata(long ledgerId, Version version, GenericCallback<Void> vb);
+    void removeLedgerMetadata(long ledgerId, Version version, GenericCallback<Void> cb);
 
     /**
      * Read ledger metadata of a specified ledger.
@@ -87,7 +85,7 @@ public interface LedgerManager extends Closeable {
      *          <li>{@link BKException.Code.ZKException} for other issue</li>
      *          </ul>
      */
-    public void readLedgerMetadata(long ledgerId, GenericCallback<LedgerMetadata> readCb);
+    void readLedgerMetadata(long ledgerId, GenericCallback<LedgerMetadata> readCb);
 
     /**
      * Write ledger metadata.
@@ -103,7 +101,7 @@ public interface LedgerManager extends Closeable {
      *          <li>{@link BKException.Code.ZKException} for other issue</li>
      *          </ul>
      */
-    public void writeLedgerMetadata(long ledgerId, LedgerMetadata metadata, GenericCallback<Void> cb);
+    void writeLedgerMetadata(long ledgerId, LedgerMetadata metadata, GenericCallback<Void> cb);
 
     /**
      * Register the ledger metadata <i>listener</i> on <i>ledgerId</i>.
@@ -113,7 +111,7 @@ public interface LedgerManager extends Closeable {
      * @param listener
      *          listener.
      */
-    public abstract void registerLedgerMetadataListener(long ledgerId, LedgerMetadataListener listener);
+    void registerLedgerMetadataListener(long ledgerId, LedgerMetadataListener listener);
 
     /**
      * Unregister the ledger metadata <i>listener</i> on <i>ledgerId</i>.
@@ -123,7 +121,7 @@ public interface LedgerManager extends Closeable {
      * @param listener
      *          ledger metadata listener.
      */
-    public abstract void unregisterLedgerMetadataListener(long ledgerId, LedgerMetadataListener listener);
+    void unregisterLedgerMetadataListener(long ledgerId, LedgerMetadataListener listener);
 
     /**
      * Loop to process all ledgers.
@@ -146,21 +144,21 @@ public interface LedgerManager extends Closeable {
      * @param failureRc
      *          Failure RC code passed to finalCb when exceptions occured.
      */
-    public void asyncProcessLedgers(Processor<Long> processor, AsyncCallback.VoidCallback finalCb,
+    void asyncProcessLedgers(Processor<Long> processor, AsyncCallback.VoidCallback finalCb,
                                     Object context, int successRc, int failureRc);
 
     /**
-     * Loop to scan a range of metadata from metadata storage
+     * Loop to scan a range of metadata from metadata storage.
      *
      * @return will return a iterator of the Ranges
      */
-    public LedgerRangeIterator getLedgerRanges();
+    LedgerRangeIterator getLedgerRanges();
 
-    /*
+    /**
      * Used to represent the Ledgers range returned from the
      * current scan.
      */
-    public static class LedgerRange {
+    class LedgerRange {
         // returned ledgers
         private final SortedSet<Long> ledgers;
 
@@ -187,7 +185,7 @@ public interface LedgerManager extends Closeable {
 
     /**
      * Interface of the ledger meta range iterator from
-     * storage (e.g. in ZooKeeper or other key/value store)
+     * storage (e.g. in ZooKeeper or other key/value store).
      */
     interface LedgerRangeIterator {
 
@@ -199,17 +197,17 @@ public interface LedgerManager extends Closeable {
          * in the case it fails to access the ledger metadata store. Otherwise it
          * will end up deleting all ledgers by accident.
          */
-        public boolean hasNext() throws IOException;
+        boolean hasNext() throws IOException;
 
         /**
          * Get the next element.
          *
-         * @return the next element.
+         * @return the next element, the LedgerRange returned must be non-empty
          * @throws IOException thrown when there is a problem accessing the ledger
          * metadata store. It is critical that it doesn't return false in the case
          * in the case it fails to access the ledger metadata store. Otherwise it
          * will end up deleting all ledgers by accident.
          */
-        public LedgerRange next() throws IOException;
+        LedgerRange next() throws IOException;
     }
 }

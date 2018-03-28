@@ -20,37 +20,50 @@
  */
 package org.apache.bookkeeper.replication;
 
-import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
-import org.apache.bookkeeper.test.TestCallbacks;
+import static org.apache.bookkeeper.meta.MetadataDrivers.runFunctionWithLedgerManagerFactory;
+import static org.junit.Assert.assertEquals;
 
-import org.apache.bookkeeper.net.BookieSocketAddress;
+import com.google.common.util.concurrent.UncheckedExecutionException;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
-
+import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
+import org.apache.bookkeeper.test.TestCallbacks;
 import org.junit.Test;
 
-import static org.junit.Assert.*;
-
 /**
- * Test auditor behaviours during a rolling restart
+ * Test auditor behaviours during a rolling restart.
  */
 public class AuditorRollingRestartTest extends BookKeeperClusterTestCase {
 
     public AuditorRollingRestartTest() {
-        super(3);
+        super(3, 600);
         // run the daemon within the bookie
-        baseConf.setAutoRecoveryDaemonEnabled(true);
+        setAutoRecoveryEnabled(true);
     }
 
     /**
-     * Test no auditing during restart if disabled
+     * Test no auditing during restart if disabled.
      */
-    @Test(timeout=600000) // 10 minutes
+    @Test
     public void testAuditingDuringRollingRestart() throws Exception {
-        LedgerManagerFactory mFactory = LedgerManagerFactory.newLedgerManagerFactory(bsConfs.get(0), zkc);
+        runFunctionWithLedgerManagerFactory(
+            bsConfs.get(0),
+            mFactory -> {
+                try {
+                    testAuditingDuringRollingRestart(mFactory);
+                } catch (Exception e) {
+                    throw new UncheckedExecutionException(e.getMessage(), e);
+                }
+                return null;
+            }
+        );
+    }
+
+    private void testAuditingDuringRollingRestart(LedgerManagerFactory mFactory) throws Exception {
         final LedgerUnderreplicationManager underReplicationManager = mFactory.newLedgerUnderreplicationManager();
 
         LedgerHandle lh = bkc.createLedger(3, 3, DigestType.CRC32, "passwd".getBytes());

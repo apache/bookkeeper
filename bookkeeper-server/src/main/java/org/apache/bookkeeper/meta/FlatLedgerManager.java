@@ -27,6 +27,7 @@ import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.Processor;
 import org.apache.bookkeeper.util.StringUtils;
 import org.apache.bookkeeper.util.ZkUtils;
 import org.apache.zookeeper.AsyncCallback;
+import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooKeeper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,7 +47,7 @@ class FlatLedgerManager extends AbstractZkLedgerManager {
     private final String ledgerPrefix;
 
     /**
-     * Constructor
+     * Constructor.
      *
      * @param conf
      *          Configuration object
@@ -88,18 +89,13 @@ class FlatLedgerManager extends AbstractZkLedgerManager {
     }
 
     @Override
-    protected boolean isSpecialZnode(String znode) {
-        return znode.startsWith(ZkLedgerIdGenerator.LEDGER_ID_GEN_PREFIX) || super.isSpecialZnode(znode);
-    }
-
-    @Override
     public LedgerRangeIterator getLedgerRanges() {
         return new LedgerRangeIterator() {
             // single iterator, can visit only one time
             boolean nextCalled = false;
             LedgerRange nextRange = null;
 
-            synchronized private void preload() throws IOException {
+            private synchronized void preload() throws IOException {
                 if (nextRange != null) {
                     return;
                 }
@@ -109,6 +105,8 @@ class FlatLedgerManager extends AbstractZkLedgerManager {
                     zkActiveLedgers = ledgerListToSet(
                             ZkUtils.getChildrenInSingleNode(zk, ledgerRootPath), ledgerRootPath);
                     nextRange = new LedgerRange(zkActiveLedgers);
+                } catch (KeeperException.NoNodeException e) {
+                    throw new IOException("Path does not exist: " + ledgerRootPath, e);
                 } catch (InterruptedException ie) {
                     Thread.currentThread().interrupt();
                     throw new IOException("Error when get child nodes from zk", ie);
@@ -116,13 +114,13 @@ class FlatLedgerManager extends AbstractZkLedgerManager {
             }
 
             @Override
-            synchronized public boolean hasNext() throws IOException {
+            public synchronized boolean hasNext() throws IOException {
                 preload();
                 return nextRange != null && nextRange.size() > 0 && !nextCalled;
             }
 
             @Override
-            synchronized public LedgerRange next() throws IOException {
+            public synchronized LedgerRange next() throws IOException {
                 if (!hasNext()) {
                     throw new NoSuchElementException();
                 }
@@ -130,5 +128,10 @@ class FlatLedgerManager extends AbstractZkLedgerManager {
                 return nextRange;
             }
         };
+    }
+
+    @Override
+    protected String getLedgerParentNodeRegex() {
+        return StringUtils.FLAT_LEDGER_NODE_REGEX;
     }
 }

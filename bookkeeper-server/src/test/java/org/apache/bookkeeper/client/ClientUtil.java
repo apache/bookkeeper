@@ -17,22 +17,34 @@
  */
 package org.apache.bookkeeper.client;
 
-import org.jboss.netty.buffer.ChannelBuffer;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 
+import java.security.GeneralSecurityException;
+
+import org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.DigestType;
+import org.apache.bookkeeper.proto.checksum.DigestManager;
+import org.apache.bookkeeper.util.ByteBufList;
+
+/**
+ * Client utilities.
+ */
 public class ClientUtil {
-    public static ChannelBuffer generatePacket(long ledgerId, long entryId, long lastAddConfirmed,
-                                               long length, byte[] data) {
+    public static ByteBuf generatePacket(long ledgerId, long entryId, long lastAddConfirmed,
+                                               long length, byte[] data) throws GeneralSecurityException {
         return generatePacket(ledgerId, entryId, lastAddConfirmed, length, data, 0, data.length);
     }
 
-    public static ChannelBuffer generatePacket(long ledgerId, long entryId, long lastAddConfirmed,
-                                               long length, byte[] data, int offset, int len) {
-        CRC32DigestManager dm = new CRC32DigestManager(ledgerId);
-        return dm.computeDigestAndPackageForSending(entryId, lastAddConfirmed, length,
-                                                    data, offset, len);
+    public static ByteBuf generatePacket(long ledgerId, long entryId, long lastAddConfirmed, long length, byte[] data,
+            int offset, int len) throws GeneralSecurityException {
+        DigestManager dm = DigestManager.instantiate(ledgerId, new byte[2], DigestType.CRC32);
+        return ByteBufList.coalesce(dm.computeDigestAndPackageForSending(entryId, lastAddConfirmed, length,
+                Unpooled.wrappedBuffer(data, offset, len)));
     }
 
-    /** Returns that whether ledger is in open state */
+    /**
+     * Returns that whether ledger is in open state.
+     */
     public static boolean isLedgerOpen(LedgerHandle handle) {
         return !handle.metadata.isClosed();
     }

@@ -30,8 +30,11 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Test the BookieHealthCheck.
+ */
 public class TestBookieHealthCheck extends BookKeeperClusterTestCase {
-    private final static Logger LOG = LoggerFactory.getLogger(TestBookieHealthCheck.class);
+    private static final Logger LOG = LoggerFactory.getLogger(TestBookieHealthCheck.class);
 
     public TestBookieHealthCheck() {
         super(4);
@@ -42,7 +45,7 @@ public class TestBookieHealthCheck extends BookKeeperClusterTestCase {
         baseClientConf.setBookieQuarantineTime(5, TimeUnit.SECONDS);
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testBkQuarantine() throws Exception {
         LedgerHandle lh = bkc.createLedger(2, 2, 2, BookKeeper.DigestType.CRC32, new byte[] {});
 
@@ -90,7 +93,7 @@ public class TestBookieHealthCheck extends BookKeeperClusterTestCase {
         Assert.assertFalse(bkc.bookieWatcher.quarantinedBookies.asMap().containsKey(bookieToQuarantine));
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testNoQuarantineOnBkRestart() throws Exception {
         final LedgerHandle lh = bkc.createLedger(2, 2, 2, BookKeeper.DigestType.CRC32, new byte[] {});
         final int numEntries = 20;
@@ -121,7 +124,7 @@ public class TestBookieHealthCheck extends BookKeeperClusterTestCase {
         Assert.assertFalse(bkc.bookieWatcher.quarantinedBookies.asMap().containsKey(bookieToRestart));
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testNoQuarantineOnExpectedBkErrors() throws Exception {
         final LedgerHandle lh = bkc.createLedger(2, 2, 2, BookKeeper.DigestType.CRC32, new byte[] {});
         final int numEntries = 10;

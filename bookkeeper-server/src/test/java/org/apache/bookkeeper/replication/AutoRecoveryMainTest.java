@@ -20,14 +20,15 @@
  */
 package org.apache.bookkeeper.replication;
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 
 import org.junit.Test;
 
-import static org.junit.Assert.*;
-
-/*
- * Test the AuditorPeer
+/**
+ * Test the AuditorPeer.
  */
 public class AutoRecoveryMainTest extends BookKeeperClusterTestCase {
 
@@ -35,10 +36,10 @@ public class AutoRecoveryMainTest extends BookKeeperClusterTestCase {
         super(3);
     }
 
-    /*
-     * test the startup of the auditorElector and RW.
+    /**
+     * Test the startup of the auditorElector and RW.
      */
-    @Test(timeout=60000)
+    @Test
     public void testStartup() throws Exception {
         AutoRecoveryMain main = new AutoRecoveryMain(bsConfs.get(0));
         try {
@@ -56,7 +57,7 @@ public class AutoRecoveryMainTest extends BookKeeperClusterTestCase {
     /*
      * Test the shutdown of all daemons
      */
-    @Test(timeout=60000)
+    @Test
     public void testShutdown() throws Exception {
         AutoRecoveryMain main = new AutoRecoveryMain(bsConfs.get(0));
         main.start();
@@ -77,7 +78,7 @@ public class AutoRecoveryMainTest extends BookKeeperClusterTestCase {
      * Test that, if an autorecovery looses its ZK connection/session
      * it will shutdown.
      */
-    @Test(timeout=60000)
+    @Test
     public void testAutoRecoverySessionLoss() throws Exception {
         AutoRecoveryMain main1 = new AutoRecoveryMain(bsConfs.get(0));
         AutoRecoveryMain main2 = new AutoRecoveryMain(bsConfs.get(1));

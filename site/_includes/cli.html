@@ -1,0 +1,45 @@
+{% assign tool_name = include.id %}
+{% assign tool = site.data.cli[tool_name] %}
+{% assign commands = tool.commands %}
+
+<h2 id="{{ tool_name }}">{{ tool_name }}</h2>
+
+{{ tool.description | markdownify }}
+
+{% if tool.env_vars %}
+<h4>Environment variables</h4>
+
+<table>
+  <thead>
+    <tr>
+      <th>Environment variable</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for var in tool.env_vars %}
+    <tr>
+      <td><code>{{ var.name }}</code></td>
+      <td>{{ var.description | markdownify }}</td>
+      <td>{% if var.default %}<code>${bookkeeperHome}/{{ var.default }}</code>{% endif %}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+
+<h4>Commands</h4>
+
+{% for command in commands %}
+<h3 id="{{ tool_name }}-{{ command.name }}">{{ command.name }}</h3>
+
+{{ command.description | markdownify }}
+
+<h5>Usage</h5>
+
+```shell
+$ {{ tool.root_path }}/{{ tool_name }} {{ command.name }} {% if command.argument %}{{ command.argument }}{% endif %}
+```
+{% unless forloop.last %}<hr>{% endunless %}
+{% endfor %}

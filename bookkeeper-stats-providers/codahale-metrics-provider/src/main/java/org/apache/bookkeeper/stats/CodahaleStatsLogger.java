@@ -16,15 +16,15 @@
  */
 package org.apache.bookkeeper.stats;
 
-import com.codahale.metrics.Timer;
-import com.codahale.metrics.MetricRegistry;
 import static com.codahale.metrics.MetricRegistry.name;
 
-import org.apache.bookkeeper.stats.Counter;
-import org.apache.bookkeeper.stats.Gauge;
-import org.apache.bookkeeper.stats.OpStatsLogger;
-import org.apache.bookkeeper.stats.StatsLogger;
+import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.Timer;
 
+/**
+ * A {@link StatsLogger} implemented based on <i>Codahale</i> metrics library.
+ */
+@Deprecated
 public class CodahaleStatsLogger implements StatsLogger {
     protected final String basename;
     final MetricRegistry metrics;
@@ -37,7 +37,7 @@ public class CodahaleStatsLogger implements StatsLogger {
     @Override
     public OpStatsLogger getOpStatsLogger(String statName) {
         Timer success = metrics.timer(name(basename, statName));
-        Timer failure = metrics.timer(name(basename, statName+"-fail"));
+        Timer failure = metrics.timer(name(basename, statName + "-fail"));
         return new CodahaleOpStatsLogger(success, failure);
     }
 
@@ -87,6 +87,11 @@ public class CodahaleStatsLogger implements StatsLogger {
     }
 
     @Override
+    public <T extends Number> void unregisterGauge(String statName, Gauge<T> gauge) {
+        // do nothing right now as the Codahale doesn't support conditional removal
+    }
+
+    @Override
     public StatsLogger scope(String scope) {
         String scopeName;
         if (0 == basename.length()) {
@@ -95,5 +100,10 @@ public class CodahaleStatsLogger implements StatsLogger {
             scopeName = name(basename, scope);
         }
         return new CodahaleStatsLogger(metrics, scopeName);
+    }
+
+    @Override
+    public void removeScope(String name, StatsLogger statsLogger) {
+        // no-op. the codahale stats logger doesn't have the references for stats logger.
     }
 }

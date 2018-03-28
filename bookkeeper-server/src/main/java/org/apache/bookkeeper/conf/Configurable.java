@@ -20,14 +20,15 @@
  */
 package org.apache.bookkeeper.conf;
 
+import org.apache.bookkeeper.common.annotation.InterfaceAudience.Public;
+import org.apache.bookkeeper.common.annotation.InterfaceStability.Stable;
 import org.apache.commons.configuration.Configuration;
-
-import com.google.common.annotations.Beta;
 
 /**
  * Class that may be configured with a {@link Configuration}.
  */
-@Beta
+@Public
+@Stable
 public interface Configurable {
 
     /**
@@ -36,12 +37,12 @@ public interface Configurable {
      * @param conf
      *          Configuration object to use
      */
-    public void setConf(Configuration conf);
+    void setConf(Configuration conf);
 
     /**
      * Return the configuration used by this object.
      *
      * @return configuration used by this object.
      */
-    public Configuration getConf();
+    Configuration getConf();
 }

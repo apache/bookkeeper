@@ -21,59 +21,47 @@
 
 package org.apache.bookkeeper.proto;
 
-import java.util.concurrent.CountDownLatch;
-import org.apache.bookkeeper.client.BookKeeper;
+import static org.junit.Assert.fail;
 
-import org.apache.bookkeeper.conf.ClientConfiguration;
+import io.netty.channel.Channel;
+import io.netty.channel.local.LocalChannel;
+
+import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.LedgerHandle;
-import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.test.BaseTestCase;
-import org.junit.Assert;
+import org.apache.bookkeeper.conf.ClientConfiguration;
+import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.junit.Test;
 
 /**
- * Tests of the main BookKeeper client using networkless comunication
+ * Tests of the main BookKeeper client using networkless comunication.
  */
-public class NetworkLessBookieTest extends BaseTestCase {
-    
-    protected ServerConfiguration newServerConfiguration() throws Exception {       
-        return super
-                .newServerConfiguration()
-                .setDisableServerSocketBind(true)
-                .setEnableLocalTransport(true);
-    }
-        
-    DigestType digestType;
-    
-    public NetworkLessBookieTest(DigestType digestType) {
-        super(4);            
-        this.digestType=digestType;
+public class NetworkLessBookieTest extends BookKeeperClusterTestCase {
+
+    public NetworkLessBookieTest() {
+        super(1);
+        baseConf.setDisableServerSocketBind(true);
+        baseConf.setEnableLocalTransport(true);
     }
 
     @Test
     public void testUseLocalBookie() throws Exception {
-        ClientConfiguration conf = new ClientConfiguration()
-                .setZkServers(zkUtil.getZooKeeperConnectString())
-                .setZkTimeout(20000);
+        ClientConfiguration conf = new ClientConfiguration();
+        conf.setZkServers(zkUtil.getZooKeeperConnectString());
+        conf.setZkTimeout(20000);
 
-        CountDownLatch l = new CountDownLatch(1);
-        zkUtil.sleepServer(5, l);
-        l.await();
-                
-        try (BookKeeper bkc = new BookKeeper(conf);) {
-            try (LedgerHandle h = bkc.createLedger(1,1,digestType, "testPasswd".getBytes());) {
+        try (BookKeeper bkc = new BookKeeper(conf)) {
+            try (LedgerHandle h = bkc.createLedger(1, 1, DigestType.CRC32, "testPasswd".getBytes())) {
                 h.addEntry("test".getBytes());
             }
         }
 
         for (BookieServer bk : bs) {
-            for (ChannelManager channel : bk.nettyServer.channels) {
-                if (! (channel instanceof VMLocalChannelManager)) {
-                    Assert.fail();
+            for (Channel channel : bk.nettyServer.allChannels) {
+                if (!(channel instanceof LocalChannel)) {
+                    fail();
                 }
             }
         }
     }
-
 }

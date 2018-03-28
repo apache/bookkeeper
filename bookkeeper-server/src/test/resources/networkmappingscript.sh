@@ -27,9 +27,13 @@
 #       127.0.0.2    - /2
 #       199.12.34.21 - /1
 # This script file is used just for testing purpose
+# rack 0 returns script error (non-zero error code)
 
 for var in "$@"
 do
     i=$((${#var}-1))
+    if [ "${var:$i:1}" == "0" ]; then
+        exit 1 
+    fi
     echo /${var:$i:1}
 done

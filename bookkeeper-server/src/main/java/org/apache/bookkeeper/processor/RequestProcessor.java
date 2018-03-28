@@ -20,14 +20,17 @@
  */
 package org.apache.bookkeeper.processor;
 
-import org.jboss.netty.channel.Channel;
+import io.netty.channel.Channel;
 
+/**
+ * A request processor that is used for processing requests at bookie side.
+ */
 public interface RequestProcessor {
 
     /**
      * Close the request processor.
      */
-    public void close();
+    void close();
 
     /**
      * Process request.
@@ -37,6 +40,6 @@ public interface RequestProcessor {
      * @param channel
      *          channel received the given request <i>r</i>
      */
-    public void processRequest(Object r, Channel channel);
+    void processRequest(Object r, Channel channel);
 
 }

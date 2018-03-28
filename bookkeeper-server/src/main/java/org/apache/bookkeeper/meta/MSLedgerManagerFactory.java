@@ -17,23 +17,26 @@
  */
 package org.apache.bookkeeper.meta;
 
-import com.google.common.base.Optional;
+import static com.google.common.base.Preconditions.checkArgument;
 import static org.apache.bookkeeper.metastore.MetastoreTable.ALL_FIELDS;
 import static org.apache.bookkeeper.metastore.MetastoreTable.NON_FIELDS;
 
+import com.google.common.base.Optional;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-
+import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.LedgerMetadata;
 import org.apache.bookkeeper.conf.AbstractConfiguration;
@@ -55,36 +58,42 @@ import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.LedgerMetadataListener;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.Processor;
 import org.apache.bookkeeper.replication.ReplicationException;
+import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.util.StringUtils;
+import org.apache.bookkeeper.util.ZkUtils;
 import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.versioning.Versioned;
+import org.apache.commons.configuration.ConfigurationException;
 import org.apache.zookeeper.AsyncCallback;
 import org.apache.zookeeper.KeeperException;
+import org.apache.zookeeper.ZKUtil;
 import org.apache.zookeeper.ZooKeeper;
+import org.apache.zookeeper.data.ACL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import java.util.List;
-import org.apache.bookkeeper.util.ZkUtils;
-import org.apache.zookeeper.data.ACL;
-
 /**
- * MetaStore Based Ledger Manager Factory
+ * MetaStore Based Ledger Manager Factory.
+ *
+ * <p>MSLedgerManagerFactory is a legacy abstraction that mixing zookeeper with a metadata store
+ * interface. It is not used by any production systems. It should be deprecated soon.
+ *
+ * @deprecated since 4.7.0
  */
-public class MSLedgerManagerFactory extends LedgerManagerFactory {
+@Slf4j
+public class MSLedgerManagerFactory extends AbstractZkLedgerManagerFactory {
 
-    private final static Logger LOG = LoggerFactory.getLogger(MSLedgerManagerFactory.class);
+    private static final Logger LOG = LoggerFactory.getLogger(MSLedgerManagerFactory.class);
 
-    static int MS_CONNECT_BACKOFF_MS = 200;
+    private static final int MS_CONNECT_BACKOFF_MS = 200;
 
     public static final int CUR_VERSION = 1;
+    public static final String NAME = "ms";
 
     public static final String TABLE_NAME = "LEDGER";
     public static final String META_FIELD = ".META";
 
     AbstractConfiguration conf;
-    ZooKeeper zk;
     MetaStore metastore;
 
     @Override
@@ -93,13 +102,17 @@ public class MSLedgerManagerFactory extends LedgerManagerFactory {
     }
 
     @Override
-    public LedgerManagerFactory initialize(final AbstractConfiguration conf, final ZooKeeper zk,
-            final int factoryVersion) throws IOException {
+    public LedgerManagerFactory initialize(final AbstractConfiguration conf,
+                                           final LayoutManager layoutManager,
+                                           final int factoryVersion) throws IOException {
+        checkArgument(layoutManager instanceof ZkLayoutManager);
+        ZkLayoutManager zkLayoutManager = (ZkLayoutManager) layoutManager;
+
         if (CUR_VERSION != factoryVersion) {
             throw new IOException("Incompatible layout version found : " + factoryVersion);
         }
         this.conf = conf;
-        this.zk = zk;
+        this.zk = zkLayoutManager.getZk();
 
         // load metadata store
         String msName = conf.getMetastoreImplClass();
@@ -107,6 +120,7 @@ public class MSLedgerManagerFactory extends LedgerManagerFactory {
             metastore = MetastoreFactory.createMetaStore(msName);
 
             // TODO: should record version in somewhere. e.g. ZooKeeper
+            // {@link https://github.com/apache/bookkeeper/issues/282}
             int msVersion = metastore.getVersion();
             metastore.init(conf, msVersion);
         } catch (Throwable t) {
@@ -117,7 +131,7 @@ public class MSLedgerManagerFactory extends LedgerManagerFactory {
     }
 
     @Override
-    public void uninitialize() throws IOException {
+    public void close() throws IOException {
         metastore.close();
     }
 
@@ -168,6 +182,7 @@ public class MSLedgerManagerFactory extends LedgerManagerFactory {
                     wait();
                 }
             } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
             }
         }
 
@@ -215,10 +230,14 @@ public class MSLedgerManagerFactory extends LedgerManagerFactory {
             @Override
             public void run() {
                 if (null != listeners.get(ledgerId)) {
-                    LOG.debug("Re-read ledger metadata for {}.", ledgerId);
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("Re-read ledger metadata for {}.", ledgerId);
+                    }
                     readLedgerMetadata(ledgerId, ReadLedgerMetadataTask.this);
                 } else {
-                    LOG.debug("Ledger metadata listener for ledger {} is already removed.", ledgerId);
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("Ledger metadata listener for ledger {} is already removed.", ledgerId);
+                    }
                 }
             }
 
@@ -227,11 +246,13 @@ public class MSLedgerManagerFactory extends LedgerManagerFactory {
                 if (BKException.Code.OK == rc) {
                     final Set<LedgerMetadataListener> listenerSet = listeners.get(ledgerId);
                     if (null != listenerSet) {
-                        LOG.debug("Ledger metadata is changed for {} : {}.", ledgerId, result);
+                        if (LOG.isDebugEnabled()) {
+                            LOG.debug("Ledger metadata is changed for {} : {}.", ledgerId, result);
+                        }
                         scheduler.submit(new Runnable() {
                             @Override
                             public void run() {
-                                synchronized(listenerSet) {
+                                synchronized (listenerSet) {
                                     for (LedgerMetadataListener listener : listenerSet) {
                                         listener.onChanged(ledgerId, result);
                                     }
@@ -243,8 +264,10 @@ public class MSLedgerManagerFactory extends LedgerManagerFactory {
                     // the ledger is removed, do nothing
                     Set<LedgerMetadataListener> listenerSet = listeners.remove(ledgerId);
                     if (null != listenerSet) {
-                        LOG.debug("Removed ledger metadata listener set on ledger {} as its ledger is deleted : {}",
-                                ledgerId, listenerSet.size());
+                        if (LOG.isDebugEnabled()) {
+                            LOG.debug("Removed ledger metadata listener set on ledger {} as its ledger is deleted : {}",
+                                    ledgerId, listenerSet.size());
+                        }
                     }
                 } else {
                     LOG.warn("Failed on read ledger metadata of ledger {} : {}", ledgerId, rc);
@@ -286,9 +309,9 @@ public class MSLedgerManagerFactory extends LedgerManagerFactory {
                 Set<LedgerMetadataListener> listenerSet = listeners.get(ledgerId);
                 if (listenerSet != null) {
                     synchronized (listenerSet) {
-                        for(LedgerMetadataListener l : listenerSet){
+                        for (LedgerMetadataListener l : listenerSet){
                             unregisterLedgerMetadataListener(ledgerId, l);
-                            l.onChanged( ledgerId, null );
+                            l.onChanged(ledgerId, null);
                         }
                     }
                 }
@@ -360,7 +383,9 @@ public class MSLedgerManagerFactory extends LedgerManagerFactory {
                         ledgerCb.operationComplete(BKException.Code.MetaStoreException, null);
                         return;
                     }
-                    LOG.debug("Create ledger {} with version {} successfully.", lid, version);
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("Create ledger {} with version {} successfully.", lid, version);
+                    }
                     // update version
                     metadata.setVersion(version);
                     ledgerCb.operationComplete(BKException.Code.OK, null);
@@ -412,8 +437,8 @@ public class MSLedgerManagerFactory extends LedgerManagerFactory {
                     }
                     LedgerMetadata metadata;
                     try {
-                        metadata = LedgerMetadata
-                                .parseConfig(value.getValue().getField(META_FIELD), value.getVersion(), Optional.<Long>absent());
+                        metadata = LedgerMetadata.parseConfig(value.getValue().getField(META_FIELD),
+                                value.getVersion(), Optional.<Long>absent());
                     } catch (IOException e) {
                         LOG.error("Could not parse ledger metadata for ledger " + ledgerId + " : ", e);
                         readCb.operationComplete(BKException.Code.MetaStoreException, null);
@@ -430,7 +455,9 @@ public class MSLedgerManagerFactory extends LedgerManagerFactory {
                 final GenericCallback<Void> cb) {
             Value data = new Value().setField(META_FIELD, metadata.serialize());
 
-            LOG.debug("Writing ledger {} metadata, version {}", new Object[] { ledgerId, metadata.getVersion() });
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Writing ledger {} metadata, version {}", new Object[] { ledgerId, metadata.getVersion() });
+            }
 
             final String key = ledgerId2Key(ledgerId);
             MetastoreCallback<Version> msCallback = new MetastoreCallback<Version>() {
@@ -599,6 +626,25 @@ public class MSLedgerManagerFactory extends LedgerManagerFactory {
         public LedgerRangeIterator getLedgerRanges() {
             return new MSLedgerRangeIterator();
         }
+
+        /**
+         * Whether the znode a special znode.
+         *
+         * @param znode
+         *          Znode Name
+         * @return true  if the znode is a special znode otherwise false
+         */
+         public static boolean isSpecialZnode(String znode) {
+            if (BookKeeperConstants.AVAILABLE_NODE.equals(znode)
+                    || BookKeeperConstants.COOKIE_NODE.equals(znode)
+                    || BookKeeperConstants.LAYOUT_ZNODE.equals(znode)
+                    || BookKeeperConstants.INSTANCEID.equals(znode)
+                    || BookKeeperConstants.UNDER_REPLICATION_NODE.equals(znode)
+                    || MsLedgerManager.IDGEN_ZNODE.equals(znode)) {
+                return true;
+            }
+            return false;
+        }
     }
 
     @Override
@@ -622,7 +668,7 @@ public class MSLedgerManagerFactory extends LedgerManagerFactory {
         ScheduledExecutorService scheduler;
 
         /**
-         * Constructor
+         * Constructor.
          *
          * @param scheduler
          *            Executor used to prevent long stack chains
@@ -632,7 +678,7 @@ public class MSLedgerManagerFactory extends LedgerManagerFactory {
         }
 
         /**
-         * Process set of items
+         * Process set of items.
          *
          * @param data
          *            Set of data to process
@@ -672,7 +718,7 @@ public class MSLedgerManagerFactory extends LedgerManagerFactory {
                     final AsyncCallback.VoidCallback stub = this;
                     scheduler.submit(new Runnable() {
                         @Override
-                        public final void run() {
+                        public void run() {
                             processor.process(dataToProcess, stub);
                         }
                     });
@@ -684,8 +730,8 @@ public class MSLedgerManagerFactory extends LedgerManagerFactory {
     }
 
     @Override
-    public void format(AbstractConfiguration conf, ZooKeeper zk) throws InterruptedException,
-            KeeperException, IOException {
+    public void format(AbstractConfiguration<?> conf, LayoutManager layoutManager)
+        throws InterruptedException, KeeperException, IOException {
         MetastoreTable ledgerTable;
         try {
             ledgerTable = metastore.createScannableTable(TABLE_NAME);
@@ -700,7 +746,57 @@ public class MSLedgerManagerFactory extends LedgerManagerFactory {
         }
         LOG.info("Finished cleaning up table {}.", TABLE_NAME);
         // Delete and recreate the LAYOUT information.
-        super.format(conf, zk);
+        Class<? extends LedgerManagerFactory> factoryClass;
+        try {
+            factoryClass = conf.getLedgerManagerFactoryClass();
+        } catch (ConfigurationException e) {
+            throw new IOException("Failed to get ledger manager factory class from configuration : ", e);
+        }
+
+        layoutManager.deleteLedgerLayout();
+        // Create new layout information again.
+        createNewLMFactory(conf, layoutManager, factoryClass);
     }
 
+    @Override
+    public boolean validateAndNukeExistingCluster(AbstractConfiguration<?> conf, LayoutManager layoutManager)
+            throws InterruptedException, KeeperException, IOException {
+        String zkLedgersRootPath = conf.getZkLedgersRootPath();
+        String zkServers = conf.getZkServers();
+
+        /*
+         * before proceeding with nuking existing cluster, make sure there
+         * are no unexpected znodes under ledgersRootPath
+         */
+        List<String> ledgersRootPathChildrenList = zk.getChildren(zkLedgersRootPath, false);
+        for (String ledgersRootPathChildren : ledgersRootPathChildrenList) {
+            if ((!MsLedgerManager.isSpecialZnode(ledgersRootPathChildren))) {
+                log.error("Found unexpected znode : {} under ledgersRootPath : {} so exiting nuke operation",
+                        ledgersRootPathChildren, zkLedgersRootPath);
+                return false;
+            }
+        }
+
+        // formatting ledgermanager deletes ledger znodes
+        format(conf, layoutManager);
+
+        // now delete all the special nodes recursively
+        ledgersRootPathChildrenList = zk.getChildren(zkLedgersRootPath, false);
+        for (String ledgersRootPathChildren : ledgersRootPathChildrenList) {
+            if (MsLedgerManager.isSpecialZnode(ledgersRootPathChildren)) {
+                ZKUtil.deleteRecursive(zk, zkLedgersRootPath + "/" + ledgersRootPathChildren);
+            } else {
+                log.error("Found unexpected znode : {} under ledgersRootPath : {} so exiting nuke operation",
+                        ledgersRootPathChildren, zkLedgersRootPath);
+                return false;
+            }
+        }
+
+        // finally deleting the ledgers rootpath
+        zk.delete(zkLedgersRootPath, -1);
+
+        log.info("Successfully nuked existing cluster, ZKServers: {} ledger root path: {}",
+                zkServers, zkLedgersRootPath);
+        return true;
+    }
 }

@@ -17,26 +17,31 @@
  */
 package org.apache.bookkeeper.client;
 
+import io.netty.util.HashedWheelTimer;
+
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.net.DNSToSwitchMapping;
 import org.apache.bookkeeper.net.Node;
 import org.apache.bookkeeper.stats.StatsLogger;
-import org.jboss.netty.util.HashedWheelTimer;
 
+/**
+ * A placement policy implementation use rack information for placing ensembles.
+ *
+ * @see EnsemblePlacementPolicy
+ */
 public class RackawareEnsemblePlacementPolicy extends RackawareEnsemblePlacementPolicyImpl
         implements ITopologyAwareEnsemblePlacementPolicy<TopologyAwareEnsemblePlacementPolicy.BookieNode> {
     RackawareEnsemblePlacementPolicyImpl slave = null;
 
-    RackawareEnsemblePlacementPolicy() {
+    public RackawareEnsemblePlacementPolicy() {
         super();
     }
 
-    RackawareEnsemblePlacementPolicy(boolean enforceDurability) {
+    public RackawareEnsemblePlacementPolicy(boolean enforceDurability) {
         super(enforceDurability);
     }
 
@@ -70,7 +75,8 @@ public class RackawareEnsemblePlacementPolicy extends RackawareEnsemblePlacement
     }
 
     @Override
-    public Set<BookieSocketAddress> onClusterChanged(Set<BookieSocketAddress> writableBookies, Set<BookieSocketAddress> readOnlyBookies) {
+    public Set<BookieSocketAddress> onClusterChanged(Set<BookieSocketAddress> writableBookies,
+            Set<BookieSocketAddress> readOnlyBookies) {
         Set<BookieSocketAddress> deadBookies = super.onClusterChanged(writableBookies, readOnlyBookies);
         if (null != slave) {
             deadBookies = slave.onClusterChanged(writableBookies, readOnlyBookies);
@@ -79,8 +85,8 @@ public class RackawareEnsemblePlacementPolicy extends RackawareEnsemblePlacement
     }
 
     @Override
-    public ArrayList<BookieSocketAddress> newEnsemble(
-        int ensembleSize, int writeQuorumSize, int ackQuorumSize, java.util.Map<String, byte[]> customMetadata, Set<BookieSocketAddress> excludeBookies)
+    public ArrayList<BookieSocketAddress> newEnsemble(int ensembleSize, int writeQuorumSize, int ackQuorumSize,
+            Map<String, byte[]> customMetadata, Set<BookieSocketAddress> excludeBookies)
             throws BKException.BKNotEnoughBookiesException {
         try {
             return super.newEnsemble(ensembleSize, writeQuorumSize, ackQuorumSize, customMetadata, excludeBookies);
@@ -94,8 +100,9 @@ public class RackawareEnsemblePlacementPolicy extends RackawareEnsemblePlacement
     }
 
     @Override
-    public BookieSocketAddress replaceBookie(
-        int ensembleSize, int writeQuorumSize, int ackQuorumSize, java.util.Map<String, byte[]> customMetadata, Collection<BookieSocketAddress> currentEnsemble, BookieSocketAddress bookieToReplace, Set<BookieSocketAddress> excludeBookies)
+    public BookieSocketAddress replaceBookie(int ensembleSize, int writeQuorumSize, int ackQuorumSize,
+            Map<String, byte[]> customMetadata, Set<BookieSocketAddress> currentEnsemble,
+            BookieSocketAddress bookieToReplace, Set<BookieSocketAddress> excludeBookies)
             throws BKException.BKNotEnoughBookiesException {
        try {
             return super.replaceBookie(ensembleSize, writeQuorumSize, ackQuorumSize, customMetadata,
@@ -104,24 +111,28 @@ public class RackawareEnsemblePlacementPolicy extends RackawareEnsemblePlacement
             if (slave == null) {
                 throw bnebe;
             } else {
-                return slave.replaceBookie(ensembleSize, writeQuorumSize, ackQuorumSize,customMetadata,
+                return slave.replaceBookie(ensembleSize, writeQuorumSize, ackQuorumSize, customMetadata,
                         currentEnsemble, bookieToReplace, excludeBookies);
             }
         }
     }
 
     @Override
-    public List<Integer> reorderReadSequence(ArrayList<BookieSocketAddress> ensemble,
-                                             List<Integer> writeSet,
-                                             Map<BookieSocketAddress, Long> bookieFailureHistory) {
-        return super.reorderReadSequence(ensemble, writeSet, bookieFailureHistory);
+    public DistributionSchedule.WriteSet reorderReadSequence(
+            ArrayList<BookieSocketAddress> ensemble,
+            BookiesHealthInfo bookiesHealthInfo,
+            DistributionSchedule.WriteSet writeSet) {
+        return super.reorderReadSequence(ensemble, bookiesHealthInfo,
+                                         writeSet);
     }
 
     @Override
-    public List<Integer> reorderReadLACSequence(ArrayList<BookieSocketAddress> ensemble,
-                                                List<Integer> writeSet,
-                                                Map<BookieSocketAddress, Long> bookieFailureHistory) {
-        return super.reorderReadLACSequence(ensemble, writeSet, bookieFailureHistory);
+    public DistributionSchedule.WriteSet reorderReadLACSequence(
+            ArrayList<BookieSocketAddress> ensemble,
+            BookiesHealthInfo bookiesHealthInfo,
+            DistributionSchedule.WriteSet writeSet) {
+        return super.reorderReadLACSequence(ensemble, bookiesHealthInfo,
+                                            writeSet);
     }
 
     @Override

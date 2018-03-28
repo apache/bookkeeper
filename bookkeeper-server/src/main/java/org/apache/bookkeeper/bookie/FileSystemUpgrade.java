@@ -21,46 +21,47 @@
 
 package org.apache.bookkeeper.bookie;
 
+import static com.google.common.base.Charsets.UTF_8;
+import static org.apache.bookkeeper.meta.MetadataDrivers.runFunctionWithRegistrationManager;
+
 import com.google.common.collect.Lists;
+import com.google.common.util.concurrent.UncheckedExecutionException;
+import java.io.File;
+import java.io.FilenameFilter;
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Scanner;
+import java.util.concurrent.ExecutionException;
+import org.apache.bookkeeper.bookie.BookieException.UpgradeException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.discover.RegistrationManager;
+import org.apache.bookkeeper.meta.exceptions.MetadataException;
 import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.util.HardLink;
 import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.versioning.Versioned;
-import org.apache.bookkeeper.zookeeper.BoundExponentialBackoffRetryPolicy;
-import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.cli.BasicParser;
-import org.apache.commons.cli.Options;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.Options;
 import org.apache.commons.configuration.ConfigurationException;
-import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.ZooKeeper;
-
+import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import java.net.MalformedURLException;
-import java.io.File;
-import java.io.FilenameFilter;
-import java.io.IOException;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Scanner;
-import java.util.NoSuchElementException;
-
-import static com.google.common.base.Charsets.UTF_8;
 
 /**
- * Application for upgrading the bookkeeper filesystem
- * between versions
+ * Application for upgrading the bookkeeper filesystem between versions.
  */
 public class FileSystemUpgrade {
-    private final static Logger LOG = LoggerFactory.getLogger(FileSystemUpgrade.class);
+    private static final Logger LOG = LoggerFactory.getLogger(FileSystemUpgrade.class);
 
-    static FilenameFilter BOOKIE_FILES_FILTER = new FilenameFilter() {
+    static FilenameFilter bookieFilesFilter = new FilenameFilter() {
             private boolean containsIndexFiles(File dir, String name) {
                 if (name.endsWith(".idx")) {
                     return true;
@@ -87,7 +88,7 @@ public class FileSystemUpgrade {
 
             public boolean accept(File dir, String name) {
                 if (name.endsWith(".txn") || name.endsWith(".log")
-                    || name.equals("lastId") || name.equals("lastMark")) {
+                    || name.equals("lastId") || name.startsWith("lastMark")) {
                     return true;
                 }
                 if (containsIndexFiles(dir, name)) {
@@ -98,16 +99,14 @@ public class FileSystemUpgrade {
         };
 
     private static List<File> getAllDirectories(ServerConfiguration conf) {
-        List<File> dirs = new ArrayList<File>();
+        List<File> dirs = new ArrayList<>();
         dirs.addAll(Lists.newArrayList(conf.getJournalDirs()));
-        for (File d: conf.getLedgerDirs()) {
-            dirs.add(d);
-        }
+        Collections.addAll(dirs, conf.getLedgerDirs());
         return dirs;
     }
 
     private static int detectPreviousVersion(File directory) throws IOException {
-        String[] files = directory.list(BOOKIE_FILES_FILTER);
+        String[] files = directory.list(bookieFilesFilter);
         File v2versionFile = new File(directory,
                 BookKeeperConstants.VERSION_FILENAME);
         if ((files == null || files.length == 0) && !v2versionFile.exists()) { // no old data, so we're ok
@@ -117,36 +116,14 @@ public class FileSystemUpgrade {
         if (!v2versionFile.exists()) {
             return 1;
         }
-        Scanner s = new Scanner(v2versionFile, UTF_8.name());
-        try {
+        try (Scanner s = new Scanner(v2versionFile, UTF_8.name())) {
             return s.nextInt();
         } catch (NoSuchElementException nse) {
-            LOG.error("Couldn't parse version file " + v2versionFile , nse);
+            LOG.error("Couldn't parse version file " + v2versionFile, nse);
             throw new IOException("Couldn't parse version file", nse);
         } catch (IllegalStateException ise) {
             LOG.error("Error reading file " + v2versionFile, ise);
             throw new IOException("Error reading version file", ise);
-        } finally {
-            s.close();
-        }
-    }
-
-    private static ZooKeeper newZookeeper(final ServerConfiguration conf)
-            throws BookieException.UpgradeException {
-        try {
-            int zkTimeout = conf.getZkTimeout();
-            return ZooKeeperClient.newBuilder()
-                    .connectString(conf.getZkServers())
-                    .sessionTimeoutMs(zkTimeout)
-                    .operationRetryPolicy(
-                            new BoundExponentialBackoffRetryPolicy(zkTimeout, zkTimeout, Integer.MAX_VALUE))
-                    .build();
-        } catch (InterruptedException ie) {
-            throw new BookieException.UpgradeException(ie);
-        } catch (IOException ioe) {
-            throw new BookieException.UpgradeException(ioe);
-        } catch (KeeperException ke) {
-            throw new BookieException.UpgradeException(ke);
         }
     }
 
@@ -158,7 +135,7 @@ public class FileSystemUpgrade {
         for (String f : files) {
             if (f.endsWith(".idx")) { // this is an index dir, create the links
                 if (!targetPath.mkdirs()) {
-                    throw new IOException("Could not create target path ["+targetPath+"]");
+                    throw new IOException("Could not create target path [" + targetPath + "]");
                 }
                 HardLink.createHardLinkMult(srcPath, files, targetPath);
                 return;
@@ -180,9 +157,28 @@ public class FileSystemUpgrade {
             throws BookieException.UpgradeException, InterruptedException {
         LOG.info("Upgrading...");
 
-        ZooKeeper zk = newZookeeper(conf);
         try {
-            Map<File,File> deferredMoves = new HashMap<File, File>();
+            runFunctionWithRegistrationManager(conf, rm -> {
+                try {
+                    upgrade(conf, rm);
+                } catch (UpgradeException e) {
+                    throw new UncheckedExecutionException(e.getMessage(), e);
+                }
+                return null;
+            });
+        } catch (MetadataException e) {
+            throw new UpgradeException(e);
+        } catch (ExecutionException e) {
+            throw new UpgradeException(e.getCause());
+        }
+
+        LOG.info("Done");
+    }
+
+    private static void upgrade(ServerConfiguration conf,
+                                RegistrationManager rm) throws UpgradeException {
+        try {
+            Map<File, File> deferredMoves = new HashMap<File, File>();
             Cookie.Builder cookieBuilder = Cookie.generateCookie(conf);
             Cookie c = cookieBuilder.build();
             for (File d : getAllDirectories(conf)) {
@@ -203,7 +199,7 @@ public class FileSystemUpgrade {
 
                     String[] files = d.list(new FilenameFilter() {
                             public boolean accept(File dir, String name) {
-                                return BOOKIE_FILES_FILTER.accept(dir, name)
+                                return bookieFilesFilter.accept(dir, name)
                                     && !(new File(dir, name).isDirectory());
                             }
                         });
@@ -216,7 +212,7 @@ public class FileSystemUpgrade {
                 }
             }
 
-            for (Map.Entry<File,File> e : deferredMoves.entrySet()) {
+            for (Map.Entry<File, File> e : deferredMoves.entrySet()) {
                 try {
                     FileUtils.moveDirectory(e.getValue(), e.getKey());
                 } catch (IOException ioe) {
@@ -232,17 +228,14 @@ public class FileSystemUpgrade {
             }
 
             try {
-                c.writeToZooKeeper(zk, conf, Version.NEW);
-            } catch (KeeperException ke) {
-                LOG.error("Error writing cookie to zookeeper");
+                c.writeToRegistrationManager(rm, conf, Version.NEW);
+            } catch (BookieException ke) {
+                LOG.error("Error writing cookie to registration manager");
                 throw new BookieException.UpgradeException(ke);
             }
         } catch (IOException ioe) {
             throw new BookieException.UpgradeException(ioe);
-        } finally {
-            zk.close();
         }
-        LOG.info("Done");
     }
 
     public static void finalizeUpgrade(ServerConfiguration conf)
@@ -261,12 +254,12 @@ public class FileSystemUpgrade {
                             LOG.warn("Could not delete old version file {}", v2versionFile);
                         }
                     }
-                    File[] files = d.listFiles(BOOKIE_FILES_FILTER);
+                    File[] files = d.listFiles(bookieFilesFilter);
                     if (files != null) {
                         for (File f : files) {
                             if (f.isDirectory()) {
                                 FileUtils.deleteDirectory(f);
-                            } else{
+                            } else {
                                 if (!f.delete()) {
                                     LOG.warn("Could not delete {}", f);
                                 }
@@ -286,41 +279,54 @@ public class FileSystemUpgrade {
     public static void rollback(ServerConfiguration conf)
             throws BookieException.UpgradeException, InterruptedException {
         LOG.info("Rolling back upgrade...");
-        ZooKeeper zk = newZookeeper(conf);
-        try {
-            for (File d : getAllDirectories(conf)) {
-                LOG.info("Rolling back {}", d);
-                try {
-                    // ensure there is a previous version before rollback
-                    int version = detectPreviousVersion(d);
 
-                    if (version <= Cookie.CURRENT_COOKIE_LAYOUT_VERSION) {
-                        File curDir = new File(d,
-                                BookKeeperConstants.CURRENT_DIR);
-                        FileUtils.deleteDirectory(curDir);
-                    } else {
-                        throw new BookieException.UpgradeException(
-                                "Cannot rollback as previous data does not exist");
-                    }
-                } catch (IOException ioe) {
-                    LOG.error("Error rolling back {}", d);
-                    throw new BookieException.UpgradeException(ioe);
+        try {
+            runFunctionWithRegistrationManager(conf, rm -> {
+                try {
+                    rollback(conf, rm);
+                } catch (UpgradeException e) {
+                    throw new UncheckedExecutionException(e.getMessage(), e);
                 }
-            }
+                return null;
+            });
+        } catch (MetadataException e) {
+            throw new UpgradeException(e);
+        } catch (ExecutionException e) {
+            throw new UpgradeException(e.getCause());
+        }
+
+        LOG.info("Done");
+    }
+
+    private static void rollback(ServerConfiguration conf,
+                                 RegistrationManager rm)
+            throws BookieException.UpgradeException {
+        for (File d : getAllDirectories(conf)) {
+            LOG.info("Rolling back {}", d);
             try {
-                Versioned<Cookie> cookie = Cookie.readFromZooKeeper(zk, conf);
-                cookie.getValue().deleteFromZooKeeper(zk, conf, cookie.getVersion());
-            } catch (KeeperException ke) {
-                LOG.error("Error deleting cookie from ZooKeeper");
-                throw new BookieException.UpgradeException(ke);
+                // ensure there is a previous version before rollback
+                int version = detectPreviousVersion(d);
+
+                if (version <= Cookie.CURRENT_COOKIE_LAYOUT_VERSION) {
+                    File curDir = new File(d,
+                            BookKeeperConstants.CURRENT_DIR);
+                    FileUtils.deleteDirectory(curDir);
+                } else {
+                    throw new BookieException.UpgradeException(
+                            "Cannot rollback as previous data does not exist");
+                }
             } catch (IOException ioe) {
-                LOG.error("I/O Error deleting cookie from ZooKeeper");
+                LOG.error("Error rolling back {}", d);
                 throw new BookieException.UpgradeException(ioe);
             }
-        } finally {
-            zk.close();
         }
-        LOG.info("Done");
+        try {
+            Versioned<Cookie> cookie = Cookie.readFromRegistrationManager(rm, conf);
+            cookie.getValue().deleteFromRegistrationManager(rm, conf, cookie.getVersion());
+        } catch (BookieException ke) {
+            LOG.error("Error deleting cookie from Registration Manager");
+            throw new BookieException.UpgradeException(ke);
+        }
     }
 
     private static void printHelp(Options opts) {
