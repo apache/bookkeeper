@@ -25,7 +25,7 @@ import io.netty.buffer.Unpooled;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.common.concurrent.FutureEventListener;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
@@ -52,7 +52,9 @@ class DLOutputStream extends OutputStream {
     private long writePos = 0L;
 
     // state
-    private final AtomicReference<Throwable> exception = new AtomicReference<>(null);
+    private static final AtomicReferenceFieldUpdater<DLOutputStream, Throwable> exceptionUpdater =
+        AtomicReferenceFieldUpdater.newUpdater(DLOutputStream.class, Throwable.class, "exception");
+    private volatile Throwable exception = null;
 
     DLOutputStream(DistributedLogManager dlm,
                    AsyncLogWriter writer) {
@@ -83,7 +85,7 @@ class DLOutputStream extends OutputStream {
     }
 
     private synchronized void write(ByteBuf buf) throws IOException {
-        Throwable cause = exception.get();
+        Throwable cause = exceptionUpdater.get(this);
         if (null != cause) {
             if (cause instanceof IOException) {
                 throw (IOException) cause;
@@ -104,7 +106,7 @@ class DLOutputStream extends OutputStream {
 
             @Override
             public void onFailure(Throwable cause) {
-                exception.compareAndSet(null, cause);
+                exceptionUpdater.compareAndSet(DLOutputStream.this, null, cause);
             }
         });
     }
