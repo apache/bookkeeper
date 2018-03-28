@@ -212,7 +212,9 @@
     <profile>
       <id>native</id>
       <activation>
-        <activeByDefault>false</activeByDefault>
+        <property>
+          <name>native</name>
+        </property>
       </activation>
       <build>
         <plugins>

@@ -18,9 +18,6 @@
 
 package org.apache.bookkeeper.util;
 
-import com.sun.jna.LastErrorException;
-import com.sun.jna.Native;
-
 import java.io.FileDescriptor;
 import java.lang.reflect.Field;
 

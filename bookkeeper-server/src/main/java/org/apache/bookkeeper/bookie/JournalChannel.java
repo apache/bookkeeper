@@ -22,6 +22,11 @@
 package org.apache.bookkeeper.bookie;
 
 import static com.google.common.base.Charsets.UTF_8;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.JOURNAL_FORCE_WRITE_LATENCY;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.JOURNAL_NUM_FORCE_WRITES;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.JOURNAL_PREALLOCATION;
+
+import com.google.common.base.Stopwatch;
 
 import java.io.Closeable;
 import java.io.File;
@@ -32,7 +37,6 @@ import java.nio.channels.FileChannel;
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 
-import com.google.common.base.Stopwatch;
 import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.OpStatsLogger;
@@ -281,7 +285,7 @@ class JournalChannel implements Closeable {
             preallocate();
             if (null != stopwatch) {
                 journalPreallocationStats.registerSuccessfulEvent(
-                        stopwatch.stop().elapsedTime(TimeUnit.MICROSECONDS),
+                        stopwatch.stop().elapsed(TimeUnit.MICROSECONDS),
                         TimeUnit.MICROSECONDS);
             }
         }
