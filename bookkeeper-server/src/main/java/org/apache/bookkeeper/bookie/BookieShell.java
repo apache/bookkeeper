@@ -874,6 +874,7 @@ public class BookieShell implements Tool {
             super(CMD_LISTUNDERREPLICATED);
             opts.addOption("missingreplica", true, "Bookie Id of missing replica");
             opts.addOption("excludingmissingreplica", true, "Bookie Id of missing replica to ignore");
+            opts.addOption("printmissingreplica", false, "Whether to print missingreplicas list?");
         }
 
         @Override
@@ -890,7 +891,7 @@ public class BookieShell implements Tool {
         @Override
         String getUsage() {
             return "listunderreplicated [[-missingreplica <bookieaddress>]"
-                    + " [-excludingmissingreplica <bookieaddress>]]";
+                    + " [-excludingmissingreplica <bookieaddress>]] [-printmissingreplica]";
         }
 
         @Override
@@ -898,6 +899,7 @@ public class BookieShell implements Tool {
 
             final String includingBookieId = cmdLine.getOptionValue("missingreplica");
             final String excludingBookieId = cmdLine.getOptionValue("excludingmissingreplica");
+            final boolean printMissingReplica = cmdLine.hasOption("printmissingreplica");
 
             final Predicate<List<String>> predicate;
             if (!StringUtils.isBlank(includingBookieId) && !StringUtils.isBlank(excludingBookieId)) {
@@ -921,9 +923,15 @@ public class BookieShell implements Tool {
                     Thread.currentThread().interrupt();
                     throw new UncheckedExecutionException("Interrupted on newing ledger underreplicated manager", e);
                 }
-                Iterator<Long> iter = underreplicationManager.listLedgersToRereplicate(predicate);
+                Iterator<Map.Entry<Long, List<String>>> iter = underreplicationManager
+                        .listLedgersToRereplicate(predicate, printMissingReplica);
                 while (iter.hasNext()) {
-                    System.out.println(ledgerIdFormatter.formatLedgerId(iter.next()));
+                    System.out.println(ledgerIdFormatter.formatLedgerId(iter.next().getKey()));
+                    if (printMissingReplica) {
+                        iter.next().getValue().forEach((missingReplica) -> {
+                            System.out.println("\t" + missingReplica);
+                        });
+                    }
                 }
                 return null;
             });

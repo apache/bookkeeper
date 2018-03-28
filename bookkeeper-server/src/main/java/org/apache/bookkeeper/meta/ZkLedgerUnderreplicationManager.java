@@ -25,6 +25,7 @@ import com.google.common.base.Joiner;
 import com.google.protobuf.TextFormat;
 
 import java.net.UnknownHostException;
+import java.util.AbstractMap;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
@@ -359,15 +360,17 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
      * otherwise it will read the content of the ZNode to decide on filtering.
      *
      * @param predicate filter to use while listing under replicated ledgers. 'null' if filtering is not required.
+     * @param includeReplicaList whether to include missing replicalist in the output.
      * @return an iterator which returns ledger ids
      */
     @Override
-    public Iterator<Long> listLedgersToRereplicate(final Predicate<List<String>> predicate) {
+    public Iterator<Map.Entry<Long, List<String>>> listLedgersToRereplicate(final Predicate<List<String>> predicate,
+            boolean includeReplicaList) {
         final Queue<String> queue = new LinkedList<String>();
         queue.add(urLedgerPath);
 
-        return new Iterator<Long>() {
-            final Queue<Long> curBatch = new LinkedList<Long>();
+        return new Iterator<Map.Entry<Long, List<String>>>() {
+            final Queue<Map.Entry<Long, List<String>>> curBatch = new LinkedList<Map.Entry<Long, List<String>>>();
 
             @Override
             public void remove() {
@@ -388,9 +391,11 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
                                 String child = parent + "/" + c;
                                 if (c.startsWith("urL")) {
                                     long ledgerId = getLedgerId(child);
+                                    List<String> replicaList = getLedgerUnreplicationInfo(ledgerId).getReplicaList();
                                     if ((predicate == null)
-                                            || predicate.test(getLedgerUnreplicationInfo(ledgerId).getReplicaList())) {
-                                        curBatch.add(ledgerId);
+                                            || predicate.test(replicaList)) {
+                                        curBatch.add(new AbstractMap.SimpleImmutableEntry<Long, List<String>>(ledgerId,
+                                                ((includeReplicaList) ? replicaList : null)));
                                     }
                                 } else {
                                     queue.add(child);
@@ -412,7 +417,7 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
             }
 
             @Override
-            public Long next() {
+            public Map.Entry<Long, List<String>> next() {
                 assert curBatch.size() > 0;
                 return curBatch.remove();
             }
