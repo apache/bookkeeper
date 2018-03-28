@@ -30,8 +30,6 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.apache.bookkeeper.util.ZeroBuffer;
-
 /**
  * Provides a buffering layer in front of a FileChannel.
  */
