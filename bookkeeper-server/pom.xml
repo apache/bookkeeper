@@ -131,6 +131,18 @@
       <type>test-jar</type>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>org.powermock</groupId>
+      <artifactId>powermock-module-junit4</artifactId>
+      <version>${powermock.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.powermock</groupId>
+      <artifactId>powermock-api-mockito2</artifactId>
+      <version>${powermock.version}</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
   <build>
     <plugins>
@@ -166,16 +178,6 @@
             <exclude>**/.project</exclude>
             <exclude>**/.checkstyle</exclude>
             <exclude>**/.settings/*</exclude>
-            <exclude>src/test/resources/server-key.pem</exclude>
-            <exclude>src/test/resources/server-key.p12</exclude>
-            <exclude>src/test/resources/server-key.jks</exclude>
-            <exclude>src/test/resources/server-cert.pem</exclude>
-            <exclude>src/test/resources/client-key.pem</exclude>
-            <exclude>src/test/resources/client-key.p12</exclude>
-            <exclude>src/test/resources/client-key.jks</exclude>
-            <exclude>src/test/resources/client-cert.pem</exclude>
-            <exclude>src/test/resources/keyStoreClientPassword.txt</exclude>
-            <exclude>src/test/resources/keyStoreServerPassword.txt</exclude>
           </excludes>
         </configuration>
       </plugin>
@@ -217,6 +219,31 @@
             <goals>
               <goal>jar</goal>
             </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-checkstyle-plugin</artifactId>
+      </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <version>1.6.0</version>
+        <executions>
+          <execution>
+            <id>Generate Self-Signed Certificates</id>
+            <phase>generate-test-resources</phase>
+            <goals>
+              <goal>exec</goal>
+            </goals>
+            <configuration>
+              <workingDirectory>${project.build.testOutputDirectory}/.</workingDirectory>
+              <executable>${basedir}/src/test/resources/generateKeysAndCerts.sh</executable>
+              <arguments>
+                <argument>${project.build.testOutputDirectory}</argument>
+              </arguments>
+            </configuration>
           </execution>
         </executions>
       </plugin>
@@ -262,31 +289,6 @@
           <version>${project.parent.version}</version>
         </dependency>
       </dependencies>
-    </profile>
-    <profile>
-      <id>tls-certs</id>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>org.codehaus.mojo</groupId>
-            <artifactId>exec-maven-plugin</artifactId>
-            <version>1.6.0</version>
-            <executions>
-              <execution>
-                <id>Generate Self-Signed Certificates</id>
-                <phase>generate-test-resources</phase>
-                <goals>
-                  <goal>exec</goal>
-                </goals>
-                <configuration>
-                  <workingDirectory>${basedir}/src/test/resources</workingDirectory>
-                  <executable>${basedir}/src/test/resources/generateKeysAndCerts.sh</executable>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-        </plugins>
-      </build>
     </profile>
     <!-- test profiles -->
     <profile>

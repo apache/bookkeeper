@@ -680,8 +680,10 @@ public class BookieRequestProcessor implements RequestProcessor {
                             .get(AuthHandler.ServerSideHandler.class);
                     authHandler.authProvider.onProtocolUpgrade();
                     if (future.isSuccess()) {
-                        LOG.info("Session {} is protected by: {}", future.get(),
-                                sslHandler.engine().getSession().getCipherSuite());
+                        if (LOG.isInfoEnabled()) {
+                            LOG.info("Session {} is protected by: {}", future.get(),
+                                    sslHandler.engine().getSession().getCipherSuite());
+                        }
 
                         // print peer credentials
                         if  (LOG.isDebugEnabled()) {
@@ -690,7 +692,7 @@ public class BookieRequestProcessor implements RequestProcessor {
                                     TLSUtils.prettyPrintCertChain(certificates));
                         }
                     } else {
-                        LOG.error("TLS Handshake failure: {}", future.cause());
+                        LOG.error("TLS Handshake failure:", future.cause());
                         BookkeeperProtocol.Response.Builder errResponse = BookkeeperProtocol.Response.newBuilder()
                                 .setHeader(r.getHeader()).setStatus(BookkeeperProtocol.StatusCode.EIO);
                         c.writeAndFlush(errResponse.build());

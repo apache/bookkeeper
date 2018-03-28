@@ -30,13 +30,17 @@ import java.security.KeyException;
 import java.security.KeyFactory;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
+import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.security.interfaces.RSAPrivateKey;
+import java.security.interfaces.RSAPublicKey;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.Arrays;
@@ -53,6 +57,7 @@ import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.TrustManagerFactory;
 
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -66,9 +71,17 @@ public class TLSUtils {
             "-+BEGIN\\s+.*PRIVATE\\s+KEY[^-]*-+(?:\\s|\\r|\\n)+([a-z0-9+/=\\r\\n]+)-+END\\s+.*PRIVATE\\s+KEY[^-]*-+",
             Pattern.CASE_INSENSITIVE);
 
-    public static X509Certificate[] getCertificates(String certFilePath) throws CertificateException, IOException {
+    /**
+     * Get certificates from a certificate file on disk.
+     *
+     * @param filePath path to certificate
+     * @return
+     * @throws CertificateException
+     * @throws IOException
+     */
+    public static X509Certificate[] getCertificates(String filePath) throws CertificateException, IOException {
         CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509");
-        try (FileInputStream fileInputStream = new FileInputStream(certFilePath)) {
+        try (FileInputStream fileInputStream = new FileInputStream(filePath)) {
             Collection<? extends Certificate> certificates = certificateFactory.generateCertificates(fileInputStream);
 
             /* cast the return to X509Certificate */
@@ -76,6 +89,42 @@ public class TLSUtils {
         }
     }
 
+    /**
+     * Get the first certificate from the certificate file on disk.
+     *
+     * @param certFilePath path to certificate
+     * @return
+     * @throws CertificateException
+     * @throws IOException
+     */
+    public static X509Certificate getCertificate(String certFilePath) throws CertificateException, IOException {
+        return getCertificates(certFilePath)[0];
+    }
+
+    /**
+     * get trust chain from trust file.
+     *
+     * @param trustFilePath path to trust file
+     * @return
+     * @throws CertificateException
+     * @throws IOException
+     */
+    public static X509Certificate[] getTrustChain(String trustFilePath) throws CertificateException, IOException {
+        return getCertificates(trustFilePath);
+    }
+
+    /**
+     * Get private key from the key file on disk.
+     * @param keyStorePath path to key
+     * @param keyPassword password used to store the key
+     * @return
+     * @throws IOException
+     * @throws NoSuchAlgorithmException
+     * @throws InvalidKeySpecException
+     * @throws KeyException
+     * @throws InvalidAlgorithmParameterException
+     * @throws NoSuchPaddingException
+     */
     public static PrivateKey getPrivateKey(String keyStorePath, String keyPassword) throws IOException,
             NoSuchAlgorithmException, InvalidKeySpecException, KeyException, InvalidAlgorithmParameterException,
             NoSuchPaddingException {
@@ -126,6 +175,20 @@ public class TLSUtils {
         }
     }
 
+    /**
+     * Factory method to initialize key manager.
+     *
+     * @param keyStoreType type of key store
+     * @param keyStoreLocation key location
+     * @param keyStorePasswordPath key password
+     * @return
+     * @throws SecurityException
+     * @throws KeyStoreException
+     * @throws NoSuchAlgorithmException
+     * @throws CertificateException
+     * @throws IOException
+     * @throws UnrecoverableKeyException
+     */
     public static KeyManagerFactory initKeyManagerFactory(String keyStoreType, String keyStoreLocation,
                                                           String keyStorePasswordPath) throws SecurityException,
             KeyStoreException, NoSuchAlgorithmException, CertificateException, IOException, UnrecoverableKeyException {
@@ -149,6 +212,19 @@ public class TLSUtils {
         return kmf;
     }
 
+    /**
+     * Factory method to initialize trust manager.
+     *
+     * @param trustStoreType trust store type
+     * @param trustStoreLocation trust file location
+     * @param trustStorePasswordPath trust file password
+     * @return
+     * @throws KeyStoreException
+     * @throws NoSuchAlgorithmException
+     * @throws CertificateException
+     * @throws IOException
+     * @throws SecurityException
+     */
     public static TrustManagerFactory initTrustManagerFactory(String trustStoreType, String trustStoreLocation,
                                                         String trustStorePasswordPath) throws KeyStoreException,
             NoSuchAlgorithmException, CertificateException, IOException, SecurityException {
@@ -172,6 +248,13 @@ public class TLSUtils {
         return tmf;
     }
 
+    /**
+     * Get password from file.
+     *
+     * @param path password file path
+     * @return
+     * @throws IOException
+     */
     public static String getPasswordFromFile(String path) throws IOException {
         byte[] pwd;
 
@@ -195,7 +278,13 @@ public class TLSUtils {
         return ks;
     }
 
-    public static String prettyPrintCertChain(Certificate[] certificates) {
+    /**
+     * Pretty print certificate chain.
+     *
+     * @param certificates certificate chain
+     * @return
+     */
+    public static String prettyPrintCertChain(Certificate... certificates) {
         StringBuilder sb = new StringBuilder();
         Arrays.stream(certificates)
                 .forEach(cert -> {
@@ -214,5 +303,41 @@ public class TLSUtils {
                     }
                 });
         return sb.toString();
+    }
+
+    /**
+     * Verify if certificate matches the key.
+     *
+     * @param certificate certificate to match
+     * @param privateKey private key
+     * @return
+     * @throws IllegalArgumentException
+     * @throws NoSuchAlgorithmException
+     */
+    public static boolean verifyRSAKeyAndCertificateMatch(X509Certificate certificate, PrivateKey privateKey)
+            throws IllegalArgumentException, NoSuchAlgorithmException {
+
+        PublicKey publicKey = certificate.getPublicKey();
+        if (!(publicKey instanceof RSAPublicKey)) {
+            throw new IllegalArgumentException("Certificate file does not contain an RSA public key but a "
+                    + publicKey.getClass().getName());
+        }
+
+        final RSAPublicKey rsaPublicKey = (RSAPublicKey) publicKey;
+        final byte[] certModulusData = rsaPublicKey.getModulus().toByteArray();
+
+        final MessageDigest sha1 = MessageDigest.getInstance("SHA-1");
+        final byte[] certID = sha1.digest(certModulusData);
+        final String certIDinHex = Hex.encodeHexString(certID);
+
+        if (!(privateKey instanceof RSAPrivateKey)) {
+            throw new IllegalArgumentException("Key file does not contain an X509 encoded private key");
+        }
+        final RSAPrivateKey rsaPrivateKey = (RSAPrivateKey) privateKey;
+        final byte[] keyModulusData = rsaPrivateKey.getModulus().toByteArray();
+        final byte[] keyID = sha1.digest(keyModulusData);
+        final String keyIDinHex = Hex.encodeHexString(keyID);
+
+        return keyIDinHex.equalsIgnoreCase(certIDinHex);
     }
 }

@@ -114,7 +114,8 @@ public abstract class BookKeeperClusterTestCase {
     }
 
     public BookKeeperClusterTestCase(int numBookies) {
-        this(numBookies, 120);
+        this.numBookies = numBookies;
+        this.globalTimeout = Timeout.seconds(120);
     }
 
     public BookKeeperClusterTestCase(int numBookies, int testTimeoutSecs) {

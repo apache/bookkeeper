@@ -27,6 +27,7 @@ import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.ssl.SslProvider;
 
+
 import java.io.IOException;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.KeyException;
@@ -126,8 +127,11 @@ public class TLSContextFactory implements SecurityHandlerFactory {
                 throw new SecurityException("CA Certificate required");
             }
 
-            X509Certificate[] trustChain = TLSUtils.getCertificates(clientConf.getTLSTrustStore());
-            LOG.info("Using Trust Chain: {}", TLSUtils.prettyPrintCertChain(trustChain));
+            X509Certificate[] trustChain = TLSUtils.getTrustChain(clientConf.getTLSTrustStore());
+
+            if (LOG.isInfoEnabled()) {
+                LOG.info("Using Trust Chain: {}", TLSUtils.prettyPrintCertChain(trustChain));
+            }
 
             sslContextBuilder = SslContextBuilder.forClient()
                     .trustManager(trustChain)
@@ -144,7 +148,10 @@ public class TLSContextFactory implements SecurityHandlerFactory {
         case PKCS12:
             TrustManagerFactory tmf = TLSUtils.initTrustManagerFactory(clientConf.getTLSTrustStoreType(),
                     clientConf.getTLSTrustStore(), clientConf.getTLSTrustStorePasswordPath());
-            LOG.info("Using Trust Chain: {}", tmf);
+
+            if (LOG.isInfoEnabled()) {
+                LOG.info("Using Trust Chain: {}", tmf);
+            }
 
             sslContextBuilder = SslContextBuilder.forClient()
                     .trustManager(tmf)
@@ -178,11 +185,22 @@ public class TLSContextFactory implements SecurityHandlerFactory {
                     keyPassword = null;
                 }
 
-                X509Certificate[] certificates = TLSUtils.getCertificates(clientConf.getTLSCertificatePath());
+                X509Certificate certificate = TLSUtils.getCertificate(clientConf.getTLSCertificatePath());
                 PrivateKey privateKey = TLSUtils.getPrivateKey(clientConf.getTLSKeyStore(), keyPassword);
-                LOG.info("Using Credentials: {}", TLSUtils.prettyPrintCertChain(certificates));
 
-                sslContextBuilder.keyManager(privateKey, certificates);
+                if (LOG.isInfoEnabled()) {
+                    LOG.info("Using Credentials: {}", TLSUtils.prettyPrintCertChain(certificate));
+                }
+
+                try {
+                    if (!TLSUtils.verifyRSAKeyAndCertificateMatch(certificate, privateKey)) {
+                        throw new SecurityException("Key and Certificate do not match");
+                    }
+                } catch (IllegalArgumentException | NoSuchAlgorithmException e) {
+                    throw new SecurityException("Failed to match Key with Certificate", e);
+                }
+
+                sslContextBuilder.keyManager(privateKey, certificate);
 
                 break;
             case JKS:
@@ -190,7 +208,10 @@ public class TLSContextFactory implements SecurityHandlerFactory {
             case PKCS12:
                 KeyManagerFactory kmf = TLSUtils.initKeyManagerFactory(clientConf.getTLSKeyStoreType(),
                         clientConf.getTLSKeyStore(), clientConf.getTLSKeyStorePasswordPath());
-                LOG.info("Using Credentials: {}", kmf);
+
+                if (LOG.isInfoEnabled()) {
+                    LOG.info("Using Credentials: {}", kmf);
+                }
 
                 sslContextBuilder.keyManager(kmf);
                 break;
@@ -237,11 +258,22 @@ public class TLSContextFactory implements SecurityHandlerFactory {
                 keyPassword = null;
             }
 
-            X509Certificate[] certificates = TLSUtils.getCertificates(serverConf.getTLSCertificatePath());
+            X509Certificate certificate = TLSUtils.getCertificate(serverConf.getTLSCertificatePath());
             PrivateKey privateKey = TLSUtils.getPrivateKey(serverConf.getTLSKeyStore(), keyPassword);
-            LOG.info("Using Credentials: {}", TLSUtils.prettyPrintCertChain(certificates));
 
-            sslContextBuilder = SslContextBuilder.forServer(privateKey, certificates)
+            if (LOG.isInfoEnabled()) {
+                LOG.info("Using Credentials: {}", TLSUtils.prettyPrintCertChain(certificate));
+            }
+
+            try {
+                if (!TLSUtils.verifyRSAKeyAndCertificateMatch(certificate, privateKey)) {
+                    throw new SecurityException("Key and Certificate do not match");
+                }
+            } catch (IllegalArgumentException | NoSuchAlgorithmException e) {
+                throw new SecurityException("Failed to match Key with Certificate", e);
+            }
+
+            sslContextBuilder = SslContextBuilder.forServer(privateKey, certificate)
                     .ciphers(null)
                     .sessionCacheSize(0)
                     .sessionTimeout(0)
@@ -252,10 +284,14 @@ public class TLSContextFactory implements SecurityHandlerFactory {
         case JKS:
             // falling thru, same as PKCS12
         case PKCS12:
+
             KeyManagerFactory kmf = TLSUtils.initKeyManagerFactory(serverConf.getTLSKeyStoreType(),
                     serverConf.getTLSKeyStore(),
                     serverConf.getTLSKeyStorePasswordPath());
-            LOG.info("Using Credentials: {}", kmf);
+
+            if (LOG.isInfoEnabled()) {
+                LOG.info("Using Credentials: {}", kmf);
+            }
 
             sslContextBuilder = SslContextBuilder.forServer(kmf)
                                 .ciphers(null)
@@ -278,8 +314,11 @@ public class TLSContextFactory implements SecurityHandlerFactory {
                     throw new SecurityException("CA Certificate chain is required");
                 }
 
-                X509Certificate[] trustChain = TLSUtils.getCertificates(serverConf.getTLSTrustStore());
-                LOG.info("Using Trust chain: {}", TLSUtils.prettyPrintCertChain(trustChain));
+                X509Certificate[] trustChain = TLSUtils.getTrustChain(serverConf.getTLSTrustStore());
+
+                if (LOG.isInfoEnabled()) {
+                    LOG.info("Using Trust chain: {}", TLSUtils.prettyPrintCertChain(trustChain));
+                }
                 sslContextBuilder.trustManager(trustChain);
                 break;
             case JKS:
@@ -287,7 +326,10 @@ public class TLSContextFactory implements SecurityHandlerFactory {
             case PKCS12:
                 TrustManagerFactory tmf = TLSUtils.initTrustManagerFactory(serverConf.getTLSTrustStoreType(),
                         serverConf.getTLSTrustStore(), serverConf.getTLSTrustStorePasswordPath());
-                LOG.info("Using Trust chain: {}", tmf);
+
+                if (LOG.isInfoEnabled()) {
+                    LOG.info("Using Trust chain: {}", tmf);
+                }
                 sslContextBuilder.trustManager(tmf);
                 break;
             default:
@@ -367,14 +409,12 @@ public class TLSContextFactory implements SecurityHandlerFactory {
             sslHandler.engine().setEnabledProtocols(protocols);
         }
 
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Enabled cipher protocols: {} ", Arrays.toString(sslHandler.engine().getEnabledProtocols()));
-        }
-
         if (ciphers != null && ciphers.length != 0) {
             sslHandler.engine().setEnabledCipherSuites(ciphers);
         }
+
         if (LOG.isDebugEnabled()) {
+            LOG.debug("Enabled cipher protocols: {} ", Arrays.toString(sslHandler.engine().getEnabledProtocols()));
             LOG.debug("Enabled cipher suites: {} ", Arrays.toString(sslHandler.engine().getEnabledCipherSuites()));
         }
 
@@ -382,7 +422,9 @@ public class TLSContextFactory implements SecurityHandlerFactory {
         if (peerHost != null && peerPort != -1) {
             SSLParameters sslParameters = new SSLParameters();
             sslParameters.setEndpointIdentificationAlgorithm("HTTPS");
-            sslParameters.setNeedClientAuth(true);
+            if (conf.getTLSClientAuthentication()) {
+                sslParameters.setNeedClientAuth(true);
+            }
             sslHandler.engine().setSSLParameters(sslParameters);
         }
 
