@@ -23,6 +23,7 @@ package org.apache.bookkeeper.client.api;
 import java.util.concurrent.CompletableFuture;
 import org.apache.bookkeeper.common.annotation.InterfaceAudience.Public;
 import org.apache.bookkeeper.common.annotation.InterfaceStability.Unstable;
+import org.apache.bookkeeper.common.concurrent.FutureUtils;
 
 /**
  * Provide read access to a ledger.
@@ -42,7 +43,21 @@ public interface ReadHandle extends Handle {
      *          id of last entry of sequence, inclusive
      * @return an handle to the result of the operation
      */
-    CompletableFuture<LedgerEntries> read(long firstEntry, long lastEntry);
+    CompletableFuture<LedgerEntries> readAsync(long firstEntry, long lastEntry);
+
+    /**
+     * Read a sequence of entries synchronously.
+     *
+     * @param firstEntry
+     *          id of first entry of sequence
+     * @param lastEntry
+     *          id of last entry of sequence, inclusive
+     * @return the result of the operation
+     */
+    default LedgerEntries read(long firstEntry, long lastEntry) throws BKException, InterruptedException {
+        return FutureUtils.<LedgerEntries, BKException>result(readAsync(firstEntry, lastEntry),
+                                                              BKException.HANDLER);
+    }
 
     /**
      * Read a sequence of entries asynchronously, allowing to read after the LastAddConfirmed range.
@@ -64,10 +79,27 @@ public interface ReadHandle extends Handle {
      *          id of last entry of sequence, inclusive
      * @return an handle to the result of the operation
      *
-     * @see #read(long, long)
-     * @see #readLastAddConfirmed()
+     * @see #readAsync(long, long)
+     * @see #readLastAddConfirmedAsync()
      */
-    CompletableFuture<LedgerEntries> readUnconfirmed(long firstEntry, long lastEntry);
+    CompletableFuture<LedgerEntries> readUnconfirmedAsync(long firstEntry, long lastEntry);
+
+    /**
+     * Read a sequence of entries synchronously.
+     *
+     * @param firstEntry
+     *          id of first entry of sequence
+     * @param lastEntry
+     *          id of last entry of sequence, inclusive
+     * @return an handle to the result of the operation
+     *
+     * @see #readUnconfirmedAsync(long, long)
+     */
+    default LedgerEntries readUnconfirmed(long firstEntry, long lastEntry)
+            throws BKException, InterruptedException {
+        return FutureUtils.<LedgerEntries, BKException>result(readUnconfirmedAsync(firstEntry, lastEntry),
+                                                              BKException.HANDLER);
+    }
 
     /**
      * Obtains asynchronously the last confirmed write from a quorum of bookies. This
@@ -80,9 +112,20 @@ public interface ReadHandle extends Handle {
      *
      * @return an handle to the result of the operation
      * @see #getLastAddConfirmed()
-     *
      */
-    CompletableFuture<Long> readLastAddConfirmed();
+    CompletableFuture<Long> readLastAddConfirmedAsync();
+
+    /**
+     * Obtains asynchronously the last confirmed write from a quorum of bookies.
+     *
+     * @return the result of the operation
+     * @see #readLastAddConfirmedAsync()
+     */
+    default long readLastAddConfirmed() throws BKException, InterruptedException {
+        return FutureUtils.<Long, BKException>result(readLastAddConfirmedAsync(),
+                                                     BKException.HANDLER);
+    }
+
 
     /**
      * Obtains asynchronously the last confirmed write from a quorum of bookies
@@ -90,10 +133,20 @@ public interface ReadHandle extends Handle {
      * immediately if it received a LAC which is larger than current LAC.
      *
      * @return an handle to the result of the operation
-     * @see #tryReadLastAddConfirmed()
-     *
      */
-    CompletableFuture<Long> tryReadLastAddConfirmed();
+    CompletableFuture<Long> tryReadLastAddConfirmedAsync();
+
+    /**
+     * Obtains asynchronously the last confirmed write from a quorum of bookies
+     * but it doesn't wait all the responses from the quorum.
+     *
+     * @return the result of the operation
+     * @see #tryReadLastAddConfirmedAsync()
+     */
+    default long tryReadLastAddConfirmed() throws BKException, InterruptedException {
+        return FutureUtils.<Long, BKException>result(tryReadLastAddConfirmedAsync(),
+                                                     BKException.HANDLER);
+    }
 
     /**
      * Get the last confirmed entry id on this ledger. It reads the local state of the ledger handle,
@@ -144,8 +197,30 @@ public interface ReadHandle extends Handle {
      *          whether to issue the long poll reads in parallel
      * @return an handle to the result of the operation
      */
-    CompletableFuture<LastConfirmedAndEntry> readLastAddConfirmedAndEntry(long entryId,
-                                                                          long timeOutInMillis,
-                                                                          boolean parallel);
+    CompletableFuture<LastConfirmedAndEntry> readLastAddConfirmedAndEntryAsync(long entryId,
+                                                                               long timeOutInMillis,
+                                                                               boolean parallel);
+
+    /**
+     * Asynchronous read specific entry and the latest last add confirmed.
+     *
+     * @param entryId
+     *          next entry id to read
+     * @param timeOutInMillis
+     *          timeout period to wait for the entry id to be available (for long poll only)
+     *          if timeout for get the entry, it will return null entry.
+     * @param parallel
+     *          whether to issue the long poll reads in parallel
+     * @return the result of the operation
+     * @see #readLastAddConfirmedAndEntry(long, long, boolean)
+     */
+    default LastConfirmedAndEntry readLastAddConfirmedAndEntry(long entryId,
+                                                               long timeOutInMillis,
+                                                               boolean parallel)
+            throws BKException, InterruptedException {
+        return FutureUtils.<LastConfirmedAndEntry, BKException>result(
+                readLastAddConfirmedAndEntryAsync(entryId, timeOutInMillis, parallel),
+                BKException.HANDLER);
+    }
 
 }

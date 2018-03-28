@@ -67,7 +67,7 @@ public class SimpleTestCommand extends ClientCommand {
             System.out.println("Ledger ID: " + wh.getId());
             long lastReport = System.nanoTime();
             for (int i = 0; i < numEntries; i++) {
-                result(wh.append(data));
+                wh.append(data);
                 if (TimeUnit.SECONDS.convert(System.nanoTime() - lastReport,
                         TimeUnit.NANOSECONDS) > 1) {
                     System.out.println(i + " entries written");

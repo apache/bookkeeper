@@ -82,6 +82,7 @@ public abstract class BookieException extends Exception {
         int CookieNotFoundException = -105;
         int MetadataStoreException = -106;
         int UnknownBookieIdException = -107;
+        int OperationRejectedException = -108;
     }
 
     public void setCode(int code) {
@@ -121,6 +122,9 @@ public abstract class BookieException extends Exception {
             break;
         case Code.UnknownBookieIdException:
             err = "Unknown bookie id";
+            break;
+        case Code.OperationRejectedException:
+            err = "Operation rejected";
             break;
         default:
             err = "Invalid operation";
@@ -171,6 +175,22 @@ public abstract class BookieException extends Exception {
     public static class LedgerFencedException extends BookieException {
         public LedgerFencedException() {
             super(Code.LedgerFencedException);
+        }
+    }
+
+    /**
+     * Signals that a ledger has been fenced in a bookie. No more entries can be appended to that ledger.
+     */
+    public static class OperationRejectedException extends BookieException {
+        public OperationRejectedException() {
+            super(Code.OperationRejectedException);
+        }
+
+        @Override
+        public Throwable fillInStackTrace() {
+            // Since this exception is a way to signal a specific condition and it's triggered and very specific points,
+            // we can disable stack traces.
+            return null;
         }
     }
 

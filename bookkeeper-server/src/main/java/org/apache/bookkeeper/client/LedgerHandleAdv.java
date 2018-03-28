@@ -246,7 +246,7 @@ public class LedgerHandleAdv extends LedgerHandle implements WriteAdvHandle {
     }
 
     @Override
-    public CompletableFuture<Long> write(long entryId, ByteBuf data) {
+    public CompletableFuture<Long> writeAsync(long entryId, ByteBuf data) {
         SyncAddCallback callback = new SyncAddCallback();
         asyncAddEntry(entryId, data, callback, data);
         return callback;

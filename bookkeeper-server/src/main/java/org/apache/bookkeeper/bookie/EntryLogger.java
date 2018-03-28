@@ -25,6 +25,7 @@ import static com.google.common.base.Charsets.UTF_8;
 import static org.apache.bookkeeper.bookie.TransactionalEntryLogCompactor.COMPACTING_SUFFIX;
 import static org.apache.bookkeeper.util.BookKeeperConstants.MAX_LOG_SIZE_LIMIT;
 
+import com.google.common.base.MoreObjects;
 import com.google.common.collect.MapMaker;
 import com.google.common.collect.Sets;
 
@@ -113,6 +114,14 @@ public class EntryLogger {
 
         public ConcurrentLongLongHashMap getLedgersMap() {
             return entryLogMetadata.getLedgersMap();
+        }
+
+        @Override
+        public String toString() {
+            return MoreObjects.toStringHelper(BufferedChannel.class)
+                .add("logId", logId)
+                .add("logFile", logFile)
+                .toString();
         }
     }
 

@@ -41,7 +41,7 @@ import org.junit.Test;
 public class SimpleTestCommandTest extends ClientCommandTestBase {
 
     @Test
-    public void testCommandShortArgs() {
+    public void testCommandShortArgs() throws Exception {
         testCommand(
             "simpletest",
             "-e", "5",
@@ -51,7 +51,7 @@ public class SimpleTestCommandTest extends ClientCommandTestBase {
     }
 
     @Test
-    public void testCommandLongArgs() {
+    public void testCommandLongArgs() throws Exception {
         testCommand(
             "simpletest",
             "--ensemble-size", "5",
@@ -60,10 +60,10 @@ public class SimpleTestCommandTest extends ClientCommandTestBase {
             "--num-entries", "10");
     }
 
-    public void testCommand(String... args) {
+    public void testCommand(String... args) throws Exception {
         WriteHandle wh = mock(WriteHandle.class);
         AtomicLong counter = new AtomicLong(0L);
-        when(wh.append(any(byte[].class))).thenReturn(FutureUtils.value(counter.get()));
+        when(wh.append(any(byte[].class))).thenReturn(counter.get());
         CreateBuilder createBuilder = mock(CreateBuilder.class);
         when(createBuilder.execute())
             .thenReturn(FutureUtils.value(wh));
