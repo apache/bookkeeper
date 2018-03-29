@@ -21,6 +21,7 @@
 package org.apache.bookkeeper.proto;
 
 import static com.google.common.base.Charsets.UTF_8;
+import static org.apache.bookkeeper.util.SafeRunnable.safeRun;
 
 import com.google.common.collect.Lists;
 import com.google.protobuf.ExtensionRegistry;
@@ -48,6 +49,7 @@ import org.apache.bookkeeper.auth.AuthProviderFactoryFactory;
 import org.apache.bookkeeper.auth.ClientAuthProvider;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookieInfoReader.BookieInfo;
+import org.apache.bookkeeper.common.util.SafeRunnable;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
@@ -62,7 +64,6 @@ import org.apache.bookkeeper.tls.SecurityException;
 import org.apache.bookkeeper.tls.SecurityHandlerFactory;
 import org.apache.bookkeeper.util.ByteBufList;
 import org.apache.bookkeeper.util.OrderedSafeExecutor;
-import org.apache.bookkeeper.util.SafeRunnable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -113,12 +114,9 @@ public class BookieClient implements PerChannelBookieClientFactory {
 
         this.scheduler = scheduler;
         if (conf.getAddEntryTimeout() > 0 || conf.getReadEntryTimeout() > 0) {
-            SafeRunnable monitor = new SafeRunnable() {
-                    @Override
-                    public void safeRun() {
-                        monitorPendingOperations();
-                    }
-                };
+            SafeRunnable monitor = safeRun(() -> {
+                monitorPendingOperations();
+            });
             this.timeoutFuture = this.scheduler.scheduleAtFixedRate(monitor,
                                                                     conf.getTimeoutMonitorIntervalSec(),
                                                                     conf.getTimeoutMonitorIntervalSec(),
@@ -197,26 +195,20 @@ public class BookieClient implements PerChannelBookieClientFactory {
         }
 
         toSend.retain();
-        client.obtain(new GenericCallback<PerChannelBookieClient>() {
-            @Override
-            public void operationComplete(final int rc, PerChannelBookieClient pcbc) {
-                if (rc != BKException.Code.OK) {
-                    try {
-                        executor.submitOrdered(ledgerId, new SafeRunnable() {
-                            @Override
-                            public void safeRun() {
-                                cb.writeLacComplete(rc, ledgerId, addr, ctx);
-                            }
-                        });
-                    } catch (RejectedExecutionException re) {
-                        cb.writeLacComplete(getRc(BKException.Code.InterruptedException), ledgerId, addr, ctx);
-                    }
-                } else {
-                    pcbc.writeLac(ledgerId, masterKey, lac, toSend, cb, ctx);
+        client.obtain((rc, pcbc) -> {
+            if (rc != BKException.Code.OK) {
+                try {
+                    executor.submitOrdered(ledgerId, safeRun(() -> {
+                        cb.writeLacComplete(rc, ledgerId, addr, ctx);
+                    }));
+                } catch (RejectedExecutionException re) {
+                    cb.writeLacComplete(getRc(BKException.Code.InterruptedException), ledgerId, addr, ctx);
                 }
-
-                toSend.release();
+            } else {
+                pcbc.writeLac(ledgerId, masterKey, lac, toSend, cb, ctx);
             }
+
+            toSend.release();
         }, ledgerId);
     }
 
@@ -367,23 +359,17 @@ public class BookieClient implements PerChannelBookieClientFactory {
                     ctx);
             return;
         }
-        client.obtain(new GenericCallback<PerChannelBookieClient>() {
-            @Override
-            public void operationComplete(final int rc, PerChannelBookieClient pcbc) {
-                if (rc != BKException.Code.OK) {
-                    try {
-                        executor.submitOrdered(ledgerId, new SafeRunnable() {
-                            @Override
-                            public void safeRun() {
-                                cb.readLacComplete(rc, ledgerId, null, null, ctx);
-                            }
-                        });
-                    } catch (RejectedExecutionException re) {
-                        cb.readLacComplete(getRc(BKException.Code.InterruptedException),
-                                ledgerId, null, null, ctx);
-                    }
-                    return;
+        client.obtain((rc, pcbc) -> {
+            if (rc != BKException.Code.OK) {
+                try {
+                    executor.submitOrdered(ledgerId, safeRun(() -> {
+                        cb.readLacComplete(rc, ledgerId, null, null, ctx);
+                    }));
+                } catch (RejectedExecutionException re) {
+                    cb.readLacComplete(getRc(BKException.Code.InterruptedException),
+                            ledgerId, null, null, ctx);
                 }
+            } else {
                 pcbc.readLac(ledgerId, cb, ctx);
             }
         }, ledgerId);
@@ -403,13 +389,10 @@ public class BookieClient implements PerChannelBookieClientFactory {
             return;
         }
 
-        client.obtain(new GenericCallback<PerChannelBookieClient>() {
-            @Override
-            public void operationComplete(final int rc, PerChannelBookieClient pcbc) {
-                if (rc != BKException.Code.OK) {
-                    completeRead(rc, ledgerId, entryId, null, cb, ctx);
-                    return;
-                }
+        client.obtain((rc, pcbc) -> {
+            if (rc != BKException.Code.OK) {
+                completeRead(rc, ledgerId, entryId, null, cb, ctx);
+            } else {
                 pcbc.readEntry(ledgerId, entryId, cb, ctx, flags, masterKey);
             }
         }, ledgerId);
@@ -431,14 +414,10 @@ public class BookieClient implements PerChannelBookieClientFactory {
             return;
         }
 
-        client.obtain(new GenericCallback<PerChannelBookieClient>() {
-            @Override
-            public void operationComplete(final int rc, PerChannelBookieClient pcbc) {
-
-                if (rc != BKException.Code.OK) {
-                    completeRead(rc, ledgerId, entryId, null, cb, ctx);
-                    return;
-                }
+        client.obtain((rc, pcbc) -> {
+            if (rc != BKException.Code.OK) {
+                completeRead(rc, ledgerId, entryId, null, cb, ctx);
+            } else {
                 pcbc.readEntryWaitForLACUpdate(ledgerId, entryId, previousLAC, timeOutInMillis, piggyBackEntry, cb,
                         ctx);
             }
@@ -453,23 +432,17 @@ public class BookieClient implements PerChannelBookieClientFactory {
                     ctx);
             return;
         }
-        client.obtain(new GenericCallback<PerChannelBookieClient>() {
-            @Override
-            public void operationComplete(final int rc, PerChannelBookieClient pcbc) {
-                if (rc != BKException.Code.OK) {
-                    try {
-                        executor.submit(new SafeRunnable() {
-                            @Override
-                            public void safeRun() {
-                                cb.getBookieInfoComplete(rc, new BookieInfo(), ctx);
-                            }
-                        });
-                    } catch (RejectedExecutionException re) {
-                        cb.getBookieInfoComplete(getRc(BKException.Code.InterruptedException),
-                                new BookieInfo(), ctx);
-                    }
-                    return;
+        client.obtain((rc, pcbc) -> {
+            if (rc != BKException.Code.OK) {
+                try {
+                    executor.submit(safeRun(() -> {
+                        cb.getBookieInfoComplete(rc, new BookieInfo(), ctx);
+                    }));
+                } catch (RejectedExecutionException re) {
+                    cb.getBookieInfoComplete(getRc(BKException.Code.InterruptedException),
+                            new BookieInfo(), ctx);
                 }
+            } else {
                 pcbc.getBookieInfo(requested, cb, ctx);
             }
         }, requested);
