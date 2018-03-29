@@ -62,7 +62,7 @@ import org.apache.commons.lang.StringUtils;
  * method.
  */
 @Slf4j
-public class OrderedSafeExecutor implements ExecutorService {
+public class OrderedExecutor implements ExecutorService {
     public static final int NO_TASK_LIMIT = -1;
     protected static final long WARN_TIME_MICRO_SEC_DEFAULT = TimeUnit.SECONDS.toMicros(1);
 
@@ -84,14 +84,14 @@ public class OrderedSafeExecutor implements ExecutorService {
     /**
      * A builder class for an OrderedSafeExecutor.
      */
-    public static class Builder extends AbstractBuilder<OrderedSafeExecutor> {
+    public static class Builder extends AbstractBuilder<OrderedExecutor> {
 
         @Override
-        public OrderedSafeExecutor build() {
+        public OrderedExecutor build() {
             if (null == threadFactory) {
                 threadFactory = new DefaultThreadFactory("bookkeeper-ordered-safe-executor");
             }
-            return new OrderedSafeExecutor(name, numThreads, threadFactory, statsLogger,
+            return new OrderedExecutor(name, numThreads, threadFactory, statsLogger,
                                            traceTaskExecution, warnTimeMicroSec, maxTasksInQueue);
         }
     }
@@ -99,12 +99,12 @@ public class OrderedSafeExecutor implements ExecutorService {
     /**
      * Builder to build ordered scheduler.
      */
-    public static class SchedulerBuilder extends AbstractBuilder<OrderedSafeExecutor> {}
+    public static class SchedulerBuilder extends AbstractBuilder<OrderedExecutor> {}
 
     /**
      * Abstract builder class to build {@link OrderedScheduler}.
      */
-    public abstract static class AbstractBuilder<T extends OrderedSafeExecutor> {
+    public abstract static class AbstractBuilder<T extends OrderedExecutor> {
         protected String name = getClass().getSimpleName();
         protected int numThreads = Runtime.getRuntime().availableProcessors();
         protected ThreadFactory threadFactory = null;
@@ -153,7 +153,7 @@ public class OrderedSafeExecutor implements ExecutorService {
             if (null == threadFactory) {
                 threadFactory = new DefaultThreadFactory(name);
             }
-            return (T) new OrderedSafeExecutor(
+            return (T) new OrderedExecutor(
                 name,
                 numThreads,
                 threadFactory,
@@ -216,7 +216,7 @@ public class OrderedSafeExecutor implements ExecutorService {
      * @param maxTasksInQueue
      *            - maximum items allowed in a thread queue. -1 for no limit
      */
-    protected OrderedSafeExecutor(String baseName, int numThreads, ThreadFactory threadFactory,
+    protected OrderedExecutor(String baseName, int numThreads, ThreadFactory threadFactory,
                                 StatsLogger statsLogger, boolean traceTaskExecution,
                                 long warnTimeMicroSec, int maxTasksInQueue) {
         checkArgument(numThreads > 0);

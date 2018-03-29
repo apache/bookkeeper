@@ -19,7 +19,7 @@ package org.apache.bookkeeper.util;
 
 import java.util.concurrent.RejectedExecutionException;
 
-import org.apache.bookkeeper.common.util.OrderedSafeExecutor;
+import org.apache.bookkeeper.common.util.OrderedExecutor;
 import org.apache.bookkeeper.common.util.SafeRunnable;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.slf4j.Logger;
@@ -29,10 +29,10 @@ import org.slf4j.LoggerFactory;
  * Generic callback implementation which will run the
  * callback in the thread which matches the ordering key.
  */
-public abstract class OrderedSafeGenericCallback<T> implements GenericCallback<T> {
-    private static final Logger LOG = LoggerFactory.getLogger(OrderedSafeGenericCallback.class);
+public abstract class OrderedGenericCallback<T> implements GenericCallback<T> {
+    private static final Logger LOG = LoggerFactory.getLogger(OrderedGenericCallback.class);
 
-    private final OrderedSafeExecutor executor;
+    private final OrderedExecutor executor;
     private final long orderingKey;
 
     /**
@@ -40,7 +40,7 @@ public abstract class OrderedSafeGenericCallback<T> implements GenericCallback<T
      * @param orderingKey Key used to decide which thread the callback
      *                    should run on.
      */
-    public OrderedSafeGenericCallback(OrderedSafeExecutor executor, long orderingKey) {
+    public OrderedGenericCallback(OrderedExecutor executor, long orderingKey) {
         this.executor = executor;
         this.orderingKey = orderingKey;
     }
@@ -64,7 +64,7 @@ public abstract class OrderedSafeGenericCallback<T> implements GenericCallback<T
                     public String toString() {
                         return String.format("Callback(key=%s, name=%s)",
                                              orderingKey,
-                                             OrderedSafeGenericCallback.this);
+                                             OrderedGenericCallback.this);
                     }
                 });
             } catch (RejectedExecutionException re) {

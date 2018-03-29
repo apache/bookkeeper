@@ -88,7 +88,7 @@ import org.apache.bookkeeper.client.LedgerEntry;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.LedgerMetadata;
 import org.apache.bookkeeper.client.UpdateLedgerOp;
-import org.apache.bookkeeper.common.util.OrderedSafeExecutor;
+import org.apache.bookkeeper.common.util.OrderedExecutor;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.discover.RegistrationManager;
@@ -814,7 +814,7 @@ public class BookieShell implements Tool {
                 } else {
                     // Use BookieClient to target a specific bookie
                     EventLoopGroup eventLoopGroup = new NioEventLoopGroup();
-                    OrderedSafeExecutor executor = OrderedSafeExecutor.newBuilder()
+                    OrderedExecutor executor = OrderedExecutor.newBuilder()
                         .numThreads(1)
                         .name("BookieClientScheduler")
                         .build();

@@ -46,7 +46,7 @@ import org.apache.bookkeeper.stats.StatsLogger;
  * achieved by hashing the key objects to threads by their {@link #hashCode()}
  * method.
  */
-public class OrderedScheduler extends OrderedSafeExecutor implements ScheduledExecutorService {
+public class OrderedScheduler extends OrderedExecutor implements ScheduledExecutorService {
 
     /**
      * Create a builder to build ordered scheduler.
@@ -60,7 +60,7 @@ public class OrderedScheduler extends OrderedSafeExecutor implements ScheduledEx
     /**
      * Builder to build ordered scheduler.
      */
-    public static class SchedulerBuilder extends OrderedSafeExecutor.AbstractBuilder<OrderedScheduler> {
+    public static class SchedulerBuilder extends OrderedExecutor.AbstractBuilder<OrderedScheduler> {
         @Override
         public OrderedScheduler build() {
             if (null == threadFactory) {

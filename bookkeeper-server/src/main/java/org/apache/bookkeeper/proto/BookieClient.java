@@ -48,7 +48,7 @@ import org.apache.bookkeeper.auth.AuthProviderFactoryFactory;
 import org.apache.bookkeeper.auth.ClientAuthProvider;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookieInfoReader.BookieInfo;
-import org.apache.bookkeeper.common.util.OrderedSafeExecutor;
+import org.apache.bookkeeper.common.util.OrderedExecutor;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
@@ -76,7 +76,7 @@ public class BookieClient implements PerChannelBookieClientFactory {
     // This is global state that should be across all BookieClients
     AtomicLong totalBytesOutstanding = new AtomicLong();
 
-    OrderedSafeExecutor executor;
+    OrderedExecutor executor;
     ScheduledExecutorService scheduler;
     ScheduledFuture<?> timeoutFuture;
 
@@ -96,7 +96,7 @@ public class BookieClient implements PerChannelBookieClientFactory {
     private final long bookieErrorThresholdPerInterval;
 
     public BookieClient(ClientConfiguration conf, EventLoopGroup eventLoopGroup,
-                        OrderedSafeExecutor executor, ScheduledExecutorService scheduler,
+                        OrderedExecutor executor, ScheduledExecutorService scheduler,
                         StatsLogger statsLogger) throws IOException {
         this.conf = conf;
         this.eventLoopGroup = eventLoopGroup;
@@ -583,7 +583,7 @@ public class BookieClient implements PerChannelBookieClientFactory {
         byte hello[] = "hello".getBytes(UTF_8);
         long ledger = Long.parseLong(args[2]);
         EventLoopGroup eventLoopGroup = new NioEventLoopGroup(1);
-        OrderedSafeExecutor executor = OrderedSafeExecutor.newBuilder()
+        OrderedExecutor executor = OrderedExecutor.newBuilder()
                 .name("BookieClientWorker")
                 .numThreads(1)
                 .build();

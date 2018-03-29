@@ -51,7 +51,7 @@ import org.apache.bookkeeper.client.BKException.Code;
 import org.apache.bookkeeper.client.api.CreateBuilder;
 import org.apache.bookkeeper.client.api.DeleteBuilder;
 import org.apache.bookkeeper.client.api.OpenBuilder;
-import org.apache.bookkeeper.common.util.OrderedSafeExecutor;
+import org.apache.bookkeeper.common.util.OrderedExecutor;
 import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.feature.Feature;
@@ -79,7 +79,7 @@ public abstract class MockBookKeeperTestCase {
     private static final Logger LOG = LoggerFactory.getLogger(MockBookKeeperTestCase.class);
 
     protected OrderedScheduler scheduler;
-    protected OrderedSafeExecutor executor;
+    protected OrderedExecutor executor;
     protected BookKeeper bk;
     protected BookieClient bookieClient;
     protected LedgerManager ledgerManager;
@@ -131,7 +131,7 @@ public abstract class MockBookKeeperTestCase {
         mockNextLedgerId = new AtomicLong(1);
         fencedLedgers = new ConcurrentSkipListSet<>();
         scheduler = OrderedScheduler.newSchedulerBuilder().numThreads(4).name("bk-test").build();
-        executor = OrderedSafeExecutor.newBuilder().build();
+        executor = OrderedExecutor.newBuilder().build();
         bookieWatcher = mock(BookieWatcher.class);
 
         bookieClient = mock(BookieClient.class);

@@ -57,7 +57,7 @@ import org.apache.bookkeeper.client.api.CreateBuilder;
 import org.apache.bookkeeper.client.api.DeleteBuilder;
 import org.apache.bookkeeper.client.api.OpenBuilder;
 import org.apache.bookkeeper.client.api.WriteFlag;
-import org.apache.bookkeeper.common.util.OrderedSafeExecutor;
+import org.apache.bookkeeper.common.util.OrderedExecutor;
 import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.apache.bookkeeper.conf.ClientConfiguration;
@@ -135,7 +135,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
     final BookieClient bookieClient;
     final BookieWatcher bookieWatcher;
 
-    final OrderedSafeExecutor mainWorkerPool;
+    final OrderedExecutor mainWorkerPool;
     final OrderedScheduler scheduler;
     final HashedWheelTimer requestTimer;
     final boolean ownTimer;
@@ -423,7 +423,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
 
         // initialize resources
         this.scheduler = OrderedScheduler.newSchedulerBuilder().numThreads(1).name("BookKeeperClientScheduler").build();
-        this.mainWorkerPool = OrderedSafeExecutor.newBuilder()
+        this.mainWorkerPool = OrderedExecutor.newBuilder()
                 .name("BookKeeperClientWorker")
                 .numThreads(conf.getNumWorkerThreads())
                 .statsLogger(statsLogger)
@@ -672,7 +672,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
     }
 
     @VisibleForTesting
-    OrderedSafeExecutor getMainWorkerPool() {
+    OrderedExecutor getMainWorkerPool() {
         return mainWorkerPool;
     }
 

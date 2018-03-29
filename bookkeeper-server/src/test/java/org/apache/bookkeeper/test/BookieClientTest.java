@@ -40,7 +40,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BKException.Code;
 import org.apache.bookkeeper.client.BookieInfoReader.BookieInfo;
-import org.apache.bookkeeper.common.util.OrderedSafeExecutor;
+import org.apache.bookkeeper.common.util.OrderedExecutor;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
@@ -68,7 +68,7 @@ public class BookieClientTest {
     public int port = 13645;
 
     public EventLoopGroup eventLoopGroup;
-    public OrderedSafeExecutor executor;
+    public OrderedExecutor executor;
     private ScheduledExecutorService scheduler;
 
     @Before
@@ -85,7 +85,7 @@ public class BookieClientTest {
         bs = new BookieServer(conf);
         bs.start();
         eventLoopGroup = new NioEventLoopGroup();
-        executor = OrderedSafeExecutor.newBuilder()
+        executor = OrderedExecutor.newBuilder()
                 .name("BKClientOrderedSafeExecutor")
                 .numThreads(2)
                 .build();
