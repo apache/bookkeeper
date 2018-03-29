@@ -51,59 +51,59 @@ public class BoundedExecutorService extends ForwardingExecutorService {
         return this.thread;
     }
 
-    private void checkQueue() {
-        if (this.maxTasksInQueue > 0 && this.queue.size() >= this.maxTasksInQueue) {
-            throw new RejectedExecutionException("Queue at limit of " + this.maxTasksInQueue + " items");
+    private final void checkQueue(int numberOfTasks) {
+        if (maxTasksInQueue > 0 && (queue.size() + numberOfTasks) >= maxTasksInQueue) {
+            throw new RejectedExecutionException("Queue at limit of " + maxTasksInQueue + " items");
         }
     }
 
     @Override
     public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks) throws InterruptedException {
-        checkQueue();
+        checkQueue(tasks.size());
         return super.invokeAll(tasks);
     }
 
     @Override
     public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks, long timeout, TimeUnit unit)
             throws InterruptedException {
-        checkQueue();
+        checkQueue(tasks.size());
         return super.invokeAll(tasks, timeout, unit);
     }
 
     @Override
     public <T> T invokeAny(Collection<? extends Callable<T>> tasks) throws InterruptedException, ExecutionException {
-        checkQueue();
+        checkQueue(tasks.size());
         return super.invokeAny(tasks);
     }
 
     @Override
     public <T> T invokeAny(Collection<? extends Callable<T>> tasks, long timeout, TimeUnit unit)
             throws InterruptedException, ExecutionException, TimeoutException {
-        checkQueue();
+        checkQueue(tasks.size());
         return super.invokeAny(tasks, timeout, unit);
     }
 
     @Override
     public void execute(Runnable command) {
-        checkQueue();
+        checkQueue(1);
         super.execute(command);
     }
 
     @Override
     public <T> Future<T> submit(Callable<T> task) {
-        checkQueue();
+        checkQueue(1);
         return super.submit(task);
     }
 
     @Override
     public Future<?> submit(Runnable task) {
-        checkQueue();
+        checkQueue(1);
         return super.submit(task);
     }
 
     @Override
     public <T> Future<T> submit(Runnable task, T result) {
-        checkQueue();
+        checkQueue(1);
         return super.submit(task, result);
     }
 }

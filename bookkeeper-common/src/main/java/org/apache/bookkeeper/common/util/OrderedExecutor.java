@@ -97,14 +97,9 @@ public class OrderedExecutor implements ExecutorService {
     }
 
     /**
-     * Builder to build ordered scheduler.
-     */
-    public static class SchedulerBuilder extends AbstractBuilder<OrderedExecutor> {}
-
-    /**
      * Abstract builder class to build {@link OrderedScheduler}.
      */
-    public abstract static class AbstractBuilder<T extends OrderedExecutor> {
+    abstract static class AbstractBuilder<T extends OrderedExecutor> {
         protected String name = getClass().getSimpleName();
         protected int numThreads = Runtime.getRuntime().availableProcessors();
         protected ThreadFactory threadFactory = null;
