@@ -31,7 +31,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.function.Function;
 import org.apache.bookkeeper.common.concurrent.FutureEventListener;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
@@ -274,7 +274,9 @@ class ZKSessionLock implements SessionLock {
     private String currentNode;
     private String watchedNode;
     private LockWatcher watcher;
-    private final AtomicInteger epoch = new AtomicInteger(0);
+    private static final AtomicIntegerFieldUpdater<ZKSessionLock> epochUpdater =
+        AtomicIntegerFieldUpdater.newUpdater(ZKSessionLock.class, "epoch");
+    private volatile int epoch = 0;
     private final OrderedScheduler lockStateExecutor;
     private LockListener lockListener = null;
     private final long lockOpTimeout;
@@ -358,9 +360,8 @@ class ZKSessionLock implements SessionLock {
         return this.lockPath;
     }
 
-    @VisibleForTesting
-    AtomicInteger getEpoch() {
-        return epoch;
+    int getEpoch() {
+        return epochUpdater.get(this);
     }
 
     @VisibleForTesting
@@ -394,7 +395,7 @@ class ZKSessionLock implements SessionLock {
         lockStateExecutor.submitOrdered(lockPath, new SafeRunnable() {
             @Override
             public void safeRun() {
-                if (ZKSessionLock.this.epoch.get() == lockEpoch) {
+                if (getEpoch() == lockEpoch) {
                     if (LOG.isTraceEnabled()) {
                         LOG.trace("{} executing lock action '{}' under epoch {} for lock {}",
                                 new Object[]{lockId, func.getActionName(), lockEpoch, lockPath});
@@ -409,7 +410,7 @@ class ZKSessionLock implements SessionLock {
                         LOG.trace("{} skipped executing lock action '{}' for lock {},"
                                         + " since epoch is changed from {} to {}.",
                                 new Object[]{lockId, func.getActionName(),
-                                        lockPath, lockEpoch, ZKSessionLock.this.epoch.get()});
+                                        lockPath, lockEpoch, getEpoch()});
                     }
                 }
             }
@@ -433,7 +434,7 @@ class ZKSessionLock implements SessionLock {
         lockStateExecutor.submitOrdered(lockPath, new SafeRunnable() {
             @Override
             public void safeRun() {
-                int currentEpoch = ZKSessionLock.this.epoch.get();
+                int currentEpoch = getEpoch();
                 if (currentEpoch == lockEpoch) {
                     if (LOG.isTraceEnabled()) {
                         LOG.trace("{} executed lock action '{}' under epoch {} for lock {}",
@@ -656,7 +657,7 @@ class ZKSessionLock implements SessionLock {
             return false;
         }
         // current owner is itself
-        final int curEpoch = epoch.incrementAndGet();
+        final int curEpoch = epochUpdater.incrementAndGet(this);
         executeLockAction(curEpoch, new LockAction() {
             @Override
             public void execute() {
@@ -736,7 +737,7 @@ class ZKSessionLock implements SessionLock {
      *          promise to satisfy with current lock owner.
      */
     private void asyncTryLockWithoutCleanup(final boolean wait, final CompletableFuture<String> promise) {
-        executeLockAction(epoch.get(), new LockAction() {
+        executeLockAction(getEpoch(), new LockAction() {
             @Override
             public void execute() {
                 if (!lockState.inState(State.INIT)) {
@@ -746,7 +747,7 @@ class ZKSessionLock implements SessionLock {
                 }
                 lockState.transition(State.PREPARING);
 
-                final int curEpoch = epoch.incrementAndGet();
+                final int curEpoch = epochUpdater.incrementAndGet(ZKSessionLock.this);
                 watcher = new LockWatcher(curEpoch);
                 // register watcher for session expires
                 zkClient.register(watcher);
@@ -913,7 +914,7 @@ class ZKSessionLock implements SessionLock {
         if (LOG.isDebugEnabled()) {
             LOG.debug("Notify lock waiters on {} at {} : watcher epoch {}, lock epoch {}",
                     new Object[] { lockPath, System.currentTimeMillis(),
-                            lockEpoch, ZKSessionLock.this.epoch.get() });
+                            lockEpoch, getEpoch() });
         }
         acquireFuture.complete(true);
     }
@@ -924,7 +925,7 @@ class ZKSessionLock implements SessionLock {
     private void unlockInternal(final CompletableFuture<Void> promise) {
 
         // already closed or expired, nothing to cleanup
-        this.epoch.incrementAndGet();
+        this.epochUpdater.incrementAndGet(this);
         if (null != watcher) {
             this.zkClient.unregister(watcher);
         }
@@ -1026,7 +1027,7 @@ class ZKSessionLock implements SessionLock {
                 }
 
                 // increment epoch to avoid any ongoing locking action
-                ZKSessionLock.this.epoch.incrementAndGet();
+                epochUpdater.incrementAndGet(ZKSessionLock.this);
 
                 // if session expired, just notify the waiter. as the lock acquire doesn't succeed.
                 // we don't even need to clean up the lock as the znode will disappear after session expired
@@ -1326,7 +1327,7 @@ class ZKSessionLock implements SessionLock {
         @Override
         public void process(WatchedEvent event) {
             LOG.debug("Received event {} from lock {} at {} : watcher epoch {}, lock epoch {}.",
-                    new Object[] {event, lockPath, System.currentTimeMillis(), epoch, ZKSessionLock.this.epoch.get() });
+                    new Object[] {event, lockPath, System.currentTimeMillis(), epoch, getEpoch() });
             if (event.getType() == Watcher.Event.EventType.None) {
                 switch (event.getState()) {
                     case SyncConnected:
@@ -1334,7 +1335,7 @@ class ZKSessionLock implements SessionLock {
                     case Expired:
                         LOG.info("Session {} is expired for lock {} at {} : watcher epoch {}, lock epoch {}.",
                                 new Object[] { lockId.getRight(), lockPath, System.currentTimeMillis(),
-                                        epoch, ZKSessionLock.this.epoch.get() });
+                                        epoch, getEpoch() });
                         handleSessionExpired(epoch);
                         break;
                     default:
