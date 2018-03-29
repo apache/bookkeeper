@@ -51,7 +51,7 @@ public class BoundedExecutorService extends ForwardingExecutorService {
         return this.thread;
     }
 
-    private final void checkQueue(int numberOfTasks) {
+    private void checkQueue(int numberOfTasks) {
         if (maxTasksInQueue > 0 && (queue.size() + numberOfTasks) >= maxTasksInQueue) {
             throw new RejectedExecutionException("Queue at limit of " + maxTasksInQueue + " items");
         }
