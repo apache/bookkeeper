@@ -485,25 +485,25 @@ public class TestZKLogStreamMetadataStore extends ZooKeeperClusterTestCase {
     @Test(timeout = 60000)
     public void testGetMissingPathsRecursive() throws Exception {
         List<String> missingPaths = FutureUtils.result(
-            getMissingPaths(zkc, uri, "path/to/log"));
+            getMissingPaths(zkc, uri, "path_missing/to/log"));
 
         assertEquals(
             Lists.newArrayList(
-                uri.getPath() + "/path/to/log",
-                uri.getPath() + "/path/to",
-                uri.getPath() + "/path"
+                uri.getPath() + "/path_missing/to/log",
+                uri.getPath() + "/path_missing/to",
+                uri.getPath() + "/path_missing"
             ),
             missingPaths);
     }
 
     @Test(timeout = 60000)
     public void testGetMissingPathsRecursive2() throws Exception {
-        String path = uri.getPath() + "/path/to/log";
+        String path = uri.getPath() + "/path_missing2/to/log";
         ZkUtils.createFullPathOptimistic(
             zkc.get(), path, EMPTY_BYTES, zkc.getDefaultACL(), CreateMode.PERSISTENT);
 
         List<String> missingPaths = FutureUtils.result(
-            getMissingPaths(zkc, uri, "path/to/log"));
+            getMissingPaths(zkc, uri, "path_missing2/to/log"));
 
         assertEquals(
             Collections.emptyList(),
@@ -523,7 +523,7 @@ public class TestZKLogStreamMetadataStore extends ZooKeeperClusterTestCase {
         }).when(mockZk).exists(anyString(), anyBoolean(), any(StatCallback.class), any());
 
         try {
-            FutureUtils.result(getMissingPaths(mockZkc, uri, "path/to/log"));
+            FutureUtils.result(getMissingPaths(mockZkc, uri, "path_failure/to/log_failure"));
             fail("Should fail on getting missing paths on zookeeper exceptions.");
         } catch (ZKException zke) {
             assertEquals(Code.BADVERSION, zke.getKeeperExceptionCode());
@@ -543,7 +543,7 @@ public class TestZKLogStreamMetadataStore extends ZooKeeperClusterTestCase {
             logIdentifier,
             numSegments);
 
-        String newLogName = "path/to/new/" + logName;
+        String newLogName = "path_rename/to/new/" + logName;
         FutureUtils.result(metadataStore.renameLog(uri, logName, newLogName));
     }
 
@@ -559,7 +559,7 @@ public class TestZKLogStreamMetadataStore extends ZooKeeperClusterTestCase {
             logIdentifier,
             numSegments);
 
-        String newLogName = "path/to/new/" + logName;
+        String newLogName = "path_rename_exists/to/new/" + logName;
         createLog(
             zkc,
             uri,
@@ -587,7 +587,7 @@ public class TestZKLogStreamMetadataStore extends ZooKeeperClusterTestCase {
         String lockPath = logRootPath + LOCK_PATH;
         zkc.get().create(lockPath + "/test", new byte[0], Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL_SEQUENTIAL);
 
-        String newLogName = "path/to/new/" + logName;
+        String newLogName = "path_rename_locked/to/new/" + logName;
         FutureUtils.result(metadataStore.renameLog(uri, logName, newLogName));
     }
 
