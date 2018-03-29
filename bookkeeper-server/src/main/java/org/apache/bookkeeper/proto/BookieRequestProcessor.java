@@ -166,9 +166,10 @@ public class BookieRequestProcessor implements RequestProcessor {
         if (serverCfg.getNumLongPollWorkerThreads() <= 0 && readThreadPool != null) {
             this.longPollThreadPool = this.readThreadPool;
         } else {
-            int numThreads = Math.max(
-                this.serverCfg.getNumLongPollWorkerThreads(),
-                1);
+            int numThreads = this.serverCfg.getNumLongPollWorkerThreads();
+            if (numThreads <= 0) {
+                numThreads = Runtime.getRuntime().availableProcessors();
+            }
             this.longPollThreadPool = createExecutor(
                 numThreads,
                 "BookieLongPollThread-" + serverCfg.getBookiePort(),
