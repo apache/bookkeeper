@@ -18,6 +18,15 @@
 
 cmake_minimum_required(VERSION 2.6 FATAL_ERROR)
 
+message(WARNING "OS_DETECTED_RELEASE - " ${OS_DETECTED_RELEASE} )
+
+if ((OS_DETECTED_RELEASE STREQUAL "fedora")
+    OR (OS_DETECTED_RELEASE STREQUAL "centos")
+    OR (OS_DETECTED_RELEASE STREQUAL "rhel"))
+    message(WARNING "DETECTED A REDHAT SYSTEM - " ${OS_DETECTED_RELEASE} )
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D__REDHAT__")
+endif ()
+
 # If JVM_ARCH_DATA_MODEL is 32, compile all binaries as 32-bit.
 # This variable is set by maven.
 if (JVM_ARCH_DATA_MODEL EQUAL 32)

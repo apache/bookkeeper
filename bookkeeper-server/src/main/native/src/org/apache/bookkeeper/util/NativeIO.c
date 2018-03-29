@@ -25,7 +25,7 @@
 #if !defined(_WIN32) && (defined(__unix__) || defined(__unix) || (defined(__APPLE__) && defined(__MACH__)))
   /* UNIX-style OS. ------------------------------------------- */
   #include <unistd.h>
-  #if (defined(__unit__) || defined(__unix)) && defined(__x86_64__)
+  #if (defined(__unit__) || defined(__unix)) && defined(__x86_64__) && !defined(__REDHAT__)
     #include <asm-x86_64/unistd.h>
   #endif
 #endif
