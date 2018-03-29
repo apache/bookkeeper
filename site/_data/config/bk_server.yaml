@@ -132,7 +132,7 @@ groups:
   params:
   - param: numLongPollWorkerThreads
     description: The number of threads that should handle long poll requests.
-    default: 10
+    default: 0
   - param: requestTimerTickDurationMs
     description: The tick duration in milliseconds for long poll requests.
     default: 10
