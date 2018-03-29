@@ -24,9 +24,9 @@ import com.scurrilous.circe.crc.Sse42Crc32C;
 import io.netty.buffer.ByteBuf;
 import io.netty.util.concurrent.FastThreadLocal;
 
-import org.apache.commons.lang3.mutable.MutableInt;
-
 import lombok.extern.slf4j.Slf4j;
+
+import org.apache.commons.lang3.mutable.MutableInt;
 
 @Slf4j
 class CRC32CDigestManager extends DigestManager {
