@@ -57,6 +57,8 @@ import org.apache.bookkeeper.client.api.CreateBuilder;
 import org.apache.bookkeeper.client.api.DeleteBuilder;
 import org.apache.bookkeeper.client.api.OpenBuilder;
 import org.apache.bookkeeper.client.api.WriteFlag;
+import org.apache.bookkeeper.common.util.OrderedSafeExecutor;
+import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.feature.Feature;
@@ -79,7 +81,6 @@ import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
-import org.apache.bookkeeper.util.OrderedSafeExecutor;
 import org.apache.bookkeeper.util.ReflectionUtils;
 import org.apache.bookkeeper.util.SafeRunnable;
 import org.apache.commons.configuration.ConfigurationException;
@@ -135,7 +136,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
     final BookieWatcher bookieWatcher;
 
     final OrderedSafeExecutor mainWorkerPool;
-    final ScheduledExecutorService scheduler;
+    final OrderedScheduler scheduler;
     final HashedWheelTimer requestTimer;
     final boolean ownTimer;
     final FeatureProvider featureProvider;
@@ -421,8 +422,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
         this.reorderReadSequence = conf.isReorderReadSequenceEnabled();
 
         // initialize resources
-        this.scheduler = Executors
-                .newSingleThreadScheduledExecutor(new DefaultThreadFactory("BookKeeperClientScheduler"));
+        this.scheduler = OrderedScheduler.newSchedulerBuilder().numThreads(1).name("BookKeeperClientScheduler").build();
         this.mainWorkerPool = OrderedSafeExecutor.newBuilder()
                 .name("BookKeeperClientWorker")
                 .numThreads(conf.getNumWorkerThreads())
@@ -677,7 +677,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
     }
 
     @VisibleForTesting
-    ScheduledExecutorService getScheduler() {
+    OrderedScheduler getScheduler() {
         return scheduler;
     }
 

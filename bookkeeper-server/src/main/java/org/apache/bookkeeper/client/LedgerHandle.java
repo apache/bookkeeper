@@ -83,7 +83,7 @@ import org.apache.bookkeeper.proto.checksum.DigestManager;
 import org.apache.bookkeeper.proto.checksum.MacDigestManager;
 import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.Gauge;
-import org.apache.bookkeeper.util.OrderedSafeExecutor.OrderedSafeGenericCallback;
+import org.apache.bookkeeper.util.OrderedSafeGenericCallback;
 import org.apache.bookkeeper.util.SafeRunnable;
 import org.apache.commons.collections4.IteratorUtils;
 import org.slf4j.Logger;
@@ -176,6 +176,7 @@ public class LedgerHandle implements WriteHandle {
         this.bookieFailureHistory = CacheBuilder.newBuilder()
             .expireAfterWrite(bk.getConf().getBookieFailureHistoryExpirationMSec(), TimeUnit.MILLISECONDS)
             .build(new CacheLoader<BookieSocketAddress, Long>() {
+            @Override
             public Long load(BookieSocketAddress key) {
                 return -1L;
             }
@@ -200,10 +201,12 @@ public class LedgerHandle implements WriteHandle {
         lacUpdateMissesCounter = bk.getStatsLogger().getCounter(BookKeeperClientStats.LAC_UPDATE_MISSES);
         bk.getStatsLogger().registerGauge(BookKeeperClientStats.PENDING_ADDS,
                                           new Gauge<Integer>() {
-                                              public Integer getDefaultValue() {
+                                              @Override
+                                            public Integer getDefaultValue() {
                                                   return 0;
                                               }
-                                              public Integer getSample() {
+                                              @Override
+                                            public Integer getSample() {
                                                   return pendingAddOps.size();
                                               }
                                           });
@@ -240,6 +243,7 @@ public class LedgerHandle implements WriteHandle {
      *
      * @return the id of the ledger
      */
+    @Override
     public long getId() {
         return ledgerId;
     }
@@ -344,6 +348,7 @@ public class LedgerHandle implements WriteHandle {
      *
      * @return the length of the ledger in bytes
      */
+    @Override
     public synchronized long getLength() {
         return this.length;
     }
@@ -453,7 +458,7 @@ public class LedgerHandle implements WriteHandle {
      * @param rc
      */
     void doAsyncCloseInternal(final CloseCallback cb, final Object ctx, final int rc) {
-        bk.getMainWorkerPool().submitOrdered(ledgerId, new SafeRunnable() {
+        bk.getMainWorkerPool().executeOrdered(ledgerId, new SafeRunnable() {
             @Override
             public void safeRun() {
                 final long prevLastEntryId;
@@ -830,7 +835,7 @@ public class LedgerHandle implements WriteHandle {
                                                               boolean isRecoveryRead) {
         PendingReadOp op = new PendingReadOp(this, bk.getScheduler(), firstEntry, lastEntry, isRecoveryRead);
         if (!bk.isClosed()) {
-            bk.getMainWorkerPool().submitOrdered(ledgerId, op);
+            bk.getMainWorkerPool().executeOrdered(ledgerId, op);
         } else {
             op.future().completeExceptionally(BKException.create(ClientClosedException));
         }
@@ -1099,7 +1104,7 @@ public class LedgerHandle implements WriteHandle {
         }
 
         try {
-            bk.getMainWorkerPool().submitOrdered(ledgerId, op);
+            bk.getMainWorkerPool().executeOrdered(ledgerId, op);
         } catch (RejectedExecutionException e) {
             op.cb.addCompleteWithLatency(bk.getReturnRc(BKException.Code.InterruptedException),
                     LedgerHandle.this, INVALID_ENTRY_ID, 0, op.ctx);

@@ -59,7 +59,7 @@ import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.auth.AuthProviderFactoryFactory;
 import org.apache.bookkeeper.auth.AuthToken;
 import org.apache.bookkeeper.bookie.Bookie;
-import org.apache.bookkeeper.common.util.OrderedScheduler;
+import org.apache.bookkeeper.common.util.OrderedSafeExecutor;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.processor.RequestProcessor;
 import org.apache.bookkeeper.stats.Counter;
@@ -68,7 +68,6 @@ import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.tls.SecurityException;
 import org.apache.bookkeeper.tls.SecurityHandlerFactory;
 import org.apache.bookkeeper.tls.SecurityHandlerFactory.NodeType;
-import org.apache.bookkeeper.util.OrderedSafeExecutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -162,11 +161,11 @@ public class BookieRequestProcessor implements RequestProcessor {
         this.longPollThreadPool = createExecutor(
                 this.serverCfg.getNumLongPollWorkerThreads(),
                 "BookieLongPollThread-" + serverCfg.getBookiePort(),
-                OrderedScheduler.NO_TASK_LIMIT, statsLogger);
+                OrderedSafeExecutor.NO_TASK_LIMIT, statsLogger);
         this.highPriorityThreadPool = createExecutor(
                 this.serverCfg.getNumHighPriorityWorkerThreads(),
                 "BookieHighPriorityThread-" + serverCfg.getBookiePort(),
-                OrderedScheduler.NO_TASK_LIMIT, statsLogger);
+                OrderedSafeExecutor.NO_TASK_LIMIT, statsLogger);
         this.requestTimer = new HashedWheelTimer(
             new ThreadFactoryBuilder().setNameFormat("BookieRequestTimer-%d").build(),
             this.serverCfg.getRequestTimerTickDurationMs(),
@@ -310,7 +309,7 @@ public class BookieRequestProcessor implements RequestProcessor {
         if (null == writeThreadPool) {
             writeLac.run();
         } else {
-            writeThreadPool.submitOrdered(r.getAddRequest().getLedgerId(), writeLac);
+            writeThreadPool.executeOrdered(r.getAddRequest().getLedgerId(), writeLac);
         }
     }
 
@@ -319,7 +318,7 @@ public class BookieRequestProcessor implements RequestProcessor {
         if (null == readThreadPool) {
             readLac.run();
         } else {
-            readThreadPool.submitOrdered(r.getAddRequest().getLedgerId(), readLac);
+            readThreadPool.executeOrdered(r.getAddRequest().getLedgerId(), readLac);
         }
     }
 
@@ -337,7 +336,7 @@ public class BookieRequestProcessor implements RequestProcessor {
             write.run();
         } else {
             try {
-                threadPool.submitOrdered(r.getAddRequest().getLedgerId(), write);
+                threadPool.executeOrdered(r.getAddRequest().getLedgerId(), write);
             } catch (RejectedExecutionException e) {
                 if (LOG.isDebugEnabled()) {
                     LOG.debug("Failed to process request to add entry at {}:{}. Too many pending requests",
@@ -387,7 +386,7 @@ public class BookieRequestProcessor implements RequestProcessor {
             read.run();
         } else {
             try {
-                threadPool.submitOrdered(r.getReadRequest().getLedgerId(), read);
+                threadPool.executeOrdered(r.getReadRequest().getLedgerId(), read);
             } catch (RejectedExecutionException e) {
                 if (LOG.isDebugEnabled()) {
                     LOG.debug("Failed to process request to read entry at {}:{}. Too many pending requests",
@@ -475,7 +474,7 @@ public class BookieRequestProcessor implements RequestProcessor {
             write.run();
         } else {
             try {
-                threadPool.submitOrdered(r.getLedgerId(), write);
+                threadPool.executeOrdered(r.getLedgerId(), write);
             } catch (RejectedExecutionException e) {
                 if (LOG.isDebugEnabled()) {
                     LOG.debug("Failed to process request to add entry at {}:{}. Too many pending requests", r.ledgerId,
@@ -505,7 +504,7 @@ public class BookieRequestProcessor implements RequestProcessor {
             read.run();
         } else {
             try {
-                threadPool.submitOrdered(r.getLedgerId(), read);
+                threadPool.executeOrdered(r.getLedgerId(), read);
             } catch (RejectedExecutionException e) {
                 if (LOG.isDebugEnabled()) {
                     LOG.debug("Failed to process request to read entry at {}:{}. Too many pending requests", r.ledgerId,

@@ -48,6 +48,7 @@ import org.apache.bookkeeper.auth.AuthProviderFactoryFactory;
 import org.apache.bookkeeper.auth.ClientAuthProvider;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookieInfoReader.BookieInfo;
+import org.apache.bookkeeper.common.util.OrderedSafeExecutor;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
@@ -61,7 +62,6 @@ import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.tls.SecurityException;
 import org.apache.bookkeeper.tls.SecurityHandlerFactory;
 import org.apache.bookkeeper.util.ByteBufList;
-import org.apache.bookkeeper.util.OrderedSafeExecutor;
 import org.apache.bookkeeper.util.SafeRunnable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -204,7 +204,7 @@ public class BookieClient implements PerChannelBookieClientFactory {
                 public void operationComplete(final int rc, PerChannelBookieClient pcbc) {
                     if (rc != BKException.Code.OK) {
                         try {
-                            executor.submitOrdered(ledgerId, new SafeRunnable() {
+                            executor.executeOrdered(ledgerId, new SafeRunnable() {
                                 @Override
                                 public void safeRun() {
                                     cb.writeLacComplete(rc, ledgerId, addr, ctx);
@@ -232,7 +232,7 @@ public class BookieClient implements PerChannelBookieClientFactory {
                              final WriteCallback cb,
                              final Object ctx) {
         try {
-            executor.submitOrdered(ledgerId, new SafeRunnable() {
+            executor.executeOrdered(ledgerId, new SafeRunnable() {
                 @Override
                 public void safeRun() {
                     cb.writeComplete(rc, ledgerId, entryId, addr, ctx);
@@ -284,7 +284,7 @@ public class BookieClient implements PerChannelBookieClientFactory {
                               final ReadEntryCallback cb,
                               final Object ctx) {
         try {
-            executor.submitOrdered(ledgerId, new SafeRunnable() {
+            executor.executeOrdered(ledgerId, new SafeRunnable() {
                 @Override
                 public void safeRun() {
                     cb.readEntryComplete(rc, ledgerId, entryId, entry, ctx);
@@ -384,7 +384,7 @@ public class BookieClient implements PerChannelBookieClientFactory {
                 public void operationComplete(final int rc, PerChannelBookieClient pcbc) {
                     if (rc != BKException.Code.OK) {
                         try {
-                            executor.submitOrdered(ledgerId, new SafeRunnable() {
+                            executor.executeOrdered(ledgerId, new SafeRunnable() {
                                 @Override
                                 public void safeRun() {
                                     cb.readLacComplete(rc, ledgerId, null, null, ctx);
