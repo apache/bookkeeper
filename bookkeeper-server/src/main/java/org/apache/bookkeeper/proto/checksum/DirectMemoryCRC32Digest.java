@@ -29,7 +29,7 @@ import org.apache.bookkeeper.proto.checksum.CRC32DigestManager.CRC32Digest;
  * Specialized implementation of CRC32 digest that uses reflection on {@link CRC32} class to get access to
  * "updateByteBuffer" method and pass a direct memory pointer.
  */
-public class DirectMemoryCRC32Digest implements CRC32Digest {
+class DirectMemoryCRC32Digest implements CRC32Digest {
 
     public static boolean isSupported() {
         return updateBytes != null;

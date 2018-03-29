@@ -26,13 +26,15 @@ import org.apache.bookkeeper.proto.checksum.CRC32DigestManager.CRC32Digest;
 /**
  * Regular implementation of CRC32 digest that makes use of {@link CRC32} class.
  */
-public class StandardCRC32Digest implements CRC32Digest {
+class StandardCRC32Digest implements CRC32Digest {
 
     private final CRC32 crc = new CRC32();
 
     @Override
     public long getValueAndReset() {
-        return crc.getValue();
+        long value = crc.getValue();
+        crc.reset();
+        return value;
     }
 
     @Override
