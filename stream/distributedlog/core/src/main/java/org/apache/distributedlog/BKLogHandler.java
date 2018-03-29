@@ -31,7 +31,7 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.function.Function;
 import org.apache.bookkeeper.common.concurrent.FutureEventListener;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
@@ -97,7 +97,9 @@ abstract class BKLogHandler implements AsyncCloseable, AsyncAbortable {
     protected final AlertStatsLogger alertStatsLogger;
     protected volatile boolean reportGetSegmentStats = false;
     private final String lockClientId;
-    protected final AtomicReference<IOException> metadataException = new AtomicReference<IOException>(null);
+    protected static final AtomicReferenceFieldUpdater<BKLogHandler, IOException> METADATA_EXCEPTION_UPDATER =
+        AtomicReferenceFieldUpdater.newUpdater(BKLogHandler.class, IOException.class, "metadataException");
+    private volatile IOException metadataException = null;
 
     // Maintain the list of log segments per stream
     protected final PerStreamLogSegmentCache logSegmentCache;
@@ -155,8 +157,9 @@ abstract class BKLogHandler implements AsyncCloseable, AsyncAbortable {
     }
 
     BKLogHandler checkMetadataException() throws IOException {
-        if (null != metadataException.get()) {
-            throw metadataException.get();
+        IOException ioe = METADATA_EXCEPTION_UPDATER.get(this);
+        if (null != ioe) {
+            throw ioe;
         }
         return this;
     }
@@ -480,7 +483,7 @@ abstract class BKLogHandler implements AsyncCloseable, AsyncAbortable {
             // the log segments cache went wrong
             LOG.error("Unexpected exception on getting log segments from the cache for stream {}",
                     getFullyQualifiedName(), ue);
-            metadataException.compareAndSet(null, ue);
+            METADATA_EXCEPTION_UPDATER.compareAndSet(this, null, ue);
             throw ue;
         }
     }

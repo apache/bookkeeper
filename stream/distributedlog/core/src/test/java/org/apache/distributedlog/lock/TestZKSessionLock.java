@@ -221,7 +221,7 @@ public class TestZKSessionLock extends ZooKeeperClusterTestCase {
 
         // lock action would be executed in same epoch
         final CountDownLatch latch1 = new CountDownLatch(1);
-        lock.executeLockAction(lock.getEpoch().get(), new LockAction() {
+        lock.executeLockAction(lock.getEpoch(), new LockAction() {
             @Override
             public void execute() {
                 counter.incrementAndGet();
@@ -238,7 +238,7 @@ public class TestZKSessionLock extends ZooKeeperClusterTestCase {
 
         // lock action would not be executed in same epoch
         final CountDownLatch latch2 = new CountDownLatch(1);
-        lock.executeLockAction(lock.getEpoch().get() + 1, new LockAction() {
+        lock.executeLockAction(lock.getEpoch() + 1, new LockAction() {
             @Override
             public void execute() {
                 counter.incrementAndGet();
@@ -249,7 +249,7 @@ public class TestZKSessionLock extends ZooKeeperClusterTestCase {
                 return "increment2";
             }
         });
-        lock.executeLockAction(lock.getEpoch().get(), new LockAction() {
+        lock.executeLockAction(lock.getEpoch(), new LockAction() {
             @Override
             public void execute() {
                 latch2.countDown();
@@ -265,7 +265,7 @@ public class TestZKSessionLock extends ZooKeeperClusterTestCase {
 
         // lock action would not be executed in same epoch and promise would be satisfied with exception
         CompletableFuture<Void> promise = new CompletableFuture<Void>();
-        lock.executeLockAction(lock.getEpoch().get() + 1, new LockAction() {
+        lock.executeLockAction(lock.getEpoch() + 1, new LockAction() {
             @Override
             public void execute() {
                 counter.incrementAndGet();

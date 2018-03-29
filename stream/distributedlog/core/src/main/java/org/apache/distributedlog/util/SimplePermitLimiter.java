@@ -18,7 +18,7 @@
 package org.apache.distributedlog.util;
 
 import com.google.common.annotations.VisibleForTesting;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import org.apache.bookkeeper.feature.Feature;
 import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.Gauge;
@@ -41,7 +41,9 @@ public class SimplePermitLimiter implements PermitLimiter {
 
     final Counter acquireFailureCounter;
     final OpStatsLogger permitsMetric;
-    final AtomicInteger permits;
+    private static final AtomicIntegerFieldUpdater<SimplePermitLimiter> permitsUpdater =
+        AtomicIntegerFieldUpdater.newUpdater(SimplePermitLimiter.class, "permits");
+    volatile int permits = 0;
     final int permitsMax;
     final boolean darkmode;
     final Feature disableWriteLimitFeature;
@@ -51,7 +53,6 @@ public class SimplePermitLimiter implements PermitLimiter {
 
     public SimplePermitLimiter(boolean darkmode, int permitsMax, StatsLogger statsLogger,
                                boolean singleton, Feature disableWriteLimitFeature) {
-        this.permits = new AtomicInteger(0);
         this.permitsMax = permitsMax;
         this.darkmode = darkmode;
         this.disableWriteLimitFeature = disableWriteLimitFeature;
@@ -66,7 +67,7 @@ public class SimplePermitLimiter implements PermitLimiter {
                 }
                 @Override
                 public Number getSample() {
-                    return permits.get();
+                    return permitsUpdater.get(SimplePermitLimiter.this);
                 }
             };
             this.permitsGaugeLabel = "permits";
@@ -82,19 +83,19 @@ public class SimplePermitLimiter implements PermitLimiter {
 
     @Override
     public boolean acquire() {
-        permitsMetric.registerSuccessfulValue(permits.get());
-        if (permits.incrementAndGet() <= permitsMax || isDarkmode()) {
+        permitsMetric.registerSuccessfulValue(permitsUpdater.get(this));
+        if (permitsUpdater.incrementAndGet(this) <= permitsMax || isDarkmode()) {
             return true;
         } else {
             acquireFailureCounter.inc();
-            permits.decrementAndGet();
+            permitsUpdater.decrementAndGet(this);
             return false;
         }
     }
 
     @Override
     public void release(int permitsToRelease) {
-        permits.addAndGet(-permitsToRelease);
+        permitsUpdater.addAndGet(this, -permitsToRelease);
     }
 
     @Override
@@ -104,7 +105,7 @@ public class SimplePermitLimiter implements PermitLimiter {
 
     @VisibleForTesting
     public int getPermits() {
-        return permits.get();
+        return permitsUpdater.get(this);
     }
 
     public void unregisterGauge() {
