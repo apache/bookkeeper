@@ -65,6 +65,7 @@ public class TestReadAheadEntryReader extends TestDistributedLogBase {
     private BookKeeperClient bkc;
     private ZooKeeperClient zkc;
 
+    @Override
     @Before
     public void setup() throws Exception {
         super.setup();
@@ -94,6 +95,7 @@ public class TestReadAheadEntryReader extends TestDistributedLogBase {
                 .build();
     }
 
+    @Override
     @After
     public void teardown() throws Exception {
         if (null != bkc) {
@@ -140,13 +142,6 @@ public class TestReadAheadEntryReader extends TestDistributedLogBase {
         final CompletableFuture<Void> promise = new CompletableFuture<Void>();
         scheduler.executeOrdered(streamName, () -> {
             FutureUtils.complete(promise, null);
-            // the following line is needed for oraclejdk9 to avoid following exception
-            // ```
-            // incompatible types: inference variable T has incompatible bounds
-            // upper bounds: java.lang.Object
-            // lower bounds: void
-            // ```
-            return (Void) null;
         });
         Utils.ioResult(promise);
     }
