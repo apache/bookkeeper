@@ -220,7 +220,7 @@ public class OrderedExecutor implements ExecutorService {
         this.maxTasksInQueue = maxTasksInQueue;
         this.warnTimeMicroSec = warnTimeMicroSec;
         name = baseName;
-        threads = new ThreadPoolExecutor[numThreads];
+        threads = new ExecutorService[numThreads];
         threadIds = new long[numThreads];
         for (int i = 0; i < numThreads; i++) {
             ThreadPoolExecutor thread = createSingleThreadExecutor(
