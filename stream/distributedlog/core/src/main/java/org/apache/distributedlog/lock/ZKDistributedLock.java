@@ -146,7 +146,7 @@ public class ZKDistributedLock implements LockListener, DistributedLock {
             if (null == throwable || !(throwable instanceof CancellationException)) {
                 return;
             }
-            lockStateExecutor.submitOrdered(lockPath, () -> asyncClose());
+            lockStateExecutor.executeOrdered(lockPath, () -> asyncClose());
         });
         final Stopwatch stopwatch = Stopwatch.createStarted();
         promise.whenComplete(new FutureEventListener<ZKDistributedLock>() {

@@ -138,7 +138,7 @@ public class TestReadAheadEntryReader extends TestDistributedLogBase {
 
     private void ensureOrderSchedulerEmpty(String streamName) throws Exception {
         final CompletableFuture<Void> promise = new CompletableFuture<Void>();
-        scheduler.submitOrdered(streamName, () -> {
+        scheduler.executeOrdered(streamName, () -> {
             FutureUtils.complete(promise, null);
             // the following line is needed for oraclejdk9 to avoid following exception
             // ```
