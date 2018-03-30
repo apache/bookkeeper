@@ -82,7 +82,7 @@ public class OrderedExecutor implements ExecutorService {
     }
 
     /**
-     * A builder class for an OrderedSafeExecutor.
+     * A builder class for an OrderedExecutor.
      */
     public static class Builder extends AbstractBuilder<OrderedExecutor> {
 
