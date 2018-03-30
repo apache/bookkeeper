@@ -63,9 +63,9 @@ import io.netty.util.HashedWheelTimer;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
 
-
-import java.util.Optional;
+import java.net.InetSocketAddress;
 import java.security.cert.Certificate;
+import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.Semaphore;
@@ -652,7 +652,15 @@ public class BookieRequestProcessor implements RequestProcessor {
             c.writeAndFlush(response.build());
         } else {
             // there is no need to execute in a different thread as this operation is light
-            SslHandler sslHandler = shFactory.newTLSHandler();
+            // Note: SSL Server Context does not support client Host name verification
+            SslHandler sslHandler;
+            if (c.remoteAddress() instanceof InetSocketAddress) {
+                InetSocketAddress peerAddr = (InetSocketAddress) c.remoteAddress();
+                sslHandler = shFactory.newTLSHandler(peerAddr.getHostName(), peerAddr.getPort());
+            } else {
+                sslHandler = shFactory.newTLSHandler();
+            }
+
             if (sslHandler == null) {
                 LOG.error("Failed to get TLS handle");
                 response.setStatus((BookkeeperProtocol.StatusCode.EIO));
@@ -676,8 +684,8 @@ public class BookieRequestProcessor implements RequestProcessor {
                                 sslHandler.engine().getSession().getCipherSuite());
 
                         // print peer credentials
-                        Certificate[] certificates = sslHandler.engine().getSession().getPeerCertificates();
                         if  (LOG.isDebugEnabled()) {
+                            Certificate[] certificates = sslHandler.engine().getSession().getPeerCertificates();
                             LOG.debug("Peer Certificate chain for {}: {} ", future.get(),
                                     TLSUtils.prettyPrintCertChain(certificates));
                         }

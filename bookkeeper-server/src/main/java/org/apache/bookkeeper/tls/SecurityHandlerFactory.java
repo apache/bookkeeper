@@ -40,4 +40,6 @@ public interface SecurityHandlerFactory {
     void init(NodeType type, AbstractConfiguration conf) throws SecurityException;
 
     SslHandler newTLSHandler();
+
+    SslHandler newTLSHandler(String peerHost, int peerPort);
 }

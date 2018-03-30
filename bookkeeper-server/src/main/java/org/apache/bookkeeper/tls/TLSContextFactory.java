@@ -40,6 +40,7 @@ import java.security.spec.InvalidKeySpecException;
 import java.util.Arrays;
 import javax.crypto.NoSuchPaddingException;
 import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLParameters;
 import javax.net.ssl.TrustManagerFactory;
 
 import org.apache.bookkeeper.conf.AbstractConfiguration;
@@ -346,6 +347,12 @@ public class TLSContextFactory implements SecurityHandlerFactory {
 
     @Override
     public SslHandler newTLSHandler() {
+
+        return newTLSHandler(null, -1);
+    }
+
+    @Override
+    public SslHandler newTLSHandler(String peerHost, int peerPort) {
         SslContext sslContext;
         try {
             sslContext = createSSLContext();
@@ -354,11 +361,12 @@ public class TLSContextFactory implements SecurityHandlerFactory {
             return null;
         }
 
-        SslHandler sslHandler = sslContext.newHandler(PooledByteBufAllocator.DEFAULT);
+        SslHandler sslHandler = sslContext.newHandler(PooledByteBufAllocator.DEFAULT, peerHost, peerPort);
 
         if (protocols != null && protocols.length != 0) {
             sslHandler.engine().setEnabledProtocols(protocols);
         }
+
         if (LOG.isDebugEnabled()) {
             LOG.debug("Enabled cipher protocols: {} ", Arrays.toString(sslHandler.engine().getEnabledProtocols()));
         }
@@ -368,6 +376,14 @@ public class TLSContextFactory implements SecurityHandlerFactory {
         }
         if (LOG.isDebugEnabled()) {
             LOG.debug("Enabled cipher suites: {} ", Arrays.toString(sslHandler.engine().getEnabledCipherSuites()));
+        }
+
+        // enable hostname identification if the peerHost is known
+        if (peerHost != null && peerPort != -1) {
+            SSLParameters sslParameters = new SSLParameters();
+            sslParameters.setEndpointIdentificationAlgorithm("HTTPS");
+            sslParameters.setNeedClientAuth(true);
+            sslHandler.engine().setSSLParameters(sslParameters);
         }
 
         return sslHandler;

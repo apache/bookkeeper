@@ -1323,7 +1323,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
     void initTLSHandshake() {
         // create TLS handler
         PerChannelBookieClient parentObj = PerChannelBookieClient.this;
-        SslHandler handler = parentObj.shFactory.newTLSHandler();
+        SslHandler handler = parentObj.shFactory.newTLSHandler(addr.getHostName(), addr.getPort());
         if (handler == null) {
             LOG.error("failed to get TLS handler");
             failTLS(BKException.Code.SecurityException);
