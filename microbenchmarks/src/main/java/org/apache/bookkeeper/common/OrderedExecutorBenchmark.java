@@ -18,7 +18,8 @@
 
 package org.apache.bookkeeper.common;
 
-import java.util.HashMap;
+import com.google.common.collect.ImmutableMap;
+
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -50,13 +51,10 @@ import org.openjdk.jmh.annotations.Warmup;
 @Measurement(iterations = 3, time = 10, timeUnit = TimeUnit.SECONDS)
 public class OrderedExecutorBenchmark {
 
-    private static Map<String, Supplier<ExecutorService>> providers = new HashMap<>();
-
-    static {
-        providers.put("JDK-ThreadPool", () -> Executors.newFixedThreadPool(1));
-        providers.put("OrderedExecutor", () -> OrderedExecutor.newBuilder().numThreads(1).build());
-        providers.put("OrderedScheduler", () -> OrderedScheduler.newSchedulerBuilder().numThreads(1).build());
-    }
+    private static Map<String, Supplier<ExecutorService>> providers = ImmutableMap.of( //
+            "JDK-ThreadPool", () -> Executors.newFixedThreadPool(1),
+            "OrderedExecutor", () -> OrderedExecutor.newBuilder().numThreads(1).build(), //
+            "OrderedScheduler", () -> OrderedScheduler.newSchedulerBuilder().numThreads(1).build());
 
     @State(Scope.Benchmark)
     public static class TestState {
