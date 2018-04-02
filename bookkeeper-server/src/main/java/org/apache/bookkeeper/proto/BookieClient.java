@@ -49,6 +49,7 @@ import org.apache.bookkeeper.auth.AuthProviderFactoryFactory;
 import org.apache.bookkeeper.auth.ClientAuthProvider;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookieInfoReader.BookieInfo;
+import org.apache.bookkeeper.common.util.OrderedExecutor;
 import org.apache.bookkeeper.common.util.SafeRunnable;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.net.BookieSocketAddress;
@@ -63,7 +64,6 @@ import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.tls.SecurityException;
 import org.apache.bookkeeper.tls.SecurityHandlerFactory;
 import org.apache.bookkeeper.util.ByteBufList;
-import org.apache.bookkeeper.util.OrderedSafeExecutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -77,7 +77,7 @@ public class BookieClient implements PerChannelBookieClientFactory {
     // This is global state that should be across all BookieClients
     AtomicLong totalBytesOutstanding = new AtomicLong();
 
-    OrderedSafeExecutor executor;
+    OrderedExecutor executor;
     ScheduledExecutorService scheduler;
     ScheduledFuture<?> timeoutFuture;
 
@@ -97,7 +97,7 @@ public class BookieClient implements PerChannelBookieClientFactory {
     private final long bookieErrorThresholdPerInterval;
 
     public BookieClient(ClientConfiguration conf, EventLoopGroup eventLoopGroup,
-                        OrderedSafeExecutor executor, ScheduledExecutorService scheduler,
+                        OrderedExecutor executor, ScheduledExecutorService scheduler,
                         StatsLogger statsLogger) throws IOException {
         this.conf = conf;
         this.eventLoopGroup = eventLoopGroup;
@@ -198,7 +198,7 @@ public class BookieClient implements PerChannelBookieClientFactory {
         client.obtain((rc, pcbc) -> {
             if (rc != BKException.Code.OK) {
                 try {
-                    executor.submitOrdered(ledgerId, safeRun(() -> {
+                    executor.executeOrdered(ledgerId, safeRun(() -> {
                         cb.writeLacComplete(rc, ledgerId, addr, ctx);
                     }));
                 } catch (RejectedExecutionException re) {
@@ -219,7 +219,7 @@ public class BookieClient implements PerChannelBookieClientFactory {
                              final WriteCallback cb,
                              final Object ctx) {
         try {
-            executor.submitOrdered(ledgerId, new SafeRunnable() {
+            executor.executeOrdered(ledgerId, new SafeRunnable() {
                 @Override
                 public void safeRun() {
                     cb.writeComplete(rc, ledgerId, entryId, addr, ctx);
@@ -266,7 +266,7 @@ public class BookieClient implements PerChannelBookieClientFactory {
                               final ReadEntryCallback cb,
                               final Object ctx) {
         try {
-            executor.submitOrdered(ledgerId, new SafeRunnable() {
+            executor.executeOrdered(ledgerId, new SafeRunnable() {
                 @Override
                 public void safeRun() {
                     cb.readEntryComplete(rc, ledgerId, entryId, entry, ctx);
@@ -362,7 +362,7 @@ public class BookieClient implements PerChannelBookieClientFactory {
         client.obtain((rc, pcbc) -> {
             if (rc != BKException.Code.OK) {
                 try {
-                    executor.submitOrdered(ledgerId, safeRun(() -> {
+                    executor.executeOrdered(ledgerId, safeRun(() -> {
                         cb.readLacComplete(rc, ledgerId, null, null, ctx);
                     }));
                 } catch (RejectedExecutionException re) {
@@ -526,7 +526,7 @@ public class BookieClient implements PerChannelBookieClientFactory {
         byte hello[] = "hello".getBytes(UTF_8);
         long ledger = Long.parseLong(args[2]);
         EventLoopGroup eventLoopGroup = new NioEventLoopGroup(1);
-        OrderedSafeExecutor executor = OrderedSafeExecutor.newBuilder()
+        OrderedExecutor executor = OrderedExecutor.newBuilder()
                 .name("BookieClientWorker")
                 .numThreads(1)
                 .build();

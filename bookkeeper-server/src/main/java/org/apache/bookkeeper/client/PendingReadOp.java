@@ -505,7 +505,7 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
     }
 
     public void submit() {
-        lh.bk.getMainWorkerPool().submitOrdered(lh.ledgerId, this);
+        lh.bk.getMainWorkerPool().executeOrdered(lh.ledgerId, this);
     }
 
     void initiate() {

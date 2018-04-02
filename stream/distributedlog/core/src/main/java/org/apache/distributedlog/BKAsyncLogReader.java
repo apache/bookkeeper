@@ -391,6 +391,7 @@ class BKAsyncLogReader implements AsyncLogReader, SafeRunnable, AsyncNotificatio
         return readInternal(1, 0, TimeUnit.MILLISECONDS).thenApply(READ_NEXT_MAP_FUNCTION);
     }
 
+    @Override
     public synchronized CompletableFuture<List<LogRecordWithDLSN>> readBulk(int numEntries) {
         return readInternal(numEntries, 0, TimeUnit.MILLISECONDS);
     }
@@ -477,7 +478,7 @@ class BKAsyncLogReader implements AsyncLogReader, SafeRunnable, AsyncNotificatio
         long prevCount = scheduleCountUpdater.getAndIncrement(this);
         if (0 == prevCount) {
             scheduleDelayStopwatch.reset().start();
-            scheduler.submitOrdered(streamName, this);
+            scheduler.executeOrdered(streamName, this);
         }
     }
 

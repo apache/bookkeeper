@@ -39,6 +39,7 @@ import org.apache.bookkeeper.auth.AuthProviderFactoryFactory;
 import org.apache.bookkeeper.auth.ClientAuthProvider;
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.client.BKException;
+import org.apache.bookkeeper.common.util.OrderedExecutor;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.net.BookieSocketAddress;
@@ -46,7 +47,6 @@ import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
 import org.apache.bookkeeper.proto.PerChannelBookieClient.ConnectionState;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
-import org.apache.bookkeeper.util.OrderedSafeExecutor;
 import org.apache.bookkeeper.util.SafeRunnable;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -79,7 +79,7 @@ public class TestPerChannelBookieClient extends BookKeeperClusterTestCase {
     @Test
     public void testConnectCloseRace() throws Exception {
         EventLoopGroup eventLoopGroup = new NioEventLoopGroup();
-        OrderedSafeExecutor executor = getOrderedSafeExecutor();
+        OrderedExecutor executor = getOrderedSafeExecutor();
 
         BookieSocketAddress addr = getBookie(0);
         for (int i = 0; i < 1000; i++) {
@@ -98,8 +98,8 @@ public class TestPerChannelBookieClient extends BookKeeperClusterTestCase {
         executor.shutdown();
     }
 
-    public OrderedSafeExecutor getOrderedSafeExecutor() {
-        return OrderedSafeExecutor.newBuilder()
+    public OrderedExecutor getOrderedSafeExecutor() {
+        return OrderedExecutor.newBuilder()
             .name("PCBC")
             .numThreads(1)
             .traceTaskExecution(true)
@@ -122,7 +122,7 @@ public class TestPerChannelBookieClient extends BookKeeperClusterTestCase {
             }
         };
         EventLoopGroup eventLoopGroup = new NioEventLoopGroup();
-        OrderedSafeExecutor executor = getOrderedSafeExecutor();
+        OrderedExecutor executor = getOrderedSafeExecutor();
 
         BookieSocketAddress addr = getBookie(0);
         for (int i = 0; i < 100; i++) {
@@ -154,7 +154,7 @@ public class TestPerChannelBookieClient extends BookKeeperClusterTestCase {
         };
         final int iterations = 100000;
         EventLoopGroup eventLoopGroup = new NioEventLoopGroup();
-        OrderedSafeExecutor executor = getOrderedSafeExecutor();
+        OrderedExecutor executor = getOrderedSafeExecutor();
         BookieSocketAddress addr = getBookie(0);
 
         final PerChannelBookieClient client = new PerChannelBookieClient(executor, eventLoopGroup,
@@ -250,7 +250,7 @@ public class TestPerChannelBookieClient extends BookKeeperClusterTestCase {
         bs.add(startBookie(conf, delayBookie));
 
         EventLoopGroup eventLoopGroup = new NioEventLoopGroup();
-        final OrderedSafeExecutor executor = getOrderedSafeExecutor();
+        final OrderedExecutor executor = getOrderedSafeExecutor();
         BookieSocketAddress addr = getBookie(0);
 
         final PerChannelBookieClient client = new PerChannelBookieClient(executor, eventLoopGroup,
@@ -268,7 +268,7 @@ public class TestPerChannelBookieClient extends BookKeeperClusterTestCase {
             @Override
             public void operationComplete(final int rc, PerChannelBookieClient pcbc) {
                 if (rc != BKException.Code.OK) {
-                    executor.submitOrdered(1, new SafeRunnable() {
+                    executor.executeOrdered(1, new SafeRunnable() {
                         @Override
                         public void safeRun() {
                             cb.readEntryComplete(rc, 1, 1, null, null);
