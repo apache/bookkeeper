@@ -21,7 +21,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.LongAdder;
 import org.apache.bookkeeper.stats.Gauge;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.distributedlog.ZooKeeperClient;
@@ -89,7 +89,7 @@ public class ZKWatcherManager implements Watcher {
     private static final String numChildWatchesGauageLabel = "num_child_watches";
 
     protected final ConcurrentMap<String, Set<Watcher>> childWatches;
-    protected final AtomicInteger allWatchesGauge;
+    protected final LongAdder allWatchesGauge;
 
     private ZKWatcherManager(String name,
                              ZooKeeperClient zkc,
@@ -100,7 +100,7 @@ public class ZKWatcherManager implements Watcher {
 
         // watches
         this.childWatches = new ConcurrentHashMap<String, Set<Watcher>>();
-        this.allWatchesGauge = new AtomicInteger(0);
+        this.allWatchesGauge = new LongAdder();
 
         // stats
         totalWatchesGauge = new Gauge<Number>() {
@@ -111,7 +111,7 @@ public class ZKWatcherManager implements Watcher {
 
             @Override
             public Number getSample() {
-                return allWatchesGauge.get();
+                return allWatchesGauge.sum();
             }
         };
         this.statsLogger.registerGauge(totalWatchesGauageLabel, totalWatchesGauge);
@@ -141,7 +141,7 @@ public class ZKWatcherManager implements Watcher {
         synchronized (watchers) {
             if (childWatches.get(path) == watchers) {
                 if (watchers.add(watcher)) {
-                    allWatchesGauge.incrementAndGet();
+                    allWatchesGauge.increment();
                 }
             } else {
                 logger.warn("Watcher set for path {} has been changed while registering child watcher {}.",
@@ -160,7 +160,7 @@ public class ZKWatcherManager implements Watcher {
         }
         synchronized (watchers) {
             if (watchers.remove(watcher)) {
-                allWatchesGauge.decrementAndGet();
+                allWatchesGauge.decrement();
             } else {
                 logger.warn("Remove a non-registered child watcher {} from path {}", watcher, path);
             }
@@ -212,7 +212,7 @@ public class ZKWatcherManager implements Watcher {
     }
 
     private void handleKeeperStateEvent(WatchedEvent event) {
-        Set<Watcher> savedAllWatches = new HashSet<Watcher>(allWatchesGauge.get());
+        Set<Watcher> savedAllWatches = new HashSet<Watcher>((int) allWatchesGauge.sum());
         for (Set<Watcher> watcherSet : childWatches.values()) {
             synchronized (watcherSet) {
                 savedAllWatches.addAll(watcherSet);

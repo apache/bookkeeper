@@ -20,24 +20,28 @@ package org.apache.bookkeeper.proto.checksum;
 
 import com.scurrilous.circe.checksum.Crc32cIntChecksum;
 import com.scurrilous.circe.crc.Sse42Crc32C;
+
 import io.netty.buffer.ByteBuf;
-import org.apache.commons.lang3.mutable.MutableBoolean;
+import io.netty.util.concurrent.FastThreadLocal;
+
+import lombok.extern.slf4j.Slf4j;
+
 import org.apache.commons.lang3.mutable.MutableInt;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
+@Slf4j
 class CRC32CDigestManager extends DigestManager {
-    static final Logger LOG = LoggerFactory.getLogger(CRC32CDigestManager.class);
 
-    private final ThreadLocal<MutableInt> currentCrc = ThreadLocal
-            .withInitial(() -> new MutableInt(0));
-    private final ThreadLocal<MutableBoolean> isNewCrc = ThreadLocal
-            .withInitial(() -> new MutableBoolean(true));
+    private static final FastThreadLocal<MutableInt> currentCrc = new FastThreadLocal<MutableInt>() {
+        @Override
+        protected MutableInt initialValue() throws Exception {
+            return new MutableInt(0);
+        }
+    };
 
     public CRC32CDigestManager(long ledgerId) {
         super(ledgerId);
         if (!Sse42Crc32C.isSupported()) {
-            LOG.error("Sse42Crc32C is not supported, will use less slower CRC32C implementation.");
+            log.error("Sse42Crc32C is not supported, will use less slower CRC32C implementation.");
         }
     }
 
@@ -48,18 +52,15 @@ class CRC32CDigestManager extends DigestManager {
 
     @Override
     void populateValueAndReset(ByteBuf buf) {
-        buf.writeInt(currentCrc.get().intValue());
-        isNewCrc.get().setTrue();
+        MutableInt current = currentCrc.get();
+        buf.writeInt(current.intValue());
+        current.setValue(0);
     }
 
     @Override
     void update(ByteBuf data) {
-        if (isNewCrc.get().isTrue()) {
-            isNewCrc.get().setFalse();
-            currentCrc.get().setValue(Crc32cIntChecksum.computeChecksum(data));
-        } else {
-            final int lastCrc = currentCrc.get().intValue();
-            currentCrc.get().setValue(Crc32cIntChecksum.resumeChecksum(lastCrc, data));
-        }
+        MutableInt current = currentCrc.get();
+        final int lastCrc = current.intValue();
+        current.setValue(Crc32cIntChecksum.resumeChecksum(lastCrc, data));
     }
 }

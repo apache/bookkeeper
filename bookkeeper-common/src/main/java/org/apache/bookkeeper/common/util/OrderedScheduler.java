@@ -330,6 +330,16 @@ public class OrderedScheduler implements ScheduledExecutorService {
     }
 
     /**
+     * schedules a one time action to execute with an ordering guarantee on the <tt>orderingKey</tt>.
+     *
+     * @param orderingKey order key to submit the task
+     * @param r task to run
+     */
+    public void executeOrdered(Object orderingKey, SafeRunnable r) {
+        chooseThread(orderingKey).execute(timedRunnable(r));
+    }
+
+    /**
      * schedules a one time action to execute with an ordering guarantee on the key.
      *
      * @param orderingKey

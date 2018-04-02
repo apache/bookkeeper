@@ -272,7 +272,7 @@ class BKLogReadHandler extends BKLogHandler implements LogSegmentNamesListener {
                         || cause instanceof LogSegmentNotFoundException
                         || cause instanceof UnexpectedException) {
                     // indicate some inconsistent behavior, abort
-                    metadataException.compareAndSet(null, (IOException) cause);
+                    METADATA_EXCEPTION_UPDATER.compareAndSet(BKLogReadHandler.this, null, (IOException) cause);
                     // notify the reader that read handler is in error state
                     notifyReaderOnError(cause);
                     FutureUtils.completeExceptionally(promise, cause);
@@ -318,7 +318,7 @@ class BKLogReadHandler extends BKLogHandler implements LogSegmentNamesListener {
                         || cause instanceof LogSegmentNotFoundException
                         || cause instanceof UnexpectedException) {
                     // indicate some inconsistent behavior, abort
-                    metadataException.compareAndSet(null, (IOException) cause);
+                    METADATA_EXCEPTION_UPDATER.compareAndSet(BKLogReadHandler.this, null, (IOException) cause);
                     // notify the reader that read handler is in error state
                     notifyReaderOnError(cause);
                     return;
