@@ -21,12 +21,13 @@
 mkdir -p $BK_JOURNALDIR $BK_LEDGERDIR
 
 sed -i "s|journalDirectory=.*|journalDirectory=$BK_JOURNALDIR|" /opt/bookkeeper/*/conf/{bk_server,bookkeeper}.conf
-# 4.7.0 includes journalDirectories instead of `journalDirectory`
-sed -i "s|journalDirectories=.*|journalDirectories=$BK_JOURNALDIR|" /opt/bookkeeper/*/conf/{bk_server,bookkeeper}.conf
 sed -i "s|ledgerDirectories=.*|ledgerDirectories=$BK_LEDGERDIR|" /opt/bookkeeper/*/conf/{bk_server,bookkeeper}.conf
 sed -i "s|zkServers=.*|zkServers=$BK_ZKCONNECTSTRING|" /opt/bookkeeper/*/conf/{bk_server,bookkeeper}.conf
+
 # 4.7.0 prefers metadataServiceUri instead of `zkServers`
-sed -i "s|zkServers=.*|zkServers=zk+hierarchical://$BK_ZKCONNECTSTRING/ledgers|" /opt/bookkeeper/*/conf/{bk_server,bookkeeper}.conf
+sed -i "s|metadataServiceUri=.*|metadataServiceUri=zk+hierarchical://$BK_ZKCONNECTSTRING/ledgers|" /opt/bookkeeper/*/conf/{bk_server,bookkeeper}.conf
+# 4.7.0 includes journalDirectories instead of `journalDirectory`
+sed -i "s|journalDirectories=.*|journalDirectories=$BK_JOURNALDIR|" /opt/bookkeeper/*/conf/{bk_server,bookkeeper}.conf
 
 # 4.3.1 & 4.3.2 shipped with a broken confs
 sed -i "s|\(# \)\?logSizeLimit=.*|logSizeLimit=1073741824|" /opt/bookkeeper/4.3.1/conf/bk_server.conf
