@@ -779,7 +779,7 @@ public class TestZKSessionLock extends ZooKeeperClusterTestCase {
         // expire session
         ZooKeeperClientUtils.expireSession(zkc, zkServers, sessionTimeoutMs);
         // submit a runnable to lock state executor to ensure any state changes happened when session expired
-        lockStateExecutor.submitOrdered(lockPath, () -> expiredLatch.countDown());
+        lockStateExecutor.executeOrdered(lockPath, () -> expiredLatch.countDown());
         expiredLatch.await();
         // no watcher was registered if never acquired lock successfully
         assertEquals(State.INIT, lock.getLockState());
@@ -1216,7 +1216,7 @@ public class TestZKSessionLock extends ZooKeeperClusterTestCase {
         } else {
             ZooKeeperClientUtils.expireSession(zkc0, zkServers, sessionTimeoutMs);
             final CountDownLatch latch = new CountDownLatch(1);
-            lockStateExecutor.submitOrdered(lockPath, () -> latch.countDown());
+            lockStateExecutor.executeOrdered(lockPath, () -> latch.countDown());
             latch.await();
             children = getLockWaiters(zkc, lockPath);
             assertEquals(0, children.size());

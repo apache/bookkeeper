@@ -22,6 +22,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.client.BKException.BKIllegalOpException;
@@ -89,10 +92,11 @@ public class BookieDecommissionTest extends BookKeeperClusterTestCase {
         bkAdmin.decommissionBookie(Bookie.getBookieAddress(killedBookieConf));
         bkAdmin.triggerAudit();
         Thread.sleep(500);
-        Iterator<Long> ledgersToRereplicate = urLedgerMgr.listLedgersToRereplicate(null);
+        Iterator<Map.Entry<Long, List<String>>> ledgersToRereplicate = urLedgerMgr.listLedgersToRereplicate(null,
+                false);
         if (ledgersToRereplicate.hasNext()) {
             while (ledgersToRereplicate.hasNext()) {
-                Long ledgerId = ledgersToRereplicate.next();
+                Long ledgerId = ledgersToRereplicate.next().getKey();
                 log.error("Ledger: {} is underreplicated which is not expected", ledgerId);
             }
             fail("There are not supposed to be any underreplicatedledgers");
@@ -102,10 +106,10 @@ public class BookieDecommissionTest extends BookKeeperClusterTestCase {
         bkAdmin.decommissionBookie(Bookie.getBookieAddress(killedBookieConf));
         bkAdmin.triggerAudit();
         Thread.sleep(500);
-        ledgersToRereplicate = urLedgerMgr.listLedgersToRereplicate(null);
+        ledgersToRereplicate = urLedgerMgr.listLedgersToRereplicate(null, false);
         if (ledgersToRereplicate.hasNext()) {
             while (ledgersToRereplicate.hasNext()) {
-                Long ledgerId = ledgersToRereplicate.next();
+                Long ledgerId = ledgersToRereplicate.next().getKey();
                 log.error("Ledger: {} is underreplicated which is not expected", ledgerId);
             }
             fail("There are not supposed to be any underreplicatedledgers");
@@ -162,10 +166,11 @@ public class BookieDecommissionTest extends BookKeeperClusterTestCase {
         bkAdmin.decommissionBookie(Bookie.getBookieAddress(killedBookieConf));
         bkAdmin.triggerAudit();
         Thread.sleep(500);
-        Iterator<Long> ledgersToRereplicate = urLedgerMgr.listLedgersToRereplicate(null);
+        Iterator<Map.Entry<Long, List<String>>> ledgersToRereplicate = urLedgerMgr.listLedgersToRereplicate(null,
+                false);
         if (ledgersToRereplicate.hasNext()) {
             while (ledgersToRereplicate.hasNext()) {
-                Long ledgerId = ledgersToRereplicate.next();
+                Long ledgerId = ledgersToRereplicate.next().getKey();
                 log.error("Ledger: {} is underreplicated which is not expected", ledgerId);
             }
             fail("There are not supposed to be any underreplicatedledgers");

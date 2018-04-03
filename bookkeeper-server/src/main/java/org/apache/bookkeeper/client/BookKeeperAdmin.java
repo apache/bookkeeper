@@ -1489,13 +1489,16 @@ public class BookKeeperAdmin implements AutoCloseable {
 
         // for double-checking, check if any ledgers are listed as underreplicated because of this bookie
         Predicate<List<String>> predicate = replicasList -> replicasList.contains(bookieAddress.toString());
-        Iterator<Long> urLedgerIterator = underreplicationManager.listLedgersToRereplicate(predicate);
+        Iterator<Map.Entry<Long, List<String>>> urLedgerIterator = underreplicationManager
+                .listLedgersToRereplicate(predicate, false);
         if (urLedgerIterator.hasNext()) {
             //if there are any then wait and make sure those ledgers are replicated properly
             LOG.info("Still in some underreplicated ledgers metadata, this bookie is part of its ensemble. "
                     + "Have to make sure that those ledger fragments are rereplicated");
             List<Long> urLedgers = new ArrayList<>();
-            urLedgerIterator.forEachRemaining(urLedgers::add);
+            urLedgerIterator.forEachRemaining((urLedger) -> {
+                urLedgers.add(urLedger.getKey());
+            });
             waitForLedgersToBeReplicated(urLedgers, bookieAddress, bkc.ledgerManager);
         }
     }

@@ -19,6 +19,7 @@ package org.apache.bookkeeper.meta;
 
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.function.Predicate;
 
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
@@ -53,9 +54,11 @@ public interface LedgerUnderreplicationManager extends AutoCloseable {
      * otherwise it will read the content of the ZNode to decide on filtering.
      *
      * @param predicate filter to use while listing under replicated ledgers. 'null' if filtering is not required
+     * @param includeReplicaList whether to include missing replicalist in the output
      * @return an iterator which returns ledger ids
      */
-    Iterator<Long> listLedgersToRereplicate(Predicate<List<String>> predicate);
+    Iterator<Entry<Long, List<String>>> listLedgersToRereplicate(Predicate<List<String>> predicate,
+            boolean includeReplicaList);
 
     /**
      * Acquire a underreplicated ledger for rereplication. The ledger

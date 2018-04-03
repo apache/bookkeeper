@@ -691,7 +691,7 @@ public class BKLogSegmentEntryReader implements SafeRunnable, LogSegmentEntryRea
 
         long prevCount = scheduleCountUpdater.getAndIncrement(this);
         if (0 == prevCount) {
-            scheduler.submitOrdered(getSegment().getLogSegmentId(), this);
+            scheduler.executeOrdered(getSegment().getLogSegmentId(), this);
         }
     }
 

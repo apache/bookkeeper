@@ -168,6 +168,7 @@ class ZKSessionLock implements SessionLock {
     }
 
     static final Comparator<String> MEMBER_COMPARATOR = new Comparator<String>() {
+        @Override
         public int compare(String o1, String o2) {
             int l1 = parseMemberID(o1);
             int l2 = parseMemberID(o2);
@@ -374,6 +375,7 @@ class ZKSessionLock implements SessionLock {
         return lockId;
     }
 
+    @Override
     public boolean isLockExpired() {
         return lockState.isExpiredOrClosing();
     }
@@ -392,7 +394,7 @@ class ZKSessionLock implements SessionLock {
      *          function to execute a lock action
      */
     protected void executeLockAction(final int lockEpoch, final LockAction func) {
-        lockStateExecutor.submitOrdered(lockPath, new SafeRunnable() {
+        lockStateExecutor.executeOrdered(lockPath, new SafeRunnable() {
             @Override
             public void safeRun() {
                 if (getEpoch() == lockEpoch) {
@@ -431,7 +433,7 @@ class ZKSessionLock implements SessionLock {
      */
     protected <T> void executeLockAction(final int lockEpoch,
                                          final LockAction func, final CompletableFuture<T> promise) {
-        lockStateExecutor.submitOrdered(lockPath, new SafeRunnable() {
+        lockStateExecutor.executeOrdered(lockPath, new SafeRunnable() {
             @Override
             public void safeRun() {
                 int currentEpoch = getEpoch();
@@ -554,7 +556,7 @@ class ZKSessionLock implements SessionLock {
                 @Override
                 public void processResult(final int rc, String path, Object ctx,
                                           final List<String> children, Stat stat) {
-                    lockStateExecutor.submitOrdered(lockPath, new SafeRunnable() {
+                    lockStateExecutor.executeOrdered(lockPath, new SafeRunnable() {
                         @Override
                         public void safeRun() {
                             if (!lockState.inState(State.INIT)) {
@@ -648,7 +650,7 @@ class ZKSessionLock implements SessionLock {
     private boolean checkOrClaimLockOwner(final Pair<String, Long> currentOwner,
                                           final CompletableFuture<String> result) {
         if (lockId.compareTo(currentOwner) != 0 && !lockContext.hasLockId(currentOwner)) {
-            lockStateExecutor.submitOrdered(lockPath, new SafeRunnable() {
+            lockStateExecutor.executeOrdered(lockPath, new SafeRunnable() {
                 @Override
                 public void safeRun() {
                     result.complete(currentOwner.getLeft());
@@ -878,7 +880,7 @@ class ZKSessionLock implements SessionLock {
         // Use lock executor here rather than lock action, because we want this opertaion to be applied
         // whether the epoch has changed or not. The member node is EPHEMERAL_SEQUENTIAL so there's no
         // risk of an ABA problem where we delete and recreate a node and then delete it again here.
-        lockStateExecutor.submitOrdered(lockPath, new SafeRunnable() {
+        lockStateExecutor.executeOrdered(lockPath, new SafeRunnable() {
             @Override
             public void safeRun() {
                 acquireFuture.completeExceptionally(cause);
@@ -980,7 +982,7 @@ class ZKSessionLock implements SessionLock {
         zk.delete(currentNode, -1, new AsyncCallback.VoidCallback() {
             @Override
             public void processResult(final int rc, final String path, Object ctx) {
-                lockStateExecutor.submitOrdered(lockPath, new SafeRunnable() {
+                lockStateExecutor.executeOrdered(lockPath, new SafeRunnable() {
                     @Override
                     public void safeRun() {
                         if (KeeperException.Code.OK.intValue() == rc) {
