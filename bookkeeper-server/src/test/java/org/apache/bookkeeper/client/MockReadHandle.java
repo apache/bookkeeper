@@ -35,7 +35,7 @@ import org.apache.bookkeeper.client.impl.LedgerEntryImpl;
  * Mock implementation of ReadHandle.
  */
 @Slf4j
-public class MockReadHandle implements ReadHandle {
+class MockReadHandle implements ReadHandle {
     private final MockBookKeeper bk;
     private final long ledgerId;
     private final LedgerMetadata metadata;
@@ -52,7 +52,7 @@ public class MockReadHandle implements ReadHandle {
     public CompletableFuture<LedgerEntries> readAsync(long firstEntry, long lastEntry) {
         CompletableFuture<LedgerEntries> promise = new CompletableFuture<>();
         if (bk.isStopped()) {
-            promise.completeExceptionally(BKException.create(-1));
+            promise.completeExceptionally(new BKException.BKClientClosedException());
             return promise;
         }
 
@@ -61,7 +61,7 @@ public class MockReadHandle implements ReadHandle {
                     promise.completeExceptionally(BKException.create(bk.failReturnCode));
                     return;
                 } else if (bk.isStopped()) {
-                    promise.completeExceptionally(BKException.create(-1));
+                    promise.completeExceptionally(new BKException.BKClientClosedException());
                     return;
                 }
 
@@ -85,7 +85,7 @@ public class MockReadHandle implements ReadHandle {
 
     @Override
     public CompletableFuture<Long> readLastAddConfirmedAsync() {
-        return CompletableFuture.completedFuture((long) (entries.size() - 1));
+        return CompletableFuture.completedFuture(getLastAddConfirmed());
     }
 
     @Override
@@ -95,7 +95,7 @@ public class MockReadHandle implements ReadHandle {
 
     @Override
     public long getLastAddConfirmed() {
-        return entries.size() - 1;
+        return entries.get(entries.size() - 1).getEntryId();
     }
 
     @Override
@@ -118,7 +118,6 @@ public class MockReadHandle implements ReadHandle {
                                                                                       long timeOutInMillis,
                                                                                       boolean parallel) {
         CompletableFuture<LastConfirmedAndEntry> promise = new CompletableFuture<>();
-        // it doesn't make sense to implement long poll until WriteHandle is also implemented
         promise.completeExceptionally(new UnsupportedOperationException("Long poll not implemented"));
         return promise;
     }
