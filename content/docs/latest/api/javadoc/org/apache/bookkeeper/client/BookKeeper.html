@@ -239,7 +239,7 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/BookKeeper.html
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookKeeper.html#LOG">LOG</a></span></code>&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<td class="colFirst"><code>(package private) org.apache.bookkeeper.util.OrderedSafeExecutor</code></td>
+<td class="colFirst"><code>(package private) org.apache.bookkeeper.common.util.OrderedExecutor</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookKeeper.html#mainWorkerPool">mainWorkerPool</a></span></code>&nbsp;</td>
 </tr>
 <tr class="altColor">
@@ -275,7 +275,7 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/BookKeeper.html
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookKeeper.html#requestTimer">requestTimer</a></span></code>&nbsp;</td>
 </tr>
 <tr class="altColor">
-<td class="colFirst"><code>(package private) <a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/ScheduledExecutorService.html?is-external=true" title="class or interface in java.util.concurrent">ScheduledExecutorService</a></code></td>
+<td class="colFirst"><code>(package private) org.apache.bookkeeper.common.util.OrderedScheduler</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookKeeper.html#scheduler">scheduler</a></span></code>&nbsp;</td>
 </tr>
 </table>
@@ -595,7 +595,7 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/BookKeeper.html
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookKeeper.html#getLedgerManager--">getLedgerManager</a></span>()</code>&nbsp;</td>
 </tr>
 <tr id="i34" class="altColor">
-<td class="colFirst"><code>(package private) org.apache.bookkeeper.util.OrderedSafeExecutor</code></td>
+<td class="colFirst"><code>(package private) org.apache.bookkeeper.common.util.OrderedExecutor</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookKeeper.html#getMainWorkerPool--">getMainWorkerPool</a></span>()</code>&nbsp;</td>
 </tr>
 <tr id="i35" class="rowColor">
@@ -655,7 +655,7 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/BookKeeper.html
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookKeeper.html#getReturnRc-int-">getReturnRc</a></span>(int&nbsp;rc)</code>&nbsp;</td>
 </tr>
 <tr id="i49" class="rowColor">
-<td class="colFirst"><code>(package private) <a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/ScheduledExecutorService.html?is-external=true" title="class or interface in java.util.concurrent">ScheduledExecutorService</a></code></td>
+<td class="colFirst"><code>(package private) org.apache.bookkeeper.common.util.OrderedScheduler</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookKeeper.html#getScheduler--">getScheduler</a></span>()</code>&nbsp;</td>
 </tr>
 <tr id="i50" class="altColor">
@@ -813,7 +813,7 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/BookKeeper.html
 <ul class="blockList">
 <li class="blockList">
 <h4>mainWorkerPool</h4>
-<pre>final&nbsp;org.apache.bookkeeper.util.OrderedSafeExecutor mainWorkerPool</pre>
+<pre>final&nbsp;org.apache.bookkeeper.common.util.OrderedExecutor mainWorkerPool</pre>
 </li>
 </ul>
 <a name="scheduler">
@@ -822,7 +822,7 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/BookKeeper.html
 <ul class="blockList">
 <li class="blockList">
 <h4>scheduler</h4>
-<pre>final&nbsp;<a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/ScheduledExecutorService.html?is-external=true" title="class or interface in java.util.concurrent">ScheduledExecutorService</a> scheduler</pre>
+<pre>final&nbsp;org.apache.bookkeeper.common.util.OrderedScheduler scheduler</pre>
 </li>
 </ul>
 <a name="requestTimer">
@@ -1286,7 +1286,7 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/BookKeeper.html
 <ul class="blockList">
 <li class="blockList">
 <h4>getMainWorkerPool</h4>
-<pre>org.apache.bookkeeper.util.OrderedSafeExecutor&nbsp;getMainWorkerPool()</pre>
+<pre>org.apache.bookkeeper.common.util.OrderedExecutor&nbsp;getMainWorkerPool()</pre>
 </li>
 </ul>
 <a name="getScheduler--">
@@ -1295,7 +1295,7 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/BookKeeper.html
 <ul class="blockList">
 <li class="blockList">
 <h4>getScheduler</h4>
-<pre><a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/ScheduledExecutorService.html?is-external=true" title="class or interface in java.util.concurrent">ScheduledExecutorService</a>&nbsp;getScheduler()</pre>
+<pre>org.apache.bookkeeper.common.util.OrderedScheduler&nbsp;getScheduler()</pre>
 </li>
 </ul>
 <a name="getPlacementPolicy--">
