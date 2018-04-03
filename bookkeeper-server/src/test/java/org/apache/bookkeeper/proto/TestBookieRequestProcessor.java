@@ -21,17 +21,56 @@
 package org.apache.bookkeeper.proto;
 
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
 
 import com.google.protobuf.ByteString;
+import org.apache.bookkeeper.bookie.Bookie;
+import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.AddRequest;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.ReadRequest;
+import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.junit.Test;
 
 /**
  * Test utility methods from bookie request processor.
  */
 public class TestBookieRequestProcessor {
+
+    @Test
+    public void testConstructLongPollThreads() throws Exception {
+        // long poll threads == read threads
+        ServerConfiguration conf = new ServerConfiguration();
+        try (BookieRequestProcessor processor = new BookieRequestProcessor(
+            conf, mock(Bookie.class), NullStatsLogger.INSTANCE, null)) {
+            assertSame(processor.getReadThreadPool(), processor.getLongPollThreadPool());
+        }
+
+        // force create long poll threads if there is no read threads
+        conf = new ServerConfiguration();
+        conf.setNumReadWorkerThreads(0);
+        try (BookieRequestProcessor processor = new BookieRequestProcessor(
+            conf, mock(Bookie.class), NullStatsLogger.INSTANCE, null)) {
+            assertNull(processor.getReadThreadPool());
+            assertNotNull(processor.getLongPollThreadPool());
+        }
+
+        // long poll threads and no read threads
+        conf = new ServerConfiguration();
+        conf.setNumReadWorkerThreads(2);
+        conf.setNumLongPollWorkerThreads(2);
+        try (BookieRequestProcessor processor = new BookieRequestProcessor(
+            conf, mock(Bookie.class), NullStatsLogger.INSTANCE, null)) {
+            assertNotNull(processor.getReadThreadPool());
+            assertNotNull(processor.getLongPollThreadPool());
+            assertNotSame(processor.getReadThreadPool(), processor.getLongPollThreadPool());
+        }
+    }
+
     @Test
     public void testFlagsV3() {
         ReadRequest read = ReadRequest.newBuilder()

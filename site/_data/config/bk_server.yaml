@@ -55,7 +55,7 @@ groups:
     default: 8
   - param: numLongPollWorkerThreads
     description: The number of threads that handle long poll requests. If zero, long poll requests are handled by [Netty threads](//netty.io/wiki/thread-model.html) directly.
-    default: 10
+    default: 0
   - param: numJournalCallbackThreads
     description: The number of threads that handle journal callbacks. If zero, journal callbacks are executed directly on force write threads.
     default: 1

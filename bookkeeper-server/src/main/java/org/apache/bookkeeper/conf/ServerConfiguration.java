@@ -1288,10 +1288,15 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
 
     /**
      * Get the number of threads that should handle long poll requests.
-     * @return
+     *
+     * <p>If the number of threads is zero or negative, bookie will fallback to
+     * use read threads. If there is no read threads used, it will create a thread pool
+     * with {@link Runtime#availableProcessors()} threads.
+     *
+     * @return the number of threads that should handle long poll requests, default value is 0.
      */
     public int getNumLongPollWorkerThreads() {
-        return getInt(NUM_LONG_POLL_WORKER_THREADS, 10);
+        return getInt(NUM_LONG_POLL_WORKER_THREADS, 0);
     }
 
     /**
