@@ -81,6 +81,7 @@
           <descriptors>
             <descriptor>../src/assemble/bin-server.xml</descriptor>
           </descriptors>
+          <tarLongFileMode>posix</tarLongFileMode>
         </configuration>
         <executions>
           <execution>

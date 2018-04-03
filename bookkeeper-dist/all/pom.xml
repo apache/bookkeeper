@@ -103,6 +103,7 @@
           <descriptors>
             <descriptor>../src/assemble/bin-all.xml</descriptor>
           </descriptors>
+          <tarLongFileMode>posix</tarLongFileMode>
         </configuration>
         <executions>
           <execution>
