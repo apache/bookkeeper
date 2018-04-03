@@ -53,6 +53,7 @@
           <descriptors>
             <descriptor>src/assemble/src.xml</descriptor>
           </descriptors>
+          <tarLongFileMode>posix</tarLongFileMode>
         </configuration>
         <executions>
           <execution>
