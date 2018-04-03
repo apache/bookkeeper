@@ -85,6 +85,7 @@ import org.apache.bookkeeper.auth.ClientAuthProvider;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeperClientStats;
 import org.apache.bookkeeper.client.BookieInfoReader.BookieInfo;
+import org.apache.bookkeeper.common.util.OrderedExecutor;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
@@ -120,7 +121,6 @@ import org.apache.bookkeeper.tls.SecurityHandlerFactory;
 import org.apache.bookkeeper.tls.SecurityHandlerFactory.NodeType;
 import org.apache.bookkeeper.util.ByteBufList;
 import org.apache.bookkeeper.util.MathUtils;
-import org.apache.bookkeeper.util.OrderedSafeExecutor;
 import org.apache.bookkeeper.util.SafeRunnable;
 import org.apache.bookkeeper.util.collections.ConcurrentOpenHashMap;
 import org.slf4j.Logger;
@@ -149,7 +149,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
 
     final BookieSocketAddress addr;
     final EventLoopGroup eventLoopGroup;
-    final OrderedSafeExecutor executor;
+    final OrderedExecutor executor;
     final long addEntryTimeoutNanos;
     final long readEntryTimeoutNanos;
     final int maxFrameSize;
@@ -213,13 +213,13 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
     private final ExtensionRegistry extRegistry;
     private final SecurityHandlerFactory shFactory;
 
-    public PerChannelBookieClient(OrderedSafeExecutor executor, EventLoopGroup eventLoopGroup,
+    public PerChannelBookieClient(OrderedExecutor executor, EventLoopGroup eventLoopGroup,
                                   BookieSocketAddress addr) throws SecurityException {
         this(new ClientConfiguration(), executor, eventLoopGroup, addr, NullStatsLogger.INSTANCE, null, null,
                 null);
     }
 
-    public PerChannelBookieClient(OrderedSafeExecutor executor, EventLoopGroup eventLoopGroup,
+    public PerChannelBookieClient(OrderedExecutor executor, EventLoopGroup eventLoopGroup,
                                   BookieSocketAddress addr,
                                   ClientAuthProvider.Factory authProviderFactory,
                                   ExtensionRegistry extRegistry) throws SecurityException {
@@ -227,7 +227,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                 authProviderFactory, extRegistry, null);
     }
 
-    public PerChannelBookieClient(ClientConfiguration conf, OrderedSafeExecutor executor,
+    public PerChannelBookieClient(ClientConfiguration conf, OrderedExecutor executor,
                                   EventLoopGroup eventLoopGroup, BookieSocketAddress addr,
                                   StatsLogger parentStatsLogger, ClientAuthProvider.Factory authProviderFactory,
                                   ExtensionRegistry extRegistry,
@@ -236,7 +236,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                 authProviderFactory, extRegistry, pcbcPool, null);
     }
 
-    public PerChannelBookieClient(ClientConfiguration conf, OrderedSafeExecutor executor,
+    public PerChannelBookieClient(ClientConfiguration conf, OrderedExecutor executor,
                                   EventLoopGroup eventLoopGroup, BookieSocketAddress addr,
                                   StatsLogger parentStatsLogger, ClientAuthProvider.Factory authProviderFactory,
                                   ExtensionRegistry extRegistry,
@@ -1111,7 +1111,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
             response.release();
         } else {
             long orderingKey = completionValue.ledgerId;
-            executor.submitOrdered(orderingKey,
+            executor.executeOrdered(orderingKey,
                     ReadV2ResponseCallback.create(completionValue, response.ledgerId, response.entryId,
                                                   status, response));
         }
@@ -1226,7 +1226,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
             }
         } else {
             long orderingKey = completionValue.ledgerId;
-            executor.submitOrdered(orderingKey, new SafeRunnable() {
+            executor.executeOrdered(orderingKey, new SafeRunnable() {
                 @Override
                 public void safeRun() {
                     completionValue.handleV3Response(response);
@@ -1400,7 +1400,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         }
 
         protected void errorOutAndRunCallback(final Runnable callback) {
-            executor.submitOrdered(ledgerId,
+            executor.executeOrdered(ledgerId,
                     new SafeRunnable() {
                         @Override
                         public void safeRun() {

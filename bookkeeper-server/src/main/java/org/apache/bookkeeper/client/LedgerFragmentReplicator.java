@@ -46,7 +46,7 @@ import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.ByteBufList;
-import org.apache.bookkeeper.util.OrderedSafeExecutor.OrderedSafeGenericCallback;
+import org.apache.bookkeeper.util.OrderedGenericCallback;
 import org.apache.zookeeper.AsyncCallback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -416,7 +416,7 @@ public class LedgerFragmentReplicator {
                 // try again, the previous success (with which this has
                 // conflicted) will have updated the stat other operations
                 // such as (addEnsemble) would update it too.
-                lh.rereadMetadata(new OrderedSafeGenericCallback<LedgerMetadata>(
+                lh.rereadMetadata(new OrderedGenericCallback<LedgerMetadata>(
                                 lh.bk.mainWorkerPool, lh.getId()) {
                             @Override
                             public void safeOperationComplete(int rc,

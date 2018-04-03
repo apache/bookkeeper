@@ -394,7 +394,7 @@ class ReadAheadEntryReader implements
             }
         }
         try {
-            scheduler.submitOrdered(streamName, runnable);
+            scheduler.executeOrdered(streamName, runnable);
         } catch (RejectedExecutionException ree) {
             logger.debug("Failed to submit and execute an operation for readhead entry reader of {}",
                     streamName, ree);
@@ -449,7 +449,7 @@ class ReadAheadEntryReader implements
         // use runnable here instead of CloseableRunnable,
         // because we need this to be executed
         try {
-            scheduler.submitOrdered(streamName, () -> unsafeAsyncClose(closeFuture));
+            scheduler.executeOrdered(streamName, () -> unsafeAsyncClose(closeFuture));
         } catch (RejectedExecutionException ree) {
             logger.warn("Scheduler has been shutdown before closing the readahead entry reader for stream {}",
                     streamName, ree);

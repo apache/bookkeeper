@@ -212,7 +212,7 @@ public class ZKLogSegmentMetadataStore implements LogSegmentMetadataStore, Watch
             if (closed) {
                 return;
             }
-            scheduler.submitOrdered(key, r);
+            scheduler.executeOrdered(key, r);
         } finally {
             closeLock.readLock().unlock();
         }

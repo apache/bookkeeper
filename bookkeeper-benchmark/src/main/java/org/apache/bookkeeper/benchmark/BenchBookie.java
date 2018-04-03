@@ -31,6 +31,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.LedgerHandle;
+import org.apache.bookkeeper.common.util.OrderedExecutor;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieClient;
@@ -38,7 +39,6 @@ import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.util.ByteBufList;
-import org.apache.bookkeeper.util.OrderedSafeExecutor;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.HelpFormatter;
@@ -165,7 +165,7 @@ public class BenchBookie {
             eventLoop = new NioEventLoopGroup();
         }
 
-        OrderedSafeExecutor executor = OrderedSafeExecutor.newBuilder()
+        OrderedExecutor executor = OrderedExecutor.newBuilder()
                 .name("BenchBookieClientScheduler")
                 .numThreads(1)
                 .build();
