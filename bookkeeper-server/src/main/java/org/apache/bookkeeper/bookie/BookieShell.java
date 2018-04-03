@@ -87,6 +87,7 @@ import org.apache.bookkeeper.client.LedgerEntry;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.LedgerMetadata;
 import org.apache.bookkeeper.client.UpdateLedgerOp;
+import org.apache.bookkeeper.common.util.OrderedExecutor;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.discover.RegistrationManager;
@@ -111,7 +112,6 @@ import org.apache.bookkeeper.util.EntryFormatter;
 import org.apache.bookkeeper.util.IOUtils;
 import org.apache.bookkeeper.util.LedgerIdFormatter;
 import org.apache.bookkeeper.util.MathUtils;
-import org.apache.bookkeeper.util.OrderedSafeExecutor;
 import org.apache.bookkeeper.util.Tool;
 import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.versioning.Versioned;
@@ -813,7 +813,7 @@ public class BookieShell implements Tool {
                 } else {
                     // Use BookieClient to target a specific bookie
                     EventLoopGroup eventLoopGroup = new NioEventLoopGroup();
-                    OrderedSafeExecutor executor = OrderedSafeExecutor.newBuilder()
+                    OrderedExecutor executor = OrderedExecutor.newBuilder()
                         .numThreads(1)
                         .name("BookieClientScheduler")
                         .build();
@@ -1021,6 +1021,7 @@ public class BookieShell implements Tool {
             return ledgerId;
         }
 
+        @Override
         public void operationComplete(int rc, LedgerMetadata result) {
             if (rc != 0) {
                 setException(BKException.create(rc));
@@ -2488,6 +2489,7 @@ public class BookieShell implements Tool {
             return "Convert bookie indexes from InterleavedStorage to DbLedgerStorage format";
         }
 
+        @Override
         String getUsage() {
             return CMD_CONVERT_TO_DB_STORAGE;
         }
@@ -2583,6 +2585,7 @@ public class BookieShell implements Tool {
             return "Convert bookie indexes from DbLedgerStorage to InterleavedStorage format";
         }
 
+        @Override
         String getUsage() {
             return CMD_CONVERT_TO_INTERLEAVED_STORAGE;
         }
@@ -2696,6 +2699,7 @@ public class BookieShell implements Tool {
             return "Rebuild DbLedgerStorage locations index by scanning the entry logs";
         }
 
+        @Override
         String getUsage() {
             return CMD_REBUILD_DB_LEDGER_LOCATIONS_INDEX;
         }
@@ -3113,6 +3117,7 @@ public class BookieShell implements Tool {
         };
 
         return new Iterable<SortedMap<Long, Long>>() {
+            @Override
             public Iterator<SortedMap<Long, Long>> iterator() {
                 return iterator;
             }

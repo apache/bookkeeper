@@ -33,7 +33,7 @@ public class Crc32cIntChecksum {
     private static final Logger log = LoggerFactory.getLogger(Crc32cIntChecksum.class);
 
     @VisibleForTesting
-    static IncrementalIntHash CRC32C_HASH;
+    final static IncrementalIntHash CRC32C_HASH;
 
     static {
         if (Sse42Crc32C.isSupported()) {
@@ -41,6 +41,7 @@ public class Crc32cIntChecksum {
             log.info("SSE4.2 CRC32C provider initialized");
         } else {
             CRC32C_HASH = new StandardCrcProvider().getIncrementalInt(CRC32C);
+            log.warn("Failed to load Circe JNI library. Falling back to Java based CRC32c provider");
         }
     }
 

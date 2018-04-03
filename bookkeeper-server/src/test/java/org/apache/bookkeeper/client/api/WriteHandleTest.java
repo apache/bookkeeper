@@ -34,7 +34,6 @@ import io.netty.buffer.ByteBufUtil;
 import java.nio.ByteBuffer;
 import java.util.concurrent.LinkedBlockingQueue;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
@@ -51,12 +50,12 @@ public class WriteHandleTest {
     private final WriteHandle handle = mock(WriteHandle.class);
     private final LinkedBlockingQueue<ByteBuf> entryQueue;
 
-    public WriteHandleTest() {
+    public WriteHandleTest() throws Exception {
         this.entryQueue = new LinkedBlockingQueue<>();
         doAnswer(invocationOnMock -> {
             ByteBuf buf = invocationOnMock.getArgument(0);
             entryQueue.add(buf);
-            return FutureUtils.value(-1L);
+            return -1L;
         }).when(handle).append(any(ByteBuf.class));
         when(handle.append(any(byte[].class))).thenCallRealMethod();
         when(handle.append(any(byte[].class), anyInt(), anyInt())).thenCallRealMethod();

@@ -21,7 +21,9 @@ package org.apache.bookkeeper.proto;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.google.common.collect.Lists;
 import com.google.protobuf.ByteString;
@@ -71,16 +73,19 @@ public class BookieProtoEncodingTest {
             .build();
 
         List<Object> outList = Lists.newArrayList();
+        ChannelHandlerContext ctx = mock(ChannelHandlerContext.class);
+        when(ctx.fireChannelRead(any())).thenAnswer((iom) -> {
+                outList.add(iom.getArgument(0));
+                return null;
+        });
 
         ResponseEnDeCoderPreV3 v2Encoder = new ResponseEnDeCoderPreV3(null);
         ResponseEnDecoderV3 v3Encoder = new ResponseEnDecoderV3(null);
 
         ResponseDecoder v3Decoder = new ResponseDecoder(null, false);
         try {
-            v3Decoder.decode(
-                mock(ChannelHandlerContext.class),
-                v2Encoder.encode(v2Resp, UnpooledByteBufAllocator.DEFAULT),
-                outList
+            v3Decoder.channelRead(ctx,
+                v2Encoder.encode(v2Resp, UnpooledByteBufAllocator.DEFAULT)
             );
             fail("V3 response decoder should fail on decoding v2 response");
         } catch (InvalidProtocolBufferException e) {
@@ -88,10 +93,9 @@ public class BookieProtoEncodingTest {
         }
         assertEquals(0, outList.size());
 
-        v3Decoder.decode(
-            mock(ChannelHandlerContext.class),
-            v3Encoder.encode(v3Resp, UnpooledByteBufAllocator.DEFAULT),
-            outList);
+        v3Decoder.channelRead(
+            ctx,
+            v3Encoder.encode(v3Resp, UnpooledByteBufAllocator.DEFAULT));
         assertEquals(1, outList.size());
     }
 
