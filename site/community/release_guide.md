@@ -338,12 +338,9 @@ Copy the source release to the dev repository of `dist.apache.org`.
 4. Sign the BookKeeper source and binary distribution.
 
         cd bookkeeper/${RC_DIR}
-        md5sum bookkeeper-${VERSION}-src.tar.gz > bookkeeper-${VERSION}-src.tar.gz.md5
-        shasum bookkeeper-${VERSION}-src.tar.gz > bookkeeper-${VERSION}-src.tar.gz.sha1
-        md5sum bookkeeper-server-${VERSION}-bin.tar.gz > bookkeeper-server-${VERSION}-bin.tar.gz.md5
-        shasum bookkeeper-server-${VERSION}-bin.tar.gz > bookkeeper-server-${VERSION}-bin.tar.gz.sha1
-        md5sum bookkeeper-all-${VERSION}-bin.tar.gz > bookkeeper-all-${VERSION}-bin.tar.gz.md5
-        shasum bookkeeper-all-${VERSION}-bin.tar.gz > bookkeeper-all-${VERSION}-bin.tar.gz.sha1
+        sha1sum bookkeeper-${VERSION}-src.tar.gz > bookkeeper-${VERSION}-src.tar.gz.sha1
+        sha1sum bookkeeper-server-${VERSION}-bin.tar.gz > bookkeeper-server-${VERSION}-bin.tar.gz.sha1
+        sha1sum bookkeeper-all-${VERSION}-bin.tar.gz > bookkeeper-all-${VERSION}-bin.tar.gz.sha1
 
 5. Go back to BookKeeper directory, add and commit all the files.
 
@@ -379,7 +376,7 @@ Start the review-and-vote thread on the dev@ mailing list. Here’s an email tem
     * Release notes [1]
     * The official Apache source and binary distributions to be deployed to dist.apache.org [2]
     * All artifacts to be deployed to the Maven Central Repository [3]
-    * Source code tag "release-4.5.0" [4]
+    * Source code tag "release-4.5.0" [4] with git sha XXXXXXXXXXXXXXXXXXXX
 
     BookKeeper's KEYS file contains PGP keys we used to sign this release:
     https://dist.apache.org/repos/dist/release/bookkeeper/KEYS
@@ -387,9 +384,9 @@ Start the review-and-vote thread on the dev@ mailing list. Here’s an email tem
     Please download these packages and review this release candidate:
 
     - Review release notes
-    - Download the source package (verify md5, shasum, and asc) and follow the
+    - Download the source package (verify shasum, and asc) and follow the
     instructions to build and run the bookkeeper service.
-    - Download the binary package (verify md5, shasum, and asc) and follow the
+    - Download the binary package (verify shasum, and asc) and follow the
     instructions to run the bookkeeper service.
     - Review maven repo, release tag, licenses, and any other things you think
     it is important to a release.

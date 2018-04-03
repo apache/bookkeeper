@@ -238,7 +238,7 @@ public class LedgerHandleAdv extends LedgerHandle implements WriteAdvHandle {
         }
 
         try {
-            bk.getMainWorkerPool().submitOrdered(ledgerId, op);
+            bk.getMainWorkerPool().executeOrdered(ledgerId, op);
         } catch (RejectedExecutionException e) {
             op.cb.addCompleteWithLatency(bk.getReturnRc(BKException.Code.InterruptedException),
                               LedgerHandleAdv.this, op.getEntryId(), 0, op.ctx);
@@ -246,7 +246,7 @@ public class LedgerHandleAdv extends LedgerHandle implements WriteAdvHandle {
     }
 
     @Override
-    public CompletableFuture<Long> write(long entryId, ByteBuf data) {
+    public CompletableFuture<Long> writeAsync(long entryId, ByteBuf data) {
         SyncAddCallback callback = new SyncAddCallback();
         asyncAddEntry(entryId, data, callback, data);
         return callback;

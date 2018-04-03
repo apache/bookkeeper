@@ -24,15 +24,15 @@ If you want to download older, archived releases, they are available in the [Apa
 
 Release | Link | Crypto files
 :-------|:-----|:------------
-Source | [bookkeeper-{{ site.latest_release }}-src.tar.gz]({{ latest_source_url }}) | [asc]({{ latest_source_dist_url }}.asc), [md5]({{ latest_source_dist_url }}.md5), [sha1]({{ latest_source_dist_url }}.sha1)
-Binary | [bookkeeper-server-{{ site.latest_release }}-bin.tar.gz]({{ latest_bin_url }}) | [asc]({{ latest_bin_dist_url }}.asc), [md5]({{ latest_bin_dist_url }}.md5), [sha1]({{ latest_bin_dist_url }}.sha1)
+Source | [bookkeeper-{{ site.latest_release }}-src.tar.gz]({{ latest_source_url }}) | [asc]({{ latest_source_dist_url }}.asc), [sha1]({{ latest_source_dist_url }}.sha1)
+Binary | [bookkeeper-server-{{ site.latest_release }}-bin.tar.gz]({{ latest_bin_url }}) | [asc]({{ latest_bin_dist_url }}.asc), [sha1]({{ latest_bin_dist_url }}.sha1)
 
 ## Latest stable release (version {{ site.stable_release }})
 
 Release | Link | Crypto files
 :-------|:-----|:------------
-Source | [bookkeeper-{{ site.stable_release }}-src.tar.gz]({{ stable_source_url }}) | [asc]({{ stable_source_url }}.asc), [md5]({{ stable_source_url }}.md5), [sha1]({{ stable_source_url }}.sha1)
-Binary | [bookkeeper-server-{{ site.stable_release }}-bin.tar.gz]({{ stable_bin_url }}) | [asc]({{ stable_bin_url }}.asc), [md5]({{ stable_bin_url }}.md5), [sha1]({{ stable_bin_url }}.sha1)
+Source | [bookkeeper-{{ site.stable_release }}-src.tar.gz]({{ stable_source_url }}) | [asc]({{ stable_source_url }}.asc), [sha1]({{ stable_source_url }}.sha1)
+Binary | [bookkeeper-server-{{ site.stable_release }}-bin.tar.gz]({{ stable_bin_url }}) | [asc]({{ stable_bin_url }}.asc), [sha1]({{ stable_bin_url }}.sha1)
 
 ## Recent releases
 
@@ -44,8 +44,8 @@ Binary | [bookkeeper-server-{{ site.stable_release }}-bin.tar.gz]({{ stable_bin_
 
 Release | Link | Crypto files
 :-------|:-----|:------------
-Source | [bookkeeper-{{ version }}-src.tar.gz]({{ src_root }}) | [asc]({{ src_root }}.asc), [md5]({{ src_root }}.md5), [sha1]({{ src_root }}.sha1)
-Binary | [bookkeeper-server-{{ version }}-bin.tar.gz]({{ bin_root }}) | [asc]({{ bin_root }}.asc), [md5]({{ bin_root }}.md5), [sha1]({{ bin_root }}.sha1)
+Source | [bookkeeper-{{ version }}-src.tar.gz]({{ src_root }}) | [asc]({{ src_root }}.asc), [sha1]({{ src_root }}.sha1)
+Binary | [bookkeeper-server-{{ version }}-bin.tar.gz]({{ bin_root }}) | [asc]({{ bin_root }}.asc), [sha1]({{ bin_root }}.sha1)
 {% endif %}{% endfor %}
 
 ## Getting Started

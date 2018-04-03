@@ -20,7 +20,7 @@ package org.apache.distributedlog.common.rate;
 import com.google.common.base.Ticker;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.LongAdder;
 import org.apache.commons.lang3.tuple.Pair;
 
 /**
@@ -30,7 +30,7 @@ class SampledMovingAverageRate implements MovingAverageRate {
 
     private static final long NANOS_PER_SEC = TimeUnit.SECONDS.toNanos(1);
 
-    private final AtomicLong total;
+    private final LongAdder total;
     private final Ticker ticker;
     private final double scaleFactor;
     private final LinkedBlockingDeque<Pair<Long, Long>> samples;
@@ -45,7 +45,7 @@ class SampledMovingAverageRate implements MovingAverageRate {
                              double scaleFactor,
                              Ticker ticker) {
         this.value = 0;
-        this.total = new AtomicLong(0);
+        this.total = new LongAdder();
         this.scaleFactor = scaleFactor;
         this.ticker = ticker;
         this.samples = new LinkedBlockingDeque<>(intervalSecs);
@@ -58,7 +58,7 @@ class SampledMovingAverageRate implements MovingAverageRate {
 
     @Override
     public void add(long amount) {
-        total.getAndAdd(amount);
+        total.add(amount);
     }
 
     @Override
@@ -71,7 +71,7 @@ class SampledMovingAverageRate implements MovingAverageRate {
     }
 
     private double doSample() {
-        long newSample = total.get();
+        long newSample = total.sum();
         long newTimestamp = ticker.read();
 
         double rate = 0;

@@ -221,7 +221,7 @@ public class TestZKSessionLock extends ZooKeeperClusterTestCase {
 
         // lock action would be executed in same epoch
         final CountDownLatch latch1 = new CountDownLatch(1);
-        lock.executeLockAction(lock.getEpoch().get(), new LockAction() {
+        lock.executeLockAction(lock.getEpoch(), new LockAction() {
             @Override
             public void execute() {
                 counter.incrementAndGet();
@@ -238,7 +238,7 @@ public class TestZKSessionLock extends ZooKeeperClusterTestCase {
 
         // lock action would not be executed in same epoch
         final CountDownLatch latch2 = new CountDownLatch(1);
-        lock.executeLockAction(lock.getEpoch().get() + 1, new LockAction() {
+        lock.executeLockAction(lock.getEpoch() + 1, new LockAction() {
             @Override
             public void execute() {
                 counter.incrementAndGet();
@@ -249,7 +249,7 @@ public class TestZKSessionLock extends ZooKeeperClusterTestCase {
                 return "increment2";
             }
         });
-        lock.executeLockAction(lock.getEpoch().get(), new LockAction() {
+        lock.executeLockAction(lock.getEpoch(), new LockAction() {
             @Override
             public void execute() {
                 latch2.countDown();
@@ -265,7 +265,7 @@ public class TestZKSessionLock extends ZooKeeperClusterTestCase {
 
         // lock action would not be executed in same epoch and promise would be satisfied with exception
         CompletableFuture<Void> promise = new CompletableFuture<Void>();
-        lock.executeLockAction(lock.getEpoch().get() + 1, new LockAction() {
+        lock.executeLockAction(lock.getEpoch() + 1, new LockAction() {
             @Override
             public void execute() {
                 counter.incrementAndGet();
@@ -779,7 +779,7 @@ public class TestZKSessionLock extends ZooKeeperClusterTestCase {
         // expire session
         ZooKeeperClientUtils.expireSession(zkc, zkServers, sessionTimeoutMs);
         // submit a runnable to lock state executor to ensure any state changes happened when session expired
-        lockStateExecutor.submitOrdered(lockPath, () -> expiredLatch.countDown());
+        lockStateExecutor.executeOrdered(lockPath, () -> expiredLatch.countDown());
         expiredLatch.await();
         // no watcher was registered if never acquired lock successfully
         assertEquals(State.INIT, lock.getLockState());
@@ -1216,7 +1216,7 @@ public class TestZKSessionLock extends ZooKeeperClusterTestCase {
         } else {
             ZooKeeperClientUtils.expireSession(zkc0, zkServers, sessionTimeoutMs);
             final CountDownLatch latch = new CountDownLatch(1);
-            lockStateExecutor.submitOrdered(lockPath, () -> latch.countDown());
+            lockStateExecutor.executeOrdered(lockPath, () -> latch.countDown());
             latch.await();
             children = getLockWaiters(zkc, lockPath);
             assertEquals(0, children.size());

@@ -94,7 +94,7 @@ public final class Retries {
                 scheduler,
                 null);
         } else {
-            scheduler.submitOrdered(key, () -> {
+            scheduler.executeOrdered(key, () -> {
                 execute(
                     future,
                     backoffs.iterator(),

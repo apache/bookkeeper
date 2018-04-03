@@ -16,6 +16,7 @@
 package org.apache.bookkeeper.client.api;
 
 import java.lang.reflect.Field;
+import java.util.function.Function;
 
 import org.apache.bookkeeper.client.LedgerHandleAdv;
 import org.apache.bookkeeper.common.annotation.InterfaceAudience.Public;
@@ -28,7 +29,20 @@ import org.apache.bookkeeper.common.annotation.InterfaceStability.Unstable;
  */
 @Public
 @Unstable
-public abstract class BKException extends Exception {
+public class BKException extends Exception {
+    static final Function<Throwable, BKException> HANDLER = cause -> {
+        if (cause == null) {
+            return null;
+        }
+        if (cause instanceof BKException) {
+            return (BKException) cause;
+        } else {
+            BKException ex = new BKException(Code.UnexpectedConditionException);
+            ex.initCause(cause);
+            return ex;
+        }
+    };
+
     protected final int code;
 
     private static final LogMessagePool logMessagePool = new LogMessagePool();
