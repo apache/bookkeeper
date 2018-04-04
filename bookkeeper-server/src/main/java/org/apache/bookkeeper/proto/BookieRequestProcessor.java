@@ -56,6 +56,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 
+import lombok.AccessLevel;
+import lombok.Getter;
 import org.apache.bookkeeper.auth.AuthProviderFactoryFactory;
 import org.apache.bookkeeper.auth.AuthToken;
 import org.apache.bookkeeper.bookie.Bookie;
@@ -92,6 +94,7 @@ public class BookieRequestProcessor implements RequestProcessor {
     /**
      * The threadpool used to execute all read entry requests issued to this server.
      */
+    @Getter(AccessLevel.PACKAGE)
     private final OrderedExecutor readThreadPool;
 
     /**
@@ -108,6 +111,7 @@ public class BookieRequestProcessor implements RequestProcessor {
      * The threadpool used to execute all long poll requests issued to this server
      * after they are done waiting.
      */
+    @Getter(AccessLevel.PACKAGE)
     private final OrderedExecutor longPollThreadPool;
 
     /**
@@ -158,10 +162,18 @@ public class BookieRequestProcessor implements RequestProcessor {
                 "BookieWriteThreadPool",
                 serverCfg.getMaxPendingAddRequestPerThread(),
                 statsLogger);
-        this.longPollThreadPool = createExecutor(
-                this.serverCfg.getNumLongPollWorkerThreads(),
+        if (serverCfg.getNumLongPollWorkerThreads() <= 0 && readThreadPool != null) {
+            this.longPollThreadPool = this.readThreadPool;
+        } else {
+            int numThreads = this.serverCfg.getNumLongPollWorkerThreads();
+            if (numThreads <= 0) {
+                numThreads = Runtime.getRuntime().availableProcessors();
+            }
+            this.longPollThreadPool = createExecutor(
+                numThreads,
                 "BookieLongPollThread-" + serverCfg.getBookiePort(),
                 OrderedExecutor.NO_TASK_LIMIT, statsLogger);
+        }
         this.highPriorityThreadPool = createExecutor(
                 this.serverCfg.getNumHighPriorityWorkerThreads(),
                 "BookieHighPriorityThread-" + serverCfg.getBookiePort(),
@@ -203,7 +215,9 @@ public class BookieRequestProcessor implements RequestProcessor {
     public void close() {
         shutdownExecutor(writeThreadPool);
         shutdownExecutor(readThreadPool);
-        shutdownExecutor(longPollThreadPool);
+        if (serverCfg.getNumLongPollWorkerThreads() > 0 || readThreadPool == null) {
+            shutdownExecutor(longPollThreadPool);
+        }
         shutdownExecutor(highPriorityThreadPool);
     }
 
@@ -362,7 +376,7 @@ public class BookieRequestProcessor implements RequestProcessor {
         final ReadEntryProcessorV3 read;
         final OrderedExecutor threadPool;
         if (RequestUtils.isLongPollReadRequest(r.getReadRequest())) {
-            ExecutorService lpThread = null == longPollThreadPool ? null : longPollThreadPool.chooseThread(c);
+            ExecutorService lpThread = longPollThreadPool.chooseThread(c);
 
             read = new LongPollReadEntryProcessorV3(r, c, this, fenceThread,
                                                     lpThread, requestTimer);
