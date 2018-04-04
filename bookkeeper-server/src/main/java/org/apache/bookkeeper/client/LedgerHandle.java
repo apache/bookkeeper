@@ -124,7 +124,7 @@ public class LedgerHandle implements WriteHandle {
      * Invalid ledger id. Ledger IDs must be greater than or equal to 0.
      * Large negative used to make it easy to spot in logs if erroneously used.
      */
-    public static final long INVALID_LEDGER_ID = -ABCDABCDL;
+    public static final long INVALID_LEDGER_ID = -0xABCDABCDL;
 
     final AtomicInteger blockAddCompletions = new AtomicInteger(0);
     final AtomicInteger numEnsembleChanges = new AtomicInteger(0);
