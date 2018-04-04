@@ -18,6 +18,8 @@
 
 package org.apache.bookkeeper.client.impl;
 
+import java.util.Arrays;
+
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.api.DigestType;
 import org.apache.bookkeeper.client.api.OpenBuilder;
@@ -50,7 +52,7 @@ public abstract class OpenBuilderBase implements OpenBuilder {
 
     @Override
     public OpenBuilder withPassword(byte[] password) {
-        this.password = password;
+        this.password = Arrays.copyOf(password, password.length);
         return this;
     }
 
