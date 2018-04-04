@@ -4819,9 +4819,14 @@ public&nbsp;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.h
 <li class="blockList">
 <h4>getNumLongPollWorkerThreads</h4>
 <pre>public&nbsp;int&nbsp;getNumLongPollWorkerThreads()</pre>
-<div class="block">Get the number of threads that should handle long poll requests.</div>
+<div class="block">Get the number of threads that should handle long poll requests.
+
+ <p>If the number of threads is zero or negative, bookie will fallback to
+ use read threads. If there is no read threads used, it will create a thread pool
+ with <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Runtime.html?is-external=true#availableProcessors--" title="class or interface in java.lang"><code>Runtime.availableProcessors()</code></a> threads.</div>
 <dl>
 <dt><span class="returnLabel">Returns:</span></dt>
+<dd>the number of threads that should handle long poll requests, default value is 0.</dd>
 </dl>
 </li>
 </ul>
