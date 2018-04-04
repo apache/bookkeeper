@@ -18,6 +18,7 @@
 
 package org.apache.bookkeeper.client.impl;
 
+import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.api.DigestType;
 import org.apache.bookkeeper.client.api.OpenBuilder;
 
@@ -31,9 +32,9 @@ public abstract class OpenBuilderBase implements OpenBuilder {
     static final Logger LOG = LoggerFactory.getLogger(OpenBuilderBase.class);
 
     protected boolean recovery = false;
-    protected long ledgerId = -1;
+    protected long ledgerId = LedgerHandle.INVALID_LEDGER_ID;
     protected byte[] password;
-    protected DigestType digestType = org.apache.bookkeeper.client.api.DigestType.CRC32;
+    protected DigestType digestType = DigestType.CRC32;
 
     @Override
     public OpenBuilder withLedgerId(long ledgerId) {
@@ -54,7 +55,7 @@ public abstract class OpenBuilderBase implements OpenBuilder {
     }
 
     @Override
-    public OpenBuilder withDigestType(org.apache.bookkeeper.client.api.DigestType digestType) {
+    public OpenBuilder withDigestType(DigestType digestType) {
         this.digestType = digestType;
         return this;
     }

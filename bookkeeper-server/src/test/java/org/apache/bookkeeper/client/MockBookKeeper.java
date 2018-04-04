@@ -223,9 +223,8 @@ public class MockBookKeeper extends BookKeeper {
 
                 if (!validate()) {
                     promise.completeExceptionally(new BKException.BKNoSuchLedgerExistsException());
-                }
-
-                if (getProgrammedFailStatus()) {
+                    return promise;
+                } else if (getProgrammedFailStatus()) {
                     if (failReturnCode != BkTimeoutOperation) {
                         promise.completeExceptionally(BKException.create(failReturnCode));
                     }
