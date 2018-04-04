@@ -65,7 +65,8 @@ class WriteEntryProcessorV3 extends PacketProcessorBaseV3 {
             return addResponse.build();
         }
 
-        if (requestProcessor.bookie.isReadOnly()) {
+        if (requestProcessor.bookie.isReadOnly()
+            && !(RequestUtils.isHighPriority(request) && requestProcessor.bookie.isAvailableForHighPriorrityWrites())) {
             logger.warn("BookieServer is running as readonly mode, so rejecting the request from the client!");
             addResponse.setStatus(StatusCode.EREADONLY);
             return addResponse.build();

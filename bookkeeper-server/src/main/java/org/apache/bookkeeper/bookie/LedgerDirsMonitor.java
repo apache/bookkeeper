@@ -53,6 +53,7 @@ class LedgerDirsMonitor {
     private final ConcurrentMap<File, Float> diskUsages;
     private final DiskChecker diskChecker;
     private final LedgerDirsManager ldm;
+    private long minUsableSizeForHighPriorityWrites;
     private ScheduledExecutorService executor;
     private ScheduledFuture<?> checkTask;
 
@@ -60,6 +61,7 @@ class LedgerDirsMonitor {
                              final DiskChecker diskChecker,
                              final LedgerDirsManager ldm) {
         this.interval = conf.getDiskCheckInterval();
+        this.minUsableSizeForHighPriorityWrites = conf.getMinUsableSizeForHighPriorityWrites();
         this.conf = conf;
         this.diskChecker = diskChecker;
         this.diskUsages = ldm.getDiskUsages();
@@ -98,8 +100,14 @@ class LedgerDirsMonitor {
             // bookie cannot get writable dir but considered to be writable
             ldm.getWritableLedgerDirs();
         } catch (NoWritableLedgerDirException e) {
+            boolean disksUnavailable = false;
+            try {
+                ldm.getDirsAboveUsableThresholdSize(minUsableSizeForHighPriorityWrites);
+            } catch (NoWritableLedgerDirException e1) {
+                disksUnavailable = true;
+            }
             for (LedgerDirsListener listener : ldm.getListeners()) {
-                listener.allDisksFull();
+                listener.allDisksFull(disksUnavailable);
             }
         }
 

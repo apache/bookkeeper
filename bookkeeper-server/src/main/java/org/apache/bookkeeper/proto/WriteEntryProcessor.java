@@ -56,7 +56,8 @@ class WriteEntryProcessor extends PacketProcessorBase<ParsedAddRequest> implemen
 
     @Override
     protected void processPacket() {
-        if (requestProcessor.bookie.isReadOnly()) {
+        if (requestProcessor.bookie.isReadOnly()
+            && !(request.isHighPriority() && requestProcessor.bookie.isAvailableForHighPriorrityWrites())) {
             LOG.warn("BookieServer is running in readonly mode,"
                     + " so rejecting the request from the client!");
             sendResponse(BookieProtocol.EREADONLY,

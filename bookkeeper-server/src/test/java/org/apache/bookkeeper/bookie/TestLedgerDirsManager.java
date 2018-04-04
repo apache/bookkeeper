@@ -434,18 +434,6 @@ public class TestLedgerDirsManager {
         }
 
         @Override
-        public void diskFailed(File disk) {
-        }
-
-        @Override
-        public void diskAlmostFull(File disk) {
-        }
-
-        @Override
-        public void diskFull(File disk) {
-        }
-
-        @Override
         public void diskWritable(File disk) {
             readOnly = false;
         }
@@ -456,12 +444,8 @@ public class TestLedgerDirsManager {
         }
 
         @Override
-        public void allDisksFull() {
+        public void allDisksFull(boolean disksUnavailable) {
             readOnly = true;
-        }
-
-        @Override
-        public void fatalError() {
         }
 
         public void reset() {

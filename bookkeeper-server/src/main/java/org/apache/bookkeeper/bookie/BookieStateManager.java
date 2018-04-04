@@ -61,13 +61,13 @@ public class BookieStateManager implements StateManager {
     private final BookieStatus bookieStatus = new BookieStatus();
     private final AtomicBoolean rmRegistered = new AtomicBoolean(false);
     private final AtomicBoolean forceReadOnly = new AtomicBoolean(false);
+    private volatile boolean availableForHighPriorityWrites = false;
 
     private final String bookieId;
     private ShutdownHandler shutdownHandler;
     private final MetadataBookieDriver metadataDriver;
     // Expose Stats
     private final StatsLogger statsLogger;
-
 
     public BookieStateManager(ServerConfiguration conf, StatsLogger statsLogger,
            MetadataBookieDriver metadataDriver, LedgerDirsManager ledgerDirsManager) throws IOException {
@@ -133,6 +133,16 @@ public class BookieStateManager implements StateManager {
     @Override
     public boolean isReadOnly(){
         return forceReadOnly.get() || bookieStatus.isInReadOnlyMode();
+    }
+
+    @Override
+    public boolean isAvailableForHighPriorityWrites() {
+        return availableForHighPriorityWrites;
+    }
+
+    @Override
+    public void setHighPriorityWritesAvailability(boolean available) {
+        this.availableForHighPriorityWrites = available;
     }
 
     @Override
