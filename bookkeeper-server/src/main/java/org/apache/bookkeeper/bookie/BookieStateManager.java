@@ -61,7 +61,7 @@ public class BookieStateManager implements StateManager {
     private final BookieStatus bookieStatus = new BookieStatus();
     private final AtomicBoolean rmRegistered = new AtomicBoolean(false);
     private final AtomicBoolean forceReadOnly = new AtomicBoolean(false);
-    private volatile boolean availableForHighPriorityWrites = false;
+    private volatile boolean availableForHighPriorityWrites = true;
 
     private final String bookieId;
     private ShutdownHandler shutdownHandler;
