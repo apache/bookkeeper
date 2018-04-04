@@ -20,6 +20,7 @@
  */
 package org.apache.bookkeeper.bookie;
 
+import static org.apache.bookkeeper.common.concurrent.FutureUtils.result;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
 import static org.mockito.ArgumentMatchers.any;
@@ -31,6 +32,7 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import java.io.File;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
@@ -38,6 +40,7 @@ import org.apache.bookkeeper.client.api.BKException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.junit.Rule;
@@ -126,5 +129,140 @@ public class BookieWriteToJournalTest {
         // let bookie exit main thread
         journalJoinLatch.countDown();
         b.shutdown();
+    }
+
+    /**
+     * test that Bookie calls correctly Journal.forceLedger and is able to return the correct LastAddPersisted entry id.
+     */
+    @Test
+    public void testForceLedger() throws Exception {
+
+        File journalDir = tempDir.newFolder();
+        Bookie.checkDirectoryStructure(Bookie.getCurrentDirectory(journalDir));
+        File ledgerDir = tempDir.newFolder();
+        Bookie.checkDirectoryStructure(Bookie.getCurrentDirectory(ledgerDir));
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setJournalDirName(journalDir.getPath())
+            .setLedgerDirNames(new String[]{ledgerDir.getPath()})
+            .setZkServers(null);
+
+        Bookie b = new Bookie(conf);
+        b.start();
+
+        long ledgerId = 1;
+        long entryId = 0;
+        Object expectedCtx = "foo";
+        byte[] masterKey = new byte[64];
+
+        CompletableFuture<Long> latchForceLedger1 = new CompletableFuture<>();
+        CompletableFuture<Long> latchForceLedger2 = new CompletableFuture<>();
+        CompletableFuture<Long> latchAddEntry = new CompletableFuture<>();
+        final ByteBuf data = Unpooled.buffer();
+        data.writeLong(ledgerId);
+        data.writeLong(entryId);
+        final long expectedEntryId = entryId;
+        b.forceLedger(ledgerId, (int rc, long ledgerId1, long entryId1,
+                                        BookieSocketAddress addr, Object ctx) -> {
+            if (rc != BKException.Code.OK) {
+                latchForceLedger1.completeExceptionally(org.apache.bookkeeper.client.BKException.create(rc));
+                return;
+            }
+            latchForceLedger1.complete(entryId1);
+        }, expectedCtx, masterKey);
+        assertEquals(BookieProtocol.INVALID_ENTRY_ID, result(latchForceLedger1).longValue());
+
+        b.addEntry(data, true /* ackBeforesync */, (int rc, long ledgerId1, long entryId1,
+                                         BookieSocketAddress addr, Object ctx) -> {
+            if (rc != BKException.Code.OK) {
+                latchAddEntry.completeExceptionally(org.apache.bookkeeper.client.BKException.create(rc));
+                return;
+            }
+            latchAddEntry.complete(entryId);
+        }, expectedCtx, masterKey);
+        assertEquals(expectedEntryId, result(latchAddEntry).longValue());
+
+        // issue a new "forceLedger", it should return the last persisted entry id
+        b.forceLedger(ledgerId, (int rc, long ledgerId1, long entryId1,
+                                        BookieSocketAddress addr, Object ctx) -> {
+            if (rc != BKException.Code.OK) {
+                latchForceLedger2.completeExceptionally(org.apache.bookkeeper.client.BKException.create(rc));
+                return;
+            }
+            latchForceLedger2.complete(entryId1);
+        }, expectedCtx, masterKey);
+        assertEquals(entryId, result(latchForceLedger2).longValue());
+
+        b.shutdown();
+    }
+
+    /**
+     * test that Bookie is able to return the recover LastAddPersisted entry id from LedgerStorage after a restart.
+     */
+    @Test
+    public void testForceLedgerRecoverFromLedgerStorage() throws Exception {
+
+        File journalDir = tempDir.newFolder();
+        Bookie.checkDirectoryStructure(Bookie.getCurrentDirectory(journalDir));
+        File ledgerDir = tempDir.newFolder();
+        Bookie.checkDirectoryStructure(Bookie.getCurrentDirectory(ledgerDir));
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setJournalDirName(journalDir.getPath())
+            .setLedgerDirNames(new String[]{ledgerDir.getPath()})
+            .setZkServers(null);
+
+        Bookie b = new Bookie(conf);
+        b.start();
+
+        long ledgerId = 1;
+        long entryId = 0;
+        Object expectedCtx = "foo";
+        byte[] masterKey = new byte[64];
+
+        CompletableFuture<Long> latchForceLedger = new CompletableFuture<>();
+        CompletableFuture<Long> latchAddEntry = new CompletableFuture<>();
+        final ByteBuf data = Unpooled.buffer();
+        data.writeLong(ledgerId);
+        data.writeLong(entryId);
+        final long expectedEntryId = entryId;
+
+        b.addEntry(data, true /* ackBeforesync */, (int rc, long ledgerId1, long entryId1,
+                                         BookieSocketAddress addr, Object ctx) -> {
+            if (rc != BKException.Code.OK) {
+                latchAddEntry.completeExceptionally(org.apache.bookkeeper.client.BKException.create(rc));
+                return;
+            }
+            latchAddEntry.complete(entryId);
+        }, expectedCtx, masterKey);
+        assertEquals(expectedEntryId, result(latchAddEntry).longValue());
+
+        // issue a new "forceLedger", it should return the last persisted entry id
+        b.forceLedger(ledgerId, (int rc, long ledgerId1, long entryId1,
+                                        BookieSocketAddress addr, Object ctx) -> {
+            if (rc != BKException.Code.OK) {
+                latchForceLedger.completeExceptionally(org.apache.bookkeeper.client.BKException.create(rc));
+                return;
+            }
+            latchForceLedger.complete(entryId1);
+        }, expectedCtx, masterKey);
+        assertEquals(entryId, result(latchForceLedger).longValue());
+
+        b.shutdown();
+
+        CompletableFuture<Long> latchForceLedger2 = new CompletableFuture<>();
+        // re-start the bookie
+        Bookie b2 = new Bookie(conf);
+        b2.start();
+        // issue a new "forceLedger"
+        b2.forceLedger(ledgerId, (int rc, long ledgerId1, long entryId1,
+                                        BookieSocketAddress addr, Object ctx) -> {
+            if (rc != BKException.Code.OK) {
+                latchForceLedger2.completeExceptionally(org.apache.bookkeeper.client.BKException.create(rc));
+                return;
+            }
+            latchForceLedger2.complete(entryId1);
+        }, expectedCtx, masterKey);
+        assertEquals(entryId, result(latchForceLedger2).longValue());
+        b2.shutdown();
+
     }
 }
