@@ -170,4 +170,14 @@ class WriteEntryProcessorV3 extends PacketProcessorBaseV3 {
                          requestProcessor.addRequestStats);
         }
     }
+
+    /**
+     * this toString method filters out body and masterKey from the output.
+     * masterKey contains the password of the ledger and body is customer data,
+     * so it is not appropriate to have these in logs or system output.
+     */
+    @Override
+    public String toString() {
+        return RequestUtils.toSafeString(request);
+    }
 }

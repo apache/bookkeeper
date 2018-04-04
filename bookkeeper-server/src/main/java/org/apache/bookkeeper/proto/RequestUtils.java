@@ -17,6 +17,8 @@
  */
 package org.apache.bookkeeper.proto;
 
+import com.google.common.base.MoreObjects;
+
 /**
  * Utilities for requests.
  */
@@ -46,4 +48,59 @@ class RequestUtils {
         return request.hasFlag() && request.getFlag() == flag;
     }
 
+    /**
+     * this toSafeString method filters out body and masterKey from the output.
+     * masterKey contains the password of the ledger and body is customer data,
+     * so it is not appropriate to have these in logs or system output.
+     */
+    public static String toSafeString(BookkeeperProtocol.Request request) {
+        MoreObjects.ToStringHelper stringHelper = MoreObjects.toStringHelper(request);
+        BookkeeperProtocol.BKPacketHeader header = request.getHeader();
+        if (request.hasAddRequest()) {
+            BookkeeperProtocol.AddRequest addRequest = request.getAddRequest();
+            includeHeaderFields(stringHelper, header);
+            stringHelper.add("ledgerId", addRequest.getLedgerId());
+            stringHelper.add("entryId", addRequest.getEntryId());
+            if (addRequest.hasFlag()) {
+                stringHelper.add("flag", addRequest.getFlag());
+            }
+            if (addRequest.hasWriteFlags()) {
+                stringHelper.add("writeFlags", addRequest.getWriteFlags());
+            }
+            return stringHelper.toString();
+        } else if (request.hasReadRequest()) {
+            BookkeeperProtocol.ReadRequest readRequest = request.getReadRequest();
+            includeHeaderFields(stringHelper, header);
+            stringHelper.add("ledgerId", readRequest.getLedgerId());
+            stringHelper.add("entryId", readRequest.getEntryId());
+            if (readRequest.hasFlag()) {
+                stringHelper.add("flag", readRequest.getFlag());
+            }
+            if (readRequest.hasPreviousLAC()) {
+                stringHelper.add("previousLAC", readRequest.getPreviousLAC());
+            }
+            if (readRequest.hasTimeOut()) {
+                stringHelper.add("timeOut", readRequest.getTimeOut());
+            }
+            return stringHelper.toString();
+        } else if (request.hasWriteLacRequest()) {
+            BookkeeperProtocol.WriteLacRequest writeLacRequest = request.getWriteLacRequest();
+            includeHeaderFields(stringHelper, header);
+            stringHelper.add("ledgerId", writeLacRequest.getLedgerId());
+            stringHelper.add("lac", writeLacRequest.getLac());
+            return stringHelper.toString();
+        } else {
+            return request.toString();
+        }
+    }
+
+    private static void includeHeaderFields(MoreObjects.ToStringHelper stringHelper,
+            BookkeeperProtocol.BKPacketHeader header) {
+        stringHelper.add("version", header.getVersion());
+        stringHelper.add("operation", header.getOperation());
+        stringHelper.add("txnId", header.getTxnId());
+        if (header.hasPriority()) {
+            stringHelper.add("priority", header.getPriority());
+        }
+    }
 }
