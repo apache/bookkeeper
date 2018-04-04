@@ -892,9 +892,9 @@ public class Bookie extends BookieCriticalThread {
             }
 
             @Override
-            public void allDisksFull(boolean disksUnavailable) {
+            public void allDisksFull(boolean highPriorityWritesAllowed) {
                 // Transition to readOnly mode on all disks full
-                stateManager.setHighPriorityWritesAvailability(!disksUnavailable);
+                stateManager.setHighPriorityWritesAvailability(highPriorityWritesAllowed);
                 stateManager.transitionToReadOnlyMode();
             }
 
@@ -960,7 +960,7 @@ public class Bookie extends BookieCriticalThread {
      *
      * @return true if the bookie is able to take high priority writes.
      */
-    public boolean isAvailableForHighPriorrityWrites() {
+    public boolean isAvailableForHighPriorityWrites() {
         return stateManager.isAvailableForHighPriorityWrites();
     }
 

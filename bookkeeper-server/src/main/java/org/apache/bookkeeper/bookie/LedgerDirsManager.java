@@ -408,10 +408,10 @@ public class LedgerDirsManager {
          * <p>Normal writes will be rejected when disks are detected as "full". High priority writes
          * such as ledger recovery writes can go through if disks are still available.
          *
-         * @param disksUnavailable the parameter indicates whether disks are still available for
-         *                         taking high priority writes.
+         * @param highPriorityWritesAllowed the parameter indicates we are still have disk spaces for high priority
+         *                                  writes even disks are detected as "full"
          */
-        default void allDisksFull(boolean disksUnavailable) {}
+        default void allDisksFull(boolean highPriorityWritesAllowed) {}
 
         /**
          * This will notify the fatal errors.

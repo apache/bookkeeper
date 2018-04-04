@@ -233,7 +233,7 @@ public class TestSyncThread {
         final CountDownLatch diskFullLatch = new CountDownLatch(1);
         LedgerDirsListener listener = new LedgerDirsListener() {
                 @Override
-                public void allDisksFull(boolean disksUnavailable) {
+                public void allDisksFull(boolean highPriorityWritesAllowed) {
                     diskFullLatch.countDown();
                 }
             };

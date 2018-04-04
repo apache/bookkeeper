@@ -134,7 +134,7 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
             }
 
             @Override
-            public void allDisksFull(boolean disksUnavailable) {
+            public void allDisksFull(boolean highPriorityWritesAllowed) {
                 if (gcThread.isForceGCAllowWhenNoSpace) {
                     gcThread.enableForceGC();
                 } else {

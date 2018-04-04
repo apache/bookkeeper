@@ -100,14 +100,14 @@ class LedgerDirsMonitor {
             // bookie cannot get writable dir but considered to be writable
             ldm.getWritableLedgerDirs();
         } catch (NoWritableLedgerDirException e) {
-            boolean disksUnavailable = false;
+            boolean highPriorityWritesAllowed = true;
             try {
                 ldm.getDirsAboveUsableThresholdSize(minUsableSizeForHighPriorityWrites);
             } catch (NoWritableLedgerDirException e1) {
-                disksUnavailable = true;
+                highPriorityWritesAllowed = false;
             }
             for (LedgerDirsListener listener : ldm.getListeners()) {
-                listener.allDisksFull(disksUnavailable);
+                listener.allDisksFull(highPriorityWritesAllowed);
             }
         }
 
