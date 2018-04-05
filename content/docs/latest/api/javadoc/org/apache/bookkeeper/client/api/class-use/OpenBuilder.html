@@ -94,6 +94,12 @@
 <div class="block">BookKeeper Client Public API.</div>
 </td>
 </tr>
+<tr class="altColor">
+<td class="colFirst"><a href="#org.apache.bookkeeper.client.impl">org.apache.bookkeeper.client.impl</a></td>
+<td class="colLast">
+<div class="block">BookKeeper Client implementation package.</div>
+</td>
+</tr>
 </tbody>
 </table>
 </li>
@@ -126,22 +132,6 @@
 <tr class="altColor">
 <td class="colFirst"><code><a href="../../../../../../org/apache/bookkeeper/client/api/OpenBuilder.html" title="interface in org.apache.bookkeeper.client.api">OpenBuilder</a></code></td>
 <td class="colLast"><span class="typeNameLabel">BookKeeper.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/bookkeeper/client/BookKeeper.html#newOpenLedgerOp--">newOpenLedgerOp</a></span>()</code>&nbsp;</td>
-</tr>
-<tr class="rowColor">
-<td class="colFirst"><code><a href="../../../../../../org/apache/bookkeeper/client/api/OpenBuilder.html" title="interface in org.apache.bookkeeper.client.api">OpenBuilder</a></code></td>
-<td class="colLast"><span class="typeNameLabel">LedgerOpenOp.OpenBuilderImpl.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/bookkeeper/client/LedgerOpenOp.OpenBuilderImpl.html#withDigestType-org.apache.bookkeeper.client.api.DigestType-">withDigestType</a></span>(<a href="../../../../../../org/apache/bookkeeper/client/api/DigestType.html" title="enum in org.apache.bookkeeper.client.api">DigestType</a>&nbsp;digestType)</code>&nbsp;</td>
-</tr>
-<tr class="altColor">
-<td class="colFirst"><code><a href="../../../../../../org/apache/bookkeeper/client/api/OpenBuilder.html" title="interface in org.apache.bookkeeper.client.api">OpenBuilder</a></code></td>
-<td class="colLast"><span class="typeNameLabel">LedgerOpenOp.OpenBuilderImpl.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/bookkeeper/client/LedgerOpenOp.OpenBuilderImpl.html#withLedgerId-long-">withLedgerId</a></span>(long&nbsp;ledgerId)</code>&nbsp;</td>
-</tr>
-<tr class="rowColor">
-<td class="colFirst"><code><a href="../../../../../../org/apache/bookkeeper/client/api/OpenBuilder.html" title="interface in org.apache.bookkeeper.client.api">OpenBuilder</a></code></td>
-<td class="colLast"><span class="typeNameLabel">LedgerOpenOp.OpenBuilderImpl.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/bookkeeper/client/LedgerOpenOp.OpenBuilderImpl.html#withPassword-byte:A-">withPassword</a></span>(byte[]&nbsp;password)</code>&nbsp;</td>
-</tr>
-<tr class="altColor">
-<td class="colFirst"><code><a href="../../../../../../org/apache/bookkeeper/client/api/OpenBuilder.html" title="interface in org.apache.bookkeeper.client.api">OpenBuilder</a></code></td>
-<td class="colLast"><span class="typeNameLabel">LedgerOpenOp.OpenBuilderImpl.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/bookkeeper/client/LedgerOpenOp.OpenBuilderImpl.html#withRecovery-boolean-">withRecovery</a></span>(boolean&nbsp;recovery)</code>&nbsp;</td>
 </tr>
 </tbody>
 </table>
@@ -186,6 +176,51 @@
 <td class="colLast"><span class="typeNameLabel">OpenBuilder.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/bookkeeper/client/api/OpenBuilder.html#withRecovery-boolean-">withRecovery</a></span>(boolean&nbsp;recovery)</code>
 <div class="block">Define to open the ledger in recovery mode or in readonly mode.</div>
 </td>
+</tr>
+</tbody>
+</table>
+</li>
+<li class="blockList"><a name="org.apache.bookkeeper.client.impl">
+<!--   -->
+</a>
+<h3>Uses of <a href="../../../../../../org/apache/bookkeeper/client/api/OpenBuilder.html" title="interface in org.apache.bookkeeper.client.api">OpenBuilder</a> in <a href="../../../../../../org/apache/bookkeeper/client/impl/package-summary.html">org.apache.bookkeeper.client.impl</a></h3>
+<table class="useSummary" border="0" cellpadding="3" cellspacing="0" summary="Use table, listing classes, and an explanation">
+<caption><span>Classes in <a href="../../../../../../org/apache/bookkeeper/client/impl/package-summary.html">org.apache.bookkeeper.client.impl</a> that implement <a href="../../../../../../org/apache/bookkeeper/client/api/OpenBuilder.html" title="interface in org.apache.bookkeeper.client.api">OpenBuilder</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colLast" scope="col">Class and Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>class&nbsp;</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/bookkeeper/client/impl/OpenBuilderBase.html" title="class in org.apache.bookkeeper.client.impl">OpenBuilderBase</a></span></code>
+<div class="block">Base class for open builders which does the mundane builder stuff.</div>
+</td>
+</tr>
+</tbody>
+</table>
+<table class="useSummary" border="0" cellpadding="3" cellspacing="0" summary="Use table, listing methods, and an explanation">
+<caption><span>Methods in <a href="../../../../../../org/apache/bookkeeper/client/impl/package-summary.html">org.apache.bookkeeper.client.impl</a> that return <a href="../../../../../../org/apache/bookkeeper/client/api/OpenBuilder.html" title="interface in org.apache.bookkeeper.client.api">OpenBuilder</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colLast" scope="col">Method and Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../../../../../../org/apache/bookkeeper/client/api/OpenBuilder.html" title="interface in org.apache.bookkeeper.client.api">OpenBuilder</a></code></td>
+<td class="colLast"><span class="typeNameLabel">OpenBuilderBase.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/bookkeeper/client/impl/OpenBuilderBase.html#withDigestType-org.apache.bookkeeper.client.api.DigestType-">withDigestType</a></span>(<a href="../../../../../../org/apache/bookkeeper/client/api/DigestType.html" title="enum in org.apache.bookkeeper.client.api">DigestType</a>&nbsp;digestType)</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../../../../../../org/apache/bookkeeper/client/api/OpenBuilder.html" title="interface in org.apache.bookkeeper.client.api">OpenBuilder</a></code></td>
+<td class="colLast"><span class="typeNameLabel">OpenBuilderBase.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/bookkeeper/client/impl/OpenBuilderBase.html#withLedgerId-long-">withLedgerId</a></span>(long&nbsp;ledgerId)</code>&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../../../../../../org/apache/bookkeeper/client/api/OpenBuilder.html" title="interface in org.apache.bookkeeper.client.api">OpenBuilder</a></code></td>
+<td class="colLast"><span class="typeNameLabel">OpenBuilderBase.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/bookkeeper/client/impl/OpenBuilderBase.html#withPassword-byte:A-">withPassword</a></span>(byte[]&nbsp;password)</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../../../../../../org/apache/bookkeeper/client/api/OpenBuilder.html" title="interface in org.apache.bookkeeper.client.api">OpenBuilder</a></code></td>
+<td class="colLast"><span class="typeNameLabel">OpenBuilderBase.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/bookkeeper/client/impl/OpenBuilderBase.html#withRecovery-boolean-">withRecovery</a></span>(boolean&nbsp;recovery)</code>&nbsp;</td>
 </tr>
 </tbody>
 </table>
