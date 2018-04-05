@@ -181,20 +181,42 @@ public class TestLedgerDirsManager {
 
     @Test
     public void testLedgerDirsMonitorDuringTransition() throws Exception {
+        testLedgerDirsMonitorDuringTransition(true);
+    }
+
+    @Test
+    public void testHighPriorityWritesDisallowedDuringTransition() throws Exception {
+        testLedgerDirsMonitorDuringTransition(false);
+    }
+
+    private void testLedgerDirsMonitorDuringTransition(boolean highPriorityWritesAllowed) throws Exception {
+        if (!highPriorityWritesAllowed) {
+            ledgerMonitor.shutdown();
+            conf.setMinUsableSizeForHighPriorityWrites(curDir.getUsableSpace() + 1024);
+            dirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs(),
+                new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()), statsLogger);
+            ledgerMonitor = new LedgerDirsMonitor(conf, mockDiskChecker, dirsManager);
+            ledgerMonitor.init();
+        }
+
         MockLedgerDirsListener mockLedgerDirsListener = new MockLedgerDirsListener();
         dirsManager.addLedgerDirsListener(mockLedgerDirsListener);
         ledgerMonitor.start();
 
         assertFalse(mockLedgerDirsListener.readOnly);
-        mockDiskChecker.setUsage(threshold + 0.05f);
+        assertTrue(mockLedgerDirsListener.highPriorityWritesAllowed);
 
+        mockDiskChecker.setUsage(threshold + 0.05f);
         executorController.advance(Duration.ofMillis(diskCheckInterval));
+
         assertTrue(mockLedgerDirsListener.readOnly);
+        assertEquals(highPriorityWritesAllowed, mockLedgerDirsListener.highPriorityWritesAllowed);
 
         mockDiskChecker.setUsage(threshold - 0.05f);
         executorController.advance(Duration.ofMillis(diskCheckInterval));
 
         assertFalse(mockLedgerDirsListener.readOnly);
+        assertTrue(mockLedgerDirsListener.highPriorityWritesAllowed);
     }
 
     @Test
@@ -427,6 +449,7 @@ public class TestLedgerDirsManager {
 
     private class MockLedgerDirsListener implements LedgerDirsListener {
 
+        public volatile boolean highPriorityWritesAllowed;
         public volatile boolean readOnly;
 
         public MockLedgerDirsListener() {
@@ -434,38 +457,26 @@ public class TestLedgerDirsManager {
         }
 
         @Override
-        public void diskFailed(File disk) {
-        }
-
-        @Override
-        public void diskAlmostFull(File disk) {
-        }
-
-        @Override
-        public void diskFull(File disk) {
-        }
-
-        @Override
         public void diskWritable(File disk) {
             readOnly = false;
+            highPriorityWritesAllowed = true;
         }
 
         @Override
         public void diskJustWritable(File disk) {
             readOnly = false;
+            highPriorityWritesAllowed = true;
         }
 
         @Override
-        public void allDisksFull() {
-            readOnly = true;
-        }
-
-        @Override
-        public void fatalError() {
+        public void allDisksFull(boolean highPriorityWritesAllowed) {
+            this.readOnly = true;
+            this.highPriorityWritesAllowed = highPriorityWritesAllowed;
         }
 
         public void reset() {
             readOnly = false;
+            highPriorityWritesAllowed = true;
         }
 
     }

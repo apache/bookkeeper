@@ -76,6 +76,7 @@ import org.slf4j.LoggerFactory;
 /**
  * An implementation of the RequestProcessor interface.
  */
+@Getter(AccessLevel.PACKAGE)
 public class BookieRequestProcessor implements RequestProcessor {
 
     private static final Logger LOG = LoggerFactory.getLogger(BookieRequestProcessor.class);
@@ -94,7 +95,6 @@ public class BookieRequestProcessor implements RequestProcessor {
     /**
      * The threadpool used to execute all read entry requests issued to this server.
      */
-    @Getter(AccessLevel.PACKAGE)
     private final OrderedExecutor readThreadPool;
 
     /**
@@ -111,7 +111,6 @@ public class BookieRequestProcessor implements RequestProcessor {
      * The threadpool used to execute all long poll requests issued to this server
      * after they are done waiting.
      */
-    @Getter(AccessLevel.PACKAGE)
     private final OrderedExecutor longPollThreadPool;
 
     /**
@@ -127,8 +126,8 @@ public class BookieRequestProcessor implements RequestProcessor {
     // Expose Stats
     private final BKStats bkStats = BKStats.getInstance();
     private final boolean statsEnabled;
-    final OpStatsLogger addRequestStats;
-    final OpStatsLogger addEntryStats;
+    private final OpStatsLogger addRequestStats;
+    private final OpStatsLogger addEntryStats;
     final OpStatsLogger readRequestStats;
     final OpStatsLogger readEntryStats;
     final OpStatsLogger fenceReadRequestStats;

@@ -439,31 +439,6 @@ public class EntryLogger {
                     shouldCreateNewEntryLog.set(true);
                 }
             }
-
-            @Override
-            public void diskFailed(File disk) {
-                // Nothing to handle here. Will be handled in Bookie
-            }
-
-            @Override
-            public void allDisksFull() {
-                // Nothing to handle here. Will be handled in Bookie
-            }
-
-            @Override
-            public void fatalError() {
-                // Nothing to handle here. Will be handled in Bookie
-            }
-
-            @Override
-            public void diskWritable(File disk) {
-                // Nothing to handle here. Will be handled in Bookie
-            }
-
-            @Override
-            public void diskJustWritable(File disk) {
-                // Nothing to handle here. Will be handled in Bookie
-            }
         };
     }
 

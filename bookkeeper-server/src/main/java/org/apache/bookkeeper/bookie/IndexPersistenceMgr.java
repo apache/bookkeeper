@@ -42,7 +42,6 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.bookie.FileInfoBackingCache.CachedFileInfo;
-import org.apache.bookkeeper.bookie.LedgerDirsManager.LedgerDirsListener;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirException;
 import org.apache.bookkeeper.common.util.Watcher;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -108,7 +107,6 @@ public class IndexPersistenceMgr {
         LOG.info("openFileLimit = {}", openFileLimit);
         // Retrieve all of the active ledgers.
         getActiveLedgers();
-        ledgerDirsManager.addLedgerDirsListener(getLedgerDirsListener());
 
         // build the file info cache
         int concurrencyLevel = Math.max(1, Math.max(conf.getNumAddWorkerThreads(), conf.getNumReadWorkerThreads()));
@@ -491,45 +489,6 @@ public class IndexPersistenceMgr {
 
     int getOpenFileLimit() {
         return openFileLimit;
-    }
-
-    private LedgerDirsListener getLedgerDirsListener() {
-        return new LedgerDirsListener() {
-            @Override
-            public void diskFull(File disk) {
-                // Nothing to handle here. Will be handled in Bookie
-            }
-
-            @Override
-            public void diskAlmostFull(File disk) {
-                // Nothing to handle here. Will be handled in Bookie
-            }
-
-            @Override
-            public void diskFailed(File disk) {
-                // Nothing to handle here. Will be handled in Bookie
-            }
-
-            @Override
-            public void allDisksFull() {
-                // Nothing to handle here. Will be handled in Bookie
-            }
-
-            @Override
-            public void fatalError() {
-                // Nothing to handle here. Will be handled in Bookie
-            }
-
-            @Override
-            public void diskWritable(File disk) {
-                // Nothing to handle here. Will be handled in Bookie
-            }
-
-            @Override
-            public void diskJustWritable(File disk) {
-                // Nothing to handle here. Will be handled in Bookie
-            }
-        };
     }
 
     private void relocateIndexFileAndFlushHeader(long ledger, FileInfo fi) throws IOException {

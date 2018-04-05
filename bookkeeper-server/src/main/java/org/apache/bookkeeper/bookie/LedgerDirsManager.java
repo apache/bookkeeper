@@ -373,43 +373,49 @@ public class LedgerDirsManager {
          *
          * @param disk Failed disk
          */
-        void diskFailed(File disk);
+        default void diskFailed(File disk) {}
 
         /**
          * Notified when the disk usage warn threshold is exceeded on the drive.
          * @param disk
          */
-        void diskAlmostFull(File disk);
+        default void diskAlmostFull(File disk) {}
 
         /**
          * This will be notified on disk detected as full.
          *
          * @param disk Filled disk
          */
-        void diskFull(File disk);
+        default void diskFull(File disk) {}
 
         /**
          * This will be notified on disk detected as writable and under warn threshold.
          *
          * @param disk Writable disk
          */
-        void diskWritable(File disk);
+        default void diskWritable(File disk) {}
 
         /**
          * This will be notified on disk detected as writable but still in warn threshold.
          *
          * @param disk Writable disk
          */
-        void diskJustWritable(File disk);
+        default void diskJustWritable(File disk) {}
 
         /**
          * This will be notified whenever all disks are detected as full.
+         *
+         * <p>Normal writes will be rejected when disks are detected as "full". High priority writes
+         * such as ledger recovery writes can go through if disks are still available.
+         *
+         * @param highPriorityWritesAllowed the parameter indicates we are still have disk spaces for high priority
+         *                                  writes even disks are detected as "full"
          */
-        void allDisksFull();
+        default void allDisksFull(boolean highPriorityWritesAllowed) {}
 
         /**
          * This will notify the fatal errors.
          */
-        void fatalError();
+        default void fatalError() {}
     }
 }
