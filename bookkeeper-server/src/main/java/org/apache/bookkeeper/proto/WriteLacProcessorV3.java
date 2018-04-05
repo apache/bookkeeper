@@ -37,6 +37,7 @@ import org.apache.bookkeeper.util.MathUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+
 class WriteLacProcessorV3 extends PacketProcessorBaseV3 implements Runnable {
     private static final Logger logger = LoggerFactory.getLogger(WriteLacProcessorV3.class);
 
@@ -111,6 +112,16 @@ class WriteLacProcessorV3 extends PacketProcessorBaseV3 implements Runnable {
             Response resp = response.build();
             sendResponse(writeLacResponse.getStatus(), resp, requestProcessor.writeLacRequestStats);
         }
+    }
+
+    /**
+     * this toString method filters out body and masterKey from the output.
+     * masterKey contains the password of the ledger and body is customer data,
+     * so it is not appropriate to have these in logs or system output.
+     */
+    @Override
+    public String toString() {
+        return RequestUtils.toSafeString(request);
     }
 }
 
