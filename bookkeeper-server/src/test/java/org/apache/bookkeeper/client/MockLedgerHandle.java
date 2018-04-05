@@ -108,7 +108,7 @@ public class MockLedgerHandle extends LedgerHandle {
                 final Queue<LedgerEntry> seq = new ArrayDeque<LedgerEntry>();
                 long entryId = firstEntry;
                 while (entryId <= lastEntry && entryId < entries.size()) {
-                    seq.add(new LedgerEntry(entries.get((int) entryId++)));
+                    seq.add(new LedgerEntry(entries.get((int) entryId++).duplicate()));
                 }
 
                 log.debug("Entries read: {}", seq);
