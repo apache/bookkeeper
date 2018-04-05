@@ -122,7 +122,7 @@ class SyncThread implements Checkpointer {
             ledgerStorage.flush();
         } catch (NoWritableLedgerDirException e) {
             log.error("No writeable ledger directories", e);
-            dirsListener.allDisksFull();
+            dirsListener.allDisksFull(true);
             return;
         } catch (IOException e) {
             log.error("Exception flushing ledgers", e);
@@ -138,7 +138,7 @@ class SyncThread implements Checkpointer {
             checkpointSource.checkpointComplete(checkpoint, false);
         } catch (IOException e) {
             log.error("Exception marking checkpoint as complete", e);
-            dirsListener.allDisksFull();
+            dirsListener.allDisksFull(true);
         }
     }
 
@@ -153,7 +153,7 @@ class SyncThread implements Checkpointer {
             ledgerStorage.checkpoint(checkpoint);
         } catch (NoWritableLedgerDirException e) {
             log.error("No writeable ledger directories", e);
-            dirsListener.allDisksFull();
+            dirsListener.allDisksFull(true);
             return;
         } catch (IOException e) {
             log.error("Exception flushing ledgers", e);
@@ -164,7 +164,7 @@ class SyncThread implements Checkpointer {
             checkpointSource.checkpointComplete(checkpoint, true);
         } catch (IOException e) {
             log.error("Exception marking checkpoint as complete", e);
-            dirsListener.allDisksFull();
+            dirsListener.allDisksFull(true);
         }
     }
 

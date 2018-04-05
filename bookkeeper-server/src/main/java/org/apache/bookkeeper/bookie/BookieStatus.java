@@ -45,7 +45,7 @@ public class BookieStatus {
 
     enum BookieMode {
         READ_ONLY,
-        READ_WRITE;
+        READ_WRITE
     }
 
     private static final long INVALID_UPDATE_TIME = -1;
@@ -53,7 +53,6 @@ public class BookieStatus {
     private int layoutVersion;
     private long lastUpdateTime;
     private volatile BookieMode bookieMode;
-
 
     BookieStatus() {
         this.bookieMode = BookieMode.READ_WRITE;

@@ -58,9 +58,11 @@ public abstract class PacketProcessorBaseV3 extends SafeRunnable {
             public void operationComplete(ChannelFuture future) throws Exception {
                 long writeElapsedNanos = MathUtils.elapsedNanos(writeNanos);
                 if (!future.isSuccess()) {
-                    requestProcessor.channelWriteStats.registerFailedEvent(writeElapsedNanos, TimeUnit.NANOSECONDS);
+                    requestProcessor.getChannelWriteStats()
+                        .registerFailedEvent(writeElapsedNanos, TimeUnit.NANOSECONDS);
                 } else {
-                    requestProcessor.channelWriteStats.registerSuccessfulEvent(writeElapsedNanos, TimeUnit.NANOSECONDS);
+                    requestProcessor.getChannelWriteStats()
+                        .registerSuccessfulEvent(writeElapsedNanos, TimeUnit.NANOSECONDS);
                 }
                 if (StatusCode.EOK == code) {
                     statsLogger.registerSuccessfulEvent(MathUtils.elapsedNanos(enqueueNanos), TimeUnit.NANOSECONDS);

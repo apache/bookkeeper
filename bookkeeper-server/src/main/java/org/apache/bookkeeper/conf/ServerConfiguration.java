@@ -162,6 +162,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     protected static final String BOOKIE_AUTH_PROVIDER_FACTORY_CLASS = "bookieAuthProviderFactoryClass";
 
     protected static final String MIN_USABLESIZE_FOR_INDEXFILE_CREATION = "minUsableSizeForIndexFileCreation";
+    protected static final String MIN_USABLESIZE_FOR_HIGH_PRIORITY_WRITES = "minUsableSizeForHighPriorityWrites";
 
     protected static final String ALLOW_MULTIPLEDIRS_UNDER_SAME_DISKPARTITION =
         "allowMultipleDirsUnderSameDiskPartition";
@@ -2523,7 +2524,30 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return
      */
     public ServerConfiguration setMinUsableSizeForIndexFileCreation(long minUsableSizeForIndexFileCreation) {
-        this.setProperty(MIN_USABLESIZE_FOR_INDEXFILE_CREATION, Long.toString(minUsableSizeForIndexFileCreation));
+        this.setProperty(MIN_USABLESIZE_FOR_INDEXFILE_CREATION, minUsableSizeForIndexFileCreation);
+        return this;
+    }
+
+    /**
+     * Gets the minimum safe usable size to be available in ledger directory for Bookie to accept high priority writes.
+     *
+     * <p>If not set, it is two times of {@link #getEntryLogSizeLimit()}.
+     *
+     * @return the minimum safe usable size per ledger directory for bookie to accept high priority writes.
+     */
+    public long getMinUsableSizeForHighPriorityWrites() {
+        return this.getLong(MIN_USABLESIZE_FOR_HIGH_PRIORITY_WRITES, 2 * getEntryLogSizeLimit());
+    }
+
+    /**
+     * Sets the minimum safe usable size to be available in ledger directory for Bookie to accept high priority writes.
+     *
+     * @param minUsableSizeForHighPriorityWrites minimum safe usable size per ledger directory for Bookie to accept
+     *                                           high priority writes
+     * @return server configuration.
+     */
+    public ServerConfiguration setMinUsableSizeForHighPriorityWrites(long minUsableSizeForHighPriorityWrites) {
+        this.setProperty(MIN_USABLESIZE_FOR_HIGH_PRIORITY_WRITES, minUsableSizeForHighPriorityWrites);
         return this;
     }
 
