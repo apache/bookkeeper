@@ -42,6 +42,7 @@ import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.ChannelPipeline;
+import io.netty.channel.ChannelPromise;
 import io.netty.channel.DefaultEventLoopGroup;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.WriteBufferWaterMark;
@@ -877,21 +878,20 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
 
         try {
             final long startTime = MathUtils.nowInNano();
-            ChannelFuture future = channel.writeAndFlush(request);
-            future.addListener(future1 -> {
-                if (future1.isSuccess()) {
-                    nettyOpLogger.registerSuccessfulEvent(MathUtils.elapsedNanos(startTime),
-                            TimeUnit.NANOSECONDS);
+
+            ChannelPromise promise = channel.newPromise().addListener(future -> {
+                if (future.isSuccess()) {
+                    nettyOpLogger.registerSuccessfulEvent(MathUtils.elapsedNanos(startTime), TimeUnit.NANOSECONDS);
                     CompletionValue completion = completionObjects.get(key);
                     if (completion != null) {
                         completion.setOutstanding();
                     }
-
                 } else {
-                    nettyOpLogger.registerFailedEvent(MathUtils.elapsedNanos(startTime),
-                            TimeUnit.NANOSECONDS);
+                    nettyOpLogger.registerFailedEvent(MathUtils.elapsedNanos(startTime), TimeUnit.NANOSECONDS);
                 }
             });
+
+            channel.writeAndFlush(request, promise);
         } catch (Throwable e) {
             LOG.warn("Operation {} failed", requestToString(request), e);
             errorOut(key);
