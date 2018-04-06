@@ -25,6 +25,7 @@ import static com.google.common.base.Charsets.UTF_8;
 import static org.apache.bookkeeper.bookie.TransactionalEntryLogCompactor.COMPACTING_SUFFIX;
 import static org.apache.bookkeeper.util.BookKeeperConstants.MAX_LOG_SIZE_LIMIT;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.MapMaker;
 import com.google.common.collect.Sets;
@@ -84,6 +85,9 @@ import org.slf4j.LoggerFactory;
 public class EntryLogger {
     private static final Logger LOG = LoggerFactory.getLogger(EntryLogger.class);
 
+    @VisibleForTesting
+    static final int UNINITIALIZED_LOG_ID = -0xDEAD;
+
     static class BufferedLogChannel extends BufferedChannel {
         private final long logId;
         private final EntryLogMetadata entryLogMetadata;
@@ -130,7 +134,6 @@ public class EntryLogger {
     private final boolean entryLogPerLedgerEnabled;
     private final AtomicBoolean shouldCreateNewEntryLog = new AtomicBoolean(false);
 
-    private volatile long currentLogId;
     private volatile long leastUnflushedLogId;
 
     /**
@@ -293,7 +296,6 @@ public class EntryLogger {
                 logId = lastLogId;
             }
         }
-        this.currentLogId = logId;
         this.leastUnflushedLogId = logId + 1;
         this.entryLoggerAllocator = new EntryLoggerAllocator(logId);
         this.conf = conf;
@@ -400,11 +402,12 @@ public class EntryLogger {
     }
 
     synchronized long getCurrentLogId() {
-        return currentLogId;
-    }
-
-    BufferedLogChannel getCurrentLogChannel() {
-        return logChannel;
+        BufferedLogChannel channel = logChannel;
+        if (null == channel) {
+            return UNINITIALIZED_LOG_ID;
+        } else {
+            return channel.getLogId();
+        }
     }
 
     /**
@@ -484,10 +487,8 @@ public class EntryLogger {
                 listener.onRotateEntryLog();
             }
             logChannel = newLogChannel;
-            currentLogId = logChannel.getLogId();
         } else {
             logChannel = entryLoggerAllocator.createNewLog();
-            currentLogId = logChannel.getLogId();
         }
         currentDir = logChannel.getLogFile().getParentFile();
     }

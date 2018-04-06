@@ -119,14 +119,11 @@ public class EntryLogTest {
         this.dirsMgr.addToFilledDirs(curDir);
 
         entryLogger = new EntryLogger(conf, dirsMgr);
-        assertEquals(1L, entryLogger.getCurrentLogId());
-        assertNull(entryLogger.getCurrentLogChannel());
+        assertEquals(EntryLogger.UNINITIALIZED_LOG_ID, entryLogger.getCurrentLogId());
 
         // add the first entry will trigger file creation
         entryLogger.addEntry(1, generateEntry(1, 1).nioBuffer());
         assertEquals(2L, entryLogger.getCurrentLogId());
-        assertNotNull(entryLogger.getCurrentLogChannel());
-        assertEquals(2L, entryLogger.getCurrentLogChannel().getLogId());
     }
 
     @Test
@@ -144,16 +141,14 @@ public class EntryLogTest {
         this.dirsMgr.addToFilledDirs(curDir);
 
         entryLogger = new EntryLogger(conf, dirsMgr);
-        assertEquals(1L, entryLogger.getCurrentLogId());
-        assertNull(entryLogger.getCurrentLogChannel());
+        assertEquals(EntryLogger.UNINITIALIZED_LOG_ID, entryLogger.getCurrentLogId());
 
         // add the first entry will trigger file creation
         try {
             entryLogger.addEntry(1, generateEntry(1, 1).nioBuffer());
             fail("Should fail to append entry if there is no enough reserved space left");
         } catch (NoWritableLedgerDirException e) {
-            assertEquals(1L, entryLogger.getCurrentLogId());
-            assertNull(entryLogger.getCurrentLogChannel());
+            assertEquals(EntryLogger.UNINITIALIZED_LOG_ID, entryLogger.getCurrentLogId());
         }
     }
 

@@ -94,6 +94,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
         String ledgersPath = "/" + "ledgers" + runtime.getMethodName();
         baseClientConf.setZkLedgersRootPath(ledgersPath);
         baseConf.setZkLedgersRootPath(ledgersPath);
+        baseConf.setMinUsableSizeForEntryLogCreation(Long.MAX_VALUE);
     }
 
     @Override
@@ -556,6 +557,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
         long usableSpace = tmpDir.getUsableSpace();
         long totalSpace = tmpDir.getTotalSpace();
         final ServerConfiguration conf = TestBKConfiguration.newServerConfiguration()
+                .setLedgerStorageClass(InterleavedLedgerStorage.class.getName())
                 .setJournalDirName(tmpDir.getPath())
                 .setLedgerDirNames(new String[] { tmpDir.getPath() })
                 .setDiskCheckInterval(1000)
@@ -567,7 +569,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
         // if isForceGCAllowWhenNoSpace or readOnlyModeEnabled is not set and Bookie is
         // started when Disk is full, then it will fail to start with NoWritableLedgerDirException
 
-        conf.setIsForceGCAllowWhenNoSpace(false)
+        conf.setMinUsableSizeForEntryLogCreation(Long.MAX_VALUE)
             .setReadOnlyModeEnabled(false);
         try {
             new Bookie(conf);
@@ -576,7 +578,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
             // expected
         }
 
-        conf.setIsForceGCAllowWhenNoSpace(true)
+        conf.setMinUsableSizeForEntryLogCreation(Long.MIN_VALUE)
             .setReadOnlyModeEnabled(false);
         try {
             new Bookie(conf);
@@ -585,13 +587,19 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
             // expected
         }
 
-        conf.setIsForceGCAllowWhenNoSpace(false)
+        conf.setMinUsableSizeForEntryLogCreation(Long.MAX_VALUE)
             .setReadOnlyModeEnabled(true);
+        Bookie bookie = null;
         try {
-            new Bookie(conf);
-            fail("NoWritableLedgerDirException expected");
+            // bookie is okay to start up when readonly mode is enabled because entry log file creation
+            // is deferred.
+            bookie = new Bookie(conf);
         } catch (NoWritableLedgerDirException e) {
-            // expected
+            fail("NoWritableLedgerDirException unexpected");
+        } finally {
+            if (null != bookie) {
+                bookie.shutdown();
+            }
         }
     }
 
