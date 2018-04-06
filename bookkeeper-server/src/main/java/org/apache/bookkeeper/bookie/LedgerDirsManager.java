@@ -53,7 +53,7 @@ public class LedgerDirsManager {
     private final ConcurrentMap<File, Float> diskUsages =
             new ConcurrentHashMap<File, Float>();
     private final long entryLogSize;
-    private boolean forceGCAllowWhenNoSpace;
+    private long minUsableSizeForEntryLogCreation;
     private long minUsableSizeForIndexFileCreation;
 
     private final DiskChecker diskChecker;
@@ -69,9 +69,9 @@ public class LedgerDirsManager {
         this.writableLedgerDirectories = new ArrayList<File>(ledgerDirectories);
         this.filledDirs = new ArrayList<File>();
         this.listeners = new ArrayList<LedgerDirsListener>();
-        this.forceGCAllowWhenNoSpace = conf.getIsForceGCAllowWhenNoSpace();
         this.entryLogSize = conf.getEntryLogSizeLimit();
         this.minUsableSizeForIndexFileCreation = conf.getMinUsableSizeForIndexFileCreation();
+        this.minUsableSizeForEntryLogCreation = conf.getMinUsableSizeForEntryLogCreation();
         for (File dir : ledgerDirectories) {
             diskUsages.put(dir, 0f);
             String statName = "dir_" + dir.getParent().replace('/', '_') + "_usage";
@@ -176,19 +176,10 @@ public class LedgerDirsManager {
             return writableLedgerDirectories;
         }
 
-        // If Force GC is not allowed under no space
-        if (!forceGCAllowWhenNoSpace) {
-            String errMsg = "All ledger directories are non writable and force GC is not enabled.";
-            NoWritableLedgerDirException e = new NoWritableLedgerDirException(errMsg);
-            LOG.error(errMsg, e);
-            throw e;
-        }
-
-        // We don't have writable Ledger Dirs.
-        // That means we must have turned readonly but the compaction
-        // must have started running and it needs to allocate
-        // a new log file to move forward with the compaction.
-        return getDirsAboveUsableThresholdSize((long) (this.entryLogSize * 1.2));
+        // We don't have writable Ledger Dirs. But we are still okay to create new entry log files if we have enough
+        // disk spaces. This allows bookie can still function at readonly mode. Because compaction, journal replays
+        // can still write data to disks.
+        return getDirsAboveUsableThresholdSize(minUsableSizeForEntryLogCreation);
     }
 
     List<File> getDirsAboveUsableThresholdSize(long thresholdSize) throws NoWritableLedgerDirException {
@@ -202,7 +193,7 @@ public class LedgerDirsManager {
 
         if (!fullLedgerDirsToAccomodate.isEmpty()) {
             LOG.info("No writable ledger dirs below diskUsageThreshold. "
-                    + "But Dirs that can accomodate {} are: {}", thresholdSize, fullLedgerDirsToAccomodate);
+                    + "But Dirs that can accommodate {} are: {}", thresholdSize, fullLedgerDirsToAccomodate);
             return fullLedgerDirsToAccomodate;
         }
 
