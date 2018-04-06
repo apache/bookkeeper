@@ -123,7 +123,8 @@ public class SingleBookieInitializationTest {
                 null,
                 new byte[0]
             );
-            fail("Should fail on creating new entry log file since there is no enough disk space to accommodate writes");
+            fail("Should fail on creating new entry log file"
+                + " since there is no enough disk space to accommodate writes");
         } catch (IOException ioe) {
             // expected
             assertTrue(ioe.getCause() instanceof NoWritableLedgerDirException);
