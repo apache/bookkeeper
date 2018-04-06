@@ -100,7 +100,7 @@ public class TestLedgerDirsManager {
         conf.setDiskLowWaterMarkUsageThreshold(conf.getDiskUsageThreshold());
         conf.setDiskCheckInterval(diskCheckInterval);
         conf.setIsForceGCAllowWhenNoSpace(true);
-        conf.setMinUsableSizeForEntryLogCreation(curDir.getUsableSpace() - 1024);
+        conf.setMinUsableSizeForEntryLogCreation(Long.MIN_VALUE);
 
         executor = PowerMockito.mock(ScheduledExecutorService.class);
         executorController = new MockExecutorController()
