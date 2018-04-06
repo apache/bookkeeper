@@ -100,6 +100,7 @@ public class TestLedgerDirsManager {
         conf.setDiskLowWaterMarkUsageThreshold(conf.getDiskUsageThreshold());
         conf.setDiskCheckInterval(diskCheckInterval);
         conf.setIsForceGCAllowWhenNoSpace(true);
+        conf.setMinUsableSizeForEntryLogCreation(Long.MIN_VALUE);
 
         executor = PowerMockito.mock(ScheduledExecutorService.class);
         executorController = new MockExecutorController()
@@ -165,7 +166,7 @@ public class TestLedgerDirsManager {
         List<File> writeDirs;
         try {
             dirsManager.addToFilledDirs(curDir);
-            writeDirs = dirsManager.getWritableLedgerDirs();
+            dirsManager.getWritableLedgerDirs();
             fail("Should not reach here due to there is no writable ledger dir.");
         } catch (NoWritableLedgerDirException nwlde) {
             // expected to fail with no writable ledger dir
@@ -175,6 +176,27 @@ public class TestLedgerDirsManager {
                 assertTrue("Must have a writable ledgerDir", writeDirs.size() > 0);
             } catch (NoWritableLedgerDirException e) {
                 fail("We should have a writeble ledgerDir");
+            }
+        }
+    }
+
+    @Test
+    public void testGetWritableDirForLogNoEnoughDiskSpace() throws Exception {
+        conf.setMinUsableSizeForEntryLogCreation(curDir.getUsableSpace() + 1024);
+        dirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs(),
+            new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()), statsLogger);
+        try {
+            dirsManager.addToFilledDirs(curDir);
+            dirsManager.getWritableLedgerDirs();
+            fail("Should not reach here due to there is no writable ledger dir.");
+        } catch (NoWritableLedgerDirException nwlde) {
+            // expected to fail with no writable ledger dir
+            // Now make sure we can get one for log
+            try {
+                dirsManager.getWritableLedgerDirsForNewLog();
+                fail("Should not reach here due to there is no enough disk space left");
+            } catch (NoWritableLedgerDirException e) {
+                // expected.
             }
         }
     }

@@ -162,6 +162,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     protected static final String BOOKIE_AUTH_PROVIDER_FACTORY_CLASS = "bookieAuthProviderFactoryClass";
 
     protected static final String MIN_USABLESIZE_FOR_INDEXFILE_CREATION = "minUsableSizeForIndexFileCreation";
+    protected static final String MIN_USABLESIZE_FOR_ENTRYLOG_CREATION = "minUsableSizeForEntryLogCreation";
     protected static final String MIN_USABLESIZE_FOR_HIGH_PRIORITY_WRITES = "minUsableSizeForHighPriorityWrites";
 
     protected static final String ALLOW_MULTIPLEDIRS_UNDER_SAME_DISKPARTITION =
@@ -2510,7 +2511,8 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * Gets the minimum safe Usable size to be available in index directory for Bookie to create Index File while
      * replaying journal at the time of Bookie Start in Readonly Mode (in bytes).
      *
-     * @return
+     * @return minimum safe usable size to be available in index directory for bookie to create index files.
+     * @see #setMinUsableSizeForIndexFileCreation(long)
      */
     public long getMinUsableSizeForIndexFileCreation() {
         return this.getLong(MIN_USABLESIZE_FOR_INDEXFILE_CREATION, 100 * 1024 * 1024L);
@@ -2520,8 +2522,12 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * Sets the minimum safe Usable size to be available in index directory for Bookie to create Index File while
      * replaying journal at the time of Bookie Start in Readonly Mode (in bytes).
      *
-     * @param minUsableSizeForIndexFileCreation
-     * @return
+     * <p>This parameter allows creating index files when there are enough disk spaces, even when the bookie
+     * is running at readonly mode because of the disk usage is exceeding {@link #getDiskUsageThreshold()}. Because
+     * compaction, journal replays can still write index files to disks when a bookie is readonly.
+     *
+     * @param minUsableSizeForIndexFileCreation min usable size for index file creation
+     * @return server configuration
      */
     public ServerConfiguration setMinUsableSizeForIndexFileCreation(long minUsableSizeForIndexFileCreation) {
         this.setProperty(MIN_USABLESIZE_FOR_INDEXFILE_CREATION, minUsableSizeForIndexFileCreation);
@@ -2529,14 +2535,39 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     }
 
     /**
+     * Gets the minimum safe usable size to be available in ledger directory for Bookie to create entry log files.
+     *
+     * @return minimum safe usable size to be available in ledger directory for entry log file creation.
+     * @see #setMinUsableSizeForEntryLogCreation(long)
+     */
+    public long getMinUsableSizeForEntryLogCreation() {
+        return this.getLong(MIN_USABLESIZE_FOR_ENTRYLOG_CREATION, (long) 1.2 * getEntryLogSizeLimit());
+    }
+
+    /**
+     * Sets the minimum safe usable size to be available in ledger directory for Bookie to create entry log files.
+     *
+     * <p>This parameter allows creating entry log files when there are enough disk spaces, even when the bookie
+     * is running at readonly mode because of the disk usage is exceeding {@link #getDiskUsageThreshold()}. Because
+     * compaction, journal replays can still write data to disks when a bookie is readonly.
+     *
+     * @param minUsableSizeForEntryLogCreation minimum safe usable size to be available in ledger directory
+     * @return server configuration
+     */
+    public ServerConfiguration setMinUsableSizeForEntryLogCreation(long minUsableSizeForEntryLogCreation) {
+        this.setProperty(MIN_USABLESIZE_FOR_ENTRYLOG_CREATION, minUsableSizeForEntryLogCreation);
+        return this;
+    }
+
+    /**
      * Gets the minimum safe usable size to be available in ledger directory for Bookie to accept high priority writes.
      *
-     * <p>If not set, it is two times of {@link #getEntryLogSizeLimit()}.
+     * <p>If not set, it is the value of {@link #getMinUsableSizeForEntryLogCreation()}.
      *
      * @return the minimum safe usable size per ledger directory for bookie to accept high priority writes.
      */
     public long getMinUsableSizeForHighPriorityWrites() {
-        return this.getLong(MIN_USABLESIZE_FOR_HIGH_PRIORITY_WRITES, 2 * getEntryLogSizeLimit());
+        return this.getLong(MIN_USABLESIZE_FOR_HIGH_PRIORITY_WRITES, getMinUsableSizeForEntryLogCreation());
     }
 
     /**
