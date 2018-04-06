@@ -67,6 +67,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.bookkeeper.bookie.LedgerDirsManager.LedgerDirsListener;
+import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.util.IOUtils;
 import org.apache.bookkeeper.util.collections.ConcurrentLongLongHashMap;
@@ -130,6 +131,7 @@ public class EntryLogger {
     private final boolean entryLogPerLedgerEnabled;
     private final AtomicBoolean shouldCreateNewEntryLog = new AtomicBoolean(false);
 
+    private volatile long currentLogId;
     private volatile long leastUnflushedLogId;
 
     /**
@@ -285,13 +287,14 @@ public class EntryLogger {
         for (File dir : ledgerDirsManager.getAllLedgerDirs()) {
             if (!dir.exists()) {
                 throw new FileNotFoundException(
-                        "Entry log directory does not exist");
+                        "Entry log directory '" + dir + "' does not exist");
             }
             long lastLogId = getLastLogId(dir);
             if (lastLogId > logId) {
                 logId = lastLogId;
             }
         }
+        this.currentLogId = logId;
         this.leastUnflushedLogId = logId + 1;
         this.entryLoggerAllocator = new EntryLoggerAllocator(logId);
         this.conf = conf;
@@ -398,7 +401,11 @@ public class EntryLogger {
     }
 
     synchronized long getCurrentLogId() {
-        return logChannel.getLogId();
+        return currentLogId;
+    }
+
+    BufferedLogChannel getCurrentLogChannel() {
+        return logChannel;
     }
 
     /**
@@ -416,8 +423,10 @@ public class EntryLogger {
     protected void initialize() throws IOException {
         // Register listener for disk full notifications.
         ledgerDirsManager.addLedgerDirsListener(getLedgerDirsListener());
-        // create a new log to write
-        createNewLog();
+
+        if (ledgerDirsManager.hasWritableLedgerDirs()) {
+            createNewLog();
+        }
     }
 
     private LedgerDirsListener getLedgerDirsListener() {
@@ -476,8 +485,10 @@ public class EntryLogger {
                 listener.onRotateEntryLog();
             }
             logChannel = newLogChannel;
+            currentLogId = logChannel.getLogId();
         } else {
             logChannel = entryLoggerAllocator.createNewLog();
+            currentLogId = logChannel.getLogId();
         }
         currentDir = logChannel.getLogFile().getParentFile();
     }
@@ -870,6 +881,12 @@ public class EntryLogger {
     };
 
     public synchronized long addEntry(long ledger, ByteBuf entry, boolean rollLog) throws IOException {
+        if (null == logChannel) {
+            // log channel can be null because the file is deferred to be created when no writable ledger directory
+            // is available.
+            createNewLog();
+        }
+
         int entrySize = entry.readableBytes() + 4; // Adding 4 bytes to prepend the size
         boolean reachEntryLogLimit =
             rollLog ? reachEntryLogLimit(entrySize) : readEntryLogHardLimit(entrySize);
