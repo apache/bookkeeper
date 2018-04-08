@@ -21,7 +21,6 @@
 
 package org.apache.bookkeeper.conf;
 
-import com.sun.org.apache.regexp.internal.RE;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.util.Collections;
