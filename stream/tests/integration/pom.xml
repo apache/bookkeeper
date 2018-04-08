@@ -68,7 +68,7 @@
           <!-- only run tests when -DstreamIntegrationTests is specified //-->
           <skipTests>true</skipTests>
           <redirectTestOutputToFile>true</redirectTestOutputToFile>
-          <argLine>-Xmx3G -Djava.net.preferIPv4Stack=true -XX:MaxDirectMemorySize=2G -Dio.netty.leakDetectionLevel=PARANOID</argLine>
+          <argLine>-Xmx3G -Djava.net.preferIPv4Stack=true -XX:MaxDirectMemorySize=2G -Dio.netty.leakDetectionLevel=${bk.leakDetectionLevel}</argLine>
           <forkMode>always</forkMode>
           <forkedProcessTimeoutInSeconds>1800</forkedProcessTimeoutInSeconds>
         </configuration>

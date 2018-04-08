@@ -36,6 +36,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import lombok.Cleanup;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException;
@@ -72,8 +73,6 @@ public class TestMaxSizeWorkersQueue extends BookKeeperClusterTestCase {
         final CountDownLatch readReceivedLatch = new CountDownLatch(1);
 
         ServerConfiguration conf = newServerConfiguration();
-        conf.setNumReadWorkerThreads(1);
-        conf.setMaxPendingReadRequestPerThread(1);
         bsConfs.add(conf);
         bs.add(startBookie(conf, () -> {
             try {
@@ -101,7 +100,7 @@ public class TestMaxSizeWorkersQueue extends BookKeeperClusterTestCase {
             }
         }));
 
-        LedgerHandle lh = bkc.createLedger(1, 1, digestType, new byte[0]);
+        @Cleanup LedgerHandle lh = bkc.createLedger(1, 1, digestType, new byte[0]);
         byte[] content = new byte[100];
 
         final int n = 3;
@@ -111,13 +110,12 @@ public class TestMaxSizeWorkersQueue extends BookKeeperClusterTestCase {
         }
 
         // Read asynchronously:
-        // - 1st read must always succeed
-        // - Subsequent reads may fail, depending on timing
-        // - At least few, we expect to fail with TooManyRequestException
-        final CountDownLatch firstReadLatch = new CountDownLatch(1);
-
+        // - 1st read is running (but blocking by testing logic) at the read thread
+        // - 2nd read is pending at the worker queue
+        // - 3rd read will be rejected with too many requests exception
 
         final AtomicInteger rcFirstReadOperation = new AtomicInteger();
+        final CountDownLatch firstReadLatch = new CountDownLatch(1);
 
         lh.asyncReadEntries(0, 0, (rc, lh1, seq, ctx) -> {
             rcFirstReadOperation.set(rc);
@@ -133,21 +131,33 @@ public class TestMaxSizeWorkersQueue extends BookKeeperClusterTestCase {
             secondReadLatch.countDown();
         }, lh);
 
-        // second read should fail with too many requests exception
-        secondReadLatch.await();
-        assertEquals(BKException.Code.TooManyRequestsException, rcSecondReadOperation.get());
+        final AtomicInteger rcThirdReadOperation = new AtomicInteger();
+        final CountDownLatch thirdReadLatch = new CountDownLatch(1);
+
+        lh.asyncReadEntries(2, 2, (rc, lh13, seq, ctx) -> {
+            rcThirdReadOperation.set(rc);
+            thirdReadLatch.countDown();
+        }, lh);
+
+        // third read should fail with too many requests exception
+        thirdReadLatch.await();
+        assertEquals(BKException.Code.TooManyRequestsException, rcThirdReadOperation.get());
 
         // let first read go through
         readLatch.countDown();
         firstReadLatch.await();
         assertEquals(BKException.Code.OK, rcFirstReadOperation.get());
-
-        lh.close();
+        secondReadLatch.await();
+        assertEquals(BKException.Code.OK, rcSecondReadOperation.get());
     }
 
     @Test
     public void testAddRejected() throws Exception {
-        LedgerHandle lh = bkc.createLedger(1, 1, digestType, new byte[0]);
+        ServerConfiguration conf = newServerConfiguration();
+        bsConfs.add(conf);
+        bs.add(startBookie(conf));
+
+        @Cleanup LedgerHandle lh = bkc.createLedger(1, 1, digestType, new byte[0]);
         byte[] content = new byte[100];
 
         final int n = 1000;
@@ -175,18 +185,19 @@ public class TestMaxSizeWorkersQueue extends BookKeeperClusterTestCase {
                 }
             }, null);
         }
-
         counter.await();
 
         assertTrue(receivedException.get());
         assertTrue(receivedTooManyRequestsException.get());
-
-        lh.close();
     }
 
     @Test
     public void testRecoveryNotRejected() throws Exception {
-        LedgerHandle lh = bkc.createLedger(1, 1, digestType, new byte[0]);
+        ServerConfiguration conf = newServerConfiguration();
+        bsConfs.add(conf);
+        bs.add(startBookie(conf));
+
+        @Cleanup LedgerHandle lh = bkc.createLedger(1, 1, digestType, new byte[0]);
         byte[] content = new byte[100];
 
         final int numEntriesToRead = 1000;
@@ -198,10 +209,11 @@ public class TestMaxSizeWorkersQueue extends BookKeeperClusterTestCase {
         final int numLedgersToRecover = 10;
         List<Long> ledgersToRecover = Lists.newArrayList();
         for (int i = 0; i < numLedgersToRecover; i++) {
-            LedgerHandle lhr = bkc.createLedger(1, 1, digestType, new byte[0]);
-            lhr.addEntry(content);
-            // Leave the ledger in open state
-            ledgersToRecover.add(lhr.getId());
+            try (LedgerHandle lhr = bkc.createLedger(1, 1, digestType, new byte[0])) {
+                lhr.addEntry(content);
+                // Leave the ledger in open state
+                ledgersToRecover.add(lhr.getId());
+            }
         }
 
         ExecutorService executor = Executors.newCachedThreadPool();
@@ -223,22 +235,17 @@ public class TestMaxSizeWorkersQueue extends BookKeeperClusterTestCase {
         }));
 
         for (long ledgerId : ledgersToRecover) {
-            futures.add(executor.submit(new Callable<Void>() {
-                @Override
-                public Void call() throws Exception {
-                    barrier.await();
+            futures.add(executor.submit((Callable<Void>) () -> {
+                barrier.await();
 
-                    // Recovery should always succeed
-                    bkc.openLedger(ledgerId, digestType, new byte[0]);
-                    return null;
-                }
+                // Recovery should always succeed
+                try (LedgerHandle ignored = bkc.openLedger(ledgerId, digestType, new byte[0])) {}
+                return null;
             }));
         }
 
         for (Future<?> future : futures) {
             future.get();
         }
-
-        lh.close();
     }
 }

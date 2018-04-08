@@ -103,6 +103,8 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <javac.target>1.8</javac.target>
+    <!-- plugin settings -->
+    <bk.leakDetectionLevel>PARANOID</bk.leakDetectionLevel>
     <!-- dependencies -->
     <arquillian-cube.version>1.15.1</arquillian-cube.version>
     <arquillian-junit.version>1.1.14.Final</arquillian-junit.version>
@@ -723,7 +725,7 @@
         <artifactId>maven-surefire-plugin</artifactId>
         <version>${maven-surefire-plugin.version}</version>
         <configuration>
-          <argLine>-Xmx2G -Djava.net.preferIPv4Stack=true -Dio.netty.leakDetectionLevel=PARANOID</argLine>
+          <argLine>-Xmx2G -Djava.net.preferIPv4Stack=true -Dio.netty.leakDetectionLevel=${bk.leakDetectionLevel}</argLine>
           <redirectTestOutputToFile>true</redirectTestOutputToFile>
           <reuseForks>false</reuseForks>
           <forkedProcessTimeoutInSeconds>1800</forkedProcessTimeoutInSeconds>
@@ -852,7 +854,7 @@
             <version>${maven-surefire-plugin.version}</version>
             <configuration>
               <!-- @{argLine} is a variable injected by JaCoCo-->
-              <argLine>@{argLine} -Xmx2G -Djava.net.preferIPv4Stack=true -Dio.netty.leakDetection.level=PARANOID</argLine>
+              <argLine>@{argLine} -Xmx2G -Djava.net.preferIPv4Stack=true -Dio.netty.leakDetection.level=${bk.leakDetectionLevel}</argLine>
               <redirectTestOutputToFile>true</redirectTestOutputToFile>
               <reuseForks>false</reuseForks>
               <forkedProcessTimeoutInSeconds>1800</forkedProcessTimeoutInSeconds>

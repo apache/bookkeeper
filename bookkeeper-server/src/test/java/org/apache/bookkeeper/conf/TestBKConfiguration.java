@@ -21,6 +21,7 @@
 
 package org.apache.bookkeeper.conf;
 
+import com.sun.org.apache.regexp.internal.RE;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.util.Collections;
@@ -53,6 +54,9 @@ public class TestBKConfiguration {
         confReturn.setGcWaitTime(1000);
         confReturn.setDiskUsageThreshold(0.999f);
         confReturn.setDiskUsageWarnThreshold(0.99f);
+        // disable queue limit
+        confReturn.setMaxPendingReadRequestPerThread(0);
+        confReturn.setMaxPendingAddRequestPerThread(0);
         setLoopbackInterfaceAndAllowLoopback(confReturn);
         return confReturn;
     }

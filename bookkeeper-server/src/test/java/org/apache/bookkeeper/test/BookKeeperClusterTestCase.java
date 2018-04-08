@@ -95,7 +95,10 @@ public abstract class BookKeeperClusterTestCase {
      * bind to loopback address.
      */
     protected final ServerConfiguration baseConf = TestBKConfiguration.newServerConfiguration();
-    protected final ClientConfiguration baseClientConf = new ClientConfiguration();
+    protected final ClientConfiguration baseClientConf = new ClientConfiguration()
+        .setAddEntryQuorumTimeout(Integer.MAX_VALUE)
+        .setAddEntryTimeout(Integer.MAX_VALUE)
+        .setReadEntryTimeout(Integer.MAX_VALUE);
 
     private final Map<BookieServer, AutoRecoveryMain> autoRecoveryProcesses = new HashMap<>();
 

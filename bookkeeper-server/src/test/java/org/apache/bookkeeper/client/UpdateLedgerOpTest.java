@@ -56,6 +56,10 @@ public class UpdateLedgerOpTest extends BookKeeperClusterTestCase {
     public UpdateLedgerOpTest() {
         super(3);
         baseConf.setGcWaitTime(100000);
+        baseConf.setMaxPendingAddRequestPerThread(0);
+        baseConf.setMaxPendingReadRequestPerThread(0);
+        baseClientConf.setAddEntryQuorumTimeout(Integer.MAX_VALUE);
+        baseClientConf.setAddEntryTimeout(Integer.MAX_VALUE);
     }
 
     UpdateLedgerNotifier progressable = new UpdateLedgerNotifier() {
