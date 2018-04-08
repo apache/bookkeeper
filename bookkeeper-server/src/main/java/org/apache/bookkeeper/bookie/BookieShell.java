@@ -76,7 +76,6 @@ import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
 import org.apache.bookkeeper.bookie.EntryLogger.EntryLogScanner;
 import org.apache.bookkeeper.bookie.Journal.JournalScanner;
 import org.apache.bookkeeper.bookie.storage.ldb.DbLedgerStorage;
-import org.apache.bookkeeper.bookie.storage.ldb.EntryLocationIndex;
 import org.apache.bookkeeper.bookie.storage.ldb.LocationsIndexRebuildOp;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BKException.MetaStoreException;
@@ -2640,8 +2639,6 @@ public class BookieShell implements Tool {
                     null, checkpointSource, checkpointer, NullStatsLogger.INSTANCE);
             LedgerCache interleavedLedgerCache = interleavedStorage.ledgerCache;
 
-            EntryLocationIndex dbEntryLocationIndex = dbStorage.getEntryLocationIndex();
-
             int convertedLedgers = 0;
             for (long ledgerId : dbStorage.getActiveLedgersInRange(0, Long.MAX_VALUE)) {
                 if (LOG.isDebugEnabled()) {
@@ -2653,10 +2650,10 @@ public class BookieShell implements Tool {
                     interleavedStorage.setFenced(ledgerId);
                 }
 
-                long lastEntryInLedger = dbEntryLocationIndex.getLastEntryInLedger(ledgerId);
+                long lastEntryInLedger = dbStorage.getLastEntryInLedger(ledgerId);
                 for (long entryId = 0; entryId <= lastEntryInLedger; entryId++) {
                     try {
-                        long location = dbEntryLocationIndex.getLocation(ledgerId, entryId);
+                        long location = dbStorage.getLocation(ledgerId, entryId);
                         if (location != 0L) {
                             interleavedLedgerCache.putEntryOffset(ledgerId, entryId, location);
                         }

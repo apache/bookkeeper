@@ -125,6 +125,18 @@ public class GarbageCollectorThread extends SafeRunnable {
 
     final ServerConfiguration conf;
 
+    /**
+     * Create a garbage collector thread.
+     *
+     * @param conf
+     *          Server Configuration Object.
+     * @throws IOException
+     */
+    public GarbageCollectorThread(ServerConfiguration conf, LedgerManager ledgerManager,
+            final CompactableLedgerStorage ledgerStorage, StatsLogger statsLogger) throws IOException {
+        this(conf, ledgerManager, ledgerStorage, statsLogger,
+                Executors.newSingleThreadScheduledExecutor(new DefaultThreadFactory("GarbageCollectorThread")));
+    }
 
     /**
      * Create a garbage collector thread.
@@ -136,9 +148,10 @@ public class GarbageCollectorThread extends SafeRunnable {
     public GarbageCollectorThread(ServerConfiguration conf,
                                   LedgerManager ledgerManager,
                                   final CompactableLedgerStorage ledgerStorage,
-                                  StatsLogger statsLogger)
+                                  StatsLogger statsLogger,
+                                    ScheduledExecutorService gcExecutor)
         throws IOException {
-        gcExecutor = Executors.newSingleThreadScheduledExecutor(new DefaultThreadFactory("GarbageCollectorThread"));
+        this.gcExecutor = gcExecutor;
         this.conf = conf;
 
         this.entryLogger = ledgerStorage.getEntryLogger();
