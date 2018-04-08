@@ -85,13 +85,13 @@ public class DistributedLogCoreShadedJarTest {
 
     @Test(expected = ClassNotFoundException.class)
     public void testBookKeeperCommon() throws Exception {
-        Class.forName("org.apache.bookkeeper.util.OrderedSafeExecutor");
+        Class.forName("org.apache.bookkeeper.common.util.OrderedExecutor");
         assertTrue(true);
     }
 
     @Test
     public void testBookKeeperCommonShade() throws Exception {
-        Class.forName("dlshade.org.apache.bookkeeper.util.OrderedSafeExecutor");
+        Class.forName("dlshade.org.apache.bookkeeper.common.util.OrderedExecutor");
         assertTrue(true);
     }
 

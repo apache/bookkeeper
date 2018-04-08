@@ -22,6 +22,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.common.collect.Lists;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
@@ -69,6 +70,8 @@ public class ListUnderReplicatedLedgerService implements HttpEndpointService {
         if (HttpServer.Method.GET == request.getMethod()) {
             final String includingBookieId;
             final String excludingBookieId;
+            boolean printMissingReplica = false;
+
             if (params != null && params.containsKey("missingreplica")) {
                 includingBookieId = params.get("missingreplica");
             } else {
@@ -78,6 +81,9 @@ public class ListUnderReplicatedLedgerService implements HttpEndpointService {
                 excludingBookieId = params.get("excludingmissingreplica");
             } else {
                 excludingBookieId = null;
+            }
+            if (params != null && params.containsKey("printmissingreplica")) {
+                printMissingReplica = true;
             }
             Predicate<List<String>> predicate = null;
             if (!StringUtils.isBlank(includingBookieId) && !StringUtils.isBlank(excludingBookieId)) {
@@ -90,21 +96,39 @@ public class ListUnderReplicatedLedgerService implements HttpEndpointService {
             }
 
             try {
-                List<Long> outputLedgers = Lists.newArrayList();
+                boolean hasURLedgers = false;
+                List<Long> outputLedgers = null;
+                Map<Long, List<String>> outputLedgersWithMissingReplica = null;
                 LedgerManagerFactory mFactory = bookieServer.getBookie().getLedgerManagerFactory();
                 LedgerUnderreplicationManager underreplicationManager = mFactory.newLedgerUnderreplicationManager();
-                Iterator<Long> iter = underreplicationManager.listLedgersToRereplicate(predicate);
+                Iterator<Map.Entry<Long, List<String>>> iter = underreplicationManager
+                        .listLedgersToRereplicate(predicate, printMissingReplica);
 
-                while (iter.hasNext()) {
-                    outputLedgers.add(iter.next());
+                hasURLedgers = iter.hasNext();
+                if (hasURLedgers) {
+                    if (printMissingReplica) {
+                        outputLedgersWithMissingReplica = new LinkedHashMap<Long, List<String>>();
+                    } else {
+                        outputLedgers = Lists.newArrayList();
+                    }
                 }
-                if (outputLedgers.isEmpty()) {
+                while (iter.hasNext()) {
+                    if (printMissingReplica) {
+                        Map.Entry<Long, List<String>> urlWithMissingReplica = iter.next();
+                        outputLedgersWithMissingReplica.put(urlWithMissingReplica.getKey(),
+                                urlWithMissingReplica.getValue());
+                    } else {
+                        outputLedgers.add(iter.next().getKey());
+                    }
+                }
+                if (!hasURLedgers) {
                     response.setCode(HttpServer.StatusCode.NOT_FOUND);
                     response.setBody("No under replicated ledgers found");
                     return response;
                 } else {
                     response.setCode(HttpServer.StatusCode.OK);
-                    String jsonResponse = JsonUtil.toJson(outputLedgers);
+                    String jsonResponse = JsonUtil
+                            .toJson(printMissingReplica ? outputLedgersWithMissingReplica : outputLedgers);
                     LOG.debug("output body: " + jsonResponse);
                     response.setBody(jsonResponse);
                     return response;

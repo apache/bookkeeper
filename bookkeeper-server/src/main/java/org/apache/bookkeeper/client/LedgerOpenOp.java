@@ -33,12 +33,12 @@ import org.apache.bookkeeper.client.AsyncCallback.OpenCallback;
 import org.apache.bookkeeper.client.AsyncCallback.ReadLastConfirmedCallback;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.SyncCallbackUtils.SyncOpenCallback;
-import org.apache.bookkeeper.client.api.OpenBuilder;
 import org.apache.bookkeeper.client.api.ReadHandle;
+import org.apache.bookkeeper.client.impl.OpenBuilderBase;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.util.MathUtils;
-import org.apache.bookkeeper.util.OrderedSafeExecutor.OrderedSafeGenericCallback;
+import org.apache.bookkeeper.util.OrderedGenericCallback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -183,7 +183,7 @@ class LedgerOpenOp implements GenericCallback<LedgerMetadata> {
         }
 
         if (doRecovery) {
-            lh.recover(new OrderedSafeGenericCallback<Void>(bk.getMainWorkerPool(), ledgerId) {
+            lh.recover(new OrderedGenericCallback<Void>(bk.getMainWorkerPool(), ledgerId) {
                 @Override
                 public void safeOperationComplete(int rc, Void result) {
                     if (rc == BKException.Code.OK) {
@@ -225,41 +225,12 @@ class LedgerOpenOp implements GenericCallback<LedgerMetadata> {
         cb.openComplete(rc, lh, ctx);
     }
 
-    static final class OpenBuilderImpl implements OpenBuilder {
+    static final class OpenBuilderImpl extends OpenBuilderBase {
 
-        private boolean builderRecovery = false;
-        private Long builderLedgerId;
-        private byte[] builderPassword;
-        private org.apache.bookkeeper.client.api.DigestType builderDigestType =
-            org.apache.bookkeeper.client.api.DigestType.CRC32;
         private final BookKeeper bk;
 
         OpenBuilderImpl(BookKeeper bookkeeper) {
             this.bk = bookkeeper;
-        }
-
-        @Override
-        public OpenBuilder withLedgerId(long ledgerId) {
-            this.builderLedgerId = ledgerId;
-            return this;
-        }
-
-        @Override
-        public OpenBuilder withRecovery(boolean recovery) {
-            this.builderRecovery = recovery;
-            return this;
-        }
-
-        @Override
-        public OpenBuilder withPassword(byte[] password) {
-            this.builderPassword = password;
-            return this;
-        }
-
-        @Override
-        public OpenBuilder withDigestType(org.apache.bookkeeper.client.api.DigestType digestType) {
-            this.builderDigestType = digestType;
-            return this;
         }
 
         @Override
@@ -270,23 +241,14 @@ class LedgerOpenOp implements GenericCallback<LedgerMetadata> {
             return future;
         }
 
-        private boolean validate() {
-            if (builderLedgerId == null || builderLedgerId < 0) {
-                LOG.error("invalid ledgerId {} < 0", builderLedgerId);
-                return false;
-            }
-            return true;
-        }
-
         private void open(OpenCallback cb) {
-
             if (!validate()) {
                 cb.openComplete(BKException.Code.NoSuchLedgerExistsException, null, null);
                 return;
             }
 
-            LedgerOpenOp op = new LedgerOpenOp(bk, builderLedgerId, fromApiDigestType(builderDigestType),
-                builderPassword, cb, null);
+            LedgerOpenOp op = new LedgerOpenOp(bk, ledgerId, fromApiDigestType(digestType),
+                                               password, cb, null);
             ReentrantReadWriteLock closeLock = bk.getCloseLock();
             closeLock.readLock().lock();
             try {
@@ -294,7 +256,7 @@ class LedgerOpenOp implements GenericCallback<LedgerMetadata> {
                     cb.openComplete(BKException.Code.ClientClosedException, null, null);
                     return;
                 }
-                if (builderRecovery) {
+                if (recovery) {
                     op.initiate();
                 } else {
                     op.initiateWithoutRecovery();

@@ -25,11 +25,24 @@ import java.util.concurrent.Future;
  */
 public interface StateManager extends AutoCloseable {
 
-
     /**
      * Init state of Bookie when launch bookie.
      */
     void initState();
+
+    /**
+     * Check if the bookie is available for high priority writes or not.
+     *
+     * @return true if the bookie is available for high priority writes; otherwise false.
+     */
+    boolean isAvailableForHighPriorityWrites();
+
+    /**
+     * Enable/Disable the availability for high priority writes.
+     *
+     * @param available the flag to enable/disable the availability for high priority writes.
+     */
+    void setHighPriorityWritesAvailability(boolean available);
 
     /**
      * Check is ReadOnly.

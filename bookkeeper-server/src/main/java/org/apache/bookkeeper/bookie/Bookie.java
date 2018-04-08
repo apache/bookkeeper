@@ -886,24 +886,15 @@ public class Bookie extends BookieCriticalThread {
         return new LedgerDirsListener() {
 
             @Override
-            public void diskFull(File disk) {
-                // Nothing needs to be handled here.
-            }
-
-            @Override
-            public void diskAlmostFull(File disk) {
-                // Nothing needs to be handled here.
-            }
-
-            @Override
             public void diskFailed(File disk) {
                 // Shutdown the bookie on disk failure.
                 triggerBookieShutdown(ExitCode.BOOKIE_EXCEPTION);
             }
 
             @Override
-            public void allDisksFull() {
+            public void allDisksFull(boolean highPriorityWritesAllowed) {
                 // Transition to readOnly mode on all disks full
+                stateManager.setHighPriorityWritesAvailability(highPriorityWritesAllowed);
                 stateManager.transitionToReadOnlyMode();
             }
 
@@ -916,12 +907,14 @@ public class Bookie extends BookieCriticalThread {
             @Override
             public void diskWritable(File disk) {
                 // Transition to writable mode when a disk becomes writable again.
+                stateManager.setHighPriorityWritesAvailability(true);
                 stateManager.transitionToWritableMode();
             }
 
             @Override
             public void diskJustWritable(File disk) {
                 // Transition to writable mode when a disk becomes writable again.
+                stateManager.setHighPriorityWritesAvailability(true);
                 stateManager.transitionToWritableMode();
             }
         };
@@ -960,6 +953,15 @@ public class Bookie extends BookieCriticalThread {
      */
     public boolean isReadOnly() {
         return stateManager.isReadOnly();
+    }
+
+    /**
+     * Check whether Bookie is available for high priority writes.
+     *
+     * @return true if the bookie is able to take high priority writes.
+     */
+    public boolean isAvailableForHighPriorityWrites() {
+        return stateManager.isAvailableForHighPriorityWrites();
     }
 
     public boolean isRunning() {

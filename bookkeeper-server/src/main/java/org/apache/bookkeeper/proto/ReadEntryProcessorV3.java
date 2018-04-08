@@ -22,12 +22,15 @@ import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.SettableFuture;
 import com.google.protobuf.ByteString;
+
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.util.ReferenceCountUtil;
+
 import java.io.IOException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
+
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.ReadRequest;
@@ -330,6 +333,15 @@ class ReadEntryProcessorV3 extends PacketProcessorBaseV3 {
         } else {
             statsLogger.registerSuccessfulEvent(startTime.elapsed(TimeUnit.NANOSECONDS), TimeUnit.NANOSECONDS);
         }
+    }
+
+    /**
+     * this toString method filters out masterKey from the output. masterKey
+     * contains the password of the ledger.
+     */
+    @Override
+    public String toString() {
+        return RequestUtils.toSafeString(request);
     }
 }
 

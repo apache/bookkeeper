@@ -162,6 +162,8 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     protected static final String BOOKIE_AUTH_PROVIDER_FACTORY_CLASS = "bookieAuthProviderFactoryClass";
 
     protected static final String MIN_USABLESIZE_FOR_INDEXFILE_CREATION = "minUsableSizeForIndexFileCreation";
+    protected static final String MIN_USABLESIZE_FOR_ENTRYLOG_CREATION = "minUsableSizeForEntryLogCreation";
+    protected static final String MIN_USABLESIZE_FOR_HIGH_PRIORITY_WRITES = "minUsableSizeForHighPriorityWrites";
 
     protected static final String ALLOW_MULTIPLEDIRS_UNDER_SAME_DISKPARTITION =
         "allowMultipleDirsUnderSameDiskPartition";
@@ -465,7 +467,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return minimum size of initial file info cache.
      */
     public int getFileInfoCacheInitialCapacity() {
-        return getInt(FILEINFO_CACHE_INITIAL_CAPACITY, 64);
+        return getInt(FILEINFO_CACHE_INITIAL_CAPACITY, Math.max(getOpenFileLimit() / 4, 64));
     }
 
     /**
@@ -1288,10 +1290,15 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
 
     /**
      * Get the number of threads that should handle long poll requests.
-     * @return
+     *
+     * <p>If the number of threads is zero or negative, bookie will fallback to
+     * use read threads. If there is no read threads used, it will create a thread pool
+     * with {@link Runtime#availableProcessors()} threads.
+     *
+     * @return the number of threads that should handle long poll requests, default value is 0.
      */
     public int getNumLongPollWorkerThreads() {
-        return getInt(NUM_LONG_POLL_WORKER_THREADS, 10);
+        return getInt(NUM_LONG_POLL_WORKER_THREADS, 0);
     }
 
     /**
@@ -2062,7 +2069,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      */
     @Beta
     public boolean getJournalRemovePagesFromCache() {
-        return getBoolean(JOURNAL_REMOVE_FROM_PAGE_CACHE, false);
+        return getBoolean(JOURNAL_REMOVE_FROM_PAGE_CACHE, true);
     }
 
     /**
@@ -2504,7 +2511,8 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * Gets the minimum safe Usable size to be available in index directory for Bookie to create Index File while
      * replaying journal at the time of Bookie Start in Readonly Mode (in bytes).
      *
-     * @return
+     * @return minimum safe usable size to be available in index directory for bookie to create index files.
+     * @see #setMinUsableSizeForIndexFileCreation(long)
      */
     public long getMinUsableSizeForIndexFileCreation() {
         return this.getLong(MIN_USABLESIZE_FOR_INDEXFILE_CREATION, 100 * 1024 * 1024L);
@@ -2514,11 +2522,63 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * Sets the minimum safe Usable size to be available in index directory for Bookie to create Index File while
      * replaying journal at the time of Bookie Start in Readonly Mode (in bytes).
      *
-     * @param minUsableSizeForIndexFileCreation
-     * @return
+     * <p>This parameter allows creating index files when there are enough disk spaces, even when the bookie
+     * is running at readonly mode because of the disk usage is exceeding {@link #getDiskUsageThreshold()}. Because
+     * compaction, journal replays can still write index files to disks when a bookie is readonly.
+     *
+     * @param minUsableSizeForIndexFileCreation min usable size for index file creation
+     * @return server configuration
      */
     public ServerConfiguration setMinUsableSizeForIndexFileCreation(long minUsableSizeForIndexFileCreation) {
-        this.setProperty(MIN_USABLESIZE_FOR_INDEXFILE_CREATION, Long.toString(minUsableSizeForIndexFileCreation));
+        this.setProperty(MIN_USABLESIZE_FOR_INDEXFILE_CREATION, minUsableSizeForIndexFileCreation);
+        return this;
+    }
+
+    /**
+     * Gets the minimum safe usable size to be available in ledger directory for Bookie to create entry log files.
+     *
+     * @return minimum safe usable size to be available in ledger directory for entry log file creation.
+     * @see #setMinUsableSizeForEntryLogCreation(long)
+     */
+    public long getMinUsableSizeForEntryLogCreation() {
+        return this.getLong(MIN_USABLESIZE_FOR_ENTRYLOG_CREATION, (long) 1.2 * getEntryLogSizeLimit());
+    }
+
+    /**
+     * Sets the minimum safe usable size to be available in ledger directory for Bookie to create entry log files.
+     *
+     * <p>This parameter allows creating entry log files when there are enough disk spaces, even when the bookie
+     * is running at readonly mode because of the disk usage is exceeding {@link #getDiskUsageThreshold()}. Because
+     * compaction, journal replays can still write data to disks when a bookie is readonly.
+     *
+     * @param minUsableSizeForEntryLogCreation minimum safe usable size to be available in ledger directory
+     * @return server configuration
+     */
+    public ServerConfiguration setMinUsableSizeForEntryLogCreation(long minUsableSizeForEntryLogCreation) {
+        this.setProperty(MIN_USABLESIZE_FOR_ENTRYLOG_CREATION, minUsableSizeForEntryLogCreation);
+        return this;
+    }
+
+    /**
+     * Gets the minimum safe usable size to be available in ledger directory for Bookie to accept high priority writes.
+     *
+     * <p>If not set, it is the value of {@link #getMinUsableSizeForEntryLogCreation()}.
+     *
+     * @return the minimum safe usable size per ledger directory for bookie to accept high priority writes.
+     */
+    public long getMinUsableSizeForHighPriorityWrites() {
+        return this.getLong(MIN_USABLESIZE_FOR_HIGH_PRIORITY_WRITES, getMinUsableSizeForEntryLogCreation());
+    }
+
+    /**
+     * Sets the minimum safe usable size to be available in ledger directory for Bookie to accept high priority writes.
+     *
+     * @param minUsableSizeForHighPriorityWrites minimum safe usable size per ledger directory for Bookie to accept
+     *                                           high priority writes
+     * @return server configuration.
+     */
+    public ServerConfiguration setMinUsableSizeForHighPriorityWrites(long minUsableSizeForHighPriorityWrites) {
+        this.setProperty(MIN_USABLESIZE_FOR_HIGH_PRIORITY_WRITES, minUsableSizeForHighPriorityWrites);
         return this;
     }
 

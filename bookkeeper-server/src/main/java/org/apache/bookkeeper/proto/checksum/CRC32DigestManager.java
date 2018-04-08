@@ -19,13 +19,30 @@ package org.apache.bookkeeper.proto.checksum;
 */
 
 import io.netty.buffer.ByteBuf;
-import java.util.zip.CRC32;
+import io.netty.util.concurrent.FastThreadLocal;
 
+/**
+ * Digest manager for CRC32 checksum.
+ */
 class CRC32DigestManager extends DigestManager {
-    private final ThreadLocal<CRC32> crc = new ThreadLocal<CRC32>() {
+
+    /**
+     * Interface that abstracts different implementations of the CRC32 digest.
+     */
+    interface CRC32Digest {
+        long getValueAndReset();
+
+        void update(ByteBuf buf);
+    }
+
+    private static final FastThreadLocal<CRC32Digest> crc = new FastThreadLocal<CRC32Digest>() {
         @Override
-        protected CRC32 initialValue() {
-            return new CRC32();
+        protected CRC32Digest initialValue() {
+            if (DirectMemoryCRC32Digest.isSupported()) {
+                return new DirectMemoryCRC32Digest();
+            } else {
+                return new StandardCRC32Digest();
+            }
         }
     };
 
@@ -40,12 +57,11 @@ class CRC32DigestManager extends DigestManager {
 
     @Override
     void populateValueAndReset(ByteBuf buf) {
-        buf.writeLong(crc.get().getValue());
-        crc.get().reset();
+        buf.writeLong(crc.get().getValueAndReset());
     }
 
     @Override
     void update(ByteBuf data) {
-        crc.get().update(data.nioBuffer());
+        crc.get().update(data);
     }
 }

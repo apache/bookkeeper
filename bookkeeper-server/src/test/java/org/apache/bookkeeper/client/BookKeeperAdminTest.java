@@ -31,12 +31,15 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Random;
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.ZkLedgerUnderreplicationManager;
+import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.util.BookKeeperConstants;
@@ -105,6 +108,7 @@ public class BookKeeperAdminTest extends BookKeeperClusterTestCase {
         ledgerHandle.addEntry(0, "data".getBytes());
         ledgerHandle.close();
 
+        BookieServer bookieToKill = bs.get(1);
         killBookie(1);
         /*
          * since lostBookieRecoveryDelay is set, when a bookie is died, it will
@@ -113,9 +117,13 @@ public class BookKeeperAdminTest extends BookKeeperClusterTestCase {
          */
         bkAdmin.triggerAudit();
         Thread.sleep(500);
-        Iterator<Long> ledgersToRereplicate = urLedgerMgr.listLedgersToRereplicate(null);
+        Iterator<Map.Entry<Long, List<String>>> ledgersToRereplicate = urLedgerMgr.listLedgersToRereplicate(null,
+                true);
         assertTrue("There are supposed to be underreplicatedledgers", ledgersToRereplicate.hasNext());
-        assertEquals("Underreplicated ledgerId", ledgerId, ledgersToRereplicate.next().longValue());
+        Entry<Long, List<String>> urlWithReplicaList = ledgersToRereplicate.next();
+        assertEquals("Underreplicated ledgerId", ledgerId, urlWithReplicaList.getKey().longValue());
+        assertTrue("Missingreplica of Underreplicated ledgerId should contain " + bookieToKill.getLocalAddress(),
+                urlWithReplicaList.getValue().contains(bookieToKill.getLocalAddress().toString()));
         bkAdmin.close();
     }
 

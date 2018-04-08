@@ -143,7 +143,7 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
 
     void timeoutQuorumWait() {
         try {
-            lh.bk.getMainWorkerPool().submitOrdered(lh.ledgerId, new SafeRunnable() {
+            lh.bk.getMainWorkerPool().executeOrdered(lh.ledgerId, new SafeRunnable() {
                 @Override
                 public void safeRun() {
                     if (completed) {

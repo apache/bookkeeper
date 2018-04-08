@@ -25,6 +25,7 @@ import static com.google.common.base.Charsets.UTF_8;
 import static org.apache.bookkeeper.bookie.TransactionalEntryLogCompactor.COMPACTING_SUFFIX;
 import static org.apache.bookkeeper.util.BookKeeperConstants.MAX_LOG_SIZE_LIMIT;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.MapMaker;
 import com.google.common.collect.Sets;
@@ -83,6 +84,9 @@ import org.slf4j.LoggerFactory;
  */
 public class EntryLogger {
     private static final Logger LOG = LoggerFactory.getLogger(EntryLogger.class);
+
+    @VisibleForTesting
+    static final int UNINITIALIZED_LOG_ID = -0xDEAD;
 
     static class BufferedLogChannel extends BufferedChannel {
         private final long logId;
@@ -285,7 +289,7 @@ public class EntryLogger {
         for (File dir : ledgerDirsManager.getAllLedgerDirs()) {
             if (!dir.exists()) {
                 throw new FileNotFoundException(
-                        "Entry log directory does not exist");
+                        "Entry log directory '" + dir + "' does not exist");
             }
             long lastLogId = getLastLogId(dir);
             if (lastLogId > logId) {
@@ -398,7 +402,12 @@ public class EntryLogger {
     }
 
     synchronized long getCurrentLogId() {
-        return logChannel.getLogId();
+        BufferedLogChannel channel = logChannel;
+        if (null == channel) {
+            return UNINITIALIZED_LOG_ID;
+        } else {
+            return channel.getLogId();
+        }
     }
 
     /**
@@ -416,8 +425,10 @@ public class EntryLogger {
     protected void initialize() throws IOException {
         // Register listener for disk full notifications.
         ledgerDirsManager.addLedgerDirsListener(getLedgerDirsListener());
-        // create a new log to write
-        createNewLog();
+
+        if (ledgerDirsManager.hasWritableLedgerDirs()) {
+            createNewLog();
+        }
     }
 
     private LedgerDirsListener getLedgerDirsListener() {
@@ -438,31 +449,6 @@ public class EntryLogger {
                 if (currentDir != null && currentDir.equals(disk)) {
                     shouldCreateNewEntryLog.set(true);
                 }
-            }
-
-            @Override
-            public void diskFailed(File disk) {
-                // Nothing to handle here. Will be handled in Bookie
-            }
-
-            @Override
-            public void allDisksFull() {
-                // Nothing to handle here. Will be handled in Bookie
-            }
-
-            @Override
-            public void fatalError() {
-                // Nothing to handle here. Will be handled in Bookie
-            }
-
-            @Override
-            public void diskWritable(File disk) {
-                // Nothing to handle here. Will be handled in Bookie
-            }
-
-            @Override
-            public void diskJustWritable(File disk) {
-                // Nothing to handle here. Will be handled in Bookie
             }
         };
     }
@@ -895,6 +881,12 @@ public class EntryLogger {
     };
 
     public synchronized long addEntry(long ledger, ByteBuf entry, boolean rollLog) throws IOException {
+        if (null == logChannel) {
+            // log channel can be null because the file is deferred to be created when no writable ledger directory
+            // is available.
+            createNewLog();
+        }
+
         int entrySize = entry.readableBytes() + 4; // Adding 4 bytes to prepend the size
         boolean reachEntryLogLimit =
             rollLog ? reachEntryLogLimit(entrySize) : readEntryLogHardLimit(entrySize);
@@ -943,6 +935,7 @@ public class EntryLogger {
     void flushCompactionLog() throws IOException {
         synchronized (compactionLogLock) {
             if (compactionLogChannel != null) {
+                appendLedgersMap(compactionLogChannel);
                 compactionLogChannel.flushAndForceWrite(false);
                 LOG.info("Flushed compaction log file {} with logId.",
                     compactionLogChannel.getLogFile(),

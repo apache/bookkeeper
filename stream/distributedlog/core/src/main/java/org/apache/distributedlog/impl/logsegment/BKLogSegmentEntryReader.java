@@ -30,9 +30,9 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
+import java.util.concurrent.atomic.AtomicLongFieldUpdater;
+import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import org.apache.bookkeeper.client.AsyncCallback;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper;
@@ -220,12 +220,12 @@ public class BKLogSegmentEntryReader implements SafeRunnable, LogSegmentEntryRea
          */
         boolean checkReturnCodeAndHandleFailure(int rc, boolean isLongPoll) {
             if (BKException.Code.OK == rc) {
-                numReadErrors.set(0);
+                numReadErrorsUpdater.set(BKLogSegmentEntryReader.this, 0);
                 return true;
             }
             if (BKException.Code.BookieHandleNotAvailableException == rc
                     || (isLongPoll && BKException.Code.NoSuchLedgerExistsException == rc)) {
-                int numErrors = Math.max(1, numReadErrors.incrementAndGet());
+                int numErrors = Math.max(1, numReadErrorsUpdater.incrementAndGet(BKLogSegmentEntryReader.this));
                 int nextReadBackoffTime = Math.min(numErrors * readAheadWaitTime, maxReadBackoffTime);
                 scheduler.scheduleOrdered(
                         getSegment().getLogSegmentId(),
@@ -301,15 +301,21 @@ public class BKLogSegmentEntryReader implements SafeRunnable, LogSegmentEntryRea
     private final List<LedgerHandle> openLedgerHandles;
     private CacheEntry outstandingLongPoll;
     private long nextEntryId;
-    private final AtomicReference<Throwable> lastException = new AtomicReference<Throwable>(null);
-    private final AtomicLong scheduleCount = new AtomicLong(0);
+    private static final AtomicReferenceFieldUpdater<BKLogSegmentEntryReader, Throwable> lastExceptionUpdater =
+        AtomicReferenceFieldUpdater.newUpdater(BKLogSegmentEntryReader.class, Throwable.class, "lastException");
+    private volatile Throwable lastException = null;
+    private static final AtomicLongFieldUpdater<BKLogSegmentEntryReader> scheduleCountUpdater =
+        AtomicLongFieldUpdater.newUpdater(BKLogSegmentEntryReader.class, "scheduleCount");
+    private volatile long scheduleCount = 0L;
     private volatile boolean hasCaughtupOnInprogress = false;
     private final CopyOnWriteArraySet<StateChangeListener> stateChangeListeners =
             new CopyOnWriteArraySet<StateChangeListener>();
     // read retries
     private int readAheadWaitTime;
     private final int maxReadBackoffTime;
-    private final AtomicInteger numReadErrors = new AtomicInteger(0);
+    private static final AtomicIntegerFieldUpdater<BKLogSegmentEntryReader> numReadErrorsUpdater =
+        AtomicIntegerFieldUpdater.newUpdater(BKLogSegmentEntryReader.class, "numReadErrors");
+    private volatile int numReadErrors = 0;
     private final boolean skipBrokenEntries;
     // readahead cache
     int cachedEntries = 0;
@@ -493,8 +499,9 @@ public class BKLogSegmentEntryReader implements SafeRunnable, LogSegmentEntryRea
     //
 
     private boolean checkClosedOrInError() {
-        if (null != lastException.get()) {
-            cancelAllPendingReads(lastException.get());
+        Throwable cause = lastExceptionUpdater.get(this);
+        if (null != cause) {
+            cancelAllPendingReads(cause);
             return true;
         }
         return false;
@@ -507,7 +514,7 @@ public class BKLogSegmentEntryReader implements SafeRunnable, LogSegmentEntryRea
      * @param isBackground is the reader set exception by background reads or foreground reads
      */
     private void completeExceptionally(Throwable throwable, boolean isBackground) {
-        lastException.compareAndSet(null, throwable);
+        lastExceptionUpdater.compareAndSet(this, null, throwable);
         if (isBackground) {
             notifyReaders();
         }
@@ -662,7 +669,7 @@ public class BKLogSegmentEntryReader implements SafeRunnable, LogSegmentEntryRea
         final PendingReadRequest readRequest = new PendingReadRequest(numEntries);
 
         if (checkClosedOrInError()) {
-            readRequest.completeExceptionally(lastException.get());
+            readRequest.completeExceptionally(lastExceptionUpdater.get(this));
         } else {
             boolean wasQueueEmpty;
             synchronized (readQueue) {
@@ -682,9 +689,9 @@ public class BKLogSegmentEntryReader implements SafeRunnable, LogSegmentEntryRea
             return;
         }
 
-        long prevCount = scheduleCount.getAndIncrement();
+        long prevCount = scheduleCountUpdater.getAndIncrement(this);
         if (0 == prevCount) {
-            scheduler.submitOrdered(getSegment().getLogSegmentId(), this);
+            scheduler.executeOrdered(getSegment().getLogSegmentId(), this);
         }
     }
 
@@ -693,7 +700,7 @@ public class BKLogSegmentEntryReader implements SafeRunnable, LogSegmentEntryRea
      */
     @Override
     public void safeRun() {
-        long scheduleCountLocal = scheduleCount.get();
+        long scheduleCountLocal = scheduleCountUpdater.get(this);
         while (true) {
             PendingReadRequest nextRequest = null;
             synchronized (readQueue) {
@@ -702,14 +709,14 @@ public class BKLogSegmentEntryReader implements SafeRunnable, LogSegmentEntryRea
 
             // if read queue is empty, nothing to read, return
             if (null == nextRequest) {
-                scheduleCount.set(0L);
+                scheduleCountUpdater.set(this, 0L);
                 return;
             }
 
             // if the oldest pending promise is interrupted then we must
             // mark the reader in error and abort all pending reads since
             // we don't know the last consumed read
-            if (null == lastException.get()) {
+            if (null == lastExceptionUpdater.get(this)) {
                 if (nextRequest.getPromise().isCancelled()) {
                     completeExceptionally(new DLInterruptedException("Interrupted on reading log segment "
                             + getSegment() + " : " + nextRequest.getPromise().isCancelled()), false);
@@ -745,7 +752,7 @@ public class BKLogSegmentEntryReader implements SafeRunnable, LogSegmentEntryRea
                 if (0 == scheduleCountLocal) {
                     return;
                 }
-                scheduleCountLocal = scheduleCount.decrementAndGet();
+                scheduleCountLocal = scheduleCountUpdater.decrementAndGet(this);
             }
         }
     }
