@@ -1175,6 +1175,7 @@ public class Bookie extends BookieCriticalThread {
         if (LOG.isTraceEnabled()) {
             LOG.trace("Forcing ledger {}", ledgerId);
         }
+        Journal journal = getJournal(ledgerId);
         WriteCallback recoverLastAddPersisted = (int rc, long ledgerId1, long entryId,
                                                     BookieSocketAddress addr, Object ctx1) -> {
             if (entryId == BookieProtocol.INVALID_ENTRY_ID) {
@@ -1185,6 +1186,8 @@ public class Bookie extends BookieCriticalThread {
                     ByteBuf entry = ledgerStorage.getEntry(ledgerId, BookieProtocol.LAST_ADD_CONFIRMED);
                     if (entry != null) {
                         entryId = entry.getLong(8);
+                        // inform Journal that entries up to 'entryId' are stored durably
+                        journal.recoverLastPersistedEntryId(ledgerId, entryId);
                         entry.release();
                     }
                     LOG.info("recovered lastAddPersisted entryId {} for ledger {} from LedgerStorage",
@@ -1196,7 +1199,7 @@ public class Bookie extends BookieCriticalThread {
             }
             cb.writeComplete(rc, ledgerId1, entryId, addr, ctx1);
         };
-        getJournal(ledgerId).forceLedger(ledgerId, recoverLastAddPersisted, ctx);
+        journal.forceLedger(ledgerId, recoverLastAddPersisted, ctx);
     }
 
     /**
