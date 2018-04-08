@@ -239,20 +239,18 @@ public class DbLedgerStorageTest {
     }
 
     @Test
-    public void doubleDirectoryError() throws Exception {
+    public void doubleDirectory() throws Exception {
         int gcWaitTime = 1000;
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
         conf.setGcWaitTime(gcWaitTime);
         conf.setLedgerStorageClass(DbLedgerStorage.class.getName());
         conf.setLedgerDirNames(new String[] { "dir1", "dir2" });
 
-        try {
-            new Bookie(conf);
-            fail("Should have failed because of the 2 directories");
-        } catch (IllegalArgumentException e) {
-            // ok
-        }
+        // Should not fail
+        Bookie bookie = new Bookie(conf);
+        assertEquals(2, ((DbLedgerStorage) bookie.getLedgerStorage()).getLedgerStorageList().size());
 
+        bookie.shutdown();
     }
 
     @Test
