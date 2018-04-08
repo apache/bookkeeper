@@ -28,11 +28,18 @@ import io.netty.buffer.Unpooled;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.concurrent.ScheduledExecutorService;
 
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException.OperationRejectedException;
+import org.apache.bookkeeper.bookie.CheckpointSource;
+import org.apache.bookkeeper.bookie.Checkpointer;
+import org.apache.bookkeeper.bookie.LedgerDirsManager;
+import org.apache.bookkeeper.bookie.StateManager;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
+import org.apache.bookkeeper.meta.LedgerManager;
+import org.apache.bookkeeper.stats.StatsLogger;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -48,29 +55,49 @@ public class DbLedgerStorageWriteCacheTest {
     private static class MockedDbLedgerStorage extends DbLedgerStorage {
 
         @Override
-        public void flush() throws IOException {
-            flushMutex.lock();
-            try {
-                // Swap the write caches and block indefinitely to simulate a slow disk
-                WriteCache tmp = writeCacheBeingFlushed;
-                writeCacheBeingFlushed = writeCache;
-                writeCache = tmp;
-
-                // since the cache is switched, we can allow flush to be triggered
-                hasFlushBeenTriggered.set(false);
-
-                // Block the flushing thread
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    return;
-                }
-            } finally {
-                flushMutex.unlock();
-            }
+        protected SingleDirectoryDbLedgerStorage newSingleDirectoryDbLedgerStorage(ServerConfiguration conf,
+                LedgerManager ledgerManager, LedgerDirsManager ledgerDirsManager, LedgerDirsManager indexDirsManager,
+                StateManager stateManager, CheckpointSource checkpointSource, Checkpointer checkpointer,
+                StatsLogger statsLogger, ScheduledExecutorService gcExecutor, long writeCacheSize, long readCacheSize)
+                throws IOException {
+            return new MockedSingleDirectoryDbLedgerStorage(conf, ledgerManager, ledgerDirsManager, indexDirsManager,
+                    stateManager, checkpointSource, checkpointer, statsLogger, gcExecutor, writeCacheSize,
+                    readCacheSize);
         }
 
+        private static class MockedSingleDirectoryDbLedgerStorage extends SingleDirectoryDbLedgerStorage {
+            public MockedSingleDirectoryDbLedgerStorage(ServerConfiguration conf, LedgerManager ledgerManager,
+                    LedgerDirsManager ledgerDirsManager, LedgerDirsManager indexDirsManager, StateManager stateManager,
+                    CheckpointSource checkpointSource, Checkpointer checkpointer, StatsLogger statsLogger,
+                    ScheduledExecutorService gcExecutor, long writeCacheSize, long readCacheSize) throws IOException {
+                super(conf, ledgerManager, ledgerDirsManager, indexDirsManager, stateManager, checkpointSource,
+                        checkpointer, statsLogger, gcExecutor, writeCacheSize, readCacheSize);
+            }
+
+          @Override
+          public void flush() throws IOException {
+              flushMutex.lock();
+              try {
+                  // Swap the write caches and block indefinitely to simulate a slow disk
+                  WriteCache tmp = writeCacheBeingFlushed;
+                  writeCacheBeingFlushed = writeCache;
+                  writeCache = tmp;
+
+                  // since the cache is switched, we can allow flush to be triggered
+                  hasFlushBeenTriggered.set(false);
+
+                  // Block the flushing thread
+                  try {
+                      Thread.sleep(1000);
+                  } catch (InterruptedException e) {
+                      Thread.currentThread().interrupt();
+                      return;
+                  }
+              } finally {
+                  flushMutex.unlock();
+              }
+          }
+        }
     }
 
     @Before
