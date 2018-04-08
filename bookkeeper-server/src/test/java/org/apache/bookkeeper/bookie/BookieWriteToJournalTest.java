@@ -25,8 +25,10 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
 import static org.powermock.api.mockito.PowerMockito.whenNew;
 
 import io.netty.buffer.ByteBuf;
@@ -35,6 +37,7 @@ import java.io.File;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.client.api.BKException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -51,6 +54,7 @@ import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
+import org.powermock.reflect.Whitebox;
 
 /**
  * Test the bookie journal.
@@ -248,11 +252,24 @@ public class BookieWriteToJournalTest {
 
         b.shutdown();
 
-        CompletableFuture<Long> latchForceLedger2 = new CompletableFuture<>();
         // re-start the bookie
         Bookie b2 = new Bookie(conf);
         b2.start();
-        // issue a new "forceLedger"
+
+        AtomicInteger recoverCount = new AtomicInteger();
+        LedgerStorage ledgerStorage = b2.getLedgerStorage();
+        LedgerStorage ledgerStorageSpy = spy(ledgerStorage);
+        Whitebox.setInternalState(b2, "ledgerStorage", ledgerStorageSpy);
+        doAnswer((InvocationOnMock iom) -> {
+                    long lId = (Long) iom.getArgument(0);
+                    long eId = (Long) iom.getArgument(1);
+                    recoverCount.incrementAndGet();
+                    return ledgerStorage.getEntry(lId, eId);
+        }).when(ledgerStorageSpy).getEntry(eq(ledgerId), eq(BookieProtocol.LAST_ADD_CONFIRMED));
+
+        // issue a new "forceLedger", lastAddPersisted will be recovered
+        // by reading the LastAddConfirmed entry from LedgerStorage
+        CompletableFuture<Long> latchForceLedger2 = new CompletableFuture<>();
         b2.forceLedger(ledgerId, (int rc, long ledgerId1, long entryId1,
                                         BookieSocketAddress addr, Object ctx) -> {
             if (rc != BKException.Code.OK) {
@@ -262,6 +279,23 @@ public class BookieWriteToJournalTest {
             latchForceLedger2.complete(entryId1);
         }, expectedCtx, masterKey);
         assertEquals(entryId, result(latchForceLedger2).longValue());
+
+        assertEquals(1, recoverCount.get());
+
+        // issue a new "forceLedger", there is no need to recover again
+        // from LedgerStorage
+        CompletableFuture<Long> latchForceLedger3 = new CompletableFuture<>();
+        b2.forceLedger(ledgerId, (int rc, long ledgerId1, long entryId1,
+                                        BookieSocketAddress addr, Object ctx) -> {
+            if (rc != BKException.Code.OK) {
+                latchForceLedger3.completeExceptionally(org.apache.bookkeeper.client.BKException.create(rc));
+                return;
+            }
+            latchForceLedger3.complete(entryId1);
+        }, expectedCtx, masterKey);
+        assertEquals(entryId, result(latchForceLedger3).longValue());
+
+        assertEquals(1, recoverCount.get());
         b2.shutdown();
 
     }

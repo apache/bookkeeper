@@ -36,11 +36,9 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -366,10 +364,11 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                 }
                 lastLogMark.setCurLogMark(this.logId, this.lastFlushedPosition);
 
-                Map.Entry<Long, Long> forced = flushedNotSyncedEntries.poll();
+                LedgerIdEntryIdPair forced = flushedNotSyncedEntries.poll();
                 while (forced != null) {
-                   long ledgerId = forced.getKey();
-                   long entryId = forced.getValue();
+                   long ledgerId = forced.ledgerId;
+                   long entryId = forced.entryId;
+                   forced.recycle();
                    SyncCursor cursor = getCursorForLedger(ledgerId);
                    cursor.update(entryId);
                    forced = flushedNotSyncedEntries.poll();
@@ -608,7 +607,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
     final BlockingQueue<QueueEntry> queue = new GrowableArrayBlockingQueue<QueueEntry>();
     final BlockingQueue<ForceWriteRequest> forceWriteRequests = new GrowableArrayBlockingQueue<ForceWriteRequest>();
 
-    final BlockingQueue<Map.Entry<Long, Long>> flushedNotSyncedEntries = new GrowableArrayBlockingQueue<>();
+    final BlockingQueue<LedgerIdEntryIdPair> flushedNotSyncedEntries = new GrowableArrayBlockingQueue<>();
     final ConcurrentLongHashMap<SyncCursor> syncCursors = new ConcurrentLongHashMap<SyncCursor>();
 
     volatile boolean running = true;
@@ -890,6 +889,10 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                 journalAddEntryStats, journalQueueSize));
     }
 
+    void recoverLastPersistedEntryId(long ledgerId, long entryId) {
+        getCursorForLedger(ledgerId).recover(entryId);
+    }
+
     void forceLedger(long ledgerId, WriteCallback cb, Object ctx) {
 
         journalQueueSize.inc();
@@ -1038,7 +1041,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                                     toFlush.set(i, null);
                                     numEntriesToFlush--;
                                     flushedNotSyncedEntries.add(
-                                            new AbstractMap.SimpleImmutableEntry<>(entry.ledgerId, entry.entryId));
+                                            LedgerIdEntryIdPair.create(entry.ledgerId, entry.entryId));
                                     cbThreadPool.execute(entry);
                                 }
                             }
@@ -1196,4 +1199,31 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
         return syncCursors.computeIfAbsent(ledgerId, (lId) -> new SyncCursor());
     }
 
+    private static final class LedgerIdEntryIdPair {
+        long ledgerId;
+        long entryId;
+
+        private final Handle<LedgerIdEntryIdPair> recyclerHandle;
+
+        static LedgerIdEntryIdPair create(long ledgerId, long entryId) {
+            LedgerIdEntryIdPair e = RECYCLER.get();
+            e.ledgerId = ledgerId;
+            e.entryId = entryId;
+            return e;
+        }
+
+        private LedgerIdEntryIdPair(Handle<LedgerIdEntryIdPair> recyclerHandle) {
+            this.recyclerHandle = recyclerHandle;
+        }
+
+        private static final Recycler<LedgerIdEntryIdPair> RECYCLER = new Recycler<LedgerIdEntryIdPair>() {
+            protected LedgerIdEntryIdPair newObject(Recycler.Handle<LedgerIdEntryIdPair> handle) {
+                return new LedgerIdEntryIdPair(handle);
+            }
+        };
+
+        private void recycle() {
+            recyclerHandle.recycle(this);
+        }
+    }
 }

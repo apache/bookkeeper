@@ -41,6 +41,21 @@ public class SyncCursor {
         return minAddSynced;
     }
 
+    public synchronized void recover(long entryId) {
+        checkArgument(entryId >= 0, "invalid entryId {}", entryId);
+        if (entryId <= minAddSynced) {
+            // cannot go backward
+            return;
+        }
+        // we got to know that all entries before 'entryId' has been
+        // persisted. This is the case when bookie restarts and are recovering
+        // the cursor from LedgerStorage
+        for (long fakeEntryId = minAddSynced + 1;
+                       fakeEntryId <= entryId; fakeEntryId++) {
+            update(fakeEntryId);
+        }
+    }
+
     @VisibleForTesting
     synchronized int getNumRanges() {
         return ranges.size();
@@ -48,8 +63,7 @@ public class SyncCursor {
 
     public synchronized void update(long entryId) {
         checkArgument(entryId >= 0, "invalid entryId {}", entryId);
-
-        if (entryId < minAddSynced) {
+        if (entryId <= minAddSynced) {
             // cannot go backward
             return;
         }
@@ -108,5 +122,11 @@ public class SyncCursor {
             }
         }
     }
+
+    @VisibleForTesting
+    synchronized SortedMap<Long, Long> getRanges() {
+        return new TreeMap<>(ranges);
+    }
+
 
 }

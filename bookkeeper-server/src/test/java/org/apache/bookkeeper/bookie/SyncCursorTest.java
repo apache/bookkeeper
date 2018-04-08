@@ -65,6 +65,38 @@ public class SyncCursorTest {
     }
 
     @Test
+    public void testRecover() {
+        SyncCursor cursor = new SyncCursor();
+        cursor.update(102);
+        assertEquals(-1, cursor.getCurrentMinAddSynced());
+
+        cursor.recover(100);
+        assertEquals(100, cursor.getCurrentMinAddSynced());
+
+        cursor.update(101);
+        assertEquals(102, cursor.getCurrentMinAddSynced());
+        cursor.update(1);
+        assertEquals(102, cursor.getCurrentMinAddSynced());
+        cursor.update(103);
+        assertEquals(103, cursor.getCurrentMinAddSynced());
+        assertEquals(0, cursor.getNumRanges());
+
+        cursor.update(110);
+        assertEquals(1, cursor.getNumRanges());
+        assertEquals(103, cursor.getCurrentMinAddSynced());
+
+        cursor.update(150);
+        assertEquals(103, cursor.getCurrentMinAddSynced());
+
+        assertEquals(2, cursor.getNumRanges());
+
+        cursor.recover(200);
+        assertEquals(0, cursor.getNumRanges());
+        assertEquals(200, cursor.getCurrentMinAddSynced());
+
+    }
+
+    @Test
     public void testWithSparseRanges() {
         SyncCursor cursor = new SyncCursor();
 
