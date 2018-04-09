@@ -55,6 +55,11 @@
           </a>
           <hr class="dropdown-divider">
           
+          <a class="navbar-item" href="/docs/4.6.2/overview/overview">
+            Release 4.6.2
+            
+          </a>
+          
           <a class="navbar-item" href="/docs/4.6.1/overview/overview">
             Release 4.6.1
             
@@ -455,15 +460,36 @@
 
       <div class="content">
         <section class="bk-main-content">
-          <p>TODO</p>
+          <p>This is the ninth release of BookKeeper as an Apache Top Level Project!</p>
+
+<p>The 4.6.2 release is a bugfix release which fixes a bunch of issues reported from users of 4.6.1.</p>
+
+<p>Apache BookKeeper users are encouraged to upgrade to 4.6.2. The technical details of this release are summarized
+below.</p>
 
 <h2 id="highlights">Highlights</h2>
 
-<p>TODO</p>
+<ul>
+  <li>
+    <p>Fix performance regression is using Netty &gt; 4.1.12, see <a href="https://github.com/apache/bookkeeper/pull/1108">https://github.com/apache/bookkeeper/pull/1108</a></p>
+  </li>
+  <li>
+    <p>Enhance performances on Prometheus stats provider, see <a href="https://github.com/apache/bookkeeper/pull/1081">https://github.com/apache/bookkeeper/pull/1081</a></p>
+  </li>
+  <li>
+    <p>Save memory resources on client by retaining for less time references to data to write, see <a href="https://github.com/apache/bookkeeper/issues/1063">https://github.com/apache/bookkeeper/issues/1063</a></p>
+  </li>
+  <li>
+    <p>Fix a problem on Java 9/10 with the ‘shaded’ artifacts, due to a bug in Maven Shade Plugin, see <a href="https://github.com/apache/bookkeeper/pull/1144">https://github.com/apache/bookkeeper/pull/1144</a></p>
+  </li>
+  <li>
+    <p>Fix Journal stats names, see <a href="https://github.com/apache/bookkeeper/pull/1250">https://github.com/apache/bookkeeper/pull/1250</a></p>
+  </li>
+</ul>
 
 <h3 id="dependencies-upgrade">Dependencies Upgrade</h3>
 
-<p>There is no dependency upgrade since 4.6.0, but now we distribute a ‘shaded’ version of main artifacts, see <a href="../ledger-api">Ledger API</a></p>
+<p>There is no dependency upgrade since 4.6.0, and since 4.6.1 we distribute a ‘shaded’ version of main artifacts, see <a href="../ledger-api">Ledger API</a></p>
 
 <h2 id="full-list-of-changes">Full list of changes</h2>
 
