@@ -81,7 +81,8 @@ public class BookieSocketAddress {
      * Maps the socketAddress to a "local" address.
      */
     public LocalAddress getLocalAddress() {
-        return new LocalAddress(socketAddress.toString());
+        // for local address, we just need "port" to differentiate different addresses.
+        return new LocalAddress("" + port);
     }
 
     // Return the String "serialized" version of this object.

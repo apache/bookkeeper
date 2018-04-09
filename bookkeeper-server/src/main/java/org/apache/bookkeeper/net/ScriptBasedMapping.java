@@ -145,6 +145,10 @@ public final class ScriptBasedMapping extends CachedDNSToSwitchMapping {
                 scriptName = null;
                 maxArgs = 0;
             }
+
+            if (null == scriptName) {
+                throw new RuntimeException("No network topology script is found when using script based DNS resolver.");
+            }
         }
 
         /**
