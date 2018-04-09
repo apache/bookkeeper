@@ -178,10 +178,11 @@ public class LedgerDirsManager {
         // We don't have writable Ledger Dirs. But we are still okay to create new entry log files if we have enough
         // disk spaces. This allows bookie can still function at readonly mode. Because compaction, journal replays
         // can still write data to disks.
-        return getDirsAboveUsableThresholdSize(minUsableSizeForEntryLogCreation);
+        return getDirsAboveUsableThresholdSize(minUsableSizeForEntryLogCreation, true);
     }
 
-    List<File> getDirsAboveUsableThresholdSize(long thresholdSize) throws NoWritableLedgerDirException {
+    List<File> getDirsAboveUsableThresholdSize(long thresholdSize, boolean loggingNoWritable)
+            throws NoWritableLedgerDirException {
         List<File> fullLedgerDirsToAccomodate = new ArrayList<File>();
         for (File dir: this.ledgerDirectories) {
             // Pick dirs which can accommodate little more than thresholdSize
@@ -191,8 +192,10 @@ public class LedgerDirsManager {
         }
 
         if (!fullLedgerDirsToAccomodate.isEmpty()) {
-            LOG.info("No writable ledger dirs below diskUsageThreshold. "
+            if (loggingNoWritable) {
+                LOG.info("No writable ledger dirs below diskUsageThreshold. "
                     + "But Dirs that can accommodate {} are: {}", thresholdSize, fullLedgerDirsToAccomodate);
+            }
             return fullLedgerDirsToAccomodate;
         }
 
@@ -200,7 +203,9 @@ public class LedgerDirsManager {
         // thresholdSize usable space
         String errMsg = "All ledger directories are non writable and no reserved space (" + thresholdSize + ") left.";
         NoWritableLedgerDirException e = new NoWritableLedgerDirException(errMsg);
-        LOG.error(errMsg, e);
+        if (loggingNoWritable) {
+            LOG.error(errMsg, e);
+        }
         throw e;
     }
 
@@ -306,7 +311,7 @@ public class LedgerDirsManager {
             // That means we must have turned readonly. But
             // during the Bookie restart, while replaying the journal there might be a need
             // to create new Index file and it should proceed.
-            writableDirsForNewIndexFile = getDirsAboveUsableThresholdSize(minUsableSizeForIndexFileCreation);
+            writableDirsForNewIndexFile = getDirsAboveUsableThresholdSize(minUsableSizeForIndexFileCreation, true);
         }
         return pickRandomDir(writableDirsForNewIndexFile, excludedDir);
     }

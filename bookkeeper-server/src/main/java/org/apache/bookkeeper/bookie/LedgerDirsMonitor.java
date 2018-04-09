@@ -82,14 +82,22 @@ class LedgerDirsMonitor {
                         listener.diskFailed(dir);
                     }
                 } catch (DiskWarnThresholdException e) {
-                    LOG.warn("Ledger directory {} is almost full.", dir);
-                    diskUsages.put(dir, e.getUsage());
+                    diskUsages.compute(dir, (d, prevUsage) -> {
+                        if (null == prevUsage || e.getUsage() != prevUsage) {
+                            LOG.warn("Ledger directory {} is almost full : usage {}", dir, e.getUsage());
+                        }
+                        return e.getUsage();
+                    });
                     for (LedgerDirsListener listener : ldm.getListeners()) {
                         listener.diskAlmostFull(dir);
                     }
                 } catch (DiskOutOfSpaceException e) {
-                    LOG.error("Ledger directory {} is out-of-space.", dir);
-                    diskUsages.put(dir, e.getUsage());
+                    diskUsages.compute(dir, (d, prevUsage) -> {
+                        if (null == prevUsage || e.getUsage() != prevUsage) {
+                            LOG.error("Ledger directory {} is out-of-space : usage {}", dir, e.getUsage());
+                        }
+                        return e.getUsage();
+                    });
                     // Notify disk full to all listeners
                     ldm.addToFilledDirs(dir);
                 }
@@ -102,7 +110,8 @@ class LedgerDirsMonitor {
         } catch (NoWritableLedgerDirException e) {
             boolean highPriorityWritesAllowed = true;
             try {
-                ldm.getDirsAboveUsableThresholdSize(minUsableSizeForHighPriorityWrites);
+                // disk check can be frequent, so disable 'loggingNoWritable' to avoid log flooding.
+                ldm.getDirsAboveUsableThresholdSize(minUsableSizeForHighPriorityWrites, false);
             } catch (NoWritableLedgerDirException e1) {
                 highPriorityWritesAllowed = false;
             }
