@@ -1,5 +1,5 @@
 ---
-title: Apache BookKeeper 4.7.0-SNAPSHOT Release Notes
+title: Apache BookKeeper 4.8.0-SNAPSHOT Release Notes
 ---
 
 Apache BookKeeper {{ site.latest_version }} is still under developement.
