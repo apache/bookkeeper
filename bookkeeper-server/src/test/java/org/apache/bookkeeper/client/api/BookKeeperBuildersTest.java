@@ -225,12 +225,12 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
     public void testCreateAdvLedgerWriteFlags() throws Exception {
         setNewGeneratedLedgerId(ledgerId);
         WriteAdvHandle writer = newCreateLedgerOp()
+            .withWriteFlags(writeFlagsDeferredSync)
             .withAckQuorumSize(ackQuorumSize)
             .withEnsembleSize(ensembleSize)
             .withPassword(password)
             .withWriteQuorumSize(writeQuorumSize)
             .withCustomMetadata(customMetadata)
-            .withWriteFlags(writeFlagsDeferredSync)
             .makeAdv()
             .execute()
             .get();
@@ -248,12 +248,12 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
     public void testCreateLedgerWriteFlags() throws Exception {
         setNewGeneratedLedgerId(ledgerId);
         WriteHandle writer = newCreateLedgerOp()
+            .withWriteFlags(writeFlagsDeferredSync)
             .withAckQuorumSize(ackQuorumSize)
             .withEnsembleSize(ensembleSize)
             .withPassword(password)
             .withWriteQuorumSize(writeQuorumSize)
             .withCustomMetadata(customMetadata)
-            .withWriteFlags(writeFlagsDeferredSync)
             .execute()
             .get();
         assertEquals(ledgerId, writer.getId());
@@ -270,12 +270,12 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
     public void testCreateLedgerWriteFlagsVarargs() throws Exception {
         setNewGeneratedLedgerId(ledgerId);
         WriteHandle writer = newCreateLedgerOp()
+            .withWriteFlags(DEFERRED_SYNC)
             .withAckQuorumSize(ackQuorumSize)
             .withEnsembleSize(ensembleSize)
             .withPassword(password)
             .withWriteQuorumSize(writeQuorumSize)
             .withCustomMetadata(customMetadata)
-            .withWriteFlags(DEFERRED_SYNC)
             .execute()
             .get();
         assertEquals(ledgerId, writer.getId());

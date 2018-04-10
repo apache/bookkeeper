@@ -48,7 +48,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.apache.bookkeeper.client.BKException.BKDigestMatchException;
 import org.apache.bookkeeper.client.BKException.Code;
-import org.apache.bookkeeper.client.api.CreateBuilder;
+import org.apache.bookkeeper.client.LedgerCreateOp.CreateBuilderImpl;
 import org.apache.bookkeeper.client.api.DeleteBuilder;
 import org.apache.bookkeeper.client.api.OpenBuilder;
 import org.apache.bookkeeper.common.util.OrderedExecutor;
@@ -209,7 +209,7 @@ public abstract class MockBookKeeperTestCase {
         when(bk.getConf()).thenReturn(config);
     }
 
-    protected CreateBuilder newCreateLedgerOp() {
+    protected CreateBuilderImpl newCreateLedgerOp() {
         return new LedgerCreateOp.CreateBuilderImpl(bk);
     }
 
