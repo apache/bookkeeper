@@ -62,7 +62,7 @@ Client Guide | API docs
 
 ## News
 
-###  April, 2018: Release 4.6.2 available
+### 9 April, 2018: Release 4.6.2 available
 
 This is the ninth release of BookKeeper as an Apache Top Level Project!
 
