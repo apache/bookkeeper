@@ -621,13 +621,13 @@
 <p><!-- if command.options --></p>
 <hr />
 
-<h3 id="bookkeeper-shell-bookieFormat">bookieFormat</h3>
+<h3 id="bookkeeper-shell-bookieformat">bookieformat</h3>
 
 <p>Format the current server contents.</p>
 
 <h5>Usage</h5>
 
-<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>bookkeeper-server/bin/bookkeeper shell bookieFormat <span class="se">\</span>
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>bookkeeper-server/bin/bookkeeper shell bookieformat <span class="se">\</span>
   &lt;options&gt;
 </code></pre></div></div>
 
@@ -659,6 +659,22 @@
     
   </tbody>
 </table>
+<p><!-- if command.options --></p>
+<hr />
+
+<h3 id="bookkeeper-shell-initbookie">initbookie</h3>
+
+<p>Initialize new bookie, by making sure that the journalDir, ledgerDirs and
+indexDirs are empty and there is no registered Bookie with this BookieId.</p>
+
+<p>If there is data present in current bookie server, the init operation will fail. If you want to format
+the bookie server, use <code class="highlighter-rouge">bookieformat</code>.</p>
+
+<h5>Usage</h5>
+
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>bookkeeper-server/bin/bookkeeper shell initbookie
+</code></pre></div></div>
+
 <p><!-- if command.options --></p>
 <hr />
 
@@ -1000,6 +1016,11 @@
       <td>Bookie Id of missing replica to ignore</td>
     </tr>
     
+    <tr>
+      <td><code>-printmissingreplica</code></td>
+      <td>Whether to print missingreplicas list?</td>
+    </tr>
+    
   </tbody>
 </table>
 <p><!-- if command.options --></p>
@@ -1007,7 +1028,8 @@
 
 <h3 id="bookkeeper-shell-metaformat">metaformat</h3>
 
-<p>Format Bookkeeper metadata in Zookeeper.</p>
+<p>Format Bookkeeper metadata in Zookeeper. This command is deprecated since 4.7.0,
+in favor of using <code class="highlighter-rouge">initnewcluster</code> for initializing a new cluster and <code class="highlighter-rouge">nukeexistingcluster</code> for nuking an existing cluster.</p>
 
 <h5>Usage</h5>
 
@@ -1034,6 +1056,60 @@
     <tr>
       <td><code>-force</code></td>
       <td>If [nonInteractive] is specified, then whether to force delete the old data without prompt.</td>
+    </tr>
+    
+  </tbody>
+</table>
+<p><!-- if command.options --></p>
+<hr />
+
+<h3 id="bookkeeper-shell-initnewcluster">initnewcluster</h3>
+
+<p>Initializes a new bookkeeper cluster. If initnewcluster fails then try nuking
+existing cluster by running nukeexistingcluster before running initnewcluster again</p>
+
+<h5>Usage</h5>
+
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>bookkeeper-server/bin/bookkeeper shell initnewcluster
+</code></pre></div></div>
+
+<p><!-- if command.options --></p>
+<hr />
+
+<h3 id="bookkeeper-shell-nukeexistingcluster">nukeexistingcluster</h3>
+
+<p>Nuke bookkeeper cluster by deleting metadata</p>
+
+<h5>Usage</h5>
+
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>bookkeeper-server/bin/bookkeeper shell nukeexistingcluster <span class="se">\</span>
+  &lt;options&gt;
+</code></pre></div></div>
+
+<h5>Options</h5>
+
+<table>
+  <thead>
+    <tr>
+      <th>Flag</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    
+    <tr>
+      <td><code>-zkledgersrootpath</code></td>
+      <td>zookeeper ledgers rootpath</td>
+    </tr>
+    
+    <tr>
+      <td><code>-instanceid</code></td>
+      <td>instance id</td>
+    </tr>
+    
+    <tr>
+      <td><code>-force</code></td>
+      <td>If instanceid is not specified, then whether to force nuke the metadata without validating instanceid</td>
     </tr>
     
   </tbody>
@@ -1348,6 +1424,66 @@
   </tbody>
 </table>
 <p><!-- if command.options --></p>
+<hr />
+
+<h3 id="bookkeeper-shell-whoisauditor">whoisauditor</h3>
+
+<p>Print the node which holds the auditor lock</p>
+
+<h5>Usage</h5>
+
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>bookkeeper-server/bin/bookkeeper shell whoisauditor
+</code></pre></div></div>
+
+<p><!-- if command.options --></p>
+<hr />
+
+<h3 id="bookkeeper-shell-whatisinstanceid">whatisinstanceid</h3>
+
+<p>Print the instanceid of the cluster</p>
+
+<h5>Usage</h5>
+
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>bookkeeper-server/bin/bookkeeper shell whatisinstanceid
+</code></pre></div></div>
+
+<p><!-- if command.options --></p>
+<hr />
+
+<h3 id="bookkeeper-shell-convert-to-db-storage">convert-to-db-storage</h3>
+
+<p>Convert bookie indexes from InterleavedStorage to DbLedgerStorage format</p>
+
+<h5>Usage</h5>
+
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>bookkeeper-server/bin/bookkeeper shell convert-to-db-storage
+</code></pre></div></div>
+
+<p><!-- if command.options --></p>
+<hr />
+
+<h3 id="bookkeeper-shell-convert-to-interleaved-storage">convert-to-interleaved-storage</h3>
+
+<p>Convert bookie indexes from DbLedgerStorage to InterleavedStorage format</p>
+
+<h5>Usage</h5>
+
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>bookkeeper-server/bin/bookkeeper shell convert-to-interleaved-storage
+</code></pre></div></div>
+
+<p><!-- if command.options --></p>
+<hr />
+
+<h3 id="bookkeeper-shell-rebuild-db-ledger-locations-index">rebuild-db-ledger-locations-index</h3>
+
+<p>Rebuild DbLedgerStorage locations index</p>
+
+<h5>Usage</h5>
+
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>bookkeeper-server/bin/bookkeeper shell rebuild-db-ledger-locations-index
+</code></pre></div></div>
+
+<p><!-- if command.options --></p>
 
 <p><!-- for command in commands --></p>
 
@@ -1383,71 +1519,88 @@
 <li class="toc-entry toc-h3"><a href="#autorecovery-1">autorecovery</a></li>
 <li class="toc-entry toc-h5"><a href="#usage-6">Usage</a></li>
 <li class="toc-entry toc-h5"><a href="#options">Options</a></li>
-<li class="toc-entry toc-h3"><a href="#bookieformat">bookieFormat</a></li>
+<li class="toc-entry toc-h3"><a href="#bookieformat">bookieformat</a></li>
 <li class="toc-entry toc-h5"><a href="#usage-7">Usage</a></li>
 <li class="toc-entry toc-h5"><a href="#options-1">Options</a></li>
-<li class="toc-entry toc-h3"><a href="#bookieinfo">bookieinfo</a></li>
+<li class="toc-entry toc-h3"><a href="#initbookie">initbookie</a></li>
 <li class="toc-entry toc-h5"><a href="#usage-8">Usage</a></li>
-<li class="toc-entry toc-h3"><a href="#bookiesanity">bookiesanity</a></li>
+<li class="toc-entry toc-h3"><a href="#bookieinfo">bookieinfo</a></li>
 <li class="toc-entry toc-h5"><a href="#usage-9">Usage</a></li>
+<li class="toc-entry toc-h3"><a href="#bookiesanity">bookiesanity</a></li>
+<li class="toc-entry toc-h5"><a href="#usage-10">Usage</a></li>
 <li class="toc-entry toc-h5"><a href="#options-2">Options</a></li>
 <li class="toc-entry toc-h3"><a href="#decommissionbookie">decommissionbookie</a></li>
-<li class="toc-entry toc-h5"><a href="#usage-10">Usage</a></li>
-<li class="toc-entry toc-h3"><a href="#deleteledger">deleteledger</a></li>
 <li class="toc-entry toc-h5"><a href="#usage-11">Usage</a></li>
+<li class="toc-entry toc-h3"><a href="#deleteledger">deleteledger</a></li>
+<li class="toc-entry toc-h5"><a href="#usage-12">Usage</a></li>
 <li class="toc-entry toc-h5"><a href="#options-3">Options</a></li>
 <li class="toc-entry toc-h3"><a href="#expandstorage">expandstorage</a></li>
-<li class="toc-entry toc-h5"><a href="#usage-12">Usage</a></li>
-<li class="toc-entry toc-h3"><a href="#help-1">help</a></li>
 <li class="toc-entry toc-h5"><a href="#usage-13">Usage</a></li>
-<li class="toc-entry toc-h3"><a href="#lastmark">lastmark</a></li>
+<li class="toc-entry toc-h3"><a href="#help-1">help</a></li>
 <li class="toc-entry toc-h5"><a href="#usage-14">Usage</a></li>
-<li class="toc-entry toc-h3"><a href="#ledger">ledger</a></li>
+<li class="toc-entry toc-h3"><a href="#lastmark">lastmark</a></li>
 <li class="toc-entry toc-h5"><a href="#usage-15">Usage</a></li>
+<li class="toc-entry toc-h3"><a href="#ledger">ledger</a></li>
+<li class="toc-entry toc-h5"><a href="#usage-16">Usage</a></li>
 <li class="toc-entry toc-h5"><a href="#options-4">Options</a></li>
 <li class="toc-entry toc-h3"><a href="#ledgermetadata">ledgermetadata</a></li>
-<li class="toc-entry toc-h5"><a href="#usage-16">Usage</a></li>
+<li class="toc-entry toc-h5"><a href="#usage-17">Usage</a></li>
 <li class="toc-entry toc-h5"><a href="#options-5">Options</a></li>
 <li class="toc-entry toc-h3"><a href="#listbookies">listbookies</a></li>
-<li class="toc-entry toc-h5"><a href="#usage-17">Usage</a></li>
+<li class="toc-entry toc-h5"><a href="#usage-18">Usage</a></li>
 <li class="toc-entry toc-h5"><a href="#options-6">Options</a></li>
 <li class="toc-entry toc-h3"><a href="#listfilesondisc">listfilesondisc</a></li>
-<li class="toc-entry toc-h5"><a href="#usage-18">Usage</a></li>
+<li class="toc-entry toc-h5"><a href="#usage-19">Usage</a></li>
 <li class="toc-entry toc-h5"><a href="#options-7">Options</a></li>
 <li class="toc-entry toc-h3"><a href="#listledgers">listledgers</a></li>
-<li class="toc-entry toc-h5"><a href="#usage-19">Usage</a></li>
+<li class="toc-entry toc-h5"><a href="#usage-20">Usage</a></li>
 <li class="toc-entry toc-h5"><a href="#options-8">Options</a></li>
 <li class="toc-entry toc-h3"><a href="#listunderreplicated">listunderreplicated</a></li>
-<li class="toc-entry toc-h5"><a href="#usage-20">Usage</a></li>
+<li class="toc-entry toc-h5"><a href="#usage-21">Usage</a></li>
 <li class="toc-entry toc-h5"><a href="#options-9">Options</a></li>
 <li class="toc-entry toc-h3"><a href="#metaformat">metaformat</a></li>
-<li class="toc-entry toc-h5"><a href="#usage-21">Usage</a></li>
-<li class="toc-entry toc-h5"><a href="#options-10">Options</a></li>
-<li class="toc-entry toc-h3"><a href="#lostbookierecoverydelay">lostbookierecoverydelay</a></li>
 <li class="toc-entry toc-h5"><a href="#usage-22">Usage</a></li>
-<li class="toc-entry toc-h5"><a href="#options-11">Options</a></li>
-<li class="toc-entry toc-h3"><a href="#readjournal">readjournal</a></li>
+<li class="toc-entry toc-h5"><a href="#options-10">Options</a></li>
+<li class="toc-entry toc-h3"><a href="#initnewcluster">initnewcluster</a></li>
 <li class="toc-entry toc-h5"><a href="#usage-23">Usage</a></li>
-<li class="toc-entry toc-h5"><a href="#options-12">Options</a></li>
-<li class="toc-entry toc-h3"><a href="#readledger">readledger</a></li>
+<li class="toc-entry toc-h3"><a href="#nukeexistingcluster">nukeexistingcluster</a></li>
 <li class="toc-entry toc-h5"><a href="#usage-24">Usage</a></li>
-<li class="toc-entry toc-h3"><a href="#readlog">readlog</a></li>
+<li class="toc-entry toc-h5"><a href="#options-11">Options</a></li>
+<li class="toc-entry toc-h3"><a href="#lostbookierecoverydelay">lostbookierecoverydelay</a></li>
 <li class="toc-entry toc-h5"><a href="#usage-25">Usage</a></li>
-<li class="toc-entry toc-h5"><a href="#options-13">Options</a></li>
-<li class="toc-entry toc-h3"><a href="#recover">recover</a></li>
+<li class="toc-entry toc-h5"><a href="#options-12">Options</a></li>
+<li class="toc-entry toc-h3"><a href="#readjournal">readjournal</a></li>
 <li class="toc-entry toc-h5"><a href="#usage-26">Usage</a></li>
-<li class="toc-entry toc-h5"><a href="#options-14">Options</a></li>
-<li class="toc-entry toc-h3"><a href="#simpletest">simpletest</a></li>
+<li class="toc-entry toc-h5"><a href="#options-13">Options</a></li>
+<li class="toc-entry toc-h3"><a href="#readledger">readledger</a></li>
 <li class="toc-entry toc-h5"><a href="#usage-27">Usage</a></li>
-<li class="toc-entry toc-h5"><a href="#options-15">Options</a></li>
-<li class="toc-entry toc-h3"><a href="#triggeraudit">triggeraudit</a></li>
+<li class="toc-entry toc-h3"><a href="#readlog">readlog</a></li>
 <li class="toc-entry toc-h5"><a href="#usage-28">Usage</a></li>
-<li class="toc-entry toc-h3"><a href="#updatecookie">updatecookie</a></li>
+<li class="toc-entry toc-h5"><a href="#options-14">Options</a></li>
+<li class="toc-entry toc-h3"><a href="#recover">recover</a></li>
 <li class="toc-entry toc-h5"><a href="#usage-29">Usage</a></li>
-<li class="toc-entry toc-h5"><a href="#options-16">Options</a></li>
-<li class="toc-entry toc-h3"><a href="#updateledgers">updateledgers</a></li>
+<li class="toc-entry toc-h5"><a href="#options-15">Options</a></li>
+<li class="toc-entry toc-h3"><a href="#simpletest">simpletest</a></li>
 <li class="toc-entry toc-h5"><a href="#usage-30">Usage</a></li>
+<li class="toc-entry toc-h5"><a href="#options-16">Options</a></li>
+<li class="toc-entry toc-h3"><a href="#triggeraudit">triggeraudit</a></li>
+<li class="toc-entry toc-h5"><a href="#usage-31">Usage</a></li>
+<li class="toc-entry toc-h3"><a href="#updatecookie">updatecookie</a></li>
+<li class="toc-entry toc-h5"><a href="#usage-32">Usage</a></li>
 <li class="toc-entry toc-h5"><a href="#options-17">Options</a></li>
+<li class="toc-entry toc-h3"><a href="#updateledgers">updateledgers</a></li>
+<li class="toc-entry toc-h5"><a href="#usage-33">Usage</a></li>
+<li class="toc-entry toc-h5"><a href="#options-18">Options</a></li>
+<li class="toc-entry toc-h3"><a href="#whoisauditor">whoisauditor</a></li>
+<li class="toc-entry toc-h5"><a href="#usage-34">Usage</a></li>
+<li class="toc-entry toc-h3"><a href="#whatisinstanceid">whatisinstanceid</a></li>
+<li class="toc-entry toc-h5"><a href="#usage-35">Usage</a></li>
+<li class="toc-entry toc-h3"><a href="#convert-to-db-storage">convert-to-db-storage</a></li>
+<li class="toc-entry toc-h5"><a href="#usage-36">Usage</a></li>
+<li class="toc-entry toc-h3"><a href="#convert-to-interleaved-storage">convert-to-interleaved-storage</a></li>
+<li class="toc-entry toc-h5"><a href="#usage-37">Usage</a></li>
+<li class="toc-entry toc-h3"><a href="#rebuild-db-ledger-locations-index">rebuild-db-ledger-locations-index</a></li>
+<li class="toc-entry toc-h5"><a href="#usage-38">Usage</a></li>
 </ul>
 </div>
 
