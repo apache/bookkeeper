@@ -18,14 +18,13 @@
 
 import common_job_properties
 
-// This job runs nightly build for bookkeeper release branch
-mavenJob('bookkeeper_release_branch') {
-  description('Run nightly build for bookkeeper release branch')
+// This job runs the Java postcommit tests on Java 8 for branch-4.7
+mavenJob('bookkeeper_release_branch_47_java8') {
+  description('Runs nightly build for bookkeeper branch-4.7 in Java 8.')
 
   // Set common parameters.
   common_job_properties.setTopLevelMainJobProperties(
-      delegate,
-      "branch-4.6")
+    delegate, 'branch-4.7', 'JDK 1.8 (latest)')
 
   // Sets that this is a PostCommit job.
   common_job_properties.setPostCommit(
@@ -36,12 +35,12 @@ mavenJob('bookkeeper_release_branch') {
   // Allows triggering this build against pull requests.
   common_job_properties.enablePhraseTriggeringFromPullRequest(
       delegate,
-      'Release Branch Test',
-      '/test-release-branch')
-  
+      'Release Branch 4.7 Java 8 Test',
+      '/test-release-branch-47-java8')
+
   // Set maven parameters.
   common_job_properties.setMavenConfig(delegate)
 
   // Maven build project.
-  goals('clean apache-rat:check package findbugs:check')
+  goals('clean apache-rat:check package spotbugs:check -Ddistributedlog -Dstream -DstreamTests')
 }
