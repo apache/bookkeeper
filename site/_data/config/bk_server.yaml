@@ -270,6 +270,17 @@ groups:
   - param: minUsableSizeForIndexFileCreation
     description: Minimum safe usable size to be available in index directory for bookie to create index file while replaying journal at the time of bookie start in readonly mode (in bytes)
     default: 1073741824
+  - param: minUsableSizeForEntryLogCreation
+    description: |
+      Minimum safe usable size to be available in ledger directory for bookie to create entry log files (in bytes).
+      This parameter allows creating entry log files when there are enough disk spaces, even when
+      the bookie is running at readonly mode because of the disk usage is exceeding `diskUsageThreshold`.
+      Because compaction, journal replays can still write data to disks when a bookie is readonly.
+    default: 1.2 * `logSizeLimit`
+  - param: minUsableSizeForHighPriorityWrites
+    description: |
+      Minimum safe usable size to be available in ledger directory for bookie to accept high priority writes even it is in readonly mode.
+    default: 1.2 * `logSizeLimit`
   - param: flushInterval
     description: When entryLogPerLedgerEnabled is enabled, checkpoint doesn't happens when a new active entrylog is created / previous one is rolled over. Instead SyncThread checkpoints periodically with 'flushInterval' delay (in milliseconds) in between executions. Checkpoint flushes both ledger entryLogs and ledger index pages to disk.  Flushing entrylog and index files will introduce much random disk I/O. If separating journal dir and ledger dirs each on different devices, flushing would not affect performance. But if putting journal dir and ledger dirs on same device, performance degrade significantly on too frequent flushing. You can consider increment flush interval to get better performance, but you need to pay more time on bookie server restart after failure. This config is used only when entryLogPerLedgerEnabled is enabled.
     default: 10000
