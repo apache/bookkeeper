@@ -23,6 +23,7 @@ package org.apache.bookkeeper.client;
 
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
@@ -238,7 +239,7 @@ class LedgerCreateOp implements GenericCallback<Void> {
         cb.createComplete(rc, lh, ctx);
     }
 
-    static class CreateBuilderImpl implements CreateBuilder {
+    public static class CreateBuilderImpl implements CreateBuilder {
 
         private final BookKeeper bk;
         private int builderEnsembleSize = 3;
@@ -260,10 +261,13 @@ class LedgerCreateOp implements GenericCallback<Void> {
             return this;
         }
 
-        @Override
         public CreateBuilder withWriteFlags(EnumSet<WriteFlag> writeFlags) {
             this.builderWriteFlags = writeFlags;
             return this;
+        }
+
+        public CreateBuilder withWriteFlags(WriteFlag... writeFlags) {
+            return withWriteFlags(EnumSet.copyOf(Arrays.asList(writeFlags)));
         }
 
         @Override
