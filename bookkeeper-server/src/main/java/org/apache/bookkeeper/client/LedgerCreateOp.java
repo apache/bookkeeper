@@ -21,6 +21,7 @@
 
 package org.apache.bookkeeper.client;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -282,6 +283,7 @@ class LedgerCreateOp implements GenericCallback<Void> {
             return this;
         }
 
+        @SuppressFBWarnings("EI_EXPOSE_REP2")
         @Override
         public CreateBuilder withPassword(byte[] password) {
             this.builderPassword = password;
