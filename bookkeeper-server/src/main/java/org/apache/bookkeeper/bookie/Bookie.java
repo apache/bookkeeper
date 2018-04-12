@@ -1198,14 +1198,15 @@ public class Bookie extends BookieCriticalThread {
         // journal does not have info about what has been persisted before last bookie restart
         // so we are reconstructing this information from LedgerStorage
         try {
-            // we are performing a scan explicitly because we must stop in case of gaps
-            // having the last written entry id is not enough, because we have to guarantee
-            // to the client that all the entries up to lastAddForced are stored durably
-            // on this bookie.
+            // we are performing a scan explicitly because we have to reconstruct fully the LastAddForcedCursor
+            // even in presence of gaps.
             // we cannot use LedgerStorage#getLastAddConfirmed or LedgerStorage#getLastEntry
             // because gaps may be present (see WriteAdvHandle) and we must be sure
             // to recover fully the cursor, so the client is telling the range of the possible entryId
-            // which may be present on this bookie.
+            // which may be present on this bookie, only the client knows exactly this value.
+            // currently we are supposing that a bookie will receive all the entries
+            // from 0 to maximumKnownEntryIdByWriter
+            // in the future it will be possible for a bookie to contain only a portion of entries of the ledger.
             for (long eId = 0; eId <= maximumKnownEntryIdByWriter; eId++) {
                 try {
                     ByteBuf entry = ledgerStorage.getEntry(ledgerId, eId);

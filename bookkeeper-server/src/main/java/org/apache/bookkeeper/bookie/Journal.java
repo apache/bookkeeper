@@ -379,6 +379,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                     if (qe != null) {
                         if (qe.entryId == Bookie.METAENTRY_ID_FORCE_LEDGER) {
                             LastAddForcedCursor cursor = getCursorForLedger(qe.ledgerId);
+                            // for these special entries we have to return the LastAddForced entry
                             qe.entryId = cursor.getLastAddForced();
                         }
                         cbThreadPool.execute(qe);
@@ -606,7 +607,9 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
     final BlockingQueue<QueueEntry> queue = new GrowableArrayBlockingQueue<QueueEntry>();
     final BlockingQueue<ForceWriteRequest> forceWriteRequests = new GrowableArrayBlockingQueue<ForceWriteRequest>();
 
+    // entries written to the disk and acknowledged to the client before forcing writes (see ackBeforeSync)
     final BlockingQueue<LedgerIdEntryIdPair> flushedNotForcedEntries = new GrowableArrayBlockingQueue<>();
+    // keep an in memory cursor which is able to return information
     final ConcurrentLongHashMap<LastAddForcedCursor> syncCursors = new ConcurrentLongHashMap<LastAddForcedCursor>();
 
     volatile boolean running = true;
