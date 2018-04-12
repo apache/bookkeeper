@@ -226,7 +226,7 @@ public class CreateNewLogTest {
                 el.getPreviousAllocatedEntryLogId());
 
         // Extracted from createNewLog()
-        logFileName = Long.toHexString(3) + TransactionalEntryLogCompactor.COMPACTING_SUFFIX;
+        logFileName = Long.toHexString(3) + ".log";
         dir = ledgerDirsManager.pickRandomWritableDir();
         LOG.info("Picked this directory: {}", dir);
         newLogFile = new File(dir, logFileName);
@@ -250,14 +250,6 @@ public class CreateNewLogTest {
         EntryLogger el = new EntryLogger(conf, ledgerDirsManager);
         AtomicBoolean receivedException = new AtomicBoolean(false);
 
-        // create a gap
-        // Extracted from createNewLog()
-        String logFileName = Long.toHexString(2) + TransactionalEntryLogCompactor.COMPACTED_SUFFIX;
-        File dir = ledgerDirsManager.pickRandomWritableDir();
-        LOG.info("Picked this directory: {}", dir);
-        File newLogFile = new File(dir, logFileName);
-        newLogFile.createNewFile();
-
         IntStream.range(0, 2).parallel().forEach((i) -> {
             try {
                 if (i % 2 == 0) {
@@ -275,7 +267,7 @@ public class CreateNewLogTest {
 
         Assert.assertFalse("There shouldn't be any exceptions while creating newlog", receivedException.get());
         Assert.assertEquals(
-                "previousAllocatedEntryLogId after 2 times createNewLog is called and entrylogid 2 is already taken", 3,
+                "previousAllocatedEntryLogId after 2 times createNewLog is called", 2,
                 el.getPreviousAllocatedEntryLogId());
     }
 }

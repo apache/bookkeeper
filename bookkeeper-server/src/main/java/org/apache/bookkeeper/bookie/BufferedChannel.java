@@ -169,8 +169,7 @@ public class BufferedChannel extends BufferedReadChannel implements Closeable {
      */
     public void flushAndForceWriteIfRegularFlush(boolean forceMetadata) throws IOException {
         if (doRegularFlushes) {
-            flush();
-            forceWrite(forceMetadata);
+            flushAndForceWrite(forceMetadata);
         }
     }
 
