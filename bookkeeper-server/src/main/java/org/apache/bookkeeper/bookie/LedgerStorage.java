@@ -27,6 +27,7 @@ import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
 import org.apache.bookkeeper.common.util.Watcher;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager;
+import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.stats.StatsLogger;
 
 /**
@@ -103,12 +104,19 @@ public interface LedgerStorage {
     long addEntry(ByteBuf entry) throws IOException, BookieException;
 
     /**
-     * Read an entry from storage.
+     * Read an entry from storage. In case of {@link BookieProtocol#LAST_ADD_CONFIRMED} we are going to return the
+     * 'last' written entry.
+     *
+     * @throws Bookie.NoEntryException in case of missing entry
+     * @throws IOException in case of internal failure
+     *
+     * @return the entry, never null
      */
-    ByteBuf getEntry(long ledgerId, long entryId) throws IOException;
+    ByteBuf getEntry(long ledgerId, long entryId) throws IOException, Bookie.NoEntryException;
 
     /**
      * Get last add confirmed.
+     * In case of missing value ever sent from the client it is expected to return the <i>last</i> written entry.
      *
      * @param ledgerId ledger id.
      * @return last add confirmed.
