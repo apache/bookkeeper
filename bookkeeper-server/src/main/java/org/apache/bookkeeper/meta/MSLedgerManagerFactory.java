@@ -40,6 +40,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.LedgerMetadata;
 import org.apache.bookkeeper.conf.AbstractConfiguration;
+import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
 import org.apache.bookkeeper.metastore.MSException;
 import org.apache.bookkeeper.metastore.MSWatchedEvent;
 import org.apache.bookkeeper.metastore.MetaStore;
@@ -198,7 +199,11 @@ public class MSLedgerManagerFactory extends AbstractZkLedgerManagerFactory {
     @Override
     public LedgerIdGenerator newLedgerIdGenerator() {
         List<ACL> zkAcls = ZkUtils.getACLs(conf);
-        return new ZkLedgerIdGenerator(zk, conf.getZkLedgersRootPath(), MsLedgerManager.IDGEN_ZNODE, zkAcls);
+        return new ZkLedgerIdGenerator(
+            zk,
+            ZKMetadataDriverBase.resolveZkLedgersRootPath(conf),
+            MsLedgerManager.IDGEN_ZNODE,
+            zkAcls);
     }
 
     static class MsLedgerManager implements LedgerManager, MetastoreWatcher {
@@ -761,8 +766,8 @@ public class MSLedgerManagerFactory extends AbstractZkLedgerManagerFactory {
     @Override
     public boolean validateAndNukeExistingCluster(AbstractConfiguration<?> conf, LayoutManager layoutManager)
             throws InterruptedException, KeeperException, IOException {
-        String zkLedgersRootPath = conf.getZkLedgersRootPath();
-        String zkServers = conf.getZkServers();
+        String zkLedgersRootPath = ZKMetadataDriverBase.resolveZkLedgersRootPath(conf);
+        String zkServers = ZKMetadataDriverBase.resolveZkServers(conf);
 
         /*
          * before proceeding with nuking existing cluster, make sure there

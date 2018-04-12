@@ -37,6 +37,7 @@ import org.apache.bookkeeper.meta.AbstractZkLedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.ZkLayoutManager;
+import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
 import org.apache.bookkeeper.replication.ReplicationException.BKAuditException;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.util.ZkUtils;
@@ -85,7 +86,7 @@ public class BookieLedgerIndexTest extends BookKeeperClusterTestCase {
     @Before
     public void setUp() throws Exception {
         super.setUp();
-        baseConf.setZkServers(zkUtil.getZooKeeperConnectString());
+        baseConf.setMetadataServiceUri(zkUtil.getMetadataServiceUri());
         rng = new Random(System.currentTimeMillis()); // Initialize the Random
         // Number Generator
         entries = new ArrayList<byte[]>(); // initialize the entries list
@@ -93,7 +94,8 @@ public class BookieLedgerIndexTest extends BookKeeperClusterTestCase {
         // initialize ledger manager
         newLedgerManagerFactory = AbstractZkLedgerManagerFactory.newLedgerManagerFactory(
             baseConf,
-            new ZkLayoutManager(zkc, baseConf.getZkLedgersRootPath(), ZkUtils.getACLs(baseConf)));
+            new ZkLayoutManager(zkc,
+                ZKMetadataDriverBase.resolveZkLedgersRootPath(baseConf), ZkUtils.getACLs(baseConf)));
 
         ledgerManager = newLedgerManagerFactory.newLedgerManager();
     }

@@ -443,7 +443,7 @@ public class LedgerRecoveryTest extends BookKeeperClusterTestCase {
             .setAddEntryTimeout(60000)
             .setRecoveryReadBatchSize(batchSize);
 
-        newConf.setZkServers(zkUtil.getZooKeeperConnectString());
+        newConf.setMetadataServiceUri(zkUtil.getMetadataServiceUri());
         BookKeeper newBk = new BookKeeper(newConf);
 
         LedgerHandle lh = newBk.createLedger(numBookies, 2, 2, digestType, "".getBytes());

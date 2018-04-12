@@ -46,8 +46,8 @@ public class StateManagerTest extends BookKeeperClusterTestCase {
     public StateManagerTest(){
         super(0);
         String ledgersPath = "/" + "ledgers" + runtime.getMethodName();
-        baseClientConf.setZkLedgersRootPath(ledgersPath);
-        baseConf.setZkLedgersRootPath(ledgersPath);
+        baseClientConf.setMetadataServiceUri(zkUtil.getMetadataServiceUri(ledgersPath));
+        baseConf.setMetadataServiceUri(zkUtil.getMetadataServiceUri(ledgersPath));
         conf = TestBKConfiguration.newServerConfiguration();
         driver = new ZKMetadataBookieDriver();
 
@@ -61,7 +61,7 @@ public class StateManagerTest extends BookKeeperClusterTestCase {
         conf.setJournalDirName(tmpDir.getPath())
                 .setLedgerDirNames(new String[] { tmpDir.getPath() })
                 .setJournalDirName(tmpDir.toString())
-                .setZkServers(zkUtil.getZooKeeperConnectString());
+                .setMetadataServiceUri(zkUtil.getMetadataServiceUri());
     }
 
     @Override
@@ -150,7 +150,7 @@ public class StateManagerTest extends BookKeeperClusterTestCase {
         readOnlyConf.setJournalDirName(tmpDir.getPath())
                 .setLedgerDirNames(new String[] { tmpDir.getPath() })
                 .setJournalDirName(tmpDir.toString())
-                .setZkServers(zkUtil.getZooKeeperConnectString())
+                .setMetadataServiceUri(zkUtil.getMetadataServiceUri())
                 .setForceReadOnlyBookie(true);
         ReadOnlyBookie readOnlyBookie = new ReadOnlyBookie(readOnlyConf, NullStatsLogger.INSTANCE);
         readOnlyBookie.start();

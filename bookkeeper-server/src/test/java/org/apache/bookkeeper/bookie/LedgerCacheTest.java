@@ -80,7 +80,7 @@ public class LedgerCacheTest {
         new File(ledgerDir, BookKeeperConstants.CURRENT_DIR).mkdir();
 
         conf = TestBKConfiguration.newServerConfiguration();
-        conf.setZkServers(null);
+        conf.setMetadataServiceUri(null);
         conf.setJournalDirName(txnDir.getPath());
         conf.setLedgerDirNames(new String[] { ledgerDir.getPath() });
         bookie = new Bookie(conf);
@@ -316,7 +316,7 @@ public class LedgerCacheTest {
         Bookie.checkDirectoryStructure(Bookie.getCurrentDirectory(ledgerDir));
 
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
-        conf.setZkServers(null);
+        conf.setMetadataServiceUri(null);
         conf.setJournalDirName(journalDir.getPath())
             .setLedgerDirNames(new String[] { ledgerDir.getPath() })
             .setFlushInterval(1000)
@@ -331,7 +331,7 @@ public class LedgerCacheTest {
         }
 
         conf = TestBKConfiguration.newServerConfiguration();
-        conf.setZkServers(null);
+        conf.setMetadataServiceUri(null);
         conf.setJournalDirName(journalDir.getPath())
             .setLedgerDirNames(new String[] { ledgerDir.getPath() });
 

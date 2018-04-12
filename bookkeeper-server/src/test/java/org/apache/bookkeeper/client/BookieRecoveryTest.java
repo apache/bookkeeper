@@ -118,7 +118,7 @@ public class BookieRecoveryTest extends BookKeeperClusterTestCase {
         sync = new SyncObject();
         bookieRecoverCb = new BookieRecoverCallback();
         ClientConfiguration adminConf = new ClientConfiguration(baseClientConf);
-        adminConf.setZkServers(zkUtil.getZooKeeperConnectString());
+        adminConf.setMetadataServiceUri(zkUtil.getMetadataServiceUri());
         bkAdmin = new BookKeeperAdmin(adminConf);
     }
 
@@ -249,7 +249,7 @@ public class BookieRecoveryTest extends BookKeeperClusterTestCase {
     @Test
     public void testMetadataConflictWhenDelayingEnsembleChange() throws Exception {
         ClientConfiguration newConf = new ClientConfiguration(baseClientConf);
-        newConf.setZkServers(zkUtil.getZooKeeperConnectString());
+        newConf.setMetadataServiceUri(zkUtil.getMetadataServiceUri());
         newConf.setDelayEnsembleChange(true);
         try (BookKeeper newBkc = new BookKeeper(newConf)) {
             metadataConflictWithRecovery(newBkc);
@@ -835,7 +835,7 @@ public class BookieRecoveryTest extends BookKeeperClusterTestCase {
         // This is fine, because it only falls back to the configured
         // password if the password info is missing from the metadata
         ClientConfiguration adminConf = new ClientConfiguration();
-        adminConf.setZkServers(zkUtil.getZooKeeperConnectString());
+        adminConf.setMetadataServiceUri(zkUtil.getMetadataServiceUri());
         adminConf.setBookieRecoveryDigestType(digestCorrect);
         adminConf.setBookieRecoveryPasswd(passwdBad);
         setMetastoreImplClass(adminConf);
@@ -860,7 +860,7 @@ public class BookieRecoveryTest extends BookKeeperClusterTestCase {
 
         // Try to recover with no password in conf
         adminConf = new ClientConfiguration();
-        adminConf.setZkServers(zkUtil.getZooKeeperConnectString());
+        adminConf.setMetadataServiceUri(zkUtil.getMetadataServiceUri());
         setMetastoreImplClass(adminConf);
 
         bka = new BookKeeperAdmin(adminConf);

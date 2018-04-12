@@ -146,8 +146,7 @@ public class BookkeeperVerifierMain {
         }
 
         ClientConfiguration conf = new ClientConfiguration();
-        conf.setZkServers(zkString);
-        conf.setZkLedgersRootPath(ledgerPath);
+        conf.setMetadataServiceUri("zk://" + zkString + ledgerPath);
         BookKeeper bkclient = new BookKeeper(conf);
 
         BookkeeperVerifier verifier = new BookkeeperVerifier(

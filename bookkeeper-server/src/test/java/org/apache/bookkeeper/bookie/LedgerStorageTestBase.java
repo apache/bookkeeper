@@ -64,7 +64,7 @@ public abstract class LedgerStorageTestBase {
         Bookie.getCurrentDirectory(ledgerDir).mkdir();
 
         // build the configuration
-        conf.setZkServers(null);
+        conf.setMetadataServiceUri(null);
         conf.setJournalDirName(journalDir.getPath());
         conf.setLedgerDirNames(new String[] { ledgerDir.getPath() });
 

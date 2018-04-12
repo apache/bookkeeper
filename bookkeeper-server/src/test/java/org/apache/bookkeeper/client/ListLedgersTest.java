@@ -45,7 +45,7 @@ public class ListLedgersTest extends BookKeeperClusterTestCase {
         int numOfLedgers = 10;
 
         ClientConfiguration conf = new ClientConfiguration();
-        conf.setZkServers(zkUtil.getZooKeeperConnectString());
+        conf.setMetadataServiceUri(zkUtil.getMetadataServiceUri());
 
         BookKeeper bkc = new BookKeeper(conf);
         for (int i = 0; i < numOfLedgers; i++) {
@@ -70,7 +70,7 @@ public class ListLedgersTest extends BookKeeperClusterTestCase {
     public void testEmptyList()
     throws Exception {
         ClientConfiguration conf = new ClientConfiguration();
-        conf.setZkServers(zkUtil.getZooKeeperConnectString());
+        conf.setMetadataServiceUri(zkUtil.getMetadataServiceUri());
 
         BookKeeperAdmin admin = new BookKeeperAdmin(zkUtil.
                 getZooKeeperConnectString());
@@ -85,7 +85,7 @@ public class ListLedgersTest extends BookKeeperClusterTestCase {
         int numOfLedgers = 1;
 
         ClientConfiguration conf = new ClientConfiguration();
-        conf.setZkServers(zkUtil.getZooKeeperConnectString());
+        conf.setMetadataServiceUri(zkUtil.getMetadataServiceUri());
 
         BookKeeper bkc = new BookKeeper(conf);
         for (int i = 0; i < numOfLedgers; i++) {

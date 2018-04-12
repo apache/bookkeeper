@@ -76,9 +76,9 @@ public class BookieJournalForceTest {
         File journalDir = tempDir.newFolder();
         Bookie.checkDirectoryStructure(Bookie.getCurrentDirectory(journalDir));
 
-        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
-        conf.setJournalDirName(journalDir.getPath())
-            .setZkServers(null);
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration()
+            .setJournalDirName(journalDir.getPath())
+            .setMetadataServiceUri(null);
 
         JournalChannel jc = spy(new JournalChannel(journalDir, 1));
         whenNew(JournalChannel.class).withAnyArguments().thenReturn(jc);
@@ -140,7 +140,7 @@ public class BookieJournalForceTest {
 
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
         conf.setJournalDirName(journalDir.getPath())
-            .setZkServers(null);
+            .setMetadataServiceUri(null);
 
         JournalChannel jc = spy(new JournalChannel(journalDir, 1));
         whenNew(JournalChannel.class).withAnyArguments().thenReturn(jc);
@@ -195,7 +195,7 @@ public class BookieJournalForceTest {
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
         conf.setJournalDirName(journalDir.getPath())
             .setJournalBufferedEntriesThreshold(journalBufferedEntriesThreshold)
-            .setZkServers(null);
+            .setMetadataServiceUri(null);
 
         JournalChannel jc = spy(new JournalChannel(journalDir, 1));
         whenNew(JournalChannel.class).withAnyArguments().thenReturn(jc);
@@ -254,7 +254,7 @@ public class BookieJournalForceTest {
 
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
         conf.setJournalDirName(journalDir.getPath())
-            .setZkServers(null);
+            .setMetadataServiceUri(null);
 
         JournalChannel jc = spy(new JournalChannel(journalDir, 1));
         whenNew(JournalChannel.class).withAnyArguments().thenReturn(jc);

@@ -146,7 +146,7 @@ public class TestParallelRead extends BookKeeperClusterTestCase {
 
         ClientConfiguration newConf = new ClientConfiguration()
             .setReadEntryTimeout(30000);
-        newConf.setZkServers(zkUtil.getZooKeeperConnectString());
+        newConf.setMetadataServiceUri(zkUtil.getMetadataServiceUri());
         BookKeeper newBk = new BookKeeper(newConf);
 
         LedgerHandle lh = bkc.openLedger(id, digestType, passwd);
@@ -179,7 +179,7 @@ public class TestParallelRead extends BookKeeperClusterTestCase {
 
         ClientConfiguration newConf = new ClientConfiguration()
             .setReadEntryTimeout(30000);
-        newConf.setZkServers(zkUtil.getZooKeeperConnectString());
+        newConf.setMetadataServiceUri(zkUtil.getMetadataServiceUri());
         BookKeeper newBk = new BookKeeper(newConf);
 
         LedgerHandle lh = bkc.openLedger(id, digestType, passwd);
@@ -217,7 +217,7 @@ public class TestParallelRead extends BookKeeperClusterTestCase {
 
         ClientConfiguration newConf = new ClientConfiguration()
             .setReadEntryTimeout(30000);
-        newConf.setZkServers(zkUtil.getZooKeeperConnectString());
+        newConf.setMetadataServiceUri(zkUtil.getMetadataServiceUri());
         BookKeeper newBk = new BookKeeper(newConf);
 
         LedgerHandle lh = bkc.openLedger(id, digestType, passwd);
