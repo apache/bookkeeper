@@ -45,9 +45,14 @@ public class ZkLedgerLayoutTest extends BookKeeperClusterTestCase {
         super(0);
     }
 
+    protected ClientConfiguration newClientConfiguration() {
+        return new ClientConfiguration()
+            .setMetadataServiceUri(metadataServiceUri);
+    }
+
     @Test
     public void testLedgerLayout() throws Exception {
-        ClientConfiguration conf = new ClientConfiguration();
+        ClientConfiguration conf = newClientConfiguration();
         conf.setLedgerManagerFactoryClass(HierarchicalLedgerManagerFactory.class);
         String ledgerRootPath = "/testLedgerLayout";
         ZkLayoutManager zkLayoutManager = new ZkLayoutManager(zkc, ledgerRootPath, Ids.OPEN_ACL_UNSAFE);
@@ -85,7 +90,7 @@ public class ZkLedgerLayoutTest extends BookKeeperClusterTestCase {
 
     @Test
     public void testBadVersionLedgerLayout() throws Exception {
-        ClientConfiguration conf = new ClientConfiguration();
+        ClientConfiguration conf = newClientConfiguration();
         String zkLedgersRootPath = ZKMetadataDriverBase.resolveZkLedgersRootPath(conf);
         // write bad version ledger layout
         writeLedgerLayout(zkLedgersRootPath,
@@ -105,8 +110,8 @@ public class ZkLedgerLayoutTest extends BookKeeperClusterTestCase {
 
     @Test
     public void testAbsentLedgerManagerLayout() throws Exception {
-        ClientConfiguration conf = new ClientConfiguration();
-        String ledgersLayout = ZKMetadataDriverBase.resolveZkServers(conf) + "/"
+        ClientConfiguration conf = newClientConfiguration();
+        String ledgersLayout = ZKMetadataDriverBase.resolveZkLedgersRootPath(conf) + "/"
                 + BookKeeperConstants.LAYOUT_ZNODE;
         // write bad format ledger layout
         StringBuilder sb = new StringBuilder();
@@ -126,7 +131,7 @@ public class ZkLedgerLayoutTest extends BookKeeperClusterTestCase {
 
     @Test
     public void testBaseLedgerManagerLayout() throws Exception {
-        ClientConfiguration conf = new ClientConfiguration();
+        ClientConfiguration conf = newClientConfiguration();
         String rootPath = ZKMetadataDriverBase.resolveZkLedgersRootPath(conf);
         String ledgersLayout = rootPath + "/"
                 + BookKeeperConstants.LAYOUT_ZNODE;
@@ -148,7 +153,7 @@ public class ZkLedgerLayoutTest extends BookKeeperClusterTestCase {
 
     @Test
     public void testReadV1LedgerManagerLayout() throws Exception {
-        ClientConfiguration conf = new ClientConfiguration();
+        ClientConfiguration conf = newClientConfiguration();
         String zkLedgersRootPath = ZKMetadataDriverBase.resolveZkLedgersRootPath(conf);
         // write v1 ledger layout
         writeLedgerLayout(zkLedgersRootPath,

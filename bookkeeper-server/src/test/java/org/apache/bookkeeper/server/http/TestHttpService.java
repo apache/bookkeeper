@@ -593,6 +593,7 @@ public class TestHttpService extends BookKeeperClusterTestCase {
         String addr = bs.get(0).getLocalAddress().toString();
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
         conf.setAuditorPeriodicBookieCheckInterval(1);
+        conf.setMetadataServiceUri("zk://" + zkUtil.getZooKeeperConnectString() + "/ledgers");
         auditorElector = new AuditorElector(addr, conf,
           auditorZookeeper);
         auditorElector.start();

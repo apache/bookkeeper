@@ -138,7 +138,7 @@ public abstract class BookKeeperClusterTestCase {
             // start zookeeper service
             startZKCluster();
             // start bookkeeper service
-            this.metadataServiceUri = zkUtil.getMetadataServiceUri(ledgersRootPath);
+            this.metadataServiceUri = getMetadataServiceUri(ledgersRootPath);
             startBKCluster(metadataServiceUri);
             LOG.info("Setup testcase {} @ metadata service {} in {} ms.",
                 runtime.getMethodName(), metadataServiceUri,  sw.elapsed(TimeUnit.MILLISECONDS));
@@ -146,6 +146,10 @@ public abstract class BookKeeperClusterTestCase {
             LOG.error("Error setting up", e);
             throw e;
         }
+    }
+
+    protected String getMetadataServiceUri(String ledgersRootPath) {
+        return zkUtil.getMetadataServiceUri(ledgersRootPath);
     }
 
     @After

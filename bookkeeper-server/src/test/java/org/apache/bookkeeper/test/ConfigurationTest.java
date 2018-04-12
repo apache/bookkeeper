@@ -67,12 +67,12 @@ public class ConfigurationTest {
 
     @Test
     public void testGetZkServers() {
-        System.setProperty("metadataServiceUri", "zk://server1:port1,server2:port2/ledgers");
+        System.setProperty("metadataServiceUri", "zk://server1:port1;server2:port2/ledgers");
         ServerConfiguration conf = new ServerConfiguration();
         ClientConfiguration clientConf = new ClientConfiguration();
         assertEquals("zookeeper connect string doesn't match in server configuration",
-                     "zk://server1:port1,server2:port2/ledgers", conf.getMetadataServiceUriUnchecked());
+                     "zk://server1:port1;server2:port2/ledgers", conf.getMetadataServiceUriUnchecked());
         assertEquals("zookeeper connect string doesn't match in client configuration",
-                     "zk://server1:port1,server2:port2/ledgers", clientConf.getMetadataServiceUriUnchecked());
+                     "zk://server1:port1;server2:port2/ledgers", clientConf.getMetadataServiceUriUnchecked());
     }
 }

@@ -35,6 +35,7 @@ import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.util.BookKeeperConstants;
+import org.junit.Before;
 import org.junit.Test;
 
 /**
@@ -48,9 +49,17 @@ public class TestAutoRecoveryAlongWithBookieServers extends
     public TestAutoRecoveryAlongWithBookieServers() {
         super(3);
         setAutoRecoveryEnabled(true);
+
+    }
+
+    @Before
+    @Override
+    public void setUp() throws Exception {
+        super.setUp();
+
         basePath = ZKMetadataDriverBase.resolveZkLedgersRootPath(baseClientConf) + '/'
-                + BookKeeperConstants.UNDER_REPLICATION_NODE
-                + BookKeeperConstants.DEFAULT_ZK_LEDGERS_ROOT_PATH;
+            + BookKeeperConstants.UNDER_REPLICATION_NODE
+            + BookKeeperConstants.DEFAULT_ZK_LEDGERS_ROOT_PATH;
     }
 
     /**

@@ -144,6 +144,7 @@ public class ZKMetadataDriverBase implements AutoCloseable {
         return SCHEME;
     }
 
+    @SuppressWarnings("deprecation")
     @SneakyThrows(InterruptedException.class)
     protected void initialize(AbstractConfiguration<?> conf,
                               StatsLogger statsLogger,
@@ -154,7 +155,7 @@ public class ZKMetadataDriverBase implements AutoCloseable {
 
         if (optionalCtx.isPresent()
             && optionalCtx.get() instanceof ZooKeeper) {
-            this.ledgersRootPath = ZKMetadataDriverBase.resolveZkLedgersRootPath(conf);
+            this.ledgersRootPath = conf.getZkLedgersRootPath();
 
             log.info("Initialize zookeeper metadata driver with external zookeeper client : ledgersRootPath = {}.",
                 ledgersRootPath);

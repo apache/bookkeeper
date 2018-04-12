@@ -248,10 +248,11 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
             }
             String zkServers = getZkServers();
             if (null != zkServers) {
+                // URI doesn't accept ','
                 serviceUri = String.format(
                     "zk+%s://%s%s",
                     ledgerManagerType,
-                    getZkServers(),
+                    zkServers.replace(",", ";"),
                     getZkLedgersRootPath());
             }
         }

@@ -147,7 +147,7 @@ public abstract class AbstractZkLedgerManagerFactory implements LedgerManagerFac
                 throw new IOException(
                     "Failed to get ledger manager factory class when using an external zookeeper client", e);
             }
-            ledgerRootPath = ZKMetadataDriverBase.resolveZkLedgersRootPath(conf);
+            ledgerRootPath = conf.getZkLedgersRootPath();
         } else {
             URI metadataServiceUri = URI.create(metadataServiceUriStr);
             factoryClass = ZKMetadataDriverBase.resolveLedgerManagerFactory(metadataServiceUri);
