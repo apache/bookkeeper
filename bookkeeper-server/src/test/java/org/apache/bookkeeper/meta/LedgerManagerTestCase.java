@@ -109,7 +109,7 @@ public abstract class LedgerManagerTestCase extends BookKeeperClusterTestCase {
     @Override
     public void setUp() throws Exception {
         super.setUp();
-        baseConf.setZkServers(zkUtil.getZooKeeperConnectString());
+        baseConf.setMetadataServiceUri(zkUtil.getMetadataServiceUri());
 
         scheduler = OrderedScheduler.newSchedulerBuilder()
             .name("test-scheduler")

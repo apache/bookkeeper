@@ -348,7 +348,7 @@ public class BookieJournalTest {
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
         conf.setJournalDirName(journalDir.getPath())
             .setLedgerDirNames(new String[] { ledgerDir.getPath() })
-            .setZkServers(null);
+            .setMetadataServiceUri(null);
 
         Bookie b = new Bookie(conf);
         b.readJournal();
@@ -377,7 +377,7 @@ public class BookieJournalTest {
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
         conf.setJournalDirName(journalDir.getPath())
             .setLedgerDirNames(new String[] { ledgerDir.getPath() })
-            .setZkServers(null);
+            .setMetadataServiceUri(null);
 
         Bookie b = new Bookie(conf);
         b.readJournal();
@@ -408,7 +408,7 @@ public class BookieJournalTest {
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
         conf.setJournalDirName(journalDir.getPath())
             .setLedgerDirNames(new String[] { ledgerDir.getPath() })
-            .setZkServers(null);
+            .setMetadataServiceUri(null);
 
         Bookie b = new Bookie(conf);
         b.readJournal();
@@ -445,7 +445,7 @@ public class BookieJournalTest {
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
         conf.setJournalDirName(journalDir.getPath())
             .setLedgerDirNames(new String[] { ledgerDir.getPath() })
-            .setZkServers(null);
+            .setMetadataServiceUri(null);
 
         Bookie b = null;
         try {
@@ -480,7 +480,7 @@ public class BookieJournalTest {
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
         conf.setJournalDirName(journalDir.getPath())
             .setLedgerDirNames(new String[] { ledgerDir.getPath() })
-            .setZkServers(null);
+            .setMetadataServiceUri(null);
 
         Bookie b = new Bookie(conf);
     }
@@ -502,7 +502,7 @@ public class BookieJournalTest {
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
         conf.setJournalDirName(journalDir.getPath())
             .setLedgerDirNames(new String[] { ledgerDir.getPath() })
-            .setZkServers(null);
+            .setMetadataServiceUri(null);
 
         Bookie b = new Bookie(conf);
     }
@@ -528,7 +528,7 @@ public class BookieJournalTest {
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
         conf.setJournalDirName(journalDir.getPath())
             .setLedgerDirNames(new String[] { ledgerDir.getPath() })
-            .setZkServers(null);
+            .setMetadataServiceUri(null);
 
         Bookie b = null;
         try {
@@ -568,7 +568,7 @@ public class BookieJournalTest {
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
         conf.setJournalDirName(journalDir.getPath())
             .setLedgerDirNames(new String[] { ledgerDir.getPath() })
-            .setZkServers(null);
+            .setMetadataServiceUri(null);
 
         Bookie b = new Bookie(conf);
         b.readJournal();
@@ -612,7 +612,7 @@ public class BookieJournalTest {
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
         conf.setJournalDirName(journalDir.getPath())
             .setLedgerDirNames(new String[] { ledgerDir.getPath() })
-            .setZkServers(null);
+            .setMetadataServiceUri(null);
 
         Bookie b = new Bookie(conf);
         b.readJournal();
@@ -674,7 +674,7 @@ public class BookieJournalTest {
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
         conf.setJournalDirName(journalDir.getPath())
             .setLedgerDirNames(new String[] { ledgerDir.getPath() })
-            .setZkServers(null);
+            .setMetadataServiceUri(null);
 
         if (truncateMasterKey) {
             try {
@@ -732,7 +732,7 @@ public class BookieJournalTest {
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
         conf.setJournalDirName(journalDir.getPath())
             .setLedgerDirNames(new String[] { ledgerDir.getPath() })
-            .setZkServers(null);
+            .setMetadataServiceUri(null);
 
         Bookie b = new Bookie(conf);
         b.readJournal();

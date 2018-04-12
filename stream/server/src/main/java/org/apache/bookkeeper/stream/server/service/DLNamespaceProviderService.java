@@ -20,6 +20,7 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.common.component.AbstractLifecycleComponent;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.stream.server.conf.DLConfiguration;
 import org.apache.distributedlog.DistributedLogConfiguration;
@@ -33,6 +34,8 @@ import org.apache.zookeeper.KeeperException.Code;
 
 /**
  * A service to provide distributedlog namespace.
+ *
+ * <p>TODO: eliminate the direct usage of zookeeper here {@link https://github.com/apache/bookkeeper/issues/1331}
  */
 @Slf4j
 public class DLNamespaceProviderService
@@ -42,7 +45,8 @@ public class DLNamespaceProviderService
     private static URI initializeNamespace(ServerConfiguration bkServerConf,
                                            URI dlogUri) throws IOException {
         BKDLConfig dlConfig = new BKDLConfig(
-            bkServerConf.getZkServers(), bkServerConf.getZkLedgersRootPath());
+            ZKMetadataDriverBase.resolveZkServers(bkServerConf),
+            ZKMetadataDriverBase.resolveZkLedgersRootPath(bkServerConf));
         DLMetadata dlMetadata = DLMetadata.create(dlConfig);
 
         try {
@@ -73,7 +77,8 @@ public class DLNamespaceProviderService
                                       StatsLogger statsLogger) {
         super("namespace-provider", conf, statsLogger);
 
-        this.dlogUri = URI.create(String.format("distributedlog://%s/stream/storage", bkServerConf.getZkServers()));
+        this.dlogUri = URI.create(String.format("distributedlog://%s/stream/storage",
+            ZKMetadataDriverBase.resolveZkServers(bkServerConf)));
         this.bkServerConf = bkServerConf;
         this.dlConf = new DistributedLogConfiguration();
         ConfUtils.loadConfiguration(this.dlConf, conf, conf.getComponentPrefix());
@@ -108,7 +113,7 @@ public class DLNamespaceProviderService
                 .build();
         } catch (Throwable e) {
             throw new RuntimeException("Failed to build the distributedlog namespace at "
-                + bkServerConf.getZkServers(), e);
+                + bkServerConf.getMetadataServiceUriUnchecked(), e);
         }
         log.info("Provided distributedlog namespace at {}.", uri);
     }

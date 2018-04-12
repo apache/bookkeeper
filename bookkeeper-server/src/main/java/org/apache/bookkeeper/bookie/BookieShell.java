@@ -40,6 +40,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.Serializable;
 import java.math.RoundingMode;
+import java.net.URI;
 import java.nio.ByteBuffer;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
@@ -95,6 +96,7 @@ import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManager.LedgerRange;
 import org.apache.bookkeeper.meta.LedgerManager.LedgerRangeIterator;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
+import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieClient;
 import org.apache.bookkeeper.proto.BookieProtocol;
@@ -1805,8 +1807,10 @@ public class BookieShell implements Tool {
         int runCmd(CommandLine cmdLine) throws Exception {
             ZooKeeper zk = null;
             try {
+                String metadataServiceUri = bkConf.getMetadataServiceUri();
+                String zkServers = ZKMetadataDriverBase.getZKServersFromServiceUri(URI.create(metadataServiceUri));
                 zk = ZooKeeperClient.newBuilder()
-                        .connectString(bkConf.getZkServers())
+                        .connectString(zkServers)
                         .sessionTimeoutMs(bkConf.getZkTimeout())
                         .build();
                 BookieSocketAddress bookieId = AuditorElector.getCurrentAuditor(bkConf, zk);
@@ -1859,8 +1863,8 @@ public class BookieShell implements Tool {
                 } catch (BookieException e) {
                     throw new UncheckedExecutionException(e);
                 }
-                LOG.info("ZKServers: {} ZkLedgersRootPath: {} InstanceId: {}", bkConf.getZkServers(),
-                        bkConf.getZkLedgersRootPath(), readInstanceId);
+                LOG.info("Metadata Service Uri: {} InstanceId: {}",
+                    bkConf.getMetadataServiceUriUnchecked(), readInstanceId);
                 return null;
             });
             return 0;

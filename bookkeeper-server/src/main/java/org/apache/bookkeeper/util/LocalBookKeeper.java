@@ -18,6 +18,7 @@
 package org.apache.bookkeeper.util;
 
 import static com.google.common.base.Charsets.UTF_8;
+import static org.apache.bookkeeper.util.BookKeeperConstants.AVAILABLE_NODE;
 import static org.apache.bookkeeper.util.BookKeeperConstants.READONLY;
 
 import com.google.common.collect.Lists;
@@ -38,6 +39,7 @@ import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.replication.ReplicationException.CompatibilityException;
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
@@ -123,12 +125,14 @@ public class LocalBookKeeper {
                     .sessionTimeoutMs(zkSessionTimeOut)
                     .build()) {
             List<Op> multiOps = Lists.newArrayListWithExpectedSize(3);
+            String zkLedgersRootPath = ZKMetadataDriverBase.resolveZkLedgersRootPath(conf);
             multiOps.add(
-                Op.create(conf.getZkLedgersRootPath(), new byte[0], Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT));
+                Op.create(zkLedgersRootPath, new byte[0], Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT));
             multiOps.add(
-                Op.create(conf.getZkAvailableBookiesPath(), new byte[0], Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT));
+                Op.create(zkLedgersRootPath + "/" + AVAILABLE_NODE,
+                    new byte[0], Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT));
             multiOps.add(
-                Op.create(conf.getZkAvailableBookiesPath() + "/" + READONLY,
+                Op.create(zkLedgersRootPath + "/" + AVAILABLE_NODE + "/" + READONLY,
                     new byte[0], Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT));
 
             zkc.multi(multiOps);
@@ -320,6 +324,7 @@ public class LocalBookKeeper {
                 initialBookiePort, true, dirSuffix, null, defaultLocalBookiesConfigDir);
     }
 
+    @SuppressWarnings("deprecation")
     static void startLocalBookiesInternal(ServerConfiguration conf,
                                           String zkHost,
                                           int zkPort,

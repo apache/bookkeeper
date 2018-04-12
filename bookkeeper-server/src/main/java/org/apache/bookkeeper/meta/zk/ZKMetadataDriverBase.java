@@ -60,8 +60,26 @@ public class ZKMetadataDriverBase implements AutoCloseable {
 
     protected static final String SCHEME = "zk";
 
-    protected static String getZKServersFromServiceUri(URI uri) {
+    public static String getZKServersFromServiceUri(URI uri) {
         return uri.getAuthority().replace(";", ",");
+    }
+
+    public static String resolveZkServers(AbstractConfiguration<?> conf) {
+        String metadataServiceUriStr = conf.getMetadataServiceUriUnchecked();
+        if (null == metadataServiceUriStr) {
+            return null;
+        }
+        URI metadataServiceUri = URI.create(metadataServiceUriStr);
+        return getZKServersFromServiceUri(metadataServiceUri);
+    }
+
+    public static String resolveZkLedgersRootPath(AbstractConfiguration<?> conf) {
+        String metadataServiceUriStr = conf.getMetadataServiceUriUnchecked();
+        if (null == metadataServiceUriStr) {
+            return null;
+        }
+        URI metadataServiceUri = URI.create(metadataServiceUriStr);
+        return metadataServiceUri.getPath();
     }
 
     @SuppressWarnings("deprecation")
@@ -136,7 +154,7 @@ public class ZKMetadataDriverBase implements AutoCloseable {
 
         if (optionalCtx.isPresent()
             && optionalCtx.get() instanceof ZooKeeper) {
-            this.ledgersRootPath = conf.getZkLedgersRootPath();
+            this.ledgersRootPath = ZKMetadataDriverBase.resolveZkLedgersRootPath(conf);
 
             log.info("Initialize zookeeper metadata driver with external zookeeper client : ledgersRootPath = {}.",
                 ledgersRootPath);

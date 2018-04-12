@@ -53,6 +53,7 @@ import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.LedgerMetadata;
 import org.apache.bookkeeper.common.testing.executors.MockExecutorController;
 import org.apache.bookkeeper.conf.ClientConfiguration;
+import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.LedgerMetadataListener;
 import org.apache.bookkeeper.test.TestCallbacks.GenericCallbackFuture;
 import org.apache.bookkeeper.util.ZkUtils;
@@ -127,7 +128,7 @@ public class AbstractZkLedgerManagerTest extends MockZooKeeperTestCase {
         }).when(ledgerManager).getLedgerId(anyString());
 
         // verify constructor
-        assertEquals(conf.getZkLedgersRootPath(), ledgerManager.ledgerRootPath);
+        assertEquals(ZKMetadataDriverBase.resolveZkLedgersRootPath(conf), ledgerManager.ledgerRootPath);
         assertSame(mockZk, ledgerManager.zk);
         assertSame(conf, ledgerManager.conf);
         assertSame(scheduler, ledgerManager.scheduler);

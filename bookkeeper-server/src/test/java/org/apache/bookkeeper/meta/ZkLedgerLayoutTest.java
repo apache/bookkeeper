@@ -29,6 +29,7 @@ import static org.junit.Assert.fail;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import org.apache.bookkeeper.conf.ClientConfiguration;
+import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.zookeeper.CreateMode;
@@ -85,13 +86,14 @@ public class ZkLedgerLayoutTest extends BookKeeperClusterTestCase {
     @Test
     public void testBadVersionLedgerLayout() throws Exception {
         ClientConfiguration conf = new ClientConfiguration();
+        String zkLedgersRootPath = ZKMetadataDriverBase.resolveZkLedgersRootPath(conf);
         // write bad version ledger layout
-        writeLedgerLayout(conf.getZkLedgersRootPath(),
+        writeLedgerLayout(zkLedgersRootPath,
                           HierarchicalLedgerManagerFactory.class.getName(),
                           HierarchicalLedgerManagerFactory.CUR_VERSION,
                           LedgerLayout.LAYOUT_FORMAT_VERSION + 1);
 
-        ZkLayoutManager zkLayoutManager = new ZkLayoutManager(zkc, conf.getZkLedgersRootPath(), Ids.OPEN_ACL_UNSAFE);
+        ZkLayoutManager zkLayoutManager = new ZkLayoutManager(zkc, zkLedgersRootPath, Ids.OPEN_ACL_UNSAFE);
 
         try {
             zkLayoutManager.readLedgerLayout();
@@ -104,14 +106,15 @@ public class ZkLedgerLayoutTest extends BookKeeperClusterTestCase {
     @Test
     public void testAbsentLedgerManagerLayout() throws Exception {
         ClientConfiguration conf = new ClientConfiguration();
-        String ledgersLayout = conf.getZkLedgersRootPath() + "/"
+        String ledgersLayout = ZKMetadataDriverBase.resolveZkServers(conf) + "/"
                 + BookKeeperConstants.LAYOUT_ZNODE;
         // write bad format ledger layout
         StringBuilder sb = new StringBuilder();
         sb.append(LedgerLayout.LAYOUT_FORMAT_VERSION).append("\n");
         zkc.create(ledgersLayout, sb.toString().getBytes(),
                                  Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-        ZkLayoutManager zkLayoutManager = new ZkLayoutManager(zkc, conf.getZkLedgersRootPath(), Ids.OPEN_ACL_UNSAFE);
+        ZkLayoutManager zkLayoutManager = new ZkLayoutManager(
+            zkc, ZKMetadataDriverBase.resolveZkLedgersRootPath(conf), Ids.OPEN_ACL_UNSAFE);
 
         try {
             zkLayoutManager.readLedgerLayout();
@@ -124,7 +127,7 @@ public class ZkLedgerLayoutTest extends BookKeeperClusterTestCase {
     @Test
     public void testBaseLedgerManagerLayout() throws Exception {
         ClientConfiguration conf = new ClientConfiguration();
-        String rootPath = conf.getZkLedgersRootPath();
+        String rootPath = ZKMetadataDriverBase.resolveZkLedgersRootPath(conf);
         String ledgersLayout = rootPath + "/"
                 + BookKeeperConstants.LAYOUT_ZNODE;
         // write bad format ledger layout
@@ -146,11 +149,12 @@ public class ZkLedgerLayoutTest extends BookKeeperClusterTestCase {
     @Test
     public void testReadV1LedgerManagerLayout() throws Exception {
         ClientConfiguration conf = new ClientConfiguration();
+        String zkLedgersRootPath = ZKMetadataDriverBase.resolveZkLedgersRootPath(conf);
         // write v1 ledger layout
-        writeLedgerLayout(conf.getZkLedgersRootPath(),
+        writeLedgerLayout(zkLedgersRootPath,
                           HierarchicalLedgerManagerFactory.NAME,
                           HierarchicalLedgerManagerFactory.CUR_VERSION, 1);
-        ZkLayoutManager zkLayoutManager = new ZkLayoutManager(zkc, conf.getZkLedgersRootPath(), Ids.OPEN_ACL_UNSAFE);
+        ZkLayoutManager zkLayoutManager = new ZkLayoutManager(zkc, zkLedgersRootPath, Ids.OPEN_ACL_UNSAFE);
 
         LedgerLayout layout = zkLayoutManager.readLedgerLayout();
 

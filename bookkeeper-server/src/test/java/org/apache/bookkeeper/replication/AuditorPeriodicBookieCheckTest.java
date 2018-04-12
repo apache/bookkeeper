@@ -96,7 +96,7 @@ public class AuditorPeriodicBookieCheckTest extends BookKeeperClusterTestCase {
      */
     @Test
     public void testPeriodicBookieCheckInterval() throws Exception {
-        bsConfs.get(0).setZkServers(zkUtil.getZooKeeperConnectString());
+        bsConfs.get(0).setMetadataServiceUri(zkUtil.getMetadataServiceUri());
         runFunctionWithLedgerManagerFactory(bsConfs.get(0), mFactory -> {
             try (LedgerManager ledgerManager = mFactory.newLedgerManager()) {
                 @Cleanup final LedgerUnderreplicationManager underReplicationManager =

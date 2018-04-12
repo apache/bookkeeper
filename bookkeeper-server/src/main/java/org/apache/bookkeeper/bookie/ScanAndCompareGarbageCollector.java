@@ -42,6 +42,7 @@ import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManager.LedgerRange;
 import org.apache.bookkeeper.meta.LedgerManager.LedgerRangeIterator;
 import org.apache.bookkeeper.meta.ZkLedgerUnderreplicationManager;
+import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.stats.Counter;
@@ -69,6 +70,8 @@ import org.slf4j.LoggerFactory;
  * <b>globalActiveLedgers</b>, do garbage collection on them.
  * </ul>
  * </p>
+ *
+ * <p>TODO: eliminate the direct usage of zookeeper here {@link https://github.com/apache/bookkeeper/issues/1331}
  */
 public class ScanAndCompareGarbageCollector implements GarbageCollector{
 
@@ -83,6 +86,7 @@ public class ScanAndCompareGarbageCollector implements GarbageCollector{
     private boolean enableGcOverReplicatedLedger;
     private final long gcOverReplicatedLedgerIntervalMillis;
     private long lastOverReplicatedLedgerGcTimeMillis;
+    private final String zkServers;
     private final String zkLedgersRootPath;
     private final boolean verifyMetadataOnGc;
     private int activeLedgerCounter;
@@ -99,7 +103,8 @@ public class ScanAndCompareGarbageCollector implements GarbageCollector{
         if (gcOverReplicatedLedgerIntervalMillis > 0) {
             this.enableGcOverReplicatedLedger = true;
         }
-        this.zkLedgersRootPath = conf.getZkLedgersRootPath();
+        this.zkServers = ZKMetadataDriverBase.resolveZkServers(conf);
+        this.zkLedgersRootPath = ZKMetadataDriverBase.resolveZkLedgersRootPath(conf);
         LOG.info("Over Replicated Ledger Deletion : enabled=" + enableGcOverReplicatedLedger + ", interval="
                 + gcOverReplicatedLedgerIntervalMillis);
 
@@ -139,7 +144,7 @@ public class ScanAndCompareGarbageCollector implements GarbageCollector{
             boolean checkOverreplicatedLedgers = (enableGcOverReplicatedLedger && curTime
                     - lastOverReplicatedLedgerGcTimeMillis > gcOverReplicatedLedgerIntervalMillis);
             if (checkOverreplicatedLedgers) {
-                zk = ZooKeeperClient.newBuilder().connectString(conf.getZkServers())
+                zk = ZooKeeperClient.newBuilder().connectString(zkServers)
                         .sessionTimeoutMs(conf.getZkTimeout()).build();
                 // remove all the overreplicated ledgers from the local bookie
                 Set<Long> overReplicatedLedgers = removeOverReplicatedledgers(bkActiveLedgers, garbageCleaner);
