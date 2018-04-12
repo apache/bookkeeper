@@ -364,7 +364,7 @@ public class LedgerStorageCheckpointTest {
         }
         handle.close();
         // simulate rolling entrylog
-        ((EntryLogManagerBase) ledgerStorage.entryLogger.entryLogManager).createNewLog(ledgerId);
+        ((EntryLogManagerBase) ledgerStorage.getEntryLogger().getEntryLogManager()).createNewLog(ledgerId);
         // sleep for a bit for checkpoint to do its task
         executorController.advance(Duration.ofMillis(500));
 
@@ -496,7 +496,7 @@ public class LedgerStorageCheckpointTest {
         BookKeeper bkClient = new BookKeeper(clientConf);
         InterleavedLedgerStorage ledgerStorage = (InterleavedLedgerStorage) server.getBookie().ledgerStorage;
         EntryLogger entryLogger = ledgerStorage.entryLogger;
-        EntryLogManagerBase entryLogManagerBase = (EntryLogManagerBase) entryLogger.entryLogManager;
+        EntryLogManagerBase entryLogManagerBase = (EntryLogManagerBase) entryLogger.getEntryLogManager();
 
         int numOfEntries = 5;
         byte[] dataBytes = "data".getBytes();
@@ -533,7 +533,7 @@ public class LedgerStorageCheckpointTest {
                     currentLog.getUnpersistedBytes());
         }
         Assert.assertNotEquals("There should be logChannelsToFlush", 0,
-                entryLogManagerBase.getCopyOfRotatedLogChannels().size());
+                entryLogManagerBase.getRotatedLogChannels().size());
 
         /*
          * wait for atleast flushInterval period, so that checkpoint can happen.
@@ -544,7 +544,7 @@ public class LedgerStorageCheckpointTest {
          * since checkpoint happenend, there shouldn't be any logChannelsToFlush
          * and bytesWrittenSinceLastFlush should be zero.
          */
-        Set<BufferedLogChannel> copyOfRotatedLogChannels = entryLogManagerBase.getCopyOfRotatedLogChannels();
+        List<BufferedLogChannel> copyOfRotatedLogChannels = entryLogManagerBase.getRotatedLogChannels();
         Assert.assertTrue("There shouldn't be logChannelsToFlush",
                 ((copyOfRotatedLogChannels == null) || (copyOfRotatedLogChannels.size() == 0)));
 

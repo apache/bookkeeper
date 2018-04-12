@@ -48,7 +48,6 @@ public class SortedLedgerStorage extends InterleavedLedgerStorage
     EntryMemTable memTable;
     private ScheduledExecutorService scheduler;
     private StateManager stateManager;
-    private boolean isTransactionalCompactionEnabled;
 
     public SortedLedgerStorage() {
         super();
@@ -79,7 +78,6 @@ public class SortedLedgerStorage extends InterleavedLedgerStorage
                 .setNameFormat("SortedLedgerStorage-%d")
                 .setPriority((Thread.NORM_PRIORITY + Thread.MAX_PRIORITY) / 2).build());
         this.stateManager = stateManager;
-        this.isTransactionalCompactionEnabled = conf.getUseTransactionalCompaction();
     }
 
     @VisibleForTesting
@@ -170,13 +168,7 @@ public class SortedLedgerStorage extends InterleavedLedgerStorage
     @Override
     public void checkpoint(final Checkpoint checkpoint) throws IOException {
         long numBytesFlushed = memTable.flush(this, checkpoint);
-        if (numBytesFlushed > 0) {
-            // if bytes are added between previous flush and this checkpoint,
-            // it means bytes might live at current active entry log, we need
-            // roll current entry log and then issue checkpoint to underlying
-            // interleaved ledger storage.
-            entryLogger.rollLogs();
-        }
+        entryLogger.prepareSortedLedgerStorageCheckpoint(numBytesFlushed);
         super.checkpoint(checkpoint);
     }
 
@@ -216,7 +208,7 @@ public class SortedLedgerStorage extends InterleavedLedgerStorage
                     if (entryLogger.commitEntryMemTableFlush()) {
                         checkpointer.startCheckpoint(cp);
                     }
-                } catch (IOException e) {
+                } catch (Exception e) {
                     stateManager.transitionToReadOnlyMode();
                     LOG.error("Exception thrown while flushing skip list cache.", e);
                 }
