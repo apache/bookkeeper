@@ -69,8 +69,8 @@ public class TestDisableEnsembleChange extends BookKeeperClusterTestCase {
 
     void disableEnsembleChangeTest(boolean startNewBookie) throws Exception {
         ClientConfiguration conf = new ClientConfiguration();
-        conf.setZkServers(zkUtil.getZooKeeperConnectString());
-        conf.setDelayEnsembleChange(false)
+        conf.setMetadataServiceUri(metadataServiceUri)
+            .setDelayEnsembleChange(false)
             .setDisableEnsembleChangeFeatureName(FEATURE_DISABLE_ENSEMBLE_CHANGE);
 
         SettableFeatureProvider featureProvider = new SettableFeatureProvider("test", 0);
@@ -172,8 +172,8 @@ public class TestDisableEnsembleChange extends BookKeeperClusterTestCase {
     @Test
     public void testRetryFailureBookie() throws Exception {
         ClientConfiguration conf = new ClientConfiguration();
-        conf.setZkServers(zkUtil.getZooKeeperConnectString());
-        conf.setDelayEnsembleChange(false)
+        conf.setMetadataServiceUri(metadataServiceUri)
+            .setDelayEnsembleChange(false)
             .setDisableEnsembleChangeFeatureName(FEATURE_DISABLE_ENSEMBLE_CHANGE);
 
         SettableFeatureProvider featureProvider = new SettableFeatureProvider("test", 0);
@@ -223,8 +223,7 @@ public class TestDisableEnsembleChange extends BookKeeperClusterTestCase {
             .setAddEntryTimeout(readTimeout)
             .setDelayEnsembleChange(false)
             .setDisableEnsembleChangeFeatureName(FEATURE_DISABLE_ENSEMBLE_CHANGE)
-            .setZkServers(zkUtil.getZooKeeperConnectString());
-
+            .setMetadataServiceUri(metadataServiceUri);
 
         SettableFeatureProvider featureProvider = new SettableFeatureProvider("test", 0);
         BookKeeper bkc = BookKeeper.forConfig(conf)
