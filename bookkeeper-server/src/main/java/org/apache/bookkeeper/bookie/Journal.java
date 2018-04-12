@@ -23,6 +23,9 @@ package org.apache.bookkeeper.bookie;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Stopwatch;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import com.google.common.util.concurrent.MoreExecutors;
 
 import io.netty.buffer.ByteBuf;
@@ -40,6 +43,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -54,7 +58,6 @@ import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.IOUtils;
 import org.apache.bookkeeper.util.MathUtils;
-import org.apache.bookkeeper.util.collections.ConcurrentLongHashMap;
 import org.apache.bookkeeper.util.collections.GrowableArrayBlockingQueue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -609,8 +612,20 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
 
     // entries written to the disk and acknowledged to the client before forcing writes (see ackBeforeSync)
     final BlockingQueue<LedgerIdEntryIdPair> flushedNotForcedEntries = new GrowableArrayBlockingQueue<>();
-    // keep an in memory cursor which is able to return information
-    final ConcurrentLongHashMap<LastAddForcedCursor> syncCursors = new ConcurrentLongHashMap<LastAddForcedCursor>();
+    final LoadingCache<Long, LastAddForcedCursor> syncCursors = CacheBuilder
+                                    .<Long, LastAddForcedCursor>newBuilder()
+                                    .maximumSize(10000)
+                                    .removalListener(notification -> {
+                                        LOG.info("evicted cursor for ledger {}" + notification.getKey());
+                                     })
+                                    .build(new CacheLoader<Long, LastAddForcedCursor>() {
+                                        @Override
+                                        public LastAddForcedCursor load(Long key) throws Exception {
+                                            // there is no need to rebuild the cursor
+                                            // in will be rebuild only on demand
+                                            return new LastAddForcedCursor();
+                                        }
+                                    });
 
     volatile boolean running = true;
     private final LedgerDirsManager ledgerDirsManager;
@@ -1194,7 +1209,12 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
     }
 
     LastAddForcedCursor getCursorForLedger(long ledgerId) {
-        return syncCursors.computeIfAbsent(ledgerId, (lId) -> new LastAddForcedCursor());
+        try {
+            return syncCursors.get(ledgerId);
+        } catch (ExecutionException err) {
+            LOG.error("Unexpected error while creating a LastAddForcedCursor", err.getCause());
+            throw new RuntimeException(err.getCause());
+        }
     }
 
     void updateCursor(long ledgerId, long entryId) {
