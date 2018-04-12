@@ -126,7 +126,7 @@ public class BookKeeperClientTestsWithBookieErrors extends BookKeeperClusterTest
     // In this testcase all the bookies will return corrupt entry
     @Test(timeout = 60000)
     public void testBookkeeperAllDigestErrors() throws Exception {
-        ClientConfiguration conf = new ClientConfiguration().setZkServers(zkUtil.getZooKeeperConnectString());
+        ClientConfiguration conf = new ClientConfiguration().setMetadataServiceUri(zkUtil.getMetadataServiceUri());
         BookKeeper bkc = new BookKeeper(conf);
 
         byte[] passwd = "AAAAAAA".getBytes();
@@ -157,7 +157,7 @@ public class BookKeeperClientTestsWithBookieErrors extends BookKeeperClusterTest
     // and the last one will return corrupt data
     @Test(timeout = 60000)
     public void testBKReadFirstTimeoutThenDigestError() throws Exception {
-        ClientConfiguration conf = new ClientConfiguration().setZkServers(zkUtil.getZooKeeperConnectString());
+        ClientConfiguration conf = new ClientConfiguration().setMetadataServiceUri(zkUtil.getMetadataServiceUri());
         BookKeeper bkc = new BookKeeper(conf);
 
         byte[] passwd = "AAAAAAA".getBytes();
@@ -187,7 +187,7 @@ public class BookKeeperClientTestsWithBookieErrors extends BookKeeperClusterTest
     // sleep (for ReadEntryTimeout+2 secs) before returning the data
     @Test(timeout = 60000)
     public void testBKReadFirstDigestErrorThenTimeout() throws Exception {
-        ClientConfiguration conf = new ClientConfiguration().setZkServers(zkUtil.getZooKeeperConnectString());
+        ClientConfiguration conf = new ClientConfiguration().setMetadataServiceUri(zkUtil.getMetadataServiceUri());
         BookKeeper bkc = new BookKeeper(conf);
 
         byte[] passwd = "AAAAAAA".getBytes();
@@ -217,7 +217,7 @@ public class BookKeeperClientTestsWithBookieErrors extends BookKeeperClusterTest
     // and the last one will return corrupt data
     @Test(timeout = 60000)
     public void testBKReadFirstBookiesDownThenDigestError() throws Exception {
-        ClientConfiguration conf = new ClientConfiguration().setZkServers(zkUtil.getZooKeeperConnectString());
+        ClientConfiguration conf = new ClientConfiguration().setMetadataServiceUri(zkUtil.getMetadataServiceUri());
         BookKeeper bkc = new BookKeeper(conf);
 
         byte[] passwd = "AAAAAAA".getBytes();
@@ -247,7 +247,7 @@ public class BookKeeperClientTestsWithBookieErrors extends BookKeeperClusterTest
     // In this testcase all the bookies will sleep (for ReadEntryTimeout+2 secs) before returning the data
     @Test(timeout = 60000)
     public void testBKReadAllTimeouts() throws Exception {
-        ClientConfiguration conf = new ClientConfiguration().setZkServers(zkUtil.getZooKeeperConnectString());
+        ClientConfiguration conf = new ClientConfiguration().setMetadataServiceUri(zkUtil.getMetadataServiceUri());
         BookKeeper bkc = new BookKeeper(conf);
 
         byte[] passwd = "AAAAAAA".getBytes();
@@ -277,7 +277,7 @@ public class BookKeeperClientTestsWithBookieErrors extends BookKeeperClusterTest
     // but the last one will return as expected
     @Test(timeout = 60000)
     public void testBKReadTwoBookiesTimeout() throws Exception {
-        ClientConfiguration conf = new ClientConfiguration().setZkServers(zkUtil.getZooKeeperConnectString());
+        ClientConfiguration conf = new ClientConfiguration().setMetadataServiceUri(zkUtil.getMetadataServiceUri());
         BookKeeper bkc = new BookKeeper(conf);
 
         byte[] passwd = "AAAAAAA".getBytes();
@@ -306,7 +306,8 @@ public class BookKeeperClientTestsWithBookieErrors extends BookKeeperClusterTest
     // but the last one will return as expected
     @Test(timeout = 60000)
     public void testBKReadTwoBookiesWithDigestError() throws Exception {
-        ClientConfiguration conf = new ClientConfiguration().setZkServers(zkUtil.getZooKeeperConnectString());
+        ClientConfiguration conf = new ClientConfiguration()
+            .setMetadataServiceUri(zkUtil.getMetadataServiceUri());
         BookKeeper bkc = new BookKeeper(conf);
 
         byte[] passwd = "AAAAAAA".getBytes();

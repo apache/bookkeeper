@@ -98,6 +98,8 @@ public class TestBookieWatcher extends BookKeeperClusterTestCase {
     private void runBookieWatcherWhenSessionExpired(ZooKeeper zk, int timeout, boolean reconnectable)
             throws Exception {
         ClientConfiguration conf = new ClientConfiguration();
+        conf.setMetadataServiceUri(metadataServiceUri);
+
         BookKeeper bkc = new BookKeeper(conf, zk);
 
         LedgerHandle lh;

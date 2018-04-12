@@ -245,7 +245,7 @@ public class ReadOnlyBookieTest extends BookKeeperClusterTestCase {
         }
 
         ServerConfiguration newConf = newServerConfiguration(
-                conf.getBookiePort() + 1, zkUtil.getZooKeeperConnectString(),
+                conf.getBookiePort() + 1,
                 ledgerDirs[0], ledgerDirs);
         bsConfs.add(newConf);
         bs.add(startBookie(newConf));

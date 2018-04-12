@@ -27,6 +27,7 @@ import java.util.Map;
 
 import javax.net.ssl.SSLEngine;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.feature.Feature;
 import org.apache.bookkeeper.meta.AbstractZkLedgerManagerFactory;
 import org.apache.bookkeeper.meta.HierarchicalLedgerManagerFactory;
@@ -47,6 +48,7 @@ import org.apache.commons.lang.StringUtils;
 /**
  * Abstract configuration.
  */
+@Slf4j
 public abstract class AbstractConfiguration<T extends AbstractConfiguration>
     extends CompositeConfiguration {
 
@@ -194,7 +196,26 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
     /**
      * Get metadata service uri.
      *
+     * <p><b>Warning:</b> this method silently converts checked exceptions to unchecked exceptions.
+     * It is useful to use this method in lambda expressions. However it should not be used with places
+     * which have logics to handle checked exceptions. In such cases use {@link #getMetadataServiceUri()} instead.
+     *
+     * @return metadata service uri
+     * @throws UncheckedConfigurationException if the metadata service uri is invalid.
+     */
+    public String getMetadataServiceUriUnchecked() throws UncheckedConfigurationException {
+        try {
+            return getMetadataServiceUri();
+        } catch (ConfigurationException e) {
+            throw new UncheckedConfigurationException(e);
+        }
+    }
+
+    /**
+     * Get metadata service uri.
+     *
      * @return metadata service uri.
+     * @throws ConfigurationException if the metadata service uri is invalid.
      */
     @SuppressWarnings("deprecation")
     public String getMetadataServiceUri() throws ConfigurationException {
@@ -227,10 +248,11 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
             }
             String zkServers = getZkServers();
             if (null != zkServers) {
+                // URI doesn't accept ','
                 serviceUri = String.format(
                     "zk+%s://%s%s",
                     ledgerManagerType,
-                    getZkServers(),
+                    zkServers.replace(",", ";"),
                     getZkLedgersRootPath());
             }
         }
@@ -252,8 +274,12 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
     /**
      * Get zookeeper servers to connect.
      *
+     * <p>`zkServers` is deprecating, in favor of using `metadataServiceUri`
+     *
      * @return zookeeper servers
+     * @deprecated since 4.7.0
      */
+    @Deprecated
     public String getZkServers() {
         List servers = getList(ZK_SERVERS, null);
         if (null == servers || 0 == servers.size()) {
@@ -265,9 +291,12 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
     /**
      * Set zookeeper servers to connect.
      *
+     * <p>`zkServers` is deprecating, in favor of using `metadataServiceUri`
+     *
      * @param zkServers
      *          ZooKeeper servers to connect
      */
+    @Deprecated
     public T setZkServers(String zkServers) {
         setProperty(ZK_SERVERS, zkServers);
         return getThis();
@@ -351,7 +380,6 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      * @param classPrefix
      *          the class prefix of shaded ledger manager factory class
      * @return configuration instance.
-     * @see #setAllowLedgerManagerFactoryClass(boolean)
      */
     public T setShadedLedgerManagerFactoryClassPrefix(String classPrefix) {
         setProperty(SHADED_LEDGER_MANAGER_FACTORY_CLASS_PREFIX, classPrefix);
@@ -418,6 +446,7 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      *
      * @param zkLedgersPath zk ledgers root path
      */
+    @Deprecated
     public void setZkLedgersRootPath(String zkLedgersPath) {
         setProperty(ZK_LEDGERS_ROOT_PATH, zkLedgersPath);
     }
@@ -427,6 +456,7 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      *
      * @return zk ledgers root path
      */
+    @Deprecated
     public String getZkLedgersRootPath() {
         return getString(ZK_LEDGERS_ROOT_PATH, "/ledgers");
     }
@@ -473,6 +503,7 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      *
      * @return Node under which available bookies are stored.
      */
+    @Deprecated
     public String getZkAvailableBookiesPath() {
         return getZkLedgersRootPath() + "/" + AVAILABLE_NODE;
     }

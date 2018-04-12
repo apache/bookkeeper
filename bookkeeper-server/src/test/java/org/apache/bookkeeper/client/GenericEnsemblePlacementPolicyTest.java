@@ -87,7 +87,7 @@ public class GenericEnsemblePlacementPolicyTest extends BookKeeperClusterTestCas
     @Test
     public void testNewEnsemble() throws Exception {
         numBookies = 1;
-        startBKCluster();
+        startBKCluster(zkUtil.getMetadataServiceUri());
         try {
             Map<String, byte[]> customMetadata = new HashMap<>();
             customMetadata.put(property, value);
@@ -105,7 +105,7 @@ public class GenericEnsemblePlacementPolicyTest extends BookKeeperClusterTestCas
     public void testNewEnsembleWithNotEnoughtBookies() throws Exception {
         numBookies = 0;
         try {
-            startBKCluster();
+            startBKCluster(zkUtil.getMetadataServiceUri());
             Map<String, byte[]> customMetadata = new HashMap<>();
             customMetadata.put(property, value);
             try (BookKeeper bk = new BookKeeper(baseClientConf, zkc)) {
@@ -124,7 +124,7 @@ public class GenericEnsemblePlacementPolicyTest extends BookKeeperClusterTestCas
     @Test
     public void testReplaceBookie() throws Exception {
         numBookies = 3;
-        startBKCluster();
+        startBKCluster(zkUtil.getMetadataServiceUri());
         try {
             Map<String, byte[]> customMetadata = new HashMap<>();
             customMetadata.put(property, value);

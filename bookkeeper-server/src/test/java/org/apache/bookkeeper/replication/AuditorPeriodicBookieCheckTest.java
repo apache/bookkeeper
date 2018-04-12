@@ -34,6 +34,7 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
+import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.test.TestCallbacks;
@@ -70,10 +71,11 @@ public class AuditorPeriodicBookieCheckTest extends BookKeeperClusterTestCase {
 
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
         conf.setAuditorPeriodicBookieCheckInterval(CHECK_INTERVAL);
+        conf.setMetadataServiceUri(metadataServiceUri);
         String addr = bs.get(0).getLocalAddress().toString();
 
         auditorZookeeper = ZooKeeperClient.newBuilder()
-                .connectString(zkUtil.getZooKeeperConnectString())
+                .connectString(ZKMetadataDriverBase.resolveZkServers(conf))
                 .sessionTimeoutMs(10000)
                 .build();
 
@@ -96,7 +98,7 @@ public class AuditorPeriodicBookieCheckTest extends BookKeeperClusterTestCase {
      */
     @Test
     public void testPeriodicBookieCheckInterval() throws Exception {
-        bsConfs.get(0).setZkServers(zkUtil.getZooKeeperConnectString());
+        bsConfs.get(0).setMetadataServiceUri(zkUtil.getMetadataServiceUri());
         runFunctionWithLedgerManagerFactory(bsConfs.get(0), mFactory -> {
             try (LedgerManager ledgerManager = mFactory.newLedgerManager()) {
                 @Cleanup final LedgerUnderreplicationManager underReplicationManager =

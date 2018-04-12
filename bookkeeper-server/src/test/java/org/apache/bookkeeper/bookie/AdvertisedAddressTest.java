@@ -64,7 +64,7 @@ public class AdvertisedAddressTest extends BookKeeperClusterTestCase {
         conf.setJournalDirName(newDirectory(false))
             .setLedgerDirNames(new String[] { newDirectory(false) })
             .setBookiePort(bookiePort)
-            .setZkServers(zkUtil.getZooKeeperConnectString());
+            .setMetadataServiceUri(zkUtil.getMetadataServiceUri());
 
         conf.setAdvertisedAddress("10.0.0.1");
         assertEquals("10.0.0.1", conf.getAdvertisedAddress());
