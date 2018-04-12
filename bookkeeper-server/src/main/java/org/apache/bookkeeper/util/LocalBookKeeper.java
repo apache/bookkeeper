@@ -62,6 +62,10 @@ public class LocalBookKeeper {
     protected static final Logger LOG = LoggerFactory.getLogger(LocalBookKeeper.class);
     public static final int CONNECTION_TIMEOUT = 30000;
 
+    private static String newMetadataServiceUri(String zkServers, int port) {
+        return "zk://" + zkServers + ":" + port + "/ledgers";
+    }
+
     int numberOfBookies;
 
     public LocalBookKeeper() {
@@ -251,9 +255,9 @@ public class LocalBookKeeper {
                 bsConfs[i].setBookiePort(initialPort + i);
             }
 
-            if (null == baseConf.getZkServers()) {
-                bsConfs[i].setZkServers(InetAddress.getLocalHost().getHostAddress() + ":"
-                                  + zooKeeperDefaultPort);
+            if (null == baseConf.getMetadataServiceUriUnchecked()) {
+                bsConfs[i].setMetadataServiceUri(
+                    newMetadataServiceUri(InetAddress.getLocalHost().getHostAddress(), zooKeeperDefaultPort));
             }
 
             bsConfs[i].setJournalDirName(journalDirs[i].getPath());
@@ -280,9 +284,9 @@ public class LocalBookKeeper {
          */
         ServerConfiguration baseConfWithCorrectZKServers = new ServerConfiguration(
                 (ServerConfiguration) baseConf.clone());
-        if (null == baseConf.getZkServers()) {
-            baseConfWithCorrectZKServers
-                    .setZkServers(InetAddress.getLocalHost().getHostAddress() + ":" + zooKeeperDefaultPort);
+        if (null == baseConf.getMetadataServiceUriUnchecked()) {
+            baseConfWithCorrectZKServers.setMetadataServiceUri(
+                newMetadataServiceUri(InetAddress.getLocalHost().getHostAddress(), zooKeeperDefaultPort));
         }
         serializeLocalBookieConfig(baseConfWithCorrectZKServers, "baseconf.conf");
     }
@@ -359,8 +363,9 @@ public class LocalBookKeeper {
                 zks = LocalBookKeeper.runZookeeper(1000, zkPort, zkTmpDir);
             }
 
+            conf.setMetadataServiceUri(newMetadataServiceUri(zkHost, zkPort));
+
             lb.initializeZookeeper(conf, zkHost, zkPort);
-            conf.setZkServers(zkHost + ":" + zkPort);
             bkTmpDirs = lb.runBookies(conf, dirSuffix);
 
             try {
