@@ -364,14 +364,13 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                 }
                 lastLogMark.setCurLogMark(this.logId, this.lastFlushedPosition);
 
-                LedgerIdEntryIdPair forced = flushedNotSyncedEntries.poll();
+                LedgerIdEntryIdPair forced = flushedNotForcedEntries.poll();
                 while (forced != null) {
                    long ledgerId = forced.ledgerId;
                    long entryId = forced.entryId;
                    forced.recycle();
-                   SyncCursor cursor = getCursorForLedger(ledgerId);
-                   cursor.update(entryId);
-                   forced = flushedNotSyncedEntries.poll();
+                   updateCursor(ledgerId, entryId);
+                   forced = flushedNotForcedEntries.poll();
                 }
 
                 // Notify the waiters that the force write succeeded
@@ -379,8 +378,8 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                     QueueEntry qe = forceWriteWaiters.get(i);
                     if (qe != null) {
                         if (qe.entryId == Bookie.METAENTRY_ID_FORCE_LEDGER) {
-                            SyncCursor cursor = getCursorForLedger(qe.ledgerId);
-                            qe.entryId = cursor.getCurrentMinAddSynced();
+                            LastAddForcedCursor cursor = getCursorForLedger(qe.ledgerId);
+                            qe.entryId = cursor.getLastAddForced();
                         }
                         cbThreadPool.execute(qe);
                     }
@@ -607,8 +606,8 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
     final BlockingQueue<QueueEntry> queue = new GrowableArrayBlockingQueue<QueueEntry>();
     final BlockingQueue<ForceWriteRequest> forceWriteRequests = new GrowableArrayBlockingQueue<ForceWriteRequest>();
 
-    final BlockingQueue<LedgerIdEntryIdPair> flushedNotSyncedEntries = new GrowableArrayBlockingQueue<>();
-    final ConcurrentLongHashMap<SyncCursor> syncCursors = new ConcurrentLongHashMap<SyncCursor>();
+    final BlockingQueue<LedgerIdEntryIdPair> flushedNotForcedEntries = new GrowableArrayBlockingQueue<>();
+    final ConcurrentLongHashMap<LastAddForcedCursor> syncCursors = new ConcurrentLongHashMap<LastAddForcedCursor>();
 
     volatile boolean running = true;
     private final LedgerDirsManager ledgerDirsManager;
@@ -889,10 +888,6 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                 journalAddEntryStats, journalQueueSize));
     }
 
-    void recoverLastPersistedEntryId(long ledgerId, long entryId) {
-        getCursorForLedger(ledgerId).recover(entryId);
-    }
-
     void forceLedger(long ledgerId, WriteCallback cb, Object ctx) {
 
         journalQueueSize.inc();
@@ -1040,7 +1035,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                                 if (entry != null && (!syncData || entry.ackBeforeSync)) {
                                     toFlush.set(i, null);
                                     numEntriesToFlush--;
-                                    flushedNotSyncedEntries.add(
+                                    flushedNotForcedEntries.add(
                                             LedgerIdEntryIdPair.create(entry.ledgerId, entry.entryId));
                                     cbThreadPool.execute(entry);
                                 }
@@ -1195,8 +1190,17 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
         join();
     }
 
-    private SyncCursor getCursorForLedger(long ledgerId) {
-        return syncCursors.computeIfAbsent(ledgerId, (lId) -> new SyncCursor());
+    LastAddForcedCursor getCursorForLedger(long ledgerId) {
+        return syncCursors.computeIfAbsent(ledgerId, (lId) -> new LastAddForcedCursor());
+    }
+
+    void updateCursor(long ledgerId, long entryId) {
+        LastAddForcedCursor cursor = getCursorForLedger(ledgerId);
+        cursor.update(entryId);
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("update cursor ledger {} entryId {}, now lastAddForced is {}",
+                    ledgerId, entryId, cursor.getLastAddForced());
+        }
     }
 
     private static final class LedgerIdEntryIdPair {
