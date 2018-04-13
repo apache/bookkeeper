@@ -1186,15 +1186,15 @@ public class EntryLogger {
         entryLogManager.flush();
     }
 
-    long addEntry(Long ledger, ByteBuffer entry) throws IOException {
+    long addEntry(long ledger, ByteBuffer entry) throws IOException {
         return entryLogManager.addEntry(ledger, Unpooled.wrappedBuffer(entry), true);
     }
 
-    long addEntry(Long ledger, ByteBuf entry) throws IOException {
+    long addEntry(long ledger, ByteBuf entry) throws IOException {
         return entryLogManager.addEntry(ledger, entry, true);
     }
 
-    public long addEntry(Long ledger, ByteBuf entry, boolean rollLog) throws IOException {
+    public long addEntry(long ledger, ByteBuf entry, boolean rollLog) throws IOException {
         return entryLogManager.addEntry(ledger, entry, true);
     }
 
