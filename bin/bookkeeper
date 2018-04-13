@@ -18,13 +18,15 @@
 # * limitations under the License.
 # */
 
-# check if net.ipv6.bindv6only is set to 1
-bindv6only=$(/sbin/sysctl -n net.ipv6.bindv6only 2> /dev/null)
-if [ -n "$bindv6only" ] && [ "$bindv6only" -eq "1" ]
-then
-  echo "Error: \"net.ipv6.bindv6only\" is set to 1 - Java networking could be broken"
-  echo "For more info (the following page also applies to bookkeeper): http://wiki.apache.org/hadoop/HadoopIPv6"
-  exit 1
+if [ -f /sbin/sysctl ]; then
+  # check if net.ipv6.bindv6only is set to 1
+  bindv6only=$(/sbin/sysctl -n net.ipv6.bindv6only 2> /dev/null)
+  if [ -n "$bindv6only" ] && [ "$bindv6only" -eq "1" ]
+  then
+    echo "Error: \"net.ipv6.bindv6only\" is set to 1 - Java networking could be broken"
+    echo "For more info (the following page also applies to bookkeeper): http://wiki.apache.org/hadoop/HadoopIPv6"
+    exit 1
+  fi
 fi
 
 # See the following page for extensive details on setting
