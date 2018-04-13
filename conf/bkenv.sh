@@ -32,6 +32,23 @@
 # Logs location
 # BOOKIE_LOG_DIR=
 
+# JVM memory options
+# BOOKIE_MEM_OPTS=
+
+# JVM GC options
+# BOOKIE_GC_OPTS=
+
+# Netty options
+
+# netty buffer leak detection level - {@link http://netty.io/wiki/reference-counted-objects.html#wiki-h3-11}
+# NETTY_LEAK_DETECTION_LEVEL=
+
+# netty recycler max capacity
+# NETTY_RECYCLER_MAXCAPACITY=
+
+# netty recycler link capacity
+# NETTY_RECYCLER_LINKCAPACITY=
+
 # Extra options to be passed to the jvm
 # BOOKIE_EXTRA_OPTS=
 

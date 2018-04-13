@@ -205,16 +205,38 @@ if [ -z "$BOOKIE_LOG_CONF" ]; then
   BOOKIE_LOG_CONF=$DEFAULT_LOG_CONF
 fi
 
+# Configure JVM settings
+DEFAULT_BOOKIE_GC_OPTS="-XX:+UseG1GC \
+    -XX:MaxGCPauseMillis=10 \
+    -XX:+ParallelRefProcEnabled \
+    -XX:+UnlockExperimentalVMOptions \
+    -XX:+AggressiveOpts \
+    -XX:+DoEscapeAnalysis \
+    -XX:ParallelGCThreads=32 \
+    -XX:ConcGCThreads=32 \
+    -XX:G1NewSizePercent=50 \
+    -XX:+DisableExplicitGC \
+    -XX:-ResizePLAB"
+BOOKIE_MEM_OPTS=${BOOKIE_MEM_OPTS:-"-Xms2g -Xmx2g -XX:MaxDirectMemorySize=4g"}
+BOOKIE_GC_OPTS=${BOOKIE_GC_OPTS:-"${DEFAULT_BOOKIE_GC_OPTS}"}
+
 BOOKIE_CLASSPATH="$BOOKIE_JAR:$BOOKIE_CLASSPATH:$BOOKIE_EXTRA_CLASSPATH"
 BOOKIE_CLASSPATH="`dirname $BOOKIE_LOG_CONF`:$BOOKIE_CLASSPATH"
 OPTS="$OPTS -Dlog4j.configuration=`basename $BOOKIE_LOG_CONF`"
 
 OPTS="-cp $BOOKIE_CLASSPATH $OPTS"
 
-OPTS="$OPTS $BOOKIE_EXTRA_OPTS"
-
 # Disable ipv6 as it can cause issues
 OPTS="$OPTS -Djava.net.preferIPv4Stack=true"
+# Disable netty leak detection
+NETTY_LEAK_DETECTION_LEVEL=${NETTY_LEAK_DETECTION_LEVEL:-"disabled"}
+OPTS="$OPTS -Dio.netty.leakDetectionLevel=${NETTY_LEAK_DETECTION_LEVEL}"
+NETTY_RECYCLER_MAXCAPACITY=${NETTY_RECYCLER_MAXCAPACITY:-"1000"}
+OPTS="$OPTS -Dio.netty.recycler.maxCapacity.default=${NETTY_RECYCLER_MAXCAPACITY}"
+NETTY_RECYCLER_LINKCAPACITY=${NETTY_RECYCLER_LINKCAPACITY:-"1024"}
+OPTS="$OPTS -Dio.netty.recycler.linkCapacity=${NETTY_RECYCLER_LINKCAPACITY}"
+
+OPTS="$OPTS $BOOKIE_MEM_OPTS $BOOKIE_GC_OPTS $BOOKIE_EXTRA_OPTS"
 
 # log directory & file
 BOOKIE_ROOT_LOGGER=${BOOKIE_ROOT_LOGGER:-"INFO,CONSOLE"}
