@@ -64,19 +64,21 @@ public class ZKMetadataDriverBase implements AutoCloseable {
         return uri.getAuthority().replace(";", ",");
     }
 
+    @SuppressWarnings("deprecation")
     public static String resolveZkServers(AbstractConfiguration<?> conf) {
         String metadataServiceUriStr = conf.getMetadataServiceUriUnchecked();
         if (null == metadataServiceUriStr) {
-            return null;
+            return conf.getZkServers();
         }
         URI metadataServiceUri = URI.create(metadataServiceUriStr);
         return getZKServersFromServiceUri(metadataServiceUri);
     }
 
+    @SuppressWarnings("deprecation")
     public static String resolveZkLedgersRootPath(AbstractConfiguration<?> conf) {
         String metadataServiceUriStr = conf.getMetadataServiceUriUnchecked();
         if (null == metadataServiceUriStr) {
-            return null;
+            return conf.getZkLedgersRootPath();
         }
         URI metadataServiceUri = URI.create(metadataServiceUriStr);
         return metadataServiceUri.getPath();
