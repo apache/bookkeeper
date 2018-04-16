@@ -54,6 +54,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -879,11 +881,7 @@ public class EntryLogger {
     }
 
     abstract class EntryLogManagerBase implements EntryLogManager {
-        final List<BufferedLogChannel> rotatedLogChannels;
-
-        EntryLogManagerBase() {
-            rotatedLogChannels = new CopyOnWriteArrayList<BufferedLogChannel>();
-        }
+        volatile List<BufferedLogChannel> rotatedLogChannels;
 
         private final FastThreadLocal<ByteBuf> sizeBufferForAdd = new FastThreadLocal<ByteBuf>() {
             @Override
@@ -938,27 +936,19 @@ public class EntryLogger {
          */
         abstract void flushCurrentLogs() throws IOException;
 
+        /*
+         * flush rotated logs.
+         */
+        abstract void flushRotatedLogs() throws IOException;
+
         List<BufferedLogChannel> getRotatedLogChannels() {
             return rotatedLogChannels;
         }
 
         @Override
         public void flush() throws IOException {
-            flushCurrentLogs();
             flushRotatedLogs();
-        }
-
-        public void flushRotatedLogs() throws IOException {
-            for (BufferedLogChannel channel : rotatedLogChannels) {
-                channel.flushAndForceWrite(true);
-                // since this channel is only used for writing, after flushing the channel,
-                // we had to close the underlying file channel. Otherwise, we might end up
-                // leaking fds which cause the disk spaces could not be reclaimed.
-                closeFileChannel(channel);
-                recentlyCreatedEntryLogsStatus.flushRotatedEntryLog(channel.getLogId());
-                rotatedLogChannels.remove(channel);
-                LOG.info("Synced entry logger {} to disk.", channel.getLogId());
-            }
+            flushCurrentLogs();
         }
 
         void flushLogChannel(BufferedLogChannel logChannel, boolean forceMetadata) throws IOException {
@@ -1005,6 +995,7 @@ public class EntryLogger {
         private final AtomicBoolean shouldCreateNewEntryLog = new AtomicBoolean(false);
 
         EntryLogManagerForSingleEntryLog(LedgerDirsManager ledgerDirsManager) {
+            this.rotatedLogChannels = new LinkedList<BufferedLogChannel>();
             // Register listener for disk full notifications.
             ledgerDirsManager.addLedgerDirsListener(getLedgerDirsListener());
         }
@@ -1122,6 +1113,43 @@ public class EntryLogger {
                  * metadata of the file also should be force written.
                  */
                 flushLogChannel(currentActiveLogChannel, true);
+            }
+        }
+
+        @Override
+        void flushRotatedLogs() throws IOException {
+            List<BufferedLogChannel> channels = null;
+            synchronized (this) {
+                channels = rotatedLogChannels;
+                rotatedLogChannels = new LinkedList<BufferedLogChannel>();
+            }
+            if (null == channels) {
+                return;
+            }
+            Iterator<BufferedLogChannel> chIter = channels.iterator();
+            while (chIter.hasNext()) {
+                BufferedLogChannel channel = chIter.next();
+                try {
+                    channel.flushAndForceWrite(true);
+                } catch (IOException ioe) {
+                    // rescue from flush exception, add unflushed channels back
+                    synchronized (this) {
+                        if (null == rotatedLogChannels) {
+                            rotatedLogChannels = channels;
+                        } else {
+                            rotatedLogChannels.addAll(0, channels);
+                        }
+                    }
+                    throw ioe;
+                }
+                // remove the channel from the list after it is successfully flushed
+                chIter.remove();
+                // since this channel is only used for writing, after flushing the channel,
+                // we had to close the underlying file channel. Otherwise, we might end up
+                // leaking fds which cause the disk spaces could not be reclaimed.
+                closeFileChannel(channel);
+                recentlyCreatedEntryLogsStatus.flushRotatedEntryLog(channel.getLogId());
+                LOG.info("Synced entry logger {} to disk.", channel.getLogId());
             }
         }
 
