@@ -139,7 +139,7 @@ public class LedgerHandle implements WriteHandle {
     final Counter ensembleChangeCounter;
     final Counter lacUpdateHitsCounter;
     final Counter lacUpdateMissesCounter;
-    private final OpStatsLogger sendWaitStats;
+    private final OpStatsLogger clientChannelWriteWaitStats;
 
     // This empty master key is used when an empty password is provided which is the hash of an empty string
     private static final byte[] emptyLedgerKey;
@@ -211,7 +211,7 @@ public class LedgerHandle implements WriteHandle {
         ensembleChangeCounter = bk.getStatsLogger().getCounter(BookKeeperClientStats.ENSEMBLE_CHANGES);
         lacUpdateHitsCounter = bk.getStatsLogger().getCounter(BookKeeperClientStats.LAC_UPDATE_HITS);
         lacUpdateMissesCounter = bk.getStatsLogger().getCounter(BookKeeperClientStats.LAC_UPDATE_MISSES);
-        sendWaitStats = bk.getStatsLogger().getOpStatsLogger(BookKeeperClientStats.CLIENT_SEND_WAIT_TIMER);
+        clientChannelWriteWaitStats = bk.getStatsLogger().getOpStatsLogger(BookKeeperClientStats.CLIENT_CHANNEL_WRITE_WAIT);
         bk.getStatsLogger().registerGauge(BookKeeperClientStats.PENDING_ADDS,
                                           new Gauge<Integer>() {
                                               @Override
@@ -1164,9 +1164,9 @@ public class LedgerHandle implements WriteHandle {
         }
 
         if (success) {
-            sendWaitStats.registerSuccessfulEvent(MathUtils.elapsedNanos(startTime), TimeUnit.NANOSECONDS);
+            clientChannelWriteWaitStats.registerSuccessfulEvent(MathUtils.elapsedNanos(startTime), TimeUnit.NANOSECONDS);
         } else {
-            sendWaitStats.registerFailedEvent(MathUtils.elapsedNanos(startTime), TimeUnit.NANOSECONDS);
+            clientChannelWriteWaitStats.registerFailedEvent(MathUtils.elapsedNanos(startTime), TimeUnit.NANOSECONDS);
         }
         return success;
     }
