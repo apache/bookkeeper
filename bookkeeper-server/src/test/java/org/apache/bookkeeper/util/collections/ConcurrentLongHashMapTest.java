@@ -117,6 +117,23 @@ public class ConcurrentLongHashMapTest {
     }
 
     @Test
+    public void testRemoveIf() {
+        ConcurrentLongHashMap<String> map = new ConcurrentLongHashMap<>(16, 1);
+
+        map.put(1L, "one");
+        map.put(2L, "two");
+        map.put(3L, "three");
+        map.put(4L, "four");
+
+        map.removeIf((k, v) -> k < 3);
+        assertFalse(map.containsKey(1L));
+        assertFalse(map.containsKey(2L));
+        assertTrue(map.containsKey(3L));
+        assertTrue(map.containsKey(4L));
+        assertEquals(2, map.size());
+    }
+
+    @Test
     public void testNegativeUsedBucketCount() {
         ConcurrentLongHashMap<String> map = new ConcurrentLongHashMap<>(16, 1);
 

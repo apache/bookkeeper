@@ -58,7 +58,20 @@ public class TLSContextFactory implements SecurityHandlerFactory {
      * Supported Key File Types.
      */
     public enum KeyStoreType {
-        PKCS12, JKS, PEM;
+        PKCS12("PKCS12"),
+        JKS("JKS"),
+        PEM("PEM");
+
+        private String str;
+
+        KeyStoreType(String str) {
+            this.str = str;
+        }
+
+        @Override
+        public String toString() {
+            return this.str;
+        }
     }
 
     private static final Logger LOG = LoggerFactory.getLogger(TLSContextFactory.class);

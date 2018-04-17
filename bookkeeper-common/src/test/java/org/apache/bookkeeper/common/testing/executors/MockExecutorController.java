@@ -166,12 +166,7 @@ public class MockExecutorController {
            Runnable task = invocationOnMock.getArgument(0);
            long value = invocationOnMock.getArgument(1);
            TimeUnit unit = invocationOnMock.getArgument(2);
-           DeferredTask deferredTask = executor.addDelayedTask(executor, unit.toMillis(value), task);
-           if (value <= 0) {
-               task.run();
-               FutureUtils.complete(deferredTask.future, null);
-           }
-           return deferredTask;
+           return executor.addDelayedTask(executor, unit.toMillis(value), task);
        };
     }
 
@@ -192,7 +187,12 @@ public class MockExecutorController {
             Runnable task) {
         checkArgument(delayTimeMs >= 0);
         DeferredTask deferredTask = new DeferredTask(task, delayTimeMs);
-        executor.deferredTasks.add(deferredTask);
+        if (delayTimeMs > 0) {
+            executor.deferredTasks.add(deferredTask);
+        } else {
+            task.run();
+            FutureUtils.complete(deferredTask.future, null);
+        }
         return deferredTask;
     }
 

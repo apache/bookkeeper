@@ -18,6 +18,7 @@
 package org.apache.distributedlog;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+
 import io.netty.buffer.ByteBuf;
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;

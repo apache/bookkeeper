@@ -130,6 +130,7 @@ public class GcLedgersTest extends LedgerManagerTestCase {
                     expected.wait(100);
                 }
             } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
             }
         }
     }
@@ -209,6 +210,7 @@ public class GcLedgersTest extends LedgerManagerTestCase {
                             try {
                                 createLatch.await();
                             } catch (InterruptedException ie) {
+                                Thread.currentThread().interrupt();
                             }
                             paused = true;
                         }

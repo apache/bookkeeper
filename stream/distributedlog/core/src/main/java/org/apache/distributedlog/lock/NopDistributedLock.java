@@ -18,7 +18,7 @@
 package org.apache.distributedlog.lock;
 
 import java.util.concurrent.CompletableFuture;
-import org.apache.distributedlog.common.concurrent.FutureUtils;
+import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.distributedlog.exceptions.LockingException;
 
 /**

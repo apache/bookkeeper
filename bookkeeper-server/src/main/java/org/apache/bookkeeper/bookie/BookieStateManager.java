@@ -32,8 +32,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.discover.RegistrationManager;
-import org.apache.bookkeeper.discover.ZKRegistrationManager;
+import org.apache.bookkeeper.meta.MetadataBookieDriver;
 import org.apache.bookkeeper.stats.Gauge;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
@@ -62,19 +61,19 @@ public class BookieStateManager implements StateManager {
     private final BookieStatus bookieStatus = new BookieStatus();
     private final AtomicBoolean rmRegistered = new AtomicBoolean(false);
     private final AtomicBoolean forceReadOnly = new AtomicBoolean(false);
+    private volatile boolean availableForHighPriorityWrites = true;
 
     private final String bookieId;
     private ShutdownHandler shutdownHandler;
-    private RegistrationManager registrationManager;
+    private final MetadataBookieDriver metadataDriver;
     // Expose Stats
     private final StatsLogger statsLogger;
 
-
     public BookieStateManager(ServerConfiguration conf, StatsLogger statsLogger,
-           RegistrationManager registrationManager, LedgerDirsManager ledgerDirsManager) throws IOException {
+           MetadataBookieDriver metadataDriver, LedgerDirsManager ledgerDirsManager) throws IOException {
         this.conf = conf;
         this.statsLogger = statsLogger;
-        this.registrationManager = registrationManager;
+        this.metadataDriver = metadataDriver;
         this.ledgerDirsManager = ledgerDirsManager;
         // ZK ephemeral node for this Bookie.
         this.bookieId = getMyId();
@@ -99,8 +98,8 @@ public class BookieStateManager implements StateManager {
     }
 
     @VisibleForTesting
-    BookieStateManager(ServerConfiguration conf, RegistrationManager registrationManager) throws IOException {
-        this(conf, NullStatsLogger.INSTANCE, registrationManager, new LedgerDirsManager(conf, conf.getLedgerDirs(),
+    BookieStateManager(ServerConfiguration conf, MetadataBookieDriver metadataDriver) throws IOException {
+        this(conf, NullStatsLogger.INSTANCE, metadataDriver, new LedgerDirsManager(conf, conf.getLedgerDirs(),
                 new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()),
                 NullStatsLogger.INSTANCE));
     }
@@ -134,6 +133,16 @@ public class BookieStateManager implements StateManager {
     @Override
     public boolean isReadOnly(){
         return forceReadOnly.get() || bookieStatus.isInReadOnlyMode();
+    }
+
+    @Override
+    public boolean isAvailableForHighPriorityWrites() {
+        return availableForHighPriorityWrites;
+    }
+
+    @Override
+    public void setHighPriorityWritesAvailability(boolean available) {
+        this.availableForHighPriorityWrites = available;
     }
 
     @Override
@@ -199,16 +208,15 @@ public class BookieStateManager implements StateManager {
     }
 
     private void doRegisterBookie(boolean isReadOnly) throws IOException {
-        if (null == registrationManager || ((ZKRegistrationManager) this.registrationManager).getZk() == null) {
-            // registration manager is null, means not register itself to zk.
-            // ZooKeeper is null existing only for testing.
-            LOG.info("null zk while do register");
+        if (null == metadataDriver) {
+            // registration manager is null, means not register itself to metadata store.
+            LOG.info("null registration manager while do register");
             return;
         }
 
         rmRegistered.set(false);
         try {
-            registrationManager.registerBookie(bookieId, isReadOnly);
+            metadataDriver.getRegistrationManager().registerBookie(bookieId, isReadOnly);
             rmRegistered.set(true);
         } catch (BookieException e) {
             throw new IOException(e);
@@ -230,7 +238,7 @@ public class BookieStateManager implements StateManager {
             bookieStatus.writeToDirectories(ledgerDirsManager.getAllLedgerDirs());
         }
         // change zookeeper state only when using zookeeper
-        if (null == registrationManager) {
+        if (null == metadataDriver) {
             return;
         }
         try {
@@ -242,7 +250,7 @@ public class BookieStateManager implements StateManager {
         }
         // clear the readonly state
         try {
-            registrationManager.unregisterBookie(bookieId, true);
+            metadataDriver.getRegistrationManager().unregisterBookie(bookieId, true);
         } catch (BookieException e) {
             // if we failed when deleting the readonly flag in zookeeper, it is OK since client would
             // already see the bookie in writable list. so just log the exception
@@ -274,11 +282,11 @@ public class BookieStateManager implements StateManager {
             this.bookieStatus.writeToDirectories(ledgerDirsManager.getAllLedgerDirs());
         }
         // change zookeeper state only when using zookeeper
-        if (null == registrationManager) {
+        if (null == metadataDriver) {
             return;
         }
         try {
-            registrationManager.registerBookie(bookieId, true);
+            metadataDriver.getRegistrationManager().registerBookie(bookieId, true);
         } catch (BookieException e) {
             LOG.error("Error in transition to ReadOnly Mode."
                     + " Shutting down", e);
@@ -294,10 +302,6 @@ public class BookieStateManager implements StateManager {
         return Bookie.getBookieAddress(conf).toString();
     }
 
-    @VisibleForTesting
-    public void setRegistrationManager(RegistrationManager rm) {
-        this.registrationManager = rm;
-    }
     @VisibleForTesting
     public ShutdownHandler getShutdownHandler(){
         return shutdownHandler;

@@ -29,6 +29,7 @@ import java.util.EnumSet;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.bookkeeper.bookie.BookieException;
+import org.apache.bookkeeper.bookie.BookieException.OperationRejectedException;
 import org.apache.bookkeeper.client.api.WriteFlag;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.AddRequest;
@@ -64,7 +65,9 @@ class WriteEntryProcessorV3 extends PacketProcessorBaseV3 {
             return addResponse.build();
         }
 
-        if (requestProcessor.bookie.isReadOnly()) {
+        if (requestProcessor.getBookie().isReadOnly()
+            && !(RequestUtils.isHighPriority(request)
+                    && requestProcessor.getBookie().isAvailableForHighPriorityWrites())) {
             logger.warn("BookieServer is running as readonly mode, so rejecting the request from the client!");
             addResponse.setStatus(StatusCode.EREADONLY);
             return addResponse.build();
@@ -75,10 +78,10 @@ class WriteEntryProcessorV3 extends PacketProcessorBaseV3 {
             public void writeComplete(int rc, long ledgerId, long entryId,
                                       BookieSocketAddress addr, Object ctx) {
                 if (BookieProtocol.EOK == rc) {
-                    requestProcessor.addEntryStats.registerSuccessfulEvent(MathUtils.elapsedNanos(startTimeNanos),
+                    requestProcessor.getAddEntryStats().registerSuccessfulEvent(MathUtils.elapsedNanos(startTimeNanos),
                             TimeUnit.NANOSECONDS);
                 } else {
-                    requestProcessor.addEntryStats.registerFailedEvent(MathUtils.elapsedNanos(startTimeNanos),
+                    requestProcessor.getAddEntryStats().registerFailedEvent(MathUtils.elapsedNanos(startTimeNanos),
                             TimeUnit.NANOSECONDS);
                 }
 
@@ -100,7 +103,7 @@ class WriteEntryProcessorV3 extends PacketProcessorBaseV3 {
                         .setStatus(addResponse.getStatus())
                         .setAddResponse(addResponse);
                 Response resp = response.build();
-                sendResponse(status, resp, requestProcessor.addRequestStats);
+                sendResponse(status, resp, requestProcessor.getAddRequestStats());
             }
         };
         final EnumSet<WriteFlag> writeFlags;
@@ -114,12 +117,19 @@ class WriteEntryProcessorV3 extends PacketProcessorBaseV3 {
         byte[] masterKey = addRequest.getMasterKey().toByteArray();
         ByteBuf entryToAdd = Unpooled.wrappedBuffer(addRequest.getBody().asReadOnlyByteBuffer());
         try {
-            if (addRequest.hasFlag() && addRequest.getFlag().equals(AddRequest.Flag.RECOVERY_ADD)) {
-                requestProcessor.bookie.recoveryAddEntry(entryToAdd, wcb, channel, masterKey);
+            if (RequestUtils.hasFlag(addRequest, AddRequest.Flag.RECOVERY_ADD)) {
+                requestProcessor.getBookie().recoveryAddEntry(entryToAdd, wcb, channel, masterKey);
             } else {
-                requestProcessor.bookie.addEntry(entryToAdd, ackBeforeSync, wcb, channel, masterKey);
+                requestProcessor.getBookie().addEntry(entryToAdd, ackBeforeSync, wcb, channel, masterKey);
             }
             status = StatusCode.EOK;
+        } catch (OperationRejectedException e) {
+            // Avoid to log each occurence of this exception as this can happen when the ledger storage is
+            // unable to keep up with the write rate.
+            if (logger.isDebugEnabled()) {
+                logger.debug("Operation rejected while writing {}", request, e);
+            }
+            status = StatusCode.EIO;
         } catch (IOException e) {
             logger.error("Error writing entry:{} to ledger:{}",
                     entryId, ledgerId, e);
@@ -159,7 +169,17 @@ class WriteEntryProcessorV3 extends PacketProcessorBaseV3 {
                     .setAddResponse(addResponse);
             Response resp = response.build();
             sendResponse(addResponse.getStatus(), resp,
-                         requestProcessor.addRequestStats);
+                         requestProcessor.getAddRequestStats());
         }
+    }
+
+    /**
+     * this toString method filters out body and masterKey from the output.
+     * masterKey contains the password of the ledger and body is customer data,
+     * so it is not appropriate to have these in logs or system output.
+     */
+    @Override
+    public String toString() {
+        return RequestUtils.toSafeString(request);
     }
 }

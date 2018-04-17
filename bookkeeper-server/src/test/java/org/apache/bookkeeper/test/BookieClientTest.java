@@ -40,6 +40,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BKException.Code;
 import org.apache.bookkeeper.client.BookieInfoReader.BookieInfo;
+import org.apache.bookkeeper.common.util.OrderedExecutor;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
@@ -52,8 +53,8 @@ import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
 import org.apache.bookkeeper.proto.BookkeeperProtocol;
 import org.apache.bookkeeper.stats.NullStatsLogger;
+import org.apache.bookkeeper.util.ByteBufList;
 import org.apache.bookkeeper.util.IOUtils;
-import org.apache.bookkeeper.util.OrderedSafeExecutor;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -67,7 +68,7 @@ public class BookieClientTest {
     public int port = 13645;
 
     public EventLoopGroup eventLoopGroup;
-    public OrderedSafeExecutor executor;
+    public OrderedExecutor executor;
     private ScheduledExecutorService scheduler;
 
     @Before
@@ -84,7 +85,7 @@ public class BookieClientTest {
         bs = new BookieServer(conf);
         bs.start();
         eventLoopGroup = new NioEventLoopGroup();
-        executor = OrderedSafeExecutor.newBuilder()
+        executor = OrderedExecutor.newBuilder()
                 .name("BKClientOrderedSafeExecutor")
                 .numThreads(2)
                 .build();
@@ -156,12 +157,12 @@ public class BookieClientTest {
 
         BookieClient bc = new BookieClient(new ClientConfiguration(), eventLoopGroup, executor,
                                            scheduler, NullStatsLogger.INSTANCE);
-        ByteBuf bb = createByteBuffer(1, 1, 1);
+        ByteBufList bb = createByteBuffer(1, 1, 1);
         bc.addEntry(addr, 1, passwd, 1, bb, wrcb, arc, BookieProtocol.FLAG_NONE);
         synchronized (arc) {
             arc.wait(1000);
             assertEquals(0, arc.rc);
-            bc.readEntry(addr, 1, 1, recb, arc);
+            bc.readEntry(addr, 1, 1, recb, arc, BookieProtocol.FLAG_NONE);
             arc.wait(1000);
             assertEquals(0, arc.rc);
             assertEquals(1, arc.entry.getInt());
@@ -180,75 +181,75 @@ public class BookieClientTest {
             notifyObject.wait();
         }
         synchronized (arc) {
-            bc.readEntry(addr, 1, 6, recb, arc);
+            bc.readEntry(addr, 1, 6, recb, arc, BookieProtocol.FLAG_NONE);
             arc.wait(1000);
             assertEquals(BKException.Code.NoSuchEntryException, arc.rc);
         }
         synchronized (arc) {
-            bc.readEntry(addr, 1, 7, recb, arc);
+            bc.readEntry(addr, 1, 7, recb, arc, BookieProtocol.FLAG_NONE);
             arc.wait(1000);
             assertEquals(0, arc.rc);
-            assertEquals(7, arc.entry.getInt());
+            assertEquals(7, arc.entry.getInt(), BookieProtocol.FLAG_NONE);
         }
         synchronized (arc) {
-            bc.readEntry(addr, 1, 1, recb, arc);
+            bc.readEntry(addr, 1, 1, recb, arc, BookieProtocol.FLAG_NONE);
             arc.wait(1000);
             assertEquals(0, arc.rc);
             assertEquals(1, arc.entry.getInt());
         }
         synchronized (arc) {
-            bc.readEntry(addr, 1, 2, recb, arc);
+            bc.readEntry(addr, 1, 2, recb, arc, BookieProtocol.FLAG_NONE);
             arc.wait(1000);
             assertEquals(0, arc.rc);
             assertEquals(2, arc.entry.getInt());
         }
         synchronized (arc) {
-            bc.readEntry(addr, 1, 3, recb, arc);
+            bc.readEntry(addr, 1, 3, recb, arc, BookieProtocol.FLAG_NONE);
             arc.wait(1000);
             assertEquals(0, arc.rc);
             assertEquals(3, arc.entry.getInt());
         }
         synchronized (arc) {
-            bc.readEntry(addr, 1, 4, recb, arc);
+            bc.readEntry(addr, 1, 4, recb, arc, BookieProtocol.FLAG_NONE);
             arc.wait(1000);
             assertEquals(BKException.Code.NoSuchEntryException, arc.rc);
         }
         synchronized (arc) {
-            bc.readEntry(addr, 1, 11, recb, arc);
+            bc.readEntry(addr, 1, 11, recb, arc, BookieProtocol.FLAG_NONE);
             arc.wait(1000);
             assertEquals(0, arc.rc);
             assertEquals(11, arc.entry.getInt());
         }
         synchronized (arc) {
-            bc.readEntry(addr, 1, 5, recb, arc);
+            bc.readEntry(addr, 1, 5, recb, arc, BookieProtocol.FLAG_NONE);
             arc.wait(1000);
             assertEquals(0, arc.rc);
             assertEquals(5, arc.entry.getInt());
         }
         synchronized (arc) {
-            bc.readEntry(addr, 1, 10, recb, arc);
+            bc.readEntry(addr, 1, 10, recb, arc, BookieProtocol.FLAG_NONE);
             arc.wait(1000);
             assertEquals(BKException.Code.NoSuchEntryException, arc.rc);
         }
         synchronized (arc) {
-            bc.readEntry(addr, 1, 12, recb, arc);
+            bc.readEntry(addr, 1, 12, recb, arc, BookieProtocol.FLAG_NONE);
             arc.wait(1000);
             assertEquals(BKException.Code.NoSuchEntryException, arc.rc);
         }
         synchronized (arc) {
-            bc.readEntry(addr, 1, 13, recb, arc);
+            bc.readEntry(addr, 1, 13, recb, arc, BookieProtocol.FLAG_NONE);
             arc.wait(1000);
             assertEquals(BKException.Code.NoSuchEntryException, arc.rc);
         }
     }
 
-    private ByteBuf createByteBuffer(int i, long lid, long eid) {
+    private ByteBufList createByteBuffer(int i, long lid, long eid) {
         ByteBuf bb = Unpooled.buffer(4 + 24);
         bb.writeLong(lid);
         bb.writeLong(eid);
         bb.writeLong(eid - 1);
         bb.writeInt(i);
-        return bb;
+        return ByteBufList.get(bb);
     }
 
     @Test
@@ -258,7 +259,7 @@ public class BookieClientTest {
         BookieClient bc = new BookieClient(new ClientConfiguration(), eventLoopGroup, executor,
                                            scheduler, NullStatsLogger.INSTANCE);
         synchronized (arc) {
-            bc.readEntry(addr, 2, 13, recb, arc);
+            bc.readEntry(addr, 2, 13, recb, arc, BookieProtocol.FLAG_NONE);
             arc.wait(1000);
             assertEquals(BKException.Code.NoSuchLedgerExistsException, arc.rc);
         }

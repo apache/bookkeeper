@@ -30,6 +30,7 @@ import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.buffer.Unpooled;
 
+import java.nio.charset.Charset;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
@@ -175,7 +176,10 @@ public class WriteCacheTest {
             executor.submit(() -> {
                 try {
                     barrier.await();
-                } catch (InterruptedException | BrokenBarrierException e) {
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    throw new RuntimeException(ie);
+                } catch (BrokenBarrierException e) {
                     throw new RuntimeException(e);
                 }
 
@@ -254,6 +258,27 @@ public class WriteCacheTest {
                 }
             }
         });
+
+        cache.close();
+    }
+
+    @Test
+    public void testWriteReadsInMultipleSegments() {
+        // Create cache with max size 4 KB and each segment is 128 bytes
+        WriteCache cache = new WriteCache(4 * 1024, 128);
+
+        for (int i = 0; i < 48; i++) {
+            boolean inserted = cache.put(1, i, Unpooled.wrappedBuffer(("test-" + i).getBytes()));
+            assertTrue(inserted);
+        }
+
+        assertEquals(48, cache.count());
+
+        for (int i = 0; i < 48; i++) {
+            ByteBuf b = cache.get(1, i);
+
+            assertEquals("test-" + i, b.toString(Charset.forName("UTF-8")));
+        }
 
         cache.close();
     }

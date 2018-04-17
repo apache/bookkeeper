@@ -25,7 +25,6 @@ import static org.junit.Assert.fail;
 
 import com.google.common.collect.Sets;
 
-import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.Enumeration;
@@ -95,14 +94,13 @@ public class TestLedgerFragmentReplication extends BookKeeperClusterTestCase {
         LOG.info("Killing Bookie", replicaToKill);
         killBookie(replicaToKill);
 
-        int startNewBookie = startNewBookie();
+        BookieSocketAddress newBkAddr = startNewBookieAndReturnAddress();
+        LOG.info("New Bookie addr : {}", newBkAddr);
+
         for (int i = 0; i < 10; i++) {
             lh.addEntry(data);
         }
 
-        BookieSocketAddress newBkAddr = new BookieSocketAddress(InetAddress
-                .getLocalHost().getHostAddress(), startNewBookie);
-        LOG.info("New Bookie addr :" + newBkAddr);
         Set<LedgerFragment> result = getFragmentsToReplicate(lh);
 
         BookKeeperAdmin admin = new BookKeeperAdmin(baseClientConf);
@@ -161,13 +159,12 @@ public class TestLedgerFragmentReplication extends BookKeeperClusterTestCase {
         BookieSocketAddress replicaToKill2 = lh.getLedgerMetadata()
                 .getEnsembles().get(0L).get(1);
 
-        int startNewBookie2 = startNewBookie();
+        BookieSocketAddress newBkAddr = startNewBookieAndReturnAddress();
+        LOG.info("New Bookie addr : {}", newBkAddr);
+
         LOG.info("Killing Bookie", replicaToKill2);
         killBookie(replicaToKill2);
 
-        BookieSocketAddress newBkAddr = new BookieSocketAddress(InetAddress
-                .getLocalHost().getHostAddress(), startNewBookie2);
-        LOG.info("New Bookie addr :" + newBkAddr);
         Set<LedgerFragment> result = getFragmentsToReplicate(lh);
 
         BookKeeperAdmin admin = new BookKeeperAdmin(baseClientConf);

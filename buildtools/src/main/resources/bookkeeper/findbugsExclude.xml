@@ -21,13 +21,16 @@
     <!-- imported code -->
     <Class name="~com\.scurrilous\.circe.*" />
   </Match>
+  <!-- bookkeeper-common -->
+  <Match>
+    <Class name="org.apache.bookkeeper.common.util.OrderedScheduler"/>
+    <Method name="submit" />
+    <Bug pattern="NP_PARAMETER_MUST_BE_NONNULL_BUT_MARKED_AS_NULLABLE"/>
+  </Match>
   <!-- bookkeeper-proto -->
   <Match>
     <!-- generated code, we can't be held responsible for findbugs in it //-->
     <Class name="~org\.apache\.bookkeeper\.proto\.DataFormats.*" />
-  </Match>
-  <Match>
-    <Class name="~org\.apache\.bookkeeper\.proto\.checksum\.generated.*" />
   </Match>
   <Match>
     <!-- generated code, we can't be held responsible for findbugs in it //-->
@@ -108,4 +111,41 @@
     <Class name="org.apache.bookkeeper.client.BKException$Code" />
     <Bug pattern="NM_SAME_SIMPLE_NAME_AS_INTERFACE"/>
   </And>
+
+  <!-- microbenchmarks -->
+  <!-- jmh generated code -->
+  <Match>
+    <Class name="~org\.apache\.bookkeeper\.proto\.generated.*" />
+  </Match>
+  <Match>
+    <Class name="~org\.apache\.bookkeeper\.proto\.checksum\.generated.*" />
+  </Match>
+  <Match>
+    <Class name="~org\.apache\.bookkeeper\.stats\.generated.*" />
+  </Match>
+  <Match>
+    <Class name="~org\.apache\.bookkeeper\.common\.generated.*" />
+  </Match>
+
+  <!-- modules under stream/ -->
+
+  <!-- common -->
+  <Match>
+    <Class name="org.apache.bookkeeper.common.hash.MurmurHash" />
+    <Method name="hash64"/>
+    <Bug pattern="SF_SWITCH_NO_DEFAULT"/>
+  </Match>
+
+  <!-- proto -->
+  <Match>
+    <Class name="~org.apache.bookkeeper.stream.coder.protobuf.test.*" />
+  </Match>
+  <Match>
+    <Class name="~org.apache.bookkeeper.stream.proto.*" />
+  </Match>
+
+  <!-- statelib -->
+  <Match>
+    <Class name="~org.apache.bookkeeper.proto.statestore.*" />
+  </Match>
 </FindBugsFilter>

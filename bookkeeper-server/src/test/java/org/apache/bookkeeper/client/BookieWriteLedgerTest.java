@@ -20,12 +20,17 @@
  */
 package org.apache.bookkeeper.client;
 
+import static org.apache.bookkeeper.client.BookKeeperClientStats.ADD_OP;
+import static org.apache.bookkeeper.client.BookKeeperClientStats.ADD_OP_UR;
+import static org.apache.bookkeeper.client.BookKeeperClientStats.CLIENT_SCOPE;
+import static org.apache.bookkeeper.client.BookKeeperClientStats.READ_OP_DM;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-
+import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Enumeration;
@@ -37,16 +42,26 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
 
+import org.apache.bookkeeper.bookie.Bookie;
+import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.BKException.BKLedgerClosedException;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
+import org.apache.bookkeeper.client.api.LedgerEntries;
+import org.apache.bookkeeper.client.api.ReadHandle;
+import org.apache.bookkeeper.client.api.WriteAdvHandle;
+import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LongHierarchicalLedgerManagerFactory;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
+import org.apache.commons.lang3.tuple.Pair;
+import org.apache.zookeeper.KeeperException;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.powermock.reflect.Whitebox;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -85,7 +100,7 @@ public class BookieWriteLedgerTest extends
     @Before
     public void setUp() throws Exception {
         super.setUp();
-        rng = new Random(System.currentTimeMillis()); // Initialize the Random
+        rng = new Random(0); // Initialize the Random
         // Number Generator
         entries1 = new ArrayList<byte[]>(); // initialize the entries list
         entries2 = new ArrayList<byte[]>(); // initialize the entries list
@@ -144,9 +159,136 @@ public class BookieWriteLedgerTest extends
             entries1.add(entry.array());
             lh.addEntry(entry.array());
         }
-
         readEntries(lh, entries1);
         lh.close();
+    }
+
+    /**
+     * Verify write and Read durability stats.
+     */
+    @Test
+    public void testWriteAndReadStats() throws Exception {
+        // Create a ledger
+        lh = bkc.createLedger(3, 3, 2, digestType, ledgerPassword);
+
+        // write-batch-1
+        for (int i = 0; i < numEntriesToWrite; i++) {
+            ByteBuffer entry = ByteBuffer.allocate(4);
+            entry.putInt(rng.nextInt(maxInt));
+            entry.position(0);
+
+            entries1.add(entry.array());
+            lh.addEntry(entry.array());
+        }
+        assertTrue(
+                "Stats should have captured a new writes",
+                bkc.getTestStatsProvider().getOpStatsLogger(
+                        CLIENT_SCOPE + "." + ADD_OP)
+                        .getSuccessCount() > 0);
+
+        CountDownLatch sleepLatch1 = new CountDownLatch(1);
+        CountDownLatch sleepLatch2 = new CountDownLatch(1);
+        ArrayList<BookieSocketAddress> ensemble = lh.getLedgerMetadata()
+                .getEnsembles().entrySet().iterator().next().getValue();
+
+        sleepBookie(ensemble.get(0), sleepLatch1);
+
+        int i = numEntriesToWrite;
+        numEntriesToWrite = numEntriesToWrite + 50;
+
+        // write-batch-2
+
+        for (; i < numEntriesToWrite; i++) {
+            ByteBuffer entry = ByteBuffer.allocate(4);
+            entry.putInt(rng.nextInt(maxInt));
+            entry.position(0);
+
+            entries1.add(entry.array());
+            lh.addEntry(entry.array());
+        }
+
+        // Let the second bookie go to sleep. This forces write timeout and ensemble change
+        // Which will be enough time to receive delayed write failures on the write-batch-2
+
+        sleepBookie(ensemble.get(1), sleepLatch2);
+        i = numEntriesToWrite;
+        numEntriesToWrite = numEntriesToWrite + 50;
+
+        // write-batch-3
+
+        for (; i < numEntriesToWrite; i++) {
+            ByteBuffer entry = ByteBuffer.allocate(4);
+            entry.putInt(rng.nextInt(maxInt));
+            entry.position(0);
+
+            entries1.add(entry.array());
+            lh.addEntry(entry.array());
+        }
+
+        assertTrue(
+                "Stats should have captured a new UnderReplication during write",
+                bkc.getTestStatsProvider().getCounter(
+                        CLIENT_SCOPE + "." + ADD_OP_UR)
+                        .get() > 0);
+
+        sleepLatch1.countDown();
+        sleepLatch2.countDown();
+
+        // Replace the bookie with a fake bookie
+        ServerConfiguration conf = killBookie(ensemble.get(0));
+        BookieWriteLedgerTest.CorruptReadBookie corruptBookie = new BookieWriteLedgerTest.CorruptReadBookie(conf);
+        bs.add(startBookie(conf, corruptBookie));
+        bsConfs.add(conf);
+
+        i = numEntriesToWrite;
+        numEntriesToWrite = numEntriesToWrite + 50;
+
+        // write-batch-4
+
+        for (; i < numEntriesToWrite; i++) {
+            ByteBuffer entry = ByteBuffer.allocate(4);
+            entry.putInt(rng.nextInt(maxInt));
+            entry.position(0);
+
+            entries1.add(entry.array());
+            lh.addEntry(entry.array());
+        }
+
+        readEntries(lh, entries1);
+        assertTrue(
+                "Stats should have captured DigestMismatch on Read",
+                bkc.getTestStatsProvider().getCounter(
+                        CLIENT_SCOPE + "." + READ_OP_DM)
+                        .get() > 0);
+        lh.close();
+    }
+
+    /**
+     * Verify the functionality Ledgers with different digests.
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testLedgerDigestTest() throws Exception {
+        for (DigestType type: DigestType.values()) {
+            lh = bkc.createLedger(5, 3, 2, type, ledgerPassword);
+
+            for (int i = 0; i < numEntriesToWrite; i++) {
+                ByteBuffer entry = ByteBuffer.allocate(4);
+                entry.putInt(rng.nextInt(maxInt));
+                entry.position(0);
+
+                entries1.add(entry.array());
+                lh.addEntry(entry.array());
+            }
+
+            readEntries(lh, entries1);
+
+            long lid = lh.getId();
+            lh.close();
+            bkc.deleteLedger(lid);
+            entries1.clear();
+        }
     }
 
     /**
@@ -441,45 +583,65 @@ public class BookieWriteLedgerTest extends
      */
     @Test
     public void testLedgerCreateAdvWithLedgerIdInLoop() throws Exception {
-        long ledgerId;
         int ledgerCount = 40;
 
-        List<List<byte[]>> entryList = new ArrayList<List<byte[]>>();
-        LedgerHandle[] lhArray = new LedgerHandle[ledgerCount];
-
-        List<byte[]> tmpEntry;
-        for (int lc = 0; lc < ledgerCount; lc++) {
-            tmpEntry = new ArrayList<byte[]>();
-
-            ledgerId = rng.nextLong();
-            ledgerId &= Long.MAX_VALUE;
-            if (!baseConf.getLedgerManagerFactoryClass().equals(LongHierarchicalLedgerManagerFactory.class)) {
-                // since LongHierarchicalLedgerManager supports ledgerIds of decimal length upto 19 digits but other
-                // LedgerManagers only upto 10 decimals
-                ledgerId %= 9999999999L;
-            }
-
-            LOG.info("Iteration: {}  LedgerId: {}", lc, ledgerId);
-            lh = bkc.createLedgerAdv(ledgerId, 5, 3, 2, digestType, ledgerPassword, null);
-            lhArray[lc] = lh;
-
-            for (int i = 0; i < numEntriesToWrite; i++) {
-                ByteBuffer entry = ByteBuffer.allocate(4);
-                entry.putInt(rng.nextInt(maxInt));
-                entry.position(0);
-                tmpEntry.add(entry.array());
-                lh.addEntry(i, entry.array());
-            }
-            entryList.add(tmpEntry);
+        long maxId = 9999999999L;
+        if (baseConf.getLedgerManagerFactoryClass().equals(LongHierarchicalLedgerManagerFactory.class)) {
+            // since LongHierarchicalLedgerManager supports ledgerIds of decimal length upto 19 digits but other
+            // LedgerManagers only upto 10 decimals
+            maxId = Long.MAX_VALUE;
         }
-        for (int lc = 0; lc < ledgerCount; lc++) {
-            // Read and verify
-            long lid = lhArray[lc].getId();
-            LOG.info("readEntries for lc: {} ledgerId: {} ", lc, lhArray[lc].getId());
-            readEntries(lhArray[lc], entryList.get(lc));
-            lhArray[lc].close();
-            bkc.deleteLedger(lid);
-        }
+
+        rng.longs(ledgerCount, 0, maxId) // generate a stream of ledger ids
+            .mapToObj(ledgerId -> { // create a ledger for each ledger id
+                    LOG.info("Creating adv ledger with id {}", ledgerId);
+                    return bkc.newCreateLedgerOp()
+                        .withEnsembleSize(1).withWriteQuorumSize(1).withAckQuorumSize(1)
+                        .withDigestType(org.apache.bookkeeper.client.api.DigestType.CRC32)
+                        .withPassword(ledgerPassword).makeAdv().withLedgerId(ledgerId)
+                        .execute()
+                        .thenApply(writer -> { // Add entries to ledger when created
+                                LOG.info("Writing stream of {} entries to {}",
+                                         numEntriesToWrite, ledgerId);
+                                List<ByteBuf> entries = rng.ints(numEntriesToWrite, 0, maxInt)
+                                    .mapToObj(i -> {
+                                            ByteBuf entry = Unpooled.buffer(4);
+                                            entry.retain();
+                                            entry.writeInt(i);
+                                            return entry;
+                                        })
+                                    .collect(Collectors.toList());
+                                CompletableFuture<?> lastRequest = null;
+                                int i = 0;
+                                for (ByteBuf entry : entries) {
+                                    long entryId = i++;
+                                    LOG.info("Writing {}:{} as {}",
+                                             ledgerId, entryId, entry.slice().readInt());
+                                    lastRequest = writer.writeAsync(entryId, entry);
+                                }
+                                lastRequest.join();
+                                return Pair.of(writer, entries);
+                            });
+                })
+            .parallel().map(CompletableFuture::join) // wait for all creations and adds in parallel
+            .forEach(e -> { // check that each set of adds succeeded
+                    try {
+                        WriteAdvHandle handle = e.getLeft();
+                        List<ByteBuf> entries = e.getRight();
+                        // Read and verify
+                        LOG.info("Read entries for ledger: {}", handle.getId());
+                        readEntries(handle, entries);
+                        entries.forEach(ByteBuf::release);
+                        handle.close();
+                        bkc.deleteLedger(handle.getId());
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                        Assert.fail("Test interrupted");
+                    } catch (Exception ex) {
+                        LOG.info("Readback failed with exception", ex);
+                        Assert.fail("Readback failed " + ex.getMessage());
+                    }
+                });
     }
 
     /**
@@ -680,6 +842,95 @@ public class BookieWriteLedgerTest extends
         readEntries(lh2, entries2);
         lh.close();
         lh2.close();
+    }
+
+    /**
+     * LedgerHandleAdv out of order writers with ensemble changes.
+     * Verify that entry that was written to old ensemble will be
+     * written to new enseble too after ensemble change.
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testLedgerHandleAdvOutOfOrderWriteAndFrocedEnsembleChange() throws Exception {
+        // Create a ledger
+        long ledgerId = 0xABCDEF;
+        SyncObj syncObj1 = new SyncObj();
+        ByteBuffer entry;
+        lh = bkc.createLedgerAdv(ledgerId, 3, 3, 3, digestType, ledgerPassword, null);
+        entry = ByteBuffer.allocate(4);
+        // Add entries 0-4
+        for (int i = 0; i < 5; i++) {
+            entry.rewind();
+            entry.putInt(rng.nextInt(maxInt));
+            lh.addEntry(i, entry.array());
+        }
+
+        // Add 10 as Async Entry, which goes to first ensemble
+        ByteBuffer entry1 = ByteBuffer.allocate(4);
+        entry1.putInt(rng.nextInt(maxInt));
+        lh.asyncAddEntry(10, entry1.array(), 0, entry1.capacity(), this, syncObj1);
+
+        // Make sure entry-10 goes to the bookies and gets response.
+        java.util.Queue<PendingAddOp> myPendingAddOps = Whitebox.getInternalState(lh, "pendingAddOps");
+        PendingAddOp addOp = null;
+        boolean pendingAddOpReceived = false;
+
+        while (!pendingAddOpReceived) {
+            addOp = myPendingAddOps.peek();
+            if (addOp.entryId == 10 && addOp.completed) {
+                pendingAddOpReceived = true;
+            } else {
+                Thread.sleep(1000);
+            }
+        }
+
+        CountDownLatch sleepLatch1 = new CountDownLatch(1);
+        ArrayList<BookieSocketAddress> ensemble;
+
+        ensemble = lh.getLedgerMetadata().getEnsembles().entrySet().iterator().next().getValue();
+
+        // Put all 3 bookies to sleep and start 3 new ones
+        sleepBookie(ensemble.get(0), sleepLatch1);
+        sleepBookie(ensemble.get(1), sleepLatch1);
+        sleepBookie(ensemble.get(2), sleepLatch1);
+        startNewBookie();
+        startNewBookie();
+        startNewBookie();
+
+        // Original bookies are in sleep, new bookies added.
+        // Now add entries 5-9 which forces ensemble changes
+        // So at this point entries 0-4, 10 went to first
+        // ensemble, 5-9 will go to new ensemble.
+        for (int i = 5; i < 10; i++) {
+            entry.rewind();
+            entry.putInt(rng.nextInt(maxInt));
+            lh.addEntry(i, entry.array());
+        }
+
+        // Wakeup all 3 bookies that went to sleep
+        sleepLatch1.countDown();
+
+        // Wait for all entries to be acknowledged for the first ledger
+        synchronized (syncObj1) {
+            while (syncObj1.counter < 1) {
+                syncObj1.wait();
+            }
+            assertEquals(BKException.Code.OK, syncObj1.rc);
+        }
+
+        // Close write handle
+        lh.close();
+
+        // Open read handle
+        lh = bkc.openLedger(ledgerId, digestType, ledgerPassword);
+
+        // Make sure to read all 10 entries.
+        for (int i = 0; i < 11; i++) {
+            lh.readEntries(i, i);
+        }
+        lh.close();
+        bkc.deleteLedger(ledgerId);
     }
 
     /**
@@ -964,6 +1215,20 @@ public class BookieWriteLedgerTest extends
         }
     }
 
+    private void readEntries(ReadHandle reader, List<ByteBuf> entries) throws Exception {
+        assertEquals("Not enough entries in ledger " + reader.getId(),
+                     reader.getLastAddConfirmed(), entries.size() - 1);
+        try (LedgerEntries readEntries = reader.read(0, reader.getLastAddConfirmed())) {
+            int i = 0;
+            for (org.apache.bookkeeper.client.api.LedgerEntry e : readEntries) {
+                int entryId = i++;
+                ByteBuf origEntry = entries.get(entryId);
+                ByteBuf readEntry = e.getEntryBuffer();
+                assertEquals("Unexpected contents in " + reader.getId() + ":" + entryId, origEntry, readEntry);
+            }
+        }
+    }
+
     private void readEntriesAndValidateDataArray(LedgerHandle lh, List<byte[]> entries)
             throws InterruptedException, BKException {
         ls = lh.readEntries(0, entries.size() - 1);
@@ -991,5 +1256,29 @@ public class BookieWriteLedgerTest extends
             x.counter++;
             x.notify();
         }
+    }
+
+    static class CorruptReadBookie extends Bookie {
+
+        static final Logger LOG = LoggerFactory.getLogger(CorruptReadBookie.class);
+        ByteBuf localBuf;
+
+        public CorruptReadBookie(ServerConfiguration conf)
+                throws IOException, KeeperException, InterruptedException, BookieException {
+            super(conf);
+        }
+
+        @Override
+        public ByteBuf readEntry(long ledgerId, long entryId) throws IOException, NoLedgerException {
+            localBuf = super.readEntry(ledgerId, entryId);
+
+            int capacity = 0;
+            while (capacity < localBuf.capacity()) {
+                localBuf.setByte(capacity, 0);
+                capacity++;
+            }
+            return localBuf;
+        }
+
     }
 }

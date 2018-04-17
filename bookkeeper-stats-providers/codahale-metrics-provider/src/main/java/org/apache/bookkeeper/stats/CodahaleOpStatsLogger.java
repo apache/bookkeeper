@@ -21,6 +21,7 @@ import com.codahale.metrics.Timer;
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 
+@Deprecated
 class CodahaleOpStatsLogger implements OpStatsLogger {
     final Timer success;
     final Timer fail;

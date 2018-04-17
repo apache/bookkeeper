@@ -17,7 +17,8 @@
  */
 package org.apache.distributedlog.acl;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+
 import java.net.URI;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;

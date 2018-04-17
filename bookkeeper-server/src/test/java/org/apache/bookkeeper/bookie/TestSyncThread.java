@@ -26,7 +26,6 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import io.netty.buffer.ByteBuf;
-import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -81,7 +80,7 @@ public class TestSyncThread {
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
         conf.setFlushInterval(flushInterval);
         CheckpointSource checkpointSource = new DummyCheckpointSource();
-        LedgerDirsListener listener = new DummyLedgerDirsListener();
+        LedgerDirsListener listener = new LedgerDirsListener() {};
 
         final CountDownLatch checkpointCalledLatch = new CountDownLatch(1);
         final CountDownLatch checkpointLatch = new CountDownLatch(1);
@@ -154,7 +153,7 @@ public class TestSyncThread {
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
         conf.setFlushInterval(flushInterval);
         CheckpointSource checkpointSource = new DummyCheckpointSource();
-        LedgerDirsListener listener = new DummyLedgerDirsListener();
+        LedgerDirsListener listener = new LedgerDirsListener() {};
 
         final AtomicInteger checkpointCount = new AtomicInteger(0);
         LedgerStorage storage = new DummyLedgerStorage() {
@@ -200,7 +199,7 @@ public class TestSyncThread {
         conf.setFlushInterval(flushInterval);
         CheckpointSource checkpointSource = new DummyCheckpointSource();
         final CountDownLatch fatalLatch = new CountDownLatch(1);
-        LedgerDirsListener listener = new DummyLedgerDirsListener() {
+        LedgerDirsListener listener = new LedgerDirsListener() {
                 @Override
                 public void fatalError() {
                     fatalLatch.countDown();
@@ -232,9 +231,9 @@ public class TestSyncThread {
         conf.setFlushInterval(flushInterval);
         CheckpointSource checkpointSource = new DummyCheckpointSource();
         final CountDownLatch diskFullLatch = new CountDownLatch(1);
-        LedgerDirsListener listener = new DummyLedgerDirsListener() {
+        LedgerDirsListener listener = new LedgerDirsListener() {
                 @Override
-                public void allDisksFull() {
+                public void allDisksFull(boolean highPriorityWritesAllowed) {
                     diskFullLatch.countDown();
                 }
             };
@@ -363,34 +362,4 @@ public class TestSyncThread {
         }
     }
 
-    private static class DummyLedgerDirsListener
-        implements LedgerDirsManager.LedgerDirsListener {
-        @Override
-        public void diskFailed(File disk) {
-        }
-
-        @Override
-        public void diskAlmostFull(File disk) {
-        }
-
-        @Override
-        public void diskFull(File disk) {
-        }
-
-        @Override
-        public void allDisksFull() {
-        }
-
-        @Override
-        public void fatalError() {
-        }
-
-        @Override
-        public void diskWritable(File disk) {
-        }
-
-        @Override
-        public void diskJustWritable(File disk) {
-        }
-    }
 }

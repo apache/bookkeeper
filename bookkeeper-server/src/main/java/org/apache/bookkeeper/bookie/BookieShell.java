@@ -19,12 +19,16 @@
 package org.apache.bookkeeper.bookie;
 
 import static com.google.common.base.Charsets.UTF_8;
+import static org.apache.bookkeeper.meta.MetadataDrivers.runFunctionWithLedgerManagerFactory;
+import static org.apache.bookkeeper.meta.MetadataDrivers.runFunctionWithMetadataBookieDriver;
+import static org.apache.bookkeeper.meta.MetadataDrivers.runFunctionWithRegistrationManager;
+import static org.apache.bookkeeper.tools.cli.helpers.CommandHelpers.getBookieSocketAddrStringRepresentation;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.google.common.net.InetAddresses;
 import com.google.common.util.concurrent.AbstractFuture;
+import com.google.common.util.concurrent.UncheckedExecutionException;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
@@ -72,9 +76,9 @@ import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
 import org.apache.bookkeeper.bookie.EntryLogger.EntryLogScanner;
 import org.apache.bookkeeper.bookie.Journal.JournalScanner;
 import org.apache.bookkeeper.bookie.storage.ldb.DbLedgerStorage;
-import org.apache.bookkeeper.bookie.storage.ldb.EntryLocationIndex;
 import org.apache.bookkeeper.bookie.storage.ldb.LocationsIndexRebuildOp;
 import org.apache.bookkeeper.client.BKException;
+import org.apache.bookkeeper.client.BKException.MetaStoreException;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
@@ -83,27 +87,31 @@ import org.apache.bookkeeper.client.LedgerEntry;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.LedgerMetadata;
 import org.apache.bookkeeper.client.UpdateLedgerOp;
+import org.apache.bookkeeper.common.util.OrderedExecutor;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.discover.RegistrationManager;
-import org.apache.bookkeeper.discover.ZKRegistrationManager;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManager.LedgerRange;
 import org.apache.bookkeeper.meta.LedgerManager.LedgerRangeIterator;
-import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieClient;
+import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.replication.AuditorElector;
+import org.apache.bookkeeper.replication.ReplicationException;
+import org.apache.bookkeeper.replication.ReplicationException.CompatibilityException;
 import org.apache.bookkeeper.stats.NullStatsLogger;
+import org.apache.bookkeeper.tools.cli.commands.bookie.LastMarkCommand;
+import org.apache.bookkeeper.tools.cli.commands.client.SimpleTestCommand;
+import org.apache.bookkeeper.tools.cli.commands.cluster.ListBookiesCommand;
 import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.util.DiskChecker;
 import org.apache.bookkeeper.util.EntryFormatter;
 import org.apache.bookkeeper.util.IOUtils;
 import org.apache.bookkeeper.util.LedgerIdFormatter;
 import org.apache.bookkeeper.util.MathUtils;
-import org.apache.bookkeeper.util.OrderedSafeExecutor;
 import org.apache.bookkeeper.util.Tool;
 import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.versioning.Versioned;
@@ -381,7 +389,7 @@ public class BookieShell implements Tool {
             opts.addOption("f", "force", false,
                     "If [nonInteractive] is specified, then whether"
                             + " to force delete the old data without prompt..?");
-            opts.addOption("d", "deleteCookie", false, "Delete its cookie on zookeeper");
+            opts.addOption("d", "deleteCookie", false, "Delete its cookie on metadata store");
         }
 
         @Override
@@ -408,17 +416,17 @@ public class BookieShell implements Tool {
             boolean result = Bookie.format(conf, interactive, force);
             // delete cookie
             if (cmdLine.hasOption("d")) {
-                RegistrationManager rm = new ZKRegistrationManager();
-                rm.initialize(conf, () -> {
-                }, NullStatsLogger.INSTANCE);
-                try {
-                    Versioned<Cookie> cookie = Cookie.readFromRegistrationManager(rm, conf);
-                    cookie.getValue().deleteFromRegistrationManager(rm, conf, cookie.getVersion());
-                } catch (CookieNotFoundException nne) {
-                    LOG.warn("No cookie to remove : ", nne);
-                } finally {
-                    rm.close();
-                }
+                runFunctionWithRegistrationManager(bkConf, rm -> {
+                    try {
+                        Versioned<Cookie> cookie = Cookie.readFromRegistrationManager(rm, conf);
+                        cookie.getValue().deleteFromRegistrationManager(rm, conf, cookie.getVersion());
+                    } catch (CookieNotFoundException nne) {
+                        LOG.warn("No cookie to remove : ", nne);
+                    } catch (BookieException be) {
+                        throw new UncheckedExecutionException(be.getMessage(), be);
+                    }
+                    return null;
+                });
             }
             return (result) ? 0 : 1;
         }
@@ -618,15 +626,29 @@ public class BookieShell implements Tool {
         private void deleteCookies(ClientConfiguration conf,
                                    Set<BookieSocketAddress> bookieAddrs) throws BKException {
             ServerConfiguration serverConf = new ServerConfiguration(conf);
-            try (RegistrationManager rm = new ZKRegistrationManager()) {
-                rm.initialize(serverConf, () -> {}, NullStatsLogger.INSTANCE);
-                for (BookieSocketAddress addr : bookieAddrs) {
-                    deleteCookie(rm, addr);
+            try {
+                runFunctionWithRegistrationManager(serverConf, rm -> {
+                    try {
+                        for (BookieSocketAddress addr : bookieAddrs) {
+                            deleteCookie(rm, addr);
+                        }
+                    } catch (Exception e) {
+                        throw new UncheckedExecutionException(e);
+                    }
+                    return null;
+                });
+            } catch (Exception e) {
+                Throwable cause = e;
+                if (e instanceof UncheckedExecutionException) {
+                    cause = e.getCause();
                 }
-            } catch (BookieException be) {
-                BKException bke = new BKException.MetaStoreException();
-                bke.initCause(be);
-                throw bke;
+                if (cause instanceof BKException) {
+                    throw (BKException) cause;
+                } else {
+                    BKException bke = new MetaStoreException();
+                    bke.initCause(bke);
+                    throw bke;
+                }
             }
         }
 
@@ -791,7 +813,7 @@ public class BookieShell implements Tool {
                 } else {
                     // Use BookieClient to target a specific bookie
                     EventLoopGroup eventLoopGroup = new NioEventLoopGroup();
-                    OrderedSafeExecutor executor = OrderedSafeExecutor.newBuilder()
+                    OrderedExecutor executor = OrderedExecutor.newBuilder()
                         .numThreads(1)
                         .name("BookieClientScheduler")
                         .build();
@@ -821,7 +843,7 @@ public class BookieShell implements Tool {
 
                                 buffer.release();
                                 future.complete(null);
-                            }, null);
+                                }, null, BookieProtocol.FLAG_NONE);
 
                         try {
                             future.get();
@@ -851,6 +873,7 @@ public class BookieShell implements Tool {
             super(CMD_LISTUNDERREPLICATED);
             opts.addOption("missingreplica", true, "Bookie Id of missing replica");
             opts.addOption("excludingmissingreplica", true, "Bookie Id of missing replica to ignore");
+            opts.addOption("printmissingreplica", false, "Whether to print missingreplicas list?");
         }
 
         @Override
@@ -867,7 +890,7 @@ public class BookieShell implements Tool {
         @Override
         String getUsage() {
             return "listunderreplicated [[-missingreplica <bookieaddress>]"
-                    + " [-excludingmissingreplica <bookieaddress>]]";
+                    + " [-excludingmissingreplica <bookieaddress>]] [-printmissingreplica]";
         }
 
         @Override
@@ -875,8 +898,9 @@ public class BookieShell implements Tool {
 
             final String includingBookieId = cmdLine.getOptionValue("missingreplica");
             final String excludingBookieId = cmdLine.getOptionValue("excludingmissingreplica");
+            final boolean printMissingReplica = cmdLine.hasOption("printmissingreplica");
 
-            Predicate<List<String>> predicate = null;
+            final Predicate<List<String>> predicate;
             if (!StringUtils.isBlank(includingBookieId) && !StringUtils.isBlank(excludingBookieId)) {
                 predicate = replicasList -> (replicasList.contains(includingBookieId)
                         && !replicasList.contains(excludingBookieId));
@@ -884,19 +908,32 @@ public class BookieShell implements Tool {
                 predicate = replicasList -> replicasList.contains(includingBookieId);
             } else if (!StringUtils.isBlank(excludingBookieId)) {
                 predicate = replicasList -> !replicasList.contains(excludingBookieId);
+            } else {
+                predicate = null;
             }
 
-            try (RegistrationManager rm = RegistrationManager.instantiateRegistrationManager(bkConf)) {
-                try (LedgerManagerFactory mFactory =
-                         LedgerManagerFactory.newLedgerManagerFactory(bkConf, rm.getLayoutManager())) {
-                    LedgerUnderreplicationManager underreplicationManager =
-                        mFactory.newLedgerUnderreplicationManager();
-                    Iterator<Long> iter = underreplicationManager.listLedgersToRereplicate(predicate);
-                    while (iter.hasNext()) {
-                        System.out.println(ledgerIdFormatter.formatLedgerId(iter.next()));
+            runFunctionWithLedgerManagerFactory(bkConf, mFactory -> {
+                LedgerUnderreplicationManager underreplicationManager;
+                try {
+                    underreplicationManager = mFactory.newLedgerUnderreplicationManager();
+                } catch (KeeperException | CompatibilityException e) {
+                    throw new UncheckedExecutionException("Failed to new ledger underreplicated manager", e);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new UncheckedExecutionException("Interrupted on newing ledger underreplicated manager", e);
+                }
+                Iterator<Map.Entry<Long, List<String>>> iter = underreplicationManager
+                        .listLedgersToRereplicate(predicate, printMissingReplica);
+                while (iter.hasNext()) {
+                    System.out.println(ledgerIdFormatter.formatLedgerId(iter.next().getKey()));
+                    if (printMissingReplica) {
+                        iter.next().getValue().forEach((missingReplica) -> {
+                            System.out.println("\t" + missingReplica);
+                        });
                     }
                 }
-            }
+                return null;
+            });
 
             return 0;
         }
@@ -918,9 +955,7 @@ public class BookieShell implements Tool {
 
         @Override
         public int runCmd(CommandLine cmdLine) throws Exception {
-            try (LedgerManagerFactory mFactory = LedgerManagerFactory.newLedgerManagerFactory(
-                    bkConf,
-                    RegistrationManager.instantiateRegistrationManager(bkConf).getLayoutManager())) {
+            runFunctionWithLedgerManagerFactory(bkConf, mFactory -> {
                 try (LedgerManager m = mFactory.newLedgerManager()) {
                     LedgerRangeIterator iter = m.getLedgerRanges();
                     if (cmdLine.hasOption("m")) {
@@ -951,8 +986,11 @@ public class BookieShell implements Tool {
                             }
                         }
                     }
+                } catch (Exception ioe) {
+                    throw new UncheckedExecutionException(ioe);
                 }
-            }
+                return null;
+            });
 
             return 0;
         }
@@ -991,6 +1029,7 @@ public class BookieShell implements Tool {
             return ledgerId;
         }
 
+        @Override
         public void operationComplete(int rc, LedgerMetadata result) {
             if (rc != 0) {
                 setException(BKException.create(rc));
@@ -1019,16 +1058,16 @@ public class BookieShell implements Tool {
                 return -1;
             }
 
-            try (RegistrationManager rm = RegistrationManager.instantiateRegistrationManager(bkConf)) {
-                try (LedgerManagerFactory mFactory =
-                         LedgerManagerFactory.newLedgerManagerFactory(bkConf, rm.getLayoutManager())){
-                    try (LedgerManager m = mFactory.newLedgerManager()) {
-                        ReadMetadataCallback cb = new ReadMetadataCallback(lid);
-                        m.readLedgerMetadata(lid, cb);
-                        printLedgerMetadata(cb);
-                    }
+            runFunctionWithLedgerManagerFactory(bkConf, mFactory -> {
+                try (LedgerManager m = mFactory.newLedgerManager()) {
+                    ReadMetadataCallback cb = new ReadMetadataCallback(lid);
+                    m.readLedgerMetadata(lid, cb);
+                    printLedgerMetadata(cb);
+                } catch (Exception e) {
+                    throw new UncheckedExecutionException(e);
                 }
-            }
+                return null;
+            });
 
             return 0;
         }
@@ -1065,33 +1104,18 @@ public class BookieShell implements Tool {
 
         @Override
         public int runCmd(CommandLine cmdLine) throws Exception {
-            byte[] data = new byte[100]; // test data
-
             int ensemble = getOptionIntValue(cmdLine, "ensemble", 3);
             int writeQuorum = getOptionIntValue(cmdLine, "writeQuorum", 2);
             int ackQuorum = getOptionIntValue(cmdLine, "ackQuorum", 2);
             int numEntries = getOptionIntValue(cmdLine, "numEntries", 1000);
 
-            ClientConfiguration conf = new ClientConfiguration();
-            conf.addConfiguration(bkConf);
-            BookKeeper bk = new BookKeeper(conf);
-            LedgerHandle lh = bk.createLedger(ensemble, writeQuorum, ackQuorum,
-                    BookKeeper.DigestType.MAC, new byte[0]);
-            System.out.println("Ledger ID: " + lh.getId());
-            long lastReport = System.nanoTime();
-            for (int i = 0; i < numEntries; i++) {
-                lh.addEntry(data);
-                if (TimeUnit.SECONDS.convert(System.nanoTime() - lastReport,
-                        TimeUnit.NANOSECONDS) > 1) {
-                    System.out.println(i + " entries written");
-                    lastReport = System.nanoTime();
-                }
-            }
+            SimpleTestCommand command = new SimpleTestCommand()
+                .ensembleSize(ensemble)
+                .writeQuorumSize(writeQuorum)
+                .ackQuorumSize(ackQuorum)
+                .numEntries(numEntries);
 
-            lh.close();
-            bk.close();
-            System.out.println(numEntries + " entries written to ledger " + lh.getId());
-
+            command.run(bkConf);
             return 0;
         }
 
@@ -1438,7 +1462,8 @@ public class BookieShell implements Tool {
 
         @Override
         public int runCmd(CommandLine c) throws Exception {
-            printLastLogMark();
+            LastMarkCommand command = new LastMarkCommand();
+            command.run(bkConf);
             return 0;
         }
 
@@ -1482,29 +1507,11 @@ public class BookieShell implements Tool {
                 printUsage();
                 return 1;
             }
-            ClientConfiguration clientConf = new ClientConfiguration(bkConf);
-            clientConf.setZkServers(bkConf.getZkServers());
-            BookKeeperAdmin bka = new BookKeeperAdmin(clientConf);
 
-            int count = 0;
-            Collection<BookieSocketAddress> bookies = new ArrayList<BookieSocketAddress>();
-            if (cmdLine.hasOption("rw")) {
-                Collection<BookieSocketAddress> availableBookies = bka
-                        .getAvailableBookies();
-                bookies.addAll(availableBookies);
-            } else if (cmdLine.hasOption("ro")) {
-                Collection<BookieSocketAddress> roBookies = bka
-                        .getReadOnlyBookies();
-                bookies.addAll(roBookies);
-            }
-            for (BookieSocketAddress b : bookies) {
-                System.out.println(getBookieSocketAddrStringRepresentation(b));
-                count++;
-            }
-            if (count == 0) {
-                System.err.println("No bookie exists!");
-                return 1;
-            }
+            ListBookiesCommand command = new ListBookiesCommand()
+                .readwrite(readwrite)
+                .readonly(readonly);
+            command.run(bkConf);
             return 0;
         }
 
@@ -1674,39 +1681,44 @@ public class BookieShell implements Tool {
                 return 1;
             }
 
-            try (RegistrationManager rm =
-                     RegistrationManager.instantiateRegistrationManager(bkConf)){
-                try (LedgerManagerFactory mFactory = LedgerManagerFactory.newLedgerManagerFactory(
-                    bkConf,
-                    rm.getLayoutManager())) {
-                    LedgerUnderreplicationManager underreplicationManager = mFactory.newLedgerUnderreplicationManager();
-                    if (!enable && !disable) {
-                        boolean enabled = underreplicationManager.isLedgerReplicationEnabled();
-                        System.out.println("Autorecovery is " + (enabled ? "enabled." : "disabled."));
-                    } else if (enable) {
-                        if (underreplicationManager.isLedgerReplicationEnabled()) {
-                            LOG.warn("Autorecovery already enabled. Doing nothing");
+            runFunctionWithLedgerManagerFactory(bkConf, mFactory -> {
+                try {
+                    try (LedgerUnderreplicationManager underreplicationManager =
+                             mFactory.newLedgerUnderreplicationManager()) {
+                        if (!enable && !disable) {
+                            boolean enabled = underreplicationManager.isLedgerReplicationEnabled();
+                            System.out.println("Autorecovery is " + (enabled ? "enabled." : "disabled."));
+                        } else if (enable) {
+                            if (underreplicationManager.isLedgerReplicationEnabled()) {
+                                LOG.warn("Autorecovery already enabled. Doing nothing");
+                            } else {
+                                LOG.info("Enabling autorecovery");
+                                underreplicationManager.enableLedgerReplication();
+                            }
                         } else {
-                            LOG.info("Enabling autorecovery");
-                            underreplicationManager.enableLedgerReplication();
-                        }
-                    } else {
-                        if (!underreplicationManager.isLedgerReplicationEnabled()) {
-                            LOG.warn("Autorecovery already disabled. Doing nothing");
-                        } else {
-                            LOG.info("Disabling autorecovery");
-                            underreplicationManager.disableLedgerReplication();
+                            if (!underreplicationManager.isLedgerReplicationEnabled()) {
+                                LOG.warn("Autorecovery already disabled. Doing nothing");
+                            } else {
+                                LOG.info("Disabling autorecovery");
+                                underreplicationManager.disableLedgerReplication();
+                            }
                         }
                     }
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new UncheckedExecutionException(e);
+                } catch (KeeperException | ReplicationException e) {
+                    throw new UncheckedExecutionException(e);
                 }
-            }
+                return null;
+            });
 
             return 0;
         }
     }
 
     /**
-     * Setter and Getter for LostBookieRecoveryDelay value (in seconds) in Zookeeper.
+     * Setter and Getter for LostBookieRecoveryDelay value (in seconds) in metadata store.
      */
     class LostBookieRecoveryDelayCmd extends MyCommand {
         Options opts = new Options();
@@ -1724,7 +1736,7 @@ public class BookieShell implements Tool {
 
         @Override
         String getDescription() {
-            return "Setter and Getter for LostBookieRecoveryDelay value (in seconds) in Zookeeper.";
+            return "Setter and Getter for LostBookieRecoveryDelay value (in seconds) in metadata store.";
         }
 
         @Override
@@ -1840,11 +1852,17 @@ public class BookieShell implements Tool {
 
         @Override
         int runCmd(CommandLine cmdLine) throws Exception {
-            try (RegistrationManager rm = RegistrationManager.instantiateRegistrationManager(bkConf)) {
-                String readInstanceId = rm.getClusterInstanceId();
+            runFunctionWithRegistrationManager(bkConf, rm -> {
+                String readInstanceId = null;
+                try {
+                    readInstanceId = rm.getClusterInstanceId();
+                } catch (BookieException e) {
+                    throw new UncheckedExecutionException(e);
+                }
                 LOG.info("ZKServers: {} ZkLedgersRootPath: {} InstanceId: {}", bkConf.getZkServers(),
                         bkConf.getZkLedgersRootPath(), readInstanceId);
-            }
+                return null;
+            });
             return 0;
         }
     }
@@ -1945,87 +1963,80 @@ public class BookieShell implements Tool {
             return retValue;
         }
 
-        private int updateBookieIdInCookie(final String bookieId, final boolean useHostname) throws BookieException,
-                InterruptedException {
-            RegistrationManager rm = new ZKRegistrationManager();
-            try {
-                rm.initialize(bkConf, () -> {
-                }, NullStatsLogger.INSTANCE);
-                ServerConfiguration conf = new ServerConfiguration(bkConf);
-                String newBookieId = Bookie.getBookieAddress(conf).toString();
-                // read oldcookie
-                Versioned<Cookie> oldCookie = null;
+        private int updateBookieIdInCookie(final String bookieId, final boolean useHostname)
+                throws Exception {
+            return runFunctionWithRegistrationManager(bkConf, rm -> {
                 try {
-                    conf.setUseHostNameAsBookieID(!useHostname);
-                    oldCookie = Cookie.readFromRegistrationManager(rm, conf);
-                } catch (CookieNotFoundException nne) {
-                    LOG.error("Either cookie already updated with UseHostNameAsBookieID={} or no cookie exists!",
+                    ServerConfiguration conf = new ServerConfiguration(bkConf);
+                    String newBookieId = Bookie.getBookieAddress(conf).toString();
+                    // read oldcookie
+                    Versioned<Cookie> oldCookie = null;
+                    try {
+                        conf.setUseHostNameAsBookieID(!useHostname);
+                        oldCookie = Cookie.readFromRegistrationManager(rm, conf);
+                    } catch (CookieNotFoundException nne) {
+                        LOG.error("Either cookie already updated with UseHostNameAsBookieID={} or no cookie exists!",
                             useHostname, nne);
-                    return -1;
-                }
-                Cookie newCookie = Cookie.newBuilder(oldCookie.getValue()).setBookieHost(newBookieId).build();
-                boolean hasCookieUpdatedInDirs = verifyCookie(newCookie, journalDirectories[0]);
-                for (File dir : ledgerDirectories) {
-                    hasCookieUpdatedInDirs &= verifyCookie(newCookie, dir);
-                }
-                if (indexDirectories != ledgerDirectories) {
-                    for (File dir : indexDirectories) {
+                        return -1;
+                    }
+                    Cookie newCookie = Cookie.newBuilder(oldCookie.getValue()).setBookieHost(newBookieId).build();
+                    boolean hasCookieUpdatedInDirs = verifyCookie(newCookie, journalDirectories[0]);
+                    for (File dir : ledgerDirectories) {
                         hasCookieUpdatedInDirs &= verifyCookie(newCookie, dir);
                     }
-                }
-
-                if (hasCookieUpdatedInDirs) {
-                    try {
-                        conf.setUseHostNameAsBookieID(useHostname);
-                        Cookie.readFromRegistrationManager(rm, conf);
-                        // since newcookie exists, just do cleanup of oldcookie and return
-                        conf.setUseHostNameAsBookieID(!useHostname);
-                        oldCookie.getValue().deleteFromRegistrationManager(rm, conf, oldCookie.getVersion());
-                        return 0;
-                    } catch (CookieNotFoundException nne) {
-                        if (LOG.isDebugEnabled()) {
-                            LOG.debug("Ignoring, cookie will be written to zookeeper");
+                    if (indexDirectories != ledgerDirectories) {
+                        for (File dir : indexDirectories) {
+                            hasCookieUpdatedInDirs &= verifyCookie(newCookie, dir);
                         }
                     }
-                } else {
-                    // writes newcookie to local dirs
-                    for (File journalDirectory : journalDirectories) {
-                        newCookie.writeToDirectory(journalDirectory);
-                        LOG.info("Updated cookie file present in journalDirectory {}", journalDirectory);
-                    }
-                    for (File dir : ledgerDirectories) {
-                        newCookie.writeToDirectory(dir);
-                    }
-                    LOG.info("Updated cookie file present in ledgerDirectories {}", ledgerDirectories);
-                    if (ledgerDirectories != indexDirectories) {
-                        for (File dir : indexDirectories) {
+
+                    if (hasCookieUpdatedInDirs) {
+                        try {
+                            conf.setUseHostNameAsBookieID(useHostname);
+                            Cookie.readFromRegistrationManager(rm, conf);
+                            // since newcookie exists, just do cleanup of oldcookie and return
+                            conf.setUseHostNameAsBookieID(!useHostname);
+                            oldCookie.getValue().deleteFromRegistrationManager(rm, conf, oldCookie.getVersion());
+                            return 0;
+                        } catch (CookieNotFoundException nne) {
+                            if (LOG.isDebugEnabled()) {
+                                LOG.debug("Ignoring, cookie will be written to zookeeper");
+                            }
+                        }
+                    } else {
+                        // writes newcookie to local dirs
+                        for (File journalDirectory : journalDirectories) {
+                            newCookie.writeToDirectory(journalDirectory);
+                            LOG.info("Updated cookie file present in journalDirectory {}", journalDirectory);
+                        }
+                        for (File dir : ledgerDirectories) {
                             newCookie.writeToDirectory(dir);
                         }
-                        LOG.info("Updated cookie file present in indexDirectories {}", indexDirectories);
+                        LOG.info("Updated cookie file present in ledgerDirectories {}", ledgerDirectories);
+                        if (ledgerDirectories != indexDirectories) {
+                            for (File dir : indexDirectories) {
+                                newCookie.writeToDirectory(dir);
+                            }
+                            LOG.info("Updated cookie file present in indexDirectories {}", indexDirectories);
+                        }
                     }
-                }
-                // writes newcookie to zookeeper
-                conf.setUseHostNameAsBookieID(useHostname);
-                newCookie.writeToRegistrationManager(rm, conf, Version.NEW);
+                    // writes newcookie to zookeeper
+                    conf.setUseHostNameAsBookieID(useHostname);
+                    newCookie.writeToRegistrationManager(rm, conf, Version.NEW);
 
-                // delete oldcookie
-                conf.setUseHostNameAsBookieID(!useHostname);
-                oldCookie.getValue().deleteFromRegistrationManager(rm, conf, oldCookie.getVersion());
-            } catch (IOException ioe) {
-                LOG.error("IOException during cookie updation!", ioe);
-                return -1;
-            } finally {
-                if (rm != null) {
-                    rm.close();
+                    // delete oldcookie
+                    conf.setUseHostNameAsBookieID(!useHostname);
+                    oldCookie.getValue().deleteFromRegistrationManager(rm, conf, oldCookie.getVersion());
+                    return 0;
+                } catch (IOException | BookieException ioe) {
+                    LOG.error("IOException during cookie updation!", ioe);
+                    return -1;
                 }
-            }
-            return 0;
+            });
         }
 
-        private int expandStorage() throws InterruptedException {
-            try (RegistrationManager rm = new ZKRegistrationManager()) {
-                rm.initialize(bkConf, () -> { }, NullStatsLogger.INSTANCE);
-
+        private int expandStorage() throws Exception {
+            return runFunctionWithMetadataBookieDriver(bkConf, driver -> {
                 List<File> allLedgerDirs = Lists.newArrayList();
                 allLedgerDirs.addAll(Arrays.asList(ledgerDirectories));
                 if (indexDirectories != ledgerDirectories) {
@@ -2034,16 +2045,13 @@ public class BookieShell implements Tool {
 
                 try {
                     Bookie.checkEnvironmentWithStorageExpansion(
-                            bkConf, rm, Arrays.asList(journalDirectories), allLedgerDirs);
+                        bkConf, driver, Arrays.asList(journalDirectories), allLedgerDirs);
+                    return 0;
                 } catch (BookieException e) {
                     LOG.error("Exception while updating cookie for storage expansion", e);
                     return -1;
                 }
-            } catch (BookieException e) {
-                LOG.error("Exception while establishing RegistrationManager connection.", e);
-                return -1;
-            }
-            return 0;
+            });
         }
 
         private boolean verifyCookie(Cookie oldCookie, File dir) throws IOException {
@@ -2056,8 +2064,7 @@ public class BookieShell implements Tool {
             return true;
         }
 
-        private int listOrDeleteCookies(boolean delete, boolean force)
-                throws IOException, BookieException {
+        private int listOrDeleteCookies(boolean delete, boolean force) throws Exception {
             BookieSocketAddress bookieAddress = Bookie.getBookieAddress(bkConf);
             File[] journalDirs = bkConf.getJournalDirs();
             File[] ledgerDirs = bkConf.getLedgerDirs();
@@ -2106,34 +2113,35 @@ public class BookieShell implements Tool {
                 LOG.info("No local cookies for Bookie: {}", bookieAddress);
             }
 
-            try (ZKRegistrationManager rm = new ZKRegistrationManager()) {
-                Versioned<Cookie> cookie = null;
+            return runFunctionWithRegistrationManager(bkConf, rm -> {
                 try {
-                    rm.initialize(bkConf, () -> { }, NullStatsLogger.INSTANCE);
-                    cookie = Cookie.readFromRegistrationManager(rm, bookieAddress);
-                } catch (CookieNotFoundException nne) {
-                    LOG.info("No cookie for {} in ZooKeeper", bookieAddress);
-                    return 0;
-                }
-
-                if (delete) {
-                    boolean confirm = force;
-                    if (!confirm) {
-                        confirm = IOUtils.confirmPrompt("Are you sure you want to delete Cookies from Zookeeper?");
+                    Versioned<Cookie> cookie = null;
+                    try {
+                        cookie = Cookie.readFromRegistrationManager(rm, bookieAddress);
+                    } catch (CookieNotFoundException nne) {
+                        LOG.info("No cookie for {} in metadata store", bookieAddress);
+                        return 0;
                     }
 
-                    if (confirm) {
-                        cookie.getValue().deleteFromRegistrationManager(rm, bkConf, cookie.getVersion());
-                        LOG.info("Deleted Cookie from Zookeeper for Bookie: {}", bookieAddress);
-                    } else {
-                        LOG.info("Skipping deleting cookie from ZooKeeper for Bookie: {}", bookieAddress);
+                    if (delete) {
+                        boolean confirm = force;
+                        if (!confirm) {
+                            confirm = IOUtils.confirmPrompt(
+                                "Are you sure you want to delete Cookies from metadata store?");
+                        }
+
+                        if (confirm) {
+                            cookie.getValue().deleteFromRegistrationManager(rm, bkConf, cookie.getVersion());
+                            LOG.info("Deleted Cookie from metadata store for Bookie: {}", bookieAddress);
+                        } else {
+                            LOG.info("Skipping deleting cookie from metadata store for Bookie: {}", bookieAddress);
+                        }
                     }
-                } else {
-                    LOG.info("{} bookie's Cookie path in Zookeeper: {} ", bookieAddress,
-                            rm.getCookiePath(bookieAddress.toString()));
+                } catch (BookieException | IOException e) {
+                    return -1;
                 }
-            }
-            return 0;
+                return 0;
+            });
         }
     }
 
@@ -2489,6 +2497,7 @@ public class BookieShell implements Tool {
             return "Convert bookie indexes from InterleavedStorage to DbLedgerStorage format";
         }
 
+        @Override
         String getUsage() {
             return CMD_CONVERT_TO_DB_STORAGE;
         }
@@ -2520,6 +2529,11 @@ public class BookieShell implements Tool {
                 @Override
                 public void startCheckpoint(Checkpoint checkpoint) {
                     // No-op
+                }
+
+                @Override
+                public void start() {
+                    // no-op
                 }
             };
 
@@ -2579,6 +2593,7 @@ public class BookieShell implements Tool {
             return "Convert bookie indexes from DbLedgerStorage to InterleavedStorage format";
         }
 
+        @Override
         String getUsage() {
             return CMD_CONVERT_TO_INTERLEAVED_STORAGE;
         }
@@ -2611,6 +2626,11 @@ public class BookieShell implements Tool {
                 public void startCheckpoint(Checkpoint checkpoint) {
                     // No-op
                 }
+
+                @Override
+                public void start() {
+                    // no-op
+                }
             };
 
             dbStorage.initialize(conf, null, ledgerDirsManager, ledgerIndexManager, null,
@@ -2618,8 +2638,6 @@ public class BookieShell implements Tool {
             interleavedStorage.initialize(conf, null, ledgerDirsManager, ledgerIndexManager,
                     null, checkpointSource, checkpointer, NullStatsLogger.INSTANCE);
             LedgerCache interleavedLedgerCache = interleavedStorage.ledgerCache;
-
-            EntryLocationIndex dbEntryLocationIndex = dbStorage.getEntryLocationIndex();
 
             int convertedLedgers = 0;
             for (long ledgerId : dbStorage.getActiveLedgersInRange(0, Long.MAX_VALUE)) {
@@ -2632,10 +2650,10 @@ public class BookieShell implements Tool {
                     interleavedStorage.setFenced(ledgerId);
                 }
 
-                long lastEntryInLedger = dbEntryLocationIndex.getLastEntryInLedger(ledgerId);
+                long lastEntryInLedger = dbStorage.getLastEntryInLedger(ledgerId);
                 for (long entryId = 0; entryId <= lastEntryInLedger; entryId++) {
                     try {
-                        long location = dbEntryLocationIndex.getLocation(ledgerId, entryId);
+                        long location = dbStorage.getLocation(ledgerId, entryId);
                         if (location != 0L) {
                             interleavedLedgerCache.putEntryOffset(ledgerId, entryId, location);
                         }
@@ -2689,6 +2707,7 @@ public class BookieShell implements Tool {
             return "Rebuild DbLedgerStorage locations index by scanning the entry logs";
         }
 
+        @Override
         String getUsage() {
             return CMD_REBUILD_DB_LEDGER_LOCATIONS_INDEX;
         }
@@ -2791,27 +2810,6 @@ public class BookieShell implements Tool {
         String[] newArgs = new String[args.length - 1];
         System.arraycopy(args, 1, newArgs, 0, newArgs.length);
         return cmd.runCmd(newArgs);
-    }
-
-    /*
-     * The string returned is of the form:
-     * 'hostname'('otherformofhostname'):'port number'
-     *
-     * where hostname and otherformofhostname are ipaddress and
-     * canonicalhostname or viceversa
-     */
-    private static String getBookieSocketAddrStringRepresentation(BookieSocketAddress bookieId) {
-        String hostname = bookieId.getHostName();
-        boolean isHostNameIpAddress = InetAddresses.isInetAddress(hostname);
-        String otherFormOfHostname = null;
-        if (isHostNameIpAddress) {
-            otherFormOfHostname = bookieId.getSocketAddress().getAddress().getCanonicalHostName();
-        } else {
-            otherFormOfHostname = bookieId.getSocketAddress().getAddress().getHostAddress();
-        }
-        String bookieSocketAddrStringRepresentation = hostname + "(" + otherFormOfHostname + ")" + ":"
-                + bookieId.getSocketAddress().getPort();
-        return bookieSocketAddrStringRepresentation;
     }
 
     /**
@@ -2968,8 +2966,9 @@ public class BookieShell implements Tool {
     private synchronized List<Journal> getJournals() throws IOException {
         if (null == journals) {
             journals = Lists.newArrayListWithCapacity(bkConf.getJournalDirs().length);
+            int idx = 0;
             for (File journalDir : bkConf.getJournalDirs()) {
-                journals.add(new Journal(new File(journalDir, BookKeeperConstants.CURRENT_DIR), bkConf,
+                journals.add(new Journal(idx++, new File(journalDir, BookKeeperConstants.CURRENT_DIR), bkConf,
                     new LedgerDirsManager(bkConf, bkConf.getLedgerDirs(),
                         new DiskChecker(bkConf.getDiskUsageThreshold(), bkConf.getDiskUsageWarnThreshold()))));
             }
@@ -3126,6 +3125,7 @@ public class BookieShell implements Tool {
         };
 
         return new Iterable<SortedMap<Long, Long>>() {
+            @Override
             public Iterator<SortedMap<Long, Long>> iterator() {
                 return iterator;
             }

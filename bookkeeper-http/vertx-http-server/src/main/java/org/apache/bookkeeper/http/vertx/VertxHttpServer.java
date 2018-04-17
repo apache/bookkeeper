@@ -84,7 +84,10 @@ public class VertxHttpServer implements HttpServer {
             } else {
                 LOG.error("Failed to start org.apache.bookkeeper.http server on port {}", port, asyncResult.cause());
             }
-        } catch (InterruptedException | ExecutionException e) {
+        } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
+            LOG.error("Failed to start org.apache.bookkeeper.http server on port {}", port, ie);
+        } catch (ExecutionException e) {
             LOG.error("Failed to start org.apache.bookkeeper.http server on port {}", port, e);
         }
         return false;
@@ -106,6 +109,7 @@ public class VertxHttpServer implements HttpServer {
         try {
             shutdownLatch.await();
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             LOG.error("Interrupted while shutting down org.apache.bookkeeper.http server");
         }
     }

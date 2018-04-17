@@ -338,12 +338,9 @@ Copy the source release to the dev repository of `dist.apache.org`.
 4. Sign the BookKeeper source and binary distribution.
 
         cd bookkeeper/${RC_DIR}
-        md5sum bookkeeper-${VERSION}-src.tar.gz > bookkeeper-${VERSION}-src.tar.gz.md5
-        shasum bookkeeper-${VERSION}-src.tar.gz > bookkeeper-${VERSION}-src.tar.gz.sha1
-        md5sum bookkeeper-server-${VERSION}-bin.tar.gz > bookkeeper-server-${VERSION}-bin.tar.gz.md5
-        shasum bookkeeper-server-${VERSION}-bin.tar.gz > bookkeeper-server-${VERSION}-bin.tar.gz.sha1
-        md5sum bookkeeper-all-${VERSION}-bin.tar.gz > bookkeeper-all-${VERSION}-bin.tar.gz.md5
-        shasum bookkeeper-all-${VERSION}-bin.tar.gz > bookkeeper-all-${VERSION}-bin.tar.gz.sha1
+        sha1sum bookkeeper-${VERSION}-src.tar.gz > bookkeeper-${VERSION}-src.tar.gz.sha1
+        sha1sum bookkeeper-server-${VERSION}-bin.tar.gz > bookkeeper-server-${VERSION}-bin.tar.gz.sha1
+        sha1sum bookkeeper-all-${VERSION}-bin.tar.gz > bookkeeper-all-${VERSION}-bin.tar.gz.sha1
 
 5. Go back to BookKeeper directory, add and commit all the files.
 
@@ -379,7 +376,7 @@ Start the review-and-vote thread on the dev@ mailing list. Here’s an email tem
     * Release notes [1]
     * The official Apache source and binary distributions to be deployed to dist.apache.org [2]
     * All artifacts to be deployed to the Maven Central Repository [3]
-    * Source code tag "release-4.5.0" [4]
+    * Source code tag "release-4.5.0" [4] with git sha XXXXXXXXXXXXXXXXXXXX
 
     BookKeeper's KEYS file contains PGP keys we used to sign this release:
     https://dist.apache.org/repos/dist/release/bookkeeper/KEYS
@@ -387,9 +384,9 @@ Start the review-and-vote thread on the dev@ mailing list. Here’s an email tem
     Please download these packages and review this release candidate:
 
     - Review release notes
-    - Download the source package (verify md5, shasum, and asc) and follow the
+    - Download the source package (verify shasum, and asc) and follow the
     instructions to build and run the bookkeeper service.
-    - Download the binary package (verify md5, shasum, and asc) and follow the
+    - Download the binary package (verify shasum, and asc) and follow the
     instructions to run the bookkeeper service.
     - Review maven repo, release tag, licenses, and any other things you think
     it is important to a release.
@@ -472,6 +469,23 @@ Copy the source release from the `dev` repository to the `release` repository at
 
     svn move https://dist.apache.org/repos/dist/dev/bookkeeper/bookkeeper-${VERSION}-rc${RC_NUM} https://dist.apache.org/repos/dist/release/bookkeeper/bookkeeper-${VERSION}
 
+According to [ASF policy](http://www.apache.org/legal/release-policy.html#when-to-archive), `/www.apache.org/dist` should contain the latest release in each branch that
+is currently under development. We need to remove the old releases from `release` repository.
+
+For example, if 4.6.1 is a newer release, we need to remove releases older than 4.6.1.
+
+
+    ```shell
+    // go to the directory checkout from `svn co https://dist.apache.org/repos/dist/release/bookkeeper`
+    $ cd bookkeeper
+
+    // delete old releases
+    $ svn rm <old-release>
+
+    // commit the change
+    $ svn commit -m "remove bookkeeper release <old-release>"
+    ```
+
 ### Update Website
 
 1. Create the documentation for `${VERSION}`. Run the `release.sh` to generate the branch for `${VERSION}` and bump
@@ -511,6 +525,71 @@ Copy the source release from the `dev` repository to the `release` repository at
     ```
 
 4. Verify the [docker hub](https://hub.docker.com/r/apache/bookkeeper/) to see if a new build for the given tag is build.
+
+### Update DC/OS BookKeeper package
+
+Once we have new version of BookKeeper docker image available at [docker hub](https://hub.docker.com/r/apache/bookkeeper/), We could update DC/OS BookKeeper package in [mesosphere universe](https://github.com/mesosphere/universe). A new pull request is needed in it. 
+
+It is easy if only version need be bump.
+
+1. Clone repo [mesosphere universe](https://github.com/mesosphere/universe).
+
+    ```shell
+    $ git clone https://github.com/mesosphere/universe
+    ```
+
+2. cd into the repo, Checkout a branch for the changes.
+
+    ```shell
+    $ cd universe
+    $ git checkout -b bookkeeper_new_version
+    ```
+
+3. Make a copy of latest code of BookKeeper package.
+
+    ```shell
+    $ cp -rf repo/packages/B/bookkeeper/1 repo/packages/B/bookkeeper/2
+    $ git add repo/packages/B/bookkeeper/2
+    $ git commit -m "copy old version"
+    ```
+
+4. Bump the version of BookKeeper docker image in file [resource.json](https://github.com/mesosphere/universe/blob/version-3.x/repo/packages/B/bookkeeper/1/resource.json#L5) and [package.json](https://github.com/mesosphere/universe/blob/version-3.x/repo/packages/B/bookkeeper/1/package.json#L4).
+
+    ```
+    diff --git repo/packages/B/bookkeeper/2/package.json repo/packages/B/bookkeeper/2/package.json
+    index 07199d56..75f4aa81 100644
+    --- repo/packages/B/bookkeeper/2/package.json
+    +++ repo/packages/B/bookkeeper/2/package.json
+    @@ -1,7 +1,7 @@
+     {
+       "packagingVersion": "3.0",
+       "name": "bookkeeper",
+    -  "version": "4.5.1",
+    +  "version": "4.7.0",
+       "scm": "https://github.com/apache/bookkeeper",
+       "maintainer": "zhaijia@apache.org",
+       "description": "BookKeeper is A scalable, fault-tolerant, and low-latency storage service optimized for real-time workloads.Further information can be found here: http://bookkeeper.apache.org/",
+    diff --git repo/packages/B/bookkeeper/2/resource.json repo/packages/B/bookkeeper/2/resource.json
+    index 3801750e..72690ea0 100644
+    --- repo/packages/B/bookkeeper/2/resource.json
+    +++ repo/packages/B/bookkeeper/2/resource.json
+    @@ -2,7 +2,7 @@
+       "assets": {
+         "container": {
+           "docker": {
+    -        "bookkeeper": "apache/bookkeeper:4.5.1"
+    +        "bookkeeper": "apache/bookkeeper:4.7.0"
+           }
+         }
+       },
+    ```
+
+5. Commit the change, create a pull request and wait for it to be approved and merged.
+
+    ```shell
+    $ git add repo/packages/B/bookkeeper/2
+    $ git commit -m "new bookkeeper version"
+    ```
 
 ### Mark the version as released in JIRA and Github
 

@@ -420,6 +420,7 @@ public class LedgerManagerIteratorTest extends LedgerManagerTestCase {
                 try {
                     latch.await();
                 } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
                     fail("Checker interrupted");
                 }
                 while (MathUtils.elapsedNanos(start) < runtime) {
@@ -448,6 +449,7 @@ public class LedgerManagerIteratorTest extends LedgerManagerTestCase {
                 try {
                     latch.await();
                 } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
                     fail("Checker interrupted");
                     e.printStackTrace();
                 }
@@ -479,6 +481,7 @@ public class LedgerManagerIteratorTest extends LedgerManagerTestCase {
         }
     }
 
+    @SuppressWarnings("deprecation")
     @Test
     public void testLedgerParentNode() throws Throwable {
         /*
@@ -503,6 +506,7 @@ public class LedgerManagerIteratorTest extends LedgerManagerTestCase {
         }
     }
 
+    @SuppressWarnings("deprecation")
     @Test
     public void testLedgerManagerFormat() throws Throwable {
         /*

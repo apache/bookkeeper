@@ -103,6 +103,7 @@ public class LongZkLedgerIdGenerator implements LedgerIdGenerator {
                         LOG.error("Failed to create long ledger ID path", e);
                         cb.operationComplete(BKException.Code.ZKException, null);
                     } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
                         LOG.error("Failed to create long ledger ID path", e);
                         cb.operationComplete(BKException.Code.InterruptedException, null);
                     } catch (IOException e) {
@@ -241,6 +242,7 @@ public class LongZkLedgerIdGenerator implements LedgerIdGenerator {
                             setLedgerIdGenPathStatus(HighOrderLedgerIdGenPathStatus.UNKNOWN);
                             cb.operationComplete(BKException.Code.ZKException, null);
                         } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
                             LOG.error("Failed to create long ledger ID path", e);
                             setLedgerIdGenPathStatus(HighOrderLedgerIdGenPathStatus.UNKNOWN);
                             cb.operationComplete(BKException.Code.InterruptedException, null);
@@ -318,6 +320,7 @@ public class LongZkLedgerIdGenerator implements LedgerIdGenerator {
             LOG.error("Failed to create long ledger ID path", e);
             cb.operationComplete(BKException.Code.ZKException, null);
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             LOG.error("Failed to create long ledger ID path", e);
             cb.operationComplete(BKException.Code.InterruptedException, null);
         } catch (IOException e) {

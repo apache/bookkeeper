@@ -40,6 +40,7 @@ import org.apache.bookkeeper.client.impl.LedgerEntriesImpl;
 import org.apache.bookkeeper.client.impl.LedgerEntryImpl;
 import org.apache.bookkeeper.common.util.SafeRunnable;
 import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallbackCtx;
 import org.apache.bookkeeper.proto.checksum.DigestManager;
@@ -72,10 +73,12 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
     long endEntryId;
     long requestTimeNanos;
     OpStatsLogger readOpLogger;
+    Counter readOpDmCounter;
     private final Counter speculativeReadCounter;
 
     final int requiredBookiesMissingEntryForRecovery;
     final boolean isRecoveryRead;
+
     boolean parallelRead = false;
     final AtomicBoolean complete = new AtomicBoolean(false);
     boolean allowFailFast = false;
@@ -133,10 +136,10 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
         boolean complete(int bookieIndex, BookieSocketAddress host, final ByteBuf buffer) {
             ByteBuf content;
             try {
-                content = lh.macManager.verifyDigestAndReturnData(entryImpl.getEntryId(), buffer);
+                content = lh.macManager.verifyDigestAndReturnData(eId, buffer);
             } catch (BKDigestMatchException e) {
+                readOpDmCounter.inc();
                 logErrorAndReattemptRead(bookieIndex, host, "Mac mismatch", BKException.Code.DigestMatchException);
-                buffer.release();
                 return false;
             }
 
@@ -151,7 +154,6 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
                 writeSet.recycle();
                 return true;
             } else {
-                buffer.release();
                 return false;
             }
         }
@@ -204,12 +206,12 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
                 ++numBookiesMissingEntry;
                 if (LOG.isDebugEnabled()) {
                     LOG.debug("No such entry found on bookie.  L{} E{} bookie: {}",
-                            lh.ledgerId, entryImpl.getEntryId(), host);
+                            lh.ledgerId, eId, host);
                 }
             } else {
                 if (LOG.isDebugEnabled()) {
                     LOG.debug(errMsg + " while reading L{} E{} from bookie: {}",
-                            lh.ledgerId, entryImpl.getEntryId(), host);
+                            lh.ledgerId, eId, host);
                 }
             }
         }
@@ -244,7 +246,7 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
 
         @Override
         public String toString() {
-            return String.format("L%d-E%d", entryImpl.getLedgerId(), entryImpl.getEntryId());
+            return String.format("L%d-E%d", lh.getId(), eId);
         }
 
         /**
@@ -482,6 +484,7 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
         heardFromHostsBitSet = new BitSet(getLedgerMetadata().getEnsembleSize());
 
         readOpLogger = lh.bk.getReadOpLogger();
+        readOpDmCounter = lh.bk.getReadOpDmCounter();
         speculativeReadCounter = lh.bk.getSpeculativeReadCounter();
     }
 
@@ -510,7 +513,7 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
     }
 
     public void submit() {
-        lh.bk.getMainWorkerPool().submitOrdered(lh.ledgerId, this);
+        lh.bk.getMainWorkerPool().executeOrdered(lh.ledgerId, this);
     }
 
     void initiate() {
@@ -573,8 +576,10 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
             lh.throttler.acquire();
         }
 
-        lh.bk.getBookieClient().readEntry(to, lh.ledgerId, entry.entryImpl.getEntryId(),
-                                     this, new ReadContext(bookieIndex, to, entry), allowFailFast);
+        int flags = isRecoveryRead ? BookieProtocol.FLAG_HIGH_PRIORITY : BookieProtocol.FLAG_NONE;
+        lh.bk.getBookieClient().readEntry(to, lh.ledgerId, entry.eId,
+                                          this, new ReadContext(bookieIndex, to, entry),
+                                          flags);
     }
 
     @Override
@@ -590,12 +595,15 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
         heardFromHosts.add(rctx.to);
         heardFromHostsBitSet.set(rctx.bookieIndex, true);
 
+        buffer.retain();
         if (entry.complete(rctx.bookieIndex, rctx.to, buffer)) {
             if (!isRecoveryRead) {
                 // do not advance LastAddConfirmed for recovery reads
                 lh.updateLastConfirmed(rctx.getLastAddConfirmed(), 0L);
             }
             submitCallback(BKException.Code.OK);
+        } else {
+            buffer.release();
         }
 
         if (numPendingEntries < 0) {
@@ -624,7 +632,7 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
             long firstUnread = LedgerHandle.INVALID_ENTRY_ID;
             for (LedgerEntryRequest req : seq) {
                 if (!req.isComplete()) {
-                    firstUnread = req.entryImpl.getEntryId();
+                    firstUnread = req.eId;
                     break;
                 }
             }

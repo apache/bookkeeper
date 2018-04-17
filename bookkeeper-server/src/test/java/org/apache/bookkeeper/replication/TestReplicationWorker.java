@@ -23,22 +23,28 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-import java.net.InetAddress;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.Set;
+import lombok.Cleanup;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.ClientUtil;
 import org.apache.bookkeeper.client.LedgerEntry;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.LedgerHandleAdapter;
+import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.discover.RegistrationManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
+import org.apache.bookkeeper.meta.MetadataBookieDriver;
+import org.apache.bookkeeper.meta.MetadataClientDriver;
+import org.apache.bookkeeper.meta.MetadataDrivers;
 import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
@@ -58,9 +64,11 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
             .getLogger(TestReplicationWorker.class);
     private String basePath = "";
     private String baseLockPath = "";
+    private MetadataBookieDriver driver;
     private LedgerManagerFactory mFactory;
     private LedgerUnderreplicationManager underReplicationManager;
     private static byte[] data = "TestReplicationWorker".getBytes();
+    private OrderedScheduler scheduler;
 
     public TestReplicationWorker() {
         this("org.apache.bookkeeper.meta.HierarchicalLedgerManagerFactory");
@@ -86,24 +94,32 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
     public void setUp() throws Exception {
         super.setUp();
         baseConf.setZkServers(zkUtil.getZooKeeperConnectString());
+
+        this.scheduler = OrderedScheduler.newSchedulerBuilder()
+            .name("test-scheduler")
+            .numThreads(1)
+            .build();
+
+        this.driver = MetadataDrivers.getBookieDriver(
+            URI.create(baseConf.getMetadataServiceUri()));
+        this.driver.initialize(
+            baseConf,
+            () -> {},
+            NullStatsLogger.INSTANCE);
         // initialize urReplicationManager
-        mFactory = LedgerManagerFactory.newLedgerManagerFactory(
-            baseClientConf,
-            RegistrationManager
-                .instantiateRegistrationManager(new ServerConfiguration(baseClientConf)).getLayoutManager());
+        mFactory = driver.getLedgerManagerFactory();
         underReplicationManager = mFactory.newLedgerUnderreplicationManager();
     }
 
     @Override
     public void tearDown() throws Exception {
         super.tearDown();
-        if (null != mFactory){
-            mFactory.close();
-            mFactory = null;
-        }
         if (null != underReplicationManager){
             underReplicationManager.close();
             underReplicationManager = null;
+        }
+        if (null != driver) {
+            driver.close();
         }
     }
 
@@ -125,14 +141,12 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
         LOG.info("Killing Bookie", replicaToKill);
         killBookie(replicaToKill);
 
-        int startNewBookie = startNewBookie();
+        BookieSocketAddress newBkAddr = startNewBookieAndReturnAddress();
+        LOG.info("New Bookie addr : {}", newBkAddr);
+
         for (int i = 0; i < 10; i++) {
             lh.addEntry(data);
         }
-
-        BookieSocketAddress newBkAddr = new BookieSocketAddress(InetAddress
-                .getLocalHost().getHostAddress(), startNewBookie);
-        LOG.info("New Bookie addr :" + newBkAddr);
 
         ReplicationWorker rw = new ReplicationWorker(zkc, baseConf);
 
@@ -175,9 +189,7 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
         LOG.info("Killing Bookie", replicaToKill);
         ServerConfiguration killedBookieConfig = killBookie(replicaToKill);
 
-        int startNewBookie = startNewBookie();
-        BookieSocketAddress newBkAddr = new BookieSocketAddress(InetAddress
-                .getLocalHost().getHostAddress(), startNewBookie);
+        BookieSocketAddress newBkAddr = startNewBookieAndReturnAddress();
         LOG.info("New Bookie addr :" + newBkAddr);
 
         killAllBookies(lh, newBkAddr);
@@ -229,17 +241,13 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
 
         killAllBookies(lh, null);
         // Starte RW1
-        int startNewBookie1 = startNewBookie();
-        BookieSocketAddress newBkAddr1 = new BookieSocketAddress(InetAddress
-                .getLocalHost().getHostAddress(), startNewBookie1);
-        LOG.info("New Bookie addr :" + newBkAddr1);
+        BookieSocketAddress newBkAddr1 = startNewBookieAndReturnAddress();
+        LOG.info("New Bookie addr : {}", newBkAddr1);
         ReplicationWorker rw1 = new ReplicationWorker(zkc, baseConf);
 
         // Starte RW2
-        int startNewBookie2 = startNewBookie();
-        BookieSocketAddress newBkAddr2 = new BookieSocketAddress(InetAddress
-                .getLocalHost().getHostAddress(), startNewBookie2);
-        LOG.info("New Bookie addr :" + newBkAddr2);
+        BookieSocketAddress newBkAddr2 = startNewBookieAndReturnAddress();
+        LOG.info("New Bookie addr : {}", newBkAddr2);
         ZooKeeper zkc1 = ZooKeeperClient.newBuilder()
                 .connectString(zkUtil.getZooKeeperConnectString())
                 .sessionTimeoutMs(10000)
@@ -293,10 +301,8 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
         LOG.info("Killing Bookie", replicaToKill);
         killBookie(replicaToKill);
 
-        int startNewBookie = startNewBookie();
-        BookieSocketAddress newBkAddr = new BookieSocketAddress(InetAddress
-                .getLocalHost().getHostAddress(), startNewBookie);
-        LOG.info("New Bookie addr :" + newBkAddr);
+        BookieSocketAddress newBkAddr = startNewBookieAndReturnAddress();
+        LOG.info("New Bookie addr : {}", newBkAddr);
         ReplicationWorker rw = new ReplicationWorker(zkc, baseConf);
         rw.start();
 
@@ -349,11 +355,8 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
         killBookie(replicaToKillFromFirstLedger);
         lh2.close();
 
-        int startNewBookie = startNewBookie();
-
-        BookieSocketAddress newBkAddr = new BookieSocketAddress(InetAddress
-                .getLocalHost().getHostAddress(), startNewBookie);
-        LOG.info("New Bookie addr :" + newBkAddr);
+        BookieSocketAddress newBkAddr = startNewBookieAndReturnAddress();
+        LOG.info("New Bookie addr : {}", newBkAddr);
 
         ReplicationWorker rw = new ReplicationWorker(zkc, baseConf);
 
@@ -406,22 +409,18 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
         LOG.info("Killing Bookie", replicaToKill);
         killBookie(replicaToKill);
 
-        int startNewBookie = startNewBookie();
-
-        BookieSocketAddress newBkAddr = new BookieSocketAddress(InetAddress
-                .getLocalHost().getHostAddress(), startNewBookie);
-        LOG.info("New Bookie addr :" + newBkAddr);
+        BookieSocketAddress newBkAddr = startNewBookieAndReturnAddress();
+        LOG.info("New Bookie addr : {}", newBkAddr);
 
         // set to 3s instead of default 30s
         baseConf.setOpenLedgerRereplicationGracePeriod("3000");
         ReplicationWorker rw = new ReplicationWorker(zkc, baseConf);
 
-        LedgerManagerFactory mFactory = LedgerManagerFactory
-            .newLedgerManagerFactory(
-                baseClientConf,
-                RegistrationManager
-                    .instantiateRegistrationManager(new ServerConfiguration(baseClientConf))
-                    .getLayoutManager());
+        @Cleanup MetadataClientDriver clientDriver = MetadataDrivers.getClientDriver(
+            URI.create(baseClientConf.getMetadataServiceUri()));
+        clientDriver.initialize(baseClientConf, scheduler, NullStatsLogger.INSTANCE, Optional.empty());
+
+        LedgerManagerFactory mFactory = clientDriver.getLedgerManagerFactory();
 
         LedgerUnderreplicationManager underReplicationManager = mFactory
                 .newLedgerUnderreplicationManager();
@@ -468,7 +467,8 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
         LOG.info("Killing Bookie", replicaToKill);
         killBookie(replicaToKill);
 
-        int startNewBookie = startNewBookie();
+        BookieSocketAddress newBkAddr = startNewBookieAndReturnAddress();
+        LOG.info("New Bookie addr : {}", newBkAddr);
 
         // Reform ensemble...Making sure that last fragment is not in
         // under-replication
@@ -476,19 +476,15 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
             lh.addEntry(data);
         }
 
-        BookieSocketAddress newBkAddr = new BookieSocketAddress(InetAddress
-                .getLocalHost().getHostAddress(), startNewBookie);
-        LOG.info("New Bookie addr :" + newBkAddr);
-
         ReplicationWorker rw = new ReplicationWorker(zkc, baseConf);
 
         baseClientConf.setZkServers(zkUtil.getZooKeeperConnectString());
-        LedgerManagerFactory mFactory = LedgerManagerFactory
-            .newLedgerManagerFactory(
-                baseClientConf,
-                RegistrationManager
-                    .instantiateRegistrationManager(new ServerConfiguration(baseClientConf))
-                    .getLayoutManager());
+
+        @Cleanup MetadataClientDriver driver = MetadataDrivers.getClientDriver(
+            URI.create(baseClientConf.getMetadataServiceUri()));
+        driver.initialize(baseClientConf, scheduler, NullStatsLogger.INSTANCE, Optional.empty());
+
+        LedgerManagerFactory mFactory = driver.getLedgerManagerFactory();
 
         LedgerUnderreplicationManager underReplicationManager = mFactory
                 .newLedgerUnderreplicationManager();

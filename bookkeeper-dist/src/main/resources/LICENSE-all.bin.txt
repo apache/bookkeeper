@@ -210,16 +210,16 @@ Apache Software License, Version 2.
 - lib/com.fasterxml.jackson.core-jackson-databind-2.8.9.jar [3]
 - lib/com.fasterxml.jackson.module-jackson-module-paranamer-2.8.4.jar [4]
 - lib/com.fasterxml.jackson.module-jackson-module-scala_2.11-2.8.4.jar [5]
-- lib/com.google.guava-guava-20.0.jar [6]
+- lib/com.github.ben-manes.caffeine-caffeine-2.3.4.jar [9]
+- lib/com.google.guava-guava-21.0.jar [6]
 - lib/commons-cli-commons-cli-1.2.jar [7]
 - lib/commons-codec-commons-codec-1.6.jar [8]
-- lib/commons-collections-commons-collections-3.2.2.jar [9]
 - lib/commons-configuration-commons-configuration-1.10.jar [10]
 - lib/commons-io-commons-io-2.4.jar [11]
 - lib/commons-lang-commons-lang-2.6.jar [12]
 - lib/commons-logging-commons-logging-1.1.1.jar [13]
 - lib/com.twitter-finagle-base-http_2.11-6.44.0.jar [14]
-- lib/com.twitter-finagle-core_2.11-6.34.0.jar [15]
+- lib/com.twitter-finagle-core_2.11-6.44.0.jar [15]
 - lib/com.twitter-finagle-http_2.11-6.44.0.jar [14]
 - lib/com.twitter-finagle-http2_2.11-6.44.0.jar [14]
 - lib/com.twitter-finagle-netty4_2.11-6.44.0.jar [14]
@@ -231,19 +231,20 @@ Apache Software License, Version 2.
 - lib/com.twitter-libthrift-0.5.0-7.jar [16]
 - lib/com.twitter-scrooge-core_2.11-4.16.0.jar [17]
 - lib/com.twitter-twitter-server_2.11-1.29.0.jar [18]
-- lib/com.twitter-util-app_2.11-6.33.0.jar [19]
-- lib/com.twitter-util-cache_2.11-6.33.0.jar [19]
-- lib/com.twitter-util-codec_2.11-6.33.0.jar [19]
-- lib/com.twitter-util-collection_2.11-6.33.0.jar [19]
-- lib/com.twitter-util-core_2.11-6.33.0.jar [19]
+- lib/com.twitter-util-app_2.11-6.43.0.jar [19]
+- lib/com.twitter-util-cache_2.11-6.43.0.jar [19]
+- lib/com.twitter-util-codec_2.11-6.43.0.jar [19]
+- lib/com.twitter-util-collection_2.11-6.43.0.jar [19]
+- lib/com.twitter-util-core_2.11-6.43.0.jar [19]
 - lib/com.twitter-util-events_2.11-6.43.0.jar [20]
-- lib/com.twitter-util-function_2.11-6.33.0.jar [19]
-- lib/com.twitter-util-hashing_2.11-6.33.0.jar [19]
-- lib/com.twitter-util-jvm_2.11-6.33.0.jar [19]
-- lib/com.twitter-util-lint_2.11-6.33.0.jar [19]
-- lib/com.twitter-util-logging_2.11-6.33.0.jar [19]
-- lib/com.twitter-util-registry_2.11-6.33.0.jar [19]
-- lib/com.twitter-util-stats_2.11-6.33.0.jar [19]
+- lib/com.twitter-util-function_2.11-6.43.0.jar [19]
+- lib/com.twitter-util-hashing_2.11-6.43.0.jar [19]
+- lib/com.twitter-util-jvm_2.11-6.43.0.jar [19]
+- lib/com.twitter-util-lint_2.11-6.43.0.jar [19]
+- lib/com.twitter-util-logging_2.11-6.43.0.jar [19]
+- lib/com.twitter-util-registry_2.11-6.43.0.jar [19]
+- lib/com.twitter-util-security_2.11-6.43.0.jar [19]
+- lib/com.twitter-util-stats_2.11-6.43.0.jar [19]
 - lib/com.twitter-util-tunable_2.11-6.43.0.jar [20]
 - lib/io.dropwizard.metrics-metrics-core-3.1.0.jar [21]
 - lib/io.dropwizard.metrics-metrics-graphite-3.1.0.jar [21]
@@ -257,8 +258,7 @@ Apache Software License, Version 2.
 - lib/io.vertx-vertx-auth-common-3.4.1.jar [25]
 - lib/io.vertx-vertx-core-3.4.1.jar [26]
 - lib/io.vertx-vertx-web-3.4.1.jar [27]
-- lib/javax.inject-javax.inject-1.jar [28]
-- lib/log4j-log4j-1.2.15.jar [29]
+- lib/log4j-log4j-1.2.17.jar [29]
 - lib/net.java.dev.jna-jna-3.2.7.jar [30]
 - lib/org.apache.commons-commons-collections4-4.1.jar [31]
 - lib/org.apache.commons-commons-lang3-3.3.2.jar [32]
@@ -270,16 +270,19 @@ Apache Software License, Version 2.
 - lib/org.eclipse.jetty-jetty-servlet-9.4.5.v20170502.jar [34]
 - lib/org.eclipse.jetty-jetty-util-9.4.5.v20170502.jar [34]
 - lib/org.rocksdb-rocksdbjni-5.8.6.jar [35]
+- lib/com.beust-jcommander-1.48.jar [36]
+- lib/com.yahoo.datasketches-memory-0.8.3.jar [37]
+- lib/com.yahoo.datasketches-sketches-core-0.8.3.jar [37]
 
 [1] Source available at https://github.com/FasterXML/jackson-annotations/tree/jackson-annotations-2.8.9
 [2] Source available at https://github.com/FasterXML/jackson-core/tree/jackson-core-2.8.9
 [3] Source available at https://github.com/FasterXML/jackson-databind/tree/jackson-databind-2.8.9
 [4] Source available at https://github.com/FasterXML/jackson-modules-base/tree/jackson-modules-base-2.8.4
 [5] Source available at https://github.com/FasterXML/jackson-module-scala/tree/f9e099
-[6] Source available at https://github.com/google/guava/tree/v20.0
+[6] Source available at https://github.com/google/guava/tree/v21.0
 [7] Source available at https://git-wip-us.apache.org/repos/asf?p=commons-cli.git;a=tag;h=bc8f0e
 [8] Source available at http://svn.apache.org/viewvc/commons/proper/codec/tags/1_6/
-[9] Source available at https://git-wip-us.apache.org/repos/asf?p=commons-collections.git;a=tag;h=092ff4
+[9] Source available at https://github.com/ben-manes/caffeine/tree/v2.3.4
 [10] Source available at http://svn.apache.org/viewvc/commons/proper/configuration/tags/CONFIGURATION_1_10/
 [11] Source available at https://git-wip-us.apache.org/repos/asf?p=commons-io.git;a=tag;h=603579
 [12] Source available at https://git-wip-us.apache.org/repos/asf?p=commons-lang.git;a=tag;h=375459
@@ -289,7 +292,7 @@ Apache Software License, Version 2.
 [16] Source unavailable
 [17] Source available at https://github.com/twitter/scrooge/tree/scrooge-4.16.0
 [18] Source available at https://github.com/twitter/twitter-server/tree/twitter-server-1.29.0
-[19] Source available at https://github.com/twitter/util/tree/util-6.33.0
+[19] Source available at https://github.com/twitter/util/tree/util-6.43.0
 [20] Source available at https://github.com/twitter/util/tree/util-6.43.0
 [21] Source available at https://github.com/dropwizard/metrics/tree/v3.1.0
 [22] Source available at https://bintray.com/netty/downloads/download_file?file_path=netty-3.10.1.Final-dist.tar.bz2
@@ -298,7 +301,6 @@ Apache Software License, Version 2.
 [25] Source available at https://github.com/vert-x3/vertx-auth/tree/3.4.1
 [26] Source available at https://github.com/eclipse/vert.x/tree/3.4.1
 [27] Source available at https://github.com/vert-x3/vertx-web/tree/3.4.1
-[28] Source available at https://github.com/javax-inject/javax-inject/tree/1
 [29] Source available at http://logging.apache.org/log4j/1.2/download.html
 [30] Source available at https://github.com/java-native-access/jna/tree/3.2.7
 [31] Source available at https://git-wip-us.apache.org/repos/asf?p=commons-collections.git;a=tag;h=a3a5ad
@@ -306,6 +308,8 @@ Apache Software License, Version 2.
 [33] Source available at https://github.com/apache/zookeeper/tree/release-3.5.3
 [34] Source available at https://github.com/eclipse/jetty.project/tree/jetty-9.4.5.v20170502
 [35] Source available at https://github.com/facebook/rocksdb/tree/v5.8.6
+[36] Source available at https://github.com/cbeust/jcommander/tree/jcommander-1.48
+[37] Source available at https://github.com/DataSketches/sketches-core/tree/sketches-0.8.3
 
 ------------------------------------------------------------------------------------
 lib/io.netty-netty-3.10.1.Final.jar contains the extensions to Java Collections Framework which has
@@ -460,11 +464,6 @@ For details, see deps/paranamer-2.8/LICENSE.txt.
 Bundled as lib/com.thoughtworks.paranamer-paranamer-2.8.jar
 Source available at https://github.com/paul-hammant/paranamer/tree/paranamer-parent-2.8
 ------------------------------------------------------------------------------------
-This product bundles Twitter's modifier jsr166e, under the CC0 1.0 license.
-
-Bundled as lib/com.twitter-jsr166e-1.0.0.jar
-Source available at https://github.com/twitter/jsr166e/tree/v1.0.0
-------------------------------------------------------------------------------------
 This product bundles the JCP Standard Java Servlet API, which is available under a
 CDDL 1.1 license. For details, see deps/javax.servlet-api-3.1.0/CDDL+GPL-1.1.
 
@@ -480,8 +479,8 @@ Source available at https://github.com/scala/scala-parser-combinators/tree/v1.0.
 This product bundles the Scala Standard Library, which is available under a
 "3-clause BSD" license. For details, see deps/scala-library-2.11.7/LICENSE.md.
 
-Bundled as lib/org.scala-lang-scala-library-2.11.7.jar
-Source available at org.scala-lang-scala-library-2.11.7.jar
+Bundled as lib/org.scala-lang-scala-library-2.11.8.jar
+Source available at org.scala-lang-scala-library-2.11.8.jar
 ------------------------------------------------------------------------------------
 This product bundles the Scala Reflection API, which is available under a
 "3-clause BSD" license. For details, see deps/scala-reflect-2.11.8/LICENSE.md.

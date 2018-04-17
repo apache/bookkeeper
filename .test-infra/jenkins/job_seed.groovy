@@ -40,6 +40,7 @@ job('bookkeeper-seed') {
     '/seed')
 
   steps {
+    folder('bookkeeper-jenkins-testing')
     dsl {
       // A list or a glob of other groovy files to process.
       external('.test-infra/jenkins/job_*.groovy')

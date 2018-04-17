@@ -43,7 +43,8 @@ class TestCompatUpgrade {
     @ArquillianResource
     DockerClient docker
 
-    private void testUpgrade(String currentlyRunning, String upgradeTo, boolean clientCompatBroken = false) {
+    private void testUpgrade(String currentlyRunning, String upgradeTo, boolean clientCompatBroken = false,
+                             boolean currentlyRunningShutsdownBadly = false) {
         String zookeeper = BookKeeperClusterUtils.zookeeperConnectString(docker)
         LOG.info("Upgrading from {} to {}", currentlyRunning, upgradeTo)
         int numEntries = 10
@@ -75,7 +76,18 @@ class TestCompatUpgrade {
                 }
             }
 
-            Assert.assertTrue(BookKeeperClusterUtils.stopAllBookies(docker))
+            if (currentlyRunningShutsdownBadly) {
+                // 4.6.0 & 4.6.1 can sometimes leave their ZK session alive
+                // eventually the session should timeout though
+                for (int i = 0; i < 5; i++) {
+                    if (BookKeeperClusterUtils.stopAllBookies(docker)) {
+                        break
+                    }
+                }
+                Assert.assertTrue(BookKeeperClusterUtils.stopAllBookies(docker))
+            } else {
+                Assert.assertTrue(BookKeeperClusterUtils.stopAllBookies(docker))
+            }
             Assert.assertTrue(BookKeeperClusterUtils.startAllBookiesWithVersion(docker, upgradeTo))
 
             // check that old client can read its old ledgers on new server
@@ -166,6 +178,6 @@ class TestCompatUpgrade {
 
     @Test
     public void test460toCurrentMaster() throws Exception {
-        testUpgrade("4.6.0", System.getProperty("currentVersion"))
+        testUpgrade("4.6.0", System.getProperty("currentVersion"), false, true)
     }
 }

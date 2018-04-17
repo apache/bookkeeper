@@ -18,6 +18,7 @@
 package org.apache.distributedlog.feature;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import java.io.File;

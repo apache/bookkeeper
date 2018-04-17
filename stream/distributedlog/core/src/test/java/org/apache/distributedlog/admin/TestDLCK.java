@@ -19,6 +19,7 @@ package org.apache.distributedlog.admin;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+
 import java.net.URI;
 import java.util.HashMap;
 import java.util.List;
@@ -26,6 +27,7 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.distributedlog.DLMTestUtil;
 import org.apache.distributedlog.DLSN;
 import org.apache.distributedlog.DistributedLogConfiguration;
@@ -39,7 +41,6 @@ import org.apache.distributedlog.api.namespace.NamespaceBuilder;
 import org.apache.distributedlog.common.util.SchedulerUtils;
 import org.apache.distributedlog.metadata.DryrunLogSegmentMetadataStoreUpdater;
 import org.apache.distributedlog.metadata.LogSegmentMetadataStoreUpdater;
-import org.apache.distributedlog.util.OrderedScheduler;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.ZooDefs;
 import org.junit.After;
@@ -113,9 +114,9 @@ public class TestDLCK extends TestDistributedLogBase {
                 .conf(confLocal)
                 .uri(uri)
                 .build();
-        OrderedScheduler scheduler = OrderedScheduler.newBuilder()
+        OrderedScheduler scheduler = OrderedScheduler.newSchedulerBuilder()
                 .name("dlck-tool")
-                .corePoolSize(1)
+                .numThreads(1)
                 .build();
         ExecutorService executorService = Executors.newCachedThreadPool();
 

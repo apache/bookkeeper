@@ -240,10 +240,12 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
      * <p>Ignores provided digestType, if enabled and uses one from ledger metadata instead.
      * Incompatible with ledger created by bookie versions < 4.2
      *
+     * <p>It is turned on by default since 4.7.
+     *
      * @return flag to enable/disable autodetection of digest type.
      */
     public boolean getEnableDigestTypeAutodetection() {
-        return getBoolean(ENABLE_DIGEST_TYPE_AUTODETECTION, false);
+        return getBoolean(ENABLE_DIGEST_TYPE_AUTODETECTION, true);
     }
 
     /**
@@ -1747,7 +1749,9 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
      *
      * @param regClientClass
      *            ClientClass
+     * @deprecated since 4.7.0
      */
+    @Deprecated
     public ClientConfiguration setRegistrationClientClass(
             Class<? extends RegistrationClient> regClientClass) {
         setProperty(REGISTRATION_CLIENT_CLASS, regClientClass);
@@ -1758,7 +1762,9 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
      * Get Registration Client Class.
      *
      * @return registration manager class.
+     * @deprecated since 4.7.0
      */
+    @Deprecated
     public Class<? extends RegistrationClient> getRegistrationClientClass()
             throws ConfigurationException {
         return ReflectionUtils.getClass(this, REGISTRATION_CLIENT_CLASS,

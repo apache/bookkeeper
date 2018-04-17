@@ -54,6 +54,7 @@ public class RandomDelayFailureInjector implements FailureInjector {
                 Thread.sleep(delayMs());
             }
         } catch (InterruptedException ex) {
+            Thread.currentThread().interrupt();
             LOG.warn("delay was interrupted ", ex);
         }
     }

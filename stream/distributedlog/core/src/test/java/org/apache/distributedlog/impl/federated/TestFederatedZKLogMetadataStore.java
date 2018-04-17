@@ -21,6 +21,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+
 import com.google.common.base.Optional;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
@@ -34,6 +35,7 @@ import java.util.TreeSet;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.distributedlog.DistributedLogConfiguration;
 import org.apache.distributedlog.TestDistributedLogBase;
 import org.apache.distributedlog.TestZooKeeperClientBuilder;
@@ -44,7 +46,6 @@ import org.apache.distributedlog.exceptions.LogExistsException;
 import org.apache.distributedlog.exceptions.UnexpectedException;
 import org.apache.distributedlog.impl.BKNamespaceDriver;
 import org.apache.distributedlog.metadata.LogMetadataStore;
-import org.apache.distributedlog.util.OrderedScheduler;
 import org.apache.distributedlog.util.Utils;
 import org.junit.After;
 import org.junit.Before;
@@ -130,9 +131,9 @@ public class TestFederatedZKLogMetadataStore extends TestDistributedLogBase {
                 .uri(createDLMURI("/"))
                 .sessionTimeoutMs(zkSessionTimeoutMs)
                 .build();
-        scheduler = OrderedScheduler.newBuilder()
+        scheduler = OrderedScheduler.newSchedulerBuilder()
                 .name("test-zk-logmetadata-store")
-                .corePoolSize(2)
+                .numThreads(2)
                 .build();
         DistributedLogConfiguration conf = new DistributedLogConfiguration();
         conf.addConfiguration(baseConf);

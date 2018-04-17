@@ -18,6 +18,7 @@
 package org.apache.distributedlog;
 
 import static com.google.common.base.Charsets.UTF_8;
+
 import com.google.common.collect.ImmutableList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;

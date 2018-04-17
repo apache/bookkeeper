@@ -15,6 +15,7 @@
  */
 package org.apache.bookkeeper.bookie;
 
+import static org.apache.bookkeeper.util.BookKeeperConstants.READONLY;
 import static org.junit.Assert.assertEquals;
 
 import java.io.File;
@@ -107,6 +108,10 @@ public class EnableZkSecurityBasicTest extends BookKeeperClusterTestCase {
     private void checkACls(ZooKeeper zk, String path) throws KeeperException, InterruptedException {
         List<String> children = zk.getChildren(path, null);
         for (String child : children) {
+            if (child.equals(READONLY)) {
+                continue;
+            }
+
             String fullPath = path.equals("/") ? path + child : path + "/" + child;
             List<ACL> acls = zk.getACL(fullPath, new Stat());
             checkACls(zk, fullPath);

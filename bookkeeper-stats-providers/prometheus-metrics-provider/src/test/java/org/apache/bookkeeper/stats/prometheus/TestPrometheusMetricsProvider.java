@@ -19,18 +19,15 @@ package org.apache.bookkeeper.stats.prometheus;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
 
-import io.prometheus.client.Collector;
-import io.prometheus.client.CollectorRegistry;
-import java.lang.reflect.Field;
-import java.util.Map;
 import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.junit.Test;
 
+/**
+ * Unit test of {@link PrometheusMetricsProvider}.
+ */
 public class TestPrometheusMetricsProvider {
-
-    private final CollectorRegistry registry = new CollectorRegistry();
 
     @Test
     public void testCache() {
@@ -53,7 +50,7 @@ public class TestPrometheusMetricsProvider {
 
     @Test
     public void testCounter() {
-        PrometheusCounter counter = new PrometheusCounter(registry, "testcounter");
+        LongAdderCounter counter = new LongAdderCounter();
         long value = counter.get();
         assertEquals(0L, value);
         counter.inc();
@@ -65,14 +62,16 @@ public class TestPrometheusMetricsProvider {
     }
 
     @Test
-    @SuppressWarnings("unchecked")
     public void testTwoCounters() throws Exception {
-        PrometheusCounter counter1 = new PrometheusCounter(registry, "testcounter");
-        PrometheusCounter counter2 = new PrometheusCounter(registry, "testcounter");
-        Field collectorsMapField = CollectorRegistry.class.getDeclaredField("namesToCollectors");
-        collectorsMapField.setAccessible(true);
-        Map<String, Collector> collectorMap = (Map<String, Collector>) collectorsMapField.get(registry);
-        assertEquals(1, collectorMap.size());
+        PrometheusMetricsProvider provider = new PrometheusMetricsProvider();
+        StatsLogger statsLogger =  provider.getStatsLogger("test");
+
+        Counter counter1 = statsLogger.getCounter("counter");
+        Counter counter2 = statsLogger.getCounter("counter");
+        assertEquals(counter1, counter2);
+        assertSame(counter1, counter2);
+
+        assertEquals(1, provider.counters.size());
     }
 
 }

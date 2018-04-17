@@ -20,6 +20,8 @@
  */
 package org.apache.bookkeeper.tests;
 
+import com.google.common.collect.Lists;
+
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -39,4 +41,11 @@ public class MavenClassLoaderTest {
                                    org.apache.zookeeper.KeeperException.NoNodeException.class));
     }
 
+    @Test
+    public void testStaticMethod() throws Exception {
+        Object o = MavenClassLoader.forBookKeeperVersion("4.6.0").callStaticMethod(
+                "org.apache.bookkeeper.client.BKException", "create", Lists.newArrayList(-101));
+        Assert.assertEquals(o.getClass().getName(),
+                            "org.apache.bookkeeper.client.BKException$BKLedgerFencedException");
+    }
 }

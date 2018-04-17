@@ -46,6 +46,7 @@ public class ReadOnlyBookieTest extends BookKeeperClusterTestCase {
         super(2);
         baseConf.setLedgerStorageClass(InterleavedLedgerStorage.class.getName());
         baseConf.setEntryLogFilePreAllocationEnabled(false);
+        baseConf.setMinUsableSizeForEntryLogCreation(Long.MAX_VALUE);
     }
 
     /**

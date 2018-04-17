@@ -236,6 +236,7 @@ public class BookieFailureTest extends BookKeeperClusterTestCase
             LOG.error("Caught BKException", e);
             fail(e.toString());
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             LOG.error("Caught InterruptedException", e);
             fail(e.toString());
         }

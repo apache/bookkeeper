@@ -17,7 +17,8 @@
  */
 package org.apache.distributedlog;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertTrue;
+
 import com.google.common.base.Stopwatch;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;

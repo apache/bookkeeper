@@ -25,16 +25,17 @@ import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
+import org.apache.bookkeeper.common.concurrent.FutureEventListener;
+import org.apache.bookkeeper.common.concurrent.FutureUtils;
+import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.distributedlog.common.concurrent.AsyncSemaphore;
-import org.apache.distributedlog.common.concurrent.FutureEventListener;
-import org.apache.distributedlog.common.concurrent.FutureUtils;
 import org.apache.distributedlog.exceptions.LockingException;
 import org.apache.distributedlog.exceptions.OwnershipAcquireFailedException;
 import org.apache.distributedlog.exceptions.UnexpectedException;
-import org.apache.distributedlog.util.OrderedScheduler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -92,7 +93,9 @@ public class ZKDistributedLock implements LockListener, DistributedLock {
     private CompletableFuture<Void> closeFuture = null;
 
     // A counter to track how many re-acquires happened during a lock's life cycle.
-    private final AtomicInteger reacquireCount = new AtomicInteger(0);
+    private static final AtomicIntegerFieldUpdater<ZKDistributedLock> reacquireCountUpdater =
+        AtomicIntegerFieldUpdater.newUpdater(ZKDistributedLock.class, "reacquireCount");
+    private volatile int reacquireCount = 0;
     private final StatsLogger lockStatsLogger;
     private final OpStatsLogger acquireStats;
     private final OpStatsLogger reacquireStats;
@@ -132,6 +135,7 @@ public class ZKDistributedLock implements LockListener, DistributedLock {
      * Asynchronously acquire the lock. Technically the try phase of this operation--which adds us to the waiter
      * list--is executed synchronously, but the lock wait itself doesn't block.
      */
+    @Override
     public synchronized CompletableFuture<ZKDistributedLock> asyncAcquire() {
         if (null != lockAcquireFuture) {
             return FutureUtils.exception(
@@ -142,7 +146,7 @@ public class ZKDistributedLock implements LockListener, DistributedLock {
             if (null == throwable || !(throwable instanceof CancellationException)) {
                 return;
             }
-            lockStateExecutor.submit(lockPath, () -> asyncClose());
+            lockStateExecutor.executeOrdered(lockPath, () -> asyncClose());
         });
         final Stopwatch stopwatch = Stopwatch.createStarted();
         promise.whenComplete(new FutureEventListener<ZKDistributedLock>() {
@@ -162,12 +166,8 @@ public class ZKDistributedLock implements LockListener, DistributedLock {
             }
         });
         this.lockAcquireFuture = promise;
-        lockStateExecutor.submit(lockPath, new Runnable() {
-            @Override
-            public void run() {
-                doAsyncAcquireWithSemaphore(promise, lockTimeout);
-            }
-        });
+        lockStateExecutor.executeOrdered(
+            lockPath, () -> doAsyncAcquireWithSemaphore(promise, lockTimeout));
         return promise;
     }
 
@@ -218,7 +218,7 @@ public class ZKDistributedLock implements LockListener, DistributedLock {
             public void onFailure(Throwable cause) {
                 FutureUtils.completeExceptionally(acquirePromise, cause);
             }
-        }, lockStateExecutor.chooseExecutor(lockPath));
+        }, lockStateExecutor.chooseThread(lockPath));
     }
 
     void asyncTryLock(SessionLock lock,
@@ -251,7 +251,7 @@ public class ZKDistributedLock implements LockListener, DistributedLock {
                 public void onFailure(Throwable cause) {
                     FutureUtils.completeExceptionally(acquirePromise, cause);
                 }
-            }, lockStateExecutor.chooseExecutor(lockPath));
+            }, lockStateExecutor.chooseThread(lockPath));
     }
 
     void waitForAcquire(final LockWaiter waiter,
@@ -273,7 +273,7 @@ public class ZKDistributedLock implements LockListener, DistributedLock {
                 public void onFailure(Throwable cause) {
                     FutureUtils.completeExceptionally(acquirePromise, cause);
                 }
-            }, lockStateExecutor.chooseExecutor(lockPath));
+            }, lockStateExecutor.chooseThread(lockPath));
     }
 
     /**
@@ -294,6 +294,7 @@ public class ZKDistributedLock implements LockListener, DistributedLock {
      *
      * @throws LockingException     if the lock attempt fails
      */
+    @Override
     public synchronized void checkOwnershipAndReacquire() throws LockingException {
         if (null == lockAcquireFuture || !lockAcquireFuture.isDone()) {
             throw new LockingException(lockPath, "check ownership before acquiring");
@@ -316,6 +317,7 @@ public class ZKDistributedLock implements LockListener, DistributedLock {
      *
      * @throws LockingException     if the lock attempt fails
      */
+    @Override
     public synchronized void checkOwnership() throws LockingException {
         if (null == lockAcquireFuture || !lockAcquireFuture.isDone()) {
             throw new LockingException(lockPath, "check ownership before acquiring");
@@ -327,7 +329,7 @@ public class ZKDistributedLock implements LockListener, DistributedLock {
 
     @VisibleForTesting
     int getReacquireCount() {
-        return reacquireCount.get();
+        return reacquireCountUpdater.get(this);
     }
 
     @VisibleForTesting
@@ -369,7 +371,7 @@ public class ZKDistributedLock implements LockListener, DistributedLock {
                     public void onFailure(Throwable cause) {
                         unlockInternalLock(closePromise);
                     }
-                }, lockStateExecutor.chooseExecutor(lockPath));
+                }, lockStateExecutor.chooseThread(lockPath));
             waiter.getAcquireFuture().cancel(true);
         }
     }
@@ -389,7 +391,7 @@ public class ZKDistributedLock implements LockListener, DistributedLock {
                     public void onFailure(Throwable cause) {
                         unlockInternalLock(closePromise);
                     }
-                }, lockStateExecutor.chooseExecutor(lockPath));
+                }, lockStateExecutor.chooseThread(lockPath));
             tryLockFuture.cancel(true);
         }
     }
@@ -426,25 +428,17 @@ public class ZKDistributedLock implements LockListener, DistributedLock {
             private void complete() {
                 FutureUtils.complete(closePromise, null);
             }
-        }, lockStateExecutor.chooseExecutor(lockPath));
-        lockStateExecutor.submit(lockPath, new Runnable() {
-            @Override
-            public void run() {
-                closeWaiter(lockWaiter, closeWaiterFuture);
-            }
-        });
+        }, lockStateExecutor.chooseThread(lockPath));
+        lockStateExecutor.executeOrdered(
+            lockPath, () -> closeWaiter(lockWaiter, closeWaiterFuture));
         return closePromise;
     }
 
     void internalReacquireLock(final AtomicInteger numRetries,
                                final long lockTimeout,
                                final CompletableFuture<ZKDistributedLock> reacquirePromise) {
-        lockStateExecutor.submit(lockPath, new Runnable() {
-            @Override
-            public void run() {
-                doInternalReacquireLock(numRetries, lockTimeout, reacquirePromise);
-            }
-        });
+        lockStateExecutor.executeOrdered(
+            lockPath, () -> doInternalReacquireLock(numRetries, lockTimeout, reacquirePromise));
     }
 
     void doInternalReacquireLock(final AtomicInteger numRetries,
@@ -523,7 +517,7 @@ public class ZKDistributedLock implements LockListener, DistributedLock {
                 }
             });
         }
-        reacquireCount.incrementAndGet();
+        reacquireCountUpdater.incrementAndGet(this);
         internalReacquireLock(new AtomicInteger(Integer.MAX_VALUE), 0, lockPromise);
         return lockPromise;
     }

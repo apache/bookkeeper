@@ -10,7 +10,7 @@ clean:
 	rm -rf _site local-generated generated_site
 
 setup:
-	gem install bundler \
+	gem install --user-install bundler \
 		--no-rdoc \
 		--no-ri
 	NOKOGIRI_USE_SYSTEM_LIBRARIES=true $(BUNDLE) install \

@@ -38,6 +38,7 @@ import java.util.concurrent.CountDownLatch;
 import org.apache.bookkeeper.auth.AuthProviderFactoryFactory;
 import org.apache.bookkeeper.auth.ClientAuthProvider;
 import org.apache.bookkeeper.auth.TestAuth;
+import org.apache.bookkeeper.common.util.OrderedExecutor;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.net.BookieSocketAddress;
@@ -47,17 +48,14 @@ import org.apache.bookkeeper.proto.BookieProtocol.ReadRequest;
 import org.apache.bookkeeper.proto.BookieProtocol.Request;
 import org.apache.bookkeeper.proto.BookieProtocol.Response;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessage;
+import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
-import org.apache.bookkeeper.util.OrderedSafeExecutor;
 import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Test backward compatibility.
  */
 public class TestBackwardCompatCMS42 extends BookKeeperClusterTestCase {
-    static final Logger LOG = LoggerFactory.getLogger(TestBackwardCompatCMS42.class);
 
     private static final byte[] SUCCESS_RESPONSE = {1};
     private static final byte[] FAILURE_RESPONSE = {2};
@@ -66,7 +64,7 @@ public class TestBackwardCompatCMS42 extends BookKeeperClusterTestCase {
     ExtensionRegistry extRegistry = ExtensionRegistry.newInstance();
     ClientAuthProvider.Factory authProvider;
     EventLoopGroup eventLoopGroup = new NioEventLoopGroup();
-    OrderedSafeExecutor executor = OrderedSafeExecutor.newBuilder().numThreads(1).name("TestBackwardCompatClient")
+    OrderedExecutor executor = OrderedExecutor.newBuilder().numThreads(1).name("TestBackwardCompatClient")
             .build();
 
     public TestBackwardCompatCMS42() throws Exception {
@@ -166,7 +164,7 @@ public class TestBackwardCompatCMS42 extends BookKeeperClusterTestCase {
         }
 
         client.sendRequest(new ReadRequest(BookieProtocol.CURRENT_PROTOCOL_VERSION,
-                                           1L, 1L, (short) 0));
+                                           1L, 1L, (short) 0, null));
         Response response = client.takeResponse();
         assertEquals("Should have failed",
                      response.getErrorCode(), BookieProtocol.EUA);
@@ -181,7 +179,9 @@ public class TestBackwardCompatCMS42 extends BookKeeperClusterTestCase {
     }
 
     CompatClient42 newCompatClient(BookieSocketAddress addr) throws Exception {
-        return new CompatClient42(executor, eventLoopGroup, addr, authProvider, extRegistry);
+        ClientConfiguration conf = new ClientConfiguration();
+        conf.setUseV2WireProtocol(true);
+        return new CompatClient42(conf, executor, eventLoopGroup, addr, authProvider, extRegistry);
     }
 
     // extending PerChannelBookieClient to get the pipeline factory
@@ -190,11 +190,21 @@ public class TestBackwardCompatCMS42 extends BookKeeperClusterTestCase {
         Channel channel;
         final CountDownLatch connected = new CountDownLatch(1);
 
-        CompatClient42(OrderedSafeExecutor executor, EventLoopGroup eventLoopGroup,
+        CompatClient42(ClientConfiguration conf,
+                       OrderedExecutor executor,
+                       EventLoopGroup eventLoopGroup,
                        BookieSocketAddress addr,
                        ClientAuthProvider.Factory authProviderFactory,
                        ExtensionRegistry extRegistry) throws Exception {
-            super(executor, eventLoopGroup, addr, authProviderFactory, extRegistry);
+            super(
+                conf,
+                executor,
+                eventLoopGroup,
+                addr,
+                NullStatsLogger.INSTANCE,
+                authProviderFactory,
+                extRegistry,
+                null);
 
             state = ConnectionState.CONNECTING;
             ChannelFuture future = connect();

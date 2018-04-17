@@ -22,6 +22,7 @@ import static com.google.common.base.Charsets.UTF_8;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+
 import java.io.IOException;
 import org.apache.distributedlog.LogSegmentMetadata.LogSegmentMetadataBuilder;
 import org.apache.distributedlog.LogSegmentMetadata.LogSegmentMetadataVersion;

@@ -21,12 +21,15 @@
 package org.apache.bookkeeper.client;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static org.apache.bookkeeper.meta.MetadataDrivers.runFunctionWithMetadataBookieDriver;
+import static org.apache.bookkeeper.meta.MetadataDrivers.runFunctionWithRegistrationManager;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.AbstractFuture;
 
+import com.google.common.util.concurrent.UncheckedExecutionException;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -61,7 +64,6 @@ import org.apache.bookkeeper.client.SyncCallbackUtils.SyncReadCallback;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.discover.RegistrationClient.RegistrationListener;
-import org.apache.bookkeeper.discover.RegistrationManager;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManager.LedgerRangeIterator;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
@@ -228,7 +230,10 @@ public class BookKeeperAdmin implements AutoCloseable {
      */
     public void watchWritableBookiesChanged(final RegistrationListener listener)
             throws BKException {
-        bkc.regClient.watchWritableBookies(listener);
+        bkc
+            .getMetadataClientDriver()
+            .getRegistrationClient()
+            .watchWritableBookies(listener);
     }
 
     /**
@@ -240,7 +245,10 @@ public class BookKeeperAdmin implements AutoCloseable {
      */
     public void watchReadOnlyBookiesChanged(final RegistrationListener listener)
             throws BKException {
-        bkc.regClient.watchReadOnlyBookies(listener);
+        bkc
+            .getMetadataClientDriver()
+            .getRegistrationClient()
+            .watchReadOnlyBookies(listener);
     }
 
     /**
@@ -386,7 +394,8 @@ public class BookKeeperAdmin implements AutoCloseable {
                 try {
                     CompletableFuture<Enumeration<LedgerEntry>> result = new CompletableFuture<>();
 
-                    handle.asyncReadEntriesInternal(nextEntryId, nextEntryId, new SyncReadCallback(result), null);
+                    handle.asyncReadEntriesInternal(nextEntryId, nextEntryId,
+                                                    new SyncReadCallback(result), null, false);
 
                     currentEntry = SyncCallbackUtils.waitForResult(result).nextElement();
 
@@ -1125,38 +1134,42 @@ public class BookKeeperAdmin implements AutoCloseable {
      */
     public static boolean format(ServerConfiguration conf,
             boolean isInteractive, boolean force) throws Exception {
+        return runFunctionWithMetadataBookieDriver(conf, driver -> {
+            try {
+                boolean ledgerRootExists = driver.getRegistrationManager().prepareFormat();
 
-        try (RegistrationManager rm = RegistrationManager.instantiateRegistrationManager(conf)) {
-            boolean ledgerRootExists = rm.prepareFormat();
-
-            // If old data was there then confirm with admin.
-            boolean doFormat = true;
-            if (ledgerRootExists) {
-                if (!isInteractive) {
-                    // If non interactive and force is set, then delete old data.
-                    if (force) {
-                        doFormat = true;
+                // If old data was there then confirm with admin.
+                boolean doFormat = true;
+                if (ledgerRootExists) {
+                    if (!isInteractive) {
+                        // If non interactive and force is set, then delete old data.
+                        if (force) {
+                            doFormat = true;
+                        } else {
+                            doFormat = false;
+                        }
                     } else {
-                        doFormat = false;
+                        // Confirm with the admin.
+                        doFormat = IOUtils
+                            .confirmPrompt("Ledger root already exists. "
+                                + "Are you sure to format bookkeeper metadata? "
+                                + "This may cause data loss.");
                     }
-                } else {
-                    // Confirm with the admin.
-                    doFormat = IOUtils
-                        .confirmPrompt("Ledger root already exists. "
-                            + "Are you sure to format bookkeeper metadata? "
-                            + "This may cause data loss.");
                 }
+
+                if (!doFormat) {
+                    return false;
+                }
+
+                driver.getLedgerManagerFactory().format(
+                    conf,
+                    driver.getLayoutManager());
+
+                return driver.getRegistrationManager().format();
+            } catch (Exception e) {
+                throw new UncheckedExecutionException(e.getMessage(), e);
             }
-
-            if (!doFormat) {
-                return false;
-            }
-
-            BookKeeper bkc = new BookKeeper(new ClientConfiguration(conf));
-            bkc.ledgerManagerFactory.format(conf, bkc.regClient.getLayoutManager());
-
-            return rm.format();
-        }
+        });
     }
 
     /**
@@ -1168,9 +1181,13 @@ public class BookKeeperAdmin implements AutoCloseable {
      * @throws Exception
      */
     public static boolean initNewCluster(ServerConfiguration conf) throws Exception {
-        try (RegistrationManager rm = RegistrationManager.instantiateRegistrationManager(conf)) {
-            return rm.initNewCluster();
-        }
+        return runFunctionWithRegistrationManager(conf, rm -> {
+            try {
+                return rm.initNewCluster();
+            } catch (Exception e) {
+                throw new UncheckedExecutionException(e.getMessage(), e);
+            }
+        });
     }
 
     /**
@@ -1195,17 +1212,21 @@ public class BookKeeperAdmin implements AutoCloseable {
             return false;
         }
 
-        try (RegistrationManager rm = RegistrationManager.instantiateRegistrationManager(conf)) {
-            if (!force) {
-                String readInstanceId = rm.getClusterInstanceId();
-                if ((instanceId == null) || !instanceId.equals(readInstanceId)) {
-                    LOG.error("Provided InstanceId : {} is not matching with cluster InstanceId in ZK: {}", instanceId,
-                            readInstanceId);
-                    return false;
+        return runFunctionWithRegistrationManager(conf, rm -> {
+            try {
+                if (!force) {
+                    String readInstanceId = rm.getClusterInstanceId();
+                    if ((instanceId == null) || !instanceId.equals(readInstanceId)) {
+                        LOG.error("Provided InstanceId : {} is not matching with cluster InstanceId in ZK: {}",
+                            instanceId, readInstanceId);
+                        return false;
+                    }
                 }
+                return rm.nukeExistingCluster();
+            } catch (Exception e) {
+                throw new UncheckedExecutionException(e.getMessage(), e);
             }
-            return rm.nukeExistingCluster();
-        }
+        });
     }
 
     /**
@@ -1237,28 +1258,32 @@ public class BookKeeperAdmin implements AutoCloseable {
             }
         }
 
-        try (RegistrationManager rm = RegistrationManager.instantiateRegistrationManager(conf)) {
-            /*
-             * make sure that there is no bookie registered with the same
-             * bookieid and the cookie for the same bookieid is not existing.
-             */
-            String bookieId = Bookie.getBookieAddress(conf).toString();
-            if (rm.isBookieRegistered(bookieId)) {
-                LOG.error("Bookie with bookieId: {} is still registered, "
-                        + "If this node is running bookie process, try stopping it first.", bookieId);
-                return false;
-            }
-
+        return runFunctionWithRegistrationManager(conf, rm -> {
             try {
-                rm.readCookie(bookieId);
-                LOG.error("Cookie still exists in the ZK for this bookie: {}, try formatting the bookie", bookieId);
-                return false;
-            } catch (BookieException.CookieNotFoundException nfe) {
-                // it is expected for readCookie to fail with
-                // BookieException.CookieNotFoundException
+                /*
+                 * make sure that there is no bookie registered with the same
+                 * bookieid and the cookie for the same bookieid is not existing.
+                 */
+                String bookieId = Bookie.getBookieAddress(conf).toString();
+                if (rm.isBookieRegistered(bookieId)) {
+                    LOG.error("Bookie with bookieId: {} is still registered, "
+                        + "If this node is running bookie process, try stopping it first.", bookieId);
+                    return false;
+                }
+
+                try {
+                    rm.readCookie(bookieId);
+                    LOG.error("Cookie still exists in the ZK for this bookie: {}, try formatting the bookie", bookieId);
+                    return false;
+                } catch (BookieException.CookieNotFoundException nfe) {
+                    // it is expected for readCookie to fail with
+                    // BookieException.CookieNotFoundException
+                }
+                return true;
+            } catch (Exception e) {
+                throw new UncheckedExecutionException(e.getMessage(), e);
             }
-            return true;
-        }
+        });
     }
 
     private static boolean validateDirectoriesAreEmpty(File[] dirs, String typeOfDir) {
@@ -1464,13 +1489,16 @@ public class BookKeeperAdmin implements AutoCloseable {
 
         // for double-checking, check if any ledgers are listed as underreplicated because of this bookie
         Predicate<List<String>> predicate = replicasList -> replicasList.contains(bookieAddress.toString());
-        Iterator<Long> urLedgerIterator = underreplicationManager.listLedgersToRereplicate(predicate);
+        Iterator<Map.Entry<Long, List<String>>> urLedgerIterator = underreplicationManager
+                .listLedgersToRereplicate(predicate, false);
         if (urLedgerIterator.hasNext()) {
             //if there are any then wait and make sure those ledgers are replicated properly
             LOG.info("Still in some underreplicated ledgers metadata, this bookie is part of its ensemble. "
                     + "Have to make sure that those ledger fragments are rereplicated");
             List<Long> urLedgers = new ArrayList<>();
-            urLedgerIterator.forEachRemaining(urLedgers::add);
+            urLedgerIterator.forEachRemaining((urLedger) -> {
+                urLedgers.add(urLedger.getKey());
+            });
             waitForLedgersToBeReplicated(urLedgers, bookieAddress, bkc.ledgerManager);
         }
     }
@@ -1510,7 +1538,10 @@ public class BookKeeperAdmin implements AutoCloseable {
                 }
             }
             return false;
-        } catch (InterruptedException | ExecutionException e) {
+        } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(ie);
+        } catch (ExecutionException e) {
             if (e.getCause() != null
                     && e.getCause().getClass().equals(BKException.BKNoSuchLedgerExistsException.class)) {
                 LOG.debug("Ledger: {} has been deleted", ledgerId);

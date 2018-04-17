@@ -42,7 +42,6 @@ import org.apache.bookkeeper.bookie.FileInfoBackingCache.CachedFileInfo;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager;
-import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks;
 import org.apache.bookkeeper.stats.StatsLogger;
@@ -64,7 +63,6 @@ public class LedgerCacheTest {
     private static final Logger LOG = LoggerFactory.getLogger(LedgerCacheTest.class);
 
     SnapshotMap<Long, Boolean> activeLedgers;
-    LedgerManagerFactory ledgerManagerFactory;
     LedgerCache ledgerCache;
     Thread flushThread;
     ServerConfiguration conf;
@@ -87,8 +85,6 @@ public class LedgerCacheTest {
         conf.setLedgerDirNames(new String[] { ledgerDir.getPath() });
         bookie = new Bookie(conf);
 
-        ledgerManagerFactory =
-            LedgerManagerFactory.newLedgerManagerFactory(conf, null);
         activeLedgers = new SnapshotMap<Long, Boolean>();
         ledgerCache = ((InterleavedLedgerStorage) bookie.ledgerStorage).ledgerCache;
     }
@@ -100,7 +96,6 @@ public class LedgerCacheTest {
             flushThread.join();
         }
         bookie.ledgerStorage.shutdown();
-        ledgerManagerFactory.close();
         FileUtils.deleteDirectory(txnDir);
         FileUtils.deleteDirectory(ledgerDir);
         for (File dir : tempDirs) {

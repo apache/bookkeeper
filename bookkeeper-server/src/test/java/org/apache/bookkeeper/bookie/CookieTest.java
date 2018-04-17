@@ -32,6 +32,7 @@ import static org.junit.Assert.fail;
 import com.google.common.collect.Sets;
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -40,7 +41,8 @@ import org.apache.bookkeeper.client.BookKeeperAdmin;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.discover.RegistrationManager;
-import org.apache.bookkeeper.discover.ZKRegistrationManager;
+import org.apache.bookkeeper.meta.MetadataBookieDriver;
+import org.apache.bookkeeper.meta.MetadataDrivers;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.test.PortManager;
@@ -75,21 +77,24 @@ public class CookieTest extends BookKeeperClusterTestCase {
         return d.getPath();
     }
 
+    MetadataBookieDriver metadataBookieDriver;
     RegistrationManager rm;
 
     @Override
     public void setUp() throws Exception {
         super.setUp();
-        rm = new ZKRegistrationManager();
         baseConf.setZkServers(zkUtil.getZooKeeperConnectString());
-        rm.initialize(baseConf, () -> {}, NullStatsLogger.INSTANCE);
+        this.metadataBookieDriver = MetadataDrivers.getBookieDriver(
+            URI.create(baseConf.getMetadataServiceUri()));
+        this.metadataBookieDriver.initialize(baseConf, () -> {}, NullStatsLogger.INSTANCE);
+        this.rm = metadataBookieDriver.getRegistrationManager();
     }
 
     @Override
     public void tearDown() throws Exception {
         super.tearDown();
-        if (rm != null) {
-            rm.close();
+        if (metadataBookieDriver != null) {
+            metadataBookieDriver.close();
         }
     }
 

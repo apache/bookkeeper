@@ -20,29 +20,29 @@
  */
 package org.apache.bookkeeper.client;
 
+import static org.apache.bookkeeper.meta.MetadataDrivers.runFunctionWithLedgerManagerFactory;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import com.google.common.util.concurrent.UncheckedExecutionException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import lombok.Cleanup;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
-import org.apache.bookkeeper.discover.RegistrationManager;
 import org.apache.bookkeeper.meta.HierarchicalLedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerIdGenerator;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LongHierarchicalLedgerManagerFactory;
-import org.apache.bookkeeper.meta.MSLedgerManagerFactory;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.LedgerMetadataListener;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
-import org.apache.bookkeeper.util.ReflectionUtils;
 import org.apache.bookkeeper.versioning.Version;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -77,7 +77,7 @@ public class TestWatchEnsembleChange extends BookKeeperClusterTestCase {
                 { org.apache.bookkeeper.meta.FlatLedgerManagerFactory.class },
                 { HierarchicalLedgerManagerFactory.class },
                 { LongHierarchicalLedgerManagerFactory.class },
-                { MSLedgerManagerFactory.class },
+                { org.apache.bookkeeper.meta.MSLedgerManagerFactory.class },
         });
     }
 
@@ -111,14 +111,20 @@ public class TestWatchEnsembleChange extends BookKeeperClusterTestCase {
 
     @Test
     public void testWatchMetadataRemoval() throws Exception {
-        LedgerManagerFactory factory = ReflectionUtils.newInstance(lmFactoryCls);
         baseConf.setZkServers(zkUtil.getZooKeeperConnectString());
-        factory.initialize(baseConf,
-            RegistrationManager.instantiateRegistrationManager(baseConf).getLayoutManager(),
-            factory.getCurrentVersion());
+        runFunctionWithLedgerManagerFactory(baseConf, factory -> {
+            try {
+                testWatchMetadataRemoval(factory);
+            } catch (Exception e) {
+                throw new UncheckedExecutionException(e.getMessage(), e);
+            }
+            return null;
+        });
+    }
 
-        final LedgerManager manager = factory.newLedgerManager();
-        LedgerIdGenerator idGenerator = factory.newLedgerIdGenerator();
+    private void testWatchMetadataRemoval(LedgerManagerFactory factory) throws Exception {
+        @Cleanup final LedgerManager manager = factory.newLedgerManager();
+        @Cleanup LedgerIdGenerator idGenerator = factory.newLedgerIdGenerator();
 
         final ByteBuffer bbLedgerId = ByteBuffer.allocate(8);
         final CountDownLatch createLatch = new CountDownLatch(1);

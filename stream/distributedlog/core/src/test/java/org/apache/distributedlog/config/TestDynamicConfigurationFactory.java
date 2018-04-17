@@ -17,7 +17,8 @@
  */
 package org.apache.distributedlog.config;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+
 import com.google.common.base.Objects;
 import com.google.common.base.Optional;
 import java.io.File;

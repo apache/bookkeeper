@@ -21,7 +21,6 @@
 package org.apache.bookkeeper.client.api;
 
 import java.util.concurrent.CompletableFuture;
-import lombok.SneakyThrows;
 import org.apache.bookkeeper.common.annotation.InterfaceAudience.Public;
 import org.apache.bookkeeper.common.annotation.InterfaceStability.Unstable;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
@@ -43,17 +42,23 @@ public interface Handle extends AutoCloseable {
     long getId();
 
     /**
-     * Close this ledger synchronously.
+     * Close this handle synchronously.
      *
      * @throws org.apache.bookkeeper.client.api.BKException
      * @throws java.lang.InterruptedException
-     * @see #asyncClose
+     * @see #closeAsync
      */
     @Override
-    @SneakyThrows(Exception.class)
     default void close() throws BKException, InterruptedException {
-        FutureUtils.result(asyncClose());
+        FutureUtils.<Void, BKException>result(closeAsync(), BKException.HANDLER);
     }
+
+    /**
+     * Asynchronous close the handle.
+     *
+     * @return an handle to access the result of the operation
+     */
+    CompletableFuture<Void> closeAsync();
 
     /**
      * Returns the metadata of this ledger.
@@ -65,18 +70,4 @@ public interface Handle extends AutoCloseable {
      * @return the metadata of this ledger.
      */
     LedgerMetadata getLedgerMetadata();
-
-    /**
-     * Asynchronous close, any adds in flight will return errors.
-     *
-     * <p>Closing a ledger will ensure that all clients agree on what the last
-     * entry of the ledger is. This ensures that, once the ledger has been closed,
-     * all reads from the ledger will return the same set of entries.
-     *
-     * @return an handle to access the result of the operation
-     *
-     * @see FutureUtils#result(java.util.concurrent.CompletableFuture) to have a simple method to access the result
-     */
-    CompletableFuture<Void> asyncClose();
-
 }

@@ -39,6 +39,7 @@ import java.util.NavigableMap;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import lombok.EqualsAndHashCode;
 import org.apache.bookkeeper.client.api.DigestType;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat;
@@ -52,6 +53,7 @@ import org.slf4j.LoggerFactory;
  *
  * <p>It provides parsing and serialization methods of such metadata.
  */
+@EqualsAndHashCode
 public class LedgerMetadata implements org.apache.bookkeeper.client.api.LedgerMetadata {
     static final Logger LOG = LoggerFactory.getLogger(LedgerMetadata.class);
 
@@ -237,6 +239,8 @@ public class LedgerMetadata implements org.apache.bookkeeper.client.api.LedgerMe
                 return DigestType.CRC32;
             case CRC32C:
                 return DigestType.CRC32C;
+            case DUMMY:
+                return DigestType.DUMMY;
             default:
                 throw new IllegalArgumentException("Unable to convert digest type " + digestType);
         }

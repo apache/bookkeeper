@@ -84,7 +84,7 @@ public class BookieJournalForceTest {
         whenNew(JournalChannel.class).withAnyArguments().thenReturn(jc);
 
         LedgerDirsManager ledgerDirsManager = mock(LedgerDirsManager.class);
-        Journal journal = new Journal(journalDir, conf, ledgerDirsManager);
+        Journal journal = new Journal(0, journalDir, conf, ledgerDirsManager);
 
         // machinery to suspend ForceWriteThread
         CountDownLatch forceWriteThreadSuspendedLatch = new CountDownLatch(1);
@@ -146,7 +146,7 @@ public class BookieJournalForceTest {
         whenNew(JournalChannel.class).withAnyArguments().thenReturn(jc);
 
         LedgerDirsManager ledgerDirsManager = mock(LedgerDirsManager.class);
-        Journal journal = new Journal(journalDir, conf, ledgerDirsManager);
+        Journal journal = new Journal(0, journalDir, conf, ledgerDirsManager);
 
         // machinery to suspend ForceWriteThread
         CountDownLatch forceWriteThreadSuspendedLatch = new CountDownLatch(1);
@@ -201,7 +201,7 @@ public class BookieJournalForceTest {
         whenNew(JournalChannel.class).withAnyArguments().thenReturn(jc);
 
         LedgerDirsManager ledgerDirsManager = mock(LedgerDirsManager.class);
-        Journal journal = new Journal(journalDir, conf, ledgerDirsManager);
+        Journal journal = new Journal(0, journalDir, conf, ledgerDirsManager);
 
         // machinery to suspend ForceWriteThread
         CountDownLatch forceWriteThreadSuspendedLatch = new CountDownLatch(1);
@@ -260,7 +260,7 @@ public class BookieJournalForceTest {
         whenNew(JournalChannel.class).withAnyArguments().thenReturn(jc);
 
         LedgerDirsManager ledgerDirsManager = mock(LedgerDirsManager.class);
-        Journal journal = new Journal(journalDir, conf, ledgerDirsManager);
+        Journal journal = new Journal(0, journalDir, conf, ledgerDirsManager);
         journal.start();
 
         final int numEntries = 100;

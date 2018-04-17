@@ -19,7 +19,10 @@ package org.apache.distributedlog.util;
 
 import static com.google.common.base.Charsets.UTF_8;
 import static org.apache.distributedlog.util.DLUtils.validateAndNormalizeName;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+
 import com.google.common.collect.Lists;
 import java.util.List;
 import org.apache.distributedlog.DLMTestUtil;

@@ -116,6 +116,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     // Replication parameters
     protected static final String AUDITOR_PERIODIC_CHECK_INTERVAL = "auditorPeriodicCheckInterval";
     protected static final String AUDITOR_PERIODIC_BOOKIE_CHECK_INTERVAL = "auditorPeriodicBookieCheckInterval";
+    protected static final String AUDITOR_LEDGER_VERIFICATION_PERCENTAGE = "auditorLedgerVerificationPercentage";
     protected static final String AUTO_RECOVERY_DAEMON_ENABLED = "autoRecoveryDaemonEnabled";
     protected static final String LOST_BOOKIE_RECOVERY_DELAY = "lostBookieRecoveryDelay";
     protected static final String RW_REREPLICATE_BACKOFF_MS = "rwRereplicateBackoffMs";
@@ -126,6 +127,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     protected static final String MAX_PENDING_READ_REQUESTS_PER_THREAD = "maxPendingReadRequestsPerThread";
     protected static final String MAX_PENDING_ADD_REQUESTS_PER_THREAD = "maxPendingAddRequestsPerThread";
     protected static final String NUM_LONG_POLL_WORKER_THREADS = "numLongPollWorkerThreads";
+    protected static final String NUM_HIGH_PRIORITY_WORKER_THREADS = "numHighPriorityWorkerThreads";
 
     // Long poll parameters
     protected static final String REQUEST_TIMER_TICK_DURATION_MILLISEC = "requestTimerTickDurationMs";
@@ -160,6 +162,8 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     protected static final String BOOKIE_AUTH_PROVIDER_FACTORY_CLASS = "bookieAuthProviderFactoryClass";
 
     protected static final String MIN_USABLESIZE_FOR_INDEXFILE_CREATION = "minUsableSizeForIndexFileCreation";
+    protected static final String MIN_USABLESIZE_FOR_ENTRYLOG_CREATION = "minUsableSizeForEntryLogCreation";
+    protected static final String MIN_USABLESIZE_FOR_HIGH_PRIORITY_WRITES = "minUsableSizeForHighPriorityWrites";
 
     protected static final String ALLOW_MULTIPLEDIRS_UNDER_SAME_DISKPARTITION =
         "allowMultipleDirsUnderSameDiskPartition";
@@ -176,6 +180,11 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
 
     // Stats
     protected static final String ENABLE_TASK_EXECUTION_STATS = "enableTaskExecutionStats";
+
+    /*
+     * config specifying if the entrylog per ledger is enabled or not.
+     */
+    protected static final String ENTRY_LOG_PER_LEDGER_ENABLED = "entryLogPerLedgerEnabled";
 
     /**
      * Construct a default configuration object.
@@ -458,7 +467,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return minimum size of initial file info cache.
      */
     public int getFileInfoCacheInitialCapacity() {
-        return getInt(FILEINFO_CACHE_INITIAL_CAPACITY, 64);
+        return getInt(FILEINFO_CACHE_INITIAL_CAPACITY, Math.max(getOpenFileLimit() / 4, 64));
     }
 
     /**
@@ -1281,11 +1290,39 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
 
     /**
      * Get the number of threads that should handle long poll requests.
-     * @return
+     *
+     * <p>If the number of threads is zero or negative, bookie will fallback to
+     * use read threads. If there is no read threads used, it will create a thread pool
+     * with {@link Runtime#availableProcessors()} threads.
+     *
+     * @return the number of threads that should handle long poll requests, default value is 0.
      */
     public int getNumLongPollWorkerThreads() {
-        return getInt(NUM_LONG_POLL_WORKER_THREADS, 10);
+        return getInt(NUM_LONG_POLL_WORKER_THREADS, 0);
     }
+
+    /**
+     * Set the number of threads that should be used for high priority requests
+     * (i.e. recovery reads and adds, and fencing)
+     *
+     * @param numThreads
+     *          number of threads to handle high priority requests.
+     * @return server configuration
+     */
+    public ServerConfiguration setNumHighPriorityWorkerThreads(int numThreads) {
+        setProperty(NUM_HIGH_PRIORITY_WORKER_THREADS, numThreads);
+        return this;
+    }
+
+    /**
+     * Get the number of threads that should be used for high priority requests
+     * (i.e. recovery reads and adds, and fencing)
+     * @return
+     */
+    public int getNumHighPriorityWorkerThreads() {
+        return getInt(NUM_HIGH_PRIORITY_WORKER_THREADS, 8);
+    }
+
 
     /**
      * Set the number of threads that would handle read requests.
@@ -1805,6 +1842,28 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     }
 
     /**
+     * Set what percentage of a ledger (fragment)'s entries will be verified.
+     * 0 - only the first and last entry of each ledger fragment would be verified
+     * 100 - the entire ledger fragment would be verified
+     * anything else - randomly picked entries from over the fragment would be verifiec
+     * @param auditorLedgerVerificationPercentage The verification proportion as a percentage
+     * @return ServerConfiguration
+     */
+    public ServerConfiguration setAuditorLedgerVerificationPercentage(long auditorLedgerVerificationPercentage) {
+        setProperty(AUDITOR_LEDGER_VERIFICATION_PERCENTAGE, auditorLedgerVerificationPercentage);
+        return this;
+    }
+
+    /**
+     * Get what percentage of a ledger (fragment)'s entries will be verified.
+     * @see #setAuditorLedgerVerificationPercentage(long)
+     * @return percentage of a ledger (fragment)'s entries will be verified. Default is 0.
+     */
+    public long getAuditorLedgerVerificationPercentage() {
+        return getLong(AUDITOR_LEDGER_VERIFICATION_PERCENTAGE, 0);
+    }
+
+    /**
      * Sets that whether the auto-recovery service can start along with Bookie
      * server itself or not.
      *
@@ -2010,7 +2069,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      */
     @Beta
     public boolean getJournalRemovePagesFromCache() {
-        return getBoolean(JOURNAL_REMOVE_FROM_PAGE_CACHE, false);
+        return getBoolean(JOURNAL_REMOVE_FROM_PAGE_CACHE, true);
     }
 
     /**
@@ -2452,7 +2511,8 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * Gets the minimum safe Usable size to be available in index directory for Bookie to create Index File while
      * replaying journal at the time of Bookie Start in Readonly Mode (in bytes).
      *
-     * @return
+     * @return minimum safe usable size to be available in index directory for bookie to create index files.
+     * @see #setMinUsableSizeForIndexFileCreation(long)
      */
     public long getMinUsableSizeForIndexFileCreation() {
         return this.getLong(MIN_USABLESIZE_FOR_INDEXFILE_CREATION, 100 * 1024 * 1024L);
@@ -2462,11 +2522,63 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * Sets the minimum safe Usable size to be available in index directory for Bookie to create Index File while
      * replaying journal at the time of Bookie Start in Readonly Mode (in bytes).
      *
-     * @param minUsableSizeForIndexFileCreation
-     * @return
+     * <p>This parameter allows creating index files when there are enough disk spaces, even when the bookie
+     * is running at readonly mode because of the disk usage is exceeding {@link #getDiskUsageThreshold()}. Because
+     * compaction, journal replays can still write index files to disks when a bookie is readonly.
+     *
+     * @param minUsableSizeForIndexFileCreation min usable size for index file creation
+     * @return server configuration
      */
     public ServerConfiguration setMinUsableSizeForIndexFileCreation(long minUsableSizeForIndexFileCreation) {
-        this.setProperty(MIN_USABLESIZE_FOR_INDEXFILE_CREATION, Long.toString(minUsableSizeForIndexFileCreation));
+        this.setProperty(MIN_USABLESIZE_FOR_INDEXFILE_CREATION, minUsableSizeForIndexFileCreation);
+        return this;
+    }
+
+    /**
+     * Gets the minimum safe usable size to be available in ledger directory for Bookie to create entry log files.
+     *
+     * @return minimum safe usable size to be available in ledger directory for entry log file creation.
+     * @see #setMinUsableSizeForEntryLogCreation(long)
+     */
+    public long getMinUsableSizeForEntryLogCreation() {
+        return this.getLong(MIN_USABLESIZE_FOR_ENTRYLOG_CREATION, (long) 1.2 * getEntryLogSizeLimit());
+    }
+
+    /**
+     * Sets the minimum safe usable size to be available in ledger directory for Bookie to create entry log files.
+     *
+     * <p>This parameter allows creating entry log files when there are enough disk spaces, even when the bookie
+     * is running at readonly mode because of the disk usage is exceeding {@link #getDiskUsageThreshold()}. Because
+     * compaction, journal replays can still write data to disks when a bookie is readonly.
+     *
+     * @param minUsableSizeForEntryLogCreation minimum safe usable size to be available in ledger directory
+     * @return server configuration
+     */
+    public ServerConfiguration setMinUsableSizeForEntryLogCreation(long minUsableSizeForEntryLogCreation) {
+        this.setProperty(MIN_USABLESIZE_FOR_ENTRYLOG_CREATION, minUsableSizeForEntryLogCreation);
+        return this;
+    }
+
+    /**
+     * Gets the minimum safe usable size to be available in ledger directory for Bookie to accept high priority writes.
+     *
+     * <p>If not set, it is the value of {@link #getMinUsableSizeForEntryLogCreation()}.
+     *
+     * @return the minimum safe usable size per ledger directory for bookie to accept high priority writes.
+     */
+    public long getMinUsableSizeForHighPriorityWrites() {
+        return this.getLong(MIN_USABLESIZE_FOR_HIGH_PRIORITY_WRITES, getMinUsableSizeForEntryLogCreation());
+    }
+
+    /**
+     * Sets the minimum safe usable size to be available in ledger directory for Bookie to accept high priority writes.
+     *
+     * @param minUsableSizeForHighPriorityWrites minimum safe usable size per ledger directory for Bookie to accept
+     *                                           high priority writes
+     * @return server configuration.
+     */
+    public ServerConfiguration setMinUsableSizeForHighPriorityWrites(long minUsableSizeForHighPriorityWrites) {
+        this.setProperty(MIN_USABLESIZE_FOR_HIGH_PRIORITY_WRITES, minUsableSizeForHighPriorityWrites);
         return this;
     }
 
@@ -2564,7 +2676,9 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      *
      * @param regManagerClass
      *            ManagerClass
+     * @deprecated since 4.7.0, in favor of using {@link #setMetadataServiceUri(String)}
      */
+    @Deprecated
     public void setRegistrationManagerClass(
             Class<? extends RegistrationManager> regManagerClass) {
         setProperty(REGISTRATION_MANAGER_CLASS, regManagerClass);
@@ -2574,7 +2688,9 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * Get Registration Manager Class.
      *
      * @return registration manager class.
+     * @deprecated since 4.7.0, in favor of using {@link #getMetadataServiceUri()}
      */
+    @Deprecated
     public Class<? extends RegistrationManager> getRegistrationManagerClass()
             throws ConfigurationException {
         return ReflectionUtils.getClass(this, REGISTRATION_MANAGER_CLASS,
@@ -2584,6 +2700,23 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
 
     @Override
     protected ServerConfiguration getThis() {
+        return this;
+    }
+
+    /*
+     * specifies if entryLog per ledger is enabled. If it is enabled, then there
+     * would be a active entrylog for each ledger
+     */
+    public boolean isEntryLogPerLedgerEnabled() {
+        return this.getBoolean(ENTRY_LOG_PER_LEDGER_ENABLED, false);
+    }
+
+    /*
+     * enables/disables entrylog per ledger feature.
+     *
+     */
+    public ServerConfiguration setEntryLogPerLedgerEnabled(boolean entryLogPerLedgerEnabled) {
+        this.setProperty(ENTRY_LOG_PER_LEDGER_ENABLED, Boolean.toString(entryLogPerLedgerEnabled));
         return this;
     }
 }

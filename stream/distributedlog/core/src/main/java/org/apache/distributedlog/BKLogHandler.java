@@ -31,8 +31,11 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.function.Function;
+import org.apache.bookkeeper.common.concurrent.FutureEventListener;
+import org.apache.bookkeeper.common.concurrent.FutureUtils;
+import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.bookkeeper.stats.AlertStatsLogger;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
@@ -40,8 +43,6 @@ import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.distributedlog.callback.LogSegmentNamesListener;
-import org.apache.distributedlog.common.concurrent.FutureEventListener;
-import org.apache.distributedlog.common.concurrent.FutureUtils;
 import org.apache.distributedlog.exceptions.LogEmptyException;
 import org.apache.distributedlog.exceptions.LogSegmentNotFoundException;
 import org.apache.distributedlog.exceptions.UnexpectedException;
@@ -52,12 +53,8 @@ import org.apache.distributedlog.logsegment.LogSegmentFilter;
 import org.apache.distributedlog.logsegment.LogSegmentMetadataCache;
 import org.apache.distributedlog.logsegment.LogSegmentMetadataStore;
 import org.apache.distributedlog.logsegment.PerStreamLogSegmentCache;
-
 import org.apache.distributedlog.metadata.LogMetadata;
-
 import org.apache.distributedlog.metadata.LogStreamMetadataStore;
-
-import org.apache.distributedlog.util.OrderedScheduler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -100,7 +97,9 @@ abstract class BKLogHandler implements AsyncCloseable, AsyncAbortable {
     protected final AlertStatsLogger alertStatsLogger;
     protected volatile boolean reportGetSegmentStats = false;
     private final String lockClientId;
-    protected final AtomicReference<IOException> metadataException = new AtomicReference<IOException>(null);
+    protected static final AtomicReferenceFieldUpdater<BKLogHandler, IOException> METADATA_EXCEPTION_UPDATER =
+        AtomicReferenceFieldUpdater.newUpdater(BKLogHandler.class, IOException.class, "metadataException");
+    private volatile IOException metadataException = null;
 
     // Maintain the list of log segments per stream
     protected final PerStreamLogSegmentCache logSegmentCache;
@@ -158,8 +157,9 @@ abstract class BKLogHandler implements AsyncCloseable, AsyncAbortable {
     }
 
     BKLogHandler checkMetadataException() throws IOException {
-        if (null != metadataException.get()) {
-            throw metadataException.get();
+        IOException ioe = METADATA_EXCEPTION_UPDATER.get(this);
+        if (null != ioe) {
+            throw ioe;
         }
         return this;
     }
@@ -483,7 +483,7 @@ abstract class BKLogHandler implements AsyncCloseable, AsyncAbortable {
             // the log segments cache went wrong
             LOG.error("Unexpected exception on getting log segments from the cache for stream {}",
                     getFullyQualifiedName(), ue);
-            metadataException.compareAndSet(null, ue);
+            METADATA_EXCEPTION_UPDATER.compareAndSet(this, null, ue);
             throw ue;
         }
     }

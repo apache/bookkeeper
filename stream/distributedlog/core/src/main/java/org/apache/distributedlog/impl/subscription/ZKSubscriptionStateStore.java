@@ -20,12 +20,11 @@ package org.apache.distributedlog.impl.subscription;
 import com.google.common.base.Charsets;
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
+import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.distributedlog.DLSN;
 import org.apache.distributedlog.ZooKeeperClient;
 import org.apache.distributedlog.api.subscription.SubscriptionStateStore;
-import org.apache.distributedlog.common.concurrent.FutureUtils;
-
 import org.apache.distributedlog.exceptions.DLInterruptedException;
 import org.apache.distributedlog.util.Utils;
 import org.apache.zookeeper.AsyncCallback;
@@ -43,7 +42,9 @@ public class ZKSubscriptionStateStore implements SubscriptionStateStore {
 
     private final ZooKeeperClient zooKeeperClient;
     private final String zkPath;
-    private AtomicReference<DLSN> lastCommittedPosition = new AtomicReference<DLSN>(null);
+    private static final AtomicReferenceFieldUpdater<ZKSubscriptionStateStore, DLSN> lastCommittedPositionUpdater =
+        AtomicReferenceFieldUpdater.newUpdater(ZKSubscriptionStateStore.class, DLSN.class, "lastCommittedPosition");
+    private volatile DLSN lastCommittedPosition = null;
 
     public ZKSubscriptionStateStore(ZooKeeperClient zooKeeperClient, String zkPath) {
         this.zooKeeperClient = zooKeeperClient;
@@ -59,8 +60,9 @@ public class ZKSubscriptionStateStore implements SubscriptionStateStore {
      */
     @Override
     public CompletableFuture<DLSN> getLastCommitPosition() {
-        if (null != lastCommittedPosition.get()) {
-            return FutureUtils.value(lastCommittedPosition.get());
+        DLSN dlsn = lastCommittedPositionUpdater.get(this);
+        if (null != dlsn) {
+            return FutureUtils.value(dlsn);
         } else {
             return getLastCommitPositionFromZK();
         }
@@ -93,6 +95,7 @@ public class ZKSubscriptionStateStore implements SubscriptionStateStore {
         } catch (ZooKeeperClient.ZooKeeperConnectionException zkce) {
             result.completeExceptionally(zkce);
         } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
             result.completeExceptionally(new DLInterruptedException("getLastCommitPosition was interrupted", ie));
         }
         return result;
@@ -105,9 +108,10 @@ public class ZKSubscriptionStateStore implements SubscriptionStateStore {
      */
     @Override
     public CompletableFuture<Void> advanceCommitPosition(DLSN newPosition) {
-        if (null == lastCommittedPosition.get()
-                || (newPosition.compareTo(lastCommittedPosition.get()) > 0)) {
-            lastCommittedPosition.set(newPosition);
+        DLSN dlsn = lastCommittedPositionUpdater.get(this);
+        if (null == dlsn
+                || (newPosition.compareTo(dlsn) > 0)) {
+            lastCommittedPositionUpdater.set(this, newPosition);
             return Utils.zkAsyncCreateFullPathOptimisticAndSetData(zooKeeperClient,
                 zkPath, newPosition.serialize().getBytes(Charsets.UTF_8),
                 zooKeeperClient.getDefaultACL(),

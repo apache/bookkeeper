@@ -17,7 +17,10 @@
  */
 package org.apache.distributedlog;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
 import com.google.common.base.Optional;
 import com.google.common.collect.Lists;
 import java.util.List;

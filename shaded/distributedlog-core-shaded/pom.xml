@@ -44,6 +44,14 @@
           <groupId>log4j</groupId>
           <artifactId>log4j</artifactId>
         </exclusion>
+        <exclusion>
+          <groupId>io.netty</groupId>
+          <artifactId>netty-common</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>io.netty</groupId>
+          <artifactId>netty-buffer</artifactId>
+        </exclusion>
       </exclusions>
     </dependency>
   </dependencies>
@@ -75,11 +83,8 @@
                   <include>com.fasterxml.jackson.core:jackson-annotations</include>
                   <include>com.google.guava:guava</include>
                   <include>com.google.protobuf:protobuf-java</include>
+                  <!-- netty 3 (included from zookeeper) -->
                   <include>io.netty:netty</include>
-                  <include>io.netty:netty-all</include>
-                  <include>io.netty:netty-buffer</include>
-                  <include>io.netty:netty-common</include>
-                  <include>io.netty:netty-tcnative-boringssl-static</include>
                   <include>net.java.dev.jna:jna</include>
                   <include>net.jpountz.lz4:lz4</include>
                   <include>org.apache.bookkeeper:bookkeeper-common</include>
@@ -170,10 +175,6 @@
                 </relocation>
                 <!-- netty -->
                 <relocation>
-                  <pattern>io.netty</pattern>
-                  <shadedPattern>dlshade.io.netty</shadedPattern>
-                </relocation>
-                <relocation>
                   <pattern>org.jboss.netty</pattern>
                   <shadedPattern>dlshade.org.jboss.netty</shadedPattern>
                 </relocation>
@@ -189,8 +190,12 @@
                 </relocation>
                 <!-- bookkeeper -->
                 <relocation>
+                  <pattern>com.scurrilous.circe</pattern>
+                  <shadedPattern>dlshade.com.scurrilous.circe</shadedPattern>
+                </relocation>
+                <relocation>
                   <pattern>org.apache.bookkeeper</pattern>
-                  <shadedPattern>org.apache.bookkeeper</shadedPattern>
+                  <shadedPattern>dlshade.org.apache.bookkeeper</shadedPattern>
                 </relocation>
                 <!-- distributedlog -->
                 <relocation>
@@ -205,7 +210,7 @@
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>license-maven-plugin</artifactId>
-        <version>1.6</version>
+        <version>${license-maven-plugin.version}</version>
         <configuration>
           <canUpdateCopyright>false</canUpdateCopyright>
           <roots><root>${project.basedir}</root></roots>
@@ -228,9 +233,9 @@
       </plugin>
       <plugin>
         <artifactId>maven-clean-plugin</artifactId>
-        <version>2.5</version>
-	<configuration>
-	  <filesets>
+        <version>${maven-clean-plugin.version}</version>
+        <configuration>
+          <filesets>
             <fileset>
               <directory>${project.basedir}</directory>
               <includes>
@@ -238,7 +243,7 @@
               </includes>
             </fileset>
           </filesets>
-	</configuration>
+        </configuration>
       </plugin>
     </plugins>
   </build>

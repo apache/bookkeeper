@@ -453,7 +453,7 @@ def get_reviewers(pr_num):
                 reviewers_ids.add(comment['user']['login'])
 
     approval_review_states = ['approved']
-    pr_reviews = get_json('{0}/pulls/{1}/reviews'.format(GITHUB_API_BASE, pr_num), True)
+    pr_reviews = get_json('{0}/pulls/{1}/reviews?per_page=100'.format(GITHUB_API_BASE, pr_num), True)
     for review in pr_reviews:
         for approval_state in approval_review_states:
             if approval_state in review['state'].lower():
@@ -475,6 +475,51 @@ def get_reviewers(pr_num):
             continue
         reviewers_emails.append('{0} <{1}>'.format(username.encode('utf8'), useremail))
     return ', '.join(reviewers_emails)
+
+def check_ci_status(pr):
+    ci_status = get_json("%s/commits/%s/status" % (GITHUB_API_BASE, pr["head"]["sha"]))
+    state = ci_status["state"]
+    if state != "success":
+        comments = get_json(pr["comments_url"])
+        ignore_ci_comments = [c for c in comments if c["body"].upper() == "IGNORE CI"]
+        if len(ignore_ci_comments) > 0:
+            print "\n\nWARNING: The PR has not passed CI (state is %s)" % (state) \
+                + ", but this has been overridden by %s. \n" % (ignore_ci_comments[0]["user"]["login"]) \
+                + "Proceed at your own peril!\n\n"
+        else:
+            check_individual_ci_status(ci_status, comments)
+
+
+def check_individual_ci_status(ci_status, comments):
+    postcommit_java9_success = False
+    postcommit_java8_success = False
+    integration_tests_success = False
+    travis_success = False
+    for status in ci_status["statuses"]:
+        if status["context"] == u"Jenkins: Maven clean install (Java 9)":
+            postcommit_java9_success = status["state"] == "success"
+        elif status["context"] == u"Jenkins: Maven clean install (Java 8)": 
+            postcommit_java8_success = status["state"] == "success"
+        elif status["context"] == u"Jenkins: Integration Tests": 
+            integration_tests_success = status["state"] == "success"
+        elif status["context"] == u"continuous-integration/travis-ci/pr":
+            travis_success = status["state"] == "success"
+
+    if postcommit_java8_success and postcommit_java9_success and travis_success and not integration_tests_success:
+        # all ci passed except integration tests
+        ignore_it_ci_comments = [c for c in comments if c["body"].upper() == "IGNORE IT CI"]
+        if len(ignore_it_ci_comments) > 0:
+            print "\n\nWARNING: The PR has not passed integration tests CI" \
+                + ", but this has been overridden by %s. \n" % (ignore_it_ci_comments[0]["user"]["login"]) \
+                + "Proceed at your own peril!\n\n"
+        else:
+            fail("The PR has not passed integration tests CI")
+    else:
+        fail("The PR has not passed CI:\n" \
+            + "\t Travis: %s\n" % travis_success \
+            + "\t PostCommit (Java 8): %s\n" % postcommit_java8_success \
+            + "\t PostCommit (Java 9): %s\n" % postcommit_java9_success \
+            + "\t Integration Tests: %s\n" % integration_tests_success)
 
 def ask_release_for_github_issues(branch, labels):
     print "=== Add release to github issues ==="
@@ -643,9 +688,11 @@ def main():
     pr = get_json("%s/pulls/%s" % (GITHUB_API_BASE, pr_num))
     pr_events = get_json("%s/issues/%s/events" % (GITHUB_API_BASE, pr_num))
     pr_reviewers = get_reviewers(pr_num)
+    check_ci_status(pr)
+
     url = pr["url"]
 
-    # 3. repare the title for commit message
+    # 3. repair the title for commit message
     pr_title = pr["title"]
     commit_title = raw_input("Commit title [%s]: " % pr_title.encode("utf-8")).decode("utf-8")
     if commit_title == "":

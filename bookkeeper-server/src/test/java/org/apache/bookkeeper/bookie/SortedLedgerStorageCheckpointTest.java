@@ -110,15 +110,26 @@ public class SortedLedgerStorageCheckpointTest extends LedgerStorageTestBase {
         // initial checkpoint
 
         this.storage = new SortedLedgerStorage();
-        this.checkpointer = checkpoint -> storage.getScheduler().submit(() -> {
-            log.info("Checkpoint the storage at {}", checkpoint);
-            try {
-                storage.checkpoint(checkpoint);
-                checkpoints.add(checkpoint);
-            } catch (IOException e) {
-                log.error("Failed to checkpoint at {}", checkpoint, e);
+        this.checkpointer = new Checkpointer() {
+            @Override
+            public void startCheckpoint(Checkpoint checkpoint) {
+                storage.getScheduler().submit(() -> {
+                    log.info("Checkpoint the storage at {}", checkpoint);
+                    try {
+                        storage.checkpoint(checkpoint);
+                        checkpoints.add(checkpoint);
+                    } catch (IOException e) {
+                        log.error("Failed to checkpoint at {}", checkpoint, e);
+                    }
+                });
             }
-        });
+
+            @Override
+            public void start() {
+                // no-op
+            }
+        };
+
         // if the SortedLedgerStorage need not to change bookie's state, pass StateManager==null is ok
         this.storage.initialize(
             conf,
@@ -203,6 +214,7 @@ public class SortedLedgerStorageCheckpointTest extends LedgerStorageTestBase {
             try {
                 readyLatch.await();
             } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
             }
         });
 

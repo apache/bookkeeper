@@ -18,23 +18,25 @@
  */
 package org.apache.bookkeeper.server.http;
 
+import static org.apache.bookkeeper.meta.MetadataDrivers.runFunctionWithLedgerManagerFactory;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import com.google.common.collect.Maps;
+import com.google.common.util.concurrent.UncheckedExecutionException;
 import java.io.File;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import lombok.Cleanup;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.LedgerHandleAdapter;
 import org.apache.bookkeeper.client.LedgerMetadata;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
-import org.apache.bookkeeper.discover.RegistrationManager;
 import org.apache.bookkeeper.http.HttpServer;
 import org.apache.bookkeeper.http.service.HttpEndpointService;
 import org.apache.bookkeeper.http.service.HttpServiceRequest;
@@ -650,6 +652,17 @@ public class TestHttpService extends BookKeeperClusterTestCase {
     @Test
     public void testListUnderReplicatedLedgerService() throws Exception {
         baseConf.setZkServers(zkUtil.getZooKeeperConnectString());
+        runFunctionWithLedgerManagerFactory(baseConf, mFactory -> {
+            try {
+                testListUnderReplicatedLedgerService(mFactory);
+            } catch (Exception e) {
+                throw new UncheckedExecutionException(e.getMessage(), e.getCause());
+            }
+            return null;
+        });
+    }
+
+    private void testListUnderReplicatedLedgerService(LedgerManagerFactory mFactory) throws Exception {
         startAuditorElector();
 
         HttpEndpointService listUnderReplicatedLedgerService = bkHttpServiceProvider
@@ -660,15 +673,11 @@ public class TestHttpService extends BookKeeperClusterTestCase {
         HttpServiceResponse response1 = listUnderReplicatedLedgerService.handle(request1);
         assertEquals(HttpServer.StatusCode.NOT_FOUND.getValue(), response1.getStatusCode());
 
-
         //2,  GET, should return success.
         // first put ledger into rereplicate. then use api to list ur ledger.
-        LedgerManagerFactory mFactory = LedgerManagerFactory.newLedgerManagerFactory(
-            bsConfs.get(0),
-            RegistrationManager.instantiateRegistrationManager(bsConfs.get(0)).getLayoutManager());
-
-        LedgerManager ledgerManager = mFactory.newLedgerManager();
-        final LedgerUnderreplicationManager underReplicationManager = mFactory.newLedgerUnderreplicationManager();
+        @Cleanup LedgerManager ledgerManager = mFactory.newLedgerManager();
+        @Cleanup final LedgerUnderreplicationManager underReplicationManager =
+            mFactory.newLedgerUnderreplicationManager();
 
         LedgerHandle lh = bkc.createLedger(3, 3, BookKeeper.DigestType.CRC32, "passwd".getBytes());
         LedgerMetadata md = LedgerHandleAdapter.getLedgerMetadata(lh);

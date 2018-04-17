@@ -94,17 +94,23 @@ class PendingReadLacOp implements ReadLacCallback {
                 // This routine picks both of them and compares to return
                 // the latest Lac.
 
-                // Extract lac from FileInfo on the ledger.
-                long lac = lh.macManager.verifyDigestAndReturnLac(lacBuffer);
-                if (lac > maxLac) {
-                    maxLac = lac;
-                }
+                // lacBuffer and lastEntryBuffer are optional in the protocol.
+                // So check if they exist before processing them.
 
+                // Extract lac from FileInfo on the ledger.
+                if (lacBuffer != null && lacBuffer.readableBytes() > 0) {
+                    long lac = lh.macManager.verifyDigestAndReturnLac(lacBuffer);
+                    if (lac > maxLac) {
+                        maxLac = lac;
+                    }
+                }
                 // Extract lac from last entry on the disk
-                RecoveryData recoveryData = lh.macManager.verifyDigestAndReturnLastConfirmed(lastEntryBuffer);
-                long recoveredLac = recoveryData.getLastAddConfirmed();
-                if (recoveredLac > maxLac) {
-                    maxLac = recoveredLac;
+                if (lastEntryBuffer != null && lastEntryBuffer.readableBytes() > 0) {
+                    RecoveryData recoveryData = lh.macManager.verifyDigestAndReturnLastConfirmed(lastEntryBuffer);
+                    long recoveredLac = recoveryData.getLastAddConfirmed();
+                    if (recoveredLac > maxLac) {
+                        maxLac = recoveredLac;
+                    }
                 }
                 heardValidResponse = true;
             } catch (BKDigestMatchException e) {

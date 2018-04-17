@@ -88,6 +88,7 @@ public class BookKeeperClientTestsWithBookieErrors extends BookKeeperClusterTest
             try {
                 Thread.sleep(sleepTime);
             } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
             }
         };
     }

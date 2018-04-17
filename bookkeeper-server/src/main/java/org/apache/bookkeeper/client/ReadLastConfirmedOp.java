@@ -18,7 +18,6 @@
 package org.apache.bookkeeper.client;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.util.ReferenceCountUtil;
 
 import org.apache.bookkeeper.client.BKException.BKDigestMatchException;
 import org.apache.bookkeeper.proto.BookieProtocol;
@@ -62,17 +61,17 @@ class ReadLastConfirmedOp implements ReadEntryCallback {
             lh.bk.getBookieClient().readEntry(lh.metadata.currentEnsemble.get(i),
                                          lh.ledgerId,
                                          BookieProtocol.LAST_ADD_CONFIRMED,
-                                         this, i);
+                                         this, i, BookieProtocol.FLAG_NONE);
         }
     }
 
     public void initiateWithFencing() {
         for (int i = 0; i < lh.metadata.currentEnsemble.size(); i++) {
-            lh.bk.getBookieClient().readEntryAndFenceLedger(lh.metadata.currentEnsemble.get(i),
-                                                       lh.ledgerId,
-                                                       lh.ledgerKey,
-                                                       BookieProtocol.LAST_ADD_CONFIRMED,
-                                                       this, i);
+            lh.bk.getBookieClient().readEntry(lh.metadata.currentEnsemble.get(i),
+                                              lh.ledgerId,
+                                              BookieProtocol.LAST_ADD_CONFIRMED,
+                                              this, i, BookieProtocol.FLAG_DO_FENCING,
+                                              lh.ledgerKey);
         }
     }
 
@@ -100,8 +99,6 @@ class ReadLastConfirmedOp implements ReadEntryCallback {
                           + lh.metadata.currentEnsemble.get(bookieIndex));
             }
         }
-
-        ReferenceCountUtil.release(buffer);
 
         if (rc == BKException.Code.NoSuchLedgerExistsException || rc == BKException.Code.NoSuchEntryException) {
             // this still counts as a valid response, e.g., if the client crashed without writing any entry

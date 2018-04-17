@@ -24,6 +24,7 @@ import com.codahale.metrics.Timer;
 /**
  * A {@link StatsLogger} implemented based on <i>Codahale</i> metrics library.
  */
+@Deprecated
 public class CodahaleStatsLogger implements StatsLogger {
     protected final String basename;
     final MetricRegistry metrics;

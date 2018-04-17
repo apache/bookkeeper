@@ -40,6 +40,7 @@ import org.slf4j.LoggerFactory;
 /**
  * A {@link StatsProvider} implemented based on <i>Codahale</i> metrics library.
  */
+@Deprecated
 @SuppressWarnings("deprecation")
 public class CodahaleMetricsProvider implements StatsProvider {
 

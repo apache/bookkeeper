@@ -21,8 +21,8 @@ import com.google.common.collect.Lists;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.distributedlog.ZooKeeperClient;
-import org.apache.distributedlog.common.concurrent.FutureUtils;
 import org.apache.distributedlog.util.Transaction;
 import org.apache.distributedlog.util.Utils;
 import org.apache.zookeeper.AsyncCallback;
@@ -68,6 +68,7 @@ public class ZKTransaction implements Transaction<Object>, AsyncCallback.MultiCa
         } catch (ZooKeeperClient.ZooKeeperConnectionException e) {
             result.completeExceptionally(Utils.zkException(e, ""));
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             result.completeExceptionally(Utils.zkException(e, ""));
         }
         return result;

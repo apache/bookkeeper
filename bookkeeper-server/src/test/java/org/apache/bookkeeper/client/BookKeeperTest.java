@@ -105,9 +105,19 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
      * it provides the wrong password or wrong digest.
      */
     @Test
-    public void testBookkeeperPassword() throws Exception {
+    public void testBookkeeperDigestPasswordWithAutoDetection() throws Exception {
+        testBookkeeperDigestPassword(true);
+    }
+
+    @Test
+    public void testBookkeeperDigestPasswordWithoutAutoDetection() throws Exception {
+        testBookkeeperDigestPassword(false);
+    }
+
+    void testBookkeeperDigestPassword(boolean autodetection) throws Exception {
         ClientConfiguration conf = new ClientConfiguration();
         conf.setZkServers(zkUtil.getZooKeeperConnectString());
+        conf.setEnableDigestTypeAutodetection(autodetection);
         BookKeeper bkc = new BookKeeper(conf);
 
         DigestType digestCorrect = digestType;
@@ -136,9 +146,14 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
             // try open with bad digest
             try {
                 bkc.openLedger(id, digestBad, passwdCorrect);
-                fail("Shouldn't be able to open with bad digest");
+                if (!autodetection) {
+                    fail("Shouldn't be able to open with bad digest");
+                }
             } catch (BKException.BKDigestMatchException bke) {
                 // correct behaviour
+                if (autodetection) {
+                    fail("Should not throw digest match exception if `autodetection` is enabled");
+                }
             }
 
             // try open with both bad
@@ -309,130 +324,6 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
             assertTrue("Ledger should be closed!", bkc.isClosed(ledgerId));
         }
         assertTrue("BookKeeper should be closed!", bkc2.closed);
-    }
-
-    @Test
-    public void testReadHandleWithNoExplicitLAC() throws Exception {
-        ClientConfiguration confWithNoExplicitLAC = new ClientConfiguration();
-        confWithNoExplicitLAC.setZkServers(zkUtil.getZooKeeperConnectString());
-        confWithNoExplicitLAC.setExplictLacInterval(0);
-
-        BookKeeper bkcWithNoExplicitLAC = new BookKeeper(confWithNoExplicitLAC);
-
-        LedgerHandle wlh = bkcWithNoExplicitLAC.createLedger(digestType, "testPasswd".getBytes());
-        long ledgerId = wlh.getId();
-        int numOfEntries = 5;
-        for (int i = 0; i < numOfEntries; i++) {
-            wlh.addEntry(("foobar" + i).getBytes());
-        }
-
-        LedgerHandle rlh = bkcWithNoExplicitLAC.openLedgerNoRecovery(ledgerId, digestType, "testPasswd".getBytes());
-        assertTrue(
-                "Expected LAC of rlh: " + (numOfEntries - 2) + " actual LAC of rlh: " + rlh.getLastAddConfirmed(),
-                (rlh.getLastAddConfirmed() == (numOfEntries - 2)));
-
-        Enumeration<LedgerEntry> entries = rlh.readEntries(0, numOfEntries - 2);
-        int entryId = 0;
-        while (entries.hasMoreElements()) {
-            LedgerEntry entry = entries.nextElement();
-            String entryString = new String(entry.getEntry());
-            assertTrue("Expected entry String: " + ("foobar" + entryId) + " actual entry String: " + entryString,
-                    entryString.equals("foobar" + entryId));
-            entryId++;
-        }
-
-        for (int i = numOfEntries; i < 2 * numOfEntries; i++) {
-            wlh.addEntry(("foobar" + i).getBytes());
-        }
-
-        Thread.sleep(3000);
-        // since explicitlacflush policy is not enabled for writeledgerhandle, when we try
-        // to read explicitlac for rlh, it will be LedgerHandle.INVALID_ENTRY_ID. But it
-        // wont throw some exception.
-        long explicitlac = rlh.readExplicitLastConfirmed();
-        assertTrue("Expected Explicit LAC of rlh: " + LedgerHandle.INVALID_ENTRY_ID
-                + " actual ExplicitLAC of rlh: " + explicitlac,
-                (explicitlac == LedgerHandle.INVALID_ENTRY_ID));
-        assertTrue(
-                "Expected LAC of wlh: " + (2 * numOfEntries - 1) + " actual LAC of rlh: " + wlh.getLastAddConfirmed(),
-                (wlh.getLastAddConfirmed() == (2 * numOfEntries - 1)));
-        assertTrue(
-                "Expected LAC of rlh: " + (numOfEntries - 2) + " actual LAC of rlh: " + rlh.getLastAddConfirmed(),
-                (rlh.getLastAddConfirmed() == (numOfEntries - 2)));
-
-        try {
-            rlh.readEntries(numOfEntries - 1, numOfEntries - 1);
-            fail("rlh readEntries beyond " + (numOfEntries - 2) + " should fail with ReadException");
-        } catch (BKException.BKReadException readException) {
-        }
-
-        rlh.close();
-        wlh.close();
-        bkcWithNoExplicitLAC.close();
-    }
-
-    @Test
-    public void testReadHandleWithExplicitLAC() throws Exception {
-        ClientConfiguration confWithExplicitLAC = new ClientConfiguration();
-        confWithExplicitLAC.setZkServers(zkUtil.getZooKeeperConnectString());
-        int explicitLacIntervalMillis = 1000;
-        confWithExplicitLAC.setExplictLacInterval(explicitLacIntervalMillis);
-
-        BookKeeper bkcWithExplicitLAC = new BookKeeper(confWithExplicitLAC);
-
-        LedgerHandle wlh = bkcWithExplicitLAC.createLedger(digestType, "testPasswd".getBytes());
-        long ledgerId = wlh.getId();
-        int numOfEntries = 5;
-        for (int i = 0; i < numOfEntries; i++) {
-            wlh.addEntry(("foobar" + i).getBytes());
-        }
-
-        LedgerHandle rlh = bkcWithExplicitLAC.openLedgerNoRecovery(ledgerId, digestType, "testPasswd".getBytes());
-
-        assertTrue(
-                "Expected LAC of rlh: " + (numOfEntries - 2) + " actual LAC of rlh: " + rlh.getLastAddConfirmed(),
-                (rlh.getLastAddConfirmed() == (numOfEntries - 2)));
-
-        for (int i = numOfEntries; i < 2 * numOfEntries; i++) {
-            wlh.addEntry(("foobar" + i).getBytes());
-        }
-
-        // we need to wait for atleast 2 explicitlacintervals,
-        // since in writehandle for the first call
-        // lh.getExplicitLastAddConfirmed() will be <
-        // lh.getPiggyBackedLastAddConfirmed(),
-        // so it wont make explicit writelac in the first run
-        Thread.sleep((2 * explicitLacIntervalMillis / 1000 + 1) * 1000);
-        assertTrue(
-                "Expected LAC of wlh: " + (2 * numOfEntries - 1) + " actual LAC of wlh: " + wlh.getLastAddConfirmed(),
-                (wlh.getLastAddConfirmed() == (2 * numOfEntries - 1)));
-        // readhandle's lastaddconfirmed wont be updated until readExplicitLastConfirmed call is made
-        assertTrue(
-                "Expected LAC of rlh: " + (numOfEntries - 2) + " actual LAC of rlh: " + rlh.getLastAddConfirmed(),
-                (rlh.getLastAddConfirmed() == (numOfEntries - 2)));
-
-        long explicitlac = rlh.readExplicitLastConfirmed();
-        assertTrue("Expected Explicit LAC of rlh: " + (2 * numOfEntries - 1)
-                + " actual ExplicitLAC of rlh: " + explicitlac,
-                (explicitlac == (2 * numOfEntries - 1)));
-        // readExplicitLastConfirmed updates the lac of rlh.
-        assertTrue(
-                "Expected LAC of rlh: " + (2 * numOfEntries - 1) + " actual LAC of rlh: " + rlh.getLastAddConfirmed(),
-                (rlh.getLastAddConfirmed() == (2 * numOfEntries - 1)));
-
-        Enumeration<LedgerEntry> entries = rlh.readEntries(numOfEntries, 2 * numOfEntries - 1);
-        int entryId = numOfEntries;
-        while (entries.hasMoreElements()) {
-            LedgerEntry entry = entries.nextElement();
-            String entryString = new String(entry.getEntry());
-            assertTrue("Expected entry String: " + ("foobar" + entryId) + " actual entry String: " + entryString,
-                    entryString.equals("foobar" + entryId));
-            entryId++;
-        }
-
-        rlh.close();
-        wlh.close();
-        bkcWithExplicitLAC.close();
     }
 
     @Test

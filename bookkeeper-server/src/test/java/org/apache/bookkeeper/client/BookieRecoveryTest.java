@@ -28,7 +28,6 @@ import static org.junit.Assert.fail;
 import io.netty.buffer.ByteBuf;
 
 import java.io.IOException;
-import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -46,6 +45,7 @@ import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
@@ -307,20 +307,18 @@ public class BookieRecoveryTest extends BookKeeperClusterTestCase {
 
         // Shutdown the first bookie server
         LOG.info("Finished writing all ledger entries so shutdown one of the bookies.");
-        int initialPort = bsConfs.get(0).getBookiePort();
+        BookieSocketAddress bookieSrc = bs.get(0).getLocalAddress();
         bs.get(0).shutdown();
         bs.remove(0);
 
         // Startup a new bookie server
-        int newBookiePort = startNewBookie();
+        startNewBookie();
 
         // Write some more entries for the ledgers so a new ensemble will be
         // created for them.
         writeEntriestoLedgers(numMsgs, 10, lhs);
 
         // Call the async recover bookie method.
-        BookieSocketAddress bookieSrc = new BookieSocketAddress(InetAddress.getLocalHost().getHostAddress(),
-          initialPort);
         // Initiate the sync object
         sync.value = false;
         bkAdmin.asyncRecoverBookieData(bookieSrc, bookieRecoverCb, sync);
@@ -359,7 +357,7 @@ public class BookieRecoveryTest extends BookKeeperClusterTestCase {
 
         // Shutdown the first bookie server
         LOG.info("Finished writing all ledger entries so shutdown one of the bookies.");
-        int initialPort = bsConfs.get(0).getBookiePort();
+        BookieSocketAddress bookieSrc = bs.get(0).getLocalAddress();
         bs.get(0).shutdown();
         bs.remove(0);
 
@@ -373,8 +371,6 @@ public class BookieRecoveryTest extends BookKeeperClusterTestCase {
         writeEntriestoLedgers(numMsgs, 10, lhs);
 
         // Call the async recover bookie method.
-        BookieSocketAddress bookieSrc = new BookieSocketAddress(InetAddress.getLocalHost().getHostAddress(),
-          initialPort);
         LOG.info("Now recover the data on the killed bookie (" + bookieSrc
           + ") and replicate it to a random available one");
         // Initiate the sync object
@@ -414,7 +410,7 @@ public class BookieRecoveryTest extends BookKeeperClusterTestCase {
 
         // Shutdown the first bookie server
         LOG.info("Finished writing all ledger entries so shutdown one of the bookies.");
-        int initialPort = bsConfs.get(0).getBookiePort();
+        BookieSocketAddress bookieSrc = bs.get(0).getLocalAddress();
         bs.get(0).shutdown();
         bs.remove(0);
 
@@ -426,12 +422,7 @@ public class BookieRecoveryTest extends BookKeeperClusterTestCase {
         writeEntriestoLedgers(numMsgs, 10, lhs);
 
         // Call the sync recover bookie method.
-        BookieSocketAddress bookieSrc = new BookieSocketAddress(InetAddress.getLocalHost().getHostAddress(),
-          initialPort);
-        BookieSocketAddress bookieDest = new BookieSocketAddress(InetAddress.getLocalHost().getHostAddress(),
-          newBookiePort);
-        LOG.info("Now recover the data on the killed bookie (" + bookieSrc + ") and replicate it to the new one ("
-          + bookieDest + ")");
+        LOG.info("Now recover the data on the killed bookie (" + bookieSrc + ") and replicate it to other bookies");
         bkAdmin.recoverBookieData(bookieSrc);
 
         // Verify the recovered ledger entries are okay.
@@ -460,7 +451,7 @@ public class BookieRecoveryTest extends BookKeeperClusterTestCase {
 
         // Shutdown the first bookie server
         LOG.info("Finished writing all ledger entries so shutdown one of the bookies.");
-        int initialPort = bsConfs.get(0).getBookiePort();
+        BookieSocketAddress bookieSrc = bs.get(0).getLocalAddress();
         bs.get(0).shutdown();
         bs.remove(0);
 
@@ -474,8 +465,6 @@ public class BookieRecoveryTest extends BookKeeperClusterTestCase {
         writeEntriestoLedgers(numMsgs, 10, lhs);
 
         // Call the sync recover bookie method.
-        BookieSocketAddress bookieSrc = new BookieSocketAddress(InetAddress.getLocalHost().getHostAddress(),
-          initialPort);
         LOG.info("Now recover the data on the killed bookie (" + bookieSrc
           + ") and replicate it to a random available one");
         bkAdmin.recoverBookieData(bookieSrc);
@@ -538,7 +527,8 @@ public class BookieRecoveryTest extends BookKeeperClusterTestCase {
             ReplicationVerificationCallback cb = new ReplicationVerificationCallback(numRequests);
             for (long i = startEntryId; i < endEntryId; i++) {
                 for (BookieSocketAddress addr : e.getValue()) {
-                    bkc.getBookieClient().readEntry(addr, lh.getId(), i, cb, addr);
+                    bkc.getBookieClient().readEntry(addr, lh.getId(), i,
+                                                    cb, addr, BookieProtocol.FLAG_NONE);
                 }
             }
 
@@ -757,13 +747,11 @@ public class BookieRecoveryTest extends BookKeeperClusterTestCase {
 
         // Shutdown the first bookie server
         LOG.info("Finished writing all ledger entries so shutdown one of the bookies.");
-        int initialPort = bsConfs.get(0).getBookiePort();
+        BookieSocketAddress bookieSrc = bs.get(0).getLocalAddress();
         bs.get(0).shutdown();
         bs.remove(0);
 
         // Call the async recover bookie method.
-        BookieSocketAddress bookieSrc = new BookieSocketAddress(InetAddress.getLocalHost().getHostAddress(),
-          initialPort);
         LOG.info("Now recover the data on the killed bookie (" + bookieSrc
           + ") and replicate it to a random available one");
         // Initiate the sync object

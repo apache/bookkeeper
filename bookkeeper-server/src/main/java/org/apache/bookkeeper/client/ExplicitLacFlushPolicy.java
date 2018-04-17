@@ -20,13 +20,12 @@
  */
 package org.apache.bookkeeper.client;
 
-import io.netty.buffer.ByteBuf;
-
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.bookkeeper.client.SyncCallbackUtils.LastAddConfirmedCallback;
+import org.apache.bookkeeper.util.ByteBufList;
 import org.apache.bookkeeper.util.SafeRunnable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -117,7 +116,7 @@ interface ExplicitLacFlushPolicy {
                 }
             };
             try {
-                scheduledFuture = lh.bk.getMainWorkerPool().scheduleAtFixedRateOrdered(lh.getId(), updateLacTask,
+                scheduledFuture = lh.bk.getScheduler().scheduleAtFixedRateOrdered(lh.getId(), updateLacTask,
                         explicitLacIntervalInMs, explicitLacIntervalInMs, TimeUnit.MILLISECONDS);
             } catch (RejectedExecutionException re) {
                 LOG.error("Scheduling of ExplictLastAddConfirmedFlush for ledger: {} has failed because of {}",
@@ -139,7 +138,8 @@ interface ExplicitLacFlushPolicy {
                 lh.bk.getMainWorkerPool().submit(new SafeRunnable() {
                     @Override
                     public void safeRun() {
-                        ByteBuf toSend = lh.macManager.computeDigestAndPackageForSendingLac(lh.getLastAddConfirmed());
+                        ByteBufList toSend = lh.macManager
+                                .computeDigestAndPackageForSendingLac(lh.getLastAddConfirmed());
                         op.initiate(toSend);
                     }
                 });
