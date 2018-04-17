@@ -59,6 +59,106 @@ For each Bookie:
 
 We describes the general upgrade method in Apache BookKeeper as above. We will cover the details for individual versions.
 
+### 4.6.x to 4.7.0 upgrade
+
+There isn't any protocol related backward compabilities changes in 4.7.0. So you can follow the general upgrade sequence to upgrade from 4.6.x to 4.7.0.
+
+However, we list a list of changes that you might want to know.
+
+#### Common Configuration Changes
+
+This section documents the common configuration changes that applied for both clients and servers.
+
+##### New Settings
+
+Following settings are newly added in 4.7.0.
+
+| Name | Default Value | Description |
+|------|---------------|-------------|
+| allowShadedLedgerManagerFactoryClass | false | The allows bookkeeper client to connect to a bookkeeper cluster using a shaded ledger manager factory |
+| shadedLedgerManagerFactoryClassPrefix | `dlshade.` | The shaded ledger manager factory prefix. This is used when `allowShadedLedgerManagerFactoryClass` is set to true |
+| metadataServiceUri | null | metadata service uri that bookkeeper is used for loading corresponding metadata driver and resolving its metadata service location |
+| permittedStartupUsers | null | The list of users are permitted to run the bookie process. Any users can run the bookie process if it is not set |
+
+##### Deprecated Settings
+
+There are no common settings deprecated at 4.7.0.
+
+##### Changed Settings
+
+There are no common settings whose default value are changed at 4.7.0.
+
+#### Server Configuration Changes
+
+##### New Settings
+
+Following settings are newly added in 4.7.0.
+
+| Name | Default Value | Description |
+|------|---------------|-------------|
+| verifyMetadataOnGC | false | Whether the bookie is configured to double check the ledgers' metadata prior to garbage collecting them |
+| auditorLedgerVerificationPercentage  | 0 | The percentage of a ledger (fragment)'s entries will be verified by Auditor before claiming a ledger (fragment) is missing |
+| numHighPriorityWorkerThreads | 8 | The number of threads that should be used for high priority requests (i.e. recovery reads and adds, and fencing). If zero, reads are handled by Netty threads directly. |
+| useShortHostName | false | Whether the bookie should use short hostname or [FQDN](https://en.wikipedia.org/wiki/Fully_qualified_domain_name) hostname for registration and ledger metadata when useHostNameAsBookieID is enabled. |
+| minUsableSizeForEntryLogCreation | 1.2 * `logSizeLimit` | Minimum safe usable size to be available in ledger directory for bookie to create entry log files (in bytes). |
+| minUsableSizeForHighPriorityWrites | 1.2 * `logSizeLimit` | Minimum safe usable size to be available in ledger directory for bookie to accept high priority writes even it is in readonly mode. |
+
+##### Deprecated Settings
+
+Following settings are deprecated since 4.7.0.
+
+| Name | Description |
+|------|-------------|
+| registrationManagerClass | The registration manager class used by server to discover registration manager. It is replaced by `metadataServiceUri`. |
+
+
+##### Changed Settings
+
+The default values of following settings are changed since 4.7.0.
+
+| Name | Old Default Value | New Default Value | Notes |
+|------|-------------------|-------------------|-------|
+| numLongPollWorkerThreads | 10 | 0 | If the number of threads is zero or negative, bookie can fallback to use read threads for long poll. This allows not creating threads if application doesn't use long poll feature. |
+
+#### Client Configuration Changes
+
+##### New Settings
+
+Following settings are newly added in 4.7.0.
+
+| Name | Default Value | Description |
+|------|---------------|-------------|
+| maxNumEnsembleChanges | Integer.MAX\_VALUE | The max allowed ensemble change number before sealing a ledger on failures |
+| timeoutMonitorIntervalSec | min(`addEntryTimeoutSec`, `addEntryQuorumTimeoutSec`, `readEntryTimeoutSec`) | The interval between successive executions of the operation timeout monitor, in seconds |
+| ensemblePlacementPolicyOrderSlowBookies | false | Flag to enable/disable reordering slow bookies in placement policy |
+
+##### Deprecated Settings
+
+Following settings are deprecated since 4.7.0.
+
+| Name | Description |
+|------|-------------|
+| clientKeyStoreType | Replaced by `tlsKeyStoreType` |
+| clientKeyStore | Replaced by `tlsKeyStore` |
+| clientKeyStorePasswordPath | Replaced by `tlsKeyStorePasswordPath` |
+| clientTrustStoreType | Replaced by `tlsTrustStoreType` |
+| clientTrustStore | Replaced by `tlsTrustStore` |
+| clientTrustStorePasswordPath | Replaced by `tlsTrustStorePasswordPath` |
+| registrationClientClass | The registration client class used by client to discover registration service. It is replaced by `metadataServiceUri`. |
+
+##### Changed Settings
+
+The default values of following settings are changed since 4.7.0.
+
+| Name | Old Default Value | New Default Value | Notes |
+|------|-------------------|-------------------|-------|
+| enableDigestTypeAutodetection | false | true | Autodetect the digest type and passwd when opening a ledger. It will ignore the provided digest type, but still verify the provided passwd. |
+
+### 4.5.x to 4.6.x upgrade
+
+There isn't any protocol related backward compabilities changes in 4.6.x. So you can follow the general upgrade sequence to upgrade from 4.5.x to 4.6.x.
+
+
 ### 4.4.x to 4.5.x upgrade
 
 There isn't any protocol related backward compabilities changes in 4.5.0. So you can follow the general upgrade sequence to upgrade from 4.4.x to 4.5.x.

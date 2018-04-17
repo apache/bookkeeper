@@ -62,6 +62,19 @@ Client Guide | API docs
 
 ## News
 
+### 17 April, 2018: Release 4.7.0 available
+
+This is the 10th release of Apache BookKeeper!
+
+The 4.7.0 release incorporates hundreds of bug fixes, improvements, and features since previous major release, 4.6.0,
+which was released four months ago. It is a big milestone in Apache BookKeeper community - Yahoo branch is fully merged
+back to upstream, and Apache Pulsar (incubating) starts using official BookKeeper release for its upcoming 2.0 release.
+
+It is also the first release of Apache DistributedLog after it is merged as sub modules of Apache BookKeeper.
+
+See [BookKeeper 4.7.0 Release Notes](../docs/4.7.0/overview/releaseNotes) for details.
+
+
 ### 9 April, 2018: Release 4.6.2 available
 
 This is the ninth release of BookKeeper as an Apache Top Level Project!
