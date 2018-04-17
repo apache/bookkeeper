@@ -59,6 +59,10 @@ For each Bookie:
 
 We describes the general upgrade method in Apache BookKeeper as above. We will cover the details for individual versions.
 
+### 4.5.x to 4.6.x upgrade
+
+There isn't any protocol related backward compabilities changes in 4.6.x. So you can follow the general upgrade sequence to upgrade from 4.5.x to 4.6.x.
+
 ### 4.4.x to 4.5.x upgrade
 
 There isn't any protocol related backward compabilities changes in 4.5.0. So you can follow the general upgrade sequence to upgrade from 4.4.x to 4.5.x.
@@ -70,4 +74,3 @@ However, we list a list of things that you might want to know.
     to take a bookie out and recover it if you want to rollback to 4.4.x.
 
 If you are planning to upgrade a non-secured cluster to a secured cluster enabling security features in 4.5.0, please read [BookKeeper Security](../../security/overview) for more details.
-
