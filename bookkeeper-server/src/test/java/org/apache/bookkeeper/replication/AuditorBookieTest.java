@@ -32,6 +32,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
@@ -56,14 +57,15 @@ public class AuditorBookieTest extends BookKeeperClusterTestCase {
 
     public AuditorBookieTest() {
         super(6);
-        electionPath = baseConf.getZkLedgersRootPath()
-                + "/underreplication/auditorelection";
     }
 
     @Override
     public void setUp() throws Exception {
         super.setUp();
         startAuditorElectors();
+
+        electionPath = ZKMetadataDriverBase.resolveZkLedgersRootPath(baseConf)
+            + "/underreplication/auditorelection";
     }
 
     @Override
@@ -138,7 +140,7 @@ public class AuditorBookieTest extends BookKeeperClusterTestCase {
         stopBKCluster();
         stopAuditorElectors();
 
-        startBKCluster();
+        startBKCluster(zkUtil.getMetadataServiceUri());
         startAuditorElectors();
         BookieServer newAuditor = waitForNewAuditor(auditor);
         assertNotSame(

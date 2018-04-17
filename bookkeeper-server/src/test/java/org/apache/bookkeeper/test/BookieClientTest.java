@@ -81,7 +81,7 @@ public class BookieClientTest {
         conf.setBookiePort(port)
             .setJournalDirName(tmpDir.getPath())
             .setLedgerDirNames(new String[] { tmpDir.getPath() })
-            .setZkServers(null);
+            .setMetadataServiceUri(null);
         bs = new BookieServer(conf);
         bs.start();
         eventLoopGroup = new NioEventLoopGroup();

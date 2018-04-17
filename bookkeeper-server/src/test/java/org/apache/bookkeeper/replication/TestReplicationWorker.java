@@ -43,6 +43,7 @@ import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
 import org.apache.bookkeeper.meta.MetadataBookieDriver;
 import org.apache.bookkeeper.meta.MetadataClientDriver;
 import org.apache.bookkeeper.meta.MetadataDrivers;
+import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
@@ -81,19 +82,20 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
         // set ledger manager name
         baseConf.setLedgerManagerFactoryClassName(ledgerManagerFactory);
         baseClientConf.setLedgerManagerFactoryClassName(ledgerManagerFactory);
-        basePath = baseClientConf.getZkLedgersRootPath() + '/'
-                + BookKeeperConstants.UNDER_REPLICATION_NODE
-                + BookKeeperConstants.DEFAULT_ZK_LEDGERS_ROOT_PATH;
-        baseLockPath = baseClientConf.getZkLedgersRootPath() + '/'
-                + BookKeeperConstants.UNDER_REPLICATION_NODE
-                + "/locks";
         baseConf.setRereplicationEntryBatchSize(3);
     }
 
     @Override
     public void setUp() throws Exception {
         super.setUp();
-        baseConf.setZkServers(zkUtil.getZooKeeperConnectString());
+
+        String zkLedgersRootPath = ZKMetadataDriverBase.resolveZkLedgersRootPath(baseClientConf);
+        basePath = zkLedgersRootPath + '/'
+                + BookKeeperConstants.UNDER_REPLICATION_NODE
+                + BookKeeperConstants.DEFAULT_ZK_LEDGERS_ROOT_PATH;
+        baseLockPath = zkLedgersRootPath + '/'
+                + BookKeeperConstants.UNDER_REPLICATION_NODE
+                + "/locks";
 
         this.scheduler = OrderedScheduler.newSchedulerBuilder()
             .name("test-scheduler")
@@ -478,7 +480,7 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
 
         ReplicationWorker rw = new ReplicationWorker(zkc, baseConf);
 
-        baseClientConf.setZkServers(zkUtil.getZooKeeperConnectString());
+        baseClientConf.setMetadataServiceUri(zkUtil.getMetadataServiceUri());
 
         @Cleanup MetadataClientDriver driver = MetadataDrivers.getClientDriver(
             URI.create(baseClientConf.getMetadataServiceUri()));

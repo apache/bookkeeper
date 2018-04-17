@@ -43,6 +43,7 @@ import org.apache.bookkeeper.meta.HierarchicalLedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerManagerTestCase;
 import org.apache.bookkeeper.meta.ZkLedgerUnderreplicationManager;
+import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
@@ -204,8 +205,11 @@ public class TestGcOverreplicatedLedger extends LedgerManagerTestCase {
 
         lh.close();
 
-        ZkLedgerUnderreplicationManager.acquireUnderreplicatedLedgerLock(zkc, baseConf.getZkLedgersRootPath(),
-                lh.getId(), ZooDefs.Ids.OPEN_ACL_UNSAFE);
+        ZkLedgerUnderreplicationManager.acquireUnderreplicatedLedgerLock(
+            zkc,
+            ZKMetadataDriverBase.resolveZkLedgersRootPath(baseConf),
+            lh.getId(),
+            ZooDefs.Ids.OPEN_ACL_UNSAFE);
 
         final CompactableLedgerStorage mockLedgerStorage = new MockLedgerStorage();
         final GarbageCollector garbageCollector = new ScanAndCompareGarbageCollector(ledgerManager, mockLedgerStorage,

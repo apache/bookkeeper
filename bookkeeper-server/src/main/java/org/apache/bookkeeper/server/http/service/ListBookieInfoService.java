@@ -82,7 +82,6 @@ public class ListBookieInfoService implements HttpEndpointService {
 
         if (HttpServer.Method.GET == request.getMethod()) {
             ClientConfiguration clientConf = new ClientConfiguration(conf);
-            clientConf.setZkServers(conf.getZkServers());
             clientConf.setDiskWeightBasedPlacementEnabled(true);
             BookKeeper bk = new BookKeeper(clientConf);
 
