@@ -20,3 +20,6 @@ lib/
 log/
 target/
 dependency-reduced-pom.xml
+
+# Logs
+logs/
