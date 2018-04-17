@@ -211,7 +211,8 @@ public class LedgerHandle implements WriteHandle {
         ensembleChangeCounter = bk.getStatsLogger().getCounter(BookKeeperClientStats.ENSEMBLE_CHANGES);
         lacUpdateHitsCounter = bk.getStatsLogger().getCounter(BookKeeperClientStats.LAC_UPDATE_HITS);
         lacUpdateMissesCounter = bk.getStatsLogger().getCounter(BookKeeperClientStats.LAC_UPDATE_MISSES);
-        clientChannelWriteWaitStats = bk.getStatsLogger().getOpStatsLogger(BookKeeperClientStats.CLIENT_CHANNEL_WRITE_WAIT);
+        clientChannelWriteWaitStats = bk.getStatsLogger()
+                .getOpStatsLogger(BookKeeperClientStats.CLIENT_CHANNEL_WRITE_WAIT);
         bk.getStatsLogger().registerGauge(BookKeeperClientStats.PENDING_ADDS,
                                           new Gauge<Integer>() {
                                               @Override
@@ -1164,9 +1165,11 @@ public class LedgerHandle implements WriteHandle {
         }
 
         if (success) {
-            clientChannelWriteWaitStats.registerSuccessfulEvent(MathUtils.elapsedNanos(startTime), TimeUnit.NANOSECONDS);
+            clientChannelWriteWaitStats.registerSuccessfulEvent(
+                    MathUtils.elapsedNanos(startTime), TimeUnit.NANOSECONDS);
         } else {
-            clientChannelWriteWaitStats.registerFailedEvent(MathUtils.elapsedNanos(startTime), TimeUnit.NANOSECONDS);
+            clientChannelWriteWaitStats.registerFailedEvent(
+                    MathUtils.elapsedNanos(startTime), TimeUnit.NANOSECONDS);
         }
         return success;
     }
