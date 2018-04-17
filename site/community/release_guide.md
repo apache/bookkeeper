@@ -463,6 +463,8 @@ Copy the source release from the `dev` repository to the `release` repository at
 
 ### Update Dockerfile
 
+> NOTE: The dockerfile PR should only be merged after the release package is showed up under https://archive.apache.org/dist/bookkeeper/
+
 1. Update the `BK_VERSION` and `GPG_KEY` in `docker/Dockerfile` (e.g. [Pull Request 436](https://github.com/apache/bookkeeper/pull/436) ),
     send a pull request for review and get an approval from the community.
 
@@ -488,6 +490,8 @@ Copy the source release from the `dev` repository to the `release` repository at
 5. Once the new docker image is built, update BC tests to include new docker image. Example: [release-4.7.0](https://github.com/apache/bookkeeper/pull/1352)
 
 ### Update DC/OS BookKeeper package
+
+> NOTE: Please update DC/OS bookkeeper package only after the release package is showed up under https://archive.apache.org/dist/bookkeeper/
 
 Once we have new version of BookKeeper docker image available at [docker hub](https://hub.docker.com/r/apache/bookkeeper/), We could update DC/OS BookKeeper package in [mesosphere universe](https://github.com/mesosphere/universe). A new pull request is needed in it. 
 
