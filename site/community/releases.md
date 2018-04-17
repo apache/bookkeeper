@@ -15,19 +15,19 @@ Apache BookKeeper community makes a feture release every 3 month.
 
 ### Feature Release Window
 
-The next feature release is `4.7.0`. The release window is the following:
+The next feature release is `4.8.0`. The release window is the following:
 
 | **Date** | **Event** |
-| November 12, 2017 | Merge window opens on master branch |
-| February 12, 2018 | Major feature should be in, Cut release branch |
-| February 19, 2018 | Minor feature should be in, Stabilize release branch |
-| February 26, 2018 - March 2, 2018 | Code freeze, Only accept fixes for blocking issues, Rolling out release candidates |
+| April 13, 2017 | Merge window opens on master branch |
+| July 12, 2018 | Major feature should be in, Cut release branch |
+| July 19, 2018 | Minor feature should be in, Stabilize release branch |
+| July 26, 2018 - August 2, 2018 | Code freeze, Only accept fixes for blocking issues, Rolling out release candidates |
 
 ## Release Schedule
 
-- **4.7.0**: November 2017 - February 2018
-- **4.8.0**: Februrary 2018 - May 2018
-- **4.9.0**: May 2018 - August 2018
-- **4.10.0**: August 2018 - November 2018
+- **4.7.0**: November 2017 - April 2018
+- **4.8.0**: April 2018 - July 2018
+- **4.9.0**: July 2018 - October 2018
+- **4.10.0**: October 2018 - January 2019
 
 <iframe src="https://calendar.google.com/calendar/embed?src=aam1p2gcoa40n68a6duflnva7c%40group.calendar.google.com&ctz=America/Los_Angeles" style="border: 0" width="800" height="600" frameborder="0" scrolling="no"></iframe>

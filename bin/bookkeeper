@@ -18,13 +18,15 @@
 # * limitations under the License.
 # */
 
-# check if net.ipv6.bindv6only is set to 1
-bindv6only=$(/sbin/sysctl -n net.ipv6.bindv6only 2> /dev/null)
-if [ -n "$bindv6only" ] && [ "$bindv6only" -eq "1" ]
-then
-  echo "Error: \"net.ipv6.bindv6only\" is set to 1 - Java networking could be broken"
-  echo "For more info (the following page also applies to bookkeeper): http://wiki.apache.org/hadoop/HadoopIPv6"
-  exit 1
+if [ -f /sbin/sysctl ]; then
+  # check if net.ipv6.bindv6only is set to 1
+  bindv6only=$(/sbin/sysctl -n net.ipv6.bindv6only 2> /dev/null)
+  if [ -n "$bindv6only" ] && [ "$bindv6only" -eq "1" ]
+  then
+    echo "Error: \"net.ipv6.bindv6only\" is set to 1 - Java networking could be broken"
+    echo "For more info (the following page also applies to bookkeeper): http://wiki.apache.org/hadoop/HadoopIPv6"
+    exit 1
+  fi
 fi
 
 # See the following page for extensive details on setting
@@ -205,20 +207,56 @@ if [ -z "$BOOKIE_LOG_CONF" ]; then
   BOOKIE_LOG_CONF=$DEFAULT_LOG_CONF
 fi
 
+BOOKIE_LOG_DIR=${BOOKIE_LOG_DIR:-"$BK_HOME/logs"}
+if [ ! -d ${BOOKIE_LOG_DIR} ]; then
+    mkdir ${BOOKIE_LOG_DIR}
+fi
+
+# Configure JVM settings
+DEFAULT_BOOKIE_GC_OPTS="-XX:+UseG1GC \
+    -XX:MaxGCPauseMillis=10 \
+    -XX:+ParallelRefProcEnabled \
+    -XX:+UnlockExperimentalVMOptions \
+    -XX:+AggressiveOpts \
+    -XX:+DoEscapeAnalysis \
+    -XX:ParallelGCThreads=32 \
+    -XX:ConcGCThreads=32 \
+    -XX:G1NewSizePercent=50 \
+    -XX:+DisableExplicitGC \
+    -XX:-ResizePLAB"
+DEFAULT_BOOKIE_GC_LOGGING_OPTS="-XX:+PrintGCDetails \
+    -XX:+PrintGCApplicationStoppedTime  \
+    -XX:+UseGCLogFileRotation \
+    -XX:NumberOfGCLogFiles=5 \
+    -XX:GCLogFileSize=64m \
+    -Xloggc:${BOOKIE_LOG_DIR}/gc_%p.log"
+BOOKIE_MAX_HEAP_MEMORY=${BOOKIE_MAX_HEAP_MEMORY:-"1g"}
+BOOKIE_MIN_HEAP_MEMORY=${BOOKIE_MIN_HEAP_MEMORY:-"1g"}
+BOOKIE_MAX_DIRECT_MEMORY=${BOOKIE_MAX_DIRECT_MEMORY:-"2g"}
+BOOKIE_MEM_OPTS=${BOOKIE_MEM_OPTS:-"-Xms${BOOKIE_MAX_HEAP_MEMORY} -Xmx${BOOKIE_MIN_HEAP_MEMORY} -XX:MaxDirectMemorySize=${BOOKIE_MAX_DIRECT_MEMORY}"}
+BOOKIE_GC_OPTS=${BOOKIE_GC_OPTS:-"${DEFAULT_BOOKIE_GC_OPTS}"}
+BOOKIE_GC_LOGGING_OPTS=${BOOKIE_GC_LOGGING_OPTS:-"${DEFAULT_BOOKIE_GC_LOGGING_OPTS}"}
+
 BOOKIE_CLASSPATH="$BOOKIE_JAR:$BOOKIE_CLASSPATH:$BOOKIE_EXTRA_CLASSPATH"
 BOOKIE_CLASSPATH="`dirname $BOOKIE_LOG_CONF`:$BOOKIE_CLASSPATH"
 OPTS="$OPTS -Dlog4j.configuration=`basename $BOOKIE_LOG_CONF`"
 
 OPTS="-cp $BOOKIE_CLASSPATH $OPTS"
 
-OPTS="$OPTS $BOOKIE_EXTRA_OPTS"
-
 # Disable ipv6 as it can cause issues
 OPTS="$OPTS -Djava.net.preferIPv4Stack=true"
+# Disable netty leak detection
+NETTY_LEAK_DETECTION_LEVEL=${NETTY_LEAK_DETECTION_LEVEL:-"disabled"}
+OPTS="$OPTS -Dio.netty.leakDetectionLevel=${NETTY_LEAK_DETECTION_LEVEL}"
+NETTY_RECYCLER_MAXCAPACITY=${NETTY_RECYCLER_MAXCAPACITY:-"1000"}
+OPTS="$OPTS -Dio.netty.recycler.maxCapacity.default=${NETTY_RECYCLER_MAXCAPACITY}"
+NETTY_RECYCLER_LINKCAPACITY=${NETTY_RECYCLER_LINKCAPACITY:-"1024"}
+OPTS="$OPTS -Dio.netty.recycler.linkCapacity=${NETTY_RECYCLER_LINKCAPACITY}"
+
+OPTS="$OPTS $BOOKIE_MEM_OPTS $BOOKIE_GC_OPTS $BOOKIE_GC_LOGGING_OPTS $BOOKIE_PERF_OPTS $BOOKIE_EXTRA_OPTS"
 
 # log directory & file
 BOOKIE_ROOT_LOGGER=${BOOKIE_ROOT_LOGGER:-"INFO,CONSOLE"}
-BOOKIE_LOG_DIR=${BOOKIE_LOG_DIR:-"$BK_HOME/logs"}
 BOOKIE_LOG_FILE=${BOOKIE_LOG_FILE:-"bookkeeper-server.log"}
 
 #Configure log configuration system properties

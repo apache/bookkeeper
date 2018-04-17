@@ -43,9 +43,9 @@ public class BookieMultipleJournalsTest extends BookKeeperClusterTestCase {
         super(1);
     }
 
-    protected ServerConfiguration newServerConfiguration(int port, String zkServers, File journalDir,
+    protected ServerConfiguration newServerConfiguration(int port, File journalDir,
             File[] ledgerDirs) {
-        ServerConfiguration conf = super.newServerConfiguration(port, zkServers, journalDir, ledgerDirs);
+        ServerConfiguration conf = super.newServerConfiguration(port, journalDir, ledgerDirs);
 
         // Use 4 journals
         String[] journalDirs = new String[4];

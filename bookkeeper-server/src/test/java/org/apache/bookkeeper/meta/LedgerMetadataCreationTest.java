@@ -34,6 +34,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
+import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
 import org.apache.zookeeper.ZooKeeper;
 import org.junit.Assume;
 import org.junit.Test;
@@ -145,7 +146,7 @@ public class LedgerMetadataCreationTest extends LedgerManagerTestCase {
         ZooKeeper zkc = new ZooKeeper(zkUtil.getZooKeeperConnectString(), 10000, null);
         BookKeeper bookKeeper = new BookKeeper(baseClientConf);
         bookKeeper.createLedgerAdv(1, 3, 2, 2, DigestType.CRC32, "passwd".getBytes(), null);
-        String ledgersRootPath = baseClientConf.getZkLedgersRootPath();
+        String ledgersRootPath = ZKMetadataDriverBase.resolveZkLedgersRootPath(baseClientConf);
         String parentZnodePath;
         if (baseClientConf.getLedgerManagerFactoryClass().equals(HierarchicalLedgerManagerFactory.class)) {
             /*

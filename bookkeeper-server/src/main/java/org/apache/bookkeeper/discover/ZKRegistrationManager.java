@@ -49,6 +49,7 @@ import org.apache.bookkeeper.meta.LayoutManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.ZkLayoutManager;
 import org.apache.bookkeeper.meta.ZkLedgerUnderreplicationManager;
+import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.util.ZkUtils;
@@ -111,7 +112,7 @@ public class ZKRegistrationManager implements RegistrationManager {
         this.zk = zk;
         this.zkAcls = ZkUtils.getACLs(conf);
 
-        this.ledgersRootPath = conf.getZkLedgersRootPath();
+        this.ledgersRootPath = ZKMetadataDriverBase.resolveZkLedgersRootPath(conf);
         this.cookiePath = ledgersRootPath + "/" + COOKIE_NODE;
         this.bookieRegistrationPath = ledgersRootPath + "/" + AVAILABLE_NODE;
         this.bookieReadonlyRegistrationPath = this.bookieRegistrationPath + "/" + READONLY;
@@ -119,7 +120,7 @@ public class ZKRegistrationManager implements RegistrationManager {
 
         this.layoutManager = new ZkLayoutManager(
             zk,
-            conf.getZkLedgersRootPath(),
+            ledgersRootPath,
             zkAcls);
 
         this.zk.register(event -> {
@@ -405,7 +406,7 @@ public class ZKRegistrationManager implements RegistrationManager {
 
     @Override
     public boolean initNewCluster() throws Exception {
-        String zkServers = conf.getZkServers();
+        String zkServers = ZKMetadataDriverBase.resolveZkServers(conf);
         String instanceIdPath = ledgersRootPath + "/" + INSTANCEID;
         log.info("Initializing ZooKeeper metadata for new cluster, ZKServers: {} ledger root path: {}", zkServers,
                 ledgersRootPath);
@@ -450,7 +451,7 @@ public class ZKRegistrationManager implements RegistrationManager {
 
     @Override
     public boolean nukeExistingCluster() throws Exception {
-        String zkServers = conf.getZkServers();
+        String zkServers = ZKMetadataDriverBase.resolveZkServers(conf);
         log.info("Nuking ZooKeeper metadata of existing cluster, ZKServers: {} ledger root path: {}",
                 zkServers, ledgersRootPath);
 

@@ -33,6 +33,7 @@ import org.apache.bookkeeper.http.HttpServiceProvider;
 import org.apache.bookkeeper.http.service.ErrorHttpService;
 import org.apache.bookkeeper.http.service.HeartbeatService;
 import org.apache.bookkeeper.http.service.HttpEndpointService;
+import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.replication.Auditor;
 import org.apache.bookkeeper.replication.AutoRecoveryMain;
@@ -60,6 +61,8 @@ import org.apache.zookeeper.ZooKeeper;
  * Bookkeeper based implementation of HttpServiceProvider,
  * which provide bookkeeper services to handle http requests
  * from different http endpoints.
+ *
+ * <p>TODO: eliminate the direct usage of zookeeper here {@link https://github.com/apache/bookkeeper/issues/1332}
  */
 @Slf4j
 public class BKHttpServiceProvider implements HttpServiceProvider {
@@ -71,7 +74,6 @@ public class BKHttpServiceProvider implements HttpServiceProvider {
     private final BookKeeperAdmin bka;
     private final ExecutorService executor;
 
-
     private BKHttpServiceProvider(BookieServer bookieServer,
                                   AutoRecoveryMain autoRecovery,
                                   ServerConfiguration serverConf)
@@ -79,13 +81,13 @@ public class BKHttpServiceProvider implements HttpServiceProvider {
         this.bookieServer = bookieServer;
         this.autoRecovery = autoRecovery;
         this.serverConf = serverConf;
+        String zkServers = ZKMetadataDriverBase.resolveZkServers(serverConf);
         this.zk = ZooKeeperClient.newBuilder()
-          .connectString(serverConf.getZkServers())
+          .connectString(zkServers)
           .sessionTimeoutMs(serverConf.getZkTimeout())
           .build();
 
         ClientConfiguration clientConfiguration = new ClientConfiguration(serverConf);
-        clientConfiguration.setZkServers(serverConf.getZkServers());
         this.bka = new BookKeeperAdmin(clientConfiguration);
 
         this.executor = Executors.newSingleThreadExecutor(

@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.concurrent.CyclicBarrier;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.util.ZkUtils;
 import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
@@ -69,6 +70,7 @@ public class TestLedgerManager extends BookKeeperClusterTestCase {
     /**
      * Test bad client configuration.
      */
+    @SuppressWarnings("deprecation")
     @Test
     public void testBadConf() throws Exception {
         ClientConfiguration conf = new ClientConfiguration();
@@ -77,11 +79,12 @@ public class TestLedgerManager extends BookKeeperClusterTestCase {
         String root0 = "/goodconf0";
         zkc.create(root0, new byte[0],
                    Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+        conf.setZkServers(zkUtil.getZooKeeperConnectString());
         conf.setZkLedgersRootPath(root0);
 
         ZkLayoutManager zkLayoutManager = new ZkLayoutManager(
             zkc,
-            conf.getZkLedgersRootPath(),
+            ZKMetadataDriverBase.resolveZkLedgersRootPath(conf),
             ZkUtils.getACLs(conf));
 
         LedgerManagerFactory m = AbstractZkLedgerManagerFactory.newLedgerManagerFactory(
@@ -106,8 +109,8 @@ public class TestLedgerManager extends BookKeeperClusterTestCase {
         String root1 = "/badconf1";
         zkc.create(root1, new byte[0],
                    Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-        conf.setZkLedgersRootPath(root1);
 
+        conf.setZkLedgersRootPath(root1);
         conf.setLedgerManagerFactoryClassName("DoesNotExist");
         try {
             AbstractZkLedgerManagerFactory.newLedgerManagerFactory(conf, zkLayoutManager);
@@ -130,7 +133,7 @@ public class TestLedgerManager extends BookKeeperClusterTestCase {
         String root0 = "/goodconf0";
         zkc.create(root0, new byte[0],
                    Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-        conf.setZkLedgersRootPath(root0);
+        conf.setMetadataServiceUri(newMetadataServiceUri(root0));
         // write v1 layout
         writeLedgerLayout(root0, HierarchicalLedgerManagerFactory.NAME,
                           HierarchicalLedgerManagerFactory.CUR_VERSION, 1);
@@ -139,7 +142,7 @@ public class TestLedgerManager extends BookKeeperClusterTestCase {
 
         ZkLayoutManager zkLayoutManager = new ZkLayoutManager(
             zkc,
-            conf.getZkLedgersRootPath(),
+            ZKMetadataDriverBase.resolveZkLedgersRootPath(conf),
             ZkUtils.getACLs(conf));
 
         LedgerManagerFactory m = AbstractZkLedgerManagerFactory.newLedgerManagerFactory(
@@ -180,7 +183,7 @@ public class TestLedgerManager extends BookKeeperClusterTestCase {
         String root0 = "/badzk0";
         zkc.create(root0, new byte[0],
                    Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-        conf.setZkLedgersRootPath(root0);
+        conf.setMetadataServiceUri(newMetadataServiceUri(root0));
 
         LedgerLayout layout = new LedgerLayout("DoesNotExist",
                          0xdeadbeef);
@@ -193,15 +196,16 @@ public class TestLedgerManager extends BookKeeperClusterTestCase {
             fail("Shouldn't reach here");
         } catch (Exception e) {
             LOG.error("Received exception", e);
-            assertTrue("Invalid exception",
-                    e.getMessage().contains("Failed to instantiate ledger manager factory"));
+            assertTrue("Invalid exception", e.getMessage().contains(
+                "Configured layout org.apache.bookkeeper.meta.HierarchicalLedgerManagerFactory"
+                    + " does not match existing layout DoesNotExist"));
         }
 
         // bad version in zookeeper
         String root1 = "/badzk1";
         zkc.create(root1, new byte[0],
                    Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-        conf.setZkLedgersRootPath(root1);
+        conf.setMetadataServiceUri(newMetadataServiceUri(root1));
 
         LedgerLayout layout1 = new LedgerLayout(HierarchicalLedgerManagerFactory.class.getName(),
                          0xdeadbeef);
@@ -221,21 +225,21 @@ public class TestLedgerManager extends BookKeeperClusterTestCase {
     private static class CreateLMThread extends Thread {
         private boolean success = false;
         private final String factoryCls;
-        private final String root;
         private final CyclicBarrier barrier;
         private ZooKeeper zkc;
         private ClientConfiguration conf;
 
+        @SuppressWarnings("deprecation")
         CreateLMThread(String zkConnectString, String root,
                        String factoryCls, CyclicBarrier barrier) throws Exception {
             this.factoryCls = factoryCls;
             this.barrier = barrier;
-            this.root = root;
             zkc = ZooKeeperClient.newBuilder()
                     .connectString(zkConnectString)
                     .build();
             this.conf = new ClientConfiguration();
             conf.setZkServers(zkConnectString);
+            conf.setZkLedgersRootPath(root);
         }
 
         public void run() {

@@ -64,7 +64,7 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
     @Test
     public void testConstructionZkDelay() throws Exception {
         ClientConfiguration conf = new ClientConfiguration();
-        conf.setZkServers(zkUtil.getZooKeeperConnectString())
+        conf.setMetadataServiceUri(zkUtil.getMetadataServiceUri())
             .setZkTimeout(20000);
 
         CountDownLatch l = new CountDownLatch(1);
@@ -79,7 +79,7 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
     @Test
     public void testConstructionNotConnectedExplicitZk() throws Exception {
         ClientConfiguration conf = new ClientConfiguration();
-        conf.setZkServers(zkUtil.getZooKeeperConnectString())
+        conf.setMetadataServiceUri(zkUtil.getMetadataServiceUri())
             .setZkTimeout(20000);
 
         CountDownLatch l = new CountDownLatch(1);
@@ -116,7 +116,7 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
 
     void testBookkeeperDigestPassword(boolean autodetection) throws Exception {
         ClientConfiguration conf = new ClientConfiguration();
-        conf.setZkServers(zkUtil.getZooKeeperConnectString());
+        conf.setMetadataServiceUri(zkUtil.getMetadataServiceUri());
         conf.setEnableDigestTypeAutodetection(autodetection);
         BookKeeper bkc = new BookKeeper(conf);
 
@@ -207,7 +207,7 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
     @Test
     public void testCloseDuringOp() throws Exception {
         ClientConfiguration conf = new ClientConfiguration();
-        conf.setZkServers(zkUtil.getZooKeeperConnectString());
+        conf.setMetadataServiceUri(zkUtil.getMetadataServiceUri());
         for (int i = 0; i < 10; i++) {
             final BookKeeper client = new BookKeeper(conf);
             final CountDownLatch l = new CountDownLatch(1);
@@ -243,7 +243,7 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
     @Test
     public void testIsClosed() throws Exception {
         ClientConfiguration conf = new ClientConfiguration();
-        conf.setZkServers(zkUtil.getZooKeeperConnectString());
+        conf.setMetadataServiceUri(zkUtil.getMetadataServiceUri());
 
         BookKeeper bkc = new BookKeeper(conf);
         LedgerHandle lh = bkc.createLedger(digestType, "testPasswd".getBytes());
@@ -263,7 +263,7 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
     @Test
     public void testReadFailureCallback() throws Exception {
         ClientConfiguration conf = new ClientConfiguration();
-        conf.setZkServers(zkUtil.getZooKeeperConnectString());
+        conf.setMetadataServiceUri(zkUtil.getMetadataServiceUri());
 
         BookKeeper bkc = new BookKeeper(conf);
         LedgerHandle lh = bkc.createLedger(digestType, "testPasswd".getBytes());
@@ -303,14 +303,12 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
         assertEquals(BKException.Code.BookieHandleNotAvailableException, returnCode.get());
 
         bkc.close();
-
-        startBKCluster();
     }
 
     @Test
     public void testAutoCloseableBookKeeper() throws Exception {
         ClientConfiguration conf = new ClientConfiguration();
-        conf.setZkServers(zkUtil.getZooKeeperConnectString());
+        conf.setMetadataServiceUri(zkUtil.getMetadataServiceUri());
         BookKeeper bkc2;
         try (BookKeeper bkc = new BookKeeper(conf)) {
             bkc2 = bkc;
@@ -330,7 +328,7 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
     public void testReadAfterLastAddConfirmed() throws Exception {
 
         ClientConfiguration clientConfiguration = new ClientConfiguration();
-        clientConfiguration.setZkServers(zkUtil.getZooKeeperConnectString());
+        clientConfiguration.setMetadataServiceUri(zkUtil.getMetadataServiceUri());
 
         try (BookKeeper bkWriter = new BookKeeper(clientConfiguration)) {
             LedgerHandle writeLh = bkWriter.createLedger(digestType, "testPasswd".getBytes());
@@ -546,7 +544,7 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
     @Test
     public void testReadWriteWithV2WireProtocol() throws Exception {
         ClientConfiguration conf = new ClientConfiguration().setUseV2WireProtocol(true);
-        conf.setZkServers(zkUtil.getZooKeeperConnectString());
+        conf.setMetadataServiceUri(zkUtil.getMetadataServiceUri());
         int numEntries = 100;
         byte[] data = "foobar".getBytes();
         try (BookKeeper bkc = new BookKeeper(conf)) {
@@ -591,7 +589,7 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
     @Test
     public void testReadEntryReleaseByteBufs() throws Exception {
         ClientConfiguration confWriter = new ClientConfiguration();
-        confWriter.setZkServers(zkUtil.getZooKeeperConnectString());
+        confWriter.setMetadataServiceUri(zkUtil.getMetadataServiceUri());
         int numEntries = 10;
         byte[] data = "foobar".getBytes();
         long ledgerId;
@@ -607,8 +605,8 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
         // v2 protocol, using pooled buffers
         ClientConfiguration confReader1 = new ClientConfiguration()
             .setUseV2WireProtocol(true)
-            .setNettyUsePooledBuffers(true);
-        confReader1.setZkServers(zkUtil.getZooKeeperConnectString());
+            .setNettyUsePooledBuffers(true)
+            .setMetadataServiceUri(zkUtil.getMetadataServiceUri());
 
         try (BookKeeper bkc = new BookKeeper(confReader1)) {
             try (LedgerHandle lh = bkc.openLedger(ledgerId, digestType, "testPasswd".getBytes())) {
@@ -629,7 +627,7 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
         ClientConfiguration confReader2 = new ClientConfiguration()
             .setUseV2WireProtocol(true)
             .setNettyUsePooledBuffers(false);
-        confReader2.setZkServers(zkUtil.getZooKeeperConnectString());
+        confReader2.setMetadataServiceUri(zkUtil.getMetadataServiceUri());
 
         try (BookKeeper bkc = new BookKeeper(confReader2)) {
             try (LedgerHandle lh = bkc.openLedger(ledgerId, digestType, "testPasswd".getBytes())) {
@@ -649,8 +647,8 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
         // v3 protocol, not using pooled buffers
         ClientConfiguration confReader3 = new ClientConfiguration()
             .setUseV2WireProtocol(false)
-            .setNettyUsePooledBuffers(false);
-        confReader3.setZkServers(zkUtil.getZooKeeperConnectString());
+            .setNettyUsePooledBuffers(false)
+            .setMetadataServiceUri(zkUtil.getMetadataServiceUri());
         try (BookKeeper bkc = new BookKeeper(confReader3)) {
             try (LedgerHandle lh = bkc.openLedger(ledgerId, digestType, "testPasswd".getBytes())) {
                 assertEquals(numEntries - 1, lh.readLastConfirmed());
@@ -672,8 +670,8 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
         // v3 protocol from 4.5 always "wraps" buffers returned by protobuf
         ClientConfiguration confReader4 = new ClientConfiguration()
             .setUseV2WireProtocol(false)
-            .setNettyUsePooledBuffers(true);
-        confReader4.setZkServers(zkUtil.getZooKeeperConnectString());
+            .setNettyUsePooledBuffers(true)
+            .setMetadataServiceUri(zkUtil.getMetadataServiceUri());
 
         try (BookKeeper bkc = new BookKeeper(confReader4)) {
             try (LedgerHandle lh = bkc.openLedger(ledgerId, digestType, "testPasswd".getBytes())) {
@@ -695,7 +693,7 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
 
         // cannot read twice an entry
         ClientConfiguration confReader5 = new ClientConfiguration();
-        confReader5.setZkServers(zkUtil.getZooKeeperConnectString());
+        confReader5.setMetadataServiceUri(zkUtil.getMetadataServiceUri());
         try (BookKeeper bkc = new BookKeeper(confReader5)) {
             try (LedgerHandle lh = bkc.openLedger(ledgerId, digestType, "testPasswd".getBytes())) {
                 assertEquals(numEntries - 1, lh.readLastConfirmed());

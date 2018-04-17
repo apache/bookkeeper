@@ -71,7 +71,7 @@ public class LedgerCloseTest extends BookKeeperClusterTestCase {
     @Test
     public void testLedgerCloseWithConsistentLength() throws Exception {
         ClientConfiguration conf = new ClientConfiguration();
-        conf.setZkServers(zkUtil.getZooKeeperConnectString());
+        conf.setMetadataServiceUri(zkUtil.getMetadataServiceUri());
         conf.setReadTimeout(1);
 
         BookKeeper bkc = new BookKeeper(conf);
@@ -91,7 +91,7 @@ public class LedgerCloseTest extends BookKeeperClusterTestCase {
         assertEquals(i.get(), BKException.Code.NotEnoughBookiesException);
         assertEquals(0, lh.getLength());
         assertEquals(LedgerHandle.INVALID_ENTRY_ID, lh.getLastAddConfirmed());
-        startBKCluster();
+        startBKCluster(zkUtil.getMetadataServiceUri());
         LedgerHandle newLh = bkc.openLedger(lh.getId(), DigestType.CRC32, new byte[] {});
         assertEquals(0, newLh.getLength());
         assertEquals(LedgerHandle.INVALID_ENTRY_ID, newLh.getLastAddConfirmed());

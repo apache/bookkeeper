@@ -59,6 +59,7 @@ import org.junit.runners.Parameterized.Parameters;
 public abstract class LedgerManagerTestCase extends BookKeeperClusterTestCase {
 
     protected MetadataClientDriver clientDriver;
+    protected Class<? extends LedgerManagerFactory> lmFactoryClass;
     protected LedgerManagerFactory ledgerManagerFactory;
     protected LedgerManager ledgerManager = null;
     protected LedgerIdGenerator ledgerIdGenerator = null;
@@ -72,8 +73,25 @@ public abstract class LedgerManagerTestCase extends BookKeeperClusterTestCase {
     public LedgerManagerTestCase(Class<? extends LedgerManagerFactory> lmFactoryCls, int numBookies) {
         super(numBookies);
         activeLedgers = new SnapshotMap<Long, Boolean>();
+        this.lmFactoryClass = lmFactoryCls;
         baseConf.setLedgerManagerFactoryClass(lmFactoryCls);
         baseClientConf.setLedgerManagerFactoryClass(lmFactoryCls);
+    }
+
+    @SuppressWarnings("deprecation")
+    @Override
+    protected String getMetadataServiceUri(String ledgersRootPath) {
+        String ledgerManagerType;
+        if (lmFactoryClass == org.apache.bookkeeper.meta.FlatLedgerManagerFactory.class) {
+            ledgerManagerType = org.apache.bookkeeper.meta.FlatLedgerManagerFactory.NAME;
+        } else if (lmFactoryClass == LongHierarchicalLedgerManagerFactory.class) {
+            ledgerManagerType = LongHierarchicalLedgerManagerFactory.NAME;
+        } else if (lmFactoryClass == org.apache.bookkeeper.meta.MSLedgerManagerFactory.class) {
+            ledgerManagerType = org.apache.bookkeeper.meta.MSLedgerManagerFactory.NAME;
+        } else {
+            ledgerManagerType = HierarchicalLedgerManagerFactory.NAME;
+        }
+        return zkUtil.getMetadataServiceUri(ledgersRootPath, ledgerManagerType);
     }
 
     public LedgerManager getIndependentLedgerManager() {
@@ -109,7 +127,7 @@ public abstract class LedgerManagerTestCase extends BookKeeperClusterTestCase {
     @Override
     public void setUp() throws Exception {
         super.setUp();
-        baseConf.setZkServers(zkUtil.getZooKeeperConnectString());
+        baseConf.setMetadataServiceUri(zkUtil.getMetadataServiceUri());
 
         scheduler = OrderedScheduler.newSchedulerBuilder()
             .name("test-scheduler")
