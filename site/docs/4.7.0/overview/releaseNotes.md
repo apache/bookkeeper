@@ -54,7 +54,7 @@ to start use CRC32C digest type.
 ### Security
 
 - New PEM format `X.509` certificates are introduced for TLS authentication. See [#965](https://github.com/apache/bookkeeper/pull/965) for more details.
-- TLS related settings are converaged into same settings as bookie server. See [Upgrade Guide](../../admin/upgrade) for more details.
+- TLS related settings are converged into same settings as bookie server. See [Upgrade Guide](../../admin/upgrade) for more details.
 
 ### DbLedgerStorage
 

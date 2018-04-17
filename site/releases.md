@@ -62,7 +62,7 @@ Client Guide | API docs
 
 ## News
 
-### [DATE], 2018: Release 4.7.0 available
+### 17 April, 2018: Release 4.7.0 available
 
 This is the 10th release of Apache BookKeeper!
 
