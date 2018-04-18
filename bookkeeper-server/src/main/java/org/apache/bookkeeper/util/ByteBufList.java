@@ -208,6 +208,20 @@ public class ByteBufList extends AbstractReferenceCounted {
     }
 
     /**
+     * @return true, if this {@link ByteBufList} is backed by a single contiguous array
+     */
+    public boolean hasArray() {
+        return buffers.size() == 1 && buffers.get(0).hasArray();
+    }
+
+    /**
+     * @return the array backing this {@link ByteBufList} (without copying it), if any
+     */
+    public byte[] array() {
+        return hasArray() ? buffers.get(0).array() : null;
+    }
+
+    /**
      * @return a single buffer with the content of both individual buffers
      */
     @VisibleForTesting

@@ -89,17 +89,27 @@ public abstract class DigestManager {
      */
     public ByteBufList computeDigestAndPackageForSending(long entryId, long lastAddConfirmed, long length,
             ByteBuf data) {
-        ByteBuf headersBuffer = PooledByteBufAllocator.DEFAULT.buffer(METADATA_LENGTH + macCodeLength);
-        headersBuffer.writeLong(ledgerId);
-        headersBuffer.writeLong(entryId);
-        headersBuffer.writeLong(lastAddConfirmed);
-        headersBuffer.writeLong(length);
+        ByteBuf sendBuffer = Unpooled.buffer(METADATA_LENGTH + macCodeLength + data.readableBytes());
+        sendBuffer.writeLong(ledgerId);
+        sendBuffer.writeLong(entryId);
+        sendBuffer.writeLong(lastAddConfirmed);
+        sendBuffer.writeLong(length);
 
-        update(headersBuffer);
+        update(sendBuffer);
         update(data);
-        populateValueAndReset(headersBuffer);
+        populateValueAndReset(sendBuffer);
 
-        return ByteBufList.get(headersBuffer, data);
+        if (data.hasArray()) {
+            // fast path: single copy into existing array
+            sendBuffer.writeBytes(data.array(), data.arrayOffset(), data.readableBytes());
+        } else {
+            // fall-back to slow path with extra object allocation and copy
+            byte[] sendArray = new byte[sendBuffer.readableBytes()];
+            sendBuffer.getBytes(sendBuffer.readerIndex(), sendArray);
+            sendBuffer.writeBytes(sendArray);
+        }
+
+        return ByteBufList.get(sendBuffer);
     }
 
     /**
@@ -110,7 +120,7 @@ public abstract class DigestManager {
      */
 
     public ByteBufList computeDigestAndPackageForSendingLac(long lac) {
-        ByteBuf headersBuffer = PooledByteBufAllocator.DEFAULT.buffer(LAC_METADATA_LENGTH + macCodeLength);
+        ByteBuf headersBuffer = Unpooled.buffer(LAC_METADATA_LENGTH + macCodeLength);
         headersBuffer.writeLong(ledgerId);
         headersBuffer.writeLong(lac);
 

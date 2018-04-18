@@ -26,6 +26,7 @@ import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Sets;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.ExtensionRegistry;
+import com.google.protobuf.UnsafeByteOperations;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
@@ -520,6 +521,14 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                                                      ctx, lac));
 
         // Build the request
+        byte[] toSendArray;
+        if (toSend.hasArray()) {
+            // fast path without arraycopy (reuse backing array)
+            toSendArray = toSend.array();
+        } else {
+            // fall-back to slow path with one arraycopy
+            toSendArray = toSend.toArray();
+        }
         BKPacketHeader.Builder headerBuilder = BKPacketHeader.newBuilder()
                 .setVersion(ProtocolVersion.VERSION_THREE)
                 .setOperation(OperationType.WRITE_LAC)
@@ -527,8 +536,8 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         WriteLacRequest.Builder writeLacBuilder = WriteLacRequest.newBuilder()
                 .setLedgerId(ledgerId)
                 .setLac(lac)
-                .setMasterKey(ByteString.copyFrom(masterKey))
-                .setBody(ByteString.copyFrom(toSend.toArray()));
+                .setMasterKey(UnsafeByteOperations.unsafeWrap(masterKey))
+                .setBody(UnsafeByteOperations.unsafeWrap(toSendArray));
 
         final Request writeLacRequest = Request.newBuilder()
                 .setHeader(headerBuilder)
@@ -578,12 +587,19 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                 headerBuilder.setPriority(DEFAULT_HIGH_PRIORITY_VALUE);
             }
 
-            byte[] toSendArray = toSend.toArray();
+            byte[] toSendArray;
+            if (toSend.hasArray()) {
+                // fast path without arraycopy (reuse backing array)
+                toSendArray = toSend.array();
+            } else {
+                // fall-back to slow path with one arraycopy
+                toSendArray = toSend.toArray();
+            }
             AddRequest.Builder addBuilder = AddRequest.newBuilder()
                     .setLedgerId(ledgerId)
                     .setEntryId(entryId)
-                    .setMasterKey(ByteString.copyFrom(masterKey))
-                    .setBody(ByteString.copyFrom(toSendArray));
+                    .setMasterKey(UnsafeByteOperations.unsafeWrap(masterKey))
+                    .setBody(UnsafeByteOperations.unsafeWrap(toSendArray));
 
             if (((short) options & BookieProtocol.FLAG_RECOVERY_ADD) == BookieProtocol.FLAG_RECOVERY_ADD) {
                 addBuilder.setFlag(AddRequest.Flag.RECOVERY_ADD);
