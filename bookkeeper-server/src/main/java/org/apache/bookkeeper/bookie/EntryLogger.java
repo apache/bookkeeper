@@ -1223,7 +1223,7 @@ public class EntryLogger {
     }
 
     public long addEntry(long ledger, ByteBuf entry, boolean rollLog) throws IOException {
-        return entryLogManager.addEntry(ledger, entry, true);
+        return entryLogManager.addEntry(ledger, entry, rollLog);
     }
 
     private final FastThreadLocal<ByteBuf> sizeBuffer = new FastThreadLocal<ByteBuf>() {
