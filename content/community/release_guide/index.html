@@ -246,22 +246,24 @@
         </ul>
       </li>
       <li><a href="#create-a-new-version-in-github" id="markdown-toc-create-a-new-version-in-github">Create a new version in Github</a></li>
-      <li><a href="#triage-release-blocking-issues-in-jira-and-github" id="markdown-toc-triage-release-blocking-issues-in-jira-and-github">Triage release-blocking issues in JIRA and Github</a>        <ul>
-          <li><a href="#jira" id="markdown-toc-jira">JIRA</a></li>
-          <li><a href="#github" id="markdown-toc-github">Github</a></li>
-        </ul>
-      </li>
-      <li><a href="#review-release-notes-in-jira-and-github" id="markdown-toc-review-release-notes-in-jira-and-github">Review Release Notes in JIRA and Github</a>        <ul>
-          <li><a href="#jira-1" id="markdown-toc-jira-1">JIRA</a></li>
-          <li><a href="#github-1" id="markdown-toc-github-1">Github</a></li>
+      <li><a href="#triage-release-blocking-issues-in-github" id="markdown-toc-triage-release-blocking-issues-in-github">Triage release-blocking issues in Github</a></li>
+      <li><a href="#review-release-notes-in-github" id="markdown-toc-review-release-notes-in-github">Review Release Notes in Github</a>        <ul>
           <li><a href="#prepare-release-notes" id="markdown-toc-prepare-release-notes">Prepare Release Notes</a></li>
         </ul>
       </li>
-      <li><a href="#prepare-release-branch" id="markdown-toc-prepare-release-branch">Prepare release branch</a></li>
+      <li><a href="#prepare-release-branch" id="markdown-toc-prepare-release-branch">Prepare release branch</a>        <ul>
+          <li><a href="#create-branch-for-major-release" id="markdown-toc-create-branch-for-major-release">Create branch for major release</a>            <ul>
+              <li><a href="#create-ci-jobs-for-release-branch" id="markdown-toc-create-ci-jobs-for-release-branch">Create CI jobs for release branch</a></li>
+            </ul>
+          </li>
+          <li><a href="#checkout-release-branch" id="markdown-toc-checkout-release-branch">Checkout release branch</a></li>
+        </ul>
+      </li>
       <li><a href="#checklist-to-proceed-to-the-next-step-1" id="markdown-toc-checklist-to-proceed-to-the-next-step-1">Checklist to proceed to the next step</a></li>
     </ul>
   </li>
   <li><a href="#build-a-release-candidate" id="markdown-toc-build-a-release-candidate">Build a release candidate</a>    <ul>
+      <li><a href="#run-linux-docker-container-to-build-release-candidate" id="markdown-toc-run-linux-docker-container-to-build-release-candidate">Run linux docker container to build release candidate</a></li>
       <li><a href="#build-and-stage-java-artifacts-with-maven" id="markdown-toc-build-and-stage-java-artifacts-with-maven">Build and stage Java artifacts with Maven</a></li>
       <li><a href="#stage-source-release-on-distapacheorg" id="markdown-toc-stage-source-release-on-distapacheorg">Stage source release on dist.apache.org</a></li>
       <li><a href="#checklist-to-proceed-to-the-next-step-2" id="markdown-toc-checklist-to-proceed-to-the-next-step-2">Checklist to proceed to the next step</a></li>
@@ -282,7 +284,7 @@
       <li><a href="#update-website" id="markdown-toc-update-website">Update Website</a></li>
       <li><a href="#update-dockerfile" id="markdown-toc-update-dockerfile">Update Dockerfile</a></li>
       <li><a href="#update-dcos-bookkeeper-package" id="markdown-toc-update-dcos-bookkeeper-package">Update DC/OS BookKeeper package</a></li>
-      <li><a href="#mark-the-version-as-released-in-jira-and-github" id="markdown-toc-mark-the-version-as-released-in-jira-and-github">Mark the version as released in JIRA and Github</a></li>
+      <li><a href="#mark-the-version-as-released-in-github" id="markdown-toc-mark-the-version-as-released-in-github">Mark the version as released in Github</a></li>
       <li><a href="#update-release-schedule" id="markdown-toc-update-release-schedule">Update Release Schedule</a></li>
       <li><a href="#checklist-to-proceed-to-the-next-step-4" id="markdown-toc-checklist-to-proceed-to-the-next-step-4">Checklist to proceed to the next step</a></li>
     </ul>
@@ -291,6 +293,7 @@
       <li><a href="#apache-mailing-lists" id="markdown-toc-apache-mailing-lists">Apache mailing lists</a></li>
       <li><a href="#recordkeeping" id="markdown-toc-recordkeeping">Recordkeeping</a></li>
       <li><a href="#social-media" id="markdown-toc-social-media">Social media</a></li>
+      <li><a href="#cleanup-old-releases" id="markdown-toc-cleanup-old-releases">Cleanup old releases</a></li>
       <li><a href="#checklist-to-declare-the-process-completed" id="markdown-toc-checklist-to-declare-the-process-completed">Checklist to declare the process completed</a></li>
     </ul>
   </li>
@@ -346,7 +349,7 @@
 
 <p>Before your first release, you should perform one-time configuration steps. This will set up your security keys for signing the release and access to various release repositories.</p>
 
-<p>To prepare for each release, you should audit the project status both in the JIRA issue tracker and the Github issue tracker, and do necessary bookkeeping. Finally, you should create a release branch from which individual release candidates will be built.</p>
+<p>To prepare for each release, you should audit the project status in Github issue tracker, and do necessary bookkeeping. Finally, you should create a release branch from which individual release candidates will be built.</p>
 
 <h3 id="one-time-setup-instructions">One-time setup instructions</h3>
 
@@ -450,21 +453,7 @@ export GPG_AGENT_INFO
 
 <p>Skip this step in case of a minor release, as milestones are only for major releases.</p>
 
-<h3 id="triage-release-blocking-issues-in-jira-and-github">Triage release-blocking issues in JIRA and Github</h3>
-
-<h4 id="jira">JIRA</h4>
-
-<p>There could be outstanding release-blocking issues, which should be triaged before proceeding to build a release candidate. We track them by assigning a specific <code class="highlighter-rouge">Fix version</code> field even before the issue resolved.</p>
-
-<p>The list of release-blocking issues is available at the <a href="https://issues.apache.org/jira/browse/BOOKKEEPER/?selectedTab=com.atlassian.jira.jira-projects-plugin:versions-panel">version status page</a>. Triage each unresolved issue with one of the following resolutions:</p>
-
-<ul>
-  <li>If the issue has been resolved and JIRA was not updated, resolve it accordingly.</li>
-  <li>If the issue has not been resolved and it is acceptable to defer this until the next release, update the <code class="highlighter-rouge">Fix Version</code> field to the new version you just created. Please consider discussing this with stakeholders and the dev@ mailing list, as appropriate.</li>
-  <li>If the issue has not been resolved and it is not acceptable to release until it is fixed, the release cannot proceed. Instead, work with the BookKeeper community to resolve the issue.</li>
-</ul>
-
-<h4 id="github">Github</h4>
+<h3 id="triage-release-blocking-issues-in-github">Triage release-blocking issues in Github</h3>
 
 <p>There could be outstanding release-blocking issues, which should be triaged before proceeding to build a release candidate. We track them by assigning a specific <code class="highlighter-rouge">Milestone</code> field even before the issue resolved.</p>
 
@@ -476,29 +465,10 @@ export GPG_AGENT_INFO
   <li>If the issue has not been resolved and it is not acceptable to release until it is fixed, the release cannot proceed. Instead, work with the BookKeeper community to resolve the issue.</li>
 </ul>
 
-<h3 id="review-release-notes-in-jira-and-github">Review Release Notes in JIRA and Github</h3>
-
-<h4 id="jira-1">JIRA</h4>
-
-<p>JIRA automatically generates Release Notes based on the <code class="highlighter-rouge">Fix Version</code> field applied to issues. Release Notes are intended for BookKeeper users (not BookKeeper committers/contributors). You should ensure that Release Notes are informative and useful.</p>
-
-<p>Open the release notes from the <a href="https://issues.apache.org/jira/browse/BOOKKEEPER/?selectedTab=com.atlassian.jira.jira-projects-plugin:versions-panel">version status page</a> by choosing the release underway and clicking Release Notes.</p>
-
-<p>You should verify that the issues listed automatically by JIRA are appropriate to appear in the Release Notes. Specifically, issues should:</p>
-
-<ul>
-  <li>Be appropriately classified as <code class="highlighter-rouge">Bug</code>, <code class="highlighter-rouge">New Feature</code>, <code class="highlighter-rouge">Improvement</code>, etc.</li>
-  <li>Represent noteworthy user-facing changes, such as new functionality, backward-incompatible API changes, or performance improvements.</li>
-  <li>Have occurred since the previous release; an issue that was introduced and fixed between releases should not appear in the Release Notes.</li>
-  <li>Have an issue title that makes sense when read on its own.</li>
-</ul>
-
-<p>Adjust any of the above properties to the improve clarity and presentation of the Release Notes.</p>
-
-<h4 id="github-1">Github</h4>
+<h3 id="review-release-notes-in-github">Review Release Notes in Github</h3>
 
 <blockquote>
-  <p>Unlike JIRA, Github does not automatically generates Release Notes based on the <code class="highlighter-rouge">Milestone</code> field applied to issues.
+  <p>Github does not automatically generates Release Notes based on the <code class="highlighter-rouge">Milestone</code> field applied to issues.
 We can use <a href="https://github.com/skywinder/github-changelog-generator">github-changelog-generator</a> to generate a ChangeLog for a milestone in future.</p>
 </blockquote>
 
@@ -506,7 +476,7 @@ We can use <a href="https://github.com/skywinder/github-changelog-generator">git
 
 <h4 id="prepare-release-notes">Prepare Release Notes</h4>
 
-<p>After review the release notes on both JIRA and Github, you should write a <code class="highlighter-rouge">releaseNotes</code> under <code class="highlighter-rouge">site/docs/${release_version}/overview/releaseNotes.md</code> and then send out a pull request for review.</p>
+<p>After review the release notes on both Github, you should write a <code class="highlighter-rouge">releaseNotes</code> under <code class="highlighter-rouge">site/docs/${release_version}/overview/releaseNotes.md</code> and then send out a pull request for review.</p>
 
 <p><a href="https://github.com/apache/bookkeeper/pull/402">4.5.0 Release Notes</a> is a good example to follow.</p>
 
@@ -541,6 +511,10 @@ DEVELOPMENT_VERSION="${NEXT_VERSION}-SNAPSHOT"
 
 <p>Version represents the release currently underway, while next version specifies the anticipated next version to be released from that branch. Normally, 4.5.0 is followed by 4.6.0, while 4.5.0 is followed by 4.5.1.</p>
 
+<h4 id="create-branch-for-major-release">Create branch for major release</h4>
+
+<p>If you are cutting a minor release, you can skip this step and go to section <a href="#checkout-release-branch">Checkout release branch</a>.</p>
+
 <p>If you are cutting a major release use Maven release plugin to create the release branch and update the current branch to use the new development version. This command applies for the new major or minor version.</p>
 
 <blockquote>
@@ -566,6 +540,16 @@ You need use <a href="https://help.github.com/articles/creating-a-personal-acces
 $ git branch -D ${BRANCH_NAME}</master></p>
 </blockquote>
 
+<h5 id="create-ci-jobs-for-release-branch">Create CI jobs for release branch</h5>
+
+<p>Once the release branch is created, please create corresponding CI jobs for the release branch. These CI jobs includes postcommit jobs for different java versions and
+integration tests.</p>
+
+<p>Example PR: <a href="https://github.com/apache/bookkeeper/pull/1328">release-4.7.0</a> <a href="https://github.com/apache/bookkeeper/pull/1353">integration tests for release-4.7.0</a></p>
+
+<h4 id="checkout-release-branch">Checkout release branch</h4>
+<p><a name="checkout-release-branch"></a></p>
+
 <p>Check out the release branch.</p>
 
 <div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>git checkout ${BRANCH_NAME}
@@ -582,11 +566,8 @@ $ git branch -D ${BRANCH_NAME}</master></p>
   <li>Release Manager’s GPG key is configured in <code class="highlighter-rouge">git</code> configuration</li>
   <li>Release Manager has <code class="highlighter-rouge">org.apache.bookkeeper</code> listed under <code class="highlighter-rouge">Staging Profiles</code> in Nexus</li>
   <li>Release Manager’s Nexus User Token is configured in <code class="highlighter-rouge">settings.xml</code></li>
-  <li>JIRA release item for the subsequent release has been created</li>
   <li>Github milestone item for the subsequet release has been created</li>
-  <li>There are no release blocking JIRA issues</li>
   <li>There are no release blocking Github issues</li>
-  <li>Release Notes in JIRA have been audited and adjusted</li>
   <li>Release Notes for Github Milestone is generated, audited and adjusted</li>
   <li>Release branch has been created</li>
   <li>Originating branch has the version information updated to the new version</li>
@@ -598,10 +579,10 @@ $ git branch -D ${BRANCH_NAME}</master></p>
 
 <p>The core of the release process is the build-vote-fix cycle. Each cycle produces one release candidate. The Release Manager repeats this cycle until the community approves one release candidate, which is then finalized.</p>
 
-<h3 id="build-and-stage-java-artifacts-with-maven">Build and stage Java artifacts with Maven</h3>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>TODO: Currently we have to build and stage maven artifacts manually, because it requires pushing the artifacts to apache staging. We should look for a solution to automate that.
-</code></pre></div></div>
+<blockquote>
+  <p>Since 4.7.0, bookkeeper is releasing a CRC32C module <code class="highlighter-rouge">circe-checksum</code>. so all the steps on building a release candidate should happen in linux environment.
+It ensures the release candidate built with right jni library for <code class="highlighter-rouge">circe-checksum</code>.</p>
+</blockquote>
 
 <p>Set up a few environment variables to simplify Maven commands that follow. This identifies the release candidate being built. Start with <code class="highlighter-rouge">release candidate number</code> equal to <code class="highlighter-rouge">0</code> and increment it for each candidate.</p>
 
@@ -614,21 +595,34 @@ RC_DIR="bookkeeper-${VERSION}-rc${RC_NUM}"
   <p>Please make sure <code class="highlighter-rouge">gpg</code> command is in your $PATH. The maven release plugin use <code class="highlighter-rouge">gpg</code> to sign generated jars and packages.</p>
 </blockquote>
 
+<h3 id="run-linux-docker-container-to-build-release-candidate">Run linux docker container to build release candidate</h3>
+
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code>./dev/release/000-run-docker.sh <span class="k">${</span><span class="nv">RC_NUM</span><span class="k">}</span>
+</code></pre></div></div>
+
+<p>After the docker process is lauched, use <code class="highlighter-rouge">cache</code> credential helper to cache github credentials during releasing process.</p>
+
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>git config <span class="nt">--global</span> credential.helper <span class="s2">"cache --timeout=3600"</span>
+</code></pre></div></div>
+
+<p>Then run a dry-run github push to apache github repo. You will be asked for typing your github password, so the password will be cached for the whole releasing process.
+If your account is configured with 2FA, use your personal token as the github password.</p>
+
+<p>The remote <code class="highlighter-rouge">apache</code> should point to <code class="highlighter-rouge">https://github.com/apache/bookkeeper</code>.</p>
+
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>git push apache <span class="nt">--dry-run</span>
+</code></pre></div></div>
+
+<h3 id="build-and-stage-java-artifacts-with-maven">Build and stage Java artifacts with Maven</h3>
+
 <p>Use Maven release plugin to build the release artifacts, as follows:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>mvn release:prepare \
-    -Dresume=false \
-    -DreleaseVersion=${VERSION} \
-    -Dtag=${TAG} \
-    -DupdateWorkingCopyVersions=false \
-    [-DdryRun] \
-    [-Darguments="-Dmaven.javadoc.skip=true -DskipTests=true"] \ // to skip javadoc and tests
-    [-Dresume=true] // resume prepare if it is interrupted in the middle
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code>./dev/release/002-release-prepare.sh
 </code></pre></div></div>
 
 <p>Use Maven release plugin to stage these artifacts on the Apache Nexus repository, as follows:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>mvn release:perform [-DdryRun] [-Darguments="-Dmaven.javadoc.skip=true -DskipTests=true"] [-Dresume=true]
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code>./dev/release/003-release-perform.sh
 </code></pre></div></div>
 
 <blockquote>
@@ -638,7 +632,7 @@ delete the release tag: git tag -d release-${VERSION} &amp;&amp; git push apache
   <p>Also, you need to check the git commits on the github and if needed you may have to
 force push backed out local git branch to github again.</p>
 
-  <p>After reset, run <code class="highlighter-rouge">release:prepare</code> again.</p>
+  <p>After reset, run <code class="highlighter-rouge">./dev/release/002-release-prepare.sh</code> again.</p>
 </blockquote>
 
 <p>Review all staged artifacts. They should contain all relevant parts for each module, including <code class="highlighter-rouge">pom.xml</code>, jar, test jar, source, test source, javadoc, etc. Artifact names should follow <a href="https://search.maven.org/#search%7Cga%7C1%7Cg%3A%22org.apache.bookkeeper%22">the existing format</a> in which artifact name mirrors directory structure, e.g., <code class="highlighter-rouge">bookkeeper-server</code>. Carefully review any new artifacts.</p>
@@ -647,52 +641,15 @@ force push backed out local git branch to github again.</p>
 
 <h3 id="stage-source-release-on-distapacheorg">Stage source release on dist.apache.org</h3>
 
-<p>Copy the source release to the dev repository of <code class="highlighter-rouge">dist.apache.org</code>.</p>
+<ol>
+  <li>Copy the source release to the dev repository of <code class="highlighter-rouge">dist.apache.org</code>.</li>
+</ol>
+
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code>./dev/release/004-stage-packages.sh
+</code></pre></div></div>
 
 <ol>
-  <li>
-    <p>If you have not already, check out the BookKeeper section of the <code class="highlighter-rouge">dev</code> repository on <code class="highlighter-rouge">dist.apache.org</code> via Subversion. In a fresh directory:</p>
-
-    <div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code> svn co https://dist.apache.org/repos/dist/dev/bookkeeper
-</code></pre></div>    </div>
-  </li>
-  <li>
-    <p>Make a directory for the new release:</p>
-
-    <div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code> mkdir bookkeeper/${RC_DIR}
-</code></pre></div>    </div>
-  </li>
-  <li>
-    <p>Copy the BookKeeper source and binary distribution, and their GPG signatures:</p>
-
-    <div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code> cp bookkeeper-dist/target/bookkeeper-${VERSION}-src.tar.gz bookkeeper/${RC_DIR}/bookkeeper-${VERSION}-src.tar.gz
- cp bookkeeper-dist/target/bookkeeper-${VERSION}-src.tar.gz.asc bookkeeper/${RC_DIR}/bookkeeper-${VERSION}-src.tar.gz.asc
- cp bookkeeper-dist/server/target/bookkeeper-server-${VERSION}-bin.tar.gz bookkeeper/${RC_DIR}/bookkeeper-server-${VERSION}-bin.tar.gz
- cp bookkeeper-dist/server/target/bookkeeper-server-${VERSION}-bin.tar.gz.asc bookkeeper/${RC_DIR}/bookkeeper-server-${VERSION}-bin.tar.gz.asc
- cp bookkeeper-dist/all/target/bookkeeper-all-${VERSION}-bin.tar.gz bookkeeper/${RC_DIR}/bookkeeper-all-${VERSION}-bin.tar.gz
- cp bookkeeper-dist/all/target/bookkeeper-all-${VERSION}-bin.tar.gz.asc bookkeeper/${RC_DIR}/bookkeeper-all-${VERSION}-bin.tar.gz.asc
-</code></pre></div>    </div>
-  </li>
-  <li>
-    <p>Sign the BookKeeper source and binary distribution.</p>
-
-    <div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code> cd bookkeeper/${RC_DIR}
- sha1sum bookkeeper-${VERSION}-src.tar.gz &gt; bookkeeper-${VERSION}-src.tar.gz.sha1
- sha1sum bookkeeper-server-${VERSION}-bin.tar.gz &gt; bookkeeper-server-${VERSION}-bin.tar.gz.sha1
- sha1sum bookkeeper-all-${VERSION}-bin.tar.gz &gt; bookkeeper-all-${VERSION}-bin.tar.gz.sha1
-</code></pre></div>    </div>
-  </li>
-  <li>
-    <p>Go back to BookKeeper directory, add and commit all the files.</p>
-
-    <div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code> cd ..
- svn add ${RC_DIR}
- svn commit
-</code></pre></div>    </div>
-  </li>
-  <li>
-    <p>Verify that files are <a href="https://dist.apache.org/repos/dist/dev/bookkeeper">present</a>.</p>
-  </li>
+  <li>Verify that files are <a href="https://dist.apache.org/repos/dist/dev/bookkeeper">present</a>.</li>
 </ol>
 
 <h3 id="checklist-to-proceed-to-the-next-step-2">Checklist to proceed to the next step</h3>
@@ -814,6 +771,8 @@ Thanks everyone!
 <p>For instance if you have released 4.5.1, you have to change version to 4.5.2-SNAPSHOT.
 Then you have to create a PR and submit it for review.</p>
 
+<p>Example PR: <a href="https://github.com/apache/bookkeeper/pull/1350">release-4.7.0</a></p>
+
 <h3 id="deploy-artifacts-to-maven-central-repository">Deploy artifacts to Maven Central Repository</h3>
 
 <p>Use the Apache Nexus repository to release the staged binary artifacts to the Maven Central repository. In the <code class="highlighter-rouge">Staging Repositories</code> section, find the relevant release candidate <code class="highlighter-rouge">orgapachebookkeeper-XXX</code> entry and click <code class="highlighter-rouge">Release</code>. Drop all other release candidates that are not being released.</p>
@@ -823,23 +782,6 @@ Then you have to create a PR and submit it for review.</p>
 <p>Copy the source release from the <code class="highlighter-rouge">dev</code> repository to the <code class="highlighter-rouge">release</code> repository at <code class="highlighter-rouge">dist.apache.org</code> using Subversion.</p>
 
 <div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>svn move https://dist.apache.org/repos/dist/dev/bookkeeper/bookkeeper-${VERSION}-rc${RC_NUM} https://dist.apache.org/repos/dist/release/bookkeeper/bookkeeper-${VERSION}
-</code></pre></div></div>
-
-<p>According to <a href="http://www.apache.org/legal/release-policy.html#when-to-archive">ASF policy</a>, <code class="highlighter-rouge">/www.apache.org/dist</code> should contain the latest release in each branch that
-is currently under development. We need to remove the old releases from <code class="highlighter-rouge">release</code> repository.</p>
-
-<p>For example, if 4.6.1 is a newer release, we need to remove releases older than 4.6.1.</p>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>```shell
-// go to the directory checkout from `svn co https://dist.apache.org/repos/dist/release/bookkeeper`
-$ cd bookkeeper
-
-// delete old releases
-$ svn rm &lt;old-release&gt;
-
-// commit the change
-$ svn commit -m "remove bookkeeper release &lt;old-release&gt;"
-```
 </code></pre></div></div>
 
 <h3 id="update-website">Update Website</h3>
@@ -863,6 +805,10 @@ $ svn commit -m "remove bookkeeper release &lt;old-release&gt;"
 </ol>
 
 <h3 id="update-dockerfile">Update Dockerfile</h3>
+
+<blockquote>
+  <p>NOTE: The dockerfile PR should only be merged after the release package is showed up under https://archive.apache.org/dist/bookkeeper/</p>
+</blockquote>
 
 <ol>
   <li>
@@ -890,9 +836,16 @@ $ svn commit -m "remove bookkeeper release &lt;old-release&gt;"
   <li>
     <p>Verify the <a href="https://hub.docker.com/r/apache/bookkeeper/">docker hub</a> to see if a new build for the given tag is build.</p>
   </li>
+  <li>
+    <p>Once the new docker image is built, update BC tests to include new docker image. Example: <a href="https://github.com/apache/bookkeeper/pull/1352">release-4.7.0</a></p>
+  </li>
 </ol>
 
 <h3 id="update-dcos-bookkeeper-package">Update DC/OS BookKeeper package</h3>
+
+<blockquote>
+  <p>NOTE: Please update DC/OS bookkeeper package only after the release package is showed up under https://archive.apache.org/dist/bookkeeper/</p>
+</blockquote>
 
 <p>Once we have new version of BookKeeper docker image available at <a href="https://hub.docker.com/r/apache/bookkeeper/">docker hub</a>, We could update DC/OS BookKeeper package in <a href="https://github.com/mesosphere/universe">mesosphere universe</a>. A new pull request is needed in it.</p>
 
@@ -960,9 +913,7 @@ $ svn commit -m "remove bookkeeper release &lt;old-release&gt;"
   </li>
 </ol>
 
-<h3 id="mark-the-version-as-released-in-jira-and-github">Mark the version as released in JIRA and Github</h3>
-
-<p>In JIRA, inside <a href="https://issues.apache.org/jira/plugins/servlet/project-config/BOOKKEEPER/versions">version management</a>, hover over the current release and a settings menu will appear. Click <code class="highlighter-rouge">Release</code>, and select today’s date.</p>
+<h3 id="mark-the-version-as-released-in-github">Mark the version as released in Github</h3>
 
 <p>In Github, inside <a href="https://github.com/apache/bookkeeper/milestones">milestones</a>, hover over the current milestone and click <code class="highlighter-rouge">close</code> button to close a milestone and set today’s date as due-date.</p>
 
@@ -983,7 +934,7 @@ $ svn commit -m "remove bookkeeper release &lt;old-release&gt;"
   <li>Website is updated with new release</li>
   <li>Docker image is built with new release</li>
   <li>Release tagged in the source code repository</li>
-  <li>Release version finalized in JIRA and Github</li>
+  <li>Release version finalized in Github</li>
   <li>Release section with release summary is added in <a href="https://github.com/apache/bookkeeper/blob/master/site/releases.md">releases.md</a></li>
   <li>Release schedule page is updated</li>
 </ul>
@@ -1049,6 +1000,18 @@ The BookKeeper Team
 <p>Tweet, post on Facebook, LinkedIn, and other platforms. Ask other contributors to do the same.</p>
 
 <p>This step can be done only by PMC.</p>
+
+<h3 id="cleanup-old-releases">Cleanup old releases</h3>
+
+<p>According to <a href="http://www.apache.org/legal/release-policy.html#when-to-archive">ASF policy</a>, <code class="highlighter-rouge">/www.apache.org/dist</code> should contain the latest release in each branch that
+is currently under development. We need to remove the old releases from <code class="highlighter-rouge">release</code> repository.</p>
+
+<p>For example, if 4.6.1 is a newer release, we need to remove releases older than 4.6.1.</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>```shell
+$ svn del https://dist.apache.org/repos/dist/release/bookkeeper/bookkeeper-${old-release} -m "remove bookkeeper release &lt;old-release&gt;"
+```
+</code></pre></div></div>
 
 <h3 id="checklist-to-declare-the-process-completed">Checklist to declare the process completed</h3>
 
