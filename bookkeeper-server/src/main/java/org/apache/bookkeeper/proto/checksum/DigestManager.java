@@ -18,6 +18,7 @@
 package org.apache.bookkeeper.proto.checksum;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.buffer.Unpooled;
 
@@ -40,10 +41,19 @@ import org.slf4j.LoggerFactory;
 public abstract class DigestManager {
     private static final Logger logger = LoggerFactory.getLogger(DigestManager.class);
 
+    /*
+     * This ByteBufAllocator gives us (pooled) heap ByteBuf's that are backed by an accessible array.
+     * The backing array can be used to instantiate a protobuf ByteString without copying the array.
+     * This allocator should be used when using protobuf to eliminate array copies when converting
+     * ByteBuf to ByteString.
+     */
+    private static final ByteBufAllocator HEAP_BYTEBUF_ALLOCATOR = new PooledByteBufAllocator(false);
+
     public static final int METADATA_LENGTH = 32;
     public static final int LAC_METADATA_LENGTH = 16;
 
-    long ledgerId;
+    final long ledgerId;
+    final ByteBufAllocator byteBufAllocator;
 
     abstract int getMacCodeLength();
 
@@ -57,22 +67,30 @@ public abstract class DigestManager {
 
     final int macCodeLength;
 
-    public DigestManager(long ledgerId) {
+    public DigestManager(long ledgerId, ByteBufAllocator byteBufAllocator) {
         this.ledgerId = ledgerId;
+        this.byteBufAllocator = byteBufAllocator;
         macCodeLength = getMacCodeLength();
     }
 
     public static DigestManager instantiate(long ledgerId, byte[] passwd, DigestType digestType)
             throws GeneralSecurityException {
+        return instantiate(ledgerId, passwd, digestType, false);
+    }
+
+    public static DigestManager instantiate(long ledgerId, byte[] passwd, DigestType digestType,
+            boolean useDirectBufferAllocator) throws GeneralSecurityException {
+        ByteBufAllocator byteBufAllocator = useDirectBufferAllocator
+            ? PooledByteBufAllocator.DEFAULT : HEAP_BYTEBUF_ALLOCATOR;
         switch(digestType) {
         case HMAC:
-            return new MacDigestManager(ledgerId, passwd);
+            return new MacDigestManager(ledgerId, passwd, byteBufAllocator);
         case CRC32:
-            return new CRC32DigestManager(ledgerId);
+            return new CRC32DigestManager(ledgerId, byteBufAllocator);
         case CRC32C:
-            return new CRC32CDigestManager(ledgerId);
+            return new CRC32CDigestManager(ledgerId, byteBufAllocator);
         case DUMMY:
-            return new DummyDigestManager(ledgerId);
+            return new DummyDigestManager(ledgerId, byteBufAllocator);
         default:
             throw new GeneralSecurityException("Unknown checksum type: " + digestType);
         }
@@ -89,7 +107,7 @@ public abstract class DigestManager {
      */
     public ByteBufList computeDigestAndPackageForSending(long entryId, long lastAddConfirmed, long length,
             ByteBuf data) {
-        ByteBuf sendBuffer = Unpooled.buffer(METADATA_LENGTH + macCodeLength + data.readableBytes());
+        ByteBuf sendBuffer = byteBufAllocator.buffer(METADATA_LENGTH + macCodeLength + data.readableBytes());
         sendBuffer.writeLong(ledgerId);
         sendBuffer.writeLong(entryId);
         sendBuffer.writeLong(lastAddConfirmed);
@@ -120,7 +138,7 @@ public abstract class DigestManager {
      */
 
     public ByteBufList computeDigestAndPackageForSendingLac(long lac) {
-        ByteBuf headersBuffer = Unpooled.buffer(LAC_METADATA_LENGTH + macCodeLength);
+        ByteBuf headersBuffer = byteBufAllocator.buffer(LAC_METADATA_LENGTH + macCodeLength);
         headersBuffer.writeLong(ledgerId);
         headersBuffer.writeLong(lac);
 

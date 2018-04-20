@@ -199,6 +199,7 @@ public class ByteBufList extends AbstractReferenceCounted {
     }
 
     /**
+     * Creates a copy of the readable content of the internal buffers and returns the copy.
      * @return an array containing all the internal buffers content
      */
     public byte[] toArray() {
@@ -208,17 +209,32 @@ public class ByteBufList extends AbstractReferenceCounted {
     }
 
     /**
-     * @return true, if this {@link ByteBufList} is backed by a single contiguous array
+     * Returns {@code true} if this buffer has a single backing byte array.
+     * If this method returns true, you can safely call {@link #array()} and
+     * {@link #arrayOffset()}.
+     * @return true, if this {@link ByteBufList} is backed by a single array
      */
     public boolean hasArray() {
         return buffers.size() == 1 && buffers.get(0).hasArray();
     }
 
     /**
-     * @return the array backing this {@link ByteBufList} (without copying it), if any
+     * Returns a reference to the array backing this {@link ByteBufList}.
+     * This method must only be called if {@link #hasArray()} returns {@code true}.
+     * @return the array backing this {@link ByteBufList}
      */
     public byte[] array() {
-        return hasArray() ? buffers.get(0).array() : null;
+        return buffers.get(0).array();
+    }
+
+    /**
+     * Returns the offset of the first byte within the backing byte array of
+     * this buffer.
+     * This method must only be called if {@link #hasArray()} returns {@code true}.
+     * @return the offset of the first byte within the backing byte array.
+     */
+    public int arrayOffset() {
+        return buffers.get(0).arrayOffset();
     }
 
     /**
