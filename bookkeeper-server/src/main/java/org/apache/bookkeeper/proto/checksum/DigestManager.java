@@ -18,7 +18,6 @@
 package org.apache.bookkeeper.proto.checksum;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.buffer.Unpooled;
 
@@ -41,19 +40,11 @@ import org.slf4j.LoggerFactory;
 public abstract class DigestManager {
     private static final Logger logger = LoggerFactory.getLogger(DigestManager.class);
 
-    /*
-     * This ByteBufAllocator gives us (pooled) heap ByteBuf's that are backed by an accessible array.
-     * The backing array can be used to instantiate a protobuf ByteString without copying the array.
-     * This allocator should be used when using protobuf to eliminate array copies when converting
-     * ByteBuf to ByteString.
-     */
-    private static final ByteBufAllocator HEAP_BYTEBUF_ALLOCATOR = new PooledByteBufAllocator(false);
-
     public static final int METADATA_LENGTH = 32;
     public static final int LAC_METADATA_LENGTH = 16;
 
     final long ledgerId;
-    final ByteBufAllocator byteBufAllocator;
+    final boolean useV2Protocol;
 
     abstract int getMacCodeLength();
 
@@ -67,9 +58,9 @@ public abstract class DigestManager {
 
     final int macCodeLength;
 
-    public DigestManager(long ledgerId, ByteBufAllocator byteBufAllocator) {
+    public DigestManager(long ledgerId, boolean useV2Protocol) {
         this.ledgerId = ledgerId;
-        this.byteBufAllocator = byteBufAllocator;
+        this.useV2Protocol = useV2Protocol;
         macCodeLength = getMacCodeLength();
     }
 
@@ -79,18 +70,16 @@ public abstract class DigestManager {
     }
 
     public static DigestManager instantiate(long ledgerId, byte[] passwd, DigestType digestType,
-            boolean useDirectBufferAllocator) throws GeneralSecurityException {
-        ByteBufAllocator byteBufAllocator = useDirectBufferAllocator
-            ? PooledByteBufAllocator.DEFAULT : HEAP_BYTEBUF_ALLOCATOR;
+            boolean useV2Protocol) throws GeneralSecurityException {
         switch(digestType) {
         case HMAC:
-            return new MacDigestManager(ledgerId, passwd, byteBufAllocator);
+            return new MacDigestManager(ledgerId, passwd, useV2Protocol);
         case CRC32:
-            return new CRC32DigestManager(ledgerId, byteBufAllocator);
+            return new CRC32DigestManager(ledgerId, useV2Protocol);
         case CRC32C:
-            return new CRC32CDigestManager(ledgerId, byteBufAllocator);
+            return new CRC32CDigestManager(ledgerId, useV2Protocol);
         case DUMMY:
-            return new DummyDigestManager(ledgerId, byteBufAllocator);
+            return new DummyDigestManager(ledgerId, useV2Protocol);
         default:
             throw new GeneralSecurityException("Unknown checksum type: " + digestType);
         }
@@ -107,27 +96,48 @@ public abstract class DigestManager {
      */
     public ByteBufList computeDigestAndPackageForSending(long entryId, long lastAddConfirmed, long length,
             ByteBuf data) {
-        ByteBuf sendBuffer = byteBufAllocator.buffer(METADATA_LENGTH + macCodeLength + data.readableBytes());
-        sendBuffer.writeLong(ledgerId);
-        sendBuffer.writeLong(entryId);
-        sendBuffer.writeLong(lastAddConfirmed);
-        sendBuffer.writeLong(length);
+        if (this.useV2Protocol) {
+            /*
+             * For V2 protocol, use pooled direct ByteBuf's to avoid object allocation in DigestManager.
+             */
+            ByteBuf headersBuffer = PooledByteBufAllocator.DEFAULT.buffer(METADATA_LENGTH + macCodeLength);
+            headersBuffer.writeLong(ledgerId);
+            headersBuffer.writeLong(entryId);
+            headersBuffer.writeLong(lastAddConfirmed);
+            headersBuffer.writeLong(length);
 
-        update(sendBuffer);
-        update(data);
-        populateValueAndReset(sendBuffer);
+            update(headersBuffer);
+            update(data);
+            populateValueAndReset(headersBuffer);
 
-        if (data.hasArray()) {
-            // fast path: single copy into existing array
-            sendBuffer.writeBytes(data.array(), data.arrayOffset(), data.readableBytes());
+            return ByteBufList.get(headersBuffer, data);
         } else {
-            // fall-back to slow path with extra object allocation and copy
-            byte[] sendArray = new byte[sendBuffer.readableBytes()];
-            sendBuffer.getBytes(sendBuffer.readerIndex(), sendArray);
-            sendBuffer.writeBytes(sendArray);
-        }
+            /*
+             * For V3 protocol, use unpooled heap ByteBuf's (backed by accessible array): The one object
+             * allocation here saves us later allocations when converting to protobuf ByteString.
+             */
+            ByteBuf sendBuffer = Unpooled.buffer(METADATA_LENGTH + macCodeLength + data.readableBytes());
+            sendBuffer.writeLong(ledgerId);
+            sendBuffer.writeLong(entryId);
+            sendBuffer.writeLong(lastAddConfirmed);
+            sendBuffer.writeLong(length);
 
-        return ByteBufList.get(sendBuffer);
+            update(sendBuffer);
+            update(data);
+            populateValueAndReset(sendBuffer);
+
+            if (data.hasArray()) {
+                // fast path: single copy into existing array
+                sendBuffer.writeBytes(data.array(), data.arrayOffset(), data.readableBytes());
+            } else {
+                // fall-back to slow path with extra object allocation and copy
+                byte[] sendArray = new byte[sendBuffer.readableBytes()];
+                sendBuffer.getBytes(sendBuffer.readerIndex(), sendArray);
+                sendBuffer.writeBytes(sendArray);
+            }
+
+            return ByteBufList.get(sendBuffer);
+        }
     }
 
     /**
@@ -138,7 +148,12 @@ public abstract class DigestManager {
      */
 
     public ByteBufList computeDigestAndPackageForSendingLac(long lac) {
-        ByteBuf headersBuffer = byteBufAllocator.buffer(LAC_METADATA_LENGTH + macCodeLength);
+        ByteBuf headersBuffer;
+        if (this.useV2Protocol) {
+            headersBuffer = PooledByteBufAllocator.DEFAULT.buffer(LAC_METADATA_LENGTH + macCodeLength);
+        } else {
+            headersBuffer = Unpooled.buffer(LAC_METADATA_LENGTH + macCodeLength);
+        }
         headersBuffer.writeLong(ledgerId);
         headersBuffer.writeLong(lac);
 

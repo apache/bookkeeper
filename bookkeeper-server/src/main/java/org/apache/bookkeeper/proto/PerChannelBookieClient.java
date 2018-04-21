@@ -525,13 +525,19 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                 .setVersion(ProtocolVersion.VERSION_THREE)
                 .setOperation(OperationType.WRITE_LAC)
                 .setTxnId(txnId);
+        ByteString body;
+        if (toSend.hasArray()) {
+            body = UnsafeByteOperations.unsafeWrap(toSend.array(), toSend.arrayOffset(), toSend.readableBytes());
+        } else if (toSend.size() == 1) {
+            body = UnsafeByteOperations.unsafeWrap(toSend.getBuffer(0).nioBuffer());
+        } else {
+            body = UnsafeByteOperations.unsafeWrap(toSend.toArray());
+        }
         WriteLacRequest.Builder writeLacBuilder = WriteLacRequest.newBuilder()
                 .setLedgerId(ledgerId)
                 .setLac(lac)
                 .setMasterKey(UnsafeByteOperations.unsafeWrap(masterKey))
-                .setBody(toSend.hasArray()
-                        ? UnsafeByteOperations.unsafeWrap(toSend.array(), toSend.arrayOffset(), toSend.readableBytes())
-                        : UnsafeByteOperations.unsafeWrap(toSend.toArray()));
+                .setBody(body);
 
         final Request writeLacRequest = Request.newBuilder()
                 .setHeader(headerBuilder)
@@ -581,13 +587,19 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                 headerBuilder.setPriority(DEFAULT_HIGH_PRIORITY_VALUE);
             }
 
+            ByteString body;
+            if (toSend.hasArray()) {
+                body = UnsafeByteOperations.unsafeWrap(toSend.array(), toSend.arrayOffset(), toSend.readableBytes());
+            } else if (toSend.size() == 1) {
+                body = UnsafeByteOperations.unsafeWrap(toSend.getBuffer(0).nioBuffer());
+            } else {
+                body = UnsafeByteOperations.unsafeWrap(toSend.toArray());
+            }
             AddRequest.Builder addBuilder = AddRequest.newBuilder()
                     .setLedgerId(ledgerId)
                     .setEntryId(entryId)
                     .setMasterKey(UnsafeByteOperations.unsafeWrap(masterKey))
-                    .setBody(toSend.hasArray()
-                        ? UnsafeByteOperations.unsafeWrap(toSend.array(), toSend.arrayOffset(), toSend.readableBytes())
-                        : UnsafeByteOperations.unsafeWrap(toSend.toArray()));
+                    .setBody(body);
 
             if (((short) options & BookieProtocol.FLAG_RECOVERY_ADD) == BookieProtocol.FLAG_RECOVERY_ADD) {
                 addBuilder.setFlag(AddRequest.Flag.RECOVERY_ADD);

@@ -19,7 +19,6 @@ package org.apache.bookkeeper.proto.checksum;
 */
 
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufAllocator;
 import io.netty.util.concurrent.FastThreadLocal;
 
 /**
@@ -47,8 +46,8 @@ class CRC32DigestManager extends DigestManager {
         }
     };
 
-    public CRC32DigestManager(long ledgerId, ByteBufAllocator byteBufAllocator) {
-        super(ledgerId, byteBufAllocator);
+    public CRC32DigestManager(long ledgerId, boolean useV2Protocol) {
+        super(ledgerId, useV2Protocol);
     }
 
     @Override

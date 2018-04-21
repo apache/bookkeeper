@@ -21,7 +21,6 @@ package org.apache.bookkeeper.proto.checksum;
 import static com.google.common.base.Charsets.UTF_8;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufAllocator;
 
 import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
@@ -63,9 +62,9 @@ public class MacDigestManager extends DigestManager {
         }
     };
 
-    public MacDigestManager(long ledgerId, byte[] passwd, ByteBufAllocator byteBufAllocator)
+    public MacDigestManager(long ledgerId, byte[] passwd, boolean useV2Protocol)
             throws GeneralSecurityException {
-        super(ledgerId, byteBufAllocator);
+        super(ledgerId, useV2Protocol);
         this.passwd = Arrays.copyOf(passwd, passwd.length);
     }
 

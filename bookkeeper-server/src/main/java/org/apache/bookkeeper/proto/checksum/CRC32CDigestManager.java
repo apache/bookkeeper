@@ -22,7 +22,6 @@ import com.scurrilous.circe.checksum.Crc32cIntChecksum;
 import com.scurrilous.circe.crc.Sse42Crc32C;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufAllocator;
 import io.netty.util.concurrent.FastThreadLocal;
 
 import lombok.extern.slf4j.Slf4j;
@@ -39,8 +38,8 @@ class CRC32CDigestManager extends DigestManager {
         }
     };
 
-    public CRC32CDigestManager(long ledgerId, ByteBufAllocator byteBufAllocator) {
-        super(ledgerId, byteBufAllocator);
+    public CRC32CDigestManager(long ledgerId, boolean useV2Protocol) {
+        super(ledgerId, useV2Protocol);
         if (!Sse42Crc32C.isSupported()) {
             log.error("Sse42Crc32C is not supported, will use less slower CRC32C implementation.");
         }

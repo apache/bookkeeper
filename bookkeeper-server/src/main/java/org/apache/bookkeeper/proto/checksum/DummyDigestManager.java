@@ -21,15 +21,14 @@
 package org.apache.bookkeeper.proto.checksum;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufAllocator;
 
 
 /**
  * This class provides a noop digest implementation.
  */
 public class DummyDigestManager extends DigestManager {
-    public DummyDigestManager(long ledgerId, ByteBufAllocator byteBufAllocator) {
-        super(ledgerId, byteBufAllocator);
+    public DummyDigestManager(long ledgerId, boolean useV2Protocol) {
+        super(ledgerId, useV2Protocol);
     }
 
     @Override
