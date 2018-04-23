@@ -26,8 +26,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.IntStream;
 
-import org.apache.bookkeeper.bookie.EntryLogger.EntryLogManagerBase;
-import org.apache.bookkeeper.bookie.EntryLogger.EntryLogManagerForSingleEntryLog;
+import org.apache.bookkeeper.bookie.EntryLogManager.EntryLogManagerBase;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.util.DiskChecker;
