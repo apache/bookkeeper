@@ -539,7 +539,6 @@ public class EntryLogTest {
             throws IOException {
         EntryLogManagerBase entryLogManager = (EntryLogManagerBase) entryLogger.getEntryLogManager();
         entryLogManager.setCurrentLogForLedgerAndAddToRotate(EntryLogger.UNASSIGNED_LEDGERID, null);
-        Random rand = new Random();
         for (int i = 0; i < numOfRotations; i++) {
             addEntries(entryLogger, 10);
             entryLogManager.setCurrentLogForLedgerAndAddToRotate(EntryLogger.UNASSIGNED_LEDGERID, null);
