@@ -126,15 +126,7 @@ public abstract class DigestManager {
             update(data);
             populateValueAndReset(sendBuffer);
 
-            if (data.hasArray()) {
-                // fast path: single copy into existing array
-                sendBuffer.writeBytes(data.array(), data.arrayOffset(), data.readableBytes());
-            } else {
-                // fall-back to slow path with extra object allocation and copy
-                byte[] sendArray = new byte[sendBuffer.readableBytes()];
-                sendBuffer.getBytes(sendBuffer.readerIndex(), sendArray);
-                sendBuffer.writeBytes(sendArray);
-            }
+            sendBuffer.writeBytes(data, data.readerIndex(), data.readableBytes());
 
             return ByteBufList.get(sendBuffer);
         }
