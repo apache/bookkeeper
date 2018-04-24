@@ -20,6 +20,8 @@ import static com.codahale.metrics.MetricRegistry.name;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -39,6 +41,12 @@ public class FastCodahaleStatsLogger extends CodahaleStatsLogger {
     }
 
     @Override
+    @SuppressFBWarnings(
+            value = {
+                    "JLM_JSR166_UTILCONCURRENT_MONITORENTER",
+                    "AT_OPERATION_SEQUENCE_ON_CONCURRENT_ABSTRACTION"
+            },
+            justification = "We use synchronized (statsLoggerCache) to make get/put atomic")
     public OpStatsLogger getOpStatsLogger(String statName) {
         CodahaleOpStatsLogger logger;
         String nameSuccess = name(basename, statName);

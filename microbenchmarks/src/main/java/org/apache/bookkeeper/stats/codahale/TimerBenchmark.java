@@ -23,7 +23,6 @@ import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.stats.codahale.CodahaleMetricsProvider;
 import org.apache.bookkeeper.stats.codahale.FastCodahaleMetricsProvider;
-import org.apache.bookkeeper.stats.prometheus.PrometheusMetricsProvider;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -35,13 +34,8 @@ import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
-import org.openjdk.jmh.annotations.TearDown;
 import org.openjdk.jmh.annotations.Threads;
 import org.openjdk.jmh.annotations.Warmup;
-
-import com.codahale.metrics.Timer;
-
-import io.netty.buffer.ByteBuf;
 
 /**
  * Microbenchmarks for default and improved (fast) Codahale timers.
@@ -187,7 +181,7 @@ public class TimerBenchmark {
         }
         StatsLogger logger = null;
         if (args[0].equalsIgnoreCase("codahale")) {
-            logger = new PrometheusMetricsProvider().getStatsLogger("test"); // new CodahaleMetricsProvider().getStatsLogger("test");
+            logger = new CodahaleMetricsProvider().getStatsLogger("test");
         } else {
             logger = new FastCodahaleMetricsProvider().getStatsLogger("test");
         }

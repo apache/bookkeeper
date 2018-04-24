@@ -17,6 +17,7 @@
 package org.apache.bookkeeper.stats.codahale;
 
 import com.codahale.metrics.Snapshot;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.OutputStream;
 
 /**
@@ -33,6 +34,9 @@ public class FastSnapshot extends Snapshot {
     private final long cnt;
     private final long[] values;
 
+    @SuppressFBWarnings(
+            value = "EI_EXPOSE_REP2",
+            justification = "long[] values is newly created array; FastTimer does not hold on to reference")
     public FastSnapshot(FastTimer timer, long min, long max, long sum, long cnt, long[] values) {
         this.timer = timer;
         this.min = min;
