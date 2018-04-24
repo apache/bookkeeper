@@ -43,7 +43,8 @@ public abstract class DigestManager {
     public static final int METADATA_LENGTH = 32;
     public static final int LAC_METADATA_LENGTH = 16;
 
-    long ledgerId;
+    final long ledgerId;
+    final boolean useV2Protocol;
 
     abstract int getMacCodeLength();
 
@@ -57,22 +58,28 @@ public abstract class DigestManager {
 
     final int macCodeLength;
 
-    public DigestManager(long ledgerId) {
+    public DigestManager(long ledgerId, boolean useV2Protocol) {
         this.ledgerId = ledgerId;
+        this.useV2Protocol = useV2Protocol;
         macCodeLength = getMacCodeLength();
     }
 
     public static DigestManager instantiate(long ledgerId, byte[] passwd, DigestType digestType)
             throws GeneralSecurityException {
+        return instantiate(ledgerId, passwd, digestType, false);
+    }
+
+    public static DigestManager instantiate(long ledgerId, byte[] passwd, DigestType digestType,
+            boolean useV2Protocol) throws GeneralSecurityException {
         switch(digestType) {
         case HMAC:
-            return new MacDigestManager(ledgerId, passwd);
+            return new MacDigestManager(ledgerId, passwd, useV2Protocol);
         case CRC32:
-            return new CRC32DigestManager(ledgerId);
+            return new CRC32DigestManager(ledgerId, useV2Protocol);
         case CRC32C:
-            return new CRC32CDigestManager(ledgerId);
+            return new CRC32CDigestManager(ledgerId, useV2Protocol);
         case DUMMY:
-            return new DummyDigestManager(ledgerId);
+            return new DummyDigestManager(ledgerId, useV2Protocol);
         default:
             throw new GeneralSecurityException("Unknown checksum type: " + digestType);
         }
@@ -89,17 +96,40 @@ public abstract class DigestManager {
      */
     public ByteBufList computeDigestAndPackageForSending(long entryId, long lastAddConfirmed, long length,
             ByteBuf data) {
-        ByteBuf headersBuffer = PooledByteBufAllocator.DEFAULT.buffer(METADATA_LENGTH + macCodeLength);
-        headersBuffer.writeLong(ledgerId);
-        headersBuffer.writeLong(entryId);
-        headersBuffer.writeLong(lastAddConfirmed);
-        headersBuffer.writeLong(length);
+        if (this.useV2Protocol) {
+            /*
+             * For V2 protocol, use pooled direct ByteBuf's to avoid object allocation in DigestManager.
+             */
+            ByteBuf headersBuffer = PooledByteBufAllocator.DEFAULT.buffer(METADATA_LENGTH + macCodeLength);
+            headersBuffer.writeLong(ledgerId);
+            headersBuffer.writeLong(entryId);
+            headersBuffer.writeLong(lastAddConfirmed);
+            headersBuffer.writeLong(length);
 
-        update(headersBuffer);
-        update(data);
-        populateValueAndReset(headersBuffer);
+            update(headersBuffer);
+            update(data);
+            populateValueAndReset(headersBuffer);
 
-        return ByteBufList.get(headersBuffer, data);
+            return ByteBufList.get(headersBuffer, data);
+        } else {
+            /*
+             * For V3 protocol, use unpooled heap ByteBuf's (backed by accessible array): The one object
+             * allocation here saves us later allocations when converting to protobuf ByteString.
+             */
+            ByteBuf sendBuffer = Unpooled.buffer(METADATA_LENGTH + macCodeLength + data.readableBytes());
+            sendBuffer.writeLong(ledgerId);
+            sendBuffer.writeLong(entryId);
+            sendBuffer.writeLong(lastAddConfirmed);
+            sendBuffer.writeLong(length);
+
+            update(sendBuffer);
+            update(data);
+            populateValueAndReset(sendBuffer);
+
+            sendBuffer.writeBytes(data, data.readerIndex(), data.readableBytes());
+
+            return ByteBufList.get(sendBuffer);
+        }
     }
 
     /**
@@ -110,7 +140,12 @@ public abstract class DigestManager {
      */
 
     public ByteBufList computeDigestAndPackageForSendingLac(long lac) {
-        ByteBuf headersBuffer = PooledByteBufAllocator.DEFAULT.buffer(LAC_METADATA_LENGTH + macCodeLength);
+        ByteBuf headersBuffer;
+        if (this.useV2Protocol) {
+            headersBuffer = PooledByteBufAllocator.DEFAULT.buffer(LAC_METADATA_LENGTH + macCodeLength);
+        } else {
+            headersBuffer = Unpooled.buffer(LAC_METADATA_LENGTH + macCodeLength);
+        }
         headersBuffer.writeLong(ledgerId);
         headersBuffer.writeLong(lac);
 
