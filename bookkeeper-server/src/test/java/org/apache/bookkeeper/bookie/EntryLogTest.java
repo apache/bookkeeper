@@ -44,6 +44,9 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import org.apache.bookkeeper.bookie.EntryLogger.EntryLogManager;
+import org.apache.bookkeeper.bookie.EntryLogger.EntryLogManagerBase;
+import org.apache.bookkeeper.bookie.EntryLogger.EntryLogManagerForSingleEntryLog;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
@@ -64,6 +67,7 @@ public class EntryLogTest {
     private static final Logger LOG = LoggerFactory.getLogger(EntryLogTest.class);
 
     final List<File> tempDirs = new ArrayList<File>();
+    final Random rand = new Random();
 
     File createTempDir(String prefix, String suffix) throws IOException {
         File dir = IOUtils.createTempDir(prefix, suffix);
@@ -119,11 +123,13 @@ public class EntryLogTest {
         this.dirsMgr.addToFilledDirs(curDir);
 
         entryLogger = new EntryLogger(conf, dirsMgr);
-        assertEquals(EntryLogger.UNINITIALIZED_LOG_ID, entryLogger.getCurrentLogId());
+        EntryLogManagerForSingleEntryLog entryLogManager =
+                (EntryLogManagerForSingleEntryLog) entryLogger.getEntryLogManager();
+        assertEquals(EntryLogger.UNINITIALIZED_LOG_ID, entryLogManager.getCurrentLogId());
 
         // add the first entry will trigger file creation
-        entryLogger.addEntry(1, generateEntry(1, 1).nioBuffer());
-        assertEquals(2L, entryLogger.getCurrentLogId());
+        entryLogger.addEntry(1L, generateEntry(1, 1).nioBuffer());
+        assertEquals(0L, entryLogManager.getCurrentLogId());
     }
 
     @Test
@@ -141,23 +147,25 @@ public class EntryLogTest {
         this.dirsMgr.addToFilledDirs(curDir);
 
         entryLogger = new EntryLogger(conf, dirsMgr);
-        assertEquals(EntryLogger.UNINITIALIZED_LOG_ID, entryLogger.getCurrentLogId());
+        EntryLogManagerForSingleEntryLog entryLogManager =
+                (EntryLogManagerForSingleEntryLog) entryLogger.getEntryLogManager();
+        assertEquals(EntryLogger.UNINITIALIZED_LOG_ID, entryLogManager.getCurrentLogId());
 
         // add the first entry will trigger file creation
         try {
-            entryLogger.addEntry(1, generateEntry(1, 1).nioBuffer());
+            entryLogger.addEntry(1L, generateEntry(1, 1).nioBuffer());
             fail("Should fail to append entry if there is no enough reserved space left");
         } catch (NoWritableLedgerDirException e) {
-            assertEquals(EntryLogger.UNINITIALIZED_LOG_ID, entryLogger.getCurrentLogId());
+            assertEquals(EntryLogger.UNINITIALIZED_LOG_ID, entryLogManager.getCurrentLogId());
         }
     }
 
     @Test
     public void testCorruptEntryLog() throws Exception {
         // create some entries
-        entryLogger.addEntry(1, generateEntry(1, 1).nioBuffer());
-        entryLogger.addEntry(3, generateEntry(3, 1).nioBuffer());
-        entryLogger.addEntry(2, generateEntry(2, 1).nioBuffer());
+        entryLogger.addEntry(1L, generateEntry(1, 1).nioBuffer());
+        entryLogger.addEntry(3L, generateEntry(3, 1).nioBuffer());
+        entryLogger.addEntry(2L, generateEntry(2, 1).nioBuffer());
         entryLogger.flush();
         entryLogger.shutdown();
         // now lets truncate the file to corrupt the last entry, which simulates a partial write
@@ -184,6 +192,16 @@ public class EntryLogTest {
         return bb;
     }
 
+    private ByteBuf generateEntry(long ledger, long entry, int length) {
+        ByteBuf bb = Unpooled.buffer(length);
+        bb.writeLong(ledger);
+        bb.writeLong(entry);
+        byte[] randbyteArray = new byte[length - 8 - 8];
+        rand.nextBytes(randbyteArray);
+        bb.writeBytes(randbyteArray);
+        return bb;
+    }
+
     private static String generateDataString(long ledger, long entry) {
         return ("ledger-" + ledger + "-" + entry);
     }
@@ -199,7 +217,7 @@ public class EntryLogTest {
 
             EntryLogger logger = new EntryLogger(conf, dirsMgr);
             for (int j = 0; j < numEntries; j++) {
-                positions[i][j] = logger.addEntry(i, generateEntry(i, j).nioBuffer());
+                positions[i][j] = logger.addEntry((long) i, generateEntry(i, j).nioBuffer());
             }
             logger.flush();
             logger.shutdown();
@@ -214,7 +232,7 @@ public class EntryLogTest {
 
             EntryLogger logger = new EntryLogger(conf, dirsMgr);
             for (int j = 0; j < numEntries; j++) {
-                positions[i][j] = logger.addEntry(i, generateEntry(i, j).nioBuffer());
+                positions[i][j] = logger.addEntry((long) i, generateEntry(i, j).nioBuffer());
             }
             logger.flush();
             logger.shutdown();
@@ -271,6 +289,7 @@ public class EntryLogTest {
         File ledgerDir1 = createTempDir("bkTest", ".dir");
         File ledgerDir2 = createTempDir("bkTest", ".dir");
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setLedgerStorageClass(InterleavedLedgerStorage.class.getName());
         conf.setJournalDirName(ledgerDir1.toString());
         conf.setLedgerDirNames(new String[] { ledgerDir1.getAbsolutePath(),
                 ledgerDir2.getAbsolutePath() });
@@ -287,7 +306,8 @@ public class EntryLogTest {
         ledgerStorage.addEntry(generateEntry(1, 1));
         ledgerStorage.addEntry(generateEntry(2, 1));
         // Add entry with disk full failure simulation
-        bookie.getLedgerDirsManager().addToFilledDirs(entryLogger.currentDir);
+        bookie.getLedgerDirsManager().addToFilledDirs(((EntryLogManagerBase) entryLogger.getEntryLogManager())
+                .getCurrentLogForLedger(EntryLogger.UNASSIGNED_LEDGERID).getLogFile().getParentFile());
         ledgerStorage.addEntry(generateEntry(3, 1));
         // Verify written entries
         Assert.assertTrue(0 == generateEntry(1, 1).compareTo(ledgerStorage.getEntry(1, 1)));
@@ -301,12 +321,14 @@ public class EntryLogTest {
     @Test
     public void testRecoverFromLedgersMap() throws Exception {
         // create some entries
-        entryLogger.addEntry(1, generateEntry(1, 1).nioBuffer());
-        entryLogger.addEntry(3, generateEntry(3, 1).nioBuffer());
-        entryLogger.addEntry(2, generateEntry(2, 1).nioBuffer());
-        entryLogger.addEntry(1, generateEntry(1, 2).nioBuffer());
-        entryLogger.rollLog();
-        entryLogger.flushRotatedLogs();
+        entryLogger.addEntry(1L, generateEntry(1, 1).nioBuffer());
+        entryLogger.addEntry(3L, generateEntry(3, 1).nioBuffer());
+        entryLogger.addEntry(2L, generateEntry(2, 1).nioBuffer());
+        entryLogger.addEntry(1L, generateEntry(1, 2).nioBuffer());
+
+        EntryLogManagerBase entryLogManager = (EntryLogManagerBase) entryLogger.getEntryLogManager();
+        entryLogManager.createNewLog(EntryLogger.UNASSIGNED_LEDGERID);
+        entryLogManager.flushRotatedLogs();
 
         EntryLogMetadata meta = entryLogger.extractEntryLogMetadataFromIndex(0L);
         LOG.info("Extracted Meta From Entry Log {}", meta);
@@ -324,11 +346,11 @@ public class EntryLogTest {
     @Test
     public void testRecoverFromLedgersMapOnV0EntryLog() throws Exception {
         // create some entries
-        entryLogger.addEntry(1, generateEntry(1, 1).nioBuffer());
-        entryLogger.addEntry(3, generateEntry(3, 1).nioBuffer());
-        entryLogger.addEntry(2, generateEntry(2, 1).nioBuffer());
-        entryLogger.addEntry(1, generateEntry(1, 2).nioBuffer());
-        entryLogger.rollLog();
+        entryLogger.addEntry(1L, generateEntry(1, 1).nioBuffer());
+        entryLogger.addEntry(3L, generateEntry(3, 1).nioBuffer());
+        entryLogger.addEntry(2L, generateEntry(2, 1).nioBuffer());
+        entryLogger.addEntry(1L, generateEntry(1, 2).nioBuffer());
+        ((EntryLogManagerBase) entryLogger.getEntryLogManager()).createNewLog(EntryLogger.UNASSIGNED_LEDGERID);
         entryLogger.shutdown();
 
         // Rewrite the entry log header to be on V0 format
@@ -373,9 +395,10 @@ public class EntryLogTest {
 
         entryLogger = new EntryLogger(conf, dirsMgr);
         // create a logger whose initialization phase allocating a new entry log
+        ((EntryLogManagerBase) entryLogger.getEntryLogManager()).createNewLog(EntryLogger.UNASSIGNED_LEDGERID);
         assertNotNull(entryLogger.getEntryLoggerAllocator().getPreallocationFuture());
 
-        entryLogger.addEntry(1, generateEntry(1, 1).nioBuffer());
+        entryLogger.addEntry(1L, generateEntry(1, 1).nioBuffer());
         // the Future<BufferedLogChannel> is not null all the time
         assertNotNull(entryLogger.getEntryLoggerAllocator().getPreallocationFuture());
         entryLogger.shutdown();
@@ -386,7 +409,7 @@ public class EntryLogTest {
         entryLogger = new EntryLogger(conf, dirsMgr);
         assertNull(entryLogger.getEntryLoggerAllocator().getPreallocationFuture());
 
-        entryLogger.addEntry(2, generateEntry(1, 1).nioBuffer());
+        entryLogger.addEntry(2L, generateEntry(1, 1).nioBuffer());
 
         // the Future<BufferedLogChannel> is null all the time
         assertNull(entryLogger.getEntryLoggerAllocator().getPreallocationFuture());
@@ -398,17 +421,18 @@ public class EntryLogTest {
     @Test
     public void testGetEntryLogsSet() throws Exception {
         // create some entries
+        EntryLogManagerBase entryLogManagerBase = ((EntryLogManagerBase) entryLogger.getEntryLogManager());
+        assertEquals(Sets.newHashSet(), entryLogger.getEntryLogsSet());
+
+        entryLogManagerBase.createNewLog(EntryLogger.UNASSIGNED_LEDGERID);
+        entryLogManagerBase.flushRotatedLogs();
+
         assertEquals(Sets.newHashSet(0L, 1L), entryLogger.getEntryLogsSet());
 
-        entryLogger.rollLog();
-        entryLogger.flushRotatedLogs();
+        entryLogManagerBase.createNewLog(EntryLogger.UNASSIGNED_LEDGERID);
+        entryLogManagerBase.flushRotatedLogs();
 
         assertEquals(Sets.newHashSet(0L, 1L, 2L), entryLogger.getEntryLogsSet());
-
-        entryLogger.rollLog();
-        entryLogger.flushRotatedLogs();
-
-        assertEquals(Sets.newHashSet(0L, 1L, 2L, 3L), entryLogger.getEntryLogsSet());
     }
 
     static class LedgerStorageWriteTask implements Callable<Boolean> {
@@ -565,5 +589,122 @@ public class EntryLogTest {
         });
 
         executor.shutdownNow();
+    }
+
+    /**
+     * Test to verify the leastUnflushedLogId logic in EntryLogsStatus.
+     */
+    @Test
+    public void testEntryLoggersRecentEntryLogsStatus() throws Exception {
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setLedgerDirNames(createAndGetLedgerDirs(2));
+        LedgerDirsManager ledgerDirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs(),
+                new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()));
+
+        EntryLogger entryLogger = new EntryLogger(conf, ledgerDirsManager);
+        EntryLogger.RecentEntryLogsStatus recentlyCreatedLogsStatus = entryLogger.recentlyCreatedEntryLogsStatus;
+
+        recentlyCreatedLogsStatus.createdEntryLog(0L);
+        Assert.assertEquals("entryLogger's leastUnflushedLogId ", 0L, entryLogger.getLeastUnflushedLogId());
+        recentlyCreatedLogsStatus.flushRotatedEntryLog(0L);
+        // since we marked entrylog - 0 as rotated, LeastUnflushedLogId would be previous rotatedlog+1
+        Assert.assertEquals("entryLogger's leastUnflushedLogId ", 1L, entryLogger.getLeastUnflushedLogId());
+        recentlyCreatedLogsStatus.createdEntryLog(1L);
+        Assert.assertEquals("entryLogger's leastUnflushedLogId ", 1L, entryLogger.getLeastUnflushedLogId());
+        recentlyCreatedLogsStatus.createdEntryLog(2L);
+        recentlyCreatedLogsStatus.createdEntryLog(3L);
+        recentlyCreatedLogsStatus.createdEntryLog(4L);
+        Assert.assertEquals("entryLogger's leastUnflushedLogId ", 1L, entryLogger.getLeastUnflushedLogId());
+        recentlyCreatedLogsStatus.flushRotatedEntryLog(1L);
+        Assert.assertEquals("entryLogger's leastUnflushedLogId ", 2L, entryLogger.getLeastUnflushedLogId());
+        recentlyCreatedLogsStatus.flushRotatedEntryLog(3L);
+        // here though we rotated entrylog-3, entrylog-2 is not yet rotated so
+        // LeastUnflushedLogId should be still 2
+        Assert.assertEquals("entryLogger's leastUnflushedLogId ", 2L, entryLogger.getLeastUnflushedLogId());
+        recentlyCreatedLogsStatus.flushRotatedEntryLog(2L);
+        // entrylog-3 is already rotated, so leastUnflushedLogId should be 4
+        Assert.assertEquals("entryLogger's leastUnflushedLogId ", 4L, entryLogger.getLeastUnflushedLogId());
+        recentlyCreatedLogsStatus.flushRotatedEntryLog(4L);
+        Assert.assertEquals("entryLogger's leastUnflushedLogId ", 5L, entryLogger.getLeastUnflushedLogId());
+        recentlyCreatedLogsStatus.createdEntryLog(5L);
+        recentlyCreatedLogsStatus.createdEntryLog(7L);
+        recentlyCreatedLogsStatus.createdEntryLog(9L);
+        Assert.assertEquals("entryLogger's leastUnflushedLogId ", 5L, entryLogger.getLeastUnflushedLogId());
+        recentlyCreatedLogsStatus.flushRotatedEntryLog(5L);
+        // since we marked entrylog-5 as rotated, LeastUnflushedLogId would be previous rotatedlog+1
+        Assert.assertEquals("entryLogger's leastUnflushedLogId ", 6L, entryLogger.getLeastUnflushedLogId());
+        recentlyCreatedLogsStatus.flushRotatedEntryLog(7L);
+        Assert.assertEquals("entryLogger's leastUnflushedLogId ", 8L, entryLogger.getLeastUnflushedLogId());
+    }
+
+    String[] createAndGetLedgerDirs(int numOfLedgerDirs) throws IOException {
+        File ledgerDir;
+        File curDir;
+        String[] ledgerDirsPath = new String[numOfLedgerDirs];
+        for (int i = 0; i < numOfLedgerDirs; i++) {
+            ledgerDir = createTempDir("bkTest", ".dir");
+            curDir = Bookie.getCurrentDirectory(ledgerDir);
+            Bookie.checkDirectoryStructure(curDir);
+            ledgerDirsPath[i] = ledgerDir.getAbsolutePath();
+        }
+        return ledgerDirsPath;
+    }
+
+    /*
+     * test for validating if the EntryLog/BufferedChannel flushes/forcewrite if the bytes written to it are more than
+     * flushIntervalInBytes
+     */
+    @Test(timeout = 60000)
+    public void testFlushIntervalInBytes() throws Exception {
+        long flushIntervalInBytes = 5000;
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setEntryLogPerLedgerEnabled(true);
+        conf.setFlushIntervalInBytes(flushIntervalInBytes);
+        conf.setLedgerDirNames(createAndGetLedgerDirs(2));
+        LedgerDirsManager ledgerDirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs(),
+                new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()));
+        EntryLogger entryLogger = new EntryLogger(conf, ledgerDirsManager);
+        EntryLogManagerBase entryLogManagerBase = ((EntryLogManagerBase) entryLogger.getEntryLogManager());
+
+        /*
+         * when entryLogger is created Header of length EntryLogger.LOGFILE_HEADER_SIZE is created
+         */
+        long ledgerId = 0L;
+        int firstEntrySize = 1000;
+        long entry0Position = entryLogger.addEntry(0L, generateEntry(ledgerId, 0L, firstEntrySize));
+        // entrylogger writes length of the entry (4 bytes) before writing entry
+        long expectedUnpersistedBytes = EntryLogger.LOGFILE_HEADER_SIZE + firstEntrySize + 4;
+        Assert.assertEquals("Unpersisted Bytes of entrylog", expectedUnpersistedBytes,
+                entryLogManagerBase.getCurrentLogForLedger(ledgerId).getUnpersistedBytes());
+
+        /*
+         * 'flushIntervalInBytes' number of bytes are flushed so BufferedChannel should be forcewritten
+         */
+        int secondEntrySize = (int) (flushIntervalInBytes - expectedUnpersistedBytes);
+        long entry1Position = entryLogger.addEntry(0L, generateEntry(ledgerId, 1L, secondEntrySize));
+        Assert.assertEquals("Unpersisted Bytes of entrylog", 0,
+                entryLogManagerBase.getCurrentLogForLedger(ledgerId).getUnpersistedBytes());
+
+        /*
+         * since entrylog/Bufferedchannel is persisted (forcewritten), we should be able to read the entrylog using
+         * newEntryLogger
+         */
+        conf.setEntryLogPerLedgerEnabled(false);
+        EntryLogger newEntryLogger = new EntryLogger(conf, ledgerDirsManager);
+        EntryLogManager newEntryLogManager = newEntryLogger.getEntryLogManager();
+        Assert.assertEquals("EntryLogManager class type", EntryLogger.EntryLogManagerForSingleEntryLog.class,
+                newEntryLogManager.getClass());
+
+        ByteBuf buf = newEntryLogger.readEntry(ledgerId, 0L, entry0Position);
+        long readLedgerId = buf.readLong();
+        long readEntryId = buf.readLong();
+        Assert.assertEquals("LedgerId", ledgerId, readLedgerId);
+        Assert.assertEquals("EntryId", 0L, readEntryId);
+
+        buf = newEntryLogger.readEntry(ledgerId, 1L, entry1Position);
+        readLedgerId = buf.readLong();
+        readEntryId = buf.readLong();
+        Assert.assertEquals("LedgerId", ledgerId, readLedgerId);
+        Assert.assertEquals("EntryId", 1L, readEntryId);
     }
 }

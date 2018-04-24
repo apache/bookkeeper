@@ -36,9 +36,11 @@ import lombok.RequiredArgsConstructor;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
+import org.apache.bookkeeper.bookie.EntryLogger.EntryLogManagerForSingleEntryLog;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -99,6 +101,7 @@ public class SortedLedgerStorageCheckpointTest extends LedgerStorageTestBase {
     public SortedLedgerStorageCheckpointTest() {
         super();
         conf.setEntryLogSizeLimit(1);
+        conf.setEntryLogFilePreAllocationEnabled(false);
         this.checkpoints = new LinkedBlockingQueue<>();
     }
 
@@ -182,6 +185,7 @@ public class SortedLedgerStorageCheckpointTest extends LedgerStorageTestBase {
         assertEquals(new TestCheckpoint(0), memtableCp);
 
         // trigger a memtable flush
+        Assert.assertNotNull("snapshot shouldn't have returned null", storage.memTable.snapshot());
         storage.onSizeLimitReached(checkpointSrc.newCheckpoint());
         // wait for checkpoint to complete
         checkpoints.poll(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
@@ -219,9 +223,11 @@ public class SortedLedgerStorageCheckpointTest extends LedgerStorageTestBase {
         });
 
         // simulate entry log is rotated (due to compaction)
-        storage.entryLogger.rollLog();
+        EntryLogManagerForSingleEntryLog entryLogManager = (EntryLogManagerForSingleEntryLog) storage.getEntryLogger()
+                .getEntryLogManager();
+        entryLogManager.createNewLog(EntryLogger.UNASSIGNED_LEDGERID);
         long leastUnflushedLogId = storage.entryLogger.getLeastUnflushedLogId();
-        long currentLogId = storage.entryLogger.getCurrentLogId();
+        long currentLogId = entryLogManager.getCurrentLogId();
         log.info("Least unflushed entry log : current = {}, leastUnflushed = {}", currentLogId, leastUnflushedLogId);
 
         readyLatch.countDown();
@@ -230,6 +236,7 @@ public class SortedLedgerStorageCheckpointTest extends LedgerStorageTestBase {
         assertEquals(20, storage.memTable.kvmap.size());
 
         // trigger a memtable flush
+        Assert.assertNotNull("snapshot shouldn't have returned null", storage.memTable.snapshot());
         storage.onSizeLimitReached(checkpointSrc.newCheckpoint());
         assertEquals(new TestCheckpoint(100), checkpoints.poll(Long.MAX_VALUE, TimeUnit.MILLISECONDS));
 
