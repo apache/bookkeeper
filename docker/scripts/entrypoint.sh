@@ -27,7 +27,7 @@ export JAVA_HOME=/usr
 PORT0=${PORT0:-${BOOKIE_PORT}}
 PORT0=${PORT0:-3181}
 BK_DATA_DIR=${BK_DATA_DIR:-"/data/bookkeeper"}
-BK_CLUSTER_ROOT_PATH=${BK_CLUSTER_ROOT_PATH:-" "}
+BK_CLUSTER_ROOT_PATH=${BK_CLUSTER_ROOT_PATH:-""}
 
 # env vars to replace values in config files
 export BK_bookiePort=${BK_bookiePort:-${PORT0}}
@@ -36,12 +36,13 @@ export BK_zkLedgersRootPath=${BK_zkLedgersRootPath:-"${BK_CLUSTER_ROOT_PATH}/led
 export BK_journalDirectory=${BK_journalDirectory:-${BK_DATA_DIR}/journal}
 export BK_ledgerDirectories=${BK_ledgerDirectories:-${BK_DATA_DIR}/ledgers}
 export BK_indexDirectories=${BK_indexDirectories:-${BK_DATA_DIR}/index}
+export BK_metadataServiceUri=${BK_metadataServiceUri:-"zk://${BK_zkServers}${BK_zkLedgersRootPath}"}
 
 echo "BK_bookiePort bookie service port is $BK_bookiePort"
 echo "BK_zkServers is $BK_zkServers"
 echo "BK_DATA_DIR is $BK_DATA_DIR"
 echo "BK_CLUSTER_ROOT_PATH is $BK_CLUSTER_ROOT_PATH"
-
+echo "BK_metadataServiceUri is $BK_metadataServiceUri"
 
 mkdir -p "${BK_journalDirectory}" "${BK_ledgerDirectories}" "${BK_indexDirectories}"
 # -------------- #
