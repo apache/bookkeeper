@@ -873,6 +873,8 @@ public class ZKLogStreamMetadataStore implements LogStreamMetadataStore {
                 } else if (Code.NOTEMPTY.intValue() == rc) {
                     future.completeExceptionally(new LockingException(oldLogPath + LOCK_PATH,
                         "Someone is holding a lock on log " + oldLogPath));
+                } else if (Code.NONODE.intValue() == rc) {
+                    future.completeExceptionally(new LogNotFoundException("Log " + newLogPath + " is not found"));
                 } else {
                     future.completeExceptionally(new ZKException("Failed to rename log "
                         + oldLogPath + " to " + newLogPath + " at path " + path, Code.get(rc)));
