@@ -46,8 +46,8 @@ class CRC32DigestManager extends DigestManager {
         }
     };
 
-    public CRC32DigestManager(long ledgerId) {
-        super(ledgerId);
+    public CRC32DigestManager(long ledgerId, boolean useV2Protocol) {
+        super(ledgerId, useV2Protocol);
     }
 
     @Override
