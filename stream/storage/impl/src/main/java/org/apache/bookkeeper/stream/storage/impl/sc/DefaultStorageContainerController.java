@@ -50,9 +50,7 @@ import org.apache.commons.lang3.tuple.Pair;
 @Slf4j
 public class DefaultStorageContainerController implements StorageContainerController {
 
-    private static final ClusterAssignmentData EMPTY_ASSIGNMENT = ClusterAssignmentData.newBuilder().build();
-
-    private static final class ServerAssignmentDataComparator
+    static final class ServerAssignmentDataComparator
         implements Comparator<Pair<BookieSocketAddress, LinkedList<Long>>> {
 
         @Override
@@ -62,7 +60,9 @@ public class DefaultStorageContainerController implements StorageContainerContro
                 // two servers have same number of container
                 // the order of these two servers doesn't matter, so use any attribute than can provide deterministic
                 // ordering during state computation is good enough
-                return Integer.compare(o1.hashCode(), o2.hashCode());
+                return String.CASE_INSENSITIVE_ORDER.compare(
+                    o1.getKey().toString(),
+                    o2.getKey().toString());
             } else {
                 return res;
             }
@@ -76,7 +76,7 @@ public class DefaultStorageContainerController implements StorageContainerContro
 
         if (currentCluster.isEmpty()) {
             log.info("Current cluster is empty. No alive server is found.");
-            return EMPTY_ASSIGNMENT;
+            return currentState;
         }
 
         // 1. get current server assignments
@@ -113,16 +113,16 @@ public class DefaultStorageContainerController implements StorageContainerContro
         Set<BookieSocketAddress> serversAdded =
             Sets.difference(currentCluster, currentServersAssigned).immutableCopy();
         Set<BookieSocketAddress> serversRemoved =
-            Sets.difference(currentCluster, currentServersAssigned).immutableCopy();
+            Sets.difference(currentServersAssigned, currentCluster).immutableCopy();
 
         if (serversAdded.isEmpty() && serversRemoved.isEmpty()) {
             // cluster is unchanged, assuming the current state is ideal, no re-assignment is required.
-            return ClusterAssignmentData.newBuilder(currentState).build();
+            return currentState;
         }
 
         log.info("Storage container controller detects cluster changed:\n"
-                + "\tservers added: {}\n\tservers removed: {}",
-            serversAdded, serversRemoved);
+                + "\t {} servers added: {}\n\t {} servers removed: {}",
+            serversAdded.size(), serversAdded, serversRemoved.size(), serversRemoved);
 
         // 4. compute the containers that owned by servers removed. these containers are needed to be reassigned.
         Set<Long> containersToReassign = currentServerAssignments.entrySet().stream()
@@ -134,11 +134,19 @@ public class DefaultStorageContainerController implements StorageContainerContro
         TreeSet<Pair<BookieSocketAddress, LinkedList<Long>>> assignmentQueue
             = new TreeSet<>(new ServerAssignmentDataComparator());
         for (Map.Entry<BookieSocketAddress, Set<Long>> entry : currentServerAssignments.entrySet()) {
-            if (!currentCluster.contains(entry.getKey())) {
-                continue;
-            }
+            BookieSocketAddress host = entry.getKey();
 
-            assignmentQueue.add(Pair.of(entry.getKey(), Lists.newLinkedList(entry.getValue())));
+            if (!currentCluster.contains(host)) {
+                if (log.isTraceEnabled()) {
+                    log.trace("Host {} is not in current cluster anymore", host);
+                }
+                continue;
+            } else {
+                if (log.isTraceEnabled()) {
+                    log.trace("Adding host {} to assignment queue", host);
+                }
+                assignmentQueue.add(Pair.of(host, Lists.newLinkedList(entry.getValue())));
+            }
         }
 
         // 6. add new servers
@@ -154,9 +162,16 @@ public class DefaultStorageContainerController implements StorageContainerContro
         }
 
         // 8. rebalance the containers if needed
+        int diffAllowed;
+        if (assignmentQueue.size() > clusterMetadata.getNumStorageContainers()) {
+            diffAllowed = 1;
+        } else {
+            diffAllowed = clusterMetadata.getNumStorageContainers() % assignmentQueue.size() == 0 ? 0 : 1;
+        }
+
         Pair<BookieSocketAddress, LinkedList<Long>> leastLoaded = assignmentQueue.first();
         Pair<BookieSocketAddress, LinkedList<Long>> mostLoaded = assignmentQueue.last();
-        while (mostLoaded.getValue().size() - leastLoaded.getValue().size() > 1) {
+        while (mostLoaded.getValue().size() - leastLoaded.getValue().size() > diffAllowed) {
             leastLoaded = assignmentQueue.pollFirst();
             mostLoaded = assignmentQueue.pollLast();
 
@@ -167,6 +182,9 @@ public class DefaultStorageContainerController implements StorageContainerContro
 
             assignmentQueue.add(leastLoaded);
             assignmentQueue.add(mostLoaded);
+
+            leastLoaded = assignmentQueue.first();
+            mostLoaded = assignmentQueue.last();
         }
 
         // 9. the new ideal state is computed, finalize it
