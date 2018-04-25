@@ -28,7 +28,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
-import org.apache.bookkeeper.common.util.OrderedExecutor;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.proto.BookieProtocol;
@@ -49,7 +48,6 @@ public class SortedLedgerStorage extends InterleavedLedgerStorage
     EntryMemTable memTable;
     private ScheduledExecutorService scheduler;
     private StateManager stateManager;
-    private OrderedExecutor flushExecutor;
 
     public SortedLedgerStorage() {
         super();
@@ -75,9 +73,7 @@ public class SortedLedgerStorage extends InterleavedLedgerStorage
             checkpointer,
             statsLogger);
         if (conf.isEntryLogPerLedgerEnabled()) {
-            this.flushExecutor = OrderedExecutor.newBuilder().numThreads(conf.getNumOfMemtableFlushThreads())
-                    .name("MemtableFlushThreads").build();
-            this.memTable = new EntryMemTableWithParallelFlusher(conf, checkpointSource, statsLogger, flushExecutor);
+            this.memTable = new EntryMemTableWithParallelFlusher(conf, checkpointSource, statsLogger);
         } else {
             this.memTable = new EntryMemTable(conf, checkpointSource, statsLogger);
         }
@@ -110,8 +106,10 @@ public class SortedLedgerStorage extends InterleavedLedgerStorage
         if (!scheduler.awaitTermination(3, TimeUnit.SECONDS)) {
             scheduler.shutdownNow();
         }
-        if (flushExecutor != null) {
-            flushExecutor.shutdown();
+        try {
+            memTable.close();
+        } catch (Exception e) {
+            LOG.error("Error while closing the memtable", e);
         }
         super.shutdown();
     }

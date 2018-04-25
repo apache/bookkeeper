@@ -20,14 +20,9 @@
 package org.apache.bookkeeper.bookie;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
-import java.util.NavigableSet;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.ConcurrentNavigableMap;
+import java.util.concurrent.Phaser;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import lombok.extern.slf4j.Slf4j;
@@ -42,15 +37,15 @@ import org.apache.bookkeeper.util.SafeRunnable;
  * EntryMemTableWithParallelFlusher.
  */
 @Slf4j
-public class EntryMemTableWithParallelFlusher extends EntryMemTable {
+class EntryMemTableWithParallelFlusher extends EntryMemTable {
 
     final OrderedExecutor flushExecutor;
-    private static final int MEMTABLE_FLUSH_TIMEOUT_IN_SECONDS = 60;
 
     public EntryMemTableWithParallelFlusher(final ServerConfiguration conf, final CheckpointSource source,
-            final StatsLogger statsLogger, OrderedExecutor flushExecutor) {
+            final StatsLogger statsLogger) {
         super(conf, source, statsLogger);
-        this.flushExecutor = flushExecutor;
+        this.flushExecutor = OrderedExecutor.newBuilder().numThreads(conf.getNumOfMemtableFlushThreads())
+                .name("MemtableFlushThreads").build();
     }
 
     /**
@@ -58,9 +53,9 @@ public class EntryMemTableWithParallelFlusher extends EntryMemTable {
      * EntryMemTable's flushSnapshot, but it uses flushExecutor
      * (OrderedExecutor) to process an entry through flusher.
      *
-     * <p>entryKeyValues of a ledger are grouped in a list and runnable is created
-     * to flush process all those entries and that runnable is submitted to the
-     * flushExecutor with ledgerId as the orderingKey.
+     * <p>SubMaps of the snapshot corresponding to the entries of the ledgers are
+     * created and submitted to the flushExecutor with ledgerId as the
+     * orderingKey to flush process the entries of a ledger.
      */
     @Override
     long flushSnapshot(final SkipListFlusher flusher, Checkpoint checkpoint) throws IOException {
@@ -68,75 +63,92 @@ public class EntryMemTableWithParallelFlusher extends EntryMemTable {
         if (this.snapshot.compareTo(checkpoint) < 0) {
             synchronized (this) {
                 EntrySkipList keyValues = this.snapshot;
+
+                Phaser pendingNumOfLedgerFlushes = new Phaser(1);
+                AtomicReference<Exception> exceptionWhileFlushingParallelly = new AtomicReference<Exception>();
+
                 if (keyValues.compareTo(checkpoint) < 0) {
-                    NavigableSet<EntryKey> keyValuesSet = keyValues.keySet();
-                    Map<Long, List<EntryKeyValue>> entryKeyValuesMap = new HashMap<Long, List<EntryKeyValue>>();
 
-                    for (EntryKey key : keyValuesSet) {
-                        EntryKeyValue kv = (EntryKeyValue) key;
-                        Long ledger = kv.getLedgerId();
-                        if (!entryKeyValuesMap.containsKey(ledger)) {
-                            entryKeyValuesMap.put(ledger, new LinkedList<EntryKeyValue>());
-                        }
-                        entryKeyValuesMap.get(ledger).add(kv);
-                    }
+                    Map.Entry<EntryKey, EntryKeyValue> thisLedgerFirstMapEntry = keyValues.firstEntry();
+                    EntryKeyValue thisLedgerFirstEntry;
+                    long thisLedgerId;
 
-                    CountDownLatch latch = new CountDownLatch(entryKeyValuesMap.size());
-                    AtomicBoolean isFlushThreadInterrupted = new AtomicBoolean(false);
-                    AtomicReference<Exception> exceptionWhileFlushingParallelly =  new AtomicReference<Exception>();
-                    Thread mainFlushThread = Thread.currentThread();
-
-                    for (Map.Entry<Long, List<EntryKeyValue>> entryKeyValuesOfALedgerMapEntry : entryKeyValuesMap
-                            .entrySet()) {
-                        Long ledgerId = entryKeyValuesOfALedgerMapEntry.getKey();
-                        List<EntryKeyValue> entryKeyValuesOfALedger = entryKeyValuesOfALedgerMapEntry.getValue();
-                        flushExecutor.executeOrdered(ledgerId.longValue(), new SafeRunnable() {
+                    while (thisLedgerFirstMapEntry != null) {
+                        thisLedgerFirstEntry = thisLedgerFirstMapEntry.getValue();
+                        thisLedgerId = thisLedgerFirstEntry.getLedgerId();
+                        EntryKey thisLedgerCeilingKeyMarker = new EntryKey(thisLedgerId, Long.MAX_VALUE - 1);
+                        /*
+                         * Gets a view of the portion of this map that
+                         * corresponds to entries of this ledger.
+                         */
+                        ConcurrentNavigableMap<EntryKey, EntryKeyValue> thisLedgerEntries = keyValues
+                                .subMap(thisLedgerFirstEntry, thisLedgerCeilingKeyMarker);
+                        pendingNumOfLedgerFlushes.register();
+                        flushExecutor.executeOrdered(thisLedgerId, new SafeRunnable() {
                             @Override
                             public void safeRun() {
-                                for (EntryKeyValue entryKeyValue : entryKeyValuesOfALedger) {
-                                    try {
-                                        flusher.process(ledgerId, entryKeyValue.getEntryId(),
-                                                entryKeyValue.getValueAsByteBuffer());
-                                        flushedSize.addAndGet(entryKeyValue.getLength());
-                                    } catch (NoLedgerException exception) {
-                                        log.debug("Got NoLedgerException while flushing entry: {}. "
-                                                + "The ledger must be deleted "
-                                                + "after this entry is added to the Memtable",
-                                                entryKeyValue);
-                                        break;
-                                    } catch (Exception exc) {
-                                        log.error(
-                                                "Got Exception while trying to flush process entry: " + entryKeyValue,
-                                                exc);
-                                        if (isFlushThreadInterrupted.compareAndSet(false, true)) {
-                                            exceptionWhileFlushingParallelly.set(exc);
-                                            mainFlushThread.interrupt();
+                                try {
+                                    long ledger;
+                                    boolean ledgerDeleted = false;
+                                    for (EntryKey key : thisLedgerEntries.keySet()) {
+                                        EntryKeyValue kv = (EntryKeyValue) key;
+                                        flushedSize.addAndGet(kv.getLength());
+                                        ledger = kv.getLedgerId();
+                                        if (!ledgerDeleted) {
+                                            try {
+                                                flusher.process(ledger, kv.getEntryId(), kv.getValueAsByteBuffer());
+                                            } catch (NoLedgerException exception) {
+                                                ledgerDeleted = true;
+                                            }
                                         }
-                                        // return without countdowning the latch since we got unexpected Exception
-                                        return;
                                     }
+                                    pendingNumOfLedgerFlushes.arriveAndDeregister();
+                                } catch (Exception exc) {
+                                    log.error("Got Exception while trying to flush process entryies: ", exc);
+                                    exceptionWhileFlushingParallelly.set(exc);
+                                    /*
+                                     * if we get any unexpected exception while
+                                     * trying to flush process entries of a
+                                     * ledger, then terminate the
+                                     * pendingNumOfLedgerFlushes phaser.
+                                     */
+                                    pendingNumOfLedgerFlushes.forceTermination();
                                 }
-                                latch.countDown();
                             }
                         });
+                        thisLedgerFirstMapEntry = keyValues.ceilingEntry(thisLedgerCeilingKeyMarker);
                     }
 
+                    boolean phaserTerminatedAbruptly = false;
                     try {
-                        while (!latch.await(MEMTABLE_FLUSH_TIMEOUT_IN_SECONDS, TimeUnit.SECONDS)) {
-                            log.error("Entrymemtable parallel flush has not completed in {} secs, so waiting again",
-                                    MEMTABLE_FLUSH_TIMEOUT_IN_SECONDS);
-                        }
-                        flushBytesCounter.add(flushedSize.get());
-                        clearSnapshot(keyValues);
-                    } catch (InterruptedException ie) {
-                        log.error("Got Interrupted exception while waiting for the flushexecutor "
-                                + "to complete the entry flushes");
+                        /*
+                         * while flush processing entries of a ledger if it
+                         * failed because of any unexpected exception then
+                         * pendingNumOfLedgerFlushes phaser would be force
+                         * terminated and because of that arriveAndAwaitAdvance
+                         * would be a negative value.
+                         */
+                        phaserTerminatedAbruptly = (pendingNumOfLedgerFlushes.arriveAndAwaitAdvance() < 0);
+                    } catch (IllegalStateException ise) {
+                        log.error("Got IllegalStateException while awaiting on Phaser", ise);
+                        throw new IOException("Got IllegalStateException while awaiting on Phaser", ise);
+                    }
+                    if (phaserTerminatedAbruptly) {
+                        log.error("Phaser is terminated while awaiting flushExecutor to complete the entry flushes",
+                                exceptionWhileFlushingParallelly.get());
                         throw new IOException("Failed to complete the flushSnapshotByParallelizing",
                                 exceptionWhileFlushingParallelly.get());
                     }
+                    flushBytesCounter.add(flushedSize.get());
+                    clearSnapshot(keyValues);
                 }
             }
         }
         return flushedSize.longValue();
+    }
+
+    @Override
+    public void close() throws Exception {
+        flushExecutor.shutdown();
     }
 }

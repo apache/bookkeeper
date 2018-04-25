@@ -37,10 +37,10 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.bookkeeper.bookie.Bookie.NoLedgerException;
-import org.apache.bookkeeper.common.util.OrderedExecutor;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.stats.NullStatsLogger;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -81,12 +81,16 @@ public class TestEntryMemTable implements CacheCallback, SkipListFlusher, Checkp
     public void setUp() throws Exception {
         if (entryMemTableClass.equals(EntryMemTableWithParallelFlusher.class)) {
             ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
-            this.memTable = new EntryMemTableWithParallelFlusher(conf, this, NullStatsLogger.INSTANCE, OrderedExecutor
-                    .newBuilder().numThreads(conf.getNumOfMemtableFlushThreads()).name("MemtableFlushThreads").build());
+            this.memTable = new EntryMemTableWithParallelFlusher(conf, this, NullStatsLogger.INSTANCE);
         } else {
             this.memTable = new EntryMemTable(TestBKConfiguration.newServerConfiguration(), this,
                     NullStatsLogger.INSTANCE);
         }
+    }
+
+    @After
+    public void cleanup() throws Exception{
+        this.memTable.close();
     }
 
     @Test

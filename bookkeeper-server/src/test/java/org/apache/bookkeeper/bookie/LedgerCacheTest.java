@@ -42,7 +42,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.apache.bookkeeper.bookie.Bookie.NoLedgerException;
 import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
 import org.apache.bookkeeper.bookie.FileInfoBackingCache.CachedFileInfo;
-import org.apache.bookkeeper.common.util.OrderedExecutor;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager;
@@ -502,8 +501,7 @@ public class LedgerCacheTest {
                 checkpointer,
                 statsLogger);
             if (this.memTable instanceof EntryMemTableWithParallelFlusher) {
-                OrderedExecutor executor = ((EntryMemTableWithParallelFlusher) this.memTable).flushExecutor;
-                this.memTable = new EntryMemTableWithParallelFlusher(conf, checkpointSource, statsLogger, executor) {
+                this.memTable = new EntryMemTableWithParallelFlusher(conf, checkpointSource, statsLogger) {
                     @Override
                     boolean isSizeLimitReached() {
                         return (injectMemTableSizeLimitReached.get() || super.isSizeLimitReached());
@@ -585,7 +583,6 @@ public class LedgerCacheTest {
         flushTestSortedLedgerStorage.setInjectMemTableSizeLimitReached(true);
         flushTestSortedLedgerStorage.setInjectFlushException(true, FlushTestSortedLedgerStorage.FORALLLEDGERS);
         flushTestSortedLedgerStorage.addEntry(generateEntry(1, 2));
-        Thread.sleep(1000);
 
         // since we simulated sizeLimitReached, snapshot shouldn't be empty
         assertFalse("EntryMemTable SnapShot is not expected to be empty", memTable.snapshot.isEmpty());
@@ -596,7 +593,6 @@ public class LedgerCacheTest {
         flushTestSortedLedgerStorage.setInjectFlushException(false, FlushTestSortedLedgerStorage.FORALLLEDGERS);
 
         flushTestSortedLedgerStorage.addEntry(generateEntry(1, 3));
-        Thread.sleep(1000);
         // since we expect memtable flush to succeed, memtable snapshot should be empty
         assertTrue("EntryMemTable SnapShot is expected to be empty, because of successful flush",
                 memTable.snapshot.isEmpty());
@@ -656,7 +652,7 @@ public class LedgerCacheTest {
         return bb;
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testEntryMemTableParallelFlush() throws Exception {
         int gcWaitTime = 1000;
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
@@ -690,14 +686,13 @@ public class LedgerCacheTest {
         // inject MemTableSizeLimitReached, so entrymemtable will be flushed
         flushTestSortedLedgerStorage.setInjectMemTableSizeLimitReached(true);
         flushTestSortedLedgerStorage.addEntry(generateEntry(1, 3));
-        Thread.sleep(1000);
 
         // since we simulated sizeLimitReached, snapshot should have been created and flushed
         assertTrue("EntryMemTable SnapShot is expected to be empty", memTable.snapshot.isEmpty());
         assertEquals("Flusher called", 1, flushTestSortedLedgerStorage.getNumOfTimesFlushSnapshotCalled());
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testEntryMemTableParallelFlushWithFlushException() throws Exception {
         int gcWaitTime = 1000;
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
@@ -730,14 +725,12 @@ public class LedgerCacheTest {
         flushTestSortedLedgerStorage.setInjectFlushException(true, 1L);
 
         flushTestSortedLedgerStorage.addEntry(generateEntry(1, 5));
-        Thread.sleep(1000);
         // since we simulate FlushException, memtable snapshot should not be empty
         assertFalse("EntryMemTable SnapShot is not expected to be empty", memTable.snapshot.isEmpty());
         assertEquals("Flusher called", 1, flushTestSortedLedgerStorage.getNumOfTimesFlushSnapshotCalled());
 
         flushTestSortedLedgerStorage.setInjectFlushException(false, FlushTestSortedLedgerStorage.FORALLLEDGERS);
         flushTestSortedLedgerStorage.addEntry(generateEntry(1, 5));
-        Thread.sleep(1000);
         /*
          * since MemTableSizeLimitReached is already set to true, and flush
          * exception is disabled, this time memtable snapshot should be flushed
