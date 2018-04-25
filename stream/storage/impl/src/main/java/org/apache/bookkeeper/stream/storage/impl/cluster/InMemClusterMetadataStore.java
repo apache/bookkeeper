@@ -22,7 +22,9 @@ import com.google.common.collect.Maps;
 import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.function.Consumer;
+import lombok.AccessLevel;
 import lombok.Data;
+import lombok.Getter;
 import org.apache.bookkeeper.stream.proto.cluster.ClusterAssignmentData;
 import org.apache.bookkeeper.stream.proto.cluster.ClusterMetadata;
 import org.apache.bookkeeper.stream.storage.api.cluster.ClusterMetadataStore;
@@ -48,8 +50,12 @@ public class InMemClusterMetadataStore implements ClusterMetadataStore {
         initializeCluster(numStorageContainers);
     }
 
+    synchronized int getNumWatchers() {
+        return watchers.size();
+    }
+
     @Override
-    public void initializeCluster(int numStorageContainers) {
+    public synchronized void initializeCluster(int numStorageContainers) {
         this.metadata = ClusterMetadata.newBuilder()
             .setNumStorageContainers(numStorageContainers)
             .build();
