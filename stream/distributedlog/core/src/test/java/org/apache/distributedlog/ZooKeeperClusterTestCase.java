@@ -18,6 +18,7 @@
 package org.apache.distributedlog;
 
 import java.io.File;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.shims.zk.ZooKeeperServerShim;
 import org.apache.bookkeeper.util.IOUtils;
 import org.apache.commons.io.FileUtils;
@@ -29,7 +30,14 @@ import org.junit.BeforeClass;
 /**
  * ZooKeeperClusterTestCase.
  */
+@Slf4j
 public class ZooKeeperClusterTestCase {
+
+    static {
+        // org.apache.zookeeper.test.ClientBase uses FourLetterWordMain, from 3.5.3 four letter words
+        // are disabled by default due to security reasons
+        System.setProperty("zookeeper.4lw.commands.whitelist", "*");
+    }
 
     protected static File zkDir;
     protected static ZooKeeperServerShim zks;
@@ -43,10 +51,13 @@ public class ZooKeeperClusterTestCase {
         zks = serverAndPort.getLeft();
         zkPort = serverAndPort.getRight();
         zkServers = "127.0.0.1:" + zkPort;
+
+        log.info("--- Setup zookeeper at {} ---", zkServers);
     }
 
     @AfterClass
     public static void shutdownZooKeeper() throws Exception {
+        log.info("--- Shutdown zookeeper at {} ---", zkServers);
         zks.stop();
         if (null != zkDir) {
             FileUtils.forceDeleteOnExit(zkDir);

@@ -23,7 +23,6 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Executor;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.stream.proto.cluster.ClusterAssignmentData;
@@ -60,6 +59,10 @@ class ZkClusterMetadataStore implements ClusterMetadataStore {
         this.zkClusterMetadataPath = zkRootPath + "/" + METADATA;
         this.zkClusterAssignmentPath = zkRootPath + "/" + ASSIGNMENT;
         this.assignmentDataConsumers = new HashMap<>();
+    }
+
+    synchronized int getNumWatchers() {
+        return assignmentDataConsumers.size();
     }
 
     @Override
