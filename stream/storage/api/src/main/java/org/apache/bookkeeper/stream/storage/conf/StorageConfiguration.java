@@ -14,6 +14,7 @@
 package org.apache.bookkeeper.stream.storage.conf;
 
 import java.io.File;
+import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.common.conf.ComponentConfiguration;
 import org.apache.commons.configuration.CompositeConfiguration;
 
@@ -27,6 +28,8 @@ public class StorageConfiguration extends ComponentConfiguration {
     private static final String RANGE_STORE_DIRS = "range_store_dirs";
 
     private static final String SERVE_READONLY_TABLES = "serve.readonly.tables";
+
+    private static final String CONTROLLER_SCHEDULE_INTERVAL_MS = "cluster.controller.schedule.interval.ms";
 
     public StorageConfiguration(CompositeConfiguration conf) {
         super(conf, COMPONENT_PREFIX);
@@ -63,6 +66,15 @@ public class StorageConfiguration extends ComponentConfiguration {
 
     public boolean getServeReadOnlyTables() {
         return getBoolean(SERVE_READONLY_TABLES, false);
+    }
+
+    /**
+     * Get the cluster controller schedule interval in milliseconds. The default value is 30 seconds.
+     *
+     * @return cluster controller schedule interval, in milliseconds.
+     */
+    public long getClusterControllerScheduleIntervalMs() {
+        return getLong(CONTROLLER_SCHEDULE_INTERVAL_MS, TimeUnit.SECONDS.toMillis(30));
     }
 
 }

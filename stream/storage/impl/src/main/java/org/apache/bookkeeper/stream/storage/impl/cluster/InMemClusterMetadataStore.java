@@ -18,7 +18,12 @@
  */
 package org.apache.bookkeeper.stream.storage.impl.cluster;
 
-import org.apache.bookkeeper.stream.proto.cluster.ClusterAssigmentData;
+import com.google.common.collect.Maps;
+import java.util.Map;
+import java.util.concurrent.Executor;
+import java.util.function.Consumer;
+import lombok.Data;
+import org.apache.bookkeeper.stream.proto.cluster.ClusterAssignmentData;
 import org.apache.bookkeeper.stream.proto.cluster.ClusterMetadata;
 import org.apache.bookkeeper.stream.storage.api.cluster.ClusterMetadataStore;
 
@@ -27,10 +32,19 @@ import org.apache.bookkeeper.stream.storage.api.cluster.ClusterMetadataStore;
  */
 public class InMemClusterMetadataStore implements ClusterMetadataStore {
 
+    @Data
+    private static class WatcherAndExecutor {
+        private final Consumer<Void> watcher;
+        private final Executor executor;
+    }
+
+    private final Map<Consumer<Void>, WatcherAndExecutor> watchers;
+
     private ClusterMetadata metadata;
-    private ClusterAssigmentData assigmentData;
+    private ClusterAssignmentData assignmentData;
 
     InMemClusterMetadataStore(int numStorageContainers) {
+        this.watchers = Maps.newHashMap();
         initializeCluster(numStorageContainers);
     }
 
@@ -39,17 +53,32 @@ public class InMemClusterMetadataStore implements ClusterMetadataStore {
         this.metadata = ClusterMetadata.newBuilder()
             .setNumStorageContainers(numStorageContainers)
             .build();
-        this.assigmentData = ClusterAssigmentData.newBuilder().build();
+        this.assignmentData = ClusterAssignmentData.newBuilder().build();
     }
 
     @Override
-    public synchronized ClusterAssigmentData getClusterAssignmentData() {
-        return assigmentData;
+    public synchronized ClusterAssignmentData getClusterAssignmentData() {
+        return assignmentData;
     }
 
     @Override
-    public synchronized void updateClusterAssignmentData(ClusterAssigmentData assigmentData) {
-        this.assigmentData = assigmentData;
+    public synchronized void updateClusterAssignmentData(ClusterAssignmentData assignmentData) {
+        this.assignmentData = assignmentData;
+        watchers.values().forEach(wae -> wae.executor.execute(() -> wae.watcher.accept(null)));
+    }
+
+    @Override
+    public synchronized void watchClusterAssignmentData(Consumer<Void> watcher, Executor executor) {
+        WatcherAndExecutor wae = watchers.get(watcher);
+        if (null == wae) {
+            wae = new WatcherAndExecutor(watcher, executor);
+            watchers.put(watcher, wae);
+        }
+    }
+
+    @Override
+    public synchronized void unwatchClusterAssignmentData(Consumer<Void> watcher) {
+        watchers.remove(watcher);
     }
 
     @Override
@@ -60,5 +89,10 @@ public class InMemClusterMetadataStore implements ClusterMetadataStore {
     @Override
     public synchronized void updateClusterMetadata(ClusterMetadata clusterMetadata) {
         this.metadata = clusterMetadata;
+    }
+
+    @Override
+    public void close() {
+        // no-op
     }
 }

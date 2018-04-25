@@ -19,15 +19,25 @@
 package org.apache.bookkeeper.stream.storage.impl.cluster;
 
 import com.google.protobuf.InvalidProtocolBufferException;
-import org.apache.bookkeeper.stream.proto.cluster.ClusterAssigmentData;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.bookkeeper.stream.proto.cluster.ClusterAssignmentData;
 import org.apache.bookkeeper.stream.proto.cluster.ClusterMetadata;
 import org.apache.bookkeeper.stream.storage.api.cluster.ClusterMetadataStore;
 import org.apache.bookkeeper.stream.storage.exceptions.StorageRuntimeException;
 import org.apache.curator.framework.CuratorFramework;
+import org.apache.curator.framework.recipes.cache.NodeCache;
+import org.apache.curator.framework.recipes.cache.NodeCacheListener;
 
 /**
  * A zookeeper based implementation of cluster metadata store.
  */
+@Slf4j
 class ZkClusterMetadataStore implements ClusterMetadataStore {
 
     private static final String METADATA = "metadata";
@@ -39,11 +49,35 @@ class ZkClusterMetadataStore implements ClusterMetadataStore {
     private final String zkClusterMetadataPath;
     private final String zkClusterAssignmentPath;
 
+    private final Map<Consumer<Void>, NodeCacheListener> assignmentDataConsumers;
+    private NodeCache assignmentDataCache;
+
+    private volatile boolean closed = false;
+
     ZkClusterMetadataStore(CuratorFramework client, String zkRootPath) {
         this.client = client;
         this.zkRootPath = zkRootPath;
         this.zkClusterMetadataPath = zkRootPath + "/" + METADATA;
         this.zkClusterAssignmentPath = zkRootPath + "/" + ASSIGNMENT;
+        this.assignmentDataConsumers = new HashMap<>();
+    }
+
+    @Override
+    public void close() {
+        synchronized (this) {
+            if (closed) {
+                return;
+            }
+            closed = true;
+
+            if (null != assignmentDataCache) {
+                try {
+                    assignmentDataCache.close();
+                } catch (IOException e) {
+                    log.warn("Failed to close assignment data cache", e);
+                }
+            }
+        }
     }
 
     @Override
@@ -51,7 +85,7 @@ class ZkClusterMetadataStore implements ClusterMetadataStore {
         ClusterMetadata metadata = ClusterMetadata.newBuilder()
             .setNumStorageContainers(numStorageContainers)
             .build();
-        ClusterAssigmentData assigmentData = ClusterAssigmentData.newBuilder()
+        ClusterAssignmentData assigmentData = ClusterAssignmentData.newBuilder()
             .build();
         try {
             client.transaction()
@@ -66,10 +100,10 @@ class ZkClusterMetadataStore implements ClusterMetadataStore {
     }
 
     @Override
-    public ClusterAssigmentData getClusterAssignmentData() {
+    public ClusterAssignmentData getClusterAssignmentData() {
         try {
             byte[] data = client.getData().forPath(zkClusterAssignmentPath);
-            return ClusterAssigmentData.parseFrom(data);
+            return ClusterAssignmentData.parseFrom(data);
         } catch (InvalidProtocolBufferException ie) {
             throw new StorageRuntimeException("The cluster assignment data from zookeeper @"
                 + zkClusterAssignmentPath + " is corrupted", ie);
@@ -80,13 +114,50 @@ class ZkClusterMetadataStore implements ClusterMetadataStore {
     }
 
     @Override
-    public void updateClusterAssignmentData(ClusterAssigmentData assigmentData) {
+    public void updateClusterAssignmentData(ClusterAssignmentData assigmentData) {
         byte[] data = assigmentData.toByteArray();
         try {
             client.setData().forPath(zkClusterAssignmentPath, data);
         } catch (Exception e) {
             throw new StorageRuntimeException("Failed to update cluster assignment data to zookeeper @"
                 + zkClusterAssignmentPath, e);
+        }
+    }
+
+    @Override
+    public void watchClusterAssignmentData(Consumer<Void> watcher, Executor executor) {
+        synchronized (this) {
+            if (assignmentDataCache == null) {
+                assignmentDataCache = new NodeCache(client, zkClusterAssignmentPath);
+                try {
+                    assignmentDataCache.start();
+                } catch (Exception e) {
+                    throw new StorageRuntimeException("Failed to watch cluster assignment data", e);
+                }
+            }
+            NodeCacheListener listener = assignmentDataConsumers.get(watcher);
+            if (null == listener) {
+                listener = () -> watcher.accept(null);
+                assignmentDataConsumers.put(watcher, listener);
+                assignmentDataCache.getListenable().addListener(listener, executor);
+            }
+        }
+    }
+
+    @Override
+    public void unwatchClusterAssignmentData(Consumer<Void> watcher) {
+        synchronized (this) {
+            NodeCacheListener listener = assignmentDataConsumers.remove(watcher);
+            if (null != listener && null != assignmentDataCache) {
+                assignmentDataCache.getListenable().removeListener(listener);
+            }
+            if (assignmentDataConsumers.isEmpty() && null != assignmentDataCache) {
+                try {
+                    assignmentDataCache.close();
+                } catch (IOException e) {
+                    log.warn("Failed to close assignment data cache when there is no watcher", e);
+                }
+            }
         }
     }
 
@@ -114,4 +185,6 @@ class ZkClusterMetadataStore implements ClusterMetadataStore {
                 + zkClusterMetadataPath, e);
         }
     }
+
+
 }

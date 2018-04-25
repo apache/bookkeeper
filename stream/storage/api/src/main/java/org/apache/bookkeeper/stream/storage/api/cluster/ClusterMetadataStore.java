@@ -18,14 +18,16 @@
  */
 package org.apache.bookkeeper.stream.storage.api.cluster;
 
-import org.apache.bookkeeper.stream.proto.cluster.ClusterAssigmentData;
+import java.util.concurrent.Executor;
+import java.util.function.Consumer;
+import org.apache.bookkeeper.stream.proto.cluster.ClusterAssignmentData;
 import org.apache.bookkeeper.stream.proto.cluster.ClusterMetadata;
 
 /**
  * Store the cluster related metadata, such as the number of storage containers, the mapping between servers
  * to storage containers.
  */
-public interface ClusterMetadataStore {
+public interface ClusterMetadataStore extends AutoCloseable {
 
     /**
      * Initialize the cluster metadata with the provided <i>numStorageContainers</i>.
@@ -39,14 +41,29 @@ public interface ClusterMetadataStore {
      *
      * @return the cluster assignment data.
      */
-    ClusterAssigmentData getClusterAssignmentData();
+    ClusterAssignmentData getClusterAssignmentData();
 
     /**
      * Update the current cluster assignment data.
      *
      * @param assignmentData cluster assignment data
      */
-    void updateClusterAssignmentData(ClusterAssigmentData assignmentData);
+    void updateClusterAssignmentData(ClusterAssignmentData assignmentData);
+
+    /**
+     * Watch the current cluster assignment data.
+     *
+     * @param watcher current cluster assignment data watcher
+     * @param executor the executor to run the <tt>watcher</tt>
+     */
+    void watchClusterAssignmentData(Consumer<Void> watcher, Executor executor);
+
+    /**
+     * Unwatch the current cluster assignment data.
+     *
+     * @param watcher current cluster assignment data watcher to remove
+     */
+    void unwatchClusterAssignmentData(Consumer<Void> watcher);
 
     /**
      * Returns the cluster metadata presents in the system.
@@ -61,5 +78,11 @@ public interface ClusterMetadataStore {
      * @param clusterMetadata cluster metadata to update.
      */
     void updateClusterMetadata(ClusterMetadata clusterMetadata);
+
+    /**
+     * Close the metadata store.
+     */
+    @Override
+    void close();
 
 }

@@ -22,6 +22,7 @@ import org.apache.bookkeeper.common.component.AbstractLifecycleComponent;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stream.proto.common.Endpoint;
+import org.apache.bookkeeper.stream.storage.api.sc.StorageContainer;
 import org.apache.bookkeeper.stream.storage.api.sc.StorageContainerManager;
 import org.apache.bookkeeper.stream.storage.api.sc.StorageContainerRegistry;
 import org.apache.bookkeeper.stream.storage.conf.StorageConfiguration;
@@ -54,7 +55,7 @@ public class LocalStorageContainerManager
 
     @Override
     protected void doStart() {
-        List<CompletableFuture<Void>> futures = Lists.newArrayListWithExpectedSize(numStorageContainers);
+        List<CompletableFuture<StorageContainer>> futures = Lists.newArrayListWithExpectedSize(numStorageContainers);
         for (int scId = 0; scId < numStorageContainers; scId++) {
             futures.add(this.registry.startStorageContainer(scId));
         }
