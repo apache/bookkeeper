@@ -43,7 +43,8 @@ class ZkClusterControllerLeaderSelector implements ClusterControllerLeaderSelect
     private ClusterControllerLeader leader;
     private LeaderSelector leaderSelector;
 
-    ZkClusterControllerLeaderSelector(CuratorFramework client, String zkRootPath) {
+    ZkClusterControllerLeaderSelector(CuratorFramework client,
+                                      String zkRootPath) {
         this.client = client;
         this.controllerZkPath = ZKPaths.makePath(zkRootPath, "controller");
     }
