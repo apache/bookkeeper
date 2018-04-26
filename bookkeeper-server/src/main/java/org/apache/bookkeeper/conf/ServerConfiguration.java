@@ -189,6 +189,22 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     protected static final String NUMBER_OF_MEMTABLE_FLUSH_THREADS = "numOfMemtableFlushThreads";
 
 
+    /*
+     * config specifying if the entrylog per ledger is enabled, then the amount
+     * of time EntryLogManagerForEntryLogPerLedger should wait for closing the
+     * entrylog file after the last addEntry call for that ledger, if explicit
+     * writeclose for that ledger is not received.
+     */
+    protected static final String ENTRYLOGMAP_ACCESS_EXPIRYTIME_INSECONDS = "entrylogMapAccessExpiryTimeInSeconds";
+
+    /*
+     * in entryLogPerLedger feature, this specifies the maximum number of
+     * entrylogs that can be active at a given point in time. If there are more
+     * number of active entryLogs then the maximumNumberOfActiveEntryLogs then
+     * the entrylog will be evicted from the cache.
+     */
+    protected static final String MAXIMUM_NUMBER_OF_ACTIVE_ENTRYLOGS = "maximumNumberOfActiveEntryLogs";
+
     /**
      * Construct a default configuration object.
      */
@@ -2742,6 +2758,43 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      */
     public ServerConfiguration setNumOfMemtableFlushThreads(int numOfMemtableFlushThreads) {
         this.setProperty(NUMBER_OF_MEMTABLE_FLUSH_THREADS, Integer.toString(numOfMemtableFlushThreads));
+        return this;
+    }
+
+    /*
+     * in entryLogPerLedger feature, this specifies the time, once this duration
+     * has elapsed after the entry's last access, that entry should be
+     * automatically removed from the cache
+     */
+    public int getEntrylogMapAccessExpiryTimeInSeconds() {
+        return this.getInt(ENTRYLOGMAP_ACCESS_EXPIRYTIME_INSECONDS, 5 * 60);
+    }
+
+    /*
+     * sets the time duration for entrylogMapAccessExpiryTimeInSeconds, which will be used for cache eviction
+     * policy, in entrylogperledger feature.
+     */
+    public ServerConfiguration setEntrylogMapAccessExpiryTimeInSeconds(int entrylogMapAccessExpiryTimeInSeconds) {
+        this.setProperty(ENTRYLOGMAP_ACCESS_EXPIRYTIME_INSECONDS,
+                Integer.toString(entrylogMapAccessExpiryTimeInSeconds));
+        return this;
+    }
+
+    /*
+     * get the maximum number of entrylogs that can be active at a given point
+     * in time.
+     */
+    public int getMaximumNumberOfActiveEntryLogs() {
+        return this.getInt(MAXIMUM_NUMBER_OF_ACTIVE_ENTRYLOGS, 500);
+    }
+
+    /*
+     * sets the maximum number of entrylogs that can be active at a given point
+     * in time.
+     */
+    public ServerConfiguration setMaximumNumberOfActiveEntryLogs(int maximumNumberOfActiveEntryLogs) {
+        this.setProperty(MAXIMUM_NUMBER_OF_ACTIVE_ENTRYLOGS,
+                Integer.toString(maximumNumberOfActiveEntryLogs));
         return this;
     }
 }

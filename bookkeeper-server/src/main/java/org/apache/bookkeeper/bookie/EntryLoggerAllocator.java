@@ -51,7 +51,7 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
 class EntryLoggerAllocator {
 
     private long preallocatedLogId;
-    private Future<BufferedLogChannel> preallocation = null;
+    Future<BufferedLogChannel> preallocation = null;
     private ExecutorService allocatorExecutor;
     private final ServerConfiguration conf;
     private final LedgerDirsManager ledgerDirsManager;
