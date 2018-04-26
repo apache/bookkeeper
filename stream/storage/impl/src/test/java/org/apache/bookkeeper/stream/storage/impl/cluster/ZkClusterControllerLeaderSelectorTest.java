@@ -1,4 +1,4 @@
-stream/storage/impl/src/test/java/org/apache/bookkeeper/stream/storage/impl/cluster/ZkClusterControllerLeaderSelectorListenerTest.java/*
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
