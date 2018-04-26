@@ -99,6 +99,7 @@ public class MVCCStoreFactoryImplTest {
                 .build());
         this.factory = new MVCCStoreFactoryImpl(
             () -> namespace,
+            () -> new FSCheckpointManager(new File(storeDirs[0], "checkpoints")),
             storeDirs,
             resources,
             false);

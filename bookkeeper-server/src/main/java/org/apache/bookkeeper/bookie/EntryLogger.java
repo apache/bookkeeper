@@ -947,8 +947,8 @@ public class EntryLogger {
 
         @Override
         public void flush() throws IOException {
-            flushRotatedLogs();
             flushCurrentLogs();
+            flushRotatedLogs();
         }
 
         void flushLogChannel(BufferedLogChannel logChannel, boolean forceMetadata) throws IOException {
