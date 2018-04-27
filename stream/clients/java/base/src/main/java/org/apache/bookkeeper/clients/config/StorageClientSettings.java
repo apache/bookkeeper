@@ -20,10 +20,14 @@ package org.apache.bookkeeper.clients.config;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
+import com.google.common.base.Supplier;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.NameResolver;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Stream;
+import org.apache.bookkeeper.clients.utils.ClientConstants;
+import org.apache.bookkeeper.common.util.Backoff;
 import org.apache.bookkeeper.stream.proto.common.Endpoint;
 import org.inferred.freebuilder.FreeBuilder;
 
@@ -80,6 +84,15 @@ public interface StorageClientSettings {
     Optional<String> clientName();
 
     /**
+     * Configure a backoff policy for the client.
+     *
+     * <p>There are a few default backoff policies defined in {@link org.apache.bookkeeper.common.util.Backoff}.
+     *
+     * @return backoff policy provider
+     */
+    Supplier<Stream<Long>> backoffPolicy();
+
+    /**
      * Builder of {@link StorageClientSettings} instances.
      */
     class Builder extends StorageClientSettings_Builder {
@@ -87,6 +100,10 @@ public interface StorageClientSettings {
         Builder() {
             numWorkerThreads(Runtime.getRuntime().availableProcessors());
             usePlaintext(true);
+            backoffPolicy(() -> Backoff.exponentialJittered(
+                ClientConstants.DEFAULT_BACKOFF_START_MS,
+                ClientConstants.DEFAULT_BACKOFF_MAX_MS
+            ));
         }
 
         @Override

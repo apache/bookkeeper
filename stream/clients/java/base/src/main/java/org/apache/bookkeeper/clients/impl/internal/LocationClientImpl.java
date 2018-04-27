@@ -105,7 +105,6 @@ public class LocationClientImpl implements LocationClient {
             }
             switch (status.getCode()) {
                 case INVALID_ARGUMENT:
-                case NOT_FOUND:
                 case ALREADY_EXISTS:
                 case PERMISSION_DENIED:
                 case UNAUTHENTICATED:
