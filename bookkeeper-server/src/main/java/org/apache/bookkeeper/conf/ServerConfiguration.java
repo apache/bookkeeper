@@ -185,6 +185,9 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * config specifying if the entrylog per ledger is enabled or not.
      */
     protected static final String ENTRY_LOG_PER_LEDGER_ENABLED = "entryLogPerLedgerEnabled";
+    // In the case of multipleentrylogs, multiple threads can be used to flush the memtable parallelly.
+    protected static final String NUMBER_OF_MEMTABLE_FLUSH_THREADS = "numOfMemtableFlushThreads";
+
 
     /**
      * Construct a default configuration object.
@@ -2721,6 +2724,24 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      */
     public ServerConfiguration setEntryLogPerLedgerEnabled(boolean entryLogPerLedgerEnabled) {
         this.setProperty(ENTRY_LOG_PER_LEDGER_ENABLED, Boolean.toString(entryLogPerLedgerEnabled));
+        return this;
+    }
+
+    /*
+     * In the case of multipleentrylogs, multiple threads can be used to flush the memtable.
+     *
+     * Gets the number of threads used to flush entrymemtable
+     */
+    public int getNumOfMemtableFlushThreads() {
+        return this.getInt(NUMBER_OF_MEMTABLE_FLUSH_THREADS, 8);
+    }
+
+    /*
+     * Sets the number of threads used to flush entrymemtable, in the case of multiple entrylogs
+     *
+     */
+    public ServerConfiguration setNumOfMemtableFlushThreads(int numOfMemtableFlushThreads) {
+        this.setProperty(NUMBER_OF_MEMTABLE_FLUSH_THREADS, Integer.toString(numOfMemtableFlushThreads));
         return this;
     }
 }

@@ -629,19 +629,63 @@ public class EntryLogTest {
     }
 
     /**
-     * test concurrent write operations and then concurrent read
-     * operations using InterleavedLedgerStorage.
+     * test concurrent write operations and then concurrent read operations
+     * using InterleavedLedgerStorage.
      */
     @Test
     public void testConcurrentWriteAndReadCallsOfInterleavedLedgerStorage() throws Exception {
+        testConcurrentWriteAndReadCalls(InterleavedLedgerStorage.class.getName(), false);
+    }
+
+    /**
+     * test concurrent write operations and then concurrent read operations
+     * using InterleavedLedgerStorage with EntryLogPerLedger enabled.
+     */
+    @Test
+    public void testConcurrentWriteAndReadCallsOfInterleavedLedgerStorageWithELPLEnabled() throws Exception {
+        testConcurrentWriteAndReadCalls(InterleavedLedgerStorage.class.getName(), true);
+    }
+
+    /**
+     * test concurrent write operations and then concurrent read operations
+     * using SortedLedgerStorage.
+     */
+    @Test
+    public void testConcurrentWriteAndReadCallsOfSortedLedgerStorage() throws Exception {
+        testConcurrentWriteAndReadCalls(SortedLedgerStorage.class.getName(), false);
+    }
+
+    /**
+     * test concurrent write operations and then concurrent read operations
+     * using SortedLedgerStorage with EntryLogPerLedger enabled.
+     */
+    @Test
+    public void testConcurrentWriteAndReadCallsOfSortedLedgerStorageWithELPLEnabled() throws Exception {
+        testConcurrentWriteAndReadCalls(SortedLedgerStorage.class.getName(), true);
+    }
+
+    public void testConcurrentWriteAndReadCalls(String ledgerStorageClass, boolean entryLogPerLedgerEnabled)
+            throws Exception {
         File ledgerDir = createTempDir("bkTest", ".dir");
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
         conf.setJournalDirName(ledgerDir.toString());
         conf.setLedgerDirNames(new String[] { ledgerDir.getAbsolutePath()});
-        conf.setLedgerStorageClass(InterleavedLedgerStorage.class.getName());
+        conf.setLedgerStorageClass(ledgerStorageClass);
+        conf.setEntryLogPerLedgerEnabled(entryLogPerLedgerEnabled);
         Bookie bookie = new Bookie(conf);
         InterleavedLedgerStorage ledgerStorage = ((InterleavedLedgerStorage) bookie.ledgerStorage);
         Random rand = new Random(0);
+
+        if (ledgerStorageClass.equals(SortedLedgerStorage.class.getName())) {
+            Assert.assertEquals("LedgerStorage Class", SortedLedgerStorage.class, ledgerStorage.getClass());
+            if (entryLogPerLedgerEnabled) {
+                Assert.assertEquals("MemTable Class", EntryMemTableWithParallelFlusher.class,
+                        ((SortedLedgerStorage) ledgerStorage).memTable.getClass());
+            } else {
+                Assert.assertEquals("MemTable Class", EntryMemTable.class,
+                        ((SortedLedgerStorage) ledgerStorage).memTable.getClass());
+            }
+        }
 
         int numOfLedgers = 70;
         int numEntries = 1500;
