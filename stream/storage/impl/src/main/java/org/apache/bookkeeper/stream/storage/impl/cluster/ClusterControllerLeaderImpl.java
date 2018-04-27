@@ -22,6 +22,8 @@ import java.time.Duration;
 import java.util.Set;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
+import lombok.AccessLevel;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.discover.RegistrationClient;
 import org.apache.bookkeeper.discover.RegistrationClient.RegistrationListener;
@@ -43,6 +45,7 @@ public class ClusterControllerLeaderImpl implements ClusterControllerLeader, Reg
     private final StorageContainerController scController;
 
     // permits that the controller leader can perform server changes.
+    @Getter(AccessLevel.PACKAGE)
     private final Semaphore performServerChangesPermits;
 
     // registration client that watch/unwatch registered servers.
@@ -52,10 +55,12 @@ public class ClusterControllerLeaderImpl implements ClusterControllerLeader, Reg
     private volatile Set<BookieSocketAddress> availableServers;
 
     // variables for suspending controller
+    @Getter(AccessLevel.PACKAGE)
     private final Object suspensionLock = new Object();
     private volatile boolean suspended = false;
 
     // last successful assignment happened at (timestamp)
+    @Getter(AccessLevel.PACKAGE)
     private long lastSuccessfulAssigmentAt;
 
     // the min interval that controller is scheduled to assign containers
@@ -82,6 +87,10 @@ public class ClusterControllerLeaderImpl implements ClusterControllerLeader, Reg
             suspended = true;
             suspensionLock.notifyAll();
         }
+    }
+
+    boolean isSuspended() {
+        return suspended;
     }
 
     /**
@@ -187,14 +196,19 @@ public class ClusterControllerLeaderImpl implements ClusterControllerLeader, Reg
 
         if (newState.equals(currentState)) {
             // no assignment state is changed, so do nothing
+            if (log.isDebugEnabled()) {
+                log.debug("Assignment state is unchanged - {}", newState);
+            }
         } else {
             // update the assignment state
+            lastSuccessfulAssigmentAt = System.currentTimeMillis();
             clusterMetadataStore.updateClusterAssignmentData(newState);
         }
     }
 
     @Override
     public void onBookiesChanged(Versioned<Set<BookieSocketAddress>> bookies) {
+        log.info("Cluster topology is changed - new cluster : {}", bookies);
         // when bookies are changed, notify the leader to take actions
         this.availableServers = bookies.getValue();
         performServerChangesPermits.release();
