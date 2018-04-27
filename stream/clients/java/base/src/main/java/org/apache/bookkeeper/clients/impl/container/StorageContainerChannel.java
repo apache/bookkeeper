@@ -78,8 +78,7 @@ public class StorageContainerChannel {
         return rsChannelFuture;
     }
 
-    @VisibleForTesting
-    synchronized void resetStorageServerChannelFuture() {
+    public synchronized void resetStorageServerChannelFuture() {
         rsChannelFuture = null;
     }
 
