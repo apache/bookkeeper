@@ -18,7 +18,7 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":9,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10,"i15":10};
+var methods = {"i0":10,"i1":9,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10,"i15":10,"i16":10};
 var tabs = {65535:["t0","All Methods"],1:["t1","Static Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -158,65 +158,69 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>(package private) boolean</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/PendingAddOp.html#callbackTriggered">callbackTriggered</a></span></code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/PendingAddOp.html#allowFailFast">allowFailFast</a></span></code>&nbsp;</td>
 </tr>
 <tr class="altColor">
+<td class="colFirst"><code>(package private) boolean</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/PendingAddOp.html#callbackTriggered">callbackTriggered</a></span></code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
 <td class="colFirst"><code>(package private) <a href="../../../../org/apache/bookkeeper/client/AsyncCallback.AddCallbackWithLatency.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.AddCallbackWithLatency</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/PendingAddOp.html#cb">cb</a></span></code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>(package private) boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/PendingAddOp.html#completed">completed</a></span></code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>(package private) <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/PendingAddOp.html#ctx">ctx</a></span></code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>(package private) long</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/PendingAddOp.html#currentLedgerLength">currentLedgerLength</a></span></code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>(package private) long</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/PendingAddOp.html#entryId">entryId</a></span></code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>(package private) int</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/PendingAddOp.html#entryLength">entryLength</a></span></code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>(package private) boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/PendingAddOp.html#hasRun">hasRun</a></span></code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>(package private) boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/PendingAddOp.html#isRecoveryAdd">isRecoveryAdd</a></span></code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>(package private) <a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/PendingAddOp.html#lh">lh</a></span></code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>(package private) io.netty.buffer.ByteBuf</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/PendingAddOp.html#payload">payload</a></span></code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>(package private) int</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/PendingAddOp.html#pendingWriteRequests">pendingWriteRequests</a></span></code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>(package private) long</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/PendingAddOp.html#qwcLatency">qwcLatency</a></span></code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>(package private) long</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/PendingAddOp.html#requestTimeNanos">requestTimeNanos</a></span></code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>(package private) long</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/PendingAddOp.html#timeoutNanos">timeoutNanos</a></span></code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>(package private) org.apache.bookkeeper.util.ByteBufList</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/PendingAddOp.html#toSend">toSend</a></span></code>&nbsp;</td>
 </tr>
@@ -243,73 +247,77 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback
 <th class="colLast" scope="col">Method and Description</th>
 </tr>
 <tr id="i0" class="altColor">
+<td class="colFirst"><code>(package private) <a href="../../../../org/apache/bookkeeper/client/PendingAddOp.html" title="class in org.apache.bookkeeper.client">PendingAddOp</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/PendingAddOp.html#allowFailFastOnUnwritableChannel--">allowFailFastOnUnwritableChannel</a></span>()</code>&nbsp;</td>
+</tr>
+<tr id="i1" class="rowColor">
 <td class="colFirst"><code>(package private) static <a href="../../../../org/apache/bookkeeper/client/PendingAddOp.html" title="class in org.apache.bookkeeper.client">PendingAddOp</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/PendingAddOp.html#create-org.apache.bookkeeper.client.LedgerHandle-io.netty.buffer.ByteBuf-org.apache.bookkeeper.client.AsyncCallback.AddCallbackWithLatency-java.lang.Object-">create</a></span>(<a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
       io.netty.buffer.ByteBuf&nbsp;payload,
       <a href="../../../../org/apache/bookkeeper/client/AsyncCallback.AddCallbackWithLatency.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.AddCallbackWithLatency</a>&nbsp;cb,
       <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&nbsp;ctx)</code>&nbsp;</td>
 </tr>
-<tr id="i1" class="rowColor">
+<tr id="i2" class="altColor">
 <td class="colFirst"><code>(package private) <a href="../../../../org/apache/bookkeeper/client/PendingAddOp.html" title="class in org.apache.bookkeeper.client">PendingAddOp</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/PendingAddOp.html#enableRecoveryAdd--">enableRecoveryAdd</a></span>()</code>
 <div class="block">Enable the recovery add flag for this operation.</div>
 </td>
 </tr>
-<tr id="i2" class="altColor">
+<tr id="i3" class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/PendingAddOp.html#equals-java.lang.Object-">equals</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&nbsp;o)</code>&nbsp;</td>
 </tr>
-<tr id="i3" class="rowColor">
+<tr id="i4" class="altColor">
 <td class="colFirst"><code>(package private) long</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/PendingAddOp.html#getEntryId--">getEntryId</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i4" class="altColor">
+<tr id="i5" class="rowColor">
 <td class="colFirst"><code>int</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/PendingAddOp.html#hashCode--">hashCode</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i5" class="rowColor">
+<tr id="i6" class="altColor">
 <td class="colFirst"><code>(package private) boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/PendingAddOp.html#maybeTimeout--">maybeTimeout</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i6" class="altColor">
+<tr id="i7" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/PendingAddOp.html#safeRun--">safeRun</a></span>()</code>
 <div class="block">Initiate the add operation.</div>
 </td>
 </tr>
-<tr id="i7" class="rowColor">
+<tr id="i8" class="altColor">
 <td class="colFirst"><code>(package private) void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/PendingAddOp.html#sendAddSuccessCallbacks--">sendAddSuccessCallbacks</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i8" class="altColor">
+<tr id="i9" class="rowColor">
 <td class="colFirst"><code>(package private) void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/PendingAddOp.html#sendWriteRequest-int-">sendWriteRequest</a></span>(int&nbsp;bookieIndex)</code>&nbsp;</td>
 </tr>
-<tr id="i9" class="rowColor">
+<tr id="i10" class="altColor">
 <td class="colFirst"><code>(package private) void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/PendingAddOp.html#setEntryId-long-">setEntryId</a></span>(long&nbsp;entryId)</code>&nbsp;</td>
 </tr>
-<tr id="i10" class="altColor">
+<tr id="i11" class="rowColor">
 <td class="colFirst"><code>(package private) void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/PendingAddOp.html#setLedgerLength-long-">setLedgerLength</a></span>(long&nbsp;ledgerLength)</code>&nbsp;</td>
 </tr>
-<tr id="i11" class="rowColor">
+<tr id="i12" class="altColor">
 <td class="colFirst"><code>(package private) void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/PendingAddOp.html#submitCallback-int-">submitCallback</a></span>(int&nbsp;rc)</code>&nbsp;</td>
 </tr>
-<tr id="i12" class="altColor">
+<tr id="i13" class="rowColor">
 <td class="colFirst"><code>(package private) void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/PendingAddOp.html#timeoutQuorumWait--">timeoutQuorumWait</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i13" class="rowColor">
+<tr id="i14" class="altColor">
 <td class="colFirst"><code><a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/PendingAddOp.html#toString--">toString</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i14" class="altColor">
+<tr id="i15" class="rowColor">
 <td class="colFirst"><code>(package private) void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/PendingAddOp.html#unsetSuccessAndSendWriteRequest-int-">unsetSuccessAndSendWriteRequest</a></span>(int&nbsp;bookieIndex)</code>&nbsp;</td>
 </tr>
-<tr id="i15" class="rowColor">
+<tr id="i16" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/PendingAddOp.html#writeComplete-int-long-long-org.apache.bookkeeper.net.BookieSocketAddress-java.lang.Object-">writeComplete</a></span>(int&nbsp;rc,
              long&nbsp;ledgerId,
@@ -518,10 +526,19 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback
 <a name="hasRun">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>hasRun</h4>
 <pre>boolean hasRun</pre>
+</li>
+</ul>
+<a name="allowFailFast">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>allowFailFast</h4>
+<pre>boolean allowFailFast</pre>
 </li>
 </ul>
 </li>
@@ -556,6 +573,15 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback
 <dt><span class="seeLabel">See Also:</span></dt>
 <dd><a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html#asyncRecoveryAddEntry-byte:A-int-int-org.apache.bookkeeper.client.AsyncCallback.AddCallback-java.lang.Object-"><code>LedgerHandle.asyncRecoveryAddEntry(byte[], int, int, org.apache.bookkeeper.client.AsyncCallback.AddCallback, java.lang.Object)</code></a></dd>
 </dl>
+</li>
+</ul>
+<a name="allowFailFastOnUnwritableChannel--">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>allowFailFastOnUnwritableChannel</h4>
+<pre><a href="../../../../org/apache/bookkeeper/client/PendingAddOp.html" title="class in org.apache.bookkeeper.client">PendingAddOp</a>&nbsp;allowFailFastOnUnwritableChannel()</pre>
 </li>
 </ul>
 <a name="setEntryId-long-">

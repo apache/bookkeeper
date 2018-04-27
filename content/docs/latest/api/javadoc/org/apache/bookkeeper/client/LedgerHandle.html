@@ -18,7 +18,7 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10,"i15":10,"i16":10,"i17":10,"i18":10,"i19":10,"i20":10,"i21":10,"i22":10,"i23":10,"i24":10,"i25":10,"i26":10,"i27":10,"i28":10,"i29":10,"i30":10,"i31":10,"i32":10,"i33":10,"i34":10,"i35":10,"i36":10,"i37":10,"i38":10,"i39":10,"i40":10,"i41":10,"i42":10,"i43":10,"i44":10,"i45":10,"i46":10,"i47":10,"i48":10,"i49":10,"i50":10,"i51":10,"i52":10,"i53":10,"i54":10,"i55":10,"i56":10,"i57":10,"i58":10,"i59":10,"i60":10,"i61":10,"i62":10,"i63":10,"i64":10,"i65":10,"i66":10,"i67":10,"i68":10,"i69":10,"i70":10};
+var methods = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10,"i15":10,"i16":10,"i17":10,"i18":10,"i19":10,"i20":10,"i21":10,"i22":10,"i23":10,"i24":10,"i25":10,"i26":10,"i27":10,"i28":10,"i29":10,"i30":10,"i31":10,"i32":10,"i33":10,"i34":10,"i35":10,"i36":10,"i37":10,"i38":10,"i39":10,"i40":10,"i41":10,"i42":10,"i43":10,"i44":10,"i45":10,"i46":10,"i47":10,"i48":10,"i49":10,"i50":10,"i51":10,"i52":10,"i53":10,"i54":10,"i55":10,"i56":10,"i57":10,"i58":10,"i59":10,"i60":10,"i61":10,"i62":10,"i63":10,"i64":10,"i65":10,"i66":10,"i67":10,"i68":10,"i69":10,"i70":10,"i71":10};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -278,6 +278,10 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.htm
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html#timeoutFuture">timeoutFuture</a></span></code>&nbsp;</td>
 </tr>
 <tr class="altColor">
+<td class="colFirst"><code>(package private) long</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html#waitForWriteSetMs">waitForWriteSetMs</a></span></code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
 <td class="colFirst"><code>(package private) <a href="http://docs.oracle.com/javase/8/docs/api/java/util/EnumSet.html?is-external=true" title="class or interface in java.util">EnumSet</a>&lt;<a href="../../../../org/apache/bookkeeper/client/api/WriteFlag.html" title="enum in org.apache.bookkeeper.client.api">WriteFlag</a>&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html#writeFlags">writeFlags</a></span></code>&nbsp;</td>
 </tr>
@@ -767,6 +771,13 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.htm
                    long&nbsp;len)</code>&nbsp;</td>
 </tr>
 <tr id="i70" class="altColor">
+<td class="colFirst"><code>protected boolean</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html#waitForWritable-org.apache.bookkeeper.client.DistributionSchedule.WriteSet-long-int-long-">waitForWritable</a></span>(<a href="../../../../org/apache/bookkeeper/client/DistributionSchedule.WriteSet.html" title="interface in org.apache.bookkeeper.client">DistributionSchedule.WriteSet</a>&nbsp;writeSet,
+               long&nbsp;key,
+               int&nbsp;allowedNonWritableCount,
+               long&nbsp;durationMs)</code>&nbsp;</td>
+</tr>
+<tr id="i71" class="rowColor">
 <td class="colFirst"><code>(package private) void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html#writeLedgerConfig-org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback-">writeLedgerConfig</a></span>(org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Void.html?is-external=true" title="class or interface in java.lang">Void</a>&gt;&nbsp;writeCb)</code>&nbsp;</td>
 </tr>
@@ -957,6 +968,15 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.htm
 <li class="blockList">
 <h4>timeoutFuture</h4>
 <pre><a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/ScheduledFuture.html?is-external=true" title="class or interface in java.util.concurrent">ScheduledFuture</a>&lt;?&gt; timeoutFuture</pre>
+</li>
+</ul>
+<a name="waitForWriteSetMs">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>waitForWriteSetMs</h4>
+<pre>final&nbsp;long waitForWriteSetMs</pre>
 </li>
 </ul>
 <a name="INVALID_ENTRY_ID">
@@ -1964,6 +1984,18 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.htm
  entries to a quorum of bookies to ensure data safety.
 
  <p>Normal client should never call this method.</div>
+</li>
+</ul>
+<a name="waitForWritable-org.apache.bookkeeper.client.DistributionSchedule.WriteSet-long-int-long-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>waitForWritable</h4>
+<pre>protected&nbsp;boolean&nbsp;waitForWritable(<a href="../../../../org/apache/bookkeeper/client/DistributionSchedule.WriteSet.html" title="interface in org.apache.bookkeeper.client">DistributionSchedule.WriteSet</a>&nbsp;writeSet,
+                                  long&nbsp;key,
+                                  int&nbsp;allowedNonWritableCount,
+                                  long&nbsp;durationMs)</pre>
 </li>
 </ul>
 <a name="doAsyncAddEntry-org.apache.bookkeeper.client.PendingAddOp-">
