@@ -92,7 +92,18 @@ public class StorageContainerRegistryImpl implements StorageContainerRegistry {
         }
 
         log.info("Registered StorageContainer ('{}').", scId);
-        return newStorageContainer.start();
+        return newStorageContainer.start()
+            .whenComplete((container, cause) -> {
+                if (null != cause) {
+                    if (containers.remove(scId, newStorageContainer)) {
+                        log.warn("De-registered StorageContainer ('{}') when failed to start", scId, cause);
+                    } else {
+                        log.warn("Fail to de-register StorageContainer ('{}') when failed to start", scId, cause);
+                    }
+                } else {
+                    log.info("Successfully started registered StorageContainer ('{}').", scId);
+                }
+            });
     }
 
     @Override

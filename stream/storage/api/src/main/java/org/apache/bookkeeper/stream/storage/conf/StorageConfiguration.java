@@ -14,6 +14,7 @@
 package org.apache.bookkeeper.stream.storage.conf;
 
 import java.io.File;
+import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.common.conf.ComponentConfiguration;
 import org.apache.commons.configuration.CompositeConfiguration;
@@ -75,6 +76,18 @@ public class StorageConfiguration extends ComponentConfiguration {
      */
     public long getClusterControllerScheduleIntervalMs() {
         return getLong(CONTROLLER_SCHEDULE_INTERVAL_MS, TimeUnit.SECONDS.toMillis(30));
+    }
+
+    /**
+     * Set the cluster controller schedule interval.
+     *
+     * @param time time value
+     * @param timeUnit time unit
+     * @return storage configuration
+     */
+    public StorageConfiguration setClusterControllerScheduleInterval(long time, TimeUnit timeUnit) {
+        setProperty(CONTROLLER_SCHEDULE_INTERVAL_MS, timeUnit.toMillis(time));
+        return this;
     }
 
 }

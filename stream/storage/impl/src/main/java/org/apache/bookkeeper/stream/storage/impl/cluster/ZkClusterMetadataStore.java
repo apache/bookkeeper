@@ -37,7 +37,7 @@ import org.apache.curator.framework.recipes.cache.NodeCacheListener;
  * A zookeeper based implementation of cluster metadata store.
  */
 @Slf4j
-class ZkClusterMetadataStore implements ClusterMetadataStore {
+public class ZkClusterMetadataStore implements ClusterMetadataStore {
 
     private static final String METADATA = "metadata";
     private static final String ASSIGNMENT = "assignment";
@@ -53,7 +53,7 @@ class ZkClusterMetadataStore implements ClusterMetadataStore {
 
     private volatile boolean closed = false;
 
-    ZkClusterMetadataStore(CuratorFramework client, String zkRootPath) {
+    public ZkClusterMetadataStore(CuratorFramework client, String zkRootPath) {
         this.client = client;
         this.zkRootPath = zkRootPath;
         this.zkClusterMetadataPath = zkRootPath + "/" + METADATA;
