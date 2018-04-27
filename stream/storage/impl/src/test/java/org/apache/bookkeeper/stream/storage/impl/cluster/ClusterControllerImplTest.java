@@ -25,6 +25,7 @@ import static org.mockito.Mockito.verify;
 
 import org.apache.bookkeeper.discover.RegistrationClient;
 import org.apache.bookkeeper.stats.NullStatsLogger;
+import org.apache.bookkeeper.stream.storage.api.cluster.ClusterController;
 import org.apache.bookkeeper.stream.storage.api.cluster.ClusterControllerLeader;
 import org.apache.bookkeeper.stream.storage.api.cluster.ClusterControllerLeaderSelector;
 import org.apache.bookkeeper.stream.storage.api.cluster.ClusterMetadataStore;
@@ -36,29 +37,23 @@ import org.junit.Before;
 import org.junit.Test;
 
 /**
- * Unit test {@link ClusterControllerService}.
+ * Unit test {@link ClusterControllerImpl}.
  */
-public class ClusterControllerServiceTest {
+public class ClusterControllerImplTest {
 
     private ClusterControllerLeaderSelector leaderSelector;
 
-    private ClusterControllerService service;
+    private ClusterController service;
 
     @Before
     public void setup() {
         this.leaderSelector = mock(ClusterControllerLeaderSelector.class);
-        this.service = new ClusterControllerService(
+        this.service = new ClusterControllerImpl(
             mock(ClusterMetadataStore.class),
             mock(RegistrationClient.class),
             mock(StorageContainerController.class),
             leaderSelector,
-            new StorageConfiguration(new CompositeConfiguration()),
-            NullStatsLogger.INSTANCE);
-    }
-
-    @After
-    public void teardown() {
-        this.service.close();
+            new StorageConfiguration(new CompositeConfiguration()));
     }
 
     @Test

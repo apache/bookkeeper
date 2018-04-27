@@ -18,11 +18,9 @@
  */
 package org.apache.bookkeeper.stream.storage.impl.cluster;
 
-import java.io.IOException;
 import java.time.Duration;
-import org.apache.bookkeeper.common.component.AbstractLifecycleComponent;
 import org.apache.bookkeeper.discover.RegistrationClient;
-import org.apache.bookkeeper.stats.StatsLogger;
+import org.apache.bookkeeper.stream.storage.api.cluster.ClusterController;
 import org.apache.bookkeeper.stream.storage.api.cluster.ClusterControllerLeader;
 import org.apache.bookkeeper.stream.storage.api.cluster.ClusterControllerLeaderSelector;
 import org.apache.bookkeeper.stream.storage.api.cluster.ClusterMetadataStore;
@@ -33,18 +31,15 @@ import org.apache.bookkeeper.stream.storage.impl.sc.StorageContainerController;
  * A service that elects a cluster controller leader for performing cluster actions,
  * such as assigning containers to servers.
  */
-class ClusterControllerService extends AbstractLifecycleComponent<StorageConfiguration> {
+public class ClusterControllerImpl implements ClusterController {
 
     private final ClusterControllerLeaderSelector controllerLeaderSelector;
 
-    ClusterControllerService(ClusterMetadataStore clusterMetadataStore,
-                             RegistrationClient registrationClient,
-                             StorageContainerController scController,
-                             ClusterControllerLeaderSelector clusterControllerLeaderSelector,
-                             StorageConfiguration conf,
-                             StatsLogger statsLogger) {
-        super("cluster-controller", conf, statsLogger);
-
+    public ClusterControllerImpl(ClusterMetadataStore clusterMetadataStore,
+                                 RegistrationClient registrationClient,
+                                 StorageContainerController scController,
+                                 ClusterControllerLeaderSelector clusterControllerLeaderSelector,
+                                 StorageConfiguration conf) {
         ClusterControllerLeader controllerLeader = new ClusterControllerLeaderImpl(
             clusterMetadataStore,
             scController,
@@ -57,17 +52,13 @@ class ClusterControllerService extends AbstractLifecycleComponent<StorageConfigu
 
 
     @Override
-    protected void doStart() {
+    public void start() {
         this.controllerLeaderSelector.start();
     }
 
     @Override
-    protected void doStop() {
+    public void stop() {
         this.controllerLeaderSelector.close();
     }
 
-    @Override
-    protected void doClose() throws IOException {
-        // no-op
-    }
 }
