@@ -24,7 +24,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import org.apache.bookkeeper.discover.RegistrationClient;
-import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stream.storage.api.cluster.ClusterController;
 import org.apache.bookkeeper.stream.storage.api.cluster.ClusterControllerLeader;
 import org.apache.bookkeeper.stream.storage.api.cluster.ClusterControllerLeaderSelector;
@@ -32,7 +31,6 @@ import org.apache.bookkeeper.stream.storage.api.cluster.ClusterMetadataStore;
 import org.apache.bookkeeper.stream.storage.conf.StorageConfiguration;
 import org.apache.bookkeeper.stream.storage.impl.sc.StorageContainerController;
 import org.apache.commons.configuration.CompositeConfiguration;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 

@@ -86,7 +86,7 @@ public class ZkStorageContainerManagerTest extends ZooKeeperClusterTestCase {
         curatorClient.start();
 
         clusterMetadataStore = spy(new ZkClusterMetadataStore(
-            curatorClient, "/" + runtime.getMethodName()));
+            curatorClient, zkServers, "/" + runtime.getMethodName()));
         clusterMetadataStore.initializeCluster(NUM_STORAGE_CONTAINERS);
 
         scheduler = OrderedScheduler.newSchedulerBuilder()
@@ -103,7 +103,6 @@ public class ZkStorageContainerManagerTest extends ZooKeeperClusterTestCase {
                 .setClusterControllerScheduleInterval(1, TimeUnit.SECONDS),
             clusterMetadataStore,
             scRegistry,
-            scheduler,
             NullStatsLogger.INSTANCE);
     }
 
@@ -287,7 +286,6 @@ public class ZkStorageContainerManagerTest extends ZooKeeperClusterTestCase {
                 .setClusterControllerScheduleInterval(1, TimeUnit.SECONDS),
             clusterMetadataStore,
             scRegistry,
-            scheduler,
             NullStatsLogger.INSTANCE);
 
 

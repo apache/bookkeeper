@@ -21,12 +21,14 @@ package org.apache.bookkeeper.stream.storage.impl.sc;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -81,13 +83,13 @@ public class ZkStorageContainerManager
                                      StorageConfiguration conf,
                                      ClusterMetadataStore clusterMetadataStore,
                                      StorageContainerRegistry registry,
-                                     ScheduledExecutorService executor,
                                      StatsLogger statsLogger) {
         super("zk-storage-container-manager", conf, statsLogger);
         this.endpoint = myEndpoint;
         this.metadataStore = clusterMetadataStore;
         this.registry = registry;
-        this.executor = executor;
+        this.executor = Executors.newSingleThreadScheduledExecutor(
+            new ThreadFactoryBuilder().setNameFormat("zk-storage-container-manager").build());
         this.liveContainers = Collections.synchronizedMap(Maps.newConcurrentMap());
         this.pendingStartStopContainers = Collections.synchronizedSet(Sets.newConcurrentHashSet());
         this.containerAssignmentMap = new ConcurrentLongHashMap<>();
@@ -126,6 +128,8 @@ public class ZkStorageContainerManager
     protected void doClose() throws IOException {
         // close the registry to shutdown the containers
         registry.close();
+        // shutdown the scheduler
+        executor.shutdown();
     }
 
     @Override

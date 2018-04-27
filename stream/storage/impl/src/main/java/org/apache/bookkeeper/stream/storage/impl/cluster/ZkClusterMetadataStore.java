@@ -18,6 +18,13 @@
  */
 package org.apache.bookkeeper.stream.storage.impl.cluster;
 
+import static org.apache.bookkeeper.stream.storage.StorageConstants.getClusterAssignmentPath;
+import static org.apache.bookkeeper.stream.storage.StorageConstants.getClusterMetadataPath;
+import static org.apache.bookkeeper.stream.storage.StorageConstants.getSegmentsRootPath;
+import static org.apache.bookkeeper.stream.storage.StorageConstants.getServersPath;
+import static org.apache.bookkeeper.stream.storage.StorageConstants.getStoragePath;
+import static org.apache.bookkeeper.stream.storage.StorageConstants.getWritableServersPath;
+
 import com.google.protobuf.InvalidProtocolBufferException;
 import java.io.IOException;
 import java.util.HashMap;
@@ -32,6 +39,8 @@ import org.apache.bookkeeper.stream.storage.exceptions.StorageRuntimeException;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.cache.NodeCache;
 import org.apache.curator.framework.recipes.cache.NodeCacheListener;
+import org.apache.distributedlog.impl.metadata.BKDLConfig;
+import org.apache.distributedlog.metadata.DLMetadata;
 
 /**
  * A zookeeper based implementation of cluster metadata store.
@@ -39,11 +48,9 @@ import org.apache.curator.framework.recipes.cache.NodeCacheListener;
 @Slf4j
 public class ZkClusterMetadataStore implements ClusterMetadataStore {
 
-    private static final String METADATA = "metadata";
-    private static final String ASSIGNMENT = "assignment";
-
     private final CuratorFramework client;
 
+    private final String zkServers;
     private final String zkRootPath;
     private final String zkClusterMetadataPath;
     private final String zkClusterAssignmentPath;
@@ -53,11 +60,12 @@ public class ZkClusterMetadataStore implements ClusterMetadataStore {
 
     private volatile boolean closed = false;
 
-    public ZkClusterMetadataStore(CuratorFramework client, String zkRootPath) {
+    public ZkClusterMetadataStore(CuratorFramework client, String zkServers, String zkRootPath) {
         this.client = client;
+        this.zkServers = zkServers;
         this.zkRootPath = zkRootPath;
-        this.zkClusterMetadataPath = zkRootPath + "/" + METADATA;
-        this.zkClusterAssignmentPath = zkRootPath + "/" + ASSIGNMENT;
+        this.zkClusterMetadataPath = getClusterMetadataPath(zkRootPath);
+        this.zkClusterAssignmentPath = getClusterAssignmentPath(zkRootPath);
         this.assignmentDataConsumers = new HashMap<>();
     }
 
@@ -91,11 +99,19 @@ public class ZkClusterMetadataStore implements ClusterMetadataStore {
         ClusterAssignmentData assigmentData = ClusterAssignmentData.newBuilder()
             .build();
         try {
+            // we are using dlog for the storage backend, so we need to initialize the dlog namespace
+            BKDLConfig dlogConfig = new BKDLConfig(
+                zkServers, getSegmentsRootPath(zkRootPath));
+            DLMetadata dlogMetadata = DLMetadata.create(dlogConfig);
+
             client.transaction()
                 .forOperations(
                     client.transactionOp().create().forPath(zkRootPath),
                     client.transactionOp().create().forPath(zkClusterMetadataPath, metadata.toByteArray()),
-                    client.transactionOp().create().forPath(zkClusterAssignmentPath, assigmentData.toByteArray()));
+                    client.transactionOp().create().forPath(zkClusterAssignmentPath, assigmentData.toByteArray()),
+                    client.transactionOp().create().forPath(getServersPath(zkRootPath)),
+                    client.transactionOp().create().forPath(getWritableServersPath(zkRootPath)),
+                    client.transactionOp().create().forPath(getStoragePath(zkRootPath), dlogMetadata.serialize()));
         } catch (Exception e) {
             throw new StorageRuntimeException("Failed to initialize storage cluster with "
                 + numStorageContainers + " storage containers", e);

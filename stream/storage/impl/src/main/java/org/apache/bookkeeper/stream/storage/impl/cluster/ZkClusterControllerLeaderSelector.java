@@ -19,6 +19,7 @@
 package org.apache.bookkeeper.stream.storage.impl.cluster;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static org.apache.bookkeeper.stream.storage.StorageConstants.getControllerPath;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.stream.storage.api.cluster.ClusterControllerLeader;
@@ -27,13 +28,12 @@ import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.leader.LeaderSelector;
 import org.apache.curator.framework.state.ConnectionState;
 import org.apache.curator.framework.state.ConnectionStateListener;
-import org.apache.curator.utils.ZKPaths;
 
 /**
  * A controller leader selector implemented using zookeeper.
  */
 @Slf4j
-class ZkClusterControllerLeaderSelector implements ClusterControllerLeaderSelector, ConnectionStateListener {
+public class ZkClusterControllerLeaderSelector implements ClusterControllerLeaderSelector, ConnectionStateListener {
 
     private final CuratorFramework client;
     // the zookeeper path that controller is using for leader election
@@ -43,10 +43,10 @@ class ZkClusterControllerLeaderSelector implements ClusterControllerLeaderSelect
     private ClusterControllerLeader leader;
     private LeaderSelector leaderSelector;
 
-    ZkClusterControllerLeaderSelector(CuratorFramework client,
-                                      String zkRootPath) {
+    public ZkClusterControllerLeaderSelector(CuratorFramework client,
+                                             String zkRootPath) {
         this.client = client;
-        this.controllerZkPath = ZKPaths.makePath(zkRootPath, "controller");
+        this.controllerZkPath = getControllerPath(zkRootPath);
     }
 
     @Override
