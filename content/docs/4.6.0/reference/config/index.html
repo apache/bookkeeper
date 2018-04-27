@@ -1445,6 +1445,13 @@ evicted and closed. If the value is zero or negative, the file info is evicted o
 </td>
       <td><code>-1</code></td>
     </tr>
+    
+    <tr id="numOfMemtableFlushThreads">
+      <td><code>numOfMemtableFlushThreads</code></td>
+      <td><p>When entryLogPerLedger is enabled SortedLedgerStorage flushes entries from memTable using OrderedExecutor having numOfMemtableFlushThreads number of threads.</p>
+</td>
+      <td><code>8</code></td>
+    </tr>
      <!-- for param in group.params -->
   </tbody>
 </table>
