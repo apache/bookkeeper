@@ -23,6 +23,9 @@ package org.apache.bookkeeper.bookie;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Stopwatch;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import com.google.common.util.concurrent.MoreExecutors;
 
 import io.netty.buffer.ByteBuf;
@@ -40,6 +43,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -313,7 +317,9 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                 LOG.debug("Acknowledge Ledger: {}, Entry: {}", ledgerId, entryId);
             }
             journalCbQueueSize.dec();
-            journalAddEntryStats.registerSuccessfulEvent(MathUtils.elapsedNanos(enqueueTime), TimeUnit.NANOSECONDS);
+            if (journalAddEntryStats != null) {
+                journalAddEntryStats.registerSuccessfulEvent(MathUtils.elapsedNanos(enqueueTime), TimeUnit.NANOSECONDS);
+            }
             cb.writeComplete(0, ledgerId, entryId, null, ctx);
             recycle();
         }
@@ -361,10 +367,24 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                 }
                 lastLogMark.setCurLogMark(this.logId, this.lastFlushedPosition);
 
+                LedgerIdEntryIdPair forced = flushedNotForcedEntries.poll();
+                while (forced != null) {
+                   long ledgerId = forced.ledgerId;
+                   long entryId = forced.entryId;
+                   forced.recycle();
+                   updateCursor(ledgerId, entryId);
+                   forced = flushedNotForcedEntries.poll();
+                }
+
                 // Notify the waiters that the force write succeeded
                 for (int i = 0; i < forceWriteWaiters.size(); i++) {
                     QueueEntry qe = forceWriteWaiters.get(i);
                     if (qe != null) {
+                        if (qe.entryId == Bookie.METAENTRY_ID_FORCE_LEDGER) {
+                            LastAddForcedCursor cursor = getCursorForLedger(qe.ledgerId);
+                            // for these special entries we have to return the LastAddForced entry
+                            qe.entryId = cursor.getLastAddForced();
+                        }
                         cbThreadPool.execute(qe);
                     }
                     journalCbQueueSize.inc();
@@ -589,6 +609,23 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
     // journal entry queue to commit
     final BlockingQueue<QueueEntry> queue = new GrowableArrayBlockingQueue<QueueEntry>();
     final BlockingQueue<ForceWriteRequest> forceWriteRequests = new GrowableArrayBlockingQueue<ForceWriteRequest>();
+
+    // entries written to the disk and acknowledged to the client before forcing writes (see ackBeforeSync)
+    final BlockingQueue<LedgerIdEntryIdPair> flushedNotForcedEntries = new GrowableArrayBlockingQueue<>();
+    final LoadingCache<Long, LastAddForcedCursor> syncCursors = CacheBuilder
+                                    .<Long, LastAddForcedCursor>newBuilder()
+                                    .maximumSize(10000)
+                                    .removalListener(notification -> {
+                                        LOG.info("evicted cursor for ledger {}" + notification.getKey());
+                                     })
+                                    .build(new CacheLoader<Long, LastAddForcedCursor>() {
+                                        @Override
+                                        public LastAddForcedCursor load(Long key) throws Exception {
+                                            // there is no need to rebuild the cursor
+                                            // in will be rebuild only on demand
+                                            return new LastAddForcedCursor();
+                                        }
+                                    });
 
     volatile boolean running = true;
     private final LedgerDirsManager ledgerDirsManager;
@@ -869,6 +906,14 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                 journalAddEntryStats, journalQueueSize));
     }
 
+    void forceLedger(long ledgerId, WriteCallback cb, Object ctx) {
+
+        journalQueueSize.inc();
+        queue.add(QueueEntry.create(
+                null, false,  ledgerId, Bookie.METAENTRY_ID_FORCE_LEDGER, cb, ctx, MathUtils.nowInNano(),
+                null, journalQueueSize));
+    }
+
     /**
      * Get the length of journal entries queue.
      *
@@ -1008,6 +1053,8 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                                 if (entry != null && (!syncData || entry.ackBeforeSync)) {
                                     toFlush.set(i, null);
                                     numEntriesToFlush--;
+                                    flushedNotForcedEntries.add(
+                                            LedgerIdEntryIdPair.create(entry.ledgerId, entry.entryId));
                                     cbThreadPool.execute(entry);
                                 }
                             }
@@ -1072,22 +1119,23 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                 if (qe == null) { // no more queue entry
                     continue;
                 }
+                if (qe.entryId != Bookie.METAENTRY_ID_FORCE_LEDGER) {
+                    int entrySize = qe.entry.readableBytes();
+                    journalWriteBytes.add(entrySize);
+                    journalQueueSize.dec();
 
-                int entrySize = qe.entry.readableBytes();
-                journalWriteBytes.add(entrySize);
-                journalQueueSize.dec();
+                    batchSize += (4 + entrySize);
 
-                batchSize += (4 + entrySize);
+                    lenBuff.clear();
+                    lenBuff.writeInt(entrySize);
 
-                lenBuff.clear();
-                lenBuff.writeInt(entrySize);
+                    // preAlloc based on size
+                    logFile.preAllocIfNeeded(4 + entrySize);
 
-                // preAlloc based on size
-                logFile.preAllocIfNeeded(4 + entrySize);
-
-                bc.write(lenBuff);
-                bc.write(qe.entry);
-                qe.entry.release();
+                    bc.write(lenBuff);
+                    bc.write(qe.entry);
+                    qe.entry.release();
+                }
 
                 toFlush.add(qe);
                 numEntriesToFlush++;
@@ -1158,5 +1206,51 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
     @VisibleForTesting
     public void joinThread() throws InterruptedException {
         join();
+    }
+
+    LastAddForcedCursor getCursorForLedger(long ledgerId) {
+        try {
+            return syncCursors.get(ledgerId);
+        } catch (ExecutionException err) {
+            LOG.error("Unexpected error while creating a LastAddForcedCursor", err.getCause());
+            throw new RuntimeException(err.getCause());
+        }
+    }
+
+    void updateCursor(long ledgerId, long entryId) {
+        LastAddForcedCursor cursor = getCursorForLedger(ledgerId);
+        cursor.update(entryId);
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("update cursor ledger {} entryId {}, now lastAddForced is {}",
+                    ledgerId, entryId, cursor.getLastAddForced());
+        }
+    }
+
+    private static final class LedgerIdEntryIdPair {
+        long ledgerId;
+        long entryId;
+
+        private final Handle<LedgerIdEntryIdPair> recyclerHandle;
+
+        static LedgerIdEntryIdPair create(long ledgerId, long entryId) {
+            LedgerIdEntryIdPair e = RECYCLER.get();
+            e.ledgerId = ledgerId;
+            e.entryId = entryId;
+            return e;
+        }
+
+        private LedgerIdEntryIdPair(Handle<LedgerIdEntryIdPair> recyclerHandle) {
+            this.recyclerHandle = recyclerHandle;
+        }
+
+        private static final Recycler<LedgerIdEntryIdPair> RECYCLER = new Recycler<LedgerIdEntryIdPair>() {
+            protected LedgerIdEntryIdPair newObject(Recycler.Handle<LedgerIdEntryIdPair> handle) {
+                return new LedgerIdEntryIdPair(handle);
+            }
+        };
+
+        private void recycle() {
+            recyclerHandle.recycle(this);
+        }
     }
 }
