@@ -79,7 +79,6 @@ import org.apache.bookkeeper.meta.MetadataDrivers;
 import org.apache.bookkeeper.meta.exceptions.MetadataException;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.net.DNS;
-import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
 import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.NullStatsLogger;
@@ -1149,9 +1148,11 @@ public class Bookie extends BookieCriticalThread {
     }
 
     /**
-     * Force write on the journal assigned to the given ledger and then return the id of the last persisted entry.
+     * Force write on the journal assigned to the given ledger.
+     * It works like a regular addEntry with ackBeforeSync=false but without really
+     * writing to disk.
      */
-    private void forceLedgerInternal(LedgerDescriptor handle, long maximumKnownEntryIdByWriter,
+    private void forceLedgerInternal(LedgerDescriptor handle,
                                      WriteCallback cb, Object ctx, byte[] masterKey)
             throws IOException, BookieException {
         long ledgerId = handle.getLedgerId();
@@ -1177,54 +1178,7 @@ public class Bookie extends BookieCriticalThread {
             LOG.trace("Forcing ledger {}", ledgerId);
         }
         Journal journal = getJournal(ledgerId);
-
-        /**
-         * This callback will receive the id of the maximum entry id which is known by the journal
-         * to be stored durably on this bookie.
-         *
-         * @see LastAddForcedCursor
-         */
-        WriteCallback recoverLastAddForced = (int rc, long ledgerId1, long entryId,
-                                                    BookieSocketAddress addr, Object ctx1) -> {
-            if (rc == BookieProtocol.EOK && entryId == BookieProtocol.INVALID_ENTRY_ID) {
-                entryId = recoverLastAddForcedFromLedgerStorage(maximumKnownEntryIdByWriter, ledgerId1, journal);
-            }
-            cb.writeComplete(rc, ledgerId1, entryId, addr, ctx1);
-        };
-        journal.forceLedger(ledgerId, recoverLastAddForced, ctx);
-    }
-
-    private long recoverLastAddForcedFromLedgerStorage(long maximumKnownEntryIdByWriter,
-                                                       long ledgerId, Journal journal) {
-        long entryId = BookieProtocol.INVALID_ENTRY_ID;
-        // journal does not have info about what has been persisted before last bookie restart
-        // so we are reconstructing this information from LedgerStorage
-        try {
-            // we are performing a scan explicitly because we have to reconstruct fully the LastAddForcedCursor
-            // even in presence of gaps.
-            // we cannot use LedgerStorage#getLastAddConfirmed or LedgerStorage#getLastEntry
-            // because gaps may be present (see WriteAdvHandle) and we must be sure
-            // to recover fully the cursor, so the client is telling the range of the possible entryId
-            // which may be present on this bookie, only the client knows exactly this value.
-            // currently we are supposing that a bookie will receive all the entries
-            // from 0 to maximumKnownEntryIdByWriter
-            // in the future it will be possible for a bookie to contain only a portion of entries of the ledger.
-            for (long eId = 0; eId <= maximumKnownEntryIdByWriter; eId++) {
-                try {
-                    ByteBuf entry = ledgerStorage.getEntry(ledgerId, eId);
-                    entry.release();
-                    journal.updateCursor(ledgerId, eId);
-                } catch (NoEntryException noEntryException) {
-                }
-            }
-            entryId = journal.getCursorForLedger(ledgerId).getLastAddForced();
-
-            LOG.info("recovered lastAddForced entryId {} for ledger {} from LedgerStorage", entryId, ledgerId);
-        } catch (IOException err) {
-            LOG.error("cannot recover lastAddForced entryId for ledger "
-                    + ledgerId + " from LedgerStorage", err);
-        }
-        return entryId;
+        journal.forceLedger(ledgerId, cb, ctx);
     }
 
     /**
@@ -1286,11 +1240,13 @@ public class Bookie extends BookieCriticalThread {
     }
 
     /**
-     * Forces (sync) data on a ledger on the Journal. This is useful for ledgers with DEFERRED_SYNC write flag
-     * for which the client receives acknoledgement for writes without the guarantee that data has been sync'd to disk.
+     * Forces (sync) data on a ledger on the Journal.
+     * This is useful for ledgers with DEFERRED_SYNC write flag
+     * for which the client receives acknoledgement for writes
+     * without the guarantee that data has been sync'd to disk (ackBeforeSync=true).
      */
-    public void forceLedger(long ledgerId, long maximumKnownEntryIdByWriter,
-                            WriteCallback cb, Object ctx, byte[] masterKey)
+    public void forceLedger(long ledgerId, WriteCallback cb,
+                            Object ctx, byte[] masterKey)
                 throws IOException, BookieException {
         long requestNanos = MathUtils.nowInNano();
         boolean success = false;
@@ -1301,7 +1257,7 @@ public class Bookie extends BookieCriticalThread {
                     throw BookieException
                             .create(BookieException.Code.LedgerFencedException);
                 }
-                forceLedgerInternal(handle, maximumKnownEntryIdByWriter, cb, ctx, masterKey);
+                forceLedgerInternal(handle, cb, ctx, masterKey);
             }
             success = true;
         } catch (NoWritableLedgerDirException e) {
