@@ -39,14 +39,12 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.bookie.Journal.ForceWriteRequest;
 import org.apache.bookkeeper.bookie.Journal.LastLogMark;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.net.BookieSocketAddress;
-import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
 import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.test.TestStatsProvider;
@@ -340,11 +338,9 @@ public class BookieJournalForceTest {
         LogMark lastLogMarkBeforeWrite = journal.getLastLogMark().markLog().getCurMark();
         CountDownLatch latch = new CountDownLatch(1);
         long ledgerId = 1;
-        AtomicLong lastAddPersisted = new AtomicLong(Long.MIN_VALUE);
         journal.forceLedger(ledgerId, new WriteCallback() {
             @Override
             public void writeComplete(int rc, long ledgerId, long entryId, BookieSocketAddress addr, Object ctx) {
-                lastAddPersisted.set(entryId);
                 latch.countDown();
             }
         }, null);
@@ -366,79 +362,6 @@ public class BookieJournalForceTest {
 
         // callback should complete now
         assertTrue(latch.await(20, TimeUnit.SECONDS));
-
-        assertEquals(BookieProtocol.INVALID_ENTRY_ID, lastAddPersisted.get());
-
-        verify(jc, atLeast(1)).forceWrite(false);
-
-        assertEquals(0, supportQueue.size());
-
-        // verify that log marker advanced
-        LastLogMark lastLogMarkAfterForceWrite = journal.getLastLogMark();
-        assertTrue(lastLogMarkAfterForceWrite.getCurMark().compare(lastLogMarkBeforeWrite) > 0);
-
-        journal.shutdown();
-    }
-
-    @Test
-    public void testForceLedgerTrackLastAddPersisted() throws Exception {
-        File journalDir = tempDir.newFolder();
-        Bookie.checkDirectoryStructure(Bookie.getCurrentDirectory(journalDir));
-
-        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
-        conf.setJournalDirName(journalDir.getPath())
-            .setZkServers(null);
-
-        JournalChannel jc = spy(new JournalChannel(journalDir, 1));
-        whenNew(JournalChannel.class).withAnyArguments().thenReturn(jc);
-
-        LedgerDirsManager ledgerDirsManager = mock(LedgerDirsManager.class);
-        Journal journal = new Journal(0, journalDir, conf, ledgerDirsManager);
-
-        // machinery to suspend ForceWriteThread
-        CountDownLatch forceWriteThreadSuspendedLatch = new CountDownLatch(1);
-        LinkedBlockingQueue<ForceWriteRequest> supportQueue =
-                enableForceWriteThreadSuspension(forceWriteThreadSuspendedLatch, journal);
-        journal.start();
-
-        LogMark lastLogMarkBeforeWrite = journal.getLastLogMark().markLog().getCurMark();
-        CountDownLatch latch = new CountDownLatch(1);
-        final int numEntries = 100;
-        CountDownLatch latchWriteEntries = new CountDownLatch(numEntries);
-        long ledgerId = 1;
-        AtomicLong lastAddPersistedAtForce = new AtomicLong(Long.MIN_VALUE);
-        for (long entryId = 0; entryId < numEntries; entryId++) {
-            journal.logAddEntry(ledgerId, entryId, DATA, true /* ackBeforeSync */, new WriteCallback() {
-                @Override
-                public void writeComplete(int rc, long ledgerId, long entryId, BookieSocketAddress addr, Object ctx) {
-                    latchWriteEntries.countDown();
-                }
-            }, null);
-        }
-        journal.forceLedger(ledgerId, new WriteCallback() {
-            @Override
-            public void writeComplete(int rc, long ledgerId, long entryId, BookieSocketAddress addr, Object ctx) {
-                lastAddPersistedAtForce.set(entryId);
-                latch.countDown();
-            }
-        }, null);
-
-        // forceLedger should not complete even if ForceWriteThread is suspended, but writes will be able to be acked
-        latchWriteEntries.await(20, TimeUnit.SECONDS);
-        assertEquals(1, latch.getCount());
-        assertEquals(1, supportQueue.size());
-
-        // in constructor of JournalChannel we are calling forceWrite(true) but it is not tracked by PowerMock
-        // because the 'spy' is applied only on return from the constructor
-        verify(jc, times(0)).forceWrite(true);
-
-        // let ForceWriteThread work
-        forceWriteThreadSuspendedLatch.countDown();
-
-        // forceLedger callback should complete now
-        assertTrue(latch.await(20, TimeUnit.SECONDS));
-
-        assertEquals(numEntries - 1, lastAddPersistedAtForce.get());
 
         verify(jc, atLeast(1)).forceWrite(false);
 
