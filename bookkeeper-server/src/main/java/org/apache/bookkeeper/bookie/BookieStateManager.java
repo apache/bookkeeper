@@ -71,7 +71,7 @@ public class BookieStateManager implements StateManager {
 
     private final String bookieId;
     private ShutdownHandler shutdownHandler;
-    private final RegistrationManager rm;
+    private final Supplier<RegistrationManager> rm;
     // Expose Stats
     private final StatsLogger statsLogger;
 
@@ -82,7 +82,7 @@ public class BookieStateManager implements StateManager {
         this(
             conf,
             statsLogger,
-            null == metadataDriver ? null : metadataDriver.getRegistrationManager(),
+            () -> null == metadataDriver ? null : metadataDriver.getRegistrationManager(),
             ledgerDirsManager.getAllLedgerDirs(),
             () -> {
                 try {
@@ -94,7 +94,7 @@ public class BookieStateManager implements StateManager {
     }
     public BookieStateManager(ServerConfiguration conf,
                               StatsLogger statsLogger,
-                              RegistrationManager rm,
+                              Supplier<RegistrationManager> rm,
                               List<File> statusDirs,
                               Supplier<String> bookieIdSupplier) throws IOException {
         this.conf = conf;
@@ -247,7 +247,7 @@ public class BookieStateManager implements StateManager {
 
         rmRegistered.set(false);
         try {
-            rm.registerBookie(bookieId, isReadOnly);
+            rm.get().registerBookie(bookieId, isReadOnly);
             rmRegistered.set(true);
         } catch (BookieException e) {
             throw new IOException(e);
@@ -281,7 +281,7 @@ public class BookieStateManager implements StateManager {
         }
         // clear the readonly state
         try {
-            rm.unregisterBookie(bookieId, true);
+            rm.get().unregisterBookie(bookieId, true);
         } catch (BookieException e) {
             // if we failed when deleting the readonly flag in zookeeper, it is OK since client would
             // already see the bookie in writable list. so just log the exception
@@ -317,7 +317,7 @@ public class BookieStateManager implements StateManager {
             return;
         }
         try {
-            rm.registerBookie(bookieId, true);
+            rm.get().registerBookie(bookieId, true);
         } catch (BookieException e) {
             LOG.error("Error in transition to ReadOnly Mode."
                     + " Shutting down", e);
