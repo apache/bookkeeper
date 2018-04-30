@@ -348,7 +348,11 @@ public class OrderedExecutor implements ExecutorService {
             return threads[0];
         }
 
-        return threads[MathUtils.signSafeMod(orderingKey.hashCode(), threads.length)];
+        if (null == orderingKey) {
+            return threads[rand.nextInt(threads.length)];
+        } else {
+            return threads[MathUtils.signSafeMod(orderingKey.hashCode(), threads.length)];
+        }
     }
 
     /**
