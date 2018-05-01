@@ -72,7 +72,11 @@ public class SortedLedgerStorage extends InterleavedLedgerStorage
             checkpointSource,
             checkpointer,
             statsLogger);
-        this.memTable = new EntryMemTable(conf, checkpointSource, statsLogger);
+        if (conf.isEntryLogPerLedgerEnabled()) {
+            this.memTable = new EntryMemTableWithParallelFlusher(conf, checkpointSource, statsLogger);
+        } else {
+            this.memTable = new EntryMemTable(conf, checkpointSource, statsLogger);
+        }
         this.scheduler = Executors.newSingleThreadScheduledExecutor(
                 new ThreadFactoryBuilder()
                 .setNameFormat("SortedLedgerStorage-%d")
@@ -101,6 +105,11 @@ public class SortedLedgerStorage extends InterleavedLedgerStorage
         scheduler.shutdown();
         if (!scheduler.awaitTermination(3, TimeUnit.SECONDS)) {
             scheduler.shutdownNow();
+        }
+        try {
+            memTable.close();
+        } catch (Exception e) {
+            LOG.error("Error while closing the memtable", e);
         }
         super.shutdown();
     }

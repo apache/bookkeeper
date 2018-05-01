@@ -48,7 +48,7 @@ import org.slf4j.LoggerFactory;
  * We continue to serve edits out of new EntrySkipList and backing snapshot until
  * flusher reports in that the flush succeeded. At that point we let the snapshot go.
  */
-public class EntryMemTable {
+public class EntryMemTable implements AutoCloseable{
     private static Logger logger = LoggerFactory.getLogger(Journal.class);
 
     /**
@@ -117,7 +117,7 @@ public class EntryMemTable {
     private final OpStatsLogger snapshotStats;
     private final OpStatsLogger putEntryStats;
     private final OpStatsLogger getEntryStats;
-    private final Counter flushBytesCounter;
+    final Counter flushBytesCounter;
     private final Counter throttlingCounter;
 
     /**
@@ -232,10 +232,14 @@ public class EntryMemTable {
     }
 
     /**
-     * Flush snapshot and clear it iff its data is before checkpoint.
-     * Only this function change non-empty this.snapshot.
+     * Flush snapshot and clear it iff its data is before checkpoint. Only this
+     * function change non-empty this.snapshot.
+     *
+     * <p>EntryMemTableWithParallelFlusher overrides this flushSnapshot method. So
+     * any change in functionality/behavior/characteristic of this method should
+     * also reflect in EntryMemTableWithParallelFlusher's flushSnapshot method.
      */
-    private long flushSnapshot(final SkipListFlusher flusher, Checkpoint checkpoint) throws IOException {
+    long flushSnapshot(final SkipListFlusher flusher, Checkpoint checkpoint) throws IOException {
         long size = 0;
         if (this.snapshot.compareTo(checkpoint) < 0) {
             long ledger, ledgerGC = -1;
@@ -268,7 +272,7 @@ public class EntryMemTable {
      * @param keyValues The snapshot to clean out.
      * @see {@link #snapshot()}
      */
-    private void clearSnapshot(final EntrySkipList keyValues) {
+    void clearSnapshot(final EntrySkipList keyValues) {
         // Caller makes sure that keyValues not empty
         assert !keyValues.isEmpty();
         this.lock.writeLock().lock();
@@ -451,5 +455,10 @@ public class EntryMemTable {
      */
     boolean isEmpty() {
         return size.get() == 0 && snapshot.isEmpty();
+    }
+
+    @Override
+    public void close() throws Exception {
+        // no-op
     }
 }

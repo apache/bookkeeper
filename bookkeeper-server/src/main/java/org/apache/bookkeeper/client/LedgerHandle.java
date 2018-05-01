@@ -72,6 +72,7 @@ import org.apache.bookkeeper.client.api.WriteHandle;
 import org.apache.bookkeeper.client.impl.LedgerEntryImpl;
 import org.apache.bookkeeper.common.concurrent.FutureEventListener;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
+import org.apache.bookkeeper.common.util.MathUtils;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks;
@@ -83,6 +84,7 @@ import org.apache.bookkeeper.proto.checksum.DigestManager;
 import org.apache.bookkeeper.proto.checksum.MacDigestManager;
 import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.Gauge;
+import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.util.OrderedGenericCallback;
 import org.apache.bookkeeper.util.SafeRunnable;
 import org.apache.commons.collections4.IteratorUtils;
@@ -114,6 +116,8 @@ public class LedgerHandle implements WriteHandle {
     final EnumSet<WriteFlag> writeFlags;
     ScheduledFuture<?> timeoutFuture = null;
 
+    final long waitForWriteSetMs;
+
     /**
      * Invalid entry id. This value is returned from methods which
      * should return an entry id but there is no valid entry available.
@@ -135,6 +139,7 @@ public class LedgerHandle implements WriteHandle {
     final Counter ensembleChangeCounter;
     final Counter lacUpdateHitsCounter;
     final Counter lacUpdateMissesCounter;
+    private final OpStatsLogger clientChannelWriteWaitStats;
 
     // This empty master key is used when an empty password is provided which is the hash of an empty string
     private static final byte[] emptyLedgerKey;
@@ -155,6 +160,7 @@ public class LedgerHandle implements WriteHandle {
         this.enableParallelRecoveryRead = bk.getConf().getEnableParallelRecoveryRead();
         this.recoveryReadBatchSize = bk.getConf().getRecoveryReadBatchSize();
         this.writeFlags = writeFlags;
+        this.waitForWriteSetMs = bk.getConf().getWaitTimeoutOnBackpressureMillis();
 
         if (metadata.isClosed()) {
             lastAddConfirmed = lastAddPushed = metadata.getLastEntryId();
@@ -206,6 +212,8 @@ public class LedgerHandle implements WriteHandle {
         ensembleChangeCounter = bk.getStatsLogger().getCounter(BookKeeperClientStats.ENSEMBLE_CHANGES);
         lacUpdateHitsCounter = bk.getStatsLogger().getCounter(BookKeeperClientStats.LAC_UPDATE_HITS);
         lacUpdateMissesCounter = bk.getStatsLogger().getCounter(BookKeeperClientStats.LAC_UPDATE_MISSES);
+        clientChannelWriteWaitStats = bk.getStatsLogger()
+                .getOpStatsLogger(BookKeeperClientStats.CLIENT_CHANNEL_WRITE_WAIT);
         bk.getStatsLogger().registerGauge(BookKeeperClientStats.PENDING_ADDS,
                                           new Gauge<Integer>() {
                                               @Override
@@ -842,6 +850,27 @@ public class LedgerHandle implements WriteHandle {
                                                               boolean isRecoveryRead) {
         PendingReadOp op = new PendingReadOp(this, bk.getScheduler(), firstEntry, lastEntry, isRecoveryRead);
         if (!bk.isClosed()) {
+            // Waiting on the first one.
+            // This is not very helpful if there are multiple ensembles or if bookie goes into unresponsive
+            // state later after N requests sent.
+            // Unfortunately it seems that alternatives are:
+            // - send reads one-by-one (up to the app)
+            // - rework LedgerHandle to send requests one-by-one (maybe later, potential perf impact)
+            // - block worker pool (not good)
+            // Even with this implementation one should be more concerned about OOME when all read responses arrive
+            // or about overloading bookies with these requests then about submission of many small requests.
+            // Naturally one of the solutions would be to submit smaller batches and in this case
+            // current implementation will prevent next batch from starting when bookie is
+            // unresponsive thus helpful enough.
+            DistributionSchedule.WriteSet ws = distributionSchedule.getWriteSet(firstEntry);
+            try {
+                if (!waitForWritable(ws, firstEntry, ws.size() - 1, waitForWriteSetMs)) {
+                    op.allowFailFastOnUnwritableChannel();
+                }
+            } finally {
+                ws.recycle();
+            }
+
             bk.getMainWorkerPool().executeOrdered(ledgerId, op);
         } else {
             op.future().completeExceptionally(BKException.create(ClientClosedException));
@@ -1066,6 +1095,86 @@ public class LedgerHandle implements WriteHandle {
         doAsyncAddEntry(op);
     }
 
+    private boolean isWritesetWritable(DistributionSchedule.WriteSet writeSet,
+                                       long key, int allowedNonWritableCount) {
+        if (allowedNonWritableCount < 0) {
+            allowedNonWritableCount = 0;
+        }
+
+        final int sz = writeSet.size();
+        final int requiredWritable = sz - allowedNonWritableCount;
+
+        int nonWritableCount = 0;
+        for (int i = 0; i < sz; i++) {
+            if (!bk.getBookieClient().isWritable(metadata.currentEnsemble.get(i), key)) {
+                nonWritableCount++;
+                if (nonWritableCount >= allowedNonWritableCount) {
+                    return false;
+                }
+            } else {
+                final int knownWritable = i - nonWritableCount;
+                if (knownWritable >= requiredWritable) {
+                    return true;
+                }
+            }
+        }
+        return true;
+    }
+
+    protected boolean waitForWritable(DistributionSchedule.WriteSet writeSet, long key,
+                                    int allowedNonWritableCount, long durationMs) {
+        if (durationMs < 0) {
+            return true;
+        }
+
+        final long startTime = MathUtils.nowInNano();
+        boolean success = isWritesetWritable(writeSet, key, allowedNonWritableCount);
+
+        if (!success && durationMs > 0) {
+            int backoff = 1;
+            final int maxBackoff = 4;
+            final long deadline = startTime + TimeUnit.MILLISECONDS.toNanos(durationMs);
+
+            while (!isWritesetWritable(writeSet, key, allowedNonWritableCount)) {
+                if (MathUtils.nowInNano() < deadline) {
+                    long maxSleep = MathUtils.elapsedMSec(startTime);
+                    if (maxSleep < 0) {
+                        maxSleep = 1;
+                    }
+                    long sleepMs = Math.min(backoff, maxSleep);
+
+                    try {
+                        TimeUnit.MILLISECONDS.sleep(sleepMs);
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        success = isWritesetWritable(writeSet, key, allowedNonWritableCount);
+                        break;
+                    }
+                    if (backoff <= maxBackoff) {
+                        backoff++;
+                    }
+                } else {
+                    success = false;
+                    break;
+                }
+            }
+            if (backoff > 1) {
+                LOG.info("Spent {} ms waiting for {} writable channels",
+                        MathUtils.elapsedMSec(startTime),
+                        writeSet.size() - allowedNonWritableCount);
+            }
+        }
+
+        if (success) {
+            clientChannelWriteWaitStats.registerSuccessfulEvent(
+                    MathUtils.elapsedNanos(startTime), TimeUnit.NANOSECONDS);
+        } else {
+            clientChannelWriteWaitStats.registerFailedEvent(
+                    MathUtils.elapsedNanos(startTime), TimeUnit.NANOSECONDS);
+        }
+        return success;
+    }
+
     protected void doAsyncAddEntry(final PendingAddOp op) {
         if (throttler != null) {
             throttler.acquire();
@@ -1108,6 +1217,15 @@ public class LedgerHandle implements WriteHandle {
                         LedgerHandle.this, INVALID_ENTRY_ID, 0, op.ctx);
             }
             return;
+        }
+
+        DistributionSchedule.WriteSet ws = distributionSchedule.getWriteSet(op.getEntryId());
+        try {
+            if (!waitForWritable(ws, op.getEntryId(), 0, waitForWriteSetMs)) {
+                op.allowFailFastOnUnwritableChannel();
+            }
+        } finally {
+            ws.recycle();
         }
 
         try {
@@ -1155,6 +1273,7 @@ public class LedgerHandle implements WriteHandle {
             cb.readLastConfirmedComplete(BKException.Code.OK, lastEntryId, ctx);
             return;
         }
+
         ReadLastConfirmedOp.LastConfirmedDataCallback innercb = new ReadLastConfirmedOp.LastConfirmedDataCallback() {
                 @Override
                 public void readLastConfirmedDataComplete(int rc, DigestManager.RecoveryData data) {
@@ -1166,6 +1285,7 @@ public class LedgerHandle implements WriteHandle {
                     }
                 }
             };
+
         new ReadLastConfirmedOp(this, innercb).initiate();
     }
 
