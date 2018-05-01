@@ -26,7 +26,6 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -35,12 +34,10 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
-import io.netty.util.concurrent.CompleteFuture;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 import org.apache.bookkeeper.clients.impl.channel.StorageServerChannel;
 import org.apache.bookkeeper.clients.impl.container.StorageContainerChannel;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
@@ -60,7 +57,8 @@ public class ListenableFutureRpcProcessorTest {
     public void setup() {
         executor = Executors.newSingleThreadScheduledExecutor();
         scChannel = mock(StorageContainerChannel.class);
-        processor = spy(new ListenableFutureRpcProcessor<String, String, String>(scChannel, executor) {
+        processor = spy(new ListenableFutureRpcProcessor<String, String, String>(
+            scChannel, executor, ClientConstants.DEFAULT_INFINIT_BACKOFF_POLICY) {
             @Override
             protected String createRequest() {
                 return null;
@@ -218,31 +216,21 @@ public class ListenableFutureRpcProcessorTest {
         when(processor.createRequest()).thenReturn(request);
         when(processor.processResponse(eq(response))).thenReturn(result);
         when(processor.sendRPC(same(serverChannel), eq(request))).thenAnswer(invocationOnMock -> {
-            if (numRpcs.getAndIncrement() > 3) {
-                SettableFuture<String> rpcFuture = SettableFuture.create();
+            SettableFuture<String> rpcFuture = SettableFuture.create();
+            if (numRpcs.getAndIncrement() > 2) {
                 rpcFuture.set(response);
-                return rpcFuture;
             } else {
-
+                rpcFuture.setException(new StatusRuntimeException(Status.NOT_FOUND));
             }
-        })
+            return rpcFuture;
+        });
 
         CompletableFuture<String> resultFuture = processor.process();
-        verify(scChannel, times(1)).getStorageContainerChannelFuture();
 
         // complete the server future to return a mock server channel
         FutureUtils.complete(serverFuture, serverChannel);
 
-        // complete the rpc future with `Status.INTERNAL`
-        rpcFuture.setException(new StatusRuntimeException(Status.INTERNAL));
-
-        try {
-            FutureUtils.result(resultFuture);
-            fail("Should throw fail immediately if rpc request failed");
-        } catch (Exception e) {
-            assertTrue(e instanceof StatusRuntimeException);
-            StatusRuntimeException sre = (StatusRuntimeException) e;
-            assertEquals(Status.INTERNAL, sre.getStatus());
-        }
+        assertEquals(result, FutureUtils.result(resultFuture));
+        verify(scChannel, times(4)).getStorageContainerChannelFuture();
     }
 }

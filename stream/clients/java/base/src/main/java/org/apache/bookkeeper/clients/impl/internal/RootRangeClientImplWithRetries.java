@@ -25,8 +25,8 @@ import io.grpc.StatusRuntimeException;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
-import java.util.stream.Stream;
 import org.apache.bookkeeper.clients.impl.internal.api.RootRangeClient;
+import org.apache.bookkeeper.common.util.Backoff;
 import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.bookkeeper.common.util.Retries;
 import org.apache.bookkeeper.stream.proto.NamespaceConfiguration;
@@ -68,21 +68,21 @@ class RootRangeClientImplWithRetries implements RootRangeClient {
     }
 
     private final RootRangeClient client;
-    private final Supplier<Stream<Long>> backoffPolicyProivder;
+    private final Backoff.Policy backoffPolicy;
     private final OrderedScheduler scheduler;
 
     RootRangeClientImplWithRetries(RootRangeClient client,
-                                   Supplier<Stream<Long>> backoffPolicyProvider,
+                                   Backoff.Policy backoffPolicy,
                                    OrderedScheduler scheduler) {
         this.client = client;
-        this.backoffPolicyProivder = backoffPolicyProvider;
+        this.backoffPolicy = backoffPolicy;
         this.scheduler = scheduler;
     }
 
     private <T> CompletableFuture<T> runRpcWithRetries(
             Supplier<CompletableFuture<T>> futureSupplier) {
         return Retries.run(
-            backoffPolicyProivder.get(),
+            backoffPolicy.toBackoffs(),
             ROOT_RANGE_CLIENT_RETRY_PREDICATE,
             futureSupplier,
             scheduler);

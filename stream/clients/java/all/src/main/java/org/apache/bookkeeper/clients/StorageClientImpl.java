@@ -98,7 +98,8 @@ class StorageClientImpl extends AbstractAutoAsyncCloseable implements StorageCli
                     streamName,
                     props,
                     serverManager,
-                    scheduler.chooseThread(props.getStreamId())
+                    scheduler.chooseThread(props.getStreamId()),
+                    settings.backoffPolicy()
                 ).initialize();
             }),
             future

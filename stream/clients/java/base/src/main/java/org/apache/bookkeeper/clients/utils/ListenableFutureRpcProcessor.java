@@ -33,7 +33,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.clients.impl.channel.StorageServerChannel;
 import org.apache.bookkeeper.clients.impl.container.StorageContainerChannel;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
-import org.apache.bookkeeper.common.util.Backoff;
+import org.apache.bookkeeper.common.util.Backoff.Policy;
 
 /**
  * A process for processing rpc request on storage container channel.
@@ -44,10 +44,6 @@ public abstract class ListenableFutureRpcProcessor<RequestT, ResponseT, ResultT>
     FutureCallback<ResponseT>,
     Runnable {
 
-    private static final long startBackoffMs = 200;
-    private static final long maxBackoffMs = 2000;
-    private static final int maxRetries = 3;
-
     private final StorageContainerChannel scChannel;
     private final Iterator<Long> backoffs;
     private final ScheduledExecutorService executor;
@@ -56,15 +52,12 @@ public abstract class ListenableFutureRpcProcessor<RequestT, ResponseT, ResultT>
     private CompletableFuture<StorageServerChannel> serverChannelFuture = null;
 
     protected ListenableFutureRpcProcessor(StorageContainerChannel channel,
-                                           ScheduledExecutorService executor) {
+                                           ScheduledExecutorService executor,
+                                           Policy backoffPolicy) {
         this.scChannel = channel;
-        this.backoffs = configureBackoffs();
+        this.backoffs = backoffPolicy.toBackoffs().iterator();
         this.resultFuture = FutureUtils.createFuture();
         this.executor = executor;
-    }
-
-    protected Iterator<Long> configureBackoffs() {
-        return Backoff.exponentialJittered(startBackoffMs, maxBackoffMs).limit(maxRetries).iterator();
     }
 
     /**
