@@ -314,7 +314,6 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
             }
             journalCbQueueSize.dec();
             journalAddEntryStats.registerSuccessfulEvent(MathUtils.elapsedNanos(enqueueTime), TimeUnit.NANOSECONDS);
-
             cb.writeComplete(0, ledgerId, entryId, null, ctx);
             recycle();
         }
