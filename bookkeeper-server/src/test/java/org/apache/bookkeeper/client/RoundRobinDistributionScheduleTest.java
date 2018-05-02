@@ -31,6 +31,8 @@ import com.google.common.collect.Sets;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.apache.bookkeeper.client.DistributionSchedule.QuorumCoverageSet;
+import org.junit.Assert;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -160,5 +162,29 @@ public class RoundRobinDistributionScheduleTest {
         w = writeSetFromValues(1, 2, 3, 4, 5);
         w.moveAndShift(4, 4);
         assertEquals(w, writeSetFromValues(1, 2, 3, 4, 5));
+    }
+
+    @Test
+    public void testRRQuorumCoverageSet() throws Exception {
+        int ensembleSize = 9;
+        int writeQuorumSize = 7;
+        int ackQuorumSize = 5;
+        RoundRobinDistributionSchedule schedule = new RoundRobinDistributionSchedule(writeQuorumSize, ackQuorumSize,
+                ensembleSize);
+        QuorumCoverageSet rrQuorumCoverageSet = schedule.getCoverageSet();
+        rrQuorumCoverageSet.addBookie(0, BKException.Code.DigestMatchException);
+        rrQuorumCoverageSet.addBookie(1, BKException.Code.OK);
+        rrQuorumCoverageSet.addBookie(2, BKException.Code.DigestMatchException);
+        rrQuorumCoverageSet.addBookie(3, BKException.Code.OK);
+        rrQuorumCoverageSet.addBookie(4, BKException.Code.DigestMatchException);
+        rrQuorumCoverageSet.addBookie(5, BKException.Code.OK);
+        rrQuorumCoverageSet.addBookie(6, BKException.Code.DigestMatchException);
+        rrQuorumCoverageSet.addBookie(7, BKException.Code.OK);
+        rrQuorumCoverageSet.addBookie(8, BKException.Code.DigestMatchException);
+        /*
+         * since not in any write quorum, there is |ackQuorum| number of OKs,
+         * so checkcovered should be false
+         */
+        Assert.assertFalse("RRQuorumCoverageSet covered should be false", rrQuorumCoverageSet.checkCovered());
     }
 }
