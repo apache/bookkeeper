@@ -141,8 +141,7 @@ public class BookieWriteToJournalTest {
         Bookie.checkDirectoryStructure(Bookie.getCurrentDirectory(ledgerDir));
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
         conf.setJournalDirName(journalDir.getPath())
-            .setLedgerDirNames(new String[]{ledgerDir.getPath()})
-            .setZkServers(null);
+            .setLedgerDirNames(new String[]{ledgerDir.getPath()});
 
         Bookie b = new Bookie(conf);
         b.start();

@@ -320,8 +320,7 @@ public class BookieJournalForceTest {
         Bookie.checkDirectoryStructure(Bookie.getCurrentDirectory(journalDir));
 
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
-        conf.setJournalDirName(journalDir.getPath())
-            .setZkServers(null);
+        conf.setJournalDirName(journalDir.getPath());
 
         JournalChannel jc = spy(new JournalChannel(journalDir, 1));
         whenNew(JournalChannel.class).withAnyArguments().thenReturn(jc);

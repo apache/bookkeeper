@@ -313,9 +313,8 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                 LOG.debug("Acknowledge Ledger: {}, Entry: {}", ledgerId, entryId);
             }
             journalCbQueueSize.dec();
-            if (journalAddEntryStats != null) {
-                journalAddEntryStats.registerSuccessfulEvent(MathUtils.elapsedNanos(enqueueTime), TimeUnit.NANOSECONDS);
-            }
+            journalAddEntryStats.registerSuccessfulEvent(MathUtils.elapsedNanos(enqueueTime), TimeUnit.NANOSECONDS);
+
             cb.writeComplete(0, ledgerId, entryId, null, ctx);
             recycle();
         }
@@ -597,6 +596,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
 
     // Expose Stats
     private final OpStatsLogger journalAddEntryStats;
+    private final OpStatsLogger journalForceLedgerStats;
     private final OpStatsLogger journalSyncStats;
     private final OpStatsLogger journalCreationStats;
     private final OpStatsLogger journalFlushStats;
@@ -658,6 +658,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
 
         // Expose Stats
         journalAddEntryStats = statsLogger.getOpStatsLogger(BookKeeperServerStats.JOURNAL_ADD_ENTRY);
+        journalForceLedgerStats = statsLogger.getOpStatsLogger(BookKeeperServerStats.JOURNAL_FORCE_LEDGER);
         journalSyncStats = statsLogger.getOpStatsLogger(BookKeeperServerStats.JOURNAL_SYNC);
         journalCreationStats = statsLogger.getOpStatsLogger(BookKeeperServerStats.JOURNAL_CREATION_LATENCY);
         journalFlushStats = statsLogger.getOpStatsLogger(BookKeeperServerStats.JOURNAL_FLUSH_LATENCY);
@@ -872,12 +873,11 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
     }
 
     void forceLedger(long ledgerId, WriteCallback cb, Object ctx) {
-
         journalQueueSize.inc();
         queue.add(QueueEntry.create(
                 null, false /* ackBeforeSync */,  ledgerId,
                 Bookie.METAENTRY_ID_FORCE_LEDGER, cb, ctx, MathUtils.nowInNano(),
-                null, journalQueueSize));
+                journalForceLedgerStats, journalQueueSize));
     }
 
     /**

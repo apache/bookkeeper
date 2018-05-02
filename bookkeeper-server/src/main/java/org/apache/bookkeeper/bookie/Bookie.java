@@ -1123,23 +1123,7 @@ public class Bookie extends BookieCriticalThread {
 
         writeBytes.add(entry.readableBytes());
 
-        // journal `addEntry` should happen after the entry is added to ledger storage.
-        // otherwise the journal entry can potentially be rolled before the ledger is created in ledger storage.
-        if (masterKeyCache.get(ledgerId) == null) {
-            // Force the load into masterKey cache
-            byte[] oldValue = masterKeyCache.putIfAbsent(ledgerId, masterKey);
-            if (oldValue == null) {
-                // new handle, we should add the key to journal ensure we can rebuild
-                ByteBuffer bb = ByteBuffer.allocate(8 + 8 + 4 + masterKey.length);
-                bb.putLong(ledgerId);
-                bb.putLong(METAENTRY_ID_LEDGER_KEY);
-                bb.putInt(masterKey.length);
-                bb.put(masterKey);
-                bb.flip();
-
-                getJournal(ledgerId).logAddEntry(bb, false /* ackBeforeSync */, new NopWriteCallback(), null);
-            }
-        }
+        ensureLedgerOnMasterKeyCache(ledgerId, masterKey);
 
         if (LOG.isTraceEnabled()) {
             LOG.trace("Adding {}@{}", entryId, ledgerId);
@@ -1149,15 +1133,23 @@ public class Bookie extends BookieCriticalThread {
 
     /**
      * Force write on the journal assigned to the given ledger.
-     * It works like a regular addEntry with ackBeforeSync=false but without really
-     * writing to disk.
+     * It works like a regular addEntry with ackBeforeSync=false.
      */
     private void forceLedgerInternal(LedgerDescriptor handle,
                                      WriteCallback cb, Object ctx, byte[] masterKey)
             throws IOException, BookieException {
         long ledgerId = handle.getLedgerId();
 
+        ensureLedgerOnMasterKeyCache(ledgerId, masterKey);
 
+        if (LOG.isTraceEnabled()) {
+            LOG.trace("Forcing ledger {}", ledgerId);
+        }
+        Journal journal = getJournal(ledgerId);
+        journal.forceLedger(ledgerId, cb, ctx);
+    }
+
+    private void ensureLedgerOnMasterKeyCache(long ledgerId, byte[] masterKey) {
         if (masterKeyCache.get(ledgerId) == null) {
             // Force the load into masterKey cache
             byte[] oldValue = masterKeyCache.putIfAbsent(ledgerId, masterKey);
@@ -1173,12 +1165,6 @@ public class Bookie extends BookieCriticalThread {
                 getJournal(ledgerId).logAddEntry(bb, false /* ackBeforeSync */, new NopWriteCallback(), null);
             }
         }
-
-        if (LOG.isTraceEnabled()) {
-            LOG.trace("Forcing ledger {}", ledgerId);
-        }
-        Journal journal = getJournal(ledgerId);
-        journal.forceLedger(ledgerId, cb, ctx);
     }
 
     /**
@@ -1240,7 +1226,7 @@ public class Bookie extends BookieCriticalThread {
     }
 
     /**
-     * Forces (sync) data on a ledger on the Journal.
+     * Force sync given 'ledgerId' entries on the journal to the disk.
      * This is useful for ledgers with DEFERRED_SYNC write flag
      * for which the client receives acknoledgement for writes
      * without the guarantee that data has been sync'd to disk (ackBeforeSync=true).
