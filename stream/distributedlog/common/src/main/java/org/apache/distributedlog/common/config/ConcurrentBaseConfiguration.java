@@ -17,11 +17,7 @@
  */
 package org.apache.distributedlog.common.config;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
-import java.util.Iterator;
-import java.util.concurrent.ConcurrentHashMap;
-import org.apache.commons.configuration.AbstractConfiguration;
+import org.apache.bookkeeper.common.conf.ConcurrentConfiguration;
 
 /**
  * Configuration view built on concurrent hash map for fast thread-safe access.
@@ -31,42 +27,5 @@ import org.apache.commons.configuration.AbstractConfiguration;
  * This class simply overwrites any existing mapping.
  */
 @SuppressWarnings("unchecked")
-public class ConcurrentBaseConfiguration extends AbstractConfiguration {
-
-    private final ConcurrentHashMap<String, Object> map;
-
-    public ConcurrentBaseConfiguration() {
-        this.map = new ConcurrentHashMap<String, Object>();
-    }
-
-    @Override
-    protected void addPropertyDirect(String key, Object value) {
-        checkNotNull(value);
-        map.put(key, value);
-    }
-
-    @Override
-    public Object getProperty(String key) {
-        return map.get(key);
-    }
-
-    @Override
-    public Iterator getKeys() {
-        return map.keySet().iterator();
-    }
-
-    @Override
-    public boolean containsKey(String key) {
-        return map.containsKey(key);
-    }
-
-    @Override
-    public boolean isEmpty() {
-        return map.isEmpty();
-    }
-
-    @Override
-    protected void clearPropertyDirect(String key) {
-        map.remove(key);
-    }
+public class ConcurrentBaseConfiguration extends ConcurrentConfiguration {
 }

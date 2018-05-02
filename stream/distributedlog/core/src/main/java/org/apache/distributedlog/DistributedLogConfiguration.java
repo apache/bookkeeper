@@ -517,16 +517,22 @@ public class DistributedLogConfiguration extends CompositeConfiguration {
      * @param baseConf Other Configuration
      */
     public void loadConf(DistributedLogConfiguration baseConf) {
-        addConfiguration(baseConf);
+        for (Iterator<String> iter = baseConf.getKeys(); iter.hasNext(); ) {
+            String key = iter.next();
+            setProperty(key, baseConf.getProperty(key));
+        }
     }
 
     /**
      * Load configuration from other configuration object.
      *
-     * @param otherConf Other configuration object
+     * @param baseConf Other configuration object
      */
-    public void loadConf(Configuration otherConf) {
-        addConfiguration(otherConf);
+    public void loadConf(Configuration baseConf) {
+        for (Iterator<String> iter = baseConf.getKeys(); iter.hasNext(); ) {
+            String key = iter.next();
+            setProperty(key, baseConf.getProperty(key));
+        }
     }
 
     /**

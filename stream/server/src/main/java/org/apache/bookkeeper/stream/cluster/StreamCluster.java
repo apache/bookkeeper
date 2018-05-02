@@ -45,7 +45,6 @@ import org.apache.bookkeeper.stream.storage.api.controller.StorageController;
 import org.apache.bookkeeper.stream.storage.conf.StorageConfiguration;
 import org.apache.bookkeeper.stream.storage.impl.sc.helix.HelixStorageController;
 import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
-import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.distributedlog.DistributedLogConfiguration;
 import org.apache.distributedlog.LocalDLMEmulator;
@@ -83,9 +82,18 @@ public class StreamCluster
     private static final String LEDGERS_AVAILABLE_PATH = "/stream/ledgers/available";
     private static final String NAMESPACE = "/stream/storage";
 
+    private static ServerConfiguration newServerConfiguration(String zkEnsemble) {
+        ServerConfiguration serverConf = new ServerConfiguration();
+        serverConf.setMetadataServiceUri("zk://" + zkEnsemble + LEDGERS_PATH);
+        serverConf.setAllowLoopback(true);
+        serverConf.setGcWaitTime(300000);
+        serverConf.setDiskUsageWarnThreshold(0.9999f);
+        serverConf.setDiskUsageThreshold(0.999999f);
+        return serverConf;
+    }
+
     private final StreamClusterSpec spec;
     private final List<Endpoint> rpcEndpoints;
-    private CompositeConfiguration baseConf;
     private String zkEnsemble;
     private int zkPort;
     private ZooKeeperServerShim zks;
@@ -140,15 +148,6 @@ public class StreamCluster
         log.info("Initializing the stream cluster.");
         ZooKeeper zkc = null;
         try (StorageController controller = new HelixStorageController(zkEnsemble)) {
-            // initialize the configuration
-            ServerConfiguration serverConf = new ServerConfiguration();
-            serverConf.setMetadataServiceUri("zk://" + zkEnsemble + LEDGERS_PATH);
-            serverConf.setAllowLoopback(true);
-            serverConf.setGcWaitTime(300000);
-            serverConf.setDiskUsageWarnThreshold(0.9999f);
-            serverConf.setDiskUsageThreshold(0.999999f);
-            this.baseConf = serverConf;
-
             zkc = ZooKeeperClient.newBuilder()
                 .connectString(zkEnsemble)
                 .sessionTimeoutMs(60000)
@@ -194,8 +193,7 @@ public class StreamCluster
             }
             LifecycleComponent server = null;
             try {
-                ServerConfiguration serverConf = new ServerConfiguration();
-                serverConf.loadConf(baseConf);
+                ServerConfiguration serverConf = newServerConfiguration(zkEnsemble);
                 serverConf.setBookiePort(bookiePort);
                 File bkDir = new File(spec.storageRootDir(), "bookie_" + bookiePort);
                 serverConf.setJournalDirName(bkDir.getPath());
