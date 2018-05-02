@@ -123,6 +123,10 @@ public class BookieStateManager implements StateManager {
         });
     }
 
+    private boolean isRegistrationManagerDisabled() {
+        return null == rm || null == rm.get();
+    }
+
     @VisibleForTesting
     BookieStateManager(ServerConfiguration conf, MetadataBookieDriver metadataDriver) throws IOException {
         this(conf, NullStatsLogger.INSTANCE, metadataDriver, new LedgerDirsManager(conf, conf.getLedgerDirs(),
@@ -239,7 +243,7 @@ public class BookieStateManager implements StateManager {
     }
 
     private void doRegisterBookie(boolean isReadOnly) throws IOException {
-        if (null == rm) {
+        if (isRegistrationManagerDisabled()) {
             // registration manager is null, means not register itself to metadata store.
             LOG.info("null registration manager while do register");
             return;
@@ -269,7 +273,7 @@ public class BookieStateManager implements StateManager {
             bookieStatus.writeToDirectories(statusDirs);
         }
         // change zookeeper state only when using zookeeper
-        if (null == rm) {
+        if (isRegistrationManagerDisabled()) {
             return;
         }
         try {
@@ -313,7 +317,7 @@ public class BookieStateManager implements StateManager {
             this.bookieStatus.writeToDirectories(statusDirs);
         }
         // change zookeeper state only when using zookeeper
-        if (null == rm) {
+        if (isRegistrationManagerDisabled()) {
             return;
         }
         try {
