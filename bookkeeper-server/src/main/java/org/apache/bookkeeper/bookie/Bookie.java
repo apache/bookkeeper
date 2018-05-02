@@ -1150,6 +1150,8 @@ public class Bookie extends BookieCriticalThread {
     }
 
     private void ensureLedgerOnMasterKeyCache(long ledgerId, byte[] masterKey) {
+        // journal `addEntry` should happen after the entry is added to ledger storage.
+        // otherwise the journal entry can potentially be rolled before the ledger is created in ledger storage.
         if (masterKeyCache.get(ledgerId) == null) {
             // Force the load into masterKey cache
             byte[] oldValue = masterKeyCache.putIfAbsent(ledgerId, masterKey);
