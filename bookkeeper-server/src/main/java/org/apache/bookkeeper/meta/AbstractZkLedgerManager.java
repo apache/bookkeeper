@@ -443,6 +443,9 @@ public abstract class AbstractZkLedgerManager implements LedgerManager, Watcher 
                     // update metadata version
                     metadata.setVersion(zv.setLongVersion(stat.getVersion()));
                     cb.operationComplete(BKException.Code.OK, null);
+                } else if (KeeperException.Code.NONODE.intValue() == rc) {
+                    LOG.warn("Ledger node does not exist in ZooKeeper: ledgerId={}", ledgerId);
+                    cb.operationComplete(BKException.Code.NoSuchLedgerExistsException, null);
                 } else {
                     LOG.warn("Conditional update ledger metadata failed: {}", KeeperException.Code.get(rc));
                     cb.operationComplete(BKException.Code.ZKException, null);
