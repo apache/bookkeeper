@@ -19,6 +19,7 @@
 package org.apache.bookkeeper.clients.impl.internal;
 
 import static org.apache.bookkeeper.clients.impl.internal.ProtocolInternalUtils.createRootRangeException;
+import static org.apache.bookkeeper.clients.utils.RpcUtils.isContainerNotFound;
 import static org.apache.bookkeeper.stream.protocol.ProtocolConstants.ROOT_STORAGE_CONTAINER_ID;
 import static org.apache.bookkeeper.stream.protocol.util.ProtoUtils.createCreateNamespaceRequest;
 import static org.apache.bookkeeper.stream.protocol.util.ProtoUtils.createCreateStreamRequest;
@@ -79,7 +80,15 @@ class RootRangeClientImpl implements RootRangeClient {
         ProcessRequestFunc<ReqT, RespT, RootRangeServiceFutureStub> processRequestFunc,
         ProcessResponseFunc<RespT, T> processResponseFunc) {
 
-        CompletableFuture<T> result = FutureUtils.createFuture();
+        CompletableFuture<T> result = FutureUtils.<T>createFuture()
+            .whenComplete((v, cause) -> {
+                if (null != cause && isContainerNotFound(cause)) {
+                    // if the rpc fails with `NOT_FOUND`, it means the storage container is not owned by any servers
+                    // yet. in this case, reset the storage server channel, this allows subsequent retries will be
+                    // forced to re-locate the containers.
+                    scClient.resetStorageServerChannelFuture();
+                }
+            });
         scClient.getStorageContainerChannelFuture().whenComplete((rsChannel, cause) -> {
             if (null != cause) {
                 handleGetRootRangeServiceFailure(result, cause);

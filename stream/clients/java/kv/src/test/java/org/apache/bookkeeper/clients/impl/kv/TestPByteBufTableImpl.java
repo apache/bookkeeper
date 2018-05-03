@@ -49,6 +49,7 @@ import org.apache.bookkeeper.clients.impl.internal.api.HashStreamRanges;
 import org.apache.bookkeeper.clients.impl.internal.api.MetaRangeClient;
 import org.apache.bookkeeper.clients.impl.internal.api.StorageServerClientManager;
 import org.apache.bookkeeper.clients.impl.routing.RangeRouter;
+import org.apache.bookkeeper.clients.utils.ClientConstants;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.common.router.HashRouter;
 import org.apache.bookkeeper.common.util.Bytes;
@@ -135,7 +136,8 @@ public class TestPByteBufTableImpl {
             runtime.getMethodName(),
             streamProps,
             mockClientManager,
-            scheduler.chooseThread(1));
+            scheduler.chooseThread(1),
+            ClientConstants.DEFAULT_INFINIT_BACKOFF_POLICY);
         try {
             FutureUtils.result(table.initialize());
             fail("Should fail initializing the table with exception " + cause);

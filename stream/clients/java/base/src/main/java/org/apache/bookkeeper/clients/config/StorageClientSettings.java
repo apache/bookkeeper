@@ -24,6 +24,8 @@ import io.grpc.ManagedChannelBuilder;
 import io.grpc.NameResolver;
 import java.util.List;
 import java.util.Optional;
+import org.apache.bookkeeper.clients.utils.ClientConstants;
+import org.apache.bookkeeper.common.util.Backoff;
 import org.apache.bookkeeper.stream.proto.common.Endpoint;
 import org.inferred.freebuilder.FreeBuilder;
 
@@ -80,6 +82,15 @@ public interface StorageClientSettings {
     Optional<String> clientName();
 
     /**
+     * Configure a backoff policy for the client.
+     *
+     * <p>There are a few default backoff policies defined in {@link org.apache.bookkeeper.common.util.Backoff}.
+     *
+     * @return backoff policy provider
+     */
+    Backoff.Policy backoffPolicy();
+
+    /**
      * Builder of {@link StorageClientSettings} instances.
      */
     class Builder extends StorageClientSettings_Builder {
@@ -87,6 +98,7 @@ public interface StorageClientSettings {
         Builder() {
             numWorkerThreads(Runtime.getRuntime().availableProcessors());
             usePlaintext(true);
+            backoffPolicy(ClientConstants.DEFAULT_INFINIT_BACKOFF_POLICY);
         }
 
         @Override

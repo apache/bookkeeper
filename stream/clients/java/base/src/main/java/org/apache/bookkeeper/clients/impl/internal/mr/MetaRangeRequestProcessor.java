@@ -27,6 +27,7 @@ import java.util.function.Function;
 import org.apache.bookkeeper.clients.impl.channel.StorageServerChannel;
 import org.apache.bookkeeper.clients.impl.container.StorageContainerChannel;
 import org.apache.bookkeeper.clients.utils.ListenableFutureRpcProcessor;
+import org.apache.bookkeeper.common.util.Backoff;
 import org.apache.bookkeeper.stream.proto.storage.StatusCode;
 import org.apache.bookkeeper.stream.proto.storage.StorageContainerRequest;
 import org.apache.bookkeeper.stream.proto.storage.StorageContainerResponse;
@@ -41,8 +42,9 @@ public class MetaRangeRequestProcessor<RespT>
         StorageContainerRequest request,
         Function<StorageContainerResponse, T> responseFunc,
         StorageContainerChannel channel,
-        ScheduledExecutorService executor) {
-        return new MetaRangeRequestProcessor<>(request, responseFunc, channel, executor);
+        ScheduledExecutorService executor,
+        Backoff.Policy backoffPolicy) {
+        return new MetaRangeRequestProcessor<>(request, responseFunc, channel, executor, backoffPolicy);
     }
 
     private final StorageContainerRequest request;
@@ -51,8 +53,9 @@ public class MetaRangeRequestProcessor<RespT>
     private MetaRangeRequestProcessor(StorageContainerRequest request,
                                       Function<StorageContainerResponse, RespT> responseFunc,
                                       StorageContainerChannel channel,
-                                      ScheduledExecutorService executor) {
-        super(channel, executor);
+                                      ScheduledExecutorService executor,
+                                      Backoff.Policy backoffPolicy) {
+        super(channel, executor, backoffPolicy);
         this.request = request;
         this.responseFunc = responseFunc;
     }

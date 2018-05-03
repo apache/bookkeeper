@@ -38,6 +38,7 @@ import lombok.Cleanup;
 import org.apache.bookkeeper.clients.grpc.GrpcClientTestBase;
 import org.apache.bookkeeper.clients.impl.channel.StorageServerChannel;
 import org.apache.bookkeeper.clients.impl.container.StorageContainerChannel;
+import org.apache.bookkeeper.clients.utils.ClientConstants;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.stream.proto.kv.rpc.DeleteRangeRequest;
 import org.apache.bookkeeper.stream.proto.kv.rpc.DeleteRangeResponse;
@@ -206,7 +207,8 @@ public class TableRequestProcessorTest extends GrpcClientTestBase {
             request,
             resp -> "test",
             scChannel,
-            scheduler);
+            scheduler,
+            ClientConstants.DEFAULT_INFINIT_BACKOFF_POLICY);
         assertEquals("test", FutureUtils.result(processor.process()));
         assertSame(request, receivedRequest.get());
         assertEquals(type, receivedRequestType.get());
