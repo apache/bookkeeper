@@ -7,7 +7,7 @@ release: N/A
 
 ### Motivation
 
-With entrylog per ledger feature (https://github.com/apache/bookkeeper/issues/570) there will be dedicated entrylog for each ledger and it provides EntryLogManagerForEntryLogPerLedger (EntryLogManager). Since there is going to be entrylog per ledger, with the current Bookie implementation there is no way for EntryLogManagerForEntryLogPerLedger (EntryLogManager) to know when the entrylog is writeclosed, so that entrylog for the active ledger can be rotated. So it would be ideal to have explicit call to EntryLogger when the write for this ledger is done and it is writeclosed, so that it can rotate the entrylog as soon as it is write closed. This will minimize the number of entrylogs/file descriptors that are open/active and also it will make progress in leastUnflushedLogId, so that GarbageCollectorThread can consider these entrylogs for garbage collection.
+With [entrylog per ledger feature](https://github.com/apache/bookkeeper/issues/570) there will be dedicated entrylog for each ledger and it provides EntryLogManagerForEntryLogPerLedger (EntryLogManager). Since there is going to be entrylog per ledger, with the current Bookie implementation there is no way for EntryLogManagerForEntryLogPerLedger (EntryLogManager) to know when the entrylog is writeclosed, so that entrylog for the active ledger can be rotated. So it would be ideal to have explicit call to EntryLogger when the write for this ledger is done and it is writeclosed, so that it can rotate the entrylog as soon as it is write closed. This will minimize the number of entrylogs/file descriptors that are open/active and also it will make progress in leastUnflushedLogId, so that GarbageCollectorThread can consider these entrylogs for garbage collection.
 
 ### Proposed Changes
 
@@ -29,6 +29,7 @@ EntryLogManagerForEntryLogPerLedger is the class which is last layer in the stac
 
 As explained above, this advisory write close should be transparent to Bookkeeper API user, this should be piggybagged in writehandle close call and other internal Bookie / BookieClient internal class methods (ReadEntryProcessorV3.readrequest and LedgerFragmentReplicator). But this feature introduces new protobuf message between Client and Bookie.
 
+```
 message WriteCloseRequest {
     required int64 ledgerId = 1;
     required bytes masterKey = 2;    
@@ -38,6 +39,7 @@ message WriteCloseResponse {
     required StatusCode status = 1;
     required int64 ledgerId = 2;  
 }
+```
 
 ### Compatibility, Deprecation, and Migration Plan
 
