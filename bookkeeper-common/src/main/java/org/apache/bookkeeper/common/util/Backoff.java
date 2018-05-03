@@ -24,6 +24,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Stream;
 import lombok.Data;
 import lombok.ToString;
+import org.apache.bookkeeper.common.util.Backoff.Jitter.Type;
 
 /**
  * Implements various backoff strategies.
@@ -33,6 +34,12 @@ import lombok.ToString;
  * retried.
  */
 public class Backoff {
+
+    public static final Policy DEFAULT = Jitter.of(
+        Type.EXPONENTIAL,
+        200,
+        2000,
+        3);
 
     private static final int MaxBitShift = 62;
 
@@ -95,7 +102,10 @@ public class Backoff {
     @ToString
     public static class Jitter implements Policy {
 
-        enum Type {
+        /**
+         * Jitter type.
+         */
+        public enum Type {
             DECORRELATED,
             EQUAL,
             EXPONENTIAL

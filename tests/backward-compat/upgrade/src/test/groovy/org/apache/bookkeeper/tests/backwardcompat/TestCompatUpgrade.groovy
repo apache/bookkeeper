@@ -178,12 +178,12 @@ class TestCompatUpgrade {
 
     @Test
     public void test460to461() throws Exception {
-        testUpgrade("4.6.0", "4.6.1")
+        testUpgrade("4.6.0", "4.6.1", false, true)
     }
 
     @Test
     public void test461to462() throws Exception {
-        testUpgrade("4.6.1", "4.6.2")
+        testUpgrade("4.6.1", "4.6.2", false, true)
     }
 
     @Test
@@ -193,6 +193,6 @@ class TestCompatUpgrade {
 
     @Test
     public void test470toCurrentMaster() throws Exception {
-        testUpgrade("4.7.0", System.getProperty("currentVersion"), false, true)
+        testUpgrade("4.7.0", System.getProperty("currentVersion"))
     }
 }

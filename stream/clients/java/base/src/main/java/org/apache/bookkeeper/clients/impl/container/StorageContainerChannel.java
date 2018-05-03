@@ -78,9 +78,23 @@ public class StorageContainerChannel {
         return rsChannelFuture;
     }
 
-    @VisibleForTesting
-    synchronized void resetStorageServerChannelFuture() {
+    public synchronized void resetStorageServerChannelFuture() {
         rsChannelFuture = null;
+    }
+
+    public synchronized boolean resetStorageServerChannelFuture(CompletableFuture<StorageServerChannel> oldFuture) {
+        if (oldFuture != null) {
+            // we only reset the channel that we expect to reset
+            if (rsChannelFuture == oldFuture) {
+                rsChannelFuture = null;
+                return true;
+            } else {
+                return false;
+            }
+        } else {
+            rsChannelFuture = null;
+            return true;
+        }
     }
 
     @VisibleForTesting

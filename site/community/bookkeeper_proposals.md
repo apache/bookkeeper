@@ -56,7 +56,7 @@ using Google Doc.
             - state: "Under Discussion"
             - release: leave the release to `N/A`. you can only mark a release after a BP is implemented.
     - Google Doc
-        - Make a copy of the [BP-Template](https://docs.google.com/document/d/1DsmH54LoohgwqnEjESPQNtIYxxcOy2rwonZ_TJCwws0). Name the BP file as `BP-<number>-[caption-of-proposal]`. 
+        - Make a copy of the [BP-Template](https://docs.google.com/document/d/1DsmH54LoohgwqnEjESPQNtIYxxcOy2rwonZ_TJCwws0). Name the BP file as `BP-<number>-[caption-of-proposal]`.
         - Fill the sections listed in the BP template.
 1. Send a PR for this BP. Following the instructions in the pull request template.
     - add `BP` label to this PR
@@ -85,7 +85,7 @@ using Google Doc.
 
 This section lists all the _bookkeeper proposals_ made to BookKeeper.
 
-*Next Proposal Number: 32*
+*Next Proposal Number: 33*
 
 ### Inprogress
 
@@ -103,6 +103,7 @@ Proposal | State
 [BP-29: Metadata API module](../../bps/BP-29-metadata-store-api-module) | Accepted
 [BP-30: BookKeeper Table Service](https://docs.google.com/document/d/155xAwWv5IdOitHh1NVMEwCMGgB28M3FyMiQSxEpjE-Y/edit#heading=h.56rbh52koe3f) | Accepted
 [BP-31: BookKeeper Durability Anchor](../../bps/BP-31-durability) | Accepted
+[BP-32: Advisory (optimistic) write close](../../bps/BP-32-advisory-write-close) | Accepted
 
 ### Adopted
 
