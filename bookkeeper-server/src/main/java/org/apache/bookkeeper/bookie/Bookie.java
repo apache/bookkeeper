@@ -1135,10 +1135,9 @@ public class Bookie extends BookieCriticalThread {
      * Force write on the journal assigned to the given ledger.
      * It works like a regular addEntry with ackBeforeSync=false.
      */
-    private void forceLedgerInternal(LedgerDescriptor handle,
+    private void forceLedgerInternal(long ledgerId,
                                      WriteCallback cb, Object ctx, byte[] masterKey)
             throws IOException, BookieException {
-        long ledgerId = handle.getLedgerId();
 
         ensureLedgerOnMasterKeyCache(ledgerId, masterKey);
 
@@ -1241,11 +1240,7 @@ public class Bookie extends BookieCriticalThread {
         try {
             LedgerDescriptor handle = handles.getHandle(ledgerId, masterKey);
             synchronized (handle) {
-                if (handle.isFenced()) {
-                    throw BookieException
-                            .create(BookieException.Code.LedgerFencedException);
-                }
-                forceLedgerInternal(handle, cb, ctx, masterKey);
+                forceLedgerInternal(ledgerId, cb, ctx, masterKey);
             }
             success = true;
         } catch (NoWritableLedgerDirException e) {
