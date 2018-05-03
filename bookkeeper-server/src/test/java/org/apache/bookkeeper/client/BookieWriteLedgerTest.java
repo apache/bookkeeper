@@ -350,8 +350,8 @@ public class BookieWriteLedgerTest extends
 
         try {
             lh.addEntry(entry.array());
-            fail("expected BKIncorrectParameterException");
-        } catch (BKException.BKIncorrectParameterException e) {
+            fail("expected IllegalOpException");
+        } catch (BKException.BKIllegalOpException e) {
             // pass, expected
         } finally {
             lh.close();

@@ -197,28 +197,6 @@ public class LedgerHandleAdv extends LedgerHandle implements WriteAdvHandle {
      */
     @Override
     protected void doAsyncAddEntry(final PendingAddOp op) {
-
-        if (op.getEntryId() == INVALID_ENTRY_ID) {
-            try {
-                bk.mainWorkerPool.submit(new SafeRunnable() {
-                    @Override
-                    public void safeRun() {
-                        LOG.warn("Attempt to add with invalid entry id: {} {}", ledgerId, op.getEntryId());
-                        op.cb.addCompleteWithLatency(BKException.Code.IncorrectParameterException,
-                                LedgerHandleAdv.this, op.getEntryId(), 0, op.ctx);
-                    }
-                    @Override
-                    public String toString() {
-                        return String.format("AsyncAddEntryWithInvalidEntryId(lid=%d)", ledgerId);
-                    }
-                });
-            } catch (RejectedExecutionException e) {
-                op.cb.addCompleteWithLatency(bk.getReturnRc(BKException.Code.InterruptedException),
-                        LedgerHandleAdv.this, op.getEntryId(), 0, op.ctx);
-            }
-            return;
-        }
-
         if (throttler != null) {
             throttler.acquire();
         }
