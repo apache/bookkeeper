@@ -334,6 +334,32 @@ public class BookieWriteLedgerTest extends
     }
 
     /**
+     * Verify that attempts to use addEntry() variant that does not require specifying entry id
+     * on LedgerHandleAdv results in error.
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testLedgerCreateAdvAndWriteNonAdv() throws Exception {
+        long ledgerId = 0xABCDEF;
+        lh = bkc.createLedgerAdv(ledgerId, 3, 3, 2, digestType, ledgerPassword, null);
+
+        ByteBuffer entry = ByteBuffer.allocate(4);
+        entry.putInt(rng.nextInt(maxInt));
+        entry.position(0);
+
+        try {
+            lh.addEntry(entry.array());
+            fail("expected BKIncorrectParameterException");
+        } catch (BKException.BKIncorrectParameterException e) {
+            // pass, expected
+        } finally {
+            lh.close();
+            bkc.deleteLedger(ledgerId);
+        }
+    }
+
+    /**
      * Verify that LedgerHandleAdv cannnot handle addEntry without the entryId.
      *
      * @throws Exception
