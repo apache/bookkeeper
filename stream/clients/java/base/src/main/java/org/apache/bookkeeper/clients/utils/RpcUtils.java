@@ -17,6 +17,9 @@ package org.apache.bookkeeper.clients.utils;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
+import io.grpc.Status;
+import io.grpc.StatusException;
+import io.grpc.StatusRuntimeException;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -46,6 +49,16 @@ public class RpcUtils {
     @FunctionalInterface
     public interface ProcessResponseFunc<RespT, T> {
         void process(RespT resp, CompletableFuture<T> resultFuture);
+    }
+
+    public static boolean isContainerNotFound(Throwable cause) {
+        if (cause instanceof StatusRuntimeException) {
+            return Status.NOT_FOUND ==  ((StatusRuntimeException) cause).getStatus();
+        } else if (cause instanceof StatusException) {
+            return Status.NOT_FOUND ==  ((StatusException) cause).getStatus();
+        } else {
+            return false;
+        }
     }
 
     public static <T, ReqT, RespT, ServiceT> void processRpc(

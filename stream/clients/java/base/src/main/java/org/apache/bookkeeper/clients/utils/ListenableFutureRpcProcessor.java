@@ -33,7 +33,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.clients.impl.channel.StorageServerChannel;
 import org.apache.bookkeeper.clients.impl.container.StorageContainerChannel;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
-import org.apache.bookkeeper.common.util.Backoff;
+import org.apache.bookkeeper.common.util.Backoff.Policy;
 
 /**
  * A process for processing rpc request on storage container channel.
@@ -44,25 +44,20 @@ public abstract class ListenableFutureRpcProcessor<RequestT, ResponseT, ResultT>
     FutureCallback<ResponseT>,
     Runnable {
 
-    private static final long startBackoffMs = 200;
-    private static final long maxBackoffMs = 2000;
-    private static final int maxRetries = 3;
-
     private final StorageContainerChannel scChannel;
     private final Iterator<Long> backoffs;
     private final ScheduledExecutorService executor;
     private final CompletableFuture<ResultT> resultFuture;
 
+    private CompletableFuture<StorageServerChannel> serverChannelFuture = null;
+
     protected ListenableFutureRpcProcessor(StorageContainerChannel channel,
-                                           ScheduledExecutorService executor) {
+                                           ScheduledExecutorService executor,
+                                           Policy backoffPolicy) {
         this.scChannel = channel;
-        this.backoffs = configureBackoffs();
+        this.backoffs = backoffPolicy.toBackoffs().iterator();
         this.resultFuture = FutureUtils.createFuture();
         this.executor = executor;
-    }
-
-    protected Iterator<Long> configureBackoffs() {
-        return Backoff.exponentialJittered(startBackoffMs, maxBackoffMs).limit(maxRetries).iterator();
     }
 
     /**
@@ -88,7 +83,8 @@ public abstract class ListenableFutureRpcProcessor<RequestT, ResponseT, ResultT>
     protected abstract ResultT processResponse(ResponseT response) throws Exception;
 
     public CompletableFuture<ResultT> process() {
-        scChannel.getStorageContainerChannelFuture().whenCompleteAsync(this, executor);
+        serverChannelFuture = scChannel.getStorageContainerChannelFuture();
+        serverChannelFuture.whenCompleteAsync(this, executor);
         return resultFuture;
     }
 
@@ -106,7 +102,9 @@ public abstract class ListenableFutureRpcProcessor<RequestT, ResponseT, ResultT>
     @Override
     public void accept(StorageServerChannel storageServerChannel, Throwable cause) {
         if (null != cause) {
-            // failure to retrieve a channel to the server that hosts this storage container
+            // The `StorageContainerChannel` already retry on failures related to server channel,
+            // So we don't need to retry here if failed to retrieve a channel to the server
+            // that hosts this storage container.
             resultFuture.completeExceptionally(cause);
             return;
         }
@@ -141,14 +139,26 @@ public abstract class ListenableFutureRpcProcessor<RequestT, ResponseT, ResultT>
 
     @Override
     public void onFailure(Throwable t) {
-        boolean shouldRetry = false;
+        Status status = null;
         if (t instanceof StatusRuntimeException) {
-            shouldRetry = shouldRetryOn(((StatusRuntimeException) t).getStatus());
+            status = ((StatusRuntimeException) t).getStatus();
         } else if (t instanceof StatusException) {
-            shouldRetry = shouldRetryOn(((StatusException) t).getStatus());
+            status = ((StatusException) t).getStatus();
         }
 
-        if (shouldRetry && backoffs.hasNext()) {
+        if (Status.NOT_FOUND == status) {
+            // `NOT_FOUND` means storage container is not found. that means:
+            //
+            // - the container is moved to a different server
+            // - the container is not assigned to any servers yet
+            // - the container is assigned, but it is still starting up and not ready for serving
+            //
+            // at either case, we need to reset the storage server channel, so next retry can attempt to re-locate
+            // the storage container again
+            scChannel.resetStorageServerChannelFuture(serverChannelFuture);
+        }
+
+        if (shouldRetryOn(status) && backoffs.hasNext()) {
             long backoffMs = backoffs.next();
             executor.schedule(this, backoffMs, TimeUnit.MILLISECONDS);
         } else {
