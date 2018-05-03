@@ -79,9 +79,13 @@ public class StorageServerClientManagerImpl
             this.channelManager,
             this.locationClient,
             scheduler);
-        this.rootRangeClient = new RootRangeClientImpl(
-            scheduler,
-            scChannelManager);
+        this.rootRangeClient = new RootRangeClientImplWithRetries(
+            new RootRangeClientImpl(
+                scheduler,
+                scChannelManager),
+            settings.backoffPolicy(),
+            scheduler
+        );
         this.streamMetadataCache = new StreamMetadataCache(rootRangeClient);
         this.metaRangeClients = Maps.newConcurrentMap();
     }

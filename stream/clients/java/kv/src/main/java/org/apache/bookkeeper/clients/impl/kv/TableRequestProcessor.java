@@ -18,10 +18,12 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Function;
+import java.util.stream.Stream;
 import org.apache.bookkeeper.clients.exceptions.InternalServerException;
 import org.apache.bookkeeper.clients.impl.channel.StorageServerChannel;
 import org.apache.bookkeeper.clients.impl.container.StorageContainerChannel;
 import org.apache.bookkeeper.clients.utils.ListenableFutureRpcProcessor;
+import org.apache.bookkeeper.common.util.Backoff.Policy;
 import org.apache.bookkeeper.stream.proto.storage.StatusCode;
 import org.apache.bookkeeper.stream.proto.storage.StorageContainerRequest;
 import org.apache.bookkeeper.stream.proto.storage.StorageContainerResponse;
@@ -36,8 +38,9 @@ public class TableRequestProcessor<RespT>
         StorageContainerRequest request,
         Function<StorageContainerResponse, T> responseFunc,
         StorageContainerChannel channel,
-        ScheduledExecutorService executor) {
-        return new TableRequestProcessor<>(request, responseFunc, channel, executor);
+        ScheduledExecutorService executor,
+        Policy backoffPolicy) {
+        return new TableRequestProcessor<>(request, responseFunc, channel, executor, backoffPolicy);
     }
 
     private final StorageContainerRequest request;
@@ -46,8 +49,9 @@ public class TableRequestProcessor<RespT>
     private TableRequestProcessor(StorageContainerRequest request,
                                   Function<StorageContainerResponse, RespT> respFunc,
                                   StorageContainerChannel channel,
-                                  ScheduledExecutorService executor) {
-        super(channel, executor);
+                                  ScheduledExecutorService executor,
+                                  Policy backoffPolicy) {
+        super(channel, executor, backoffPolicy);
         this.request = request;
         this.responseFunc = respFunc;
     }

@@ -41,6 +41,7 @@ import org.apache.bookkeeper.api.kv.result.PutResult;
 import org.apache.bookkeeper.api.kv.result.RangeResult;
 import org.apache.bookkeeper.api.kv.result.TxnResult;
 import org.apache.bookkeeper.clients.impl.container.StorageContainerChannel;
+import org.apache.bookkeeper.common.util.Backoff;
 import org.apache.bookkeeper.stream.proto.RangeProperties;
 import org.apache.bookkeeper.stream.proto.kv.rpc.RoutingHeader;
 import org.apache.bookkeeper.stream.proto.kv.rpc.TxnRequest;
@@ -58,6 +59,7 @@ class PByteBufTableRangeImpl implements PTable<ByteBuf, ByteBuf> {
     private final OpFactory<ByteBuf, ByteBuf> opFactory;
     private final ResultFactory<ByteBuf, ByteBuf> resultFactory;
     private final KeyValueFactory<ByteBuf, ByteBuf> kvFactory;
+    private final Backoff.Policy backoffPolicy;
 
     PByteBufTableRangeImpl(long streamId,
                            RangeProperties rangeProps,
@@ -65,7 +67,8 @@ class PByteBufTableRangeImpl implements PTable<ByteBuf, ByteBuf> {
                            ScheduledExecutorService executor,
                            OpFactory<ByteBuf, ByteBuf> opFactory,
                            ResultFactory<ByteBuf, ByteBuf> resultFactory,
-                           KeyValueFactory<ByteBuf, ByteBuf> kvFactory) {
+                           KeyValueFactory<ByteBuf, ByteBuf> kvFactory,
+                           Backoff.Policy backoffPolicy) {
         this.streamId = streamId;
         this.rangeProps = rangeProps;
         this.scChannel = scChannel;
@@ -73,6 +76,7 @@ class PByteBufTableRangeImpl implements PTable<ByteBuf, ByteBuf> {
         this.opFactory = opFactory;
         this.resultFactory = resultFactory;
         this.kvFactory = kvFactory;
+        this.backoffPolicy = backoffPolicy;
     }
 
     private RoutingHeader.Builder newRoutingHeader(ByteBuf pKey) {
@@ -97,7 +101,8 @@ class PByteBufTableRangeImpl implements PTable<ByteBuf, ByteBuf> {
                     .setHeader(newRoutingHeader(pKey))),
             response -> KvUtils.newRangeResult(response.getKvRangeResp(), resultFactory, kvFactory),
             scChannel,
-            executor
+            executor,
+            backoffPolicy
         ).process().whenComplete((value, cause) -> {
             pKey.release();
             lKey.release();
@@ -122,7 +127,8 @@ class PByteBufTableRangeImpl implements PTable<ByteBuf, ByteBuf> {
                     .setHeader(newRoutingHeader(pKey))),
             response -> KvUtils.newPutResult(response.getKvPutResp(), resultFactory, kvFactory),
             scChannel,
-            executor
+            executor,
+            backoffPolicy
         ).process().whenComplete((ignored, cause) -> {
             pKey.release();
             lKey.release();
@@ -146,7 +152,8 @@ class PByteBufTableRangeImpl implements PTable<ByteBuf, ByteBuf> {
                     .setHeader(newRoutingHeader(pKey))),
             response -> KvUtils.newDeleteResult(response.getKvDeleteResp(), resultFactory, kvFactory),
             scChannel,
-            executor
+            executor,
+            backoffPolicy
         ).process().whenComplete((ignored, cause) -> {
             pKey.release();
             lKey.release();
@@ -170,7 +177,8 @@ class PByteBufTableRangeImpl implements PTable<ByteBuf, ByteBuf> {
                     .setHeader(newRoutingHeader(pKey))),
             response -> KvUtils.newIncrementResult(response.getKvIncrResp(), resultFactory, kvFactory),
             scChannel,
-            executor
+            executor,
+            backoffPolicy
         ).process().whenComplete((ignored, cause) -> {
             pKey.release();
             lKey.release();
@@ -246,7 +254,8 @@ class PByteBufTableRangeImpl implements PTable<ByteBuf, ByteBuf> {
                     txnBuilder.setHeader(newRoutingHeader(pKey))),
                 response -> KvUtils.newKvTxnResult(response.getKvTxnResp(), resultFactory, kvFactory),
                 scChannel,
-                executor
+                executor,
+                backoffPolicy
             ).process().whenComplete((ignored, cause) -> {
                 pKey.release();
                 for (AutoCloseable resource : resourcesToRelease) {
