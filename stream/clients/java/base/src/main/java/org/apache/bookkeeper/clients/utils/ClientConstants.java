@@ -18,6 +18,10 @@
 
 package org.apache.bookkeeper.clients.utils;
 
+import org.apache.bookkeeper.common.util.Backoff.Jitter;
+import org.apache.bookkeeper.common.util.Backoff.Jitter.Type;
+import org.apache.bookkeeper.common.util.Backoff.Policy;
+
 /**
  * Client related constants.
  */
@@ -32,5 +36,17 @@ public final class ClientConstants {
     public static final int DEFAULT_BACKOFF_START_MS = 200;
     public static final int DEFAULT_BACKOFF_MAX_MS = 1000;
     public static final int DEFAULT_BACKOFF_MULTIPLIER = 2;
+    public static final int DEFAULT_BACKOFF_RETRIES = 3;
+
+    public static final Policy DEFAULT_BACKOFF_POLICY = Jitter.of(
+        Type.EXPONENTIAL,
+        DEFAULT_BACKOFF_START_MS,
+        DEFAULT_BACKOFF_MAX_MS,
+        DEFAULT_BACKOFF_RETRIES);
+
+    public static final Policy DEFAULT_INFINIT_BACKOFF_POLICY = Jitter.of(
+        Type.EXPONENTIAL,
+        DEFAULT_BACKOFF_START_MS,
+        DEFAULT_BACKOFF_MAX_MS);
 
 }
