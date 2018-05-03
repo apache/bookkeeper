@@ -103,7 +103,7 @@ Proposal | State
 [BP-29: Metadata API module](../../bps/BP-29-metadata-store-api-module) | Accepted
 [BP-30: BookKeeper Table Service](https://docs.google.com/document/d/155xAwWv5IdOitHh1NVMEwCMGgB28M3FyMiQSxEpjE-Y/edit#heading=h.56rbh52koe3f) | Accepted
 [BP-31: BookKeeper Durability Anchor](../../bps/BP-31-durability) | Accepted
-[BP-32: Advisory (optimistic) write close](../../bps/BP-32-advisory-write-close) | Draft
+[BP-32: Advisory (optimistic) write close](../../bps/BP-32-advisory-write-close) | Accepted
 
 ### Adopted
 
