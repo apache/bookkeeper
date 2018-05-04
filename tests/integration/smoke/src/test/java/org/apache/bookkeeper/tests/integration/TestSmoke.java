@@ -35,6 +35,7 @@ import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.LedgerEntry;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
+import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.tests.BookKeeperClusterUtils;
 import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.arquillian.test.api.ArquillianResource;
@@ -121,9 +122,24 @@ public class TestSmoke {
     }
 
     @Test
-    public void testTailingReads() throws Exception {
+    public void testTailingReadsWithoutExplicitLac() throws Exception {
+        testTailingReads(100, 98, 0);
+    }
+
+    @Test
+    public void testTailingReadsWithExplicitLac() throws Exception {
+        testTailingReads(100, 99, 100);
+    }
+
+    private void testTailingReads(int numEntries,
+                                  long lastExpectedConfirmedEntryId,
+                                  int lacIntervalMs)
+            throws Exception {
         String zookeeper = BookKeeperClusterUtils.zookeeperConnectString(docker);
-        @Cleanup BookKeeper bk = new BookKeeper(zookeeper);
+        ClientConfiguration conf = new ClientConfiguration()
+            .setExplictLacInterval(lacIntervalMs)
+            .setMetadataServiceUri("zk://" + zookeeper + "/ledgers");
+        @Cleanup BookKeeper bk = BookKeeper.forConfig(conf).build();
         @Cleanup LedgerHandle writeLh = bk.createLedger(DigestType.CRC32C, PASSWD);
         @Cleanup("shutdown") ExecutorService writeExecutor = Executors.newSingleThreadExecutor(
             new ThreadFactoryBuilder().setNameFormat("write-executor").build());
@@ -132,13 +148,11 @@ public class TestSmoke {
         @Cleanup("shutdown") ExecutorService readExecutor = Executors.newSingleThreadExecutor(
             new ThreadFactoryBuilder().setNameFormat("read-executor").build());
 
-        int numEntries = 100;
         CompletableFuture<Void> readFuture = new CompletableFuture<>();
         CompletableFuture<Void> writeFuture = new CompletableFuture<>();
 
         // start the read thread
         readExecutor.submit(() -> {
-            long lastExpectedConfirmedEntryId = numEntries - 2;
             long nextEntryId = 0L;
             try {
                 while (nextEntryId <= lastExpectedConfirmedEntryId) {
