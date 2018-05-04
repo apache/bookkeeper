@@ -70,6 +70,7 @@ public class DLNamespaceProviderService
 
     private final ServerConfiguration bkServerConf;
     private final DistributedLogConfiguration dlConf;
+    private final DynamicDistributedLogConfiguration dlDynConf;
     @Getter
     private final URI dlogUri;
     private Namespace namespace;
@@ -84,7 +85,7 @@ public class DLNamespaceProviderService
             StorageConstants.getStoragePath(StorageConstants.ZK_METADATA_ROOT_PATH)));
         this.bkServerConf = bkServerConf;
         this.dlConf = new DistributedLogConfiguration();
-        ConfUtils.loadConfiguration(this.dlConf, conf, conf.getComponentPrefix());
+        this.dlConf.loadConf(conf);
         // disable write lock
         this.dlConf.setWriteLockEnabled(false);
         // setting the flush policy
@@ -96,6 +97,7 @@ public class DLNamespaceProviderService
         // rolling log segment concurrency is only 1
         this.dlConf.setLogSegmentRollingConcurrency(1);
         this.dlConf.setMaxLogSegmentBytes(256 * 1024 * 1024); // 256 MB
+        this.dlDynConf = ConfUtils.getConstDynConf(dlConf);
     }
 
     @Override
@@ -112,7 +114,7 @@ public class DLNamespaceProviderService
                 .statsLogger(getStatsLogger())
                 .clientId("storage-server")
                 .conf(dlConf)
-                .dynConf(ConfUtils.getConstDynConf(dlConf))
+                .dynConf(dlDynConf)
                 .uri(uri)
                 .build();
         } catch (Throwable e) {

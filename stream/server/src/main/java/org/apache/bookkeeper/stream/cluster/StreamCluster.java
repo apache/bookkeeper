@@ -76,9 +76,9 @@ public class StreamCluster
         return new StreamCluster(spec);
     }
 
-    private static ServerConfiguration newBookieConfiguration(String zkEnsemble) {
+    private static ServerConfiguration newServerConfiguration(String zkEnsemble) {
         ServerConfiguration serverConf = new ServerConfiguration();
-        serverConf.setMetadataServiceUri("zk://" + zkEnsemble + getSegmentsRootPath(ZK_METADATA_ROOT_PATH));
+        serverConf.setMetadataServiceUri("zk://" + zkEnsemble + LEDGERS_PATH);
         serverConf.setAllowLoopback(true);
         serverConf.setGcWaitTime(300000);
         serverConf.setDiskUsageWarnThreshold(0.9999f);
@@ -191,7 +191,7 @@ public class StreamCluster
             }
             LifecycleComponent server = null;
             try {
-                ServerConfiguration serverConf = newBookieConfiguration(zkEnsemble);
+                ServerConfiguration serverConf = newServerConfiguration(zkEnsemble);
                 serverConf.setBookiePort(bookiePort);
                 File bkDir = new File(spec.storageRootDir(), "bookie_" + bookiePort);
                 serverConf.setJournalDirName(bkDir.getPath());

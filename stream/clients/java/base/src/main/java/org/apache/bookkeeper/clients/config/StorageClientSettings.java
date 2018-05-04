@@ -25,7 +25,6 @@ import io.grpc.ManagedChannelBuilder;
 import io.grpc.NameResolver;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Stream;
 import org.apache.bookkeeper.clients.utils.ClientConstants;
 import org.apache.bookkeeper.common.util.Backoff;
 import org.apache.bookkeeper.stream.proto.common.Endpoint;
@@ -90,7 +89,7 @@ public interface StorageClientSettings {
      *
      * @return backoff policy provider
      */
-    Supplier<Stream<Long>> backoffPolicy();
+    Backoff.Policy backoffPolicy();
 
     /**
      * Builder of {@link StorageClientSettings} instances.
@@ -100,10 +99,7 @@ public interface StorageClientSettings {
         Builder() {
             numWorkerThreads(Runtime.getRuntime().availableProcessors());
             usePlaintext(true);
-            backoffPolicy(() -> Backoff.exponentialJittered(
-                ClientConstants.DEFAULT_BACKOFF_START_MS,
-                ClientConstants.DEFAULT_BACKOFF_MAX_MS
-            ));
+            backoffPolicy(ClientConstants.DEFAULT_INFINIT_BACKOFF_POLICY);
         }
 
         @Override

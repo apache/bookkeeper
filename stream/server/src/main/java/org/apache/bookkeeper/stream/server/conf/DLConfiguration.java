@@ -18,11 +18,11 @@ import org.apache.bookkeeper.common.conf.ComponentConfiguration;
 import org.apache.commons.configuration.CompositeConfiguration;
 
 /**
- * A configuration delegates distributedlog configuration {@link org.apache.bookkeeper.DistributedLogConfiguration}.
+ * A configuration delegates distributedlog configuration {@link org.apache.distributedlog.DistributedLogConfiguration}.
  */
 public class DLConfiguration extends ComponentConfiguration {
 
-    public static final String COMPONENT_PREFIX = "dl" + DELIMITER;
+    public static final String COMPONENT_PREFIX = "dlog" + DELIMITER;
 
     public static DLConfiguration of(CompositeConfiguration conf) {
         return new DLConfiguration(conf);
