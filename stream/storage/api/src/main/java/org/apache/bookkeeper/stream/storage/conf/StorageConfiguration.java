@@ -24,7 +24,7 @@ public class StorageConfiguration extends ComponentConfiguration {
 
     private static final String COMPONENT_PREFIX = "storage" + DELIMITER;
 
-    private static final String RANGE_STORE_DIRS = "range_store_dirs";
+    private static final String RANGE_STORE_DIRS = "range.store.dirs";
 
     private static final String SERVE_READONLY_TABLES = "serve.readonly.tables";
 
