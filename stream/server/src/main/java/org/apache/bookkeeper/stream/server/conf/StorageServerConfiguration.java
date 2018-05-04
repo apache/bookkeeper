@@ -22,7 +22,7 @@ import org.apache.commons.configuration.CompositeConfiguration;
  */
 public class StorageServerConfiguration extends ComponentConfiguration {
 
-    private static final String COMPONENT_PREFIX = "rangeserver" + DELIMITER;
+    private static final String COMPONENT_PREFIX = "storageserver" + DELIMITER;
 
     public static StorageServerConfiguration of(CompositeConfiguration conf) {
         return new StorageServerConfiguration(conf);
