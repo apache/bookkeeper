@@ -63,6 +63,7 @@ enum OperationType {
     READ_LAC = 7;
     GET_BOOKIE_INFO = 8;
     START_TLS = 9;
+    FORCE_LEDGER = 10;
 }
 
 /**
@@ -85,6 +86,7 @@ message Request {
     optional ReadLacRequest readLacRequest = 104;
     optional GetBookieInfoRequest getBookieInfoRequest = 105;
     optional StartTLSRequest startTLSRequest = 106;
+    optional ForceLedgerRequest forceLedgerRequest = 107;
 }
 
 message ReadRequest {
@@ -126,6 +128,11 @@ message WriteLacRequest {
     required bytes body = 4;
 }
 
+message ForceLedgerRequest {
+    required int64 ledgerId = 1;
+    required bytes masterKey = 2;
+}
+
 message ReadLacRequest {
     required int64 ledgerId = 1;
 }
@@ -153,6 +160,7 @@ message Response {
     optional ReadLacResponse readLacResponse = 104;
     optional GetBookieInfoResponse getBookieInfoResponse = 105;
     optional StartTLSResponse startTLSResponse = 106;
+    optional ForceLedgerResponse forceLedgerResponse = 107;
 }
 
 message ReadResponse {
@@ -177,6 +185,11 @@ message AuthMessage {
 }
 
 message WriteLacResponse {
+    required StatusCode status = 1;
+    required int64 ledgerId = 2;
+}
+
+message ForceLedgerResponse {
     required StatusCode status = 1;
     required int64 ledgerId = 2;
 }
