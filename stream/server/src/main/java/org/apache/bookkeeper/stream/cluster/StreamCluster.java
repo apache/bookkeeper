@@ -46,6 +46,7 @@ import org.apache.bookkeeper.stream.proto.NamespaceProperties;
 import org.apache.bookkeeper.stream.proto.cluster.ClusterMetadata;
 import org.apache.bookkeeper.stream.proto.common.Endpoint;
 import org.apache.bookkeeper.stream.server.StorageServer;
+import org.apache.bookkeeper.stream.storage.StorageConstants;
 import org.apache.bookkeeper.stream.storage.conf.StorageConfiguration;
 import org.apache.bookkeeper.stream.storage.exceptions.StorageRuntimeException;
 import org.apache.bookkeeper.stream.storage.impl.cluster.ZkClusterMetadataStore;
@@ -76,9 +77,10 @@ public class StreamCluster
         return new StreamCluster(spec);
     }
 
-    private static ServerConfiguration newServerConfiguration(String zkEnsemble) {
+    private static ServerConfiguration newBookieConfiguration(String zkEnsemble) {
         ServerConfiguration serverConf = new ServerConfiguration();
-        serverConf.setMetadataServiceUri("zk://" + zkEnsemble + LEDGERS_PATH);
+        serverConf.setMetadataServiceUri(
+            "zk://" + zkEnsemble + getSegmentsRootPath(StorageConstants.ZK_METADATA_ROOT_PATH));
         serverConf.setAllowLoopback(true);
         serverConf.setGcWaitTime(300000);
         serverConf.setDiskUsageWarnThreshold(0.9999f);
@@ -122,7 +124,7 @@ public class StreamCluster
             return;
         }
 
-        File zkDir = new File(spec.storageRootDir, "zookeeper");
+        File zkDir = new File(spec.storageRootDir(), "zookeeper");
         Pair<ZooKeeperServerShim, Integer> zkServerAndPort =
             LocalDLMEmulator.runZookeeperOnAnyPort(zkDir);
         zks = zkServerAndPort.getLeft();
@@ -191,7 +193,7 @@ public class StreamCluster
             }
             LifecycleComponent server = null;
             try {
-                ServerConfiguration serverConf = newServerConfiguration(zkEnsemble);
+                ServerConfiguration serverConf = newBookieConfiguration(zkEnsemble);
                 serverConf.setBookiePort(bookiePort);
                 File bkDir = new File(spec.storageRootDir(), "bookie_" + bookiePort);
                 serverConf.setJournalDirName(bkDir.getPath());

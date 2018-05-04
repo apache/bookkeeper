@@ -77,7 +77,7 @@ public class RegistrationStateService
                 stateManager = new BookieStateManager(
                     bkServerConf,
                     statsLogger.scope("state"),
-                    regManager,
+                    () -> regManager,
                     Collections.emptyList(),
                     () -> NetUtils.endpointToString(myEndpoint));
                 stateManager.initState();
