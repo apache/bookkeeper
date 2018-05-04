@@ -28,8 +28,11 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import lombok.Cleanup;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.bookkeeper.client.BKException;
+import org.apache.bookkeeper.client.BKException.Code;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.LedgerEntry;
@@ -203,7 +206,86 @@ public class TestSmoke {
         result(readFuture);
         result(writeFuture);
 
-        assertEquals(readLh.getLastAddConfirmed(), numEntries - 2);
+        assertEquals(readLh.getLastAddConfirmed(), lastExpectedConfirmedEntryId);
+        assertEquals(writeLh.getLastAddConfirmed(), numEntries - 1);
+        assertEquals(writeLh.getLastAddPushed(), numEntries - 1);
+    }
+
+    @Test
+    public void testLongTailingReadsWithoutExplicitLac() throws Exception {
+        testLongPollTailingReads(100, 99, 100);
+    }
+
+    @Test
+    public void testLongTailingReadsWithExplicitLac() throws Exception {
+        testLongPollTailingReads(100, 99, 100);
+    }
+
+    private void testLongPollTailingReads(int numEntries,
+                                          long lastExpectedConfirmedEntryId,
+                                          int lacIntervalMs)
+            throws Exception {
+        String zookeeper = BookKeeperClusterUtils.zookeeperConnectString(docker);
+        ClientConfiguration conf = new ClientConfiguration()
+            .setExplictLacInterval(lacIntervalMs)
+            .setMetadataServiceUri("zk://" + zookeeper + "/ledgers");
+        @Cleanup BookKeeper bk = BookKeeper.forConfig(conf).build();
+        @Cleanup LedgerHandle writeLh = bk.createLedger(DigestType.CRC32C, PASSWD);
+        @Cleanup("shutdown") ExecutorService writeExecutor = Executors.newSingleThreadExecutor(
+            new ThreadFactoryBuilder().setNameFormat("write-executor").build());
+
+        @Cleanup LedgerHandle readLh = bk.openLedgerNoRecovery(writeLh.getId(), DigestType.CRC32C, PASSWD);
+        @Cleanup("shutdown") ExecutorService readExecutor = Executors.newSingleThreadExecutor(
+            new ThreadFactoryBuilder().setNameFormat("read-executor").build());
+
+        CompletableFuture<Void> readFuture = new CompletableFuture<>();
+        CompletableFuture<Void> writeFuture = new CompletableFuture<>();
+
+        // start the read thread
+        AtomicLong nextEntryId = new AtomicLong();
+
+        Runnable readNextFunc = new Runnable() {
+
+            @Override
+            public void run() {
+                if (nextEntryId.get() > lastExpectedConfirmedEntryId) {
+                    FutureUtils.complete(readFuture, null);
+                    return;
+                }
+
+                readLh.asyncReadLastConfirmedAndEntry(nextEntryId.get(), Long.MAX_VALUE, false,
+                    (rc, lastConfirmed, entry, ctx) -> {
+                        if (Code.OK == rc) {
+                            readExecutor.submit(this);
+                        } else {
+                            log.error("Failed to read entries ");
+                            readFuture.completeExceptionally(BKException.create(rc));
+                        }
+                    }, null);
+            }
+        };
+
+        readNextFunc.run();
+
+        // start the write thread
+        writeExecutor.submit(() -> {
+            try {
+                for (int i = 0; i < 100; i++) {
+                    writeLh.addEntry(("entry-" + i).getBytes());
+                }
+                log.info("Completed writing {} entries to ledger {}", numEntries, writeLh.getId());
+                FutureUtils.complete(writeFuture, null);
+            } catch (Exception e) {
+                log.error("Exceptions thrown during writing {} entries to ledger {}", numEntries, writeLh.getId(), e);
+                writeFuture.completeExceptionally(e);
+            }
+        });
+
+        // both write and read should be successful
+        result(readFuture);
+        result(writeFuture);
+
+        assertEquals(readLh.getLastAddConfirmed(), lastExpectedConfirmedEntryId);
         assertEquals(writeLh.getLastAddConfirmed(), numEntries - 1);
         assertEquals(writeLh.getLastAddPushed(), numEntries - 1);
     }
