@@ -138,10 +138,10 @@ public class TestSmoke {
 
         // start the read thread
         readExecutor.submit(() -> {
-            long lastEntryId = numEntries - 2;
+            long lastExpectedConfirmedEntryId = numEntries - 2;
             long nextEntryId = 0L;
             try {
-                while (nextEntryId <= lastEntryId) {
+                while (nextEntryId <= lastExpectedConfirmedEntryId) {
                     long lac = readLh.getLastAddConfirmed();
                     while (lac >= nextEntryId) {
                         Enumeration<LedgerEntry> entries = readLh.readEntries(nextEntryId, lac);
@@ -154,7 +154,7 @@ public class TestSmoke {
                         assertEquals(lac + 1, nextEntryId);
                     }
 
-                    if (nextEntryId >= lastEntryId) {
+                    if (nextEntryId >= lastExpectedConfirmedEntryId) {
                         break;
                     }
 
