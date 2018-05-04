@@ -23,7 +23,6 @@ package org.apache.bookkeeper.bookie;
 import static org.apache.bookkeeper.common.concurrent.FutureUtils.complete;
 import static org.apache.bookkeeper.common.concurrent.FutureUtils.result;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertSame;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
@@ -34,13 +33,10 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import java.io.File;
-import java.util.Arrays;
-import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.bookkeeper.bookie.BookieException.BookieUnauthorizedAccessException;
 import org.apache.bookkeeper.client.api.BKException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
@@ -192,56 +188,6 @@ public class BookieWriteToJournalTest {
         result(latchForceLedger2);
 
         b.shutdown();
-    }
-
-    /**
-     * test that Bookie forceLedger fails with a bad master key.
-     */
-    @Test(expected = BookieUnauthorizedAccessException.class)
-    public void testForceLedgerBadMasterKey() throws Exception {
-
-        File journalDir = tempDir.newFolder();
-        Bookie.checkDirectoryStructure(Bookie.getCurrentDirectory(journalDir));
-        File ledgerDir = tempDir.newFolder();
-        Bookie.checkDirectoryStructure(Bookie.getCurrentDirectory(ledgerDir));
-        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
-        conf.setJournalDirName(journalDir.getPath())
-                .setLedgerDirNames(new String[]{ledgerDir.getPath()});
-
-        Bookie b = new Bookie(conf);
-        try {
-            b.start();
-
-            long ledgerId = 1;
-            long entryId = 0;
-            Object expectedCtx = "foo";
-            final ByteBuf data = buildEntry(ledgerId, entryId, -1);
-            byte[] masterKey = new byte[64];
-            Random random = new Random();
-            random.nextBytes(masterKey);
-
-            CompletableFuture<Long> latchForceLedger1 = new CompletableFuture<>();
-            b.forceLedger(ledgerId, (int rc, long ledgerId1, long entryId1,
-                    BookieSocketAddress addr, Object ctx) -> {
-                if (rc != BKException.Code.OK) {
-                    latchForceLedger1.completeExceptionally(org.apache.bookkeeper.client.BKException.create(rc));
-                    return;
-                }
-                complete(latchForceLedger1, null);
-            }, expectedCtx, masterKey);
-            result(latchForceLedger1);
-
-            byte[] badMasterKey = new byte[64];
-            random.nextBytes(badMasterKey);
-            assertFalse(Arrays.equals(masterKey, badMasterKey));
-
-            // second master key is different from the first seen
-            b.forceLedger(ledgerId, (int rc, long ledgerId1, long entryId1,
-                    BookieSocketAddress addr, Object ctx) -> {
-            }, expectedCtx, badMasterKey);
-        } finally {
-            b.shutdown();
-        }
     }
 
     private static ByteBuf buildEntry(long ledgerId, long entryId, long lastAddConfirmed) {

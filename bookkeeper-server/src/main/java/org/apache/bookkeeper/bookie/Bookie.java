@@ -141,11 +141,11 @@ public class Bookie extends BookieCriticalThread {
     private final StatsLogger statsLogger;
     private final Counter writeBytes;
     private final Counter readBytes;
+    private final Counter forceLedgerOps;
     // Bookie Operation Latency Stats
     private final OpStatsLogger addEntryStats;
     private final OpStatsLogger recoveryAddEntryStats;
     private final OpStatsLogger readEntryStats;
-    private final OpStatsLogger forceLedgerStats;
     // Bookie Operation Bytes Stats
     private final OpStatsLogger addBytesStats;
     private final OpStatsLogger readBytesStats;
@@ -737,8 +737,8 @@ public class Bookie extends BookieCriticalThread {
         // Expose Stats
         writeBytes = statsLogger.getCounter(WRITE_BYTES);
         readBytes = statsLogger.getCounter(READ_BYTES);
+        forceLedgerOps = statsLogger.getCounter(BOOKIE_FORCE_LEDGER);
         addEntryStats = statsLogger.getOpStatsLogger(BOOKIE_ADD_ENTRY);
-        forceLedgerStats = statsLogger.getOpStatsLogger(BOOKIE_FORCE_LEDGER);
         recoveryAddEntryStats = statsLogger.getOpStatsLogger(BOOKIE_RECOVERY_ADD_ENTRY);
         readEntryStats = statsLogger.getOpStatsLogger(BOOKIE_READ_ENTRY);
         addBytesStats = statsLogger.getOpStatsLogger(BOOKIE_ADD_ENTRY_BYTES);
@@ -1131,23 +1131,6 @@ public class Bookie extends BookieCriticalThread {
         getJournal(ledgerId).logAddEntry(entry, ackBeforeSync, cb, ctx);
     }
 
-    /**
-     * Force write on the journal assigned to the given ledger.
-     * It works like a regular addEntry with ackBeforeSync=false.
-     */
-    private void forceLedgerInternal(long ledgerId,
-                                     WriteCallback cb, Object ctx, byte[] masterKey)
-            throws IOException, BookieException {
-
-        ensureLedgerOnMasterKeyCache(ledgerId, masterKey);
-
-        if (LOG.isTraceEnabled()) {
-            LOG.trace("Forcing ledger {}", ledgerId);
-        }
-        Journal journal = getJournal(ledgerId);
-        journal.forceLedger(ledgerId, cb, ctx);
-    }
-
     private void ensureLedgerOnMasterKeyCache(long ledgerId, byte[] masterKey) {
         // journal `addEntry` should happen after the entry is added to ledger storage.
         // otherwise the journal entry can potentially be rolled before the ledger is created in ledger storage.
@@ -1228,32 +1211,18 @@ public class Bookie extends BookieCriticalThread {
 
     /**
      * Force sync given 'ledgerId' entries on the journal to the disk.
-     * This is useful for ledgers with DEFERRED_SYNC write flag
-     * for which the client receives acknoledgement for writes
-     * without the guarantee that data has been sync'd to disk (ackBeforeSync=true).
+     * It works like a regular addEntry with ackBeforeSync=false.
+     * This is useful for ledgers with DEFERRED_SYNC write flag.
      */
     public void forceLedger(long ledgerId, WriteCallback cb,
-                            Object ctx, byte[] masterKey)
-                throws IOException, BookieException {
-        long requestNanos = MathUtils.nowInNano();
-        boolean success = false;
-        try {
-            LedgerDescriptor handle = handles.getHandle(ledgerId, masterKey);
-            synchronized (handle) {
-                forceLedgerInternal(ledgerId, cb, ctx, masterKey);
-            }
-            success = true;
-        } catch (NoWritableLedgerDirException e) {
-            stateManager.transitionToReadOnlyMode();
-            throw new IOException(e);
-        } finally {
-            long elapsedNanos = MathUtils.elapsedNanos(requestNanos);
-            if (success) {
-                forceLedgerStats.registerSuccessfulEvent(elapsedNanos, TimeUnit.NANOSECONDS);
-            } else {
-                forceLedgerStats.registerFailedEvent(elapsedNanos, TimeUnit.NANOSECONDS);
-            }
+                            Object ctx, byte[] masterKey) {
+        if (LOG.isTraceEnabled()) {
+            LOG.trace("Forcing ledger {}", ledgerId);
         }
+        ensureLedgerOnMasterKeyCache(ledgerId, masterKey);
+        Journal journal = getJournal(ledgerId);
+        journal.forceLedger(ledgerId, cb, ctx);
+        forceLedgerOps.inc();
     }
 
     /**
