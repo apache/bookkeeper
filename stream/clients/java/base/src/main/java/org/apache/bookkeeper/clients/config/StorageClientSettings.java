@@ -20,7 +20,6 @@ package org.apache.bookkeeper.clients.config;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
-import com.google.common.base.Supplier;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.NameResolver;
 import java.util.List;
