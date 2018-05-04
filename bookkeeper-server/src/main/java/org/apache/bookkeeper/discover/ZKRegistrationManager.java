@@ -108,11 +108,17 @@ public class ZKRegistrationManager implements RegistrationManager {
     public ZKRegistrationManager(ServerConfiguration conf,
                                  ZooKeeper zk,
                                  RegistrationListener listener) {
+        this(conf, zk, ZKMetadataDriverBase.resolveZkLedgersRootPath(conf), listener);
+    }
+
+    public ZKRegistrationManager(ServerConfiguration conf,
+                                 ZooKeeper zk,
+                                 String ledgersRootPath,
+                                 RegistrationListener listener) {
         this.conf = conf;
         this.zk = zk;
         this.zkAcls = ZkUtils.getACLs(conf);
-
-        this.ledgersRootPath = ZKMetadataDriverBase.resolveZkLedgersRootPath(conf);
+        this.ledgersRootPath = ledgersRootPath;
         this.cookiePath = ledgersRootPath + "/" + COOKIE_NODE;
         this.bookieRegistrationPath = ledgersRootPath + "/" + AVAILABLE_NODE;
         this.bookieReadonlyRegistrationPath = this.bookieRegistrationPath + "/" + READONLY;
