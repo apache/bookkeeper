@@ -532,7 +532,9 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
                 }
                 return addrs;
             }
-            // pick nodes by racks, to ensure there is at least two racks per write quorum.
+            // pick nodes by racks, to ensure there is at least write quorum number of racks.
+            int idx = 0;
+            String[] racks = new String[ensembleSize];
             for (int i = 0; i < ensembleSize; i++) {
                 String curRack;
                 if (null == prevNode) {
@@ -542,9 +544,58 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
                         curRack = localNode.getNetworkLocation();
                     }
                 } else {
-                    curRack = "~" + prevNode.getNetworkLocation();
+                    StringBuilder sb = new StringBuilder();
+                    sb.append("~");
+
+                    if (writeQuorumSize > 1) {
+                        /*
+                         * Ideally RackAwareEnsemblePlacementPolicy should try
+                         * to select bookies from different racks for a write
+                         * quorum. So in a WriteQuorum, bookies should be from
+                         * WriteQuorum number of racks. So we would add racks of
+                         * (WriteQuorumSize-1) neighbours (both sides) to the
+                         * exclusion list (~curRack).
+                         */
+                        for (int j = 1; j < writeQuorumSize; j++) {
+                            int nextIndex = i + j;
+                            if (nextIndex >= ensembleSize) {
+                                nextIndex %= ensembleSize;
+                            }
+                            /*
+                             * if racks[nextIndex] is null, then it means bookie
+                             * is not yet selected for ensemble at 'nextIndex'
+                             * index.
+                             */
+                            if (racks[nextIndex] != null) {
+                                if (!((sb.length() == 1) && (sb.charAt(0) == '~'))) {
+                                    sb.append(NetworkTopologyImpl.NODE_SEPARATOR);
+                                }
+                                sb.append(racks[nextIndex]);
+                            }
+                        }
+
+                        for (int j = 1; j < writeQuorumSize; j++) {
+                            int nextIndex = i - j;
+                            if (nextIndex < 0) {
+                                nextIndex += ensembleSize;
+                            }
+                            /*
+                             * if racks[nextIndex] is null, then it means bookie
+                             * is not yet selected for ensemble at 'nextIndex'
+                             * index.
+                             */
+                            if (racks[nextIndex] != null) {
+                                if (!((sb.length() == 1) && (sb.charAt(0) == '~'))) {
+                                    sb.append(NetworkTopologyImpl.NODE_SEPARATOR);
+                                }
+                                sb.append(racks[nextIndex]);
+                            }
+                        }
+                    }
+                    curRack = sb.toString();
                 }
                 prevNode = selectFromNetworkLocation(curRack, excludeNodes, ensemble, ensemble);
+                racks[i] = prevNode.getNetworkLocation();
             }
             ArrayList<BookieSocketAddress> bookieList = ensemble.toList();
             if (ensembleSize != bookieList.size()) {

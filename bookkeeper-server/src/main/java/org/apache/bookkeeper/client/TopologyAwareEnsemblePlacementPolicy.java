@@ -133,12 +133,13 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
                 if (writeQuorumSize < 2) {
                     return true;
                 }
-
-                if (seenBookies + 1 == writeQuorumSize) {
-                    return racksOrRegionsInQuorum.size()
-                        > (racksOrRegionsInQuorum.contains(candidate.getNetworkLocation(distanceFromLeaves)) ? 1 : 0);
-                }
-                return true;
+                /*
+                 * Ideally RackAwareEnsemblePlacementPolicy should try to select
+                 * bookies from different racks for a write quorum. So in a
+                 * WriteQuorum, bookies should be from WriteQuorum number of
+                 * racks.
+                 */
+                return !racksOrRegionsInQuorum.contains(candidate.getNetworkLocation(distanceFromLeaves));
             }
 
             @Override

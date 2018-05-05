@@ -95,14 +95,19 @@ public class TestRackawarePolicyNotificationUpdates extends TestCase {
         StaticDNSResolver.addNodeToRack(addr2.getHostName(), "/default-region/rack-2");
         StaticDNSResolver.addNodeToRack(addr3.getHostName(), "/default-region/rack-2");
         StaticDNSResolver.addNodeToRack(addr4.getHostName(), "/default-region/rack-2");
+        int numOfAvailableRacks = 2;
 
         // Update cluster
         Set<BookieSocketAddress> addrs = Sets.newHashSet(addr1, addr2, addr3, addr4);
         repp.onClusterChanged(addrs, new HashSet<>());
 
-        ArrayList<BookieSocketAddress> ensemble = repp.newEnsemble(3, 2, 2, Collections.emptyMap(),
-                Collections.emptySet());
-        int numCovered = TestRackawareEnsemblePlacementPolicy.getNumCoveredWriteQuorums(ensemble, 2);
+        int ensembleSize = 3;
+        int writeQuorumSize = 2;
+        int acqQuorumSize = 2;
+        ArrayList<BookieSocketAddress> ensemble = repp.newEnsemble(ensembleSize, writeQuorumSize, acqQuorumSize,
+                Collections.emptyMap(), Collections.emptySet());
+        int numCovered = TestRackawareEnsemblePlacementPolicy.getNumCoveredWriteQuorums(ensemble, writeQuorumSize,
+                numOfAvailableRacks);
         assertTrue(numCovered >= 1 && numCovered < 3);
         assertTrue(ensemble.contains(addr1));
 
@@ -111,9 +116,12 @@ public class TestRackawarePolicyNotificationUpdates extends TestCase {
         bookieAddressList.add(addr2);
         rackList.add("/default-region/rack-3");
         StaticDNSResolver.changeRack(bookieAddressList, rackList);
-
-        ensemble = repp.newEnsemble(3, 2, 1, Collections.emptyMap(), Collections.emptySet());
-        assertEquals(3, TestRackawareEnsemblePlacementPolicy.getNumCoveredWriteQuorums(ensemble, 2));
+        numOfAvailableRacks = numOfAvailableRacks + 1;
+        acqQuorumSize = 1;
+        ensemble = repp.newEnsemble(ensembleSize, writeQuorumSize, acqQuorumSize, Collections.emptyMap(),
+                Collections.emptySet());
+        assertEquals(3, TestRackawareEnsemblePlacementPolicy.getNumCoveredWriteQuorums(ensemble, writeQuorumSize,
+                numOfAvailableRacks));
         assertTrue(ensemble.contains(addr1));
         assertTrue(ensemble.contains(addr2));
     }
