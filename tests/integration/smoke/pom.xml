@@ -45,6 +45,7 @@
         <configuration>
           <!-- smoke test should never flake //-->
           <rerunFailingTestsCount>0</rerunFailingTestsCount>
+          <redirectTestOutputToFile>${redirectTestOutputToFile}</redirectTestOutputToFile>
         </configuration>
       </plugin>
     </plugins>
