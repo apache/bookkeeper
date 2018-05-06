@@ -130,7 +130,6 @@ message WriteLacRequest {
 
 message ForceLedgerRequest {
     required int64 ledgerId = 1;
-    required bytes masterKey = 2;
 }
 
 message ReadLacRequest {

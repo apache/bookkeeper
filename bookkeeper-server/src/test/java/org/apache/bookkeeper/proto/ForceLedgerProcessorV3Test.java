@@ -29,7 +29,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.google.protobuf.ByteString;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelPromise;
 import io.netty.channel.DefaultChannelPromise;
@@ -69,7 +68,6 @@ public class ForceLedgerProcessorV3Test {
                 .build())
             .setForceLedgerRequest(ForceLedgerRequest.newBuilder()
                 .setLedgerId(System.currentTimeMillis())
-                .setMasterKey(ByteString.copyFrom(new byte[0]))
                 .build())
             .build();
         channel = mock(Channel.class);
@@ -142,8 +140,7 @@ public class ForceLedgerProcessorV3Test {
         }).when(bookie).forceLedger(
             eq(request.getForceLedgerRequest().getLedgerId()),
             any(WriteCallback.class),
-            same(channel),
-            eq(new byte[0]));
+            same(channel));
 
         ChannelPromise promise = new DefaultChannelPromise(channel);
         AtomicReference<Object> writtenObject = new AtomicReference<>();
@@ -158,7 +155,7 @@ public class ForceLedgerProcessorV3Test {
 
         verify(bookie, times(1))
             .forceLedger(eq(request.getForceLedgerRequest().getLedgerId()),
-                    any(WriteCallback.class), same(channel), eq(new byte[0]));
+                    any(WriteCallback.class), same(channel));
         verify(channel, times(1)).writeAndFlush(any(Response.class));
 
         latch.await();

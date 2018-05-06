@@ -98,9 +98,8 @@ class ForceLedgerProcessorV3 extends PacketProcessorBaseV3 implements Runnable {
             }
         };
         StatusCode status = null;
-        byte[] masterKey = forceLedgerRequest.getMasterKey().toByteArray();
         try {
-            requestProcessor.getBookie().forceLedger(ledgerId, wcb, channel, masterKey);
+            requestProcessor.getBookie().forceLedger(ledgerId, wcb, channel);
             status = StatusCode.EOK;
         } catch (Throwable t) {
             logger.error("Unexpected exception while forcing ledger {} : ", ledgerId, t);
