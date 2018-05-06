@@ -245,7 +245,7 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
         // becasue of delayed write errors
         Map <Integer, BookieSocketAddress> delayedWriteFailedBookies = lh.getDelayedWriteFailedBookies();
         if (!delayedWriteFailedBookies.isEmpty()) {
-            lh.handleDelayeWriteBookieFailure();
+            lh.handleDelayedWriteBookieFailure();
         }
         // Iterate over set and trigger the sendWriteRequests
         DistributionSchedule.WriteSet writeSet = lh.distributionSchedule.getWriteSet(entryId);

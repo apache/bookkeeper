@@ -118,7 +118,7 @@ public class LedgerHandle implements WriteHandle {
     ScheduledFuture<?> timeoutFuture = null;
 
     final long waitForWriteSetMs;
-    Map<Integer, BookieSocketAddress> delayedWriteFailedBookies = new HashMap<Integer, BookieSocketAddress>();
+    private Map<Integer, BookieSocketAddress> delayedWriteFailedBookies = new HashMap<Integer, BookieSocketAddress>();
 
     /**
      * Invalid entry id. This value is returned from methods which
@@ -1755,7 +1755,7 @@ public class LedgerHandle implements WriteHandle {
         return new EnsembleInfo(newEnsemble, failedBookies, replacedBookies);
     }
 
-    void handleDelayeWriteBookieFailure() {
+    void handleDelayedWriteBookieFailure() {
         int curBlockAddCompletions = blockAddCompletions.get();
         if (bk.getDisableEnsembleChangeFeature().isAvailable()) {
             if (LOG.isDebugEnabled()) {

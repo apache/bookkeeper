@@ -303,7 +303,7 @@ public class BookieWriteLedgerTest extends
             lh.addEntry(entry.array());
         }
         // Sleep to receive delayed error on the write directed to the sleeping bookie
-        Thread.sleep(baseClientConf.getAddEntryTimeout() * 1000 * 2 );
+        Thread.sleep(baseClientConf.getAddEntryTimeout() * 1000 * 2);
         assertTrue(
                 "Stats should have captured a new UnderReplication during write",
                 bkc.getTestStatsProvider().getCounter(
