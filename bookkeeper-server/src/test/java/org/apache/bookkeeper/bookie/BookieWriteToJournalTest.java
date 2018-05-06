@@ -163,7 +163,7 @@ public class BookieWriteToJournalTest {
                 return;
             }
             complete(latchForceLedger1, null);
-        }, expectedCtx, masterKey);
+        }, expectedCtx);
         result(latchForceLedger1);
 
         b.addEntry(data, true /* ackBeforesync */, (int rc, long ledgerId1, long entryId1,
@@ -184,7 +184,7 @@ public class BookieWriteToJournalTest {
                 return;
             }
             complete(latchForceLedger2, null);
-        }, expectedCtx, masterKey);
+        }, expectedCtx);
         result(latchForceLedger2);
 
         b.shutdown();

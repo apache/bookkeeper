@@ -1123,15 +1123,6 @@ public class Bookie extends BookieCriticalThread {
 
         writeBytes.add(entry.readableBytes());
 
-        ensureLedgerOnMasterKeyCache(ledgerId, masterKey);
-
-        if (LOG.isTraceEnabled()) {
-            LOG.trace("Adding {}@{}", entryId, ledgerId);
-        }
-        getJournal(ledgerId).logAddEntry(entry, ackBeforeSync, cb, ctx);
-    }
-
-    private void ensureLedgerOnMasterKeyCache(long ledgerId, byte[] masterKey) {
         // journal `addEntry` should happen after the entry is added to ledger storage.
         // otherwise the journal entry can potentially be rolled before the ledger is created in ledger storage.
         if (masterKeyCache.get(ledgerId) == null) {
@@ -1149,6 +1140,11 @@ public class Bookie extends BookieCriticalThread {
                 getJournal(ledgerId).logAddEntry(bb, false /* ackBeforeSync */, new NopWriteCallback(), null);
             }
         }
+
+        if (LOG.isTraceEnabled()) {
+            LOG.trace("Adding {}@{}", entryId, ledgerId);
+        }
+        getJournal(ledgerId).logAddEntry(entry, ackBeforeSync, cb, ctx);
     }
 
     /**
@@ -1215,11 +1211,10 @@ public class Bookie extends BookieCriticalThread {
      * This is useful for ledgers with DEFERRED_SYNC write flag.
      */
     public void forceLedger(long ledgerId, WriteCallback cb,
-                            Object ctx, byte[] masterKey) {
+                            Object ctx) {
         if (LOG.isTraceEnabled()) {
             LOG.trace("Forcing ledger {}", ledgerId);
         }
-        ensureLedgerOnMasterKeyCache(ledgerId, masterKey);
         Journal journal = getJournal(ledgerId);
         journal.forceLedger(ledgerId, cb, ctx);
         forceLedgerOps.inc();
