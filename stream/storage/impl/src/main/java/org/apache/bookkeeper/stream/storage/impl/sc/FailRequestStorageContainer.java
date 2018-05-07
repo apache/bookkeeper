@@ -63,8 +63,8 @@ public final class FailRequestStorageContainer implements StorageContainer {
     }
 
     @Override
-    public CompletableFuture<Void> start() {
-        return CompletableFuture.completedFuture(null);
+    public CompletableFuture<StorageContainer> start() {
+        return CompletableFuture.completedFuture(this);
     }
 
     @Override
