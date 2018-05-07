@@ -59,15 +59,18 @@ public class PrometheusMetricsProvider implements StatsProvider {
 
     private ScheduledExecutorService executor;
 
-    private static final String PROMETHEUS_STATS_HTTP_PORT = "prometheusStatsHttpPort";
-    private static final int DEFAULT_PROMETHEUS_STATS_HTTP_PORT = 8000;
+    public static final String PROMETHEUS_STATS_HTTP_ENABLE = "prometheusStatsHttpEnable";
+    public static final boolean DEFAULT_PROMETHEUS_STATS_HTTP_ENABLE = true;
 
-    private static final String PROMETHEUS_STATS_LATENCY_ROLLOVER_SECONDS = "prometheusStatsLatencyRolloverSeconds";
-    private static final int DEFAULT_PROMETHEUS_STATS_LATENCY_ROLLOVER_SECONDS = 60;
+    public static final String PROMETHEUS_STATS_HTTP_PORT = "prometheusStatsHttpPort";
+    public static final int DEFAULT_PROMETHEUS_STATS_HTTP_PORT = 8000;
 
-    final CollectorRegistry registry = new CollectorRegistry();
+    public static final String PROMETHEUS_STATS_LATENCY_ROLLOVER_SECONDS = "prometheusStatsLatencyRolloverSeconds";
+    public static final int DEFAULT_PROMETHEUS_STATS_LATENCY_ROLLOVER_SECONDS = 60;
 
-    private Server server;
+    final CollectorRegistry registry;
+
+    Server server;
     private final CachingStatsProvider cachingStatsProvider;
 
     /*
@@ -78,6 +81,11 @@ public class PrometheusMetricsProvider implements StatsProvider {
     final ConcurrentMap<String, DataSketchesOpStatsLogger> opStats = new ConcurrentSkipListMap<>();
 
     public PrometheusMetricsProvider() {
+        this(new CollectorRegistry());
+    }
+
+    public PrometheusMetricsProvider(CollectorRegistry registry) {
+        this.registry = registry;
         this.cachingStatsProvider = new CachingStatsProvider(new StatsProvider() {
             @Override
             public void start(Configuration conf) {
@@ -98,19 +106,23 @@ public class PrometheusMetricsProvider implements StatsProvider {
 
     @Override
     public void start(Configuration conf) {
-        int httpPort = conf.getInt(PROMETHEUS_STATS_HTTP_PORT, DEFAULT_PROMETHEUS_STATS_HTTP_PORT);
-        InetSocketAddress httpEndpoint = InetSocketAddress.createUnresolved("0.0.0.0", httpPort);
-        this.server = new Server(httpEndpoint);
-        ServletContextHandler context = new ServletContextHandler();
-        context.setContextPath("/");
-        server.setHandler(context);
+        boolean httpEnabled = conf.getBoolean(PROMETHEUS_STATS_HTTP_ENABLE, DEFAULT_PROMETHEUS_STATS_HTTP_ENABLE);
+        if (httpEnabled) {
+            int httpPort = conf.getInt(PROMETHEUS_STATS_HTTP_PORT, DEFAULT_PROMETHEUS_STATS_HTTP_PORT);
+            InetSocketAddress httpEndpoint = InetSocketAddress.createUnresolved("0.0.0.0", httpPort);
+            this.server = new Server(httpEndpoint);
+            ServletContextHandler context = new ServletContextHandler();
+            context.setContextPath("/");
+            server.setHandler(context);
 
-        context.addServlet(new ServletHolder(new PrometheusServlet(this)), "/metrics");
+            context.addServlet(new ServletHolder(new PrometheusServlet(this)), "/metrics");
 
-        try {
-            server.start();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+            try {
+                server.start();
+                log.info("Started Prometheus stats endpoint at {}", httpEndpoint);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
         }
 
         // Include standard JVM stats
@@ -143,7 +155,6 @@ public class PrometheusMetricsProvider implements StatsProvider {
             rotateLatencyCollection();
         }, 1, latencyRolloverSeconds, TimeUnit.SECONDS);
 
-        log.info("Started Prometheus stats endpoint at {}", httpEndpoint);
     }
 
     @Override
