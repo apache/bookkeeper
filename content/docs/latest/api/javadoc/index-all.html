@@ -1548,6 +1548,12 @@
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/AbstractConfiguration.html#DEFAULT_NETTY_MAX_FRAME_SIZE">DEFAULT_NETTY_MAX_FRAME_SIZE</a></span> - Static variable in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/prometheus/PrometheusMetricsProvider.html#DEFAULT_PROMETHEUS_STATS_HTTP_ENABLE">DEFAULT_PROMETHEUS_STATS_HTTP_ENABLE</a></span> - Static variable in class org.apache.bookkeeper.stats.prometheus.<a href="org/apache/bookkeeper/stats/prometheus/PrometheusMetricsProvider.html" title="class in org.apache.bookkeeper.stats.prometheus">PrometheusMetricsProvider</a></dt>
+<dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/prometheus/PrometheusMetricsProvider.html#DEFAULT_PROMETHEUS_STATS_HTTP_PORT">DEFAULT_PROMETHEUS_STATS_HTTP_PORT</a></span> - Static variable in class org.apache.bookkeeper.stats.prometheus.<a href="org/apache/bookkeeper/stats/prometheus/PrometheusMetricsProvider.html" title="class in org.apache.bookkeeper.stats.prometheus">PrometheusMetricsProvider</a></dt>
+<dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/prometheus/PrometheusMetricsProvider.html#DEFAULT_PROMETHEUS_STATS_LATENCY_ROLLOVER_SECONDS">DEFAULT_PROMETHEUS_STATS_LATENCY_ROLLOVER_SECONDS</a></span> - Static variable in class org.apache.bookkeeper.stats.prometheus.<a href="org/apache/bookkeeper/stats/prometheus/PrometheusMetricsProvider.html" title="class in org.apache.bookkeeper.stats.prometheus">PrometheusMetricsProvider</a></dt>
+<dd>&nbsp;</dd>
 <dt><a href="org/apache/bookkeeper/client/DefaultEnsemblePlacementPolicy.html" title="class in org.apache.bookkeeper.client"><span class="typeNameLink">DefaultEnsemblePlacementPolicy</span></a> - Class in <a href="org/apache/bookkeeper/client/package-summary.html">org.apache.bookkeeper.client</a></dt>
 <dd>
 <div class="block">Default Ensemble Placement Policy, which picks bookies randomly.</div>
@@ -11266,11 +11272,19 @@
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerFragmentReplicator.SingleFragmentCallback.html#processResult-int-java.lang.String-java.lang.Object-">processResult(int, String, Object)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerFragmentReplicator.SingleFragmentCallback.html" title="class in org.apache.bookkeeper.client">LedgerFragmentReplicator.SingleFragmentCallback</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/prometheus/PrometheusMetricsProvider.html#PROMETHEUS_STATS_HTTP_ENABLE">PROMETHEUS_STATS_HTTP_ENABLE</a></span> - Static variable in class org.apache.bookkeeper.stats.prometheus.<a href="org/apache/bookkeeper/stats/prometheus/PrometheusMetricsProvider.html" title="class in org.apache.bookkeeper.stats.prometheus">PrometheusMetricsProvider</a></dt>
+<dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/prometheus/PrometheusMetricsProvider.html#PROMETHEUS_STATS_HTTP_PORT">PROMETHEUS_STATS_HTTP_PORT</a></span> - Static variable in class org.apache.bookkeeper.stats.prometheus.<a href="org/apache/bookkeeper/stats/prometheus/PrometheusMetricsProvider.html" title="class in org.apache.bookkeeper.stats.prometheus">PrometheusMetricsProvider</a></dt>
+<dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/prometheus/PrometheusMetricsProvider.html#PROMETHEUS_STATS_LATENCY_ROLLOVER_SECONDS">PROMETHEUS_STATS_LATENCY_ROLLOVER_SECONDS</a></span> - Static variable in class org.apache.bookkeeper.stats.prometheus.<a href="org/apache/bookkeeper/stats/prometheus/PrometheusMetricsProvider.html" title="class in org.apache.bookkeeper.stats.prometheus">PrometheusMetricsProvider</a></dt>
+<dd>&nbsp;</dd>
 <dt><a href="org/apache/bookkeeper/stats/prometheus/PrometheusMetricsProvider.html" title="class in org.apache.bookkeeper.stats.prometheus"><span class="typeNameLink">PrometheusMetricsProvider</span></a> - Class in <a href="org/apache/bookkeeper/stats/prometheus/package-summary.html">org.apache.bookkeeper.stats.prometheus</a></dt>
 <dd>
 <div class="block">A <i>Prometheus</i> based <a href="org/apache/bookkeeper/stats/StatsProvider.html" title="interface in org.apache.bookkeeper.stats"><code>StatsProvider</code></a> implementation.</div>
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/prometheus/PrometheusMetricsProvider.html#PrometheusMetricsProvider--">PrometheusMetricsProvider()</a></span> - Constructor for class org.apache.bookkeeper.stats.prometheus.<a href="org/apache/bookkeeper/stats/prometheus/PrometheusMetricsProvider.html" title="class in org.apache.bookkeeper.stats.prometheus">PrometheusMetricsProvider</a></dt>
+<dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/prometheus/PrometheusMetricsProvider.html#PrometheusMetricsProvider-io.prometheus.client.CollectorRegistry-">PrometheusMetricsProvider(CollectorRegistry)</a></span> - Constructor for class org.apache.bookkeeper.stats.prometheus.<a href="org/apache/bookkeeper/stats/prometheus/PrometheusMetricsProvider.html" title="class in org.apache.bookkeeper.stats.prometheus">PrometheusMetricsProvider</a></dt>
 <dd>&nbsp;</dd>
 <dt><a href="org/apache/bookkeeper/stats/prometheus/PrometheusServlet.html" title="class in org.apache.bookkeeper.stats.prometheus"><span class="typeNameLink">PrometheusServlet</span></a> - Class in <a href="org/apache/bookkeeper/stats/prometheus/package-summary.html">org.apache.bookkeeper.stats.prometheus</a></dt>
 <dd>
@@ -12126,6 +12140,8 @@
 <div class="block">Generates a byte array of this object.</div>
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerMetadata.html#serialize-boolean-">serialize(boolean)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a></dt>
+<dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/prometheus/PrometheusMetricsProvider.html#server">server</a></span> - Variable in class org.apache.bookkeeper.stats.prometheus.<a href="org/apache/bookkeeper/stats/prometheus/PrometheusMetricsProvider.html" title="class in org.apache.bookkeeper.stats.prometheus">PrometheusMetricsProvider</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#SERVER_SOCK_KEEPALIVE">SERVER_SOCK_KEEPALIVE</a></span> - Static variable in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
 <dd>&nbsp;</dd>

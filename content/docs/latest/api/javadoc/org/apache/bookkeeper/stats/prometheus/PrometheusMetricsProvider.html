@@ -140,16 +140,44 @@ implements <a href="../../../../../org/apache/bookkeeper/stats/StatsProvider.htm
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/stats/prometheus/PrometheusMetricsProvider.html#counters">counters</a></span></code>&nbsp;</td>
 </tr>
 <tr class="rowColor">
+<td class="colFirst"><code>static boolean</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/stats/prometheus/PrometheusMetricsProvider.html#DEFAULT_PROMETHEUS_STATS_HTTP_ENABLE">DEFAULT_PROMETHEUS_STATS_HTTP_ENABLE</a></span></code>&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>static int</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/stats/prometheus/PrometheusMetricsProvider.html#DEFAULT_PROMETHEUS_STATS_HTTP_PORT">DEFAULT_PROMETHEUS_STATS_HTTP_PORT</a></span></code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>static int</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/stats/prometheus/PrometheusMetricsProvider.html#DEFAULT_PROMETHEUS_STATS_LATENCY_ROLLOVER_SECONDS">DEFAULT_PROMETHEUS_STATS_LATENCY_ROLLOVER_SECONDS</a></span></code>&nbsp;</td>
+</tr>
+<tr class="altColor">
 <td class="colFirst"><code>(package private) <a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/ConcurrentMap.html?is-external=true" title="class or interface in java.util.concurrent">ConcurrentMap</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>,<a href="../../../../../org/apache/bookkeeper/stats/prometheus/SimpleGauge.html" title="class in org.apache.bookkeeper.stats.prometheus">SimpleGauge</a>&lt;? extends <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Number.html?is-external=true" title="class or interface in java.lang">Number</a>&gt;&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/stats/prometheus/PrometheusMetricsProvider.html#gauges">gauges</a></span></code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>(package private) <a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/ConcurrentMap.html?is-external=true" title="class or interface in java.util.concurrent">ConcurrentMap</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>,<a href="../../../../../org/apache/bookkeeper/stats/prometheus/DataSketchesOpStatsLogger.html" title="class in org.apache.bookkeeper.stats.prometheus">DataSketchesOpStatsLogger</a>&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/stats/prometheus/PrometheusMetricsProvider.html#opStats">opStats</a></span></code>&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>static <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/stats/prometheus/PrometheusMetricsProvider.html#PROMETHEUS_STATS_HTTP_ENABLE">PROMETHEUS_STATS_HTTP_ENABLE</a></span></code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>static <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/stats/prometheus/PrometheusMetricsProvider.html#PROMETHEUS_STATS_HTTP_PORT">PROMETHEUS_STATS_HTTP_PORT</a></span></code>&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>static <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/stats/prometheus/PrometheusMetricsProvider.html#PROMETHEUS_STATS_LATENCY_ROLLOVER_SECONDS">PROMETHEUS_STATS_LATENCY_ROLLOVER_SECONDS</a></span></code>&nbsp;</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>(package private) io.prometheus.client.CollectorRegistry</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/stats/prometheus/PrometheusMetricsProvider.html#registry">registry</a></span></code>&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>(package private) org.eclipse.jetty.server.Server</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/stats/prometheus/PrometheusMetricsProvider.html#server">server</a></span></code>&nbsp;</td>
 </tr>
 </table>
 </li>
@@ -167,6 +195,9 @@ implements <a href="../../../../../org/apache/bookkeeper/stats/StatsProvider.htm
 </tr>
 <tr class="altColor">
 <td class="colOne"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/stats/prometheus/PrometheusMetricsProvider.html#PrometheusMetricsProvider--">PrometheusMetricsProvider</a></span>()</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colOne"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/stats/prometheus/PrometheusMetricsProvider.html#PrometheusMetricsProvider-io.prometheus.client.CollectorRegistry-">PrometheusMetricsProvider</a></span>(io.prometheus.client.CollectorRegistry&nbsp;registry)</code>&nbsp;</td>
 </tr>
 </table>
 </li>
@@ -231,6 +262,84 @@ implements <a href="../../../../../org/apache/bookkeeper/stats/StatsProvider.htm
 <!--   -->
 </a>
 <h3>Field Detail</h3>
+<a name="PROMETHEUS_STATS_HTTP_ENABLE">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>PROMETHEUS_STATS_HTTP_ENABLE</h4>
+<pre>public static final&nbsp;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a> PROMETHEUS_STATS_HTTP_ENABLE</pre>
+<dl>
+<dt><span class="seeLabel">See Also:</span></dt>
+<dd><a href="../../../../../constant-values.html#org.apache.bookkeeper.stats.prometheus.PrometheusMetricsProvider.PROMETHEUS_STATS_HTTP_ENABLE">Constant Field Values</a></dd>
+</dl>
+</li>
+</ul>
+<a name="DEFAULT_PROMETHEUS_STATS_HTTP_ENABLE">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>DEFAULT_PROMETHEUS_STATS_HTTP_ENABLE</h4>
+<pre>public static final&nbsp;boolean DEFAULT_PROMETHEUS_STATS_HTTP_ENABLE</pre>
+<dl>
+<dt><span class="seeLabel">See Also:</span></dt>
+<dd><a href="../../../../../constant-values.html#org.apache.bookkeeper.stats.prometheus.PrometheusMetricsProvider.DEFAULT_PROMETHEUS_STATS_HTTP_ENABLE">Constant Field Values</a></dd>
+</dl>
+</li>
+</ul>
+<a name="PROMETHEUS_STATS_HTTP_PORT">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>PROMETHEUS_STATS_HTTP_PORT</h4>
+<pre>public static final&nbsp;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a> PROMETHEUS_STATS_HTTP_PORT</pre>
+<dl>
+<dt><span class="seeLabel">See Also:</span></dt>
+<dd><a href="../../../../../constant-values.html#org.apache.bookkeeper.stats.prometheus.PrometheusMetricsProvider.PROMETHEUS_STATS_HTTP_PORT">Constant Field Values</a></dd>
+</dl>
+</li>
+</ul>
+<a name="DEFAULT_PROMETHEUS_STATS_HTTP_PORT">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>DEFAULT_PROMETHEUS_STATS_HTTP_PORT</h4>
+<pre>public static final&nbsp;int DEFAULT_PROMETHEUS_STATS_HTTP_PORT</pre>
+<dl>
+<dt><span class="seeLabel">See Also:</span></dt>
+<dd><a href="../../../../../constant-values.html#org.apache.bookkeeper.stats.prometheus.PrometheusMetricsProvider.DEFAULT_PROMETHEUS_STATS_HTTP_PORT">Constant Field Values</a></dd>
+</dl>
+</li>
+</ul>
+<a name="PROMETHEUS_STATS_LATENCY_ROLLOVER_SECONDS">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>PROMETHEUS_STATS_LATENCY_ROLLOVER_SECONDS</h4>
+<pre>public static final&nbsp;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a> PROMETHEUS_STATS_LATENCY_ROLLOVER_SECONDS</pre>
+<dl>
+<dt><span class="seeLabel">See Also:</span></dt>
+<dd><a href="../../../../../constant-values.html#org.apache.bookkeeper.stats.prometheus.PrometheusMetricsProvider.PROMETHEUS_STATS_LATENCY_ROLLOVER_SECONDS">Constant Field Values</a></dd>
+</dl>
+</li>
+</ul>
+<a name="DEFAULT_PROMETHEUS_STATS_LATENCY_ROLLOVER_SECONDS">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>DEFAULT_PROMETHEUS_STATS_LATENCY_ROLLOVER_SECONDS</h4>
+<pre>public static final&nbsp;int DEFAULT_PROMETHEUS_STATS_LATENCY_ROLLOVER_SECONDS</pre>
+<dl>
+<dt><span class="seeLabel">See Also:</span></dt>
+<dd><a href="../../../../../constant-values.html#org.apache.bookkeeper.stats.prometheus.PrometheusMetricsProvider.DEFAULT_PROMETHEUS_STATS_LATENCY_ROLLOVER_SECONDS">Constant Field Values</a></dd>
+</dl>
+</li>
+</ul>
 <a name="registry">
 <!--   -->
 </a>
@@ -238,6 +347,15 @@ implements <a href="../../../../../org/apache/bookkeeper/stats/StatsProvider.htm
 <li class="blockList">
 <h4>registry</h4>
 <pre>final&nbsp;io.prometheus.client.CollectorRegistry registry</pre>
+</li>
+</ul>
+<a name="server">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>server</h4>
+<pre>org.eclipse.jetty.server.Server server</pre>
 </li>
 </ul>
 <a name="counters">
@@ -278,10 +396,19 @@ implements <a href="../../../../../org/apache/bookkeeper/stats/StatsProvider.htm
 <a name="PrometheusMetricsProvider--">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>PrometheusMetricsProvider</h4>
 <pre>public&nbsp;PrometheusMetricsProvider()</pre>
+</li>
+</ul>
+<a name="PrometheusMetricsProvider-io.prometheus.client.CollectorRegistry-">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>PrometheusMetricsProvider</h4>
+<pre>public&nbsp;PrometheusMetricsProvider(io.prometheus.client.CollectorRegistry&nbsp;registry)</pre>
 </li>
 </ul>
 </li>
