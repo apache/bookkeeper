@@ -172,7 +172,7 @@ public class StorageContainerImpl
     }
 
     @Override
-    public CompletableFuture<Void> start() {
+    public CompletableFuture<StorageContainer> start() {
         log.info("Starting storage container ({}) ...", getId());
 
         List<CompletableFuture<Void>> futures = Lists.newArrayList(
@@ -181,7 +181,7 @@ public class StorageContainerImpl
 
         return FutureUtils.collect(futures).thenApply(ignored -> {
             log.info("Successfully started storage container ({}).", getId());
-            return null;
+            return StorageContainerImpl.this;
         });
     }
 

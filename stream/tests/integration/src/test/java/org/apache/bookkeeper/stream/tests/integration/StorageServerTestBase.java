@@ -43,7 +43,7 @@ public abstract class StorageServerTestBase {
     @Rule
     public final TemporaryFolder testDir = new TemporaryFolder();
 
-    protected final StreamClusterSpec spec;
+    protected StreamClusterSpec spec;
     protected StreamCluster cluster;
 
     protected StorageServerTestBase() {
@@ -59,7 +59,7 @@ public abstract class StorageServerTestBase {
 
     @Before
     public void setUp() throws Exception {
-        spec.storageRootDir(testDir.newFolder("tests"));
+        spec = spec.storageRootDir(testDir.newFolder("tests"));
         this.cluster = StreamCluster.build(spec);
         this.cluster.start();
         doSetup();

@@ -31,7 +31,6 @@ import static org.junit.Assert.fail;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
-import java.net.URI;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.api.StorageClient;
@@ -65,11 +64,9 @@ public class TableClientSimpleTest extends StorageServerTestBase {
     private OrderedScheduler scheduler;
     private StorageAdminClient adminClient;
     private StorageClient storageClient;
-    private URI defaultBackendUri;
 
     @Override
     protected void doSetup() throws Exception {
-        defaultBackendUri = URI.create("distributedlog://" + cluster.getZkServers() + "/stream/storage");
         scheduler = OrderedScheduler.newSchedulerBuilder()
             .name("table-client-test")
             .numThreads(1)
@@ -128,7 +125,7 @@ public class TableClientSimpleTest extends StorageServerTestBase {
         assertEquals(streamName, streamProps.getStreamName());
         assertEquals(
             StreamConfiguration.newBuilder(streamConf)
-                .setBackendServiceUrl(defaultBackendUri.toString())
+                .setBackendServiceUrl(cluster.getDefaultBackendUri().toString())
                 .build(),
             streamProps.getStreamConf());
 
