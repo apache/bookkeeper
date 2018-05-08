@@ -56,12 +56,6 @@ class ForceLedgerProcessorV3 extends PacketProcessorBaseV3 implements Runnable {
             return forceLedgerResponse.build();
         }
 
-        if (requestProcessor.getBookie().isReadOnly()) {
-            logger.warn("BookieServer is running as readonly mode, so rejecting the request from the client!");
-            forceLedgerResponse.setStatus(StatusCode.EREADONLY);
-            return forceLedgerResponse.build();
-        }
-
         BookkeeperInternalCallbacks.WriteCallback wcb = new BookkeeperInternalCallbacks.WriteCallback() {
             @Override
             public void writeComplete(int rc, long ledgerId, long entryId,

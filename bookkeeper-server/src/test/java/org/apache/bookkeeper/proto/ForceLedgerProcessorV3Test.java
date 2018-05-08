@@ -84,47 +84,8 @@ public class ForceLedgerProcessorV3Test {
             requestProcessor);
     }
 
-    private void reinitRequest(int priority) {
-        request = Request.newBuilder(request)
-            .setHeader(BKPacketHeader.newBuilder(request.getHeader())
-                .setPriority(priority)
-                .build())
-            .build();
-
-        processor = new ForceLedgerProcessorV3(
-            request,
-            channel,
-            requestProcessor);
-    }
-
     @Test
-    public void testWritesOnReadOnlyBookie() throws Exception {
-        when(bookie.isReadOnly()).thenReturn(true);
-        when(channel.voidPromise()).thenReturn(mock(ChannelPromise.class));
-
-        ChannelPromise promise = new DefaultChannelPromise(channel);
-        AtomicReference<Object> writtenObject = new AtomicReference<>();
-        CountDownLatch latch = new CountDownLatch(1);
-        doAnswer(invocationOnMock -> {
-            writtenObject.set(invocationOnMock.getArgument(0));
-            latch.countDown();
-            return promise;
-        }).when(channel).writeAndFlush(any());
-
-        processor.run();
-
-        verify(channel, times(1)).writeAndFlush(any(Response.class));
-
-        latch.await();
-
-        assertTrue(writtenObject.get() instanceof Response);
-        Response response = (Response) writtenObject.get();
-        assertEquals(StatusCode.EREADONLY, response.getStatus());
-    }
-
-    @Test
-    public void testNormalWritesOnWritableBookie() throws Exception {
-        when(bookie.isReadOnly()).thenReturn(false);
+    public void testForceLedger() throws Exception {
         when(channel.voidPromise()).thenReturn(mock(ChannelPromise.class));
         when(channel.writeAndFlush(any())).thenReturn(mock(ChannelPromise.class));
         doAnswer(invocationOnMock -> {
