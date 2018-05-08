@@ -118,7 +118,8 @@ public class LedgerHandle implements WriteHandle {
     ScheduledFuture<?> timeoutFuture = null;
 
     final long waitForWriteSetMs;
-    private Map<Integer, BookieSocketAddress> delayedWriteFailedBookies = new HashMap<Integer, BookieSocketAddress>();
+    private final Map<Integer, BookieSocketAddress> delayedWriteFailedBookies =
+            new HashMap<Integer, BookieSocketAddress>();
 
     /**
      * Invalid entry id. This value is returned from methods which
