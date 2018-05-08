@@ -20,6 +20,7 @@
  */
 package org.apache.bookkeeper.client.api;
 
+import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.Map;
 import org.apache.bookkeeper.common.annotation.InterfaceAudience.Public;
@@ -74,22 +75,24 @@ public interface CreateBuilder extends OpBuilder<WriteHandle> {
     CreateBuilder withPassword(byte[] password);
 
     /**
-     * Set writeFlags for this handle.
+     * Set write flags. Write flags specify the behaviour of writes
      *
-     * @param writeFlags the writeFlags
+     * @param writeFlags the flags
      *
      * @return the builder itself
      */
     CreateBuilder withWriteFlags(EnumSet<WriteFlag> writeFlags);
 
     /**
-     * Set writeFlags for this handle.
+     * Set write flags. Write flags specify the behaviour of writes
      *
-     * @param writeFlags the writeFlags
+     * @param writeFlags the flags
      *
      * @return the builder itself
      */
-    CreateBuilder withWriteFlags(WriteFlag ... writeFlags);
+    default CreateBuilder withWriteFlags(WriteFlag ... writeFlags) {
+        return withWriteFlags(EnumSet.copyOf(Arrays.asList(writeFlags)));
+    }
 
     /**
      * Set a map a custom data to be attached to the ledger. The application is responsible for the semantics of these
