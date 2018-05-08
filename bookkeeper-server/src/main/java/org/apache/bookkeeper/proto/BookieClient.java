@@ -249,18 +249,6 @@ public class BookieClient implements PerChannelBookieClientFactory {
                          final ByteBufList toSend,
                          final WriteCallback cb,
                          final Object ctx,
-                         final int options) {
-        addEntry(addr, ledgerId, masterKey, entryId, toSend, cb, ctx, options, false,
-                 EnumSet.noneOf(WriteFlag.class));
-    }
-
-    public void addEntry(final BookieSocketAddress addr,
-                         final long ledgerId,
-                         final byte[] masterKey,
-                         final long entryId,
-                         final ByteBufList toSend,
-                         final WriteCallback cb,
-                         final Object ctx,
                          final int options,
                          final boolean allowFastFail,
                          final EnumSet<WriteFlag> writeFlags) {

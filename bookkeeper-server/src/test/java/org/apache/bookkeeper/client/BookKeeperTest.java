@@ -796,7 +796,7 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
                     .withPassword("".getBytes())
                     .withWriteFlags(WriteFlag.DEFERRED_SYNC)
                     .execute())) {
-               result(wh.append("test".getBytes()));
+               result(wh.appendAsync("test".getBytes()));
             }
         }
     }

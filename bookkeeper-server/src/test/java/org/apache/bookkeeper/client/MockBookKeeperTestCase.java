@@ -523,12 +523,6 @@ public abstract class MockBookKeeperTestCase {
                 anyLong(), any(byte[].class),
                 anyLong(), any(ByteBufList.class),
                 any(BookkeeperInternalCallbacks.WriteCallback.class),
-                any(), anyInt());
-
-        stub.when(bookieClient).addEntry(any(BookieSocketAddress.class),
-                anyLong(), any(byte[].class),
-                anyLong(), any(ByteBufList.class),
-                any(BookkeeperInternalCallbacks.WriteCallback.class),
                 any(), anyInt(), anyBoolean(), any(EnumSet.class));
     }
 
