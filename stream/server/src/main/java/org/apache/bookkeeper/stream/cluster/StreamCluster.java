@@ -16,17 +16,20 @@ package org.apache.bookkeeper.stream.cluster;
 
 import static org.apache.bookkeeper.common.concurrent.FutureUtils.result;
 import static org.apache.bookkeeper.stream.protocol.ProtocolConstants.DEFAULT_STREAM_CONF;
+import static org.apache.bookkeeper.stream.storage.StorageConstants.ZK_METADATA_ROOT_PATH;
+import static org.apache.bookkeeper.stream.storage.StorageConstants.getSegmentsRootPath;
+import static org.apache.bookkeeper.stream.storage.StorageConstants.getStoragePath;
 
 import com.google.common.collect.Lists;
 import java.io.File;
 import java.io.IOException;
 import java.net.BindException;
+import java.net.URI;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.clients.StorageClientBuilder;
 import org.apache.bookkeeper.clients.admin.StorageAdminClient;
@@ -35,25 +38,25 @@ import org.apache.bookkeeper.clients.exceptions.NamespaceExistsException;
 import org.apache.bookkeeper.common.component.AbstractLifecycleComponent;
 import org.apache.bookkeeper.common.component.LifecycleComponent;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.meta.MetadataDrivers;
 import org.apache.bookkeeper.shims.zk.ZooKeeperServerShim;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stream.proto.NamespaceConfiguration;
 import org.apache.bookkeeper.stream.proto.NamespaceProperties;
+import org.apache.bookkeeper.stream.proto.cluster.ClusterMetadata;
 import org.apache.bookkeeper.stream.proto.common.Endpoint;
 import org.apache.bookkeeper.stream.server.StorageServer;
-import org.apache.bookkeeper.stream.storage.api.controller.StorageController;
+import org.apache.bookkeeper.stream.storage.StorageConstants;
 import org.apache.bookkeeper.stream.storage.conf.StorageConfiguration;
-import org.apache.bookkeeper.stream.storage.impl.sc.helix.HelixStorageController;
-import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
+import org.apache.bookkeeper.stream.storage.exceptions.StorageRuntimeException;
+import org.apache.bookkeeper.stream.storage.impl.cluster.ZkClusterMetadataStore;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.curator.framework.CuratorFramework;
+import org.apache.curator.framework.CuratorFrameworkFactory;
+import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.apache.distributedlog.DistributedLogConfiguration;
 import org.apache.distributedlog.LocalDLMEmulator;
-import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.KeeperException.Code;
-import org.apache.zookeeper.Transaction;
-import org.apache.zookeeper.ZooDefs;
-import org.apache.zookeeper.ZooKeeper;
 
 /**
  * A Cluster that runs a few storage nodes.
@@ -74,17 +77,10 @@ public class StreamCluster
         return new StreamCluster(spec);
     }
 
-    //
-    // DL Settings
-    //
-    private static final String ROOT_PATH = "/stream";
-    private static final String LEDGERS_PATH = "/stream/ledgers";
-    private static final String LEDGERS_AVAILABLE_PATH = "/stream/ledgers/available";
-    private static final String NAMESPACE = "/stream/storage";
-
-    private static ServerConfiguration newServerConfiguration(String zkEnsemble) {
+    private static ServerConfiguration newBookieConfiguration(String zkEnsemble) {
         ServerConfiguration serverConf = new ServerConfiguration();
-        serverConf.setMetadataServiceUri("zk://" + zkEnsemble + LEDGERS_PATH);
+        serverConf.setMetadataServiceUri(
+            "zk://" + zkEnsemble + getSegmentsRootPath(StorageConstants.ZK_METADATA_ROOT_PATH));
         serverConf.setAllowLoopback(true);
         serverConf.setGcWaitTime(300000);
         serverConf.setDiskUsageWarnThreshold(0.9999f);
@@ -117,8 +113,8 @@ public class StreamCluster
         return rpcEndpoints;
     }
 
-    public String getZkServers() {
-        return zkEnsemble;
+    public URI getDefaultBackendUri() {
+        return URI.create("distributedlog://" + zkEnsemble + getStoragePath(ZK_METADATA_ROOT_PATH));
     }
 
     private void startZooKeeper() throws Exception {
@@ -128,7 +124,7 @@ public class StreamCluster
             return;
         }
 
-        File zkDir = new File(spec.storageRootDir, "zookeeper");
+        File zkDir = new File(spec.storageRootDir(), "zookeeper");
         Pair<ZooKeeperServerShim, Integer> zkServerAndPort =
             LocalDLMEmulator.runZookeeperOnAnyPort(zkDir);
         zks = zkServerAndPort.getLeft();
@@ -145,39 +141,43 @@ public class StreamCluster
     }
 
     private void initializeCluster() throws Exception {
-        log.info("Initializing the stream cluster.");
-        ZooKeeper zkc = null;
-        try (StorageController controller = new HelixStorageController(zkEnsemble)) {
-            zkc = ZooKeeperClient.newBuilder()
-                .connectString(zkEnsemble)
-                .sessionTimeoutMs(60000)
-                .build();
-            Transaction txn = zkc.transaction();
-            txn.create(
-                ROOT_PATH, new byte[0], ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-            txn.create(
-                LEDGERS_PATH, new byte[0], ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-            txn.create(
-                LEDGERS_AVAILABLE_PATH, new byte[0], ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+        try (CuratorFramework client = CuratorFrameworkFactory.newClient(
+            zkEnsemble,
+            new ExponentialBackoffRetry(100, Integer.MAX_VALUE, 10000)
+        )) {
+            client.start();
 
+            ZkClusterMetadataStore store = new ZkClusterMetadataStore(client, zkEnsemble, ZK_METADATA_ROOT_PATH);
+
+            ClusterMetadata metadata;
             try {
-                txn.commit();
-            } catch (KeeperException ke) {
-                if (Code.NODEEXISTS != ke.code()) {
-                    throw ke;
+                metadata = store.getClusterMetadata();
+                log.info("Loaded cluster metadata : \n{}", metadata);
+            } catch (StorageRuntimeException sre) {
+                if (sre.getCause() instanceof KeeperException.NoNodeException) {
+                    log.info("Initializing the stream cluster.");
+                    store.initializeCluster(spec.numServers() * 2);
+                    log.info("Successfully initialized the stream cluster : \n{}", store.getClusterMetadata());
+                } else {
+                    throw sre;
                 }
             }
-
-            log.info("Initialize the bookkeeper metadata.");
-
-            // initialize the storage
-            controller.createCluster("stream/helix", spec.numServers() * 2, 1);
-            log.info("Initialized the helix metadata with {} storage containers.", spec.numServers() * 2);
-        } finally {
-            if (null != zkc) {
-                zkc.close();
-            }
         }
+
+        // format the bookkeeper cluster
+        MetadataDrivers.runFunctionWithMetadataBookieDriver(newBookieConfiguration(zkEnsemble), driver -> {
+            try {
+                boolean initialized = driver.getRegistrationManager().initNewCluster();
+                if (initialized) {
+                    log.info("Successfully initialized the segment storage");
+                } else {
+                    log.info("The segment storage was already initialized");
+                }
+            } catch (Exception e) {
+                throw new StorageRuntimeException("Failed to initialize the segment storage", e);
+            }
+            return null;
+        });
     }
 
     private LifecycleComponent startServer() throws Exception {
@@ -193,7 +193,7 @@ public class StreamCluster
             }
             LifecycleComponent server = null;
             try {
-                ServerConfiguration serverConf = newServerConfiguration(zkEnsemble);
+                ServerConfiguration serverConf = newBookieConfiguration(zkEnsemble);
                 serverConf.setBookiePort(bookiePort);
                 File bkDir = new File(spec.storageRootDir(), "bookie_" + bookiePort);
                 serverConf.setJournalDirName(bkDir.getPath());
@@ -300,9 +300,6 @@ public class StreamCluster
 
             // create default namespaces
             createDefaultNamespaces();
-
-            // wait for 10 seconds
-            TimeUnit.SECONDS.sleep(10);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

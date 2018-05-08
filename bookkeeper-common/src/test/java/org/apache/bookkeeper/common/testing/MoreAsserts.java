@@ -23,6 +23,9 @@ import static org.junit.Assert.assertTrue;
 import com.google.common.collect.Sets;
 import com.google.common.collect.Sets.SetView;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Predicate;
+import java.util.function.Supplier;
 
 /**
  * Assertion utils.
@@ -40,6 +43,12 @@ public final class MoreAsserts {
         assertTrue(
             "Actual set contains items not exist at expected set : " + diff.immutableCopy(),
             diff.isEmpty());
+    }
+
+    public static <T> void assertUtil(Predicate<T> predicate, Supplier<T> supplier) throws InterruptedException {
+        while (!predicate.test(supplier.get())) {
+            TimeUnit.MILLISECONDS.sleep(100);
+        }
     }
 
 }

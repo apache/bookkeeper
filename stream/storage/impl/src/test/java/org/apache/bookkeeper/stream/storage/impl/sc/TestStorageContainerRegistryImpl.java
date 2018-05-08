@@ -69,7 +69,7 @@ public class TestStorageContainerRegistryImpl {
 
     private StorageContainer createStorageContainer() {
         StorageContainer sc = mock(StorageContainer.class);
-        when(sc.start()).thenReturn(FutureUtils.value(null));
+        when(sc.start()).thenReturn(FutureUtils.value(sc));
         when(sc.stop()).thenReturn(FutureUtils.value(null));
         return sc;
     }
