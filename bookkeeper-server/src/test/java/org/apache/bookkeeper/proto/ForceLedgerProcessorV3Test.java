@@ -94,7 +94,7 @@ public class ForceLedgerProcessorV3Test {
             wc.writeComplete(
                 0,
                 request.getForceLedgerRequest().getLedgerId(),
-                -1,
+                Bookie.METAENTRY_ID_FORCE_LEDGER,
                 null,
                 null);
             return null;

@@ -20,10 +20,11 @@
  */
 package org.apache.bookkeeper.proto;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import io.netty.channel.Channel;
-
 import java.util.concurrent.TimeUnit;
-
+import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.ForceLedgerRequest;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.ForceLedgerResponse;
@@ -56,40 +57,41 @@ class ForceLedgerProcessorV3 extends PacketProcessorBaseV3 implements Runnable {
             return forceLedgerResponse.build();
         }
 
-        BookkeeperInternalCallbacks.WriteCallback wcb = new BookkeeperInternalCallbacks.WriteCallback() {
-            @Override
-            public void writeComplete(int rc, long ledgerId, long entryId,
-                                      BookieSocketAddress addr, Object ctx) {
-                if (BookieProtocol.EOK == rc) {
-                    requestProcessor.getForceLedgerStats()
-                            .registerSuccessfulEvent(MathUtils.elapsedNanos(startTimeNanos),
-                            TimeUnit.NANOSECONDS);
-                } else {
-                    requestProcessor.getForceLedgerStats()
-                            .registerFailedEvent(MathUtils.elapsedNanos(startTimeNanos),
-                            TimeUnit.NANOSECONDS);
-                }
+        BookkeeperInternalCallbacks.WriteCallback wcb =
+                (int rc, long ledgerId1, long entryId, BookieSocketAddress addr, Object ctx) -> {
 
-                StatusCode status;
-                switch (rc) {
-                    case BookieProtocol.EOK:
-                        status = StatusCode.EOK;
-                        break;
-                    case BookieProtocol.EIO:
-                        status = StatusCode.EIO;
-                        break;
-                    default:
-                        status = StatusCode.EUA;
-                        break;
-                }
-                forceLedgerResponse.setStatus(status);
-                Response.Builder response = Response.newBuilder()
-                        .setHeader(getHeader())
-                        .setStatus(forceLedgerResponse.getStatus())
-                        .setForceLedgerResponse(forceLedgerResponse);
-                Response resp = response.build();
-                sendResponse(status, resp, requestProcessor.getForceLedgerRequestStats());
+            checkArgument(entryId == Bookie.METAENTRY_ID_FORCE_LEDGER,
+                    "entryId must be METAENTRY_ID_FORCE_LEDGER but was {}", entryId);
+
+            if (BookieProtocol.EOK == rc) {
+                requestProcessor.getForceLedgerStats()
+                        .registerSuccessfulEvent(MathUtils.elapsedNanos(startTimeNanos),
+                                TimeUnit.NANOSECONDS);
+            } else {
+                requestProcessor.getForceLedgerStats()
+                        .registerFailedEvent(MathUtils.elapsedNanos(startTimeNanos),
+                                TimeUnit.NANOSECONDS);
             }
+
+            StatusCode status;
+            switch (rc) {
+                case BookieProtocol.EOK:
+                    status = StatusCode.EOK;
+                    break;
+                case BookieProtocol.EIO:
+                    status = StatusCode.EIO;
+                    break;
+                default:
+                    status = StatusCode.EUA;
+                    break;
+            }
+            forceLedgerResponse.setStatus(status);
+            Response.Builder response = Response.newBuilder()
+                    .setHeader(getHeader())
+                    .setStatus(forceLedgerResponse.getStatus())
+                    .setForceLedgerResponse(forceLedgerResponse);
+            Response resp = response.build();
+            sendResponse(status, resp, requestProcessor.getForceLedgerRequestStats());
         };
         StatusCode status = null;
         try {
