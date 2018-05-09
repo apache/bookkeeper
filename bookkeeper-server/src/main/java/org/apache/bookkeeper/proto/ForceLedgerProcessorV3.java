@@ -63,6 +63,9 @@ class ForceLedgerProcessorV3 extends PacketProcessorBaseV3 implements Runnable {
             checkArgument(entryId == Bookie.METAENTRY_ID_FORCE_LEDGER,
                     "entryId must be METAENTRY_ID_FORCE_LEDGER but was {}", entryId);
 
+            checkArgument(ledgerId1 == ledgerId,
+                    "ledgerId must be {} but was {}", ledgerId, ledgerId1);
+
             if (BookieProtocol.EOK == rc) {
                 requestProcessor.getForceLedgerStats()
                         .registerSuccessfulEvent(MathUtils.elapsedNanos(startTimeNanos),
