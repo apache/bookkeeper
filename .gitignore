@@ -23,6 +23,3 @@ dependency-reduced-pom.xml
 
 # Logs
 logs/
-
-# Vagrant
-**/.vagrant
