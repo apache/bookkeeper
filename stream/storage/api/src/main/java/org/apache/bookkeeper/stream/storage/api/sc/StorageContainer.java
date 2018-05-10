@@ -41,7 +41,7 @@ public interface StorageContainer
      *
      * @return a future represents the result of starting a storage container.
      */
-    CompletableFuture<Void> start();
+    CompletableFuture<StorageContainer> start();
 
     /**
      * Stop the storage container.
