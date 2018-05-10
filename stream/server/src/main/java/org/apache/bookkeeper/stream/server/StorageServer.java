@@ -13,6 +13,8 @@
  */
 package org.apache.bookkeeper.stream.server;
 
+import static org.apache.bookkeeper.stream.storage.StorageConstants.ZK_METADATA_ROOT_PATH;
+
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import java.io.File;
@@ -35,14 +37,22 @@ import org.apache.bookkeeper.stream.server.conf.DLConfiguration;
 import org.apache.bookkeeper.stream.server.conf.StorageServerConfiguration;
 import org.apache.bookkeeper.stream.server.grpc.GrpcServerSpec;
 import org.apache.bookkeeper.stream.server.service.BookieService;
+import org.apache.bookkeeper.stream.server.service.ClusterControllerService;
+import org.apache.bookkeeper.stream.server.service.CuratorProviderService;
 import org.apache.bookkeeper.stream.server.service.DLNamespaceProviderService;
 import org.apache.bookkeeper.stream.server.service.GrpcService;
+import org.apache.bookkeeper.stream.server.service.RegistrationServiceProvider;
+import org.apache.bookkeeper.stream.server.service.RegistrationStateService;
 import org.apache.bookkeeper.stream.server.service.StatsProviderService;
 import org.apache.bookkeeper.stream.server.service.StorageService;
 import org.apache.bookkeeper.stream.storage.RangeStoreBuilder;
 import org.apache.bookkeeper.stream.storage.StorageResources;
 import org.apache.bookkeeper.stream.storage.conf.StorageConfiguration;
-import org.apache.bookkeeper.stream.storage.impl.sc.helix.HelixStorageContainerManager;
+import org.apache.bookkeeper.stream.storage.impl.cluster.ClusterControllerImpl;
+import org.apache.bookkeeper.stream.storage.impl.cluster.ZkClusterControllerLeaderSelector;
+import org.apache.bookkeeper.stream.storage.impl.cluster.ZkClusterMetadataStore;
+import org.apache.bookkeeper.stream.storage.impl.sc.DefaultStorageContainerController;
+import org.apache.bookkeeper.stream.storage.impl.sc.ZkStorageContainerManager;
 import org.apache.bookkeeper.stream.storage.impl.store.MVCCStoreFactoryImpl;
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.configuration.Configuration;
@@ -184,11 +194,35 @@ public class StorageServer {
         // Create the bookie service
         BookieService bookieService = new BookieService(bkConf, rootStatsLogger);
 
+        // Create the curator provider service
+        CuratorProviderService curatorProviderService = new CuratorProviderService(
+            bookieService.serverConf(), dlConf, rootStatsLogger.scope("curator"));
+
         // Create the distributedlog namespace service
         DLNamespaceProviderService dlNamespaceProvider = new DLNamespaceProviderService(
             bookieService.serverConf(),
             dlConf,
-            rootStatsLogger.scope("dl"));
+            rootStatsLogger.scope("dlog"));
+
+        // Create a registration service provider
+        RegistrationServiceProvider regService = new RegistrationServiceProvider(
+            bookieService.serverConf(),
+            dlConf,
+            rootStatsLogger.scope("registration").scope("provider"));
+
+        // Create a cluster controller service
+        ClusterControllerService clusterControllerService = new ClusterControllerService(
+            storageConf,
+            () -> new ClusterControllerImpl(
+                new ZkClusterMetadataStore(
+                    curatorProviderService.get(),
+                    ZKMetadataDriverBase.resolveZkServers(bookieService.serverConf()),
+                    ZK_METADATA_ROOT_PATH),
+                regService.get(),
+                new DefaultStorageContainerController(),
+                new ZkClusterControllerLeaderSelector(curatorProviderService.get(), ZK_METADATA_ROOT_PATH),
+                storageConf),
+            rootStatsLogger.scope("cluster_controller"));
 
         // Create range (stream) store
         RangeStoreBuilder rangeStoreBuilder = RangeStoreBuilder.newBuilder()
@@ -200,16 +234,17 @@ public class StorageServer {
             .withNumStorageContainers(numStorageContainers)
             // the default log backend uri
             .withDefaultBackendUri(dlNamespaceProvider.getDlogUri())
-            // with the storage container manager (currently it is helix)
+            // with zk-based storage container manager
             .withStorageContainerManagerFactory((ignored, storeConf, registry) ->
-                new HelixStorageContainerManager(
-                    ZKMetadataDriverBase.resolveZkServers(bookieService.serverConf()),
-                    "stream/helix",
-                    storeConf,
-                    registry,
+                new ZkStorageContainerManager(
                     myEndpoint,
-                    instanceName,
-                    rootStatsLogger.scope("helix")))
+                    storageConf,
+                    new ZkClusterMetadataStore(
+                        curatorProviderService.get(),
+                        ZKMetadataDriverBase.resolveZkServers(bookieService.serverConf()),
+                        ZK_METADATA_ROOT_PATH),
+                    registry,
+                    rootStatsLogger.scope("sc").scope("manager")))
             // with the inter storage container client manager
             .withRangeStoreFactory(
                 new MVCCStoreFactoryImpl(
@@ -232,15 +267,26 @@ public class StorageServer {
         GrpcService grpcService = new GrpcService(
             serverConf, serverSpec, rpcStatsLogger);
 
+        // Create a registration state service only when service is ready.
+        RegistrationStateService regStateService = new RegistrationStateService(
+            myEndpoint,
+            bookieService.serverConf(),
+            bkConf,
+            regService,
+            rootStatsLogger.scope("registration"));
 
         // Create all the service stack
         return LifecycleComponentStack.newBuilder()
             .withName("storage-server")
             .addComponent(statsProviderService)     // stats provider
             .addComponent(bookieService)            // bookie server
+            .addComponent(curatorProviderService)   // service that provides curator client
             .addComponent(dlNamespaceProvider)      // service that provides dl namespace
+            .addComponent(regService)               // service that provides registration client
+            .addComponent(clusterControllerService) // service that run cluster controller service
             .addComponent(storageService)           // range (stream) store
             .addComponent(grpcService)              // range (stream) server (gRPC)
+            .addComponent(regStateService)          // service that manages server state
             .build();
     }
 

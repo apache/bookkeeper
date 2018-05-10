@@ -19,7 +19,6 @@ import static org.apache.bookkeeper.stream.protocol.ProtocolConstants.DEFAULT_SE
 import static org.apache.bookkeeper.stream.protocol.ProtocolConstants.DEFAULT_SPLIT_POLICY;
 import static org.junit.Assert.assertEquals;
 
-import java.net.URI;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.api.StorageClient;
 import org.apache.bookkeeper.clients.StorageClientBuilder;
@@ -59,11 +58,9 @@ public class StorageClientTest extends StorageServerTestBase {
     private final NamespaceConfiguration colConf = NamespaceConfiguration.newBuilder()
         .setDefaultStreamConf(streamConf)
         .build();
-    private URI defaultBackendUri;
 
     @Override
     protected void doSetup() throws Exception {
-        defaultBackendUri = URI.create("distributedlog://" + cluster.getZkServers() + "/stream/storage");
         StorageClientSettings settings = StorageClientSettings.newBuilder()
             .addEndpoints(cluster.getRpcEndpoints().toArray(new Endpoint[cluster.getRpcEndpoints().size()]))
             .usePlaintext(true)
@@ -106,7 +103,7 @@ public class StorageClientTest extends StorageServerTestBase {
             FutureUtils.result(adminClient.getStream(nsName, streamName));
         assertEquals(
             StreamConfiguration.newBuilder(streamConf)
-                .setBackendServiceUrl(defaultBackendUri.toString())
+                .setBackendServiceUrl(cluster.getDefaultBackendUri().toString())
                 .build()
             , properties.getStreamConf());
     }

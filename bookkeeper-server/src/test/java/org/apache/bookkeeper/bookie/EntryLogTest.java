@@ -49,9 +49,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.bookkeeper.bookie.EntryLogger.BufferedLogChannel;
-import org.apache.bookkeeper.bookie.EntryLogger.EntryLogManager;
-import org.apache.bookkeeper.bookie.EntryLogger.EntryLogManagerBase;
-import org.apache.bookkeeper.bookie.EntryLogger.EntryLogManagerForSingleEntryLog;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
@@ -855,7 +852,7 @@ public class EntryLogTest {
         conf.setEntryLogPerLedgerEnabled(false);
         EntryLogger newEntryLogger = new EntryLogger(conf, ledgerDirsManager);
         EntryLogManager newEntryLogManager = newEntryLogger.getEntryLogManager();
-        Assert.assertEquals("EntryLogManager class type", EntryLogger.EntryLogManagerForSingleEntryLog.class,
+        Assert.assertEquals("EntryLogManager class type", EntryLogManagerForSingleEntryLog.class,
                 newEntryLogManager.getClass());
 
         ByteBuf buf = newEntryLogger.readEntry(ledgerId, 0L, entry0Position);

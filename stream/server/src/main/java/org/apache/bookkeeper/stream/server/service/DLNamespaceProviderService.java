@@ -23,9 +23,11 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.stream.server.conf.DLConfiguration;
+import org.apache.bookkeeper.stream.storage.StorageConstants;
 import org.apache.distributedlog.DistributedLogConfiguration;
 import org.apache.distributedlog.api.namespace.Namespace;
 import org.apache.distributedlog.api.namespace.NamespaceBuilder;
+import org.apache.distributedlog.config.DynamicDistributedLogConfiguration;
 import org.apache.distributedlog.exceptions.ZKException;
 import org.apache.distributedlog.impl.metadata.BKDLConfig;
 import org.apache.distributedlog.metadata.DLMetadata;
@@ -68,6 +70,7 @@ public class DLNamespaceProviderService
 
     private final ServerConfiguration bkServerConf;
     private final DistributedLogConfiguration dlConf;
+    private final DynamicDistributedLogConfiguration dlDynConf;
     @Getter
     private final URI dlogUri;
     private Namespace namespace;
@@ -77,11 +80,12 @@ public class DLNamespaceProviderService
                                       StatsLogger statsLogger) {
         super("namespace-provider", conf, statsLogger);
 
-        this.dlogUri = URI.create(String.format("distributedlog://%s/stream/storage",
-            ZKMetadataDriverBase.resolveZkServers(bkServerConf)));
+        this.dlogUri = URI.create(String.format("distributedlog://%s%s",
+            ZKMetadataDriverBase.resolveZkServers(bkServerConf),
+            StorageConstants.getStoragePath(StorageConstants.ZK_METADATA_ROOT_PATH)));
         this.bkServerConf = bkServerConf;
         this.dlConf = new DistributedLogConfiguration();
-        ConfUtils.loadConfiguration(this.dlConf, conf, conf.getComponentPrefix());
+        this.dlConf.loadConf(conf);
         // disable write lock
         this.dlConf.setWriteLockEnabled(false);
         // setting the flush policy
@@ -93,6 +97,7 @@ public class DLNamespaceProviderService
         // rolling log segment concurrency is only 1
         this.dlConf.setLogSegmentRollingConcurrency(1);
         this.dlConf.setMaxLogSegmentBytes(256 * 1024 * 1024); // 256 MB
+        this.dlDynConf = ConfUtils.getConstDynConf(dlConf);
     }
 
     @Override
@@ -109,6 +114,7 @@ public class DLNamespaceProviderService
                 .statsLogger(getStatsLogger())
                 .clientId("storage-server")
                 .conf(dlConf)
+                .dynConf(dlDynConf)
                 .uri(uri)
                 .build();
         } catch (Throwable e) {

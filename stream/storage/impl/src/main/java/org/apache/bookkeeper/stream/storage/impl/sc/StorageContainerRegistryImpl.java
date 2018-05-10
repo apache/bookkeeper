@@ -37,7 +37,7 @@ public class StorageContainerRegistryImpl implements StorageContainerRegistry {
     private static final String COMPONENT_NAME = StorageContainerRegistry.class.getSimpleName();
 
     private final StorageContainerFactory scFactory;
-    private final ConcurrentMap<Long, StorageContainer> groups;
+    private final ConcurrentMap<Long, StorageContainer> containers;
     private final ReentrantReadWriteLock closeLock;
     private final StorageContainer failRequestStorageContainer;
     private boolean closed = false;
@@ -46,27 +46,27 @@ public class StorageContainerRegistryImpl implements StorageContainerRegistry {
                                         OrderedScheduler scheduler) {
         this.scFactory = factory;
         this.failRequestStorageContainer = FailRequestStorageContainer.of(scheduler);
-        this.groups = Maps.newConcurrentMap();
+        this.containers = Maps.newConcurrentMap();
         this.closeLock = new ReentrantReadWriteLock();
     }
 
     @VisibleForTesting
     public void setStorageContainer(long scId, StorageContainer group) {
-        groups.put(scId, group);
+        containers.put(scId, group);
     }
 
     @Override
     public int getNumStorageContainers() {
-        return groups.size();
+        return containers.size();
     }
 
     @Override
     public StorageContainer getStorageContainer(long storageContainerId) {
-        return groups.getOrDefault(storageContainerId, failRequestStorageContainer);
+        return containers.getOrDefault(storageContainerId, failRequestStorageContainer);
     }
 
     @Override
-    public CompletableFuture<Void> startStorageContainer(long scId) {
+    public CompletableFuture<StorageContainer> startStorageContainer(long scId) {
         closeLock.readLock().lock();
         try {
             return unsafeStartStorageContainer(scId);
@@ -75,49 +75,71 @@ public class StorageContainerRegistryImpl implements StorageContainerRegistry {
         }
     }
 
-    private CompletableFuture<Void> unsafeStartStorageContainer(long scId) {
+    private CompletableFuture<StorageContainer> unsafeStartStorageContainer(long scId) {
         if (closed) {
             return FutureUtils.exception(new ObjectClosedException(COMPONENT_NAME));
         }
 
-        if (groups.containsKey(scId)) {
+        if (containers.containsKey(scId)) {
             return FutureUtils.exception(new StorageException("StorageContainer " + scId + " already registered"));
         }
 
         StorageContainer newStorageContainer = scFactory.createStorageContainer(scId);
-        StorageContainer oldStorageContainer = groups.putIfAbsent(scId, newStorageContainer);
+        StorageContainer oldStorageContainer = containers.putIfAbsent(scId, newStorageContainer);
         if (null != oldStorageContainer) {
             newStorageContainer.close();
             return FutureUtils.exception(new StorageException("StorageContainer " + scId + " already registered"));
         }
 
         log.info("Registered StorageContainer ('{}').", scId);
-        return newStorageContainer.start();
+        return newStorageContainer.start()
+            .whenComplete((container, cause) -> {
+                if (null != cause) {
+                    if (containers.remove(scId, newStorageContainer)) {
+                        log.warn("De-registered StorageContainer ('{}') when failed to start", scId, cause);
+                    } else {
+                        log.warn("Fail to de-register StorageContainer ('{}') when failed to start", scId, cause);
+                    }
+                } else {
+                    log.info("Successfully started registered StorageContainer ('{}').", scId);
+                }
+            });
     }
 
     @Override
-    public CompletableFuture<Void> stopStorageContainer(long scId) {
+    public CompletableFuture<Void> stopStorageContainer(long scId, StorageContainer container) {
         closeLock.readLock().lock();
         try {
-            return unsafeStopStorageContainer(scId);
+            return unsafeStopStorageContainer(scId, container);
         } finally {
             closeLock.readLock().unlock();
         }
     }
 
-    private CompletableFuture<Void> unsafeStopStorageContainer(long scId) {
+    private CompletableFuture<Void> unsafeStopStorageContainer(long scId, StorageContainer container) {
         if (closed) {
             return FutureUtils.exception(new ObjectClosedException(COMPONENT_NAME));
         }
 
-        StorageContainer group = groups.remove(scId);
+        if (null == container) {
+            StorageContainer existingContainer = containers.remove(scId);
+            if (null != existingContainer) {
+                log.info("Unregistered StorageContainer ('{}').", scId);
+                return existingContainer.stop();
+            } else {
+                return FutureUtils.Void();
+            }
+        } else {
+            boolean removed = containers.remove(scId, container);
 
-        if (null == group) {
-            return FutureUtils.value(null);
+            if (removed) {
+                log.info("Unregistered StorageContainer ('{}').", scId);
+            }
+
+            // no matter we successfully removed the containers or not, we need to close the current container.
+            // this ensure the resources held by the passed-in container are released.
+            return container.stop();
         }
-
-        log.info("Unregistered StorageContainer ('{}').", scId);
-        return group.stop();
     }
 
     @Override
@@ -133,7 +155,7 @@ public class StorageContainerRegistryImpl implements StorageContainerRegistry {
         }
 
         // close all the ranges
-        groups.values().forEach(StorageContainer::close);
-        groups.clear();
+        containers.values().forEach(StorageContainer::close);
+        containers.clear();
     }
 }

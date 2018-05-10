@@ -25,6 +25,7 @@ import io.grpc.StatusRuntimeException;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.clients.impl.internal.api.RootRangeClient;
 import org.apache.bookkeeper.common.util.Backoff;
 import org.apache.bookkeeper.common.util.OrderedScheduler;
@@ -37,6 +38,7 @@ import org.apache.bookkeeper.stream.proto.StreamProperties;
 /**
  * A root range client wrapper with retries.
  */
+@Slf4j
 class RootRangeClientImplWithRetries implements RootRangeClient {
 
     @VisibleForTesting
@@ -63,7 +65,8 @@ class RootRangeClientImplWithRetries implements RootRangeClient {
         } else if (cause instanceof RuntimeException) {
             return false;
         } else {
-            return true;
+            // storage level exceptions
+            return false;
         }
     }
 

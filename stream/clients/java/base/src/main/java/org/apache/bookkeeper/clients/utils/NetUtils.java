@@ -119,4 +119,16 @@ public class NetUtils {
             .build();
     }
 
+    /**
+     * Convert an endpoint to string.
+     *
+     * @param ep endpoint
+     * @return endpoint string representation
+     */
+    public static String endpointToString(Endpoint ep) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(ep.getHostname()).append(":").append(ep.getPort());
+        return sb.toString();
+    }
+
 }
