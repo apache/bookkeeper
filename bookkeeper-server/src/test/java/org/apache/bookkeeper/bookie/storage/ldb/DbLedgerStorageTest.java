@@ -42,7 +42,6 @@ import org.apache.bookkeeper.bookie.EntryLogger;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.proto.BookieProtocol;
-import org.apache.commons.io.FileUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -242,8 +241,8 @@ public class DbLedgerStorageTest {
     @Test
     public void doubleDirectory() throws Exception {
         int gcWaitTime = 1000;
-        File firstDir = new File("dir1");
-        File secondDir = new File("dir2");
+        File firstDir = new File(tmpDir, "dir1");
+        File secondDir = new File(tmpDir, "dir2");
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
         conf.setGcWaitTime(gcWaitTime);
         conf.setLedgerStorageClass(DbLedgerStorage.class.getName());
@@ -254,8 +253,6 @@ public class DbLedgerStorageTest {
         assertEquals(2, ((DbLedgerStorage) bookie.getLedgerStorage()).getLedgerStorageList().size());
 
         bookie.shutdown();
-        FileUtils.deleteDirectory(firstDir);
-        FileUtils.deleteDirectory(secondDir);
     }
 
     @Test
