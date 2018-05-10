@@ -75,52 +75,50 @@ public class TestSmoke {
     @Test
     public void testReadWrite() throws Exception {
         String zookeeper = BookKeeperClusterUtils.zookeeperConnectString(docker);
+        int numEntries = 100;
         try (BookKeeper bk = new BookKeeper(zookeeper)) {
             long ledgerId;
             try (LedgerHandle writelh = bk.createLedger(BookKeeper.DigestType.CRC32C, PASSWD)) {
                 ledgerId = writelh.getId();
-                for (int i = 0; i < 100; i++) {
+                for (int i = 0; i < numEntries; i++) {
                     writelh.addEntry(("entry-" + i).getBytes());
                 }
             }
 
-            try (LedgerHandle readlh = bk.openLedger(ledgerId, BookKeeper.DigestType.CRC32C, PASSWD)) {
-                long lac = readlh.getLastAddConfirmed();
-                int i = 0;
-                Enumeration<LedgerEntry> entries = readlh.readEntries(0, lac);
-                while (entries.hasMoreElements()) {
-                    LedgerEntry e = entries.nextElement();
-                    String readBack = new String(e.getEntry());
-                    assertEquals(readBack, "entry-" + i++);
-                }
-                assertEquals(i, 100);
-            }
+            readEntries(bk, ledgerId, numEntries);
         }
     }
 
     @Test
     public void testReadWriteAdv() throws Exception {
         String zookeeper = BookKeeperClusterUtils.zookeeperConnectString(docker);
+        int numEntries = 100;
         try (BookKeeper bk = new BookKeeper(zookeeper)) {
             long ledgerId;
             try (LedgerHandle writelh = bk.createLedgerAdv(3, 3, 2, BookKeeper.DigestType.CRC32C, PASSWD)) {
                 ledgerId = writelh.getId();
-                for (int i = 0; i < 100; i++) {
+                for (int i = 0; i < numEntries; i++) {
                     writelh.addEntry(i, ("entry-" + i).getBytes());
                 }
             }
 
-            try (LedgerHandle readlh = bk.openLedger(ledgerId, BookKeeper.DigestType.CRC32C, PASSWD)) {
-                long lac = readlh.getLastAddConfirmed();
-                int i = 0;
-                Enumeration<LedgerEntry> entries = readlh.readEntries(0, lac);
-                while (entries.hasMoreElements()) {
-                    LedgerEntry e = entries.nextElement();
-                    String readBack = new String(e.getEntry());
-                    assertEquals(readBack, "entry-" + i++);
-                }
-                assertEquals(i, 100);
+            readEntries(bk, ledgerId, numEntries);
+        }
+    }
+
+    private static void readEntries(BookKeeper bk,
+                                    long ledgerId,
+                                    int numExpectedEntries) throws Exception {
+        try (LedgerHandle readlh = bk.openLedger(ledgerId, BookKeeper.DigestType.CRC32C, PASSWD)) {
+            long lac = readlh.getLastAddConfirmed();
+            int i = 0;
+            Enumeration<LedgerEntry> entries = readlh.readEntries(0, lac);
+            while (entries.hasMoreElements()) {
+                LedgerEntry e = entries.nextElement();
+                String readBack = new String(e.getEntry());
+                assertEquals(readBack, "entry-" + i++);
             }
+            assertEquals(i, numExpectedEntries);
         }
     }
 
@@ -189,6 +187,21 @@ public class TestSmoke {
         });
 
         // start the write thread
+        writeEntries(numEntries, writeLh, writeExecutor, writeFuture);
+
+        // both write and read should be successful
+        result(readFuture);
+        result(writeFuture);
+
+        assertEquals(readLh.getLastAddConfirmed(), lastExpectedConfirmedEntryId);
+        assertEquals(writeLh.getLastAddConfirmed(), numEntries - 1);
+        assertEquals(writeLh.getLastAddPushed(), numEntries - 1);
+    }
+
+    private static void writeEntries(int numEntries,
+                                     LedgerHandle writeLh,
+                                     ExecutorService writeExecutor,
+                                     CompletableFuture<Void> writeFuture) {
         writeExecutor.submit(() -> {
             try {
                 for (int i = 0; i < 100; i++) {
@@ -201,14 +214,6 @@ public class TestSmoke {
                 writeFuture.completeExceptionally(e);
             }
         });
-
-        // both write and read should be successful
-        result(readFuture);
-        result(writeFuture);
-
-        assertEquals(readLh.getLastAddConfirmed(), lastExpectedConfirmedEntryId);
-        assertEquals(writeLh.getLastAddConfirmed(), numEntries - 1);
-        assertEquals(writeLh.getLastAddPushed(), numEntries - 1);
     }
 
     @Test
@@ -268,18 +273,7 @@ public class TestSmoke {
         readNextFunc.run();
 
         // start the write thread
-        writeExecutor.submit(() -> {
-            try {
-                for (int i = 0; i < 100; i++) {
-                    writeLh.addEntry(("entry-" + i).getBytes());
-                }
-                log.info("Completed writing {} entries to ledger {}", numEntries, writeLh.getId());
-                FutureUtils.complete(writeFuture, null);
-            } catch (Exception e) {
-                log.error("Exceptions thrown during writing {} entries to ledger {}", numEntries, writeLh.getId(), e);
-                writeFuture.completeExceptionally(e);
-            }
-        });
+        writeEntries(numEntries, writeLh, writeExecutor, writeFuture);
 
         // both write and read should be successful
         result(readFuture);
