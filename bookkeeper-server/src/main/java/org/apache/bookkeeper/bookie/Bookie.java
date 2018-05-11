@@ -106,6 +106,10 @@ public class Bookie extends BookieCriticalThread {
 
     private static final Logger LOG = LoggerFactory.getLogger(Bookie.class);
 
+    public static final String PROP_SLOW_JOURNAL_FLUSH_DELAY = "test.slowJournal.flushDelay";
+    public static final String PROP_SLOW_JOURNAL_ADD_DELAY = "test.slowJournal.addDelay";
+    public static final String PROP_SLOW_JOURNAL_GET_DELAY = "test.slowJournal.getDelay";
+
     final List<File> journalDirectories;
     final ServerConfiguration conf;
 

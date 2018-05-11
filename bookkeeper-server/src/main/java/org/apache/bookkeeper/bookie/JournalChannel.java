@@ -42,6 +42,13 @@ import org.slf4j.LoggerFactory;
 class JournalChannel implements Closeable {
     private static final Logger LOG = LoggerFactory.getLogger(JournalChannel.class);
 
+    @FunctionalInterface
+    public interface BufferedChannelBuilder {
+        BufferedChannel create(FileChannel fc, int capacity) throws IOException;
+    }
+    public static final BufferedChannelBuilder DEFAULT_BCBUILDER =
+            (FileChannel fc, int capacity) -> new BufferedChannel(fc, capacity);
+
     final RandomAccessFile randomAccessFile;
     final int fd;
     final FileChannel fc;
@@ -93,7 +100,8 @@ class JournalChannel implements Closeable {
     // Open journal for scanning starting from given position.
     JournalChannel(File journalDirectory, long logId,
                    long preAllocSize, int writeBufferSize, long position) throws IOException {
-         this(journalDirectory, logId, preAllocSize, writeBufferSize, SECTOR_SIZE, position, false, V5);
+         this(journalDirectory, logId, preAllocSize, writeBufferSize, SECTOR_SIZE,
+                 position, false, V5, DEFAULT_BCBUILDER);
     }
 
     // Open journal to write
@@ -101,11 +109,20 @@ class JournalChannel implements Closeable {
                    long preAllocSize, int writeBufferSize, int journalAlignSize,
                    boolean fRemoveFromPageCache, int formatVersionToWrite) throws IOException {
         this(journalDirectory, logId, preAllocSize, writeBufferSize, journalAlignSize,
-             START_OF_FILE, fRemoveFromPageCache, formatVersionToWrite);
+             fRemoveFromPageCache, formatVersionToWrite, DEFAULT_BCBUILDER);
+    }
+
+    JournalChannel(File journalDirectory, long logId,
+                   long preAllocSize, int writeBufferSize, int journalAlignSize,
+                   boolean fRemoveFromPageCache, int formatVersionToWrite,
+                   BufferedChannelBuilder bcBuilder) throws IOException {
+        this(journalDirectory, logId, preAllocSize, writeBufferSize, journalAlignSize,
+                START_OF_FILE, fRemoveFromPageCache, formatVersionToWrite, bcBuilder);
     }
 
     /**
      * Create a journal file.
+     * Allows injection of BufferedChannelBuilder for testing purposes.
      *
      * @param journalDirectory
      *          directory to store the journal file.
@@ -128,7 +145,7 @@ class JournalChannel implements Closeable {
     private JournalChannel(File journalDirectory, long logId,
                            long preAllocSize, int writeBufferSize, int journalAlignSize,
                            long position, boolean fRemoveFromPageCache,
-                           int formatVersionToWrite) throws IOException {
+                           int formatVersionToWrite, BufferedChannelBuilder bcBuilder) throws IOException {
         this.journalAlignSize = journalAlignSize;
         this.zeros = ByteBuffer.allocate(journalAlignSize);
         this.preAllocSize = preAllocSize - preAllocSize % journalAlignSize;
@@ -160,7 +177,7 @@ class JournalChannel implements Closeable {
             bb.clear();
             fc.write(bb);
 
-            bc = new BufferedChannel(fc, writeBufferSize);
+            bc = bcBuilder.create(fc, writeBufferSize);
             forceWrite(true);
             nextPrealloc = this.preAllocSize;
             fc.write(zeros, nextPrealloc - journalAlignSize);

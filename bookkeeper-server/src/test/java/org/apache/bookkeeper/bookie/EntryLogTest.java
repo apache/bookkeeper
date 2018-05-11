@@ -303,7 +303,8 @@ public class EntryLogTest {
         Bookie bookie = new Bookie(conf);
         EntryLogger entryLogger = new EntryLogger(conf,
                 bookie.getLedgerDirsManager());
-        InterleavedLedgerStorage ledgerStorage = ((InterleavedLedgerStorage) bookie.ledgerStorage);
+        InterleavedLedgerStorage ledgerStorage =
+                ((InterleavedLedgerStorage) bookie.ledgerStorage.getUnderlyingLedgerStorage());
         ledgerStorage.entryLogger = entryLogger;
         // Create ledgers
         ledgerStorage.setMasterKey(1, "key".getBytes());
@@ -675,7 +676,7 @@ public class EntryLogTest {
         conf.setLedgerStorageClass(ledgerStorageClass);
         conf.setEntryLogPerLedgerEnabled(entryLogPerLedgerEnabled);
         Bookie bookie = new Bookie(conf);
-        InterleavedLedgerStorage ledgerStorage = ((InterleavedLedgerStorage) bookie.ledgerStorage);
+        CompactableLedgerStorage ledgerStorage = (CompactableLedgerStorage) bookie.ledgerStorage;
         Random rand = new Random(0);
 
         if (ledgerStorageClass.equals(SortedLedgerStorage.class.getName())) {

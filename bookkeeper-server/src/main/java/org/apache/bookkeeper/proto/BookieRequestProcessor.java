@@ -22,6 +22,9 @@ package org.apache.bookkeeper.proto;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.ADD_ENTRY;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.ADD_ENTRY_BLOCKED;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.ADD_ENTRY_BLOCKED_WAIT;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.ADD_ENTRY_IN_PROGRESS;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.ADD_ENTRY_REQUEST;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.CHANNEL_WRITE;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.FORCE_LEDGER;
@@ -29,9 +32,12 @@ import static org.apache.bookkeeper.bookie.BookKeeperServerStats.FORCE_LEDGER_RE
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.GET_BOOKIE_INFO;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.GET_BOOKIE_INFO_REQUEST;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.READ_ENTRY;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.READ_ENTRY_BLOCKED;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.READ_ENTRY_BLOCKED_WAIT;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.READ_ENTRY_FENCE_READ;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.READ_ENTRY_FENCE_REQUEST;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.READ_ENTRY_FENCE_WAIT;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.READ_ENTRY_IN_PROGRESS;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.READ_ENTRY_LONG_POLL_PRE_WAIT;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.READ_ENTRY_LONG_POLL_READ;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.READ_ENTRY_LONG_POLL_REQUEST;
@@ -45,6 +51,7 @@ import static org.apache.bookkeeper.bookie.BookKeeperServerStats.WRITE_LAC;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.WRITE_LAC_REQUEST;
 import static org.apache.bookkeeper.proto.RequestUtils.hasFlag;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.protobuf.ByteString;
 
@@ -56,17 +63,21 @@ import io.netty.util.concurrent.GenericFutureListener;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import lombok.AccessLevel;
 import lombok.Getter;
 import org.apache.bookkeeper.auth.AuthProviderFactoryFactory;
 import org.apache.bookkeeper.auth.AuthToken;
 import org.apache.bookkeeper.bookie.Bookie;
+import org.apache.bookkeeper.common.util.MathUtils;
 import org.apache.bookkeeper.common.util.OrderedExecutor;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.processor.RequestProcessor;
 import org.apache.bookkeeper.stats.Counter;
+import org.apache.bookkeeper.stats.Gauge;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.tls.SecurityException;
@@ -150,6 +161,18 @@ public class BookieRequestProcessor implements RequestProcessor {
     final OpStatsLogger getBookieInfoRequestStats;
     final OpStatsLogger getBookieInfoStats;
     final OpStatsLogger channelWriteStats;
+    final OpStatsLogger addEntryBlockedStats;
+    final OpStatsLogger readEntryBlockedStats;
+
+    final AtomicInteger addsInProgress = new AtomicInteger(0);
+    final AtomicInteger maxAddsInProgress = new AtomicInteger(0);
+    final AtomicInteger addsBlocked = new AtomicInteger(0);
+    final AtomicInteger readsInProgress = new AtomicInteger(0);
+    final AtomicInteger readsBlocked = new AtomicInteger(0);
+    final AtomicInteger maxReadsInProgress = new AtomicInteger(0);
+
+    final Semaphore addsSemaphore;
+    final Semaphore readsSemaphore;
 
     public BookieRequestProcessor(ServerConfiguration serverCfg, Bookie bookie,
             StatsLogger statsLogger, SecurityHandlerFactory shFactory) throws SecurityException {
@@ -214,6 +237,122 @@ public class BookieRequestProcessor implements RequestProcessor {
         this.getBookieInfoStats = statsLogger.getOpStatsLogger(GET_BOOKIE_INFO);
         this.getBookieInfoRequestStats = statsLogger.getOpStatsLogger(GET_BOOKIE_INFO_REQUEST);
         this.channelWriteStats = statsLogger.getOpStatsLogger(CHANNEL_WRITE);
+
+        this.addEntryBlockedStats = statsLogger.getOpStatsLogger(ADD_ENTRY_BLOCKED_WAIT);
+        this.readEntryBlockedStats = statsLogger.getOpStatsLogger(READ_ENTRY_BLOCKED_WAIT);
+
+        int maxAdds = serverCfg.getMaxAddsInProgress();
+        addsSemaphore = maxAdds > 0 ? new Semaphore(maxAdds, true) : null;
+
+        int maxReads = serverCfg.getMaxReadsInProgress();
+        readsSemaphore = maxReads > 0 ? new Semaphore(maxReads, true) : null;
+
+        statsLogger.registerGauge(ADD_ENTRY_IN_PROGRESS, new Gauge<Number>() {
+            @Override
+            public Number getDefaultValue() {
+                return 0;
+            }
+
+            @Override
+            public Number getSample() {
+                return addsInProgress;
+            }
+        });
+
+        statsLogger.registerGauge(ADD_ENTRY_BLOCKED, new Gauge<Number>() {
+            @Override
+            public Number getDefaultValue() {
+                return 0;
+            }
+
+            @Override
+            public Number getSample() {
+                return addsBlocked;
+            }
+        });
+
+        statsLogger.registerGauge(READ_ENTRY_IN_PROGRESS, new Gauge<Number>() {
+            @Override
+            public Number getDefaultValue() {
+                return 0;
+            }
+
+            @Override
+            public Number getSample() {
+                return readsInProgress;
+            }
+        });
+
+        statsLogger.registerGauge(READ_ENTRY_BLOCKED, new Gauge<Number>() {
+            @Override
+            public Number getDefaultValue() {
+                return 0;
+            }
+
+            @Override
+            public Number getSample() {
+                return readsBlocked;
+            }
+        });
+
+    }
+
+    protected void onAddRequestStart(Channel channel) {
+        if (addsSemaphore != null) {
+            if (!addsSemaphore.tryAcquire()) {
+                final long throttlingStartTimeNanos = MathUtils.nowInNano();
+                channel.config().setAutoRead(false);
+                addsBlocked.incrementAndGet();
+                addsSemaphore.acquireUninterruptibly();
+                channel.config().setAutoRead(true);
+                addEntryBlockedStats.registerSuccessfulEvent(MathUtils.elapsedNanos(throttlingStartTimeNanos),
+                        TimeUnit.NANOSECONDS);
+                addsBlocked.decrementAndGet();
+            }
+        }
+        final int curr = addsInProgress.incrementAndGet();
+        maxAddsInProgress.accumulateAndGet(curr, Integer::max);
+    }
+
+    protected void onAddRequestFinish() {
+        addsInProgress.decrementAndGet();
+        if (addsSemaphore != null) {
+            addsSemaphore.release();
+        }
+    }
+
+    protected void onReadRequestStart(Channel channel) {
+        if (readsSemaphore != null) {
+            if (!readsSemaphore.tryAcquire()) {
+                final long throttlingStartTimeNanos = MathUtils.nowInNano();
+                channel.config().setAutoRead(false);
+                readsBlocked.incrementAndGet();
+                readsSemaphore.acquireUninterruptibly();
+                channel.config().setAutoRead(true);
+                readEntryBlockedStats.registerSuccessfulEvent(MathUtils.elapsedNanos(throttlingStartTimeNanos),
+                        TimeUnit.NANOSECONDS);
+                readsBlocked.decrementAndGet();
+            }
+        }
+        final int curr = readsInProgress.incrementAndGet();
+        maxReadsInProgress.accumulateAndGet(curr, Integer::max);
+    }
+
+    protected void onReadRequestFinish() {
+        readsInProgress.decrementAndGet();
+        if (readsSemaphore != null) {
+            readsSemaphore.release();
+        }
+    }
+
+    @VisibleForTesting
+    int maxAddsInProgressCount() {
+        return maxAddsInProgress.get();
+    }
+
+    @VisibleForTesting
+    int maxReadsInProgressCount() {
+        return maxReadsInProgress.get();
     }
 
     @Override

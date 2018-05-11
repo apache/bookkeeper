@@ -36,6 +36,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -907,6 +908,10 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
     public void run() {
         LOG.info("Starting journal on {}", journalDirectory);
 
+        long getDelay = conf.getLong(Bookie.PROP_SLOW_JOURNAL_GET_DELAY, 0);
+        long addDelay = conf.getLong(Bookie.PROP_SLOW_JOURNAL_ADD_DELAY, 0);
+        long flushDelay = conf.getLong(Bookie.PROP_SLOW_JOURNAL_FLUSH_DELAY, 0);
+
         RecyclableArrayList<QueueEntry> toFlush = entryListRecycler.newInstance();
         int numEntriesToFlush = 0;
         ByteBuf lenBuff = Unpooled.buffer(4);
@@ -935,11 +940,27 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
             while (true) {
                 // new journal file to write
                 if (null == logFile) {
+
                     logId = logId + 1;
+                    final JournalChannel.BufferedChannelBuilder bcBuilder;
+                    if (getDelay > 0 || addDelay > 0 || flushDelay > 0) {
+                        LOG.warn("delay of journal writes enabled, please make sure it is only used in test env.");
+                        bcBuilder = (FileChannel fc, int capacity) ->  {
+                            SlowBufferedChannel sbc = new SlowBufferedChannel(fc, capacity);
+                            sbc.setAddDelay(addDelay);
+                            sbc.setGetDelay(getDelay);
+                            sbc.setFlushDelay(flushDelay);
+                            return sbc;
+                        };
+                    } else {
+                        bcBuilder = JournalChannel.DEFAULT_BCBUILDER;
+                    }
 
                     journalCreationWatcher.reset().start();
                     logFile = new JournalChannel(journalDirectory, logId, journalPreAllocSize, journalWriteBufferSize,
-                                        journalAlignmentSize, removePagesFromCache, journalFormatVersionToWrite);
+                                        journalAlignmentSize, removePagesFromCache,
+                                        journalFormatVersionToWrite, bcBuilder);
+
                     journalCreationStats.registerSuccessfulEvent(
                             journalCreationWatcher.stop().elapsed(TimeUnit.NANOSECONDS), TimeUnit.NANOSECONDS);
 

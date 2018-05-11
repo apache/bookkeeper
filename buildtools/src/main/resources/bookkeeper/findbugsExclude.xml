@@ -62,6 +62,12 @@
     <Bug pattern="EI_EXPOSE_REP" />
   </Match>
   <Match>
+    <!-- https://github.com/spotbugs/spotbugs/issues/259 -->
+    <Class name="org.apache.bookkeeper.bookie.InterleavedLedgerStorage" />
+    <Method name="getLastAddConfirmed" />
+    <Bug pattern="RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE" />
+  </Match>
+  <Match>
     <Class name="org.apache.bookkeeper.auth.AuthToken" />
     <Method name="getData" />
     <Bug pattern="EI_EXPOSE_REP" />

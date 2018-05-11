@@ -81,6 +81,9 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     protected static final String JOURNAL_ALIGNMENT_SIZE = "journalAlignmentSize";
     protected static final String NUM_JOURNAL_CALLBACK_THREADS = "numJournalCallbackThreads";
     protected static final String JOURNAL_FORMAT_VERSION_TO_WRITE = "journalFormatVersionToWrite";
+    // backpressure control
+    protected static final String MAX_ADDS_IN_PROGRESS = "maxAddsInProgress";
+    protected static final String MAX_READS_IN_PROGRESS = "maxReadsInProgress";
     // Bookie Parameters
     protected static final String BOOKIE_PORT = "bookiePort";
     protected static final String LISTENING_INTERFACE = "listeningInterface";
@@ -631,6 +634,48 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      */
     public ServerConfiguration setJournalFormatVersionToWrite(int version) {
         this.setProperty(JOURNAL_FORMAT_VERSION_TO_WRITE, version);
+        return this;
+    }
+
+    /**
+     * Get max number of adds in progress. 0 == unlimited.
+     *
+     * @return Max number of adds in progress.
+     */
+    public int getMaxAddsInProgress() {
+        return this.getInt(MAX_ADDS_IN_PROGRESS, 0);
+    }
+
+    /**
+     * Set max number of adds in progress. 0 == unlimited.
+     *
+     * @param value
+     *          max number of adds in progress.
+     * @return server configuration.
+     */
+    public ServerConfiguration setMaxAddsInProgress(int value) {
+        this.setProperty(MAX_ADDS_IN_PROGRESS, value);
+        return this;
+    }
+
+    /**
+     * Get max number of reads in progress. 0 == unlimited.
+     *
+     * @return Max number of reads in progress.
+     */
+    public int getMaxReadsInProgress() {
+        return this.getInt(MAX_READS_IN_PROGRESS, 0);
+    }
+
+    /**
+     * Set max number of reads in progress. 0 == unlimited.
+     *
+     * @param value
+     *          max number of reads in progress.
+     * @return server configuration.
+     */
+    public ServerConfiguration setMaxReadsInProgress(int value) {
+        this.setProperty(MAX_READS_IN_PROGRESS, value);
         return this;
     }
 
@@ -1540,6 +1585,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
 
     /**
      * Get skip list data size limitation (default 64MB).
+     * Max value is 1,073,741,823
      *
      * @return skip list data size limitation
      */
@@ -1554,6 +1600,10 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return server configuration object.
      */
     public ServerConfiguration setSkipListSizeLimit(int size) {
+        if (size > (Integer.MAX_VALUE - 1) / 2) {
+            // gives max of 2*1023MB for mem table (one being checkpointed and still writable).
+            throw new IllegalArgumentException("skiplist size over " + ((Integer.MAX_VALUE - 1) / 2));
+        }
         setProperty(SKIP_LIST_SIZE_LIMIT, size);
         return this;
     }
