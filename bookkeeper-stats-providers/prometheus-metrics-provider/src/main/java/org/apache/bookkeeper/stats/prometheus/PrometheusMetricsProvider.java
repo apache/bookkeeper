@@ -175,7 +175,7 @@ public class PrometheusMetricsProvider implements StatsProvider {
         return this.cachingStatsProvider.getStatsLogger(scope);
     }
 
-    @VisibleForTesting
+    @Override
     public void writeAllMetrics(Writer writer) throws IOException {
         PrometheusTextFormatUtil.writeMetricsCollectedByPrometheusClient(writer, registry);
 
