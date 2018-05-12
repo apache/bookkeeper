@@ -61,9 +61,9 @@ Vagrant.configure("2") do |config|
   # Puppet, Chef, Ansible, Salt, and Docker are also available. Please see the
   # documentation for more information about their specific syntax and use.
   config.vm.provision "shell", inline: <<-SHELL
-    yum update
+    yum update -y
     yum install -y kernel-devel
     yum install -y kernel-headers
-    yum install -y wget vim java-1.8.0-openjdk-devel maven docker kernel-devel-3.10.0-693.21.1.el7.x86_64
+    yum install -y wget vim java-1.8.0-openjdk-devel maven docker gcc-c++
   SHELL
 end
