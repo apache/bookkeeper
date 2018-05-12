@@ -154,7 +154,7 @@ public class TestSmoke {
                         assertEquals(lac + 1, nextEntryId);
                     }
 
-                    if (nextEntryId >= lastExpectedConfirmedEntryId) {
+                    if (nextEntryId > lastExpectedConfirmedEntryId) {
                         break;
                     }
 
@@ -189,9 +189,9 @@ public class TestSmoke {
         result(readFuture);
         result(writeFuture);
 
-        assertEquals(readLh.getLastAddConfirmed(), numEntries - 2);
-        assertEquals(writeLh.getLastAddConfirmed(), numEntries - 1);
-        assertEquals(writeLh.getLastAddPushed(), numEntries - 1);
+        assertEquals(numEntries - 2, readLh.getLastAddConfirmed());
+        assertEquals(numEntries - 1, writeLh.getLastAddConfirmed());
+        assertEquals(numEntries - 1, writeLh.getLastAddPushed());
     }
 
 }
