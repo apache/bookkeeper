@@ -22,11 +22,13 @@ import static org.apache.bookkeeper.common.concurrent.FutureUtils.result;
 import static org.junit.Assert.assertEquals;
 
 import com.github.dockerjava.api.DockerClient;
+import com.google.common.base.Stopwatch;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import java.util.Enumeration;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import lombok.Cleanup;
@@ -159,6 +161,8 @@ public class TestSmoke {
                 while (nextEntryId <= lastExpectedConfirmedEntryId) {
                     long lac = readLh.getLastAddConfirmed();
                     while (lac >= nextEntryId) {
+                        log.info("Attempt to read entries : [{} - {}]",
+                            nextEntryId, lac);
                         Enumeration<LedgerEntry> entries = readLh.readEntries(nextEntryId, lac);
                         while (entries.hasMoreElements()) {
                             LedgerEntry e = entries.nextElement();
@@ -174,8 +178,16 @@ public class TestSmoke {
                     }
 
                     // refresh lac
-                    while (readLh.readLastConfirmed() < nextEntryId) {
+                    readLh.readLastConfirmed();
+                    while (readLh.getLastAddConfirmed() < nextEntryId) {
+                        log.info("Refresh lac {}, next entry id = {}",
+                            readLh.getLastAddConfirmed(), nextEntryId);
                         TimeUnit.MILLISECONDS.sleep(100L);
+
+                        readLh.readLastConfirmed();
+                        if (readLh.getLastAddConfirmed() < nextEntryId) {
+                            readLh.readExplicitLastConfirmed();
+                        }
                     }
                 }
                 FutureUtils.complete(readFuture, null);
@@ -193,9 +205,9 @@ public class TestSmoke {
         result(readFuture);
         result(writeFuture);
 
-        assertEquals(readLh.getLastAddConfirmed(), lastExpectedConfirmedEntryId);
-        assertEquals(writeLh.getLastAddConfirmed(), numEntries - 1);
-        assertEquals(writeLh.getLastAddPushed(), numEntries - 1);
+        assertEquals(lastExpectedConfirmedEntryId, readLh.getLastAddConfirmed());
+        assertEquals(numEntries - 1, writeLh.getLastAddConfirmed());
+        assertEquals(numEntries - 1, writeLh.getLastAddPushed());
     }
 
     private static void writeEntries(int numEntries,
@@ -218,7 +230,7 @@ public class TestSmoke {
 
     @Test
     public void testLongTailingReadsWithoutExplicitLac() throws Exception {
-        testLongPollTailingReads(100, 99, 100);
+        testLongPollTailingReads(100, 98, 0);
     }
 
     @Test
@@ -240,14 +252,14 @@ public class TestSmoke {
             new ThreadFactoryBuilder().setNameFormat("write-executor").build());
 
         @Cleanup LedgerHandle readLh = bk.openLedgerNoRecovery(writeLh.getId(), DigestType.CRC32C, PASSWD);
-        @Cleanup("shutdown") ExecutorService readExecutor = Executors.newSingleThreadExecutor(
+        @Cleanup("shutdown") ScheduledExecutorService readExecutor = Executors.newSingleThreadScheduledExecutor(
             new ThreadFactoryBuilder().setNameFormat("read-executor").build());
 
         CompletableFuture<Void> readFuture = new CompletableFuture<>();
         CompletableFuture<Void> writeFuture = new CompletableFuture<>();
 
         // start the read thread
-        AtomicLong nextEntryId = new AtomicLong();
+        AtomicLong nextEntryId = new AtomicLong(0L);
 
         Runnable readNextFunc = new Runnable() {
 
@@ -258,12 +270,32 @@ public class TestSmoke {
                     return;
                 }
 
-                readLh.asyncReadLastConfirmedAndEntry(nextEntryId.get(), Long.MAX_VALUE, false,
+                Stopwatch readWatch = Stopwatch.createStarted();
+                log.info("Attempt to read next entry {} - lac {}", nextEntryId.get(), readLh.getLastAddConfirmed());
+                readLh.asyncReadLastConfirmedAndEntry(nextEntryId.get(), Long.MAX_VALUE / 2, false,
                     (rc, lastConfirmed, entry, ctx) -> {
+                        log.info("Read return in {} ms : rc = {}, lac = {}, entry = {}",
+                            readWatch.elapsed(TimeUnit.MILLISECONDS), rc, lastConfirmed, entry);
                         if (Code.OK == rc) {
+                            if (null != entry) {
+                                log.info("Successfully read entry {} : {}",
+                                    entry.getEntryId(), new String(entry.getEntry(), UTF_8));
+                                if (entry.getEntryId() != nextEntryId.get()) {
+                                    log.error("Attempt to read entry {} but received entry {}",
+                                        nextEntryId.get(), entry.getEntryId());
+                                    readFuture.completeExceptionally(
+                                        BKException.create(Code.UnexpectedConditionException));
+                                    return;
+                                } else {
+                                    nextEntryId.incrementAndGet();
+                                }
+                            }
                             readExecutor.submit(this);
+                        } else if (Code.NoSuchLedgerExistsException == rc) {
+                            // the ledger hasn't been created yet.
+                            readExecutor.schedule(this, 200, TimeUnit.MILLISECONDS);
                         } else {
-                            log.error("Failed to read entries ");
+                            log.error("Failed to read entries : {}", BKException.getMessage(rc));
                             readFuture.completeExceptionally(BKException.create(rc));
                         }
                     }, null);
@@ -279,6 +311,7 @@ public class TestSmoke {
         result(readFuture);
         result(writeFuture);
 
+        assertEquals(lastExpectedConfirmedEntryId + 1, nextEntryId.get());
         assertEquals(lastExpectedConfirmedEntryId, readLh.getLastAddConfirmed());
         assertEquals(numEntries - 1, writeLh.getLastAddConfirmed());
         assertEquals(numEntries - 1, writeLh.getLastAddPushed());
