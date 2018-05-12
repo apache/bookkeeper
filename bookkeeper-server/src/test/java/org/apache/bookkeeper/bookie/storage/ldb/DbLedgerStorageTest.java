@@ -241,10 +241,12 @@ public class DbLedgerStorageTest {
     @Test
     public void doubleDirectory() throws Exception {
         int gcWaitTime = 1000;
+        File firstDir = new File(tmpDir, "dir1");
+        File secondDir = new File(tmpDir, "dir2");
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
         conf.setGcWaitTime(gcWaitTime);
         conf.setLedgerStorageClass(DbLedgerStorage.class.getName());
-        conf.setLedgerDirNames(new String[] { "dir1", "dir2" });
+        conf.setLedgerDirNames(new String[] { firstDir.getCanonicalPath(), secondDir.getCanonicalPath() });
 
         // Should not fail
         Bookie bookie = new Bookie(conf);

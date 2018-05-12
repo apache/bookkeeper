@@ -20,6 +20,8 @@
  */
 package org.apache.bookkeeper.bookie;
 
+import static org.apache.bookkeeper.common.concurrent.FutureUtils.complete;
+import static org.apache.bookkeeper.common.concurrent.FutureUtils.result;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
 import static org.mockito.ArgumentMatchers.any;
@@ -31,6 +33,7 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import java.io.File;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
@@ -72,8 +75,8 @@ public class BookieWriteToJournalTest {
         Bookie.checkDirectoryStructure(Bookie.getCurrentDirectory(ledgerDir));
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
         conf.setJournalDirName(journalDir.getPath())
-            .setLedgerDirNames(new String[]{ledgerDir.getPath()})
-            .setMetadataServiceUri(null);
+                .setLedgerDirNames(new String[]{ledgerDir.getPath()})
+                .setMetadataServiceUri(null);
         BookieSocketAddress bookieAddress = Bookie.getBookieAddress(conf);
         CountDownLatch journalJoinLatch = new CountDownLatch(1);
         Journal journal = mock(Journal.class);
@@ -108,12 +111,10 @@ public class BookieWriteToJournalTest {
         byte[] masterKey = new byte[64];
         for (boolean ackBeforeSync : new boolean[]{true, false}) {
             CountDownLatch latch = new CountDownLatch(1);
-            final ByteBuf data = Unpooled.buffer();
-            data.writeLong(ledgerId);
-            data.writeLong(entryId);
+            final ByteBuf data = buildEntry(ledgerId, entryId, -1);
             final long expectedEntryId = entryId;
             b.addEntry(data, ackBeforeSync, (int rc, long ledgerId1, long entryId1,
-                                             BookieSocketAddress addr, Object ctx) -> {
+                    BookieSocketAddress addr, Object ctx) -> {
                 assertSame(expectedCtx, ctx);
                 assertEquals(ledgerId, ledgerId1);
                 assertEquals(expectedEntryId, entryId1);
@@ -126,5 +127,74 @@ public class BookieWriteToJournalTest {
         // let bookie exit main thread
         journalJoinLatch.countDown();
         b.shutdown();
+    }
+
+    /**
+     * test that Bookie calls correctly Journal.forceLedger and is able to return the correct LastAddPersisted entry id.
+     */
+    @Test
+    public void testForceLedger() throws Exception {
+
+        File journalDir = tempDir.newFolder();
+        Bookie.checkDirectoryStructure(Bookie.getCurrentDirectory(journalDir));
+        File ledgerDir = tempDir.newFolder();
+        Bookie.checkDirectoryStructure(Bookie.getCurrentDirectory(ledgerDir));
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setJournalDirName(journalDir.getPath())
+                .setLedgerDirNames(new String[]{ledgerDir.getPath()});
+
+        Bookie b = new Bookie(conf);
+        b.start();
+
+        long ledgerId = 1;
+        long entryId = 0;
+        Object expectedCtx = "foo";
+        byte[] masterKey = new byte[64];
+
+        CompletableFuture<Long> latchForceLedger1 = new CompletableFuture<>();
+        CompletableFuture<Long> latchForceLedger2 = new CompletableFuture<>();
+        CompletableFuture<Long> latchAddEntry = new CompletableFuture<>();
+        final ByteBuf data = buildEntry(ledgerId, entryId, -1);
+        final long expectedEntryId = entryId;
+        b.forceLedger(ledgerId, (int rc, long ledgerId1, long entryId1,
+                BookieSocketAddress addr, Object ctx) -> {
+            if (rc != BKException.Code.OK) {
+                latchForceLedger1.completeExceptionally(org.apache.bookkeeper.client.BKException.create(rc));
+                return;
+            }
+            complete(latchForceLedger1, null);
+        }, expectedCtx);
+        result(latchForceLedger1);
+
+        b.addEntry(data, true /* ackBeforesync */, (int rc, long ledgerId1, long entryId1,
+                        BookieSocketAddress addr, Object ctx) -> {
+                    if (rc != BKException.Code.OK) {
+                        latchAddEntry.completeExceptionally(org.apache.bookkeeper.client.BKException.create(rc));
+                        return;
+                    }
+                    latchAddEntry.complete(entryId);
+                }, expectedCtx, masterKey);
+        assertEquals(expectedEntryId, result(latchAddEntry).longValue());
+
+        // issue a new "forceLedger"
+        b.forceLedger(ledgerId, (int rc, long ledgerId1, long entryId1,
+                BookieSocketAddress addr, Object ctx) -> {
+            if (rc != BKException.Code.OK) {
+                latchForceLedger2.completeExceptionally(org.apache.bookkeeper.client.BKException.create(rc));
+                return;
+            }
+            complete(latchForceLedger2, null);
+        }, expectedCtx);
+        result(latchForceLedger2);
+
+        b.shutdown();
+    }
+
+    private static ByteBuf buildEntry(long ledgerId, long entryId, long lastAddConfirmed) {
+        final ByteBuf data = Unpooled.buffer();
+        data.writeLong(ledgerId);
+        data.writeLong(entryId);
+        data.writeLong(lastAddConfirmed);
+        return data;
     }
 }
