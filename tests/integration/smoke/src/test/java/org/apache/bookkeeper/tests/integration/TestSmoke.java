@@ -154,8 +154,7 @@ public class TestSmoke {
                         assertEquals(lac + 1, nextEntryId);
                     }
 
-                    if (nextEntryId >= lastExpectedConfirmedEntryId
-                        && lac >= lastExpectedConfirmedEntryId) {
+                    if (nextEntryId > lastExpectedConfirmedEntryId) {
                         break;
                     }
 
