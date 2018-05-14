@@ -21,6 +21,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 
+import lombok.Cleanup;
 import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
@@ -62,6 +63,16 @@ public class TestPrometheusMetricsProvider {
         } finally {
             provider.stop();
         }
+    }
+
+    @Test
+    public void testStartNoHttpWhenBkHttpEnabled() {
+        PropertiesConfiguration config = new PropertiesConfiguration();
+        config.setProperty(PrometheusMetricsProvider.PROMETHEUS_STATS_HTTP_ENABLE, true);
+        config.setProperty("httpServerEnabled", true);
+        @Cleanup("stop") PrometheusMetricsProvider provider = new PrometheusMetricsProvider();
+        provider.start(config);
+        assertNull(provider.server);
     }
 
     @Test
