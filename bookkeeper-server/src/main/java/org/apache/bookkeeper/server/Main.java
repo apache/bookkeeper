@@ -315,6 +315,7 @@ public class Main {
             BKHttpServiceProvider provider = new BKHttpServiceProvider.Builder()
                 .setBookieServer(bookieService.getServer())
                 .setServerConfiguration(conf.getServerConf())
+                .setStatsProvider(statsProviderService.getStatsProvider())
                 .build();
             HttpService httpService =
                 new HttpService(provider, conf, rootStatsLogger);
