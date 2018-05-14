@@ -120,7 +120,7 @@ public class Bookie extends BookieCriticalThread {
 
     static final long METAENTRY_ID_LEDGER_KEY = -0x1000;
     static final long METAENTRY_ID_FENCE_KEY  = -0x2000;
-    static final long METAENTRY_ID_FORCE_LEDGER  = -0x4000;
+    public static final long METAENTRY_ID_FORCE_LEDGER  = -0x4000;
 
     private final LedgerDirsManager ledgerDirsManager;
     private LedgerDirsManager indexDirsManager;
