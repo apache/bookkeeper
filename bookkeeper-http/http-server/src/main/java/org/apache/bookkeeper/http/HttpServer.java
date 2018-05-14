@@ -64,6 +64,7 @@ public interface HttpServer {
     enum ApiType {
         HEARTBEAT,
         SERVER_CONFIG,
+        METRICS,
 
         // ledger
         DELETE_LEDGER,

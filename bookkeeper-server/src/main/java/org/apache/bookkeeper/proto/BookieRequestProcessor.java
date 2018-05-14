@@ -24,6 +24,8 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.ADD_ENTRY;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.ADD_ENTRY_REQUEST;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.CHANNEL_WRITE;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.FORCE_LEDGER;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.FORCE_LEDGER_REQUEST;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.GET_BOOKIE_INFO;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.GET_BOOKIE_INFO_REQUEST;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.READ_ENTRY;
@@ -130,6 +132,8 @@ public class BookieRequestProcessor implements RequestProcessor {
     private final OpStatsLogger addEntryStats;
     final OpStatsLogger readRequestStats;
     final OpStatsLogger readEntryStats;
+    final OpStatsLogger forceLedgerStats;
+    final OpStatsLogger forceLedgerRequestStats;
     final OpStatsLogger fenceReadRequestStats;
     final OpStatsLogger fenceReadEntryStats;
     final OpStatsLogger fenceReadWaitStats;
@@ -191,6 +195,8 @@ public class BookieRequestProcessor implements RequestProcessor {
         this.addEntryStats = statsLogger.getOpStatsLogger(ADD_ENTRY);
         this.addRequestStats = statsLogger.getOpStatsLogger(ADD_ENTRY_REQUEST);
         this.readEntryStats = statsLogger.getOpStatsLogger(READ_ENTRY);
+        this.forceLedgerStats = statsLogger.getOpStatsLogger(FORCE_LEDGER);
+        this.forceLedgerRequestStats = statsLogger.getOpStatsLogger(FORCE_LEDGER_REQUEST);
         this.readRequestStats = statsLogger.getOpStatsLogger(READ_ENTRY_REQUEST);
         this.fenceReadEntryStats = statsLogger.getOpStatsLogger(READ_ENTRY_FENCE_READ);
         this.fenceReadRequestStats = statsLogger.getOpStatsLogger(READ_ENTRY_FENCE_REQUEST);
@@ -257,6 +263,9 @@ public class BookieRequestProcessor implements RequestProcessor {
                     break;
                 case READ_ENTRY:
                     processReadRequestV3(r, c);
+                    break;
+                case FORCE_LEDGER:
+                    processForceLedgerRequestV3(r, c);
                     break;
                 case AUTH:
                     LOG.info("Ignoring auth operation from client {}", c.remoteAddress());
@@ -365,6 +374,40 @@ public class BookieRequestProcessor implements RequestProcessor {
                         .setAddResponse(addResponse);
                 BookkeeperProtocol.Response resp = response.build();
                 write.sendResponse(addResponse.getStatus(), resp, addRequestStats);
+            }
+        }
+    }
+
+    private void processForceLedgerRequestV3(final BookkeeperProtocol.Request r, final Channel c) {
+        ForceLedgerProcessorV3 forceLedger = new ForceLedgerProcessorV3(r, c, this);
+
+        final OrderedExecutor threadPool;
+        if (RequestUtils.isHighPriority(r)) {
+            threadPool = highPriorityThreadPool;
+        } else {
+            threadPool = writeThreadPool;
+        }
+
+        if (null == threadPool) {
+            forceLedger.run();
+        } else {
+            try {
+                threadPool.executeOrdered(r.getForceLedgerRequest().getLedgerId(), forceLedger);
+            } catch (RejectedExecutionException e) {
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Failed to process request to force ledger {}. Too many pending requests",
+                              r.getForceLedgerRequest().getLedgerId());
+                }
+                BookkeeperProtocol.ForceLedgerResponse.Builder forceLedgerResponse =
+                        BookkeeperProtocol.ForceLedgerResponse.newBuilder()
+                        .setLedgerId(r.getForceLedgerRequest().getLedgerId())
+                        .setStatus(BookkeeperProtocol.StatusCode.ETOOMANYREQUESTS);
+                BookkeeperProtocol.Response.Builder response = BookkeeperProtocol.Response.newBuilder()
+                        .setHeader(forceLedger.getHeader())
+                        .setStatus(forceLedgerResponse.getStatus())
+                        .setForceLedgerResponse(forceLedgerResponse);
+                BookkeeperProtocol.Response resp = response.build();
+                forceLedger.sendResponse(forceLedgerResponse.getStatus(), resp, forceLedgerRequestStats);
             }
         }
     }

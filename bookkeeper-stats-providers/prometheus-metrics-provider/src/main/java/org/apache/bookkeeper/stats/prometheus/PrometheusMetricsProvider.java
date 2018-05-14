@@ -107,7 +107,9 @@ public class PrometheusMetricsProvider implements StatsProvider {
     @Override
     public void start(Configuration conf) {
         boolean httpEnabled = conf.getBoolean(PROMETHEUS_STATS_HTTP_ENABLE, DEFAULT_PROMETHEUS_STATS_HTTP_ENABLE);
-        if (httpEnabled) {
+        boolean bkHttpServerEnabled = conf.getBoolean("httpServerEnabled", false);
+        // only start its own http server when prometheus http is enabled and bk http server is not enabled.
+        if (httpEnabled && !bkHttpServerEnabled) {
             int httpPort = conf.getInt(PROMETHEUS_STATS_HTTP_PORT, DEFAULT_PROMETHEUS_STATS_HTTP_PORT);
             InetSocketAddress httpEndpoint = InetSocketAddress.createUnresolved("0.0.0.0", httpPort);
             this.server = new Server(httpEndpoint);
@@ -173,8 +175,8 @@ public class PrometheusMetricsProvider implements StatsProvider {
         return this.cachingStatsProvider.getStatsLogger(scope);
     }
 
-    @VisibleForTesting
-    void writeAllMetrics(Writer writer) throws IOException {
+    @Override
+    public void writeAllMetrics(Writer writer) throws IOException {
         PrometheusTextFormatUtil.writeMetricsCollectedByPrometheusClient(writer, registry);
 
         gauges.forEach((name, gauge) -> PrometheusTextFormatUtil.writeGauge(writer, name, gauge));
