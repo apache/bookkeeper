@@ -53,6 +53,13 @@ class RoundRobinDistributionSchedule implements DistributionSchedule {
         return WriteSetImpl.create(ensembleSize, writeQuorumSize, entryId);
     }
 
+    @Override
+    public WriteSet getWriteSetForLongPoll(long entryId) {
+        // for long poll reads, we are trying all the bookies in the ensemble
+        // so we create a `WriteSet` with `writeQuorumSize == ensembleSize`.
+        return WriteSetImpl.create(ensembleSize, ensembleSize /* writeQuorumSize */, entryId);
+    }
+
     @VisibleForTesting
     static WriteSet writeSetFromValues(Integer... values) {
         WriteSetImpl writeSet = WriteSetImpl.create(0, 0, 0);
