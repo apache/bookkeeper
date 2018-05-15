@@ -64,7 +64,7 @@ fi
 
 BINDIR=${BK_BINDIR:-"`dirname "$0"`"}
 BK_HOME=${BK_HOME:-"`cd ${BINDIR}/..;pwd`"}
-BK_CONFDIR=${BK_CONFDIR:-"${BK_HOME}/conf"}
+BK_CONFDIR=${BK_HOME}/conf
 DEFAULT_LOG_CONF=${BK_CONFDIR}/log4j.properties
 
 source ${BK_CONFDIR}/nettyenv.sh

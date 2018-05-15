@@ -108,6 +108,11 @@ testFindModuleJarAt() {
 
 testFindModuleJar() {
   BK_HOME=${BK_TMPDIR}
+  # prepare the env files
+  mkdir -p ${BK_HOME}/conf
+  echo "" > ${BK_HOME}/conf/nettyenv.sh
+  echo "" > ${BK_HOME}/conf/bkenv.sh
+  echo "" > ${BK_HOME}/conf/bk_cli_env.sh
 
   source ${BK_BINDIR}/common.sh
 
@@ -142,7 +147,31 @@ testFindModuleJar() {
     count=$(( $count + 1 ))
   done
 
+  unset BK_HOME
 }
+
+testLoadEnvfiles() {
+  BK_HOME=${BK_TMPDIR}
+
+  # prepare the env files
+  mkdir -p ${BK_HOME}/conf
+  echo "NETTY_LEAK_DETECTION_LEVEL=enabled" > ${BK_HOME}/conf/nettyenv.sh
+  echo "BOOKIE_MAX_HEAP_MEMORY=2048M" > ${BK_HOME}/conf/bkenv.sh
+  echo "CLI_MAX_HEAP_MEMORY=2048M" > ${BK_HOME}/conf/bk_cli_env.sh
+
+  # load the common.sh
+  source ${BK_BINDIR}/common.sh
+
+  assertEquals "NETTY_LEAK_DETECTION_LEVEL is not set correctly" "enabled" "${NETTY_LEAK_DETECTION_LEVEL}"
+  assertEquals "BOOKIE_MAX_HEAP_MEMORY is not set correctly" "2048M" "${BOOKIE_MAX_HEAP_MEMORY}"
+  assertEquals "CLI_MAX_HEAP_MEMORY is not set correctly" "2048M" "${CLI_MAX_HEAP_MEMORY}"
+
+  unset NETTY_LEAK_DETECTION_LEVEL
+  unset BOOKIE_MAX_HEAP_MEMORY
+  unset CLI_MAX_HEAP_MEMORY
+  unset BK_HOME
+}
+
 testBuildBookieJVMOpts() {
   source ${BK_BINDIR}/common.sh
 
