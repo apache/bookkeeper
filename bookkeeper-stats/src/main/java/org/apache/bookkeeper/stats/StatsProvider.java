@@ -16,6 +16,8 @@
  */
 package org.apache.bookkeeper.stats;
 
+import java.io.IOException;
+import java.io.Writer;
 import org.apache.commons.configuration.Configuration;
 
 /**
@@ -34,6 +36,15 @@ public interface StatsProvider {
      * Close the stats provider.
      */
     void stop();
+
+    /**
+     *
+     * @param writer
+     * @throws IOException
+     */
+    default void writeAllMetrics(Writer writer) throws IOException {
+        throw new UnsupportedOperationException("writeAllMetrics is not implemented yet");
+    }
 
     /**
      * Return the stats logger to a given <i>scope</i>.

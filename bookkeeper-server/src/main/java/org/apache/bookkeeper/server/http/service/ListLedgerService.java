@@ -142,13 +142,13 @@ public class ListLedgerService implements HttpEndpointService {
                         }
                     }
                     if (futures.size() >= LIST_LEDGER_BATCH_SIZE) {
-                        while (futures.size() > 0) {
+                        while (!futures.isEmpty()) {
                             ReadLedgerMetadataCallback cb = futures.remove(0);
                             keepLedgerMetadata(cb, output);
                         }
                     }
                 }
-                while (futures.size() > 0) {
+                while (!futures.isEmpty()) {
                     ReadLedgerMetadataCallback cb = futures.remove(0);
                     keepLedgerMetadata(cb, output);
                 }

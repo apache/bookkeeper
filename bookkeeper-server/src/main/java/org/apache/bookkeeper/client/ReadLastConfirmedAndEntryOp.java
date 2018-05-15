@@ -81,7 +81,7 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
         ReadLACAndEntryRequest(ArrayList<BookieSocketAddress> ensemble, long lId, long eId) {
             this.entryImpl = LedgerEntryImpl.create(lId, eId);
             this.ensemble = ensemble;
-            this.writeSet = lh.distributionSchedule.getWriteSet(eId);
+            this.writeSet = lh.distributionSchedule.getWriteSetForLongPoll(eId);
             if (lh.bk.reorderReadSequence) {
                 this.orderedEnsemble = lh.bk.placementPolicy.reorderReadLACSequence(ensemble,
                         lh.getBookiesHealthInfo(), writeSet.copy());
@@ -435,7 +435,10 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
         this.lastAddConfirmed = lh.getLastAddConfirmed();
         this.timeOutInMillis = timeOutInMillis;
         this.numResponsesPending = 0;
-        this.numEmptyResponsesAllowed = getLedgerMetadata().getWriteQuorumSize()
+        // since long poll is effectively reading lac with waits, lac can be potentially
+        // be advanced in different write quorums, so we need to make sure to cover enough
+        // bookies before claiming lac is not advanced.
+        this.numEmptyResponsesAllowed = getLedgerMetadata().getEnsembleSize()
                 - getLedgerMetadata().getAckQuorumSize() + 1;
         this.requestTimeNano = MathUtils.nowInNano();
         this.scheduler = scheduler;
