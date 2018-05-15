@@ -18,6 +18,8 @@
  */
 package org.apache.bookkeeper.tests;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.async.ResultCallback;
 import com.github.dockerjava.api.command.InspectExecResponse;
@@ -158,7 +160,7 @@ public class DockerUtils {
                 @Override
                 public void onNext(Frame object) {
                     LOG.info("DOCKER.exec({}:{}): {}", containerId, cmdString, object);
-                    output.append(new String(object.getPayload()));
+                    output.append(new String(object.getPayload(), UTF_8));
                 }
 
                 @Override
