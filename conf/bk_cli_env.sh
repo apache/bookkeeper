@@ -23,7 +23,9 @@
 # Set JAVA_HOME here to override the environment setting
 # JAVA_HOME=
 
+########################################
 # default settings for bookkeeper cli
+########################################
 
 # Configuration file of settings used in bookkeeper cli
 # CLI_CONF=
@@ -34,9 +36,9 @@
 # Add extra paths to the bookkeeper classpath
 # CLI_EXTRA_CLASSPATH=
 
-#
+#################################
 # CLI Logging Options
-#
+#################################
 
 # Log4j configuration file
 # CLI_LOG_CONF=
@@ -49,3 +51,17 @@
 
 # Log level & appender
 # CLI_ROOT_LOGGER="INFO,CONSOLE"
+
+#################################
+# JVM memory options
+#################################
+
+# CLI_MAX_HEAP_MEMORY=512M
+# CLI_MIN_HEAP_MEMORY=256M
+# CLI_MEM_OPTS=
+
+# JVM GC options
+# CLI_GC_OPTS=
+
+# JVM GC logging options
+# CLI_GC_LOGGING_OPTS=

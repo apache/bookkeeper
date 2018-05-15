@@ -62,6 +62,13 @@
       <version>${project.version}</version>
     </dependency>
 
+    <!-- dlog -->
+    <dependency>
+      <groupId>org.apache.distributedlog</groupId>
+      <artifactId>distributedlog-core</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+
     <!-- slf4j binding -->
     <dependency>
       <groupId>org.slf4j</groupId>
