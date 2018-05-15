@@ -18,7 +18,7 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":9};
+var methods = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":9};
 var tabs = {65535:["t0","All Methods"],1:["t1","Static Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -204,13 +204,19 @@ implements <a href="../../../../org/apache/bookkeeper/client/DistributionSchedul
 </td>
 </tr>
 <tr id="i3" class="rowColor">
+<td class="colFirst"><code><a href="../../../../org/apache/bookkeeper/client/DistributionSchedule.WriteSet.html" title="interface in org.apache.bookkeeper.client">DistributionSchedule.WriteSet</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/RoundRobinDistributionSchedule.html#getWriteSetForLongPoll-long-">getWriteSetForLongPoll</a></span>(long&nbsp;entryId)</code>
+<div class="block">Return the set of bookies indices to send the messages to for longpoll reads.</div>
+</td>
+</tr>
+<tr id="i4" class="altColor">
 <td class="colFirst"><code>boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/RoundRobinDistributionSchedule.html#hasEntry-long-int-">hasEntry</a></span>(long&nbsp;entryId,
         int&nbsp;bookieIndex)</code>
 <div class="block">Whether entry presents on given bookie index.</div>
 </td>
 </tr>
-<tr id="i4" class="altColor">
+<tr id="i5" class="rowColor">
 <td class="colFirst"><code>(package private) static <a href="../../../../org/apache/bookkeeper/client/DistributionSchedule.WriteSet.html" title="interface in org.apache.bookkeeper.client">DistributionSchedule.WriteSet</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/RoundRobinDistributionSchedule.html#writeSetFromValues-java.lang.Integer...-">writeSetFromValues</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Integer.html?is-external=true" title="class or interface in java.lang">Integer</a>...&nbsp;values)</code>&nbsp;</td>
 </tr>
@@ -267,6 +273,25 @@ implements <a href="../../../../org/apache/bookkeeper/client/DistributionSchedul
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
 <dd><code><a href="../../../../org/apache/bookkeeper/client/DistributionSchedule.html#getWriteSet-long-">getWriteSet</a></code>&nbsp;in interface&nbsp;<code><a href="../../../../org/apache/bookkeeper/client/DistributionSchedule.html" title="interface in org.apache.bookkeeper.client">DistributionSchedule</a></code></dd>
+</dl>
+</li>
+</ul>
+<a name="getWriteSetForLongPoll-long-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getWriteSetForLongPoll</h4>
+<pre>public&nbsp;<a href="../../../../org/apache/bookkeeper/client/DistributionSchedule.WriteSet.html" title="interface in org.apache.bookkeeper.client">DistributionSchedule.WriteSet</a>&nbsp;getWriteSetForLongPoll(long&nbsp;entryId)</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from interface:&nbsp;<code><a href="../../../../org/apache/bookkeeper/client/DistributionSchedule.html#getWriteSetForLongPoll-long-">DistributionSchedule</a></code></span></div>
+<div class="block">Return the set of bookies indices to send the messages to for longpoll reads.</div>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="../../../../org/apache/bookkeeper/client/DistributionSchedule.html#getWriteSetForLongPoll-long-">getWriteSetForLongPoll</a></code>&nbsp;in interface&nbsp;<code><a href="../../../../org/apache/bookkeeper/client/DistributionSchedule.html" title="interface in org.apache.bookkeeper.client">DistributionSchedule</a></code></dd>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>entryId</code> - expected next entry id to read.</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>the set of bookies indices to read from.</dd>
 </dl>
 </li>
 </ul>
