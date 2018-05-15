@@ -62,13 +62,14 @@ else
   JAVA=${JAVA_HOME}/bin/java
 fi
 
-BINDIR=`dirname "$0"`
-BK_HOME=`cd ${BINDIR}/..;pwd`
-DEFAULT_LOG_CONF=${BK_HOME}/conf/log4j.properties
+BINDIR=${BK_BINDIR:-"`dirname "$0"`"}
+BK_HOME=${BK_HOME:-"`cd ${BINDIR}/..;pwd`"}
+BK_CONFDIR=${BK_CONFDIR:-"${BK_HOME}/conf"}
+DEFAULT_LOG_CONF=${BK_CONFDIR}/log4j.properties
 
-source ${BK_HOME}/conf/nettyenv.sh
-source ${BK_HOME}/conf/bkenv.sh
-source ${BK_HOME}/conf/bk_cli_env.sh
+source ${BK_CONFDIR}/nettyenv.sh
+source ${BK_CONFDIR}/bkenv.sh
+source ${BK_CONFDIR}/bk_cli_env.sh
 
 # default netty settings
 NETTY_LEAK_DETECTION_LEVEL=${NETTY_LEAK_DETECTION_LEVEL:-"disabled"}
@@ -141,28 +142,25 @@ find_module_jar() {
     fi
   fi
 
-  BUILT_JAR=$(find_module_jar_at ${BK_HOME}/${MODULE_PATH}/target ${MODULE_NAME})
-
-  if [ -z "${BUILT_JAR}" ] && [ -z "${MODULE_JAR}" ]; then
-    echo "Couldn't find module '${MODULE_NAME}' jar." >&2
-    read -p "Do you want me to run \`mvn package -DskiptTests\` for you ? " answer
-    case "${answer:0:1}" in
-      y|Y )
-        mvn package -DskipTests
-        ;;
-      * )
-        exit 1
-        ;;
-    esac
-
+  if [ -z "${MODULE_JAR}" ]; then
     BUILT_JAR=$(find_module_jar_at ${BK_HOME}/${MODULE_PATH}/target ${MODULE_NAME})
+    if [ -z "${BUILT_JAR}" ]; then
+      echo "Couldn't find module '${MODULE_NAME}' jar." >&2
+      read -p "Do you want me to run \`mvn package -DskiptTests\` for you ? " answer
+      case "${answer:0:1}" in
+        y|Y )
+          mvn package -DskipTests
+          ;;
+        * )
+          exit 1
+          ;;
+      esac
+
+      BUILT_JAR=$(find_module_jar_at ${BK_HOME}/${MODULE_PATH}/target ${MODULE_NAME})
+    fi
     if [ -n "${BUILT_JAR}" ]; then
       MODULE_JAR=${BUILT_JAR}
     fi
-  fi
-
-  if [ -e "${BUILT_JAR}" ]; then
-    MODULE_JAR="${BUILT_JAR}"
   fi
 
   if [ ! -e "${MODULE_JAR}" ]; then
