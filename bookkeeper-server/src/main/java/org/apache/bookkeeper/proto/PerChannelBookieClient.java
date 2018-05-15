@@ -581,14 +581,11 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
      *          Write callback
      * @param ctx
      *          Write callback context
-     * @param options
-     *          Add options
+     * @param allowFastFail
+     *          allowFastFail flag
+     * @param writeFlags
+     *          WriteFlags
      */
-    void addEntry(final long ledgerId, byte[] masterKey, final long entryId, ByteBufList toSend, WriteCallback cb,
-                  Object ctx, final int options) {
-        addEntry(ledgerId, masterKey, entryId, toSend, cb, ctx, options, false, EnumSet.noneOf(WriteFlag.class));
-    }
-
     void addEntry(final long ledgerId, byte[] masterKey, final long entryId, ByteBufList toSend, WriteCallback cb,
                   Object ctx, final int options, boolean allowFastFail, final EnumSet<WriteFlag> writeFlags) {
         Object request = null;
@@ -596,7 +593,9 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         if (useV2WireProtocol) {
             if (writeFlags.contains(WriteFlag.DEFERRED_SYNC)) {
                 LOG.error("invalid writeflags {} for v2 protocol", writeFlags);
-                cb.writeComplete(BKException.Code.IllegalOpException, ledgerId, entryId, addr, ctx);
+                executor.executeOrdered(ledgerId, () -> {
+                    cb.writeComplete(BKException.Code.IllegalOpException, ledgerId, entryId, addr, ctx);
+                });
                 return;
             }
             completionKey = acquireV2Key(ledgerId, entryId, OperationType.ADD_ENTRY);

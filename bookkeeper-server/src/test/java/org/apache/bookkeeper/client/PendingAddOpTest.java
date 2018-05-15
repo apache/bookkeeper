@@ -27,7 +27,6 @@ import static org.mockito.Mockito.when;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import java.util.EnumSet;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.bookkeeper.client.BKException.Code;
 import org.apache.bookkeeper.client.api.WriteFlag;
@@ -63,7 +62,7 @@ public class PendingAddOpTest {
     public void testExecuteAfterCancelled() {
         AtomicInteger rcHolder = new AtomicInteger(-0xdead);
         PendingAddOp op = PendingAddOp.create(
-            lh, payload, EnumSet.noneOf(WriteFlag.class), (rc, handle, entryId, qwcLatency, ctx) -> {
+            lh, payload, WriteFlag.NONE, (rc, handle, entryId, qwcLatency, ctx) -> {
                 rcHolder.set(rc);
             }, null);
         assertSame(lh, op.lh);

@@ -562,7 +562,7 @@ public class BookieClient implements PerChannelBookieClientFactory {
             counter.inc();
             bc.addEntry(addr, ledger, new byte[0], i,
                     ByteBufList.get(Unpooled.wrappedBuffer(hello)), cb, counter, 0, false,
-                    EnumSet.noneOf(WriteFlag.class));
+                    WriteFlag.NONE);
         }
         counter.wait(0);
         System.out.println("Total = " + counter.total());

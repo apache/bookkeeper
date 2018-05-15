@@ -26,7 +26,6 @@ import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.util.concurrent.DefaultThreadFactory;
 import java.io.IOException;
-import java.util.EnumSet;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import org.apache.bookkeeper.client.BKException;
@@ -190,7 +189,7 @@ public class BenchBookie {
             toSend.writerIndex(toSend.capacity());
             bc.addEntry(new BookieSocketAddress(addr, port), ledger, new byte[20],
                     entry, ByteBufList.get(toSend), tc, null, BookieProtocol.FLAG_NONE,
-                    false, EnumSet.noneOf(WriteFlag.class));
+                    false, WriteFlag.NONE);
         }
         LOG.info("Waiting for warmup");
         tc.waitFor(warmUpCount);
@@ -208,7 +207,7 @@ public class BenchBookie {
             lc.resetComplete();
             bc.addEntry(new BookieSocketAddress(addr, port), ledger, new byte[20],
                         entry, ByteBufList.get(toSend), lc, null,
-                        BookieProtocol.FLAG_NONE, false, EnumSet.noneOf(WriteFlag.class));
+                        BookieProtocol.FLAG_NONE, false, WriteFlag.NONE);
             lc.waitForComplete();
         }
         long endTime = System.nanoTime();
@@ -227,7 +226,7 @@ public class BenchBookie {
             toSend.writerIndex(toSend.capacity());
             bc.addEntry(new BookieSocketAddress(addr, port), ledger, new byte[20],
                     entry, ByteBufList.get(toSend), tc, null, BookieProtocol.FLAG_NONE,
-                    false, EnumSet.noneOf(WriteFlag.class));
+                    false, WriteFlag.NONE);
         }
         tc.waitFor(throughputCount);
         endTime = System.currentTimeMillis();

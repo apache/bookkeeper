@@ -246,7 +246,7 @@ class LedgerCreateOp implements GenericCallback<Void> {
         private int builderAckQuorumSize = 2;
         private int builderWriteQuorumSize = 2;
         private byte[] builderPassword;
-        private EnumSet<WriteFlag> builderWriteFlags = EnumSet.noneOf(WriteFlag.class);
+        private EnumSet<WriteFlag> builderWriteFlags = WriteFlag.NONE;
         private org.apache.bookkeeper.client.api.DigestType builderDigestType =
             org.apache.bookkeeper.client.api.DigestType.CRC32;
         private Map<String, byte[]> builderCustomMetadata = Collections.emptyMap();
