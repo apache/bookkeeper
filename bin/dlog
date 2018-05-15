@@ -25,7 +25,7 @@ BK_HOME=`cd ${BINDIR}/..;pwd`
 
 source ${BK_HOME}/bin/common.sh
 
-DLOG_MODULE_NAME=distributedlog-core
+DLOG_MODULE_NAME="(org.apache.distributedlog-)?distributedlog-core"
 DLOG_MODULE_PATH=stream/distributedlog/core
 DLOG_MODULE_HOME=${BK_HOME}/${DLOG_MODULE_PATH}
 

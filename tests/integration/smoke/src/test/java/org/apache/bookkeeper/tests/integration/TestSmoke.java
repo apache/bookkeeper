@@ -44,14 +44,15 @@ import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.tests.BookKeeperClusterUtils;
 import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.arquillian.test.api.ArquillianResource;
-import org.junit.After;
 import org.junit.Assert;
-import org.junit.Before;
+import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.junit.runners.MethodSorters;
 
 @Slf4j
 @RunWith(Arquillian.class)
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class TestSmoke {
     private static byte[] PASSWD = "foobar".getBytes();
 
@@ -60,8 +61,8 @@ public class TestSmoke {
 
     private String currentVersion = System.getProperty("currentVersion");
 
-    @Before
-    public void setup() throws Exception {
+    @Test
+    public void test000_Setup() throws Exception {
         // First test to run, formats metadata and bookies
         if (BookKeeperClusterUtils.metadataFormatIfNeeded(docker, currentVersion)) {
             BookKeeperClusterUtils.formatAllBookies(docker, currentVersion);
@@ -69,13 +70,13 @@ public class TestSmoke {
         Assert.assertTrue(BookKeeperClusterUtils.startAllBookiesWithVersion(docker, currentVersion));
     }
 
-    @After
-    public void teardown() throws Exception {
+    @Test
+    public void tear999_Teardown() {
         Assert.assertTrue(BookKeeperClusterUtils.stopAllBookies(docker));
     }
 
     @Test
-    public void testReadWrite() throws Exception {
+    public void test001_ReadWrite() throws Exception {
         String zookeeper = BookKeeperClusterUtils.zookeeperConnectString(docker);
         int numEntries = 100;
         try (BookKeeper bk = new BookKeeper(zookeeper)) {
@@ -92,7 +93,7 @@ public class TestSmoke {
     }
 
     @Test
-    public void testReadWriteAdv() throws Exception {
+    public void test002_ReadWriteAdv() throws Exception {
         String zookeeper = BookKeeperClusterUtils.zookeeperConnectString(docker);
         int numEntries = 100;
         try (BookKeeper bk = new BookKeeper(zookeeper)) {
@@ -125,12 +126,12 @@ public class TestSmoke {
     }
 
     @Test
-    public void testTailingReadsWithoutExplicitLac() throws Exception {
+    public void test003_TailingReadsWithoutExplicitLac() throws Exception {
         testTailingReads(100, 98, 0);
     }
 
     @Test
-    public void testTailingReadsWithExplicitLac() throws Exception {
+    public void test004_TailingReadsWithExplicitLac() throws Exception {
         testTailingReads(100, 99, 100);
     }
 
@@ -229,12 +230,12 @@ public class TestSmoke {
     }
 
     @Test
-    public void testLongTailingReadsWithoutExplicitLac() throws Exception {
+    public void test005_LongTailingReadsWithoutExplicitLac() throws Exception {
         testLongPollTailingReads(100, 98, 0);
     }
 
     @Test
-    public void testLongTailingReadsWithExplicitLac() throws Exception {
+    public void test006_LongTailingReadsWithExplicitLac() throws Exception {
         testLongPollTailingReads(100, 99, 100);
     }
 

@@ -123,6 +123,15 @@ public class BookKeeperClusterUtils {
         }
     }
 
+    public static String getAnyBookie() throws Exception {
+        Optional<String> bookie = DockerUtils.cubeIdsMatching("bookkeeper").stream().findAny();
+        if (bookie.isPresent()) {
+            return bookie.get();
+        } else {
+            throw new Exception("No bookie is available");
+        }
+    }
+
     public static void runOnAllBookies(DockerClient docker, String... cmds) throws Exception {
         for (String b : DockerUtils.cubeIdsMatching("bookkeeper")) {
             DockerUtils.runCommand(docker, b, cmds);

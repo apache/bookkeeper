@@ -27,7 +27,7 @@ source ${BK_HOME}/bin/common.sh
 source ${BK_HOME}/conf/bk_cli_env.sh
 
 CLI_MODULE_PATH=bookkeeper-tools
-CLI_MODULE_NAME=bookkeeper-tools
+CLI_MODULE_NAME="(org.apache.bookkeeper-)?bookkeeper-tools"
 CLI_MODULE_HOME=${BK_HOME}/${CLI_MODULE_PATH}
 
 # find the module jar
@@ -60,8 +60,6 @@ NETTY_OPTS=$(build_netty_opts)
 LOGGING_OPTS=$(build_logging_opts ${CLI_LOG_CONF} ${CLI_LOG_DIR} ${CLI_LOG_FILE} ${CLI_ROOT_LOGGER})
 
 OPTS="${OPTS} -cp ${CLI_CLASSPATH} ${BOOKIE_OPTS} ${GC_OPTS} ${NETTY_OPTS} ${LOGGING_OPTS} ${CLI_EXTRA_OPTS}"
-
-echo $OPTS
 
 #Change to BK_HOME to support relative paths
 cd "$BK_HOME"

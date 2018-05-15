@@ -131,10 +131,16 @@ public class DockerUtils {
         throw new IllegalArgumentException("Container " + containerId + " has no networks");
     }
 
-    public static void runCommand(DockerClient docker, String containerId, String... cmd) throws Exception {
+    public static String runCommand(DockerClient docker, String containerId, String... cmd) throws Exception {
         CompletableFuture<Boolean> future = new CompletableFuture<>();
-        String execid = docker.execCreateCmd(containerId).withCmd(cmd).exec().getId();
+        String execid = docker.execCreateCmd(containerId)
+            .withCmd(cmd)
+            .withAttachStderr(true)
+            .withAttachStdout(true)
+            .exec()
+            .getId();
         String cmdString = Arrays.stream(cmd).collect(Collectors.joining(" "));
+        StringBuffer output = new StringBuffer();
         docker.execStartCmd(execid).withDetach(false).exec(new ResultCallback<Frame>() {
                 @Override
                 public void close() {}
@@ -147,6 +153,7 @@ public class DockerUtils {
                 @Override
                 public void onNext(Frame object) {
                     LOG.info("DOCKER.exec({}:{}): {}", containerId, cmdString, object);
+                    output.append(new String(object.getPayload()));
                 }
 
                 @Override
@@ -169,10 +176,14 @@ public class DockerUtils {
         }
         int retCode = resp.getExitCode();
         if (retCode != 0) {
+            LOG.error("DOCKER.exec({}:{}): failed with {} : {}", containerId, cmdString, retCode, output);
             throw new Exception(
                     String.format("cmd(%s) failed on %s with exitcode %d",
                                   cmdString, containerId, retCode));
+        } else {
+            LOG.info("DOCKER.exec({}:{}): completed with {}", containerId, cmdString, retCode);
         }
+        return output.toString();
     }
 
     public static Set<String> cubeIdsMatching(String needle) {

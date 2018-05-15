@@ -24,7 +24,7 @@ BK_HOME=`cd ${BINDIR}/..;pwd`
 source ${BK_HOME}/bin/common.sh
 
 BOOKIE_MODULE_PATH=bookkeeper-server
-BOOKIE_MODULE_NAME=bookkeeper-server
+BOOKIE_MODULE_NAME="(org.apache.bookkeeper-)?bookkeeper-server"
 BOOKIE_MODULE_HOME=${BK_HOME}/${BOOKIE_MODULE_PATH}
 
 # find the module jar
