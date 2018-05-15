@@ -132,6 +132,11 @@ public class DockerUtils {
     }
 
     public static String runCommand(DockerClient docker, String containerId, String... cmd) throws Exception {
+        return runCommand(docker, containerId, false, cmd);
+    }
+
+    public static String runCommand(DockerClient docker, String containerId, boolean ignoreError, String... cmd)
+            throws Exception {
         CompletableFuture<Boolean> future = new CompletableFuture<>();
         String execid = docker.execCreateCmd(containerId)
             .withCmd(cmd)
@@ -177,9 +182,10 @@ public class DockerUtils {
         int retCode = resp.getExitCode();
         if (retCode != 0) {
             LOG.error("DOCKER.exec({}:{}): failed with {} : {}", containerId, cmdString, retCode, output);
-            throw new Exception(
-                    String.format("cmd(%s) failed on %s with exitcode %d",
-                                  cmdString, containerId, retCode));
+            if (!ignoreError) {
+                throw new Exception(String.format("cmd(%s) failed on %s with exitcode %d",
+                    cmdString, containerId, retCode));
+            }
         } else {
             LOG.info("DOCKER.exec({}:{}): completed with {}", containerId, cmdString, retCode);
         }
