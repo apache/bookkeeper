@@ -79,6 +79,7 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
     int maxWeightMultiple;
     private Map<BookieNode, WeightedObject> bookieInfoMap = new HashMap<BookieNode, WeightedObject>();
     private WeightedRandomSelection<BookieNode> weightedSelection;
+    private int minNumRacksPerWriteQuorum;
 
     public static final String REPP_DNS_RESOLVER_CLASS = "reppDnsResolverClass";
     public static final String REPP_RANDOM_READ_REORDERING = "ensembleRandomReadReordering";
@@ -233,6 +234,7 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
                                                               int stabilizePeriodSeconds,
                                                               boolean isWeighted,
                                                               int maxWeightMultiple,
+                                                              int minNumRacksPerWriteQuorum,
                                                               StatsLogger statsLogger) {
         checkNotNull(statsLogger, "statsLogger should not be null, use NullStatsLogger instead.");
         this.statsLogger = statsLogger;
@@ -242,6 +244,7 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
         this.stabilizePeriodSeconds = stabilizePeriodSeconds;
         this.dnsResolver = new DNSResolverDecorator(dnsResolver, () -> this.getDefaultRack());
         this.timer = timer;
+        this.minNumRacksPerWriteQuorum = minNumRacksPerWriteQuorum;
 
         // create the network topology
         if (stabilizePeriodSeconds > 0) {
@@ -329,6 +332,7 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
                 conf.getNetworkTopologyStabilizePeriodSeconds(),
                 conf.getDiskWeightBasedPlacementEnabled(),
                 conf.getBookieMaxWeightMultipleForWeightBasedPlacement(),
+                conf.getMinNumRacksPerWriteQuorum(),
                 statsLogger);
     }
 
@@ -512,6 +516,7 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
         rwLock.readLock().lock();
         try {
             Set<Node> excludeNodes = convertBookiesToNodes(excludeBookies);
+            int minNumRacksPerWriteQuorumForThisEnsemble = Math.min(writeQuorumSize, minNumRacksPerWriteQuorum);
             RRTopologyAwareCoverageEnsemble ensemble =
                     new RRTopologyAwareCoverageEnsemble(
                             ensembleSize,
@@ -519,7 +524,8 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
                             ackQuorumSize,
                             RACKNAME_DISTANCE_FROM_LEAVES,
                             parentEnsemble,
-                            parentPredicate);
+                            parentPredicate,
+                            minNumRacksPerWriteQuorumForThisEnsemble);
             BookieNode prevNode = null;
             int numRacks = topology.getNumOfRacks();
             // only one rack, use the random algorithm.
@@ -549,14 +555,18 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
 
                     if (writeQuorumSize > 1) {
                         /*
-                         * Ideally RackAwareEnsemblePlacementPolicy should try
-                         * to select bookies from different racks for a write
-                         * quorum. So in a WriteQuorum, bookies should be from
-                         * WriteQuorum number of racks. So we would add racks of
-                         * (WriteQuorumSize-1) neighbours (both sides) to the
-                         * exclusion list (~curRack).
+                         * RackAwareEnsemblePlacementPolicy should try to select
+                         * bookies from atleast
+                         * minNumRacksPerWriteQuorumForThisEnsemble number of
+                         * different racks for a write quorum. So in a
+                         * WriteQuorum, bookies should be from
+                         * minNumRacksPerWriteQuorumForThisEnsemble number of
+                         * racks. So we would add racks of
+                         * (minNumRacksPerWriteQuorumForThisEnsemble-1)
+                         * neighbours (both sides) to the exclusion list
+                         * (~curRack).
                          */
-                        for (int j = 1; j < writeQuorumSize; j++) {
+                        for (int j = 1; j < minNumRacksPerWriteQuorumForThisEnsemble; j++) {
                             int nextIndex = i + j;
                             if (nextIndex >= ensembleSize) {
                                 nextIndex %= ensembleSize;
@@ -574,7 +584,7 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
                             }
                         }
 
-                        for (int j = 1; j < writeQuorumSize; j++) {
+                        for (int j = 1; j < minNumRacksPerWriteQuorumForThisEnsemble; j++) {
                             int nextIndex = i - j;
                             if (nextIndex < 0) {
                                 nextIndex += ensembleSize;

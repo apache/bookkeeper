@@ -107,7 +107,7 @@ public class TestRackawarePolicyNotificationUpdates extends TestCase {
         ArrayList<BookieSocketAddress> ensemble = repp.newEnsemble(ensembleSize, writeQuorumSize, acqQuorumSize,
                 Collections.emptyMap(), Collections.emptySet());
         int numCovered = TestRackawareEnsemblePlacementPolicy.getNumCoveredWriteQuorums(ensemble, writeQuorumSize,
-                numOfAvailableRacks);
+                conf.getMinNumRacksPerWriteQuorum());
         assertTrue(numCovered >= 1 && numCovered < 3);
         assertTrue(ensemble.contains(addr1));
 
@@ -121,7 +121,7 @@ public class TestRackawarePolicyNotificationUpdates extends TestCase {
         ensemble = repp.newEnsemble(ensembleSize, writeQuorumSize, acqQuorumSize, Collections.emptyMap(),
                 Collections.emptySet());
         assertEquals(3, TestRackawareEnsemblePlacementPolicy.getNumCoveredWriteQuorums(ensemble, writeQuorumSize,
-                numOfAvailableRacks));
+                conf.getMinNumRacksPerWriteQuorum()));
         assertTrue(ensemble.contains(addr1));
         assertTrue(ensemble.contains(addr2));
     }

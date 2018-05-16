@@ -125,6 +125,11 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
         protected class RackQuorumCoverageSet implements CoverageSet {
             HashSet<String> racksOrRegionsInQuorum = new HashSet<String>();
             int seenBookies = 0;
+            private final int minNumRacksPerWriteQuorum;
+
+            protected RackQuorumCoverageSet(int minNumRacksPerWriteQuorum) {
+                this.minNumRacksPerWriteQuorum = Math.min(writeQuorumSize, minNumRacksPerWriteQuorum);
+            }
 
             @Override
             public boolean apply(BookieNode candidate) {
@@ -133,13 +138,32 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
                 if (writeQuorumSize < 2) {
                     return true;
                 }
+
                 /*
-                 * Ideally RackAwareEnsemblePlacementPolicy should try to select
-                 * bookies from different racks for a write quorum. So in a
-                 * WriteQuorum, bookies should be from WriteQuorum number of
-                 * racks.
+                 * allow the initial writeQuorumSize-minRacksToWriteTo+1 bookies
+                 * to be placed on any rack(including on a single rack). But
+                 * after that make sure that with each new bookie chosen, we
+                 * will be able to satisfy the minRackToWriteTo condition
+                 * eventually
                  */
-                return !racksOrRegionsInQuorum.contains(candidate.getNetworkLocation(distanceFromLeaves));
+                if (seenBookies + minNumRacksPerWriteQuorum - 1 >= writeQuorumSize) {
+                    int numRacks = racksOrRegionsInQuorum.size();
+                    if (!racksOrRegionsInQuorum.contains(candidate.getNetworkLocation(distanceFromLeaves))) {
+                        numRacks++;
+                    }
+                    if (numRacks >= minNumRacksPerWriteQuorum
+                            || ((writeQuorumSize - seenBookies - 1) >= (minNumRacksPerWriteQuorum - numRacks))) {
+                        /*
+                         * either we have reached our goal or we still have a
+                         * few bookies to be selected with which to catch up to
+                         * the goal
+                         */
+                        return true;
+                    } else {
+                        return false;
+                    }
+                }
+                return true;
             }
 
             @Override
@@ -150,7 +174,7 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
 
             @Override
             public RackQuorumCoverageSet duplicate() {
-                RackQuorumCoverageSet ret = new RackQuorumCoverageSet();
+                RackQuorumCoverageSet ret = new RackQuorumCoverageSet(this.minNumRacksPerWriteQuorum);
                 ret.racksOrRegionsInQuorum = Sets.newHashSet(this.racksOrRegionsInQuorum);
                 ret.seenBookies = this.seenBookies;
                 return ret;
@@ -276,6 +300,7 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
         final int writeQuorumSize;
         final int ackQuorumSize;
         final int minRacksOrRegionsForDurability;
+        final int minNumRacksPerWriteQuorum;
         final ArrayList<BookieNode> chosenNodes;
         final Set<String> racksOrRegions;
         private final CoverageSet[] quorums;
@@ -304,6 +329,7 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
                 this.racksOrRegions = null;
             }
             this.minRacksOrRegionsForDurability = that.minRacksOrRegionsForDurability;
+            this.minNumRacksPerWriteQuorum = that.minNumRacksPerWriteQuorum;
         }
 
         protected RRTopologyAwareCoverageEnsemble(int ensembleSize,
@@ -311,9 +337,10 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
                                                   int ackQuorumSize,
                                                   int distanceFromLeaves,
                                                   Set<String> racksOrRegions,
-                                                  int minRacksOrRegionsForDurability) {
-            this(ensembleSize, writeQuorumSize, ackQuorumSize, distanceFromLeaves, null, null,
-                 racksOrRegions, minRacksOrRegionsForDurability);
+                                                  int minRacksOrRegionsForDurability,
+                                                  int minNumRacksPerWriteQuorum) {
+            this(ensembleSize, writeQuorumSize, ackQuorumSize, distanceFromLeaves, null, null, racksOrRegions,
+                    minRacksOrRegionsForDurability, minNumRacksPerWriteQuorum);
         }
 
         protected RRTopologyAwareCoverageEnsemble(int ensembleSize,
@@ -321,9 +348,10 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
                                                   int ackQuorumSize,
                                                   int distanceFromLeaves,
                                                   Ensemble<BookieNode> parentEnsemble,
-                                                  Predicate<BookieNode> parentPredicate) {
+                                                  Predicate<BookieNode> parentPredicate,
+                                                  int minNumRacksPerWriteQuorum) {
             this(ensembleSize, writeQuorumSize, ackQuorumSize, distanceFromLeaves, parentEnsemble, parentPredicate,
-                 null, 0);
+                 null, 0, minNumRacksPerWriteQuorum);
         }
 
         protected RRTopologyAwareCoverageEnsemble(int ensembleSize,
@@ -333,7 +361,8 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
                                                   Ensemble<BookieNode> parentEnsemble,
                                                   Predicate<BookieNode> parentPredicate,
                                                   Set<String> racksOrRegions,
-                                                  int minRacksOrRegionsForDurability) {
+                                                  int minRacksOrRegionsForDurability,
+                                                  int minNumRacksPerWriteQuorum) {
             this.ensembleSize = ensembleSize;
             this.writeQuorumSize = writeQuorumSize;
             this.ackQuorumSize = ackQuorumSize;
@@ -348,6 +377,7 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
             this.parentPredicate = parentPredicate;
             this.racksOrRegions = racksOrRegions;
             this.minRacksOrRegionsForDurability = minRacksOrRegionsForDurability;
+            this.minNumRacksPerWriteQuorum = minNumRacksPerWriteQuorum;
         }
 
         @Override
@@ -378,7 +408,7 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
                         if (minRacksOrRegionsForDurability > 0) {
                             quorums[idx] = new RackOrRegionDurabilityCoverageSet();
                         } else {
-                            quorums[idx] = new RackQuorumCoverageSet();
+                            quorums[idx] = new RackQuorumCoverageSet(this.minNumRacksPerWriteQuorum);
                         }
                     }
                     if (!quorums[idx].apply(candidate)) {
@@ -411,7 +441,7 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
                         if (minRacksOrRegionsForDurability > 0) {
                             quorums[idx] = new RackOrRegionDurabilityCoverageSet();
                         } else {
-                            quorums[idx] = new RackQuorumCoverageSet();
+                            quorums[idx] = new RackQuorumCoverageSet(this.minNumRacksPerWriteQuorum);
                         }
                     }
                     quorums[idx].addBookie(node);
