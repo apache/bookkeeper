@@ -52,6 +52,8 @@ import static org.apache.bookkeeper.bookie.BookKeeperServerStats.WRITE_LAC_REQUE
 import static org.apache.bookkeeper.proto.RequestUtils.hasFlag;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.protobuf.ByteString;
 
@@ -61,11 +63,13 @@ import io.netty.util.HashedWheelTimer;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
 
+import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -99,6 +103,7 @@ public class BookieRequestProcessor implements RequestProcessor {
      * worker threads.
      */
     private final ServerConfiguration serverCfg;
+    private final long waitTimeoutOnBackpressureMillis;
 
     /**
      * This is the Bookie instance that is used to handle all read and write requests.
@@ -174,9 +179,14 @@ public class BookieRequestProcessor implements RequestProcessor {
     final Semaphore addsSemaphore;
     final Semaphore readsSemaphore;
 
+    // to temporary blacklist channels
+    final Optional<Cache<Channel, Boolean>> blacklistedChannels;
+    final Consumer<Channel> onResponseTimeout;
+
     public BookieRequestProcessor(ServerConfiguration serverCfg, Bookie bookie,
             StatsLogger statsLogger, SecurityHandlerFactory shFactory) throws SecurityException {
         this.serverCfg = serverCfg;
+        this.waitTimeoutOnBackpressureMillis = serverCfg.getWaitTimeoutOnBackpressureMillis();
         this.bookie = bookie;
         this.readThreadPool = createExecutor(
                 this.serverCfg.getNumReadWorkerThreads(),
@@ -211,6 +221,25 @@ public class BookieRequestProcessor implements RequestProcessor {
         this.shFactory = shFactory;
         if (shFactory != null) {
             shFactory.init(NodeType.Server, serverCfg);
+        }
+
+        if (waitTimeoutOnBackpressureMillis > 0) {
+            blacklistedChannels = Optional.of(CacheBuilder.newBuilder()
+                    .expireAfterWrite(waitTimeoutOnBackpressureMillis, TimeUnit.MILLISECONDS)
+                    .build());
+        } else {
+            blacklistedChannels = Optional.empty();
+        }
+
+        if (serverCfg.getCloseChannelOnResponseTimeout()) {
+            onResponseTimeout = (ch) -> {
+                LOG.warn("closing channel {} because it was non-writable for longer than {} ms",
+                        ch, waitTimeoutOnBackpressureMillis);
+                ch.close();
+            };
+        } else {
+            // noop
+            onResponseTimeout = (ch) -> {};
         }
 
         // Expose Stats
@@ -710,5 +739,29 @@ public class BookieRequestProcessor implements RequestProcessor {
                         ResponseBuilder.buildErrorResponse(BookieProtocol.ETOOMANYREQUESTS, r), readRequestStats);
             }
         }
+    }
+
+    public long getWaitTimeoutOnBackpressureMillis() {
+        return waitTimeoutOnBackpressureMillis;
+    }
+
+    public void blacklistChannel(Channel channel) {
+        blacklistedChannels
+                .ifPresent(x -> x.put(channel, true));
+    }
+
+    public void invalidateBlacklist(Channel channel) {
+        blacklistedChannels
+                .ifPresent(x -> x.invalidate(channel));
+    }
+
+    public boolean isBlacklisted(Channel channel) {
+        return blacklistedChannels
+                .map(x -> x.getIfPresent(channel))
+                .orElse(false);
+    }
+
+    public void handleNonWritableChannel(Channel channel) {
+        onResponseTimeout.accept(channel);
     }
 }

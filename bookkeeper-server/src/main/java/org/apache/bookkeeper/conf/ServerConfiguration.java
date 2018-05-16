@@ -84,6 +84,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     // backpressure control
     protected static final String MAX_ADDS_IN_PROGRESS = "maxAddsInProgress";
     protected static final String MAX_READS_IN_PROGRESS = "maxReadsInProgress";
+    protected static final String CLOSE_CHANNEL_ON_RESPONSE_TIMEOUT = "closeChannelOnResponseTimeout";
     // Bookie Parameters
     protected static final String BOOKIE_PORT = "bookiePort";
     protected static final String LISTENING_INTERFACE = "listeningInterface";
@@ -96,10 +97,12 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     protected static final String LEDGER_DIRS = "ledgerDirectories";
     protected static final String INDEX_DIRS = "indexDirectories";
     protected static final String ALLOW_STORAGE_EXPANSION = "allowStorageExpansion";
-    // NIO Parameters
+    // NIO and Netty Parameters
     protected static final String SERVER_TCP_NODELAY = "serverTcpNoDelay";
     protected static final String SERVER_SOCK_KEEPALIVE = "serverSockKeepalive";
     protected static final String SERVER_SOCK_LINGER = "serverTcpLinger";
+    protected static final String SERVER_WRITEBUFFER_LOW_WATER_MARK = "serverWriteBufferLowWaterMark";
+    protected static final String SERVER_WRITEBUFFER_HIGH_WATER_MARK = "serverWriteBufferHighWaterMark";
 
     // Zookeeper Parameters
     protected static final String ZK_RETRY_BACKOFF_START_MS = "zkRetryBackoffStartMs";
@@ -679,6 +682,31 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
         return this;
     }
 
+    /**
+     * Configures action in case if server timed out sending response to the client.
+     * true == close the channel and drop response
+     * false == drop response
+     * Requires waitTimeoutOnBackpressureMs >= 0 otherwise ignored.
+     *
+     * @return value indicating if channel should be closed.
+     */
+    public boolean getCloseChannelOnResponseTimeout(){
+        return this.getBoolean(CLOSE_CHANNEL_ON_RESPONSE_TIMEOUT, false);
+    }
+
+    /**
+     * Configures action in case if server timed out sending response to the client.
+     * true == close the channel and drop response
+     * false == drop response
+     * Requires waitTimeoutOnBackpressureMs >= 0 otherwise ignored.
+     *
+     * @param value
+     * @return server configuration.
+     */
+    public ServerConfiguration setCloseChannelOnResponseTimeout(boolean value) {
+        this.setProperty(CLOSE_CHANNEL_ON_RESPONSE_TIMEOUT, value);
+        return this;
+    }
     /**
      * Get bookie port that bookie server listen on.
      *
@@ -2799,6 +2827,47 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
         return this;
     }
 
+    /**
+     * Get server netty channel write buffer low water mark.
+     *
+     * @return netty channel write buffer low water mark.
+     */
+    public int getServerWriteBufferLowWaterMark() {
+        return getInt(SERVER_WRITEBUFFER_LOW_WATER_MARK, 384 * 1024);
+    }
+
+    /**
+     * Set server netty channel write buffer low water mark.
+     *
+     * @param waterMark
+     *          netty channel write buffer low water mark.
+     * @return client configuration.
+     */
+    public ServerConfiguration setServerWriteBufferLowWaterMark(int waterMark) {
+        setProperty(SERVER_WRITEBUFFER_LOW_WATER_MARK, waterMark);
+        return this;
+    }
+
+    /**
+     * Get server netty channel write buffer high water mark.
+     *
+     * @return netty channel write buffer high water mark.
+     */
+    public int getServerWriteBufferHighWaterMark() {
+        return getInt(SERVER_WRITEBUFFER_HIGH_WATER_MARK, 512 * 1024);
+    }
+
+    /**
+     * Set server netty channel write buffer high water mark.
+     *
+     * @param waterMark
+     *          netty channel write buffer high water mark.
+     * @return client configuration.
+     */
+    public ServerConfiguration setServerWriteBufferHighWaterMark(int waterMark) {
+        setProperty(SERVER_WRITEBUFFER_HIGH_WATER_MARK, waterMark);
+        return this;
+    }
     /**
      * Set registration manager class.
      *

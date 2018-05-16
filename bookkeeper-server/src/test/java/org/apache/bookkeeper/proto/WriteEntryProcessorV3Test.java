@@ -79,10 +79,13 @@ public class WriteEntryProcessorV3Test {
         bookie = mock(Bookie.class);
         requestProcessor = mock(BookieRequestProcessor.class);
         when(requestProcessor.getBookie()).thenReturn(bookie);
+        when(requestProcessor.getWaitTimeoutOnBackpressureMillis()).thenReturn(-1L);
         when(requestProcessor.getAddEntryStats())
             .thenReturn(NullStatsLogger.INSTANCE.getOpStatsLogger("add_entry"));
         when(requestProcessor.getAddRequestStats())
             .thenReturn(NullStatsLogger.INSTANCE.getOpStatsLogger("add_requests"));
+        when(requestProcessor.getChannelWriteStats())
+                .thenReturn(NullStatsLogger.INSTANCE.getOpStatsLogger("CHANNEL_WRITE"));
         processor = new WriteEntryProcessorV3(
             request,
             channel,
@@ -240,6 +243,43 @@ public class WriteEntryProcessorV3Test {
         assertTrue(writtenObject.get() instanceof Response);
         Response response = (Response) writtenObject.get();
         assertEquals(StatusCode.EOK, response.getStatus());
+    }
+
+    @Test
+    public void testWritesWithClientNotAcceptingReponses() throws Exception {
+        when(requestProcessor.getWaitTimeoutOnBackpressureMillis()).thenReturn(5L);
+
+        doAnswer(invocationOnMock -> {
+            Channel ch = invocationOnMock.getArgument(0);
+            ch.close();
+            return null;
+        }).when(requestProcessor).handleNonWritableChannel(any());
+
+        when(channel.isWritable()).thenReturn(false);
+
+        when(bookie.isReadOnly()).thenReturn(false);
+        when(channel.voidPromise()).thenReturn(mock(ChannelPromise.class));
+        when(channel.writeAndFlush(any())).thenReturn(mock(ChannelPromise.class));
+        doAnswer(invocationOnMock -> {
+            WriteCallback wc = invocationOnMock.getArgument(2);
+
+            wc.writeComplete(
+                    0,
+                    request.getAddRequest().getLedgerId(),
+                    request.getAddRequest().getEntryId(),
+                    null,
+                    null);
+            return null;
+        }).when(bookie).addEntry(
+                any(ByteBuf.class), eq(false), any(WriteCallback.class), same(channel), eq(new byte[0]));
+
+        processor.run();
+
+        verify(bookie, times(1))
+                .addEntry(any(ByteBuf.class), eq(false), any(WriteCallback.class), same(channel), eq(new byte[0]));
+        verify(requestProcessor, times(1)).handleNonWritableChannel(channel);
+        verify(channel, times(0)).writeAndFlush(any(Response.class));
+        verify(channel, times(1)).close();
     }
 
 }
