@@ -26,7 +26,6 @@ import java.io.IOException;
 import java.net.BindException;
 import java.net.URI;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -210,11 +209,10 @@ public class StreamCluster
                 log.info("Attempting to start storage server at (bookie port = {}, grpc port = {})"
                         + " : bkDir = {}, rangesStoreDir = {}, serveReadOnlyTables = {}",
                     bookiePort, grpcPort, bkDir, rangesStoreDir, spec.serveReadOnlyTable);
-                server = StorageServer.startStorageServer(
+                server = StorageServer.buildStorageServer(
                     serverConf,
                     grpcPort,
-                    spec.numServers() * 2,
-                    Optional.empty());
+                    spec.numServers() * 2);
                 server.start();
                 log.info("Started storage server at (bookie port = {}, grpc port = {})",
                     bookiePort, grpcPort);

@@ -13,6 +13,7 @@
  */
 package org.apache.bookkeeper.stream.server;
 
+import static com.google.common.base.Preconditions.checkNotNull;
 import static org.apache.bookkeeper.stream.storage.StorageConstants.ZK_METADATA_ROOT_PATH;
 
 import com.beust.jcommander.JCommander;
@@ -21,15 +22,16 @@ import java.io.File;
 import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.UnknownHostException;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.common.component.ComponentStarter;
 import org.apache.bookkeeper.common.component.LifecycleComponent;
 import org.apache.bookkeeper.common.component.LifecycleComponentStack;
+import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
 import org.apache.bookkeeper.statelib.impl.rocksdb.checkpoint.dlog.DLCheckpointStore;
+import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.stream.proto.common.Endpoint;
 import org.apache.bookkeeper.stream.server.conf.BookieConfiguration;
@@ -71,7 +73,7 @@ public class StorageServer {
         private String serverConfigFile;
 
         @Parameter(names = {"-p", "--port"}, description = "Port to listen on for gPRC server")
-        private int port = 3182;
+        private int port = 4181;
 
         @Parameter(names = {"-h", "--help"}, description = "Show this help message")
         private boolean help = false;
@@ -137,11 +139,10 @@ public class StorageServer {
 
         LifecycleComponent storageServer;
         try {
-            storageServer = startStorageServer(
+            storageServer = buildStorageServer(
                 conf,
                 grpcPort,
-                1024,
-                Optional.empty());
+                1024);
         } catch (ConfigurationException e) {
             log.error("Invalid storage configuration", e);
             return ExitCode.INVALID_CONF.code();
@@ -164,11 +165,23 @@ public class StorageServer {
         return ExitCode.OK.code();
     }
 
-    public static LifecycleComponent startStorageServer(CompositeConfiguration conf,
+    public static LifecycleComponent buildStorageServer(CompositeConfiguration conf,
+                                                        int grpcPort,
+                                                        int numStorageContainers)
+            throws UnknownHostException, ConfigurationException {
+        return buildStorageServer(conf, grpcPort, numStorageContainers, true, NullStatsLogger.INSTANCE);
+    }
+
+    public static LifecycleComponent buildStorageServer(CompositeConfiguration conf,
                                                         int grpcPort,
                                                         int numStorageContainers,
-                                                        Optional<String> instanceName)
+                                                        boolean startBookieAndStartProvider,
+                                                        StatsLogger externalStatsLogger)
         throws ConfigurationException, UnknownHostException {
+
+        LifecycleComponentStack.Builder serverBuilder = LifecycleComponentStack.newBuilder()
+            .withName("storage-server");
+
         BookieConfiguration bkConf = BookieConfiguration.of(conf);
         bkConf.validate();
 
@@ -188,25 +201,40 @@ public class StorageServer {
         StorageResources storageResources = StorageResources.create();
 
         // Create the stats provider
-        StatsProviderService statsProviderService = new StatsProviderService(bkConf);
-        StatsLogger rootStatsLogger = statsProviderService.getStatsProvider().getStatsLogger("");
+        StatsLogger rootStatsLogger;
+        if (startBookieAndStartProvider) {
+            StatsProviderService statsProviderService = new StatsProviderService(bkConf);
+            rootStatsLogger = statsProviderService.getStatsProvider().getStatsLogger("");
+            serverBuilder.addComponent(statsProviderService);
+        } else {
+            rootStatsLogger = checkNotNull(externalStatsLogger,
+                "External stats logger is not provided while not starting stats provider");
+        }
 
         // Create the bookie service
-        BookieService bookieService = new BookieService(bkConf, rootStatsLogger);
+        ServerConfiguration bkServerConf;
+        if (startBookieAndStartProvider) {
+            BookieService bookieService = new BookieService(bkConf, rootStatsLogger);
+            serverBuilder.addComponent(bookieService);
+            bkServerConf = bookieService.serverConf();
+        } else {
+            bkServerConf = new ServerConfiguration();
+            bkServerConf.loadConf(bkConf.getUnderlyingConf());
+        }
 
         // Create the curator provider service
         CuratorProviderService curatorProviderService = new CuratorProviderService(
-            bookieService.serverConf(), dlConf, rootStatsLogger.scope("curator"));
+            bkServerConf, dlConf, rootStatsLogger.scope("curator"));
 
         // Create the distributedlog namespace service
         DLNamespaceProviderService dlNamespaceProvider = new DLNamespaceProviderService(
-            bookieService.serverConf(),
+            bkServerConf,
             dlConf,
             rootStatsLogger.scope("dlog"));
 
         // Create a registration service provider
         RegistrationServiceProvider regService = new RegistrationServiceProvider(
-            bookieService.serverConf(),
+            bkServerConf,
             dlConf,
             rootStatsLogger.scope("registration").scope("provider"));
 
@@ -216,7 +244,7 @@ public class StorageServer {
             () -> new ClusterControllerImpl(
                 new ZkClusterMetadataStore(
                     curatorProviderService.get(),
-                    ZKMetadataDriverBase.resolveZkServers(bookieService.serverConf()),
+                    ZKMetadataDriverBase.resolveZkServers(bkServerConf),
                     ZK_METADATA_ROOT_PATH),
                 regService.get(),
                 new DefaultStorageContainerController(),
@@ -241,7 +269,7 @@ public class StorageServer {
                     storageConf,
                     new ZkClusterMetadataStore(
                         curatorProviderService.get(),
-                        ZKMetadataDriverBase.resolveZkServers(bookieService.serverConf()),
+                        ZKMetadataDriverBase.resolveZkServers(bkServerConf),
                         ZK_METADATA_ROOT_PATH),
                     registry,
                     rootStatsLogger.scope("sc").scope("manager")))
@@ -270,16 +298,13 @@ public class StorageServer {
         // Create a registration state service only when service is ready.
         RegistrationStateService regStateService = new RegistrationStateService(
             myEndpoint,
-            bookieService.serverConf(),
+            bkServerConf,
             bkConf,
             regService,
             rootStatsLogger.scope("registration"));
 
         // Create all the service stack
-        return LifecycleComponentStack.newBuilder()
-            .withName("storage-server")
-            .addComponent(statsProviderService)     // stats provider
-            .addComponent(bookieService)            // bookie server
+        return serverBuilder
             .addComponent(curatorProviderService)   // service that provides curator client
             .addComponent(dlNamespaceProvider)      // service that provides dl namespace
             .addComponent(regService)               // service that provides registration client

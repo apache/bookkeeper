@@ -78,6 +78,14 @@
       <version>${project.version}</version>
     </dependency>
 
+    <!-- stream.storage -->
+    <dependency>
+      <groupId>org.apache.bookkeeper</groupId>
+      <artifactId>stream-storage-server</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+
+    <!-- bookkeeper benchmark -->
     <dependency>
       <groupId>org.apache.bookkeeper</groupId>
       <artifactId>bookkeeper-benchmark</artifactId>
