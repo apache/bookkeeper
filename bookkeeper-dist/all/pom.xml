@@ -78,6 +78,21 @@
       <version>${project.version}</version>
     </dependency>
 
+    <!-- bookkeeper.tools (new CLI) -->
+    <dependency>
+      <groupId>org.apache.bookkeeper</groupId>
+      <artifactId>bookkeeper-tools</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+
+    <!-- dlog -->
+    <dependency>
+      <groupId>org.apache.distributedlog</groupId>
+      <artifactId>distributedlog-core</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+
+    <!-- bookkeeper benchmark -->
     <dependency>
       <groupId>org.apache.bookkeeper</groupId>
       <artifactId>bookkeeper-benchmark</artifactId>
