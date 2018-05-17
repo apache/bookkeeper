@@ -95,6 +95,26 @@ public class BookKeeperClusterUtils {
         }
     }
 
+    public static String createDlogNamespaceIfNeeded(DockerClient docker,
+                                                     String version,
+                                                     String namespace) throws Exception {
+        String zkServers = BookKeeperClusterUtils.zookeeperConnectString(docker);
+        String dlogUri = "distributedlog://" + zkServers + namespace;
+        try (ZooKeeper zk = BookKeeperClusterUtils.zookeeperClient(docker)) {
+            if (zk.exists(namespace, false) == null) {
+                String dlog = "/opt/bookkeeper/" + version + "/bin/dlog";
+
+                runOnAnyBookie(docker, dlog,
+                    "admin",
+                    "bind",
+                    "-l", "/ledgers",
+                    "-s", zkServers,
+                    "-c", dlogUri);
+            }
+        }
+        return dlogUri;
+    }
+
     public static void formatAllBookies(DockerClient docker, String version) throws Exception {
         String bookkeeper = "/opt/bookkeeper/" + version + "/bin/bookkeeper";
         BookKeeperClusterUtils.runOnAllBookies(docker, bookkeeper, "shell", "bookieformat", "-nonInteractive");
@@ -123,6 +143,15 @@ public class BookKeeperClusterUtils {
             return true;
         } else {
             return false;
+        }
+    }
+
+    public static String getAnyBookie() throws Exception {
+        Optional<String> bookie = DockerUtils.cubeIdsMatching("bookkeeper").stream().findAny();
+        if (bookie.isPresent()) {
+            return bookie.get();
+        } else {
+            throw new Exception("No bookie is available");
         }
     }
 
