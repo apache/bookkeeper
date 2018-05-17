@@ -2009,6 +2009,13 @@ when using either RackawareEnsemblePlacementPolicy and RegionAwareEnsemblePlacem
       <td><code>30</code></td>
     </tr>
     
+    <tr id="lockReleaseOfFailedLedgerGracePeriod">
+      <td><code>lockReleaseOfFailedLedgerGracePeriod</code></td>
+      <td><p>the grace period so that if the replication worker fails to replicate a underreplicatedledger for more than ReplicationWorker.MAXNUMBER_REPLICATION_FAILURES_ALLOWED_BEFORE_DEFERRING number of times, then instead of releasing the lock immediately after failed attempt, it will hold under replicated ledger lock for this grace period and then it will release the lock.</p>
+</td>
+      <td><code>60</code></td>
+    </tr>
+    
     <tr id="rwRereplicateBackoffMs">
       <td><code>rwRereplicateBackoffMs</code></td>
       <td><p>The time to backoff when replication worker encounters exceptions on replicating a ledger, in milliseconds.</p>
