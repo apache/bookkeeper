@@ -20,14 +20,54 @@
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>org.apache.bookkeeper.tests</groupId>
-    <artifactId>integration-tests-base</artifactId>
+    <artifactId>tests-parent</artifactId>
     <version>4.8.0-SNAPSHOT</version>
-    <relativePath>../integration-tests-base</relativePath>
+    <relativePath>..</relativePath>
   </parent>
   <groupId>org.apache.bookkeeper.tests.integration</groupId>
   <artifactId>tests-parent</artifactId>
   <name>Apache BookKeeper :: Tests :: Integration</name>
   <modules>
     <module>smoke</module>
+    <module>standalone</module>
   </modules>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <!-- only run tests when -DintegrationTests is specified //-->
+          <skipTests>true</skipTests>
+          <systemPropertyVariables>
+            <currentVersion>${project.version}</currentVersion>
+            <maven.buildDirectory>${project.build.directory}</maven.buildDirectory>
+          </systemPropertyVariables>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+
+  <profiles>
+    <profile>
+      <id>integrationTests</id>
+      <activation>
+        <property>
+          <name>integrationTests</name>
+        </property>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-surefire-plugin</artifactId>
+            <configuration>
+              <skipTests>false</skipTests>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 </project>
