@@ -25,6 +25,8 @@ import com.github.dockerjava.api.command.LogContainerCmd;
 import com.github.dockerjava.api.model.Frame;
 import com.github.dockerjava.core.command.LogContainerResultCallback;
 import java.time.Duration;
+import java.util.Objects;
+import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.testcontainers.containers.GenericContainer;
@@ -122,4 +124,22 @@ public class BKStandaloneContainer<SELF extends BKStandaloneContainer<SELF>> ext
         log.info("Start a standalone bookkeeper cluster at container {}", containerName);
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof BKStandaloneContainer)) {
+            return false;
+        }
+
+        BKStandaloneContainer another = (BKStandaloneContainer) o;
+        return containerName.equals(another.containerName)
+            && numBookies == another.numBookies
+            && super.equals(another);
+    }
+
+    @Override
+    public int hashCode() {
+        return 31 * super.hashCode() + Objects.hash(
+            containerName,
+            numBookies);
+    }
 }
