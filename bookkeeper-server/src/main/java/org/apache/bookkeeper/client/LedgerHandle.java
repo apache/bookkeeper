@@ -181,7 +181,7 @@ public class LedgerHandle implements WriteHandle {
             length = 0;
         }
 
-        this.pendingAddsSequenceHead = lastAddConfirmed + 1;
+        this.pendingAddsSequenceHead = lastAddConfirmed;
 
         this.ledgerId = ledgerId;
 
@@ -1692,23 +1692,21 @@ public class LedgerHandle implements WriteHandle {
                 return;
             }
             // Check if it is the next entry in the sequence.
-            if (pendingAddOp.entryId != 0 && pendingAddOp.entryId != pendingAddsSequenceHead) {
+            if (pendingAddOp.entryId != 0 && pendingAddOp.entryId != pendingAddsSequenceHead + 1) {
                 if (LOG.isDebugEnabled()) {
                     LOG.debug("Head of the queue entryId: {} is not the expected value: {}", pendingAddOp.entryId,
-                               pendingAddsSequenceHead);
+                               pendingAddsSequenceHead + 1);
                 }
                 return;
             }
 
             pendingAddOps.remove();
             explicitLacFlushPolicy.updatePiggyBackedLac(lastAddConfirmed);
-            if (writeFlags.contains(WriteFlag.DEFERRED_SYNC)) {
-                // cannot update LastAddConfirmed, we are not sure bookie has stored the entry durably at this point
-            } else {
-                this.lastAddConfirmed = Math.max(lastAddConfirmed, pendingAddOp.entryId);
+            if (!writeFlags.contains(WriteFlag.DEFERRED_SYNC)) {
+                this.lastAddConfirmed = pendingAddOp.entryId;
             }
 
-            pendingAddsSequenceHead = pendingAddOp.entryId + 1;
+            pendingAddsSequenceHead = pendingAddOp.entryId;
 
             pendingAddOp.submitCallback(BKException.Code.OK);
         }

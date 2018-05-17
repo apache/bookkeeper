@@ -112,7 +112,7 @@ class LedgerRecoveryOp implements ReadEntryListener, AddCallback {
                             synchronized (lh) {
                                 lh.lastAddPushed = lh.lastAddConfirmed = data.getLastAddConfirmed();
                                 lh.length = data.getLength();
-                                lh.pendingAddsSequenceHead = lh.lastAddConfirmed + 1;
+                                lh.pendingAddsSequenceHead = lh.lastAddConfirmed;
                                 startEntryToRead = endEntryToRead = lh.lastAddConfirmed;
                             }
                             // keep a copy of ledger metadata before proceeding
