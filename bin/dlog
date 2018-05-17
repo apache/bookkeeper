@@ -1,0 +1,131 @@
+#!/usr/bin/env bash
+#
+# vim:et:ft=sh:sts=2:sw=2
+#
+#/**
+# * Licensed to the Apache Software Foundation (ASF) under one
+# * or more contributor license agreements.  See the NOTICE file
+# * distributed with this work for additional information
+# * regarding copyright ownership.  The ASF licenses this file
+# * to you under the Apache License, Version 2.0 (the
+# * "License"); you may not use this file except in compliance
+# * with the License.  You may obtain a copy of the License at
+# *
+# *     http://www.apache.org/licenses/LICENSE-2.0
+# *
+# * Unless required by applicable law or agreed to in writing, software
+# * distributed under the License is distributed on an "AS IS" BASIS,
+# * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# * See the License for the specific language governing permissions and
+# * limitations under the License.
+# */
+
+BINDIR=`dirname "$0"`
+BK_HOME=`cd ${BINDIR}/..;pwd`
+
+source ${BK_HOME}/bin/common.sh
+
+DLOG_MODULE_NAME="(org.apache.distributedlog-)?distributedlog-core"
+DLOG_MODULE_PATH=stream/distributedlog/core
+DLOG_MODULE_HOME=${BK_HOME}/${DLOG_MODULE_PATH}
+
+# find the module jar
+DLOG_JAR=$(find_module_jar ${DLOG_MODULE_PATH} ${DLOG_MODULE_NAME})
+
+# set up the classpath
+DLOG_CLASSPATH=$(set_module_classpath ${DLOG_MODULE_PATH})
+
+# default variables
+DEFAULT_CONF=${BK_HOME}/conf/bk_server.conf
+DEFAULT_CLI_CONF=${BK_HOME}/conf/bk_server.conf
+DEFAULT_LOG_CONF=${BK_HOME}/conf/log4j.properties
+DEFAULT_CLI_LOG_CONF=${BK_HOME}/conf/log4j.cli.properties
+
+dlog_help() {
+    cat <<EOF
+Usage: dlog <command>
+where command is one of:
+    local               Run distributedlog sandbox
+    tool                Run distributedlog tool
+    admin               Run distributedlog admin tool
+    help                This help message
+
+or command is the full name of a class with a defined main() method.
+
+Environment variables:
+
+    BOOKIE_CONF            Bookie configuration file (default: ${DEFAULT_CONF})
+    BOOKIE_EXTRA_OPTS      Extra options to be passed to the bookie jvm
+    BOOKIE_EXTRA_CLASSPATH Add extra paths to the bookie classpath
+    CLI_CONF               CLI configuration file (default: ${DEFAULT_CLI_CONF})
+    CLI_EXTRA_OPTS         Extra options to be passed to the CLI jvm
+    CLI_EXTRA_CLASSPATH    Add extra paths to the CLI classpath
+
+These variable can also be set in conf/bkenv.sh & conf/bk_cli_env.sh
+EOF
+}
+
+# if no args specified, show usage
+if [ $# = 0 ]; then
+  dlog_help;
+  exit 1;
+fi
+
+# get arguments
+COMMAND=$1
+shift
+
+if [ ${COMMAND} == "local" ]; then
+  DLOG_CONF=${BOOKIE_CONF:-"${DEFAULT_CONF}"}
+  DLOG_LOG_CONF=${BOOKIE_LOG_CONF:-"${DEFAULT_LOG_CONF}"}
+  DLOG_LOG_DIR=${BOOKIE_LOG_DIR:-"${BK_HOME}/logs"}
+  DLOG_LOG_FILE=${BOOKIE_LOG_FILE:-"dlog.log"}
+  DLOG_ROOT_LOGGER=${BOOKIE_ROOT_LOGGER:-"INFO,CONSOLE"}
+  DLOG_EXTRA_CLASSPATH=${BOOKIE_EXTRA_CLASSPATH}
+  DLOG_GC_OPTS=$(build_bookie_jvm_opts ${DLOG_LOG_DIR} "dlog_gc_%p.log")
+  DLOG_EXTRA_OPTS=${BOOKIE_EXTRA_OPTS}
+  DLOG_LOGGING_OPTS=$(build_logging_opts ${DLOG_LOG_CONF} ${DLOG_LOG_DIR} ${DLOG_LOG_FILE} ${DLOG_ROOT_LOGGER})
+else
+  DLOG_CONF=${CLI_CONF:-"${DEFAULT_CLI_CONF}"}
+  DLOG_LOG_CONF=${CLI_LOG_CONF:-"${DEFAULT_CLI_LOG_CONF}"}
+  DLOG_LOG_DIR=${CLI_LOG_DIR:-"${BK_HOME}/logs"}
+  DLOG_LOG_FILE=${CLI_LOG_FILE:-"dlog-cli.log"}
+  DLOG_ROOT_LOGGER=${CLI_ROOT_LOGGER:-"INFO,ROLLINGFILE"}
+  DLOG_EXTRA_CLASSPATH=${CLI_EXTRA_CLASSPATH}
+  DLOG_GC_OPTS=$(build_cli_jvm_opts ${DLOG_LOG_DIR} "dlog-cli-gc.log")
+  DLOG_EXTRA_OPTS=${CLI_EXTRA_OPTS}
+  DLOG_LOGGING_OPTS=$(build_cli_logging_opts ${DLOG_LOG_CONF} ${DLOG_LOG_DIR} ${DLOG_LOG_FILE} ${DLOG_ROOT_LOGGER})
+fi
+
+DLOG_CLASSPATH="$DLOG_JAR:$DLOG_CLASSPATH:$DLOG_EXTRA_CLASSPATH"
+DLOG_CLASSPATH="`dirname $DLOG_LOG_CONF`:$DLOG_CLASSPATH"
+
+# Build the OPTS
+BOOKIE_OPTS=$(build_bookie_opts)
+NETTY_OPTS=$(build_netty_opts)
+OPTS="${OPTS} -cp ${DLOG_CLASSPATH} ${BOOKIE_OPTS} ${DLOG_GC_OPTS} ${NETTY_OPTS} ${DLOG_LOGGING_OPTS} ${DLOG_EXTRA_OPTS}"
+
+if [ ! -d ${DLOG_LOG_DIR} ]; then
+    mkdir ${DLOG_LOG_DIR}
+fi
+
+#Change to BK_HOME to support relative paths
+cd "$BK_HOME"
+case "${COMMAND}" in
+  local)
+    exec ${JAVA} ${OPTS} ${JMX_ARGS} -Dzookeeper.4lw.commands.whitelist='*' org.apache.distributedlog.LocalDLMEmulator $@
+    ;;
+  tool)
+    exec ${JAVA} ${OPTS} org.apache.distributedlog.tools.Tool org.apache.distributedlog.tools.DistributedLogTool $@
+    ;;
+  admin)
+    exec ${JAVA} ${OPTS} org.apache.distributedlog.tools.Tool org.apache.distributedlog.admin.DistributedLogAdmin $@
+    ;;
+  help)
+    dlog_help
+    ;;
+  *)
+    exec ${JAVA} ${OPTS} ${COMMAND} $@
+    ;;
+esac
+
