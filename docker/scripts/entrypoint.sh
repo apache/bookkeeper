@@ -37,12 +37,14 @@ export BK_journalDirectory=${BK_journalDirectory:-${BK_DATA_DIR}/journal}
 export BK_ledgerDirectories=${BK_ledgerDirectories:-${BK_DATA_DIR}/ledgers}
 export BK_indexDirectories=${BK_indexDirectories:-${BK_DATA_DIR}/index}
 export BK_metadataServiceUri=${BK_metadataServiceUri:-"zk://${BK_zkServers}${BK_zkLedgersRootPath}"}
+export BK_dlogRootPath=${BK_dlogRootPath:-"${BK_CLUSTER_ROOT_PATH}/distributedlog"}
 
 echo "BK_bookiePort bookie service port is $BK_bookiePort"
 echo "BK_zkServers is $BK_zkServers"
 echo "BK_DATA_DIR is $BK_DATA_DIR"
 echo "BK_CLUSTER_ROOT_PATH is $BK_CLUSTER_ROOT_PATH"
 echo "BK_metadataServiceUri is $BK_metadataServiceUri"
+echo "BK_dlogRootPath is $BK_dlogRootPath"
 
 mkdir -p "${BK_journalDirectory}" "${BK_ledgerDirectories}" "${BK_indexDirectories}"
 # -------------- #
@@ -104,6 +106,48 @@ else
 
         if [ ${tenSeconds} -eq 10 ]; then
             echo "Waited 100 seconds for bookkeeper cluster init, something wrong, please check"
+            exit
+        fi
+    fi
+fi
+
+# Create default dlog namespace
+# Use ephemeral zk node as lock to keep initialize atomic.
+/opt/bookkeeper/bin/bookkeeper org.apache.zookeeper.ZooKeeperMain -server ${BK_zkServers} stat ${BK_dlogRootPath}
+if [ $? -eq 0 ]; then
+    echo "Dlog namespace already created, no need to create another one"
+else
+    # create ephemeral zk node dlogInitLock, initiator who this node, then do init; other initiators will wait.
+    /opt/bookkeeper/bin/bookkeeper org.apache.zookeeper.ZooKeeperMain -server ${BK_zkServers} create -e ${BK_CLUSTER_ROOT_PATH}/dlogInitLock
+    if [ $? -eq 0 ]; then
+        # dlogInitLock created success, this is the successor to do znode init
+        echo "Dlog namespace not exist, do the init to create them."
+        /opt/bookkeeper/bin/dlog admin bind -l ${BK_zkLedgersRootPath} -s ${BK_zkServers} -c distributedlog://${BK_zkServers}${BK_dlogRootPath}
+        if [ $? -eq 0 ]; then
+            echo "Dlog namespace is created successfully."
+        else
+            echo "Failed to create dlog namespace ${BK_dlogRootPath}. please check the reason."
+            exit
+        fi
+    else
+        echo "Other docker instance is doing initialize at the same time, will wait in this instance."
+        tenSeconds=1
+        while [ ${tenSeconds} -lt 10 ]
+        do
+            sleep 10
+            /opt/bookkeeper/bin/bookkeeper org.apache.zookeeper.ZooKeeperMain -server ${BK_zkServers} stat ${BK_dlogRootPath}
+            if [ $? -eq 0 ]; then
+                echo "Waited $tenSeconds * 10 seconds, dlog namespace created"
+                break
+            else
+                echo "Waited $tenSeconds * 10 seconds, dlog namespace still not created"
+                (( tenSeconds++ ))
+                continue
+            fi
+        done
+
+        if [ ${tenSeconds} -eq 10 ]; then
+            echo "Waited 100 seconds for creating dlog namespace, something wrong, please check"
             exit
         fi
     fi
