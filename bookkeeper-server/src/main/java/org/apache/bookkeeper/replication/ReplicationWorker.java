@@ -295,6 +295,9 @@ public class ReplicationWorker implements Runnable {
                 if (replicationFailedLedgers.getUnchecked(ledgerIdToReplicate)
                         .incrementAndGet() == MAXNUMBER_REPLICATION_FAILURES_ALLOWED_BEFORE_DEFERRING) {
                     deferLedgerLockRelease = true;
+                    LOG.error(
+                            "ReplicationWorker failed to replicate Ledger : {} for {} number of times, so deferring the ledger lock release",
+                            ledgerIdToReplicate, MAXNUMBER_REPLICATION_FAILURES_ALLOWED_BEFORE_DEFERRING);
                     deferLedgerLockReleaseOfFailedLedger(ledgerIdToReplicate);
                 }
                 // Releasing the underReplication ledger lock and compete
@@ -474,6 +477,7 @@ public class ReplicationWorker implements Runnable {
                 try {
                     replicationFailedLedgers.invalidate(ledgerId);
                     underreplicationManager.releaseUnderreplicatedLedger(ledgerId);
+                    LOG.info("Deferred releasing of lock of underreplicated ledger lock : {}", ledgerId);
                 } catch (UnavailableException e) {
                     LOG.error("UnavailableException while replicating fragments of ledger {}", ledgerId, e);
                     shutdown();
