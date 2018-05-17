@@ -20,6 +20,7 @@
 package org.apache.bookkeeper.replication;
 
 import static org.apache.bookkeeper.replication.ReplicationStats.BK_CLIENT_SCOPE;
+import static org.apache.bookkeeper.replication.ReplicationStats.NUM_DEFER_LEDGER_LOCK_RELEASE_OF_FAILED_LEDGER;
 import static org.apache.bookkeeper.replication.ReplicationStats.NUM_FULL_OR_PARTIAL_LEDGERS_REPLICATED;
 import static org.apache.bookkeeper.replication.ReplicationStats.REPLICATE_EXCEPTION;
 import static org.apache.bookkeeper.replication.ReplicationStats.REREPLICATE_OP;
@@ -97,6 +98,7 @@ public class ReplicationWorker implements Runnable {
     private final StatsLogger statsLogger;
     private final OpStatsLogger rereplicateOpStats;
     private final Counter numLedgersReplicated;
+    private final Counter numDeferLedgerLockReleaseOfFailedLedger;
     private final Map<String, Counter> exceptionCounters;
     final LoadingCache<Long, AtomicInteger> replicationFailedLedgers;
 
@@ -169,6 +171,8 @@ public class ReplicationWorker implements Runnable {
         this.statsLogger = statsLogger;
         this.rereplicateOpStats = this.statsLogger.getOpStatsLogger(REREPLICATE_OP);
         this.numLedgersReplicated = this.statsLogger.getCounter(NUM_FULL_OR_PARTIAL_LEDGERS_REPLICATED);
+        this.numDeferLedgerLockReleaseOfFailedLedger = this.statsLogger
+                .getCounter(NUM_DEFER_LEDGER_LOCK_RELEASE_OF_FAILED_LEDGER);
         this.exceptionCounters = new HashMap<String, Counter>();
     }
 
@@ -296,9 +300,11 @@ public class ReplicationWorker implements Runnable {
                         .incrementAndGet() == MAXNUMBER_REPLICATION_FAILURES_ALLOWED_BEFORE_DEFERRING) {
                     deferLedgerLockRelease = true;
                     LOG.error(
-                            "ReplicationWorker failed to replicate Ledger : {} for {} number of times, so deferring the ledger lock release",
+                            "ReplicationWorker failed to replicate Ledger : {} for {} number of times, "
+                            + "so deferring the ledger lock release",
                             ledgerIdToReplicate, MAXNUMBER_REPLICATION_FAILURES_ALLOWED_BEFORE_DEFERRING);
                     deferLedgerLockReleaseOfFailedLedger(ledgerIdToReplicate);
+                    numDeferLedgerLockReleaseOfFailedLedger.inc();
                 }
                 // Releasing the underReplication ledger lock and compete
                 // for the replication again for the pending fragments
@@ -477,7 +483,6 @@ public class ReplicationWorker implements Runnable {
                 try {
                     replicationFailedLedgers.invalidate(ledgerId);
                     underreplicationManager.releaseUnderreplicatedLedger(ledgerId);
-                    LOG.info("Deferred releasing of lock of underreplicated ledger lock : {}", ledgerId);
                 } catch (UnavailableException e) {
                     LOG.error("UnavailableException while replicating fragments of ledger {}", ledgerId, e);
                     shutdown();
