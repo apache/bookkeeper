@@ -1,0 +1,91 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.bookkeeper.tests.containers;
+
+import java.util.concurrent.TimeUnit;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.bookkeeper.tests.BookKeeperClusterUtils;
+import org.apache.bookkeeper.tests.DockerUtils;
+import org.rnorth.ducttape.TimeoutException;
+import org.rnorth.ducttape.unreliables.Unreliables;
+import org.testcontainers.containers.ContainerLaunchException;
+
+@Slf4j
+public class ZKContainer<SELF extends ZKContainer<SELF>> extends MetadataStoreContainer<SELF> {
+
+    private static class ZKWaitStrategy extends org.testcontainers.containers.wait.strategy.AbstractWaitStrategy {
+
+        @Override
+        protected void waitUntilReady() {
+            String hostname = waitStrategyTarget.getContainerIpAddress();
+            int externalPort = waitStrategyTarget.getMappedPort(ZK_PORT);
+
+            try {
+                Unreliables.retryUntilTrue(
+                    (int) startupTimeout.getSeconds(),
+                    TimeUnit.SECONDS,
+                    () -> getRateLimiter().getWhenReady(
+                        () -> {
+                            log.info("Check if zookeeper is running at {}:{}", hostname, externalPort);
+                            return BookKeeperClusterUtils.zookeeperRunning(
+                                hostname, externalPort
+                            );
+                        }));
+            } catch (TimeoutException te) {
+                throw new ContainerLaunchException(
+                    "Timed out waiting for zookeeper to be ready");
+            }
+        }
+    }
+
+    private static final int ZK_PORT = 2181;
+
+    private static final String IMAGE_NAME = "zookeeper:3.4.11";
+    private static final String HOST_NAME = "metadata-store";
+
+    public ZKContainer() {
+        super(IMAGE_NAME);
+    }
+
+    @Override
+    public String getExternalServiceUri() {
+        return "zk://" + getContainerIpAddress() + ":" + getMappedPort(ZK_PORT) + "/ledgers";
+    }
+
+    @Override
+    public String getInternalServiceUri() {
+        return "zk://" + DockerUtils.getContainerIP(dockerClient, containerId) + ":" + ZK_PORT + "/ledgers";
+    }
+
+    @Override
+    protected void configure() {
+        addExposedPort(ZK_PORT);
+    }
+
+    @Override
+    public void start() {
+        this.waitStrategy = new ZKWaitStrategy();
+        this.withCreateContainerCmdModifier(createContainerCmd -> createContainerCmd.withHostName(HOST_NAME));
+
+        super.start();
+        log.info("Start a zookeeper server at container {} : external service uri = {}, internal service uri = {}",
+            containerName, getExternalServiceUri(), getInternalServiceUri());
+    }
+
+}
