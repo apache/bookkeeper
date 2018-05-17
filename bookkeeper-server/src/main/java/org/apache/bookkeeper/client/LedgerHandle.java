@@ -1702,11 +1702,10 @@ public class LedgerHandle implements WriteHandle {
 
             pendingAddOps.remove();
             explicitLacFlushPolicy.updatePiggyBackedLac(lastAddConfirmed);
-            if (!writeFlags.contains(WriteFlag.DEFERRED_SYNC)) {
-                this.lastAddConfirmed = pendingAddOp.entryId;
-            }
-
             pendingAddsSequenceHead = pendingAddOp.entryId;
+            if (!writeFlags.contains(WriteFlag.DEFERRED_SYNC)) {
+                this.lastAddConfirmed = pendingAddsSequenceHead;
+            }
 
             pendingAddOp.submitCallback(BKException.Code.OK);
         }
