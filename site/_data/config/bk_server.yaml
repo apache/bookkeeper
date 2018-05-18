@@ -626,6 +626,9 @@ groups:
   - param: openLedgerRereplicationGracePeriod
     description: The grace period, in seconds, that the replication worker waits before fencing and replicating a ledger fragment that's still being written to upon bookie failure.
     default: 30
+  - param: lockReleaseOfFailedLedgerGracePeriod
+    description: the grace period so that if the replication worker fails to replicate a underreplicatedledger for more than ReplicationWorker.MAXNUMBER_REPLICATION_FAILURES_ALLOWED_BEFORE_DEFERRING number of times, then instead of releasing the lock immediately after failed attempt, it will hold under replicated ledger lock for this grace period and then it will release the lock.
+    default: 60
   - param: rwRereplicateBackoffMs
     description: The time to backoff when replication worker encounters exceptions on replicating a ledger, in milliseconds.
     default: 5000

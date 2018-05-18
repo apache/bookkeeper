@@ -60,7 +60,10 @@ public class BookKeeperClusterUtils {
 
     public static boolean zookeeperRunning(DockerClient docker, String containerId) {
         String ip = DockerUtils.getContainerIP(docker, containerId);
-        try (Socket socket = new Socket(ip, 2181)) {
+        return zookeeperRunning(ip, 2181);
+    }
+    public static boolean zookeeperRunning(String ip, int port) {
+        try (Socket socket = new Socket(ip, port)) {
             socket.setSoTimeout(1000);
             socket.getOutputStream().write("ruok".getBytes(UTF_8));
             byte[] resp = new byte[4];
@@ -92,6 +95,26 @@ public class BookKeeperClusterUtils {
         }
     }
 
+    public static String createDlogNamespaceIfNeeded(DockerClient docker,
+                                                     String version,
+                                                     String namespace) throws Exception {
+        String zkServers = BookKeeperClusterUtils.zookeeperConnectString(docker);
+        String dlogUri = "distributedlog://" + zkServers + namespace;
+        try (ZooKeeper zk = BookKeeperClusterUtils.zookeeperClient(docker)) {
+            if (zk.exists(namespace, false) == null) {
+                String dlog = "/opt/bookkeeper/" + version + "/bin/dlog";
+
+                runOnAnyBookie(docker, dlog,
+                    "admin",
+                    "bind",
+                    "-l", "/ledgers",
+                    "-s", zkServers,
+                    "-c", dlogUri);
+            }
+        }
+        return dlogUri;
+    }
+
     public static void formatAllBookies(DockerClient docker, String version) throws Exception {
         String bookkeeper = "/opt/bookkeeper/" + version + "/bin/bookkeeper";
         BookKeeperClusterUtils.runOnAllBookies(docker, bookkeeper, "shell", "bookieformat", "-nonInteractive");
@@ -120,6 +143,15 @@ public class BookKeeperClusterUtils {
             return true;
         } else {
             return false;
+        }
+    }
+
+    public static String getAnyBookie() throws Exception {
+        Optional<String> bookie = DockerUtils.cubeIdsMatching("bookkeeper").stream().findAny();
+        if (bookie.isPresent()) {
+            return bookie.get();
+        } else {
+            throw new Exception("No bookie is available");
         }
     }
 

@@ -20,11 +20,16 @@
 package org.apache.bookkeeper.replication;
 
 import static org.apache.bookkeeper.replication.ReplicationStats.BK_CLIENT_SCOPE;
+import static org.apache.bookkeeper.replication.ReplicationStats.NUM_DEFER_LEDGER_LOCK_RELEASE_OF_FAILED_LEDGER;
 import static org.apache.bookkeeper.replication.ReplicationStats.NUM_FULL_OR_PARTIAL_LEDGERS_REPLICATED;
 import static org.apache.bookkeeper.replication.ReplicationStats.REPLICATE_EXCEPTION;
 import static org.apache.bookkeeper.replication.ReplicationStats.REREPLICATE_OP;
 
 import com.google.common.base.Stopwatch;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -36,6 +41,8 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import org.apache.bookkeeper.bookie.BookieThread;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BKException.BKNoSuchLedgerExistsException;
@@ -71,6 +78,9 @@ import org.slf4j.LoggerFactory;
 public class ReplicationWorker implements Runnable {
     private static final Logger LOG = LoggerFactory
             .getLogger(ReplicationWorker.class);
+    private static final int REPLICATED_FAILED_LEDGERS_MAXSIZE = 100;
+    static final int MAXNUMBER_REPLICATION_FAILURES_ALLOWED_BEFORE_DEFERRING = 10;
+
     private final LedgerUnderreplicationManager underreplicationManager;
     private final ServerConfiguration conf;
     private final ZooKeeper zkc;
@@ -82,12 +92,15 @@ public class ReplicationWorker implements Runnable {
     private final long rwRereplicateBackoffMs;
     private final long openLedgerRereplicationGracePeriod;
     private final Timer pendingReplicationTimer;
+    private final long lockReleaseOfFailedLedgerGracePeriod;
 
     // Expose Stats
     private final StatsLogger statsLogger;
     private final OpStatsLogger rereplicateOpStats;
     private final Counter numLedgersReplicated;
+    private final Counter numDeferLedgerLockReleaseOfFailedLedger;
     private final Map<String, Counter> exceptionCounters;
+    final LoadingCache<Long, AtomicInteger> replicationFailedLedgers;
 
     /**
      * Replication worker for replicating the ledger fragments from
@@ -143,13 +156,23 @@ public class ReplicationWorker implements Runnable {
         this.workerThread = new BookieThread(this, "ReplicationWorker");
         this.openLedgerRereplicationGracePeriod = conf
                 .getOpenLedgerRereplicationGracePeriod();
+        this.lockReleaseOfFailedLedgerGracePeriod = conf.getLockReleaseOfFailedLedgerGracePeriod();
         this.rwRereplicateBackoffMs = conf.getRwRereplicateBackoffMs();
         this.pendingReplicationTimer = new Timer("PendingReplicationTimer");
+        this.replicationFailedLedgers = CacheBuilder.newBuilder().maximumSize(REPLICATED_FAILED_LEDGERS_MAXSIZE)
+                .build(new CacheLoader<Long, AtomicInteger>() {
+                    @Override
+                    public AtomicInteger load(Long key) throws Exception {
+                        return new AtomicInteger();
+                    }
+                });
 
         // Expose Stats
         this.statsLogger = statsLogger;
         this.rereplicateOpStats = this.statsLogger.getOpStatsLogger(REREPLICATE_OP);
         this.numLedgersReplicated = this.statsLogger.getCounter(NUM_FULL_OR_PARTIAL_LEDGERS_REPLICATED);
+        this.numDeferLedgerLockReleaseOfFailedLedger = this.statsLogger
+                .getCounter(NUM_DEFER_LEDGER_LOCK_RELEASE_OF_FAILED_LEDGER);
         this.exceptionCounters = new HashMap<String, Counter>();
     }
 
@@ -273,6 +296,16 @@ public class ReplicationWorker implements Runnable {
                 underreplicationManager.markLedgerReplicated(ledgerIdToReplicate);
                 return true;
             } else {
+                if (replicationFailedLedgers.getUnchecked(ledgerIdToReplicate)
+                        .incrementAndGet() == MAXNUMBER_REPLICATION_FAILURES_ALLOWED_BEFORE_DEFERRING) {
+                    deferLedgerLockRelease = true;
+                    LOG.error(
+                            "ReplicationWorker failed to replicate Ledger : {} for {} number of times, "
+                            + "so deferring the ledger lock release",
+                            ledgerIdToReplicate, MAXNUMBER_REPLICATION_FAILURES_ALLOWED_BEFORE_DEFERRING);
+                    deferLedgerLockReleaseOfFailedLedger(ledgerIdToReplicate);
+                    numDeferLedgerLockReleaseOfFailedLedger.inc();
+                }
                 // Releasing the underReplication ledger lock and compete
                 // for the replication again for the pending fragments
                 return false;
@@ -438,6 +471,25 @@ public class ReplicationWorker implements Runnable {
             }
         };
         pendingReplicationTimer.schedule(timerTask, gracePeriod);
+    }
+
+    /**
+     * Schedules a timer task for releasing the lock.
+     */
+    private void deferLedgerLockReleaseOfFailedLedger(final long ledgerId) {
+        TimerTask timerTask = new TimerTask() {
+            @Override
+            public void run() {
+                try {
+                    replicationFailedLedgers.invalidate(ledgerId);
+                    underreplicationManager.releaseUnderreplicatedLedger(ledgerId);
+                } catch (UnavailableException e) {
+                    LOG.error("UnavailableException while replicating fragments of ledger {}", ledgerId, e);
+                    shutdown();
+                }
+            }
+        };
+        pendingReplicationTimer.schedule(timerTask, lockReleaseOfFailedLedgerGracePeriod);
     }
 
     /**
