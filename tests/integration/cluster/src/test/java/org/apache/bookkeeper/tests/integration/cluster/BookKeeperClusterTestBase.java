@@ -18,22 +18,30 @@
 
 package org.apache.bookkeeper.tests.integration.cluster;
 
+import com.google.common.base.Stopwatch;
 import java.net.URI;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.meta.MetadataClientDriver;
 import org.apache.bookkeeper.meta.MetadataDrivers;
+import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.tests.integration.topologies.BKCluster;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 
 /**
  * A docker container based bookkeeper cluster test base, providing similar facility like the one in unit test.
  */
-public class BookKeeperClusterTestBase {
+@Slf4j
+public abstract class BookKeeperClusterTestBase {
 
     protected static BKCluster bkCluster;
     protected static URI metadataServiceUri;
@@ -42,7 +50,7 @@ public class BookKeeperClusterTestBase {
 
     @BeforeClass
     public static void setupCluster() throws Exception {
-        bkCluster = new BKCluster("test-metadata-store");
+        bkCluster = new BKCluster(RandomStringUtils.randomAlphabetic(8), 0);
         bkCluster.start();
 
         metadataServiceUri = URI.create(bkCluster.getExternalServiceUri());
@@ -63,6 +71,23 @@ public class BookKeeperClusterTestBase {
         }
         if (null != bkCluster) {
             bkCluster.stop();
+        }
+    }
+
+    private boolean findIfBookieRegistered(String bookieName) throws Exception {
+        Set<BookieSocketAddress> bookies =
+            FutureUtils.result(metadataClientDriver.getRegistrationClient().getWritableBookies()).getValue();
+        Optional<BookieSocketAddress> registered =
+            bookies.stream().filter(addr -> addr.getHostName().equals(bookieName)).findFirst();
+        return registered.isPresent();
+    }
+
+    protected void waitUntilBookieUnregistered(String bookieName) throws Exception {
+        Stopwatch sw = Stopwatch.createStarted();
+        while (findIfBookieRegistered(bookieName)) {
+            TimeUnit.MILLISECONDS.sleep(1000);
+            log.info("Bookie {} is still registered in cluster {} after {} ms elapsed",
+                bookieName, bkCluster.getClusterName(), sw.elapsed(TimeUnit.MILLISECONDS));
         }
     }
 

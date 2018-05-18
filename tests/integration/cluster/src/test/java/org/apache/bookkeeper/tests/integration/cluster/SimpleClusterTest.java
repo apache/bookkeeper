@@ -18,25 +18,61 @@
 
 package org.apache.bookkeeper.tests.integration.cluster;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.tests.containers.BookieContainer;
+import org.junit.FixMethodOrder;
 import org.junit.Test;
+import org.junit.runners.MethodSorters;
 
 /**
  * A simple test on bookkeeper cluster operations, e.g. start bookies, stop bookies and list bookies.
  */
 @Slf4j
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class SimpleClusterTest extends BookKeeperClusterTestBase {
 
     @Test
-    public void getWritableBookiesEmpty() throws Exception {
+    public void test000_ClusterIsEmpty() throws Exception {
         Set<BookieSocketAddress> bookies =
             FutureUtils.result(metadataClientDriver.getRegistrationClient().getWritableBookies()).getValue();
         assertTrue(bookies.isEmpty());
+    }
+
+    @Test
+    public void test001_StartBookie() throws Exception {
+        String bookieName = "bookie-000";
+        BookieContainer container = bkCluster.createBookie(bookieName);
+        assertNotNull("Container should be started", container);
+        assertEquals(1, bkCluster.getBookieContainers().size());
+        assertSame(container, bkCluster.getBookie(bookieName));
+
+        Set<BookieSocketAddress> bookies =
+            FutureUtils.result(metadataClientDriver.getRegistrationClient().getWritableBookies()).getValue();
+        assertEquals(1, bookies.size());
+    }
+
+    @Test
+    public void test002_StopBookie() throws Exception {
+        String bookieName = "bookie-000";
+        BookieContainer container = bkCluster.killBookie(bookieName);
+        assertNotNull("Bookie '" + bookieName + "' doesn't exist", container);
+        assertEquals(0, bkCluster.getBookieContainers().size());
+        assertNull(bkCluster.getBookie(bookieName));
+
+        waitUntilBookieUnregistered(bookieName);
+
+        Set<BookieSocketAddress> bookies =
+            FutureUtils.result(metadataClientDriver.getRegistrationClient().getWritableBookies()).getValue();
+        assertEquals(0, bookies.size());
     }
 
 }

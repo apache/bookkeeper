@@ -18,49 +18,20 @@
 
 package org.apache.bookkeeper.tests.containers;
 
-import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.bookkeeper.tests.BookKeeperClusterUtils;
-import org.apache.bookkeeper.tests.DockerUtils;
-import org.rnorth.ducttape.TimeoutException;
-import org.rnorth.ducttape.unreliables.Unreliables;
-import org.testcontainers.containers.ContainerLaunchException;
+import org.apache.bookkeeper.tests.containers.wait.ZKWaitStrategy;
 
 @Slf4j
 public class ZKContainer<SELF extends ZKContainer<SELF>> extends MetadataStoreContainer<SELF> {
 
-    private static class ZKWaitStrategy extends org.testcontainers.containers.wait.strategy.AbstractWaitStrategy {
-
-        @Override
-        protected void waitUntilReady() {
-            String hostname = waitStrategyTarget.getContainerIpAddress();
-            int externalPort = waitStrategyTarget.getMappedPort(ZK_PORT);
-
-            try {
-                Unreliables.retryUntilTrue(
-                    (int) startupTimeout.getSeconds(),
-                    TimeUnit.SECONDS,
-                    () -> getRateLimiter().getWhenReady(
-                        () -> {
-                            log.info("Check if zookeeper is running at {}:{}", hostname, externalPort);
-                            return BookKeeperClusterUtils.zookeeperRunning(
-                                hostname, externalPort
-                            );
-                        }));
-            } catch (TimeoutException te) {
-                throw new ContainerLaunchException(
-                    "Timed out waiting for zookeeper to be ready");
-            }
-        }
-    }
-
     private static final int ZK_PORT = 2181;
 
     private static final String IMAGE_NAME = "zookeeper:3.4.11";
-    private static final String HOST_NAME = "metadata-store";
+    public static final String HOST_NAME = "metadata-store";
+    public static final String SERVICE_URI = "zk://" + HOST_NAME + ":" + ZK_PORT + "/ledgers";
 
-    public ZKContainer() {
-        super(IMAGE_NAME);
+    public ZKContainer(String clusterName) {
+        super(clusterName, IMAGE_NAME);
     }
 
     @Override
@@ -70,7 +41,7 @@ public class ZKContainer<SELF extends ZKContainer<SELF>> extends MetadataStoreCo
 
     @Override
     public String getInternalServiceUri() {
-        return "zk://" + DockerUtils.getContainerIP(dockerClient, containerId) + ":" + ZK_PORT + "/ledgers";
+        return SERVICE_URI;
     }
 
     @Override
@@ -80,7 +51,7 @@ public class ZKContainer<SELF extends ZKContainer<SELF>> extends MetadataStoreCo
 
     @Override
     public void start() {
-        this.waitStrategy = new ZKWaitStrategy();
+        this.waitStrategy = new ZKWaitStrategy(ZK_PORT);
         this.withCreateContainerCmdModifier(createContainerCmd -> createContainerCmd.withHostName(HOST_NAME));
 
         super.start();

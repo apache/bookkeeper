@@ -22,8 +22,8 @@ package org.apache.bookkeeper.tests.containers;
  * An abstract class for metadata store container.
  */
 public abstract class MetadataStoreContainer<SELF extends MetadataStoreContainer<SELF>> extends ChaosContainer<SELF> {
-    protected MetadataStoreContainer(String image) {
-        super(image);
+    protected MetadataStoreContainer(String clusterName, String image) {
+        super(clusterName, image);
     }
 
     public abstract String getExternalServiceUri();
