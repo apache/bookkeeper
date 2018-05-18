@@ -101,6 +101,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     protected static final String ZK_RETRY_BACKOFF_START_MS = "zkRetryBackoffStartMs";
     protected static final String ZK_RETRY_BACKOFF_MAX_MS = "zkRetryBackoffMaxMs";
     protected static final String OPEN_LEDGER_REREPLICATION_GRACE_PERIOD = "openLedgerRereplicationGracePeriod";
+    protected static final String LOCK_RELEASE_OF_FAILED_LEDGER_GRACE_PERIOD = "lockReleaseOfFailedLedgerGracePeriod";
     //ReadOnly mode support on all disk full
     protected static final String READ_ONLY_MODE_ENABLED = "readOnlyModeEnabled";
     //Whether the bookie is force started in ReadOnly mode
@@ -1233,6 +1234,33 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      */
     public long getOpenLedgerRereplicationGracePeriod() {
         return getLong(OPEN_LEDGER_REREPLICATION_GRACE_PERIOD, 30000);
+    }
+
+    /**
+     * Set the grace period so that if the replication worker fails to replicate
+     * a underreplicatedledger for more than
+     * ReplicationWorker.MAXNUMBER_REPLICATION_FAILURES_ALLOWED_BEFORE_DEFERRING
+     * number of times, then instead of releasing the lock immediately after
+     * failed attempt, it will hold under replicated ledger lock for this grace
+     * period and then it will release the lock.
+     *
+     * @param waitTime
+     */
+    public void setLockReleaseOfFailedLedgerGracePeriod(String waitTime) {
+        setProperty(LOCK_RELEASE_OF_FAILED_LEDGER_GRACE_PERIOD, waitTime);
+    }
+
+    /**
+     * Get the grace period which the replication worker to wait before
+     * releasing the lock after replication worker failing to replicate for more
+     * than
+     * ReplicationWorker.MAXNUMBER_REPLICATION_FAILURES_ALLOWED_BEFORE_DEFERRING
+     * number of times.
+     *
+     * @return
+     */
+    public long getLockReleaseOfFailedLedgerGracePeriod() {
+        return getLong(LOCK_RELEASE_OF_FAILED_LEDGER_GRACE_PERIOD, 60000);
     }
 
     /**

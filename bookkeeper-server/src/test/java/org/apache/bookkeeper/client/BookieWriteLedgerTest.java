@@ -25,6 +25,7 @@ import static org.apache.bookkeeper.client.BookKeeperClientStats.ADD_OP_UR;
 import static org.apache.bookkeeper.client.BookKeeperClientStats.CLIENT_SCOPE;
 import static org.apache.bookkeeper.client.BookKeeperClientStats.READ_OP_DM;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import io.netty.buffer.ByteBuf;
@@ -262,7 +263,75 @@ public class BookieWriteLedgerTest extends
                         .get() > 0);
         lh.close();
     }
+    /**
+     * Verty delayedWriteError causes ensemble changes.
+     */
+    @Test
+    public void testDelayedWriteEnsembleChange() throws Exception {
+        // Create a ledger
+        lh = bkc.createLedger(3, 3, 2, digestType, ledgerPassword);
+        baseClientConf.setAddEntryTimeout(1);
 
+        int numEntriesToWrite = 10;
+        // write-batch-1
+        for (int i = 0; i < numEntriesToWrite; i++) {
+            ByteBuffer entry = ByteBuffer.allocate(4);
+            entry.putInt(rng.nextInt(maxInt));
+            entry.position(0);
+
+            entries1.add(entry.array());
+            lh.addEntry(entry.array());
+        }
+
+        CountDownLatch sleepLatch1 = new CountDownLatch(1);
+
+        // get bookie at index-0
+        BookieSocketAddress bookie1 = lh.getLedgerMetadata().currentEnsemble.get(0);
+        sleepBookie(bookie1, sleepLatch1);
+
+        int i = numEntriesToWrite;
+        numEntriesToWrite = numEntriesToWrite + 10;
+
+        // write-batch-2
+
+        for (; i < numEntriesToWrite; i++) {
+            ByteBuffer entry = ByteBuffer.allocate(4);
+            entry.putInt(rng.nextInt(maxInt));
+            entry.position(0);
+
+            entries1.add(entry.array());
+            lh.addEntry(entry.array());
+        }
+        // Sleep to receive delayed error on the write directed to the sleeping bookie
+        Thread.sleep(baseClientConf.getAddEntryTimeout() * 1000 * 2);
+        assertTrue(
+                "Stats should have captured a new UnderReplication during write",
+                bkc.getTestStatsProvider().getCounter(
+                        CLIENT_SCOPE + "." + ADD_OP_UR)
+                        .get() > 0);
+
+        i = numEntriesToWrite;
+        numEntriesToWrite = numEntriesToWrite + 10;
+
+        // write-batch-3
+        for (; i < numEntriesToWrite; i++) {
+            ByteBuffer entry = ByteBuffer.allocate(4);
+            entry.putInt(rng.nextInt(maxInt));
+            entry.position(0);
+
+            entries1.add(entry.array());
+            lh.addEntry(entry.array());
+        }
+
+        sleepLatch1.countDown();
+        // get the bookie at index-0 again, this must be different.
+        BookieSocketAddress bookie2 = lh.getLedgerMetadata().currentEnsemble.get(0);
+
+        assertFalse(
+                "Delayed write error must have forced ensemble change",
+                        bookie1.equals(bookie2));
+        lh.close();
+    }
     /**
      * Verify the functionality Ledgers with different digests.
      *

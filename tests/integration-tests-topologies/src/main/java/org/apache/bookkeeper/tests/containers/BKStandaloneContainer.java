@@ -47,7 +47,7 @@ public class BKStandaloneContainer<SELF extends BKStandaloneContainer<SELF>> ext
 
     @Override
     public String getContainerName() {
-        return containerName + "-standalone-" + numBookies + "-bookies";
+        return clusterName + "-standalone-" + numBookies + "-bookies";
     }
 
     @Override
