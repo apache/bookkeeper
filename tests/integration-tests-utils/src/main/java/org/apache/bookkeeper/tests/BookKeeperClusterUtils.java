@@ -60,7 +60,10 @@ public class BookKeeperClusterUtils {
 
     public static boolean zookeeperRunning(DockerClient docker, String containerId) {
         String ip = DockerUtils.getContainerIP(docker, containerId);
-        try (Socket socket = new Socket(ip, 2181)) {
+        return zookeeperRunning(ip, 2181);
+    }
+    public static boolean zookeeperRunning(String ip, int port) {
+        try (Socket socket = new Socket(ip, port)) {
             socket.setSoTimeout(1000);
             socket.getOutputStream().write("ruok".getBytes(UTF_8));
             byte[] resp = new byte[4];
