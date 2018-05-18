@@ -258,7 +258,7 @@ class JournalChannel implements Closeable {
     }
 
     public void close() throws IOException {
-        fc.close();
+        bc.close();
     }
 
     public void forceWrite(boolean forceMetadata) throws IOException {
