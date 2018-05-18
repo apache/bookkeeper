@@ -86,8 +86,9 @@ public class BufferedChannel extends BufferedReadChannel implements Closeable {
     }
 
     @Override
-    public void close() throws IOException {
+    public synchronized void close() throws IOException {
         writeBuffer.release();
+        fileChannel.close();
     }
 
     /**

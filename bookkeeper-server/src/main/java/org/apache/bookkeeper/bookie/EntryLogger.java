@@ -1089,24 +1089,15 @@ public class EntryLogger {
         entryLoggerAllocator.stop();
     }
 
-    static void closeFileChannel(BufferedChannelBase channel) throws IOException {
-        if (null == channel) {
-            return;
-        }
-
-        FileChannel fileChannel = channel.getFileChannel();
-        if (null != fileChannel) {
-            fileChannel.close();
+    static void closeFileChannel(BufferedChannel channel) throws IOException {
+        if (channel != null) {
+            channel.close();
         }
     }
 
-    static void forceCloseFileChannel(BufferedChannelBase channel) {
-        if (null == channel) {
-            return;
-        }
-        FileChannel fileChannel = channel.getFileChannel();
-        if (null != fileChannel) {
-            IOUtils.close(LOG, fileChannel);
+    static void forceCloseFileChannel(BufferedChannel channel) {
+        if (channel != null) {
+            IOUtils.close(LOG, channel);
         }
     }
 
