@@ -30,6 +30,7 @@
   <modules>
     <module>smoke</module>
     <module>standalone</module>
+    <module>cluster</module>
   </modules>
 
   <build>
