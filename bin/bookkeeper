@@ -35,6 +35,7 @@ BOOKIE_CLASSPATH=$(set_module_classpath ${BOOKIE_MODULE_PATH})
 
 # default variables
 DEFAULT_CONF=${BK_HOME}/conf/bk_server.conf
+DEFAULT_ZK_CONF=$BK_HOME/conf/zookeeper.conf
 
 bookkeeper_help() {
     cat <<EOF
@@ -52,6 +53,7 @@ or command is the full name of a class with a defined main() method.
 Environment variables:
    BOOKIE_LOG_CONF        Log4j configuration file (default ${DEFAULT_LOG_CONF})
    BOOKIE_CONF            Configuration file (default: ${DEFAULT_CONF})
+   BOOKIE_ZK_CONF         Configuration file for zookeeper (default: $DEFAULT_ZK_CONF)
    BOOKIE_EXTRA_OPTS      Extra options to be passed to the jvm
    BOOKIE_EXTRA_CLASSPATH Add extra paths to the bookkeeper classpath
    ENTRY_FORMATTER_CLASS  Entry formatter class to format entries.
@@ -85,6 +87,10 @@ if [ ${COMMAND} == "shell" ]; then
       shift
     fi
   fi
+fi
+
+if [ -z "$BOOKIE_ZK_CONF" ]; then
+    BOOKIE_ZK_CONF=$DEFAULT_ZK_CONF
 fi
 
 if [ -z "$BOOKIE_CONF" ]; then
@@ -128,6 +134,9 @@ elif [ ${COMMAND} == "localbookie" ]; then
   exec ${JAVA} ${OPTS} ${JMX_ARGS} -Dzookeeper.4lw.commands.whitelist='*' org.apache.bookkeeper.util.LocalBookKeeper ${NUMBER} ${BOOKIE_CONF} $@
 elif [ ${COMMAND} == "upgrade" ]; then
   exec ${JAVA} ${OPTS} org.apache.bookkeeper.bookie.FileSystemUpgrade --conf ${BOOKIE_CONF} $@
+elif [ $COMMAND == "zookeeper" ]; then
+    BOOKIE_LOG_FILE=${BOOKIE_LOG_FILE:-"zookeeper.log"}
+    exec $JAVA $OPTS -Dbookkeeper.log.file=$BOOKIE_LOG_FILE org.apache.zookeeper.server.quorum.QuorumPeerMain $BOOKIE_ZK_CONF $@
 elif [ ${COMMAND} == "shell" ]; then
   ENTRY_FORMATTER_ARG="-DentryFormatterClass=${ENTRY_FORMATTER_CLASS:-org.apache.bookkeeper.util.StringEntryFormatter}"
   exec ${JAVA} ${OPTS} ${ENTRY_FORMATTER_ARG} org.apache.bookkeeper.bookie.BookieShell -conf ${BOOKIE_CONF} $@
