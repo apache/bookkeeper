@@ -20,6 +20,8 @@ package org.apache.bookkeeper.bookie;
 
 import static org.junit.Assert.assertTrue;
 
+import com.google.common.util.concurrent.MoreExecutors;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
@@ -28,11 +30,13 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
 
+import org.apache.bookkeeper.bookie.EntryLogManagerForEntryLogPerLedger.BufferedLogChannelWithDirInfo;
 import org.apache.bookkeeper.bookie.EntryLogger.BufferedLogChannel;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
@@ -50,7 +54,7 @@ import org.slf4j.LoggerFactory;
  */
 public class CreateNewLogTest {
     private static final Logger LOG = LoggerFactory
-    .getLogger(CreateNewLogTest.class);
+            .getLogger(CreateNewLogTest.class);
 
     private String[] ledgerDirs;
     private int numDirs = 100;
@@ -151,6 +155,12 @@ public class CreateNewLogTest {
         assertTrue("Wrong log id", entryLogManager.getCurrentLogId() > 1);
     }
 
+    void setSameThreadExecutorForEntryLoggerAllocator(EntryLoggerAllocator entryLoggerAllocator) {
+        ExecutorService executorService = entryLoggerAllocator.allocatorExecutor;
+        executorService.shutdown();
+        entryLoggerAllocator.allocatorExecutor = MoreExecutors.newDirectExecutorService();
+    }
+
     /*
      * entryLogPerLedger is enabled and various scenarios of entrylogcreation are tested
      */
@@ -177,6 +187,8 @@ public class CreateNewLogTest {
         EntryLoggerAllocator entryLoggerAllocator = entryLogger.entryLoggerAllocator;
         EntryLogManagerForEntryLogPerLedger entryLogManager = (EntryLogManagerForEntryLogPerLedger) entryLogger
                 .getEntryLogManager();
+        // set same thread executor for entryLoggerAllocator's allocatorExecutor
+        setSameThreadExecutorForEntryLoggerAllocator(entryLoggerAllocator);
 
         /*
          * no entrylog will be created during initialization
@@ -192,7 +204,6 @@ public class CreateNewLogTest {
             entryLogManager.createNewLog(i);
         }
 
-        Thread.sleep(100);
         /*
          * preallocation is enabled so though entryLogId starts with 0, preallocatedLogId would be equal to numOfLedgers
          */
@@ -219,7 +230,7 @@ public class CreateNewLogTest {
          */
         long rotatedLedger = 1L;
         entryLogManager.createNewLog(rotatedLedger);
-        Thread.sleep(100);
+
         expectedPreAllocatedLogID = expectedPreAllocatedLogID + 2;
         Assert.assertEquals("PreallocatedlogId ",
                 expectedPreAllocatedLogID, entryLoggerAllocator.getPreallocatedLogId());
@@ -284,8 +295,9 @@ public class CreateNewLogTest {
         EntryLoggerAllocator entryLoggerAllocator = entryLogger.entryLoggerAllocator;
         EntryLogManagerForEntryLogPerLedger entryLogManager = (EntryLogManagerForEntryLogPerLedger)
                 entryLogger.getEntryLogManager();
+        // set same thread executor for entryLoggerAllocator's allocatorExecutor
+        setSameThreadExecutorForEntryLoggerAllocator(entryLoggerAllocator);
 
-        Thread.sleep(200);
         int expectedPreAllocatedLogIDDuringInitialization = -1;
         Assert.assertEquals("PreallocatedlogId after initialization of Entrylogger",
                 expectedPreAllocatedLogIDDuringInitialization, entryLoggerAllocator.getPreallocatedLogId());
@@ -295,7 +307,7 @@ public class CreateNewLogTest {
         long ledgerId = 0L;
 
         entryLogManager.createNewLog(ledgerId);
-        Thread.sleep(100);
+
         /*
          * pre-allocation is not enabled, so it would not preallocate for next entrylog
          */
@@ -326,7 +338,7 @@ public class CreateNewLogTest {
      * In this testcase it is validated if the entryLog is created in the
      * ledgerDir with least number of current active entrylogs
      */
-    @Test(timeout = 60000)
+    @Test
     public void testLedgerDirsUniformityDuringCreation() throws Exception {
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
 
@@ -366,10 +378,10 @@ public class CreateNewLogTest {
     }
 
 
-    int highestFrequencyOfEntryLogsPerLedgerDir(Set<BufferedLogChannel> copyOfCurrentLogs) {
+    int highestFrequencyOfEntryLogsPerLedgerDir(Set<BufferedLogChannelWithDirInfo> copyOfCurrentLogsWithDirInfo) {
         Map<File, MutableInt> frequencyOfEntryLogsInLedgerDirs = new HashMap<File, MutableInt>();
-        for (BufferedLogChannel logChannel : copyOfCurrentLogs) {
-            File parentDir = logChannel.getLogFile().getParentFile();
+        for (BufferedLogChannelWithDirInfo logChannelWithDirInfo : copyOfCurrentLogsWithDirInfo) {
+            File parentDir = logChannelWithDirInfo.getLogChannel().getLogFile().getParentFile();
             if (frequencyOfEntryLogsInLedgerDirs.containsKey(parentDir)) {
                 frequencyOfEntryLogsInLedgerDirs.get(parentDir).increment();
             } else {
@@ -404,6 +416,9 @@ public class CreateNewLogTest {
 
         EntryLogger el = new EntryLogger(conf, ledgerDirsManager);
         EntryLogManagerBase entryLogManager = (EntryLogManagerBase) el.getEntryLogManager();
+        // set same thread executor for entryLoggerAllocator's allocatorExecutor
+        setSameThreadExecutorForEntryLoggerAllocator(el.getEntryLoggerAllocator());
+
         Assert.assertEquals("previousAllocatedEntryLogId after initialization", -1,
                 el.getPreviousAllocatedEntryLogId());
         Assert.assertEquals("leastUnflushedLogId after initialization", 0, el.getLeastUnflushedLogId());
@@ -418,8 +433,6 @@ public class CreateNewLogTest {
                 receivedException.set(true);
             }
         });
-        // wait for the pre-allocation to complete
-        Thread.sleep(1000);
 
         Assert.assertFalse("There shouldn't be any exceptions while creating newlog", receivedException.get());
         int expectedPreviousAllocatedEntryLogId = createNewLogNumOfTimes - 1;
@@ -429,7 +442,7 @@ public class CreateNewLogTest {
 
         Assert.assertEquals(
                 "previousAllocatedEntryLogId after " + createNewLogNumOfTimes
-                        + " number of times createNewLog is called",
+                + " number of times createNewLog is called",
                 expectedPreviousAllocatedEntryLogId, el.getPreviousAllocatedEntryLogId());
         Assert.assertEquals("Number of RotatedLogChannels", createNewLogNumOfTimes - 1,
                 entryLogManager.getRotatedLogChannels().size());
@@ -486,6 +499,8 @@ public class CreateNewLogTest {
         LedgerDirsManager ledgerDirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs(),
                 new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()));
         EntryLogger el = new EntryLogger(conf, ledgerDirsManager);
+        // set same thread executor for entryLoggerAllocator's allocatorExecutor
+        setSameThreadExecutorForEntryLoggerAllocator(el.getEntryLoggerAllocator());
         AtomicBoolean receivedException = new AtomicBoolean(false);
 
         IntStream.range(0, 2).parallel().forEach((i) -> {
@@ -500,8 +515,6 @@ public class CreateNewLogTest {
                 receivedException.set(true);
             }
         });
-        // wait for the pre-allocation to complete
-        Thread.sleep(1000);
 
         Assert.assertFalse("There shouldn't be any exceptions while creating newlog", receivedException.get());
         Assert.assertEquals(
@@ -536,20 +549,17 @@ public class CreateNewLogTest {
         for (long i = 0; i < numOfLedgers; i++) {
             for (int j = 0; j < numOfThreadsForSameLedger; j++) {
                 long ledgerId = i;
-                new Thread() {
-                    @Override
-                    public void run() {
-                        try {
-                            startLatch.await();
-                            entrylogManager.createNewLog(ledgerId);
-                            createdEntryLogs.incrementAndGet();
-                        } catch (InterruptedException | IOException e) {
-                            LOG.error("Got exception while trying to createNewLog for Ledger: " + ledgerId, e);
-                        } finally {
-                            createdLatch.countDown();
-                        }
+                new Thread(() -> {
+                    try {
+                        startLatch.await();
+                        entrylogManager.createNewLog(ledgerId);
+                        createdEntryLogs.incrementAndGet();
+                    } catch (InterruptedException | IOException e) {
+                        LOG.error("Got exception while trying to createNewLog for Ledger: " + ledgerId, e);
+                    } finally {
+                        createdLatch.countDown();
                     }
-                }.start();
+                }).start();
             }
         }
 

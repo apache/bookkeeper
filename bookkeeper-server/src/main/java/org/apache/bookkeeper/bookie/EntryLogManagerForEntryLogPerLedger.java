@@ -37,7 +37,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
@@ -47,14 +46,36 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.bookie.EntryLogger.BufferedLogChannel;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.LedgerDirsListener;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.util.collections.ConcurrentLongHashMap;
 import org.apache.commons.lang.mutable.MutableInt;
 
 @Slf4j
 class EntryLogManagerForEntryLogPerLedger extends EntryLogManagerBase {
 
+    static class BufferedLogChannelWithDirInfo {
+        private final BufferedLogChannel logChannel;
+        volatile boolean ledgerDirFull = false;
+
+        BufferedLogChannelWithDirInfo(BufferedLogChannel logChannel) {
+            this.logChannel = logChannel;
+        }
+
+        public boolean isLedgerDirFull() {
+            return ledgerDirFull;
+        }
+
+        public void setLedgerDirFull(boolean ledgerDirFull) {
+            this.ledgerDirFull = ledgerDirFull;
+        }
+
+        public BufferedLogChannel getLogChannel() {
+            return logChannel;
+        }
+    }
+
     static class EntryLogAndLockTuple {
         private final Lock ledgerLock;
-        private BufferedLogChannel entryLog;
+        private BufferedLogChannelWithDirInfo entryLogWithDirInfo;
 
         public EntryLogAndLockTuple() {
             ledgerLock = new ReentrantLock();
@@ -64,16 +85,16 @@ class EntryLogManagerForEntryLogPerLedger extends EntryLogManagerBase {
             return ledgerLock;
         }
 
-        public BufferedLogChannel getEntryLog() {
-            return entryLog;
+        public BufferedLogChannelWithDirInfo getEntryLogWithDirInfo() {
+            return entryLogWithDirInfo;
         }
 
-        public void setEntryLog(BufferedLogChannel entryLog) {
-            this.entryLog = entryLog;
+        public void setEntryLogWithDirInfo(BufferedLogChannelWithDirInfo entryLogWithDirInfo) {
+            this.entryLogWithDirInfo = entryLogWithDirInfo;
         }
     }
 
-    private LoadingCache<Long, EntryLogAndLockTuple> ledgerIdEntryLogMap;
+    private final LoadingCache<Long, EntryLogAndLockTuple> ledgerIdEntryLogMap;
     /*
      * every time active logChannel is accessed from ledgerIdEntryLogMap
      * cache, the accesstime of that entry is updated. But for certain
@@ -81,9 +102,9 @@ class EntryLogManagerForEntryLogPerLedger extends EntryLogManagerBase {
      * periodic flush of current active logChannels), and those operations
      * can use this copy of references.
      */
-    private final ConcurrentHashMap<Long, BufferedLogChannel> replicaOfCurrentLogChannels;
+    private final ConcurrentLongHashMap<BufferedLogChannelWithDirInfo> replicaOfCurrentLogChannels;
     private final CacheLoader<Long, EntryLogAndLockTuple> entryLogAndLockTupleCacheLoader;
-    private EntryLogger.RecentEntryLogsStatus recentlyCreatedEntryLogsStatus;
+    private final EntryLogger.RecentEntryLogsStatus recentlyCreatedEntryLogsStatus;
     private final int entrylogMapAccessExpiryTimeInSeconds;
     private final int maximumNumberOfActiveEntryLogs;
 
@@ -93,7 +114,7 @@ class EntryLogManagerForEntryLogPerLedger extends EntryLogManagerBase {
         super(conf, ledgerDirsManager, entryLoggerAllocator, listeners);
         this.recentlyCreatedEntryLogsStatus = recentlyCreatedEntryLogsStatus;
         this.rotatedLogChannels = new CopyOnWriteArrayList<BufferedLogChannel>();
-        this.replicaOfCurrentLogChannels = new ConcurrentHashMap<Long, BufferedLogChannel>();
+        this.replicaOfCurrentLogChannels = new ConcurrentLongHashMap<BufferedLogChannelWithDirInfo>();
         this.entrylogMapAccessExpiryTimeInSeconds = conf.getEntrylogMapAccessExpiryTimeInSeconds();
         this.maximumNumberOfActiveEntryLogs = conf.getMaximumNumberOfActiveEntryLogs();
         ledgerDirsManager.addLedgerDirsListener(getLedgerDirsListener());
@@ -123,34 +144,48 @@ class EntryLogManagerForEntryLogPerLedger extends EntryLogManagerBase {
                     @Override
                     public void onRemoval(
                             RemovalNotification<Long, EntryLogAndLockTuple> expiredLedgerEntryLogMapEntry) {
-                        removalOnExpiry(expiredLedgerEntryLogMapEntry);
+                        onCacheEntryRemoval(expiredLedgerEntryLogMapEntry);
                     }
                 }).build(entryLogAndLockTupleCacheLoader);
     }
 
     /*
-     * This method is called when access time of that ledger has elapsed
-     * entrylogMapAccessExpiryTimeInSeconds period and the entry for that
-     * ledger is removed from cache. Since the entrylog of this ledger is
-     * not active anymore it has to be removed from
-     * replicaOfCurrentLogChannels and added to rotatedLogChannels.
+     * This method is called when an entry is removed from the cache. This could
+     * be because access time of that ledger has elapsed
+     * entrylogMapAccessExpiryTimeInSeconds period, or number of active
+     * currentlogs in the cache has reached the size of
+     * maximumNumberOfActiveEntryLogs, or if an entry is explicitly
+     * invalidated/removed. In these cases entry for that ledger is removed from
+     * cache. Since the entrylog of this ledger is not active anymore it has to
+     * be removed from replicaOfCurrentLogChannels and added to
+     * rotatedLogChannels.
      *
      * Because of performance/optimizations concerns the cleanup maintenance
-     * operations wont happen automatically, for more info on eviction
-     * cleanup maintenance tasks -
+     * operations wont happen automatically, for more info on eviction cleanup
+     * maintenance tasks -
      * https://google.github.io/guava/releases/19.0/api/docs/com/google/
      * common/cache/CacheBuilder.html
      *
      */
-    private void removalOnExpiry(RemovalNotification<Long, EntryLogAndLockTuple> expiredLedgerEntryLogMapEntry) {
-        Long ledgerId = expiredLedgerEntryLogMapEntry.getKey();
-        log.debug("LedgerId {} is not accessed for entrylogMapAccessExpiryTimeInSeconds"
-                + " period so it is being evicted from the cache map", ledgerId);
-        EntryLogAndLockTuple entryLogAndLockTuple = expiredLedgerEntryLogMapEntry.getValue();
+    private void onCacheEntryRemoval(RemovalNotification<Long, EntryLogAndLockTuple> removedLedgerEntryLogMapEntry) {
+        Long ledgerId = removedLedgerEntryLogMapEntry.getKey();
+        log.debug("LedgerId {} is being evicted from the cache map because of {}", ledgerId,
+                removedLedgerEntryLogMapEntry.getCause());
+        EntryLogAndLockTuple entryLogAndLockTuple = removedLedgerEntryLogMapEntry.getValue();
+        if (entryLogAndLockTuple == null) {
+            log.error("entryLogAndLockTuple is not supposed to be null in entry removal listener for ledger : {}",
+                    ledgerId);
+            return;
+        }
         Lock lock = entryLogAndLockTuple.ledgerLock;
-        BufferedLogChannel logChannel = entryLogAndLockTuple.entryLog;
+        BufferedLogChannelWithDirInfo logChannelWithDirInfo = entryLogAndLockTuple.getEntryLogWithDirInfo();
+        if (logChannelWithDirInfo == null) {
+            log.error("logChannel for ledger: {} is not supposed to be null in entry removal listener", ledgerId);
+            return;
+        }
         lock.lock();
         try {
+            BufferedLogChannel logChannel = logChannelWithDirInfo.getLogChannel();
             replicaOfCurrentLogChannels.remove(logChannel.getLogId());
             rotatedLogChannels.add(logChannel);
         } finally {
@@ -162,41 +197,32 @@ class EntryLogManagerForEntryLogPerLedger extends EntryLogManagerBase {
         return new LedgerDirsListener() {
             @Override
             public void diskFull(File disk) {
-                Set<BufferedLogChannel> copyOfCurrentLogs = getCopyOfCurrentLogs();
-                for (BufferedLogChannel currentLog : copyOfCurrentLogs) {
-                    if (disk.equals(currentLog.getLogFile().getParentFile())) {
-                        currentLog.setLedgerDirFull(true);
+                Set<BufferedLogChannelWithDirInfo> copyOfCurrentLogsWithDirInfo = getCopyOfCurrentLogs();
+                for (BufferedLogChannelWithDirInfo currentLogWithDirInfo : copyOfCurrentLogsWithDirInfo) {
+                    if (disk.equals(currentLogWithDirInfo.getLogChannel().getLogFile().getParentFile())) {
+                        currentLogWithDirInfo.setLedgerDirFull(true);
                     }
                 }
             }
 
             @Override
             public void diskWritable(File disk) {
-                Set<BufferedLogChannel> copyOfCurrentLogs = getCopyOfCurrentLogs();
-                for (BufferedLogChannel currentLog : copyOfCurrentLogs) {
-                    if (disk.equals(currentLog.getLogFile().getParentFile())) {
-                        currentLog.setLedgerDirFull(false);
+                Set<BufferedLogChannelWithDirInfo> copyOfCurrentLogsWithDirInfo = getCopyOfCurrentLogs();
+                for (BufferedLogChannelWithDirInfo currentLogWithDirInfo : copyOfCurrentLogsWithDirInfo) {
+                    if (disk.equals(currentLogWithDirInfo.getLogChannel().getLogFile().getParentFile())) {
+                        currentLogWithDirInfo.setLedgerDirFull(false);
                     }
                 }
             }
         };
     }
 
-    public void acquireLock(Long ledgerId) throws IOException {
+    Lock getLock(long ledgerId) throws IOException {
         try {
-            ledgerIdEntryLogMap.get(ledgerId).getLedgerLock().lock();
+            return ledgerIdEntryLogMap.get(ledgerId).getLedgerLock();
         } catch (Exception e) {
-            log.error("Received unexpected exception while fetching lock to acquire", e);
+            log.error("Received unexpected exception while fetching lock to acquire for ledger: " + ledgerId, e);
             throw new IOException("Received unexpected exception while fetching lock to acquire", e);
-        }
-    }
-
-    public void releaseLock(Long ledgerId) throws IOException {
-        try {
-            ledgerIdEntryLogMap.get(ledgerId).getLedgerLock().unlock();
-        } catch (Exception e) {
-            log.error("Received unexpected exception while fetching lock to release", e);
-            throw new IOException("Received unexpected exception while fetching lock to release", e);
         }
     }
 
@@ -208,45 +234,62 @@ class EntryLogManagerForEntryLogPerLedger extends EntryLogManagerBase {
      */
     @Override
     public void setCurrentLogForLedgerAndAddToRotate(long ledgerId, BufferedLogChannel logChannel) throws IOException {
-        acquireLock(ledgerId);
+        Lock lock = getLock(ledgerId);
+        lock.lock();
         try {
             BufferedLogChannel hasToRotateLogChannel = getCurrentLogForLedger(ledgerId);
             logChannel.setLedgerIdAssigned(ledgerId);
-            ledgerIdEntryLogMap.get(ledgerId).setEntryLog(logChannel);
-            replicaOfCurrentLogChannels.put(logChannel.getLogId(), logChannel);
+            BufferedLogChannelWithDirInfo logChannelWithDirInfo = new BufferedLogChannelWithDirInfo(logChannel);
+            ledgerIdEntryLogMap.get(ledgerId).setEntryLogWithDirInfo(logChannelWithDirInfo);
+            replicaOfCurrentLogChannels.put(logChannel.getLogId(), logChannelWithDirInfo);
             if (hasToRotateLogChannel != null) {
                 replicaOfCurrentLogChannels.remove(hasToRotateLogChannel.getLogId());
                 rotatedLogChannels.add(hasToRotateLogChannel);
             }
         } catch (Exception e) {
-            log.error("Received unexpected exception while fetching entry from map", e);
+            log.error("Received unexpected exception while fetching entry from map for ledger: " + ledgerId, e);
             throw new IOException("Received unexpected exception while fetching entry from map", e);
         } finally {
-            releaseLock(ledgerId);
+            lock.unlock();
         }
     }
 
     @Override
     public BufferedLogChannel getCurrentLogForLedger(long ledgerId) throws IOException {
-        acquireLock(ledgerId);
+        BufferedLogChannelWithDirInfo bufferedLogChannelWithDirInfo = getCurrentLogWithDirInfoForLedger(ledgerId);
+        BufferedLogChannel bufferedLogChannel = null;
+        if (bufferedLogChannelWithDirInfo != null) {
+            bufferedLogChannel = bufferedLogChannelWithDirInfo.getLogChannel();
+        }
+        return bufferedLogChannel;
+    }
+
+    public BufferedLogChannelWithDirInfo getCurrentLogWithDirInfoForLedger(long ledgerId) throws IOException {
+        Lock lock = getLock(ledgerId);
+        lock.lock();
         try {
             EntryLogAndLockTuple entryLogAndLockTuple = ledgerIdEntryLogMap.get(ledgerId);
-            return entryLogAndLockTuple.getEntryLog();
+            return entryLogAndLockTuple.getEntryLogWithDirInfo();
         } catch (Exception e) {
-            log.error("Received unexpected exception while fetching entry from map", e);
+            log.error("Received unexpected exception while fetching entry from map for ledger: " + ledgerId, e);
             throw new IOException("Received unexpected exception while fetching entry from map", e);
         } finally {
-            releaseLock(ledgerId);
+            lock.unlock();
         }
     }
 
-    public Set<BufferedLogChannel> getCopyOfCurrentLogs() {
-        return new HashSet<BufferedLogChannel>(replicaOfCurrentLogChannels.values());
+    public Set<BufferedLogChannelWithDirInfo> getCopyOfCurrentLogs() {
+        return new HashSet<BufferedLogChannelWithDirInfo>(replicaOfCurrentLogChannels.values());
     }
 
     @Override
     public BufferedLogChannel getCurrentLogIfPresent(long entryLogId) {
-        return replicaOfCurrentLogChannels.get(entryLogId);
+        BufferedLogChannelWithDirInfo bufferedLogChannelWithDirInfo = replicaOfCurrentLogChannels.get(entryLogId);
+        BufferedLogChannel logChannel = null;
+        if (bufferedLogChannelWithDirInfo != null) {
+            logChannel = bufferedLogChannelWithDirInfo.getLogChannel();
+        }
+        return logChannel;
     }
 
     @Override
@@ -283,18 +326,20 @@ class EntryLogManagerForEntryLogPerLedger extends EntryLogManagerBase {
     public boolean commitEntryMemTableFlush() throws IOException {
         // lock it only if there is new data
         // so that cache accesstime is not changed
-        Set<BufferedLogChannel> copyOfCurrentLogs = getCopyOfCurrentLogs();
-        for (BufferedLogChannel currentLog : copyOfCurrentLogs) {
+        Set<BufferedLogChannelWithDirInfo> copyOfCurrentLogsWithDirInfo = getCopyOfCurrentLogs();
+        for (BufferedLogChannelWithDirInfo currentLogWithDirInfo : copyOfCurrentLogsWithDirInfo) {
+            BufferedLogChannel currentLog = currentLogWithDirInfo.getLogChannel();
             if (reachEntryLogLimit(currentLog, 0L)) {
                 Long ledgerId = currentLog.getLedgerIdAssigned();
-                acquireLock(ledgerId);
+                Lock lock = getLock(ledgerId);
+                lock.lock();
                 try {
                     if (reachEntryLogLimit(currentLog, 0L)) {
                         log.info("Rolling entry logger since it reached size limitation for ledger: {}", ledgerId);
                         createNewLog(ledgerId);
                     }
                 } finally {
-                    releaseLock(ledgerId);
+                    lock.unlock();
                 }
             }
         }
@@ -347,8 +392,8 @@ class EntryLogManagerForEntryLogPerLedger extends EntryLogManagerBase {
         Map<File, MutableInt> writableLedgerDirFrequency = new HashMap<File, MutableInt>();
         writableLedgerDirs.stream()
                 .forEach((ledgerDir) -> writableLedgerDirFrequency.put(ledgerDir, new MutableInt()));
-        for (BufferedLogChannel logChannel : replicaOfCurrentLogChannels.values()) {
-            File parentDirOfCurrentLogChannel = logChannel.getLogFile().getParentFile();
+        for (BufferedLogChannelWithDirInfo logChannelWithDirInfo : replicaOfCurrentLogChannels.values()) {
+            File parentDirOfCurrentLogChannel = logChannelWithDirInfo.getLogChannel().getLogFile().getParentFile();
             if (writableLedgerDirFrequency.containsKey(parentDirOfCurrentLogChannel)) {
                 writableLedgerDirFrequency.get(parentDirOfCurrentLogChannel).increment();
             }
@@ -361,29 +406,29 @@ class EntryLogManagerForEntryLogPerLedger extends EntryLogManagerBase {
 
     @Override
     public void close() throws IOException {
-        Set<BufferedLogChannel> copyOfCurrentLogs = getCopyOfCurrentLogs();
-        for (BufferedLogChannel currentLog : copyOfCurrentLogs) {
-            EntryLogger.closeFileChannel(currentLog);
+        Set<BufferedLogChannelWithDirInfo> copyOfCurrentLogsWithDirInfo = getCopyOfCurrentLogs();
+        for (BufferedLogChannelWithDirInfo currentLogWithDirInfo : copyOfCurrentLogsWithDirInfo) {
+            EntryLogger.closeFileChannel(currentLogWithDirInfo.getLogChannel());
         }
     }
 
     @Override
     public void forceClose() {
-        Set<BufferedLogChannel> copyOfCurrentLogs = getCopyOfCurrentLogs();
-        for (BufferedLogChannel currentLog : copyOfCurrentLogs) {
-            EntryLogger.forceCloseFileChannel(currentLog);
+        Set<BufferedLogChannelWithDirInfo> copyOfCurrentLogsWithDirInfo = getCopyOfCurrentLogs();
+        for (BufferedLogChannelWithDirInfo currentLogWithDirInfo : copyOfCurrentLogsWithDirInfo) {
+            EntryLogger.forceCloseFileChannel(currentLogWithDirInfo.getLogChannel());
         }
     }
 
     @Override
     void flushCurrentLogs() throws IOException {
-        Set<BufferedLogChannel> copyOfCurrentLogs = getCopyOfCurrentLogs();
-        for (BufferedLogChannel logChannel : copyOfCurrentLogs) {
+        Set<BufferedLogChannelWithDirInfo> copyOfCurrentLogsWithDirInfo = getCopyOfCurrentLogs();
+        for (BufferedLogChannelWithDirInfo logChannelWithDirInfo : copyOfCurrentLogsWithDirInfo) {
             /**
              * flushCurrentLogs method is called during checkpoint, so metadata
              * of the file also should be force written.
              */
-            flushLogChannel(logChannel, true);
+            flushLogChannel(logChannelWithDirInfo.getLogChannel(), true);
         }
     }
 
@@ -395,21 +440,23 @@ class EntryLogManagerForEntryLogPerLedger extends EntryLogManagerBase {
 
     @Override
     public long addEntry(long ledger, ByteBuf entry, boolean rollLog) throws IOException {
-        acquireLock(ledger);
+        Lock lock = getLock(ledger);
+        lock.lock();
         try {
             return super.addEntry(ledger, entry, rollLog);
         } finally {
-            releaseLock(ledger);
+            lock.unlock();
         }
     }
 
     @Override
     void createNewLog(long ledgerId) throws IOException {
-        acquireLock(ledgerId);
+        Lock lock = getLock(ledgerId);
+        lock.lock();
         try {
             super.createNewLog(ledgerId);
         } finally {
-            releaseLock(ledgerId);
+            lock.unlock();
         }
     }
 
@@ -417,13 +464,18 @@ class EntryLogManagerForEntryLogPerLedger extends EntryLogManagerBase {
     @Override
     BufferedLogChannel getCurrentLogForLedgerForAddEntry(long ledgerId, int entrySize, boolean rollLog)
             throws IOException {
-        acquireLock(ledgerId);
+        Lock lock = getLock(ledgerId);
+        lock.lock();
         try {
-            BufferedLogChannel logChannel = getCurrentLogForLedger(ledgerId);
+            BufferedLogChannelWithDirInfo logChannelWithDirInfo = getCurrentLogWithDirInfoForLedger(ledgerId);
+            BufferedLogChannel logChannel = null;
+            if (logChannelWithDirInfo != null) {
+                logChannel = logChannelWithDirInfo.getLogChannel();
+            }
             boolean reachEntryLogLimit = rollLog ? reachEntryLogLimit(logChannel, entrySize)
                     : readEntryLogHardLimit(logChannel, entrySize);
             // Create new log if logSizeLimit reached or current disk is full
-            boolean diskFull = (logChannel == null) ? false : logChannel.isLedgerDirFull();
+            boolean diskFull = (logChannel == null) ? false : logChannelWithDirInfo.isLedgerDirFull();
             boolean allDisksFull = !ledgerDirsManager.hasWritableLedgerDirs();
 
             /**
@@ -443,7 +495,7 @@ class EntryLogManagerForEntryLogPerLedger extends EntryLogManagerBase {
 
             return getCurrentLogForLedger(ledgerId);
         } finally {
-            releaseLock(ledgerId);
+            lock.unlock();
         }
     }
 

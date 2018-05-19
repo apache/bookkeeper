@@ -52,7 +52,7 @@ class EntryLoggerAllocator {
 
     private long preallocatedLogId;
     Future<BufferedLogChannel> preallocation = null;
-    private ExecutorService allocatorExecutor;
+    ExecutorService allocatorExecutor;
     private final ServerConfiguration conf;
     private final LedgerDirsManager ledgerDirsManager;
     private final Object createEntryLogLock = new Object();

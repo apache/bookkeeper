@@ -83,7 +83,6 @@ public class EntryLogger {
         private final EntryLogMetadata entryLogMetadata;
         private final File logFile;
         private long ledgerIdAssigned = UNASSIGNED_LEDGERID;
-        volatile boolean ledgerDirFull = false;
 
         public BufferedLogChannel(FileChannel fc, int writeCapacity, int readCapacity, long logId, File logFile,
                 long unpersistedBytesBound) throws IOException {
@@ -123,14 +122,6 @@ public class EntryLogger {
                 .add("logFile", logFile)
                 .add("ledgerIdAssigned", ledgerIdAssigned)
                 .toString();
-        }
-
-        public boolean isLedgerDirFull() {
-            return ledgerDirFull;
-        }
-
-        public void setLedgerDirFull(boolean ledgerDirFull) {
-            this.ledgerDirFull = ledgerDirFull;
         }
 
         /**

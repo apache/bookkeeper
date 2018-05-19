@@ -51,6 +51,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLongArray;
+import java.util.concurrent.locks.Lock;
 
 import org.apache.bookkeeper.bookie.EntryLogger.BufferedLogChannel;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirException;
@@ -965,7 +966,7 @@ public class EntryLogTest {
     }
 
     /*
-     * validates the concurrency aspect of entryLogManager.acquireLockByCreatingIfRequired/acquireLock/releaseLock
+     * validates the concurrency aspect of entryLogManager's lock
      *
      * Executor of fixedThreadPool of size 'numOfLedgers * numOfThreadsPerLedger' is created and the same number
      * of tasks are submitted to the Executor. In each task, lock of that ledger is acquired and then released.
@@ -984,10 +985,11 @@ public class EntryLogTest {
             tpe.submit(() -> {
                 try {
                     latchToStart.await();
-                    entryLogManager.acquireLock(ledgerId);
+                    Lock lock = entryLogManager.getLock(ledgerId);
+                    lock.lock();
                     numberOfThreadsAcquiredLock.incrementAndGet();
                     latchToWait.await();
-                    entryLogManager.releaseLock(ledgerId);
+                    lock.unlock();
                 } catch (InterruptedException | IOException e) {
                     irptExceptionHappened.set(true);
                 }
@@ -1055,7 +1057,7 @@ public class EntryLogTest {
 
         Assert.assertTrue("since mapentry must have been evicted, it should be null",
                 (entryLogManager.getCacheAsMap().get(ledgerId) == null)
-                        || (entryLogManager.getCacheAsMap().get(ledgerId).getEntryLog() == null));
+                        || (entryLogManager.getCacheAsMap().get(ledgerId).getEntryLogWithDirInfo() == null));
     }
 
     /*
@@ -1211,7 +1213,7 @@ public class EntryLogTest {
 
         Assert.assertTrue("since mapentry must have been evicted, it should be null",
                 (entryLogManager.getCacheAsMap().get(ledgerId) == null)
-                        || (entryLogManager.getCacheAsMap().get(ledgerId).getEntryLog() == null));
+                        || (entryLogManager.getCacheAsMap().get(ledgerId).getEntryLogWithDirInfo() == null));
     }
 
     /*
