@@ -1144,7 +1144,6 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
             // close will flush the file system cache making any previous
             // cached writes durable so this is fine as well.
             IOUtils.close(LOG, bc);
-            IOUtils.close(LOG, logFile);
         }
         LOG.info("Journal exited loop!");
     }
