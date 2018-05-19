@@ -29,6 +29,7 @@ import com.google.protobuf.InvalidProtocolBufferException;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.Executor;
 import java.util.function.Consumer;
 import lombok.extern.slf4j.Slf4j;
@@ -92,7 +93,7 @@ public class ZkClusterMetadataStore implements ClusterMetadataStore {
     }
 
     @Override
-    public void initializeCluster(int numStorageContainers) {
+    public void initializeCluster(int numStorageContainers, Optional<String> segmentStorePath) {
         ClusterMetadata metadata = ClusterMetadata.newBuilder()
             .setNumStorageContainers(numStorageContainers)
             .build();
@@ -101,7 +102,7 @@ public class ZkClusterMetadataStore implements ClusterMetadataStore {
         try {
             // we are using dlog for the storage backend, so we need to initialize the dlog namespace
             BKDLConfig dlogConfig = new BKDLConfig(
-                zkServers, getSegmentsRootPath(zkRootPath));
+                zkServers, segmentStorePath.orElse(getSegmentsRootPath(zkRootPath)));
             DLMetadata dlogMetadata = DLMetadata.create(dlogConfig);
 
             client.transaction()

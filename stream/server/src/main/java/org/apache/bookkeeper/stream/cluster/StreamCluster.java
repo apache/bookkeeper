@@ -48,6 +48,7 @@ import org.apache.bookkeeper.stream.server.StorageServer;
 import org.apache.bookkeeper.stream.storage.StorageConstants;
 import org.apache.bookkeeper.stream.storage.conf.StorageConfiguration;
 import org.apache.bookkeeper.stream.storage.exceptions.StorageRuntimeException;
+import org.apache.bookkeeper.stream.storage.impl.cluster.ZkClusterInitializer;
 import org.apache.bookkeeper.stream.storage.impl.cluster.ZkClusterMetadataStore;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.curator.framework.CuratorFramework;
@@ -140,28 +141,9 @@ public class StreamCluster
     }
 
     private void initializeCluster() throws Exception {
-        try (CuratorFramework client = CuratorFrameworkFactory.newClient(
-            zkEnsemble,
-            new ExponentialBackoffRetry(100, Integer.MAX_VALUE, 10000)
-        )) {
-            client.start();
-
-            ZkClusterMetadataStore store = new ZkClusterMetadataStore(client, zkEnsemble, ZK_METADATA_ROOT_PATH);
-
-            ClusterMetadata metadata;
-            try {
-                metadata = store.getClusterMetadata();
-                log.info("Loaded cluster metadata : \n{}", metadata);
-            } catch (StorageRuntimeException sre) {
-                if (sre.getCause() instanceof KeeperException.NoNodeException) {
-                    log.info("Initializing the stream cluster.");
-                    store.initializeCluster(spec.numServers() * 2);
-                    log.info("Successfully initialized the stream cluster : \n{}", store.getClusterMetadata());
-                } else {
-                    throw sre;
-                }
-            }
-        }
+        new ZkClusterInitializer().initializeCluster(
+            URI.create("zk://" + zkEnsemble),
+            spec.numServers() * 2);
 
         // format the bookkeeper cluster
         MetadataDrivers.runFunctionWithMetadataBookieDriver(newBookieConfiguration(zkEnsemble), driver -> {

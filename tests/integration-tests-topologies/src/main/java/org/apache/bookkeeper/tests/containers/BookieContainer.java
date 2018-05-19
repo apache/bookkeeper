@@ -40,18 +40,25 @@ public class BookieContainer<SELF extends BookieContainer<SELF>> extends ChaosCo
 
     private final String hostname;
     private final String metadataServiceUri;
+    private final String extraServerComponents;
 
     public BookieContainer(String clusterName,
                            String hostname,
-                           String metadataServiceUri) {
+                           String metadataServiceUri,
+                           String extraServerComponents) {
         super(clusterName, IMAGE_NAME);
         this.hostname = hostname;
         this.metadataServiceUri = metadataServiceUri;
+        this.extraServerComponents = extraServerComponents;
     }
 
     @Override
     public String getContainerName() {
         return clusterName + "-" + hostname;
+    }
+
+    public String getExternalGrpcEndpointStr() {
+        return getContainerIpAddress() + ":" + getMappedPort(BOOKIE_GRPC_PORT);
     }
 
     @Override
@@ -65,11 +72,14 @@ public class BookieContainer<SELF extends BookieContainer<SELF>> extends ChaosCo
         addEnv("BK_httpServerPort", "" + BOOKIE_HTTP_PORT);
         addEnv("BK_metadataServiceUri", metadataServiceUri);
         addEnv("BK_useHostNameAsBookieID", "true");
+        addEnv("BK_extraServerComponents", extraServerComponents);
         if (metadataServiceUri.toLowerCase().startsWith("zk")) {
             URI uri = URI.create(metadataServiceUri);
             addEnv("BK_zkServers", uri.getAuthority());
             addEnv("BK_zkLedgersRootPath", uri.getPath());
         }
+        // grpc port
+        addEnv("BK_storageserver.grpc.port", "" + BOOKIE_GRPC_PORT);
     }
 
     @Override

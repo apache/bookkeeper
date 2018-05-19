@@ -20,11 +20,10 @@ package org.apache.bookkeeper.stream.storage.impl.cluster;
 
 import com.google.common.collect.Maps;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.Executor;
 import java.util.function.Consumer;
-import lombok.AccessLevel;
 import lombok.Data;
-import lombok.Getter;
 import org.apache.bookkeeper.stream.proto.cluster.ClusterAssignmentData;
 import org.apache.bookkeeper.stream.proto.cluster.ClusterMetadata;
 import org.apache.bookkeeper.stream.storage.api.cluster.ClusterMetadataStore;
@@ -55,7 +54,8 @@ public class InMemClusterMetadataStore implements ClusterMetadataStore {
     }
 
     @Override
-    public synchronized void initializeCluster(int numStorageContainers) {
+    public synchronized void initializeCluster(int numStorageContainers,
+                                               Optional<String> segmentStorePath) {
         this.metadata = ClusterMetadata.newBuilder()
             .setNumStorageContainers(numStorageContainers)
             .build();

@@ -33,6 +33,7 @@ import org.apache.bookkeeper.meta.MetadataDrivers;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.tests.integration.topologies.BKCluster;
+import org.apache.bookkeeper.tests.integration.topologies.BKClusterSpec;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -50,8 +51,22 @@ public abstract class BookKeeperClusterTestBase {
 
     @BeforeClass
     public static void setupCluster() throws Exception {
-        bkCluster = new BKCluster(RandomStringUtils.randomAlphabetic(8), 0);
+        BKClusterSpec spec = BKClusterSpec.builder()
+            .clusterName(RandomStringUtils.randomAlphabetic(8))
+            .numBookies(0)
+            .build();
+
+        setupCluster(spec);
+    }
+
+    protected static void setupCluster(BKClusterSpec spec) throws Exception {
+        log.info("Setting up cluster {} with {} bookies : extraServerComponents = {}",
+            spec.clusterName(), spec.numBookies(), spec.extraServerComponents());
+
+        bkCluster = BKCluster.forSpec(spec);
         bkCluster.start();
+
+        log.info("Cluster {} is setup", spec.clusterName());
 
         metadataServiceUri = URI.create(bkCluster.getExternalServiceUri());
         ClientConfiguration conf = new ClientConfiguration()
@@ -59,6 +74,8 @@ public abstract class BookKeeperClusterTestBase {
         executor = Executors.newSingleThreadScheduledExecutor();
         metadataClientDriver = MetadataDrivers.getClientDriver(metadataServiceUri);
         metadataClientDriver.initialize(conf, executor, NullStatsLogger.INSTANCE, Optional.empty());
+
+        log.info("Initialized metadata client driver : {}", metadataServiceUri);
     }
 
     @AfterClass
@@ -74,7 +91,7 @@ public abstract class BookKeeperClusterTestBase {
         }
     }
 
-    private boolean findIfBookieRegistered(String bookieName) throws Exception {
+    private static boolean findIfBookieRegistered(String bookieName) throws Exception {
         Set<BookieSocketAddress> bookies =
             FutureUtils.result(metadataClientDriver.getRegistrationClient().getWritableBookies()).getValue();
         Optional<BookieSocketAddress> registered =
@@ -82,7 +99,7 @@ public abstract class BookKeeperClusterTestBase {
         return registered.isPresent();
     }
 
-    protected void waitUntilBookieUnregistered(String bookieName) throws Exception {
+    protected static void waitUntilBookieUnregistered(String bookieName) throws Exception {
         Stopwatch sw = Stopwatch.createStarted();
         while (findIfBookieRegistered(bookieName)) {
             TimeUnit.MILLISECONDS.sleep(1000);
