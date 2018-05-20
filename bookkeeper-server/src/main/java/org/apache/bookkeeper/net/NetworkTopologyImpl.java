@@ -18,6 +18,7 @@
 package org.apache.bookkeeper.net;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -43,6 +44,7 @@ public class NetworkTopologyImpl implements NetworkTopology {
 
     public static final int DEFAULT_HOST_LEVEL = 2;
     public static final Logger LOG = LoggerFactory.getLogger(NetworkTopologyImpl.class);
+    public static final String NODE_SEPARATOR = ",";
 
     /**
      * A marker for an InvalidTopology Exception.
@@ -772,7 +774,11 @@ public class NetworkTopologyImpl implements NetworkTopology {
         try {
             if (scope.startsWith("~")) {
                 Set<Node> allNodes = doGetLeaves(NodeBase.ROOT);
-                Set<Node> excludeNodes = doGetLeaves(scope.substring(1));
+                String[] excludeScopes = scope.substring(1).split(NODE_SEPARATOR);
+                Set<Node> excludeNodes = new HashSet<Node>();
+                Arrays.stream(excludeScopes).forEach((excludeScope) -> {
+                    excludeNodes.addAll(doGetLeaves(excludeScope));
+                });
                 allNodes.removeAll(excludeNodes);
                 return allNodes;
             } else {
