@@ -53,6 +53,7 @@ public class ZKContainer<SELF extends ZKContainer<SELF>> extends MetadataStoreCo
         addExposedPorts(
             ZK_PORT,
             ZK_HTTP_PORT);
+        setCommand("zookeeper");
         addEnv("BK_admin.serverPort", "" + ZK_HTTP_PORT);
     }
 
