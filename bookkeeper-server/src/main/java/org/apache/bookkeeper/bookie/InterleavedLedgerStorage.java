@@ -113,10 +113,6 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
 
     private LedgerDirsListener getLedgerDirsListener() {
         return new LedgerDirsListener() {
-            @Override
-            public void diskFailed(File disk) {
-                // do nothing.
-            }
 
             @Override
             public void diskAlmostFull(File disk) {
@@ -138,18 +134,13 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
             }
 
             @Override
-            public void allDisksFull() {
+            public void allDisksFull(boolean highPriorityWritesAllowed) {
                 if (gcThread.isForceGCAllowWhenNoSpace) {
                     gcThread.enableForceGC();
                 } else {
                     gcThread.suspendMajorGC();
                     gcThread.suspendMinorGC();
                 }
-            }
-
-            @Override
-            public void fatalError() {
-                // do nothing.
             }
 
             @Override

@@ -53,6 +53,7 @@ class LedgerDirsMonitor {
     private final ConcurrentMap<File, Float> diskUsages;
     private final DiskChecker diskChecker;
     private final LedgerDirsManager ldm;
+    private long minUsableSizeForHighPriorityWrites;
     private ScheduledExecutorService executor;
     private ScheduledFuture<?> checkTask;
 
@@ -60,6 +61,7 @@ class LedgerDirsMonitor {
                              final DiskChecker diskChecker,
                              final LedgerDirsManager ldm) {
         this.interval = conf.getDiskCheckInterval();
+        this.minUsableSizeForHighPriorityWrites = conf.getMinUsableSizeForHighPriorityWrites();
         this.conf = conf;
         this.diskChecker = diskChecker;
         this.diskUsages = ldm.getDiskUsages();
@@ -80,14 +82,22 @@ class LedgerDirsMonitor {
                         listener.diskFailed(dir);
                     }
                 } catch (DiskWarnThresholdException e) {
-                    LOG.warn("Ledger directory {} is almost full.", dir);
-                    diskUsages.put(dir, e.getUsage());
+                    diskUsages.compute(dir, (d, prevUsage) -> {
+                        if (null == prevUsage || e.getUsage() != prevUsage) {
+                            LOG.warn("Ledger directory {} is almost full : usage {}", dir, e.getUsage());
+                        }
+                        return e.getUsage();
+                    });
                     for (LedgerDirsListener listener : ldm.getListeners()) {
                         listener.diskAlmostFull(dir);
                     }
                 } catch (DiskOutOfSpaceException e) {
-                    LOG.error("Ledger directory {} is out-of-space.", dir);
-                    diskUsages.put(dir, e.getUsage());
+                    diskUsages.compute(dir, (d, prevUsage) -> {
+                        if (null == prevUsage || e.getUsage() != prevUsage) {
+                            LOG.error("Ledger directory {} is out-of-space : usage {}", dir, e.getUsage());
+                        }
+                        return e.getUsage();
+                    });
                     // Notify disk full to all listeners
                     ldm.addToFilledDirs(dir);
                 }
@@ -98,8 +108,15 @@ class LedgerDirsMonitor {
             // bookie cannot get writable dir but considered to be writable
             ldm.getWritableLedgerDirs();
         } catch (NoWritableLedgerDirException e) {
+            boolean highPriorityWritesAllowed = true;
+            try {
+                // disk check can be frequent, so disable 'loggingNoWritable' to avoid log flooding.
+                ldm.getDirsAboveUsableThresholdSize(minUsableSizeForHighPriorityWrites, false);
+            } catch (NoWritableLedgerDirException e1) {
+                highPriorityWritesAllowed = false;
+            }
             for (LedgerDirsListener listener : ldm.getListeners()) {
-                listener.allDisksFull();
+                listener.allDisksFull(highPriorityWritesAllowed);
             }
         }
 

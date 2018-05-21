@@ -48,6 +48,7 @@ public class AbstractConfigurationTest {
     private AbstractConfiguration conf;
 
     @Before
+    @SuppressWarnings("deprecation")
     public void setup() {
         this.conf = new ClientConfiguration();
         this.conf.setZkServers("127.0.0.1");

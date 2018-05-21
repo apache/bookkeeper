@@ -84,14 +84,22 @@ class DefaultPerChannelBookieClientPool implements PerChannelBookieClientPool,
         }
     }
 
-    @Override
-    public void obtain(GenericCallback<PerChannelBookieClient> callback, long key) {
+    private PerChannelBookieClient getClient(long key) {
         if (1 == clients.length) {
-            clients[0].connectIfNeededAndDoOp(callback);
-            return;
+            return clients[0];
         }
         int idx = MathUtils.signSafeMod(key, clients.length);
-        clients[idx].connectIfNeededAndDoOp(callback);
+        return clients[idx];
+    }
+
+    @Override
+    public void obtain(GenericCallback<PerChannelBookieClient> callback, long key) {
+        getClient(key).connectIfNeededAndDoOp(callback);
+    }
+
+    @Override
+    public boolean isWritable(long key) {
+        return getClient(key).isWritable();
     }
 
     @Override

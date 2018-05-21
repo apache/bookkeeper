@@ -167,9 +167,6 @@ public class BookieStorageThresholdTest extends BookKeeperClusterTestCase {
         final CountDownLatch diskWritable = new CountDownLatch(1);
         final CountDownLatch diskFull = new CountDownLatch(1);
         ledgerDirsManager.addLedgerDirsListener(new LedgerDirsListener() {
-            @Override
-            public void fatalError() {
-            }
 
             @Override
             public void diskWritable(File disk) {
@@ -177,25 +174,10 @@ public class BookieStorageThresholdTest extends BookKeeperClusterTestCase {
             }
 
             @Override
-            public void diskJustWritable(File disk) {
-            }
-
-            @Override
             public void diskFull(File disk) {
                 diskFull.countDown();
             }
 
-            @Override
-            public void diskFailed(File disk) {
-            }
-
-            @Override
-            public void diskAlmostFull(File disk) {
-            }
-
-            @Override
-            public void allDisksFull() {
-            }
         });
 
         // Dependency Injected class

@@ -30,13 +30,18 @@ import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.Enumeration;
 import java.util.Queue;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.RejectedExecutionException;
 
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.AsyncCallback.CloseCallback;
 import org.apache.bookkeeper.client.AsyncCallback.ReadCallback;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
+import org.apache.bookkeeper.client.api.LastConfirmedAndEntry;
+import org.apache.bookkeeper.client.api.LedgerEntries;
+import org.apache.bookkeeper.client.api.ReadHandle;
 import org.apache.bookkeeper.client.api.WriteFlag;
+import org.apache.bookkeeper.client.impl.LedgerEntryImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,11 +50,12 @@ import org.slf4j.LoggerFactory;
  */
 public class MockLedgerHandle extends LedgerHandle {
 
-    final ArrayList<LedgerEntry> entries = Lists.newArrayList();
+    final ArrayList<LedgerEntryImpl> entries = Lists.newArrayList();
     final MockBookKeeper bk;
     final long id;
     final DigestType digest;
     final byte[] passwd;
+    final ReadHandle readHandle;
     long lastEntry = -1;
     boolean fenced = false;
 
@@ -60,6 +66,8 @@ public class MockLedgerHandle extends LedgerHandle {
         this.id = id;
         this.digest = digest;
         this.passwd = Arrays.copyOf(passwd, passwd.length);
+
+        readHandle = new MockReadHandle(bk, id, getLedgerMetadata(), entries);
     }
 
     @Override
@@ -100,7 +108,7 @@ public class MockLedgerHandle extends LedgerHandle {
                 final Queue<LedgerEntry> seq = new ArrayDeque<LedgerEntry>();
                 long entryId = firstEntry;
                 while (entryId <= lastEntry && entryId < entries.size()) {
-                    seq.add(entries.get((int) entryId++));
+                    seq.add(new LedgerEntry(entries.get((int) entryId++).duplicate()));
                 }
 
                 log.debug("Entries read: {}", seq);
@@ -142,7 +150,7 @@ public class MockLedgerHandle extends LedgerHandle {
         }
 
         lastEntry = entries.size();
-        entries.add(new MockLedgerEntry(ledgerId, lastEntry, data));
+        entries.add(LedgerEntryImpl.create(ledgerId, lastEntry, data.length, Unpooled.wrappedBuffer(data)));
         return lastEntry;
     }
 
@@ -192,8 +200,8 @@ public class MockLedgerHandle extends LedgerHandle {
                     lastEntry = entries.size();
                     byte[] storedData = new byte[data.readableBytes()];
                     data.readBytes(storedData);
-                    LedgerEntry entry = new MockLedgerEntry(ledgerId, lastEntry, storedData);
-                    entries.add(entry);
+                    entries.add(LedgerEntryImpl.create(ledgerId, lastEntry,
+                                                       storedData.length, Unpooled.wrappedBuffer(storedData)));
                     data.release();
                     cb.addComplete(0, MockLedgerHandle.this, lastEntry, ctx);
                 }
@@ -214,11 +222,45 @@ public class MockLedgerHandle extends LedgerHandle {
     @Override
     public long getLength() {
         long length = 0;
-        for (LedgerEntry entry : entries) {
+        for (LedgerEntryImpl entry : entries) {
             length += entry.getLength();
         }
 
         return length;
+    }
+
+
+    // ReadHandle interface
+    @Override
+    public CompletableFuture<LedgerEntries> readAsync(long firstEntry, long lastEntry) {
+        return readHandle.readAsync(firstEntry, lastEntry);
+    }
+
+    @Override
+    public CompletableFuture<LedgerEntries> readUnconfirmedAsync(long firstEntry, long lastEntry) {
+        return readHandle.readUnconfirmedAsync(firstEntry, lastEntry);
+    }
+
+    @Override
+    public CompletableFuture<Long> readLastAddConfirmedAsync() {
+        return readHandle.readLastAddConfirmedAsync();
+    }
+
+    @Override
+    public CompletableFuture<Long> tryReadLastAddConfirmedAsync() {
+        return readHandle.tryReadLastAddConfirmedAsync();
+    }
+
+    @Override
+    public boolean isClosed() {
+        return readHandle.isClosed();
+    }
+
+    @Override
+    public CompletableFuture<LastConfirmedAndEntry> readLastAddConfirmedAndEntryAsync(long entryId,
+                                                                                      long timeOutInMillis,
+                                                                                      boolean parallel) {
+        return readHandle.readLastAddConfirmedAndEntryAsync(entryId, timeOutInMillis, parallel);
     }
 
     private static final Logger log = LoggerFactory.getLogger(MockLedgerHandle.class);

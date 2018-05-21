@@ -41,15 +41,26 @@ public interface StorageContainerRegistry extends AutoCloseable {
      * @param scId storage container id
      * @return a future represents the started storage container or exception if failed to start.
      */
-    CompletableFuture<Void> startStorageContainer(long scId);
+    CompletableFuture<StorageContainer> startStorageContainer(long scId);
+
+    /**
+     * Stop the storage container in this registry blindly.
+     *
+     * @param scId storage container id
+     * @return a future represents the result of stopping a storage container or exception if failed to start.
+     */
+    default CompletableFuture<Void> stopStorageContainer(long scId) {
+        return stopStorageContainer(scId, null);
+    }
 
     /**
      * Stop the storage container in this registry.
      *
      * @param scId storage container id
+     * @param container storage container instance to stop
      * @return a future represents the result of stopping a storage container or exception if failed to start.
      */
-    CompletableFuture<Void> stopStorageContainer(long scId);
+    CompletableFuture<Void> stopStorageContainer(long scId, StorageContainer container);
 
     /**
      * Close the registry.

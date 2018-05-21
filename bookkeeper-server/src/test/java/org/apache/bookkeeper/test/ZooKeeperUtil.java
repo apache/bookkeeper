@@ -83,6 +83,18 @@ public class ZooKeeperUtil {
         return connectString;
     }
 
+    public String getMetadataServiceUri() {
+        return getMetadataServiceUri("/ledgers");
+    }
+
+    public String getMetadataServiceUri(String zkLedgersRootPath) {
+        return "zk://" + connectString + zkLedgersRootPath;
+    }
+
+    public String getMetadataServiceUri(String zkLedgersRootPath, String type) {
+        return "zk+" + type + "://" + connectString + zkLedgersRootPath;
+    }
+
     public void startServer() throws Exception {
         // create a ZooKeeper server(dataDir, dataLogDir, port)
         LOG.debug("Running ZK server");

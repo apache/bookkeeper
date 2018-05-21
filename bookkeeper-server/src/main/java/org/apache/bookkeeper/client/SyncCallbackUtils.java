@@ -20,6 +20,8 @@ package org.apache.bookkeeper.client;
 import java.util.Enumeration;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.client.api.LastConfirmedAndEntry;
 import org.apache.bookkeeper.client.impl.LastConfirmedAndEntryImpl;
@@ -42,7 +44,19 @@ class SyncCallbackUtils {
      */
     public static <T> T waitForResult(CompletableFuture<T> future) throws InterruptedException, BKException {
         try {
-            return future.get();
+            try {
+                /*
+                 * CompletableFuture.get() in JDK8 spins before blocking and wastes CPU time.
+                 * CompletableFuture.get(long, TimeUnit) blocks immediately (if the result is
+                 * not yet available). While the implementation of get() has changed in JDK9
+                 * (not spinning any more), using CompletableFuture.get(long, TimeUnit) allows
+                 * us to avoid spinning for all current JDK versions.
+                 */
+                return future.get(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+            } catch (TimeoutException eignore) {
+                // it's ok to return null if we timeout after 292 years (2^63 nanos)
+                return null;
+            }
         } catch (ExecutionException err) {
             if (err.getCause() instanceof BKException) {
                 throw (BKException) err.getCause();

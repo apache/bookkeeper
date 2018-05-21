@@ -82,7 +82,7 @@ public class EnableZkSecurityBasicTest extends BookKeeperClusterTestCase {
         startNewBookie();
 
         ClientConfiguration conf = new ClientConfiguration();
-        conf.setZkServers(zkUtil.getZooKeeperConnectString());
+        conf.setMetadataServiceUri(zkUtil.getMetadataServiceUri());
         conf.setZkTimeout(20000);
 
         conf.setZkEnableSecurity(true);

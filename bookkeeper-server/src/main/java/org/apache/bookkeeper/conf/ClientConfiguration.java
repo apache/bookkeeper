@@ -128,6 +128,7 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
     protected static final String PCBC_TIMEOUT_TIMER_NUM_TICKS = "pcbcTimeoutTimerNumTicks";
     protected static final String TIMEOUT_TIMER_TICK_DURATION_MS = "timeoutTimerTickDurationMs";
     protected static final String TIMEOUT_TIMER_NUM_TICKS = "timeoutTimerNumTicks";
+    protected static final String WAIT_TIMEOUT_ON_BACKPRESSURE = "waitTimeoutOnBackpressureMs";
 
     // Bookie health check settings
     protected static final String BOOKIE_HEALTH_CHECK_ENABLED = "bookieHealthCheckEnabled";
@@ -418,7 +419,7 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
      * @return netty channel write buffer low water mark.
      */
     public int getClientWriteBufferLowWaterMark() {
-        return getInt(CLIENT_WRITEBUFFER_LOW_WATER_MARK, 32 * 1024);
+        return getInt(CLIENT_WRITEBUFFER_LOW_WATER_MARK, 384 * 1024);
     }
 
     /**
@@ -439,7 +440,7 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
      * @return netty channel write buffer high water mark.
      */
     public int getClientWriteBufferHighWaterMark() {
-        return getInt(CLIENT_WRITEBUFFER_HIGH_WATER_MARK, 64 * 1024);
+        return getInt(CLIENT_WRITEBUFFER_HIGH_WATER_MARK, 512 * 1024);
     }
 
     /**
@@ -796,6 +797,34 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
     @Deprecated
     public ClientConfiguration setPCBCTimeoutTimerNumTicks(int numTicks) {
         setProperty(PCBC_TIMEOUT_TIMER_NUM_TICKS, numTicks);
+        return this;
+    }
+
+    /**
+     * Timeout controlling wait on request send in case of unresponsive bookie(s)
+     * (i.e. bookie in long GC etc.)
+     *
+     * @return timeout value
+     *        negative value disables the feature
+     *        0 to allow request to fail immediately
+     *        Default is -1 (disabled)
+     */
+    public long getWaitTimeoutOnBackpressureMillis() {
+        return getLong(WAIT_TIMEOUT_ON_BACKPRESSURE, -1);
+    }
+
+    /**
+     * Timeout controlling wait on request send in case of unresponsive bookie(s)
+     * (i.e. bookie in long GC etc.)
+     *
+     * @param value
+     *        negative value disables the feature
+     *        0 to allow request to fail immediately
+     *        Default is -1 (disabled)
+     * @return client configuration.
+     */
+    public ClientConfiguration setWaitTimeoutOnBackpressureMillis(long value) {
+        setProperty(WAIT_TIMEOUT_ON_BACKPRESSURE, value);
         return this;
     }
 

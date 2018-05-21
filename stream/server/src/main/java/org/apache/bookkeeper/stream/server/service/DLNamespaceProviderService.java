@@ -20,11 +20,14 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.common.component.AbstractLifecycleComponent;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.stream.server.conf.DLConfiguration;
+import org.apache.bookkeeper.stream.storage.StorageConstants;
 import org.apache.distributedlog.DistributedLogConfiguration;
 import org.apache.distributedlog.api.namespace.Namespace;
 import org.apache.distributedlog.api.namespace.NamespaceBuilder;
+import org.apache.distributedlog.config.DynamicDistributedLogConfiguration;
 import org.apache.distributedlog.exceptions.ZKException;
 import org.apache.distributedlog.impl.metadata.BKDLConfig;
 import org.apache.distributedlog.metadata.DLMetadata;
@@ -33,6 +36,8 @@ import org.apache.zookeeper.KeeperException.Code;
 
 /**
  * A service to provide distributedlog namespace.
+ *
+ * <p>TODO: eliminate the direct usage of zookeeper here {@link https://github.com/apache/bookkeeper/issues/1331}
  */
 @Slf4j
 public class DLNamespaceProviderService
@@ -42,7 +47,8 @@ public class DLNamespaceProviderService
     private static URI initializeNamespace(ServerConfiguration bkServerConf,
                                            URI dlogUri) throws IOException {
         BKDLConfig dlConfig = new BKDLConfig(
-            bkServerConf.getZkServers(), bkServerConf.getZkLedgersRootPath());
+            ZKMetadataDriverBase.resolveZkServers(bkServerConf),
+            ZKMetadataDriverBase.resolveZkLedgersRootPath(bkServerConf));
         DLMetadata dlMetadata = DLMetadata.create(dlConfig);
 
         try {
@@ -64,6 +70,7 @@ public class DLNamespaceProviderService
 
     private final ServerConfiguration bkServerConf;
     private final DistributedLogConfiguration dlConf;
+    private final DynamicDistributedLogConfiguration dlDynConf;
     @Getter
     private final URI dlogUri;
     private Namespace namespace;
@@ -73,10 +80,12 @@ public class DLNamespaceProviderService
                                       StatsLogger statsLogger) {
         super("namespace-provider", conf, statsLogger);
 
-        this.dlogUri = URI.create(String.format("distributedlog://%s/stream/storage", bkServerConf.getZkServers()));
+        this.dlogUri = URI.create(String.format("distributedlog://%s%s",
+            ZKMetadataDriverBase.resolveZkServers(bkServerConf),
+            StorageConstants.getStoragePath(StorageConstants.ZK_METADATA_ROOT_PATH)));
         this.bkServerConf = bkServerConf;
         this.dlConf = new DistributedLogConfiguration();
-        ConfUtils.loadConfiguration(this.dlConf, conf, conf.getComponentPrefix());
+        this.dlConf.loadConf(conf);
         // disable write lock
         this.dlConf.setWriteLockEnabled(false);
         // setting the flush policy
@@ -88,6 +97,7 @@ public class DLNamespaceProviderService
         // rolling log segment concurrency is only 1
         this.dlConf.setLogSegmentRollingConcurrency(1);
         this.dlConf.setMaxLogSegmentBytes(256 * 1024 * 1024); // 256 MB
+        this.dlDynConf = ConfUtils.getConstDynConf(dlConf);
     }
 
     @Override
@@ -104,11 +114,12 @@ public class DLNamespaceProviderService
                 .statsLogger(getStatsLogger())
                 .clientId("storage-server")
                 .conf(dlConf)
+                .dynConf(dlDynConf)
                 .uri(uri)
                 .build();
         } catch (Throwable e) {
             throw new RuntimeException("Failed to build the distributedlog namespace at "
-                + bkServerConf.getZkServers(), e);
+                + bkServerConf.getMetadataServiceUriUnchecked(), e);
         }
         log.info("Provided distributedlog namespace at {}.", uri);
     }

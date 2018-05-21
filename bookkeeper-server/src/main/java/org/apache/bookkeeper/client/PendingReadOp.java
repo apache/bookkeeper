@@ -81,6 +81,7 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
 
     boolean parallelRead = false;
     final AtomicBoolean complete = new AtomicBoolean(false);
+    boolean allowFailFast = false;
 
     abstract class LedgerEntryRequest implements SpeculativeRequestExecutor, AutoCloseable {
 
@@ -391,6 +392,8 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
                 return null;
             }
 
+            // ToDo: pick replica with writable PCBC. ISSUE #1239
+            // https://github.com/apache/bookkeeper/issues/1239
             int replica = nextReplicaIndexToReadFrom;
             int bookieIndex = writeSet.get(nextReplicaIndexToReadFrom);
             nextReplicaIndexToReadFrom++;
@@ -473,6 +476,7 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
         this.endEntryId = endEntryId;
         this.scheduler = scheduler;
         this.isRecoveryRead = isRecoveryRead;
+        this.allowFailFast = false;
         numPendingEntries = endEntryId - startEntryId + 1;
         requiredBookiesMissingEntryForRecovery = getLedgerMetadata().getWriteQuorumSize()
                 - getLedgerMetadata().getAckQuorumSize() + 1;
@@ -504,8 +508,12 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
         return this;
     }
 
+    void allowFailFastOnUnwritableChannel() {
+        allowFailFast = true;
+    }
+
     public void submit() {
-        lh.bk.getMainWorkerPool().submitOrdered(lh.ledgerId, this);
+        lh.bk.getMainWorkerPool().executeOrdered(lh.ledgerId, this);
     }
 
     void initiate() {

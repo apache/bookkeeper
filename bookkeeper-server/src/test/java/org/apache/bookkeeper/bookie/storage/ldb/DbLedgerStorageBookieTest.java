@@ -60,7 +60,7 @@ public class DbLedgerStorageBookieTest extends BookKeeperClusterTestCase {
     public void testV2ReadWrite() throws Exception {
         ClientConfiguration conf = new ClientConfiguration();
         conf.setUseV2WireProtocol(true);
-        conf.setZkServers(zkUtil.getZooKeeperConnectString());
+        conf.setMetadataServiceUri(zkUtil.getMetadataServiceUri());
 
         BookKeeper bkc = new BookKeeper(conf);
         LedgerHandle lh1 = bkc.createLedger(1, 1, DigestType.CRC32, new byte[0]);

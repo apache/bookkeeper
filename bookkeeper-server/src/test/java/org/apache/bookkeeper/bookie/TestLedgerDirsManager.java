@@ -100,6 +100,7 @@ public class TestLedgerDirsManager {
         conf.setDiskLowWaterMarkUsageThreshold(conf.getDiskUsageThreshold());
         conf.setDiskCheckInterval(diskCheckInterval);
         conf.setIsForceGCAllowWhenNoSpace(true);
+        conf.setMinUsableSizeForEntryLogCreation(Long.MIN_VALUE);
 
         executor = PowerMockito.mock(ScheduledExecutorService.class);
         executorController = new MockExecutorController()
@@ -165,7 +166,7 @@ public class TestLedgerDirsManager {
         List<File> writeDirs;
         try {
             dirsManager.addToFilledDirs(curDir);
-            writeDirs = dirsManager.getWritableLedgerDirs();
+            dirsManager.getWritableLedgerDirs();
             fail("Should not reach here due to there is no writable ledger dir.");
         } catch (NoWritableLedgerDirException nwlde) {
             // expected to fail with no writable ledger dir
@@ -180,21 +181,64 @@ public class TestLedgerDirsManager {
     }
 
     @Test
+    public void testGetWritableDirForLogNoEnoughDiskSpace() throws Exception {
+        conf.setMinUsableSizeForEntryLogCreation(curDir.getUsableSpace() + 1024);
+        dirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs(),
+            new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()), statsLogger);
+        try {
+            dirsManager.addToFilledDirs(curDir);
+            dirsManager.getWritableLedgerDirs();
+            fail("Should not reach here due to there is no writable ledger dir.");
+        } catch (NoWritableLedgerDirException nwlde) {
+            // expected to fail with no writable ledger dir
+            // Now make sure we can get one for log
+            try {
+                dirsManager.getWritableLedgerDirsForNewLog();
+                fail("Should not reach here due to there is no enough disk space left");
+            } catch (NoWritableLedgerDirException e) {
+                // expected.
+            }
+        }
+    }
+
+    @Test
     public void testLedgerDirsMonitorDuringTransition() throws Exception {
+        testLedgerDirsMonitorDuringTransition(true);
+    }
+
+    @Test
+    public void testHighPriorityWritesDisallowedDuringTransition() throws Exception {
+        testLedgerDirsMonitorDuringTransition(false);
+    }
+
+    private void testLedgerDirsMonitorDuringTransition(boolean highPriorityWritesAllowed) throws Exception {
+        if (!highPriorityWritesAllowed) {
+            ledgerMonitor.shutdown();
+            conf.setMinUsableSizeForHighPriorityWrites(curDir.getUsableSpace() + 1024);
+            dirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs(),
+                new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()), statsLogger);
+            ledgerMonitor = new LedgerDirsMonitor(conf, mockDiskChecker, dirsManager);
+            ledgerMonitor.init();
+        }
+
         MockLedgerDirsListener mockLedgerDirsListener = new MockLedgerDirsListener();
         dirsManager.addLedgerDirsListener(mockLedgerDirsListener);
         ledgerMonitor.start();
 
         assertFalse(mockLedgerDirsListener.readOnly);
-        mockDiskChecker.setUsage(threshold + 0.05f);
+        assertTrue(mockLedgerDirsListener.highPriorityWritesAllowed);
 
+        mockDiskChecker.setUsage(threshold + 0.05f);
         executorController.advance(Duration.ofMillis(diskCheckInterval));
+
         assertTrue(mockLedgerDirsListener.readOnly);
+        assertEquals(highPriorityWritesAllowed, mockLedgerDirsListener.highPriorityWritesAllowed);
 
         mockDiskChecker.setUsage(threshold - 0.05f);
         executorController.advance(Duration.ofMillis(diskCheckInterval));
 
         assertFalse(mockLedgerDirsListener.readOnly);
+        assertTrue(mockLedgerDirsListener.highPriorityWritesAllowed);
     }
 
     @Test
@@ -427,6 +471,7 @@ public class TestLedgerDirsManager {
 
     private class MockLedgerDirsListener implements LedgerDirsListener {
 
+        public volatile boolean highPriorityWritesAllowed;
         public volatile boolean readOnly;
 
         public MockLedgerDirsListener() {
@@ -434,38 +479,26 @@ public class TestLedgerDirsManager {
         }
 
         @Override
-        public void diskFailed(File disk) {
-        }
-
-        @Override
-        public void diskAlmostFull(File disk) {
-        }
-
-        @Override
-        public void diskFull(File disk) {
-        }
-
-        @Override
         public void diskWritable(File disk) {
             readOnly = false;
+            highPriorityWritesAllowed = true;
         }
 
         @Override
         public void diskJustWritable(File disk) {
             readOnly = false;
+            highPriorityWritesAllowed = true;
         }
 
         @Override
-        public void allDisksFull() {
-            readOnly = true;
-        }
-
-        @Override
-        public void fatalError() {
+        public void allDisksFull(boolean highPriorityWritesAllowed) {
+            this.readOnly = true;
+            this.highPriorityWritesAllowed = highPriorityWritesAllowed;
         }
 
         public void reset() {
             readOnly = false;
+            highPriorityWritesAllowed = true;
         }
 
     }

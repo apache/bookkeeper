@@ -27,8 +27,8 @@ import io.netty.buffer.ByteBuf;
  * This class provides a noop digest implementation.
  */
 public class DummyDigestManager extends DigestManager {
-    public DummyDigestManager(long ledgerId) {
-        super(ledgerId);
+    public DummyDigestManager(long ledgerId, boolean useV2Protocol) {
+        super(ledgerId, useV2Protocol);
     }
 
     @Override

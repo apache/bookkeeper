@@ -49,6 +49,7 @@ import org.apache.bookkeeper.clients.impl.internal.api.StorageServerClientManage
 import org.apache.bookkeeper.clients.impl.routing.RangeRouter;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.common.router.ByteBufHashRouter;
+import org.apache.bookkeeper.common.util.Backoff;
 import org.apache.bookkeeper.stream.proto.StreamProperties;
 
 /**
@@ -157,7 +158,8 @@ public class PByteBufTableImpl implements PTable<ByteBuf, ByteBuf> {
     public PByteBufTableImpl(String streamName,
                              StreamProperties props,
                              StorageServerClientManager clientManager,
-                             ScheduledExecutorService executor) {
+                             ScheduledExecutorService executor,
+                             Backoff.Policy backoffPolicy) {
         this(
             streamName,
             props,
@@ -171,7 +173,8 @@ public class PByteBufTableImpl implements PTable<ByteBuf, ByteBuf> {
                     executorService,
                     opFactory,
                     resultFactory,
-                    kvFactory),
+                    kvFactory,
+                    backoffPolicy),
             Optional.empty());
     }
 

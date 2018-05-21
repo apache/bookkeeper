@@ -21,7 +21,7 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import org.apache.bookkeeper.stats.Gauge;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
@@ -44,14 +44,14 @@ public class LimitedPermitManager implements PermitManager, Runnable, Watcher {
         ALLOWED, DISALLOWED, DISABLED
     }
 
-    class EpochPermit implements Permit {
+    static class EpochPermit implements Permit {
 
         final PermitState state;
         final int epoch;
 
-        EpochPermit(PermitState state) {
+        EpochPermit(PermitState state, int epoch) {
             this.state = state;
-            this.epoch = LimitedPermitManager.this.epoch.get();
+            this.epoch = epoch;
         }
 
         int getEpoch() {
@@ -69,7 +69,9 @@ public class LimitedPermitManager implements PermitManager, Runnable, Watcher {
     final int period;
     final TimeUnit timeUnit;
     final ScheduledExecutorService executorService;
-    final AtomicInteger epoch = new AtomicInteger(0);
+    private static final AtomicIntegerFieldUpdater<LimitedPermitManager> epochUpdater =
+        AtomicIntegerFieldUpdater.newUpdater(LimitedPermitManager.class, "epoch");
+    volatile int epoch = 0;
     private StatsLogger statsLogger = null;
     private Gauge<Number> outstandingGauge = null;
 
@@ -106,13 +108,13 @@ public class LimitedPermitManager implements PermitManager, Runnable, Watcher {
     @Override
     public synchronized Permit acquirePermit() {
         if (!enablePermits) {
-            return new EpochPermit(PermitState.DISABLED);
+            return new EpochPermit(PermitState.DISABLED, epochUpdater.get(this));
         }
         if (null != semaphore) {
-            return semaphore.tryAcquire() ? new EpochPermit(PermitState.ALLOWED) :
-                    new EpochPermit(PermitState.DISALLOWED);
+            return semaphore.tryAcquire() ? new EpochPermit(PermitState.ALLOWED, epochUpdater.get(this)) :
+                    new EpochPermit(PermitState.DISALLOWED, epochUpdater.get(this));
         } else {
-            return new EpochPermit(PermitState.ALLOWED);
+            return new EpochPermit(PermitState.ALLOWED, epochUpdater.get(this));
         }
     }
 
@@ -138,9 +140,10 @@ public class LimitedPermitManager implements PermitManager, Runnable, Watcher {
         if (!(permit instanceof EpochPermit)) {
             return false;
         }
-        if (epoch.getAndIncrement() == ((EpochPermit) permit).getEpoch()) {
+        int epoch = epochUpdater.getAndIncrement(this);
+        if (epoch == ((EpochPermit) permit).getEpoch()) {
             this.enablePermits = false;
-            LOG.info("EnablePermits = {}, Epoch = {}.", this.enablePermits, epoch.get());
+            LOG.info("EnablePermits = {}, Epoch = {}.", this.enablePermits, epoch);
             return true;
         } else {
             return false;
@@ -159,9 +162,9 @@ public class LimitedPermitManager implements PermitManager, Runnable, Watcher {
     }
 
     synchronized void forceSetAllowPermits(boolean allowPermits) {
-        epoch.getAndIncrement();
+        int epoch = epochUpdater.getAndIncrement(this);
         this.enablePermits = allowPermits;
-        LOG.info("EnablePermits = {}, Epoch = {}.", this.enablePermits, epoch.get());
+        LOG.info("EnablePermits = {}, Epoch = {}.", this.enablePermits, epoch);
     }
 
     @Override

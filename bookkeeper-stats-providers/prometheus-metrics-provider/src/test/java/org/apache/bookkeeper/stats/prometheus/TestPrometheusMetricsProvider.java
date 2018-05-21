@@ -17,11 +17,15 @@
 package org.apache.bookkeeper.stats.prometheus;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 
+import lombok.Cleanup;
 import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
+import org.apache.commons.configuration.PropertiesConfiguration;
 import org.junit.Test;
 
 /**
@@ -46,6 +50,43 @@ public class TestPrometheusMetricsProvider {
         StatsLogger scope1 = statsLogger.scope("scopetest");
         StatsLogger scope2 = statsLogger.scope("scopetest");
         assertSame(scope1, scope2);
+    }
+
+    @Test
+    public void testStartNoHttp() {
+        PropertiesConfiguration config = new PropertiesConfiguration();
+        config.setProperty(PrometheusMetricsProvider.PROMETHEUS_STATS_HTTP_ENABLE, false);
+        PrometheusMetricsProvider provider = new PrometheusMetricsProvider();
+        try {
+            provider.start(config);
+            assertNull(provider.server);
+        } finally {
+            provider.stop();
+        }
+    }
+
+    @Test
+    public void testStartNoHttpWhenBkHttpEnabled() {
+        PropertiesConfiguration config = new PropertiesConfiguration();
+        config.setProperty(PrometheusMetricsProvider.PROMETHEUS_STATS_HTTP_ENABLE, true);
+        config.setProperty("httpServerEnabled", true);
+        @Cleanup("stop") PrometheusMetricsProvider provider = new PrometheusMetricsProvider();
+        provider.start(config);
+        assertNull(provider.server);
+    }
+
+    @Test
+    public void testStartWithHttp() {
+        PropertiesConfiguration config = new PropertiesConfiguration();
+        config.setProperty(PrometheusMetricsProvider.PROMETHEUS_STATS_HTTP_ENABLE, true);
+        config.setProperty(PrometheusMetricsProvider.PROMETHEUS_STATS_HTTP_PORT, 0); // ephemeral
+        PrometheusMetricsProvider provider = new PrometheusMetricsProvider();
+        try {
+            provider.start(config);
+            assertNotNull(provider.server);
+        } finally {
+            provider.stop();
+        }
     }
 
     @Test

@@ -141,6 +141,13 @@ public interface DistributionSchedule {
      */
     WriteSet getWriteSet(long entryId);
 
+    /**
+     * Return the set of bookies indices to send the messages to for longpoll reads.
+     *
+     * @param entryId expected next entry id to read.
+     * @return the set of bookies indices to read from.
+     */
+    WriteSet getWriteSetForLongPoll(long entryId);
 
     /**
      * An ack set represents the set of bookies from which

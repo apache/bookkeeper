@@ -19,6 +19,7 @@ package org.apache.bookkeeper.meta;
 
 import java.util.List;
 
+import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
 import org.apache.bookkeeper.util.ZkUtils;
 import org.apache.zookeeper.data.ACL;
 
@@ -32,9 +33,10 @@ public class HierarchicalLedgerManagerFactory extends LegacyHierarchicalLedgerMa
     @Override
     public LedgerIdGenerator newLedgerIdGenerator() {
         List<ACL> zkAcls = ZkUtils.getACLs(conf);
-        ZkLedgerIdGenerator subIdGenerator = new ZkLedgerIdGenerator(zk, conf.getZkLedgersRootPath(),
+        String zkLedgersRootPath = ZKMetadataDriverBase.resolveZkLedgersRootPath(conf);
+        ZkLedgerIdGenerator subIdGenerator = new ZkLedgerIdGenerator(zk, zkLedgersRootPath,
                 LegacyHierarchicalLedgerManager.IDGEN_ZNODE, zkAcls);
-        return new LongZkLedgerIdGenerator(zk, conf.getZkLedgersRootPath(), LongHierarchicalLedgerManager.IDGEN_ZNODE,
+        return new LongZkLedgerIdGenerator(zk, zkLedgersRootPath, LongHierarchicalLedgerManager.IDGEN_ZNODE,
                 subIdGenerator, zkAcls);
     }
 

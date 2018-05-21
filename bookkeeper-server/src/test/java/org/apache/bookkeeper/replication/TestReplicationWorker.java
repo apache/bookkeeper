@@ -22,6 +22,7 @@ package org.apache.bookkeeper.replication;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.net.URI;
 import java.util.ArrayList;
@@ -29,7 +30,10 @@ import java.util.Enumeration;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import lombok.Cleanup;
+
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.ClientUtil;
@@ -43,6 +47,7 @@ import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
 import org.apache.bookkeeper.meta.MetadataBookieDriver;
 import org.apache.bookkeeper.meta.MetadataClientDriver;
 import org.apache.bookkeeper.meta.MetadataDrivers;
+import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
@@ -81,19 +86,20 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
         // set ledger manager name
         baseConf.setLedgerManagerFactoryClassName(ledgerManagerFactory);
         baseClientConf.setLedgerManagerFactoryClassName(ledgerManagerFactory);
-        basePath = baseClientConf.getZkLedgersRootPath() + '/'
-                + BookKeeperConstants.UNDER_REPLICATION_NODE
-                + BookKeeperConstants.DEFAULT_ZK_LEDGERS_ROOT_PATH;
-        baseLockPath = baseClientConf.getZkLedgersRootPath() + '/'
-                + BookKeeperConstants.UNDER_REPLICATION_NODE
-                + "/locks";
         baseConf.setRereplicationEntryBatchSize(3);
     }
 
     @Override
     public void setUp() throws Exception {
         super.setUp();
-        baseConf.setZkServers(zkUtil.getZooKeeperConnectString());
+
+        String zkLedgersRootPath = ZKMetadataDriverBase.resolveZkLedgersRootPath(baseClientConf);
+        basePath = zkLedgersRootPath + '/'
+                + BookKeeperConstants.UNDER_REPLICATION_NODE
+                + BookKeeperConstants.DEFAULT_ZK_LEDGERS_ROOT_PATH;
+        baseLockPath = zkLedgersRootPath + '/'
+                + BookKeeperConstants.UNDER_REPLICATION_NODE
+                + "/locks";
 
         this.scheduler = OrderedScheduler.newSchedulerBuilder()
             .name("test-scheduler")
@@ -448,6 +454,135 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
     }
 
     /**
+     * Tests that ReplicationWorker will not make more than
+     * ReplicationWorker.MAXNUMBER_REPLICATION_FAILURES_ALLOWED_BEFORE_DEFERRING
+     * number of replication failure attempts and if it fails more these many
+     * number of times then it will defer lock release by
+     * lockReleaseOfFailedLedgerGracePeriod.
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testBookiesNotAvailableScenarioForReplicationWorker() throws Exception {
+        int ensembleSize = 3;
+        LedgerHandle lh = bkc.createLedger(ensembleSize, ensembleSize, BookKeeper.DigestType.CRC32, TESTPASSWD);
+
+        for (int i = 0; i < 10; i++) {
+            lh.addEntry(data);
+        }
+        lh.close();
+
+        BookieSocketAddress[] bookiesKilled = new BookieSocketAddress[ensembleSize];
+        ServerConfiguration[] killedBookiesConfig = new ServerConfiguration[ensembleSize];
+
+        // kill all bookies
+        for (int i = 0; i < ensembleSize; i++) {
+            bookiesKilled[i] = LedgerHandleAdapter.getLedgerMetadata(lh).getEnsembles().get(0L).get(i);
+            killedBookiesConfig[i] = getBkConf(bookiesKilled[i]);
+            LOG.info("Killing Bookie", bookiesKilled[i]);
+            killBookie(bookiesKilled[i]);
+        }
+
+        // start new bookiesToKill number of bookies
+        for (int i = 0; i < ensembleSize; i++) {
+            BookieSocketAddress newBkAddr = startNewBookieAndReturnAddress();
+        }
+
+        // create couple of replicationworkers
+        baseConf.setLockReleaseOfFailedLedgerGracePeriod("500");
+        ReplicationWorker rw1 = new ReplicationWorker(zkc, baseConf);
+        ReplicationWorker rw2 = new ReplicationWorker(zkc, baseConf);
+
+        @Cleanup
+        MetadataClientDriver clientDriver = MetadataDrivers
+                .getClientDriver(URI.create(baseClientConf.getMetadataServiceUri()));
+        clientDriver.initialize(baseClientConf, scheduler, NullStatsLogger.INSTANCE, Optional.empty());
+
+        LedgerManagerFactory mFactory = clientDriver.getLedgerManagerFactory();
+
+        LedgerUnderreplicationManager underReplicationManager = mFactory.newLedgerUnderreplicationManager();
+        try {
+            for (int i = 0; i < bookiesKilled.length; i++) {
+                underReplicationManager.markLedgerUnderreplicated(lh.getId(), bookiesKilled[i].toString());
+            }
+            while (!ReplicationTestUtil.isLedgerInUnderReplication(zkc, lh.getId(), basePath)) {
+                Thread.sleep(100);
+            }
+            rw1.start();
+            rw2.start();
+
+            AtomicBoolean isBookieRestarted = new AtomicBoolean(false);
+
+            (new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        Thread.sleep(4000);
+                        isBookieRestarted.set(true);
+                        /*
+                         * after sleeping for 4000 msecs, restart one of the
+                         * bookie, so that replication can succeed.
+                         */
+                        startBookie(killedBookiesConfig[0]);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            })).start();
+
+            while (!isBookieRestarted.get()) {
+                /*
+                 * since all the bookies containing the ledger entries are down
+                 * replication wouldnt have succeeded.
+                 */
+                assertTrue("Ledger: " + lh.getId() + " should be underreplicated",
+                        ReplicationTestUtil.isLedgerInUnderReplication(zkc, lh.getId(), basePath));
+                /*
+                 * check for both the replicationworkders number of failed
+                 * attempts should be less than ReplicationWorker.
+                 * MAXNUMBER_REPLICATION_FAILURES_ALLOWED_BEFORE_DEFERRING
+                 */
+                int failedAttempts = rw1.replicationFailedLedgers.get(lh.getId()).get();
+                assertTrue(
+                        "The number of failed attempts should be less than "
+                                + "ReplicationWorker.MAXNUMBER_REPLICATION_FAILURES_ALLOWED_BEFORE_DEFERRING, "
+                                + "but it is "
+                                + failedAttempts,
+                        failedAttempts <= ReplicationWorker.MAXNUMBER_REPLICATION_FAILURES_ALLOWED_BEFORE_DEFERRING);
+
+                failedAttempts = rw2.replicationFailedLedgers.get(lh.getId()).get();
+                assertTrue(
+                        "The number of failed attempts should be less than "
+                                + "ReplicationWorker.MAXNUMBER_REPLICATION_FAILURES_ALLOWED_BEFORE_DEFERRING, "
+                                + "but it is "
+                                + failedAttempts,
+                        failedAttempts <= ReplicationWorker.MAXNUMBER_REPLICATION_FAILURES_ALLOWED_BEFORE_DEFERRING);
+
+                Thread.sleep(50);
+            }
+
+            /**
+             * since one of the killed bookie is restarted, replicationworker
+             * should succeed in replicating this under replicated ledger and it
+             * shouldn't be under replicated anymore.
+             */
+            int timeToWaitForReplicationToComplete = 2000;
+            int timeWaited = 0;
+            while (ReplicationTestUtil.isLedgerInUnderReplication(zkc, lh.getId(), basePath)) {
+                Thread.sleep(100);
+                timeWaited += 100;
+                if (timeWaited == timeToWaitForReplicationToComplete) {
+                    fail("Ledger should be replicated by now");
+                }
+            }
+        } finally {
+            rw1.shutdown();
+            rw2.shutdown();
+            underReplicationManager.close();
+        }
+    }
+
+    /**
      * Tests that ReplicationWorker should not have identified for postponing
      * the replication if ledger is in open state and lastFragment is not in
      * underReplication state. Note that RW should not fence such ledgers.
@@ -478,7 +613,7 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
 
         ReplicationWorker rw = new ReplicationWorker(zkc, baseConf);
 
-        baseClientConf.setZkServers(zkUtil.getZooKeeperConnectString());
+        baseClientConf.setMetadataServiceUri(zkUtil.getMetadataServiceUri());
 
         @Cleanup MetadataClientDriver driver = MetadataDrivers.getClientDriver(
             URI.create(baseClientConf.getMetadataServiceUri()));

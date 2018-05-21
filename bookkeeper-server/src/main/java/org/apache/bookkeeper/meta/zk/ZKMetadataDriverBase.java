@@ -60,8 +60,28 @@ public class ZKMetadataDriverBase implements AutoCloseable {
 
     protected static final String SCHEME = "zk";
 
-    protected static String getZKServersFromServiceUri(URI uri) {
+    public static String getZKServersFromServiceUri(URI uri) {
         return uri.getAuthority().replace(";", ",");
+    }
+
+    @SuppressWarnings("deprecation")
+    public static String resolveZkServers(AbstractConfiguration<?> conf) {
+        String metadataServiceUriStr = conf.getMetadataServiceUriUnchecked();
+        if (null == metadataServiceUriStr) {
+            return conf.getZkServers();
+        }
+        URI metadataServiceUri = URI.create(metadataServiceUriStr);
+        return getZKServersFromServiceUri(metadataServiceUri);
+    }
+
+    @SuppressWarnings("deprecation")
+    public static String resolveZkLedgersRootPath(AbstractConfiguration<?> conf) {
+        String metadataServiceUriStr = conf.getMetadataServiceUriUnchecked();
+        if (null == metadataServiceUriStr) {
+            return conf.getZkLedgersRootPath();
+        }
+        URI metadataServiceUri = URI.create(metadataServiceUriStr);
+        return metadataServiceUri.getPath();
     }
 
     @SuppressWarnings("deprecation")
@@ -126,6 +146,7 @@ public class ZKMetadataDriverBase implements AutoCloseable {
         return SCHEME;
     }
 
+    @SuppressWarnings("deprecation")
     @SneakyThrows(InterruptedException.class)
     protected void initialize(AbstractConfiguration<?> conf,
                               StatsLogger statsLogger,

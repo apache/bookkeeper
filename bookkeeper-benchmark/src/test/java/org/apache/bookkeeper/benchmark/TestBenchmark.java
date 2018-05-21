@@ -48,6 +48,11 @@ public class TestBenchmark extends BookKeeperClusterTestCase {
         super.setUp();
     }
 
+    @Override
+    protected String getMetadataServiceUri(String ledgersRootPath) {
+        return zkUtil.getMetadataServiceUri(ledgersRootPath, "flat");
+    }
+
     @Test
     public void testThroughputLatency() throws Exception {
         String latencyFile = System.getProperty("test.latency.file", "latencyDump.dat");

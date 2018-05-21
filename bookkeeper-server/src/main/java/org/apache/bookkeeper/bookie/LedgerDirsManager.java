@@ -53,7 +53,7 @@ public class LedgerDirsManager {
     private final ConcurrentMap<File, Float> diskUsages =
             new ConcurrentHashMap<File, Float>();
     private final long entryLogSize;
-    private boolean forceGCAllowWhenNoSpace;
+    private long minUsableSizeForEntryLogCreation;
     private long minUsableSizeForIndexFileCreation;
 
     private final DiskChecker diskChecker;
@@ -62,16 +62,15 @@ public class LedgerDirsManager {
         this(conf, dirs, diskChecker, NullStatsLogger.INSTANCE);
     }
 
-    @VisibleForTesting
-    LedgerDirsManager(ServerConfiguration conf, File[] dirs, DiskChecker diskChecker, StatsLogger statsLogger) {
+    public LedgerDirsManager(ServerConfiguration conf, File[] dirs, DiskChecker diskChecker, StatsLogger statsLogger) {
         this.ledgerDirectories = Arrays.asList(Bookie
                 .getCurrentDirectories(dirs));
         this.writableLedgerDirectories = new ArrayList<File>(ledgerDirectories);
         this.filledDirs = new ArrayList<File>();
         this.listeners = new ArrayList<LedgerDirsListener>();
-        this.forceGCAllowWhenNoSpace = conf.getIsForceGCAllowWhenNoSpace();
         this.entryLogSize = conf.getEntryLogSizeLimit();
         this.minUsableSizeForIndexFileCreation = conf.getMinUsableSizeForIndexFileCreation();
+        this.minUsableSizeForEntryLogCreation = conf.getMinUsableSizeForEntryLogCreation();
         for (File dir : ledgerDirectories) {
             diskUsages.put(dir, 0f);
             String statName = "dir_" + dir.getParent().replace('/', '_') + "_usage";
@@ -176,22 +175,14 @@ public class LedgerDirsManager {
             return writableLedgerDirectories;
         }
 
-        // If Force GC is not allowed under no space
-        if (!forceGCAllowWhenNoSpace) {
-            String errMsg = "All ledger directories are non writable and force GC is not enabled.";
-            NoWritableLedgerDirException e = new NoWritableLedgerDirException(errMsg);
-            LOG.error(errMsg, e);
-            throw e;
-        }
-
-        // We don't have writable Ledger Dirs.
-        // That means we must have turned readonly but the compaction
-        // must have started running and it needs to allocate
-        // a new log file to move forward with the compaction.
-        return getDirsAboveUsableThresholdSize((long) (this.entryLogSize * 1.2));
+        // We don't have writable Ledger Dirs. But we are still okay to create new entry log files if we have enough
+        // disk spaces. This allows bookie can still function at readonly mode. Because compaction, journal replays
+        // can still write data to disks.
+        return getDirsAboveUsableThresholdSize(minUsableSizeForEntryLogCreation, true);
     }
 
-    List<File> getDirsAboveUsableThresholdSize(long thresholdSize) throws NoWritableLedgerDirException {
+    List<File> getDirsAboveUsableThresholdSize(long thresholdSize, boolean loggingNoWritable)
+            throws NoWritableLedgerDirException {
         List<File> fullLedgerDirsToAccomodate = new ArrayList<File>();
         for (File dir: this.ledgerDirectories) {
             // Pick dirs which can accommodate little more than thresholdSize
@@ -201,8 +192,10 @@ public class LedgerDirsManager {
         }
 
         if (!fullLedgerDirsToAccomodate.isEmpty()) {
-            LOG.info("No writable ledger dirs below diskUsageThreshold. "
-                    + "But Dirs that can accomodate {} are: {}", thresholdSize, fullLedgerDirsToAccomodate);
+            if (loggingNoWritable) {
+                LOG.info("No writable ledger dirs below diskUsageThreshold. "
+                    + "But Dirs that can accommodate {} are: {}", thresholdSize, fullLedgerDirsToAccomodate);
+            }
             return fullLedgerDirsToAccomodate;
         }
 
@@ -210,7 +203,9 @@ public class LedgerDirsManager {
         // thresholdSize usable space
         String errMsg = "All ledger directories are non writable and no reserved space (" + thresholdSize + ") left.";
         NoWritableLedgerDirException e = new NoWritableLedgerDirException(errMsg);
-        LOG.error(errMsg, e);
+        if (loggingNoWritable) {
+            LOG.error(errMsg, e);
+        }
         throw e;
     }
 
@@ -316,7 +311,7 @@ public class LedgerDirsManager {
             // That means we must have turned readonly. But
             // during the Bookie restart, while replaying the journal there might be a need
             // to create new Index file and it should proceed.
-            writableDirsForNewIndexFile = getDirsAboveUsableThresholdSize(minUsableSizeForIndexFileCreation);
+            writableDirsForNewIndexFile = getDirsAboveUsableThresholdSize(minUsableSizeForIndexFileCreation, true);
         }
         return pickRandomDir(writableDirsForNewIndexFile, excludedDir);
     }
@@ -352,6 +347,10 @@ public class LedgerDirsManager {
         }
     }
 
+    public DiskChecker getDiskChecker() {
+        return diskChecker;
+    }
+
     /**
      * Indicates All configured ledger directories are full.
      */
@@ -373,43 +372,49 @@ public class LedgerDirsManager {
          *
          * @param disk Failed disk
          */
-        void diskFailed(File disk);
+        default void diskFailed(File disk) {}
 
         /**
          * Notified when the disk usage warn threshold is exceeded on the drive.
          * @param disk
          */
-        void diskAlmostFull(File disk);
+        default void diskAlmostFull(File disk) {}
 
         /**
          * This will be notified on disk detected as full.
          *
          * @param disk Filled disk
          */
-        void diskFull(File disk);
+        default void diskFull(File disk) {}
 
         /**
          * This will be notified on disk detected as writable and under warn threshold.
          *
          * @param disk Writable disk
          */
-        void diskWritable(File disk);
+        default void diskWritable(File disk) {}
 
         /**
          * This will be notified on disk detected as writable but still in warn threshold.
          *
          * @param disk Writable disk
          */
-        void diskJustWritable(File disk);
+        default void diskJustWritable(File disk) {}
 
         /**
          * This will be notified whenever all disks are detected as full.
+         *
+         * <p>Normal writes will be rejected when disks are detected as "full". High priority writes
+         * such as ledger recovery writes can go through if disks are still available.
+         *
+         * @param highPriorityWritesAllowed the parameter indicates we are still have disk spaces for high priority
+         *                                  writes even disks are detected as "full"
          */
-        void allDisksFull();
+        default void allDisksFull(boolean highPriorityWritesAllowed) {}
 
         /**
          * This will notify the fatal errors.
          */
-        void fatalError();
+        default void fatalError() {}
     }
 }

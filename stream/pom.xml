@@ -21,7 +21,7 @@
   <parent>
     <groupId>org.apache.bookkeeper</groupId>
     <artifactId>bookkeeper</artifactId>
-    <version>4.7.0-SNAPSHOT</version>
+    <version>4.8.0-SNAPSHOT</version>
     <relativePath>..</relativePath>
   </parent>
   <packaging>pom</packaging>
@@ -89,3 +89,4 @@
   </profiles>
 
 </project>
+

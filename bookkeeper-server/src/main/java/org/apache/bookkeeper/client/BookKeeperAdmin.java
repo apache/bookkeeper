@@ -68,6 +68,7 @@ import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManager.LedgerRangeIterator;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
+import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.MultiCallback;
@@ -134,7 +135,7 @@ public class BookKeeperAdmin implements AutoCloseable {
      *             BookKeeper client.
      */
     public BookKeeperAdmin(String zkServers) throws IOException, InterruptedException, BKException {
-        this(new ClientConfiguration().setZkServers(zkServers));
+        this(new ClientConfiguration().setMetadataServiceUri("zk+null://" + zkServers + "/ledgers"));
     }
 
     /**
@@ -1205,7 +1206,7 @@ public class BookKeeperAdmin implements AutoCloseable {
      */
     public static boolean nukeExistingCluster(ServerConfiguration conf, String ledgersRootPath, String instanceId,
             boolean force) throws Exception {
-        String confLedgersRootPath = conf.getZkLedgersRootPath();
+        String confLedgersRootPath = ZKMetadataDriverBase.resolveZkLedgersRootPath(conf);
         if (!confLedgersRootPath.equals(ledgersRootPath)) {
             LOG.error("Provided ledgerRootPath : {} is not matching with config's ledgerRootPath: {}, "
                     + "so exiting nuke operation", ledgersRootPath, confLedgersRootPath);
@@ -1489,13 +1490,16 @@ public class BookKeeperAdmin implements AutoCloseable {
 
         // for double-checking, check if any ledgers are listed as underreplicated because of this bookie
         Predicate<List<String>> predicate = replicasList -> replicasList.contains(bookieAddress.toString());
-        Iterator<Long> urLedgerIterator = underreplicationManager.listLedgersToRereplicate(predicate);
+        Iterator<Map.Entry<Long, List<String>>> urLedgerIterator = underreplicationManager
+                .listLedgersToRereplicate(predicate, false);
         if (urLedgerIterator.hasNext()) {
             //if there are any then wait and make sure those ledgers are replicated properly
             LOG.info("Still in some underreplicated ledgers metadata, this bookie is part of its ensemble. "
                     + "Have to make sure that those ledger fragments are rereplicated");
             List<Long> urLedgers = new ArrayList<>();
-            urLedgerIterator.forEachRemaining(urLedgers::add);
+            urLedgerIterator.forEachRemaining((urLedger) -> {
+                urLedgers.add(urLedger.getKey());
+            });
             waitForLedgersToBeReplicated(urLedgers, bookieAddress, bkc.ledgerManager);
         }
     }

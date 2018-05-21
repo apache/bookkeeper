@@ -59,83 +59,83 @@ public class BoundedScheduledExecutorService extends ForwardingListeningExecutor
 
     @Override
     public ListenableScheduledFuture<?> schedule(Runnable command, long delay, TimeUnit unit) {
-        this.checkQueue();
+        this.checkQueue(1);
         return this.thread.schedule(command, delay, unit);
     }
 
     @Override
     public <V> ListenableScheduledFuture<V> schedule(Callable<V> callable, long delay, TimeUnit unit) {
-        this.checkQueue();
+        this.checkQueue(1);
         return this.thread.schedule(callable, delay, unit);
     }
 
     @Override
     public ListenableScheduledFuture<?> scheduleAtFixedRate(Runnable command,
                                                             long initialDelay, long period, TimeUnit unit) {
-        this.checkQueue();
+        this.checkQueue(1);
         return this.thread.scheduleAtFixedRate(command, initialDelay, period, unit);
     }
 
     @Override
     public ListenableScheduledFuture<?> scheduleWithFixedDelay(Runnable command,
                                                                long initialDelay, long delay, TimeUnit unit) {
-        this.checkQueue();
+        this.checkQueue(1);
         return this.thread.scheduleAtFixedRate(command, initialDelay, delay, unit);
     }
 
     @Override
     public <T> ListenableFuture<T> submit(Callable<T> task) {
-        this.checkQueue();
+        this.checkQueue(1);
         return super.submit(task);
     }
 
     @Override
     public ListenableFuture<?> submit(Runnable task) {
-        this.checkQueue();
+        this.checkQueue(1);
         return super.submit(task);
     }
 
     @Override
     public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks) throws InterruptedException {
-        this.checkQueue();
+        this.checkQueue(tasks.size());
         return super.invokeAll(tasks);
     }
 
     @Override
     public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks,
                                          long timeout, TimeUnit unit) throws InterruptedException {
-        this.checkQueue();
+        this.checkQueue(tasks.size());
         return super.invokeAll(tasks, timeout, unit);
     }
 
     @Override
     public <T> T invokeAny(Collection<? extends Callable<T>> tasks) throws InterruptedException, ExecutionException {
-        this.checkQueue();
+        this.checkQueue(tasks.size());
         return super.invokeAny(tasks);
     }
 
     @Override
     public <T> T invokeAny(Collection<? extends Callable<T>> tasks, long timeout,
                            TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
-        this.checkQueue();
+        this.checkQueue(tasks.size());
         return super.invokeAny(tasks, timeout, unit);
     }
 
     @Override
     public <T> ListenableFuture<T> submit(Runnable task, T result) {
-        this.checkQueue();
+        this.checkQueue(1);
         return super.submit(task, result);
     }
 
     @Override
     public void execute(Runnable command) {
-        this.checkQueue();
+        this.checkQueue(1);
         super.execute(command);
     }
 
-    private void checkQueue() {
-        if (this.maxTasksInQueue > 0 && this.queue.size() >= this.maxTasksInQueue) {
-            throw new RejectedExecutionException("Queue at limit of " + this.maxTasksInQueue + " items");
+    private void checkQueue(int numberOfTasks) {
+        if (maxTasksInQueue > 0 && (queue.size() + numberOfTasks) > maxTasksInQueue) {
+            throw new RejectedExecutionException("Queue at limit of " + maxTasksInQueue + " items");
         }
     }
 

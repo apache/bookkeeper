@@ -46,6 +46,7 @@ public class ReadOnlyBookieTest extends BookKeeperClusterTestCase {
         super(2);
         baseConf.setLedgerStorageClass(InterleavedLedgerStorage.class.getName());
         baseConf.setEntryLogFilePreAllocationEnabled(false);
+        baseConf.setMinUsableSizeForEntryLogCreation(Long.MAX_VALUE);
     }
 
     /**
@@ -244,7 +245,7 @@ public class ReadOnlyBookieTest extends BookKeeperClusterTestCase {
         }
 
         ServerConfiguration newConf = newServerConfiguration(
-                conf.getBookiePort() + 1, zkUtil.getZooKeeperConnectString(),
+                conf.getBookiePort() + 1,
                 ledgerDirs[0], ledgerDirs);
         bsConfs.add(newConf);
         bs.add(startBookie(newConf));

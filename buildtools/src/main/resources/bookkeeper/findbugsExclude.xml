@@ -123,6 +123,12 @@
   <Match>
     <Class name="~org\.apache\.bookkeeper\.stats\.generated.*" />
   </Match>
+  <Match>
+    <Class name="~org\.apache\.bookkeeper\.stats\.codahale\.generated.*" />
+  </Match>
+  <Match>
+    <Class name="~org\.apache\.bookkeeper\.common\.generated.*" />
+  </Match>
 
   <!-- modules under stream/ -->
 

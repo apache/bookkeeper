@@ -38,23 +38,13 @@ public class ReadOnlyEntryLogger extends EntryLogger {
     }
 
     @Override
-    protected void initialize() throws IOException {
-        // do nothing for read only entry logger
-    }
-
-    @Override
-    void createNewLog() throws IOException {
-        throw new IOException("Can't create new entry log using a readonly entry logger.");
-    }
-
-    @Override
     protected boolean removeEntryLog(long entryLogId) {
         // can't remove entry log in readonly mode
         return false;
     }
 
     @Override
-    public synchronized long addEntry(long ledger, ByteBuffer entry) throws IOException {
+    public synchronized long addEntry(long ledgerId, ByteBuffer entry) throws IOException {
         throw new IOException("Can't add entry to a readonly entry logger.");
     }
 }

@@ -76,9 +76,9 @@ public class BookieJournalForceTest {
         File journalDir = tempDir.newFolder();
         Bookie.checkDirectoryStructure(Bookie.getCurrentDirectory(journalDir));
 
-        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
-        conf.setJournalDirName(journalDir.getPath())
-            .setZkServers(null);
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration()
+            .setJournalDirName(journalDir.getPath())
+            .setMetadataServiceUri(null);
 
         JournalChannel jc = spy(new JournalChannel(journalDir, 1));
         whenNew(JournalChannel.class).withAnyArguments().thenReturn(jc);
@@ -140,7 +140,7 @@ public class BookieJournalForceTest {
 
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
         conf.setJournalDirName(journalDir.getPath())
-            .setZkServers(null);
+            .setMetadataServiceUri(null);
 
         JournalChannel jc = spy(new JournalChannel(journalDir, 1));
         whenNew(JournalChannel.class).withAnyArguments().thenReturn(jc);
@@ -195,7 +195,7 @@ public class BookieJournalForceTest {
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
         conf.setJournalDirName(journalDir.getPath())
             .setJournalBufferedEntriesThreshold(journalBufferedEntriesThreshold)
-            .setZkServers(null);
+            .setMetadataServiceUri(null);
 
         JournalChannel jc = spy(new JournalChannel(journalDir, 1));
         whenNew(JournalChannel.class).withAnyArguments().thenReturn(jc);
@@ -254,7 +254,7 @@ public class BookieJournalForceTest {
 
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
         conf.setJournalDirName(journalDir.getPath())
-            .setZkServers(null);
+            .setMetadataServiceUri(null);
 
         JournalChannel jc = spy(new JournalChannel(journalDir, 1));
         whenNew(JournalChannel.class).withAnyArguments().thenReturn(jc);
@@ -312,6 +312,65 @@ public class BookieJournalForceTest {
         });
         Whitebox.setInternalState(journal, "forceWriteRequests", forceWriteRequests);
         return supportQueue;
+    }
+
+    @Test
+    public void testForceLedger() throws Exception {
+        File journalDir = tempDir.newFolder();
+        Bookie.checkDirectoryStructure(Bookie.getCurrentDirectory(journalDir));
+
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setJournalDirName(journalDir.getPath());
+
+        JournalChannel jc = spy(new JournalChannel(journalDir, 1));
+        whenNew(JournalChannel.class).withAnyArguments().thenReturn(jc);
+
+        LedgerDirsManager ledgerDirsManager = mock(LedgerDirsManager.class);
+        Journal journal = new Journal(0, journalDir, conf, ledgerDirsManager);
+
+        // machinery to suspend ForceWriteThread
+        CountDownLatch forceWriteThreadSuspendedLatch = new CountDownLatch(1);
+        LinkedBlockingQueue<ForceWriteRequest> supportQueue =
+                enableForceWriteThreadSuspension(forceWriteThreadSuspendedLatch, journal);
+        journal.start();
+
+        LogMark lastLogMarkBeforeWrite = journal.getLastLogMark().markLog().getCurMark();
+        CountDownLatch latch = new CountDownLatch(1);
+        long ledgerId = 1;
+        journal.forceLedger(ledgerId, new WriteCallback() {
+            @Override
+            public void writeComplete(int rc, long ledgerId, long entryId, BookieSocketAddress addr, Object ctx) {
+                latch.countDown();
+            }
+        }, null);
+
+        // forceLedger should not complete even if ForceWriteThread is suspended
+        // wait that an entry is written to the ForceWriteThread queue
+        while (supportQueue.isEmpty()) {
+            Thread.sleep(100);
+        }
+        assertEquals(1, latch.getCount());
+        assertEquals(1, supportQueue.size());
+
+        // in constructor of JournalChannel we are calling forceWrite(true) but it is not tracked by PowerMock
+        // because the 'spy' is applied only on return from the constructor
+        verify(jc, times(0)).forceWrite(true);
+
+        // let ForceWriteThread work
+        forceWriteThreadSuspendedLatch.countDown();
+
+        // callback should complete now
+        assertTrue(latch.await(20, TimeUnit.SECONDS));
+
+        verify(jc, atLeast(1)).forceWrite(false);
+
+        assertEquals(0, supportQueue.size());
+
+        // verify that log marker advanced
+        LastLogMark lastLogMarkAfterForceWrite = journal.getLastLogMark();
+        assertTrue(lastLogMarkAfterForceWrite.getCurMark().compare(lastLogMarkBeforeWrite) > 0);
+
+        journal.shutdown();
     }
 
 }

@@ -220,16 +220,17 @@ public class DbLedgerStorageTest {
         storage.addEntry(entry3);
 
         // Simulate bookie compaction
-        EntryLogger entryLogger = ((DbLedgerStorage) storage).getEntryLogger();
+        SingleDirectoryDbLedgerStorage singleDirStorage = ((DbLedgerStorage) storage).getLedgerStorageList().get(0);
+        EntryLogger entryLogger = singleDirStorage.getEntryLogger();
         // Rewrite entry-3
         ByteBuf newEntry3 = Unpooled.buffer(1024);
         newEntry3.writeLong(4); // ledger id
         newEntry3.writeLong(3); // entry id
         newEntry3.writeBytes("new-entry-3".getBytes());
-        long location = entryLogger.addEntry(4, newEntry3, false);
+        long location = entryLogger.addEntry(4L, newEntry3, false);
 
         List<EntryLocation> locations = Lists.newArrayList(new EntryLocation(4, 3, location));
-        storage.updateEntriesLocations(locations);
+        singleDirStorage.updateEntriesLocations(locations);
 
         ByteBuf res = storage.getEntry(4, 3);
         System.out.println("res:       " + ByteBufUtil.hexDump(res));
@@ -238,20 +239,20 @@ public class DbLedgerStorageTest {
     }
 
     @Test
-    public void doubleDirectoryError() throws Exception {
+    public void doubleDirectory() throws Exception {
         int gcWaitTime = 1000;
+        File firstDir = new File(tmpDir, "dir1");
+        File secondDir = new File(tmpDir, "dir2");
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
         conf.setGcWaitTime(gcWaitTime);
         conf.setLedgerStorageClass(DbLedgerStorage.class.getName());
-        conf.setLedgerDirNames(new String[] { "dir1", "dir2" });
+        conf.setLedgerDirNames(new String[] { firstDir.getCanonicalPath(), secondDir.getCanonicalPath() });
 
-        try {
-            new Bookie(conf);
-            fail("Should have failed because of the 2 directories");
-        } catch (IllegalArgumentException e) {
-            // ok
-        }
+        // Should not fail
+        Bookie bookie = new Bookie(conf);
+        assertEquals(2, ((DbLedgerStorage) bookie.getLedgerStorage()).getLedgerStorageList().size());
 
+        bookie.shutdown();
     }
 
     @Test

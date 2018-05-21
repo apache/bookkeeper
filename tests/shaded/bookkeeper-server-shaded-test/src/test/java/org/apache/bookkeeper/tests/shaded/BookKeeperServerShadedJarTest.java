@@ -50,7 +50,7 @@ public class BookKeeperServerShadedJarTest {
 
     @Test
     public void testBookKeeperCommon() throws Exception {
-        Class.forName("org.apache.bookkeeper.util.OrderedSafeExecutor");
+        Class.forName("org.apache.bookkeeper.common.util.OrderedExecutor");
         assertTrue(true);
     }
 

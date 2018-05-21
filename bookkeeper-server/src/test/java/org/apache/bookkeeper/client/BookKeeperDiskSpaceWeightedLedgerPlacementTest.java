@@ -144,7 +144,7 @@ public class BookKeeperDiskSpaceWeightedLedgerPlacementTest extends BookKeeperCl
         conf.setDiskWeightBasedPlacementEnabled(true)
             .setGetBookieInfoRetryIntervalSeconds(1, TimeUnit.SECONDS)
             .setBookieMaxWeightMultipleForWeightBasedPlacement(multiple)
-            .setZkServers(zkUtil.getZooKeeperConnectString());
+            .setMetadataServiceUri(zkUtil.getMetadataServiceUri());
         final BookKeeperCheckInfoReader client = new BookKeeperCheckInfoReader(conf);
 
         for (int i = 0; i < numBookies; i++) {
@@ -194,7 +194,7 @@ public class BookKeeperDiskSpaceWeightedLedgerPlacementTest extends BookKeeperCl
         conf.setDiskWeightBasedPlacementEnabled(true)
             .setGetBookieInfoRetryIntervalSeconds(1, TimeUnit.SECONDS)
             .setBookieMaxWeightMultipleForWeightBasedPlacement(multiple)
-            .setZkServers(zkUtil.getZooKeeperConnectString());
+            .setMetadataServiceUri(zkUtil.getMetadataServiceUri());
         final BookKeeperCheckInfoReader client = new BookKeeperCheckInfoReader(conf);
 
         for (int i = 0; i < numBookies; i++) {
@@ -284,7 +284,7 @@ public class BookKeeperDiskSpaceWeightedLedgerPlacementTest extends BookKeeperCl
         conf.setDiskWeightBasedPlacementEnabled(true)
             .setGetBookieInfoRetryIntervalSeconds(1, TimeUnit.SECONDS)
             .setBookieMaxWeightMultipleForWeightBasedPlacement(multiple)
-            .setZkServers(zkUtil.getZooKeeperConnectString());
+            .setMetadataServiceUri(zkUtil.getMetadataServiceUri());
         final BookKeeperCheckInfoReader client = new BookKeeperCheckInfoReader(conf);
 
         for (int i = 0; i < numBookies; i++) {
@@ -365,7 +365,7 @@ public class BookKeeperDiskSpaceWeightedLedgerPlacementTest extends BookKeeperCl
         conf.setDiskWeightBasedPlacementEnabled(true)
             .setGetBookieInfoRetryIntervalSeconds(1, TimeUnit.SECONDS)
             .setBookieMaxWeightMultipleForWeightBasedPlacement(multiple)
-            .setZkServers(zkUtil.getZooKeeperConnectString());
+            .setMetadataServiceUri(zkUtil.getMetadataServiceUri());
         final BookKeeperCheckInfoReader client = new BookKeeperCheckInfoReader(conf);
 
         for (int i = 0; i < numBookies; i++) {
@@ -437,8 +437,8 @@ public class BookKeeperDiskSpaceWeightedLedgerPlacementTest extends BookKeeperCl
 
         int updateIntervalSecs = 6;
         ClientConfiguration conf = new ClientConfiguration();
-        conf.setZkServers(zkUtil.getZooKeeperConnectString());
-        conf.setDiskWeightBasedPlacementEnabled(true)
+        conf.setMetadataServiceUri(zkUtil.getMetadataServiceUri())
+            .setDiskWeightBasedPlacementEnabled(true)
             .setGetBookieInfoRetryIntervalSeconds(1, TimeUnit.SECONDS)
             .setBookieMaxWeightMultipleForWeightBasedPlacement(multiple)
             .setGetBookieInfoIntervalSeconds(updateIntervalSecs, TimeUnit.SECONDS);
