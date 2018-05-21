@@ -26,27 +26,32 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-
 import com.google.common.collect.Sets;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.nio.channels.FileChannel;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLongArray;
+import java.util.concurrent.locks.Lock;
 
 import org.apache.bookkeeper.bookie.EntryLogger.BufferedLogChannel;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirException;
@@ -814,7 +819,7 @@ public class EntryLogTest {
      * test for validating if the EntryLog/BufferedChannel flushes/forcewrite if the bytes written to it are more than
      * flushIntervalInBytes
      */
-    @Test(timeout = 60000)
+    @Test
     public void testFlushIntervalInBytes() throws Exception {
         long flushIntervalInBytes = 5000;
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
@@ -867,4 +872,828 @@ public class EntryLogTest {
         Assert.assertEquals("LedgerId", ledgerId, readLedgerId);
         Assert.assertEquals("EntryId", 1L, readEntryId);
     }
+
+    /*
+     * tests basic logic of EntryLogManager interface for
+     * EntryLogManagerForEntryLogPerLedger.
+     */
+    @Test
+    public void testEntryLogManagerInterfaceForEntryLogPerLedger() throws Exception {
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setEntryLogFilePreAllocationEnabled(true);
+        conf.setEntryLogPerLedgerEnabled(true);
+        conf.setLedgerDirNames(createAndGetLedgerDirs(2));
+        LedgerDirsManager ledgerDirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs(),
+                new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()));
+
+        EntryLogger entryLogger = new EntryLogger(conf, ledgerDirsManager);
+        EntryLogManagerForEntryLogPerLedger entryLogManager = (EntryLogManagerForEntryLogPerLedger) entryLogger
+                .getEntryLogManager();
+
+        Assert.assertEquals("Number of current active EntryLogs ", 0, entryLogManager.getCopyOfCurrentLogs().size());
+        Assert.assertEquals("Number of Rotated Logs ", 0, entryLogManager.getRotatedLogChannels().size());
+
+        int numOfLedgers = 5;
+        int numOfThreadsPerLedger = 10;
+        validateLockAcquireAndRelease(numOfLedgers, numOfThreadsPerLedger, entryLogManager);
+
+        for (long i = 0; i < numOfLedgers; i++) {
+            entryLogManager.setCurrentLogForLedgerAndAddToRotate(i,
+                    createDummyBufferedLogChannel(entryLogger, i, conf));
+        }
+
+        for (long i = 0; i < numOfLedgers; i++) {
+            Assert.assertEquals("LogChannel for ledger: " + i, entryLogManager.getCurrentLogIfPresent(i),
+                    entryLogManager.getCurrentLogForLedger(i));
+        }
+
+        Assert.assertEquals("Number of current active EntryLogs ", numOfLedgers,
+                entryLogManager.getCopyOfCurrentLogs().size());
+        Assert.assertEquals("Number of Rotated Logs ", 0, entryLogManager.getRotatedLogChannels().size());
+
+        for (long i = 0; i < numOfLedgers; i++) {
+            entryLogManager.setCurrentLogForLedgerAndAddToRotate(i,
+                    createDummyBufferedLogChannel(entryLogger, numOfLedgers + i, conf));
+        }
+
+        /*
+         * since new entryLogs are set for all the ledgers, previous entrylogs would be added to rotatedLogChannels
+         */
+        Assert.assertEquals("Number of current active EntryLogs ", numOfLedgers,
+                entryLogManager.getCopyOfCurrentLogs().size());
+        Assert.assertEquals("Number of Rotated Logs ", numOfLedgers,
+                entryLogManager.getRotatedLogChannels().size());
+
+        for (long i = 0; i < numOfLedgers; i++) {
+            entryLogManager.setCurrentLogForLedgerAndAddToRotate(i,
+                    createDummyBufferedLogChannel(entryLogger, 2 * numOfLedgers + i, conf));
+        }
+
+        /*
+         * again since new entryLogs are set for all the ledgers, previous entrylogs would be added to
+         * rotatedLogChannels
+         */
+        Assert.assertEquals("Number of current active EntryLogs ", numOfLedgers,
+                entryLogManager.getCopyOfCurrentLogs().size());
+        Assert.assertEquals("Number of Rotated Logs ", 2 * numOfLedgers,
+                entryLogManager.getRotatedLogChannels().size());
+
+        for (BufferedLogChannel logChannel : entryLogManager.getRotatedLogChannels()) {
+            entryLogManager.getRotatedLogChannels().remove(logChannel);
+        }
+        Assert.assertEquals("Number of Rotated Logs ", 0, entryLogManager.getRotatedLogChannels().size());
+
+        // entrylogid is sequential
+        for (long i = 0; i < numOfLedgers; i++) {
+            assertEquals("EntryLogid for Ledger " + i, 2 * numOfLedgers + i,
+                    entryLogManager.getCurrentLogForLedger(i).getLogId());
+        }
+
+        for (long i = 2 * numOfLedgers; i < (3 * numOfLedgers); i++) {
+            assertTrue("EntryLog with logId: " + i + " should be present",
+                    entryLogManager.getCurrentLogIfPresent(i) != null);
+        }
+    }
+
+    private EntryLogger.BufferedLogChannel createDummyBufferedLogChannel(EntryLogger entryLogger, long logid,
+            ServerConfiguration servConf) throws IOException {
+        File tmpFile = File.createTempFile("entrylog", logid + "");
+        tmpFile.deleteOnExit();
+        FileChannel fc = FileChannel.open(tmpFile.toPath());
+        EntryLogger.BufferedLogChannel logChannel = new BufferedLogChannel(fc, 10, 10, logid, tmpFile,
+                servConf.getFlushIntervalInBytes());
+        return logChannel;
+    }
+
+    /*
+     * validates the concurrency aspect of entryLogManager's lock
+     *
+     * Executor of fixedThreadPool of size 'numOfLedgers * numOfThreadsPerLedger' is created and the same number
+     * of tasks are submitted to the Executor. In each task, lock of that ledger is acquired and then released.
+     */
+    private void validateLockAcquireAndRelease(int numOfLedgers, int numOfThreadsPerLedger,
+            EntryLogManagerForEntryLogPerLedger entryLogManager) throws InterruptedException {
+        ExecutorService tpe = Executors.newFixedThreadPool(numOfLedgers * numOfThreadsPerLedger);
+        CountDownLatch latchToStart = new CountDownLatch(1);
+        CountDownLatch latchToWait = new CountDownLatch(1);
+        AtomicInteger numberOfThreadsAcquiredLock = new AtomicInteger(0);
+        AtomicBoolean irptExceptionHappened = new AtomicBoolean(false);
+        Random rand = new Random();
+
+        for (int i = 0; i < numOfLedgers * numOfThreadsPerLedger; i++) {
+            long ledgerId = i % numOfLedgers;
+            tpe.submit(() -> {
+                try {
+                    latchToStart.await();
+                    Lock lock = entryLogManager.getLock(ledgerId);
+                    lock.lock();
+                    numberOfThreadsAcquiredLock.incrementAndGet();
+                    latchToWait.await();
+                    lock.unlock();
+                } catch (InterruptedException | IOException e) {
+                    irptExceptionHappened.set(true);
+                }
+            });
+        }
+
+        assertEquals("Number Of Threads acquired Lock", 0, numberOfThreadsAcquiredLock.get());
+        latchToStart.countDown();
+        Thread.sleep(1000);
+        /*
+         * since there are only "numOfLedgers" ledgers, only "numOfLedgers" threads should have been able to acquire
+         * lock. After acquiring the lock there must be waiting on 'latchToWait' latch
+         */
+        assertEquals("Number Of Threads acquired Lock", numOfLedgers, numberOfThreadsAcquiredLock.get());
+        latchToWait.countDown();
+        Thread.sleep(2000);
+        assertEquals("Number Of Threads acquired Lock", numOfLedgers * numOfThreadsPerLedger,
+                numberOfThreadsAcquiredLock.get());
+    }
+
+    /*
+     * test EntryLogManager.EntryLogManagerForEntryLogPerLedger removes the
+     * ledger from its cache map if entry is not added to that ledger or its
+     * corresponding state is not accessed for more than evictionPeriod
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testEntryLogManagerExpiryRemoval() throws Exception {
+        int evictionPeriod = 1;
+
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setEntryLogFilePreAllocationEnabled(false);
+        conf.setEntryLogPerLedgerEnabled(true);
+        conf.setLedgerDirNames(createAndGetLedgerDirs(2));
+        conf.setEntrylogMapAccessExpiryTimeInSeconds(evictionPeriod);
+        LedgerDirsManager ledgerDirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs(),
+                new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()));
+
+        EntryLogger entryLogger = new EntryLogger(conf, ledgerDirsManager);
+        EntryLogManagerForEntryLogPerLedger entryLogManager =
+                (EntryLogManagerForEntryLogPerLedger) entryLogger.getEntryLogManager();
+
+        long ledgerId = 0L;
+
+        BufferedLogChannel logChannel = createDummyBufferedLogChannel(entryLogger, 0, conf);
+        entryLogManager.setCurrentLogForLedgerAndAddToRotate(ledgerId, logChannel);
+
+        BufferedLogChannel currentLogForLedger = entryLogManager.getCurrentLogForLedger(ledgerId);
+        assertEquals("LogChannel for ledger " + ledgerId + " should match", logChannel, currentLogForLedger);
+
+        Thread.sleep(evictionPeriod * 1000 + 100);
+        entryLogManager.doEntryLogMapCleanup();
+
+        /*
+         * since for more than evictionPeriod, that ledger is not accessed and cache is cleaned up, mapping for that
+         * ledger should not be available anymore
+         */
+        currentLogForLedger = entryLogManager.getCurrentLogForLedger(ledgerId);
+        assertEquals("LogChannel for ledger " + ledgerId + " should be null", null, currentLogForLedger);
+        Assert.assertEquals("Number of current active EntryLogs ", 0, entryLogManager.getCopyOfCurrentLogs().size());
+        Assert.assertEquals("Number of rotated EntryLogs ", 1, entryLogManager.getRotatedLogChannels().size());
+        Assert.assertTrue("CopyOfRotatedLogChannels should contain the created LogChannel",
+                entryLogManager.getRotatedLogChannels().contains(logChannel));
+
+        Assert.assertTrue("since mapentry must have been evicted, it should be null",
+                (entryLogManager.getCacheAsMap().get(ledgerId) == null)
+                        || (entryLogManager.getCacheAsMap().get(ledgerId).getEntryLogWithDirInfo() == null));
+    }
+
+    /*
+     * tests if the maximum size of cache (maximumNumberOfActiveEntryLogs) is
+     * honored in EntryLogManagerForEntryLogPerLedger's cache eviction policy.
+     */
+    @Test
+    public void testCacheMaximumSizeEvictionPolicy() throws Exception {
+        final int cacheMaximumSize = 20;
+
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setEntryLogFilePreAllocationEnabled(true);
+        conf.setEntryLogPerLedgerEnabled(true);
+        conf.setLedgerDirNames(createAndGetLedgerDirs(1));
+        conf.setMaximumNumberOfActiveEntryLogs(cacheMaximumSize);
+        LedgerDirsManager ledgerDirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs(),
+                new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()));
+
+        EntryLogger entryLogger = new EntryLogger(conf, ledgerDirsManager);
+        EntryLogManagerForEntryLogPerLedger entryLogManager =
+                (EntryLogManagerForEntryLogPerLedger) entryLogger.getEntryLogManager();
+
+        for (int i = 0; i < cacheMaximumSize + 10; i++) {
+            entryLogManager.createNewLog(i);
+            int cacheSize = entryLogManager.getCacheAsMap().size();
+            Assert.assertTrue("Cache maximum size is expected to be less than " + cacheMaximumSize
+                    + " but current cacheSize is " + cacheSize, cacheSize <= cacheMaximumSize);
+        }
+    }
+
+    /**
+     * test EntryLogManager.EntryLogManagerForEntryLogPerLedger doesn't removes
+     * the ledger from its cache map if ledger's corresponding state is accessed
+     * within the evictionPeriod.
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testExpiryRemovalByAccessingOnAnotherThread() throws Exception {
+        int evictionPeriod = 1;
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setEntryLogFilePreAllocationEnabled(false);
+        conf.setEntryLogPerLedgerEnabled(true);
+        conf.setLedgerDirNames(createAndGetLedgerDirs(2));
+        conf.setEntrylogMapAccessExpiryTimeInSeconds(evictionPeriod);
+        LedgerDirsManager ledgerDirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs(),
+                new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()));
+
+        EntryLogger entryLogger = new EntryLogger(conf, ledgerDirsManager);
+        EntryLogManagerForEntryLogPerLedger entryLogManager =
+                (EntryLogManagerForEntryLogPerLedger) entryLogger.getEntryLogManager();
+
+        long ledgerId = 0L;
+
+        BufferedLogChannel newLogChannel = createDummyBufferedLogChannel(entryLogger, 1, conf);
+        entryLogManager.setCurrentLogForLedgerAndAddToRotate(ledgerId, newLogChannel);
+
+        Thread t = new Thread() {
+            public void run() {
+                try {
+                    Thread.sleep((evictionPeriod * 1000) / 2);
+                    entryLogManager.getCurrentLogForLedger(ledgerId);
+                } catch (InterruptedException | IOException e) {
+                }
+            }
+        };
+
+        t.start();
+        Thread.sleep(evictionPeriod * 1000 + 100);
+        entryLogManager.doEntryLogMapCleanup();
+
+        /*
+         * in this scenario, that ledger is accessed by other thread during
+         * eviction period time, so it should not be evicted.
+         */
+        BufferedLogChannel currentLogForLedger = entryLogManager.getCurrentLogForLedger(ledgerId);
+        assertEquals("LogChannel for ledger " + ledgerId, newLogChannel, currentLogForLedger);
+        Assert.assertEquals("Number of current active EntryLogs ", 1, entryLogManager.getCopyOfCurrentLogs().size());
+        Assert.assertEquals("Number of rotated EntryLogs ", 0, entryLogManager.getRotatedLogChannels().size());
+    }
+
+    /**
+     * test EntryLogManager.EntryLogManagerForEntryLogPerLedger removes the
+     * ledger from its cache map if entry is not added to that ledger or its
+     * corresponding state is not accessed for more than evictionPeriod. In this
+     * testcase we try to call unrelated methods or access state of other
+     * ledgers within the eviction period.
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testExpiryRemovalByAccessingNonCacheRelatedMethods() throws Exception {
+        int evictionPeriod = 1;
+
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setEntryLogFilePreAllocationEnabled(false);
+        conf.setEntryLogPerLedgerEnabled(true);
+        conf.setLedgerDirNames(createAndGetLedgerDirs(2));
+        conf.setEntrylogMapAccessExpiryTimeInSeconds(evictionPeriod);
+        LedgerDirsManager ledgerDirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs(),
+                new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()));
+
+        EntryLogger entryLogger = new EntryLogger(conf, ledgerDirsManager);
+        EntryLogManagerForEntryLogPerLedger entryLogManager =
+                (EntryLogManagerForEntryLogPerLedger) entryLogger.getEntryLogManager();
+
+        long ledgerId = 0L;
+
+        BufferedLogChannel newLogChannel = createDummyBufferedLogChannel(entryLogger, 1, conf);
+        entryLogManager.setCurrentLogForLedgerAndAddToRotate(ledgerId, newLogChannel);
+
+        AtomicBoolean exceptionOccured = new AtomicBoolean(false);
+        Thread t = new Thread() {
+            public void run() {
+                try {
+                    Thread.sleep(500);
+                    /*
+                     * any of the following operations should not access entry
+                     * of 'ledgerId' in the cache
+                     */
+                    entryLogManager.getCopyOfCurrentLogs();
+                    entryLogManager.getRotatedLogChannels();
+                    entryLogManager.getCurrentLogIfPresent(newLogChannel.getLogId());
+                    entryLogManager.getDirForNextEntryLog(ledgerDirsManager.getWritableLedgerDirs());
+                    long newLedgerId = 100;
+                    BufferedLogChannel logChannelForNewLedger =
+                            createDummyBufferedLogChannel(entryLogger, newLedgerId, conf);
+                    entryLogManager.setCurrentLogForLedgerAndAddToRotate(newLedgerId, logChannelForNewLedger);
+                    entryLogManager.getCurrentLogIfPresent(newLedgerId);
+                } catch (Exception e) {
+                    LOG.error("Got Exception in thread", e);
+                    exceptionOccured.set(true);
+                }
+            }
+        };
+
+        t.start();
+        Thread.sleep(evictionPeriod * 1000 + 100);
+        entryLogManager.doEntryLogMapCleanup();
+        Assert.assertFalse("Exception occured in thread, which is not expected", exceptionOccured.get());
+
+        /*
+         * since for more than evictionPeriod, that ledger is not accessed and cache is cleaned up, mapping for that
+         * ledger should not be available anymore
+         */
+        BufferedLogChannel currentLogForLedger = entryLogManager.getCurrentLogForLedger(ledgerId);
+        assertEquals("LogChannel for ledger " + ledgerId + " should be null", null, currentLogForLedger);
+        // expected number of current active entryLogs is 1 since we created entrylog for 'newLedgerId'
+        Assert.assertEquals("Number of current active EntryLogs ", 1, entryLogManager.getCopyOfCurrentLogs().size());
+        Assert.assertEquals("Number of rotated EntryLogs ", 1, entryLogManager.getRotatedLogChannels().size());
+        Assert.assertTrue("CopyOfRotatedLogChannels should contain the created LogChannel",
+                entryLogManager.getRotatedLogChannels().contains(newLogChannel));
+
+        Assert.assertTrue("since mapentry must have been evicted, it should be null",
+                (entryLogManager.getCacheAsMap().get(ledgerId) == null)
+                        || (entryLogManager.getCacheAsMap().get(ledgerId).getEntryLogWithDirInfo() == null));
+    }
+
+    /*
+     * testing EntryLogger functionality (addEntry/createNewLog/flush) and EntryLogManager with entryLogPerLedger
+     * enabled
+     */
+    @Test
+    public void testEntryLogManagerForEntryLogPerLedger() throws Exception {
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setEntryLogPerLedgerEnabled(true);
+        conf.setFlushIntervalInBytes(10000000);
+        conf.setLedgerDirNames(createAndGetLedgerDirs(2));
+        LedgerDirsManager ledgerDirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs(),
+                new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()));
+        EntryLogger entryLogger = new EntryLogger(conf, ledgerDirsManager);
+        EntryLogManagerBase entryLogManager = (EntryLogManagerBase) entryLogger.getEntryLogManager();
+        Assert.assertEquals("EntryLogManager class type", EntryLogManagerForEntryLogPerLedger.class,
+                entryLogManager.getClass());
+
+        int numOfActiveLedgers = 20;
+        int numEntries = 5;
+
+        for (int j = 0; j < numEntries; j++) {
+            for (long i = 0; i < numOfActiveLedgers; i++) {
+                entryLogger.addEntry(i, generateEntry(i, j));
+            }
+        }
+
+        for (long i = 0; i < numOfActiveLedgers; i++) {
+            BufferedLogChannel logChannel =  entryLogManager.getCurrentLogForLedger(i);
+            Assert.assertTrue("unpersistedBytes should be greater than LOGFILE_HEADER_SIZE",
+                    logChannel.getUnpersistedBytes() > EntryLogger.LOGFILE_HEADER_SIZE);
+        }
+
+        for (long i = 0; i < numOfActiveLedgers; i++) {
+            entryLogManager.createNewLog(i);
+        }
+
+        /*
+         * since we created new entrylog for all the activeLedgers, entrylogs of all the ledgers
+         * should be rotated and hence the size of copyOfRotatedLogChannels should be numOfActiveLedgers
+         */
+        List<BufferedLogChannel> rotatedLogs = entryLogManager.getRotatedLogChannels();
+        Assert.assertEquals("Number of rotated entrylogs", numOfActiveLedgers, rotatedLogs.size());
+
+        /*
+         * Since newlog is created for all slots, so they are moved to rotated logs and hence unpersistedBytes of all
+         * the slots should be just EntryLogger.LOGFILE_HEADER_SIZE
+         *
+         */
+        for (long i = 0; i < numOfActiveLedgers; i++) {
+            BufferedLogChannel logChannel = entryLogManager.getCurrentLogForLedger(i);
+            Assert.assertEquals("unpersistedBytes should be LOGFILE_HEADER_SIZE", EntryLogger.LOGFILE_HEADER_SIZE,
+                    logChannel.getUnpersistedBytes());
+        }
+
+        for (int j = numEntries; j < 2 * numEntries; j++) {
+            for (long i = 0; i < numOfActiveLedgers; i++) {
+                entryLogger.addEntry(i, generateEntry(i, j));
+            }
+        }
+
+        for (long i = 0; i < numOfActiveLedgers; i++) {
+            BufferedLogChannel logChannel =  entryLogManager.getCurrentLogForLedger(i);
+            Assert.assertTrue("unpersistedBytes should be greater than LOGFILE_HEADER_SIZE",
+                    logChannel.getUnpersistedBytes() > EntryLogger.LOGFILE_HEADER_SIZE);
+        }
+
+        Assert.assertEquals("LeastUnflushedloggerID", 0, entryLogger.getLeastUnflushedLogId());
+
+        /*
+         * here flush is called so all the rotatedLogChannels should be file closed and there shouldn't be any
+         * rotatedlogchannel and also leastUnflushedLogId should be advanced to numOfActiveLedgers
+         */
+        entryLogger.flush();
+        Assert.assertEquals("Number of rotated entrylogs", 0, entryLogManager.getRotatedLogChannels().size());
+        Assert.assertEquals("LeastUnflushedloggerID", numOfActiveLedgers, entryLogger.getLeastUnflushedLogId());
+
+        /*
+         * after flush (flushCurrentLogs) unpersistedBytes should be 0.
+         */
+        for (long i = 0; i < numOfActiveLedgers; i++) {
+            BufferedLogChannel logChannel =  entryLogManager.getCurrentLogForLedger(i);
+            Assert.assertEquals("unpersistedBytes should be 0", 0L, logChannel.getUnpersistedBytes());
+        }
+    }
+
+    /*
+     * with entryLogPerLedger enabled, create multiple entrylogs, add entries of ledgers and read them before and after
+     * flush
+     */
+    @Test
+    public void testReadAddCallsOfMultipleEntryLogs() throws Exception {
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setEntryLogPerLedgerEnabled(true);
+        conf.setLedgerDirNames(createAndGetLedgerDirs(2));
+        // pre allocation enabled
+        conf.setEntryLogFilePreAllocationEnabled(true);
+        LedgerDirsManager ledgerDirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs(),
+                new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()));
+
+        EntryLogger entryLogger = new EntryLogger(conf, ledgerDirsManager);
+        EntryLogManagerBase entryLogManagerBase = ((EntryLogManagerBase) entryLogger.getEntryLogManager());
+
+        int numOfActiveLedgers = 10;
+        int numEntries = 10;
+        long[][] positions = new long[numOfActiveLedgers][];
+        for (int i = 0; i < numOfActiveLedgers; i++) {
+            positions[i] = new long[numEntries];
+        }
+
+        /*
+         * addentries to the ledgers
+         */
+        for (int j = 0; j < numEntries; j++) {
+            for (int i = 0; i < numOfActiveLedgers; i++) {
+                positions[i][j] = entryLogger.addEntry((long) i, generateEntry(i, j));
+                long entryLogId = (positions[i][j] >> 32L);
+                /**
+                 *
+                 * Though EntryLogFilePreAllocation is enabled, Since things are not done concurrently here,
+                 * entryLogIds will be sequential.
+                 */
+                Assert.assertEquals("EntryLogId for ledger: " + i, i, entryLogId);
+            }
+        }
+
+        /*
+         * read the entries which are written
+         */
+        for (int j = 0; j < numEntries; j++) {
+            for (int i = 0; i < numOfActiveLedgers; i++) {
+                String expectedValue = "ledger-" + i + "-" + j;
+                ByteBuf buf = entryLogger.readEntry(i, j, positions[i][j]);
+                long ledgerId = buf.readLong();
+                long entryId = buf.readLong();
+                byte[] data = new byte[buf.readableBytes()];
+                buf.readBytes(data);
+                assertEquals("LedgerId ", i, ledgerId);
+                assertEquals("EntryId ", j, entryId);
+                assertEquals("Entry Data ", expectedValue, new String(data));
+            }
+        }
+
+        for (long i = 0; i < numOfActiveLedgers; i++) {
+            entryLogManagerBase.createNewLog(i);
+        }
+
+        entryLogManagerBase.flushRotatedLogs();
+
+        // reading after flush of rotatedlogs
+        for (int j = 0; j < numEntries; j++) {
+            for (int i = 0; i < numOfActiveLedgers; i++) {
+                String expectedValue = "ledger-" + i + "-" + j;
+                ByteBuf buf = entryLogger.readEntry(i, j, positions[i][j]);
+                long ledgerId = buf.readLong();
+                long entryId = buf.readLong();
+                byte[] data = new byte[buf.readableBytes()];
+                buf.readBytes(data);
+                assertEquals("LedgerId ", i, ledgerId);
+                assertEquals("EntryId ", j, entryId);
+                assertEquals("Entry Data ", expectedValue, new String(data));
+            }
+        }
+    }
+
+    class ReadTask implements Callable<Boolean> {
+        long ledgerId;
+        int entryId;
+        long position;
+        EntryLogger entryLogger;
+
+        ReadTask(long ledgerId, int entryId, long position, EntryLogger entryLogger) {
+            this.ledgerId = ledgerId;
+            this.entryId = entryId;
+            this.position = position;
+            this.entryLogger = entryLogger;
+        }
+
+        @Override
+        public Boolean call() throws IOException {
+            try {
+                ByteBuf expectedByteBuf = generateEntry(ledgerId, entryId);
+                ByteBuf actualByteBuf = entryLogger.readEntry(ledgerId, entryId, position);
+                if (!expectedByteBuf.equals(actualByteBuf)) {
+                    LOG.error("Expected Entry: {} Actual Entry: {}", expectedByteBuf.toString(Charset.defaultCharset()),
+                            actualByteBuf.toString(Charset.defaultCharset()));
+                    throw new IOException("Expected Entry: " + expectedByteBuf.toString(Charset.defaultCharset())
+                            + " Actual Entry: " + actualByteBuf.toString(Charset.defaultCharset()));
+                }
+            } catch (IOException e) {
+                LOG.error("Got Exception for GetEntry call. LedgerId: " + ledgerId + " entryId: " + entryId, e);
+                throw new IOException("Got Exception for GetEntry call. LedgerId: " + ledgerId + " entryId: " + entryId,
+                        e);
+            }
+            return true;
+        }
+    }
+
+    /*
+     * test concurrent read operations of entries from flushed rotatedlogs with entryLogPerLedgerEnabled
+     */
+    @Test
+    public void testConcurrentReadCallsAfterEntryLogsAreRotated() throws Exception {
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setEntryLogPerLedgerEnabled(true);
+        conf.setFlushIntervalInBytes(1000 * 25);
+        conf.setLedgerDirNames(createAndGetLedgerDirs(3));
+        LedgerDirsManager ledgerDirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs(),
+                new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()));
+
+        EntryLogger entryLogger = new EntryLogger(conf, ledgerDirsManager);
+        int numOfActiveLedgers = 15;
+        int numEntries = 2000;
+        final AtomicLongArray positions = new AtomicLongArray(numOfActiveLedgers * numEntries);
+        EntryLogManagerForEntryLogPerLedger entryLogManager = (EntryLogManagerForEntryLogPerLedger)
+                entryLogger.getEntryLogManager();
+
+        for (int i = 0; i < numOfActiveLedgers; i++) {
+            for (int j = 0; j < numEntries; j++) {
+                positions.set(i * numEntries + j, entryLogger.addEntry((long) i, generateEntry(i, j)));
+                long entryLogId = (positions.get(i * numEntries + j) >> 32L);
+                /**
+                 *
+                 * Though EntryLogFilePreAllocation is enabled, Since things are not done concurrently here, entryLogIds
+                 * will be sequential.
+                 */
+                Assert.assertEquals("EntryLogId for ledger: " + i, i, entryLogId);
+            }
+        }
+
+        for (long i = 0; i < numOfActiveLedgers; i++) {
+            entryLogManager.createNewLog(i);
+        }
+        entryLogManager.flushRotatedLogs();
+
+        // reading after flush of rotatedlogs
+        ArrayList<ReadTask> readTasks = new ArrayList<ReadTask>();
+        for (int i = 0; i < numOfActiveLedgers; i++) {
+            for (int j = 0; j < numEntries; j++) {
+                readTasks.add(new ReadTask(i, j, positions.get(i * numEntries + j), entryLogger));
+            }
+        }
+
+        ExecutorService executor = Executors.newFixedThreadPool(40);
+        executor.invokeAll(readTasks).forEach((future) -> {
+            try {
+                future.get();
+            } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
+                LOG.error("Read/Flush task failed because of InterruptedException", ie);
+                Assert.fail("Read/Flush task interrupted");
+            } catch (Exception ex) {
+                LOG.error("Read/Flush task failed because of  exception", ex);
+                Assert.fail("Read/Flush task failed " + ex.getMessage());
+            }
+        });
+    }
+
+    /**
+     * testcase to validate when ledgerdirs become full and eventually all
+     * ledgerdirs become full. Later a ledgerdir becomes writable.
+     */
+    @Test
+    public void testEntryLoggerAddEntryWhenLedgerDirsAreFull() throws Exception {
+        int numberOfLedgerDirs = 3;
+        List<File> ledgerDirs = new ArrayList<File>();
+        String[] ledgerDirsPath = new String[numberOfLedgerDirs];
+        List<File> curDirs = new ArrayList<File>();
+
+        File ledgerDir;
+        File curDir;
+        for (int i = 0; i < numberOfLedgerDirs; i++) {
+            ledgerDir = createTempDir("bkTest", ".dir").getAbsoluteFile();
+            curDir = Bookie.getCurrentDirectory(ledgerDir);
+            Bookie.checkDirectoryStructure(curDir);
+            ledgerDirs.add(ledgerDir);
+            ledgerDirsPath[i] = ledgerDir.getPath();
+            curDirs.add(curDir);
+        }
+
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        // pre-allocation is disabled
+        conf.setEntryLogFilePreAllocationEnabled(false);
+        conf.setEntryLogPerLedgerEnabled(true);
+        conf.setLedgerDirNames(ledgerDirsPath);
+
+        LedgerDirsManager ledgerDirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs(),
+                new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()));
+
+        EntryLogger entryLogger = new EntryLogger(conf, ledgerDirsManager);
+        EntryLogManagerForEntryLogPerLedger entryLogManager = (EntryLogManagerForEntryLogPerLedger)
+                entryLogger.getEntryLogManager();
+        Assert.assertEquals("EntryLogManager class type", EntryLogManagerForEntryLogPerLedger.class,
+                entryLogManager.getClass());
+
+        entryLogger.addEntry(0L, generateEntry(0, 1));
+        entryLogger.addEntry(1L, generateEntry(1, 1));
+        entryLogger.addEntry(2L, generateEntry(2, 1));
+
+        File ledgerDirForLedger0 = entryLogManager.getCurrentLogForLedger(0L).getLogFile().getParentFile();
+        File ledgerDirForLedger1 = entryLogManager.getCurrentLogForLedger(1L).getLogFile().getParentFile();
+        File ledgerDirForLedger2 = entryLogManager.getCurrentLogForLedger(2L).getLogFile().getParentFile();
+
+        Set<File> ledgerDirsSet = new HashSet<File>();
+        ledgerDirsSet.add(ledgerDirForLedger0);
+        ledgerDirsSet.add(ledgerDirForLedger1);
+        ledgerDirsSet.add(ledgerDirForLedger2);
+
+        /*
+         * since there are 3 ledgerdirs, entrylogs for all the 3 ledgers should be in different ledgerdirs.
+         */
+        Assert.assertEquals("Current active LedgerDirs size", 3, ledgerDirs.size());
+        Assert.assertEquals("Number of rotated logchannels", 0, entryLogManager.getRotatedLogChannels().size());
+
+        /*
+         * ledgerDirForLedger0 is added to filledDirs, for ledger0 new entrylog should not be created in
+         * ledgerDirForLedger0
+         */
+        ledgerDirsManager.addToFilledDirs(ledgerDirForLedger0);
+        addEntryAndValidateFolders(entryLogger, entryLogManager, 2, ledgerDirForLedger0, false, ledgerDirForLedger1,
+                ledgerDirForLedger2);
+        Assert.assertEquals("Number of rotated logchannels", 1, entryLogManager.getRotatedLogChannels().size());
+
+        /*
+         * ledgerDirForLedger1 is also added to filledDirs, so for all the ledgers new entryLogs should be in
+         * ledgerDirForLedger2
+         */
+        ledgerDirsManager.addToFilledDirs(ledgerDirForLedger1);
+        addEntryAndValidateFolders(entryLogger, entryLogManager, 3, ledgerDirForLedger2, true, ledgerDirForLedger2,
+                ledgerDirForLedger2);
+        Assert.assertTrue("Number of rotated logchannels", (2 <= entryLogManager.getRotatedLogChannels().size())
+                && (entryLogManager.getRotatedLogChannels().size() <= 3));
+        int numOfRotatedLogChannels = entryLogManager.getRotatedLogChannels().size();
+
+        /*
+         * since ledgerDirForLedger2 is added to filleddirs, all the dirs are full. If all the dirs are full then it
+         * will continue to use current entrylogs for new entries instead of creating new one. So for all the ledgers
+         * ledgerdirs should be same as before - ledgerDirForLedger2
+         */
+        ledgerDirsManager.addToFilledDirs(ledgerDirForLedger2);
+        addEntryAndValidateFolders(entryLogger, entryLogManager, 4, ledgerDirForLedger2, true, ledgerDirForLedger2,
+                ledgerDirForLedger2);
+        Assert.assertEquals("Number of rotated logchannels", numOfRotatedLogChannels,
+                entryLogManager.getRotatedLogChannels().size());
+
+        /*
+         *  ledgerDirForLedger1 is added back to writableDirs, so new entrylog for all the ledgers should be created in
+         *  ledgerDirForLedger1
+         */
+        ledgerDirsManager.addToWritableDirs(ledgerDirForLedger1, true);
+        addEntryAndValidateFolders(entryLogger, entryLogManager, 4, ledgerDirForLedger1, true, ledgerDirForLedger1,
+                ledgerDirForLedger1);
+        Assert.assertEquals("Number of rotated logchannels", numOfRotatedLogChannels + 3,
+                entryLogManager.getRotatedLogChannels().size());
+    }
+
+    /*
+     * in this method we add an entry and validate the ledgerdir of the
+     * currentLogForLedger against the provided expected ledgerDirs.
+     */
+    void addEntryAndValidateFolders(EntryLogger entryLogger, EntryLogManagerBase entryLogManager, int entryId,
+            File expectedDirForLedger0, boolean equalsForLedger0, File expectedDirForLedger1,
+            File expectedDirForLedger2) throws IOException {
+        entryLogger.addEntry(0L, generateEntry(0, entryId));
+        entryLogger.addEntry(1L, generateEntry(1, entryId));
+        entryLogger.addEntry(2L, generateEntry(2, entryId));
+
+        if (equalsForLedger0) {
+            Assert.assertEquals("LedgerDir for ledger 0 after adding entry " + entryId, expectedDirForLedger0,
+                    entryLogManager.getCurrentLogForLedger(0L).getLogFile().getParentFile());
+        } else {
+            Assert.assertNotEquals("LedgerDir for ledger 0 after adding entry " + entryId, expectedDirForLedger0,
+                    entryLogManager.getCurrentLogForLedger(0L).getLogFile().getParentFile());
+        }
+        Assert.assertEquals("LedgerDir for ledger 1 after adding entry " + entryId, expectedDirForLedger1,
+                entryLogManager.getCurrentLogForLedger(1L).getLogFile().getParentFile());
+        Assert.assertEquals("LedgerDir for ledger 2 after adding entry " + entryId, expectedDirForLedger2,
+                entryLogManager.getCurrentLogForLedger(2L).getLogFile().getParentFile());
+    }
+
+    /*
+     * entries added using entrylogger with entryLogPerLedger enabled and the same entries are read using entrylogger
+     * with entryLogPerLedger disabled
+     */
+    @Test
+    public void testSwappingEntryLogManagerFromEntryLogPerLedgerToSingle() throws Exception {
+        testSwappingEntryLogManager(true, false);
+    }
+
+    /*
+     * entries added using entrylogger with entryLogPerLedger disabled and the same entries are read using entrylogger
+     * with entryLogPerLedger enabled
+     */
+    @Test
+    public void testSwappingEntryLogManagerFromSingleToEntryLogPerLedger() throws Exception {
+        testSwappingEntryLogManager(false, true);
+    }
+
+    public void testSwappingEntryLogManager(boolean initialEntryLogPerLedgerEnabled,
+            boolean laterEntryLogPerLedgerEnabled) throws Exception {
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setEntryLogPerLedgerEnabled(initialEntryLogPerLedgerEnabled);
+        conf.setLedgerDirNames(createAndGetLedgerDirs(2));
+        // pre allocation enabled
+        conf.setEntryLogFilePreAllocationEnabled(true);
+        LedgerDirsManager ledgerDirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs(),
+                new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()));
+
+        EntryLogger entryLogger = new EntryLogger(conf, ledgerDirsManager);
+        EntryLogManagerBase entryLogManager = (EntryLogManagerBase) entryLogger.getEntryLogManager();
+        Assert.assertEquals(
+                "EntryLogManager class type", initialEntryLogPerLedgerEnabled
+                        ? EntryLogManagerForEntryLogPerLedger.class : EntryLogManagerForSingleEntryLog.class,
+                entryLogManager.getClass());
+
+        int numOfActiveLedgers = 10;
+        int numEntries = 10;
+        long[][] positions = new long[numOfActiveLedgers][];
+        for (int i = 0; i < numOfActiveLedgers; i++) {
+            positions[i] = new long[numEntries];
+        }
+
+        /*
+         * addentries to the ledgers
+         */
+        for (int j = 0; j < numEntries; j++) {
+            for (int i = 0; i < numOfActiveLedgers; i++) {
+                positions[i][j] = entryLogger.addEntry((long) i, generateEntry(i, j));
+                long entryLogId = (positions[i][j] >> 32L);
+                if (initialEntryLogPerLedgerEnabled) {
+                    Assert.assertEquals("EntryLogId for ledger: " + i, i, entryLogId);
+                } else {
+                    Assert.assertEquals("EntryLogId for ledger: " + i, 0, entryLogId);
+                }
+            }
+        }
+
+        for (long i = 0; i < numOfActiveLedgers; i++) {
+            entryLogManager.createNewLog(i);
+        }
+
+        /**
+         * since new entrylog is created for all the ledgers, the previous
+         * entrylogs must be rotated and with the following flushRotatedLogs
+         * call they should be forcewritten and file should be closed.
+         */
+        entryLogManager.flushRotatedLogs();
+
+        /*
+         * new entrylogger and entryLogManager are created with
+         * 'laterEntryLogPerLedgerEnabled' conf
+         */
+        conf.setEntryLogPerLedgerEnabled(laterEntryLogPerLedgerEnabled);
+        LedgerDirsManager newLedgerDirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs(),
+                new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()));
+        EntryLogger newEntryLogger = new EntryLogger(conf, newLedgerDirsManager);
+        EntryLogManager newEntryLogManager = newEntryLogger.getEntryLogManager();
+        Assert.assertEquals("EntryLogManager class type",
+                laterEntryLogPerLedgerEnabled ? EntryLogManagerForEntryLogPerLedger.class
+                        : EntryLogManagerForSingleEntryLog.class,
+                newEntryLogManager.getClass());
+
+        /*
+         * read the entries (which are written with previous entrylogger) with
+         * new entrylogger
+         */
+        for (int j = 0; j < numEntries; j++) {
+            for (int i = 0; i < numOfActiveLedgers; i++) {
+                String expectedValue = "ledger-" + i + "-" + j;
+                ByteBuf buf = newEntryLogger.readEntry(i, j, positions[i][j]);
+                long ledgerId = buf.readLong();
+                long entryId = buf.readLong();
+                byte[] data = new byte[buf.readableBytes()];
+                buf.readBytes(data);
+                assertEquals("LedgerId ", i, ledgerId);
+                assertEquals("EntryId ", j, entryId);
+                assertEquals("Entry Data ", expectedValue, new String(data));
+            }
+        }
+    }
+
 }
