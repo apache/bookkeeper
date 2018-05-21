@@ -239,6 +239,8 @@ Apache Software License, Version 2.
 - lib/com.yahoo.datasketches-memory-0.8.3.jar [24]
 - lib/com.yahoo.datasketches-sketches-core-0.8.3.jar [24]
 - lib/net.jpountz.lz4-lz4-1.3.0.jar [25]
+- lib/org.codehaus.jackson-jackson-core-asl-1.9.11.jar [26]
+- lib/org.codehaus.jackson-jackson-mapper-asl-1.9.11.jar [27]
 
 [1] Source available at https://github.com/FasterXML/jackson-annotations/tree/jackson-annotations-2.8.9
 [2] Source available at https://github.com/FasterXML/jackson-core/tree/jackson-core-2.8.9
@@ -265,6 +267,8 @@ Apache Software License, Version 2.
 [23] Source available at https://github.com/cbeust/jcommander/tree/jcommander-1.48
 [24] Source available at https://github.com/DataSketches/sketches-core/tree/sketches-0.8.3
 [25] Source available at https://github.com/lz4/lz4-java/tree/1.3.0
+[26] Source available at https://github.com/codehaus/jackson/tree/1.9
+[27] Source available at https://github.com/codehaus/jackson/tree/1.9
 
 ------------------------------------------------------------------------------------
 lib/io.netty-netty-all-4.1.12.Final.jar bundles some 3rd party dependencies
