@@ -48,7 +48,7 @@ import org.slf4j.LoggerFactory;
  * We continue to serve edits out of new EntrySkipList and backing snapshot until
  * flusher reports in that the flush succeeded. At that point we let the snapshot go.
  */
-public class EntryMemTable implements AutoCloseable{
+public class EntryMemTable implements AutoCloseable {
     private static Logger logger = LoggerFactory.getLogger(Journal.class);
 
     /**
