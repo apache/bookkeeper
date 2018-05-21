@@ -242,12 +242,13 @@ implements <a href="../../../../org/apache/bookkeeper/client/ITopologyAwareEnsem
 </tr>
 <tr id="i2" class="altColor">
 <td class="colFirst"><code>protected <a href="../../../../org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicy.html" title="class in org.apache.bookkeeper.client">RackawareEnsemblePlacementPolicy</a></code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicy.html#initialize-org.apache.bookkeeper.net.DNSToSwitchMapping-io.netty.util.HashedWheelTimer-boolean-int-boolean-int-org.apache.bookkeeper.stats.StatsLogger-">initialize</a></span>(org.apache.bookkeeper.net.DNSToSwitchMapping&nbsp;dnsResolver,
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicy.html#initialize-org.apache.bookkeeper.net.DNSToSwitchMapping-io.netty.util.HashedWheelTimer-boolean-int-boolean-int-int-org.apache.bookkeeper.stats.StatsLogger-">initialize</a></span>(org.apache.bookkeeper.net.DNSToSwitchMapping&nbsp;dnsResolver,
           io.netty.util.HashedWheelTimer&nbsp;timer,
           boolean&nbsp;reorderReadsRandom,
           int&nbsp;stabilizePeriodSeconds,
           boolean&nbsp;isWeighted,
           int&nbsp;maxWeightMultiple,
+          int&nbsp;minNumRacksPerWriteQuorum,
           <a href="../../../../org/apache/bookkeeper/stats/StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger)</code>
 <div class="block">Initialize the policy.</div>
 </td>
@@ -403,7 +404,7 @@ implements <a href="../../../../org/apache/bookkeeper/client/ITopologyAwareEnsem
 <!--   -->
 </a>
 <h3>Method Detail</h3>
-<a name="initialize-org.apache.bookkeeper.net.DNSToSwitchMapping-io.netty.util.HashedWheelTimer-boolean-int-boolean-int-org.apache.bookkeeper.stats.StatsLogger-">
+<a name="initialize-org.apache.bookkeeper.net.DNSToSwitchMapping-io.netty.util.HashedWheelTimer-boolean-int-boolean-int-int-org.apache.bookkeeper.stats.StatsLogger-">
 <!--   -->
 </a>
 <ul class="blockList">
@@ -415,12 +416,13 @@ implements <a href="../../../../org/apache/bookkeeper/client/ITopologyAwareEnsem
                                                       int&nbsp;stabilizePeriodSeconds,
                                                       boolean&nbsp;isWeighted,
                                                       int&nbsp;maxWeightMultiple,
+                                                      int&nbsp;minNumRacksPerWriteQuorum,
                                                       <a href="../../../../org/apache/bookkeeper/stats/StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger)</pre>
-<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="../../../../org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html#initialize-org.apache.bookkeeper.net.DNSToSwitchMapping-io.netty.util.HashedWheelTimer-boolean-int-boolean-int-org.apache.bookkeeper.stats.StatsLogger-">RackawareEnsemblePlacementPolicyImpl</a></code></span></div>
+<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="../../../../org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html#initialize-org.apache.bookkeeper.net.DNSToSwitchMapping-io.netty.util.HashedWheelTimer-boolean-int-boolean-int-int-org.apache.bookkeeper.stats.StatsLogger-">RackawareEnsemblePlacementPolicyImpl</a></code></span></div>
 <div class="block">Initialize the policy.</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
-<dd><code><a href="../../../../org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html#initialize-org.apache.bookkeeper.net.DNSToSwitchMapping-io.netty.util.HashedWheelTimer-boolean-int-boolean-int-org.apache.bookkeeper.stats.StatsLogger-">initialize</a></code>&nbsp;in class&nbsp;<code><a href="../../../../org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html" title="class in org.apache.bookkeeper.client">RackawareEnsemblePlacementPolicyImpl</a></code></dd>
+<dd><code><a href="../../../../org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html#initialize-org.apache.bookkeeper.net.DNSToSwitchMapping-io.netty.util.HashedWheelTimer-boolean-int-boolean-int-int-org.apache.bookkeeper.stats.StatsLogger-">initialize</a></code>&nbsp;in class&nbsp;<code><a href="../../../../org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html" title="class in org.apache.bookkeeper.client">RackawareEnsemblePlacementPolicyImpl</a></code></dd>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>dnsResolver</code> - the object used to resolve addresses to their network address</dd>
 <dt><span class="returnLabel">Returns:</span></dt>

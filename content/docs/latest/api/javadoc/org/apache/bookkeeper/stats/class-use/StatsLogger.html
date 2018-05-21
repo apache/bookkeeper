@@ -218,24 +218,26 @@
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>protected <a href="../../../../../org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html" title="class in org.apache.bookkeeper.client">RackawareEnsemblePlacementPolicyImpl</a></code></td>
-<td class="colLast"><span class="typeNameLabel">RackawareEnsemblePlacementPolicyImpl.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html#initialize-org.apache.bookkeeper.net.DNSToSwitchMapping-io.netty.util.HashedWheelTimer-boolean-int-boolean-int-org.apache.bookkeeper.stats.StatsLogger-">initialize</a></span>(org.apache.bookkeeper.net.DNSToSwitchMapping&nbsp;dnsResolver,
+<td class="colLast"><span class="typeNameLabel">RackawareEnsemblePlacementPolicyImpl.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html#initialize-org.apache.bookkeeper.net.DNSToSwitchMapping-io.netty.util.HashedWheelTimer-boolean-int-boolean-int-int-org.apache.bookkeeper.stats.StatsLogger-">initialize</a></span>(org.apache.bookkeeper.net.DNSToSwitchMapping&nbsp;dnsResolver,
           io.netty.util.HashedWheelTimer&nbsp;timer,
           boolean&nbsp;reorderReadsRandom,
           int&nbsp;stabilizePeriodSeconds,
           boolean&nbsp;isWeighted,
           int&nbsp;maxWeightMultiple,
+          int&nbsp;minNumRacksPerWriteQuorum,
           <a href="../../../../../org/apache/bookkeeper/stats/StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger)</code>
 <div class="block">Initialize the policy.</div>
 </td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>protected <a href="../../../../../org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicy.html" title="class in org.apache.bookkeeper.client">RackawareEnsemblePlacementPolicy</a></code></td>
-<td class="colLast"><span class="typeNameLabel">RackawareEnsemblePlacementPolicy.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicy.html#initialize-org.apache.bookkeeper.net.DNSToSwitchMapping-io.netty.util.HashedWheelTimer-boolean-int-boolean-int-org.apache.bookkeeper.stats.StatsLogger-">initialize</a></span>(org.apache.bookkeeper.net.DNSToSwitchMapping&nbsp;dnsResolver,
+<td class="colLast"><span class="typeNameLabel">RackawareEnsemblePlacementPolicy.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicy.html#initialize-org.apache.bookkeeper.net.DNSToSwitchMapping-io.netty.util.HashedWheelTimer-boolean-int-boolean-int-int-org.apache.bookkeeper.stats.StatsLogger-">initialize</a></span>(org.apache.bookkeeper.net.DNSToSwitchMapping&nbsp;dnsResolver,
           io.netty.util.HashedWheelTimer&nbsp;timer,
           boolean&nbsp;reorderReadsRandom,
           int&nbsp;stabilizePeriodSeconds,
           boolean&nbsp;isWeighted,
           int&nbsp;maxWeightMultiple,
+          int&nbsp;minNumRacksPerWriteQuorum,
           <a href="../../../../../org/apache/bookkeeper/stats/StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger)</code>&nbsp;</td>
 </tr>
 <tr class="altColor">

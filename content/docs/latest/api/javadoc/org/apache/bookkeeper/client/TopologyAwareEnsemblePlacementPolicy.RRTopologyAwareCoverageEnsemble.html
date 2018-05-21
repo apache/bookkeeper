@@ -185,21 +185,25 @@ implements <a href="../../../../org/apache/bookkeeper/client/ITopologyAwareEnsem
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>(package private) int</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.RRTopologyAwareCoverageEnsemble.html#minRacksOrRegionsForDurability">minRacksOrRegionsForDurability</a></span></code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.RRTopologyAwareCoverageEnsemble.html#minNumRacksPerWriteQuorum">minNumRacksPerWriteQuorum</a></span></code>&nbsp;</td>
 </tr>
 <tr class="rowColor">
+<td class="colFirst"><code>(package private) int</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.RRTopologyAwareCoverageEnsemble.html#minRacksOrRegionsForDurability">minRacksOrRegionsForDurability</a></span></code>&nbsp;</td>
+</tr>
+<tr class="altColor">
 <td class="colFirst"><code>(package private) <a href="../../../../org/apache/bookkeeper/client/ITopologyAwareEnsemblePlacementPolicy.Ensemble.html" title="interface in org.apache.bookkeeper.client">ITopologyAwareEnsemblePlacementPolicy.Ensemble</a>&lt;<a href="../../../../org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.BookieNode.html" title="class in org.apache.bookkeeper.client">TopologyAwareEnsemblePlacementPolicy.BookieNode</a>&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.RRTopologyAwareCoverageEnsemble.html#parentEnsemble">parentEnsemble</a></span></code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>(package private) <a href="../../../../org/apache/bookkeeper/client/ITopologyAwareEnsemblePlacementPolicy.Predicate.html" title="interface in org.apache.bookkeeper.client">ITopologyAwareEnsemblePlacementPolicy.Predicate</a>&lt;<a href="../../../../org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.BookieNode.html" title="class in org.apache.bookkeeper.client">TopologyAwareEnsemblePlacementPolicy.BookieNode</a>&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.RRTopologyAwareCoverageEnsemble.html#parentPredicate">parentPredicate</a></span></code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>(package private) <a href="http://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.RRTopologyAwareCoverageEnsemble.html#racksOrRegions">racksOrRegions</a></span></code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>(package private) int</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.RRTopologyAwareCoverageEnsemble.html#writeQuorumSize">writeQuorumSize</a></span></code>&nbsp;</td>
 </tr>
@@ -220,32 +224,35 @@ implements <a href="../../../../org/apache/bookkeeper/client/ITopologyAwareEnsem
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>protected </code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.RRTopologyAwareCoverageEnsemble.html#RRTopologyAwareCoverageEnsemble-int-int-int-int-org.apache.bookkeeper.client.ITopologyAwareEnsemblePlacementPolicy.Ensemble-org.apache.bookkeeper.client.ITopologyAwareEnsemblePlacementPolicy.Predicate-">RRTopologyAwareCoverageEnsemble</a></span>(int&nbsp;ensembleSize,
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.RRTopologyAwareCoverageEnsemble.html#RRTopologyAwareCoverageEnsemble-int-int-int-int-org.apache.bookkeeper.client.ITopologyAwareEnsemblePlacementPolicy.Ensemble-org.apache.bookkeeper.client.ITopologyAwareEnsemblePlacementPolicy.Predicate-int-">RRTopologyAwareCoverageEnsemble</a></span>(int&nbsp;ensembleSize,
                                int&nbsp;writeQuorumSize,
                                int&nbsp;ackQuorumSize,
                                int&nbsp;distanceFromLeaves,
                                <a href="../../../../org/apache/bookkeeper/client/ITopologyAwareEnsemblePlacementPolicy.Ensemble.html" title="interface in org.apache.bookkeeper.client">ITopologyAwareEnsemblePlacementPolicy.Ensemble</a>&lt;<a href="../../../../org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.BookieNode.html" title="class in org.apache.bookkeeper.client">TopologyAwareEnsemblePlacementPolicy.BookieNode</a>&gt;&nbsp;parentEnsemble,
-                               <a href="../../../../org/apache/bookkeeper/client/ITopologyAwareEnsemblePlacementPolicy.Predicate.html" title="interface in org.apache.bookkeeper.client">ITopologyAwareEnsemblePlacementPolicy.Predicate</a>&lt;<a href="../../../../org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.BookieNode.html" title="class in org.apache.bookkeeper.client">TopologyAwareEnsemblePlacementPolicy.BookieNode</a>&gt;&nbsp;parentPredicate)</code>&nbsp;</td>
+                               <a href="../../../../org/apache/bookkeeper/client/ITopologyAwareEnsemblePlacementPolicy.Predicate.html" title="interface in org.apache.bookkeeper.client">ITopologyAwareEnsemblePlacementPolicy.Predicate</a>&lt;<a href="../../../../org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.BookieNode.html" title="class in org.apache.bookkeeper.client">TopologyAwareEnsemblePlacementPolicy.BookieNode</a>&gt;&nbsp;parentPredicate,
+                               int&nbsp;minNumRacksPerWriteQuorum)</code>&nbsp;</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>protected </code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.RRTopologyAwareCoverageEnsemble.html#RRTopologyAwareCoverageEnsemble-int-int-int-int-org.apache.bookkeeper.client.ITopologyAwareEnsemblePlacementPolicy.Ensemble-org.apache.bookkeeper.client.ITopologyAwareEnsemblePlacementPolicy.Predicate-java.util.Set-int-">RRTopologyAwareCoverageEnsemble</a></span>(int&nbsp;ensembleSize,
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.RRTopologyAwareCoverageEnsemble.html#RRTopologyAwareCoverageEnsemble-int-int-int-int-org.apache.bookkeeper.client.ITopologyAwareEnsemblePlacementPolicy.Ensemble-org.apache.bookkeeper.client.ITopologyAwareEnsemblePlacementPolicy.Predicate-java.util.Set-int-int-">RRTopologyAwareCoverageEnsemble</a></span>(int&nbsp;ensembleSize,
                                int&nbsp;writeQuorumSize,
                                int&nbsp;ackQuorumSize,
                                int&nbsp;distanceFromLeaves,
                                <a href="../../../../org/apache/bookkeeper/client/ITopologyAwareEnsemblePlacementPolicy.Ensemble.html" title="interface in org.apache.bookkeeper.client">ITopologyAwareEnsemblePlacementPolicy.Ensemble</a>&lt;<a href="../../../../org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.BookieNode.html" title="class in org.apache.bookkeeper.client">TopologyAwareEnsemblePlacementPolicy.BookieNode</a>&gt;&nbsp;parentEnsemble,
                                <a href="../../../../org/apache/bookkeeper/client/ITopologyAwareEnsemblePlacementPolicy.Predicate.html" title="interface in org.apache.bookkeeper.client">ITopologyAwareEnsemblePlacementPolicy.Predicate</a>&lt;<a href="../../../../org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.BookieNode.html" title="class in org.apache.bookkeeper.client">TopologyAwareEnsemblePlacementPolicy.BookieNode</a>&gt;&nbsp;parentPredicate,
                                <a href="http://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&gt;&nbsp;racksOrRegions,
-                               int&nbsp;minRacksOrRegionsForDurability)</code>&nbsp;</td>
+                               int&nbsp;minRacksOrRegionsForDurability,
+                               int&nbsp;minNumRacksPerWriteQuorum)</code>&nbsp;</td>
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>protected </code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.RRTopologyAwareCoverageEnsemble.html#RRTopologyAwareCoverageEnsemble-int-int-int-int-java.util.Set-int-">RRTopologyAwareCoverageEnsemble</a></span>(int&nbsp;ensembleSize,
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.RRTopologyAwareCoverageEnsemble.html#RRTopologyAwareCoverageEnsemble-int-int-int-int-java.util.Set-int-int-">RRTopologyAwareCoverageEnsemble</a></span>(int&nbsp;ensembleSize,
                                int&nbsp;writeQuorumSize,
                                int&nbsp;ackQuorumSize,
                                int&nbsp;distanceFromLeaves,
                                <a href="http://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&gt;&nbsp;racksOrRegions,
-                               int&nbsp;minRacksOrRegionsForDurability)</code>&nbsp;</td>
+                               int&nbsp;minRacksOrRegionsForDurability,
+                               int&nbsp;minNumRacksPerWriteQuorum)</code>&nbsp;</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>protected </code></td>
@@ -359,6 +366,15 @@ implements <a href="../../../../org/apache/bookkeeper/client/ITopologyAwareEnsem
 <pre>final&nbsp;int minRacksOrRegionsForDurability</pre>
 </li>
 </ul>
+<a name="minNumRacksPerWriteQuorum">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>minNumRacksPerWriteQuorum</h4>
+<pre>final&nbsp;int minNumRacksPerWriteQuorum</pre>
+</li>
+</ul>
 <a name="chosenNodes">
 <!--   -->
 </a>
@@ -412,7 +428,7 @@ implements <a href="../../../../org/apache/bookkeeper/client/ITopologyAwareEnsem
 <pre>protected&nbsp;RRTopologyAwareCoverageEnsemble(<a href="../../../../org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.RRTopologyAwareCoverageEnsemble.html" title="class in org.apache.bookkeeper.client">TopologyAwareEnsemblePlacementPolicy.RRTopologyAwareCoverageEnsemble</a>&nbsp;that)</pre>
 </li>
 </ul>
-<a name="RRTopologyAwareCoverageEnsemble-int-int-int-int-java.util.Set-int-">
+<a name="RRTopologyAwareCoverageEnsemble-int-int-int-int-java.util.Set-int-int-">
 <!--   -->
 </a>
 <ul class="blockList">
@@ -423,10 +439,11 @@ implements <a href="../../../../org/apache/bookkeeper/client/ITopologyAwareEnsem
                                           int&nbsp;ackQuorumSize,
                                           int&nbsp;distanceFromLeaves,
                                           <a href="http://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&gt;&nbsp;racksOrRegions,
-                                          int&nbsp;minRacksOrRegionsForDurability)</pre>
+                                          int&nbsp;minRacksOrRegionsForDurability,
+                                          int&nbsp;minNumRacksPerWriteQuorum)</pre>
 </li>
 </ul>
-<a name="RRTopologyAwareCoverageEnsemble-int-int-int-int-org.apache.bookkeeper.client.ITopologyAwareEnsemblePlacementPolicy.Ensemble-org.apache.bookkeeper.client.ITopologyAwareEnsemblePlacementPolicy.Predicate-">
+<a name="RRTopologyAwareCoverageEnsemble-int-int-int-int-org.apache.bookkeeper.client.ITopologyAwareEnsemblePlacementPolicy.Ensemble-org.apache.bookkeeper.client.ITopologyAwareEnsemblePlacementPolicy.Predicate-int-">
 <!--   -->
 </a>
 <ul class="blockList">
@@ -437,10 +454,11 @@ implements <a href="../../../../org/apache/bookkeeper/client/ITopologyAwareEnsem
                                           int&nbsp;ackQuorumSize,
                                           int&nbsp;distanceFromLeaves,
                                           <a href="../../../../org/apache/bookkeeper/client/ITopologyAwareEnsemblePlacementPolicy.Ensemble.html" title="interface in org.apache.bookkeeper.client">ITopologyAwareEnsemblePlacementPolicy.Ensemble</a>&lt;<a href="../../../../org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.BookieNode.html" title="class in org.apache.bookkeeper.client">TopologyAwareEnsemblePlacementPolicy.BookieNode</a>&gt;&nbsp;parentEnsemble,
-                                          <a href="../../../../org/apache/bookkeeper/client/ITopologyAwareEnsemblePlacementPolicy.Predicate.html" title="interface in org.apache.bookkeeper.client">ITopologyAwareEnsemblePlacementPolicy.Predicate</a>&lt;<a href="../../../../org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.BookieNode.html" title="class in org.apache.bookkeeper.client">TopologyAwareEnsemblePlacementPolicy.BookieNode</a>&gt;&nbsp;parentPredicate)</pre>
+                                          <a href="../../../../org/apache/bookkeeper/client/ITopologyAwareEnsemblePlacementPolicy.Predicate.html" title="interface in org.apache.bookkeeper.client">ITopologyAwareEnsemblePlacementPolicy.Predicate</a>&lt;<a href="../../../../org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.BookieNode.html" title="class in org.apache.bookkeeper.client">TopologyAwareEnsemblePlacementPolicy.BookieNode</a>&gt;&nbsp;parentPredicate,
+                                          int&nbsp;minNumRacksPerWriteQuorum)</pre>
 </li>
 </ul>
-<a name="RRTopologyAwareCoverageEnsemble-int-int-int-int-org.apache.bookkeeper.client.ITopologyAwareEnsemblePlacementPolicy.Ensemble-org.apache.bookkeeper.client.ITopologyAwareEnsemblePlacementPolicy.Predicate-java.util.Set-int-">
+<a name="RRTopologyAwareCoverageEnsemble-int-int-int-int-org.apache.bookkeeper.client.ITopologyAwareEnsemblePlacementPolicy.Ensemble-org.apache.bookkeeper.client.ITopologyAwareEnsemblePlacementPolicy.Predicate-java.util.Set-int-int-">
 <!--   -->
 </a>
 <ul class="blockListLast">
@@ -453,7 +471,8 @@ implements <a href="../../../../org/apache/bookkeeper/client/ITopologyAwareEnsem
                                           <a href="../../../../org/apache/bookkeeper/client/ITopologyAwareEnsemblePlacementPolicy.Ensemble.html" title="interface in org.apache.bookkeeper.client">ITopologyAwareEnsemblePlacementPolicy.Ensemble</a>&lt;<a href="../../../../org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.BookieNode.html" title="class in org.apache.bookkeeper.client">TopologyAwareEnsemblePlacementPolicy.BookieNode</a>&gt;&nbsp;parentEnsemble,
                                           <a href="../../../../org/apache/bookkeeper/client/ITopologyAwareEnsemblePlacementPolicy.Predicate.html" title="interface in org.apache.bookkeeper.client">ITopologyAwareEnsemblePlacementPolicy.Predicate</a>&lt;<a href="../../../../org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.BookieNode.html" title="class in org.apache.bookkeeper.client">TopologyAwareEnsemblePlacementPolicy.BookieNode</a>&gt;&nbsp;parentPredicate,
                                           <a href="http://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&gt;&nbsp;racksOrRegions,
-                                          int&nbsp;minRacksOrRegionsForDurability)</pre>
+                                          int&nbsp;minRacksOrRegionsForDurability,
+                                          int&nbsp;minNumRacksPerWriteQuorum)</pre>
 </li>
 </ul>
 </li>
