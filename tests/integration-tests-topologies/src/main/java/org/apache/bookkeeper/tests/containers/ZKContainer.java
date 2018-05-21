@@ -18,15 +18,19 @@
 
 package org.apache.bookkeeper.tests.containers;
 
+import static java.time.temporal.ChronoUnit.SECONDS;
+
+import java.time.Duration;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.bookkeeper.tests.containers.wait.ZKWaitStrategy;
+import org.apache.bookkeeper.tests.containers.wait.HttpWaitStrategy;
 
 @Slf4j
 public class ZKContainer<SELF extends ZKContainer<SELF>> extends MetadataStoreContainer<SELF> {
 
     private static final int ZK_PORT = 2181;
+    private static final int ZK_HTTP_PORT = 8080;
 
-    private static final String IMAGE_NAME = "zookeeper:3.4.11";
+    private static final String IMAGE_NAME = "apachebookkeeper/bookkeeper-current:latest";
     public static final String HOST_NAME = "metadata-store";
     public static final String SERVICE_URI = "zk://" + HOST_NAME + ":" + ZK_PORT + "/ledgers";
 
@@ -46,12 +50,21 @@ public class ZKContainer<SELF extends ZKContainer<SELF>> extends MetadataStoreCo
 
     @Override
     protected void configure() {
-        addExposedPort(ZK_PORT);
+        addExposedPorts(
+            ZK_PORT,
+            ZK_HTTP_PORT);
+        setCommand("zookeeper");
+        addEnv("BK_admin.serverPort", "" + ZK_HTTP_PORT);
     }
 
     @Override
     public void start() {
-        this.waitStrategy = new ZKWaitStrategy(ZK_PORT);
+        this.waitStrategy = new HttpWaitStrategy()
+            .forPath("/commands/ruok")
+            .forStatusCode(200)
+            .forPort(ZK_HTTP_PORT)
+            .withStartupTimeout(Duration.of(60, SECONDS));
+
         this.withCreateContainerCmdModifier(createContainerCmd -> createContainerCmd.withHostName(HOST_NAME));
 
         super.start();

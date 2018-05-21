@@ -27,6 +27,8 @@ ARG PKG_NAME=bookkeeper-server-${BK_VERSION}
 ENV BOOKIE_PORT=3181
 EXPOSE $BOOKIE_PORT
 ENV BK_USER=bookkeeper
+ENV BK_HOME=/opt/bookkeeper
+ENV JAVA_HOME=/usr/lib/jvm/jre-1.8.0
 
 # prepare utils
 RUN set -x \
@@ -42,9 +44,10 @@ RUN mv /opt/${PKG_NAME} /opt/bookkeeper
 
 WORKDIR /opt/bookkeeper
 
-COPY target/scripts/apply-config-from-env.py target/scripts/entrypoint.sh target/scripts/healthcheck.sh /opt/bookkeeper/
+COPY target/scripts /opt/bookkeeper/scripts
+RUN chmod +x -R /opt/bookkeeper/scripts/
 
-ENTRYPOINT [ "/bin/bash", "/opt/bookkeeper/entrypoint.sh" ]
-CMD ["/opt/bookkeeper/bin/bookkeeper", "bookie"]
+ENTRYPOINT [ "/bin/bash", "/opt/bookkeeper/scripts/entrypoint.sh" ]
+CMD ["bookie"]
 
-HEALTHCHECK --interval=10s --timeout=60s CMD /bin/bash /opt/bookkeeper/healthcheck.sh
+HEALTHCHECK --interval=10s --timeout=60s CMD /bin/bash /opt/bookkeeper/scripts/healthcheck.sh

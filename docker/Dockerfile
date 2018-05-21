@@ -27,6 +27,9 @@ ARG GPG_KEY=FD74402C
 ENV BOOKIE_PORT=3181
 EXPOSE $BOOKIE_PORT
 ENV BK_USER=bookkeeper
+ENV BK_HOME=/opt/bookkeeper
+ENV JAVA_HOME=/usr/lib/jvm/jre-1.8.0
+
 
 # Download Apache Bookkeeper, untar and clean up
 RUN set -x \
@@ -48,9 +51,10 @@ RUN set -x \
 
 WORKDIR /opt/bookkeeper
 
-COPY scripts/apply-config-from-env.py scripts/entrypoint.sh scripts/healthcheck.sh /opt/bookkeeper/
+COPY scripts /opt/bookkeeper/scripts
+RUN chmod +x -R /opt/bookkeeper/scripts/
 
-ENTRYPOINT [ "/bin/bash", "/opt/bookkeeper/entrypoint.sh" ]
-CMD ["/opt/bookkeeper/bin/bookkeeper", "bookie"]
+ENTRYPOINT [ "/bin/bash", "/opt/bookkeeper/scripts/entrypoint.sh" ]
+CMD ["bookie"]
 
-HEALTHCHECK --interval=10s --timeout=60s CMD /bin/bash /opt/bookkeeper/healthcheck.sh
+HEALTHCHECK --interval=10s --timeout=60s CMD /bin/bash /opt/bookkeeper/scripts/healthcheck.sh

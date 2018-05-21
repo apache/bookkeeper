@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 #/**
 # * Copyright 2007 The Apache Software Foundation
@@ -20,15 +20,4 @@
 # * limitations under the License.
 # */
 
-#!/bin/bash
-
-set -x -e -u
-
-export JAVA_HOME=/usr/lib/jvm/jre-1.8.0
-
-# Sanity check that creates a ledger, writes a few entries, reads them and deletes the ledger.
-DEFAULT_HEALTH_CHECK_CMD="/opt/bookkeeper/bin/bookkeeper shell bookiesanity"
-
-HEALTH_CHECK_CMD=${HEALTH_CHECK_CMD:-"${DEFAULT_HEALTH_CHECK_CMD}"}
-
-exec "${HEALTH_CHECK_CMD}"
+source ${SCRIPTS_DIR}/common.sh
