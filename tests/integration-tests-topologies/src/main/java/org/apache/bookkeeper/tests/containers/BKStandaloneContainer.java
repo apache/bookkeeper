@@ -59,11 +59,8 @@ public class BKStandaloneContainer<SELF extends BKStandaloneContainer<SELF>> ext
             addExposedPort(BOOKIE_BASE_PORT + i);
         }
         setCommand(
-            "/opt/bookkeeper/bin/bookkeeper",
-            "localbookie",
-            "" + numBookies
-        );
-        addEnv("JAVA_HOME", "/usr/lib/jvm/jre-1.8.0");
+            "standalone",
+            "" + numBookies);
     }
 
     @Override
@@ -75,7 +72,6 @@ public class BKStandaloneContainer<SELF extends BKStandaloneContainer<SELF>> ext
         this.withCreateContainerCmdModifier(createContainerCmd -> {
             createContainerCmd.withHostName(STANDALONE_HOST_NAME);
             createContainerCmd.withName(getContainerName());
-            createContainerCmd.withEntrypoint("/bin/bash");
         });
 
         super.start();

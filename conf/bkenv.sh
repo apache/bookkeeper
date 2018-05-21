@@ -28,6 +28,9 @@
 # Configuration file of settings used in bookie server
 # BOOKIE_CONF=
 
+# Configuration file of settings used in zookeeper server
+# BOOKIE_ZK_CONF=
+
 # Extra options to be passed to the jvm
 # BOOKIE_EXTRA_OPTS=
 
