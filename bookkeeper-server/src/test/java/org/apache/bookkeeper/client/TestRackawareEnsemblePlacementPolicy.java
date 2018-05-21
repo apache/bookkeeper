@@ -498,9 +498,9 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         repp.onClusterChanged(addrs, new HashSet<BookieSocketAddress>());
         try {
             ArrayList<BookieSocketAddress> ensemble = repp.newEnsemble(3, 2, 2, null, new HashSet<>());
-            assertEquals(0, getNumCoveredWriteQuorums(ensemble, 2));
+            assertEquals(0, getNumCoveredWriteQuorums(ensemble, 2, conf.getMinNumRacksPerWriteQuorum()));
             ArrayList<BookieSocketAddress> ensemble2 = repp.newEnsemble(4, 2, 2, null, new HashSet<>());
-            assertEquals(0, getNumCoveredWriteQuorums(ensemble2, 2));
+            assertEquals(0, getNumCoveredWriteQuorums(ensemble2, 2, conf.getMinNumRacksPerWriteQuorum()));
         } catch (BKNotEnoughBookiesException bnebe) {
             fail("Should not get not enough bookies exception even there is only one rack.");
         }
@@ -525,15 +525,91 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         addrs.add(addr4);
         repp.onClusterChanged(addrs, new HashSet<BookieSocketAddress>());
         try {
-            ArrayList<BookieSocketAddress> ensemble = repp.newEnsemble(3, 2, 2, null, new HashSet<>());
-            int numCovered = getNumCoveredWriteQuorums(ensemble, 2);
+            int ensembleSize = 3;
+            int writeQuorumSize = 2;
+            int acqQuorumSize = 2;
+            ArrayList<BookieSocketAddress> ensemble = repp.newEnsemble(ensembleSize, writeQuorumSize, acqQuorumSize,
+                    null, new HashSet<>());
+            int numCovered = getNumCoveredWriteQuorums(ensemble, 2, conf.getMinNumRacksPerWriteQuorum());
             assertTrue(numCovered >= 1 && numCovered < 3);
-            ArrayList<BookieSocketAddress> ensemble2 = repp.newEnsemble(4, 2, 2, null, new HashSet<>());
-            numCovered = getNumCoveredWriteQuorums(ensemble2, 2);
+            ensembleSize = 4;
+            ArrayList<BookieSocketAddress> ensemble2 = repp.newEnsemble(ensembleSize, writeQuorumSize, acqQuorumSize,
+                    null, new HashSet<>());
+            numCovered = getNumCoveredWriteQuorums(ensemble2, 2, conf.getMinNumRacksPerWriteQuorum());
             assertTrue(numCovered >= 1 && numCovered < 3);
         } catch (BKNotEnoughBookiesException bnebe) {
             fail("Should not get not enough bookies exception even there is only one rack.");
         }
+    }
+
+    @Test
+    public void testMinNumRacksPerWriteQuorumOfRacks() throws Exception {
+        int numOfRacksToCreate = 6;
+        int numOfNodesInEachRack = 5;
+
+        // Update cluster
+        Set<BookieSocketAddress> addrs = new HashSet<BookieSocketAddress>();
+        BookieSocketAddress addr;
+        for (int i = 0; i < numOfRacksToCreate; i++) {
+            for (int j = 0; j < numOfNodesInEachRack; j++) {
+                addr = new BookieSocketAddress("128.0.0." + ((i * numOfNodesInEachRack) + j), 3181);
+                // update dns mapping
+                StaticDNSResolver.addNodeToRack(addr.getHostName(), "/default-region/r" + i);
+                addrs.add(addr);
+            }
+        }
+
+        try {
+            ClientConfiguration newConf = new ClientConfiguration(conf);
+            // set MinNumRacksPerWriteQuorum to 4
+            int minNumRacksPerWriteQuorum = 4;
+            int ensembleSize = 12;
+            int writeQuorumSize = 6;
+            validateNumOfWriteQuorumsCoveredInEnsembleCreation(addrs, minNumRacksPerWriteQuorum, ensembleSize,
+                    writeQuorumSize);
+
+            // set MinNumRacksPerWriteQuorum to 6
+            newConf = new ClientConfiguration(conf);
+            minNumRacksPerWriteQuorum = 6;
+            ensembleSize = 6;
+            writeQuorumSize = 6;
+            validateNumOfWriteQuorumsCoveredInEnsembleCreation(addrs, minNumRacksPerWriteQuorum, ensembleSize,
+                    writeQuorumSize);
+
+            // set MinNumRacksPerWriteQuorum to 6
+            newConf = new ClientConfiguration(conf);
+            minNumRacksPerWriteQuorum = 6;
+            ensembleSize = 10;
+            writeQuorumSize = ensembleSize;
+            validateNumOfWriteQuorumsCoveredInEnsembleCreation(addrs, minNumRacksPerWriteQuorum, ensembleSize,
+                    writeQuorumSize);
+
+            // set MinNumRacksPerWriteQuorum to 5
+            newConf = new ClientConfiguration(conf);
+            minNumRacksPerWriteQuorum = 5;
+            ensembleSize = 24;
+            writeQuorumSize = 12;
+            validateNumOfWriteQuorumsCoveredInEnsembleCreation(addrs, minNumRacksPerWriteQuorum, ensembleSize,
+                    writeQuorumSize);
+
+        } catch (BKNotEnoughBookiesException bnebe) {
+            fail("Should not get not enough bookies exception even there is only one rack.");
+        }
+    }
+
+    void validateNumOfWriteQuorumsCoveredInEnsembleCreation(Set<BookieSocketAddress> addrs,
+            int minNumRacksPerWriteQuorum, int ensembleSize, int writeQuorumSize) throws Exception {
+        ClientConfiguration newConf = new ClientConfiguration(conf);
+        newConf.setMinNumRacksPerWriteQuorum(minNumRacksPerWriteQuorum);
+        repp = new RackawareEnsemblePlacementPolicy();
+        repp.initialize(newConf, Optional.<DNSToSwitchMapping> empty(), timer, DISABLE_ALL, NullStatsLogger.INSTANCE);
+        repp.withDefaultRack(NetworkTopology.DEFAULT_REGION_AND_RACK);
+        repp.onClusterChanged(addrs, new HashSet<BookieSocketAddress>());
+
+        ArrayList<BookieSocketAddress> ensemble = repp.newEnsemble(ensembleSize, writeQuorumSize, writeQuorumSize, null,
+                new HashSet<>());
+        int numCovered = getNumCoveredWriteQuorums(ensemble, writeQuorumSize, minNumRacksPerWriteQuorum);
+        assertEquals("minimum number of racks covered for writequorum ensemble: " + ensemble, ensembleSize, numCovered);
     }
 
     @Test
@@ -555,6 +631,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         StaticDNSResolver.addNodeToRack(addr6.getHostName(), "/default-region/r2");
         StaticDNSResolver.addNodeToRack(addr7.getHostName(), "/default-region/r3");
         StaticDNSResolver.addNodeToRack(addr8.getHostName(), "/default-region/r4");
+        int availableNumOfRacks = 4;
         // Update cluster
         Set<BookieSocketAddress> addrs = new HashSet<BookieSocketAddress>();
         addrs.add(addr1);
@@ -567,10 +644,17 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         addrs.add(addr8);
         repp.onClusterChanged(addrs, new HashSet<BookieSocketAddress>());
         try {
-            ArrayList<BookieSocketAddress> ensemble1 = repp.newEnsemble(3, 2, 2, null, new HashSet<>());
-            assertEquals(3, getNumCoveredWriteQuorums(ensemble1, 2));
-            ArrayList<BookieSocketAddress> ensemble2 = repp.newEnsemble(4, 2, 2, null, new HashSet<>());
-            assertEquals(4, getNumCoveredWriteQuorums(ensemble2, 2));
+            int ensembleSize = 3;
+            int writeQuorumSize = 3;
+            int ackQuorumSize = 2;
+            ArrayList<BookieSocketAddress> ensemble1 = repp.newEnsemble(ensembleSize, writeQuorumSize, ackQuorumSize,
+                    null, new HashSet<>());
+            assertEquals(ensembleSize, getNumCoveredWriteQuorums(ensemble1, 2, conf.getMinNumRacksPerWriteQuorum()));
+            ensembleSize = 4;
+            writeQuorumSize = 4;
+            ArrayList<BookieSocketAddress> ensemble2 = repp.newEnsemble(ensembleSize, writeQuorumSize, 2, null,
+                    new HashSet<>());
+            assertEquals(ensembleSize, getNumCoveredWriteQuorums(ensemble2, 2, conf.getMinNumRacksPerWriteQuorum()));
         } catch (BKNotEnoughBookiesException bnebe) {
             fail("Should not get not enough bookies exception even there is only one rack.");
         }
@@ -791,13 +875,18 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
 
         Set<BookieSocketAddress> excludeList = new HashSet<BookieSocketAddress>();
         ArrayList<BookieSocketAddress> ensemble;
+        int ensembleSize = 3;
+        int writeQuorumSize = 2;
+        int acqQuorumSize = 2;
         for (int i = 0; i < numTries; i++) {
             // addr2 is on /r2 and this is the only one on this rack. So the replacement
             // will come from other racks. However, the weight should be honored in such
             // selections as well
-            ensemble = repp.newEnsemble(3, 2, 2, null, excludeList);
-            assertTrue("Rackaware selection not happening " + getNumCoveredWriteQuorums(ensemble, 2),
-                    getNumCoveredWriteQuorums(ensemble, 2) >= 2);
+            ensemble = repp.newEnsemble(ensembleSize, writeQuorumSize, acqQuorumSize, null, excludeList);
+            assertTrue(
+                    "Rackaware selection not happening "
+                            + getNumCoveredWriteQuorums(ensemble, writeQuorumSize, conf.getMinNumRacksPerWriteQuorum()),
+                    getNumCoveredWriteQuorums(ensemble, writeQuorumSize, conf.getMinNumRacksPerWriteQuorum()) >= 2);
             for (BookieSocketAddress b : ensemble) {
                 selectionCounts.put(b, selectionCounts.get(b) + 1);
             }
@@ -875,8 +964,8 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         }
     }
 
-    static int getNumCoveredWriteQuorums(ArrayList<BookieSocketAddress> ensemble, int writeQuorumSize)
-            throws Exception {
+    static int getNumCoveredWriteQuorums(ArrayList<BookieSocketAddress> ensemble, int writeQuorumSize,
+            int minNumRacksPerWriteQuorumConfValue) throws Exception {
         int ensembleSize = ensemble.size();
         int numCoveredWriteQuorums = 0;
         for (int i = 0; i < ensembleSize; i++) {
@@ -886,7 +975,8 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
                 BookieSocketAddress addr = ensemble.get(bookieIdx);
                 racks.add(StaticDNSResolver.getRack(addr.getHostName()));
             }
-            numCoveredWriteQuorums += (racks.size() > 1 ? 1 : 0);
+            int numOfRacksToCoverTo = Math.max(Math.min(writeQuorumSize, minNumRacksPerWriteQuorumConfValue), 2);
+            numCoveredWriteQuorums += (racks.size() >= numOfRacksToCoverTo ? 1 : 0);
         }
         return numCoveredWriteQuorums;
     }
