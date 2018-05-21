@@ -47,15 +47,13 @@ public class LocationClientTest extends StreamClusterTestBase {
     private LocationClient client;
 
     @Before
-    public void setup() throws Exception {
-        Thread.sleep(300000);
-
+    public void setup() {
         scheduler = OrderedScheduler.newSchedulerBuilder()
             .name("location-client-test")
             .numThreads(1)
             .build();
         StorageClientSettings settings = StorageClientSettings.newBuilder()
-            .addEndpoints(getStreamEndpoints().toArray(new Endpoint[getNumBookies()]))
+            .addEndpoints(getExsternalStreamEndpoints().toArray(new Endpoint[getNumBookies()]))
             .usePlaintext(true)
             .build();
         client = new LocationClientImpl(
@@ -84,14 +82,14 @@ public class LocationClientTest extends StreamClusterTestBase {
         assertEquals(StatusCode.SUCCESS, oneResponse.getStatusCode());
 
         Endpoint endpoint = oneResponse.getEndpoint().getRwEndpoint();
-        log.info("Current cluster endpoints = {}", getStreamEndpoints());
+        log.info("Current cluster endpoints = {}", getInternalStreamEndpoints());
         log.info("Response : rw endpoint = {}", endpoint);
-        assertTrue(getStreamEndpoints().contains(endpoint));
+        assertTrue(getInternalStreamEndpoints().contains(endpoint));
 
         assertEquals(1, oneResponse.getEndpoint().getRoEndpointCount());
         endpoint = oneResponse.getEndpoint().getRoEndpoint(0);
         log.info("Response : ro endpoint = {}", endpoint);
-        assertTrue(getStreamEndpoints().contains(endpoint));
+        assertTrue(getInternalStreamEndpoints().contains(endpoint));
     }
 
 

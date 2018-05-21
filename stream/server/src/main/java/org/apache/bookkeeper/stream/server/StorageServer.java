@@ -39,6 +39,7 @@ import org.apache.bookkeeper.stream.server.conf.DLConfiguration;
 import org.apache.bookkeeper.stream.server.conf.StorageServerConfiguration;
 import org.apache.bookkeeper.stream.server.grpc.GrpcServerSpec;
 import org.apache.bookkeeper.stream.server.service.BookieService;
+import org.apache.bookkeeper.stream.server.service.BookieWatchService;
 import org.apache.bookkeeper.stream.server.service.ClusterControllerService;
 import org.apache.bookkeeper.stream.server.service.CuratorProviderService;
 import org.apache.bookkeeper.stream.server.service.DLNamespaceProviderService;
@@ -60,6 +61,7 @@ import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
+import org.apache.distributedlog.DistributedLogConfiguration;
 
 /**
  * A storage server is a server that run storage service and serving rpc requests.
@@ -222,6 +224,16 @@ public class StorageServer {
             bkServerConf.loadConf(bkConf.getUnderlyingConf());
         }
 
+        // Create the bookie watch service
+        BookieWatchService bkWatchService;
+        {
+            DistributedLogConfiguration dlogConf = new DistributedLogConfiguration();
+            bkWatchService = new BookieWatchService(
+                dlogConf.getEnsembleSize(),
+                bkConf,
+                NullStatsLogger.INSTANCE);
+        }
+
         // Create the curator provider service
         CuratorProviderService curatorProviderService = new CuratorProviderService(
             bkServerConf, dlConf, rootStatsLogger.scope("curator"));
@@ -231,26 +243,6 @@ public class StorageServer {
             bkServerConf,
             dlConf,
             rootStatsLogger.scope("dlog"));
-
-        // Create a registration service provider
-        RegistrationServiceProvider regService = new RegistrationServiceProvider(
-            bkServerConf,
-            dlConf,
-            rootStatsLogger.scope("registration").scope("provider"));
-
-        // Create a cluster controller service
-        ClusterControllerService clusterControllerService = new ClusterControllerService(
-            storageConf,
-            () -> new ClusterControllerImpl(
-                new ZkClusterMetadataStore(
-                    curatorProviderService.get(),
-                    ZKMetadataDriverBase.resolveZkServers(bkServerConf),
-                    ZK_METADATA_ROOT_PATH),
-                regService.get(),
-                new DefaultStorageContainerController(),
-                new ZkClusterControllerLeaderSelector(curatorProviderService.get(), ZK_METADATA_ROOT_PATH),
-                storageConf),
-            rootStatsLogger.scope("cluster_controller"));
 
         // Create range (stream) store
         RangeStoreBuilder rangeStoreBuilder = RangeStoreBuilder.newBuilder()
@@ -295,6 +287,12 @@ public class StorageServer {
         GrpcService grpcService = new GrpcService(
             serverConf, serverSpec, rpcStatsLogger);
 
+        // Create a registration service provider
+        RegistrationServiceProvider regService = new RegistrationServiceProvider(
+            bkServerConf,
+            dlConf,
+            rootStatsLogger.scope("registration").scope("provider"));
+
         // Create a registration state service only when service is ready.
         RegistrationStateService regStateService = new RegistrationStateService(
             myEndpoint,
@@ -303,15 +301,30 @@ public class StorageServer {
             regService,
             rootStatsLogger.scope("registration"));
 
+        // Create a cluster controller service
+        ClusterControllerService clusterControllerService = new ClusterControllerService(
+            storageConf,
+            () -> new ClusterControllerImpl(
+                new ZkClusterMetadataStore(
+                    curatorProviderService.get(),
+                    ZKMetadataDriverBase.resolveZkServers(bkServerConf),
+                    ZK_METADATA_ROOT_PATH),
+                regService.get(),
+                new DefaultStorageContainerController(),
+                new ZkClusterControllerLeaderSelector(curatorProviderService.get(), ZK_METADATA_ROOT_PATH),
+                storageConf),
+            rootStatsLogger.scope("cluster_controller"));
+
         // Create all the service stack
         return serverBuilder
+            .addComponent(bkWatchService)           // service that watches bookies
             .addComponent(curatorProviderService)   // service that provides curator client
             .addComponent(dlNamespaceProvider)      // service that provides dl namespace
-            .addComponent(regService)               // service that provides registration client
-            .addComponent(clusterControllerService) // service that run cluster controller service
             .addComponent(storageService)           // range (stream) store
             .addComponent(grpcService)              // range (stream) server (gRPC)
+            .addComponent(regService)               // service that provides registration client
             .addComponent(regStateService)          // service that manages server state
+            .addComponent(clusterControllerService) // service that run cluster controller service
             .build();
     }
 

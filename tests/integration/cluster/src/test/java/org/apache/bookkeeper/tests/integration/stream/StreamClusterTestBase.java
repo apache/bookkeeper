@@ -42,7 +42,6 @@ public abstract class StreamClusterTestBase extends BookKeeperClusterTestBase {
             .clusterName(RandomStringUtils.randomAlphabetic(8))
             .numBookies(3)
             .extraServerComponents("org.apache.bookkeeper.stream.server.StreamStorageLifecycleComponent")
-            .enableContainerLog(true)
             .build();
         BookKeeperClusterTestBase.setupCluster(spec);
     }
@@ -56,10 +55,17 @@ public abstract class StreamClusterTestBase extends BookKeeperClusterTestBase {
         return bkCluster.getBookieContainers().size();
     }
 
-    protected static List<Endpoint> getStreamEndpoints() {
+    protected static List<Endpoint> getExsternalStreamEndpoints() {
         return bkCluster.getBookieContainers().values().stream()
             .map(container ->
                 NetUtils.parseEndpoint(container.getExternalGrpcEndpointStr()))
+            .collect(Collectors.toList());
+    }
+
+    protected static List<Endpoint> getInternalStreamEndpoints() {
+        return bkCluster.getBookieContainers().values().stream()
+            .map(container ->
+                NetUtils.parseEndpoint(container.getInternalGrpcEndpointStr()))
             .collect(Collectors.toList());
     }
 

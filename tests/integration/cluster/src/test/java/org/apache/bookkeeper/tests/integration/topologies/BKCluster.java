@@ -31,6 +31,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.MetadataDrivers;
+import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
 import org.apache.bookkeeper.stream.storage.impl.cluster.ZkClusterInitializer;
 import org.apache.bookkeeper.tests.containers.BookieContainer;
 import org.apache.bookkeeper.tests.containers.MetadataStoreContainer;
@@ -100,8 +101,10 @@ public class BKCluster {
         if (!Strings.isNullOrEmpty(extraServerComponents)) {
             int numStorageContainers = numBookies > 0 ? 2 * numBookies : 8;
             // initialize the stream storage.
-            new ZkClusterInitializer().initializeCluster(
-                URI.create(metadataContainer.getExternalServiceUri()),
+            new ZkClusterInitializer(
+                ZKMetadataDriverBase.getZKServersFromServiceUri(URI.create(metadataContainer.getExternalServiceUri()))
+            ).initializeCluster(
+                URI.create(metadataContainer.getInternalServiceUri()),
                 numStorageContainers);
             log.info("Successfully initialized stream storage metadata with {} storage containers",
                 numStorageContainers);

@@ -20,11 +20,14 @@ package org.apache.bookkeeper.tests.containers;
 
 import static java.time.temporal.ChronoUnit.SECONDS;
 
+import com.google.common.base.Strings;
 import java.net.URI;
 import java.time.Duration;
 import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.bookkeeper.tests.DockerUtils;
 import org.apache.bookkeeper.tests.containers.wait.HttpWaitStrategy;
+import org.testcontainers.containers.wait.strategy.HostPortWaitStrategy;
 
 /**
  * Test Container for Bookies.
@@ -61,6 +64,10 @@ public class BookieContainer<SELF extends BookieContainer<SELF>> extends ChaosCo
         return getContainerIpAddress() + ":" + getMappedPort(BOOKIE_GRPC_PORT);
     }
 
+    public String getInternalGrpcEndpointStr() {
+        return DockerUtils.getContainerIP(dockerClient, containerId) + ":" + BOOKIE_GRPC_PORT;
+    }
+
     @Override
     protected void configure() {
         addExposedPorts(
@@ -84,11 +91,16 @@ public class BookieContainer<SELF extends BookieContainer<SELF>> extends ChaosCo
 
     @Override
     public void start() {
-        this.waitStrategy = new HttpWaitStrategy()
-            .forPath("/heartbeat")
-            .forStatusCode(200)
-            .forPort(BOOKIE_HTTP_PORT)
-            .withStartupTimeout(Duration.of(60, SECONDS));
+        if (Strings.isNullOrEmpty(extraServerComponents)) {
+            this.waitStrategy = new HttpWaitStrategy()
+                .forPath("/heartbeat")
+                .forStatusCode(200)
+                .forPort(BOOKIE_HTTP_PORT)
+                .withStartupTimeout(Duration.of(60, SECONDS));
+        } else {
+            this.waitStrategy = new HostPortWaitStrategy()
+                .withStartupTimeout(Duration.of(300, SECONDS));
+        }
         this.withCreateContainerCmdModifier(createContainerCmd -> {
             createContainerCmd.withHostName(hostname);
             createContainerCmd.withName(getContainerName());

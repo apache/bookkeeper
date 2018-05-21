@@ -39,6 +39,12 @@ import org.apache.zookeeper.KeeperException;
 @Slf4j
 public class ZkClusterInitializer implements ClusterInitializer  {
 
+    private final String zkExternalConnectString;
+
+    public ZkClusterInitializer(String zkServers) {
+        this.zkExternalConnectString = zkServers;
+    }
+
     @Override
     public boolean acceptsURI(URI metadataServiceUri) {
         return metadataServiceUri.getScheme().toLowerCase().startsWith("zk");
@@ -46,14 +52,19 @@ public class ZkClusterInitializer implements ClusterInitializer  {
 
     @Override
     public void initializeCluster(URI metadataServiceUri, int numStorageContainers) {
-        String zkEnsemble = ZKMetadataDriverBase.getZKServersFromServiceUri(metadataServiceUri);
+        String zkInternalConnectString = ZKMetadataDriverBase.getZKServersFromServiceUri(metadataServiceUri);
+        // 1) `zkExternalConnectString` are the public endpoints, where the tool can interact with.
+        //    It allows the tools running outside of the cluster. It is useful for being used in dockerized environment.
+        // 2) `zkInternalConnectString` are the internal endpoints, where the services can interact with.
+        //    It is used by dlog to bind a namespace.
         try (CuratorFramework client = CuratorFrameworkFactory.newClient(
-            zkEnsemble,
+            zkExternalConnectString,
             new ExponentialBackoffRetry(100, Integer.MAX_VALUE, 10000)
         )) {
             client.start();
 
-            ZkClusterMetadataStore store = new ZkClusterMetadataStore(client, zkEnsemble, ZK_METADATA_ROOT_PATH);
+            ZkClusterMetadataStore store =
+                new ZkClusterMetadataStore(client, zkInternalConnectString, ZK_METADATA_ROOT_PATH);
 
             ClusterMetadata metadata;
             try {

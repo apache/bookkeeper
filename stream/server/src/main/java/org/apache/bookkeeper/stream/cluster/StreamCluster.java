@@ -42,21 +42,15 @@ import org.apache.bookkeeper.shims.zk.ZooKeeperServerShim;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stream.proto.NamespaceConfiguration;
 import org.apache.bookkeeper.stream.proto.NamespaceProperties;
-import org.apache.bookkeeper.stream.proto.cluster.ClusterMetadata;
 import org.apache.bookkeeper.stream.proto.common.Endpoint;
 import org.apache.bookkeeper.stream.server.StorageServer;
 import org.apache.bookkeeper.stream.storage.StorageConstants;
 import org.apache.bookkeeper.stream.storage.conf.StorageConfiguration;
 import org.apache.bookkeeper.stream.storage.exceptions.StorageRuntimeException;
 import org.apache.bookkeeper.stream.storage.impl.cluster.ZkClusterInitializer;
-import org.apache.bookkeeper.stream.storage.impl.cluster.ZkClusterMetadataStore;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.curator.framework.CuratorFramework;
-import org.apache.curator.framework.CuratorFrameworkFactory;
-import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.apache.distributedlog.DistributedLogConfiguration;
 import org.apache.distributedlog.LocalDLMEmulator;
-import org.apache.zookeeper.KeeperException;
 
 /**
  * A Cluster that runs a few storage nodes.
@@ -141,7 +135,7 @@ public class StreamCluster
     }
 
     private void initializeCluster() throws Exception {
-        new ZkClusterInitializer().initializeCluster(
+        new ZkClusterInitializer(zkEnsemble).initializeCluster(
             URI.create("zk://" + zkEnsemble),
             spec.numServers() * 2);
 
