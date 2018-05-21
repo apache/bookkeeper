@@ -86,7 +86,9 @@ public class BKCluster {
 
     public void start() throws Exception {
         // start the metadata store
-        this.metadataContainer.tailContainerLog();
+        if (enableContainerLog) {
+            this.metadataContainer.tailContainerLog();
+        }
         this.metadataContainer.start();
         log.info("Successfully started metadata store container.");
 

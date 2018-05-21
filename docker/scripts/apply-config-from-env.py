@@ -42,6 +42,7 @@ print 'conf files: '
 print conf_files
 
 bk_env_prefix = 'BK_'
+zk_env_prefix = 'ZK_'
 
 for conf_filename in conf_files:
     lines = []  # List of config file lines
@@ -73,6 +74,12 @@ for conf_filename in conf_files:
         v = os.environ[k]
         if k.startswith(bk_env_prefix):
             search_key = k[len(bk_env_prefix):]
+            if search_key in keys:
+                print '[%s] Applying config %s = %s' % (conf_filename, search_key, v)
+                idx = keys[search_key]
+                lines[idx] = '%s=%s\n' % (search_key, v)
+        if k.startswith(zk_env_prefix):
+            search_key = k[len(zk_env_prefix):]
             if search_key in keys:
                 print '[%s] Applying config %s = %s' % (conf_filename, search_key, v)
                 idx = keys[search_key]

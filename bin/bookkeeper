@@ -35,7 +35,7 @@ BOOKIE_CLASSPATH=$(set_module_classpath ${BOOKIE_MODULE_PATH})
 
 # default variables
 DEFAULT_CONF=${BK_HOME}/conf/bk_server.conf
-DEFAULT_ZK_CONF=$BK_HOME/conf/zookeeper.conf
+DEFAULT_ZK_CONF=${BK_HOME}/conf/zookeeper.conf
 
 bookkeeper_help() {
     cat <<EOF
@@ -44,8 +44,10 @@ where command is one of:
     bookie              Run a bookie server
     autorecovery        Run AutoRecovery service daemon
     localbookie <n>     Run a test ensemble of <n> bookies locally
+    standalone <n>      Run a standalone cluster of <n> bookies locally
     upgrade             Upgrade bookie filesystem
     shell               Run shell for admin commands
+    zookeeper           Run zookeeper server
     help                This help message
 
 or command is the full name of a class with a defined main() method.
@@ -128,7 +130,7 @@ if [ ${COMMAND} == "bookie" ]; then
   exec ${JAVA} ${OPTS} ${JMX_ARGS} org.apache.bookkeeper.server.Main --conf ${BOOKIE_CONF} $@
 elif [ ${COMMAND} == "autorecovery" ]; then
   exec ${JAVA} ${OPTS} ${JMX_ARGS} org.apache.bookkeeper.replication.AutoRecoveryMain --conf ${BOOKIE_CONF} $@
-elif [ ${COMMAND} == "localbookie" ]; then
+elif [ ${COMMAND} == "localbookie" -o ${COMMAND} == "standalone" ]; then
   NUMBER=$1
   shift
   exec ${JAVA} ${OPTS} ${JMX_ARGS} -Dzookeeper.4lw.commands.whitelist='*' org.apache.bookkeeper.util.LocalBookKeeper ${NUMBER} ${BOOKIE_CONF} $@
