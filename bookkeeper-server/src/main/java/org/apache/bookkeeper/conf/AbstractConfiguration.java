@@ -141,6 +141,9 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
     // Validate bookie process user
     public static final String PERMITTED_STARTUP_USERS = "permittedStartupUsers";
 
+    // minimum number of racks per write quorum
+    public static final String MIN_NUM_RACKS_PER_WRITE_QUORUM = "minNumRacksPerWriteQuorum";
+
     protected AbstractConfiguration() {
         super();
         if (READ_SYSTEM_PROPERTIES) {
@@ -779,6 +782,19 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
         return getString(TLS_ENABLED_PROTOCOLS, null);
     }
 
+    /**
+     * Set the minimum number of racks per write quorum.
+     */
+    public void setMinNumRacksPerWriteQuorum(int minNumRacksPerWriteQuorum) {
+        setProperty(MIN_NUM_RACKS_PER_WRITE_QUORUM, minNumRacksPerWriteQuorum);
+    }
+
+    /**
+     * Get the minimum number of racks per write quorum.
+     */
+    public int getMinNumRacksPerWriteQuorum() {
+        return getInteger(MIN_NUM_RACKS_PER_WRITE_QUORUM, 2);
+    }
 
     /**
      * Trickery to allow inheritance with fluent style.

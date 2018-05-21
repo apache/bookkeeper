@@ -75,6 +75,7 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
     protected boolean enableValidation = true;
     protected boolean enforceDurabilityInReplace = false;
     protected Feature disableDurabilityFeature;
+    protected int minNumRacksPerWriteQuorum;
 
     RegionAwareEnsemblePlacementPolicy() {
         super();
@@ -130,7 +131,7 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
             if (null == perRegionPlacement.get(region)) {
                 perRegionPlacement.put(region, new RackawareEnsemblePlacementPolicy()
                         .initialize(dnsResolver, timer, this.reorderReadsRandom, this.stabilizePeriodSeconds,
-                                this.isWeighted, this.maxWeightMultiple, statsLogger)
+                                this.isWeighted, this.maxWeightMultiple, this.minNumRacksPerWriteQuorum, statsLogger)
                         .withDefaultRack(NetworkTopology.DEFAULT_REGION_AND_RACK));
             }
 
@@ -178,7 +179,7 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
             for (String region: regions) {
                 perRegionPlacement.put(region, new RackawareEnsemblePlacementPolicy(true)
                         .initialize(dnsResolver, timer, this.reorderReadsRandom, this.stabilizePeriodSeconds,
-                                this.isWeighted, this.maxWeightMultiple, statsLogger)
+                                this.isWeighted, this.maxWeightMultiple, this.minNumRacksPerWriteQuorum, statsLogger)
                         .withDefaultRack(NetworkTopology.DEFAULT_REGION_AND_RACK));
             }
             minRegionsForDurability = conf.getInt(REPP_MINIMUM_REGIONS_FOR_DURABILITY,
@@ -202,6 +203,7 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
                         conf.getString(REPP_DISABLE_DURABILITY_FEATURE_NAME,
                                 BookKeeperConstants.FEATURE_REPP_DISABLE_DURABILITY_ENFORCEMENT));
         }
+        this.minNumRacksPerWriteQuorum = conf.getMinNumRacksPerWriteQuorum();
         return this;
     }
 
@@ -285,7 +287,7 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
                 RRTopologyAwareCoverageEnsemble ensemble = new RRTopologyAwareCoverageEnsemble(ensembleSize,
                         writeQuorumSize, ackQuorumSize, REGIONID_DISTANCE_FROM_LEAVES,
                         effectiveMinRegionsForDurability > 0 ? new HashSet<>(perRegionPlacement.keySet()) : null,
-                        effectiveMinRegionsForDurability);
+                        effectiveMinRegionsForDurability, minNumRacksPerWriteQuorum);
                 TopologyAwareEnsemblePlacementPolicy nextPolicy = perRegionPlacement.get(
                         availableRegions.iterator().next());
                 return nextPolicy.newEnsemble(ensembleSize, writeQuorumSize, writeQuorumSize, excludeBookies, ensemble,
@@ -316,7 +318,7 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
                         // regardless of regions that are available; constraints are
                         // always applied based on all possible regions
                         effectiveMinRegionsForDurability > 0 ? new HashSet<>(perRegionPlacement.keySet()) : null,
-                        effectiveMinRegionsForDurability);
+                        effectiveMinRegionsForDurability, minNumRacksPerWriteQuorum);
                 remainingEnsembleBeforeIteration = remainingEnsemble;
                 int regionsToAllocate = numRemainingRegions;
                 for (Map.Entry<String, Pair<Integer, Integer>> regionEntry: regionsWiseAllocation.entrySet()) {
@@ -426,7 +428,7 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
                 ackQuorumSize,
                 REGIONID_DISTANCE_FROM_LEAVES,
                 effectiveMinRegionsForDurability > 0 ? new HashSet<String>(perRegionPlacement.keySet()) : null,
-                effectiveMinRegionsForDurability);
+                effectiveMinRegionsForDurability, minNumRacksPerWriteQuorum);
 
             BookieNode bookieNodeToReplace = knownBookies.get(bookieToReplace);
             if (null == bookieNodeToReplace) {
