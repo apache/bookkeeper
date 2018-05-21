@@ -61,7 +61,7 @@ public class TestDLFileSystem extends TestDLFSBase {
         }
         assertTrue(fs.exists(path));
 
-        File tempFile = new File("/tmp/" + runtime.getMethodName());
+        File tempFile = new File(newTempDir(runtime.getMethodName()), "test.bin");
         tempFile.delete();
         Path localDst = new Path(tempFile.getPath());
         // copy the file
