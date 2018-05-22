@@ -37,7 +37,7 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
 abstract class EntryLogManagerBase implements EntryLogManager {
     volatile List<BufferedLogChannel> rotatedLogChannels;
     final EntryLoggerAllocator entryLoggerAllocator;
-    private final LedgerDirsManager ledgerDirsManager;
+    final LedgerDirsManager ledgerDirsManager;
     private final List<EntryLogger.EntryLogListener> listeners;
     /**
      * The maximum size of a entry logger file.
@@ -93,12 +93,12 @@ abstract class EntryLogManagerBase implements EntryLogManager {
         return logChannel.position() + size > Integer.MAX_VALUE;
     }
 
-    abstract BufferedLogChannel getCurrentLogForLedger(long ledgerId);
+    abstract BufferedLogChannel getCurrentLogForLedger(long ledgerId) throws IOException;
 
     abstract BufferedLogChannel getCurrentLogForLedgerForAddEntry(long ledgerId, int entrySize, boolean rollLog)
             throws IOException;
 
-    abstract void setCurrentLogForLedgerAndAddToRotate(long ledgerId, BufferedLogChannel logChannel);
+    abstract void setCurrentLogForLedgerAndAddToRotate(long ledgerId, BufferedLogChannel logChannel) throws IOException;
 
     /*
      * flush current logs.

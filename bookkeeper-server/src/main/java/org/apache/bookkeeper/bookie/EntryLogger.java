@@ -45,9 +45,7 @@ import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -366,63 +364,8 @@ public class EntryLogger {
         this.entryLoggerAllocator = new EntryLoggerAllocator(conf, ledgerDirsManager, recentlyCreatedEntryLogsStatus,
                 logId);
         if (entryLogPerLedgerEnabled) {
-            this.entryLogManager = new EntryLogManagerForSingleEntryLog(conf, ledgerDirsManager, entryLoggerAllocator,
-                    listeners, recentlyCreatedEntryLogsStatus) {
-                @Override
-                public void checkpoint() throws IOException {
-                    /*
-                     * In the case of entryLogPerLedgerEnabled we need to flush
-                     * both rotatedlogs and currentlogs. This is needed because
-                     * syncThread periodically does checkpoint and at this time
-                     * all the logs should be flushed.
-                     *
-                     */
-                    super.flush();
-                }
-
-                @Override
-                public void prepareSortedLedgerStorageCheckpoint(long numBytesFlushed) throws IOException {
-                    // do nothing
-                    /*
-                     * prepareSortedLedgerStorageCheckpoint is required for
-                     * singleentrylog scenario, but it is not needed for
-                     * entrylogperledger scenario, since entries of a ledger go
-                     * to a entrylog (even during compaction) and SyncThread
-                     * drives periodic checkpoint logic.
-                     */
-
-                }
-
-                @Override
-                public void prepareEntryMemTableFlush() {
-                    // do nothing
-                }
-
-                @Override
-                public boolean commitEntryMemTableFlush() throws IOException {
-                    // lock it only if there is new data
-                    // so that cache accesstime is not changed
-                    Set<BufferedLogChannel> copyOfCurrentLogs = new HashSet<BufferedLogChannel>(
-                            Arrays.asList(super.getCurrentLogForLedger(EntryLogger.UNASSIGNED_LEDGERID)));
-                    for (BufferedLogChannel currentLog : copyOfCurrentLogs) {
-                        if (reachEntryLogLimit(currentLog, 0L)) {
-                            synchronized (this) {
-                                if (reachEntryLogLimit(currentLog, 0L)) {
-                                    LOG.info("Rolling entry logger since it reached size limitation");
-                                    createNewLog(EntryLogger.UNASSIGNED_LEDGERID);
-                                }
-                            }
-                        }
-                    }
-                    /*
-                     * in the case of entrylogperledger, SyncThread drives
-                     * checkpoint logic for every flushInterval. So
-                     * EntryMemtable doesn't need to call checkpoint in the case
-                     * of entrylogperledger.
-                     */
-                    return false;
-                }
-            };
+            this.entryLogManager = new EntryLogManagerForEntryLogPerLedger(conf, ledgerDirsManager,
+                    entryLoggerAllocator, listeners, recentlyCreatedEntryLogsStatus);
         } else {
             this.entryLogManager = new EntryLogManagerForSingleEntryLog(conf, ledgerDirsManager, entryLoggerAllocator,
                     listeners, recentlyCreatedEntryLogsStatus);
