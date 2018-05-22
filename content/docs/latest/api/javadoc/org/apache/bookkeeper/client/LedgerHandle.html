@@ -223,7 +223,9 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.htm
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>(package private) long</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html#lastAddConfirmed">lastAddConfirmed</a></span></code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html#lastAddConfirmed">lastAddConfirmed</a></span></code>
+<div class="block">Last entryId which has been confirmed to be written durably to the bookies.</div>
+</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>(package private) long</code></td>
@@ -266,22 +268,28 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.htm
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html#pendingAddOps">pendingAddOps</a></span></code>&nbsp;</td>
 </tr>
 <tr class="rowColor">
+<td class="colFirst"><code>(package private) long</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html#pendingAddsSequenceHead">pendingAddsSequenceHead</a></span></code>
+<div class="block">Next entryId which is expected to move forward during <a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html#sendAddSuccessCallbacks--"><code>sendAddSuccessCallbacks()</code></a>.</div>
+</td>
+</tr>
+<tr class="altColor">
 <td class="colFirst"><code>(package private) int</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html#recoveryReadBatchSize">recoveryReadBatchSize</a></span></code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>(package private) com.google.common.util.concurrent.RateLimiter</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html#throttler">throttler</a></span></code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>(package private) <a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/ScheduledFuture.html?is-external=true" title="class or interface in java.util.concurrent">ScheduledFuture</a>&lt;?&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html#timeoutFuture">timeoutFuture</a></span></code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>(package private) long</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html#waitForWriteSetMs">waitForWriteSetMs</a></span></code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>(package private) <a href="http://docs.oracle.com/javase/8/docs/api/java/util/EnumSet.html?is-external=true" title="class or interface in java.util">EnumSet</a>&lt;<a href="../../../../org/apache/bookkeeper/client/api/WriteFlag.html" title="enum in org.apache.bookkeeper.client.api">WriteFlag</a>&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html#writeFlags">writeFlags</a></span></code>&nbsp;</td>
 </tr>
@@ -886,6 +894,19 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.htm
 <li class="blockList">
 <h4>lastAddConfirmed</h4>
 <pre>volatile&nbsp;long lastAddConfirmed</pre>
+<div class="block">Last entryId which has been confirmed to be written durably to the bookies.
+ This value is used by readers, the the LAC protocol</div>
+</li>
+</ul>
+<a name="pendingAddsSequenceHead">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>pendingAddsSequenceHead</h4>
+<pre>volatile&nbsp;long pendingAddsSequenceHead</pre>
+<div class="block">Next entryId which is expected to move forward during <a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html#sendAddSuccessCallbacks--"><code>sendAddSuccessCallbacks()</code></a>. This is important
+ in order to have an ordered sequence of addEntry ackknowledged to the writer</div>
 </li>
 </ul>
 <a name="length">
