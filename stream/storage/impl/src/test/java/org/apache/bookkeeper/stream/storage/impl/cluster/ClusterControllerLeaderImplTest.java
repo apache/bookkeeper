@@ -30,6 +30,7 @@ import static org.mockito.Mockito.when;
 
 import java.time.Duration;
 import java.util.Collections;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
@@ -82,7 +83,7 @@ public class ClusterControllerLeaderImplTest {
         ClusterMetadataStore originalStore = metadataStore;
         this.metadataStore = new ClusterMetadataStore() {
             @Override
-            public void initializeCluster(int numStorageContainers) {
+            public void initializeCluster(int numStorageContainers, Optional<String> segmentStorePath) {
                 originalStore.initializeCluster(numStorageContainers);
             }
 
