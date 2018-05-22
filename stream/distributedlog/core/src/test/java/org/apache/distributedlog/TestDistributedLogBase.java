@@ -97,12 +97,6 @@ public class TestDistributedLogBase {
     protected static int numBookies = 3;
     private static final List<File> tmpDirs = new ArrayList<File>();
 
-    protected static File newTempDir(String name) throws IOException {
-        File zkTmpDir = IOUtils.createTempDir(name, "distrlog");
-        tmpDirs.add(zkTmpDir);
-        return zkTmpDir;
-    }
-
     @BeforeClass
     public static void setupCluster() throws Exception {
         File zkTmpDir = IOUtils.createTempDir("zookeeper", "distrlog");
