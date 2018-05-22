@@ -1199,6 +1199,20 @@ Because compaction, journal replays can still write data to disks when a bookie 
 </td>
       <td></td>
     </tr>
+    
+    <tr id="entrylogMapAccessExpiryTimeInSeconds">
+      <td><code>entrylogMapAccessExpiryTimeInSeconds</code></td>
+      <td><p>config specifying if the entrylog per ledger is enabled, then the amount of time EntryLogManagerForEntryLogPerLedger should wait for closing the entrylog file after the last addEntry call for that ledger, if explicit writeclose for that ledger is not received.</p>
+</td>
+      <td><code>300</code></td>
+    </tr>
+    
+    <tr id="maximumNumberOfActiveEntryLogs">
+      <td><code>maximumNumberOfActiveEntryLogs</code></td>
+      <td><p>in entryLogPerLedger feature, this specifies the maximum number of entrylogs that can be active at a given point in time. If there are more number of active entryLogs then the maximumNumberOfActiveEntryLogs then the entrylog will be evicted from the cache.</p>
+</td>
+      <td><code>500</code></td>
+    </tr>
      <!-- for param in group.params -->
   </tbody>
 </table>
