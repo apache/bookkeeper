@@ -19,7 +19,7 @@
 import common_job_properties
 
 // This job deploys a snapshot of latest master to artifactory nightly
-freeStyleJob('bookkeeper-jenkins-testing/bookkeeper_release_nightly_snapshot') {
+freeStyleJob('bookkeeper-jenkins-testing-bookkeeper_release_nightly_snapshot') {
   description('runs a `mvn clean deploy` of the nightly snapshot for bookkeeper.')
 
   // Set common parameters.
