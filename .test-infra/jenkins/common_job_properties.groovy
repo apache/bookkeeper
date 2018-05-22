@@ -110,7 +110,7 @@ class common_job_properties {
 
       credentialsBinding {
         string("COVERALLS_REPO_TOKEN", "bookkeeper-coveralls-token")
-        usernamePassword(credentialsId: 'bookkeeper_dockerhub', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASSWORD')
+        usernamePassword('DOCKER_USER', 'DOCKER_PASSWORD', 'bookkeeper_dockerhub')
       }
     }
   }
