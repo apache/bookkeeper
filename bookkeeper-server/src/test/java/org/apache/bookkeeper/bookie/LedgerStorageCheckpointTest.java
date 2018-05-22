@@ -28,9 +28,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.time.Duration;
-import java.util.Arrays;
 import java.util.Enumeration;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
@@ -42,6 +40,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 
+import org.apache.bookkeeper.bookie.EntryLogManagerForEntryLogPerLedger.BufferedLogChannelWithDirInfo;
 import org.apache.bookkeeper.bookie.EntryLogger.BufferedLogChannel;
 import org.apache.bookkeeper.bookie.Journal.LastLogMark;
 import org.apache.bookkeeper.client.BKException;
@@ -494,44 +493,33 @@ public class LedgerStorageCheckpointTest {
         BookKeeper bkClient = new BookKeeper(clientConf);
         InterleavedLedgerStorage ledgerStorage = (InterleavedLedgerStorage) server.getBookie().ledgerStorage;
         EntryLogger entryLogger = ledgerStorage.entryLogger;
-        EntryLogManagerBase entryLogManagerBase = (EntryLogManagerBase) entryLogger.getEntryLogManager();
+        EntryLogManagerForEntryLogPerLedger entryLogManager = (EntryLogManagerForEntryLogPerLedger) entryLogger
+                .getEntryLogManager();
 
+        Random rand = new Random();
         int numOfEntries = 5;
         byte[] dataBytes = "data".getBytes();
 
-        long ledgerId = 10;
-        LedgerHandle handle = bkClient.createLedgerAdv(ledgerId, 1, 1, 1, DigestType.CRC32, "passwd".getBytes(), null);
-        for (int j = 0; j < numOfEntries; j++) {
-            handle.addEntry(j, dataBytes);
+        int numOfLedgers = 3;
+        long[] ledgerIds = new long[numOfLedgers];
+        LedgerHandle handle;
+        for (int i = 0; i < numOfLedgers; i++) {
+            ledgerIds[i] = rand.nextInt(100000) + 1;
+            handle = bkClient.createLedgerAdv(ledgerIds[i], 1, 1, 1, DigestType.CRC32, "passwd".getBytes(), null);
+            for (int j = 0; j < numOfEntries; j++) {
+                handle.addEntry(j, dataBytes);
+            }
+            // simulate rolling entrylog
+            entryLogManager.createNewLog(ledgerIds[i]);
         }
-        handle.close();
-        // simulate rolling entrylog
-        entryLogManagerBase.createNewLog(ledgerId);
 
-        ledgerId = 20;
-        handle = bkClient.createLedgerAdv(ledgerId, 1, 1, 1, DigestType.CRC32, "passwd".getBytes(), null);
-        for (int j = 0; j < numOfEntries; j++) {
-            handle.addEntry(j, dataBytes);
-        }
-        handle.close();
-        // simulate rolling entrylog
-        entryLogManagerBase.createNewLog(ledgerId);
-
-        ledgerId = 30;
-        handle = bkClient.createLedgerAdv(ledgerId, 1, 1, 1, DigestType.CRC32, "passwd".getBytes(), null);
-        for (int j = 0; j < numOfEntries; j++) {
-            handle.addEntry(j, dataBytes);
-        }
-        handle.close();
-
-        Set<BufferedLogChannel> copyOfCurrentLogs = new HashSet<BufferedLogChannel>(
-                Arrays.asList(entryLogManagerBase.getCurrentLogForLedger(EntryLogger.UNASSIGNED_LEDGERID)));
-        for (BufferedLogChannel currentLog : copyOfCurrentLogs) {
+        Set<BufferedLogChannelWithDirInfo> copyOfCurrentLogsWithDirInfo = entryLogManager.getCopyOfCurrentLogs();
+        for (BufferedLogChannelWithDirInfo currentLogWithDirInfo : copyOfCurrentLogsWithDirInfo) {
             Assert.assertNotEquals("bytesWrittenSinceLastFlush shouldn't be zero", 0,
-                    currentLog.getUnpersistedBytes());
+                    currentLogWithDirInfo.getLogChannel().getUnpersistedBytes());
         }
         Assert.assertNotEquals("There should be logChannelsToFlush", 0,
-                entryLogManagerBase.getRotatedLogChannels().size());
+                entryLogManager.getRotatedLogChannels().size());
 
         /*
          * wait for atleast flushInterval period, so that checkpoint can happen.
@@ -542,15 +530,14 @@ public class LedgerStorageCheckpointTest {
          * since checkpoint happenend, there shouldn't be any logChannelsToFlush
          * and bytesWrittenSinceLastFlush should be zero.
          */
-        List<BufferedLogChannel> copyOfRotatedLogChannels = entryLogManagerBase.getRotatedLogChannels();
+        List<BufferedLogChannel> copyOfRotatedLogChannels = entryLogManager.getRotatedLogChannels();
         Assert.assertTrue("There shouldn't be logChannelsToFlush",
                 ((copyOfRotatedLogChannels == null) || (copyOfRotatedLogChannels.size() == 0)));
 
-        copyOfCurrentLogs = new HashSet<BufferedLogChannel>(
-                Arrays.asList(entryLogManagerBase.getCurrentLogForLedger(EntryLogger.UNASSIGNED_LEDGERID)));
-        for (BufferedLogChannel currentLog : copyOfCurrentLogs) {
+        copyOfCurrentLogsWithDirInfo = entryLogManager.getCopyOfCurrentLogs();
+        for (BufferedLogChannelWithDirInfo currentLogWithDirInfo : copyOfCurrentLogsWithDirInfo) {
             Assert.assertEquals("bytesWrittenSinceLastFlush should be zero", 0,
-                    currentLog.getUnpersistedBytes());
+                    currentLogWithDirInfo.getLogChannel().getUnpersistedBytes());
         }
     }
 
