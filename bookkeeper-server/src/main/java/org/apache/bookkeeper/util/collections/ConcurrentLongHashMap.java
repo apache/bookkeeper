@@ -196,7 +196,10 @@ public class ConcurrentLongHashMap<V> {
         return keys;
     }
 
-    List<V> values() {
+    /**
+     * @return a new list of all keys (makes a copy)
+     */
+    public List<V> values() {
         List<V> values = Lists.newArrayListWithExpectedSize((int) size());
         forEach((key, value) -> values.add(value));
         return values;
