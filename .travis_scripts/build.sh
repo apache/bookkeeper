@@ -23,10 +23,8 @@ BINDIR=`dirname "$0"`
 BK_HOME=`cd $BINDIR/..;pwd`
 
 mvn --batch-mode clean apache-rat:check compile spotbugs:check install -DskipTests -Dstream
-if [ "$TRAVIS_OS_NAME" == "linux" ]; then
-    $BK_HOME/dev/check-binary-license ./bookkeeper-dist/all/target/bookkeeper-all-*-bin.tar.gz;
-    $BK_HOME/dev/check-binary-license ./bookkeeper-dist/server/target/bookkeeper-server-*-bin.tar.gz;
-fi
+$BK_HOME/dev/check-binary-license ./bookkeeper-dist/all/target/bookkeeper-all-*-bin.tar.gz;
+$BK_HOME/dev/check-binary-license ./bookkeeper-dist/server/target/bookkeeper-server-*-bin.tar.gz;
 if [ "$DLOG_MODIFIED" == "true" ]; then
     cd $BK_HOME/stream/distributedlog
     mvn --batch-mode clean package -Ddistributedlog
