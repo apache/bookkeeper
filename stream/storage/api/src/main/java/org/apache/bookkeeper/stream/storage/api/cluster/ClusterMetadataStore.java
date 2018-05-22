@@ -18,6 +18,7 @@
  */
 package org.apache.bookkeeper.stream.storage.api.cluster;
 
+import java.util.Optional;
 import java.util.concurrent.Executor;
 import java.util.function.Consumer;
 import org.apache.bookkeeper.stream.proto.cluster.ClusterAssignmentData;
@@ -29,12 +30,18 @@ import org.apache.bookkeeper.stream.proto.cluster.ClusterMetadata;
  */
 public interface ClusterMetadataStore extends AutoCloseable {
 
+
+    default void initializeCluster(int numStorageContainers) {
+        initializeCluster(numStorageContainers, Optional.empty());
+    }
+
     /**
      * Initialize the cluster metadata with the provided <i>numStorageContainers</i>.
      *
      * @param numStorageContainers number of storage containers.
+     * @param segmentStorePath segment store path
      */
-    void initializeCluster(int numStorageContainers);
+    void initializeCluster(int numStorageContainers, Optional<String> segmentStorePath);
 
     /**
      * Get the current cluster assignment data.

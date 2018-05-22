@@ -69,6 +69,7 @@ public class DLNamespaceProviderService
     }
 
     private final ServerConfiguration bkServerConf;
+    @Getter
     private final DistributedLogConfiguration dlConf;
     private final DynamicDistributedLogConfiguration dlDynConf;
     @Getter

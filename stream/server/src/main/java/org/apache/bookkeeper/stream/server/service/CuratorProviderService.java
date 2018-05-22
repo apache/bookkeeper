@@ -20,6 +20,7 @@ package org.apache.bookkeeper.stream.server.service;
 
 import java.io.IOException;
 import java.util.function.Supplier;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.common.component.AbstractLifecycleComponent;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
@@ -33,6 +34,7 @@ import org.apache.curator.retry.ExponentialBackoffRetry;
 /**
  * A service to provide a curator client.
  */
+@Slf4j
 public class CuratorProviderService
     extends AbstractLifecycleComponent<DLConfiguration>
     implements Supplier<CuratorFramework> {
@@ -57,6 +59,7 @@ public class CuratorProviderService
     @Override
     protected void doStart() {
         curatorClient.start();
+        log.info("Provided curator clients to zookeeper {}.", zkServers);
     }
 
     @Override

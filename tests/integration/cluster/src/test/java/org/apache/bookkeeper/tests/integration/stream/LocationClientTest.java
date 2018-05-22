@@ -7,7 +7,7 @@
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.bookkeeper.stream.tests.integration;
+package org.apache.bookkeeper.tests.integration.stream;
 
 import static org.apache.bookkeeper.stream.protocol.ProtocolConstants.ROOT_STORAGE_CONTAINER_ID;
 import static org.junit.Assert.assertEquals;
@@ -33,25 +33,27 @@ import org.apache.bookkeeper.common.util.Revisioned;
 import org.apache.bookkeeper.stream.proto.common.Endpoint;
 import org.apache.bookkeeper.stream.proto.storage.OneStorageContainerEndpointResponse;
 import org.apache.bookkeeper.stream.proto.storage.StatusCode;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
 /**
  * Integration test for location test.
  */
 @Slf4j
-public class LocationClientTest extends StorageServerTestBase {
+public class LocationClientTest extends StreamClusterTestBase {
 
     private OrderedScheduler scheduler;
     private LocationClient client;
 
-    @Override
-    protected void doSetup() throws Exception {
+    @Before
+    public void setup() {
         scheduler = OrderedScheduler.newSchedulerBuilder()
             .name("location-client-test")
             .numThreads(1)
             .build();
         StorageClientSettings settings = StorageClientSettings.newBuilder()
-            .addEndpoints(cluster.getRpcEndpoints().toArray(new Endpoint[cluster.getRpcEndpoints().size()]))
+            .addEndpoints(getExsternalStreamEndpoints().toArray(new Endpoint[getNumBookies()]))
             .usePlaintext(true)
             .build();
         client = new LocationClientImpl(
@@ -59,8 +61,8 @@ public class LocationClientTest extends StorageServerTestBase {
             scheduler);
     }
 
-    @Override
-    protected void doTeardown() throws Exception {
+    @After
+    public void teardown() {
         if (null != client) {
             client.close();
         }
@@ -80,13 +82,15 @@ public class LocationClientTest extends StorageServerTestBase {
         assertEquals(StatusCode.SUCCESS, oneResponse.getStatusCode());
 
         Endpoint endpoint = oneResponse.getEndpoint().getRwEndpoint();
-        log.info("Current cluster endpoints = {}", cluster.getRpcEndpoints());
+        log.info("Current cluster endpoints = {}", getInternalStreamEndpoints());
         log.info("Response : rw endpoint = {}", endpoint);
-        assertTrue(cluster.getRpcEndpoints().contains(endpoint));
+        assertTrue(getInternalStreamEndpoints().contains(endpoint));
 
         assertEquals(1, oneResponse.getEndpoint().getRoEndpointCount());
         endpoint = oneResponse.getEndpoint().getRoEndpoint(0);
         log.info("Response : ro endpoint = {}", endpoint);
-        assertTrue(cluster.getRpcEndpoints().contains(endpoint));
+        assertTrue(getInternalStreamEndpoints().contains(endpoint));
     }
+
+
 }
