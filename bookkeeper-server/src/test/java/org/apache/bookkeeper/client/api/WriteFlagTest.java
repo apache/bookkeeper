@@ -41,7 +41,7 @@ public class WriteFlagTest {
 
     @Test
     public void testGetWriteFlagsNone() {
-        assertEquals(EnumSet.noneOf(WriteFlag.class),
+        assertEquals(WriteFlag.NONE,
                 WriteFlag.getWriteFlags(NONE));
     }
 
@@ -52,7 +52,7 @@ public class WriteFlagTest {
 
     @Test
     public void testGetWriteFlagsValueEmpty() {
-        assertEquals(0, WriteFlag.getWriteFlagsValue(EnumSet.noneOf(WriteFlag.class)));
+        assertEquals(0, WriteFlag.getWriteFlagsValue(WriteFlag.NONE));
     }
 
     @Test

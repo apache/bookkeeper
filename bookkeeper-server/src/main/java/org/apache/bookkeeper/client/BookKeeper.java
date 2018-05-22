@@ -33,7 +33,6 @@ import io.netty.util.HashedWheelTimer;
 import io.netty.util.concurrent.DefaultThreadFactory;
 import java.io.IOException;
 import java.net.URI;
-import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -871,7 +870,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
             }
             new LedgerCreateOp(BookKeeper.this, ensSize, writeQuorumSize,
                                ackQuorumSize, digestType, passwd, cb, ctx,
-                               customMetadata, EnumSet.noneOf(WriteFlag.class), getStatsLogger())
+                               customMetadata, WriteFlag.NONE, getStatsLogger())
                 .initiate();
         } finally {
             closeLock.readLock().unlock();
@@ -1075,7 +1074,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
             }
             new LedgerCreateOp(BookKeeper.this, ensSize, writeQuorumSize,
                                ackQuorumSize, digestType, passwd, cb, ctx,
-                               customMetadata, EnumSet.noneOf(WriteFlag.class), getStatsLogger())
+                               customMetadata, WriteFlag.NONE, getStatsLogger())
                                        .initiateAdv(-1L);
         } finally {
             closeLock.readLock().unlock();
@@ -1186,7 +1185,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
             }
             new LedgerCreateOp(BookKeeper.this, ensSize, writeQuorumSize,
                                ackQuorumSize, digestType, passwd, cb, ctx,
-                               customMetadata, EnumSet.noneOf(WriteFlag.class), getStatsLogger())
+                               customMetadata, WriteFlag.NONE, getStatsLogger())
                     .initiateAdv(ledgerId);
         } finally {
             closeLock.readLock().unlock();

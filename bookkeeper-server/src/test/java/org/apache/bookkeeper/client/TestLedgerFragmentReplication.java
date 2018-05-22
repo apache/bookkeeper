@@ -26,7 +26,6 @@ import static org.junit.Assert.fail;
 import com.google.common.collect.Sets;
 
 import java.util.ArrayList;
-import java.util.EnumSet;
 import java.util.Enumeration;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -248,7 +247,7 @@ public class TestLedgerFragmentReplication extends BookKeeperClusterTestCase {
             }
         };
         LedgerHandle lh = new LedgerHandle(bkc, 0, metadata, TEST_DIGEST_TYPE,
-                TEST_PSSWD, EnumSet.noneOf(WriteFlag.class));
+                TEST_PSSWD, WriteFlag.NONE);
         testSplitIntoSubFragments(10, 21, -1, 1, lh);
         testSplitIntoSubFragments(10, 21, 20, 1, lh);
         testSplitIntoSubFragments(0, 0, 10, 1, lh);

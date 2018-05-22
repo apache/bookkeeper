@@ -31,6 +31,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.LedgerHandle;
+import org.apache.bookkeeper.client.api.WriteFlag;
 import org.apache.bookkeeper.common.util.OrderedExecutor;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.net.BookieSocketAddress;
@@ -187,7 +188,8 @@ public class BenchBookie {
             toSend.writeLong(entry);
             toSend.writerIndex(toSend.capacity());
             bc.addEntry(new BookieSocketAddress(addr, port), ledger, new byte[20],
-                    entry, ByteBufList.get(toSend), tc, null, BookieProtocol.FLAG_NONE);
+                    entry, ByteBufList.get(toSend), tc, null, BookieProtocol.FLAG_NONE,
+                    false, WriteFlag.NONE);
         }
         LOG.info("Waiting for warmup");
         tc.waitFor(warmUpCount);
@@ -204,7 +206,8 @@ public class BenchBookie {
             toSend.writerIndex(toSend.capacity());
             lc.resetComplete();
             bc.addEntry(new BookieSocketAddress(addr, port), ledger, new byte[20],
-                    entry, ByteBufList.get(toSend), lc, null, BookieProtocol.FLAG_NONE);
+                        entry, ByteBufList.get(toSend), lc, null,
+                        BookieProtocol.FLAG_NONE, false, WriteFlag.NONE);
             lc.waitForComplete();
         }
         long endTime = System.nanoTime();
@@ -222,7 +225,8 @@ public class BenchBookie {
             toSend.writeLong(entry);
             toSend.writerIndex(toSend.capacity());
             bc.addEntry(new BookieSocketAddress(addr, port), ledger, new byte[20],
-                    entry, ByteBufList.get(toSend), tc, null, BookieProtocol.FLAG_NONE);
+                    entry, ByteBufList.get(toSend), tc, null, BookieProtocol.FLAG_NONE,
+                    false, WriteFlag.NONE);
         }
         tc.waitFor(throughputCount);
         endTime = System.currentTimeMillis();

@@ -35,6 +35,7 @@ import io.netty.util.Recycler.Handle;
 import io.netty.util.concurrent.DefaultThreadFactory;
 
 import java.io.IOException;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
@@ -49,6 +50,7 @@ import org.apache.bookkeeper.auth.AuthProviderFactoryFactory;
 import org.apache.bookkeeper.auth.ClientAuthProvider;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookieInfoReader.BookieInfo;
+import org.apache.bookkeeper.client.api.WriteFlag;
 import org.apache.bookkeeper.common.util.OrderedExecutor;
 import org.apache.bookkeeper.common.util.SafeRunnable;
 import org.apache.bookkeeper.conf.ClientConfiguration;
@@ -247,19 +249,9 @@ public class BookieClient implements PerChannelBookieClientFactory {
                          final ByteBufList toSend,
                          final WriteCallback cb,
                          final Object ctx,
-                         final int options) {
-        addEntry(addr, ledgerId, masterKey, entryId, toSend, cb, ctx, options, false);
-    }
-
-    public void addEntry(final BookieSocketAddress addr,
-                         final long ledgerId,
-                         final byte[] masterKey,
-                         final long entryId,
-                         final ByteBufList toSend,
-                         final WriteCallback cb,
-                         final Object ctx,
                          final int options,
-                         final boolean allowFastFail) {
+                         final boolean allowFastFail,
+                         final EnumSet<WriteFlag> writeFlags) {
         final PerChannelBookieClientPool client = lookupClient(addr);
         if (client == null) {
             completeAdd(getRc(BKException.Code.BookieHandleNotAvailableException),
@@ -273,7 +265,7 @@ public class BookieClient implements PerChannelBookieClientFactory {
 
         client.obtain(ChannelReadyForAddEntryCallback.create(
                               this, toSend, ledgerId, entryId, addr,
-                                  ctx, cb, options, masterKey, allowFastFail),
+                                  ctx, cb, options, masterKey, allowFastFail, writeFlags),
                       ledgerId);
     }
 
@@ -310,11 +302,13 @@ public class BookieClient implements PerChannelBookieClientFactory {
         private int options;
         private byte[] masterKey;
         private boolean allowFastFail;
+        private EnumSet<WriteFlag> writeFlags;
 
         static ChannelReadyForAddEntryCallback create(
                 BookieClient bookieClient, ByteBufList toSend, long ledgerId,
                 long entryId, BookieSocketAddress addr, Object ctx,
-                WriteCallback cb, int options, byte[] masterKey, boolean allowFastFail) {
+                WriteCallback cb, int options, byte[] masterKey, boolean allowFastFail,
+                EnumSet<WriteFlag> writeFlags) {
             ChannelReadyForAddEntryCallback callback = RECYCLER.get();
             callback.bookieClient = bookieClient;
             callback.toSend = toSend;
@@ -326,6 +320,7 @@ public class BookieClient implements PerChannelBookieClientFactory {
             callback.options = options;
             callback.masterKey = masterKey;
             callback.allowFastFail = allowFastFail;
+            callback.writeFlags = writeFlags;
             return callback;
         }
 
@@ -336,7 +331,7 @@ public class BookieClient implements PerChannelBookieClientFactory {
                 bookieClient.completeAdd(rc, ledgerId, entryId, addr, cb, ctx);
             } else {
                 pcbc.addEntry(ledgerId, masterKey, entryId,
-                              toSend, cb, ctx, options, allowFastFail);
+                              toSend, cb, ctx, options, allowFastFail, writeFlags);
             }
 
             toSend.release();
@@ -367,7 +362,7 @@ public class BookieClient implements PerChannelBookieClientFactory {
             options = -1;
             masterKey = null;
             allowFastFail = false;
-
+            writeFlags = null;
             recyclerHandle.recycle(this);
         }
     }
@@ -565,7 +560,9 @@ public class BookieClient implements PerChannelBookieClientFactory {
 
         for (int i = 0; i < 100000; i++) {
             counter.inc();
-            bc.addEntry(addr, ledger, new byte[0], i, ByteBufList.get(Unpooled.wrappedBuffer(hello)), cb, counter, 0);
+            bc.addEntry(addr, ledger, new byte[0], i,
+                    ByteBufList.get(Unpooled.wrappedBuffer(hello)), cb, counter, 0, false,
+                    WriteFlag.NONE);
         }
         counter.wait(0);
         System.out.println("Total = " + counter.total());
