@@ -150,6 +150,13 @@ public interface DistributionSchedule {
     WriteSet getWriteSetForLongPoll(long entryId);
 
     /**
+     * Return the set of bookies indices to send the messages to for force ledger.
+     *
+     * @return the set of bookies indices to send force request to.
+     */
+    WriteSet getWriteSetForForceLedger();
+
+    /**
      * An ack set represents the set of bookies from which
      * a response must be received so that an entry can be
      * considered to be replicated on a quorum.
@@ -197,6 +204,11 @@ public interface DistributionSchedule {
      */
     AckSet getAckSet();
 
+    /**
+     * Returns an ackset object useful to wait for all bookies in the ensemble,
+     * responses should be checked against this.
+     */
+    AckSet getAckSetForForceLedger();
 
     /**
      * Interface to keep track of which bookies in an ensemble, an action

@@ -117,6 +117,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
     private OpStatsLogger readLacAndEntryOpLogger;
     private OpStatsLogger readLacAndEntryRespLogger;
     private OpStatsLogger addOpLogger;
+    private OpStatsLogger forceOpLogger;
     private OpStatsLogger writeLacOpLogger;
     private OpStatsLogger readLacOpLogger;
     private OpStatsLogger recoverAddEntriesStats;
@@ -1493,6 +1494,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
         readLacAndEntryRespLogger = stats.getOpStatsLogger(
                 BookKeeperClientStats.READ_LAST_CONFIRMED_AND_ENTRY_RESPONSE);
         addOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.ADD_OP);
+        forceOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.FORCE_OP);
         addOpUrCounter = stats.getCounter(BookKeeperClientStats.ADD_OP_UR);
         writeLacOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.WRITE_LAC_OP);
         readLacOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.READ_LAC_OP);
@@ -1525,6 +1527,9 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
     }
     OpStatsLogger getAddOpLogger() {
         return addOpLogger;
+    }
+    OpStatsLogger getForceOpLogger() {
+        return forceOpLogger;
     }
     OpStatsLogger getWriteLacOpLogger() {
         return writeLacOpLogger;

@@ -1109,6 +1109,67 @@ public class LedgerHandle implements WriteHandle {
     }
 
     /**
+     * {@inheritDoc}
+     */
+    @Override
+    public CompletableFuture<Void> force() {
+        CompletableFuture<Void> result = new CompletableFuture<>();
+        ForceLedgerOp op = new ForceLedgerOp(this, result);
+        boolean wasClosed = false;
+        synchronized (this) {
+            // synchronized on this to ensure that
+            // the ledger isn't closed between checking and
+            // updating lastAddPushed
+            if (metadata.isClosed()) {
+                wasClosed = true;
+            }
+        }
+
+        if (wasClosed) {
+            // make sure the callback is triggered in main worker pool
+            try {
+                bk.getMainWorkerPool().submit(new SafeRunnable() {
+                    @Override
+                    public void safeRun() {
+                        LOG.warn("Attempt to use a closed ledger: {}", ledgerId);
+                        result.completeExceptionally(new BKException.BKLedgerClosedException());
+                    }
+
+                    @Override
+                    public String toString() {
+                        return String.format("force(lid=%d)", ledgerId);
+                    }
+                });
+            } catch (RejectedExecutionException e) {
+                result.completeExceptionally(new BKException.BKInterruptedException());
+            }
+            return result;
+        }
+
+        if (pendingAddsSequenceHead == INVALID_ENTRY_ID) {
+            bk.getMainWorkerPool().submit(new SafeRunnable() {
+                    @Override
+                    public void safeRun() {
+                        FutureUtils.complete(result, null);
+                    }
+
+                    @Override
+                    public String toString() {
+                        return String.format("force(lid=%d)", ledgerId);
+                    }
+                });
+            return result;
+        }
+
+        try {
+            bk.getMainWorkerPool().executeOrdered(ledgerId, op);
+        } catch (RejectedExecutionException e) {
+            result.completeExceptionally(new BKException.BKInterruptedException());
+        }
+        return result;
+    }
+
+    /**
      * Make a recovery add entry request. Recovery adds can add to a ledger even
      * if it has been fenced.
      *

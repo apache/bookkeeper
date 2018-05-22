@@ -22,8 +22,10 @@ import static org.junit.Assert.assertEquals;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import java.util.concurrent.CompletableFuture;
 import org.apache.bookkeeper.client.api.WriteFlag;
 import org.apache.bookkeeper.client.api.WriteHandle;
+import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.junit.Test;
 
 /**
@@ -49,9 +51,110 @@ public class DeferredSyncTest extends MockBookKeeperTestCase {
             }
             long lastEntryID = result(wh.appendAsync(DATA));
             assertEquals(NUM_ENTRIES - 1, lastEntryID);
+            assertEquals(NUM_ENTRIES - 1, wh.getLastAddPushed());
+            assertEquals(-1, wh.getLastAddConfirmed());
+        }
+    }
+
+    @Test
+    public void testAddEntryLastAddConfirmedAdvanceWithForce() throws Exception {
+        try (WriteHandle wh = result(newCreateLedgerOp()
+                .withEnsembleSize(3)
+                .withWriteQuorumSize(3)
+                .withAckQuorumSize(2)
+                .withPassword(PASSWORD)
+                .withWriteFlags(WriteFlag.DEFERRED_SYNC)
+                .execute())) {
+            for (int i = 0; i < NUM_ENTRIES - 1; i++) {
+                result(wh.appendAsync(DATA));
+            }
+            long lastEntryID = result(wh.appendAsync(DATA));
+            assertEquals(NUM_ENTRIES - 1, lastEntryID);
+            assertEquals(NUM_ENTRIES - 1, wh.getLastAddPushed());
+            assertEquals(-1, wh.getLastAddConfirmed());
+            result(wh.force());
+            assertEquals(NUM_ENTRIES - 1, wh.getLastAddConfirmed());
+        }
+    }
+
+    @Test
+    public void testForceRequiresFullEnsemble() throws Exception {
+        try (WriteHandle wh = result(newCreateLedgerOp()
+                .withEnsembleSize(3)
+                .withWriteQuorumSize(2)
+                .withAckQuorumSize(2)
+                .withPassword(PASSWORD)
+                .withWriteFlags(WriteFlag.DEFERRED_SYNC)
+                .execute())) {
+            for (int i = 0; i < NUM_ENTRIES - 1; i++) {
+                result(wh.appendAsync(DATA));
+            }
+            long lastEntryID = result(wh.appendAsync(DATA));
+            assertEquals(NUM_ENTRIES - 1, lastEntryID);
+            assertEquals(NUM_ENTRIES - 1, wh.getLastAddPushed());
+            assertEquals(-1, wh.getLastAddConfirmed());
+
+            BookieSocketAddress bookieAddress = wh.getLedgerMetadata().getEnsembleAt(wh.getLastAddPushed()).get(0);
+            killBookie(bookieAddress);
+
+            // write should succeed (we still have 2 bookies out of 3)
+            result(wh.appendAsync(DATA));
+
+            // force cannot go, it must be acknowledged by all of the bookies in the ensamble
+            try {
+                result(wh.force());
+            } catch (BKException.BKBookieException failed) {
+            }
+            // bookie comes up again, force must succeed
+            startKilledBookie(bookieAddress);
+            result(wh.force());
+        }
+    }
+
+    @Test
+    public void testForceWillAdvanceLacOnlyUpToLastAcknoledgedWrite() throws Exception {
+        try (WriteHandle wh = result(newCreateLedgerOp()
+                .withEnsembleSize(3)
+                .withWriteQuorumSize(3)
+                .withAckQuorumSize(3)
+                .withPassword(PASSWORD)
+                .withWriteFlags(WriteFlag.DEFERRED_SYNC)
+                .execute())) {
+            for (int i = 0; i < NUM_ENTRIES - 1; i++) {
+                result(wh.appendAsync(DATA));
+            }
+            long lastEntryIdBeforeSuspend = result(wh.appendAsync(DATA));
+            assertEquals(NUM_ENTRIES - 1, lastEntryIdBeforeSuspend);
+            assertEquals(-1, wh.getLastAddConfirmed());
+
+            // one bookie will stop sending acks
+            BookieSocketAddress bookieAddress = wh.getLedgerMetadata().getEnsembleAt(wh.getLastAddPushed()).get(0);
+            suspendBookieWriteAcks(bookieAddress);
+
+            // start a write
+            CompletableFuture<Long> suspendedWrite = wh.appendAsync(DATA);
+            long lastAddPushedAfterSuspendedWrite = wh.getLastAddPushed();
             LedgerHandle lh = (LedgerHandle) wh;
-            assertEquals(NUM_ENTRIES - 1, lh.getLastAddPushed());
-            assertEquals(-1, lh.getLastAddConfirmed());
+            // we are waiting for the ack for that entry
+            assertEquals(lastEntryIdBeforeSuspend, lh.pendingAddsSequenceHead);
+            assertEquals(lastAddPushedAfterSuspendedWrite - 1, lh.pendingAddsSequenceHead);
+
+            // start and complete a force, lastAddConfirmed cannot be "lastAddPushedAfterSuspendedWrite"
+            // because the write has not yet been acknowledged by AckQuorumSize Bookies
+            result(wh.force());
+            assertEquals(lastEntryIdBeforeSuspend, wh.getLastAddConfirmed());
+
+            // receive the ack
+            resumeBookieWriteAcks(bookieAddress);
+            long suspendedWriteEntryId = result(suspendedWrite);
+            assertEquals(lastAddPushedAfterSuspendedWrite, suspendedWriteEntryId);
+
+            assertEquals(suspendedWriteEntryId, wh.getLastAddPushed());
+
+            assertEquals(lastEntryIdBeforeSuspend, wh.getLastAddConfirmed());
+
+            result(wh.force());
+            assertEquals(suspendedWriteEntryId, wh.getLastAddConfirmed());
         }
     }
 

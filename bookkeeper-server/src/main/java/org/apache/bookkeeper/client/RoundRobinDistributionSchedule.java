@@ -60,6 +60,11 @@ class RoundRobinDistributionSchedule implements DistributionSchedule {
         return WriteSetImpl.create(ensembleSize, ensembleSize /* writeQuorumSize */, entryId);
     }
 
+    @Override
+    public WriteSet getWriteSetForForceLedger() {
+        return WriteSetImpl.create(ensembleSize, ensembleSize /* writeQuorumSize */, 0);
+    }
+
     @VisibleForTesting
     static WriteSet writeSetFromValues(Integer... values) {
         WriteSetImpl writeSet = WriteSetImpl.create(0, 0, 0);
@@ -250,6 +255,11 @@ class RoundRobinDistributionSchedule implements DistributionSchedule {
     @Override
     public AckSet getAckSet() {
         return AckSetImpl.create(ensembleSize, writeQuorumSize, ackQuorumSize);
+    }
+
+    @Override
+    public AckSet getAckSetForForceLedger() {
+        return AckSetImpl.create(ensembleSize, ensembleSize, ensembleSize);
     }
 
     private static class AckSetImpl implements AckSet {
