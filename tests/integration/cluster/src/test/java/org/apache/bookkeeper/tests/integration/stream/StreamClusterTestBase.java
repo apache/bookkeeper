@@ -104,5 +104,4 @@ public abstract class StreamClusterTestBase extends BookKeeperClusterTestBase {
             .build();
     }
 
-
 }

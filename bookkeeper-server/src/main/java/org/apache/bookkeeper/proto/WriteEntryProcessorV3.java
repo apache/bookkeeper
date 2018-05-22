@@ -110,7 +110,7 @@ class WriteEntryProcessorV3 extends PacketProcessorBaseV3 {
         if (addRequest.hasWriteFlags()) {
             writeFlags = WriteFlag.getWriteFlags(addRequest.getWriteFlags());
         } else {
-            writeFlags = EnumSet.noneOf(WriteFlag.class);
+            writeFlags = WriteFlag.NONE;
         }
         final boolean ackBeforeSync = writeFlags.contains(WriteFlag.DEFERRED_SYNC);
         StatusCode status = null;

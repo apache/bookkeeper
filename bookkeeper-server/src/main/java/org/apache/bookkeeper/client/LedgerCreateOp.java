@@ -24,7 +24,6 @@ package org.apache.bookkeeper.client;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
@@ -247,7 +246,7 @@ class LedgerCreateOp implements GenericCallback<Void> {
         private int builderAckQuorumSize = 2;
         private int builderWriteQuorumSize = 2;
         private byte[] builderPassword;
-        private EnumSet<WriteFlag> builderWriteFlags = EnumSet.noneOf(WriteFlag.class);
+        private EnumSet<WriteFlag> builderWriteFlags = WriteFlag.NONE;
         private org.apache.bookkeeper.client.api.DigestType builderDigestType =
             org.apache.bookkeeper.client.api.DigestType.CRC32;
         private Map<String, byte[]> builderCustomMetadata = Collections.emptyMap();
@@ -262,13 +261,10 @@ class LedgerCreateOp implements GenericCallback<Void> {
             return this;
         }
 
+        @Override
         public CreateBuilder withWriteFlags(EnumSet<WriteFlag> writeFlags) {
             this.builderWriteFlags = writeFlags;
             return this;
-        }
-
-        public CreateBuilder withWriteFlags(WriteFlag... writeFlags) {
-            return withWriteFlags(EnumSet.copyOf(Arrays.asList(writeFlags)));
         }
 
         @Override
