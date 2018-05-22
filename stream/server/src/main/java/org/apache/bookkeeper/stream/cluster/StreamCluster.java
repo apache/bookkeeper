@@ -26,7 +26,6 @@ import java.io.IOException;
 import java.net.BindException;
 import java.net.URI;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -43,20 +42,15 @@ import org.apache.bookkeeper.shims.zk.ZooKeeperServerShim;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stream.proto.NamespaceConfiguration;
 import org.apache.bookkeeper.stream.proto.NamespaceProperties;
-import org.apache.bookkeeper.stream.proto.cluster.ClusterMetadata;
 import org.apache.bookkeeper.stream.proto.common.Endpoint;
 import org.apache.bookkeeper.stream.server.StorageServer;
 import org.apache.bookkeeper.stream.storage.StorageConstants;
 import org.apache.bookkeeper.stream.storage.conf.StorageConfiguration;
 import org.apache.bookkeeper.stream.storage.exceptions.StorageRuntimeException;
-import org.apache.bookkeeper.stream.storage.impl.cluster.ZkClusterMetadataStore;
+import org.apache.bookkeeper.stream.storage.impl.cluster.ZkClusterInitializer;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.curator.framework.CuratorFramework;
-import org.apache.curator.framework.CuratorFrameworkFactory;
-import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.apache.distributedlog.DistributedLogConfiguration;
 import org.apache.distributedlog.LocalDLMEmulator;
-import org.apache.zookeeper.KeeperException;
 
 /**
  * A Cluster that runs a few storage nodes.
@@ -141,28 +135,9 @@ public class StreamCluster
     }
 
     private void initializeCluster() throws Exception {
-        try (CuratorFramework client = CuratorFrameworkFactory.newClient(
-            zkEnsemble,
-            new ExponentialBackoffRetry(100, Integer.MAX_VALUE, 10000)
-        )) {
-            client.start();
-
-            ZkClusterMetadataStore store = new ZkClusterMetadataStore(client, zkEnsemble, ZK_METADATA_ROOT_PATH);
-
-            ClusterMetadata metadata;
-            try {
-                metadata = store.getClusterMetadata();
-                log.info("Loaded cluster metadata : \n{}", metadata);
-            } catch (StorageRuntimeException sre) {
-                if (sre.getCause() instanceof KeeperException.NoNodeException) {
-                    log.info("Initializing the stream cluster.");
-                    store.initializeCluster(spec.numServers() * 2);
-                    log.info("Successfully initialized the stream cluster : \n{}", store.getClusterMetadata());
-                } else {
-                    throw sre;
-                }
-            }
-        }
+        new ZkClusterInitializer(zkEnsemble).initializeCluster(
+            URI.create("zk://" + zkEnsemble),
+            spec.numServers() * 2);
 
         // format the bookkeeper cluster
         MetadataDrivers.runFunctionWithMetadataBookieDriver(newBookieConfiguration(zkEnsemble), driver -> {
@@ -210,11 +185,10 @@ public class StreamCluster
                 log.info("Attempting to start storage server at (bookie port = {}, grpc port = {})"
                         + " : bkDir = {}, rangesStoreDir = {}, serveReadOnlyTables = {}",
                     bookiePort, grpcPort, bkDir, rangesStoreDir, spec.serveReadOnlyTable);
-                server = StorageServer.startStorageServer(
+                server = StorageServer.buildStorageServer(
                     serverConf,
                     grpcPort,
-                    spec.numServers() * 2,
-                    Optional.empty());
+                    spec.numServers() * 2);
                 server.start();
                 log.info("Started storage server at (bookie port = {}, grpc port = {})",
                     bookiePort, grpcPort);
