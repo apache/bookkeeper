@@ -175,6 +175,8 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
 
     // Lifecycle Components
     protected static final String EXTRA_SERVER_COMPONENTS = "extraServerComponents";
+    protected static final String IGNORE_EXTRA_SERVER_COMPONENTS_STARTUP_FAILURES
+        = "ignoreExtraServerComponentsStartupFailures";
 
     // Registration
     protected static final String REGISTRATION_MANAGER_CLASS = "registrationManagerClass";
@@ -2719,6 +2721,29 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      */
     public ServerConfiguration setExtraServerComponents(String[] componentClasses) {
         this.setProperty(EXTRA_SERVER_COMPONENTS, componentClasses);
+        return this;
+    }
+
+    /**
+     * Return the flag whether to ignore startup failures on loading server components specified at
+     * {@link #getExtraServerComponents()}.
+     *
+     * @return the flag whether to ignore startup failures on loading server components specified at
+     * {@link #getExtraServerComponents()}. The default value is <tt>false</tt>.
+     */
+    public boolean getIgnoreExtraServerComponentsStartupFailures() {
+        return getBoolean(IGNORE_EXTRA_SERVER_COMPONENTS_STARTUP_FAILURES, false);
+    }
+
+    /**
+     * Set the flag whether to ignore startup failures on loading server components specified at
+     * {@link #getExtraServerComponents()}.
+     *
+     * @param enabled flag to enable/disable ignoring startup failures on loading server components.
+     * @return server configuration.
+     */
+    public ServerConfiguration setIgnoreExtraServerComponentsStartupFailures(boolean enabled) {
+        setProperty(IGNORE_EXTRA_SERVER_COMPONENTS_STARTUP_FAILURES, enabled);
         return this;
     }
 
