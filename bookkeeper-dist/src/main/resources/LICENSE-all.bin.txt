@@ -276,6 +276,25 @@ Apache Software License, Version 2.
 - lib/net.jpountz.lz4-lz4-1.3.0.jar [38]
 - lib/org.codehaus.jackson-jackson-core-asl-1.9.11.jar [39]
 - lib/org.codehaus.jackson-jackson-mapper-asl-1.9.11.jar [40]
+- lib/com.google.api.grpc-proto-google-common-protos-0.1.9.jar [41]
+- lib/com.google.code.gson-gson-2.7.jar [42]
+- lib/com.google.instrumentation-instrumentation-api-0.4.3.jar [43]
+- lib/com.squareup.okhttp-okhttp-2.5.0.jar [44]
+- lib/com.squareup.okio-okio-1.6.0.jar [45]
+- lib/io.grpc-grpc-all-1.5.0.jar [46]
+- lib/io.grpc-grpc-auth-1.5.0.jar [46]
+- lib/io.grpc-grpc-context-1.5.0.jar [46]
+- lib/io.grpc-grpc-core-1.5.0.jar [46]
+- lib/io.grpc-grpc-netty-1.5.0.jar [46]
+- lib/io.grpc-grpc-okhttp-1.5.0.jar [46]
+- lib/io.grpc-grpc-protobuf-1.5.0.jar [46]
+- lib/io.grpc-grpc-protobuf-lite-1.5.0.jar [46]
+- lib/io.grpc-grpc-protobuf-nano-1.5.0.jar [46]
+- lib/io.grpc-grpc-stub-1.5.0.jar [46]
+- lib/org.apache.curator-curator-client-4.0.1.jar [47]
+- lib/org.apache.curator-curator-framework-4.0.1.jar [47]
+- lib/org.apache.curator-curator-recipes-4.0.1.jar [47]
+- lib/org.inferred-freebuilder-1.14.9.jar [48]
 
 [1] Source available at https://github.com/FasterXML/jackson-annotations/tree/jackson-annotations-2.8.9
 [2] Source available at https://github.com/FasterXML/jackson-core/tree/jackson-core-2.8.9
@@ -316,6 +335,15 @@ Apache Software License, Version 2.
 [38] Source available at https://github.com/lz4/lz4-java/tree/1.3.0
 [39] Source available at https://github.com/codehaus/jackson/tree/1.9
 [40] Source available at https://github.com/codehaus/jackson/tree/1.9
+[41] Source available at https://github.com/googleapis/googleapis
+[42] Source available at https://github.com/google/gson/tree/gson-parent-2.7
+[43] Source available at https://github.com/census-instrumentation/opencensus-java/tree/v0.4.3
+[44] Source available at https://github.com/square/okhttp/tree/parent-2.5.0
+[45] Source available at https://github.com/square/okio/tree/okio-parent-1.6.0
+[46] Source available at https://github.com/grpc/grpc-java/tree/v1.5.0
+[47] Source available at https://github.com/apache/curator/tree/apache-curator-4.0.1
+[48] Source available at https://github.com/inferred/FreeBuilder/tree/v1.14.9
+
 
 ------------------------------------------------------------------------------------
 lib/io.netty-netty-3.10.1.Final.jar contains the extensions to Java Collections Framework which has
@@ -459,10 +487,20 @@ Bundled as lib/com.google.code.findbugs-jsr305-3.0.2.jar
 Source available at https://storage.googleapis.com/google-code-archive-source/v2/code.google.com/jsr-305/source-archive.zip
 ------------------------------------------------------------------------------------
 This product bundles Google Protocal Buffers, which is available under a "3-clause BSD"
-license. For details, see deps/protobuf-3.4.0/LICENSE.
+license.
 
 Bundled as lib/com.google.protobuf-protobuf-java-3.4.0.jar
 Source available at https://github.com/google/protobuf/tree/v3.4.0
+For details, see deps/protobuf-3.4.0/LICENSE.
+
+Bundled as lib/com.google.protobuf.nano-protobuf-javanano-3.0.0-alpha-5.jar
+Source available at https://github.com/google/protobuf/tree/3.0.0-pre
+For details, see deps/protobuf-3.0.0/LICENSE.
+
+Bundled as com.google.protobuf-protobuf-java-util-3.3.1.jar
+Source available at https://github.com/google/protobuf/tree/v3.3.1
+For details, see deps/protobuf-3.3.1/LICENSE.
+
 ------------------------------------------------------------------------------------
 This product bundles Paranamer, which is available under a "3-clause BSD" license.
 For details, see deps/paranamer-2.8/LICENSE.txt.
@@ -501,4 +539,11 @@ Bundled as
   - lib/org.slf4j-slf4j-api-1.7.25.jar
   - lib/org.slf4j-slf4j-log4j12-1.7.25.jar
 Source available at https://github.com/qos-ch/slf4j/tree/v_1.7.25
+------------------------------------------------------------------------------------
+This product bundles the Google Auth Library, which is available under a "3-clause BSD"
+license. For details, see deps/google-auth-library-credentials-0.4.0/LICENSE
+
+Bundled as
+  - lib/com.google.auth-google-auth-library-credentials-0.4.0.jar
+Source available at https://github.com/google/google-auth-library-java/tree/0.4.0
 
