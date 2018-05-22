@@ -21,6 +21,10 @@ package org.apache.bookkeeper.tests.integration.stream;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.bookkeeper.api.StorageClient;
+import org.apache.bookkeeper.clients.StorageClientBuilder;
+import org.apache.bookkeeper.clients.admin.StorageAdminClient;
+import org.apache.bookkeeper.clients.config.StorageClientSettings;
 import org.apache.bookkeeper.clients.utils.NetUtils;
 import org.apache.bookkeeper.stream.proto.common.Endpoint;
 import org.apache.bookkeeper.tests.integration.cluster.BookKeeperClusterTestBase;
@@ -67,6 +71,37 @@ public abstract class StreamClusterTestBase extends BookKeeperClusterTestBase {
             .map(container ->
                 NetUtils.parseEndpoint(container.getInternalGrpcEndpointStr()))
             .collect(Collectors.toList());
+    }
+
+    //
+    // Test Util Methods
+    //
+
+    protected static StorageClientSettings newStorageClientSettings() {
+        return StorageClientSettings.newBuilder()
+            .addEndpoints(getExsternalStreamEndpoints().toArray(new Endpoint[getNumBookies()]))
+            .endpointResolver(endpoint -> {
+                String internalEndpointStr = NetUtils.endpointToString(endpoint);
+                String externalEndpointStr =
+                    bkCluster.resolveExternalGrpcEndpointStr(internalEndpointStr);
+                log.info("Resolve endpoint {} to {}", internalEndpointStr, externalEndpointStr);
+                return NetUtils.parseEndpoint(externalEndpointStr);
+            })
+            .usePlaintext(true)
+            .build();
+    }
+
+    protected static StorageAdminClient createStorageAdminClient(StorageClientSettings settings) {
+        return StorageClientBuilder.newBuilder()
+            .withSettings(settings)
+            .buildAdmin();
+    }
+
+    protected static StorageClient createStorageClient(StorageClientSettings settings, String namespace) {
+        return StorageClientBuilder.newBuilder()
+            .withSettings(settings)
+            .withNamespace(namespace)
+            .build();
     }
 
 

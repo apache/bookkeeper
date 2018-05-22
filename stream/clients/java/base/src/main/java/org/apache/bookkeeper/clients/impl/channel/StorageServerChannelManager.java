@@ -40,7 +40,7 @@ public class StorageServerChannelManager implements AutoCloseable {
     private final Function<Endpoint, StorageServerChannel> channelFactory;
 
     public StorageServerChannelManager(StorageClientSettings settings) {
-        this(StorageServerChannel.factory(settings.usePlaintext()));
+        this(StorageServerChannel.factory(settings));
     }
 
     @VisibleForTesting

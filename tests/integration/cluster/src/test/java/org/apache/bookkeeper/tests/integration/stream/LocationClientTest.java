@@ -52,12 +52,8 @@ public class LocationClientTest extends StreamClusterTestBase {
             .name("location-client-test")
             .numThreads(1)
             .build();
-        StorageClientSettings settings = StorageClientSettings.newBuilder()
-            .addEndpoints(getExsternalStreamEndpoints().toArray(new Endpoint[getNumBookies()]))
-            .usePlaintext(true)
-            .build();
         client = new LocationClientImpl(
-            settings,
+            newStorageClientSettings(),
             scheduler);
     }
 
