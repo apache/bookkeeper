@@ -70,6 +70,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Queue;
@@ -87,6 +88,7 @@ import org.apache.bookkeeper.auth.ClientAuthProvider;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeperClientStats;
 import org.apache.bookkeeper.client.BookieInfoReader.BookieInfo;
+import org.apache.bookkeeper.client.api.WriteFlag;
 import org.apache.bookkeeper.common.util.OrderedExecutor;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.net.BookieSocketAddress;
@@ -579,19 +581,23 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
      *          Write callback
      * @param ctx
      *          Write callback context
-     * @param options
-     *          Add options
+     * @param allowFastFail
+     *          allowFastFail flag
+     * @param writeFlags
+     *          WriteFlags
      */
     void addEntry(final long ledgerId, byte[] masterKey, final long entryId, ByteBufList toSend, WriteCallback cb,
-                  Object ctx, final int options) {
-        addEntry(ledgerId, masterKey, entryId, toSend, cb, ctx, options, false);
-    }
-
-    void addEntry(final long ledgerId, byte[] masterKey, final long entryId, ByteBufList toSend, WriteCallback cb,
-                  Object ctx, final int options, boolean allowFastFail) {
+                  Object ctx, final int options, boolean allowFastFail, final EnumSet<WriteFlag> writeFlags) {
         Object request = null;
         CompletionKey completionKey = null;
         if (useV2WireProtocol) {
+            if (writeFlags.contains(WriteFlag.DEFERRED_SYNC)) {
+                LOG.error("invalid writeflags {} for v2 protocol", writeFlags);
+                executor.executeOrdered(ledgerId, () -> {
+                    cb.writeComplete(BKException.Code.IllegalOpException, ledgerId, entryId, addr, ctx);
+                });
+                return;
+            }
             completionKey = acquireV2Key(ledgerId, entryId, OperationType.ADD_ENTRY);
             request = BookieProtocol.AddRequest.create(
                     BookieProtocol.CURRENT_PROTOCOL_VERSION, ledgerId, entryId,
@@ -627,6 +633,10 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                 addBuilder.setFlag(AddRequest.Flag.RECOVERY_ADD);
             }
 
+            if (!writeFlags.isEmpty()) {
+                // add flags only if needed, in order to be able to talk with old bookies
+                addBuilder.setWriteFlags(WriteFlag.getWriteFlagsValue(writeFlags));
+            }
 
             request = Request.newBuilder()
                     .setHeader(headerBuilder)

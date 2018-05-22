@@ -104,7 +104,18 @@ public class LedgerHandle implements WriteHandle {
     final BookKeeper bk;
     final long ledgerId;
     long lastAddPushed;
+
+    /**
+      * Last entryId which has been confirmed to be written durably to the bookies.
+      * This value is used by readers, the the LAC protocol
+      */
     volatile long lastAddConfirmed;
+
+     /**
+      * Next entryId which is expected to move forward during {@link #sendAddSuccessCallbacks() }. This is important
+      * in order to have an ordered sequence of addEntry ackknowledged to the writer
+      */
+    volatile long pendingAddsSequenceHead;
 
     long length;
     final DigestManager macManager;
@@ -176,6 +187,8 @@ public class LedgerHandle implements WriteHandle {
             lastAddConfirmed = lastAddPushed = INVALID_ENTRY_ID;
             length = 0;
         }
+
+        this.pendingAddsSequenceHead = lastAddConfirmed;
 
         this.ledgerId = ledgerId;
 
@@ -1030,7 +1043,7 @@ public class LedgerHandle implements WriteHandle {
 
     public void asyncAddEntry(ByteBuf data, final AddCallback cb, final Object ctx) {
         data.retain();
-        PendingAddOp op = PendingAddOp.create(this, data, cb, ctx);
+        PendingAddOp op = PendingAddOp.create(this, data, writeFlags, cb, ctx);
         doAsyncAddEntry(op);
     }
 
@@ -1097,7 +1110,8 @@ public class LedgerHandle implements WriteHandle {
      */
     void asyncRecoveryAddEntry(final byte[] data, final int offset, final int length,
                                final AddCallback cb, final Object ctx) {
-        PendingAddOp op = PendingAddOp.create(this, Unpooled.wrappedBuffer(data, offset, length), cb, ctx)
+        PendingAddOp op = PendingAddOp.create(this, Unpooled.wrappedBuffer(data, offset, length),
+                                              writeFlags, cb, ctx)
                 .enableRecoveryAdd();
         doAsyncAddEntry(op);
     }
@@ -1685,17 +1699,20 @@ public class LedgerHandle implements WriteHandle {
                 return;
             }
             // Check if it is the next entry in the sequence.
-            if (pendingAddOp.entryId != 0 && pendingAddOp.entryId != lastAddConfirmed + 1) {
+            if (pendingAddOp.entryId != 0 && pendingAddOp.entryId != pendingAddsSequenceHead + 1) {
                 if (LOG.isDebugEnabled()) {
-                    LOG.debug("Head of the queue entryId: {} is not lac: {} + 1", pendingAddOp.entryId,
-                            lastAddConfirmed);
+                    LOG.debug("Head of the queue entryId: {} is not the expected value: {}", pendingAddOp.entryId,
+                               pendingAddsSequenceHead + 1);
                 }
                 return;
             }
 
             pendingAddOps.remove();
             explicitLacFlushPolicy.updatePiggyBackedLac(lastAddConfirmed);
-            lastAddConfirmed = pendingAddOp.entryId;
+            pendingAddsSequenceHead = pendingAddOp.entryId;
+            if (!writeFlags.contains(WriteFlag.DEFERRED_SYNC)) {
+                this.lastAddConfirmed = pendingAddsSequenceHead;
+            }
 
             pendingAddOp.submitCallback(BKException.Code.OK);
         }

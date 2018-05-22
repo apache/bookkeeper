@@ -21,7 +21,6 @@
 package org.apache.bookkeeper.client;
 
 import java.security.GeneralSecurityException;
-import java.util.EnumSet;
 import java.util.Map;
 import java.util.concurrent.RejectedExecutionException;
 
@@ -77,7 +76,7 @@ class ReadOnlyLedgerHandle extends LedgerHandle implements LedgerMetadataListene
     ReadOnlyLedgerHandle(BookKeeper bk, long ledgerId, LedgerMetadata metadata,
                          DigestType digestType, byte[] password, boolean watch)
             throws GeneralSecurityException, NumberFormatException {
-        super(bk, ledgerId, metadata, digestType, password, EnumSet.noneOf(WriteFlag.class));
+        super(bk, ledgerId, metadata, digestType, password, WriteFlag.NONE);
         if (watch) {
             bk.getLedgerManager().registerLedgerMetadataListener(ledgerId, this);
         }

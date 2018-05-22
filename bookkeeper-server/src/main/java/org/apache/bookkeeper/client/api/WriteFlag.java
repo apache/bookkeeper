@@ -35,6 +35,13 @@ public enum WriteFlag {
      */
     DEFERRED_SYNC(0x1 << 0);
 
+    /**
+     * No flag is set, use default behaviour.
+     */
+    public static final EnumSet<WriteFlag> NONE = EnumSet.noneOf(WriteFlag.class);
+
+    private static final EnumSet<WriteFlag> ONLY_DEFERRED_SYNC = EnumSet.of(DEFERRED_SYNC);
+
     private final int value;
 
     WriteFlag(int value) {
@@ -49,9 +56,9 @@ public enum WriteFlag {
      */
     public static EnumSet<WriteFlag> getWriteFlags(int flagValue) {
         if ((flagValue & DEFERRED_SYNC.value) == DEFERRED_SYNC.value) {
-            return EnumSet.of(DEFERRED_SYNC);
+            return ONLY_DEFERRED_SYNC;
         }
-        return EnumSet.noneOf(WriteFlag.class);
+        return WriteFlag.NONE;
     }
 
     /**
