@@ -175,8 +175,8 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
 
     // Lifecycle Components
     protected static final String EXTRA_SERVER_COMPONENTS = "extraServerComponents";
-    protected static final String IGNORE_EXTRA_SERVER_COMPONENTS_STARTUP_FAILURES
-        = "ignoreExtraServerComponentsStartupFailures";
+    protected static final String IGNORE_EXTRA_SERVER_COMPONENTS_STARTUP_FAILURES =
+        "ignoreExtraServerComponentsStartupFailures";
 
     // Registration
     protected static final String REGISTRATION_MANAGER_CLASS = "registrationManagerClass";
