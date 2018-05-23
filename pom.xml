@@ -864,6 +864,9 @@
 
             <!-- logs -->
             <exclude>**/*.log</exclude>
+
+            <!-- data -->
+            <exclude>data/**</exclude>
           </excludes>
           <consoleOutput>true</consoleOutput>
         </configuration>
