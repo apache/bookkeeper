@@ -18,7 +18,6 @@
 
 package org.apache.bookkeeper.stream.storage.api.sc;
 
-import io.grpc.Channel;
 import java.util.concurrent.CompletableFuture;
 import org.apache.bookkeeper.stream.storage.api.metadata.RangeStoreService;
 
@@ -36,13 +35,6 @@ public interface StorageContainer
      * @return the storage container id.
      */
     long getId();
-
-    /**
-     * The grpc service channel provided by this storage container.
-     *
-     * @return grpc service channel.
-     */
-    Channel getChannel();
 
     /**
      * Start the storage container.

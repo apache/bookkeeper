@@ -25,7 +25,7 @@ import io.grpc.ClientInterceptor;
 import io.grpc.ClientInterceptors.CheckedForwardingClientCall;
 import io.grpc.Metadata;
 import io.grpc.MethodDescriptor;
-import org.apache.bookkeeper.clients.utils.LongMarshaller;
+import org.apache.bookkeeper.common.grpc.netty.LongBinaryMarshaller;
 
 /**
  * A client interceptor that intercepting outgoing calls to storage containers.
@@ -41,7 +41,7 @@ public class StorageContainerClientInterceptor implements ClientInterceptor {
         this.scId = scId;
         this.scIdKey = Metadata.Key.of(
             SC_ID_KEY,
-            LongMarshaller.of());
+            LongBinaryMarshaller.of());
     }
 
     @Override

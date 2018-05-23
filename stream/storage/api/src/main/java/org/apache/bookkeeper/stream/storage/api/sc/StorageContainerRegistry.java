@@ -36,16 +36,6 @@ public interface StorageContainerRegistry extends AutoCloseable {
     StorageContainer getStorageContainer(long storageContainerId);
 
     /**
-     * Get the instance of storage container of <tt>storageContainerId</tt>,
-     * or <tt>null</tt> if there is no storage container found in the registry.
-     *
-     * @param storageContainerId storage container id
-     * @return the instance of storage container if found in the registry,
-     *         <tt>null</tt> if not found.
-     */
-    StorageContainer getStorageContainerIfPresent(long storageContainerId);
-
-    /**
      * Start the storage container in this registry.
      *
      * @param scId storage container id

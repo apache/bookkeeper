@@ -16,31 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.bookkeeper.clients.utils;
-
-import io.grpc.Metadata.BinaryMarshaller;
-import org.apache.bookkeeper.common.util.Bytes;
-
 /**
- * Marshaller for long numbers.
+ * Common Grpc Netty Utils.
  */
-public class LongMarshaller implements BinaryMarshaller<Long> {
-
-    public static LongMarshaller of() {
-        return INSTANCE;
-    }
-
-    private static final LongMarshaller INSTANCE = new LongMarshaller();
-
-    private LongMarshaller() {}
-
-    @Override
-    public byte[] toBytes(Long value) {
-        return Bytes.toBytes(value);
-    }
-
-    @Override
-    public Long parseBytes(byte[] serialized) {
-        return Bytes.toLong(serialized, 0);
-    }
-}
+package org.apache.bookkeeper.common.grpc.netty;

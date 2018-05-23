@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.bookkeeper.stream.server.grpc.proxy;
+package org.apache.bookkeeper.common.grpc.proxy;
 
 import io.grpc.ClientCall;
 import io.grpc.Metadata;
@@ -28,13 +28,13 @@ import lombok.Getter;
  * Proxy grpc calls.
  */
 @Getter
-public class GrpcCallProxy<ReqT, RespT> {
+class ProxyCall<ReqT, RespT> {
 
     private final RequestProxy serverCallListener;
     private final ResponseProxy clientCallListener;
 
-    public GrpcCallProxy(ServerCall<ReqT, RespT> serverCall,
-                         ClientCall<ReqT, RespT> clientCall) {
+    ProxyCall(ServerCall<ReqT, RespT> serverCall,
+              ClientCall<ReqT, RespT> clientCall) {
         this.serverCallListener = new RequestProxy(clientCall);
         this.clientCallListener = new ResponseProxy(serverCall);
     }
