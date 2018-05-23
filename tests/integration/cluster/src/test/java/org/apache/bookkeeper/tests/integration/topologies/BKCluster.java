@@ -18,6 +18,8 @@
 
 package org.apache.bookkeeper.tests.integration.topologies;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -60,6 +62,7 @@ public class BKCluster {
     private final Network network;
     private final MetadataStoreContainer metadataContainer;
     private final Map<String, BookieContainer> bookieContainers;
+    private final Map<String, String> internalEndpointsToExternalEndpoints;
     private final int numBookies;
     private final String extraServerComponents;
     private volatile boolean enableContainerLog;
@@ -72,6 +75,7 @@ public class BKCluster {
             .withNetwork(network)
             .withNetworkAliases(ZKContainer.HOST_NAME);
         this.bookieContainers = Maps.newTreeMap();
+        this.internalEndpointsToExternalEndpoints = Maps.newConcurrentMap();
         this.numBookies = spec.numBookies();
         this.extraServerComponents = spec.extraServerComponents();
         this.enableContainerLog = spec.enableContainerLog();
@@ -112,6 +116,13 @@ public class BKCluster {
 
         // create bookies
         createBookies("bookie", numBookies);
+    }
+
+    public String resolveExternalGrpcEndpointStr(String internalGrpcEndpointStr) {
+        String externalGrpcEndpointStr = internalEndpointsToExternalEndpoints.get(internalGrpcEndpointStr);
+        checkNotNull(externalGrpcEndpointStr,
+            "No internal grpc endpoint is found : " + internalGrpcEndpointStr);
+        return externalGrpcEndpointStr;
     }
 
     public void stop() {
@@ -155,6 +166,7 @@ public class BKCluster {
         synchronized (this) {
             container = bookieContainers.remove(bookieName);
             if (null != container) {
+                internalEndpointsToExternalEndpoints.remove(container.getInternalGrpcEndpointStr());
                 container.stop();
             }
         }
@@ -175,8 +187,6 @@ public class BKCluster {
                 if (enableContainerLog) {
                     container.tailContainerLog();
                 }
-
-                log.info("Created bookie {}", bookieName);
                 bookieContainers.put(bookieName, container);
             }
         }
@@ -184,6 +194,11 @@ public class BKCluster {
         if (shouldStart) {
             log.info("Starting bookie {}", bookieName);
             container.start();
+            log.info("Started bookie {} : internal endpoint = {}, external endpoint = {}",
+                bookieName, container.getInternalGrpcEndpointStr(), container.getExternalGrpcEndpointStr());
+            internalEndpointsToExternalEndpoints.put(
+                container.getInternalGrpcEndpointStr(),
+                container.getExternalGrpcEndpointStr());
         }
         return container;
     }

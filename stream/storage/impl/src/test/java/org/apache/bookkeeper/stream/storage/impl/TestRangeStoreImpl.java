@@ -211,7 +211,7 @@ public class TestRangeStoreImpl {
         rangeStore = (RangeStoreImpl) RangeStoreBuilder.newBuilder()
             .withStorageConfiguration(storageConf)
             .withStorageResources(storageResources)
-            .withStorageContainerManagerFactory((numScs, storeConf, rgRegistry)
+            .withStorageContainerManagerFactory((storeConf, rgRegistry)
                 -> new LocalStorageContainerManager(endpoint, storeConf, rgRegistry, 2))
             .withRangeStoreFactory(storeFactory)
             .withDefaultBackendUri(URI.create("distributedlog://127.0.0.1/stream/storage"))

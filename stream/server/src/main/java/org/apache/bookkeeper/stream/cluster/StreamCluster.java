@@ -187,8 +187,7 @@ public class StreamCluster
                     bookiePort, grpcPort, bkDir, rangesStoreDir, spec.serveReadOnlyTable);
                 server = StorageServer.buildStorageServer(
                     serverConf,
-                    grpcPort,
-                    spec.numServers() * 2);
+                    grpcPort);
                 server.start();
                 log.info("Started storage server at (bookie port = {}, grpc port = {})",
                     bookiePort, grpcPort);
