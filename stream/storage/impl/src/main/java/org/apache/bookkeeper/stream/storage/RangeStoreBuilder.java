@@ -19,10 +19,12 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import java.net.URI;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
+import org.apache.bookkeeper.stream.protocol.util.StorageContainerPlacementPolicy;
 import org.apache.bookkeeper.stream.storage.api.RangeStore;
 import org.apache.bookkeeper.stream.storage.api.sc.StorageContainerManagerFactory;
 import org.apache.bookkeeper.stream.storage.conf.StorageConfiguration;
 import org.apache.bookkeeper.stream.storage.impl.RangeStoreImpl;
+import org.apache.bookkeeper.stream.storage.impl.sc.StorageContainerPlacementPolicyImpl;
 import org.apache.bookkeeper.stream.storage.impl.store.MVCCStoreFactory;
 
 /**
@@ -38,8 +40,9 @@ public final class RangeStoreBuilder {
     private StorageConfiguration storeConf = null;
     private StorageResources storeResources = null;
     private StorageContainerManagerFactory scmFactory = null;
+    private StorageContainerPlacementPolicy.Factory placementPolicyFactory = () ->
+        StorageContainerPlacementPolicyImpl.of(1024);
     private MVCCStoreFactory mvccStoreFactory = null;
-    private int numStorageContainers = 1024;
     private URI defaultBackendUri = null;
 
     private RangeStoreBuilder() {
@@ -52,7 +55,19 @@ public final class RangeStoreBuilder {
      * @return range store builder
      */
     public RangeStoreBuilder withNumStorageContainers(int numStorageContainers) {
-        this.numStorageContainers = numStorageContainers;
+        this.placementPolicyFactory = () -> StorageContainerPlacementPolicyImpl.of(numStorageContainers);
+        return this;
+    }
+
+    /**
+     * Build the range store with the provided <tt>placementPolicyFactory</tt>.
+     *
+     * @param placementPolicyFactory placement policy factor to create placement policies.
+     * @return range store builder.
+     */
+    public RangeStoreBuilder withStorageContainerPlacementPolicyFactory(
+        StorageContainerPlacementPolicy.Factory placementPolicyFactory) {
+        this.placementPolicyFactory = placementPolicyFactory;
         return this;
     }
 
@@ -130,6 +145,7 @@ public final class RangeStoreBuilder {
         checkNotNull(storeConf, "StorageConfiguration is not provided");
         checkNotNull(mvccStoreFactory, "MVCCStoreFactory is not provided");
         checkNotNull(defaultBackendUri, "Default backend uri is not provided");
+        checkNotNull(placementPolicyFactory, "Storage Container Placement Policy Factory is not provided");
 
         return new RangeStoreImpl(
             storeConf,
@@ -137,7 +153,7 @@ public final class RangeStoreBuilder {
             scmFactory,
             mvccStoreFactory,
             defaultBackendUri,
-            numStorageContainers,
+            placementPolicyFactory,
             statsLogger);
     }
 

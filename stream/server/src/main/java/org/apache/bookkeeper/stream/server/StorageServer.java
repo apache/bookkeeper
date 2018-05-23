@@ -55,6 +55,7 @@ import org.apache.bookkeeper.stream.storage.impl.cluster.ClusterControllerImpl;
 import org.apache.bookkeeper.stream.storage.impl.cluster.ZkClusterControllerLeaderSelector;
 import org.apache.bookkeeper.stream.storage.impl.cluster.ZkClusterMetadataStore;
 import org.apache.bookkeeper.stream.storage.impl.sc.DefaultStorageContainerController;
+import org.apache.bookkeeper.stream.storage.impl.sc.StorageContainerPlacementPolicyImpl;
 import org.apache.bookkeeper.stream.storage.impl.sc.ZkStorageContainerManager;
 import org.apache.bookkeeper.stream.storage.impl.store.MVCCStoreFactoryImpl;
 import org.apache.commons.configuration.CompositeConfiguration;
@@ -143,8 +144,7 @@ public class StorageServer {
         try {
             storageServer = buildStorageServer(
                 conf,
-                grpcPort,
-                1024);
+                grpcPort);
         } catch (ConfigurationException e) {
             log.error("Invalid storage configuration", e);
             return ExitCode.INVALID_CONF.code();
@@ -168,15 +168,13 @@ public class StorageServer {
     }
 
     public static LifecycleComponent buildStorageServer(CompositeConfiguration conf,
-                                                        int grpcPort,
-                                                        int numStorageContainers)
+                                                        int grpcPort)
             throws UnknownHostException, ConfigurationException {
-        return buildStorageServer(conf, grpcPort, numStorageContainers, true, NullStatsLogger.INSTANCE);
+        return buildStorageServer(conf, grpcPort, true, NullStatsLogger.INSTANCE);
     }
 
     public static LifecycleComponent buildStorageServer(CompositeConfiguration conf,
                                                         int grpcPort,
-                                                        int numStorageContainers,
                                                         boolean startBookieAndStartProvider,
                                                         StatsLogger externalStatsLogger)
         throws ConfigurationException, UnknownHostException {
@@ -250,12 +248,21 @@ public class StorageServer {
             .withStorageConfiguration(storageConf)
             // the storage resources shared across multiple components
             .withStorageResources(storageResources)
-            // the number of storage containers
-            .withNumStorageContainers(numStorageContainers)
+            // the placement policy
+            .withStorageContainerPlacementPolicyFactory(() -> {
+                long numStorageContainers;
+                try (ZkClusterMetadataStore store = new ZkClusterMetadataStore(
+                    curatorProviderService.get(),
+                    ZKMetadataDriverBase.resolveZkServers(bkServerConf),
+                    ZK_METADATA_ROOT_PATH)) {
+                    numStorageContainers = store.getClusterMetadata().getNumStorageContainers();
+                }
+                return StorageContainerPlacementPolicyImpl.of((int) numStorageContainers);
+            })
             // the default log backend uri
             .withDefaultBackendUri(dlNamespaceProvider.getDlogUri())
             // with zk-based storage container manager
-            .withStorageContainerManagerFactory((ignored, storeConf, registry) ->
+            .withStorageContainerManagerFactory((storeConf, registry) ->
                 new ZkStorageContainerManager(
                     myEndpoint,
                     storageConf,

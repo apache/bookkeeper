@@ -48,7 +48,6 @@ import org.apache.bookkeeper.stream.storage.api.sc.StorageContainerManagerFactor
 import org.apache.bookkeeper.stream.storage.api.sc.StorageContainerRoutingService;
 import org.apache.bookkeeper.stream.storage.conf.StorageConfiguration;
 import org.apache.bookkeeper.stream.storage.impl.sc.DefaultStorageContainerFactory;
-import org.apache.bookkeeper.stream.storage.impl.sc.StorageContainerPlacementPolicyImpl;
 import org.apache.bookkeeper.stream.storage.impl.sc.StorageContainerRegistryImpl;
 import org.apache.bookkeeper.stream.storage.impl.store.MVCCStoreFactory;
 
@@ -71,15 +70,14 @@ public class RangeStoreImpl
                           StorageContainerManagerFactory factory,
                           MVCCStoreFactory mvccStoreFactory,
                           URI defaultBackendUri,
-                          int numStorageContainers,
+                          StorageContainerPlacementPolicy.Factory placementPolicyFactory,
                           StatsLogger statsLogger) {
         super("range-service", conf, statsLogger);
         this.schedulerResource = schedulerResource;
         this.scheduler = SharedResourceManager.shared().get(schedulerResource);
         this.scmFactory = factory;
-        StorageContainerPlacementPolicy placementPolicy =
-            StorageContainerPlacementPolicyImpl.of(numStorageContainers);
         this.storeFactory = mvccStoreFactory;
+        StorageContainerPlacementPolicy placementPolicy = placementPolicyFactory.newPlacementPolicy();
         this.scRegistry = new StorageContainerRegistryImpl(
             new DefaultStorageContainerFactory(
                 conf,
@@ -88,7 +86,7 @@ public class RangeStoreImpl
                 storeFactory,
                 defaultBackendUri),
             scheduler);
-        this.scManager = scmFactory.create(numStorageContainers, conf, scRegistry);
+        this.scManager = scmFactory.create(conf, scRegistry);
     }
 
     @Override
