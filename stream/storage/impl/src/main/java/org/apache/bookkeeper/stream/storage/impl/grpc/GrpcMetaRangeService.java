@@ -1,7 +1,11 @@
 /*
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -11,26 +15,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package org.apache.bookkeeper.stream.server.grpc;
+package org.apache.bookkeeper.stream.storage.impl.grpc;
 
 import io.grpc.stub.StreamObserver;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.stream.proto.storage.MetaRangeServiceGrpc.MetaRangeServiceImplBase;
 import org.apache.bookkeeper.stream.proto.storage.StorageContainerRequest;
 import org.apache.bookkeeper.stream.proto.storage.StorageContainerResponse;
-import org.apache.bookkeeper.stream.server.handler.StorageContainerResponseHandler;
+import org.apache.bookkeeper.stream.storage.impl.grpc.handler.StorageContainerResponseHandler;
 import org.apache.bookkeeper.stream.storage.api.RangeStore;
+import org.apache.bookkeeper.stream.storage.api.metadata.RangeStoreService;
 
 /**
  * The gRPC protocol based range service.
  */
 @Slf4j
-class GrpcMetaRangeService extends MetaRangeServiceImplBase {
+public class GrpcMetaRangeService extends MetaRangeServiceImplBase {
 
-    private final RangeStore rangeStore;
+    private final RangeStoreService rangeStore;
 
-    GrpcMetaRangeService(RangeStore service) {
+    public GrpcMetaRangeService(RangeStore service) {
         this.rangeStore = service;
         log.info("Created MetaRange service");
     }
