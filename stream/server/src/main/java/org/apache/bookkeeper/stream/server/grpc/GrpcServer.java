@@ -27,6 +27,9 @@ import org.apache.bookkeeper.stream.proto.common.Endpoint;
 import org.apache.bookkeeper.stream.server.conf.StorageServerConfiguration;
 import org.apache.bookkeeper.stream.server.exceptions.StorageServerRuntimeException;
 import org.apache.bookkeeper.stream.storage.api.RangeStore;
+import org.apache.bookkeeper.stream.storage.impl.grpc.GrpcMetaRangeService;
+import org.apache.bookkeeper.stream.storage.impl.grpc.GrpcRootRangeService;
+import org.apache.bookkeeper.stream.storage.impl.grpc.GrpcTableService;
 
 /**
  * KeyRange Server.

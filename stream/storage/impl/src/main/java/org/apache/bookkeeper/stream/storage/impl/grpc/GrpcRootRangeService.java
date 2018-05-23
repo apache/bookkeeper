@@ -1,7 +1,11 @@
 /*
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -11,8 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package org.apache.bookkeeper.stream.server.grpc;
+package org.apache.bookkeeper.stream.storage.impl.grpc;
 
 import io.grpc.stub.StreamObserver;
 import org.apache.bookkeeper.stream.proto.storage.CreateNamespaceRequest;
@@ -29,17 +32,17 @@ import org.apache.bookkeeper.stream.proto.storage.GetStreamRequest;
 import org.apache.bookkeeper.stream.proto.storage.GetStreamResponse;
 import org.apache.bookkeeper.stream.proto.storage.RootRangeServiceGrpc.RootRangeServiceImplBase;
 import org.apache.bookkeeper.stream.proto.storage.StatusCode;
-import org.apache.bookkeeper.stream.server.handler.ResponseHandler;
-import org.apache.bookkeeper.stream.storage.api.RangeStore;
+import org.apache.bookkeeper.stream.storage.impl.grpc.handler.ResponseHandler;
+import org.apache.bookkeeper.stream.storage.api.metadata.RangeStoreService;
 
 /**
  * Grpc based root range service.
  */
-class GrpcRootRangeService extends RootRangeServiceImplBase {
+public class GrpcRootRangeService extends RootRangeServiceImplBase {
 
-    private final RangeStore rs;
+    private final RangeStoreService rs;
 
-    GrpcRootRangeService(RangeStore rs) {
+    public GrpcRootRangeService(RangeStoreService rs) {
         this.rs = rs;
     }
 
