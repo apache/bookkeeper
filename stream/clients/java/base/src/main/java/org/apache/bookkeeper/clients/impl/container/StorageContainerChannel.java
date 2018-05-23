@@ -190,9 +190,13 @@ public class StorageContainerChannel {
             }
             return;
         }
+
+        // intercept the storage server channel with additional sc metadata
+        StorageServerChannel interceptedChannel = serverChannel.intercept(scId);
+
         // update the future
         synchronized (this) {
-            rsChannelFuture.complete(serverChannel);
+            rsChannelFuture.complete(interceptedChannel);
         }
     }
 
