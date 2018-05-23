@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.bookkeeper.stream.tests.integration;
+package org.apache.bookkeeper.tests.integration.stream;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.bookkeeper.common.concurrent.FutureUtils.result;
@@ -38,15 +38,14 @@ import org.apache.bookkeeper.api.kv.PTable;
 import org.apache.bookkeeper.api.kv.exceptions.KvApiException;
 import org.apache.bookkeeper.api.kv.result.Code;
 import org.apache.bookkeeper.api.kv.result.KeyValue;
-import org.apache.bookkeeper.clients.StorageClientBuilder;
 import org.apache.bookkeeper.clients.admin.StorageAdminClient;
 import org.apache.bookkeeper.clients.config.StorageClientSettings;
-import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.bookkeeper.stream.proto.NamespaceConfiguration;
 import org.apache.bookkeeper.stream.proto.NamespaceProperties;
 import org.apache.bookkeeper.stream.proto.StreamConfiguration;
 import org.apache.bookkeeper.stream.proto.StreamProperties;
-import org.apache.bookkeeper.stream.proto.common.Endpoint;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
@@ -55,46 +54,30 @@ import org.junit.rules.TestName;
  * Integration test for table service.
  */
 @Slf4j
-public class TableClientSimpleTest extends StorageServerTestBase {
+public class TableClientSimpleTest extends StreamClusterTestBase {
 
     @Rule
     public final TestName testName = new TestName();
 
     private final String namespace = "test_namespace";
-    private OrderedScheduler scheduler;
     private StorageAdminClient adminClient;
     private StorageClient storageClient;
 
-    @Override
-    protected void doSetup() throws Exception {
-        scheduler = OrderedScheduler.newSchedulerBuilder()
-            .name("table-client-test")
-            .numThreads(1)
-            .build();
-        StorageClientSettings settings = StorageClientSettings.newBuilder()
-            .addEndpoints(cluster.getRpcEndpoints().toArray(new Endpoint[cluster.getRpcEndpoints().size()]))
-            .usePlaintext(true)
-            .build();
+    @Before
+    public void setup() {
+        StorageClientSettings settings = newStorageClientSettings();
         String namespace = "test_namespace";
-        adminClient = StorageClientBuilder.newBuilder()
-            .withSettings(settings)
-            .buildAdmin();
-        storageClient = StorageClientBuilder.newBuilder()
-            .withSettings(settings)
-            .withNamespace(namespace)
-            .build();
+        adminClient = createStorageAdminClient(settings);
+        storageClient = createStorageClient(settings, namespace);
     }
 
-    @Override
-    protected void doTeardown() throws Exception {
+    @After
+    public void teardown() {
         if (null != adminClient) {
             adminClient.close();
         }
         if (null != storageClient) {
             storageClient.close();
-        }
-        if (null != scheduler) {
-            scheduler.shutdown();
         }
     }
 
@@ -123,11 +106,6 @@ public class TableClientSimpleTest extends StorageServerTestBase {
         StreamProperties streamProps = result(
             adminClient.createStream(namespace, streamName, streamConf));
         assertEquals(streamName, streamProps.getStreamName());
-        assertEquals(
-            StreamConfiguration.newBuilder(streamConf)
-                .setBackendServiceUrl(cluster.getDefaultBackendUri().toString())
-                .build(),
-            streamProps.getStreamConf());
 
         // Open the table
         PTable<ByteBuf, ByteBuf> table = result(storageClient.openPTable(streamName));

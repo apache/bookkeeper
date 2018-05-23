@@ -116,7 +116,6 @@ class StorageClientImpl extends AbstractAutoAsyncCloseable implements StorageCli
             serverManager.close();
             closeFuture.complete(null);
             SharedResourceManager.shared().release(resources.scheduler(), scheduler);
-            scheduler.shutdown();
         });
     }
 

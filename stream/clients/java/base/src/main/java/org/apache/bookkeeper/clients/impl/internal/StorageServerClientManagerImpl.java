@@ -65,7 +65,7 @@ public class StorageServerClientManagerImpl
         this(
             settings,
             schedulerResource,
-            StorageServerChannel.factory(settings.usePlaintext()));
+            StorageServerChannel.factory(settings));
     }
 
     public StorageServerClientManagerImpl(StorageClientSettings settings,

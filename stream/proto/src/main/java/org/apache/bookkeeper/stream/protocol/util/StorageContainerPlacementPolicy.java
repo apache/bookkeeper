@@ -31,7 +31,15 @@ package org.apache.bookkeeper.stream.protocol.util;
 /**
  * Placement policy to place ranges to group.
  */
+@FunctionalInterface
 public interface StorageContainerPlacementPolicy {
+
+    @FunctionalInterface
+    interface Factory {
+
+        StorageContainerPlacementPolicy newPlacementPolicy();
+
+    }
 
     long placeStreamRange(long streamId, long rangeId);
 
