@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-job('bookkeeper-jenkins-testing/seed') {
+job('bookkeeper-jenkins-testing-seed') {
   description('Seed job, which allows DSL jobs to be tested before being pushed for review')
 
   // Source code management.

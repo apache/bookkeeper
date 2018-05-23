@@ -19,7 +19,7 @@
 import common_job_properties
 
 // This job deploys a snapshot of latest master to artifactory nightly
-mavenJob('bookkeeper_release_nightly_snapshot') {
+freeStyleJob('bookkeeper_release_nightly_snapshot') {
   description('runs a `mvn clean deploy` of the nightly snapshot for bookkeeper.')
 
   // Set common parameters.
@@ -37,9 +37,22 @@ mavenJob('bookkeeper_release_nightly_snapshot') {
       'Release Snapshot',
       '/release-snapshot')
 
-  // Set maven parameters.
-  common_job_properties.setMavenConfig(delegate)
+  steps {
+    maven {
+      // Set maven parameters.
+      common_job_properties.setMavenConfig(delegate)
 
-  // Maven build project.
-  goals('clean apache-rat:check package spotbugs:check -Dmaven.test.failure.ignore=true deploy -Ddistributedlog -Dstream -DstreamTests')
+      // Maven build project.
+      goals('clean apache-rat:check package spotbugs:check -Dmaven.test.failure.ignore=true deploy -Ddistributedlog -Dstream -DstreamTests -Pdocker')
+    }
+
+    // publish the docker images
+    shell '''
+export MAVEN_HOME=/home/jenkins/tools/maven/latest
+export PATH=$JAVA_HOME/bin:$MAVEN_HOME/bin:$PATH
+export MAVEN_OPTS=-Xmx2048m
+
+./dev/publish-docker-images.sh
+    '''.stripIndent().trim()
+  }
 }
