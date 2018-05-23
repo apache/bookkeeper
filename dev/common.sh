@@ -21,7 +21,8 @@
 #
 
 function get_bk_version() {
-    echo `mvn org.apache.maven.plugins:maven-help-plugin:2.1.1:evaluate -Dexpression=project.version | grep -Ev '(^\[|Download\w+:)' 2> /dev/null`
+    bk_version=`mvn org.apache.maven.plugins:maven-help-plugin:2.1.1:evaluate -Dexpression=project.version | grep -Ev '(^\[|Download\w+:)' 2> /dev/null`
+    echo ${bk_version}
 }
 
 export BK_DEV_DIR=`dirname "$0"`
