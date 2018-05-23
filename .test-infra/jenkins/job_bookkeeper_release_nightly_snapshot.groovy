@@ -47,6 +47,12 @@ freeStyleJob('bookkeeper_release_nightly_snapshot') {
     }
 
     // publish the docker images
-    shell("./dev/publish-docker-images.sh") 
+    shell '''
+export MAVEN_HOME=/home/jenkins/tools/maven/latest
+export PATH=$JAVA_HOME/bin:$MAVEN_HOME/bin:$PATH
+export MAVEN_OPTS=-Xmx2048m
+
+./dev/publish-docker-images.sh
+    '''.stripIndent().trim()
   }
 }
