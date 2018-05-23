@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.bookkeeper.stream.server.handler;
+package org.apache.bookkeeper.stream.storage.impl.grpc.handler;
 
 import io.grpc.StatusException;
 import io.grpc.StatusRuntimeException;

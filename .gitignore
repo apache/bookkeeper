@@ -26,3 +26,6 @@ logs/
 
 # Vagrant
 **/.vagrant
+
+# Data directory
+data/

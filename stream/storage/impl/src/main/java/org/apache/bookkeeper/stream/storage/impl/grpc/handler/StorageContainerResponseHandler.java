@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.bookkeeper.stream.server.handler;
+package org.apache.bookkeeper.stream.storage.impl.grpc.handler;
 
 import io.grpc.stub.StreamObserver;
 import org.apache.bookkeeper.stream.proto.storage.StatusCode;

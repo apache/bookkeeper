@@ -24,6 +24,7 @@ import io.grpc.ManagedChannelBuilder;
 import io.grpc.NameResolver;
 import java.util.List;
 import java.util.Optional;
+import org.apache.bookkeeper.clients.resolver.EndpointResolver;
 import org.apache.bookkeeper.clients.utils.ClientConstants;
 import org.apache.bookkeeper.common.util.Backoff;
 import org.apache.bookkeeper.stream.proto.common.Endpoint;
@@ -55,6 +56,15 @@ public interface StorageClientSettings {
      * @return the list of endpoints.
      */
     List<Endpoint> endpoints();
+
+    /**
+     * Return the endpoint resolver for resolving individual endpoints.
+     *
+     * <p>The default resolver is an identity resolver.
+     *
+     * @return the endpoint resolver for resolving endpoints.
+     */
+    EndpointResolver endpointResolver();
 
     /**
      * Returns the builder to create the managed channel.
@@ -99,6 +109,7 @@ public interface StorageClientSettings {
             numWorkerThreads(Runtime.getRuntime().availableProcessors());
             usePlaintext(true);
             backoffPolicy(ClientConstants.DEFAULT_INFINIT_BACKOFF_POLICY);
+            endpointResolver(EndpointResolver.identity());
         }
 
         @Override

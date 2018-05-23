@@ -33,13 +33,18 @@ import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.Path;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
 /**
  * Integration test for {@link DLFileSystem}.
  */
 @Slf4j
 public class TestDLFileSystem extends TestDLFSBase {
+
+    @Rule
+    public TemporaryFolder tmpDir = new TemporaryFolder();
 
     @Test(expected = FileNotFoundException.class)
     public void testOpenFileNotFound() throws Exception {
@@ -61,8 +66,7 @@ public class TestDLFileSystem extends TestDLFSBase {
         }
         assertTrue(fs.exists(path));
 
-        File tempFile = new File("/tmp/" + runtime.getMethodName());
-        tempFile.delete();
+        File tempFile = tmpDir.newFile();
         Path localDst = new Path(tempFile.getPath());
         // copy the file
         fs.copyToLocalFile(path, localDst);
