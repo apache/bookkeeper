@@ -36,5 +36,5 @@ mavenJob('bookkeeper_codecoverage') {
   common_job_properties.setMavenConfig(delegate)
 
   // Maven build project.
-  goals('clean verify jacoco:report coveralls:report -Pcode-coverage -DrepoToken=$COVERALLS_REPO_TOKEN -Dmaven.test.failure.ignore=true')
+  goals('clean verify jacoco:report coveralls:report -Pcode-coverage -DrepoToken=$COVERALLS_REPO_TOKEN -Dmaven.test.failure.ignore=true -Dstream')
 }
