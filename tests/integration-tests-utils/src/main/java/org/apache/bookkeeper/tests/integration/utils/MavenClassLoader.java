@@ -1,5 +1,4 @@
-/**
- *
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -8,17 +7,15 @@
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
  *
- *   http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
- *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
-package org.apache.bookkeeper.tests;
+package org.apache.bookkeeper.tests.integration.utils;
 
 import com.google.common.collect.Lists;
 
@@ -48,6 +45,9 @@ import org.jboss.shrinkwrap.resolver.api.maven.coordinate.MavenDependency;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * A maven class loader for resolving and loading maven artifacts.
+ */
 public class MavenClassLoader implements AutoCloseable {
     private static final Logger LOG = LoggerFactory.getLogger(MavenClassLoader.class);
 
@@ -127,7 +127,7 @@ public class MavenClassLoader implements AutoCloseable {
                     try {
                         Object type = k.getField("TYPE").get(null);
                         if (type instanceof Class<?>) {
-                            return (Class<?>)type;
+                            return (Class<?>) type;
                         } else {
                             return k;
                         }
@@ -153,7 +153,8 @@ public class MavenClassLoader implements AutoCloseable {
                                                   return closure.call(args);
                                               } else {
                                                   final Class<?> declaringClass = m.getDeclaringClass();
-                                                  return constructor.newInstance(declaringClass, MethodHandles.Lookup.PRIVATE)
+                                                  return constructor.newInstance(
+                                                      declaringClass, MethodHandles.Lookup.PRIVATE)
                                                       .unreflectSpecial(m, declaringClass)
                                                       .bindTo(proxy)
                                                       .invokeWithArguments(args);

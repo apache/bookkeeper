@@ -14,7 +14,6 @@
 package org.apache.bookkeeper.stream.storage.conf;
 
 import java.io.File;
-import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.common.conf.ComponentConfiguration;
 import org.apache.commons.configuration.CompositeConfiguration;

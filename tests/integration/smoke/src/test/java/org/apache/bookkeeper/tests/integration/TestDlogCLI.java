@@ -25,8 +25,8 @@ import com.github.dockerjava.api.DockerClient;
 import java.util.HashSet;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.bookkeeper.tests.BookKeeperClusterUtils;
-import org.apache.bookkeeper.tests.DockerUtils;
+import org.apache.bookkeeper.tests.integration.utils.BookKeeperClusterUtils;
+import org.apache.bookkeeper.tests.integration.utils.DockerUtils;
 import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.junit.Before;
@@ -35,6 +35,9 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.MethodSorters;
 
+/**
+ * Test `bin/dlog`.
+ */
 @Slf4j
 @RunWith(Arquillian.class)
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)

@@ -24,41 +24,41 @@ networks:
 zookeeper*:
   image: zookeeper:3.4.11
   await:
-    strategy: org.apache.bookkeeper.tests.ZooKeeperAwaitStrategy
+    strategy: org.apache.bookkeeper.tests.integration.utils.ZooKeeperAwaitStrategy
   aliases:
     - zookeeper
   beforeStop:
     - customBeforeStopAction:
-        strategy: org.apache.bookkeeper.tests.LogToTargetDirStopAction
+        strategy: org.apache.bookkeeper.tests.integration.utils.LogToTargetDirStopAction
   networkMode: testnetwork*
 
 bookkeeper1*:
   image: apachebookkeeper/bookkeeper-all-versions
   await:
-    strategy: org.apache.bookkeeper.tests.NoopAwaitStrategy
+    strategy: org.apache.bookkeeper.tests.integration.utils.NoopAwaitStrategy
   env: [BK_ZKCONNECTSTRING=zookeeper]
   beforeStop:
     - customBeforeStopAction:
-        strategy: org.apache.bookkeeper.tests.BookKeeperLogsToTargetDirStopAction
+        strategy: org.apache.bookkeeper.tests.integration.utils.BookKeeperLogsToTargetDirStopAction
   networkMode: testnetwork*
 
 bookkeeper2*:
   image: apachebookkeeper/bookkeeper-all-versions
   await:
-    strategy: org.apache.bookkeeper.tests.NoopAwaitStrategy
+    strategy: org.apache.bookkeeper.tests.integration.utils.NoopAwaitStrategy
   env: [BK_ZKCONNECTSTRING=zookeeper]
   beforeStop:
     - customBeforeStopAction:
-        strategy: org.apache.bookkeeper.tests.BookKeeperLogsToTargetDirStopAction
+        strategy: org.apache.bookkeeper.tests.integration.utils.BookKeeperLogsToTargetDirStopAction
   networkMode: testnetwork*
 
 bookkeeper3*:
   image: apachebookkeeper/bookkeeper-all-versions
   await:
-    strategy: org.apache.bookkeeper.tests.NoopAwaitStrategy
+    strategy: org.apache.bookkeeper.tests.integration.utils.NoopAwaitStrategy
   env: [BK_ZKCONNECTSTRING=zookeeper]
   beforeStop:
     - customBeforeStopAction:
-        strategy: org.apache.bookkeeper.tests.BookKeeperLogsToTargetDirStopAction
+        strategy: org.apache.bookkeeper.tests.integration.utils.BookKeeperLogsToTargetDirStopAction
   networkMode: testnetwork*
 

@@ -22,8 +22,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.stream.proto.storage.StorageContainerRequest;
 import org.apache.bookkeeper.stream.proto.storage.StorageContainerResponse;
 import org.apache.bookkeeper.stream.proto.storage.TableServiceGrpc.TableServiceImplBase;
-import org.apache.bookkeeper.stream.storage.impl.grpc.handler.StorageContainerResponseHandler;
 import org.apache.bookkeeper.stream.storage.api.metadata.RangeStoreService;
+import org.apache.bookkeeper.stream.storage.impl.grpc.handler.StorageContainerResponseHandler;
 
 /**
  * The gRPC protocol based k/v service.
