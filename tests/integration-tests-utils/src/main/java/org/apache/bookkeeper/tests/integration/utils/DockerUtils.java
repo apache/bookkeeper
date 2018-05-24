@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -7,30 +7,29 @@
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
  *
- *   http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
-package org.apache.bookkeeper.tests;
+package org.apache.bookkeeper.tests.integration.utils;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.async.ResultCallback;
 import com.github.dockerjava.api.command.InspectExecResponse;
-import com.github.dockerjava.api.model.Frame;
 import com.github.dockerjava.api.model.ContainerNetwork;
+import com.github.dockerjava.api.model.Frame;
 
 import java.io.Closeable;
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.InputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Set;
@@ -39,12 +38,15 @@ import java.util.concurrent.ExecutionException;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
+import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Docker utilities for integration tests.
+ */
 public class DockerUtils {
     private static final Logger LOG = LoggerFactory.getLogger(DockerUtils.class);
 
@@ -92,7 +94,7 @@ public class DockerUtils {
                         }
                     });
             future.get();
-        } catch (RuntimeException|ExecutionException|IOException e) {
+        } catch (RuntimeException | ExecutionException | IOException e) {
             LOG.error("Error dumping log for {}", containerId, e);
         } catch (InterruptedException ie) {
             Thread.currentThread().interrupt();
@@ -101,7 +103,7 @@ public class DockerUtils {
     }
 
     public static void dumpContainerLogDirToTarget(DockerClient docker, String containerId, String path) {
-        final int READ_BLOCK_SIZE = 10000;
+        final int readBlockSize = 10000;
 
         try (InputStream dockerStream = docker.copyArchiveFromContainerCmd(containerId, path).exec();
              TarArchiveInputStream stream = new TarArchiveInputStream(dockerStream)) {
@@ -110,17 +112,17 @@ public class DockerUtils {
                 if (entry.isFile()) {
                     File output = new File(getTargetDirectory(containerId), entry.getName().replace("/", "-"));
                     try (FileOutputStream os = new FileOutputStream(output)) {
-                        byte[] block = new byte[READ_BLOCK_SIZE];
-                        int read = stream.read(block, 0, READ_BLOCK_SIZE);
+                        byte[] block = new byte[readBlockSize];
+                        int read = stream.read(block, 0, readBlockSize);
                         while (read > -1) {
                             os.write(block, 0, read);
-                            read = stream.read(block, 0, READ_BLOCK_SIZE);
+                            read = stream.read(block, 0, readBlockSize);
                         }
                     }
                 }
                 entry = stream.getNextTarEntry();
             }
-        } catch (RuntimeException|IOException e) {
+        } catch (RuntimeException | IOException e) {
             LOG.error("Error reading bk logs from container {}", containerId, e);
         }
     }

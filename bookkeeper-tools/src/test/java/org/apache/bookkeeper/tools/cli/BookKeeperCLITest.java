@@ -56,7 +56,7 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
 /**
- * Unit test of {@link BookKeeperCLI}
+ * Unit test of {@link BookKeeperCLI}.
  */
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({ BookKeeperCLI.class, CmdBase.class })

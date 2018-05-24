@@ -54,7 +54,8 @@ public class DefaultStorageContainerController implements StorageContainerContro
         implements Comparator<Pair<BookieSocketAddress, LinkedList<Long>>> {
 
         @Override
-        public int compare(Pair<BookieSocketAddress, LinkedList<Long>> o1, Pair<BookieSocketAddress, LinkedList<Long>> o2) {
+        public int compare(Pair<BookieSocketAddress, LinkedList<Long>> o1,
+                           Pair<BookieSocketAddress, LinkedList<Long>> o2) {
             int res = Integer.compare(o1.getValue().size(), o2.getValue().size());
             if (0 == res) {
                 // two servers have same number of container
@@ -131,8 +132,8 @@ public class DefaultStorageContainerController implements StorageContainerContro
             .collect(Collectors.toSet());
 
         // 5. use an ordered set as priority deque to sort the servers by the number of assigned containers
-        TreeSet<Pair<BookieSocketAddress, LinkedList<Long>>> assignmentQueue
-            = new TreeSet<>(new ServerAssignmentDataComparator());
+        TreeSet<Pair<BookieSocketAddress, LinkedList<Long>>> assignmentQueue =
+            new TreeSet<>(new ServerAssignmentDataComparator());
         for (Map.Entry<BookieSocketAddress, Set<Long>> entry : currentServerAssignments.entrySet()) {
             BookieSocketAddress host = entry.getKey();
 

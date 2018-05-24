@@ -26,15 +26,6 @@
   <groupId>org.apache.bookkeeper.stats</groupId>
   <artifactId>prometheus-metrics-provider</artifactId>
   <name>Apache BookKeeper :: Stats Providers :: Prometheus</name>
-  <build>
-    <plugins>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-checkstyle-plugin</artifactId>
-      </plugin>
-    </plugins>
-  </build>
-
   <dependencies>
     <dependency>
       <groupId>org.apache.bookkeeper.stats</groupId>

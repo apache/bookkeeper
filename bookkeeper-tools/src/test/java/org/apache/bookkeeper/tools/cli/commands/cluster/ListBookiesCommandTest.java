@@ -155,14 +155,14 @@ public class ListBookiesCommandTest extends DiscoveryCommandTestBase {
         assertTrue(runner.runArgs(args));
 
         if (readwrite && !readonly) {
-            verifyPrintBookies(3181, 10,1);
-            verifyPrintBookies(4181, 10,0);
+            verifyPrintBookies(3181, 10, 1);
+            verifyPrintBookies(4181, 10, 0);
         } else if (readonly && !readwrite) {
-            verifyPrintBookies(3181, 10,0);
-            verifyPrintBookies(4181, 10,1);
+            verifyPrintBookies(3181, 10, 0);
+            verifyPrintBookies(4181, 10, 1);
         } else {
-            verifyPrintBookies(3181, 10,1);
-            verifyPrintBookies(4181, 10,1);
+            verifyPrintBookies(3181, 10, 1);
+            verifyPrintBookies(4181, 10, 1);
         }
     }
 

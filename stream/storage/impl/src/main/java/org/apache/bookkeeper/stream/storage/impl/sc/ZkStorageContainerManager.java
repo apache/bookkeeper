@@ -265,7 +265,7 @@ public class ZkStorageContainerManager
             pendingStartStopContainers.add(scId);
             return registry
                 .startStorageContainer(scId)
-                .whenComplete((container, cause ) -> {
+                .whenComplete((container, cause) -> {
                     try {
                         if (null != cause) {
                             log.warn("Failed to start storage container ({})", scId, cause);

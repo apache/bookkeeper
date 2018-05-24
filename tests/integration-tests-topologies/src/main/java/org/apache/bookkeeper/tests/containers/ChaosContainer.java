@@ -34,7 +34,7 @@ import org.testcontainers.containers.GenericContainer;
  * A base container provides chaos capability.
  */
 @Slf4j
-public class ChaosContainer<SELF extends ChaosContainer<SELF>> extends GenericContainer<SELF> {
+public class ChaosContainer<SelfT extends ChaosContainer<SelfT>> extends GenericContainer<SelfT> {
 
     protected final String clusterName;
 
@@ -45,7 +45,7 @@ public class ChaosContainer<SELF extends ChaosContainer<SELF>> extends GenericCo
 
     public void tailContainerLog() {
         CompletableFuture.runAsync(() -> {
-            while(null == containerId) {
+            while (null == containerId) {
                 try {
                     TimeUnit.MILLISECONDS.sleep(100);
                 } catch (InterruptedException e) {

@@ -16,19 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.bookkeeper.tests.containers;
-
 /**
- * An abstract class for metadata store container.
+ * Test containers used for running integration tests.
  */
-public abstract class MetadataStoreContainer<SelfT extends MetadataStoreContainer<SelfT>>
-        extends ChaosContainer<SelfT> {
-    protected MetadataStoreContainer(String clusterName, String image) {
-        super(clusterName, image);
-    }
-
-    public abstract String getExternalServiceUri();
-
-    public abstract String getInternalServiceUri();
-
-}
+package org.apache.bookkeeper.tests.containers;

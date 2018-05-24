@@ -28,6 +28,9 @@ import org.apache.bookkeeper.tools.cli.commands.CmdBase;
 @Slf4j
 public class CommandTestBase {
 
+    /**
+     * Command Runner to run commands inherited from {@link CmdBase}.
+     */
     protected static class CommandRunner extends CmdBase {
 
         public CommandRunner(ServerConfiguration conf, Command command) {
