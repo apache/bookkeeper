@@ -21,7 +21,11 @@
 #
 
 function get_bk_version() {
-    bk_version=`mvn org.apache.maven.plugins:maven-help-plugin:2.1.1:evaluate -Dexpression=project.version | grep -Ev '(^\[|Download\w+:)' 2> /dev/null`
+    bk_version=$(mvn -q \
+    -Dexec.executable="echo" \
+    -Dexec.args='${project.version}' \
+    --non-recursive \
+    org.codehaus.mojo:exec-maven-plugin:1.3.1:exec)
     echo ${bk_version}
 }
 
