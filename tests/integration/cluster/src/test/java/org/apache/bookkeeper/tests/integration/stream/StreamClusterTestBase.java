@@ -19,6 +19,7 @@
 package org.apache.bookkeeper.tests.integration.stream;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.api.StorageClient;
@@ -26,6 +27,8 @@ import org.apache.bookkeeper.clients.StorageClientBuilder;
 import org.apache.bookkeeper.clients.admin.StorageAdminClient;
 import org.apache.bookkeeper.clients.config.StorageClientSettings;
 import org.apache.bookkeeper.clients.utils.NetUtils;
+import org.apache.bookkeeper.common.concurrent.FutureUtils;
+import org.apache.bookkeeper.common.util.AsyncCloseable;
 import org.apache.bookkeeper.stream.proto.common.Endpoint;
 import org.apache.bookkeeper.tests.integration.cluster.BookKeeperClusterTestBase;
 import org.apache.bookkeeper.tests.integration.topologies.BKClusterSpec;
@@ -102,6 +105,19 @@ public abstract class StreamClusterTestBase extends BookKeeperClusterTestBase {
             .withSettings(settings)
             .withNamespace(namespace)
             .build();
+    }
+
+    protected static void closeResourceQuietly(AsyncCloseable closeable) {
+        if (null == closeable) {
+            return;
+        }
+        try {
+            FutureUtils.result(
+                closeable.closeAsync(),
+                30, TimeUnit.SECONDS);
+        } catch (Exception e) {
+            log.warn("Failed to close resource {} : ", closeable, e);
+        }
     }
 
 }

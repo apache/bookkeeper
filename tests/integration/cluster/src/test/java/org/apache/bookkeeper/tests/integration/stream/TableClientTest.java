@@ -84,12 +84,8 @@ public class TableClientTest extends StreamClusterTestBase {
 
     @After
     public void teardown() {
-        if (null != adminClient) {
-            adminClient.close();
-        }
-        if (null != storageClient) {
-            storageClient.close();
-        }
+        closeResourceQuietly(adminClient);
+        closeResourceQuietly(storageClient);
     }
 
     private static ByteBuf getLKey(int i) {
