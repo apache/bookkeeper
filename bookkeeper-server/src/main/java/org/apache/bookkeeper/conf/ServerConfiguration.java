@@ -18,6 +18,7 @@
 package org.apache.bookkeeper.conf;
 
 import com.google.common.annotations.Beta;
+import com.google.common.base.Strings;
 import java.io.File;
 import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.bookie.InterleavedLedgerStorage;
@@ -2706,7 +2707,8 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return the extra list of server lifecycle components to enable on a bookie server.
      */
     public String[] getExtraServerComponents() {
-        if (!this.containsKey(EXTRA_SERVER_COMPONENTS)) {
+        String extraServerComponentsStr = getString(EXTRA_SERVER_COMPONENTS);
+        if (Strings.isNullOrEmpty(extraServerComponentsStr)) {
             return null;
         }
         return this.getStringArray(EXTRA_SERVER_COMPONENTS);
