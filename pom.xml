@@ -759,7 +759,7 @@
         <version>${maven-surefire-plugin.version}</version>
         <configuration>
           <argLine>-Xmx2G -Djava.net.preferIPv4Stack=true</argLine>
-          <redirectTestOutputToFile>true</redirectTestOutputToFile>
+          <redirectTestOutputToFile>${redirectTestOutputToFile}</redirectTestOutputToFile>
           <reuseForks>false</reuseForks>
           <forkedProcessTimeoutInSeconds>1800</forkedProcessTimeoutInSeconds>
           <rerunFailingTestsCount>2</rerunFailingTestsCount>
@@ -894,7 +894,7 @@
             <configuration>
               <!-- @{argLine} is a variable injected by JaCoCo-->
               <argLine>@{argLine} -Xmx2G -Djava.net.preferIPv4Stack=true</argLine>
-              <redirectTestOutputToFile>true</redirectTestOutputToFile>
+              <redirectTestOutputToFile>${redirectTestOutputToFile}</redirectTestOutputToFile>
               <reuseForks>false</reuseForks>
               <forkedProcessTimeoutInSeconds>1800</forkedProcessTimeoutInSeconds>
               <!-- we want build to complete even in case of failures -->
