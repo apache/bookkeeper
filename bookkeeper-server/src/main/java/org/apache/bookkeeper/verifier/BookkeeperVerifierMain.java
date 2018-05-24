@@ -60,7 +60,7 @@ public class BookkeeperVerifierMain {
                 "write_quorum", true, "Bookkeeper client write quorum size");
         options.addOption("ack_quorum", true, "Bookkeeper client ack quorum size");
         options.addOption("duration", true, "Run duration in seconds");
-        options.addOption("drainTimeout", true, "Seconds to wait for in progress ops to end");
+        options.addOption("drain_timeout", true, "Seconds to wait for in progress ops to end");
         options.addOption(
                 "target_concurrent_ledgers",
                 true,
