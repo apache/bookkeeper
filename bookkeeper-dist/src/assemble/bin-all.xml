@@ -114,6 +114,12 @@
         <exclude>io.netty:netty-tcnative-boringssl-static</exclude>
         <exclude>io.netty:netty-transport-native-epoll</exclude>
         <exclude>io.netty:netty-transport</exclude>
+        <!-- All these dependencies are already included in stream-storage-java-client -->
+        <exclude>org.apache.bookkeeper:stream-storage-common</exclude>
+        <exclude>org.apache.bookkeeper:stream-storage-proto</exclude>
+        <exclude>org.apache.bookkeeper:stream-storage-api</exclude>
+        <exclude>org.apache.bookkeeper:stream-storage-java-client-base</exclude>
+        <exclude>org.apache.bookkeeper:stream-storage-java-kv-client</exclude>
       </excludes>
     </dependencySet>
   </dependencySets>
