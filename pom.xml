@@ -867,6 +867,9 @@
 
             <!-- data -->
             <exclude>data/**</exclude>
+
+            <!-- vargrant -->
+            <exclude>dev/.vagrant/**</exclude>
           </excludes>
           <consoleOutput>true</consoleOutput>
         </configuration>
