@@ -22,13 +22,20 @@ package org.apache.bookkeeper.proto;
  */
 
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
 
+import java.lang.reflect.Field;
+import java.nio.channels.FileChannel;
 import java.util.Enumeration;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.bookkeeper.bookie.Bookie;
+import org.apache.bookkeeper.bookie.Journal;
+import org.apache.bookkeeper.bookie.SlowBufferedChannel;
 import org.apache.bookkeeper.bookie.SlowInterleavedLedgerStorage;
 import org.apache.bookkeeper.bookie.SlowSortedLedgerStorage;
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
@@ -42,6 +49,7 @@ import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.hamcrest.Matchers;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 
 import org.slf4j.Logger;
@@ -51,6 +59,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Tests for backpressure handling on the server side.
  */
+// PowerMock usage is problematic here due to https://github.com/powermock/powermock/issues/822
 public class BookieBackpressureTest extends BookKeeperClusterTestCase
         implements AddCallback, ReadCallback, ReadLastConfirmedCallback {
 
@@ -67,11 +76,26 @@ public class BookieBackpressureTest extends BookKeeperClusterTestCase
 
     DigestType digestType;
 
+    long getDelay;
+    long addDelay;
+    long flushDelay;
+
     public BookieBackpressureTest() {
         super(1);
         this.digestType = DigestType.CRC32;
 
         baseClientConf.setAddEntryTimeout(100);
+        baseClientConf.setAddEntryQuorumTimeout(100);
+        baseClientConf.setReadEntryTimeout(100);
+    }
+
+    @Before
+    @Override
+    public void setUp() throws Exception {
+        super.setUp();
+        getDelay = 0;
+        addDelay = 0;
+        flushDelay = 0;
     }
 
     class SyncObj {
@@ -96,11 +120,39 @@ public class BookieBackpressureTest extends BookKeeperClusterTestCase
         }
     }
 
+    private void mockJournal(Bookie bookie, long getDelay, long addDelay, long flushDelay) throws Exception {
+        if (getDelay <= 0 && addDelay <= 0 && flushDelay <= 0) {
+            return;
+        }
+
+        List<Journal> journals = getJournals(bookie);
+        for (int i = 0; i < journals.size(); i++) {
+            Journal mock = spy(journals.get(i));
+            when(mock.getBufferedChannelBuilder()).thenReturn((FileChannel fc, int capacity) ->  {
+                SlowBufferedChannel sbc = new SlowBufferedChannel(fc, capacity);
+                sbc.setAddDelay(addDelay);
+                sbc.setGetDelay(getDelay);
+                sbc.setFlushDelay(flushDelay);
+                return sbc;
+            });
+
+            journals.set(i, mock);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<Journal> getJournals(Bookie bookie) throws NoSuchFieldException, IllegalAccessException {
+        Field f = bookie.getClass().getDeclaredField("journals");
+        f.setAccessible(true);
+
+        return (List<Journal>) f.get(bookie);
+    }
+
     @Test
     public void testWriteNoBackpressureSlowJournal() throws Exception {
         //disable backpressure for writes
         bsConfs.get(0).setMaxAddsInProgress(0);
-        bsConfs.get(0).setProperty(Bookie.PROP_SLOW_JOURNAL_ADD_DELAY, "1");
+        addDelay = 1;
 
         doWritesNoBackpressure(0);
     }
@@ -111,7 +163,7 @@ public class BookieBackpressureTest extends BookKeeperClusterTestCase
         bsConfs.get(0).setMaxAddsInProgress(0);
         // to increase frequency of flushes
         bsConfs.get(0).setJournalAdaptiveGroupWrites(false);
-        bsConfs.get(0).setProperty(Bookie.PROP_SLOW_JOURNAL_FLUSH_DELAY, "1");
+        flushDelay = 1;
 
         doWritesNoBackpressure(0);
     }
@@ -120,7 +172,7 @@ public class BookieBackpressureTest extends BookKeeperClusterTestCase
     public void testWriteWithBackpressureSlowJournal() throws Exception {
         //enable backpressure with MAX_PENDING writes in progress
         bsConfs.get(0).setMaxAddsInProgress(MAX_PENDING);
-        bsConfs.get(0).setProperty(Bookie.PROP_SLOW_JOURNAL_FLUSH_DELAY, "1");
+        flushDelay = 1;
 
         doWritesWithBackpressure(0);
     }
@@ -132,7 +184,7 @@ public class BookieBackpressureTest extends BookKeeperClusterTestCase
         bsConfs.get(0).setMaxAddsInProgress(MAX_PENDING);
         // to increase frequency of flushes
         bsConfs.get(0).setJournalAdaptiveGroupWrites(false);
-        bsConfs.get(0).setProperty(Bookie.PROP_SLOW_JOURNAL_FLUSH_DELAY, "1");
+        flushDelay = 1;
 
         doWritesWithBackpressure(0);
     }
@@ -255,6 +307,7 @@ public class BookieBackpressureTest extends BookKeeperClusterTestCase
         BookieServer bks = bs.get(bkId);
         bks.shutdown();
         bks = new BookieServer(bsConfs.get(bkId));
+        mockJournal(bks.bookie, getDelay, addDelay, flushDelay);
         bks.start();
         bs.set(bkId, bks);
 
@@ -294,6 +347,7 @@ public class BookieBackpressureTest extends BookKeeperClusterTestCase
         BookieServer bks = bs.get(bkId);
         bks.shutdown();
         bks = new BookieServer(bsConfs.get(bkId));
+        mockJournal(bks.bookie, getDelay, addDelay, flushDelay);
         bks.start();
         bs.set(bkId, bks);
 
@@ -335,6 +389,7 @@ public class BookieBackpressureTest extends BookKeeperClusterTestCase
         BookieServer bks = bs.get(bkId);
         bks.shutdown();
         bks = new BookieServer(bsConfs.get(bkId));
+        mockJournal(bks.bookie, getDelay, addDelay, flushDelay);
         bks.start();
         bs.set(bkId, bks);
 
