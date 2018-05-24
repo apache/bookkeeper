@@ -331,11 +331,13 @@ public class BookieRequestProcessor implements RequestProcessor {
             if (!addsSemaphore.tryAcquire()) {
                 final long throttlingStartTimeNanos = MathUtils.nowInNano();
                 channel.config().setAutoRead(false);
+                LOG.info("Too many add requests in progress, disabling autoread on channel {}", channel);
                 addsBlocked.incrementAndGet();
                 addsSemaphore.acquireUninterruptibly();
                 channel.config().setAutoRead(true);
-                addEntryBlockedStats.registerSuccessfulEvent(MathUtils.elapsedNanos(throttlingStartTimeNanos),
-                        TimeUnit.NANOSECONDS);
+                final long delayNanos = MathUtils.elapsedNanos(throttlingStartTimeNanos);
+                LOG.info("Re-enabled autoread on channel {} after AddRequest delay of {} nanos", channel, delayNanos);
+                addEntryBlockedStats.registerSuccessfulEvent(delayNanos, TimeUnit.NANOSECONDS);
                 addsBlocked.decrementAndGet();
             }
         }
@@ -355,11 +357,13 @@ public class BookieRequestProcessor implements RequestProcessor {
             if (!readsSemaphore.tryAcquire()) {
                 final long throttlingStartTimeNanos = MathUtils.nowInNano();
                 channel.config().setAutoRead(false);
+                LOG.info("Too many read requests in progress, disabling autoread on channel {}", channel);
                 readsBlocked.incrementAndGet();
                 readsSemaphore.acquireUninterruptibly();
                 channel.config().setAutoRead(true);
-                readEntryBlockedStats.registerSuccessfulEvent(MathUtils.elapsedNanos(throttlingStartTimeNanos),
-                        TimeUnit.NANOSECONDS);
+                final long delayNanos = MathUtils.elapsedNanos(throttlingStartTimeNanos);
+                LOG.info("Re-enabled autoread on channel {} after ReadRequest delay of {} nanos", channel, delayNanos);
+                readEntryBlockedStats.registerSuccessfulEvent(delayNanos, TimeUnit.NANOSECONDS);
                 readsBlocked.decrementAndGet();
             }
         }
