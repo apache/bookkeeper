@@ -82,8 +82,8 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     protected static final String NUM_JOURNAL_CALLBACK_THREADS = "numJournalCallbackThreads";
     protected static final String JOURNAL_FORMAT_VERSION_TO_WRITE = "journalFormatVersionToWrite";
     // backpressure control
-    protected static final String MAX_ADDS_IN_PROGRESS = "maxAddsInProgress";
-    protected static final String MAX_READS_IN_PROGRESS = "maxReadsInProgress";
+    protected static final String MAX_ADDS_IN_PROGRESS_LIMIT = "maxAddsInProgressLimit";
+    protected static final String MAX_READS_IN_PROGRESS_LIMIT = "maxReadsInProgressLimit";
     protected static final String CLOSE_CHANNEL_ON_RESPONSE_TIMEOUT = "closeChannelOnResponseTimeout";
     // Bookie Parameters
     protected static final String BOOKIE_PORT = "bookiePort";
@@ -645,8 +645,8 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      *
      * @return Max number of adds in progress.
      */
-    public int getMaxAddsInProgress() {
-        return this.getInt(MAX_ADDS_IN_PROGRESS, 0);
+    public int getMaxAddsInProgressLimit() {
+        return this.getInt(MAX_ADDS_IN_PROGRESS_LIMIT, 0);
     }
 
     /**
@@ -656,8 +656,8 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      *          max number of adds in progress.
      * @return server configuration.
      */
-    public ServerConfiguration setMaxAddsInProgress(int value) {
-        this.setProperty(MAX_ADDS_IN_PROGRESS, value);
+    public ServerConfiguration setMaxAddsInProgressLimit(int value) {
+        this.setProperty(MAX_ADDS_IN_PROGRESS_LIMIT, value);
         return this;
     }
 
@@ -666,8 +666,8 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      *
      * @return Max number of reads in progress.
      */
-    public int getMaxReadsInProgress() {
-        return this.getInt(MAX_READS_IN_PROGRESS, 0);
+    public int getMaxReadsInProgressLimit() {
+        return this.getInt(MAX_READS_IN_PROGRESS_LIMIT, 0);
     }
 
     /**
@@ -677,8 +677,8 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      *          max number of reads in progress.
      * @return server configuration.
      */
-    public ServerConfiguration setMaxReadsInProgress(int value) {
-        this.setProperty(MAX_READS_IN_PROGRESS, value);
+    public ServerConfiguration setMaxReadsInProgressLimit(int value) {
+        this.setProperty(MAX_READS_IN_PROGRESS_LIMIT, value);
         return this;
     }
 

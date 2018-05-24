@@ -151,7 +151,7 @@ public class BookieBackpressureTest extends BookKeeperClusterTestCase
     @Test
     public void testWriteNoBackpressureSlowJournal() throws Exception {
         //disable backpressure for writes
-        bsConfs.get(0).setMaxAddsInProgress(0);
+        bsConfs.get(0).setMaxAddsInProgressLimit(0);
         addDelay = 1;
 
         doWritesNoBackpressure(0);
@@ -160,7 +160,7 @@ public class BookieBackpressureTest extends BookKeeperClusterTestCase
     @Test
     public void testWriteNoBackpressureSlowJournalFlush() throws Exception {
         //disable backpressure for writes
-        bsConfs.get(0).setMaxAddsInProgress(0);
+        bsConfs.get(0).setMaxAddsInProgressLimit(0);
         // to increase frequency of flushes
         bsConfs.get(0).setJournalAdaptiveGroupWrites(false);
         flushDelay = 1;
@@ -171,7 +171,7 @@ public class BookieBackpressureTest extends BookKeeperClusterTestCase
     @Test
     public void testWriteWithBackpressureSlowJournal() throws Exception {
         //enable backpressure with MAX_PENDING writes in progress
-        bsConfs.get(0).setMaxAddsInProgress(MAX_PENDING);
+        bsConfs.get(0).setMaxAddsInProgressLimit(MAX_PENDING);
         flushDelay = 1;
 
         doWritesWithBackpressure(0);
@@ -181,7 +181,7 @@ public class BookieBackpressureTest extends BookKeeperClusterTestCase
     @Test
     public void testWriteWithBackpressureSlowJournalFlush() throws Exception {
         //enable backpressure with MAX_PENDING writes in progress
-        bsConfs.get(0).setMaxAddsInProgress(MAX_PENDING);
+        bsConfs.get(0).setMaxAddsInProgressLimit(MAX_PENDING);
         // to increase frequency of flushes
         bsConfs.get(0).setJournalAdaptiveGroupWrites(false);
         flushDelay = 1;
@@ -192,7 +192,7 @@ public class BookieBackpressureTest extends BookKeeperClusterTestCase
     @Test
     public void testWriteNoBackpressureSlowInterleavedStorage() throws Exception {
         //disable backpressure for writes
-        bsConfs.get(0).setMaxAddsInProgress(0);
+        bsConfs.get(0).setMaxAddsInProgressLimit(0);
         bsConfs.get(0).setLedgerStorageClass(SlowInterleavedLedgerStorage.class.getName());
         bsConfs.get(0).setWriteBufferBytes(data.length);
 
@@ -204,7 +204,7 @@ public class BookieBackpressureTest extends BookKeeperClusterTestCase
     @Test
     public void testWriteWithBackpressureSlowInterleavedStorage() throws Exception {
         //enable backpressure with MAX_PENDING writes in progress
-        bsConfs.get(0).setMaxAddsInProgress(MAX_PENDING);
+        bsConfs.get(0).setMaxAddsInProgressLimit(MAX_PENDING);
         bsConfs.get(0).setLedgerStorageClass(SlowInterleavedLedgerStorage.class.getName());
         bsConfs.get(0).setWriteBufferBytes(data.length);
 
@@ -216,7 +216,7 @@ public class BookieBackpressureTest extends BookKeeperClusterTestCase
     @Test
     public void testWriteNoBackpressureSlowInterleavedStorageFlush() throws Exception {
         //disable backpressure for writes
-        bsConfs.get(0).setMaxAddsInProgress(0);
+        bsConfs.get(0).setMaxAddsInProgressLimit(0);
         bsConfs.get(0).setLedgerStorageClass(SlowInterleavedLedgerStorage.class.getName());
         bsConfs.get(0).setWriteBufferBytes(data.length);
 
@@ -228,7 +228,7 @@ public class BookieBackpressureTest extends BookKeeperClusterTestCase
     @Test
     public void testWriteWithBackpressureSlowInterleavedStorageFlush() throws Exception {
         //enable backpressure with MAX_PENDING writes in progress
-        bsConfs.get(0).setMaxAddsInProgress(MAX_PENDING);
+        bsConfs.get(0).setMaxAddsInProgressLimit(MAX_PENDING);
         bsConfs.get(0).setLedgerStorageClass(SlowInterleavedLedgerStorage.class.getName());
         bsConfs.get(0).setWriteBufferBytes(data.length);
 
@@ -240,7 +240,7 @@ public class BookieBackpressureTest extends BookKeeperClusterTestCase
     @Test
     public void testWriteNoBackpressureSortedStorage() throws Exception {
         //disable backpressure for writes
-        bsConfs.get(0).setMaxAddsInProgress(0);
+        bsConfs.get(0).setMaxAddsInProgressLimit(0);
         bsConfs.get(0).setLedgerStorageClass(SlowSortedLedgerStorage.class.getName());
         bsConfs.get(0).setWriteBufferBytes(data.length);
 
@@ -258,7 +258,7 @@ public class BookieBackpressureTest extends BookKeeperClusterTestCase
     @Test
     public void testWriteWithBackpressureSortedStorage() throws Exception {
         //enable backpressure with MAX_PENDING writes in progress
-        bsConfs.get(0).setMaxAddsInProgress(MAX_PENDING);
+        bsConfs.get(0).setMaxAddsInProgressLimit(MAX_PENDING);
         bsConfs.get(0).setLedgerStorageClass(SlowSortedLedgerStorage.class.getName());
         bsConfs.get(0).setWriteBufferBytes(data.length);
 
@@ -276,7 +276,7 @@ public class BookieBackpressureTest extends BookKeeperClusterTestCase
     @Test
     public void testReadsNoBackpressure() throws Exception {
         //disable backpressure for reads
-        bsConfs.get(0).setMaxReadsInProgress(0);
+        bsConfs.get(0).setMaxReadsInProgressLimit(0);
         bsConfs.get(0).setLedgerStorageClass(SlowInterleavedLedgerStorage.class.getName());
         bsConfs.get(0).setWriteBufferBytes(data.length);
 
@@ -291,7 +291,7 @@ public class BookieBackpressureTest extends BookKeeperClusterTestCase
    @Test
     public void testReadsWithBackpressure() throws Exception {
         //enable backpressure for reads
-        bsConfs.get(0).setMaxReadsInProgress(MAX_PENDING);
+        bsConfs.get(0).setMaxReadsInProgressLimit(MAX_PENDING);
         bsConfs.get(0).setLedgerStorageClass(SlowInterleavedLedgerStorage.class.getName());
         bsConfs.get(0).setWriteBufferBytes(data.length);
 

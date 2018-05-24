@@ -270,10 +270,10 @@ public class BookieRequestProcessor implements RequestProcessor {
         this.addEntryBlockedStats = statsLogger.getOpStatsLogger(ADD_ENTRY_BLOCKED_WAIT);
         this.readEntryBlockedStats = statsLogger.getOpStatsLogger(READ_ENTRY_BLOCKED_WAIT);
 
-        int maxAdds = serverCfg.getMaxAddsInProgress();
+        int maxAdds = serverCfg.getMaxAddsInProgressLimit();
         addsSemaphore = maxAdds > 0 ? new Semaphore(maxAdds, true) : null;
 
-        int maxReads = serverCfg.getMaxReadsInProgress();
+        int maxReads = serverCfg.getMaxReadsInProgressLimit();
         readsSemaphore = maxReads > 0 ? new Semaphore(maxReads, true) : null;
 
         statsLogger.registerGauge(ADD_ENTRY_IN_PROGRESS, new Gauge<Number>() {
