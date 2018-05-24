@@ -132,9 +132,6 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
     protected static final String NETTY_MAX_FRAME_SIZE = "nettyMaxFrameSizeBytes";
     protected static final int DEFAULT_NETTY_MAX_FRAME_SIZE = 5 * 1024 * 1024; // 5MB
 
-    // backpressure configuration
-    protected static final String WAIT_TIMEOUT_ON_BACKPRESSURE = "waitTimeoutOnBackpressureMs";
-
     // Zookeeper ACL settings
     protected static final String ZK_ENABLE_SECURITY = "zkEnableSecurity";
 
@@ -668,34 +665,6 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      */
     public T setNettyMaxFrameSizeBytes(int maxSize) {
         setProperty(NETTY_MAX_FRAME_SIZE, String.valueOf(maxSize));
-        return getThis();
-    }
-
-    /**
-     * Timeout controlling wait on request send in case of unresponsive bookie(s)
-     * (i.e. bookie in long GC etc.)
-     *
-     * @return timeout value
-     *        negative value disables the feature
-     *        0 to allow request to fail immediately
-     *        Default is -1 (disabled)
-     */
-    public long getWaitTimeoutOnBackpressureMillis() {
-        return getLong(WAIT_TIMEOUT_ON_BACKPRESSURE, -1);
-    }
-
-    /**
-     * Timeout controlling wait on request send in case of unresponsive bookie(s)
-     * (i.e. bookie in long GC etc.)
-     *
-     * @param value
-     *        negative value disables the feature
-     *        0 to allow request to fail immediately
-     *        Default is -1 (disabled)
-     * @return client configuration.
-     */
-    public T setWaitTimeoutOnBackpressureMillis(long value) {
-        setProperty(WAIT_TIMEOUT_ON_BACKPRESSURE, value);
         return getThis();
     }
 

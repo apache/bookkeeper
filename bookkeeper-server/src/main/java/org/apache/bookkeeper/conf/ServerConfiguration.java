@@ -85,6 +85,8 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     protected static final String MAX_ADDS_IN_PROGRESS_LIMIT = "maxAddsInProgressLimit";
     protected static final String MAX_READS_IN_PROGRESS_LIMIT = "maxReadsInProgressLimit";
     protected static final String CLOSE_CHANNEL_ON_RESPONSE_TIMEOUT = "closeChannelOnResponseTimeout";
+    protected static final String WAIT_TIMEOUT_ON_RESPONSE_BACKPRESSURE = "waitTimeoutOnResponseBackpressureMs";
+
     // Bookie Parameters
     protected static final String BOOKIE_PORT = "bookiePort";
     protected static final String LISTENING_INTERFACE = "listeningInterface";
@@ -707,6 +709,35 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
         this.setProperty(CLOSE_CHANNEL_ON_RESPONSE_TIMEOUT, value);
         return this;
     }
+
+    /**
+     * Timeout controlling wait on response send in case of unresponsive client
+     * (i.e. client in long GC etc.)
+     *
+     * @return timeout value
+     *        negative value disables the feature
+     *        0 to allow request to fail immediately
+     *        Default is -1 (disabled)
+     */
+    public long getWaitTimeoutOnResponseBackpressureMillis() {
+        return getLong(WAIT_TIMEOUT_ON_RESPONSE_BACKPRESSURE, -1);
+    }
+
+    /**
+     * Timeout controlling wait on response send in case of unresponsive client
+     * (i.e. client in long GC etc.)
+     *
+     * @param value
+     *        negative value disables the feature
+     *        0 to allow request to fail immediately
+     *        Default is -1 (disabled)
+     * @return client configuration.
+     */
+    public ServerConfiguration setWaitTimeoutOnResponseBackpressureMillis(long value) {
+        setProperty(WAIT_TIMEOUT_ON_RESPONSE_BACKPRESSURE, value);
+        return this;
+    }
+
     /**
      * Get bookie port that bookie server listen on.
      *

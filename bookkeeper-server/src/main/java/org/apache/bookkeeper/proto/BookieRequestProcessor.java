@@ -186,7 +186,7 @@ public class BookieRequestProcessor implements RequestProcessor {
     public BookieRequestProcessor(ServerConfiguration serverCfg, Bookie bookie,
             StatsLogger statsLogger, SecurityHandlerFactory shFactory) throws SecurityException {
         this.serverCfg = serverCfg;
-        this.waitTimeoutOnBackpressureMillis = serverCfg.getWaitTimeoutOnBackpressureMillis();
+        this.waitTimeoutOnBackpressureMillis = serverCfg.getWaitTimeoutOnResponseBackpressureMillis();
         this.bookie = bookie;
         this.readThreadPool = createExecutor(
                 this.serverCfg.getNumReadWorkerThreads(),
