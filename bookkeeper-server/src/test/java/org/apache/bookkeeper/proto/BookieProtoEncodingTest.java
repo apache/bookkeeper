@@ -27,6 +27,7 @@ import static org.mockito.Mockito.when;
 
 import com.google.common.collect.Lists;
 import com.google.protobuf.ByteString;
+import com.google.protobuf.ExtensionRegistry;
 import com.google.protobuf.InvalidProtocolBufferException;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.UnpooledByteBufAllocator;
@@ -43,12 +44,20 @@ import org.apache.bookkeeper.proto.BookkeeperProtocol.BKPacketHeader;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.OperationType;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.ProtocolVersion;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.StatusCode;
+import org.junit.Before;
 import org.junit.Test;
 
 /**
  * Unit test {@link BookieProtoEncoding}.
  */
 public class BookieProtoEncodingTest {
+
+    private ExtensionRegistry registry;
+
+    @Before
+    public void setup() {
+        this.registry = ExtensionRegistry.newInstance();
+    }
 
     @Test
     public void testV3ResponseDecoderNoFallback() throws Exception {
@@ -79,10 +88,10 @@ public class BookieProtoEncodingTest {
                 return null;
         });
 
-        ResponseEnDeCoderPreV3 v2Encoder = new ResponseEnDeCoderPreV3(null);
-        ResponseEnDecoderV3 v3Encoder = new ResponseEnDecoderV3(null);
+        ResponseEnDeCoderPreV3 v2Encoder = new ResponseEnDeCoderPreV3(registry);
+        ResponseEnDecoderV3 v3Encoder = new ResponseEnDecoderV3(registry);
 
-        ResponseDecoder v3Decoder = new ResponseDecoder(null, false);
+        ResponseDecoder v3Decoder = new ResponseDecoder(registry, false);
         try {
             v3Decoder.channelRead(ctx,
                 v2Encoder.encode(v2Resp, UnpooledByteBufAllocator.DEFAULT)
@@ -101,8 +110,8 @@ public class BookieProtoEncodingTest {
 
     @Test(expected = IllegalStateException.class)
     public void testV2RequestDecoderThrowExceptionOnUnknownRequests() throws Exception {
-        RequestEnDeCoderPreV3 v2ReqEncoder = new RequestEnDeCoderPreV3(null);
-        RequestEnDecoderV3 v3ReqEncoder = new RequestEnDecoderV3(null);
+        RequestEnDeCoderPreV3 v2ReqEncoder = new RequestEnDeCoderPreV3(registry);
+        RequestEnDecoderV3 v3ReqEncoder = new RequestEnDecoderV3(registry);
 
         BookkeeperProtocol.Request v3Req = BookkeeperProtocol.Request.newBuilder()
             .setHeader(BKPacketHeader.newBuilder()
