@@ -27,7 +27,7 @@ import io.grpc.ServerCall.Listener;
 import io.grpc.ServerCallHandler;
 
 /**
- * Abstract server call handler
+ * Abstract server call handler.
  */
 class ProxyServerCallHandler<ReqT, RespT> implements ServerCallHandler<ReqT, RespT> {
 
