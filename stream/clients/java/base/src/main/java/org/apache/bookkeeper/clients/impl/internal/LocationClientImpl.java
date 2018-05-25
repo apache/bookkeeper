@@ -58,6 +58,7 @@ public class LocationClientImpl implements LocationClient {
     private final ManagedChannel channel;
     private final StorageContainerServiceFutureStub locationService;
 
+    @SuppressWarnings("deprecation")
     public LocationClientImpl(StorageClientSettings settings,
                               OrderedScheduler scheduler) {
         this.settings = settings;

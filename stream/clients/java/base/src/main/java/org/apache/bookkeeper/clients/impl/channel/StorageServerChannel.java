@@ -71,6 +71,7 @@ public class StorageServerChannel implements AutoCloseable {
      * @param token    token used to access range server
      * @param usePlainText whether to plain text protocol or not
      */
+    @SuppressWarnings("deprecation")
     public StorageServerChannel(Endpoint endpoint,
                                 Optional<String> token,
                                 boolean usePlainText,

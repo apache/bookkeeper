@@ -122,7 +122,7 @@
     <freebuilder.version>1.14.9</freebuilder.version>
     <google.code.version>3.0.2</google.code.version>
     <google.errorprone.version>2.1.2</google.errorprone.version>
-    <grpc.version>1.5.0</grpc.version>
+    <grpc.version>1.12.0</grpc.version>
     <guava.version>21.0</guava.version>
     <hadoop.version>2.7.3</hadoop.version>
     <hamcrest.version>1.3</hamcrest.version>
@@ -139,14 +139,14 @@
     <lombok.version>1.16.20</lombok.version>
     <lz4.version>1.3.0</lz4.version>
     <mockito.version>2.13.0</mockito.version>
-    <netty.version>4.1.12.Final</netty.version>
-    <netty-boringssl.version>2.0.3.Final</netty-boringssl.version>
+    <netty.version>4.1.22.Final</netty.version>
+    <netty-boringssl.version>2.0.7.Final</netty-boringssl.version>
     <ostrich.version>9.1.3</ostrich.version>
     <powermock.version>2.0.0-beta.5</powermock.version>
     <prometheus.version>0.0.21</prometheus.version>
     <datasketches.version>0.8.3</datasketches.version>
-    <protobuf.version>3.4.0</protobuf.version>
-    <protoc-gen-grpc-java.version>1.0.0</protoc-gen-grpc-java.version>
+    <protobuf.version>3.5.1</protobuf.version>
+    <protoc-gen-grpc-java.version>1.12.0</protoc-gen-grpc-java.version>
     <rocksdb.version>5.8.6</rocksdb.version>
     <shrinkwrap.version>3.0.1</shrinkwrap.version>
     <slf4j.version>1.7.25</slf4j.version>
@@ -362,12 +362,6 @@
         <groupId>io.grpc</groupId>
         <artifactId>grpc-all</artifactId>
         <version>${grpc.version}</version>
-        <exclusions>
-          <exclusion>
-            <groupId>com.google.errorprone</groupId>
-            <artifactId>error_prone_annotations</artifactId>
-          </exclusion>
-        </exclusions>
       </dependency>
 
       <!-- rocksdb dependencies -->
