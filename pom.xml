@@ -57,7 +57,6 @@
     <module>bookkeeper-stats</module>
     <module>bookkeeper-proto</module>
     <module>bookkeeper-server</module>
-    <module>bookkeeper-tools</module>
     <module>bookkeeper-benchmark</module>
     <module>bookkeeper-stats-providers</module>
     <module>bookkeeper-http</module>
@@ -66,6 +65,7 @@
     <module>bookkeeper-dist</module>
     <module>microbenchmarks</module>
     <module>stream/distributedlog</module>
+    <module>tools</module>
   </modules>
   <mailingLists>
     <mailingList>
