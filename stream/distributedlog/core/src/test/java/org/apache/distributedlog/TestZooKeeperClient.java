@@ -33,7 +33,6 @@ import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.zookeeper.BoundExponentialBackoffRetryPolicy;
 import org.apache.distributedlog.ZooKeeperClient.Credentials;
 import org.apache.distributedlog.ZooKeeperClient.DigestCredentials;
-import org.apache.distributedlog.common.annotations.DistributedLogAnnotations;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
@@ -265,7 +264,6 @@ public class TestZooKeeperClient extends ZooKeeperClusterTestCase {
     /**
      * {@link https://issues.apache.org/jira/browse/DL-34}.
      */
-    @DistributedLogAnnotations.FlakyTest
     @Ignore
     @Test(timeout = 60000)
     public void testAclAuthSpansExpiration() throws Exception {
@@ -290,7 +288,6 @@ public class TestZooKeeperClient extends ZooKeeperClusterTestCase {
     /**
      * {@link https://issues.apache.org/jira/browse/DL-34}.
      */
-    @DistributedLogAnnotations.FlakyTest
     @Ignore
     @Test(timeout = 60000)
     public void testAclAuthSpansExpirationNonRetryableClient() throws Exception {

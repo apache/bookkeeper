@@ -40,6 +40,7 @@ import org.apache.bookkeeper.api.kv.result.Code;
 import org.apache.bookkeeper.api.kv.result.KeyValue;
 import org.apache.bookkeeper.clients.admin.StorageAdminClient;
 import org.apache.bookkeeper.clients.config.StorageClientSettings;
+import org.apache.bookkeeper.common.testing.annotations.FlakyTest;
 import org.apache.bookkeeper.stream.proto.NamespaceConfiguration;
 import org.apache.bookkeeper.stream.proto.NamespaceProperties;
 import org.apache.bookkeeper.stream.proto.StreamConfiguration;
@@ -47,7 +48,6 @@ import org.apache.bookkeeper.stream.proto.StreamProperties;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
-import org.junit.Test;
 import org.junit.rules.TestName;
 
 /**
@@ -89,7 +89,7 @@ public class TableClientSimpleTest extends StreamClusterTestBase {
         return Unpooled.wrappedBuffer(String.format("test-val-%06d", i).getBytes(UTF_8));
     }
 
-    @Test
+    @FlakyTest("https://github.com/apache/bookkeeper/issues/1440")
     public void testTableSimpleAPI() throws Exception {
         // Create a namespace
         NamespaceConfiguration nsConf = NamespaceConfiguration.newBuilder()

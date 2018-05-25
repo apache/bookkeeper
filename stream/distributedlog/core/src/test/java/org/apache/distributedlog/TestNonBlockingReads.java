@@ -30,7 +30,6 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import org.apache.distributedlog.api.DistributedLogManager;
 import org.apache.distributedlog.api.LogReader;
-import org.apache.distributedlog.common.annotations.DistributedLogAnnotations;
 import org.apache.distributedlog.exceptions.IdleReaderException;
 import org.apache.distributedlog.util.Utils;
 import org.junit.Assert;
@@ -42,7 +41,6 @@ import org.slf4j.LoggerFactory;
 /**
  * {@link https://issues.apache.org/jira/browse/DL-12}.
  */
-@DistributedLogAnnotations.FlakyTest
 @Ignore
 public class TestNonBlockingReads extends TestDistributedLogBase {
     static final Logger LOG = LoggerFactory.getLogger(TestNonBlockingReads.class);
