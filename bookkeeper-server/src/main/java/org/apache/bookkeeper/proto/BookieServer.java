@@ -132,7 +132,7 @@ public class BookieServer {
 
         // fixes test flappers at random places until ISSUE#1400 is resolved
         // https://github.com/apache/bookkeeper/issues/1400
-        TimeUnit.MILLISECONDS.sleep(100);
+        TimeUnit.MILLISECONDS.sleep(250);
     }
 
     @VisibleForTesting

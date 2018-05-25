@@ -69,10 +69,11 @@ public class BookieBackpressureTest extends BookKeeperClusterTestCase
 
     final byte[] data = new byte[8 * 1024];
 
-    // test related variables
-    static final int NUM_ENTRIES_TO_WRITE = 500;
-    static final int MAX_PENDING = 10;
-    static final int NUM_OF_LEDGERS = 25;
+    // test related constants
+    static final int NUM_ENTRIES_TO_WRITE = 200;
+    static final int ENTRIES_IN_MEMTABLE = 2;
+    static final int MAX_PENDING = 2 * ENTRIES_IN_MEMTABLE + 1;
+    static final int NUM_OF_LEDGERS = 2 * MAX_PENDING;
 
     DigestType digestType;
 
@@ -244,11 +245,10 @@ public class BookieBackpressureTest extends BookKeeperClusterTestCase
         bsConfs.get(0).setLedgerStorageClass(SlowSortedLedgerStorage.class.getName());
         bsConfs.get(0).setWriteBufferBytes(data.length);
 
-        final int entriesInMemtable = 3;
         // one for memtable being flushed, one for the part accepting the data
         assertTrue("for the test, memtable should not keep more entries than allowed",
-                entriesInMemtable * 2 <= MAX_PENDING);
-        bsConfs.get(0).setSkipListSizeLimit(data.length * entriesInMemtable);
+                ENTRIES_IN_MEMTABLE * 2 <= MAX_PENDING);
+        bsConfs.get(0).setSkipListSizeLimit(data.length * ENTRIES_IN_MEMTABLE - 1);
         bsConfs.get(0).setProperty(SlowInterleavedLedgerStorage.PROP_SLOW_STORAGE_ADD_DELAY, "1");
         bsConfs.get(0).setProperty(SlowInterleavedLedgerStorage.PROP_SLOW_STORAGE_FLUSH_DELAY, "10");
 
@@ -262,11 +262,10 @@ public class BookieBackpressureTest extends BookKeeperClusterTestCase
         bsConfs.get(0).setLedgerStorageClass(SlowSortedLedgerStorage.class.getName());
         bsConfs.get(0).setWriteBufferBytes(data.length);
 
-        final int entriesInMemtable = 3;
         // one for memtable being flushed, one for the part accepting the data
         assertTrue("for the test, memtable should not keep more entries than allowed",
-                entriesInMemtable * 2 <= MAX_PENDING);
-        bsConfs.get(0).setSkipListSizeLimit(data.length * entriesInMemtable);
+                ENTRIES_IN_MEMTABLE * 2 <= MAX_PENDING);
+        bsConfs.get(0).setSkipListSizeLimit(data.length * ENTRIES_IN_MEMTABLE - 1);
         bsConfs.get(0).setProperty(SlowInterleavedLedgerStorage.PROP_SLOW_STORAGE_ADD_DELAY, "1");
         bsConfs.get(0).setProperty(SlowInterleavedLedgerStorage.PROP_SLOW_STORAGE_FLUSH_DELAY, "10");
 
@@ -311,6 +310,7 @@ public class BookieBackpressureTest extends BookKeeperClusterTestCase
         bks.start();
         bs.set(bkId, bks);
 
+        LOG.info("creating ledgers");
         // Create ledgers
         final int numEntriesForReads = 10;
         LedgerHandle[] lhs = new LedgerHandle[NUM_OF_LEDGERS];
@@ -319,7 +319,7 @@ public class BookieBackpressureTest extends BookKeeperClusterTestCase
             LOG.info("created ledger ID: {}", lhs[i].getId());
         }
 
-        // generate data for reads
+        LOG.info("generating data for reads");
         final CountDownLatch writesCompleteLatch = new CountDownLatch(numEntriesForReads * NUM_OF_LEDGERS);
         for (int i = 0; i < numEntriesForReads; i++) {
             for (int ledger = 0; ledger < NUM_OF_LEDGERS; ledger++) {
@@ -328,8 +328,7 @@ public class BookieBackpressureTest extends BookKeeperClusterTestCase
         }
         writesCompleteLatch.await();
 
-        // issue bunch of async reads
-        // generate data for reads
+        LOG.info("issue bunch of async reads");
         final CountDownLatch readsCompleteLatch = new CountDownLatch(numEntriesForReads * NUM_OF_LEDGERS);
         for (int i = 0; i < numEntriesForReads; i++) {
             for (int ledger = 0; ledger < NUM_OF_LEDGERS; ledger++) {
@@ -337,6 +336,7 @@ public class BookieBackpressureTest extends BookKeeperClusterTestCase
             }
         }
         readsCompleteLatch.await();
+        LOG.info("reads finished");
 
         return bks.getBookieRequestProcessor();
     }
@@ -351,7 +351,7 @@ public class BookieBackpressureTest extends BookKeeperClusterTestCase
         bks.start();
         bs.set(bkId, bks);
 
-        // Create ledgers
+        LOG.info("Creating ledgers");
         LedgerHandle[] lhs = new LedgerHandle[NUM_OF_LEDGERS];
         for (int i = 0; i < NUM_OF_LEDGERS; i++) {
             lhs[i] = bkc.createLedger(1, 1, digestType, ledgerPassword);
@@ -360,6 +360,7 @@ public class BookieBackpressureTest extends BookKeeperClusterTestCase
 
         final CountDownLatch completeLatch = new CountDownLatch(NUM_ENTRIES_TO_WRITE * NUM_OF_LEDGERS);
 
+        LOG.info("submitting writes");
         for (int i = 0; i < NUM_ENTRIES_TO_WRITE; i++) {
             for (int ledger = 0; ledger < NUM_OF_LEDGERS; ledger++) {
                 lhs[ledger].asyncAddEntry(data, (rc2, lh, entryId, ctx) -> completeLatch.countDown(), null);
@@ -374,6 +375,8 @@ public class BookieBackpressureTest extends BookKeeperClusterTestCase
                 exceededLimit = true;
                 break;
             }
+            LOG.info("Waiting until all writes succeeded or maxAddsInProgressCount {} > MAX_PENDING {}",
+                    val, MAX_PENDING);
         }
 
         assertTrue("expected to exceed number of pending writes", exceededLimit);
@@ -393,9 +396,7 @@ public class BookieBackpressureTest extends BookKeeperClusterTestCase
         bks.start();
         bs.set(bkId, bks);
 
-        LOG.info("test restarted bookie; starting writes");
-
-        // Create ledgers
+        LOG.info("Creating ledgers");
         LedgerHandle[] lhs = new LedgerHandle[NUM_OF_LEDGERS];
         for (int i = 0; i < NUM_OF_LEDGERS; i++) {
             lhs[i] = bkc.createLedger(1, 1, digestType, ledgerPassword);
@@ -405,6 +406,7 @@ public class BookieBackpressureTest extends BookKeeperClusterTestCase
         final CountDownLatch completeLatch = new CountDownLatch(NUM_ENTRIES_TO_WRITE * NUM_OF_LEDGERS);
         final AtomicInteger rc = new AtomicInteger(BKException.Code.OK);
 
+        LOG.info("submitting writes");
         for (int i = 0; i < NUM_ENTRIES_TO_WRITE; i++) {
             for (int ledger = 0; ledger < NUM_OF_LEDGERS; ledger++) {
                 lhs[ledger].asyncAddEntry(data, (rc2, lh, entryId, ctx) -> {
@@ -419,6 +421,8 @@ public class BookieBackpressureTest extends BookKeeperClusterTestCase
         while (!completeLatch.await(1, TimeUnit.MILLISECONDS)) {
             int val = brp.maxAddsInProgressCount();
             assertTrue("writes in progress should not exceed limit, got " + val, val <= MAX_PENDING);
+            LOG.info("Waiting for all writes to succeed, left {} of {}",
+                    completeLatch.getCount(), NUM_ENTRIES_TO_WRITE * NUM_OF_LEDGERS);
         }
 
         if (rc.get() != BKException.Code.OK) {
