@@ -19,12 +19,15 @@
 package org.apache.bookkeeper.clients.impl.channel;
 
 import com.google.common.annotations.VisibleForTesting;
+import io.grpc.Channel;
+import io.grpc.ClientInterceptors;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import java.util.Optional;
 import java.util.function.Function;
 import javax.annotation.concurrent.GuardedBy;
 import org.apache.bookkeeper.clients.config.StorageClientSettings;
+import org.apache.bookkeeper.clients.impl.container.StorageContainerClientInterceptor;
 import org.apache.bookkeeper.clients.resolver.EndpointResolver;
 import org.apache.bookkeeper.clients.utils.GrpcUtils;
 import org.apache.bookkeeper.stream.proto.common.Endpoint;
@@ -53,7 +56,7 @@ public class StorageServerChannel implements AutoCloseable {
     }
 
     private final Optional<String> token;
-    private final ManagedChannel channel;
+    private final Channel channel;
 
     @GuardedBy("this")
     private RootRangeServiceFutureStub rootRangeService;
@@ -87,6 +90,11 @@ public class StorageServerChannel implements AutoCloseable {
     @VisibleForTesting
     public StorageServerChannel(ManagedChannel channel,
                                 Optional<String> token) {
+        this((Channel) channel, token);
+    }
+
+    protected StorageServerChannel(Channel channel,
+                                   Optional<String> token) {
         this.token = token;
         this.channel = channel;
     }
@@ -127,8 +135,26 @@ public class StorageServerChannel implements AutoCloseable {
         return kvService;
     }
 
+    /**
+     * Create an intercepted server channel that add additional storage container metadata.
+     *
+     * @param scId storage container id
+     * @return an intercepted server channel.
+     */
+    public StorageServerChannel intercept(long scId) {
+        Channel interceptedChannel = ClientInterceptors.intercept(
+            this.channel,
+            new StorageContainerClientInterceptor(scId));
+
+        return new StorageServerChannel(
+            interceptedChannel,
+            this.token);
+    }
+
     @Override
     public void close() {
-        channel.shutdown();
+        if (channel instanceof ManagedChannel) {
+            ((ManagedChannel) channel).shutdown();
+        }
     }
 }
