@@ -26,14 +26,6 @@
   <groupId>org.apache.bookkeeper.stats</groupId>
   <artifactId>twitter-science-provider</artifactId>
   <name>Apache BookKeeper :: Stats Providers :: Twitter Science Stats</name>
-  <build>
-    <plugins>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-checkstyle-plugin</artifactId>
-      </plugin>
-    </plugins>
-  </build>
   <!--
     keep twitter specific dependencies defined in this profile only.
    -->

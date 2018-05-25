@@ -36,7 +36,7 @@ import org.testcontainers.containers.ContainerLaunchException;
 import org.testcontainers.containers.wait.strategy.AbstractWaitStrategy;
 
 /**
- * Http Strategy
+ * An wait strategy to wait for http ports.
  */
 public class HttpWaitStrategy extends AbstractWaitStrategy {
     @java.lang.SuppressWarnings("all")
@@ -114,7 +114,8 @@ public class HttpWaitStrategy extends AbstractWaitStrategy {
     }
 
     /**
-     * Waits for the response to pass the given predicate
+     * Waits for the response to pass the given predicate.
+     *
      * @param responsePredicate The predicate to test the response against
      * @return this
      */
