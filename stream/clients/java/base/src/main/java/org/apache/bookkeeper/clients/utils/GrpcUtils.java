@@ -20,11 +20,14 @@ package org.apache.bookkeeper.clients.utils;
 
 import static org.apache.bookkeeper.clients.utils.ClientConstants.TOKEN;
 
+import io.grpc.Attributes;
 import io.grpc.CallCredentials;
 import io.grpc.Metadata;
+import io.grpc.MethodDescriptor;
 import io.grpc.stub.AbstractStub;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 
 /**
  * Grpc related utils.
@@ -47,8 +50,19 @@ public final class GrpcUtils {
             Metadata metadata = new Metadata();
             Metadata.Key<String> tokenKey = Metadata.Key.of(TOKEN, Metadata.ASCII_STRING_MARSHALLER);
             metadata.put(tokenKey, t);
-            CallCredentials callCredentials = (method, attrs, appExecutor, applier) -> {
-                applier.apply(metadata);
+            CallCredentials callCredentials = new CallCredentials() {
+                @Override
+                public void applyRequestMetadata(MethodDescriptor<?, ?> method,
+                                                 Attributes attrs,
+                                                 Executor appExecutor,
+                                                 MetadataApplier applier) {
+                    applier.apply(metadata);
+                }
+
+                @Override
+                public void thisUsesUnstableApi() {
+                    // no-op;
+                }
             };
             return stub.withCallCredentials(callCredentials);
         }).orElse(stub);
