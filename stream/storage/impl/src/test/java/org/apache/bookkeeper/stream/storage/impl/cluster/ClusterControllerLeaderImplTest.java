@@ -83,8 +83,8 @@ public class ClusterControllerLeaderImplTest {
         ClusterMetadataStore originalStore = metadataStore;
         this.metadataStore = new ClusterMetadataStore() {
             @Override
-            public void initializeCluster(int numStorageContainers, Optional<String> segmentStorePath) {
-                originalStore.initializeCluster(numStorageContainers);
+            public boolean initializeCluster(int numStorageContainers, Optional<String> segmentStorePath) {
+                return originalStore.initializeCluster(numStorageContainers);
             }
 
             @Override

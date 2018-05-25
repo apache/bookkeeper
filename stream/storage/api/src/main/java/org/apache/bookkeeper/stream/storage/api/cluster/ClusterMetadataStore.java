@@ -31,8 +31,8 @@ import org.apache.bookkeeper.stream.proto.cluster.ClusterMetadata;
 public interface ClusterMetadataStore extends AutoCloseable {
 
 
-    default void initializeCluster(int numStorageContainers) {
-        initializeCluster(numStorageContainers, Optional.empty());
+    default boolean initializeCluster(int numStorageContainers) {
+        return initializeCluster(numStorageContainers, Optional.empty());
     }
 
     /**
@@ -40,8 +40,9 @@ public interface ClusterMetadataStore extends AutoCloseable {
      *
      * @param numStorageContainers number of storage containers.
      * @param segmentStorePath segment store path
+     * @return true if successfully initialized cluster, otherwise false.
      */
-    void initializeCluster(int numStorageContainers, Optional<String> segmentStorePath);
+    boolean initializeCluster(int numStorageContainers, Optional<String> segmentStorePath);
 
     /**
      * Get the current cluster assignment data.

@@ -149,7 +149,7 @@ find_module_jar() {
       read -p "Do you want me to run \`mvn package -DskiptTests\` for you ? " answer
       case "${answer:0:1}" in
         y|Y )
-          mvn package -DskipTests
+          mvn package -DskipTests -Dstream
           ;;
         * )
           exit 1
@@ -183,7 +183,7 @@ add_maven_deps_to_classpath() {
   # clean it up and force us create a new one.
   f="${MODULE_PATH}/target/cached_classpath.txt"
   if [ ! -f ${f} ]; then
-    ${MVN} -f "${MODULE_PATH}/pom.xml" dependency:build-classpath -Dmdep.outputFile="target/cached_classpath.txt" &> /dev/null
+    ${MVN} -f "${MODULE_PATH}/pom.xml" -Dstream dependency:build-classpath -Dmdep.outputFile="target/cached_classpath.txt" &> /dev/null
   fi
 }
 

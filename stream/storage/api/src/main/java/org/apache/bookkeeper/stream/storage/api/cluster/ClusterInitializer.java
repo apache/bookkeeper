@@ -41,7 +41,8 @@ public interface ClusterInitializer {
      *
      * @param metadataServiceUri metadata service uri
      * @param numStorageContainers number storage containers
+     * @return true if successfully initialized cluster; otherwise false.
      */
-    void initializeCluster(URI metadataServiceUri, int numStorageContainers);
+    boolean initializeCluster(URI metadataServiceUri, int numStorageContainers);
 
 }

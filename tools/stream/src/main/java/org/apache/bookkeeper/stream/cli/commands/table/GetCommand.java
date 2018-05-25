@@ -17,12 +17,11 @@
  */
 package org.apache.bookkeeper.stream.cli.commands.table;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkArgument;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.bookkeeper.common.concurrent.FutureUtils.result;
 
 import com.beust.jcommander.Parameter;
-import com.beust.jcommander.Parameters;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
@@ -30,53 +29,69 @@ import org.apache.bookkeeper.api.StorageClient;
 import org.apache.bookkeeper.api.kv.Table;
 import org.apache.bookkeeper.api.kv.result.KeyValue;
 import org.apache.bookkeeper.stream.cli.commands.ClientCommand;
+import org.apache.bookkeeper.stream.cli.commands.table.GetCommand.Flags;
+import org.apache.bookkeeper.tools.framework.CliFlags;
+import org.apache.bookkeeper.tools.framework.CliSpec;
 
 /**
  * Command to get kv.
  */
-@Parameters(commandDescription = "Get key/value pair from a table")
-public class GetCommand extends ClientCommand {
+public class GetCommand extends ClientCommand<Flags> {
 
-    @Parameter(names = { "-t", "--table" }, description = "table name")
-    private String tableName = null;
+    private static final String NAME = "get";
+    private static final String DESC = "Get key/value pair from a table";
 
-    @Parameter(names = { "-k", "--key" }, description = "key")
-    private String key = null;
+    /**
+     * Flags for the get kv command.
+     */
+    public static class Flags extends CliFlags {
 
-    @Parameter(names = { "-w", "--watch" }, description = "watch the value changes of a key")
-    private boolean watch = false;
+        @Parameter(names = { "-w", "--watch" }, description = "watch the value changes of a key")
+        private boolean watch = false;
+
+    }
+
+    public GetCommand() {
+        super(CliSpec.<Flags>newBuilder()
+            .withName(NAME)
+            .withDescription(DESC)
+            .withFlags(new Flags())
+            .withArgumentsUsage("<table> <key>")
+            .build());
+    }
 
     @Override
-    protected void run(StorageClient client) throws Exception {
-        checkNotNull(tableName, "Table name is not provided");
-        checkNotNull(key, "Key is not provided");
+    protected void run(StorageClient client, Flags flags) throws Exception {
+        checkArgument(flags.arguments.size() >= 2,
+            "table and key are not provided");
+
+        String tableName = flags.arguments.get(0);
+        String key = flags.arguments.get(1);
 
         try (Table<ByteBuf, ByteBuf> table = result(client.openTable(tableName))) {
             long lastVersion = -1L;
             do {
-                try (KeyValue<ByteBuf, ByteBuf> kv = result(table.getKv(Unpooled.wrappedBuffer(key.getBytes(UTF_8))))) {
+                try (KeyValue<ByteBuf, ByteBuf> kv =
+                         result(table.getKv(Unpooled.wrappedBuffer(key.getBytes(UTF_8))))) {
                     if (null == kv) {
-                        System.out.println("key '" + key + "' doesn't exist.");
+                        spec.console().println("key '" + key + "' doesn't exist.");
                     } else {
                         if (kv.version() > lastVersion) {
                             if (kv.isNumber()) {
-                                System.out.println("value = " + kv.numberValue());
+                                spec.console().println("value = " + kv.numberValue());
                             } else {
-                                System.out.println("value = " + new String(ByteBufUtil.getBytes(kv.value()), UTF_8));
+                                spec.console()
+                                    .println("value = " + new String(ByteBufUtil.getBytes(kv.value()), UTF_8));
                             }
                             lastVersion = kv.version();
                         }
                     }
                 }
-                if (watch) {
+                if (flags.watch) {
                     Thread.sleep(1000);
                 }
-            } while (watch);
+            } while (flags.watch);
         }
     }
 
-    @Override
-    public String name() {
-        return "get";
-    }
 }

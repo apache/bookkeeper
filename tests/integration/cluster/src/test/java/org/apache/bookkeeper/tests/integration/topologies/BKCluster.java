@@ -18,6 +18,7 @@
 
 package org.apache.bookkeeper.tests.integration.topologies;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.common.base.Strings;
@@ -25,6 +26,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import java.net.URI;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -159,6 +161,14 @@ public class BKCluster {
 
     public synchronized BookieContainer getBookie(String bookieName) {
         return bookieContainers.get(bookieName);
+    }
+
+    public synchronized BookieContainer getAnyBookie() {
+        List<BookieContainer> bookieList = Lists.newArrayList();
+        bookieList.addAll(bookieContainers.values());
+        Collections.shuffle(bookieList);
+        checkArgument(!bookieList.isEmpty(), "No bookie is alive");
+        return bookieList.get(0);
     }
 
     public BookieContainer killBookie(String bookieName) {
