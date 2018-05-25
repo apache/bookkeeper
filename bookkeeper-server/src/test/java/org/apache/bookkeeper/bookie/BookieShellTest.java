@@ -26,7 +26,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.same;
-import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -50,8 +50,9 @@ import org.apache.bookkeeper.discover.RegistrationManager;
 import org.apache.bookkeeper.meta.MetadataBookieDriver;
 import org.apache.bookkeeper.meta.MetadataDrivers;
 import org.apache.bookkeeper.tools.cli.commands.bookie.LastMarkCommand;
+import org.apache.bookkeeper.tools.cli.commands.bookies.ListBookiesCommand;
 import org.apache.bookkeeper.tools.cli.commands.client.SimpleTestCommand;
-import org.apache.bookkeeper.tools.cli.commands.cluster.ListBookiesCommand;
+import org.apache.bookkeeper.tools.framework.CliFlags;
 import org.apache.bookkeeper.util.EntryFormatter;
 import org.apache.bookkeeper.util.LedgerIdFormatter;
 import org.apache.bookkeeper.versioning.LongVersion;
@@ -85,7 +86,9 @@ public class BookieShellTest {
 
     // commands
     private LastMarkCommand mockLastMarkCommand;
+    private SimpleTestCommand.Flags mockSimpleTestFlags;
     private SimpleTestCommand mockSimpleTestCommand;
+    private ListBookiesCommand.Flags mockListBookiesFlags;
     private ListBookiesCommand mockListBookiesCommand;
 
     @Before
@@ -95,15 +98,33 @@ public class BookieShellTest {
         whenNew(LastMarkCommand.class)
             .withNoArguments()
             .thenReturn(mockLastMarkCommand);
+
+        // setup the mocks for simple test command
+        this.mockSimpleTestFlags = spy(new SimpleTestCommand.Flags());
+        whenNew(SimpleTestCommand.Flags.class)
+            .withNoArguments()
+            .thenReturn(mockSimpleTestFlags);
+
         this.mockSimpleTestCommand = spy(new SimpleTestCommand());
-        doNothing().when(mockSimpleTestCommand).run(any(ServerConfiguration.class));
+        doReturn(true).when(mockSimpleTestCommand)
+            .apply(any(ServerConfiguration.class), any(SimpleTestCommand.Flags.class));
         whenNew(SimpleTestCommand.class)
-            .withNoArguments()
+            .withParameterTypes(SimpleTestCommand.Flags.class)
+            .withArguments(mockSimpleTestFlags)
             .thenReturn(mockSimpleTestCommand);
-        this.mockListBookiesCommand = spy(new ListBookiesCommand());
-        doNothing().when(mockListBookiesCommand).run(any(ServerConfiguration.class));
-        whenNew(ListBookiesCommand.class)
+
+        // setup the mocks for list bookies command
+        this.mockListBookiesFlags = spy(new ListBookiesCommand.Flags());
+        whenNew(ListBookiesCommand.Flags.class)
             .withNoArguments()
+            .thenReturn(mockListBookiesFlags);
+
+        this.mockListBookiesCommand = spy(new ListBookiesCommand());
+        doReturn(true).when(mockListBookiesCommand)
+            .apply(any(ServerConfiguration.class), any(ListBookiesCommand.Flags.class));
+        whenNew(ListBookiesCommand.class)
+            .withParameterTypes(ListBookiesCommand.Flags.class)
+            .withArguments(mockListBookiesFlags)
             .thenReturn(mockListBookiesCommand);
 
         // construct the bookie shell.
@@ -323,7 +344,8 @@ public class BookieShellTest {
     public void testLastMarkCmd() throws Exception {
         shell.run(new String[] { "lastmark"});
         verifyNew(LastMarkCommand.class, times(1)).withNoArguments();
-        verify(mockLastMarkCommand, times(1)).run(same(shell.bkConf));
+        verify(mockLastMarkCommand, times(1))
+            .apply(same(shell.bkConf), any(CliFlags.class));
     }
 
     @Test
@@ -335,12 +357,14 @@ public class BookieShellTest {
             "-a", "3",
             "-n", "200"
         });
-        verifyNew(SimpleTestCommand.class, times(1)).withNoArguments();
-        verify(mockSimpleTestCommand, times(1)).run(same(shell.bkConf));
-        verify(mockSimpleTestCommand, times(1)).ensembleSize(eq(10));
-        verify(mockSimpleTestCommand, times(1)).writeQuorumSize(eq(5));
-        verify(mockSimpleTestCommand, times(1)).ackQuorumSize(eq(3));
-        verify(mockSimpleTestCommand, times(1)).numEntries(eq(200));
+        verifyNew(SimpleTestCommand.class, times(1))
+            .withArguments(same(mockSimpleTestFlags));
+        verify(mockSimpleTestCommand, times(1))
+            .apply(same(shell.bkConf), same(mockSimpleTestFlags));
+        verify(mockSimpleTestFlags, times(1)).ensembleSize(eq(10));
+        verify(mockSimpleTestFlags, times(1)).writeQuorumSize(eq(5));
+        verify(mockSimpleTestFlags, times(1)).ackQuorumSize(eq(3));
+        verify(mockSimpleTestFlags, times(1)).numEntries(eq(200));
     }
 
     @Test
@@ -364,10 +388,12 @@ public class BookieShellTest {
         assertEquals(0, shell.run(new String[] {
             "listbookies", "-ro"
         }));
-        verifyNew(ListBookiesCommand.class, times(1)).withNoArguments();
-        verify(mockListBookiesCommand, times(1)).run(same(shell.bkConf));
-        verify(mockListBookiesCommand, times(1)).readonly(true);
-        verify(mockListBookiesCommand, times(1)).readwrite(false);
+        verifyNew(ListBookiesCommand.class, times(1))
+            .withArguments(same(mockListBookiesFlags));
+        verify(mockListBookiesCommand, times(1))
+            .apply(same(shell.bkConf), same(mockListBookiesFlags));
+        verify(mockListBookiesFlags, times(1)).readonly(true);
+        verify(mockListBookiesFlags, times(1)).readwrite(false);
     }
 
     @Test
@@ -375,9 +401,11 @@ public class BookieShellTest {
         assertEquals(0, shell.run(new String[] {
             "listbookies", "-rw"
         }));
-        verifyNew(ListBookiesCommand.class, times(1)).withNoArguments();
-        verify(mockListBookiesCommand, times(1)).run(same(shell.bkConf));
-        verify(mockListBookiesCommand, times(1)).readonly(false);
-        verify(mockListBookiesCommand, times(1)).readwrite(true);
+        verifyNew(ListBookiesCommand.class, times(1))
+            .withArguments(same(mockListBookiesFlags));
+        verify(mockListBookiesCommand, times(1))
+            .apply(same(shell.bkConf), same(mockListBookiesFlags));
+        verify(mockListBookiesFlags, times(1)).readonly(false);
+        verify(mockListBookiesFlags, times(1)).readwrite(true);
     }
 }

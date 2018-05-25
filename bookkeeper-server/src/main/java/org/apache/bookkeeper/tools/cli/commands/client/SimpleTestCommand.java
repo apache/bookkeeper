@@ -21,52 +21,69 @@ package org.apache.bookkeeper.tools.cli.commands.client;
 import static org.apache.bookkeeper.common.concurrent.FutureUtils.result;
 
 import com.beust.jcommander.Parameter;
-import com.beust.jcommander.Parameters;
 import java.util.concurrent.TimeUnit;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 import org.apache.bookkeeper.client.api.BookKeeper;
 import org.apache.bookkeeper.client.api.DigestType;
 import org.apache.bookkeeper.client.api.WriteHandle;
+import org.apache.bookkeeper.tools.cli.commands.client.SimpleTestCommand.Flags;
 import org.apache.bookkeeper.tools.cli.helpers.ClientCommand;
+import org.apache.bookkeeper.tools.framework.CliFlags;
+import org.apache.bookkeeper.tools.framework.CliSpec;
 
 /**
  * A client command that simply tests if a cluster is healthy.
  */
-@Accessors(fluent = true)
-@Setter
-@Parameters(commandDescription = "Simple test to create a ledger and write entries to it.")
-public class SimpleTestCommand extends ClientCommand {
+public class SimpleTestCommand extends ClientCommand<Flags> {
 
-    @Parameter(names = { "-e", "--ensemble-size" }, description = "Ensemble size (default 3)")
-    private int ensembleSize = 3;
-    @Parameter(names = { "-w", "--write-quorum-size" }, description = "Write quorum size (default 2)")
-    private int writeQuorumSize = 2;
-    @Parameter(names = { "-a", "--ack-quorum-size" }, description = "Ack quorum size (default 2)")
-    private int ackQuorumSize = 2;
-    @Parameter(names = { "-n", "--num-entries" }, description = "Entries to write (default 100)")
-    private int numEntries = 100;
+    private static final String NAME = "simpletest";
+    private static final String DESC = "Simple test to create a ledger and write entries to it.";
 
-    @Override
-    public String name() {
-        return "simpletest";
+    /**
+     * Flags for simple test command.
+     */
+    @Accessors(fluent = true)
+    @Setter
+    public static class Flags extends CliFlags {
+
+        @Parameter(names = { "-e", "--ensemble-size" }, description = "Ensemble size (default 3)")
+        private int ensembleSize = 3;
+        @Parameter(names = { "-w", "--write-quorum-size" }, description = "Write quorum size (default 2)")
+        private int writeQuorumSize = 2;
+        @Parameter(names = { "-a", "--ack-quorum-size" }, description = "Ack quorum size (default 2)")
+        private int ackQuorumSize = 2;
+        @Parameter(names = { "-n", "--num-entries" }, description = "Entries to write (default 100)")
+        private int numEntries = 100;
+
+    }
+    public SimpleTestCommand() {
+        this(new Flags());
+    }
+
+    public SimpleTestCommand(Flags flags) {
+        super(CliSpec.<Flags>newBuilder()
+            .withName(NAME)
+            .withDescription(DESC)
+            .withFlags(flags)
+            .build());
     }
 
     @Override
-    protected void run(BookKeeper bk) throws Exception {
+    protected void run(BookKeeper bk, Flags flags) throws Exception {
         byte[] data = new byte[100]; // test data
 
         try (WriteHandle wh = result(bk.newCreateLedgerOp()
-            .withEnsembleSize(ensembleSize)
-            .withWriteQuorumSize(writeQuorumSize)
-            .withAckQuorumSize(ackQuorumSize)
+            .withEnsembleSize(flags.ensembleSize)
+            .withWriteQuorumSize(flags.writeQuorumSize)
+            .withAckQuorumSize(flags.ackQuorumSize)
             .withDigestType(DigestType.CRC32C)
             .withPassword(new byte[0])
             .execute())) {
 
             System.out.println("Ledger ID: " + wh.getId());
             long lastReport = System.nanoTime();
-            for (int i = 0; i < numEntries; i++) {
+            for (int i = 0; i < flags.numEntries; i++) {
                 wh.append(data);
                 if (TimeUnit.SECONDS.convert(System.nanoTime() - lastReport,
                         TimeUnit.NANOSECONDS) > 1) {
@@ -74,7 +91,7 @@ public class SimpleTestCommand extends ClientCommand {
                     lastReport = System.nanoTime();
                 }
             }
-            System.out.println(numEntries + " entries written to ledger " + wh.getId());
+            System.out.println(flags.numEntries + " entries written to ledger " + wh.getId());
         }
     }
 }

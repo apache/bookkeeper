@@ -16,37 +16,8 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.bookkeeper.tools.cli.helpers;
-
-import org.apache.bookkeeper.conf.ServerConfiguration;
 
 /**
- * A basic command interface provides a run method to execute it.
+ * Commands on operating a cluster of bookies.
  */
-public interface Command {
-
-    /**
-     * Command name.
-     *
-     * @return command name.
-     */
-    String name();
-
-    /**
-     * Validate the args before running the command.
-     *
-     * @return true if the args are valid, otherwise false.
-     */
-    default boolean validateArgs() {
-        return true;
-    }
-
-    /**
-     * Run the command with provided configuration.
-     *
-     * @param conf server configuration.
-     * @throws Exception
-     */
-    void run(ServerConfiguration conf) throws Exception;
-
-}
+package org.apache.bookkeeper.tools.cli.commands.bookies;
