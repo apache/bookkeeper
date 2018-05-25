@@ -95,7 +95,7 @@ public abstract class PingPongServiceTestBase {
 
         if (useReverseProxy) {
             proxyChannel = InProcessChannelBuilder.forName(serverName)
-                .usePlaintext(false)
+                .usePlaintext()
                 .build();
 
             ProxyHandlerRegistry registry = ProxyHandlerRegistry.newBuilder()
@@ -113,7 +113,7 @@ public abstract class PingPongServiceTestBase {
         }
 
         clientChannel = InProcessChannelBuilder.forName(SERVICE_NAME)
-            .usePlaintext(false)
+            .usePlaintext()
             .build();
 
         client = PingPongServiceGrpc.newStub(clientChannel);
