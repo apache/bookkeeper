@@ -22,6 +22,7 @@ package org.apache.bookkeeper.server;
 import static org.apache.bookkeeper.server.Main.buildBookieServer;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -93,6 +94,54 @@ public class TestMain {
 
         stack.close();
         verify(mockServer, times(1)).shutdown();
+    }
+
+    @Test
+    public void testIgnoreExtraServerComponentsStartupFailures() throws Exception {
+        ServerConfiguration serverConf = new ServerConfiguration()
+            .setAutoRecoveryDaemonEnabled(false)
+            .setHttpServerEnabled(false)
+            .setExtraServerComponents(new String[] { "bad-server-component"})
+            .setIgnoreExtraServerComponentsStartupFailures(true);
+        BookieConfiguration conf = new BookieConfiguration(serverConf);
+
+        BookieServer mockServer = PowerMockito.mock(BookieServer.class);
+        whenNew(BookieServer.class)
+            .withArguments(any(ServerConfiguration.class), any(StatsLogger.class))
+            .thenReturn(mockServer);
+
+        LifecycleComponentStack stack = buildBookieServer(conf);
+        assertEquals(2, stack.getNumComponents());
+
+        stack.start();
+        verify(mockServer, times(1)).start();
+
+        stack.stop();
+
+        stack.close();
+        verify(mockServer, times(1)).shutdown();
+    }
+
+    @Test
+    public void testExtraServerComponentsStartupFailures() throws Exception {
+        ServerConfiguration serverConf = new ServerConfiguration()
+            .setAutoRecoveryDaemonEnabled(false)
+            .setHttpServerEnabled(false)
+            .setExtraServerComponents(new String[] { "bad-server-component"})
+            .setIgnoreExtraServerComponentsStartupFailures(false);
+        BookieConfiguration conf = new BookieConfiguration(serverConf);
+
+        BookieServer mockServer = PowerMockito.mock(BookieServer.class);
+        whenNew(BookieServer.class)
+            .withArguments(any(ServerConfiguration.class), any(StatsLogger.class))
+            .thenReturn(mockServer);
+
+        try {
+            buildBookieServer(conf);
+            fail("Should fail to start bookie server if `ignoreExtraServerComponentsStartupFailures` is set to false");
+        } catch (RuntimeException re) {
+            assertTrue(re.getCause() instanceof ClassNotFoundException);
+        }
     }
 
 }
