@@ -19,9 +19,9 @@ package org.apache.bookkeeper.tests.backwardcompat
 
 import com.github.dockerjava.api.DockerClient
 
-import org.apache.bookkeeper.tests.BookKeeperClusterUtils
-import org.apache.bookkeeper.tests.MavenClassLoader
-import org.apache.bookkeeper.tests.ThreadReaper
+import org.apache.bookkeeper.tests.integration.utils.BookKeeperClusterUtils
+import org.apache.bookkeeper.tests.integration.utils.MavenClassLoader
+import org.apache.bookkeeper.tests.integration.utils.ThreadReaper
 
 import org.jboss.arquillian.junit.Arquillian
 import org.jboss.arquillian.test.api.ArquillianResource

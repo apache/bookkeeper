@@ -25,7 +25,6 @@ import static org.junit.Assert.assertTrue;
 import com.google.common.collect.Lists;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.bookkeeper.clients.config.StorageClientSettings;
 import org.apache.bookkeeper.clients.impl.internal.LocationClientImpl;
 import org.apache.bookkeeper.clients.impl.internal.api.LocationClient;
 import org.apache.bookkeeper.common.util.OrderedScheduler;

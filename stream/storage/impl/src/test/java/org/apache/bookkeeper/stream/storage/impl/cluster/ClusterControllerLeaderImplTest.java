@@ -71,8 +71,8 @@ public class ClusterControllerLeaderImplTest {
     private ExecutorService leaderExecutor;
 
     private final Semaphore coordSem = new Semaphore(0);
-    private final AtomicReference<RegistrationListener> regListenerRef
-        = new AtomicReference<>(null);
+    private final AtomicReference<RegistrationListener> regListenerRef =
+        new AtomicReference<>(null);
     private final CompletableFuture<Void> watchFuture = new CompletableFuture<>();
 
     @Before

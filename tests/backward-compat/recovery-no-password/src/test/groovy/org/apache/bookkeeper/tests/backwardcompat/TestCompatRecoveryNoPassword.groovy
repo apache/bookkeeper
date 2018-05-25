@@ -20,8 +20,7 @@ package org.apache.bookkeeper.tests.backwardcompat
 import com.github.dockerjava.api.DockerClient
 
 import io.netty.buffer.ByteBuf
-import java.util.ArrayList
-import java.util.HashMap
+
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
@@ -36,9 +35,9 @@ import org.apache.bookkeeper.conf.ClientConfiguration
 import org.apache.bookkeeper.net.BookieSocketAddress
 import org.apache.bookkeeper.proto.BookieProtocol
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback
-import org.apache.bookkeeper.tests.BookKeeperClusterUtils
-import org.apache.bookkeeper.tests.DockerUtils
-import org.apache.bookkeeper.tests.MavenClassLoader
+import org.apache.bookkeeper.tests.integration.utils.BookKeeperClusterUtils
+import org.apache.bookkeeper.tests.integration.utils.DockerUtils
+import org.apache.bookkeeper.tests.integration.utils.MavenClassLoader
 
 import org.jboss.arquillian.junit.Arquillian
 import org.jboss.arquillian.test.api.ArquillianResource

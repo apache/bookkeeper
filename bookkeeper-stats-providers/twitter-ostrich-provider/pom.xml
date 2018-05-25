@@ -27,14 +27,6 @@
   <artifactId>twitter-ostrich-provider</artifactId>
   <name>Apache BookKeeper :: Stats Providers :: Twitter Ostrich Stats</name>
   <url>http://maven.apache.org</url>
-  <build>
-    <plugins>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-checkstyle-plugin</artifactId>
-      </plugin>
-    </plugins>
-  </build>
   <dependencies>
     <dependency>
       <groupId>org.apache.bookkeeper.stats</groupId>

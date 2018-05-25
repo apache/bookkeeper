@@ -20,7 +20,7 @@ package org.apache.bookkeeper.tests.containers.wait;
 
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.bookkeeper.tests.BookKeeperClusterUtils;
+import org.apache.bookkeeper.tests.integration.utils.BookKeeperClusterUtils;
 import org.rnorth.ducttape.TimeoutException;
 import org.rnorth.ducttape.unreliables.Unreliables;
 import org.testcontainers.containers.ContainerLaunchException;

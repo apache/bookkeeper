@@ -43,7 +43,7 @@ freeStyleJob('bookkeeper_release_nightly_snapshot') {
       common_job_properties.setMavenConfig(delegate)
 
       // Maven build project.
-      goals('clean apache-rat:check package spotbugs:check -Dmaven.test.failure.ignore=true deploy -Ddistributedlog -Dstream -DstreamTests -Pdocker')
+      goals('clean apache-rat:check checkstyle:check package spotbugs:check -Dmaven.test.failure.ignore=true deploy -Ddistributedlog -Dstream -DstreamTests -Pdocker')
     }
 
     // publish the docker images

@@ -29,7 +29,7 @@ import org.testcontainers.containers.wait.strategy.LogMessageWaitStrategy;
  * Test Container for Bookies.
  */
 @Slf4j
-public class BKStandaloneContainer<SELF extends BKStandaloneContainer<SELF>> extends ChaosContainer<SELF> {
+public class BKStandaloneContainer<SelfT extends BKStandaloneContainer<SelfT>> extends ChaosContainer<SelfT> {
 
     private static final int ZK_PORT = 2181;
     private static final int BOOKIE_BASE_PORT = 3181;

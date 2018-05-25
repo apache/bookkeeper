@@ -66,7 +66,7 @@ public class ZkClusterMetadataStoreTest extends ZooKeeperClusterTestCase {
             zkServers,
             new ExponentialBackoffRetry(200, 10, 5000));
         curatorClient.start();
-        store = new ZkClusterMetadataStore(curatorClient, zkServers,"/" + runtime.getMethodName());
+        store = new ZkClusterMetadataStore(curatorClient, zkServers, "/" + runtime.getMethodName());
         store.initializeCluster(NUM_STORAGE_CONTAINERS);
     }
 

@@ -31,6 +31,7 @@
 
   <modules>
     <module>common</module>
+    <module>tests-common</module>
     <module>statelib</module>
     <module>api</module>
     <module>proto</module>

@@ -27,14 +27,6 @@
   <artifactId>twitter-http-server</artifactId>
   <name>Apache BookKeeper :: Bookkeeper Http :: Twitter Http Server</name>
   <url>http://maven.apache.org</url>
-  <build>
-    <plugins>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-checkstyle-plugin</artifactId>
-      </plugin>
-    </plugins>
-  </build>
   <dependencies>
     <dependency>
       <groupId>com.twitter</groupId>

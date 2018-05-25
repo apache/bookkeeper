@@ -25,15 +25,15 @@ import java.net.URI;
 import java.time.Duration;
 import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.bookkeeper.tests.DockerUtils;
 import org.apache.bookkeeper.tests.containers.wait.HttpWaitStrategy;
+import org.apache.bookkeeper.tests.integration.utils.DockerUtils;
 import org.testcontainers.containers.wait.strategy.HostPortWaitStrategy;
 
 /**
  * Test Container for Bookies.
  */
 @Slf4j
-public class BookieContainer<SELF extends BookieContainer<SELF>> extends ChaosContainer<SELF> {
+public class BookieContainer<SelfT extends BookieContainer<SelfT>> extends ChaosContainer<SelfT> {
 
     private static final int BOOKIE_PORT = 3181;
     private static final int BOOKIE_GRPC_PORT = 4181; // stream storage grpc port
