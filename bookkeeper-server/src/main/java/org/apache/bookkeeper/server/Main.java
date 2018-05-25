@@ -338,8 +338,12 @@ public class Main {
                     log.info("Load lifecycle component : {}", component.getClass().getName());
                 }
             } catch (Exception e) {
-                log.info("Failed to load extra components '{}' - {}. Continuing without those components.",
-                    StringUtils.join(extraComponents), e.getMessage());
+                if (conf.getServerConf().getIgnoreExtraServerComponentsStartupFailures()) {
+                    log.info("Failed to load extra components '{}' - {}. Continuing without those components.",
+                        StringUtils.join(extraComponents), e.getMessage());
+                } else {
+                    throw e;
+                }
             }
         }
 

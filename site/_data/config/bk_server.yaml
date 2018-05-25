@@ -44,6 +44,9 @@ groups:
   - param: extraServerComponents
     description: Configure a list of extra server components to enable and load on a bookie server. This provides a plugin mechanism to run extra server components along with a bookie server.
     default: ''
+  - param: ignoreExtraServerComponentsStartupFailures
+    description: Whether the bookie should ignore startup failures on loading server components specified by `extraServerComponents`.
+    default: 'false'
 
 - name: Worker thread settings
   params:
