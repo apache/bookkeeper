@@ -164,4 +164,17 @@ public interface LedgerUnderreplicationManager extends AutoCloseable {
      */
     void notifyLostBookieRecoveryDelayChanged(GenericCallback<Void> cb)
             throws ReplicationException.UnavailableException;
+
+    /**
+     * If a replicationworker has acquired lock on an underreplicated ledger,
+     * then getReplicationWorkerIdRereplicatingLedger should return
+     * ReplicationWorkerId (BookieId) of the ReplicationWorker that is holding
+     * lock. If lock for the underreplicated ledger is not yet acquired or if it
+     * is released then it is supposed to return null.
+     *
+     * @param ledgerId
+     * @return
+     * @throws ReplicationException.UnavailableException
+     */
+    String getReplicationWorkerIdRereplicatingLedger(long ledgerId) throws ReplicationException.UnavailableException;
 }
