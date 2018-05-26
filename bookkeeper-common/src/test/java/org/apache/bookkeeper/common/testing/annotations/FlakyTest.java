@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.bookkeeper.test.annotations;
+package org.apache.bookkeeper.common.testing.annotations;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
