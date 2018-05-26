@@ -32,7 +32,7 @@ import org.apache.bookkeeper.clients.exceptions.NamespaceNotFoundException;
 import org.apache.bookkeeper.clients.exceptions.StreamExistsException;
 import org.apache.bookkeeper.clients.exceptions.StreamNotFoundException;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
-import org.apache.bookkeeper.common.util.OrderedScheduler;
+import org.apache.bookkeeper.common.testing.annotations.FlakyTest;
 import org.apache.bookkeeper.stream.proto.NamespaceConfiguration;
 import org.apache.bookkeeper.stream.proto.NamespaceProperties;
 import org.apache.bookkeeper.stream.proto.StreamConfiguration;
@@ -42,7 +42,6 @@ import org.apache.bookkeeper.stream.proto.storage.StatusCode;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
-import org.junit.Test;
 import org.junit.rules.TestName;
 
 /**
@@ -67,7 +66,7 @@ public class StorageAdminClientTest extends StreamClusterTestBase {
         }
     }
 
-    @Test
+    @FlakyTest("https://github.com/apache/bookkeeper/issues/1440")
     public void testNamespaceAPI() throws Exception {
         // Create a namespace
         String nsName = testName.getMethodName();
@@ -123,7 +122,7 @@ public class StorageAdminClientTest extends StreamClusterTestBase {
         }
     }
 
-    @Test
+    @FlakyTest("https://github.com/apache/bookkeeper/issues/1440")
     public void testStreamAPI() throws Exception {
         // Create a namespace
         String nsName = testName.getMethodName() + "_ns";
