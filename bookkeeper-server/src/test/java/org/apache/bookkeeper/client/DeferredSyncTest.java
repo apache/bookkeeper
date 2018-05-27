@@ -25,6 +25,7 @@ import static org.junit.Assert.fail;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import java.util.concurrent.CompletableFuture;
+import org.apache.bookkeeper.client.api.WriteAdvHandle;
 import org.apache.bookkeeper.client.api.WriteFlag;
 import org.apache.bookkeeper.client.api.WriteHandle;
 import org.apache.bookkeeper.net.BookieSocketAddress;
@@ -76,6 +77,36 @@ public class DeferredSyncTest extends MockBookKeeperTestCase {
             assertEquals(-1, wh.getLastAddConfirmed());
             result(wh.force());
             assertEquals(NUM_ENTRIES - 1, wh.getLastAddConfirmed());
+        }
+    }
+
+    @Test
+    public void testForceOnWriteAdvHandle() throws Exception {
+        try (WriteAdvHandle wh = result(newCreateLedgerOp()
+                .withEnsembleSize(3)
+                .withWriteQuorumSize(3)
+                .withAckQuorumSize(2)
+                .withPassword(PASSWORD)
+                .withWriteFlags(WriteFlag.DEFERRED_SYNC)
+                .makeAdv()
+                .execute())) {
+            CompletableFuture<Long> w0 = wh.writeAsync(0, DATA);
+            CompletableFuture<Long> w2 = wh.writeAsync(2, DATA);
+            CompletableFuture<Long> w3 = wh.writeAsync(3, DATA);
+            result(w0);
+            result(wh.force());
+            assertEquals(0, wh.getLastAddConfirmed());
+            CompletableFuture<Long> w1 = wh.writeAsync(1, DATA);
+            result(w3);
+            assertTrue(w1.isDone());
+            assertTrue(w2.isDone());
+            CompletableFuture<Long> w5 = wh.writeAsync(5, DATA);
+            result(wh.force());
+            assertEquals(3, wh.getLastAddConfirmed());
+            wh.writeAsync(4, DATA);
+            result(w5);
+            result(wh.force());
+            assertEquals(5, wh.getLastAddConfirmed());
         }
     }
 
