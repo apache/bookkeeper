@@ -574,6 +574,13 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
     }
 
     void forceLedger(final long ledgerId, ForceLedgerCallback cb, Object ctx) {
+        if (useV2WireProtocol) {
+                LOG.error("force is not allowed with v2 protocol");
+                executor.executeOrdered(ledgerId, () -> {
+                    cb.forceLedgerComplete(BKException.Code.IllegalOpException, ledgerId, addr, ctx);
+                });
+                return;
+        }
         final long txnId = getTxnId();
         final CompletionKey completionKey = new V3CompletionKey(txnId,
                                                                 OperationType.FORCE_LEDGER);
