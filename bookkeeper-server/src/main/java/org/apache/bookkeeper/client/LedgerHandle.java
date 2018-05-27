@@ -1860,6 +1860,14 @@ public class LedgerHandle implements WriteHandle {
             }
             return;
         }
+        if (writeFlags.contains(WriteFlag.DEFERRED_SYNC)) {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Cannot perform ensemble changee with writeflags {}."
+                        + "Failed bookies {} for ledger {}.",
+                        writeFlags, delayedWriteFailedBookies, ledgerId);
+            }
+            return;
+        }
         synchronized (metadata) {
             try {
                 EnsembleInfo ensembleInfo = replaceBookieInMetadata(delayedWriteFailedBookies, curNumEnsembleChanges);
@@ -1888,6 +1896,17 @@ public class LedgerHandle implements WriteHandle {
                     failedBookies, ledgerId);
             }
             unsetSuccessAndSendWriteRequest(failedBookies.keySet());
+            return;
+        }
+
+        if (writeFlags.contains(WriteFlag.DEFERRED_SYNC)) {
+            blockAddCompletions.decrementAndGet();
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Cannot perform ensemble change with write flags {}. "
+                        + "Retry sending to failed bookies {} for ledger {}.",
+                    writeFlags, failedBookies, ledgerId);
+            }
+            handleUnrecoverableErrorDuringAdd(WriteException);
             return;
         }
 

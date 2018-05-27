@@ -19,6 +19,8 @@ package org.apache.bookkeeper.client;
 
 import static org.apache.bookkeeper.common.concurrent.FutureUtils.result;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -155,6 +157,38 @@ public class DeferredSyncTest extends MockBookKeeperTestCase {
 
             result(wh.force());
             assertEquals(suspendedWriteEntryId, wh.getLastAddConfirmed());
+        }
+    }
+
+    @Test
+    public void testForbiddenEnsembleChange() throws Exception {
+        try (WriteHandle wh = result(newCreateLedgerOp()
+                .withEnsembleSize(1)
+                .withWriteQuorumSize(1)
+                .withAckQuorumSize(1)
+                .withPassword(PASSWORD)
+                .withWriteFlags(WriteFlag.DEFERRED_SYNC)
+                .execute())) {
+            for (int i = 0; i < NUM_ENTRIES - 1; i++) {
+                wh.append(DATA);
+            }
+
+            assertEquals(1, availableBookies.size());
+            // kill the only bookie in the ensamble
+            killBookie(wh.getLedgerMetadata().getEnsembleAt(wh.getLastAddPushed()).get(0));
+            assertEquals(0, availableBookies.size());
+            startNewBookie();
+            assertEquals(1, availableBookies.size());
+
+            try {
+                // we cannot switch to the new bookie with DEFERRED_SYNC
+                wh.append(DATA);
+                fail("since ensemble change is disable we cannot be able to write any more");
+            } catch (BKException.BKWriteException ex) {
+                // expected
+            }
+            LedgerHandle lh = (LedgerHandle) wh;
+            assertTrue(lh.getDelayedWriteFailedBookies().isEmpty());
         }
     }
 
