@@ -97,8 +97,8 @@ public abstract class MockBookKeeperTestCase {
     protected ConcurrentSkipListSet<Long> fencedLedgers;
     protected ConcurrentMap<Long, Map<BookieSocketAddress, Map<Long, MockEntry>>> mockLedgerData;
 
-    private Map<BookieSocketAddress, List<Runnable>> slowBookieResponses;
-    private Set<BookieSocketAddress> suspendedBookiesForWrites;
+    private Map<BookieSocketAddress, List<Runnable>> deferredBookieForceLedgerResponses;
+    private Set<BookieSocketAddress> suspendedBookiesForForceLedgerAcks;
 
     List<BookieSocketAddress> failedBookies;
     Set<BookieSocketAddress> availableBookies;
@@ -134,8 +134,8 @@ public abstract class MockBookKeeperTestCase {
 
     @Before
     public void setup() throws Exception {
-        slowBookieResponses = new ConcurrentHashMap<>();
-        suspendedBookiesForWrites = Collections.synchronizedSet(new HashSet<>());
+        deferredBookieForceLedgerResponses = new ConcurrentHashMap<>();
+        suspendedBookiesForForceLedgerAcks = Collections.synchronizedSet(new HashSet<>());
         mockLedgerMetadataRegistry = new ConcurrentHashMap<>();
         mockLedgerData = new ConcurrentHashMap<>();
         mockNextLedgerId = new AtomicLong(1);
@@ -250,13 +250,13 @@ public abstract class MockBookKeeperTestCase {
         availableBookies.add(killedBookieSocketAddress);
     }
 
-    protected void suspendBookieWriteAcks(BookieSocketAddress address) {
-        suspendedBookiesForWrites.add(address);
+    protected void suspendBookieForceLedgerAcks(BookieSocketAddress address) {
+        suspendedBookiesForForceLedgerAcks.add(address);
     }
 
     protected void resumeBookieWriteAcks(BookieSocketAddress address) {
-        suspendedBookiesForWrites.remove(address);
-        List<Runnable> pendingResponses = slowBookieResponses.remove(address);
+        suspendedBookiesForForceLedgerAcks.remove(address);
+        List<Runnable> pendingResponses = deferredBookieForceLedgerResponses.remove(address);
         if (pendingResponses != null) {
             pendingResponses.forEach(Runnable::run);
         }
@@ -511,43 +511,34 @@ public abstract class MockBookKeeperTestCase {
             boolean isRecoveryAdd =
                 ((short) options & BookieProtocol.FLAG_RECOVERY_ADD) == BookieProtocol.FLAG_RECOVERY_ADD;
 
-            Runnable activity = () -> {
-                executor.executeOrdered(ledgerId, () -> {
-                    byte[] entry;
-                    try {
-                        entry = extractEntryPayload(ledgerId, entryId, toSend);
-                    } catch (BKDigestMatchException e) {
-                        callback.writeComplete(Code.DigestMatchException,
+            executor.executeOrdered(ledgerId, () -> {
+                byte[] entry;
+                try {
+                    entry = extractEntryPayload(ledgerId, entryId, toSend);
+                } catch (BKDigestMatchException e) {
+                    callback.writeComplete(Code.DigestMatchException,
+                            ledgerId, entryId, bookieSocketAddress, ctx);
+                    return;
+                }
+                boolean fenced = fencedLedgers.contains(ledgerId);
+                if (fenced && !isRecoveryAdd) {
+                    callback.writeComplete(BKException.Code.LedgerFencedException,
+                        ledgerId, entryId, bookieSocketAddress, ctx);
+                } else {
+                    if (failedBookies.contains(bookieSocketAddress)) {
+                        callback.writeComplete(NoBookieAvailableException,
                                 ledgerId, entryId, bookieSocketAddress, ctx);
                         return;
                     }
-                    boolean fenced = fencedLedgers.contains(ledgerId);
-                    if (fenced && !isRecoveryAdd) {
-                        callback.writeComplete(BKException.Code.LedgerFencedException,
-                            ledgerId, entryId, bookieSocketAddress, ctx);
-                    } else {
-                        if (failedBookies.contains(bookieSocketAddress)) {
-                            callback.writeComplete(NoBookieAvailableException,
-                                    ledgerId, entryId, bookieSocketAddress, ctx);
-                            return;
-                        }
-                        if (getMockLedgerContentsInBookie(ledgerId, bookieSocketAddress).isEmpty()) {
-                                registerMockEntryForRead(ledgerId, BookieProtocol.LAST_ADD_CONFIRMED,
-                                        bookieSocketAddress, new byte[0], BookieProtocol.INVALID_ENTRY_ID);
-                        }
-                        registerMockEntryForRead(ledgerId, entryId, bookieSocketAddress, entry, ledgerId);
-                        callback.writeComplete(BKException.Code.OK,
-                                ledgerId, entryId, bookieSocketAddress, ctx);
+                    if (getMockLedgerContentsInBookie(ledgerId, bookieSocketAddress).isEmpty()) {
+                            registerMockEntryForRead(ledgerId, BookieProtocol.LAST_ADD_CONFIRMED,
+                                    bookieSocketAddress, new byte[0], BookieProtocol.INVALID_ENTRY_ID);
                     }
-                });
-            };
-            if (suspendedBookiesForWrites.contains(bookieSocketAddress)) {
-                 List<Runnable> suspendedCallbacks =
-                         slowBookieResponses.computeIfAbsent(bookieSocketAddress, (k)->new CopyOnWriteArrayList<>());
-                 suspendedCallbacks.add(activity);
-            } else {
-                activity.run();
-            }
+                    registerMockEntryForRead(ledgerId, entryId, bookieSocketAddress, entry, ledgerId);
+                    callback.writeComplete(BKException.Code.OK,
+                            ledgerId, entryId, bookieSocketAddress, ctx);
+                }
+            });
 
             return null;
         });
@@ -569,14 +560,22 @@ public abstract class MockBookKeeperTestCase {
                     (BookkeeperInternalCallbacks.ForceLedgerCallback) args[2];
             Object ctx = args[3];
 
-            executor.executeOrdered(ledgerId, () -> {
-                if (failedBookies.contains(bookieSocketAddress)) {
-                    callback.forceLedgerComplete(NoBookieAvailableException, ledgerId, bookieSocketAddress, ctx);
-                    return;
-                }
-                callback.forceLedgerComplete(BKException.Code.OK, ledgerId, bookieSocketAddress, ctx);
-
-            });
+            Runnable activity = () -> {
+                executor.executeOrdered(ledgerId, () -> {
+                    if (failedBookies.contains(bookieSocketAddress)) {
+                        callback.forceLedgerComplete(NoBookieAvailableException, ledgerId, bookieSocketAddress, ctx);
+                        return;
+                    }
+                    callback.forceLedgerComplete(BKException.Code.OK, ledgerId, bookieSocketAddress, ctx);
+                });
+            };
+            if (suspendedBookiesForForceLedgerAcks.contains(bookieSocketAddress)) {
+                List<Runnable> queue = deferredBookieForceLedgerResponses.computeIfAbsent(bookieSocketAddress,
+                        (k) -> new CopyOnWriteArrayList<>());
+                queue.add(activity);
+            } else {
+                activity.run();
+            }
             return null;
         });
 

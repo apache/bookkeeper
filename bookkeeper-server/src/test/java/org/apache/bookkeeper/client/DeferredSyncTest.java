@@ -160,34 +160,28 @@ public class DeferredSyncTest extends MockBookKeeperTestCase {
             assertEquals(NUM_ENTRIES - 1, lastEntryIdBeforeSuspend);
             assertEquals(-1, wh.getLastAddConfirmed());
 
-            // one bookie will stop sending acks
+            // one bookie will stop sending acks for forceLedger
             BookieSocketAddress bookieAddress = wh.getLedgerMetadata().getEnsembleAt(wh.getLastAddPushed()).get(0);
-            suspendBookieWriteAcks(bookieAddress);
-
-            // start a write
-            CompletableFuture<Long> suspendedWrite = wh.appendAsync(DATA);
-            long lastAddPushedAfterSuspendedWrite = wh.getLastAddPushed();
-            LedgerHandle lh = (LedgerHandle) wh;
-            // we are waiting for the ack for that entry
-            assertEquals(lastEntryIdBeforeSuspend, lh.pendingAddsSequenceHead);
-            assertEquals(lastAddPushedAfterSuspendedWrite - 1, lh.pendingAddsSequenceHead);
+            suspendBookieForceLedgerAcks(bookieAddress);
 
             // start and complete a force, lastAddConfirmed cannot be "lastAddPushedAfterSuspendedWrite"
             // because the write has not yet been acknowledged by AckQuorumSize Bookies
-            result(wh.force());
-            assertEquals(lastEntryIdBeforeSuspend, wh.getLastAddConfirmed());
+            CompletableFuture<?> forceResult = wh.force();
+            assertEquals(-1, wh.getLastAddConfirmed());
 
-            // receive the ack
+            // send an entry and receive ack
+            long lastEntry = wh.append(DATA);
+
+            // receive the ack for forceLedger
             resumeBookieWriteAcks(bookieAddress);
-            long suspendedWriteEntryId = result(suspendedWrite);
-            assertEquals(lastAddPushedAfterSuspendedWrite, suspendedWriteEntryId);
+            result(forceResult);
 
-            assertEquals(suspendedWriteEntryId, wh.getLastAddPushed());
-
+            // now LastAddConfirmed will be equals to the last confirmed entry
+            // before force() started
             assertEquals(lastEntryIdBeforeSuspend, wh.getLastAddConfirmed());
 
             result(wh.force());
-            assertEquals(suspendedWriteEntryId, wh.getLastAddConfirmed());
+            assertEquals(lastEntry, wh.getLastAddConfirmed());
         }
     }
 
