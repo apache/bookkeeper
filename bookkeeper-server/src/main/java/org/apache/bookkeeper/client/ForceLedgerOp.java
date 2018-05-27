@@ -33,7 +33,7 @@ import org.slf4j.LoggerFactory;
 class ForceLedgerOp extends SafeRunnable implements ForceLedgerCallback {
 
     private static final Logger LOG = LoggerFactory.getLogger(ForceLedgerOp.class);
-    CompletableFuture<Void> cb;
+    final CompletableFuture<Void> cb;
     BitSet receivedResponseSet;
 
     DistributionSchedule.AckSet ackSet;
@@ -43,7 +43,7 @@ class ForceLedgerOp extends SafeRunnable implements ForceLedgerCallback {
 
     long currentNonDurableLastAddConfirmed = LedgerHandle.INVALID_ENTRY_ID;
 
-    LedgerHandle lh;
+    final LedgerHandle lh;
 
     ForceLedgerOp(LedgerHandle lh, CompletableFuture<Void> cb) {
         this.lh = lh;
@@ -61,7 +61,9 @@ class ForceLedgerOp extends SafeRunnable implements ForceLedgerCallback {
 
     void initiate() {
 
-        // capture currentNonDurableLastAddConfirmed, we are inside OrderedExecutor
+        // capture currentNonDurableLastAddConfirmed
+        // remember that we are inside OrderedExecutor, this induces a strict ordering
+        // on the sequence of events
         this.currentNonDurableLastAddConfirmed = lh.pendingAddsSequenceHead;
         LOG.debug("start force() on ledger {} capturing {} ", lh.ledgerId, currentNonDurableLastAddConfirmed);
 
@@ -103,7 +105,7 @@ class ForceLedgerOp extends SafeRunnable implements ForceLedgerCallback {
                 completed = true;
                 // we are able to say that every bookie sync'd its own journal
                 // for every ackknowledged entry before issuing the force() call
-                LOG.info("After force on ledger {} updating LastAddConfirmed to {} ",
+                LOG.debug("After force on ledger {} updating LastAddConfirmed to {} ",
                         ledgerId, currentNonDurableLastAddConfirmed);
                 lh.lastAddConfirmed = currentNonDurableLastAddConfirmed;
                 FutureUtils.complete(cb, null);

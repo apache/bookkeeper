@@ -217,4 +217,17 @@ public class DeferredSyncTest extends MockBookKeeperTestCase {
         }
     }
 
+    @Test(expected = BKException.BKLedgerClosedException.class)
+    public void testCannotIssueForceOnClosedLedgerHandle() throws Exception {
+        WriteHandle wh = result(newCreateLedgerOp()
+                .withEnsembleSize(1)
+                .withWriteQuorumSize(1)
+                .withAckQuorumSize(1)
+                .withPassword(PASSWORD)
+                .withWriteFlags(WriteFlag.DEFERRED_SYNC)
+                .execute());
+        wh.close();
+        result(wh.force());
+    }
+
 }
