@@ -14,45 +14,24 @@
 
 package org.apache.bookkeeper.stream.storage.impl.sc;
 
-import java.net.URI;
-import org.apache.bookkeeper.common.util.OrderedScheduler;
-import org.apache.bookkeeper.stream.protocol.util.StorageContainerPlacementPolicy;
 import org.apache.bookkeeper.stream.storage.api.sc.StorageContainer;
 import org.apache.bookkeeper.stream.storage.api.sc.StorageContainerFactory;
-import org.apache.bookkeeper.stream.storage.conf.StorageConfiguration;
-import org.apache.bookkeeper.stream.storage.impl.store.MVCCStoreFactory;
+import org.apache.bookkeeper.stream.storage.api.sc.StorageContainerServiceFactory;
 
 /**
  * The default storage container factory for creating {@link StorageContainer}s.
  */
 public class DefaultStorageContainerFactory implements StorageContainerFactory {
 
-    private final StorageConfiguration storageConf;
-    private final StorageContainerPlacementPolicy rangePlacementPolicy;
-    private final OrderedScheduler scheduler;
-    private final MVCCStoreFactory storeFactory;
-    private final URI defaultBackendUri;
+    private final StorageContainerServiceFactory serviceFactory;
 
-    public DefaultStorageContainerFactory(StorageConfiguration storageConf,
-                                          StorageContainerPlacementPolicy rangePlacementPolicy,
-                                          OrderedScheduler scheduler,
-                                          MVCCStoreFactory storeFactory,
-                                          URI defaultBackendUri) {
-        this.storageConf = storageConf;
-        this.rangePlacementPolicy = rangePlacementPolicy;
-        this.scheduler = scheduler;
-        this.storeFactory = storeFactory;
-        this.defaultBackendUri = defaultBackendUri;
+    public DefaultStorageContainerFactory(StorageContainerServiceFactory serviceFactory) {
+        this.serviceFactory = serviceFactory;
     }
 
     @Override
     public StorageContainer createStorageContainer(long scId) {
         return new StorageContainerImpl(
-            storageConf,
-            scId,
-            rangePlacementPolicy,
-            scheduler,
-            storeFactory,
-            defaultBackendUri);
+            serviceFactory, scId);
     }
 }

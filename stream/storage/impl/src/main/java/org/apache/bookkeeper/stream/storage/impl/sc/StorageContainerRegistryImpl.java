@@ -22,7 +22,6 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.common.exceptions.ObjectClosedException;
-import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.bookkeeper.stream.storage.api.sc.StorageContainer;
 import org.apache.bookkeeper.stream.storage.api.sc.StorageContainerFactory;
 import org.apache.bookkeeper.stream.storage.api.sc.StorageContainerRegistry;
@@ -39,13 +38,10 @@ public class StorageContainerRegistryImpl implements StorageContainerRegistry {
     private final StorageContainerFactory scFactory;
     private final ConcurrentMap<Long, StorageContainer> containers;
     private final ReentrantReadWriteLock closeLock;
-    private final StorageContainer failRequestStorageContainer;
     private boolean closed = false;
 
-    public StorageContainerRegistryImpl(StorageContainerFactory factory,
-                                        OrderedScheduler scheduler) {
+    public StorageContainerRegistryImpl(StorageContainerFactory factory) {
         this.scFactory = factory;
-        this.failRequestStorageContainer = FailRequestStorageContainer.of(scheduler);
         this.containers = Maps.newConcurrentMap();
         this.closeLock = new ReentrantReadWriteLock();
     }
@@ -62,7 +58,7 @@ public class StorageContainerRegistryImpl implements StorageContainerRegistry {
 
     @Override
     public StorageContainer getStorageContainer(long storageContainerId) {
-        return containers.getOrDefault(storageContainerId, failRequestStorageContainer);
+        return containers.getOrDefault(storageContainerId, StorageContainer404.of());
     }
 
     @Override

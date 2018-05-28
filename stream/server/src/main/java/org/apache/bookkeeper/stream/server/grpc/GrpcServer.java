@@ -18,6 +18,7 @@ import com.google.common.annotations.VisibleForTesting;
 import io.grpc.HandlerRegistry;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
+import io.grpc.ServerServiceDefinition;
 import io.grpc.inprocess.InProcessServerBuilder;
 import java.io.IOException;
 import lombok.extern.slf4j.Slf4j;
@@ -26,10 +27,8 @@ import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.stream.proto.common.Endpoint;
 import org.apache.bookkeeper.stream.server.conf.StorageServerConfiguration;
 import org.apache.bookkeeper.stream.server.exceptions.StorageServerRuntimeException;
-import org.apache.bookkeeper.stream.storage.api.RangeStore;
-import org.apache.bookkeeper.stream.storage.impl.grpc.GrpcMetaRangeService;
-import org.apache.bookkeeper.stream.storage.impl.grpc.GrpcRootRangeService;
-import org.apache.bookkeeper.stream.storage.impl.grpc.GrpcTableService;
+import org.apache.bookkeeper.stream.storage.api.StorageContainerStore;
+import org.apache.bookkeeper.stream.storage.impl.grpc.GrpcServices;
 
 /**
  * KeyRange Server.
@@ -50,15 +49,15 @@ public class GrpcServer extends AbstractLifecycleComponent<StorageServerConfigur
     private final Endpoint myEndpoint;
     private final Server grpcServer;
 
-    public GrpcServer(RangeStore rangeStore,
+    public GrpcServer(StorageContainerStore storageContainerStore,
                       StorageServerConfiguration conf,
                       Endpoint myEndpoint,
                       StatsLogger statsLogger) {
-        this(rangeStore, conf, myEndpoint, null, null, statsLogger);
+        this(storageContainerStore, conf, myEndpoint, null, null, statsLogger);
     }
 
     @VisibleForTesting
-    public GrpcServer(RangeStore rangeStore,
+    public GrpcServer(StorageContainerStore storageContainerStore,
                       StorageServerConfiguration conf,
                       Endpoint myEndpoint,
                       String localServerName,
@@ -75,12 +74,12 @@ public class GrpcServer extends AbstractLifecycleComponent<StorageServerConfigur
             }
             this.grpcServer = serverBuilder.build();
         } else {
-            this.grpcServer = ServerBuilder
-                .forPort(this.myEndpoint.getPort())
-                .addService(new GrpcRootRangeService(rangeStore))
-                .addService(new GrpcStorageContainerService(rangeStore))
-                .addService(new GrpcMetaRangeService(rangeStore))
-                .addService(new GrpcTableService(rangeStore))
+            ServerBuilder builder = ServerBuilder.forPort(this.myEndpoint.getPort());
+            for (ServerServiceDefinition definition : GrpcServices.create(null)) {
+                builder = builder.addService(definition);
+            }
+            this.grpcServer = builder
+                .addService(new GrpcStorageContainerService(storageContainerStore))
                 .build();
         }
     }

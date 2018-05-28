@@ -13,6 +13,7 @@
  */
 package org.apache.bookkeeper.stream.storage.api.metadata;
 
+import java.util.concurrent.CompletableFuture;
 import org.apache.bookkeeper.stream.storage.api.kv.TableStore;
 
 /**
@@ -22,4 +23,9 @@ public interface RangeStoreService
     extends MetaRangeStore,
     RootRangeStore,
     TableStore {
+
+    CompletableFuture<Void> start();
+
+    CompletableFuture<Void> stop();
+
 }

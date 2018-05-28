@@ -25,6 +25,7 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
+import javax.annotation.Nullable;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 
@@ -34,6 +35,16 @@ import lombok.NoArgsConstructor;
  */
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class ListenableFutures {
+
+    /**
+     * Convert a {@link ListenableFuture} to a {@link CompletableFuture}.
+     *
+     * @param listenableFuture listenable future to convert.
+     * @return the completable future.
+     */
+    public static <T> CompletableFuture<T> fromListenableFuture(ListenableFuture<T> listenableFuture) {
+        return fromListenableFuture(listenableFuture, Function.identity());
+    }
 
     /**
      * Convert a {@link ListenableFuture} to a {@link CompletableFuture} and do a transformation.

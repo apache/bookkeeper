@@ -7,7 +7,7 @@
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,47 +18,39 @@
 
 package org.apache.bookkeeper.stream.storage.api.sc;
 
-import io.grpc.Channel;
+import io.grpc.ServerServiceDefinition;
+import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * A {@code StorageContainer} is a service container that can encapsulate metadata and data operations.
+ * Represents the service running within a container.
  *
- * <p>A {@link StorageContainer} is typically implemented by replicated state machine backed by a log.
+ * <p>The implementation implements their core business logic and the framework provides resources like tables/streams
+ * for it.
  */
-public interface StorageContainer extends AutoCloseable {
+public interface StorageContainerService {
 
     /**
-     * Get the storage container id.
+     * Return the registered grpc services.
      *
-     * @return the storage container id.
+     * <p>The framework registers the grpc services in the container runtime. So the framework will know how to route
+     * the grpc requests to the actual grpc services.
+     * @return
      */
-    long getId();
+    Collection<ServerServiceDefinition> getRegisteredServices();
 
     /**
-     * Get the grpc channel to interact with grpc services registered in this container.
+     * Start the storage container service.
      *
-     * @return grpc channel.
+     * @return a future represents the result of starting a storage container service.
      */
-    Channel getChannel();
+    CompletableFuture<Void> start();
 
     /**
-     * Start the storage container.
+     * Stop the storage container service.
      *
-     * @return a future represents the result of starting a storage container.
-     */
-    CompletableFuture<StorageContainer> start();
-
-    /**
-     * Stop the storage container.
-     *
-     * @return a future represents the result of stopping a storage container.
+     * @return a future represents the result of stopping a storage container service.
      */
     CompletableFuture<Void> stop();
-
-    /**
-     * Close a storage container.
-     */
-    void close();
 
 }
