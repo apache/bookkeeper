@@ -23,6 +23,7 @@ import io.grpc.inprocess.InProcessServerBuilder;
 import java.io.IOException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.common.component.AbstractLifecycleComponent;
+import org.apache.bookkeeper.common.grpc.proxy.ProxyHandlerRegistry;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.stream.proto.common.Endpoint;
 import org.apache.bookkeeper.stream.server.conf.StorageServerConfiguration;
@@ -74,12 +75,14 @@ public class GrpcServer extends AbstractLifecycleComponent<StorageServerConfigur
             }
             this.grpcServer = serverBuilder.build();
         } else {
-            ServerBuilder builder = ServerBuilder.forPort(this.myEndpoint.getPort());
+            ProxyHandlerRegistry.Builder proxyRegistryBuilder = ProxyHandlerRegistry.newBuilder()
+                .setChannelFinder(storageContainerStore);
             for (ServerServiceDefinition definition : GrpcServices.create(null)) {
-                builder = builder.addService(definition);
+                proxyRegistryBuilder = proxyRegistryBuilder.addService(definition);
             }
-            this.grpcServer = builder
+            this.grpcServer = ServerBuilder.forPort(this.myEndpoint.getPort())
                 .addService(new GrpcStorageContainerService(storageContainerStore))
+                .fallbackHandlerRegistry(proxyRegistryBuilder.build())
                 .build();
         }
     }
