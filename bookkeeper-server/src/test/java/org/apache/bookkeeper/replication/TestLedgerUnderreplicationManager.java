@@ -51,6 +51,7 @@ import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
 import org.apache.bookkeeper.meta.ZkLayoutManager;
 import org.apache.bookkeeper.meta.ZkLedgerUnderreplicationManager;
 import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
+import org.apache.bookkeeper.net.DNS;
 import org.apache.bookkeeper.proto.DataFormats.UnderreplicatedLedgerFormat;
 import org.apache.bookkeeper.replication.ReplicationException.CompatibilityException;
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
@@ -369,6 +370,47 @@ public class TestLedgerUnderreplicationManager {
         lA = f.get(5, TimeUnit.SECONDS);
         assertEquals("Should be the ledger I had marked previously",
                      lA, ledgerA);
+    }
+
+    /**
+     * If replicationworker has acquired lock on it, then
+     * getReplicationWorkerIdRereplicatingLedger should return
+     * ReplicationWorkerId (BookieId) of the ReplicationWorker that is holding
+     * lock. If lock for the underreplicated ledger is not yet acquired or if it
+     * is released then it is supposed to return null.
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testGetReplicationWorkerIdRereplicatingLedger() throws Exception {
+        String missingReplica1 = "localhost:3181";
+        String missingReplica2 = "localhost:3182";
+
+        LedgerUnderreplicationManager m1 = lmf1.newLedgerUnderreplicationManager();
+
+        Long ledgerA = 0xfeadeefdacL;
+        m1.markLedgerUnderreplicated(ledgerA, missingReplica1);
+        m1.markLedgerUnderreplicated(ledgerA, missingReplica2);
+
+        // lock is not yet acquired so replicationWorkerIdRereplicatingLedger
+        // should
+        assertEquals("ReplicationWorkerId of the lock", null, m1.getReplicationWorkerIdRereplicatingLedger(ledgerA));
+
+        Future<Long> fA = getLedgerToReplicate(m1);
+        Long lA = fA.get(5, TimeUnit.SECONDS);
+        assertEquals("Should be the ledger that was just marked", lA, ledgerA);
+
+        /*
+         * ZkLedgerUnderreplicationManager.getLockData uses
+         * DNS.getDefaultHost("default") as the bookieId.
+         *
+         */
+        assertEquals("ReplicationWorkerId of the lock", DNS.getDefaultHost("default"),
+                m1.getReplicationWorkerIdRereplicatingLedger(ledgerA));
+
+        m1.markLedgerReplicated(lA);
+
+        assertEquals("ReplicationWorkerId of the lock", null, m1.getReplicationWorkerIdRereplicatingLedger(ledgerA));
     }
 
     /**

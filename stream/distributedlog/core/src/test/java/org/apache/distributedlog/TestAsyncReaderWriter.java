@@ -56,7 +56,6 @@ import org.apache.distributedlog.api.LogReader;
 import org.apache.distributedlog.api.LogWriter;
 import org.apache.distributedlog.api.namespace.Namespace;
 import org.apache.distributedlog.api.namespace.NamespaceBuilder;
-import org.apache.distributedlog.common.annotations.DistributedLogAnnotations;
 import org.apache.distributedlog.common.config.ConcurrentBaseConfiguration;
 import org.apache.distributedlog.common.config.ConcurrentConstConfiguration;
 import org.apache.distributedlog.config.DynamicDistributedLogConfiguration;
@@ -826,7 +825,6 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
      * Test Case: starting reading when the streams don't exist.
      * {@link https://issues.apache.org/jira/browse/DL-42}
      */
-    @DistributedLogAnnotations.FlakyTest
     @Ignore
     @Test(timeout = 120000)
     public void testSimpleAsyncReadWriteStartEmptyFactory() throws Exception {
@@ -1505,7 +1503,6 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
         dlm.close();
     }
 
-    @DistributedLogAnnotations.FlakyTest
     @Test(timeout = 60000)
     public void testAsyncReadMissingLogSegmentsNotification() throws Exception {
         String name = "distrlog-async-reader-missing-zk-notification";
