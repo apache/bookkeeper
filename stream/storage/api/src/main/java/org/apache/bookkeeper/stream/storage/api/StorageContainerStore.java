@@ -14,15 +14,15 @@
 
 package org.apache.bookkeeper.stream.storage.api;
 
-import java.util.concurrent.ScheduledExecutorService;
 import org.apache.bookkeeper.common.component.LifecycleComponent;
-import org.apache.bookkeeper.stream.storage.api.metadata.RangeStoreService;
+import org.apache.bookkeeper.common.grpc.proxy.ChannelFinder;
+import org.apache.bookkeeper.stream.storage.api.sc.StorageContainerRegistry;
 import org.apache.bookkeeper.stream.storage.api.sc.StorageContainerRoutingService;
 
 /**
- * The umbrella interface for accessing ranges (both metadata and data).
+ * The umbrella interface for accessing storage containers.
  */
-public interface RangeStore extends LifecycleComponent, RangeStoreService {
+public interface StorageContainerStore extends LifecycleComponent, ChannelFinder {
 
     /**
      * Get the routing service.
@@ -32,11 +32,10 @@ public interface RangeStore extends LifecycleComponent, RangeStoreService {
     StorageContainerRoutingService getRoutingService();
 
     /**
-     * Choose the executor for a given {@code key}.
+     * Get the container registry.
      *
-     * @param key submit key
-     * @return executor
+     * @return container registry.
      */
-    ScheduledExecutorService chooseExecutor(long key);
+    StorageContainerRegistry getRegistry();
 
 }

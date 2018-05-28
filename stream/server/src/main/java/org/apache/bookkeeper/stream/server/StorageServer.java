@@ -48,7 +48,7 @@ import org.apache.bookkeeper.stream.server.service.RegistrationServiceProvider;
 import org.apache.bookkeeper.stream.server.service.RegistrationStateService;
 import org.apache.bookkeeper.stream.server.service.StatsProviderService;
 import org.apache.bookkeeper.stream.server.service.StorageService;
-import org.apache.bookkeeper.stream.storage.RangeStoreBuilder;
+import org.apache.bookkeeper.stream.storage.StorageContainerStoreBuilder;
 import org.apache.bookkeeper.stream.storage.StorageResources;
 import org.apache.bookkeeper.stream.storage.conf.StorageConfiguration;
 import org.apache.bookkeeper.stream.storage.impl.cluster.ClusterControllerImpl;
@@ -243,7 +243,7 @@ public class StorageServer {
             rootStatsLogger.scope("dlog"));
 
         // Create range (stream) store
-        RangeStoreBuilder rangeStoreBuilder = RangeStoreBuilder.newBuilder()
+        StorageContainerStoreBuilder storageContainerStoreBuilder = StorageContainerStoreBuilder.newBuilder()
             .withStatsLogger(rootStatsLogger.scope("storage"))
             .withStorageConfiguration(storageConf)
             // the storage resources shared across multiple components
@@ -281,7 +281,7 @@ public class StorageServer {
                     storageResources,
                     storageConf.getServeReadOnlyTables()));
         StorageService storageService = new StorageService(
-            storageConf, rangeStoreBuilder, rootStatsLogger.scope("storage"));
+            storageConf, storageContainerStoreBuilder, rootStatsLogger.scope("storage"));
 
         // Create gRPC server
         StatsLogger rpcStatsLogger = rootStatsLogger.scope("grpc");

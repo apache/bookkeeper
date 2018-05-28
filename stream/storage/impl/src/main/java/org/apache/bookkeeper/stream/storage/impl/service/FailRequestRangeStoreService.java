@@ -7,7 +7,7 @@
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,9 +16,8 @@
  * limitations under the License.
  */
 
-package org.apache.bookkeeper.stream.storage.impl.sc;
+package org.apache.bookkeeper.stream.storage.impl.service;
 
-import static org.apache.bookkeeper.stream.protocol.ProtocolConstants.INVALID_STORAGE_CONTAINER_ID;
 import static org.apache.bookkeeper.stream.protocol.ProtocolConstants.ROOT_STORAGE_CONTAINER_ID;
 
 import io.grpc.Status;
@@ -40,41 +39,21 @@ import org.apache.bookkeeper.stream.proto.storage.GetStreamRequest;
 import org.apache.bookkeeper.stream.proto.storage.GetStreamResponse;
 import org.apache.bookkeeper.stream.proto.storage.StorageContainerRequest;
 import org.apache.bookkeeper.stream.proto.storage.StorageContainerResponse;
-import org.apache.bookkeeper.stream.storage.api.sc.StorageContainer;
+import org.apache.bookkeeper.stream.storage.api.metadata.RangeStoreService;
 
 /**
  * It is a single-ton implementation that fails all requests.
  */
-public final class FailRequestStorageContainer implements StorageContainer {
+final class FailRequestRangeStoreService implements RangeStoreService {
 
-    public static StorageContainer of(OrderedScheduler scheduler) {
-        return new FailRequestStorageContainer(scheduler);
+    static RangeStoreService of(OrderedScheduler scheduler) {
+        return new FailRequestRangeStoreService(scheduler);
     }
 
     private final OrderedScheduler scheduler;
 
-    private FailRequestStorageContainer(OrderedScheduler scheduler) {
+    private FailRequestRangeStoreService(OrderedScheduler scheduler) {
         this.scheduler = scheduler;
-    }
-
-    @Override
-    public long getId() {
-        return INVALID_STORAGE_CONTAINER_ID;
-    }
-
-    @Override
-    public CompletableFuture<StorageContainer> start() {
-        return CompletableFuture.completedFuture(this);
-    }
-
-    @Override
-    public CompletableFuture<Void> stop() {
-        return CompletableFuture.completedFuture(null);
-    }
-
-    @Override
-    public void close() {
-        // no-op
     }
 
     private <T> CompletableFuture<T> failWrongGroupRequest(long scId) {
@@ -83,6 +62,16 @@ public final class FailRequestStorageContainer implements StorageContainer {
             future.completeExceptionally(new StatusRuntimeException(Status.NOT_FOUND));
         });
         return future;
+    }
+
+    @Override
+    public CompletableFuture<Void> start() {
+        return FutureUtils.Void();
+    }
+
+    @Override
+    public CompletableFuture<Void> stop() {
+        return FutureUtils.Void();
     }
 
     //

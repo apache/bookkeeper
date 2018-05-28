@@ -22,7 +22,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.stream.proto.storage.MetaRangeServiceGrpc.MetaRangeServiceImplBase;
 import org.apache.bookkeeper.stream.proto.storage.StorageContainerRequest;
 import org.apache.bookkeeper.stream.proto.storage.StorageContainerResponse;
-import org.apache.bookkeeper.stream.storage.api.RangeStore;
 import org.apache.bookkeeper.stream.storage.api.metadata.RangeStoreService;
 import org.apache.bookkeeper.stream.storage.impl.grpc.handler.StorageContainerResponseHandler;
 
@@ -34,7 +33,7 @@ public class GrpcMetaRangeService extends MetaRangeServiceImplBase {
 
     private final RangeStoreService rangeStore;
 
-    public GrpcMetaRangeService(RangeStore service) {
+    public GrpcMetaRangeService(RangeStoreService service) {
         this.rangeStore = service;
         log.info("Created MetaRange service");
     }

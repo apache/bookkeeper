@@ -18,6 +18,8 @@
 
 package org.apache.bookkeeper.clients.impl.container;
 
+import static org.apache.bookkeeper.stream.protocol.ProtocolConstants.SC_ID_KEY;
+
 import io.grpc.CallOptions;
 import io.grpc.Channel;
 import io.grpc.ClientCall;
@@ -31,8 +33,6 @@ import org.apache.bookkeeper.common.grpc.netty.LongBinaryMarshaller;
  * A client interceptor that intercepting outgoing calls to storage containers.
  */
 public class StorageContainerClientInterceptor implements ClientInterceptor {
-
-    private static final String SC_ID_KEY = "SC_ID";
 
     private final long scId;
     private final Metadata.Key<Long> scIdKey;

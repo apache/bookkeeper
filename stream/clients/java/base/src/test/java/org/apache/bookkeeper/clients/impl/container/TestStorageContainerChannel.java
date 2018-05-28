@@ -26,6 +26,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -58,9 +59,9 @@ public class TestStorageContainerChannel extends GrpcClientTestBase {
     private OrderedScheduler scheduler;
     private final LocationClient locationClient = mock(LocationClient.class);
 
-    private StorageServerChannel mockChannel = mock(StorageServerChannel.class);
-    private StorageServerChannel mockChannel2 = mock(StorageServerChannel.class);
-    private StorageServerChannel mockChannel3 = mock(StorageServerChannel.class);
+    private StorageServerChannel mockChannel = newMockServerChannel();
+    private StorageServerChannel mockChannel2 = newMockServerChannel();
+    private StorageServerChannel mockChannel3 = newMockServerChannel();
     private final Endpoint endpoint = Endpoint.newBuilder()
         .setHostname("127.0.0.1")
         .setPort(8181)
@@ -104,6 +105,12 @@ public class TestStorageContainerChannel extends GrpcClientTestBase {
         if (null != scheduler) {
             scheduler.shutdown();
         }
+    }
+
+    private StorageServerChannel newMockServerChannel() {
+        StorageServerChannel channel = mock(StorageServerChannel.class);
+        when(channel.intercept(anyLong())).thenReturn(channel);
+        return channel;
     }
 
     private void ensureCallbackExecuted() throws Exception {

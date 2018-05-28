@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.bookkeeper.stream.storage.impl.sc;
+package org.apache.bookkeeper.stream.storage.impl.service;
 
 import static org.apache.bookkeeper.stream.proto.storage.StorageContainerRequest.RequestCase.KV_DELETE_REQ;
 import static org.apache.bookkeeper.stream.proto.storage.StorageContainerRequest.RequestCase.KV_PUT_REQ;
@@ -73,9 +73,9 @@ import org.junit.Before;
 import org.junit.Test;
 
 /**
- * Unit test of {@link StorageContainerImpl}.
+ * Unit test of {@link RangeStoreServiceImpl}.
  */
-public class StorageContainerImplTest {
+public class RangeStoreServiceImplTest {
 
     private static final long SCID = 3456L;
     private static final long STREAM_ID = 1234L;
@@ -86,7 +86,7 @@ public class StorageContainerImplTest {
     private RootRangeStoreFactory rrStoreFactory;
     private MetaRangeStoreFactory mrStoreFactory;
     private TableStoreFactory tableStoreFactory;
-    private StorageContainerImpl container;
+    private RangeStoreServiceImpl container;
     private OrderedScheduler scheduler;
     private RootRangeStore rrStore;
     private MVCCAsyncStore<byte[], byte[]> rrMvccStore;
@@ -111,7 +111,7 @@ public class StorageContainerImplTest {
         this.mrMvccStore = mock(MVCCAsyncStore.class);
         this.trMvccStore = mock(MVCCAsyncStore.class);
 
-        this.container = new StorageContainerImpl(
+        this.container = new RangeStoreServiceImpl(
             SCID,
             scheduler,
             mvccStoreFactory,
@@ -179,7 +179,7 @@ public class StorageContainerImplTest {
     public void testStartRootContainer() throws Exception {
         mockStorageContainer(ROOT_STORAGE_CONTAINER_ID);
 
-        StorageContainerImpl container = new StorageContainerImpl(
+        RangeStoreServiceImpl container = new RangeStoreServiceImpl(
             ROOT_STORAGE_CONTAINER_ID,
             scheduler,
             mvccStoreFactory,

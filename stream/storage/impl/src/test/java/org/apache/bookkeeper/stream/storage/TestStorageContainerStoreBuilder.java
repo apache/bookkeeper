@@ -18,18 +18,18 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
 import java.net.URI;
-import org.apache.bookkeeper.stream.storage.api.RangeStore;
+import org.apache.bookkeeper.stream.storage.api.StorageContainerStore;
 import org.apache.bookkeeper.stream.storage.api.sc.StorageContainerManagerFactory;
 import org.apache.bookkeeper.stream.storage.conf.StorageConfiguration;
-import org.apache.bookkeeper.stream.storage.impl.RangeStoreImpl;
+import org.apache.bookkeeper.stream.storage.impl.StorageContainerStoreImpl;
 import org.apache.bookkeeper.stream.storage.impl.store.MVCCStoreFactory;
 import org.junit.Before;
 import org.junit.Test;
 
 /**
- * Unit test for {@link RangeStoreBuilder}.
+ * Unit test for {@link StorageContainerStoreBuilder}.
  */
-public class TestRangeStoreBuilder {
+public class TestStorageContainerStoreBuilder {
 
     private MVCCStoreFactory storeFactory;
     private final URI uri = URI.create("distributedlog://127.0.0.1/stream/storage");
@@ -41,7 +41,7 @@ public class TestRangeStoreBuilder {
 
     @Test(expected = NullPointerException.class)
     public void testBuildNullConfiguration() {
-        RangeStoreBuilder.newBuilder()
+        StorageContainerStoreBuilder.newBuilder()
             .withStorageConfiguration(null)
             .withStorageContainerManagerFactory(mock(StorageContainerManagerFactory.class))
             .withStorageResources(StorageResources.create())
@@ -52,7 +52,7 @@ public class TestRangeStoreBuilder {
 
     @Test(expected = NullPointerException.class)
     public void testBuildNullResources() {
-        RangeStoreBuilder.newBuilder()
+        StorageContainerStoreBuilder.newBuilder()
             .withStorageConfiguration(mock(StorageConfiguration.class))
             .withStorageContainerManagerFactory(mock(StorageContainerManagerFactory.class))
             .withStorageResources(null)
@@ -63,7 +63,7 @@ public class TestRangeStoreBuilder {
 
     @Test(expected = NullPointerException.class)
     public void testBuildNullRGManagerFactory() {
-        RangeStoreBuilder.newBuilder()
+        StorageContainerStoreBuilder.newBuilder()
             .withStorageConfiguration(mock(StorageConfiguration.class))
             .withStorageContainerManagerFactory(null)
             .withStorageResources(StorageResources.create())
@@ -74,7 +74,7 @@ public class TestRangeStoreBuilder {
 
     @Test(expected = NullPointerException.class)
     public void testBuildNullStoreFactory() {
-        RangeStoreBuilder.newBuilder()
+        StorageContainerStoreBuilder.newBuilder()
             .withStorageConfiguration(mock(StorageConfiguration.class))
             .withStorageContainerManagerFactory(mock(StorageContainerManagerFactory.class))
             .withStorageResources(StorageResources.create())
@@ -85,7 +85,7 @@ public class TestRangeStoreBuilder {
 
     @Test(expected = NullPointerException.class)
     public void testBuildNullDefaultBackendUri() {
-        RangeStoreBuilder.newBuilder()
+        StorageContainerStoreBuilder.newBuilder()
             .withStorageConfiguration(mock(StorageConfiguration.class))
             .withStorageContainerManagerFactory(mock(StorageContainerManagerFactory.class))
             .withStorageResources(StorageResources.create())
@@ -96,14 +96,14 @@ public class TestRangeStoreBuilder {
 
     @Test
     public void testBuild() {
-        RangeStore rangeStore = RangeStoreBuilder.newBuilder()
+        StorageContainerStore storageContainerStore = StorageContainerStoreBuilder.newBuilder()
             .withStorageConfiguration(mock(StorageConfiguration.class))
             .withStorageContainerManagerFactory(mock(StorageContainerManagerFactory.class))
             .withStorageResources(StorageResources.create())
             .withRangeStoreFactory(storeFactory)
             .withDefaultBackendUri(uri)
             .build();
-        assertTrue(rangeStore instanceof RangeStoreImpl);
+        assertTrue(storageContainerStore instanceof StorageContainerStoreImpl);
     }
 
 }

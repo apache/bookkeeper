@@ -20,20 +20,22 @@ import java.net.URI;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.stream.protocol.util.StorageContainerPlacementPolicy;
-import org.apache.bookkeeper.stream.storage.api.RangeStore;
+import org.apache.bookkeeper.stream.storage.api.StorageContainerStore;
 import org.apache.bookkeeper.stream.storage.api.sc.StorageContainerManagerFactory;
 import org.apache.bookkeeper.stream.storage.conf.StorageConfiguration;
-import org.apache.bookkeeper.stream.storage.impl.RangeStoreImpl;
+import org.apache.bookkeeper.stream.storage.impl.StorageContainerStoreImpl;
 import org.apache.bookkeeper.stream.storage.impl.sc.StorageContainerPlacementPolicyImpl;
+import org.apache.bookkeeper.stream.storage.impl.service.RangeStoreContainerServiceFactoryImpl;
+import org.apache.bookkeeper.stream.storage.impl.service.RangeStoreServiceFactoryImpl;
 import org.apache.bookkeeper.stream.storage.impl.store.MVCCStoreFactory;
 
 /**
  * Builder to build the storage component.
  */
-public final class RangeStoreBuilder {
+public final class StorageContainerStoreBuilder {
 
-    public static RangeStoreBuilder newBuilder() {
-        return new RangeStoreBuilder();
+    public static StorageContainerStoreBuilder newBuilder() {
+        return new StorageContainerStoreBuilder();
     }
 
     private StatsLogger statsLogger = NullStatsLogger.INSTANCE;
@@ -45,18 +47,7 @@ public final class RangeStoreBuilder {
     private MVCCStoreFactory mvccStoreFactory = null;
     private URI defaultBackendUri = null;
 
-    private RangeStoreBuilder() {
-    }
-
-    /**
-     * Build the range store with the provided {@code numStorageContainers}.
-     *
-     * @param numStorageContainers number of the storage containers.
-     * @return range store builder
-     */
-    public RangeStoreBuilder withNumStorageContainers(int numStorageContainers) {
-        this.placementPolicyFactory = () -> StorageContainerPlacementPolicyImpl.of(numStorageContainers);
-        return this;
+    private StorageContainerStoreBuilder() {
     }
 
     /**
@@ -65,7 +56,7 @@ public final class RangeStoreBuilder {
      * @param placementPolicyFactory placement policy factor to create placement policies.
      * @return range store builder.
      */
-    public RangeStoreBuilder withStorageContainerPlacementPolicyFactory(
+    public StorageContainerStoreBuilder withStorageContainerPlacementPolicyFactory(
         StorageContainerPlacementPolicy.Factory placementPolicyFactory) {
         this.placementPolicyFactory = placementPolicyFactory;
         return this;
@@ -77,7 +68,7 @@ public final class RangeStoreBuilder {
      * @param statsLogger stats logger for collecting stats.
      * @return range store builder;
      */
-    public RangeStoreBuilder withStatsLogger(StatsLogger statsLogger) {
+    public StorageContainerStoreBuilder withStatsLogger(StatsLogger statsLogger) {
         if (null == statsLogger) {
             return this;
         }
@@ -91,7 +82,7 @@ public final class RangeStoreBuilder {
      * @param storeConf storage configuration
      * @return range store builder
      */
-    public RangeStoreBuilder withStorageConfiguration(StorageConfiguration storeConf) {
+    public StorageContainerStoreBuilder withStorageConfiguration(StorageConfiguration storeConf) {
         this.storeConf = storeConf;
         return this;
     }
@@ -102,7 +93,7 @@ public final class RangeStoreBuilder {
      * @param scmFactory storage container manager factory.
      * @return range store builder
      */
-    public RangeStoreBuilder withStorageContainerManagerFactory(StorageContainerManagerFactory scmFactory) {
+    public StorageContainerStoreBuilder withStorageContainerManagerFactory(StorageContainerManagerFactory scmFactory) {
         this.scmFactory = scmFactory;
         return this;
     }
@@ -113,7 +104,7 @@ public final class RangeStoreBuilder {
      * @param resources storage resources.
      * @return range store builder.
      */
-    public RangeStoreBuilder withStorageResources(StorageResources resources) {
+    public StorageContainerStoreBuilder withStorageResources(StorageResources resources) {
         this.storeResources = resources;
         return this;
     }
@@ -124,7 +115,7 @@ public final class RangeStoreBuilder {
      * @param storeFactory factory to create range stores.
      * @return range store builder.
      */
-    public RangeStoreBuilder withRangeStoreFactory(MVCCStoreFactory storeFactory) {
+    public StorageContainerStoreBuilder withRangeStoreFactory(MVCCStoreFactory storeFactory) {
         this.mvccStoreFactory = storeFactory;
         return this;
     }
@@ -135,25 +126,32 @@ public final class RangeStoreBuilder {
      * @param uri uri for storing table ranges.
      * @return range store builder.
      */
-    public RangeStoreBuilder withDefaultBackendUri(URI uri) {
+    public StorageContainerStoreBuilder withDefaultBackendUri(URI uri) {
         this.defaultBackendUri = uri;
         return this;
     }
 
-    public RangeStore build() {
+    public StorageContainerStore build() {
         checkNotNull(scmFactory, "StorageContainerManagerFactory is not provided");
         checkNotNull(storeConf, "StorageConfiguration is not provided");
         checkNotNull(mvccStoreFactory, "MVCCStoreFactory is not provided");
         checkNotNull(defaultBackendUri, "Default backend uri is not provided");
         checkNotNull(placementPolicyFactory, "Storage Container Placement Policy Factory is not provided");
 
-        return new RangeStoreImpl(
+        RangeStoreServiceFactoryImpl serviceFactory = new RangeStoreServiceFactoryImpl(
             storeConf,
+            placementPolicyFactory.newPlacementPolicy(),
             storeResources.scheduler(),
-            scmFactory,
             mvccStoreFactory,
-            defaultBackendUri,
-            placementPolicyFactory,
+            defaultBackendUri);
+
+        RangeStoreContainerServiceFactoryImpl containerServiceFactory =
+            new RangeStoreContainerServiceFactoryImpl(serviceFactory);
+
+        return new StorageContainerStoreImpl(
+            storeConf,
+            scmFactory,
+            containerServiceFactory,
             statsLogger);
     }
 

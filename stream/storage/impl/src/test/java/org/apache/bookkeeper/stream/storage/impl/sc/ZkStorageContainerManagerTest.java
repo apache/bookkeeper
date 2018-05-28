@@ -35,7 +35,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.bookkeeper.clients.utils.NetUtils;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.common.testing.MoreAsserts;
-import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stream.proto.cluster.ClusterAssignmentData;
 import org.apache.bookkeeper.stream.proto.cluster.ServerAssignmentData;
@@ -76,7 +75,6 @@ public class ZkStorageContainerManagerTest extends ZooKeeperClusterTestCase {
     private StorageContainerRegistry scRegistry;
     private ZkClusterMetadataStore clusterMetadataStore;
     private ZkStorageContainerManager scManager;
-    private OrderedScheduler scheduler;
 
     @Before
     public void setup() {
@@ -89,13 +87,8 @@ public class ZkStorageContainerManagerTest extends ZooKeeperClusterTestCase {
             curatorClient, zkServers, "/" + runtime.getMethodName()));
         clusterMetadataStore.initializeCluster(NUM_STORAGE_CONTAINERS);
 
-        scheduler = OrderedScheduler.newSchedulerBuilder()
-            .name("test-scheduler")
-            .numThreads(1)
-            .build();
-
         mockScFactory = mock(StorageContainerFactory.class);
-        scRegistry = spy(new StorageContainerRegistryImpl(mockScFactory, scheduler));
+        scRegistry = spy(new StorageContainerRegistryImpl(mockScFactory));
 
         scManager = new ZkStorageContainerManager(
             myEndpoint,
@@ -110,10 +103,6 @@ public class ZkStorageContainerManagerTest extends ZooKeeperClusterTestCase {
     public void teardown() {
         if (null != scManager) {
             scManager.close();
-        }
-
-        if (null != scheduler) {
-            scheduler.shutdown();
         }
 
         if (null != curatorClient) {
@@ -278,7 +267,7 @@ public class ZkStorageContainerManagerTest extends ZooKeeperClusterTestCase {
                 );
             }
         };
-        scRegistry = spy(new StorageContainerRegistryImpl(mockScFactory, scheduler));
+        scRegistry = spy(new StorageContainerRegistryImpl(mockScFactory));
 
         scManager = new ZkStorageContainerManager(
             myEndpoint,

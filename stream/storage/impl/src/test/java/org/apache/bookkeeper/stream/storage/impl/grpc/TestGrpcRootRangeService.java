@@ -70,8 +70,8 @@ import org.apache.bookkeeper.stream.proto.storage.GetNamespaceResponse;
 import org.apache.bookkeeper.stream.proto.storage.GetStreamRequest;
 import org.apache.bookkeeper.stream.proto.storage.GetStreamResponse;
 import org.apache.bookkeeper.stream.proto.storage.StatusCode;
+import org.apache.bookkeeper.stream.storage.api.metadata.RangeStoreService;
 import org.apache.bookkeeper.stream.storage.exceptions.StorageException;
-import org.apache.bookkeeper.stream.storage.impl.RangeStoreImpl;
 import org.junit.Test;
 
 /**
@@ -108,7 +108,7 @@ public class TestGrpcRootRangeService {
 
     @Test
     public void testCreateNamespaceSuccess() throws Exception {
-        RangeStoreImpl rangeService = mock(RangeStoreImpl.class);
+        RangeStoreService rangeService = mock(RangeStoreService.class);
         GrpcRootRangeService grpcService = new GrpcRootRangeService(rangeService);
         CreateNamespaceResponse createResp = CreateNamespaceResponse.newBuilder()
             .setCode(StatusCode.SUCCESS)
@@ -152,7 +152,7 @@ public class TestGrpcRootRangeService {
 
     @Test
     public void testCreateNamespaceFailure() throws Exception {
-        RangeStoreImpl rangeService = mock(RangeStoreImpl.class);
+        RangeStoreService rangeService = mock(RangeStoreService.class);
         GrpcRootRangeService grpcService = new GrpcRootRangeService(rangeService);
         CreateNamespaceResponse createResp = CreateNamespaceResponse.newBuilder()
             .setCode(StatusCode.INTERNAL_SERVER_ERROR)
@@ -195,7 +195,7 @@ public class TestGrpcRootRangeService {
 
     @Test
     public void testDeleteNamespaceSuccess() throws Exception {
-        RangeStoreImpl rangeService = mock(RangeStoreImpl.class);
+        RangeStoreService rangeService = mock(RangeStoreService.class);
         GrpcRootRangeService grpcService = new GrpcRootRangeService(rangeService);
         DeleteNamespaceResponse deleteResp = DeleteNamespaceResponse.newBuilder()
             .setCode(StatusCode.SUCCESS)
@@ -237,7 +237,7 @@ public class TestGrpcRootRangeService {
 
     @Test
     public void testDeleteNamespaceFailure() throws Exception {
-        RangeStoreImpl rangeService = mock(RangeStoreImpl.class);
+        RangeStoreService rangeService = mock(RangeStoreService.class);
         GrpcRootRangeService grpcService = new GrpcRootRangeService(rangeService);
         DeleteNamespaceResponse deleteResp = DeleteNamespaceResponse.newBuilder()
             .setCode(StatusCode.INTERNAL_SERVER_ERROR)
@@ -279,7 +279,7 @@ public class TestGrpcRootRangeService {
 
     @Test
     public void testGetNamespaceSuccess() throws Exception {
-        RangeStoreImpl rangeService = mock(RangeStoreImpl.class);
+        RangeStoreService rangeService = mock(RangeStoreService.class);
         GrpcRootRangeService grpcService = new GrpcRootRangeService(rangeService);
         GetNamespaceResponse getResp = GetNamespaceResponse.newBuilder()
             .setCode(StatusCode.SUCCESS)
@@ -322,7 +322,7 @@ public class TestGrpcRootRangeService {
 
     @Test
     public void testGetNamespaceFailure() throws Exception {
-        RangeStoreImpl rangeService = mock(RangeStoreImpl.class);
+        RangeStoreService rangeService = mock(RangeStoreService.class);
         GrpcRootRangeService grpcService = new GrpcRootRangeService(rangeService);
         GetNamespaceResponse getResp = GetNamespaceResponse.newBuilder()
             .setCode(StatusCode.INTERNAL_SERVER_ERROR)
@@ -368,7 +368,7 @@ public class TestGrpcRootRangeService {
 
     @Test
     public void testCreateStreamSuccess() throws Exception {
-        RangeStoreImpl rangeService = mock(RangeStoreImpl.class);
+        RangeStoreService rangeService = mock(RangeStoreService.class);
         GrpcRootRangeService grpcService = new GrpcRootRangeService(rangeService);
         CreateStreamResponse createResp = CreateStreamResponse.newBuilder()
             .setCode(StatusCode.SUCCESS)
@@ -413,7 +413,7 @@ public class TestGrpcRootRangeService {
 
     @Test
     public void testCreateStreamFailure() throws Exception {
-        RangeStoreImpl rangeService = mock(RangeStoreImpl.class);
+        RangeStoreService rangeService = mock(RangeStoreService.class);
         GrpcRootRangeService grpcService = new GrpcRootRangeService(rangeService);
         CreateStreamResponse createResp = CreateStreamResponse.newBuilder()
             .setCode(StatusCode.INTERNAL_SERVER_ERROR)
@@ -457,7 +457,7 @@ public class TestGrpcRootRangeService {
 
     @Test
     public void testDeleteStreamSuccess() throws Exception {
-        RangeStoreImpl rangeService = mock(RangeStoreImpl.class);
+        RangeStoreService rangeService = mock(RangeStoreService.class);
         GrpcRootRangeService grpcService = new GrpcRootRangeService(rangeService);
         DeleteStreamResponse deleteResp = DeleteStreamResponse.newBuilder()
             .setCode(StatusCode.SUCCESS)
@@ -500,7 +500,7 @@ public class TestGrpcRootRangeService {
 
     @Test
     public void testDeleteStreamFailure() throws Exception {
-        RangeStoreImpl rangeService = mock(RangeStoreImpl.class);
+        RangeStoreService rangeService = mock(RangeStoreService.class);
         GrpcRootRangeService grpcService = new GrpcRootRangeService(rangeService);
         DeleteStreamResponse deleteResp = DeleteStreamResponse.newBuilder()
             .setCode(StatusCode.INTERNAL_SERVER_ERROR)
@@ -543,7 +543,7 @@ public class TestGrpcRootRangeService {
 
     @Test
     public void testGetStreamSuccess() throws Exception {
-        RangeStoreImpl rangeService = mock(RangeStoreImpl.class);
+        RangeStoreService rangeService = mock(RangeStoreService.class);
         GrpcRootRangeService grpcService = new GrpcRootRangeService(rangeService);
         GetStreamResponse getResp = GetStreamResponse.newBuilder()
             .setCode(StatusCode.SUCCESS)
@@ -588,7 +588,7 @@ public class TestGrpcRootRangeService {
 
     @Test
     public void testGetStreamFailure() throws Exception {
-        RangeStoreImpl rangeService = mock(RangeStoreImpl.class);
+        RangeStoreService rangeService = mock(RangeStoreService.class);
         GrpcRootRangeService grpcService = new GrpcRootRangeService(rangeService);
         GetStreamResponse getResp = GetStreamResponse.newBuilder()
             .setCode(StatusCode.INTERNAL_SERVER_ERROR)
