@@ -104,6 +104,7 @@ import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.replication.AuditorElector;
 import org.apache.bookkeeper.replication.ReplicationException;
 import org.apache.bookkeeper.replication.ReplicationException.CompatibilityException;
+import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.tools.cli.commands.bookie.LastMarkCommand;
 import org.apache.bookkeeper.tools.cli.commands.client.SimpleTestCommand;
@@ -876,6 +877,7 @@ public class BookieShell implements Tool {
             opts.addOption("missingreplica", true, "Bookie Id of missing replica");
             opts.addOption("excludingmissingreplica", true, "Bookie Id of missing replica to ignore");
             opts.addOption("printmissingreplica", false, "Whether to print missingreplicas list?");
+            opts.addOption("printreplicationworkerid", false, "Whether to print replicationworkerid?");
         }
 
         @Override
@@ -892,7 +894,7 @@ public class BookieShell implements Tool {
         @Override
         String getUsage() {
             return "listunderreplicated [[-missingreplica <bookieaddress>]"
-                    + " [-excludingmissingreplica <bookieaddress>]] [-printmissingreplica]";
+                    + " [-excludingmissingreplica <bookieaddress>]] [-printmissingreplica] [-printreplicationworkerid]";
         }
 
         @Override
@@ -901,6 +903,7 @@ public class BookieShell implements Tool {
             final String includingBookieId = cmdLine.getOptionValue("missingreplica");
             final String excludingBookieId = cmdLine.getOptionValue("excludingmissingreplica");
             final boolean printMissingReplica = cmdLine.hasOption("printmissingreplica");
+            final boolean printReplicationWorkerId = cmdLine.hasOption("printreplicationworkerid");
 
             final Predicate<List<String>> predicate;
             if (!StringUtils.isBlank(includingBookieId) && !StringUtils.isBlank(excludingBookieId)) {
@@ -927,11 +930,25 @@ public class BookieShell implements Tool {
                 Iterator<Map.Entry<Long, List<String>>> iter = underreplicationManager
                         .listLedgersToRereplicate(predicate, printMissingReplica);
                 while (iter.hasNext()) {
-                    System.out.println(ledgerIdFormatter.formatLedgerId(iter.next().getKey()));
+                    Map.Entry<Long, List<String>> urLedgerMapEntry = iter.next();
+                    long urLedgerId = urLedgerMapEntry.getKey();
+                    System.out.println(ledgerIdFormatter.formatLedgerId(urLedgerId));
                     if (printMissingReplica) {
-                        iter.next().getValue().forEach((missingReplica) -> {
-                            System.out.println("\t" + missingReplica);
+                        urLedgerMapEntry.getValue().forEach((missingReplica) -> {
+                            System.out.println("\tMissingReplica : " + missingReplica);
                         });
+                    }
+                    if (printReplicationWorkerId) {
+                        try {
+                            String replicationWorkerId = underreplicationManager
+                                    .getReplicationWorkerIdRereplicatingLedger(urLedgerId);
+                            if (replicationWorkerId != null) {
+                                System.out.println("\tReplicationWorkerId : " + replicationWorkerId);
+                            }
+                        } catch (UnavailableException e) {
+                            LOG.error("Failed to get ReplicationWorkerId rereplicating ledger {} -- {}", urLedgerId,
+                                    e.getMessage());
+                        }
                     }
                 }
                 return null;
