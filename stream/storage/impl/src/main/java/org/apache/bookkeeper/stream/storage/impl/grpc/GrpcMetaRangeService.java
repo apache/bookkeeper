@@ -34,7 +34,7 @@ public class GrpcMetaRangeService extends MetaRangeServiceImplBase {
 
     private final RangeStoreService rangeStore;
 
-    public GrpcMetaRangeService(RangeStore service) {
+    public GrpcMetaRangeService(RangeStoreService service) {
         this.rangeStore = service;
         log.info("Created MetaRange service");
     }

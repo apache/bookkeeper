@@ -36,6 +36,16 @@ import lombok.NoArgsConstructor;
 public final class ListenableFutures {
 
     /**
+     * Convert a {@link ListenableFuture} to a {@link CompletableFuture}.
+     *
+     * @param listenableFuture listenable future to convert.
+     * @return the completable future.
+     */
+    public static <T> CompletableFuture<T> fromListenableFuture(ListenableFuture<T> listenableFuture) {
+        return fromListenableFuture(listenableFuture, Function.identity());
+    }
+
+    /**
      * Convert a {@link ListenableFuture} to a {@link CompletableFuture} and do a transformation.
      *
      * @param listenableFuture listenable future

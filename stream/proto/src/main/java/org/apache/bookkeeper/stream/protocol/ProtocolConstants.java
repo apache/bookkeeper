@@ -18,6 +18,7 @@
 
 package org.apache.bookkeeper.stream.protocol;
 
+import io.grpc.Metadata;
 import org.apache.bookkeeper.stream.proto.FixedRangeSplitPolicy;
 import org.apache.bookkeeper.stream.proto.RangeKeyType;
 import org.apache.bookkeeper.stream.proto.RetentionPolicy;
@@ -107,4 +108,6 @@ public final class ProtocolConstants {
             .setSplitPolicy(DEFAULT_SPLIT_POLICY)
             .build();
 
+    // storage container request metadata key
+    public static final String SC_ID_KEY = "sc-id" + Metadata.BINARY_HEADER_SUFFIX;
 }
