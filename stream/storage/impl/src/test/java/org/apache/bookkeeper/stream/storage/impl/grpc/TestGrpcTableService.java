@@ -38,7 +38,7 @@ import org.apache.bookkeeper.stream.proto.kv.rpc.RoutingHeader;
 import org.apache.bookkeeper.stream.proto.storage.StatusCode;
 import org.apache.bookkeeper.stream.proto.storage.StorageContainerRequest;
 import org.apache.bookkeeper.stream.proto.storage.StorageContainerResponse;
-import org.apache.bookkeeper.stream.storage.api.RangeStore;
+import org.apache.bookkeeper.stream.storage.api.metadata.RangeStoreService;
 import org.junit.Test;
 
 /**
@@ -63,7 +63,7 @@ public class TestGrpcTableService {
 
     @Test
     public void testPutSuccess() throws Exception {
-        RangeStore rangeService = mock(RangeStore.class);
+        RangeStoreService rangeService = mock(RangeStoreService.class);
         GrpcTableService grpcService = new GrpcTableService(rangeService);
 
         StorageContainerRequest request = StorageContainerRequest
@@ -95,7 +95,7 @@ public class TestGrpcTableService {
 
     @Test
     public void testPutFailure() throws Exception {
-        RangeStore rangeService = mock(RangeStore.class);
+        RangeStoreService rangeService = mock(RangeStoreService.class);
         GrpcTableService grpcService = new GrpcTableService(rangeService);
 
         StorageContainerRequest request = StorageContainerRequest
@@ -126,7 +126,7 @@ public class TestGrpcTableService {
 
     @Test
     public void testPutException() throws Exception {
-        RangeStore rangeService = mock(RangeStore.class);
+        RangeStoreService rangeService = mock(RangeStoreService.class);
         GrpcTableService grpcService = new GrpcTableService(rangeService);
 
         StorageContainerRequest request = StorageContainerRequest
@@ -153,7 +153,7 @@ public class TestGrpcTableService {
 
     @Test
     public void testRangeSuccess() throws Exception {
-        RangeStore rangeService = mock(RangeStore.class);
+        RangeStoreService rangeService = mock(RangeStoreService.class);
         GrpcTableService grpcService = new GrpcTableService(rangeService);
 
         StorageContainerRequest request = StorageContainerRequest
@@ -184,7 +184,7 @@ public class TestGrpcTableService {
 
     @Test
     public void testRangeActiveRangesFailure() throws Exception {
-        RangeStore rangeService = mock(RangeStore.class);
+        RangeStoreService rangeService = mock(RangeStoreService.class);
         GrpcTableService grpcService = new GrpcTableService(rangeService);
 
         StorageContainerRequest request = StorageContainerRequest
@@ -214,7 +214,7 @@ public class TestGrpcTableService {
 
     @Test
     public void testRangeActiveRangesException() throws Exception {
-        RangeStore rangeService = mock(RangeStore.class);
+        RangeStoreService rangeService = mock(RangeStoreService.class);
         GrpcTableService grpcService = new GrpcTableService(rangeService);
 
         StorageContainerRequest request = StorageContainerRequest
@@ -240,7 +240,7 @@ public class TestGrpcTableService {
 
     @Test
     public void testDeleteSuccess() throws Exception {
-        RangeStore rangeService = mock(RangeStore.class);
+        RangeStoreService rangeService = mock(RangeStoreService.class);
         GrpcTableService grpcService = new GrpcTableService(rangeService);
 
         StorageContainerRequest request = StorageContainerRequest
@@ -271,7 +271,7 @@ public class TestGrpcTableService {
 
     @Test
     public void testDeleteFailure() throws Exception {
-        RangeStore rangeService = mock(RangeStore.class);
+        RangeStoreService rangeService = mock(RangeStoreService.class);
         GrpcTableService grpcService = new GrpcTableService(rangeService);
 
         StorageContainerRequest request = StorageContainerRequest
@@ -301,7 +301,7 @@ public class TestGrpcTableService {
 
     @Test
     public void testDeleteException() throws Exception {
-        RangeStore rangeService = mock(RangeStore.class);
+        RangeStoreService rangeService = mock(RangeStoreService.class);
         GrpcTableService grpcService = new GrpcTableService(rangeService);
 
         StorageContainerRequest request = StorageContainerRequest

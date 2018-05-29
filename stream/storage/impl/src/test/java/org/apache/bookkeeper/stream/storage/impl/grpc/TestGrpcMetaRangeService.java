@@ -32,7 +32,7 @@ import org.apache.bookkeeper.stream.proto.storage.GetActiveRangesResponse;
 import org.apache.bookkeeper.stream.proto.storage.StatusCode;
 import org.apache.bookkeeper.stream.proto.storage.StorageContainerRequest;
 import org.apache.bookkeeper.stream.proto.storage.StorageContainerResponse;
-import org.apache.bookkeeper.stream.storage.impl.RangeStoreImpl;
+import org.apache.bookkeeper.stream.storage.api.metadata.RangeStoreService;
 import org.junit.Test;
 
 /**
@@ -48,7 +48,7 @@ public class TestGrpcMetaRangeService {
 
     @Test
     public void testGetActiveRangesSuccess() throws Exception {
-        RangeStoreImpl rangeService = mock(RangeStoreImpl.class);
+        RangeStoreService rangeService = mock(RangeStoreService.class);
         GrpcMetaRangeService grpcService = new GrpcMetaRangeService(rangeService);
 
         StorageContainerRequest request = StorageContainerRequest
@@ -79,7 +79,7 @@ public class TestGrpcMetaRangeService {
 
     @Test
     public void testGetActiveRangesFailure() throws Exception {
-        RangeStoreImpl rangeService = mock(RangeStoreImpl.class);
+        RangeStoreService rangeService = mock(RangeStoreService.class);
         GrpcMetaRangeService grpcService = new GrpcMetaRangeService(rangeService);
 
         StorageContainerRequest request = StorageContainerRequest
@@ -109,7 +109,7 @@ public class TestGrpcMetaRangeService {
 
     @Test
     public void testGetActiveRangesException() throws Exception {
-        RangeStoreImpl rangeService = mock(RangeStoreImpl.class);
+        RangeStoreService rangeService = mock(RangeStoreService.class);
         GrpcMetaRangeService grpcService = new GrpcMetaRangeService(rangeService);
 
         StorageContainerRequest request = StorageContainerRequest

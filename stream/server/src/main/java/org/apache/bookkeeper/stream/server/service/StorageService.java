@@ -19,23 +19,23 @@ import java.util.function.Supplier;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.common.component.AbstractLifecycleComponent;
 import org.apache.bookkeeper.stats.StatsLogger;
-import org.apache.bookkeeper.stream.storage.RangeStoreBuilder;
-import org.apache.bookkeeper.stream.storage.api.RangeStore;
+import org.apache.bookkeeper.stream.storage.StorageContainerStoreBuilder;
+import org.apache.bookkeeper.stream.storage.api.StorageContainerStore;
 import org.apache.bookkeeper.stream.storage.conf.StorageConfiguration;
 
 /**
- * Service to run the storage {@link RangeStore}.
+ * Service to run the storage {@link StorageContainerStore}.
  */
 @Slf4j
 public class StorageService
     extends AbstractLifecycleComponent<StorageConfiguration>
-    implements Supplier<RangeStore> {
+    implements Supplier<StorageContainerStore> {
 
-    private final RangeStoreBuilder storeBuilder;
-    private RangeStore store;
+    private final StorageContainerStoreBuilder storeBuilder;
+    private StorageContainerStore store;
 
     public StorageService(StorageConfiguration conf,
-                          RangeStoreBuilder storeBuilder,
+                          StorageContainerStoreBuilder storeBuilder,
                           StatsLogger statsLogger) {
         super("storage-service", conf, statsLogger);
         this.storeBuilder = storeBuilder;
@@ -58,7 +58,7 @@ public class StorageService
     }
 
     @Override
-    public RangeStore get() {
+    public StorageContainerStore get() {
         return store;
     }
 }
