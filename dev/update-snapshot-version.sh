@@ -20,22 +20,15 @@
 # under the License.
 #
 
-function get_bk_version() {
-    bk_version=$(mvn -q \
-    -Dexec.executable="echo" \
-    -Dexec.args='${project.version}' \
-    --non-recursive \
-    org.codehaus.mojo:exec-maven-plugin:1.3.1:exec)
-    echo ${bk_version}
-}
+###############################################################################
+# Script to update the maven project version to a snapshot version with gitsha
+# before publishing snapshot versions.
+#
+# usage: ./dev/update-snapshot-version.sh
 
-function get_snapshot_version_with_gitsha() {
-    local gitsha=$(git rev-parse --short HEAD)
-    local commitdate=$(git log -1 --date=format:'%Y%m%d' --pretty=format:%cd)
-    local version=$(get_bk_version)
-    echo ${version}-${commitdate}-${gitsha}
-}
+source `dirname "$0"`/common.sh
 
-export BK_DEV_DIR=`dirname "$0"`
-export BK_HOME=`cd ${BK_DEV_DIR}/..;pwd`
-export BK_VERSION=`get_bk_version`
+VERSION=$(get_snapshot_version_with_gitsha)
+
+mvn versions:set -DnewVersion=${VERSION}
+mvn versions:commit
