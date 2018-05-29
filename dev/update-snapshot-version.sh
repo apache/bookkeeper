@@ -33,5 +33,5 @@ NEW_VERSION=$(get_snapshot_version_with_gitsha)
 
 echo "Update version from ${OLD_VERSION} to ${NEW_VERSION}"
 
-mvn versions:set -DnewVersion=${VERSION} -Dstream
+mvn versions:set -Dstream -DnewVersion=${NEW_VERSION} 
 mvn versions:commit -Dstream
