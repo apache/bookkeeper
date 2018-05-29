@@ -158,6 +158,7 @@ final class TableStoreUtils {
         ByteString rKey = routingHeader.getRKey();
         PutResponse.Builder putRespBuilder = PutResponse.newBuilder()
             .setHeader(ResponseHeader.newBuilder()
+                .setCode(mvccCodeToStatusCode(result.code()))
                 .setRoutingHeader(routingHeader)
                 .build());
         if (null != result.prevKv()) {
@@ -170,6 +171,7 @@ final class TableStoreUtils {
                                                     IncrementResult<byte[], byte[]> result) {
         IncrementResponse.Builder putRespBuilder = IncrementResponse.newBuilder()
             .setHeader(ResponseHeader.newBuilder()
+                .setCode(mvccCodeToStatusCode(result.code()))
                 .setRoutingHeader(routingHeader)
                 .build())
             .setTotalAmount(result.totalAmount());
@@ -182,6 +184,7 @@ final class TableStoreUtils {
         return RangeResponse.newBuilder()
             .setCount(result.count())
             .setHeader(ResponseHeader.newBuilder()
+                .setCode(mvccCodeToStatusCode(result.code()))
                 .setRoutingHeader(routingHeader)
                 .build())
             .addAllKvs(Lists.transform(result.kvs(), kv -> newKeyValue(rKey, kv)))
@@ -194,6 +197,7 @@ final class TableStoreUtils {
         ByteString rKey = routingHeader.getRKey();
         return DeleteRangeResponse.newBuilder()
             .setHeader(ResponseHeader.newBuilder()
+                .setCode(mvccCodeToStatusCode(result.code()))
                 .setRoutingHeader(routingHeader)
                 .build())
             .setDeleted(result.numDeleted())
@@ -205,6 +209,7 @@ final class TableStoreUtils {
                                         TxnResult<byte[], byte[]> txnResult) {
         return TxnResponse.newBuilder()
             .setHeader(ResponseHeader.newBuilder()
+                .setCode(mvccCodeToStatusCode(txnResult.code()))
                 .setRoutingHeader(routingHeader)
                 .build())
             .setSucceeded(txnResult.isSuccess())

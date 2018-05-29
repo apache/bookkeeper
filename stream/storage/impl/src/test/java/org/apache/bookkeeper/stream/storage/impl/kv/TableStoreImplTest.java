@@ -46,9 +46,6 @@ import org.apache.bookkeeper.stream.proto.kv.rpc.RoutingHeader;
 import org.apache.bookkeeper.stream.proto.kv.rpc.TxnRequest;
 import org.apache.bookkeeper.stream.proto.kv.rpc.TxnResponse;
 import org.apache.bookkeeper.stream.proto.storage.StatusCode;
-import org.apache.bookkeeper.stream.proto.storage.StorageContainerRequest;
-import org.apache.bookkeeper.stream.proto.storage.StorageContainerResponse;
-import org.apache.bookkeeper.stream.proto.storage.StorageContainerResponse.ResponseCase;
 import org.apache.bookkeeper.stream.storage.impl.store.MVCCAsyncStoreTestBase;
 import org.junit.Test;
 
@@ -90,16 +87,14 @@ public class TableStoreImplTest extends MVCCAsyncStoreTestBase {
     }
 
     private List<KeyValue> writeKVs(int numPairs, boolean prevKv) throws Exception {
-        List<CompletableFuture<StorageContainerResponse>> results =
+        List<CompletableFuture<PutResponse>> results =
             Lists.newArrayListWithExpectedSize(numPairs);
         for (int i = 0; i < numPairs; i++) {
             results.add(writeKV(i, prevKv));
         }
         return Lists.transform(
-            result(FutureUtils.collect(results)), response -> {
-                assertEquals(StatusCode.SUCCESS, response.getCode());
-                assertEquals(ResponseCase.KV_PUT_RESP, response.getResponseCase());
-                PutResponse putResp = response.getKvPutResp();
+            result(FutureUtils.collect(results)), putResp -> {
+                assertEquals(StatusCode.SUCCESS, putResp.getHeader().getCode());
                 assertEquals(HEADER, putResp.getHeader().getRoutingHeader());
                 if (putResp.hasPrevKv()) {
                     return putResp.getPrevKv();
@@ -109,33 +104,26 @@ public class TableStoreImplTest extends MVCCAsyncStoreTestBase {
             });
     }
 
-    private CompletableFuture<StorageContainerResponse> writeKV(int i, boolean prevKv) {
-        return tableStore.put(StorageContainerRequest.newBuilder()
-            .setScId(SC_ID)
-            .setKvPutReq(PutRequest.newBuilder()
-                .setKey(getKey(i))
-                .setValue(getValue(i))
-                .setHeader(HEADER)
-                .setPrevKv(prevKv))
+    private CompletableFuture<PutResponse> writeKV(int i, boolean prevKv) {
+        return tableStore.put(PutRequest.newBuilder()
+            .setKey(getKey(i))
+            .setValue(getValue(i))
+            .setHeader(HEADER)
+            .setPrevKv(prevKv)
             .build());
     }
 
-    StorageContainerResponse getKeyFromTableStore(int i) throws Exception {
+    RangeResponse getKeyFromTableStore(int i) throws Exception {
         return result(
-            tableStore.range(StorageContainerRequest.newBuilder()
-                .setScId(SC_ID)
-                .setKvRangeReq(RangeRequest.newBuilder()
-                    .setHeader(HEADER)
-                    .setKey(getKey(i))
-                    .build())
+            tableStore.range(RangeRequest.newBuilder()
+                .setHeader(HEADER)
+                .setKey(getKey(i))
                 .build()));
     }
 
     KeyValue getKeyValue(int i) throws Exception {
-        StorageContainerResponse resp = getKeyFromTableStore(i);
-        assertEquals(StatusCode.SUCCESS, resp.getCode());
-        assertEquals(ResponseCase.KV_RANGE_RESP, resp.getResponseCase());
-        RangeResponse rr = resp.getKvRangeResp();
+        RangeResponse rr = getKeyFromTableStore(i);
+        assertEquals(StatusCode.SUCCESS, rr.getHeader().getCode());
         assertEquals(HEADER, rr.getHeader().getRoutingHeader());
         assertFalse(rr.getMore());
         if (0 == rr.getCount()) {
@@ -146,53 +134,43 @@ public class TableStoreImplTest extends MVCCAsyncStoreTestBase {
     }
 
     void putKeyToTableStore(int key, int value) throws Exception {
-        StorageContainerResponse response = result(
-            tableStore.put(StorageContainerRequest.newBuilder()
-                .setScId(SC_ID)
-                .setKvPutReq(PutRequest.newBuilder()
-                    .setHeader(HEADER)
-                    .setKey(getKey(key))
-                    .setValue(getValue(value))
-                    .build())
+        PutResponse putResp = result(
+            tableStore.put(PutRequest.newBuilder()
+                .setHeader(HEADER)
+                .setKey(getKey(key))
+                .setValue(getValue(value))
                 .build()));
 
-        assertEquals(StatusCode.SUCCESS, response.getCode());
-        assertEquals(ResponseCase.KV_PUT_RESP, response.getResponseCase());
-        PutResponse putResp = response.getKvPutResp();
+        assertEquals(StatusCode.SUCCESS, putResp.getHeader().getCode());
         assertEquals(HEADER, putResp.getHeader().getRoutingHeader());
         assertFalse(putResp.hasPrevKv());
     }
 
     KeyValue putIfAbsentToTableStore(int key, int value, boolean expectedSuccess) throws Exception {
-        StorageContainerResponse response = result(
-            tableStore.txn(StorageContainerRequest.newBuilder()
-                .setScId(SC_ID)
-                .setKvTxnReq(TxnRequest.newBuilder()
-                    .setHeader(HEADER)
-                    .addCompare(Compare.newBuilder()
-                        .setResult(CompareResult.EQUAL)
-                        .setTarget(CompareTarget.VALUE)
+        TxnResponse txnResp = result(
+            tableStore.txn(TxnRequest.newBuilder()
+                .setHeader(HEADER)
+                .addCompare(Compare.newBuilder()
+                    .setResult(CompareResult.EQUAL)
+                    .setTarget(CompareTarget.VALUE)
+                    .setKey(getKey(key))
+                    .setValue(ByteString.copyFrom(new byte[0])))
+                .addSuccess(RequestOp.newBuilder()
+                    .setRequestPut(PutRequest.newBuilder()
+                        .setHeader(HEADER)
                         .setKey(getKey(key))
-                        .setValue(ByteString.copyFrom(new byte[0])))
-                    .addSuccess(RequestOp.newBuilder()
-                        .setRequestPut(PutRequest.newBuilder()
-                            .setHeader(HEADER)
-                            .setKey(getKey(key))
-                            .setValue(getValue(value))
-                            .setPrevKv(true)
-                            .build()))
-                    .addFailure(RequestOp.newBuilder()
-                        .setRequestRange(RangeRequest.newBuilder()
-                            .setHeader(HEADER)
-                            .setKey(getKey(key))
-                            .build()))
-                    .build())
+                        .setValue(getValue(value))
+                        .setPrevKv(true)
+                        .build()))
+                .addFailure(RequestOp.newBuilder()
+                    .setRequestRange(RangeRequest.newBuilder()
+                        .setHeader(HEADER)
+                        .setKey(getKey(key))
+                        .build()))
                 .build()));
 
-        assertEquals(ResponseCase.KV_TXN_RESP, response.getResponseCase());
-        TxnResponse txnResp = response.getKvTxnResp();
         assertEquals(HEADER, txnResp.getHeader().getRoutingHeader());
-        assertEquals(StatusCode.SUCCESS, response.getCode());
+        assertEquals(StatusCode.SUCCESS, txnResp.getHeader().getCode());
 
         ResponseOp respOp = txnResp.getResponses(0);
         if (expectedSuccess) {
@@ -215,39 +193,34 @@ public class TableStoreImplTest extends MVCCAsyncStoreTestBase {
         }
     }
 
-    StorageContainerResponse vPutToTableStore(int key, int value, long version)
+    TxnResponse vPutToTableStore(int key, int value, long version)
         throws Exception {
         return result(
-            tableStore.txn(StorageContainerRequest.newBuilder()
-                .setScId(SC_ID)
-                .setKvTxnReq(TxnRequest.newBuilder()
-                    .setHeader(HEADER)
-                    .addCompare(Compare.newBuilder()
-                        .setResult(CompareResult.EQUAL)
-                        .setTarget(CompareTarget.VERSION)
+            tableStore.txn(TxnRequest.newBuilder()
+                .setHeader(HEADER)
+                .addCompare(Compare.newBuilder()
+                    .setResult(CompareResult.EQUAL)
+                    .setTarget(CompareTarget.VERSION)
+                    .setKey(getKey(key))
+                    .setVersion(version))
+                .addSuccess(RequestOp.newBuilder()
+                    .setRequestPut(PutRequest.newBuilder()
+                        .setHeader(HEADER)
                         .setKey(getKey(key))
-                        .setVersion(version))
-                    .addSuccess(RequestOp.newBuilder()
-                        .setRequestPut(PutRequest.newBuilder()
-                            .setHeader(HEADER)
-                            .setKey(getKey(key))
-                            .setValue(getValue(value))
-                            .setPrevKv(true)
-                            .build()))
-                    .addFailure(RequestOp.newBuilder()
-                        .setRequestRange(RangeRequest.newBuilder()
-                            .setHeader(HEADER)
-                            .setKey(getKey(key))
-                            .build()))
-                    .build())
+                        .setValue(getValue(value))
+                        .setPrevKv(true)
+                        .build()))
+                .addFailure(RequestOp.newBuilder()
+                    .setRequestRange(RangeRequest.newBuilder()
+                        .setHeader(HEADER)
+                        .setKey(getKey(key))
+                        .build()))
                 .build()));
     }
 
-    KeyValue verifyVPutResponse(StorageContainerResponse response, boolean expectedSuccess) throws Exception {
-        assertEquals(ResponseCase.KV_TXN_RESP, response.getResponseCase());
-        TxnResponse txnResp = response.getKvTxnResp();
+    KeyValue verifyVPutResponse(TxnResponse txnResp, boolean expectedSuccess) throws Exception {
         assertEquals(HEADER, txnResp.getHeader().getRoutingHeader());
-        assertEquals(StatusCode.SUCCESS, response.getCode());
+        assertEquals(StatusCode.SUCCESS, txnResp.getHeader().getCode());
 
         ResponseOp respOp = txnResp.getResponses(0);
         if (expectedSuccess) {
@@ -270,89 +243,71 @@ public class TableStoreImplTest extends MVCCAsyncStoreTestBase {
         }
     }
 
-    StorageContainerResponse rPutToTableStore(int key, int value, long revision)
+    TxnResponse rPutToTableStore(int key, int value, long revision)
         throws Exception {
         return result(
-            tableStore.txn(StorageContainerRequest.newBuilder()
-                .setScId(SC_ID)
-                .setKvTxnReq(TxnRequest.newBuilder()
-                    .setHeader(HEADER)
-                    .addCompare(Compare.newBuilder()
-                        .setResult(CompareResult.EQUAL)
-                        .setTarget(CompareTarget.MOD)
+            tableStore.txn(TxnRequest.newBuilder()
+                .setHeader(HEADER)
+                .addCompare(Compare.newBuilder()
+                    .setResult(CompareResult.EQUAL)
+                    .setTarget(CompareTarget.MOD)
+                    .setKey(getKey(key))
+                    .setModRevision(revision))
+                .addSuccess(RequestOp.newBuilder()
+                    .setRequestPut(PutRequest.newBuilder()
+                        .setHeader(HEADER)
                         .setKey(getKey(key))
-                        .setModRevision(revision))
-                    .addSuccess(RequestOp.newBuilder()
-                        .setRequestPut(PutRequest.newBuilder()
-                            .setHeader(HEADER)
-                            .setKey(getKey(key))
-                            .setValue(getValue(value))
-                            .setPrevKv(true)
-                            .build()))
-                    .addFailure(RequestOp.newBuilder()
-                        .setRequestRange(RangeRequest.newBuilder()
-                            .setHeader(HEADER)
-                            .setKey(getKey(key))
-                            .build()))
-                    .build())
+                        .setValue(getValue(value))
+                        .setPrevKv(true)
+                        .build()))
+                .addFailure(RequestOp.newBuilder()
+                    .setRequestRange(RangeRequest.newBuilder()
+                        .setHeader(HEADER)
+                        .setKey(getKey(key))
+                        .build()))
                 .build()));
     }
 
     KeyValue deleteKeyFromTableStore(int key) throws Exception {
-        StorageContainerResponse response = result(
-            tableStore.delete(StorageContainerRequest.newBuilder()
-                .setScId(SC_ID)
-                .setKvDeleteReq(DeleteRangeRequest.newBuilder()
-                    .setHeader(HEADER)
-                    .setKey(getKey(key))
-                    .setPrevKv(true)
-                    .build())
+        DeleteRangeResponse response = result(
+            tableStore.delete(DeleteRangeRequest.newBuilder()
+                .setHeader(HEADER)
+                .setKey(getKey(key))
+                .setPrevKv(true)
                 .build()));
 
-        assertEquals(StatusCode.SUCCESS, response.getCode());
-        assertEquals(ResponseCase.KV_DELETE_RESP, response.getResponseCase());
-        DeleteRangeResponse delResp = response.getKvDeleteResp();
-        assertEquals(HEADER, delResp.getHeader().getRoutingHeader());
-        if (0 == delResp.getPrevKvsCount()) {
+        assertEquals(StatusCode.SUCCESS, response.getHeader().getCode());
+        assertEquals(HEADER, response.getHeader().getRoutingHeader());
+        if (0 == response.getPrevKvsCount()) {
             return null;
         } else {
-            return delResp.getPrevKvs(0);
+            return response.getPrevKvs(0);
         }
     }
 
     List<KeyValue> deleteRange(int startKey, int endKey) throws Exception {
-        StorageContainerResponse response = result(
-            tableStore.delete(StorageContainerRequest.newBuilder()
-                .setScId(SC_ID)
-                .setKvDeleteReq(DeleteRangeRequest.newBuilder()
-                    .setHeader(HEADER)
-                    .setKey(getKey(startKey))
-                    .setRangeEnd(getKey(endKey))
-                    .setPrevKv(true)
-                    .build())
+        DeleteRangeResponse delResp = result(
+            tableStore.delete(DeleteRangeRequest.newBuilder()
+                .setHeader(HEADER)
+                .setKey(getKey(startKey))
+                .setRangeEnd(getKey(endKey))
+                .setPrevKv(true)
                 .build()));
 
-        assertEquals(StatusCode.SUCCESS, response.getCode());
-        assertEquals(ResponseCase.KV_DELETE_RESP, response.getResponseCase());
-        DeleteRangeResponse delResp = response.getKvDeleteResp();
+        assertEquals(StatusCode.SUCCESS, delResp.getHeader().getCode());
         assertEquals(HEADER, delResp.getHeader().getRoutingHeader());
         return delResp.getPrevKvsList();
     }
 
     List<KeyValue> range(int startKey, int endKey) throws Exception {
-        StorageContainerResponse response = result(
-            tableStore.range(StorageContainerRequest.newBuilder()
-                .setScId(SC_ID)
-                .setKvRangeReq(RangeRequest.newBuilder()
-                    .setHeader(HEADER)
-                    .setKey(getKey(startKey))
-                    .setRangeEnd(getKey(endKey))
-                    .build())
+        RangeResponse rangeResp = result(
+            tableStore.range(RangeRequest.newBuilder()
+                .setHeader(HEADER)
+                .setKey(getKey(startKey))
+                .setRangeEnd(getKey(endKey))
                 .build()));
 
-        assertEquals(StatusCode.SUCCESS, response.getCode());
-        assertEquals(ResponseCase.KV_RANGE_RESP, response.getResponseCase());
-        RangeResponse rangeResp = response.getKvRangeResp();
+        assertEquals(StatusCode.SUCCESS, rangeResp.getHeader().getCode());
         assertEquals(HEADER, rangeResp.getHeader().getRoutingHeader());
         return rangeResp.getKvsList();
     }
@@ -398,18 +353,18 @@ public class TableStoreImplTest extends MVCCAsyncStoreTestBase {
             int key = 2;
             int initialVal = 2;
             int casVal = 99;
-            StorageContainerResponse response = vPutToTableStore(key, initialVal, 100L);
-            assertEquals(StatusCode.KEY_NOT_FOUND, response.getCode());
+            TxnResponse response = vPutToTableStore(key, initialVal, 100L);
+            assertEquals(StatusCode.KEY_NOT_FOUND, response.getHeader().getCode());
 
             // vPut(k, v, -1L)
             response = vPutToTableStore(key, initialVal, -1L);
-            assertEquals(StatusCode.KEY_NOT_FOUND, response.getCode());
+            assertEquals(StatusCode.KEY_NOT_FOUND, response.getHeader().getCode());
             // put(key2, v)
             KeyValue prevKV = putIfAbsentToTableStore(key, initialVal, true);
             assertNull(prevKV);
             // vPut(key2, v, 0)
             response = vPutToTableStore(key, casVal, 0);
-            assertEquals(StatusCode.SUCCESS, response.getCode());
+            assertEquals(StatusCode.SUCCESS, response.getHeader().getCode());
             prevKV = verifyVPutResponse(response, true);
             assertNotNull(prevKV);
             assertEquals(getKey(key), prevKV.getKey());
@@ -428,12 +383,12 @@ public class TableStoreImplTest extends MVCCAsyncStoreTestBase {
             int initialVal = 3;
             int casVal = 99;
 
-            StorageContainerResponse response = rPutToTableStore(key, initialVal, 100L);
-            assertEquals(StatusCode.KEY_NOT_FOUND, response.getCode());
+            TxnResponse response = rPutToTableStore(key, initialVal, 100L);
+            assertEquals(StatusCode.KEY_NOT_FOUND, response.getHeader().getCode());
 
             // rPut(k, v, -1L)
             response = rPutToTableStore(key, initialVal, -1L);
-            assertEquals(StatusCode.KEY_NOT_FOUND, response.getCode());
+            assertEquals(StatusCode.KEY_NOT_FOUND, response.getHeader().getCode());
 
             // put(key2, v)
             KeyValue prevKV = putIfAbsentToTableStore(key, initialVal, true);
@@ -445,7 +400,7 @@ public class TableStoreImplTest extends MVCCAsyncStoreTestBase {
 
             // rPut(key2, v, 0)
             response = rPutToTableStore(key, casVal, revision);
-            assertEquals(StatusCode.SUCCESS, response.getCode());
+            assertEquals(StatusCode.SUCCESS, response.getHeader().getCode());
 
             kv = getKeyValue(key);
             assertEquals(revision + 1, kv.getModRevision());

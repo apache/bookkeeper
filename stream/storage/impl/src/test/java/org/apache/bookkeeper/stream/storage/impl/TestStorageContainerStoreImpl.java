@@ -16,7 +16,6 @@ package org.apache.bookkeeper.stream.storage.impl;
 
 import static org.apache.bookkeeper.common.util.ListenableFutures.fromListenableFuture;
 import static org.apache.bookkeeper.stream.protocol.ProtocolConstants.DEFAULT_STREAM_CONF;
-import static org.apache.bookkeeper.stream.protocol.ProtocolConstants.ROOT_STORAGE_CONTAINER_ID;
 import static org.apache.bookkeeper.stream.protocol.util.ProtoUtils.createCreateNamespaceRequest;
 import static org.apache.bookkeeper.stream.protocol.util.ProtoUtils.createCreateStreamRequest;
 import static org.apache.bookkeeper.stream.protocol.util.ProtoUtils.createDeleteNamespaceRequest;
@@ -46,6 +45,7 @@ import io.grpc.inprocess.InProcessServerBuilder;
 import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ThreadLocalRandom;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.clients.impl.container.StorageContainerClientInterceptor;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
@@ -64,6 +64,8 @@ import org.apache.bookkeeper.stream.proto.kv.rpc.RangeRequest;
 import org.apache.bookkeeper.stream.proto.kv.rpc.RangeResponse;
 import org.apache.bookkeeper.stream.proto.kv.rpc.ResponseHeader;
 import org.apache.bookkeeper.stream.proto.kv.rpc.RoutingHeader;
+import org.apache.bookkeeper.stream.proto.kv.rpc.TableServiceGrpc;
+import org.apache.bookkeeper.stream.proto.kv.rpc.TableServiceGrpc.TableServiceFutureStub;
 import org.apache.bookkeeper.stream.proto.storage.CreateNamespaceRequest;
 import org.apache.bookkeeper.stream.proto.storage.CreateNamespaceResponse;
 import org.apache.bookkeeper.stream.proto.storage.CreateStreamRequest;
@@ -72,6 +74,8 @@ import org.apache.bookkeeper.stream.proto.storage.DeleteNamespaceRequest;
 import org.apache.bookkeeper.stream.proto.storage.DeleteNamespaceResponse;
 import org.apache.bookkeeper.stream.proto.storage.DeleteStreamRequest;
 import org.apache.bookkeeper.stream.proto.storage.DeleteStreamResponse;
+import org.apache.bookkeeper.stream.proto.storage.GetActiveRangesRequest;
+import org.apache.bookkeeper.stream.proto.storage.GetActiveRangesResponse;
 import org.apache.bookkeeper.stream.proto.storage.GetNamespaceRequest;
 import org.apache.bookkeeper.stream.proto.storage.GetNamespaceResponse;
 import org.apache.bookkeeper.stream.proto.storage.GetStreamRequest;
@@ -81,10 +85,6 @@ import org.apache.bookkeeper.stream.proto.storage.MetaRangeServiceGrpc.MetaRange
 import org.apache.bookkeeper.stream.proto.storage.RootRangeServiceGrpc;
 import org.apache.bookkeeper.stream.proto.storage.RootRangeServiceGrpc.RootRangeServiceFutureStub;
 import org.apache.bookkeeper.stream.proto.storage.StatusCode;
-import org.apache.bookkeeper.stream.proto.storage.StorageContainerRequest;
-import org.apache.bookkeeper.stream.proto.storage.StorageContainerResponse;
-import org.apache.bookkeeper.stream.proto.storage.TableServiceGrpc;
-import org.apache.bookkeeper.stream.proto.storage.TableServiceGrpc.TableServiceFutureStub;
 import org.apache.bookkeeper.stream.storage.api.metadata.RangeStoreService;
 import org.apache.bookkeeper.stream.storage.api.service.RangeStoreServiceFactory;
 import org.apache.bookkeeper.stream.storage.conf.StorageConfiguration;
@@ -140,6 +140,7 @@ public class TestStorageContainerStoreImpl {
     private TableServiceFutureStub tableService;
     private RootRangeServiceFutureStub rootRangeService;
     private MetaRangeServiceFutureStub metaRangeService;
+    private long scId;
 
     //
     // Utils for table api
@@ -156,64 +157,52 @@ public class TestStorageContainerStoreImpl {
         .setRoutingHeader(TEST_ROUTING_HEADER)
         .build();
 
-    private static StorageContainerRequest createPutRequest(long scId) {
-        return StorageContainerRequest.newBuilder()
-            .setScId(scId)
-            .setKvPutReq(PutRequest.newBuilder()
+    private static PutRequest createPutRequest() {
+        return PutRequest.newBuilder()
                 .setHeader(TEST_ROUTING_HEADER)
                 .setKey(TEST_KEY)
                 .setValue(TEST_VAL)
-                .build())
-            .build();
+                .build();
     }
 
-    private static StorageContainerResponse createPutResponse(StatusCode code) {
-        return StorageContainerResponse.newBuilder()
-            .setCode(code)
-            .setKvPutResp(PutResponse.newBuilder()
-                .setHeader(TEST_RESP_HEADER)
-                .build())
-            .build();
+    private static PutResponse createPutResponse(StatusCode code) {
+        return PutResponse.newBuilder()
+                .setHeader(ResponseHeader.newBuilder(TEST_RESP_HEADER)
+                    .setCode(code)
+                    .build())
+                .build();
     }
 
-    private static StorageContainerRequest createRangeRequest(long scId) {
-        return StorageContainerRequest.newBuilder()
-            .setScId(scId)
-            .setKvRangeReq(RangeRequest.newBuilder()
+    private static RangeRequest createRangeRequest() {
+        return RangeRequest.newBuilder()
                 .setHeader(TEST_ROUTING_HEADER)
                 .setKey(TEST_KEY)
-                .build())
-            .build();
+                .build();
     }
 
-    private static StorageContainerResponse createRangeResponse(StatusCode code) {
-        return StorageContainerResponse.newBuilder()
-            .setCode(code)
-            .setKvRangeResp(RangeResponse.newBuilder()
-                .setHeader(TEST_RESP_HEADER)
+    private static RangeResponse createRangeResponse(StatusCode code) {
+        return RangeResponse.newBuilder()
+                .setHeader(ResponseHeader.newBuilder(TEST_RESP_HEADER)
+                    .setCode(code)
+                    .build())
                 .setCount(0)
-                .build())
-            .build();
+                .build();
     }
 
-    private static StorageContainerRequest createDeleteRequest(long scId) {
-        return StorageContainerRequest.newBuilder()
-            .setScId(scId)
-            .setKvDeleteReq(DeleteRangeRequest.newBuilder()
+    private static DeleteRangeRequest createDeleteRequest() {
+        return DeleteRangeRequest.newBuilder()
                 .setHeader(TEST_ROUTING_HEADER)
                 .setKey(TEST_KEY)
-                .build())
-            .build();
+                .build();
     }
 
-    private static StorageContainerResponse createDeleteResponse(StatusCode code) {
-        return StorageContainerResponse.newBuilder()
-            .setCode(code)
-            .setKvDeleteResp(DeleteRangeResponse.newBuilder()
-                .setHeader(TEST_RESP_HEADER)
+    private static DeleteRangeResponse createDeleteResponse(StatusCode code) {
+        return DeleteRangeResponse.newBuilder()
+                .setHeader(ResponseHeader.newBuilder(TEST_RESP_HEADER)
+                    .setCode(code)
+                    .build())
                 .setDeleted(0)
-                .build())
-            .build();
+                .build();
     }
 
     @SuppressWarnings("unchecked")
@@ -263,10 +252,12 @@ public class TestStorageContainerStoreImpl {
             .usePlaintext()
             .build();
 
+        scId = ThreadLocalRandom.current().nextInt(2);
+
         // intercept the channel with storage container information.
         channel = ClientInterceptors.intercept(
             channel,
-            new StorageContainerClientInterceptor(0L));
+            new StorageContainerClientInterceptor(scId));
 
 
         tableService = TableServiceGrpc.newFutureStub(channel);
@@ -307,7 +298,7 @@ public class TestStorageContainerStoreImpl {
 
     @Test
     public void testCreateNamespaceNoRootStorageContainerStore() throws Exception {
-        rangeStore.getRegistry().stopStorageContainer(ROOT_STORAGE_CONTAINER_ID).join();
+        rangeStore.getRegistry().stopStorageContainer(scId).join();
 
         String colName = "test-create-namespace-no-root-storage-container-store";
         verifyNotFoundException(fromListenableFuture(
@@ -317,7 +308,7 @@ public class TestStorageContainerStoreImpl {
 
     @Test
     public void testDeleteNamespaceNoRootStorageContainerStore() throws Exception {
-        rangeStore.getRegistry().stopStorageContainer(ROOT_STORAGE_CONTAINER_ID).join();
+        rangeStore.getRegistry().stopStorageContainer(scId).join();
 
         String colName = "test-delete-namespace-no-root-storage-container-store";
         verifyNotFoundException(fromListenableFuture(
@@ -327,7 +318,7 @@ public class TestStorageContainerStoreImpl {
 
     @Test
     public void testGetNamespaceNoRootStorageContainerStore() throws Exception {
-        rangeStore.getRegistry().stopStorageContainer(ROOT_STORAGE_CONTAINER_ID).join();
+        rangeStore.getRegistry().stopStorageContainer(scId).join();
 
         String colName = "test-get-namespace-no-root-storage-container-store";
         verifyNotFoundException(fromListenableFuture(
@@ -395,7 +386,7 @@ public class TestStorageContainerStoreImpl {
 
     @Test
     public void testCreateStreamNoRootStorageContainerStore() throws Exception {
-        rangeStore.getRegistry().stopStorageContainer(ROOT_STORAGE_CONTAINER_ID).join();
+        rangeStore.getRegistry().stopStorageContainer(scId).join();
 
         String colName = "test-create-namespace-no-root-storage-container-store";
         String streamName = colName;
@@ -406,7 +397,7 @@ public class TestStorageContainerStoreImpl {
 
     @Test
     public void testDeleteStreamNoRootStorageContainerStore() throws Exception {
-        rangeStore.getRegistry().stopStorageContainer(ROOT_STORAGE_CONTAINER_ID).join();
+        rangeStore.getRegistry().stopStorageContainer(scId).join();
 
         String colName = "test-delete-namespace-no-root-storage-container-store";
         String streamName = colName;
@@ -417,7 +408,7 @@ public class TestStorageContainerStoreImpl {
 
     @Test
     public void testGetStreamNoRootStorageContainerStore() throws Exception {
-        rangeStore.getRegistry().stopStorageContainer(ROOT_STORAGE_CONTAINER_ID).join();
+        rangeStore.getRegistry().stopStorageContainer(scId).join();
 
         String colName = "test-get-namespace-no-root-storage-container-store";
         String streamName = colName;
@@ -482,26 +473,24 @@ public class TestStorageContainerStoreImpl {
 
     @Test
     public void testGetActiveRangesNoManager() throws Exception {
-        rangeStore.getRegistry().stopStorageContainer(ROOT_STORAGE_CONTAINER_ID).join();
+        rangeStore.getRegistry().stopStorageContainer(scId).join();
 
         verifyNotFoundException(fromListenableFuture(
-            metaRangeService.getActiveRanges(createGetActiveRangesRequest(12L, 34L))),
+            metaRangeService.getActiveRanges(createGetActiveRangesRequest(34L))),
             Status.NOT_FOUND);
     }
 
     @Test
     public void testGetActiveRangesMockManager() throws Exception {
-        long scId = System.currentTimeMillis();
-
-        StorageContainerResponse resp = StorageContainerResponse.newBuilder()
+        GetActiveRangesResponse resp = GetActiveRangesResponse.newBuilder()
             .setCode(StatusCode.STREAM_NOT_FOUND)
             .build();
-        StorageContainerRequest request = createGetActiveRangesRequest(scId, 34L);
+        GetActiveRangesRequest request = createGetActiveRangesRequest(34L);
 
         when(mockRangeStoreService.getActiveRanges(request))
             .thenReturn(CompletableFuture.completedFuture(resp));
 
-        CompletableFuture<StorageContainerResponse> future = fromListenableFuture(
+        CompletableFuture<GetActiveRangesResponse> future = fromListenableFuture(
             metaRangeService.getActiveRanges(request));
         verify(mockRangeStoreService, times(1)).getActiveRanges(request);
         assertTrue(resp == future.get());
@@ -514,40 +503,40 @@ public class TestStorageContainerStoreImpl {
 
     @Test
     public void testPutNoStorageContainer() throws Exception {
-        rangeStore.getRegistry().stopStorageContainer(ROOT_STORAGE_CONTAINER_ID).join();
+        rangeStore.getRegistry().stopStorageContainer(scId).join();
 
         verifyNotFoundException(fromListenableFuture(
-            tableService.put(createPutRequest(ROOT_STORAGE_CONTAINER_ID))),
+            tableService.put(createPutRequest())),
             Status.NOT_FOUND);
     }
 
     @Test
     public void testDeleteNoStorageContainer() throws Exception {
-        rangeStore.getRegistry().stopStorageContainer(ROOT_STORAGE_CONTAINER_ID).join();
+        rangeStore.getRegistry().stopStorageContainer(scId).join();
 
         verifyNotFoundException(fromListenableFuture(
-            tableService.delete(createDeleteRequest(ROOT_STORAGE_CONTAINER_ID))),
+            tableService.delete(createDeleteRequest())),
             Status.NOT_FOUND);
     }
 
     @Test
     public void testRangeNoStorageContainer() throws Exception {
-        rangeStore.getRegistry().stopStorageContainer(ROOT_STORAGE_CONTAINER_ID).join();
+        rangeStore.getRegistry().stopStorageContainer(scId).join();
 
         verifyNotFoundException(fromListenableFuture(
-            tableService.range(createRangeRequest(ROOT_STORAGE_CONTAINER_ID))),
+            tableService.range(createRangeRequest())),
             Status.NOT_FOUND);
     }
 
     @Test
     public void testRangeMockStorageContainer() throws Exception {
-        StorageContainerResponse response = createRangeResponse(StatusCode.SUCCESS);
-        StorageContainerRequest request = createRangeRequest(ROOT_STORAGE_CONTAINER_ID);
+        RangeResponse response = createRangeResponse(StatusCode.SUCCESS);
+        RangeRequest request = createRangeRequest();
 
         when(mockRangeStoreService.range(request))
             .thenReturn(CompletableFuture.completedFuture(response));
 
-        CompletableFuture<StorageContainerResponse> future = fromListenableFuture(
+        CompletableFuture<RangeResponse> future = fromListenableFuture(
             tableService.range(request));
         verify(mockRangeStoreService, times(1)).range(eq(request));
         assertTrue(response == future.get());
@@ -555,13 +544,13 @@ public class TestStorageContainerStoreImpl {
 
     @Test
     public void testDeleteMockStorageContainer() throws Exception {
-        StorageContainerResponse response = createDeleteResponse(StatusCode.SUCCESS);
-        StorageContainerRequest request = createDeleteRequest(ROOT_STORAGE_CONTAINER_ID);
+        DeleteRangeResponse response = createDeleteResponse(StatusCode.SUCCESS);
+        DeleteRangeRequest request = createDeleteRequest();
 
         when(mockRangeStoreService.delete(request))
             .thenReturn(CompletableFuture.completedFuture(response));
 
-        CompletableFuture<StorageContainerResponse> future = fromListenableFuture(
+        CompletableFuture<DeleteRangeResponse> future = fromListenableFuture(
             tableService.delete(request));
         verify(mockRangeStoreService, times(1)).delete(eq(request));
         assertTrue(response == future.get());
@@ -569,13 +558,13 @@ public class TestStorageContainerStoreImpl {
 
     @Test
     public void testPutMockStorageContainer() throws Exception {
-        StorageContainerResponse response = createPutResponse(StatusCode.SUCCESS);
-        StorageContainerRequest request = createPutRequest(ROOT_STORAGE_CONTAINER_ID);
+        PutResponse response = createPutResponse(StatusCode.SUCCESS);
+        PutRequest request = createPutRequest();
 
         when(mockRangeStoreService.put(request))
             .thenReturn(CompletableFuture.completedFuture(response));
 
-        CompletableFuture<StorageContainerResponse> future = fromListenableFuture(
+        CompletableFuture<PutResponse> future = fromListenableFuture(
             tableService.put(request));
         verify(mockRangeStoreService, times(1)).put(eq(request));
         assertTrue(response == future.get());
