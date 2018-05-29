@@ -623,6 +623,12 @@
   <dependencies>
     <!-- provided dependencies (available at compilation and test classpths and *NOT* packaged) -->
     <dependency>
+      <groupId>org.apache.bookkeeper</groupId>
+      <artifactId>buildtools</artifactId>
+      <version>${project.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
       <groupId>org.projectlombok</groupId>
       <artifactId>lombok</artifactId>
       <scope>provided</scope>
