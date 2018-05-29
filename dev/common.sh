@@ -33,7 +33,7 @@ function get_snapshot_version_with_gitsha() {
     local gitsha=$(git rev-parse --short HEAD)
     local commitdate=$(git log -1 --date=format:'%Y%m%d' --pretty=format:%cd)
     local version=$(get_bk_version)
-    echo ${version/-SNAPSHOT/}-${commitdate}-${gitsha}
+    echo ${version/-SNAPSHOT/}-${commitdate}-${gitsha}-SNAPSHOT
 }
 
 export BK_DEV_DIR=`dirname "$0"`
