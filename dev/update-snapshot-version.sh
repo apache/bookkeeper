@@ -28,7 +28,10 @@
 
 source `dirname "$0"`/common.sh
 
-VERSION=$(get_snapshot_version_with_gitsha)
+OLD_VERSION=$(get_bk_version)
+NEW_VERSION=$(get_snapshot_version_with_gitsha)
 
-mvn versions:set -DnewVersion=${VERSION}
-mvn versions:commit
+echo "Update version from ${OLD_VERSION} to ${NEW_VERSION}"
+
+mvn versions:set -DnewVersion=${VERSION} -Dstream
+mvn versions:commit -Dstream
