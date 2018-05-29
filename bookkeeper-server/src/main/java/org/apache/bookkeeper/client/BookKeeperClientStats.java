@@ -41,7 +41,7 @@ public interface BookKeeperClientStats {
 
     String ADD_OP = "ADD_ENTRY";
     String ADD_OP_UR = "ADD_ENTRY_UR"; // Under Replicated during AddEntry.
-    String FORCE_OP = "FORCE";
+    String FORCE_OP = "FORCE"; // Number of force ledger operations
     String READ_OP = "READ_ENTRY";
     // Corrupted entry (Digest Mismatch/ Under Replication) detected during ReadEntry
     String READ_OP_DM = "READ_ENTRY_DM";

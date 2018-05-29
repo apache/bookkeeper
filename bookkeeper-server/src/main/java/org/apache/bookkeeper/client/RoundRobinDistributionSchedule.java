@@ -62,6 +62,8 @@ class RoundRobinDistributionSchedule implements DistributionSchedule {
 
     @Override
     public WriteSet getWriteSetForForceLedger() {
+        // for long poll reads, we are trying all the bookies in the ensemble
+        // so we create a `WriteSet` with `writeQuorumSize == ensembleSize`.
         return WriteSetImpl.create(ensembleSize, ensembleSize /* writeQuorumSize */, 0);
     }
 

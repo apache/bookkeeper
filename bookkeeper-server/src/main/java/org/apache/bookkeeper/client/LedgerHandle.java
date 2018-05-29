@@ -1131,7 +1131,7 @@ public class LedgerHandle implements WriteHandle {
                 bk.getMainWorkerPool().submit(new SafeRunnable() {
                     @Override
                     public void safeRun() {
-                        LOG.warn("Attempt to use a closed ledger: {}", ledgerId);
+                        LOG.warn("Force() attempted on a closed ledger: {}", ledgerId);
                         result.completeExceptionally(new BKException.BKLedgerClosedException());
                     }
 
@@ -1146,6 +1146,7 @@ public class LedgerHandle implements WriteHandle {
             return result;
         }
 
+        // early exit: no write has been issued yet
         if (pendingAddsSequenceHead == INVALID_ENTRY_ID) {
             bk.getMainWorkerPool().submit(new SafeRunnable() {
                     @Override
@@ -1862,7 +1863,7 @@ public class LedgerHandle implements WriteHandle {
         }
         if (writeFlags.contains(WriteFlag.DEFERRED_SYNC)) {
             if (LOG.isDebugEnabled()) {
-                LOG.debug("Cannot perform ensemble changee with writeflags {}."
+                LOG.debug("Cannot perform ensemble change with writeflags {}."
                         + "Failed bookies {} for ledger {}.",
                         writeFlags, delayedWriteFailedBookies, ledgerId);
             }

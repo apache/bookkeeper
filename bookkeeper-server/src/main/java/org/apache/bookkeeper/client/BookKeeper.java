@@ -737,6 +737,20 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
                     throw new IllegalArgumentException("Unable to convert digest type " + digestType);
             }
         }
+        public org.apache.bookkeeper.client.api.DigestType toApiDigestType() {
+            switch (this) {
+                case MAC:
+                    return org.apache.bookkeeper.client.api.DigestType.MAC;
+                case CRC32:
+                    return org.apache.bookkeeper.client.api.DigestType.CRC32;
+                case CRC32C:
+                    return org.apache.bookkeeper.client.api.DigestType.CRC32C;
+                case DUMMY:
+                    return org.apache.bookkeeper.client.api.DigestType.DUMMY;
+                default:
+                    throw new IllegalArgumentException("Unable to convert digest type " + this);
+            }
+        }
     }
 
     boolean shouldReorderReadSequence() {

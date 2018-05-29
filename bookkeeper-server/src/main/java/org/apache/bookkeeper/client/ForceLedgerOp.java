@@ -65,7 +65,7 @@ class ForceLedgerOp extends SafeRunnable implements ForceLedgerCallback {
         // remember that we are inside OrderedExecutor, this induces a strict ordering
         // on the sequence of events
         this.currentNonDurableLastAddConfirmed = lh.pendingAddsSequenceHead;
-        LOG.debug("start force() on ledger {} capturing {} ", lh.ledgerId, currentNonDurableLastAddConfirmed);
+        LOG.debug("force {} clientNonDurableLac {}", lh.ledgerId, currentNonDurableLastAddConfirmed);
 
         // we need to send the request to every bookie in the ensamble
         this.currentEnsemble = lh.metadata.currentEnsemble;
