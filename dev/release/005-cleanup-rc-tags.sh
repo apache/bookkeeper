@@ -22,10 +22,7 @@ BK_HOME=`cd $BINDIR/../..;pwd`
 
 cd $BK_HOME
 
-mvn release:prepare \
-    -DreleaseVersion=${VERSION} \
-    -Dtag=${RC_TAG} \
-    -DupdateWorkingCopyVersions=false \
-    -Darguments="-Dmaven.javadoc.skip=true -DskipTests=true -Dstream" \
-    -Dstream \
-    -Dresume=true 
+for num in $(seq 0 $RC_NUM); do
+    git tag -d "v${VERSION}-rc${num}"
+    git push apache :"v${VERSION}-rc${num}"
+done
