@@ -52,9 +52,7 @@ import org.apache.bookkeeper.stream.proto.kv.rpc.PutResponse;
 import org.apache.bookkeeper.stream.proto.kv.rpc.RangeRequest;
 import org.apache.bookkeeper.stream.proto.kv.rpc.RangeResponse;
 import org.apache.bookkeeper.stream.proto.kv.rpc.RequestOp;
-import org.apache.bookkeeper.stream.proto.kv.rpc.TxnRequest;
 import org.apache.bookkeeper.stream.proto.kv.rpc.TxnResponse;
-import org.apache.bookkeeper.stream.proto.storage.StorageContainerRequest;
 
 /**
  * K/V related utils.
@@ -86,15 +84,6 @@ public final class KvUtils {
         return Lists.transform(kvs, kv -> fromProtoKeyValue(kv, kvFactory));
     }
 
-    public static StorageContainerRequest newKvRangeRequest(
-        long scId,
-        RangeRequest.Builder rangeReq) {
-        return StorageContainerRequest.newBuilder()
-            .setScId(scId)
-            .setKvRangeReq(rangeReq)
-            .build();
-    }
-
     public static RangeRequest.Builder newRangeRequest(ByteBuf key, RangeOption<ByteBuf> option) {
         RangeRequest.Builder builder = RangeRequest.newBuilder()
             .setKey(toProtoKey(key))
@@ -121,15 +110,6 @@ public final class KvUtils {
             .kvs(fromProtoKeyValues(response.getKvsList(), kvFactory));
     }
 
-    public static StorageContainerRequest newKvPutRequest(
-        long scId,
-        PutRequest.Builder putReq) {
-        return StorageContainerRequest.newBuilder()
-            .setScId(scId)
-            .setKvPutReq(putReq)
-            .build();
-    }
-
     public static PutRequest.Builder newPutRequest(ByteBuf key,
                                                    ByteBuf value,
                                                    PutOption<ByteBuf> option) {
@@ -150,15 +130,6 @@ public final class KvUtils {
         return result;
     }
 
-    public static StorageContainerRequest newKvIncrementRequest(
-        long scId,
-        IncrementRequest.Builder putReq) {
-        return StorageContainerRequest.newBuilder()
-            .setScId(scId)
-            .setKvIncrReq(putReq)
-            .build();
-    }
-
     public static IncrementRequest.Builder newIncrementRequest(ByteBuf key,
                                                                long amount,
                                                                IncrementOption<ByteBuf> option) {
@@ -175,15 +146,6 @@ public final class KvUtils {
         IncrementResultImpl<ByteBuf, ByteBuf> result = resultFactory.newIncrementResult(-1L)
             .totalAmount(response.getTotalAmount());
         return result;
-    }
-
-    public static StorageContainerRequest newKvDeleteRequest(
-        long scId,
-        DeleteRangeRequest.Builder deleteReq) {
-        return StorageContainerRequest.newBuilder()
-            .setScId(scId)
-            .setKvDeleteReq(deleteReq)
-            .build();
     }
 
     public static DeleteRangeRequest.Builder newDeleteRequest(ByteBuf key, DeleteOption<ByteBuf> option) {
@@ -308,15 +270,6 @@ public final class KvUtils {
                 throw new IllegalArgumentException("Type '" + op.type() + "' is not supported in a txn yet.");
         }
         return reqBuilder;
-    }
-
-    public static StorageContainerRequest newKvTxnRequest(
-        long scId,
-        TxnRequest.Builder txnReq) {
-        return StorageContainerRequest.newBuilder()
-            .setScId(scId)
-            .setKvTxnReq(txnReq)
-            .build();
     }
 
     public static TxnResult<ByteBuf, ByteBuf> newKvTxnResult(

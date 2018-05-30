@@ -19,8 +19,8 @@
 package org.apache.bookkeeper.stream.storage.api.metadata;
 
 import java.util.concurrent.CompletableFuture;
-import org.apache.bookkeeper.stream.proto.storage.StorageContainerRequest;
-import org.apache.bookkeeper.stream.proto.storage.StorageContainerResponse;
+import org.apache.bookkeeper.stream.proto.storage.GetActiveRangesRequest;
+import org.apache.bookkeeper.stream.proto.storage.GetActiveRangesResponse;
 
 /**
  * The metadata store that store ranges.
@@ -33,6 +33,6 @@ public interface MetaRangeStore {
      * @param request the request
      * @return the active ranges
      */
-    CompletableFuture<StorageContainerResponse> getActiveRanges(StorageContainerRequest request);
+    CompletableFuture<GetActiveRangesResponse> getActiveRanges(GetActiveRangesRequest request);
 
 }

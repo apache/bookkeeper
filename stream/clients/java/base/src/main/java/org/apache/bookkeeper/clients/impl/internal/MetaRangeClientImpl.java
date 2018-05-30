@@ -78,10 +78,8 @@ class MetaRangeClientImpl implements MetaRangeClient {
     @Override
     public CompletableFuture<HashStreamRanges> getActiveDataRanges() {
         return MetaRangeRequestProcessor.of(
-            createGetActiveRangesRequest(
-                scClient.getStorageContainerId(),
-                streamProps),
-            (response) -> createActiveRanges(response.getGetActiveRangesResp()),
+            createGetActiveRangesRequest(streamProps),
+            (response) -> createActiveRanges(response),
             scClient,
             executor,
             backoffPolicy

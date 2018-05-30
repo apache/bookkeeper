@@ -19,12 +19,12 @@ package org.apache.bookkeeper.stream.storage.impl.grpc;
 
 import io.grpc.stub.StreamObserver;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.bookkeeper.stream.proto.storage.GetActiveRangesRequest;
+import org.apache.bookkeeper.stream.proto.storage.GetActiveRangesResponse;
 import org.apache.bookkeeper.stream.proto.storage.MetaRangeServiceGrpc.MetaRangeServiceImplBase;
-import org.apache.bookkeeper.stream.proto.storage.StorageContainerRequest;
-import org.apache.bookkeeper.stream.proto.storage.StorageContainerResponse;
-import org.apache.bookkeeper.stream.storage.impl.grpc.handler.StorageContainerResponseHandler;
-import org.apache.bookkeeper.stream.storage.api.RangeStore;
+import org.apache.bookkeeper.stream.proto.storage.StatusCode;
 import org.apache.bookkeeper.stream.storage.api.metadata.RangeStoreService;
+import org.apache.bookkeeper.stream.storage.impl.grpc.handler.ResponseHandler;
 
 /**
  * The gRPC protocol based range service.
@@ -44,10 +44,17 @@ public class GrpcMetaRangeService extends MetaRangeServiceImplBase {
     //
 
     @Override
-    public void getActiveRanges(StorageContainerRequest request,
-                                StreamObserver<StorageContainerResponse> responseObserver) {
+    public void getActiveRanges(GetActiveRangesRequest request,
+                                StreamObserver<GetActiveRangesResponse> responseObserver) {
         rangeStore.getActiveRanges(request).whenComplete(
-            StorageContainerResponseHandler.of(responseObserver));
+            new ResponseHandler<GetActiveRangesResponse>(responseObserver) {
+                @Override
+                protected GetActiveRangesResponse createErrorResp(Throwable cause) {
+                    return GetActiveRangesResponse.newBuilder()
+                        .setCode(StatusCode.INTERNAL_SERVER_ERROR)
+                        .build();
+                }
+            });
     }
 
 }

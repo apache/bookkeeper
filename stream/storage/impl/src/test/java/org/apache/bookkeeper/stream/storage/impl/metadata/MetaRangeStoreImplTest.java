@@ -36,8 +36,6 @@ import org.apache.bookkeeper.stream.proto.storage.GetActiveRangesRequest;
 import org.apache.bookkeeper.stream.proto.storage.GetActiveRangesResponse;
 import org.apache.bookkeeper.stream.proto.storage.RelatedRanges;
 import org.apache.bookkeeper.stream.proto.storage.StatusCode;
-import org.apache.bookkeeper.stream.proto.storage.StorageContainerRequest;
-import org.apache.bookkeeper.stream.proto.storage.StorageContainerResponse;
 import org.apache.bookkeeper.stream.storage.impl.metadata.stream.MetaRangeImpl;
 import org.apache.bookkeeper.stream.storage.impl.sc.StorageContainerPlacementPolicyImpl;
 import org.apache.bookkeeper.stream.storage.impl.store.MVCCAsyncStoreTestBase;
@@ -69,21 +67,18 @@ public class MetaRangeStoreImplTest extends MVCCAsyncStoreTestBase {
     protected void doTeardown() throws Exception {
     }
 
-    StorageContainerRequest createRequest(StreamProperties streamProperties) {
+    GetActiveRangesRequest createRequest(StreamProperties streamProperties) {
         GetActiveRangesRequest.Builder reqBuilder = GetActiveRangesRequest.newBuilder()
             .setStreamId(this.streamProps.getStreamId());
         if (null != streamProperties) {
             reqBuilder = reqBuilder.setStreamProps(streamProperties);
         }
-        return StorageContainerRequest.newBuilder()
-            .setGetActiveRangesReq(reqBuilder)
-            .setScId(1L)
-            .build();
+        return reqBuilder.build();
     }
 
     @Test
     public void testCreateIfMissingPropsNotSpecified() throws Exception {
-        StorageContainerResponse resp = FutureUtils.result(
+        GetActiveRangesResponse resp = FutureUtils.result(
             this.mrStoreImpl.getActiveRanges(createRequest(null)));
 
         assertEquals(StatusCode.STREAM_NOT_FOUND, resp.getCode());
@@ -91,13 +86,11 @@ public class MetaRangeStoreImplTest extends MVCCAsyncStoreTestBase {
 
     @Test
     public void testCreateIfMissing() throws Exception {
-        StorageContainerResponse resp = FutureUtils.result(
+        GetActiveRangesResponse resp = FutureUtils.result(
             this.mrStoreImpl.getActiveRanges(createRequest(streamProps)));
 
         assertEquals(StatusCode.SUCCESS, resp.getCode());
-        GetActiveRangesResponse getResp = resp.getGetActiveRangesResp();
-
-        verifyGetResponse(getResp);
+        verifyGetResponse(resp);
     }
 
     private void verifyGetResponse(GetActiveRangesResponse getResp) throws Exception {
@@ -222,22 +215,19 @@ public class MetaRangeStoreImplTest extends MVCCAsyncStoreTestBase {
 
     @Test
     public void testGetTwice() throws Exception {
-
-        StorageContainerResponse resp = FutureUtils.result(
+        GetActiveRangesResponse resp = FutureUtils.result(
             this.mrStoreImpl.getActiveRanges(createRequest(streamProps)));
 
         assertEquals(StatusCode.SUCCESS, resp.getCode());
 
-        GetActiveRangesResponse getResp = resp.getGetActiveRangesResp();
-        verifyGetResponse(getResp);
+        verifyGetResponse(resp);
 
-        StorageContainerResponse secondResp = FutureUtils.result(
+        GetActiveRangesResponse secondResp = FutureUtils.result(
             this.mrStoreImpl.getActiveRanges(createRequest(streamProps)));
 
         assertEquals(StatusCode.SUCCESS, secondResp.getCode());
 
-        GetActiveRangesResponse secondGetResp = resp.getGetActiveRangesResp();
-        verifyGetResponse(secondGetResp);
+        verifyGetResponse(secondResp);
     }
 
 }
