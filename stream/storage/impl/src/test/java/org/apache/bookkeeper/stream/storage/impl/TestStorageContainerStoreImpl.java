@@ -112,7 +112,7 @@ public class TestStorageContainerStoreImpl {
 
     private static StreamName createStreamName(String name) {
         return StreamName.newBuilder()
-            .setColName(name + "_col")
+            .setNamespaceName(name + "_col")
             .setStreamName(name + "_stream")
             .build();
     }

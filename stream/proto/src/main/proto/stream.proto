@@ -55,7 +55,7 @@ message RangeProperties {
 enum RangeKeyType {
     NULL        = 0;
     HASH        = 1;
-    RAW         = 2;
+    RAW         = 2; // reserved, not implemented yet
 }
 
 message RangeMetadata {
@@ -84,6 +84,15 @@ message ParentRangesList {
 //
 // Stream
 //
+
+// since stream and table are similar and exchangable,
+// from the beginning, we shared the metadata management
+// between streams and tables and distinguish them using
+// a flag that recorded in metadata.
+enum StreamType {
+    STREAM      = 0;
+    TABLE       = 1;
+}
 
 enum SplitPolicyType {
     FIXED       = 0;
@@ -139,8 +148,7 @@ message StreamConfiguration {
     SplitPolicy split_policy            = 4;
     SegmentRollingPolicy rolling_policy = 5;
     RetentionPolicy retention_policy    = 6;
-    string backend_service_url          = 7;
-    bool is_readonly                    = 8;
+    StreamType stream_type              = 7;
 }
 
 message StreamProperties {
@@ -151,7 +159,7 @@ message StreamProperties {
 }
 
 message StreamName {
-    string col_name     = 1;
+    string namespace_name     = 1;
     string stream_name  = 2;
 }
 

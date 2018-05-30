@@ -123,7 +123,7 @@ class RootRangeClientImpl implements RootRangeClient {
                                                 CompletableFuture<NamespaceProperties> createNamespaceFuture) {
         StatusCode code = response.getCode();
         if (StatusCode.SUCCESS == code) {
-            createNamespaceFuture.complete(response.getColProps());
+            createNamespaceFuture.complete(response.getNsProps());
             return;
         }
         createNamespaceFuture.completeExceptionally(createRootRangeException(namespace, code));
@@ -161,7 +161,7 @@ class RootRangeClientImpl implements RootRangeClient {
                                              CompletableFuture<NamespaceProperties> getFuture) {
         StatusCode code = response.getCode();
         if (StatusCode.SUCCESS == code) {
-            getFuture.complete(response.getColProps());
+            getFuture.complete(response.getNsProps());
             return;
         }
         getFuture.completeExceptionally(createRootRangeException(namespace, code));
