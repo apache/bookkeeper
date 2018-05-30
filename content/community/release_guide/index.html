@@ -281,6 +281,7 @@
       <li><a href="#advance-version-on-release-branch" id="markdown-toc-advance-version-on-release-branch">Advance version on release branch</a></li>
       <li><a href="#deploy-artifacts-to-maven-central-repository" id="markdown-toc-deploy-artifacts-to-maven-central-repository">Deploy artifacts to Maven Central Repository</a></li>
       <li><a href="#deploy-source-release-to-distapacheorg" id="markdown-toc-deploy-source-release-to-distapacheorg">Deploy source release to dist.apache.org</a></li>
+      <li><a href="#git-tag" id="markdown-toc-git-tag">Git tag</a></li>
       <li><a href="#update-website" id="markdown-toc-update-website">Update Website</a></li>
       <li><a href="#update-dockerfile" id="markdown-toc-update-dockerfile">Update Dockerfile</a></li>
       <li><a href="#update-dcos-bookkeeper-package" id="markdown-toc-update-dcos-bookkeeper-package">Update DC/OS BookKeeper package</a></li>
@@ -589,6 +590,7 @@ It ensures the release candidate built with right jni library for <code class="h
 <div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>RC_NUM="0"
 TAG="release-${VERSION}"
 RC_DIR="bookkeeper-${VERSION}-rc${RC_NUM}"
+RC_TAG="v${VERSION}-rc${RC_NUM}"
 </code></pre></div></div>
 
 <blockquote>
@@ -782,6 +784,22 @@ Then you have to create a PR and submit it for review.</p>
 <p>Copy the source release from the <code class="highlighter-rouge">dev</code> repository to the <code class="highlighter-rouge">release</code> repository at <code class="highlighter-rouge">dist.apache.org</code> using Subversion.</p>
 
 <div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>svn move https://dist.apache.org/repos/dist/dev/bookkeeper/bookkeeper-${VERSION}-rc${RC_NUM} https://dist.apache.org/repos/dist/release/bookkeeper/bookkeeper-${VERSION}
+</code></pre></div></div>
+
+<h3 id="git-tag">Git tag</h3>
+
+<p>Create and push a new signed for the released version by copying the tag for the final release tag, as follows</p>
+
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code>git tag <span class="nt">-s</span> <span class="s2">"</span><span class="k">${</span><span class="nv">TAG</span><span class="k">}</span><span class="s2">"</span> <span class="s2">"</span><span class="k">${</span><span class="nv">RC_TAG</span><span class="k">}</span><span class="s2">"</span>
+git push apache <span class="s2">"</span><span class="k">${</span><span class="nv">TAG</span><span class="k">}</span><span class="s2">"</span>
+</code></pre></div></div>
+
+<p>Remove rc tags:</p>
+
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">for </span>num <span class="k">in</span> <span class="k">$(</span><span class="nb">seq </span>0 <span class="k">${</span><span class="nv">RC_NUM</span><span class="k">})</span><span class="p">;</span> <span class="k">do
+    </span>git tag <span class="nt">-d</span> <span class="s2">"v</span><span class="k">${</span><span class="nv">VERSION</span><span class="k">}</span><span class="s2">-rc</span><span class="k">${</span><span class="nv">num</span><span class="k">}</span><span class="s2">"</span>
+    git push apache :<span class="s2">"v</span><span class="k">${</span><span class="nv">VERSION</span><span class="k">}</span><span class="s2">-rc</span><span class="k">${</span><span class="nv">num</span><span class="k">}</span><span class="s2">"</span>
+<span class="k">done</span>
 </code></pre></div></div>
 
 <h3 id="update-website">Update Website</h3>
