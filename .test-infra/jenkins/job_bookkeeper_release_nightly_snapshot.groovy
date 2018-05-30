@@ -37,7 +37,28 @@ freeStyleJob('bookkeeper_release_nightly_snapshot') {
       'Release Snapshot',
       '/release-snapshot')
 
+  parameters {
+      stringParam(
+          'sha1',
+          defaultBranch,
+          'Commit id or refname (eg: origin/pr/9/head) you want to build.')
+        
+      stringParam(
+          'PUBLISH_GITSHA',
+          'false',
+          'Whether to publish a snapshot with gitsha information. Options: (true|false).')
+  }
+
   steps {
+    // update snapshot version if `PUBLISH_GITSHA` is `true`
+    shell '''
+export MAVEN_HOME=/home/jenkins/tools/maven/latest
+export PATH=$JAVA_HOME/bin:$MAVEN_HOME/bin:$PATH
+export MAVEN_OPTS=-Xmx2048m
+
+./dev/update-snapshot-version.sh
+    '''.stripIndent().trim()
+
     maven {
       // Set maven parameters.
       common_job_properties.setMavenConfig(delegate)
