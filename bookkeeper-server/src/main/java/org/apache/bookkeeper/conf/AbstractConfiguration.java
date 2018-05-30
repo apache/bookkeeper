@@ -712,7 +712,7 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
     /**
      * Whether the client will send an TLS certificate on TLS-handshake.
      *
-     * @see #setTLSClientAuthentication(boolean) 
+     * @see #setTLSClientAuthentication(boolean)
      * @return whether TLS is enabled on the bookie or not.
      */
     public boolean getTLSClientAuthentication() {
