@@ -18,9 +18,6 @@
 
 package org.apache.bookkeeper.stream.storage.impl.metadata;
 
-import static com.google.common.base.Preconditions.checkState;
-import static org.apache.bookkeeper.stream.proto.storage.StorageContainerRequest.RequestCase.GET_ACTIVE_RANGES_REQ;
-
 import com.google.common.collect.Maps;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -30,12 +27,11 @@ import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.statelib.api.mvcc.MVCCAsyncStore;
 import org.apache.bookkeeper.stream.proto.RangeMetadata;
 import org.apache.bookkeeper.stream.proto.StreamProperties;
+import org.apache.bookkeeper.stream.proto.storage.GetActiveRangesRequest;
 import org.apache.bookkeeper.stream.proto.storage.GetActiveRangesResponse;
 import org.apache.bookkeeper.stream.proto.storage.RelatedRanges;
 import org.apache.bookkeeper.stream.proto.storage.RelationType;
 import org.apache.bookkeeper.stream.proto.storage.StatusCode;
-import org.apache.bookkeeper.stream.proto.storage.StorageContainerRequest;
-import org.apache.bookkeeper.stream.proto.storage.StorageContainerResponse;
 import org.apache.bookkeeper.stream.protocol.util.StorageContainerPlacementPolicy;
 import org.apache.bookkeeper.stream.storage.api.metadata.MetaRangeStore;
 import org.apache.bookkeeper.stream.storage.api.metadata.stream.MetaRange;
@@ -70,11 +66,11 @@ public class MetaRangeStoreImpl
     // Stream API
     //
 
-    private CompletableFuture<StorageContainerResponse> createStreamIfMissing(long streamId,
-                                                                              MetaRangeImpl metaRange,
-                                                                              StreamProperties streamProps) {
+    private CompletableFuture<GetActiveRangesResponse> createStreamIfMissing(long streamId,
+                                                                             MetaRangeImpl metaRange,
+                                                                             StreamProperties streamProps) {
         if (null == streamProps) {
-            return FutureUtils.value(StorageContainerResponse.newBuilder()
+            return FutureUtils.value(GetActiveRangesResponse.newBuilder()
                 .setCode(StatusCode.STREAM_NOT_FOUND)
                 .build());
         }
@@ -86,7 +82,7 @@ public class MetaRangeStoreImpl
                 }
                 return getActiveRanges(metaRange);
             } else {
-                return FutureUtils.value(StorageContainerResponse.newBuilder()
+                return FutureUtils.value(GetActiveRangesResponse.newBuilder()
                     .setCode(StatusCode.INTERNAL_SERVER_ERROR)
                     .build());
             }
@@ -94,11 +90,8 @@ public class MetaRangeStoreImpl
     }
 
     @Override
-    public CompletableFuture<StorageContainerResponse> getActiveRanges(StorageContainerRequest request) {
-        checkState(
-            GET_ACTIVE_RANGES_REQ == request.getRequestCase(),
-            "Wrong request type: %s", request.getRequestCase());
-        final long streamId = request.getGetActiveRangesReq().getStreamId();
+    public CompletableFuture<GetActiveRangesResponse> getActiveRanges(GetActiveRangesRequest request) {
+        final long streamId = request.getStreamId();
 
         MetaRangeImpl metaRange = streams.get(streamId);
 
@@ -107,8 +100,8 @@ public class MetaRangeStoreImpl
             return metaRangeImpl.load(streamId)
                 .thenCompose(mr -> {
                     if (null == mr) {
-                        StreamProperties streamProps = request.getGetActiveRangesReq().hasStreamProps()
-                            ? request.getGetActiveRangesReq().getStreamProps() : null;
+                        StreamProperties streamProps = request.hasStreamProps()
+                            ? request.getStreamProps() : null;
                         return createStreamIfMissing(streamId, metaRangeImpl, streamProps);
                     } else {
                         synchronized (streams) {
@@ -122,8 +115,7 @@ public class MetaRangeStoreImpl
         }
     }
 
-    private CompletableFuture<StorageContainerResponse> getActiveRanges(MetaRange metaRange) {
-        StorageContainerResponse.Builder scBuilder = StorageContainerResponse.newBuilder();
+    private CompletableFuture<GetActiveRangesResponse> getActiveRanges(MetaRange metaRange) {
         GetActiveRangesResponse.Builder respBuilder = GetActiveRangesResponse.newBuilder();
         return metaRange.getActiveRanges()
             .thenApplyAsync(ranges -> {
@@ -134,12 +126,11 @@ public class MetaRangeStoreImpl
                         .addAllRelatedRanges(range.getParentsList());
                     respBuilder.addRanges(rrBuilder);
                 }
-                return scBuilder
+                return respBuilder
                     .setCode(StatusCode.SUCCESS)
-                    .setGetActiveRangesResp(respBuilder)
                     .build();
             }, executor)
-            .exceptionally(cause -> scBuilder.setCode(StatusCode.INTERNAL_SERVER_ERROR).build());
+            .exceptionally(cause -> respBuilder.setCode(StatusCode.INTERNAL_SERVER_ERROR).build());
     }
 
 }

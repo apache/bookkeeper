@@ -19,11 +19,21 @@ package org.apache.bookkeeper.stream.storage.impl.grpc;
 
 import io.grpc.stub.StreamObserver;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.bookkeeper.stream.proto.storage.StorageContainerRequest;
-import org.apache.bookkeeper.stream.proto.storage.StorageContainerResponse;
-import org.apache.bookkeeper.stream.proto.storage.TableServiceGrpc.TableServiceImplBase;
+import org.apache.bookkeeper.stream.proto.kv.rpc.DeleteRangeRequest;
+import org.apache.bookkeeper.stream.proto.kv.rpc.DeleteRangeResponse;
+import org.apache.bookkeeper.stream.proto.kv.rpc.IncrementRequest;
+import org.apache.bookkeeper.stream.proto.kv.rpc.IncrementResponse;
+import org.apache.bookkeeper.stream.proto.kv.rpc.PutRequest;
+import org.apache.bookkeeper.stream.proto.kv.rpc.PutResponse;
+import org.apache.bookkeeper.stream.proto.kv.rpc.RangeRequest;
+import org.apache.bookkeeper.stream.proto.kv.rpc.RangeResponse;
+import org.apache.bookkeeper.stream.proto.kv.rpc.ResponseHeader;
+import org.apache.bookkeeper.stream.proto.kv.rpc.TableServiceGrpc.TableServiceImplBase;
+import org.apache.bookkeeper.stream.proto.kv.rpc.TxnRequest;
+import org.apache.bookkeeper.stream.proto.kv.rpc.TxnResponse;
+import org.apache.bookkeeper.stream.proto.storage.StatusCode;
 import org.apache.bookkeeper.stream.storage.api.metadata.RangeStoreService;
-import org.apache.bookkeeper.stream.storage.impl.grpc.handler.StorageContainerResponseHandler;
+import org.apache.bookkeeper.stream.storage.impl.grpc.handler.ResponseHandler;
 
 /**
  * The gRPC protocol based k/v service.
@@ -39,35 +49,87 @@ public class GrpcTableService extends TableServiceImplBase {
     }
 
     @Override
-    public void range(StorageContainerRequest request,
-                      StreamObserver<StorageContainerResponse> responseObserver) {
+    public void range(RangeRequest request,
+                      StreamObserver<RangeResponse> responseObserver) {
         rangeStore.range(request).whenComplete(
-            StorageContainerResponseHandler.of(responseObserver));
+            new ResponseHandler<RangeResponse>(responseObserver) {
+                @Override
+                protected RangeResponse createErrorResp(Throwable cause) {
+                    return RangeResponse.newBuilder()
+                        .setHeader(ResponseHeader.newBuilder()
+                            .setCode(StatusCode.INTERNAL_SERVER_ERROR)
+                            .setRoutingHeader(request.getHeader())
+                            .build())
+                        .build();
+                }
+            });
     }
 
     @Override
-    public void put(StorageContainerRequest request,
-                    StreamObserver<StorageContainerResponse> responseObserver) {
+    public void put(PutRequest request,
+                    StreamObserver<PutResponse> responseObserver) {
         rangeStore.put(request).whenComplete(
-            StorageContainerResponseHandler.of(responseObserver));
+            new ResponseHandler<PutResponse>(responseObserver) {
+                @Override
+                protected PutResponse createErrorResp(Throwable cause) {
+                    return PutResponse.newBuilder()
+                        .setHeader(ResponseHeader.newBuilder()
+                            .setCode(StatusCode.INTERNAL_SERVER_ERROR)
+                            .setRoutingHeader(request.getHeader())
+                            .build())
+                        .build();
+                }
+            });
     }
 
     @Override
-    public void delete(StorageContainerRequest request,
-                       StreamObserver<StorageContainerResponse> responseObserver) {
+    public void delete(DeleteRangeRequest request,
+                       StreamObserver<DeleteRangeResponse> responseObserver) {
         rangeStore.delete(request).whenComplete(
-            StorageContainerResponseHandler.of(responseObserver));
+            new ResponseHandler<DeleteRangeResponse>(responseObserver) {
+                @Override
+                protected DeleteRangeResponse createErrorResp(Throwable cause) {
+                    return DeleteRangeResponse.newBuilder()
+                        .setHeader(ResponseHeader.newBuilder()
+                            .setCode(StatusCode.INTERNAL_SERVER_ERROR)
+                            .setRoutingHeader(request.getHeader())
+                            .build())
+                        .build();
+                }
+            });
     }
 
     @Override
-    public void txn(StorageContainerRequest request, StreamObserver<StorageContainerResponse> responseObserver) {
+    public void txn(TxnRequest request,
+                    StreamObserver<TxnResponse> responseObserver) {
         rangeStore.txn(request).whenComplete(
-            StorageContainerResponseHandler.of(responseObserver));
+            new ResponseHandler<TxnResponse>(responseObserver) {
+                @Override
+                protected TxnResponse createErrorResp(Throwable cause) {
+                    return TxnResponse.newBuilder()
+                        .setHeader(ResponseHeader.newBuilder()
+                            .setCode(StatusCode.INTERNAL_SERVER_ERROR)
+                            .setRoutingHeader(request.getHeader())
+                            .build())
+                        .build();
+                }
+            });
     }
 
     @Override
-    public void increment(StorageContainerRequest request, StreamObserver<StorageContainerResponse> responseObserver) {
+    public void increment(IncrementRequest request,
+                          StreamObserver<IncrementResponse> responseObserver) {
         rangeStore.incr(request).whenComplete(
-            StorageContainerResponseHandler.of(responseObserver));
+            new ResponseHandler<IncrementResponse>(responseObserver) {
+                @Override
+                protected IncrementResponse createErrorResp(Throwable cause) {
+                    return IncrementResponse.newBuilder()
+                        .setHeader(ResponseHeader.newBuilder()
+                            .setCode(StatusCode.INTERNAL_SERVER_ERROR)
+                            .setRoutingHeader(request.getHeader())
+                            .build())
+                        .build();
+                }
+            });
     }
 }

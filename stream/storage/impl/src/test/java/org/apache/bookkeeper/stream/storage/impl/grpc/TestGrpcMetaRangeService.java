@@ -30,8 +30,6 @@ import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.stream.proto.storage.GetActiveRangesRequest;
 import org.apache.bookkeeper.stream.proto.storage.GetActiveRangesResponse;
 import org.apache.bookkeeper.stream.proto.storage.StatusCode;
-import org.apache.bookkeeper.stream.proto.storage.StorageContainerRequest;
-import org.apache.bookkeeper.stream.proto.storage.StorageContainerResponse;
 import org.apache.bookkeeper.stream.storage.api.metadata.RangeStoreService;
 import org.junit.Test;
 
@@ -51,23 +49,19 @@ public class TestGrpcMetaRangeService {
         RangeStoreService rangeService = mock(RangeStoreService.class);
         GrpcMetaRangeService grpcService = new GrpcMetaRangeService(rangeService);
 
-        StorageContainerRequest request = StorageContainerRequest
+        GetActiveRangesRequest request = GetActiveRangesRequest
             .newBuilder()
-            .setGetActiveRangesReq(GetActiveRangesRequest
-                .newBuilder()
-                .setStreamId(23456L)
-                .build())
+            .setStreamId(23456L)
             .build();
 
-        StorageContainerResponse response = StorageContainerResponse.newBuilder()
+        GetActiveRangesResponse response = GetActiveRangesResponse.newBuilder()
             .setCode(StatusCode.SUCCESS)
-            .setGetActiveRangesResp(GetActiveRangesResponse.newBuilder())
             .build();
 
         when(rangeService.getActiveRanges(request)).thenReturn(
             CompletableFuture.completedFuture(response));
 
-        TestResponseObserver<StorageContainerResponse> responseObserver =
+        TestResponseObserver<GetActiveRangesResponse> responseObserver =
             new TestResponseObserver<>();
         grpcService.getActiveRanges(
             request,
@@ -82,22 +76,19 @@ public class TestGrpcMetaRangeService {
         RangeStoreService rangeService = mock(RangeStoreService.class);
         GrpcMetaRangeService grpcService = new GrpcMetaRangeService(rangeService);
 
-        StorageContainerRequest request = StorageContainerRequest
+        GetActiveRangesRequest request = GetActiveRangesRequest
             .newBuilder()
-            .setGetActiveRangesReq(GetActiveRangesRequest
-                .newBuilder()
-                .setStreamId(23456L)
-                .build())
+            .setStreamId(23456L)
             .build();
 
-        StorageContainerResponse response = StorageContainerResponse.newBuilder()
+        GetActiveRangesResponse response = GetActiveRangesResponse.newBuilder()
             .setCode(StatusCode.INTERNAL_SERVER_ERROR)
             .build();
 
         when(rangeService.getActiveRanges(request)).thenReturn(
             FutureUtils.exception(CAUSE));
 
-        TestResponseObserver<StorageContainerResponse> responseObserver =
+        TestResponseObserver<GetActiveRangesResponse> responseObserver =
             new TestResponseObserver<>();
         grpcService.getActiveRanges(
             request,
@@ -112,18 +103,15 @@ public class TestGrpcMetaRangeService {
         RangeStoreService rangeService = mock(RangeStoreService.class);
         GrpcMetaRangeService grpcService = new GrpcMetaRangeService(rangeService);
 
-        StorageContainerRequest request = StorageContainerRequest
+        GetActiveRangesRequest request = GetActiveRangesRequest
             .newBuilder()
-            .setGetActiveRangesReq(GetActiveRangesRequest
-                .newBuilder()
-                .setStreamId(23456L)
-                .build())
+            .setStreamId(23456L)
             .build();
 
         when(rangeService.getActiveRanges(request)).thenReturn(
             FutureUtils.exception(new StatusRuntimeException(Status.NOT_FOUND)));
 
-        TestResponseObserver<StorageContainerResponse> responseObserver =
+        TestResponseObserver<GetActiveRangesResponse> responseObserver =
             new TestResponseObserver<>();
         grpcService.getActiveRanges(
             request,
