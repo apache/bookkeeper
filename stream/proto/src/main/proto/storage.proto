@@ -112,13 +112,13 @@ service MetaRangeService {
 //
 
 message CreateNamespaceRequest {
-    string name                                 = 1;
-    stream.NamespaceConfiguration col_conf     = 2;
+    string name                             = 1;
+    stream.NamespaceConfiguration ns_conf   = 2;
 }
 
 message CreateNamespaceResponse {
-    StatusCode code                             = 1;
-    stream.NamespaceProperties col_props       = 2;
+    StatusCode code                         = 1;
+    stream.NamespaceProperties ns_props     = 2;
 }
 
 message DeleteNamespaceRequest {
@@ -135,11 +135,11 @@ message GetNamespaceRequest {
 
 message GetNamespaceResponse {
     StatusCode code = 1;
-    stream.NamespaceProperties col_props = 2;
+    stream.NamespaceProperties ns_props = 2;
 }
 
 message CreateStreamRequest {
-    string col_name                        = 1;
+    string ns_name                         = 1;
     string name                            = 2;
     stream.StreamConfiguration stream_conf = 3;
 }
@@ -150,7 +150,7 @@ message CreateStreamResponse {
 }
 
 message DeleteStreamRequest {
-    string col_name                      = 1;
+    string ns_name                       = 1;
     string name                          = 2;
 }
 

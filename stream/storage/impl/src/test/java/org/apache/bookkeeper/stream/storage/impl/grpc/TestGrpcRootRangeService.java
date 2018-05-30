@@ -15,21 +15,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-/*
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package org.apache.bookkeeper.stream.storage.impl.grpc;
 
 import static org.apache.bookkeeper.stream.protocol.ProtocolConstants.DEFAULT_STREAM_CONF;
@@ -112,7 +97,7 @@ public class TestGrpcRootRangeService {
         GrpcRootRangeService grpcService = new GrpcRootRangeService(rangeService);
         CreateNamespaceResponse createResp = CreateNamespaceResponse.newBuilder()
             .setCode(StatusCode.SUCCESS)
-            .setColProps(namespaceProps)
+            .setNsProps(namespaceProps)
             .build();
         CreateNamespaceRequest createReq = createCreateNamespaceRequest(nsName, namespaceConf);
         when(rangeService.createNamespace(createReq)).thenReturn(
@@ -140,7 +125,7 @@ public class TestGrpcRootRangeService {
         grpcService.createNamespace(
             CreateNamespaceRequest.newBuilder()
                 .setName(nsName)
-                .setColConf(namespaceConf)
+                .setNsConf(namespaceConf)
                 .build(),
             streamObserver);
         latch.await();
@@ -183,7 +168,7 @@ public class TestGrpcRootRangeService {
         grpcService.createNamespace(
             CreateNamespaceRequest.newBuilder()
                 .setName(nsName)
-                .setColConf(namespaceConf)
+                .setNsConf(namespaceConf)
                 .build(),
             streamObserver);
         latch.await();
@@ -283,7 +268,7 @@ public class TestGrpcRootRangeService {
         GrpcRootRangeService grpcService = new GrpcRootRangeService(rangeService);
         GetNamespaceResponse getResp = GetNamespaceResponse.newBuilder()
             .setCode(StatusCode.SUCCESS)
-            .setColProps(namespaceProps)
+            .setNsProps(namespaceProps)
             .build();
         GetNamespaceRequest getReq = createGetNamespaceRequest(nsName);
         when(rangeService.getNamespace(getReq)).thenReturn(
@@ -399,7 +384,7 @@ public class TestGrpcRootRangeService {
         };
         grpcService.createStream(
             CreateStreamRequest.newBuilder()
-                .setColName(nsName)
+                .setNsName(nsName)
                 .setName(streamName)
                 .setStreamConf(DEFAULT_STREAM_CONF)
                 .build(),
@@ -443,7 +428,7 @@ public class TestGrpcRootRangeService {
         };
         grpcService.createStream(
             CreateStreamRequest.newBuilder()
-                .setColName(nsName)
+                .setNsName(nsName)
                 .setName(streamName)
                 .setStreamConf(DEFAULT_STREAM_CONF)
                 .build(),
@@ -487,7 +472,7 @@ public class TestGrpcRootRangeService {
         };
         grpcService.deleteStream(
             DeleteStreamRequest.newBuilder()
-                .setColName(nsName)
+                .setNsName(nsName)
                 .setName(streamName)
                 .build(),
             streamObserver);
@@ -530,7 +515,7 @@ public class TestGrpcRootRangeService {
         };
         grpcService.deleteStream(
             DeleteStreamRequest.newBuilder()
-                .setColName(nsName)
+                .setNsName(nsName)
                 .setName(streamName)
                 .build(),
             streamObserver);
@@ -575,7 +560,7 @@ public class TestGrpcRootRangeService {
         grpcService.getStream(
             GetStreamRequest.newBuilder()
                 .setStreamName(StreamName.newBuilder()
-                    .setColName(nsName)
+                    .setNamespaceName(nsName)
                     .setStreamName(streamName))
                 .build(),
             streamObserver);
@@ -619,7 +604,7 @@ public class TestGrpcRootRangeService {
         grpcService.getStream(
             GetStreamRequest.newBuilder()
                 .setStreamName(StreamName.newBuilder()
-                    .setColName(nsName)
+                    .setNamespaceName(nsName)
                     .setStreamName(streamName))
                 .build(),
             streamObserver);

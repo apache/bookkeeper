@@ -66,7 +66,6 @@ public class TestRootRangeStoreImpl extends MVCCAsyncStoreTestBase {
 
     private final StreamConfiguration streamConf =
         StreamConfiguration.newBuilder(DEFAULT_STREAM_CONF)
-            .setBackendServiceUrl(DEFAULT_SERVICE_URI)
             .build();
 
 
@@ -136,9 +135,9 @@ public class TestRootRangeStoreImpl extends MVCCAsyncStoreTestBase {
             createCreateNamespaceRequest(nsName, namespaceConf));
         CreateNamespaceResponse response = FutureUtils.result(createFuture);
         assertEquals(StatusCode.SUCCESS, response.getCode());
-        assertEquals(expectedNsId, response.getColProps().getNamespaceId());
-        assertEquals(nsName, response.getColProps().getNamespaceName());
-        assertEquals(namespaceConf.getDefaultStreamConf(), response.getColProps().getDefaultStreamConf());
+        assertEquals(expectedNsId, response.getNsProps().getNamespaceId());
+        assertEquals(nsName, response.getNsProps().getNamespaceName());
+        assertEquals(namespaceConf.getDefaultStreamConf(), response.getNsProps().getDefaultStreamConf());
 
         return response;
     }
@@ -149,8 +148,8 @@ public class TestRootRangeStoreImpl extends MVCCAsyncStoreTestBase {
         CompletableFuture<GetNamespaceResponse> getFuture = rootRangeStore.getNamespace(
             createGetNamespaceRequest(nsName));
         GetNamespaceResponse getResp = FutureUtils.result(getFuture);
-        assertEquals(expectedNsId, getResp.getColProps().getNamespaceId());
-        assertEquals(streamConf, getResp.getColProps().getDefaultStreamConf());
+        assertEquals(expectedNsId, getResp.getNsProps().getNamespaceId());
+        assertEquals(streamConf, getResp.getNsProps().getDefaultStreamConf());
     }
 
     @Test
@@ -170,7 +169,7 @@ public class TestRootRangeStoreImpl extends MVCCAsyncStoreTestBase {
 
         CreateNamespaceResponse response = createNamespaceAndVerify(nsName, 0L);
 
-        verifyNamespaceExists(nsName, response.getColProps().getNamespaceId());
+        verifyNamespaceExists(nsName, response.getNsProps().getNamespaceId());
         verifyNamespaceId(0L);
     }
 
@@ -180,7 +179,7 @@ public class TestRootRangeStoreImpl extends MVCCAsyncStoreTestBase {
 
         // create first namespace
         CreateNamespaceResponse response = createNamespaceAndVerify(nsName, 0L);
-        verifyNamespaceExists(nsName, response.getColProps().getNamespaceId());
+        verifyNamespaceExists(nsName, response.getNsProps().getNamespaceId());
         verifyNamespaceId(0L);
 
         // create the namespace with same name will fail
@@ -215,11 +214,11 @@ public class TestRootRangeStoreImpl extends MVCCAsyncStoreTestBase {
         String nsName = name.getMethodName();
 
         CreateNamespaceResponse createResp = createNamespaceAndVerify(nsName, 0L);
-        verifyNamespaceExists(nsName, createResp.getColProps().getNamespaceId());
+        verifyNamespaceExists(nsName, createResp.getNsProps().getNamespaceId());
         verifyNamespaceId(0L);
 
         deleteNamespaceAndVerify(nsName);
-        verifyNamespaceNotExists(nsName, createResp.getColProps().getNamespaceId());
+        verifyNamespaceNotExists(nsName, createResp.getNsProps().getNamespaceId());
         verifyNamespaceId(0L);
     }
 
@@ -333,7 +332,7 @@ public class TestRootRangeStoreImpl extends MVCCAsyncStoreTestBase {
         createStreamAndVerify(nsName, streamName, MIN_DATA_STREAM_ID);
 
         verifyStreamExists(
-            createResp.getColProps().getNamespaceId(),
+            createResp.getNsProps().getNamespaceId(),
             streamName,
             MIN_DATA_STREAM_ID);
         verifyStreamId(MIN_DATA_STREAM_ID);
@@ -348,7 +347,7 @@ public class TestRootRangeStoreImpl extends MVCCAsyncStoreTestBase {
         createStreamAndVerify(nsName, streamName, MIN_DATA_STREAM_ID);
 
         verifyStreamExists(
-            createResp.getColProps().getNamespaceId(),
+            createResp.getNsProps().getNamespaceId(),
             streamName,
             MIN_DATA_STREAM_ID);
         verifyStreamId(MIN_DATA_STREAM_ID);
@@ -392,7 +391,7 @@ public class TestRootRangeStoreImpl extends MVCCAsyncStoreTestBase {
         createStreamAndVerify(nsName, streamName, MIN_DATA_STREAM_ID);
 
         verifyStreamExists(
-            createResp.getColProps().getNamespaceId(),
+            createResp.getNsProps().getNamespaceId(),
             streamName,
             MIN_DATA_STREAM_ID);
         verifyStreamId(MIN_DATA_STREAM_ID);
@@ -403,7 +402,7 @@ public class TestRootRangeStoreImpl extends MVCCAsyncStoreTestBase {
         assertEquals(StatusCode.SUCCESS, deleteResp.getCode());
 
         verifyStreamNotExists(
-            createResp.getColProps().getNamespaceId(),
+            createResp.getNsProps().getNamespaceId(),
             streamName,
             MIN_DATA_STREAM_ID);
         verifyStreamId(MIN_DATA_STREAM_ID);
