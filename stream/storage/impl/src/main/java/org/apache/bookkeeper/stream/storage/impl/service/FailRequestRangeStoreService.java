@@ -18,13 +18,21 @@
 
 package org.apache.bookkeeper.stream.storage.impl.service;
 
-import static org.apache.bookkeeper.stream.protocol.ProtocolConstants.ROOT_STORAGE_CONTAINER_ID;
-
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import java.util.concurrent.CompletableFuture;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.common.util.OrderedScheduler;
+import org.apache.bookkeeper.stream.proto.kv.rpc.DeleteRangeRequest;
+import org.apache.bookkeeper.stream.proto.kv.rpc.DeleteRangeResponse;
+import org.apache.bookkeeper.stream.proto.kv.rpc.IncrementRequest;
+import org.apache.bookkeeper.stream.proto.kv.rpc.IncrementResponse;
+import org.apache.bookkeeper.stream.proto.kv.rpc.PutRequest;
+import org.apache.bookkeeper.stream.proto.kv.rpc.PutResponse;
+import org.apache.bookkeeper.stream.proto.kv.rpc.RangeRequest;
+import org.apache.bookkeeper.stream.proto.kv.rpc.RangeResponse;
+import org.apache.bookkeeper.stream.proto.kv.rpc.TxnRequest;
+import org.apache.bookkeeper.stream.proto.kv.rpc.TxnResponse;
 import org.apache.bookkeeper.stream.proto.storage.CreateNamespaceRequest;
 import org.apache.bookkeeper.stream.proto.storage.CreateNamespaceResponse;
 import org.apache.bookkeeper.stream.proto.storage.CreateStreamRequest;
@@ -33,12 +41,12 @@ import org.apache.bookkeeper.stream.proto.storage.DeleteNamespaceRequest;
 import org.apache.bookkeeper.stream.proto.storage.DeleteNamespaceResponse;
 import org.apache.bookkeeper.stream.proto.storage.DeleteStreamRequest;
 import org.apache.bookkeeper.stream.proto.storage.DeleteStreamResponse;
+import org.apache.bookkeeper.stream.proto.storage.GetActiveRangesRequest;
+import org.apache.bookkeeper.stream.proto.storage.GetActiveRangesResponse;
 import org.apache.bookkeeper.stream.proto.storage.GetNamespaceRequest;
 import org.apache.bookkeeper.stream.proto.storage.GetNamespaceResponse;
 import org.apache.bookkeeper.stream.proto.storage.GetStreamRequest;
 import org.apache.bookkeeper.stream.proto.storage.GetStreamResponse;
-import org.apache.bookkeeper.stream.proto.storage.StorageContainerRequest;
-import org.apache.bookkeeper.stream.proto.storage.StorageContainerResponse;
 import org.apache.bookkeeper.stream.storage.api.metadata.RangeStoreService;
 
 /**
@@ -56,11 +64,10 @@ final class FailRequestRangeStoreService implements RangeStoreService {
         this.scheduler = scheduler;
     }
 
-    private <T> CompletableFuture<T> failWrongGroupRequest(long scId) {
+    private <T> CompletableFuture<T> failWrongGroupRequest() {
         CompletableFuture<T> future = FutureUtils.createFuture();
-        scheduler.executeOrdered(scId, () -> {
-            future.completeExceptionally(new StatusRuntimeException(Status.NOT_FOUND));
-        });
+        scheduler.execute(() ->
+            future.completeExceptionally(new StatusRuntimeException(Status.NOT_FOUND)));
         return future;
     }
 
@@ -80,17 +87,17 @@ final class FailRequestRangeStoreService implements RangeStoreService {
 
     @Override
     public CompletableFuture<CreateNamespaceResponse> createNamespace(CreateNamespaceRequest request) {
-        return failWrongGroupRequest(ROOT_STORAGE_CONTAINER_ID);
+        return failWrongGroupRequest();
     }
 
     @Override
     public CompletableFuture<DeleteNamespaceResponse> deleteNamespace(DeleteNamespaceRequest request) {
-        return failWrongGroupRequest(ROOT_STORAGE_CONTAINER_ID);
+        return failWrongGroupRequest();
     }
 
     @Override
     public CompletableFuture<GetNamespaceResponse> getNamespace(GetNamespaceRequest request) {
-        return failWrongGroupRequest(ROOT_STORAGE_CONTAINER_ID);
+        return failWrongGroupRequest();
     }
 
     //
@@ -99,17 +106,17 @@ final class FailRequestRangeStoreService implements RangeStoreService {
 
     @Override
     public CompletableFuture<CreateStreamResponse> createStream(CreateStreamRequest request) {
-        return failWrongGroupRequest(ROOT_STORAGE_CONTAINER_ID);
+        return failWrongGroupRequest();
     }
 
     @Override
     public CompletableFuture<DeleteStreamResponse> deleteStream(DeleteStreamRequest request) {
-        return failWrongGroupRequest(ROOT_STORAGE_CONTAINER_ID);
+        return failWrongGroupRequest();
     }
 
     @Override
     public CompletableFuture<GetStreamResponse> getStream(GetStreamRequest request) {
-        return failWrongGroupRequest(ROOT_STORAGE_CONTAINER_ID);
+        return failWrongGroupRequest();
     }
 
     //
@@ -117,8 +124,8 @@ final class FailRequestRangeStoreService implements RangeStoreService {
     //
 
     @Override
-    public CompletableFuture<StorageContainerResponse> getActiveRanges(StorageContainerRequest request) {
-        return failWrongGroupRequest(request.getScId());
+    public CompletableFuture<GetActiveRangesResponse> getActiveRanges(GetActiveRangesRequest request) {
+        return failWrongGroupRequest();
     }
 
     //
@@ -127,27 +134,27 @@ final class FailRequestRangeStoreService implements RangeStoreService {
 
 
     @Override
-    public CompletableFuture<StorageContainerResponse> range(StorageContainerRequest request) {
-        return failWrongGroupRequest(request.getScId());
+    public CompletableFuture<RangeResponse> range(RangeRequest request) {
+        return failWrongGroupRequest();
     }
 
     @Override
-    public CompletableFuture<StorageContainerResponse> put(StorageContainerRequest request) {
-        return failWrongGroupRequest(request.getScId());
+    public CompletableFuture<PutResponse> put(PutRequest request) {
+        return failWrongGroupRequest();
     }
 
     @Override
-    public CompletableFuture<StorageContainerResponse> delete(StorageContainerRequest request) {
-        return failWrongGroupRequest(request.getScId());
+    public CompletableFuture<DeleteRangeResponse> delete(DeleteRangeRequest request) {
+        return failWrongGroupRequest();
     }
 
     @Override
-    public CompletableFuture<StorageContainerResponse> txn(StorageContainerRequest request) {
-        return failWrongGroupRequest(request.getScId());
+    public CompletableFuture<TxnResponse> txn(TxnRequest request) {
+        return failWrongGroupRequest();
     }
 
     @Override
-    public CompletableFuture<StorageContainerResponse> incr(StorageContainerRequest request) {
-        return failWrongGroupRequest(request.getScId());
+    public CompletableFuture<IncrementResponse> incr(IncrementRequest request) {
+        return failWrongGroupRequest();
     }
 }

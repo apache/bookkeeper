@@ -17,16 +17,8 @@ package org.apache.bookkeeper.clients.impl.kv;
 import static com.google.common.base.Charsets.UTF_8;
 import static org.apache.bookkeeper.clients.impl.kv.KvUtils.newDeleteRequest;
 import static org.apache.bookkeeper.clients.impl.kv.KvUtils.newIncrementRequest;
-import static org.apache.bookkeeper.clients.impl.kv.KvUtils.newKvDeleteRequest;
-import static org.apache.bookkeeper.clients.impl.kv.KvUtils.newKvIncrementRequest;
-import static org.apache.bookkeeper.clients.impl.kv.KvUtils.newKvPutRequest;
-import static org.apache.bookkeeper.clients.impl.kv.KvUtils.newKvRangeRequest;
 import static org.apache.bookkeeper.clients.impl.kv.KvUtils.newPutRequest;
 import static org.apache.bookkeeper.clients.impl.kv.KvUtils.newRangeRequest;
-import static org.apache.bookkeeper.stream.proto.storage.StorageContainerRequest.RequestCase.KV_DELETE_REQ;
-import static org.apache.bookkeeper.stream.proto.storage.StorageContainerRequest.RequestCase.KV_INCR_REQ;
-import static org.apache.bookkeeper.stream.proto.storage.StorageContainerRequest.RequestCase.KV_PUT_REQ;
-import static org.apache.bookkeeper.stream.proto.storage.StorageContainerRequest.RequestCase.KV_RANGE_REQ;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -45,7 +37,6 @@ import org.apache.bookkeeper.stream.proto.kv.rpc.DeleteRangeRequest;
 import org.apache.bookkeeper.stream.proto.kv.rpc.IncrementRequest;
 import org.apache.bookkeeper.stream.proto.kv.rpc.PutRequest;
 import org.apache.bookkeeper.stream.proto.kv.rpc.RangeRequest;
-import org.apache.bookkeeper.stream.proto.storage.StorageContainerRequest;
 import org.junit.Test;
 
 /**
@@ -89,26 +80,6 @@ public class TestKvUtils {
     }
 
     @Test
-    public void testNewKvRangeRequest() {
-        try (RangeOption<ByteBuf> rangeOption = optionFactory.newRangeOption()
-            .endKey(key.retainedDuplicate())
-            .countOnly(true)
-            .keysOnly(true)
-            .limit(10)
-            .maxCreateRev(1234L)
-            .minCreateRev(234L)
-            .maxModRev(2345L)
-            .minModRev(1235L)
-            .build()) {
-            RangeRequest.Builder rrBuilder = newRangeRequest(key, rangeOption);
-            StorageContainerRequest request = newKvRangeRequest(scId, rrBuilder);
-            assertEquals(scId, request.getScId());
-            assertEquals(KV_RANGE_REQ, request.getRequestCase());
-            assertEquals(rrBuilder.build(), request.getKvRangeReq());
-        }
-    }
-
-    @Test
     public void testNewPutRequest() {
         try (PutOption<ByteBuf> option = Options.putAndGet()) {
             PutRequest rr = newPutRequest(key, value, option).build();
@@ -116,17 +87,6 @@ public class TestKvUtils {
             assertEquals(valueBs, rr.getValue());
             assertTrue(rr.getPrevKv());
             assertFalse(rr.hasHeader());
-        }
-    }
-
-    @Test
-    public void testNewKvPutRequest() {
-        try (PutOption<ByteBuf> option = Options.putAndGet()) {
-            PutRequest.Builder putBuilder = newPutRequest(key, value, option);
-            StorageContainerRequest request = newKvPutRequest(scId, putBuilder);
-            assertEquals(scId, request.getScId());
-            assertEquals(KV_PUT_REQ, request.getRequestCase());
-            assertEquals(putBuilder.build(), request.getKvPutReq());
         }
     }
 
@@ -142,17 +102,6 @@ public class TestKvUtils {
     }
 
     @Test
-    public void testNewKvIncrementRequest() {
-        try (IncrementOption<ByteBuf> option = Options.incrementAndGet()) {
-            IncrementRequest.Builder incrBuilder = newIncrementRequest(key, 100L, option);
-            StorageContainerRequest request = newKvIncrementRequest(scId, incrBuilder);
-            assertEquals(scId, request.getScId());
-            assertEquals(KV_INCR_REQ, request.getRequestCase());
-            assertEquals(incrBuilder.build(), request.getKvIncrReq());
-        }
-    }
-
-    @Test
     public void testNewDeleteRequest() {
         try (DeleteOption<ByteBuf> option = optionFactory.newDeleteOption()
             .endKey(key.retainedDuplicate())
@@ -163,20 +112,6 @@ public class TestKvUtils {
             assertEquals(keyBs, rr.getRangeEnd());
             assertTrue(rr.getPrevKv());
             assertFalse(rr.hasHeader());
-        }
-    }
-
-    @Test
-    public void testNewKvDeleteRequest() {
-        try (DeleteOption<ByteBuf> option = optionFactory.newDeleteOption()
-            .endKey(key.retainedDuplicate())
-            .prevKv(true)
-            .build()) {
-            DeleteRangeRequest.Builder delBuilder = newDeleteRequest(key, option);
-            StorageContainerRequest request = newKvDeleteRequest(scId, delBuilder);
-            assertEquals(scId, request.getScId());
-            assertEquals(KV_DELETE_REQ, request.getRequestCase());
-            assertEquals(delBuilder.build(), request.getKvDeleteReq());
         }
     }
 

@@ -18,12 +18,6 @@
 
 package org.apache.bookkeeper.stream.storage.impl.service;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static org.apache.bookkeeper.stream.proto.storage.StorageContainerRequest.RequestCase.KV_DELETE_REQ;
-import static org.apache.bookkeeper.stream.proto.storage.StorageContainerRequest.RequestCase.KV_INCR_REQ;
-import static org.apache.bookkeeper.stream.proto.storage.StorageContainerRequest.RequestCase.KV_PUT_REQ;
-import static org.apache.bookkeeper.stream.proto.storage.StorageContainerRequest.RequestCase.KV_RANGE_REQ;
-import static org.apache.bookkeeper.stream.proto.storage.StorageContainerRequest.RequestCase.KV_TXN_REQ;
 import static org.apache.bookkeeper.stream.protocol.ProtocolConstants.CONTAINER_META_RANGE_ID;
 import static org.apache.bookkeeper.stream.protocol.ProtocolConstants.CONTAINER_META_STREAM_ID;
 import static org.apache.bookkeeper.stream.protocol.ProtocolConstants.ROOT_RANGE_ID;
@@ -40,11 +34,16 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.bookkeeper.stream.proto.kv.rpc.DeleteRangeRequest;
+import org.apache.bookkeeper.stream.proto.kv.rpc.DeleteRangeResponse;
 import org.apache.bookkeeper.stream.proto.kv.rpc.IncrementRequest;
+import org.apache.bookkeeper.stream.proto.kv.rpc.IncrementResponse;
 import org.apache.bookkeeper.stream.proto.kv.rpc.PutRequest;
+import org.apache.bookkeeper.stream.proto.kv.rpc.PutResponse;
 import org.apache.bookkeeper.stream.proto.kv.rpc.RangeRequest;
+import org.apache.bookkeeper.stream.proto.kv.rpc.RangeResponse;
 import org.apache.bookkeeper.stream.proto.kv.rpc.RoutingHeader;
 import org.apache.bookkeeper.stream.proto.kv.rpc.TxnRequest;
+import org.apache.bookkeeper.stream.proto.kv.rpc.TxnResponse;
 import org.apache.bookkeeper.stream.proto.storage.CreateNamespaceRequest;
 import org.apache.bookkeeper.stream.proto.storage.CreateNamespaceResponse;
 import org.apache.bookkeeper.stream.proto.storage.CreateStreamRequest;
@@ -53,12 +52,12 @@ import org.apache.bookkeeper.stream.proto.storage.DeleteNamespaceRequest;
 import org.apache.bookkeeper.stream.proto.storage.DeleteNamespaceResponse;
 import org.apache.bookkeeper.stream.proto.storage.DeleteStreamRequest;
 import org.apache.bookkeeper.stream.proto.storage.DeleteStreamResponse;
+import org.apache.bookkeeper.stream.proto.storage.GetActiveRangesRequest;
+import org.apache.bookkeeper.stream.proto.storage.GetActiveRangesResponse;
 import org.apache.bookkeeper.stream.proto.storage.GetNamespaceRequest;
 import org.apache.bookkeeper.stream.proto.storage.GetNamespaceResponse;
 import org.apache.bookkeeper.stream.proto.storage.GetStreamRequest;
 import org.apache.bookkeeper.stream.proto.storage.GetStreamResponse;
-import org.apache.bookkeeper.stream.proto.storage.StorageContainerRequest;
-import org.apache.bookkeeper.stream.proto.storage.StorageContainerResponse;
 import org.apache.bookkeeper.stream.protocol.RangeId;
 import org.apache.bookkeeper.stream.protocol.util.StorageContainerPlacementPolicy;
 import org.apache.bookkeeper.stream.storage.api.kv.TableStore;
@@ -232,7 +231,7 @@ class RangeStoreServiceImpl implements RangeStoreService, AutoCloseable {
     //
 
     @Override
-    public CompletableFuture<StorageContainerResponse> getActiveRanges(StorageContainerRequest request) {
+    public CompletableFuture<GetActiveRangesResponse> getActiveRanges(GetActiveRangesRequest request) {
         return mgStore.getActiveRanges(request);
     }
 
@@ -242,12 +241,8 @@ class RangeStoreServiceImpl implements RangeStoreService, AutoCloseable {
 
 
     @Override
-    public CompletableFuture<StorageContainerResponse> range(StorageContainerRequest request) {
-        checkArgument(KV_RANGE_REQ == request.getRequestCase());
-
-        long scId = request.getScId();
-        RangeRequest rr = request.getKvRangeReq();
-        RoutingHeader header = rr.getHeader();
+    public CompletableFuture<RangeResponse> range(RangeRequest request) {
+        RoutingHeader header = request.getHeader();
 
         RangeId rid = RangeId.of(header.getStreamId(), header.getRangeId());
         TableStore store = tableStoreCache.getTableStore(rid);
@@ -260,12 +255,8 @@ class RangeStoreServiceImpl implements RangeStoreService, AutoCloseable {
     }
 
     @Override
-    public CompletableFuture<StorageContainerResponse> put(StorageContainerRequest request) {
-        checkArgument(KV_PUT_REQ == request.getRequestCase());
-
-        long scId = request.getScId();
-        PutRequest rr = request.getKvPutReq();
-        RoutingHeader header = rr.getHeader();
+    public CompletableFuture<PutResponse> put(PutRequest request) {
+        RoutingHeader header = request.getHeader();
 
         RangeId rid = RangeId.of(header.getStreamId(), header.getRangeId());
         TableStore store = tableStoreCache.getTableStore(rid);
@@ -278,12 +269,8 @@ class RangeStoreServiceImpl implements RangeStoreService, AutoCloseable {
     }
 
     @Override
-    public CompletableFuture<StorageContainerResponse> delete(StorageContainerRequest request) {
-        checkArgument(KV_DELETE_REQ == request.getRequestCase());
-
-        long scId = request.getScId();
-        DeleteRangeRequest rr = request.getKvDeleteReq();
-        RoutingHeader header = rr.getHeader();
+    public CompletableFuture<DeleteRangeResponse> delete(DeleteRangeRequest request) {
+        RoutingHeader header = request.getHeader();
 
         RangeId rid = RangeId.of(header.getStreamId(), header.getRangeId());
         TableStore store = tableStoreCache.getTableStore(rid);
@@ -296,12 +283,8 @@ class RangeStoreServiceImpl implements RangeStoreService, AutoCloseable {
     }
 
     @Override
-    public CompletableFuture<StorageContainerResponse> txn(StorageContainerRequest request) {
-        checkArgument(KV_TXN_REQ == request.getRequestCase());
-
-        long scId = request.getScId();
-        TxnRequest rr = request.getKvTxnReq();
-        RoutingHeader header = rr.getHeader();
+    public CompletableFuture<TxnResponse> txn(TxnRequest request) {
+        RoutingHeader header = request.getHeader();
 
         RangeId rid = RangeId.of(header.getStreamId(), header.getRangeId());
         TableStore store = tableStoreCache.getTableStore(rid);
@@ -314,12 +297,8 @@ class RangeStoreServiceImpl implements RangeStoreService, AutoCloseable {
     }
 
     @Override
-    public CompletableFuture<StorageContainerResponse> incr(StorageContainerRequest request) {
-        checkArgument(KV_INCR_REQ == request.getRequestCase());
-
-        long scId = request.getScId();
-        IncrementRequest ir = request.getKvIncrReq();
-        RoutingHeader header = ir.getHeader();
+    public CompletableFuture<IncrementResponse> incr(IncrementRequest request) {
+        RoutingHeader header = request.getHeader();
 
         RangeId rid = RangeId.of(header.getStreamId(), header.getRangeId());
         TableStore store = tableStoreCache.getTableStore(rid);
