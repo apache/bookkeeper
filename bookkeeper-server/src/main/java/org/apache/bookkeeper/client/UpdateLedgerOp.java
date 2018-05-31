@@ -77,8 +77,6 @@ public class UpdateLedgerOp {
      * @throws IOException
      *             if there is an error when updating bookie id in ledger
      *             metadata
-     * @throws InterruptedException
-     *             interrupted exception when update ledger meta
      */
     public void updateBookieIdInLedgers(final BookieSocketAddress oldBookieId, final BookieSocketAddress newBookieId,
             final int rate, final int limit, final UpdateLedgerNotifier progressable) throws IOException {
