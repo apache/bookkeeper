@@ -22,7 +22,6 @@ import static com.google.common.base.Charsets.UTF_8;
 import static org.apache.bookkeeper.stream.protocol.ProtocolConstants.MIN_DATA_STREAM_ID;
 import static org.apache.bookkeeper.stream.protocol.util.ProtoUtils.validateNamespaceName;
 import static org.apache.bookkeeper.stream.protocol.util.ProtoUtils.validateStreamName;
-import static org.apache.commons.lang3.StringUtils.isBlank;
 
 import com.google.protobuf.InvalidProtocolBufferException;
 import java.net.URI;
@@ -220,7 +219,7 @@ public class RootRangeStoreImpl
             .setProps(NamespaceProperties.newBuilder()
                 .setNamespaceId(namespaceId)
                 .setNamespaceName(nsName)
-                .setDefaultStreamConf(request.getColConf().getDefaultStreamConf()))
+                .setDefaultStreamConf(request.getNsConf().getDefaultStreamConf()))
             .build();
 
         byte[] nsNameKey = getNamespaceNameKey(nsName);
@@ -246,7 +245,7 @@ public class RootRangeStoreImpl
                     CreateNamespaceResponse.Builder respBuilder = CreateNamespaceResponse.newBuilder();
                     if (txnResult.isSuccess()) {
                         respBuilder.setCode(StatusCode.SUCCESS);
-                        respBuilder.setColProps(metadata.getProps());
+                        respBuilder.setNsProps(metadata.getProps());
                     } else {
                         // TODO: differentiate the error code
                         respBuilder.setCode(StatusCode.INTERNAL_SERVER_ERROR);
@@ -341,7 +340,7 @@ public class RootRangeStoreImpl
                     nsRespBuilder.setCode(StatusCode.NAMESPACE_NOT_FOUND);
                 } else {
                     nsRespBuilder.setCode(StatusCode.SUCCESS);
-                    nsRespBuilder.setColProps(nsMetadata.getProps());
+                    nsRespBuilder.setNsProps(nsMetadata.getProps());
                 }
                 return nsRespBuilder.build();
             });
@@ -379,7 +378,7 @@ public class RootRangeStoreImpl
     @Override
     public CompletableFuture<CreateStreamResponse> createStream(CreateStreamRequest request) {
         String streamName = request.getName();
-        String nsName = request.getColName();
+        String nsName = request.getNsName();
 
         StatusCode code = verifyStreamRequest(nsName, streamName);
         if (StatusCode.SUCCESS != code) {
@@ -457,19 +456,11 @@ public class RootRangeStoreImpl
         long scId = placementPolicy.placeStreamRange(streamId, 0L);
 
 
-        StreamConfiguration newStreamConf = streamConf;
-        // no backend service url is provided, use the default service url
-        if (isBlank(streamConf.getBackendServiceUrl())) {
-            newStreamConf = StreamConfiguration.newBuilder(streamConf)
-                .setBackendServiceUrl(defaultServiceUri.toString())
-                .build();
-        }
-
         StreamProperties streamProps = StreamProperties.newBuilder()
             .setStreamId(streamId)
             .setStreamName(streamName)
             .setStorageContainerId(scId)
-            .setStreamConf(newStreamConf)
+            .setStreamConf(streamConf)
             .build();
 
         byte[] nsIdKey = getNamespaceIdKey(nsId);
@@ -519,7 +510,7 @@ public class RootRangeStoreImpl
     @Override
     public CompletableFuture<DeleteStreamResponse> deleteStream(DeleteStreamRequest request) {
         String streamName = request.getName();
-        String nsName = request.getColName();
+        String nsName = request.getNsName();
 
         StatusCode code = verifyStreamRequest(nsName, streamName);
         if (StatusCode.SUCCESS != code) {
@@ -599,12 +590,14 @@ public class RootRangeStoreImpl
     public CompletableFuture<GetStreamResponse> getStream(GetStreamRequest request) {
         StreamName streamName = request.getStreamName();
 
-        StatusCode code = verifyStreamRequest(streamName.getColName(), streamName.getStreamName());
+        StatusCode code = verifyStreamRequest(
+            streamName.getNamespaceName(),
+            streamName.getStreamName());
         if (StatusCode.SUCCESS != code) {
             return FutureUtils.value(GetStreamResponse.newBuilder().setCode(code).build());
         }
 
-        byte[] nsNameKey = getNamespaceNameKey(streamName.getColName());
+        byte[] nsNameKey = getNamespaceNameKey(streamName.getNamespaceName());
         GetStreamResponse.Builder respBuilder = GetStreamResponse.newBuilder();
         return store.get(nsNameKey)
             .thenCompose(nsIdBytes -> {
