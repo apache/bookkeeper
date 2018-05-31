@@ -46,7 +46,8 @@ public interface CreateBuilder extends OpBuilder<WriteHandle> {
     CreateBuilder withEnsembleSize(int ensembleSize);
 
     /**
-     * Set the number of bookies which receive every single entry. In case of ensembleSize > writeQuorumSize data will
+     * Set the number of bookies which receive every single entry.
+     * In case of ensembleSize &gt; writeQuorumSize data will
      * be striped across a number of ensembleSize bookies. It defaults to 2.
      *
      * @param writeQuorumSize the replication factor for each entry

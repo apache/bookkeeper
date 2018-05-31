@@ -19,7 +19,6 @@ package org.apache.bookkeeper.client;
 
 import io.netty.util.HashedWheelTimer;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -42,12 +41,12 @@ import org.apache.bookkeeper.stats.StatsLogger;
  *
  * <h2>How does it work?</h2>
  *
- * <p>This interface basically covers three parts:
+ * <p>This interface basically covers three parts:</p>
  * <ul>
  * <li>Initialization and uninitialization</li>
  * <li>How to choose bookies to place data</li>
  * <li>How to choose bookies to do speculative reads</li>
- * </ul></p>
+ * </ul>
  *
  * <h3>Initialization and uninitialization</h3>
  *
@@ -59,7 +58,7 @@ import org.apache.bookkeeper.stats.StatsLogger;
  * <p>The {@link #initialize(ClientConfiguration, Optional, HashedWheelTimer, FeatureProvider, StatsLogger)}
  * method takes a few resources from bookkeeper for instantiating itself. These resources include:
  *
- * <p><ul>
+ * <ul>
  * <li>`ClientConfiguration` : The client configuration that used for constructing the bookkeeper client.
  *                             The implementation of the placement policy could obtain its settings from this
  *                             configuration.
@@ -72,7 +71,7 @@ import org.apache.bookkeeper.stats.StatsLogger;
  *                        features. For example, a {@link RegionAwareEnsemblePlacementPolicy} could offer features
  *                        to disable placing data to a specific region at runtime.
  * <li>`StatsLogger`: A {@link StatsLogger} for exposing stats.
- * </ul></p>
+ * </ul>
  *
  * <p>The ensemble placement policy is a single instance per bookkeeper client. The instance will
  * be {@link #uninitalize()} when closing the bookkeeper client. The implementation of a placement policy should be
@@ -85,7 +84,9 @@ import org.apache.bookkeeper.stats.StatsLogger;
  * bookie changes, the ensemble placement policy will be notified with new list of bookies via
  * {@link #onClusterChanged(Set, Set)}. The implementation of the ensemble placement policy will react on those
  * changes to build new network topology. Subsequent operations like {@link #newEnsemble(int, int, int, Map, Set)} or
- * {@link #replaceBookie(int, int, int, Map, Collection, BookieSocketAddress, Set)} hence can operate on the new
+ * {@link #replaceBookie(int, int, int, java.util.Map, java.util.Set,
+ * org.apache.bookkeeper.net.BookieSocketAddress, java.util.Set)}
+ * hence can operate on the new
  * network topology.
  *
  * <p>Both {@link RackawareEnsemblePlacementPolicy} and {@link RegionAwareEnsemblePlacementPolicy} are
@@ -158,12 +159,12 @@ import org.apache.bookkeeper.stats.StatsLogger;
  *
  * <p>For example, in {@link RackawareEnsemblePlacementPolicy}, the reads will be attempted in following sequence:
  *
- * <p><ul>
+ * <ul>
  * <li>bookies are writable and didn't experience failures before
  * <li>bookies are writable and experienced failures before
  * <li>bookies are readonly
  * <li>bookies already disappeared from network topology
- * </ul></p>
+ * </ul>
  *
  * <p>In {@link RegionAwareEnsemblePlacementPolicy}, the reads will be tried in similar following sequence
  * as `RackAware` placement policy. There is a slight different on trying writable bookies: after trying every 2
@@ -224,7 +225,9 @@ public interface EnsemblePlacementPolicy {
      *
      * <p>The implementation should take actions when the cluster view is changed. So subsequent
      * {@link #newEnsemble(int, int, int, Map, Set)} and
-     * {@link #replaceBookie(int, int, int, Map, Collection, BookieSocketAddress, Set)} can choose proper bookies.
+     * {@link #replaceBookie(int, int, int, java.util.Map, java.util.Set,
+     * org.apache.bookkeeper.net.BookieSocketAddress, java.util.Set) }
+     * can choose proper bookies.
      *
      * @param writableBookies
      *          All the bookies in the cluster available for write/read.

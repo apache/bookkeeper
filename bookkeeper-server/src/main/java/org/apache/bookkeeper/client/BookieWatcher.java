@@ -262,7 +262,6 @@ class BookieWatcher {
     /**
      * Quarantine <i>bookie</i> so it will not be preferred to be chosen for new ensembles.
      * @param bookie
-     * @return
      */
     public void quarantineBookie(BookieSocketAddress bookie) {
         if (quarantinedBookies.getIfPresent(bookie) == null) {
