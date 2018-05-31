@@ -81,7 +81,7 @@ public abstract class StreamClusterTestBase extends BookKeeperClusterTestBase {
         String serviceUri = String.format(
             "bk://%s/",
             getExsternalStreamEndpoints().stream()
-                .map(endpoint -> endpoint.toString())
+                .map(endpoint -> NetUtils.endpointToString(endpoint))
                 .collect(Collectors.joining(",")));
         return StorageClientSettings.newBuilder()
             .serviceUri(serviceUri)

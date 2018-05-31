@@ -16,17 +16,19 @@
  * limitations under the License.
  */
 
-package org.apache.bookkeeper.clients.impl.grpc;
+package org.apache.bookkeeper.clients.utils;
 
 import io.grpc.ManagedChannelBuilder;
-import io.grpc.NameResolverProvider;
 import io.grpc.inprocess.InProcessChannelBuilder;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.clients.config.StorageClientSettings;
 import org.apache.bookkeeper.common.net.ServiceURI;
+import org.apache.bookkeeper.common.resolver.ServiceNameResolverProvider;
 
 /**
  * Utils to create grpc channels.
  */
+@Slf4j
 public final class GrpcChannels {
 
     private static final String BACKEND_INPROCESS = "inprocess";
@@ -51,7 +53,7 @@ public final class GrpcChannels {
             builder = InProcessChannelBuilder.forName(serviceName).directExecutor();
         } else {
             builder = ManagedChannelBuilder.forTarget(serviceUri)
-                .nameResolverFactory(NameResolverProvider.asFactory());
+                .nameResolverFactory(new ServiceNameResolverProvider().toFactory());
         }
         if (settings.usePlaintext()) {
             builder = builder.usePlaintext();

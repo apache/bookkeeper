@@ -18,6 +18,8 @@
 
 package org.apache.bookkeeper.common.resolver;
 
+import static com.google.common.base.Preconditions.checkState;
+
 import com.google.common.base.Function;
 import com.google.common.collect.Lists;
 import io.grpc.Attributes;
@@ -30,6 +32,7 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import javax.annotation.Nullable;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.common.net.ServiceURI;
 import org.apache.bookkeeper.common.util.SharedResourceManager.Resource;
 
@@ -37,6 +40,7 @@ import org.apache.bookkeeper.common.util.SharedResourceManager.Resource;
  * An implementation of {@link NameResolverProvider} that provides {@link NameResolver}s
  * to resolve {@link org.apache.bookkeeper.common.net.ServiceURI}.
  */
+@Slf4j
 public final class ServiceNameResolverProvider extends NameResolverProvider {
 
     private final DnsNameResolverProvider dnsProvider;
@@ -75,6 +79,8 @@ public final class ServiceNameResolverProvider extends NameResolverProvider {
             serviceURI = ServiceURI.create(targetUri);
         } catch (NullPointerException | IllegalArgumentException e) {
             // invalid uri here, so return null to allow grpc to use other name resolvers
+            log.info("ServiceNameResolverProvider doesn't know how to resolve {} : cause {}",
+                targetUri, e.getMessage());
             return null;
         }
 
@@ -119,5 +125,40 @@ public final class ServiceNameResolverProvider extends NameResolverProvider {
     @Override
     public String getDefaultScheme() {
         return ServiceURI.SERVICE_BK;
+    }
+
+    public NameResolver.Factory toFactory() {
+        return new NameResolverFactory(Lists.newArrayList(this));
+    }
+
+    private static class NameResolverFactory extends NameResolver.Factory {
+        private final List<NameResolverProvider> providers;
+
+        public NameResolverFactory(List<NameResolverProvider> providers) {
+            this.providers = providers;
+        }
+
+        @Override
+        public NameResolver newNameResolver(URI targetUri, Attributes params) {
+            checkForProviders();
+            for (NameResolverProvider provider : providers) {
+                NameResolver resolver = provider.newNameResolver(targetUri, params);
+                if (resolver != null) {
+                    return resolver;
+                }
+            }
+            return null;
+        }
+
+        @Override
+        public String getDefaultScheme() {
+            checkForProviders();
+            return providers.get(0).getDefaultScheme();
+        }
+
+        private void checkForProviders() {
+            checkState(!providers.isEmpty(),
+                "No NameResolverProviders found. Please check your configuration");
+        }
     }
 }

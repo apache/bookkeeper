@@ -35,6 +35,7 @@ import org.apache.bookkeeper.clients.StorageClientBuilder;
 import org.apache.bookkeeper.clients.admin.StorageAdminClient;
 import org.apache.bookkeeper.clients.config.StorageClientSettings;
 import org.apache.bookkeeper.clients.exceptions.NamespaceExistsException;
+import org.apache.bookkeeper.clients.utils.NetUtils;
 import org.apache.bookkeeper.common.component.AbstractLifecycleComponent;
 import org.apache.bookkeeper.common.component.LifecycleComponent;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -232,7 +233,7 @@ public class StreamCluster
         String serviceUri = String.format(
             "bk://%s/",
             getRpcEndpoints().stream()
-                .map(endpoint -> endpoint.toString())
+                .map(endpoint -> NetUtils.endpointToString(endpoint))
                 .collect(Collectors.joining(",")));
         StorageClientSettings settings = StorageClientSettings.newBuilder()
             .serviceUri(serviceUri)

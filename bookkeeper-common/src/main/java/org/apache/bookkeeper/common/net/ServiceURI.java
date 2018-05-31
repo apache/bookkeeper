@@ -24,6 +24,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.net.URI;
 import java.util.List;
 import lombok.AccessLevel;
@@ -74,7 +75,8 @@ import org.apache.commons.lang.StringUtils;
  * <p>All told, then, a service URI instance has the following components:
  *
  * <blockquote>
- * <table summary="Describes the components of a service URI:service,service-specific-part,authority,user-info,host,port,path">
+ * <table summary="Describes the components of a service
+ * URI:service,service-specific-part,authority,user-info,host,port,path">
  * <tr><td>service</td><td>{@code String}</td></tr>
  * <tr><td>service-specific-part&nbsp;&nbsp;&nbsp;&nbsp;</td><td>{@code String}</td></tr>
  * <tr><td>authority</td><td>{@code String}</td></tr>
@@ -93,8 +95,8 @@ import org.apache.commons.lang.StringUtils;
  * {@code etcd://localhost/ledgers} =&gt; ledger service uri using etcd as metadata store<br>
  * {@code distributedlog://localhost:2181/distributedlog} =&gt; distributedlog namespace<br>
  * {@code distributedlog-bk://localhost:2181/distributedlog} =&gt; distributedlog namespace with bk backend<br>
- * {@code bk://bookkeeper-cluster/ =&gt; stream storage service uri <br>
- * {@code host1:port,host2:port =&gt; a list of hosts as bootstrap hosts to a stream storage cluster}
+ * {@code bk://bookkeeper-cluster/} =&gt; stream storage service uri <br>
+ * {@code host1:port,host2:port} =&gt; a list of hosts as bootstrap hosts to a stream storage cluster}
  * </blockquote>
  *
  * @since 4.8.0
@@ -125,7 +127,7 @@ public class ServiceURI {
     private static final String SERVICE_DLOG_SEP = "-";
 
     /**
-     * Create a service uri instance from a uri string
+     * Create a service uri instance from a uri string.
      *
      * @param uriStr service uri string
      * @return a service uri instance
@@ -219,5 +221,15 @@ public class ServiceURI {
     private final String[] serviceHosts;
     private final String servicePath;
     private final URI uri;
+
+    @SuppressFBWarnings("EI_EXPOSE_REP")
+    public String[] getServiceInfos() {
+        return serviceInfos;
+    }
+
+    @SuppressFBWarnings("EI_EXPOSE_REP")
+    public String[] getServiceHosts() {
+        return serviceHosts;
+    }
 
 }
