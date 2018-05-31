@@ -48,7 +48,7 @@ import org.slf4j.LoggerFactory;
  * We continue to serve edits out of new EntrySkipList and backing snapshot until
  * flusher reports in that the flush succeeded. At that point we let the snapshot go.
  */
-public class EntryMemTable implements AutoCloseable{
+public class EntryMemTable implements AutoCloseable {
     private static Logger logger = LoggerFactory.getLogger(Journal.class);
 
     /**
@@ -280,9 +280,14 @@ public class EntryMemTable implements AutoCloseable{
             // create a new snapshot and let the old one go.
             assert this.snapshot == keyValues;
             this.snapshot = EntrySkipList.EMPTY_VALUE;
+
+
         } finally {
             this.lock.writeLock().unlock();
         }
+
+        // recycle all the kvs once snapshot is swapped.
+        keyValues.forEach((key, kv) -> kv.release());
     }
 
     /**
@@ -347,6 +352,8 @@ public class EntryMemTable implements AutoCloseable{
         if (kvmap.putIfAbsent(toAdd, toAdd) == null) {
             sizeChange = toAdd.getLength();
             size.addAndGet(sizeChange);
+        } else { // fail to put the entry into the buffer, recycle the object
+            toAdd.release();
         }
         return sizeChange;
     }
@@ -363,7 +370,7 @@ public class EntryMemTable implements AutoCloseable{
             buf = new byte[length];
             entry.get(buf);
         }
-        return new EntryKeyValue(ledgerId, entryId, buf, offset, length);
+        return EntryKeyValue.of(ledgerId, entryId, buf, offset, length);
     }
 
     private EntryKeyValue cloneWithAllocator(long ledgerId, long entryId, final ByteBuffer entry) {
@@ -377,7 +384,7 @@ public class EntryMemTable implements AutoCloseable{
 
         assert alloc.getData() != null;
         entry.get(alloc.getData(), alloc.getOffset(), len);
-        return new EntryKeyValue(ledgerId, entryId, alloc.getData(), alloc.getOffset(), len);
+        return EntryKeyValue.of(ledgerId, entryId, alloc.getData(), alloc.getOffset(), len);
     }
 
     /**
@@ -387,7 +394,7 @@ public class EntryMemTable implements AutoCloseable{
      * @return the entry kv or null if none found.
      */
     public EntryKeyValue getEntry(long ledgerId, long entryId) throws IOException {
-        EntryKey key = new EntryKey(ledgerId, entryId);
+        EntryKey key = EntryKeyImpl.of(ledgerId, entryId);
         EntryKeyValue value = null;
         long startTimeNanos = MathUtils.nowInNano();
         boolean success = false;
@@ -397,6 +404,9 @@ public class EntryMemTable implements AutoCloseable{
             if (value == null) {
                 value = this.snapshot.get(key);
             }
+            if (value != null) {
+                value.retain();
+            }
             success = true;
         } finally {
             this.lock.readLock().unlock();
@@ -405,6 +415,7 @@ public class EntryMemTable implements AutoCloseable{
             } else {
                 getEntryStats.registerFailedEvent(MathUtils.elapsedNanos(startTimeNanos), TimeUnit.NANOSECONDS);
             }
+            key.release();
         }
 
         return value;
@@ -417,7 +428,7 @@ public class EntryMemTable implements AutoCloseable{
      */
     public EntryKeyValue getLastEntry(long ledgerId) throws IOException {
         EntryKey result = null;
-        EntryKey key = new EntryKey(ledgerId, Long.MAX_VALUE);
+        EntryKey key = EntryKeyImpl.of(ledgerId, Long.MAX_VALUE);
         long startTimeNanos = MathUtils.nowInNano();
         boolean success = false;
         this.lock.readLock().lock();
@@ -425,6 +436,10 @@ public class EntryMemTable implements AutoCloseable{
             result = this.kvmap.floorKey(key);
             if (result == null || result.getLedgerId() != ledgerId) {
                 result = this.snapshot.floorKey(key);
+            }
+            if (null != result) {
+                // retain the reference for allowing it accessed out side of the lock.
+                result.retain();
             }
             success = true;
         } finally {
@@ -434,11 +449,16 @@ public class EntryMemTable implements AutoCloseable{
             } else {
                 getEntryStats.registerFailedEvent(MathUtils.elapsedNanos(startTimeNanos), TimeUnit.NANOSECONDS);
             }
+            key.release();
         }
 
-        if (result == null || result.getLedgerId() != ledgerId) {
+        if (null == result) {
+            return null;
+        } else if (result.getLedgerId() != ledgerId) {
+            result.release();
             return null;
         }
+
         return (EntryKeyValue) result;
     }
 

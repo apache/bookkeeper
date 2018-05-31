@@ -19,6 +19,7 @@
  */
 package org.apache.bookkeeper.bookie;
 
+import io.netty.util.ReferenceCounted;
 import java.io.Serializable;
 import java.util.Comparator;
 
@@ -27,61 +28,39 @@ import java.util.Comparator;
  *
  * <p>This class is mainly used in {@code SortedLedgerStorage} for managing and sorting the entries in the memtable.
  */
-public class EntryKey {
-    long ledgerId;
-    long entryId;
+interface EntryKey extends ReferenceCounted {
 
-    public EntryKey() {
-        this(0, 0);
-    }
+    long getLedgerId();
 
-    public EntryKey(long ledgerId, long entryId) {
-        this.ledgerId = ledgerId;
-        this.entryId = entryId;
-    }
+    long getEntryId();
 
-    public long getLedgerId() {
-        return ledgerId;
-    }
-
-    public long getEntryId() {
-        return entryId;
-    }
+    //
+    // Comparator
+    //
 
     /**
-    * Comparator for the key portion.
-    */
-    public static final KeyComparator COMPARATOR = new KeyComparator();
+     * Comparator for the key portion.
+     */
+    KeyComparator COMPARATOR = new KeyComparator();
 
-    // Only compares the key portion
-    @Override
-    public boolean equals(Object other) {
-        if (!(other instanceof EntryKey)) {
-          return false;
+    /**
+     * Compare EntryKey.
+     */
+    class KeyComparator implements Comparator<EntryKey>, Serializable {
+
+        private static final long serialVersionUID = 0L;
+
+        @Override
+        public int compare(EntryKey left, EntryKey right) {
+            long ret = left.getLedgerId() - right.getLedgerId();
+            if (ret == 0) {
+                ret = left.getEntryId() - right.getEntryId();
+            }
+            return (ret < 0) ? -1 : ((ret > 0) ? 1 : 0);
         }
-        EntryKey key = (EntryKey) other;
-        return ledgerId == key.ledgerId && entryId == key.entryId;
     }
 
-    @Override
-    public int hashCode() {
-        return (int) (ledgerId * 13 ^ entryId * 17);
-    }
 }
 
-/**
-* Compare EntryKey.
-*/
-class KeyComparator implements Comparator<EntryKey>, Serializable {
 
-    private static final long serialVersionUID = 0L;
 
-    @Override
-    public int compare(EntryKey left, EntryKey right) {
-        long ret = left.ledgerId - right.ledgerId;
-        if (ret == 0) {
-            ret = left.entryId - right.entryId;
-        }
-        return (ret < 0) ? -1 : ((ret > 0) ? 1 : 0);
-    }
-}

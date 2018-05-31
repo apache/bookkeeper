@@ -122,6 +122,8 @@ public class SortedLedgerStorage extends InterleavedLedgerStorage
             EntryKeyValue kv = memTable.getLastEntry(ledgerId);
             if (null == kv) {
                 return super.ledgerExists(ledgerId);
+            } else {
+                kv.release();
             }
         }
         return true;
@@ -146,7 +148,11 @@ public class SortedLedgerStorage extends InterleavedLedgerStorage
     private ByteBuf getLastEntryId(long ledgerId) throws IOException {
         EntryKeyValue kv = memTable.getLastEntry(ledgerId);
         if (null != kv) {
-            return kv.getValueAsByteBuffer();
+            try {
+                return kv.getValueAsByteBuffer();
+            } finally {
+                kv.release();
+            }
         }
         // If it doesn't exist in the skip list, then fallback to the ledger cache+index.
         return super.getEntry(ledgerId, BookieProtocol.LAST_ADD_CONFIRMED);
@@ -167,7 +173,11 @@ public class SortedLedgerStorage extends InterleavedLedgerStorage
                 // If the entry truly doesn't exist, then this will throw a NoEntryException
                 buffToRet = super.getEntry(ledgerId, entryId);
             } else {
-                buffToRet = kv.getValueAsByteBuffer();
+                try {
+                    buffToRet = kv.getValueAsByteBuffer();
+                } finally {
+                    kv.release();
+                }
             }
         }
         // buffToRet will not be null when we reach here.
