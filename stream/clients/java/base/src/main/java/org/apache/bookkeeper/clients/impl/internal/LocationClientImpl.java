@@ -24,8 +24,6 @@ import static org.apache.bookkeeper.stream.protocol.util.ProtoUtils.createGetSto
 
 import com.google.common.annotations.VisibleForTesting;
 import io.grpc.ManagedChannel;
-import io.grpc.ManagedChannelBuilder;
-import io.grpc.NameResolver;
 import io.grpc.Status;
 import io.grpc.StatusException;
 import io.grpc.StatusRuntimeException;
@@ -35,8 +33,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 import org.apache.bookkeeper.clients.config.StorageClientSettings;
+import org.apache.bookkeeper.clients.impl.grpc.GrpcChannels;
 import org.apache.bookkeeper.clients.impl.internal.api.LocationClient;
-import org.apache.bookkeeper.clients.resolver.SimpleStreamResolverFactory;
 import org.apache.bookkeeper.clients.utils.ClientConstants;
 import org.apache.bookkeeper.clients.utils.GrpcUtils;
 import org.apache.bookkeeper.common.util.Backoff;
@@ -63,26 +61,12 @@ public class LocationClientImpl implements LocationClient {
                               OrderedScheduler scheduler) {
         this.settings = settings;
         this.scheduler = scheduler;
-        ManagedChannelBuilder builder = settings.managedChannelBuilder().orElse(
-            ManagedChannelBuilder
-                .forTarget("stream")
-                .nameResolverFactory(getResolver(settings))
-        );
-        if (settings.usePlaintext()) {
-            builder = builder.usePlaintext(true);
-        }
-        this.channel = builder.build();
+        this.channel = GrpcChannels.createChannelBuilder(
+            settings.serviceUri(), settings
+        ).build();
         this.locationService = GrpcUtils.configureGrpcStub(
             StorageContainerServiceGrpc.newFutureStub(channel),
             Optional.empty());
-    }
-
-    private NameResolver.Factory getResolver(StorageClientSettings settings) {
-        if (settings.nameResolverFactory().isPresent()) {
-            return settings.nameResolverFactory().get();
-        } else {
-            return SimpleStreamResolverFactory.of(settings.endpoints());
-        }
     }
 
     private Stream<Long> getDefaultBackoffs() {

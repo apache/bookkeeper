@@ -28,12 +28,12 @@ import java.net.InetSocketAddress;
 import java.net.URI;
 import java.util.List;
 import java.util.stream.Collectors;
-import org.apache.bookkeeper.common.resolver.SimpleNameResolver;
+import org.apache.bookkeeper.common.resolver.StaticNameResolver;
 import org.apache.bookkeeper.common.util.SharedResourceManager.Resource;
 import org.junit.Test;
 
 /**
- * Unit test of {@link SimpleNameResolver}.
+ * Unit test of {@link StaticNameResolver}.
  */
 public class TestSimpleNameResolver {
 
@@ -61,7 +61,7 @@ public class TestSimpleNameResolver {
             .collect(Collectors.toList());
 
         @SuppressWarnings("unchecked") // for the mock
-            SimpleNameResolver nameResolver = new SimpleNameResolver(
+            StaticNameResolver nameResolver = new StaticNameResolver(
             "test-name-resolver",
             mock(Resource.class),
             uris);

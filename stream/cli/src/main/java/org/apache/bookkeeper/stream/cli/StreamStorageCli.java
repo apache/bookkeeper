@@ -28,12 +28,10 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.clients.config.StorageClientSettings;
-import org.apache.bookkeeper.clients.utils.NetUtils;
 import org.apache.bookkeeper.stream.cli.commands.CmdBase;
 import org.apache.bookkeeper.stream.cli.commands.CmdNamespace;
 import org.apache.bookkeeper.stream.cli.commands.CmdStream;
 import org.apache.bookkeeper.stream.cli.commands.CmdTable;
-import org.apache.bookkeeper.stream.proto.common.Endpoint;
 
 /**
  * Bookie Shell.
@@ -83,8 +81,8 @@ public class StreamStorageCli {
     @Getter(AccessLevel.PACKAGE)
     static class ShellArguments {
 
-        @Parameter(names = { "-s", "--server" }, description = "A storage server address")
-        private String endpoint = null;
+        @Parameter(names = { "-u", "--server-uri" }, description = "The bookkeeper service uri")
+        private String serviceUri = "bk://localhost:4181";
 
         @Parameter(names = { "-n", "--namespace" }, description = "Namespace")
         private String namespace = "default";
@@ -155,16 +153,15 @@ public class StreamStorageCli {
             return false;
         }
 
-        if (null == shellArgs.endpoint) {
+        if (null == shellArgs.serviceUri) {
             System.err.println("No endpoint is provided");
             commander.usage();
             return false;
         }
 
-        Endpoint endpoint = NetUtils.parseEndpoint(shellArgs.endpoint);
-        settingsBuilder.addEndpoints(endpoint);
+        settingsBuilder.serviceUri(shellArgs.serviceUri);
 
-        log.info("connecting to storage service = {}", endpoint);
+        log.info("connecting to storage service = {}", shellArgs.serviceUri);
 
         if (cmdPos == args.length) {
             commander.usage();

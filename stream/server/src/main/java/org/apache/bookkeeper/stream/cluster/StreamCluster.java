@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.clients.StorageClientBuilder;
 import org.apache.bookkeeper.clients.admin.StorageAdminClient;
@@ -226,12 +227,18 @@ public class StreamCluster
         executor.shutdown();
     }
 
+
     private void createDefaultNamespaces() throws Exception {
+        String serviceUri = String.format(
+            "bk://%s/",
+            getRpcEndpoints().stream()
+                .map(endpoint -> endpoint.toString())
+                .collect(Collectors.joining(",")));
         StorageClientSettings settings = StorageClientSettings.newBuilder()
-            .addEndpoints(getRpcEndpoints().toArray(new Endpoint[getRpcEndpoints().size()]))
+            .serviceUri(serviceUri)
             .usePlaintext(true)
             .build();
-        log.info("RpcEndpoints are : {}", settings.endpoints());
+        log.info("Service uri are : {}", serviceUri);
         String namespaceName = "default";
         try (StorageAdminClient admin = StorageClientBuilder.newBuilder()
             .withSettings(settings)
