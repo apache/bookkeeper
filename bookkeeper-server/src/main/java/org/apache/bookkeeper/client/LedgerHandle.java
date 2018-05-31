@@ -1050,7 +1050,8 @@ public class LedgerHandle implements WriteHandle {
     /**
      * Add entry asynchronously to an open ledger, using an offset and range.
      * This can be used only with {@link LedgerHandleAdv} returned through
-     * ledgers created with {@link createLedgerAdv(int, int, int, DigestType, byte[])}.
+     * ledgers created with
+     * {@link BookKeeper#createLedgerAdv(int, int, int, org.apache.bookkeeper.client.BookKeeper.DigestType, byte[])}.
      *
      * @param entryId
      *            entryId of the entry to add.
@@ -1564,10 +1565,10 @@ public class LedgerHandle implements WriteHandle {
     /**
      * Obtains asynchronously the explicit last add confirmed from a quorum of
      * bookies. This call obtains Explicit LAC value and piggy-backed LAC value (just like
-     * {@Link #asyncReadLastConfirmed(ReadLastConfirmedCallback, Object)}) from each
+     * {@link #asyncReadLastConfirmed(ReadLastConfirmedCallback, Object)}) from each
      * bookie in the ensemble and returns the maximum.
      * If in the write LedgerHandle, explicitLAC feature is not enabled then this call behavior
-     * will be similar to {@Link #asyncReadLastConfirmed(ReadLastConfirmedCallback, Object)}.
+     * will be similar to {@link #asyncReadLastConfirmed(ReadLastConfirmedCallback, Object)}.
      * If the read explicit lastaddconfirmed is greater than getLastAddConfirmed, then it updates the
      * lastAddConfirmed of this ledgerhandle. If the ledger has been closed, it
      * returns the value of the last add confirmed from the metadata.
