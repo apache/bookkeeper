@@ -18,16 +18,11 @@
 
 package org.apache.bookkeeper.clients.config;
 
-import static com.google.common.base.Preconditions.checkArgument;
-
-import io.grpc.ManagedChannelBuilder;
-import io.grpc.NameResolver;
-import java.util.List;
 import java.util.Optional;
 import org.apache.bookkeeper.clients.resolver.EndpointResolver;
 import org.apache.bookkeeper.clients.utils.ClientConstants;
+import org.apache.bookkeeper.common.net.ServiceURI;
 import org.apache.bookkeeper.common.util.Backoff;
-import org.apache.bookkeeper.stream.proto.common.Endpoint;
 import org.inferred.freebuilder.FreeBuilder;
 
 /**
@@ -44,18 +39,11 @@ public interface StorageClientSettings {
     int numWorkerThreads();
 
     /**
-     * Returns the name resolver factory used by zstream client.
+     * Returns the service uri that storage client should talk to.
      *
-     * @return name resolver factory.
+     * @return service uri
      */
-    Optional<NameResolver.Factory> nameResolverFactory();
-
-    /**
-     * Returns the endpoints used by the client builder.
-     *
-     * @return the list of endpoints.
-     */
-    List<Endpoint> endpoints();
+    String serviceUri();
 
     /**
      * Return the endpoint resolver for resolving individual endpoints.
@@ -65,13 +53,6 @@ public interface StorageClientSettings {
      * @return the endpoint resolver for resolving endpoints.
      */
     EndpointResolver endpointResolver();
-
-    /**
-     * Returns the builder to create the managed channel.
-     *
-     * @return
-     */
-    Optional<ManagedChannelBuilder> managedChannelBuilder();
 
     /**
      * Use of a plaintext connection to the server. By default a secure connection mechanism
@@ -114,14 +95,13 @@ public interface StorageClientSettings {
 
         @Override
         public StorageClientSettings build() {
-            checkArgument(
-                nameResolverFactory().isPresent()
-                    || !endpoints().isEmpty()
-                    || managedChannelBuilder().isPresent(),
-                "No name resolver or endpoints or channel builder provided");
-            return super.build();
-        }
+            StorageClientSettings settings = super.build();
 
+            // create a service uri to ensure the service uri is valid
+            ServiceURI.create(serviceUri());
+
+            return settings;
+        }
     }
 
     static Builder newBuilder() {

@@ -32,11 +32,11 @@ import org.apache.bookkeeper.common.util.SharedResourceManager.Resource;
 /**
  * A simple name resolver that returns pre-configured host addresses.
  */
-public class SimpleNameResolver extends AbstractNameResolver {
+public class StaticNameResolver extends AbstractNameResolver {
 
     private final List<EquivalentAddressGroup> servers;
 
-    public SimpleNameResolver(String name,
+    public StaticNameResolver(String name,
                               Resource<ExecutorService> executorResource,
                               List<URI> endpoints) {
         super(name, executorResource);

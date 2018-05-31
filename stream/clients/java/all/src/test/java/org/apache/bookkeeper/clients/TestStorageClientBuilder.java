@@ -47,7 +47,9 @@ public class TestStorageClientBuilder {
     @Test(expected = IllegalArgumentException.class)
     public void testBuildClientInvalidNamespaceName() {
         StorageClientBuilder.newBuilder()
-            .withSettings(mock(StorageClientSettings.class))
+            .withSettings(StorageClientSettings.newBuilder()
+                .serviceUri("bk://localhost:4181")
+                .build())
             .withNamespace("invalid-namespace")
             .build();
     }

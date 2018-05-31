@@ -23,9 +23,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import com.google.common.collect.Lists;
-import java.util.List;
-import org.apache.bookkeeper.stream.proto.common.Endpoint;
 import org.junit.Test;
 
 /**
@@ -35,14 +32,10 @@ public class TestStorageClientSettings {
 
     @Test
     public void testDefault() {
-        List<Endpoint> endpoints = Lists.newArrayList(
-            Endpoint.newBuilder()
-                .setHostname("127.0.0.1")
-                .setPort(80)
-                .build());
         StorageClientSettings settings = StorageClientSettings.newBuilder()
-            .addAllEndpoints(endpoints)
+            .serviceUri("bk://127.0.0.1:4181/")
             .build();
+        assertEquals("bk://127.0.0.1:4181/", settings.serviceUri());
         assertEquals(Runtime.getRuntime().availableProcessors(), settings.numWorkerThreads());
         assertTrue(settings.usePlaintext());
         assertFalse(settings.clientName().isPresent());
@@ -53,8 +46,8 @@ public class TestStorageClientSettings {
         try {
             StorageClientSettings.newBuilder().build();
             fail("Should fail with missing endpoints");
-        } catch (IllegalArgumentException iae) {
-            assertEquals("No name resolver or endpoints or channel builder provided", iae.getMessage());
+        } catch (IllegalStateException iae) {
+            assertEquals("Not set: [serviceUri]", iae.getMessage());
         }
     }
 
