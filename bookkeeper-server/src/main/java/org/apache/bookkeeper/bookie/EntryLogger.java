@@ -56,6 +56,8 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.stats.NullStatsLogger;
+import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.IOUtils;
 import org.apache.bookkeeper.util.collections.ConcurrentLongLongHashMap;
 import org.apache.bookkeeper.util.collections.ConcurrentLongLongHashMap.BiConsumerLong;
@@ -77,6 +79,9 @@ public class EntryLogger {
 
     @VisibleForTesting
     static final int UNINITIALIZED_LOG_ID = -0xDEAD;
+
+    // Expose Stats
+    private final StatsLogger statsLogger;
 
     static class BufferedLogChannel extends BufferedChannel {
         private final long logId;
@@ -323,11 +328,11 @@ public class EntryLogger {
      */
     public EntryLogger(ServerConfiguration conf,
             LedgerDirsManager ledgerDirsManager) throws IOException {
-        this(conf, ledgerDirsManager, null);
+        this(conf, ledgerDirsManager, null, NullStatsLogger.INSTANCE);
     }
 
     public EntryLogger(ServerConfiguration conf,
-            LedgerDirsManager ledgerDirsManager, EntryLogListener listener)
+            LedgerDirsManager ledgerDirsManager, EntryLogListener listener, StatsLogger statsLogger)
                     throws IOException {
         //We reserve 500 bytes as overhead for the protocol.  This is not 100% accurate
         // but the protocol varies so an exact value is difficult to determine
@@ -363,9 +368,10 @@ public class EntryLogger {
         this.recentlyCreatedEntryLogsStatus = new RecentEntryLogsStatus(logId + 1);
         this.entryLoggerAllocator = new EntryLoggerAllocator(conf, ledgerDirsManager, recentlyCreatedEntryLogsStatus,
                 logId);
+        this.statsLogger = statsLogger;
         if (entryLogPerLedgerEnabled) {
             this.entryLogManager = new EntryLogManagerForEntryLogPerLedger(conf, ledgerDirsManager,
-                    entryLoggerAllocator, listeners, recentlyCreatedEntryLogsStatus);
+                    entryLoggerAllocator, listeners, recentlyCreatedEntryLogsStatus, statsLogger);
         } else {
             this.entryLogManager = new EntryLogManagerForSingleEntryLog(conf, ledgerDirsManager, entryLoggerAllocator,
                     listeners, recentlyCreatedEntryLogsStatus);

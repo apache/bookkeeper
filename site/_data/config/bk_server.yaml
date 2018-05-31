@@ -317,6 +317,9 @@ groups:
   - param: maximumNumberOfActiveEntryLogs
     description: in entryLogPerLedger feature, this specifies the maximum number of entrylogs that can be active at a given point in time. If there are more number of active entryLogs then the maximumNumberOfActiveEntryLogs then the entrylog will be evicted from the cache.
     default: 500
+  - param: entryLogPerLedgerCounterLimitsMultFactor
+    description: in EntryLogManagerForEntryLogPerLedger, this config value specifies the metrics cache size limits in multiples of entrylogMap cache size limits.
+    default: 10
 
 - name: Entry log compaction settings
   params:
