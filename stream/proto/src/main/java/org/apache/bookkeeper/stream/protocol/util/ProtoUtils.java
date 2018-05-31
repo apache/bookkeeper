@@ -19,6 +19,7 @@ package org.apache.bookkeeper.stream.protocol.util;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
+import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 import java.util.List;
 import org.apache.bookkeeper.common.util.Revisioned;
@@ -42,7 +43,6 @@ import org.apache.bookkeeper.stream.proto.storage.OneStorageContainerEndpointReq
 import org.apache.bookkeeper.stream.proto.storage.OneStorageContainerEndpointResponse;
 import org.apache.bookkeeper.stream.proto.storage.StatusCode;
 import org.apache.bookkeeper.stream.proto.storage.StorageContainerEndpoint;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 
 /**
@@ -89,37 +89,37 @@ public class ProtoUtils {
     }
 
     /**
-     * Validate namespace characters are [a-zA-Z_0-9].
+     * Validate namespace name.
      *
      * @return true if it is a valid namespace name. otherwise false.
      */
     public static boolean validateNamespaceName(String name) {
-        if (StringUtils.isBlank(name)) {
-            return false;
-        }
-        for (int i = 0; i < name.length(); i++) {
-            if (Character.isLetterOrDigit(name.charAt(i)) || name.charAt(i) == '_') {
-                continue;
-            }
-            return false;
-        }
-        return true;
+        return validateStreamName(name);
     }
 
     /**
-     * Validate namespace characters are [a-zA-Z_0-9].
+     * Validate stream name.
+     *
+     * <p>follow the rules that dlog uses for validating stream name.
      *
      * @return true if it is a valid namespace name. otherwise false.
      */
     public static boolean validateStreamName(String name) {
-        if (StringUtils.isBlank(name)) {
+        if (Strings.isNullOrEmpty(name)) {
             return false;
         }
         for (int i = 0; i < name.length(); i++) {
-            if (Character.isLetterOrDigit(name.charAt(i)) || name.charAt(i) == '_') {
-                continue;
+            char c = name.charAt(i);
+            if (c == 0
+                || c == ' '
+                || c == '<'
+                || c == '>'
+                || c > '\u0000' && c < '\u001f'
+                || c > '\u007f' && c < '\u009f'
+                || c > '\ud800' && c < '\uf8ff'
+                || c > '\ufff0' && c < '\uffff') {
+                return false;
             }
-            return false;
         }
         return true;
     }
@@ -243,15 +243,15 @@ public class ProtoUtils {
     /**
      * Create a {@link CreateNamespaceRequest}.
      *
-     * @param colName namespace name
-     * @param colConf namespace conf
+     * @param nsName namespace name
+     * @param nsConf namespace conf
      * @return a create namespace request.
      */
-    public static CreateNamespaceRequest createCreateNamespaceRequest(String colName,
-                                                                      NamespaceConfiguration colConf) {
+    public static CreateNamespaceRequest createCreateNamespaceRequest(String nsName,
+                                                                      NamespaceConfiguration nsConf) {
         return CreateNamespaceRequest.newBuilder()
-            .setName(colName)
-            .setColConf(colConf)
+            .setName(nsName)
+            .setNsConf(nsConf)
             .build();
     }
 
@@ -286,16 +286,16 @@ public class ProtoUtils {
     /**
      * Create a {@link CreateStreamRequest}.
      *
-     * @param colName    namespace name
+     * @param nsName     namespace name
      * @param streamName stream name
      * @param streamConf stream configuration
      * @return a create stream request.
      */
-    public static CreateStreamRequest createCreateStreamRequest(String colName,
+    public static CreateStreamRequest createCreateStreamRequest(String nsName,
                                                                 String streamName,
                                                                 StreamConfiguration streamConf) {
         return CreateStreamRequest.newBuilder()
-            .setColName(colName)
+            .setNsName(nsName)
             .setName(streamName)
             .setStreamConf(streamConf)
             .build();
@@ -304,14 +304,15 @@ public class ProtoUtils {
     /**
      * Create a {@link GetStreamRequest}.
      *
-     * @param colName    namespace name
+     * @param nsName     namespace name
      * @param streamName stream name
      * @return a create stream request.
      */
-    public static GetStreamRequest createGetStreamRequest(String colName, String streamName) {
+    public static GetStreamRequest createGetStreamRequest(String nsName,
+                                                          String streamName) {
         return GetStreamRequest.newBuilder()
             .setStreamName(StreamName.newBuilder()
-                .setColName(colName)
+                .setNamespaceName(nsName)
                 .setStreamName(streamName))
             .build();
     }
@@ -331,14 +332,15 @@ public class ProtoUtils {
     /**
      * Create a {@link DeleteStreamRequest}.
      *
-     * @param colName    namespace name
+     * @param nsName     namespace name
      * @param streamName stream name
      * @return a create stream request.
      */
-    public static DeleteStreamRequest createDeleteStreamRequest(String colName, String streamName) {
+    public static DeleteStreamRequest createDeleteStreamRequest(String nsName,
+                                                                String streamName) {
         return DeleteStreamRequest.newBuilder()
             .setName(streamName)
-            .setColName(colName)
+            .setNsName(nsName)
             .build();
     }
 

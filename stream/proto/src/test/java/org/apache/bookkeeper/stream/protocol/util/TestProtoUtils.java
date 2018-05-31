@@ -56,8 +56,13 @@ public class TestProtoUtils {
         assertTrue(validateNamespaceName("namespace_name"));
         assertTrue(validateNamespaceName("NamespaceName"));
         assertTrue(validateNamespaceName("9NamespaceName"));
-        assertFalse(validateNamespaceName("namespace-name"));
-        assertFalse(validateNamespaceName("!namespace_name"));
+        assertTrue(validateNamespaceName("namespace-name"));
+        assertTrue(validateNamespaceName("!namespace_name"));
+        assertFalse(validateNamespaceName(" namespace_name"));
+        assertFalse(validateNamespaceName("<namespace_name"));
+        assertFalse(validateNamespaceName(">namespace_name"));
+        assertFalse(validateNamespaceName(""));
+        assertFalse(validateNamespaceName(null));
     }
 
     @Test
@@ -65,8 +70,13 @@ public class TestProtoUtils {
         assertTrue(validateStreamName("stream_name"));
         assertTrue(validateStreamName("StreamName"));
         assertTrue(validateStreamName("9StreamName"));
-        assertFalse(validateStreamName("stream-name"));
-        assertFalse(validateStreamName("!stream_name"));
+        assertTrue(validateStreamName("stream-name"));
+        assertTrue(validateStreamName("!stream_name"));
+        assertFalse(validateNamespaceName(" stream_name"));
+        assertFalse(validateNamespaceName("<stream_name"));
+        assertFalse(validateNamespaceName(">stream_name"));
+        assertFalse(validateNamespaceName(""));
+        assertFalse(validateNamespaceName(null));
     }
 
     @Test
@@ -184,14 +194,14 @@ public class TestProtoUtils {
 
     @Test
     public void testCreateCreateNamespaceRequest() {
-        NamespaceConfiguration colConf = NamespaceConfiguration.newBuilder()
+        NamespaceConfiguration nsConf = NamespaceConfiguration.newBuilder()
             .setDefaultStreamConf(DEFAULT_STREAM_CONF)
             .build();
         CreateNamespaceRequest request = createCreateNamespaceRequest(
             name.getMethodName(),
-            colConf);
+            nsConf);
         assertEquals(name.getMethodName(), request.getName());
-        assertEquals(colConf, request.getColConf());
+        assertEquals(nsConf, request.getNsConf());
     }
 
     @Test
