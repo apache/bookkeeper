@@ -144,6 +144,7 @@ class EntryMemTableWithParallelFlusher extends EntryMemTable {
                 }
             }
         }
+        skipListSemaphore.release(flushedSize.intValue());
         return flushedSize.longValue();
     }
 

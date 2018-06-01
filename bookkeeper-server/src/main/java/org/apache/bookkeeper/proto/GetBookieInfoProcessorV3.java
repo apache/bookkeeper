@@ -54,7 +54,7 @@ public class GetBookieInfoProcessorV3 extends PacketProcessorBaseV3 implements R
 
         if (!isVersionCompatible()) {
             getBookieInfoResponse.setStatus(StatusCode.EBADVERSION);
-            requestProcessor.getBookieInfoStats.registerFailedEvent(MathUtils.elapsedNanos(startTimeNanos),
+            requestProcessor.getGetBookieInfoStats().registerFailedEvent(MathUtils.elapsedNanos(startTimeNanos),
                     TimeUnit.NANOSECONDS);
             return getBookieInfoResponse.build();
         }
@@ -66,11 +66,11 @@ public class GetBookieInfoProcessorV3 extends PacketProcessorBaseV3 implements R
         long freeDiskSpace = 0L, totalDiskSpace = 0L;
         try {
             if ((requested & GetBookieInfoRequest.Flags.FREE_DISK_SPACE_VALUE) != 0) {
-                freeDiskSpace = requestProcessor.bookie.getTotalFreeSpace();
+                freeDiskSpace = requestProcessor.getBookie().getTotalFreeSpace();
                 getBookieInfoResponse.setFreeDiskSpace(freeDiskSpace);
             }
             if ((requested & GetBookieInfoRequest.Flags.TOTAL_DISK_CAPACITY_VALUE) != 0) {
-                totalDiskSpace = requestProcessor.bookie.getTotalDiskSpace();
+                totalDiskSpace = requestProcessor.getBookie().getTotalDiskSpace();
                 getBookieInfoResponse.setTotalDiskCapacity(totalDiskSpace);
             }
             LOG.debug("FreeDiskSpace info is " + freeDiskSpace + " totalDiskSpace is: " + totalDiskSpace);
@@ -80,7 +80,7 @@ public class GetBookieInfoProcessorV3 extends PacketProcessorBaseV3 implements R
         }
 
         getBookieInfoResponse.setStatus(status);
-        requestProcessor.getBookieInfoStats.registerSuccessfulEvent(MathUtils.elapsedNanos(startTimeNanos),
+        requestProcessor.getGetBookieInfoStats().registerSuccessfulEvent(MathUtils.elapsedNanos(startTimeNanos),
                 TimeUnit.NANOSECONDS);
         return getBookieInfoResponse.build();
     }
@@ -98,6 +98,6 @@ public class GetBookieInfoProcessorV3 extends PacketProcessorBaseV3 implements R
                 .setGetBookieInfoResponse(getBookieInfoResponse);
         sendResponse(response.getStatus(),
                      response.build(),
-                     requestProcessor.getBookieInfoRequestStats);
+                     requestProcessor.getGetBookieInfoRequestStats());
     }
 }

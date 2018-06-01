@@ -37,6 +37,7 @@ import org.apache.bookkeeper.proto.BookkeeperProtocol.AddResponse;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.Request;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.Response;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.StatusCode;
+import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.util.MathUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,6 +48,7 @@ class WriteEntryProcessorV3 extends PacketProcessorBaseV3 {
     public WriteEntryProcessorV3(Request request, Channel channel,
                                  BookieRequestProcessor requestProcessor) {
         super(request, channel, requestProcessor);
+        requestProcessor.onAddRequestStart(channel);
     }
 
     // Returns null if there is no exception thrown
@@ -171,6 +173,12 @@ class WriteEntryProcessorV3 extends PacketProcessorBaseV3 {
             sendResponse(addResponse.getStatus(), resp,
                          requestProcessor.getAddRequestStats());
         }
+    }
+
+    @Override
+    protected void sendResponse(StatusCode code, Object response, OpStatsLogger statsLogger) {
+        super.sendResponse(code, response, statsLogger);
+        requestProcessor.onAddRequestFinish();
     }
 
     /**

@@ -36,6 +36,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -75,6 +76,19 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
     private interface JournalIdFilter {
         boolean accept(long journalId);
     }
+
+    /**
+     * For testability.
+     */
+    @FunctionalInterface
+    public interface BufferedChannelBuilder {
+        BufferedChannelBuilder DEFAULT_BCBUILDER =
+                (FileChannel fc, int capacity) -> new BufferedChannel(fc, capacity);
+
+        BufferedChannel create(FileChannel fc, int capacity) throws IOException;
+    }
+
+
 
     /**
      * List all journal ids by a specified journal id filer.
@@ -935,11 +949,14 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
             while (true) {
                 // new journal file to write
                 if (null == logFile) {
+
                     logId = logId + 1;
 
                     journalCreationWatcher.reset().start();
                     logFile = new JournalChannel(journalDirectory, logId, journalPreAllocSize, journalWriteBufferSize,
-                                        journalAlignmentSize, removePagesFromCache, journalFormatVersionToWrite);
+                                        journalAlignmentSize, removePagesFromCache,
+                                        journalFormatVersionToWrite, getBufferedChannelBuilder());
+
                     journalCreationStats.registerSuccessfulEvent(
                             journalCreationWatcher.stop().elapsed(TimeUnit.NANOSECONDS), TimeUnit.NANOSECONDS);
 
@@ -1119,6 +1136,10 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
             IOUtils.close(LOG, logFile);
         }
         LOG.info("Journal exited loop!");
+    }
+
+    public BufferedChannelBuilder getBufferedChannelBuilder() {
+        return BufferedChannelBuilder.DEFAULT_BCBUILDER;
     }
 
     /**

@@ -24,10 +24,12 @@ import static org.apache.bookkeeper.bookie.BookKeeperServerStats.SKIP_LIST_GET_E
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.SKIP_LIST_PUT_ENTRY;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.SKIP_LIST_SNAPSHOT;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.SKIP_LIST_THROTTLING;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.SKIP_LIST_THROTTLING_LATENCY;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
@@ -103,6 +105,7 @@ public class EntryMemTable implements AutoCloseable{
     final AtomicLong size;
 
     final long skipListSizeLimit;
+    final Semaphore skipListSemaphore;
 
     SkipListArena allocator;
 
@@ -119,6 +122,7 @@ public class EntryMemTable implements AutoCloseable{
     private final OpStatsLogger getEntryStats;
     final Counter flushBytesCounter;
     private final Counter throttlingCounter;
+    private final OpStatsLogger throttlingStats;
 
     /**
     * Constructor.
@@ -136,12 +140,22 @@ public class EntryMemTable implements AutoCloseable{
         // skip list size limit
         this.skipListSizeLimit = conf.getSkipListSizeLimit();
 
+        if (skipListSizeLimit > (Integer.MAX_VALUE - 1) / 2) {
+            // gives 2*1023MB for mem table.
+            // consider a way to create semaphore with long num of permits
+            // until that 1023MB should be enough for everything (tm)
+            throw new IllegalArgumentException("skiplist size over " + ((Integer.MAX_VALUE - 1) / 2));
+        }
+        // double the size for snapshot in progress + incoming data
+        this.skipListSemaphore = new Semaphore((int) skipListSizeLimit * 2);
+
         // Stats
         this.snapshotStats = statsLogger.getOpStatsLogger(SKIP_LIST_SNAPSHOT);
         this.putEntryStats = statsLogger.getOpStatsLogger(SKIP_LIST_PUT_ENTRY);
         this.getEntryStats = statsLogger.getOpStatsLogger(SKIP_LIST_GET_ENTRY);
         this.flushBytesCounter = statsLogger.getCounter(SKIP_LIST_FLUSH_BYTES);
         this.throttlingCounter = statsLogger.getCounter(SKIP_LIST_THROTTLING);
+        this.throttlingStats = statsLogger.getOpStatsLogger(SKIP_LIST_THROTTLING_LATENCY);
     }
 
     void dump() {
@@ -264,6 +278,7 @@ public class EntryMemTable implements AutoCloseable{
             }
         }
 
+        skipListSemaphore.release((int) size);
         return size;
     }
 
@@ -286,18 +301,6 @@ public class EntryMemTable implements AutoCloseable{
     }
 
     /**
-     * Throttling writer w/ 1 ms delay.
-     */
-    private void throttleWriters() {
-        try {
-            Thread.sleep(1);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        }
-        throttlingCounter.inc();
-    }
-
-    /**
      * Write an update.
      *
      * @param entry
@@ -314,9 +317,16 @@ public class EntryMemTable implements AutoCloseable{
                 Checkpoint cp = snapshot();
                 if ((null != cp) || (!previousFlushSucceeded.get())) {
                     cb.onSizeLimitReached(cp);
-                } else {
-                    throttleWriters();
                 }
+            }
+
+            final int len = entry.remaining();
+            if (!skipListSemaphore.tryAcquire(len)) {
+                throttlingCounter.inc();
+                final long throttlingStartTimeNanos = MathUtils.nowInNano();
+                skipListSemaphore.acquireUninterruptibly(len);
+                throttlingStats.registerSuccessfulEvent(MathUtils.elapsedNanos(throttlingStartTimeNanos),
+                        TimeUnit.NANOSECONDS);
             }
 
             this.lock.readLock().lock();

@@ -81,6 +81,12 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     protected static final String JOURNAL_ALIGNMENT_SIZE = "journalAlignmentSize";
     protected static final String NUM_JOURNAL_CALLBACK_THREADS = "numJournalCallbackThreads";
     protected static final String JOURNAL_FORMAT_VERSION_TO_WRITE = "journalFormatVersionToWrite";
+    // backpressure control
+    protected static final String MAX_ADDS_IN_PROGRESS_LIMIT = "maxAddsInProgressLimit";
+    protected static final String MAX_READS_IN_PROGRESS_LIMIT = "maxReadsInProgressLimit";
+    protected static final String CLOSE_CHANNEL_ON_RESPONSE_TIMEOUT = "closeChannelOnResponseTimeout";
+    protected static final String WAIT_TIMEOUT_ON_RESPONSE_BACKPRESSURE = "waitTimeoutOnResponseBackpressureMs";
+
     // Bookie Parameters
     protected static final String BOOKIE_PORT = "bookiePort";
     protected static final String LISTENING_INTERFACE = "listeningInterface";
@@ -93,10 +99,12 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     protected static final String LEDGER_DIRS = "ledgerDirectories";
     protected static final String INDEX_DIRS = "indexDirectories";
     protected static final String ALLOW_STORAGE_EXPANSION = "allowStorageExpansion";
-    // NIO Parameters
+    // NIO and Netty Parameters
     protected static final String SERVER_TCP_NODELAY = "serverTcpNoDelay";
     protected static final String SERVER_SOCK_KEEPALIVE = "serverSockKeepalive";
     protected static final String SERVER_SOCK_LINGER = "serverTcpLinger";
+    protected static final String SERVER_WRITEBUFFER_LOW_WATER_MARK = "serverWriteBufferLowWaterMark";
+    protected static final String SERVER_WRITEBUFFER_HIGH_WATER_MARK = "serverWriteBufferHighWaterMark";
 
     // Zookeeper Parameters
     protected static final String ZK_RETRY_BACKOFF_START_MS = "zkRetryBackoffStartMs";
@@ -631,6 +639,102 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      */
     public ServerConfiguration setJournalFormatVersionToWrite(int version) {
         this.setProperty(JOURNAL_FORMAT_VERSION_TO_WRITE, version);
+        return this;
+    }
+
+    /**
+     * Get max number of adds in progress. 0 == unlimited.
+     *
+     * @return Max number of adds in progress.
+     */
+    public int getMaxAddsInProgressLimit() {
+        return this.getInt(MAX_ADDS_IN_PROGRESS_LIMIT, 0);
+    }
+
+    /**
+     * Set max number of adds in progress. 0 == unlimited.
+     *
+     * @param value
+     *          max number of adds in progress.
+     * @return server configuration.
+     */
+    public ServerConfiguration setMaxAddsInProgressLimit(int value) {
+        this.setProperty(MAX_ADDS_IN_PROGRESS_LIMIT, value);
+        return this;
+    }
+
+    /**
+     * Get max number of reads in progress. 0 == unlimited.
+     *
+     * @return Max number of reads in progress.
+     */
+    public int getMaxReadsInProgressLimit() {
+        return this.getInt(MAX_READS_IN_PROGRESS_LIMIT, 0);
+    }
+
+    /**
+     * Set max number of reads in progress. 0 == unlimited.
+     *
+     * @param value
+     *          max number of reads in progress.
+     * @return server configuration.
+     */
+    public ServerConfiguration setMaxReadsInProgressLimit(int value) {
+        this.setProperty(MAX_READS_IN_PROGRESS_LIMIT, value);
+        return this;
+    }
+
+    /**
+     * Configures action in case if server timed out sending response to the client.
+     * true == close the channel and drop response
+     * false == drop response
+     * Requires waitTimeoutOnBackpressureMs >= 0 otherwise ignored.
+     *
+     * @return value indicating if channel should be closed.
+     */
+    public boolean getCloseChannelOnResponseTimeout(){
+        return this.getBoolean(CLOSE_CHANNEL_ON_RESPONSE_TIMEOUT, false);
+    }
+
+    /**
+     * Configures action in case if server timed out sending response to the client.
+     * true == close the channel and drop response
+     * false == drop response
+     * Requires waitTimeoutOnBackpressureMs >= 0 otherwise ignored.
+     *
+     * @param value
+     * @return server configuration.
+     */
+    public ServerConfiguration setCloseChannelOnResponseTimeout(boolean value) {
+        this.setProperty(CLOSE_CHANNEL_ON_RESPONSE_TIMEOUT, value);
+        return this;
+    }
+
+    /**
+     * Timeout controlling wait on response send in case of unresponsive client
+     * (i.e. client in long GC etc.)
+     *
+     * @return timeout value
+     *        negative value disables the feature
+     *        0 to allow request to fail immediately
+     *        Default is -1 (disabled)
+     */
+    public long getWaitTimeoutOnResponseBackpressureMillis() {
+        return getLong(WAIT_TIMEOUT_ON_RESPONSE_BACKPRESSURE, -1);
+    }
+
+    /**
+     * Timeout controlling wait on response send in case of unresponsive client
+     * (i.e. client in long GC etc.)
+     *
+     * @param value
+     *        negative value disables the feature
+     *        0 to allow request to fail immediately
+     *        Default is -1 (disabled)
+     * @return client configuration.
+     */
+    public ServerConfiguration setWaitTimeoutOnResponseBackpressureMillis(long value) {
+        setProperty(WAIT_TIMEOUT_ON_RESPONSE_BACKPRESSURE, value);
         return this;
     }
 
@@ -1540,6 +1644,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
 
     /**
      * Get skip list data size limitation (default 64MB).
+     * Max value is 1,073,741,823
      *
      * @return skip list data size limitation
      */
@@ -1554,6 +1659,10 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return server configuration object.
      */
     public ServerConfiguration setSkipListSizeLimit(int size) {
+        if (size > (Integer.MAX_VALUE - 1) / 2) {
+            // gives max of 2*1023MB for mem table (one being checkpointed and still writable).
+            throw new IllegalArgumentException("skiplist size over " + ((Integer.MAX_VALUE - 1) / 2));
+        }
         setProperty(SKIP_LIST_SIZE_LIMIT, size);
         return this;
     }
@@ -2749,6 +2858,47 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
         return this;
     }
 
+    /**
+     * Get server netty channel write buffer low water mark.
+     *
+     * @return netty channel write buffer low water mark.
+     */
+    public int getServerWriteBufferLowWaterMark() {
+        return getInt(SERVER_WRITEBUFFER_LOW_WATER_MARK, 384 * 1024);
+    }
+
+    /**
+     * Set server netty channel write buffer low water mark.
+     *
+     * @param waterMark
+     *          netty channel write buffer low water mark.
+     * @return client configuration.
+     */
+    public ServerConfiguration setServerWriteBufferLowWaterMark(int waterMark) {
+        setProperty(SERVER_WRITEBUFFER_LOW_WATER_MARK, waterMark);
+        return this;
+    }
+
+    /**
+     * Get server netty channel write buffer high water mark.
+     *
+     * @return netty channel write buffer high water mark.
+     */
+    public int getServerWriteBufferHighWaterMark() {
+        return getInt(SERVER_WRITEBUFFER_HIGH_WATER_MARK, 512 * 1024);
+    }
+
+    /**
+     * Set server netty channel write buffer high water mark.
+     *
+     * @param waterMark
+     *          netty channel write buffer high water mark.
+     * @return client configuration.
+     */
+    public ServerConfiguration setServerWriteBufferHighWaterMark(int waterMark) {
+        setProperty(SERVER_WRITEBUFFER_HIGH_WATER_MARK, waterMark);
+        return this;
+    }
     /**
      * Set registration manager class.
      *

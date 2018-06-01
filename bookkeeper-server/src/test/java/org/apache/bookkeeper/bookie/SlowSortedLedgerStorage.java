@@ -1,4 +1,6 @@
-/**
+package org.apache.bookkeeper.bookie;
+
+/*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -18,27 +20,17 @@
  * under the License.
  *
  */
-package org.apache.bookkeeper.processor;
-
-import io.netty.channel.Channel;
 
 /**
- * A request processor that is used for processing requests at bookie side.
+ * Strictly for unit testing.
  */
-public interface RequestProcessor extends AutoCloseable {
+public class SlowSortedLedgerStorage extends SortedLedgerStorage {
 
-    /**
-     * Close the request processor.
-     */
-    void close();
+    public SlowSortedLedgerStorage() {
+        this(new SlowInterleavedLedgerStorage());
+    }
 
-    /**
-     * Process request.
-     *
-     * @param r
-     *          request to process
-     * @param channel
-     *          channel received the given request <i>r</i>
-     */
-    void processRequest(Object r, Channel channel);
+    SlowSortedLedgerStorage(InterleavedLedgerStorage ils) {
+        super(ils);
+    }
 }
