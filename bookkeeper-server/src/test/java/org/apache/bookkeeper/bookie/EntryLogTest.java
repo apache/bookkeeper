@@ -59,6 +59,7 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.util.DiskChecker;
 import org.apache.bookkeeper.util.IOUtils;
+import org.apache.bookkeeper.util.collections.ConcurrentLongLongHashMap;
 import org.apache.commons.io.FileUtils;
 import org.junit.After;
 import org.junit.Assert;
@@ -959,7 +960,7 @@ public class EntryLogTest {
             ServerConfiguration servConf) throws IOException {
         File tmpFile = File.createTempFile("entrylog", logid + "");
         tmpFile.deleteOnExit();
-        FileChannel fc = FileChannel.open(tmpFile.toPath());
+        FileChannel fc = new RandomAccessFile(tmpFile, "rw").getChannel();
         EntryLogger.BufferedLogChannel logChannel = new BufferedLogChannel(fc, 10, 10, logid, tmpFile,
                 servConf.getFlushIntervalInBytes());
         return logChannel;
@@ -1086,6 +1087,67 @@ public class EntryLogTest {
             Assert.assertTrue("Cache maximum size is expected to be less than " + cacheMaximumSize
                     + " but current cacheSize is " + cacheSize, cacheSize <= cacheMaximumSize);
         }
+    }
+
+    /*
+     * when entrylog for ledger is removed from ledgerIdEntryLogMap, then
+     * ledgermap should be appended to that entrylog, before moving that
+     * entrylog to rotatedlogchannels.
+     */
+    @Test
+    public void testAppendLedgersMapOnCacheRemoval() throws Exception {
+        final int cacheMaximumSize = 5;
+
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setEntryLogFilePreAllocationEnabled(true);
+        conf.setEntryLogPerLedgerEnabled(true);
+        conf.setLedgerDirNames(createAndGetLedgerDirs(1));
+        conf.setMaximumNumberOfActiveEntryLogs(cacheMaximumSize);
+        LedgerDirsManager ledgerDirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs(),
+                new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()));
+
+        EntryLogger entryLogger = new EntryLogger(conf, ledgerDirsManager);
+        EntryLogManagerForEntryLogPerLedger entryLogManager = (EntryLogManagerForEntryLogPerLedger) entryLogger
+                .getEntryLogManager();
+
+        long ledgerId = 0l;
+        entryLogManager.createNewLog(ledgerId);
+        int entrySize = 200;
+        int numOfEntries = 4;
+        for (int i = 0; i < numOfEntries; i++) {
+            entryLogger.addEntry(ledgerId, generateEntry(ledgerId, i, entrySize));
+        }
+
+        BufferedLogChannel logChannelForledger = entryLogManager.getCurrentLogForLedger(ledgerId);
+        long logIdOfLedger = logChannelForledger.getLogId();
+        /*
+         * do checkpoint to make sure entrylog files are persisted
+         */
+        entryLogger.checkpoint();
+
+        try {
+            entryLogger.extractEntryLogMetadataFromIndex(logIdOfLedger);
+        } catch (IOException ie) {
+            // expected because appendLedgersMap wouldn't have been called
+        }
+
+        /*
+         * create entrylogs for more ledgers, so that ledgerIdEntryLogMap would
+         * reach its limit and remove the oldest entrylog.
+         */
+        for (int i = 1; i <= cacheMaximumSize; i++) {
+            entryLogManager.createNewLog(i);
+        }
+        /*
+         * do checkpoint to make sure entrylog files are persisted
+         */
+        entryLogger.checkpoint();
+
+        EntryLogMetadata entryLogMetadata = entryLogger.extractEntryLogMetadataFromIndex(logIdOfLedger);
+        ConcurrentLongLongHashMap ledgersMap = entryLogMetadata.getLedgersMap();
+        Assert.assertEquals("There should be only one entry in entryLogMetadata", 1, ledgersMap.size());
+        Assert.assertTrue("Usage should be 1", Double.compare(1.0, entryLogMetadata.getUsage()) == 0);
+        Assert.assertEquals("Total size of entries", (entrySize + 4) * numOfEntries, ledgersMap.get(ledgerId));
     }
 
     /**
