@@ -50,7 +50,7 @@ public abstract class GrpcClientTestBase {
         .setPort(4181)
         .build();
 
-    protected String serverName = "fake server for " + getClass();
+    protected String serverName;
     protected final MutableHandlerRegistry serviceRegistry = new MutableHandlerRegistry();
     protected Server fakeServer;
     protected OrderedScheduler scheduler;
@@ -61,6 +61,7 @@ public abstract class GrpcClientTestBase {
 
     @Before
     public void setUp() throws Exception {
+        serverName = "fake-server";
         fakeServer = InProcessServerBuilder
             .forName(serverName)
             .fallbackHandlerRegistry(serviceRegistry)
@@ -72,8 +73,7 @@ public abstract class GrpcClientTestBase {
             .numThreads(Runtime.getRuntime().availableProcessors())
             .build();
         settings = StorageClientSettings.newBuilder()
-            .managedChannelBuilder(InProcessChannelBuilder.forName(serverName).directExecutor())
-            .usePlaintext(true)
+            .serviceUri("bk+inprocess://" + serverName)
             .build();
         serverManager = new StorageServerClientManagerImpl(
             settings,

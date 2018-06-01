@@ -27,6 +27,7 @@ import io.grpc.inprocess.InProcessChannelBuilder;
 import java.io.IOException;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import lombok.Cleanup;
 import org.apache.bookkeeper.clients.exceptions.ClientException;
 import org.apache.bookkeeper.clients.exceptions.InvalidNamespaceNameException;
 import org.apache.bookkeeper.clients.exceptions.NamespaceExistsException;
@@ -118,7 +119,7 @@ public abstract class RootRangeClientImplTestBase extends GrpcClientTestBase {
 
         RootRangeServiceImplBase rootRangeService = createRootRangeServiceForSuccess();
         serviceRegistry.addService(rootRangeService.bindService());
-        StorageServerChannel rsChannel = new StorageServerChannel(
+        @Cleanup StorageServerChannel rsChannel = new StorageServerChannel(
             InProcessChannelBuilder.forName(serverName).directExecutor().build(),
             Optional.empty());
         serviceFuture.complete(rsChannel);
@@ -138,7 +139,7 @@ public abstract class RootRangeClientImplTestBase extends GrpcClientTestBase {
 
         RootRangeServiceImplBase rootRangeService = createRootRangeServiceForRequestFailure();
         serviceRegistry.addService(rootRangeService.bindService());
-        StorageServerChannel rsChannel = new StorageServerChannel(
+        @Cleanup StorageServerChannel rsChannel = new StorageServerChannel(
             InProcessChannelBuilder.forName(serverName).directExecutor().build(),
             Optional.empty());
         serviceFuture.complete(rsChannel);
@@ -158,7 +159,7 @@ public abstract class RootRangeClientImplTestBase extends GrpcClientTestBase {
 
         RootRangeServiceImplBase rootRangeService = createRootRangeServiceForRpcFailure();
         serviceRegistry.addService(rootRangeService.bindService());
-        StorageServerChannel rsChannel = new StorageServerChannel(
+        @Cleanup StorageServerChannel rsChannel = new StorageServerChannel(
             InProcessChannelBuilder.forName(serverName).directExecutor().build(),
             Optional.empty());
         serviceFuture.complete(rsChannel);
