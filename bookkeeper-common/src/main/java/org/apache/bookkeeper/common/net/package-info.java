@@ -7,7 +7,7 @@
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,23 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.bookkeeper.common.resolver;
-
-import io.grpc.NameResolver;
-
 /**
- * The abstract bookkeeper name resolver factory.
- *
- * <p>The name resolver is responsible for creating specific name resolver
- * which provides addresses for {@link io.grpc.LoadBalancer}.
+ * Classes for resolving service uris in bookkeeper.
  */
-public abstract class AbstractNameResolverFactory extends NameResolver.Factory {
-
-    /**
-     * Gets name of the name resolver factory.
-     *
-     * @return name of the name resolver factory.
-     */
-    public abstract String name();
-
-}
+package org.apache.bookkeeper.common.net;

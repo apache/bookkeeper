@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import lombok.Cleanup;
 import org.apache.bookkeeper.clients.grpc.GrpcClientTestBase;
 import org.apache.bookkeeper.clients.impl.channel.StorageServerChannel;
 import org.apache.bookkeeper.clients.impl.channel.StorageServerChannelManager;
@@ -145,7 +146,7 @@ public class TestMetaRangeClientImpl extends GrpcClientTestBase {
         };
         serviceRegistry.addService(metaRangeService.bindService());
 
-        StorageServerChannel rsChannel = new StorageServerChannel(
+        @Cleanup StorageServerChannel rsChannel = new StorageServerChannel(
             InProcessChannelBuilder.forName(serverName).directExecutor().build(),
             Optional.empty());
         serviceFuture.complete(rsChannel);
@@ -169,7 +170,7 @@ public class TestMetaRangeClientImpl extends GrpcClientTestBase {
         };
         serviceRegistry.addService(metaRangeService.bindService());
 
-        StorageServerChannel rsChannel = new StorageServerChannel(
+        @Cleanup StorageServerChannel rsChannel = new StorageServerChannel(
             InProcessChannelBuilder.forName(serverName).directExecutor().build(),
             Optional.empty());
         serviceFuture.complete(rsChannel);
