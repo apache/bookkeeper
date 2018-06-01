@@ -40,7 +40,7 @@ freeStyleJob('bookkeeper_release_nightly_snapshot') {
   parameters {
       stringParam(
           'sha1',
-          defaultBranch,
+          'master',
           'Commit id or refname (eg: origin/pr/9/head) you want to build.')
         
       stringParam(
