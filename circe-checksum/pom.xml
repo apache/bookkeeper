@@ -114,6 +114,9 @@
 
   <profiles>
     <profile>
+      <!-- from JDK10 javah command is not available
+           see http://openjdk.java.net/jeps/313
+      -->
       <id>jdk-without-javah</id>
       <activation>
          <jdk>[10,)</jdk>
