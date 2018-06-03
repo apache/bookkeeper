@@ -427,6 +427,9 @@ class MVCCStoreImpl<K, V> extends RocksdbKVStore<K, V> implements MVCCStore<K, V
                 result.totalAmount(newAmount);
             }
             return result;
+        } catch (RocksDBException rde) {
+            result.close();
+            throw new StateStoreRuntimeException(rde);
         } catch (StateStoreRuntimeException e) {
             result.close();
             throw e;
