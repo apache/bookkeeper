@@ -68,7 +68,7 @@
             <compilerArg>-Xlint:unchecked</compilerArg>
             <!-- https://issues.apache.org/jira/browse/MCOMPILER-205 -->
             <compilerArg>-Xpkginfo:always</compilerArg>
-            </compilerArgs>
+          </compilerArgs>
         </configuration>
       </plugin>
       <plugin>
@@ -142,16 +142,16 @@
                 <source>1.8</source>
                 <target>1.8</target>
                 <compilerArgs>
-                   <!-- Object.finalize() is deprecated at java 9 -->
-                   <!-- <compilerArg>-Werror</compilerArg> -->
-                   <compilerArg>-Xlint:deprecation</compilerArg>
-                   <compilerArg>-Xlint:unchecked</compilerArg>
+                  <!-- Object.finalize() is deprecated at java 9 -->
+                  <!-- <compilerArg>-Werror</compilerArg> -->
+                  <compilerArg>-Xlint:deprecation</compilerArg>
+                  <compilerArg>-Xlint:unchecked</compilerArg>
                    <!-- https://issues.apache.org/jira/browse/MCOMPILER-205 -->
-                   <compilerArg>-Xpkginfo:always</compilerArg>
-                   <!-- add -h flag to javac -->
-                   <compilerArg>-h</compilerArg>
-                   <compilerArg>${project.build.directory}/nar/javah-include</compilerArg>
-               </compilerArgs>
+                  <compilerArg>-Xpkginfo:always</compilerArg>
+                  <!-- add -h flag to javac -->
+                  <compilerArg>-h</compilerArg>
+                  <compilerArg>${project.build.directory}/nar/javah-include</compilerArg>
+                </compilerArgs>
              </configuration>
           </plugin>
             </plugins>
