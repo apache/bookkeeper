@@ -35,7 +35,7 @@ mavenJob('bookkeeper_precommit_pullrequest_validation') {
     '${ghprbTargetBranch}')
 
   // Sets that this is a PreCommit job.
-  common_job_properties.setPreCommit(delegate, 'Pull Request Validation', '--none--', '', true)
+  common_job_properties.setPreCommit(delegate, 'Pull Request Validation', '--none--', true)
 
   // Set Maven parameters.
   common_job_properties.setMavenConfig(delegate)
