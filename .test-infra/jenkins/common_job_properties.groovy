@@ -146,7 +146,7 @@ class common_job_properties {
           onlyTriggerPhrase()
         }
         if (onlyMaster) {
-          whiteListTargetBranches('master')
+          whiteListTargetBranches(['master'])
         }
 
         extensions {
