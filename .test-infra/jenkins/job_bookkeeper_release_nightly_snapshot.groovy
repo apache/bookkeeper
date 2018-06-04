@@ -64,7 +64,7 @@ export MAVEN_OPTS=-Xmx2048m
       common_job_properties.setMavenConfig(delegate)
 
       // Maven build project.
-      goals('clean apache-rat:check checkstyle:check package spotbugs:check -Dmaven.test.failure.ignore=true deploy -Ddistributedlog -Dstream -DstreamTests -Pdocker')
+      goals('clean package -Dmaven.test.failure.ignore=true deploy -Ddistributedlog -Dstream -DstreamTests -Pdocker')
     }
 
     // publish the docker images

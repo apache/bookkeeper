@@ -50,5 +50,5 @@ mavenJob('bookkeeper_precommit_pullrequest_java8') {
   common_job_properties.setMavenConfig(delegate)
 
   // Maven build project
-  goals('clean apache-rat:check checkstyle:check package spotbugs:check -Dstream')
+  goals('clean apache-rat:check package spotbugs:check -Dstream')
 }
