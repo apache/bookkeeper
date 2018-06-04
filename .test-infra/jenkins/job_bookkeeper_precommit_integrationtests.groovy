@@ -27,7 +27,9 @@ freeStyleJob('bookkeeper_precommit_integrationtests') {
         delegate,
         'master',
         'JDK 1.8 (latest)',
-        120)
+        120,
+        'ubuntu',
+        '${ghprbTargetBranch}')
 
     // Execute concurrent builds if necessary.
     concurrentBuild()

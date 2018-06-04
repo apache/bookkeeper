@@ -43,7 +43,8 @@ class common_job_properties {
                                            String branch = 'master',
                                            String jdkVersion = 'JDK 1.8 (latest)',
                                            int timeout = 200,
-                                           String jenkinsExecutorLabel = 'ubuntu') {
+                                           String jenkinsExecutorLabel = 'ubuntu',
+                                           String branchVarName = '${sha1}') {
     // GitHub project.
     context.properties {
       githubProjectUrl('https://github.com/apache/bookkeeper/')
@@ -55,7 +56,9 @@ class common_job_properties {
             'https://github.com/apache/bookkeeper.git',
             branch,
             jenkinsExecutorLabel,
-            timeout)
+            timeout,
+            jdkVersion,
+            branchVarName)
   }
 
   // Sets common top-level job properties. Accessed through one of the above
@@ -65,7 +68,8 @@ class common_job_properties {
                                                String defaultBranch,
                                                String jenkinsExecutorLabel,
                                                int defaultTimeout,
-                                               String jdkVersion = 'JDK 1.8 (latest)') {
+                                               String jdkVersion = 'JDK 1.8 (latest)',
+                                               String branchVarName = '${sha1}') {
     // Set JDK version.
     context.jdk(jdkVersion)
 
@@ -85,20 +89,23 @@ class common_job_properties {
           refspec('+refs/heads/*:refs/remotes/origin/* ' +
                   '+refs/pull/${ghprbPullId}/*:refs/remotes/origin/pr/${ghprbPullId}/*')
         }
-        branch('${sha1}')
+        branch(branchVarName)
         extensions {
           cleanAfterCheckout()
         }
       }
     }
 
-    context.parameters {
-      // This is a recommended setup if you want to run the job manually. The
-      // ${sha1} parameter needs to be provided, and defaults to the main branch.
-      stringParam(
-          'sha1',
-          defaultBranch,
-          'Commit id or refname (eg: origin/pr/9/head) you want to build.')
+    // add the parameter when branch var name is `sha1`
+    if (branchVarName == '${sha1}') {
+      context.parameters {
+        // This is a recommended setup if you want to run the job manually. The
+        // ${sha1} parameter needs to be provided, and defaults to the main branch.
+        stringParam(
+            'sha1',
+            defaultBranch,
+            'Commit id or refname (eg: origin/pr/9/head) you want to build.')
+      }
     }
 
     context.wrappers {
