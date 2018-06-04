@@ -31,8 +31,10 @@ freeStyleJob('bookkeeper_precommit_integrationtests') {
         'ubuntu',
         '${ghprbTargetBranch}')
 
-    // Execute concurrent builds if necessary.
-    concurrentBuild()
+    throttleConcurrentBuilds {
+        // limit builds to 1 per node to avoid conflicts on building docker images
+        maxPerNode(1)
+    }
 
     // Sets that this is a PreCommit job.
     common_job_properties.setPreCommit(delegate, 'Integration Tests')
