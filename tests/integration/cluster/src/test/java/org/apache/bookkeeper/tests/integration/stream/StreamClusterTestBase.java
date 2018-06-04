@@ -38,6 +38,7 @@ import org.junit.BeforeClass;
  * but enabled stream storage for testing stream storage related features.
  */
 @Slf4j
+@SuppressWarnings("deprecation")
 public abstract class StreamClusterTestBase extends BookKeeperClusterTestBase {
 
     @BeforeClass

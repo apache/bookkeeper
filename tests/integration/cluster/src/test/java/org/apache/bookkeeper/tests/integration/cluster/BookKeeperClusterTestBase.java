@@ -42,6 +42,7 @@ import org.junit.BeforeClass;
  * A docker container based bookkeeper cluster test base, providing similar facility like the one in unit test.
  */
 @Slf4j
+@SuppressWarnings("deprecation")
 public abstract class BookKeeperClusterTestBase {
 
     protected static BKCluster bkCluster;

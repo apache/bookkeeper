@@ -27,6 +27,16 @@ import static org.apache.bookkeeper.bookie.BookKeeperServerStats.NUM_OF_WRITE_AC
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.NUM_OF_WRITE_LEDGERS_REMOVED_CACHE_EXPIRY;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.NUM_OF_WRITE_LEDGERS_REMOVED_CACHE_MAXSIZE;
 
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
+import com.google.common.cache.RemovalCause;
+import com.google.common.cache.RemovalListener;
+import com.google.common.cache.RemovalNotification;
+
+import io.netty.buffer.ByteBuf;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
@@ -42,6 +52,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+import lombok.extern.slf4j.Slf4j;
+
 import org.apache.bookkeeper.bookie.EntryLogger.BufferedLogChannel;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.LedgerDirsListener;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -50,17 +62,6 @@ import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.collections.ConcurrentLongHashMap;
 import org.apache.commons.lang3.mutable.MutableInt;
-
-import com.google.common.annotations.VisibleForTesting;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
-import com.google.common.cache.RemovalCause;
-import com.google.common.cache.RemovalListener;
-import com.google.common.cache.RemovalNotification;
-
-import io.netty.buffer.ByteBuf;
-import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 class EntryLogManagerForEntryLogPerLedger extends EntryLogManagerBase {
@@ -232,7 +233,8 @@ class EntryLogManagerForEntryLogPerLedger extends EntryLogManagerBase {
 
     EntryLogManagerForEntryLogPerLedger(ServerConfiguration conf, LedgerDirsManager ledgerDirsManager,
             EntryLoggerAllocator entryLoggerAllocator, List<EntryLogger.EntryLogListener> listeners,
-            EntryLogger.RecentEntryLogsStatus recentlyCreatedEntryLogsStatus, StatsLogger statsLogger) throws IOException {
+            EntryLogger.RecentEntryLogsStatus recentlyCreatedEntryLogsStatus, StatsLogger statsLogger)
+            throws IOException {
         super(conf, ledgerDirsManager, entryLoggerAllocator, listeners);
         this.recentlyCreatedEntryLogsStatus = recentlyCreatedEntryLogsStatus;
         this.rotatedLogChannels = new CopyOnWriteArrayList<BufferedLogChannel>();
@@ -271,7 +273,7 @@ class EntryLogManagerForEntryLogPerLedger extends EntryLogManagerBase {
                         onCacheEntryRemoval(expiredLedgerEntryLogMapEntry);
                     }
                 }).build(entryLogAndLockTupleCacheLoader);
-        
+
         this.statsLogger = statsLogger;
         this.entryLogsPerLedgerCounter = new EntryLogsPerLedgerCounter(this.statsLogger);
     }
@@ -315,7 +317,8 @@ class EntryLogManagerForEntryLogPerLedger extends EntryLogManagerBase {
             BufferedLogChannel logChannel = logChannelWithDirInfo.getLogChannel();
             replicaOfCurrentLogChannels.remove(logChannel.getLogId());
             rotatedLogChannels.add(logChannel);
-            entryLogsPerLedgerCounter.removedLedgerFromEntryLogMapCache(ledgerId, removedLedgerEntryLogMapEntry.getCause());
+            entryLogsPerLedgerCounter.removedLedgerFromEntryLogMapCache(ledgerId,
+                    removedLedgerEntryLogMapEntry.getCause());
         } finally {
             lock.unlock();
         }

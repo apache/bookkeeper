@@ -41,8 +41,6 @@ import org.apache.bookkeeper.bookie.EntryLogger.BufferedLogChannel;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.stats.Counter;
-import org.apache.bookkeeper.stats.Gauge;
-import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.test.TestStatsProvider;
 import org.apache.bookkeeper.test.TestStatsProvider.TestOpStatsLogger;
 import org.apache.bookkeeper.test.TestStatsProvider.TestStatsLogger;
@@ -584,7 +582,7 @@ public class CreateNewLogTest {
         Assert.assertEquals("PreviousAllocatedEntryLogId", numOfLedgers * numOfThreadsForSameLedger,
                 entryLogger.getPreviousAllocatedEntryLogId());
     }
-    
+
     /*
      * In this testcase metrics of EntryLogManagerForEntryLogPerLedger are
      * validated.
@@ -633,10 +631,10 @@ public class CreateNewLogTest {
 
         // lid-1 : 3 entrylogs, lid-2 : 2 entrylogs, lid-3 : 1 entrylog
         int numOfEntrylogsForLedger1 = 3;
-        createNewLogs(entrylogManager, 1l, numOfEntrylogsForLedger1);
+        createNewLogs(entrylogManager, 1L, numOfEntrylogsForLedger1);
         int numOfEntrylogsForLedger2 = 2;
-        createNewLogs(entrylogManager, 2l, numOfEntrylogsForLedger2);
-        createNewLogs(entrylogManager, 3l, 1);
+        createNewLogs(entrylogManager, 2L, numOfEntrylogsForLedger2);
+        createNewLogs(entrylogManager, 3L, 1);
 
         Assert.assertEquals("NUM_OF_WRITE_ACTIVE_LEDGERS", 3, numOfWriteActiveLedgers.get().intValue());
         Assert.assertEquals("NUM_OF_WRITE_LEDGERS_REMOVED_CACHE_EXPIRY", 0,
@@ -651,7 +649,7 @@ public class CreateNewLogTest {
          * since entrylog for lid-4 is created and entrylogmap cachesize is 3,
          * lid-1 will be removed from entrylogmap cache
          */
-        createNewLogs(entrylogManager, 4l, 1);
+        createNewLogs(entrylogManager, 4L, 1);
         Assert.assertEquals("NUM_OF_WRITE_ACTIVE_LEDGERS", maximumNumberOfActiveEntryLogs,
                 numOfWriteActiveLedgers.get().intValue());
         Assert.assertEquals("NUM_OF_WRITE_LEDGERS_REMOVED_CACHE_MAXSIZE", 1,
@@ -664,9 +662,9 @@ public class CreateNewLogTest {
          * entryLogPerLedgerCounterLimitsMultFactor = 2, when the entrylog for
          * lid-7 is created, count of lid-1 should be removed from countermap.
          */
-        createNewLogs(entrylogManager, 5l, 1);
-        createNewLogs(entrylogManager, 6l, 1);
-        createNewLogs(entrylogManager, 7l, 1);
+        createNewLogs(entrylogManager, 5L, 1);
+        createNewLogs(entrylogManager, 6L, 1);
+        createNewLogs(entrylogManager, 7L, 1);
         Assert.assertEquals("NUM_OF_WRITE_ACTIVE_LEDGERS", maximumNumberOfActiveEntryLogs,
                 numOfWriteActiveLedgers.get().intValue());
         Assert.assertEquals("NUM_OF_WRITE_LEDGERS_REMOVED_CACHE_MAXSIZE", 4,
@@ -679,7 +677,7 @@ public class CreateNewLogTest {
          * entrylog for new lid-8 is created so one more entry from countermap
          * should be removed.
          */
-        createNewLogs(entrylogManager, 8l, 4);
+        createNewLogs(entrylogManager, 8L, 4);
         Assert.assertEquals("NUM_OF_WRITE_ACTIVE_LEDGERS", maximumNumberOfActiveEntryLogs,
                 numOfWriteActiveLedgers.get().intValue());
         Assert.assertEquals("NUM_OF_WRITE_LEDGERS_REMOVED_CACHE_MAXSIZE", 5,
@@ -699,13 +697,13 @@ public class CreateNewLogTest {
          * added to previous value 1 and hence the EntryLogsPerLedger for ledger
          * - 3l should be updated to 5.
          */
-        createNewLogs(entrylogManager, 3l, 4);
+        createNewLogs(entrylogManager, 3L, 4);
         Assert.assertEquals("NUM_OF_WRITE_LEDGERS_REMOVED_CACHE_MAXSIZE", 6,
                 numOfWriteLedgersRemovedCacheMaxSize.get().intValue());
         Assert.assertEquals("NUM_LEDGERS_HAVING_MULTIPLE_ENTRYLOGS", 4,
                 numLedgersHavingMultipleEntrylogs.get().intValue());
         Assert.assertEquals("Numofentrylogs for ledger: 3l", 5,
-                entrylogManager.entryLogsPerLedgerCounter.getCounterMap().get(3l).intValue());
+                entrylogManager.entryLogsPerLedgerCounter.getCounterMap().get(3L).intValue());
         Assert.assertEquals("ENTRYLOGS_PER_LEDGER SuccessCount", 2, entryLogsPerLedger.getSuccessCount());
     }
 
@@ -743,7 +741,7 @@ public class CreateNewLogTest {
                 .getOpStatsLogger(BookKeeperServerStats.ENTRYLOGS_PER_LEDGER);
 
         int numOfEntrylogsForLedger1 = 3;
-        createNewLogs(entrylogManager, 1l, numOfEntrylogsForLedger1);
+        createNewLogs(entrylogManager, 1L, numOfEntrylogsForLedger1);
         Assert.assertEquals("ENTRYLOGS_PER_LEDGER SuccessCount", 0, entryLogsPerLedger.getSuccessCount());
         Assert.assertEquals("NUM_OF_WRITE_LEDGERS_REMOVED_CACHE_EXPIRY", 0,
                 numOfWriteLedgersRemovedCacheExpiry.get().intValue());
