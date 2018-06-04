@@ -51,8 +51,6 @@ REPO_HOME = os.environ.get("%s_HOME" % CAPITALIZED_PROJECT_NAME, os.getcwd())
 PR_REMOTE_NAME = os.environ.get("PR_REMOTE_NAME", "apache-github")
 # Remote name which points to Apache git
 PUSH_REMOTE_NAME = os.environ.get("PUSH_REMOTE_NAME", "apache")
-# Reference branch name
-DEV_BRANCH_NAME = os.environ.get("DEV_BRANCH_NAME", "master")
 # ASF JIRA username
 JIRA_USERNAME = os.environ.get("JIRA_USERNAME", "")
 # ASF JIRA password
@@ -304,9 +302,9 @@ def cherry_pick(pr_num, merge_hash, pick_ref):
     return pick_ref
 
 
-def fix_version_from_branch(branch, versions):
+def fix_version_from_branch(branch, versions, target_ref):
     # Note: Assumes this is a sorted (newest->oldest) list of un-released versions
-    if branch == DEV_BRANCH_NAME:
+    if branch == target_ref:
         versions = filter(lambda x: x == DEFAULT_FIX_VERSION, versions)
         if len(versions) > 0:
             return versions[0]
@@ -320,7 +318,7 @@ def fix_version_from_branch(branch, versions):
             return None
 
 
-def resolve_jira_issue(merge_branches, comment, jira_id):
+def resolve_jira_issue(merge_branches, comment, jira_id, target_ref):
     asf_jira = jira.client.JIRA({'server': JIRA_API_BASE},
                                 basic_auth=(JIRA_USERNAME, JIRA_PASSWORD))
 
@@ -352,7 +350,7 @@ def resolve_jira_issue(merge_branches, comment, jira_id):
     versions = filter(lambda x: x.raw['released'] is False, versions)
 
     version_names = map(lambda x: x.name, versions)
-    default_fix_versions = map(lambda x: fix_version_from_branch(x, version_names), merge_branches)
+    default_fix_versions = map(lambda x: fix_version_from_branch(x, version_names), merge_branches, target_ref)
     default_fix_versions = filter(lambda x: x != None, default_fix_versions)
     default_fix_versions = ",".join(default_fix_versions)
 
@@ -375,13 +373,13 @@ def resolve_jira_issue(merge_branches, comment, jira_id):
     print "Successfully resolved %s with fixVersions=%s!" % (jira_id, fix_versions)
 
 
-def resolve_jira_issues(title, merge_branches, comment):
+def resolve_jira_issues(title, merge_branches, comment, target_ref):
     jira_ids = re.findall("%s-[0-9]{3,6}" % CAPITALIZED_PROJECT_NAME, title)
 
     if len(jira_ids) == 0:
         print "No JIRA issue found to update"
     for jira_id in jira_ids:
-        resolve_jira_issue(merge_branches, comment, jira_id)
+        resolve_jira_issue(merge_branches, comment, jira_id, target_ref)
 
 
 def standardize_jira_ref(text):
@@ -537,15 +535,16 @@ def ask_release_for_github_issues(branch, labels):
             break
     return fix_releases
 
-def ask_updates_for_github_issues(milestones, labels, issue_labels):
+def ask_updates_for_github_issues(milestones, labels, issue_labels, milestone_required):
     while True:
         fix_milestone, fix_milestone_number, fix_areas, fix_types = \
-            get_updates_for_github_issues(milestones, labels, issue_labels)
+            get_updates_for_github_issues(milestones, labels, issue_labels, milestone_required)
 
         print "=== Apply following milestone, area, type to github issues ==" 
         print "Fix Types: %s" % ', '.join(fix_types)
         print "Fix Areas: %s" % ', '.join(fix_areas)
-        print "Fix Milestone: %s" % fix_milestone
+        if milestone_required:
+            print "Fix Milestone: %s" % fix_milestone
         print ""
 
         if raw_input("Would you like to update github issues with these labels? (y/n): ") == "y":
@@ -553,22 +552,25 @@ def ask_updates_for_github_issues(milestones, labels, issue_labels):
 
     return fix_milestone, fix_milestone_number, fix_areas, fix_types
 
-def get_updates_for_github_issues(milestones, labels, issue_labels):
+def get_updates_for_github_issues(milestones, labels, issue_labels, milestone_required):
     # get milestone
-    default_milestone_name = milestones[0]['title']
-    milestone_list = map(lambda x: x['title'], milestones)
-    milestone_map = dict((milestone['title'], milestone['number']) for milestone in milestones)
     fix_milestone = ""
-    while True:
-        fix_milestone = raw_input("Choose fix milestone : options are [%s] - default: [%s]: " % (', '.join(milestone_list).strip(), default_milestone_name))
-        fix_milestone = fix_milestone.strip()
-        if fix_milestone == "":
-            fix_milestone = default_milestone_name
-            break
-        elif fix_milestone in milestone_map:
-            break
-        else:
-            print "Invalid milestone: %s." % fix_milestone
+    fix_milestone_number = ""
+    if milestone_required:
+        default_milestone_name = milestones[0]['title']
+        milestone_list = map(lambda x: x['title'], milestones)
+        milestone_map = dict((milestone['title'], milestone['number']) for milestone in milestones)
+        while True:
+            fix_milestone = raw_input("Choose fix milestone : options are [%s] - default: [%s]: " % (', '.join(milestone_list).strip(), default_milestone_name))
+            fix_milestone = fix_milestone.strip()
+            if fix_milestone == "":
+                fix_milestone = default_milestone_name
+                break
+            elif fix_milestone in milestone_map:
+                break
+            else:
+                print "Invalid milestone: %s." % fix_milestone
+        fix_milestone_number = milestone_map[fix_milestone]
 
     # get area
     fix_areas = ask_for_labels("area/", labels, issue_labels)
@@ -576,7 +578,7 @@ def get_updates_for_github_issues(milestones, labels, issue_labels):
     # get types
     fix_types = ask_for_labels("type/", labels, issue_labels) 
 
-    return fix_milestone, milestone_map[fix_milestone], fix_areas, fix_types
+    return fix_milestone, fix_milestone_number, fix_areas, fix_types
 
 def ask_for_labels(prefix, labels, issue_labels):
     issue_filtered_labels = map(lambda l: l.split('/')[1], filter(lambda x: x.startswith(prefix), issue_labels))
@@ -636,11 +638,17 @@ def update_github_issue(github_issue_id, fix_milestone_number, fix_milestone, fi
     url = get_github_issue_url(github_issue_id)
     labels = other_labels + map(lambda x: "area/%s" % x, fix_areas)
     labels = labels + map(lambda x: "type/%s" % x, fix_types)
-    labels.append("release/%s" % fix_milestone)
-    data = json.dumps({
-        'milestone': int(fix_milestone_number),
-        'labels': labels,
-    })
+    if fix_milestone_number == '':
+        data = json.dumps({
+            'labels': labels,
+        })
+    else:
+        labels.append("release/%s" % fix_milestone)
+        data = json.dumps({
+            'milestone': int(fix_milestone_number),
+            'labels': labels,
+        })
+
     post_json(url, data)
     return labels
 
@@ -747,7 +755,7 @@ def main():
     issue_labels = get_github_issue_labels(pr_num)
     # ask for fix milestone, area and type
     fix_milestone, fix_milestone_number, fix_areas, fix_types = \
-        ask_updates_for_github_issues(milestones, labels, issue_labels)
+        ask_updates_for_github_issues(milestones, labels, issue_labels, target_ref == "master")
     # update issues with fix milestone, are and type
     other_labels = filter(lambda x: not x.startswith("area"), issue_labels)
     all_issue_labels = update_github_issues( \
@@ -759,6 +767,13 @@ def main():
         other_labels)
     # add the pr author to the assignees
     add_assignees_to_github_issues(github_issue_ids, [ user_login ])
+
+    if target_ref != "master":
+        branch_version = target_ref.split('-')[1]
+        # add releases
+        fix_releases = ask_release_for_github_issues(branch_version, labels)
+        if len(fix_releases) > 0:
+            all_issue_labels = add_release_to_github_issues(github_issue_ids, all_issue_labels, fix_releases[0])
 
     #
     # 5. Process the merge
@@ -817,7 +832,7 @@ def main():
             %s
             {noformat}
             ''' % (pr_num, GITHUB_BASE, pr_num, merge_commit_log)
-            resolve_jira_issues(commit_title, merged_refs, jira_comment)
+            resolve_jira_issues(commit_title, merged_refs, jira_comment, target_ref)
         else:
             print "JIRA_USERNAME and JIRA_PASSWORD not set"
             print "Exiting without trying to close the associated JIRA."
