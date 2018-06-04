@@ -41,5 +41,5 @@ mavenJob('bookkeeper_precommit_pullrequest_validation') {
   common_job_properties.setMavenConfig(delegate)
 
   // Maven build project
-  goals('clean apache-rat:check checkstyle:check -Ddistributedlog -Dstream')
+  goals('clean apache-rat:check checkstyle:check package -Ddistributedlog -Dstream -DskipTests')
 }
