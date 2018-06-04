@@ -50,7 +50,7 @@ public class TestStorageClientBuilder {
             .withSettings(StorageClientSettings.newBuilder()
                 .serviceUri("bk://localhost:4181")
                 .build())
-            .withNamespace("invalid-namespace")
+            .withNamespace("invalid namespace")
             .build();
     }
 
