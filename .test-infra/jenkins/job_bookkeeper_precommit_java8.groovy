@@ -44,11 +44,15 @@ mavenJob('bookkeeper_precommit_pullrequest_java8') {
     '${ghprbTargetBranch}')
 
   // Sets that this is a PreCommit job.
-  common_job_properties.setPreCommit(delegate, 'Maven clean install (Java 8)')
+  common_job_properties.setPreCommit(
+    delegate,
+    'Build (Java 8)',
+    '.*(re)?build( java8)?.*',
+    '.*\[skip build( java8)?\].*')
 
   // Set Maven parameters.
   common_job_properties.setMavenConfig(delegate)
 
   // Maven build project
-  goals('clean apache-rat:check package spotbugs:check -Dstream')
+  goals('clean package spotbugs:check -Dstream -DskipBookKeeperServerTests')
 }
