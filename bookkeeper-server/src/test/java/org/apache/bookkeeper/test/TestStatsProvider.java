@@ -177,6 +177,10 @@ public class TestStatsProvider implements StatsProvider {
             return TestStatsProvider.this.getOrCreateCounter(getSubPath(name));
         }
 
+        public Gauge<? extends Number> getGauge(String name) {
+            return gaugeMap.get(path);
+        }
+
         @Override
         public <T extends Number> void registerGauge(String name, Gauge<T> gauge) {
             TestStatsProvider.this.registerGauge(getSubPath(name), gauge);
