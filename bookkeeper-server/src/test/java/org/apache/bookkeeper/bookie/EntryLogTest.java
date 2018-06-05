@@ -1111,7 +1111,7 @@ public class EntryLogTest {
         EntryLogManagerForEntryLogPerLedger entryLogManager = (EntryLogManagerForEntryLogPerLedger) entryLogger
                 .getEntryLogManager();
 
-        long ledgerId = 0l;
+        long ledgerId = 0L;
         entryLogManager.createNewLog(ledgerId);
         int entrySize = 200;
         int numOfEntries = 4;
