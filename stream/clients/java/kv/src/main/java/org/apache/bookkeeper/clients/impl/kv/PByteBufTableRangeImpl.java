@@ -94,12 +94,11 @@ class PByteBufTableRangeImpl implements PTable<ByteBuf, ByteBuf> {
         if (null != option.endKey()) {
             option.endKey().retain();
         }
-        return TableRequestProcessor.of(
-            KvUtils.newKvRangeRequest(
-                scChannel.getStorageContainerId(),
-                KvUtils.newRangeRequest(lKey, option)
-                    .setHeader(newRoutingHeader(pKey))),
-            response -> KvUtils.newRangeResult(response.getKvRangeResp(), resultFactory, kvFactory),
+        return RangeRequestProcessor.of(
+            KvUtils.newRangeRequest(lKey, option)
+                .setHeader(newRoutingHeader(pKey))
+                .build(),
+            response -> KvUtils.newRangeResult(response, resultFactory, kvFactory),
             scChannel,
             executor,
             backoffPolicy
@@ -120,12 +119,11 @@ class PByteBufTableRangeImpl implements PTable<ByteBuf, ByteBuf> {
         pKey.retain();
         lKey.retain();
         value.retain();
-        return TableRequestProcessor.of(
-            KvUtils.newKvPutRequest(
-                scChannel.getStorageContainerId(),
-                KvUtils.newPutRequest(lKey, value, option)
-                    .setHeader(newRoutingHeader(pKey))),
-            response -> KvUtils.newPutResult(response.getKvPutResp(), resultFactory, kvFactory),
+        return PutRequestProcessor.of(
+            KvUtils.newPutRequest(lKey, value, option)
+                .setHeader(newRoutingHeader(pKey))
+                .build(),
+            response -> KvUtils.newPutResult(response, resultFactory, kvFactory),
             scChannel,
             executor,
             backoffPolicy
@@ -145,12 +143,11 @@ class PByteBufTableRangeImpl implements PTable<ByteBuf, ByteBuf> {
         if (null != option.endKey()) {
             option.endKey().retain();
         }
-        return TableRequestProcessor.of(
-            KvUtils.newKvDeleteRequest(
-                scChannel.getStorageContainerId(),
-                KvUtils.newDeleteRequest(lKey, option)
-                    .setHeader(newRoutingHeader(pKey))),
-            response -> KvUtils.newDeleteResult(response.getKvDeleteResp(), resultFactory, kvFactory),
+        return DeleteRequestProcessor.of(
+            KvUtils.newDeleteRequest(lKey, option)
+                .setHeader(newRoutingHeader(pKey))
+                .build(),
+            response -> KvUtils.newDeleteResult(response, resultFactory, kvFactory),
             scChannel,
             executor,
             backoffPolicy
@@ -170,12 +167,11 @@ class PByteBufTableRangeImpl implements PTable<ByteBuf, ByteBuf> {
                                                                           IncrementOption<ByteBuf> option) {
         pKey.retain();
         lKey.retain();
-        return TableRequestProcessor.of(
-            KvUtils.newKvIncrementRequest(
-                scChannel.getStorageContainerId(),
-                KvUtils.newIncrementRequest(lKey, amount, option)
-                    .setHeader(newRoutingHeader(pKey))),
-            response -> KvUtils.newIncrementResult(response.getKvIncrResp(), resultFactory, kvFactory),
+        return IncrementRequestProcessor.of(
+            KvUtils.newIncrementRequest(lKey, amount, option)
+                .setHeader(newRoutingHeader(pKey))
+                .build(),
+            response -> KvUtils.newIncrementResult(response, resultFactory, kvFactory),
             scChannel,
             executor,
             backoffPolicy
@@ -248,11 +244,9 @@ class PByteBufTableRangeImpl implements PTable<ByteBuf, ByteBuf> {
 
         @Override
         public CompletableFuture<TxnResult<ByteBuf, ByteBuf>> commit() {
-            return TableRequestProcessor.of(
-                KvUtils.newKvTxnRequest(
-                    scChannel.getStorageContainerId(),
-                    txnBuilder.setHeader(newRoutingHeader(pKey))),
-                response -> KvUtils.newKvTxnResult(response.getKvTxnResp(), resultFactory, kvFactory),
+            return TxnRequestProcessor.of(
+                txnBuilder.setHeader(newRoutingHeader(pKey)).build(),
+                response -> KvUtils.newKvTxnResult(response, resultFactory, kvFactory),
                 scChannel,
                 executor,
                 backoffPolicy

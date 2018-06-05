@@ -20,17 +20,20 @@ package org.apache.bookkeeper.tests.containers;
 
 import static java.time.temporal.ChronoUnit.SECONDS;
 
+import com.google.common.base.Strings;
 import java.net.URI;
 import java.time.Duration;
 import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.tests.containers.wait.HttpWaitStrategy;
+import org.apache.bookkeeper.tests.integration.utils.DockerUtils;
+import org.testcontainers.containers.wait.strategy.HostPortWaitStrategy;
 
 /**
  * Test Container for Bookies.
  */
 @Slf4j
-public class BookieContainer<SELF extends BookieContainer<SELF>> extends ChaosContainer<SELF> {
+public class BookieContainer<SelfT extends BookieContainer<SelfT>> extends ChaosContainer<SelfT> {
 
     private static final int BOOKIE_PORT = 3181;
     private static final int BOOKIE_GRPC_PORT = 4181; // stream storage grpc port
@@ -40,18 +43,29 @@ public class BookieContainer<SELF extends BookieContainer<SELF>> extends ChaosCo
 
     private final String hostname;
     private final String metadataServiceUri;
+    private final String extraServerComponents;
 
     public BookieContainer(String clusterName,
                            String hostname,
-                           String metadataServiceUri) {
+                           String metadataServiceUri,
+                           String extraServerComponents) {
         super(clusterName, IMAGE_NAME);
         this.hostname = hostname;
         this.metadataServiceUri = metadataServiceUri;
+        this.extraServerComponents = extraServerComponents;
     }
 
     @Override
     public String getContainerName() {
         return clusterName + "-" + hostname;
+    }
+
+    public String getExternalGrpcEndpointStr() {
+        return getContainerIpAddress() + ":" + getMappedPort(BOOKIE_GRPC_PORT);
+    }
+
+    public String getInternalGrpcEndpointStr() {
+        return DockerUtils.getContainerIP(dockerClient, containerId) + ":" + BOOKIE_GRPC_PORT;
     }
 
     @Override
@@ -65,20 +79,28 @@ public class BookieContainer<SELF extends BookieContainer<SELF>> extends ChaosCo
         addEnv("BK_httpServerPort", "" + BOOKIE_HTTP_PORT);
         addEnv("BK_metadataServiceUri", metadataServiceUri);
         addEnv("BK_useHostNameAsBookieID", "true");
+        addEnv("BK_extraServerComponents", extraServerComponents);
         if (metadataServiceUri.toLowerCase().startsWith("zk")) {
             URI uri = URI.create(metadataServiceUri);
             addEnv("BK_zkServers", uri.getAuthority());
             addEnv("BK_zkLedgersRootPath", uri.getPath());
         }
+        // grpc port
+        addEnv("BK_storageserver.grpc.port", "" + BOOKIE_GRPC_PORT);
     }
 
     @Override
     public void start() {
-        this.waitStrategy = new HttpWaitStrategy()
-            .forPath("/heartbeat")
-            .forStatusCode(200)
-            .forPort(BOOKIE_HTTP_PORT)
-            .withStartupTimeout(Duration.of(60, SECONDS));
+        if (Strings.isNullOrEmpty(extraServerComponents)) {
+            this.waitStrategy = new HttpWaitStrategy()
+                .forPath("/heartbeat")
+                .forStatusCode(200)
+                .forPort(BOOKIE_HTTP_PORT)
+                .withStartupTimeout(Duration.of(60, SECONDS));
+        } else {
+            this.waitStrategy = new HostPortWaitStrategy()
+                .withStartupTimeout(Duration.of(300, SECONDS));
+        }
         this.withCreateContainerCmdModifier(createContainerCmd -> {
             createContainerCmd.withHostName(hostname);
             createContainerCmd.withName(getContainerName());

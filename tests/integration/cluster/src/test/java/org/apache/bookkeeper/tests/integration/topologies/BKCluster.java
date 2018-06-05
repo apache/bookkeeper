@@ -18,9 +18,13 @@
 
 package org.apache.bookkeeper.tests.integration.topologies;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
+import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.UncheckedExecutionException;
+import java.net.URI;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -29,6 +33,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.MetadataDrivers;
+import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
+import org.apache.bookkeeper.stream.storage.impl.cluster.ZkClusterInitializer;
 import org.apache.bookkeeper.tests.containers.BookieContainer;
 import org.apache.bookkeeper.tests.containers.MetadataStoreContainer;
 import org.apache.bookkeeper.tests.containers.ZKContainer;
@@ -40,21 +46,39 @@ import org.testcontainers.containers.Network;
 @Slf4j
 public class BKCluster {
 
+    /**
+     * BookKeeper Cluster Spec.
+     *
+     * @param spec bookkeeper cluster spec.
+     * @return the built bookkeeper cluster
+     */
+    public static BKCluster forSpec(BKClusterSpec spec) {
+        return new BKCluster(spec);
+    }
+
+    private final BKClusterSpec spec;
     @Getter
     private final String clusterName;
     private final Network network;
     private final MetadataStoreContainer metadataContainer;
     private final Map<String, BookieContainer> bookieContainers;
+    private final Map<String, String> internalEndpointsToExternalEndpoints;
     private final int numBookies;
+    private final String extraServerComponents;
+    private volatile boolean enableContainerLog;
 
-    public BKCluster(String clusterName, int numBookies) {
-        this.clusterName = clusterName;
+    private BKCluster(BKClusterSpec spec) {
+        this.spec = spec;
+        this.clusterName = spec.clusterName();
         this.network = Network.newNetwork();
         this.metadataContainer = (MetadataStoreContainer) new ZKContainer(clusterName)
             .withNetwork(network)
             .withNetworkAliases(ZKContainer.HOST_NAME);
         this.bookieContainers = Maps.newTreeMap();
-        this.numBookies = numBookies;
+        this.internalEndpointsToExternalEndpoints = Maps.newConcurrentMap();
+        this.numBookies = spec.numBookies();
+        this.extraServerComponents = spec.extraServerComponents();
+        this.enableContainerLog = spec.enableContainerLog();
     }
 
     public String getExternalServiceUri() {
@@ -67,13 +91,38 @@ public class BKCluster {
 
     public void start() throws Exception {
         // start the metadata store
+        if (enableContainerLog) {
+            this.metadataContainer.tailContainerLog();
+        }
         this.metadataContainer.start();
+        log.info("Successfully started metadata store container.");
 
         // init a new cluster
         initNewCluster(metadataContainer.getExternalServiceUri());
+        log.info("Successfully initialized metadata service uri : {}",
+            metadataContainer.getExternalServiceUri());
+
+        if (!Strings.isNullOrEmpty(extraServerComponents)) {
+            int numStorageContainers = numBookies > 0 ? 2 * numBookies : 8;
+            // initialize the stream storage.
+            new ZkClusterInitializer(
+                ZKMetadataDriverBase.getZKServersFromServiceUri(URI.create(metadataContainer.getExternalServiceUri()))
+            ).initializeCluster(
+                URI.create(metadataContainer.getInternalServiceUri()),
+                numStorageContainers);
+            log.info("Successfully initialized stream storage metadata with {} storage containers",
+                numStorageContainers);
+        }
 
         // create bookies
         createBookies("bookie", numBookies);
+    }
+
+    public String resolveExternalGrpcEndpointStr(String internalGrpcEndpointStr) {
+        String externalGrpcEndpointStr = internalEndpointsToExternalEndpoints.get(internalGrpcEndpointStr);
+        checkNotNull(externalGrpcEndpointStr,
+            "No internal grpc endpoint is found : " + internalGrpcEndpointStr);
+        return externalGrpcEndpointStr;
     }
 
     public void stop() {
@@ -117,26 +166,46 @@ public class BKCluster {
         synchronized (this) {
             container = bookieContainers.remove(bookieName);
             if (null != container) {
+                internalEndpointsToExternalEndpoints.remove(container.getInternalGrpcEndpointStr());
                 container.stop();
             }
         }
         return container;
     }
 
-    public synchronized BookieContainer createBookie(String bookieName) {
-        BookieContainer container = getBookie(bookieName);
-        if (null == container) {
-            container = (BookieContainer) new BookieContainer(clusterName, bookieName, ZKContainer.SERVICE_URI)
-                .withNetwork(network)
-                .withNetworkAliases(bookieName);
+    public BookieContainer createBookie(String bookieName) {
+        boolean shouldStart = false;
+        BookieContainer container;
+        synchronized (this) {
+            container = getBookie(bookieName);
+            if (null == container) {
+                shouldStart = true;
+                log.info("Creating bookie {}", bookieName);
+                container = (BookieContainer) new BookieContainer(
+                    clusterName, bookieName, ZKContainer.SERVICE_URI, extraServerComponents
+                ).withNetwork(network).withNetworkAliases(bookieName);
+                if (enableContainerLog) {
+                    container.tailContainerLog();
+                }
+                bookieContainers.put(bookieName, container);
+            }
+        }
+
+        if (shouldStart) {
+            log.info("Starting bookie {}", bookieName);
             container.start();
-            bookieContainers.put(bookieName, container);
+            log.info("Started bookie {} : internal endpoint = {}, external endpoint = {}",
+                bookieName, container.getInternalGrpcEndpointStr(), container.getExternalGrpcEndpointStr());
+            internalEndpointsToExternalEndpoints.put(
+                container.getInternalGrpcEndpointStr(),
+                container.getExternalGrpcEndpointStr());
         }
         return container;
     }
 
-    public synchronized Map<String, BookieContainer> createBookies(String bookieNamePrefix, int numBookies)
+    public Map<String, BookieContainer> createBookies(String bookieNamePrefix, int numBookies)
             throws Exception {
+        log.info("Creating {} bookies with bookie name prefix '{}'", numBookies, bookieNamePrefix);
         List<CompletableFuture<Void>> startFutures = Lists.newArrayListWithExpectedSize(numBookies);
         Map<String, BookieContainer> containers = Maps.newHashMap();
         for (int i = 0; i < numBookies; i++) {
@@ -144,6 +213,7 @@ public class BKCluster {
             startFutures.add(
                 CompletableFuture.runAsync(() -> {
                     String bookieName = String.format("%s-%03d", bookieNamePrefix, idx);
+                    log.info("Starting bookie {} at cluster {}", bookieName, clusterName);
                     BookieContainer container = createBookie(bookieName);
                     synchronized (containers) {
                         containers.put(bookieName, container);

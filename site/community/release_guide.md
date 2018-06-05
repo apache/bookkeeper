@@ -263,6 +263,7 @@ Set up a few environment variables to simplify Maven commands that follow. This 
     RC_NUM="0"
     TAG="release-${VERSION}"
     RC_DIR="bookkeeper-${VERSION}-rc${RC_NUM}"
+    RC_TAG="v${VERSION}-rc${RC_NUM}"
 
 > Please make sure `gpg` command is in your $PATH. The maven release plugin use `gpg` to sign generated jars and packages.
 
@@ -444,6 +445,24 @@ Use the Apache Nexus repository to release the staged binary artifacts to the Ma
 Copy the source release from the `dev` repository to the `release` repository at `dist.apache.org` using Subversion.
 
     svn move https://dist.apache.org/repos/dist/dev/bookkeeper/bookkeeper-${VERSION}-rc${RC_NUM} https://dist.apache.org/repos/dist/release/bookkeeper/bookkeeper-${VERSION}
+
+### Git tag
+
+Create and push a new signed for the released version by copying the tag for the final release tag, as follows
+
+```shell
+git tag -s "${TAG}" "${RC_TAG}"
+git push apache "${TAG}"
+```
+
+Remove rc tags:
+
+```shell
+for num in $(seq 0 ${RC_NUM}); do
+    git tag -d "v${VERSION}-rc${num}"
+    git push apache :"v${VERSION}-rc${num}"
+done
+```
 
 ### Update Website
 

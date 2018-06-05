@@ -21,7 +21,7 @@ package org.apache.bookkeeper.stream.storage;
 import static org.apache.bookkeeper.util.BookKeeperConstants.AVAILABLE_NODE;
 
 /**
- * Defines the storage constants
+ * Defines the storage constants.
  */
 public final class StorageConstants {
 

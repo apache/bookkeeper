@@ -21,9 +21,6 @@ import static com.google.common.base.Charsets.UTF_8;
 import static org.apache.bookkeeper.util.BookKeeperConstants.FEATURE_DISABLE_ENSEMBLE_CHANGE;
 
 import io.netty.buffer.ByteBuf;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.EnsemblePlacementPolicy;
@@ -128,6 +125,7 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
     protected static final String PCBC_TIMEOUT_TIMER_NUM_TICKS = "pcbcTimeoutTimerNumTicks";
     protected static final String TIMEOUT_TIMER_TICK_DURATION_MS = "timeoutTimerTickDurationMs";
     protected static final String TIMEOUT_TIMER_NUM_TICKS = "timeoutTimerNumTicks";
+    // backpressure configuration
     protected static final String WAIT_TIMEOUT_ON_BACKPRESSURE = "waitTimeoutOnBackpressureMs";
 
     // Bookie health check settings
@@ -238,7 +236,7 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
      * Get autodetection of digest type.
      *
      * <p>Ignores provided digestType, if enabled and uses one from ledger metadata instead.
-     * Incompatible with ledger created by bookie versions < 4.2
+     * Incompatible with ledger created by bookie versions &lt; 4.2
      *
      * <p>It is turned on by default since 4.7.
      *
@@ -251,7 +249,7 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
     /**
      * Enable autodetection of digest type.
      * Ignores provided digestType, if enabled and uses one from ledger metadata instead.
-     * Incompatible with ledger created by bookie versions < 4.2
+     * Incompatible with ledger created by bookie versions &lt; 4.2
      *
      * @return client configuration.
      */
@@ -738,10 +736,8 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
 
     /**
      * Get the tick duration in milliseconds that used for the
-     * {@link org.jboss.netty.util.HashedWheelTimer} that used by PCBC to timeout
+     * HashedWheelTimer that used by PCBC to timeout
      * requests.
-     *
-     * @see org.jboss.netty.util.HashedWheelTimer
      *
      * @return tick duration in milliseconds
      */
@@ -752,8 +748,8 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
 
     /**
      * Set the tick duration in milliseconds that used for
-     * {@link org.jboss.netty.util.HashedWheelTimer} that used by PCBC to timeout
-     * requests. Be aware of {@link org.jboss.netty.util.HashedWheelTimer} if you
+     * HashedWheelTimer that used by PCBC to timeout
+     * requests. Be aware of HashedWheelTimer if you
      * are going to modify this setting.
      *
      * @see #getPCBCTimeoutTimerTickDurationMs()
@@ -770,10 +766,8 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
 
     /**
      * Get number of ticks that used for
-     * {@link org.jboss.netty.util.HashedWheelTimer} that used by PCBC to timeout
+     * HashedWheelTimer that used by PCBC to timeout
      * requests.
-     *
-     * @see org.jboss.netty.util.HashedWheelTimer
      *
      * @return number of ticks that used for timeout timer.
      */
@@ -784,8 +778,8 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
 
     /**
      * Set number of ticks that used for
-     * {@link org.jboss.netty.util.HashedWheelTimer} that used by PCBC to timeout request.
-     * Be aware of {@link org.jboss.netty.util.HashedWheelTimer} if you are going to modify
+     * HashedWheelTimer that used by PCBC to timeout request.
+     * Be aware of HashedWheelTimer if you are going to modify
      * this setting.
      *
      * @see #getPCBCTimeoutTimerNumTicks()
@@ -1091,9 +1085,11 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
      * Enable/disable reordering read sequence on reading entries.
      *
      * <p>If this flag is enabled, the client will use
-     * {@link EnsemblePlacementPolicy#reorderReadSequence(ArrayList, List, Map)}
+     * {@link EnsemblePlacementPolicy#reorderReadSequence(java.util.ArrayList,
+     * org.apache.bookkeeper.client.BookiesHealthInfo, org.apache.bookkeeper.client.DistributionSchedule.WriteSet)}
      * to figure out a better read sequence to attempt reads from replicas and use
-     * {@link EnsemblePlacementPolicy#reorderReadLACSequence(ArrayList, List, Map)}
+     * {@link EnsemblePlacementPolicy#reorderReadLACSequence(java.util.ArrayList,
+     * org.apache.bookkeeper.client.BookiesHealthInfo, org.apache.bookkeeper.client.DistributionSchedule.WriteSet)}
      * to figure out a better read sequence to attempt long poll reads from replicas.
      *
      * <p>The order of read sequence is determined by the placement policy implementations.
@@ -1283,8 +1279,8 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
      * Note: Please {@link #enableBookieHealthCheck()} to use this configuration.
      * </p>
      *
-     * @param threshold
-     * @param unit
+     * @param thresholdPerInterval
+     *
      * @return client configuration
      */
     public ClientConfiguration setBookieErrorThresholdPerInterval(long thresholdPerInterval) {
@@ -1426,7 +1422,7 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
     /**
      * Set the timeout value in secs for the GET_BOOKIE_INFO request.
      *
-     * @param timeout
+     * @param timeoutSecs
      * @return client configuration
      */
     public ClientConfiguration setGetBookieInfoTimeout(int timeoutSecs) {
@@ -1436,7 +1432,7 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
 
     /**
      * Set the timeout value in secs for the START_TLS request.
-     * @param timeout
+     * @param timeoutSecs
      * @return client configuration
      */
     public ClientConfiguration setStartTLSTimeout(int timeoutSecs) {

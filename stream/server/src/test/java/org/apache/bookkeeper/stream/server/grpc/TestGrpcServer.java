@@ -22,7 +22,7 @@ import io.grpc.util.MutableHandlerRegistry;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stream.server.StorageServer;
 import org.apache.bookkeeper.stream.server.conf.StorageServerConfiguration;
-import org.apache.bookkeeper.stream.storage.impl.RangeStoreImpl;
+import org.apache.bookkeeper.stream.storage.impl.StorageContainerStoreImpl;
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.junit.Rule;
 import org.junit.Test;
@@ -41,7 +41,7 @@ public class TestGrpcServer {
     @Test
     public void testCreateLocalServer() {
         GrpcServer server = new GrpcServer(
-            mock(RangeStoreImpl.class),
+            mock(StorageContainerStoreImpl.class),
             StorageServerConfiguration.of(compConf),
             null,
             name.getMethodName(),
@@ -55,7 +55,7 @@ public class TestGrpcServer {
     @Test
     public void testCreateBindServer() throws Exception {
         GrpcServer server = new GrpcServer(
-            mock(RangeStoreImpl.class),
+            mock(StorageContainerStoreImpl.class),
             StorageServerConfiguration.of(compConf),
             StorageServer.createLocalEndpoint(0, false),
             null,

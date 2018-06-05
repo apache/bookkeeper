@@ -24,8 +24,11 @@ import java.time.Duration;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.tests.containers.wait.HttpWaitStrategy;
 
+/**
+ * Test container that runs zookeeper.
+ */
 @Slf4j
-public class ZKContainer<SELF extends ZKContainer<SELF>> extends MetadataStoreContainer<SELF> {
+public class ZKContainer<SelfT extends ZKContainer<SelfT>> extends MetadataStoreContainer<SelfT> {
 
     private static final int ZK_PORT = 2181;
     private static final int ZK_HTTP_PORT = 8080;

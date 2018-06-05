@@ -71,6 +71,7 @@ DEVELOPMENT_VERSION="${NEXT_VERSION}-SNAPSHOT"
 
 TAG="release-${VERSION}"
 RC_DIR="bookkeeper-${VERSION}-rc${RC_NUM}"
+RC_TAG="v${VERSION}-rc${RC_NUM}"
 
 CMD="
 gpg-agent --daemon --pinentry-program /usr/bin/pinentry --homedir \$HOME/.gnupg --use-standard-socket
@@ -89,6 +90,7 @@ echo 'BRANCH_NAME               = $BRANCH_NAME'
 echo 'TAG                       = $TAG'
 echo 'RC_NUM                    = $RC_NUM'
 echo 'RC_DIR                    = $RC_DIR'
+echo 'RC_TAG                    = $RC_TAG'
 echo
 echo 'Before executing any release scripts, PLEASE configure your git to cache your github password:'
 echo
@@ -114,6 +116,7 @@ docker run -i -t \
   -e DEVELOPMENT_VERSION=${DEVELOPMENT_VERSION} \
   -e RC_NUM=${RC_NUM} \
   -e TAG=${TAG} \
+  -e RC_TAG=${RC_TAG} \
   -e RC_DIR=${RC_DIR} \
   ${IMAGE_NAME}-${USER_NAME} \
   bash -c "${CMD}"

@@ -24,6 +24,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.Before;
 import org.junit.Test;
 
+/**
+ * Test Base for testing bookie shell scripts.
+ */
 @Slf4j
 public abstract class BookieShellTestBase {
 

@@ -35,6 +35,9 @@ import org.apache.bookkeeper.stream.storage.api.cluster.ClusterMetadataStore;
 import org.apache.bookkeeper.stream.storage.impl.sc.StorageContainerController;
 import org.apache.bookkeeper.versioning.Versioned;
 
+/**
+ * A default implementation of {@link ClusterControllerLeader}.
+ */
 @Slf4j
 public class ClusterControllerLeaderImpl implements ClusterControllerLeader, RegistrationListener {
 
@@ -79,7 +82,7 @@ public class ClusterControllerLeaderImpl implements ClusterControllerLeader, Reg
     }
 
     /**
-     * Suspend the controller if the leader disconnects from zookeeper
+     * Suspend the controller if the leader disconnects from zookeeper.
      */
     @Override
     public void suspend() {
@@ -134,8 +137,8 @@ public class ClusterControllerLeaderImpl implements ClusterControllerLeader, Reg
                 // if the leader is suspended due to losing connection to zookeeper
                 // we don't give leadership until it becomes leader again or being interrupted by curator
                 if (!suspended) {
-                    log.warn("Controller leader encountered exceptions on processing server changes," +
-                        " giving up leadership");
+                    log.warn("Controller leader encountered exceptions on processing server changes,"
+                        + " giving up leadership");
 
                     // stop monitoring the servers
                     this.regClient.unwatchWritableBookies(this);

@@ -74,6 +74,7 @@ public class ForceLedgerProcessorV3Test {
         bookie = mock(Bookie.class);
         requestProcessor = mock(BookieRequestProcessor.class);
         when(requestProcessor.getBookie()).thenReturn(bookie);
+        when(requestProcessor.getWaitTimeoutOnBackpressureMillis()).thenReturn(-1L);
         when(requestProcessor.getForceLedgerStats())
             .thenReturn(NullStatsLogger.INSTANCE.getOpStatsLogger("force_ledger"));
         when(requestProcessor.getForceLedgerRequestStats())

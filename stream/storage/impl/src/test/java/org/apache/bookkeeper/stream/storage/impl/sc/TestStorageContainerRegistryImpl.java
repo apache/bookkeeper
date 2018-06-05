@@ -11,21 +11,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-/*
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package org.apache.bookkeeper.stream.storage.impl.sc;
 
 import static org.junit.Assert.assertEquals;
@@ -81,7 +66,7 @@ public class TestStorageContainerRegistryImpl {
     @Test
     public void testOperationsAfterClosed() throws Exception {
         StorageContainerFactory scFactory = createStorageContainerFactory();
-        StorageContainerRegistryImpl registry = new StorageContainerRegistryImpl(scFactory, scheduler);
+        StorageContainerRegistryImpl registry = new StorageContainerRegistryImpl(scFactory);
         registry.close();
 
         long scId = 1234L;
@@ -106,7 +91,7 @@ public class TestStorageContainerRegistryImpl {
     @Test
     public void testStopNotFoundStorageContainer() throws Exception {
         StorageContainerFactory scFactory = createStorageContainerFactory();
-        StorageContainerRegistryImpl registry = new StorageContainerRegistryImpl(scFactory, scheduler);
+        StorageContainerRegistryImpl registry = new StorageContainerRegistryImpl(scFactory);
         FutureUtils.result(registry.stopStorageContainer(1234L));
         assertEquals(0, registry.getNumStorageContainers());
     }
@@ -114,7 +99,7 @@ public class TestStorageContainerRegistryImpl {
     @Test
     public void testStartStorageContainerTwice() throws Exception {
         StorageContainerFactory scFactory = createStorageContainerFactory();
-        StorageContainerRegistryImpl registry = new StorageContainerRegistryImpl(scFactory, scheduler);
+        StorageContainerRegistryImpl registry = new StorageContainerRegistryImpl(scFactory);
         FutureUtils.result(registry.startStorageContainer(1234L));
         assertEquals(1, registry.getNumStorageContainers());
         // second time
@@ -140,7 +125,7 @@ public class TestStorageContainerRegistryImpl {
 
         long scId = 1L;
 
-        StorageContainerRegistryImpl registry = new StorageContainerRegistryImpl(factory, scheduler);
+        StorageContainerRegistryImpl registry = new StorageContainerRegistryImpl(factory);
         FutureUtils.result(registry.startStorageContainer(scId));
         assertEquals(1, registry.getNumStorageContainers());
         assertEquals(sc1, registry.getStorageContainer(scId));

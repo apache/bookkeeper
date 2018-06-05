@@ -19,21 +19,26 @@
 package org.apache.bookkeeper.clients.impl.channel;
 
 import com.google.common.annotations.VisibleForTesting;
+import io.grpc.Channel;
+import io.grpc.ClientInterceptors;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import java.util.Optional;
 import java.util.function.Function;
 import javax.annotation.concurrent.GuardedBy;
+import org.apache.bookkeeper.clients.config.StorageClientSettings;
+import org.apache.bookkeeper.clients.impl.container.StorageContainerClientInterceptor;
+import org.apache.bookkeeper.clients.resolver.EndpointResolver;
 import org.apache.bookkeeper.clients.utils.GrpcUtils;
 import org.apache.bookkeeper.stream.proto.common.Endpoint;
+import org.apache.bookkeeper.stream.proto.kv.rpc.TableServiceGrpc;
+import org.apache.bookkeeper.stream.proto.kv.rpc.TableServiceGrpc.TableServiceFutureStub;
 import org.apache.bookkeeper.stream.proto.storage.MetaRangeServiceGrpc;
 import org.apache.bookkeeper.stream.proto.storage.MetaRangeServiceGrpc.MetaRangeServiceFutureStub;
 import org.apache.bookkeeper.stream.proto.storage.RootRangeServiceGrpc;
 import org.apache.bookkeeper.stream.proto.storage.RootRangeServiceGrpc.RootRangeServiceFutureStub;
 import org.apache.bookkeeper.stream.proto.storage.StorageContainerServiceGrpc;
 import org.apache.bookkeeper.stream.proto.storage.StorageContainerServiceGrpc.StorageContainerServiceFutureStub;
-import org.apache.bookkeeper.stream.proto.storage.TableServiceGrpc;
-import org.apache.bookkeeper.stream.proto.storage.TableServiceGrpc.TableServiceFutureStub;
 
 /**
  * A channel connected to a range server.
@@ -42,12 +47,16 @@ import org.apache.bookkeeper.stream.proto.storage.TableServiceGrpc.TableServiceF
  */
 public class StorageServerChannel implements AutoCloseable {
 
-    public static Function<Endpoint, StorageServerChannel> factory(boolean usePlaintext) {
-        return (endpoint) -> new StorageServerChannel(endpoint, Optional.empty(), usePlaintext);
+    public static Function<Endpoint, StorageServerChannel> factory(StorageClientSettings settings) {
+        return (endpoint) -> new StorageServerChannel(
+            endpoint,
+            Optional.empty(),
+            settings.usePlaintext(),
+            settings.endpointResolver());
     }
 
     private final Optional<String> token;
-    private final ManagedChannel channel;
+    private final Channel channel;
 
     @GuardedBy("this")
     private RootRangeServiceFutureStub rootRangeService;
@@ -63,14 +72,18 @@ public class StorageServerChannel implements AutoCloseable {
      *
      * @param endpoint range server endpoint.
      * @param token    token used to access range server
+     * @param usePlainText whether to plain text protocol or not
      */
+    @SuppressWarnings("deprecation")
     public StorageServerChannel(Endpoint endpoint,
                                 Optional<String> token,
-                                boolean usePlainText) {
+                                boolean usePlainText,
+                                EndpointResolver endpointResolver) {
         this.token = token;
+        Endpoint resolvedEndpoint = endpointResolver.resolve(endpoint);
         this.channel = ManagedChannelBuilder.forAddress(
-            endpoint.getHostname(),
-            endpoint.getPort())
+            resolvedEndpoint.getHostname(),
+            resolvedEndpoint.getPort())
             .usePlaintext(usePlainText)
             .build();
     }
@@ -78,6 +91,11 @@ public class StorageServerChannel implements AutoCloseable {
     @VisibleForTesting
     public StorageServerChannel(ManagedChannel channel,
                                 Optional<String> token) {
+        this((Channel) channel, token);
+    }
+
+    protected StorageServerChannel(Channel channel,
+                                   Optional<String> token) {
         this.token = token;
         this.channel = channel;
     }
@@ -118,8 +136,26 @@ public class StorageServerChannel implements AutoCloseable {
         return kvService;
     }
 
+    /**
+     * Create an intercepted server channel that add additional storage container metadata.
+     *
+     * @param scId storage container id
+     * @return an intercepted server channel.
+     */
+    public StorageServerChannel intercept(long scId) {
+        Channel interceptedChannel = ClientInterceptors.intercept(
+            this.channel,
+            new StorageContainerClientInterceptor(scId));
+
+        return new StorageServerChannel(
+            interceptedChannel,
+            this.token);
+    }
+
     @Override
     public void close() {
-        channel.shutdown();
+        if (channel instanceof ManagedChannel) {
+            ((ManagedChannel) channel).shutdown();
+        }
     }
 }

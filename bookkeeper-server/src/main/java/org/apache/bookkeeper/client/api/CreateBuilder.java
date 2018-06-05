@@ -20,6 +20,8 @@
  */
 package org.apache.bookkeeper.client.api;
 
+import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.Map;
 import org.apache.bookkeeper.common.annotation.InterfaceAudience.Public;
 import org.apache.bookkeeper.common.annotation.InterfaceStability.Unstable;
@@ -44,7 +46,8 @@ public interface CreateBuilder extends OpBuilder<WriteHandle> {
     CreateBuilder withEnsembleSize(int ensembleSize);
 
     /**
-     * Set the number of bookies which receive every single entry. In case of ensembleSize > writeQuorumSize data will
+     * Set the number of bookies which receive every single entry.
+     * In case of ensembleSize &gt; writeQuorumSize data will
      * be striped across a number of ensembleSize bookies. It defaults to 2.
      *
      * @param writeQuorumSize the replication factor for each entry
@@ -71,6 +74,26 @@ public interface CreateBuilder extends OpBuilder<WriteHandle> {
      * @return the builder itself
      */
     CreateBuilder withPassword(byte[] password);
+
+    /**
+     * Set write flags. Write flags specify the behaviour of writes
+     *
+     * @param writeFlags the flags
+     *
+     * @return the builder itself
+     */
+    CreateBuilder withWriteFlags(EnumSet<WriteFlag> writeFlags);
+
+    /**
+     * Set write flags. Write flags specify the behaviour of writes
+     *
+     * @param writeFlags the flags
+     *
+     * @return the builder itself
+     */
+    default CreateBuilder withWriteFlags(WriteFlag ... writeFlags) {
+        return withWriteFlags(EnumSet.copyOf(Arrays.asList(writeFlags)));
+    }
 
     /**
      * Set a map a custom data to be attached to the ledger. The application is responsible for the semantics of these

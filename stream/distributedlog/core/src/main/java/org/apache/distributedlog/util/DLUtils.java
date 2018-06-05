@@ -26,15 +26,11 @@ import java.net.InetAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
-import org.apache.commons.lang.StringUtils;
+import org.apache.bookkeeper.common.net.ServiceURI;
 import org.apache.distributedlog.DistributedLogConstants;
 import org.apache.distributedlog.LogSegmentMetadata;
 import org.apache.distributedlog.exceptions.InvalidStreamNameException;
 import org.apache.distributedlog.exceptions.UnexpectedException;
-
-
-
-
 
 /**
  * Utilities about DL implementations like uri, log segments, metadata serialization and deserialization.
@@ -228,17 +224,14 @@ public class DLUtils {
      * @return the normalized uri
      */
     public static URI normalizeURI(URI uri) {
-        checkNotNull(uri, "DistributedLog uri is null");
-        String scheme = uri.getScheme();
-        checkNotNull(scheme, "Invalid distributedlog uri : " + uri);
-        scheme = scheme.toLowerCase();
-        String[] schemeParts = StringUtils.split(scheme, '-');
-        checkArgument(Objects.equal(DistributedLogConstants.SCHEME_PREFIX, schemeParts[0].toLowerCase()),
+        ServiceURI serviceURI = ServiceURI.create(uri);
+        checkNotNull(serviceURI.getServiceName(), "Invalid distributedlog uri : " + uri);
+        checkArgument(Objects.equal(DistributedLogConstants.SCHEME_PREFIX, serviceURI.getServiceName()),
                 "Unknown distributedlog scheme found : " + uri);
         URI normalizedUri;
         try {
             normalizedUri = new URI(
-                    schemeParts[0],     // remove backend info
+                    serviceURI.getServiceName(),     // remove backend info
                     uri.getAuthority(),
                     uri.getPath(),
                     uri.getQuery(),

@@ -24,7 +24,7 @@ cd $BK_HOME
 
 mvn release:prepare \
     -DreleaseVersion=${VERSION} \
-    -Dtag=${TAG} \
+    -Dtag=${RC_TAG} \
     -DupdateWorkingCopyVersions=false \
     -Darguments="-Dmaven.javadoc.skip=true -DskipTests=true -Dstream" \
     -Dstream \

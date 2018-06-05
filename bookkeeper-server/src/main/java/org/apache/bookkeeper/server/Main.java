@@ -48,6 +48,7 @@ import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.configuration.ConfigurationException;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * A bookie server is a server that run bookie and serving rpc requests.
@@ -327,13 +328,22 @@ public class Main {
         // 5. build extra services
         String[] extraComponents = conf.getServerConf().getExtraServerComponents();
         if (null != extraComponents) {
-            List<ServerLifecycleComponent> components = loadServerComponents(
-                extraComponents,
-                conf,
-                rootStatsLogger);
-            for (ServerLifecycleComponent component : components) {
-                serverBuilder.addComponent(component);
-                log.info("Load lifecycle component : {}", component.getClass().getName());
+            try {
+                List<ServerLifecycleComponent> components = loadServerComponents(
+                    extraComponents,
+                    conf,
+                    rootStatsLogger);
+                for (ServerLifecycleComponent component : components) {
+                    serverBuilder.addComponent(component);
+                    log.info("Load lifecycle component : {}", component.getClass().getName());
+                }
+            } catch (Exception e) {
+                if (conf.getServerConf().getIgnoreExtraServerComponentsStartupFailures()) {
+                    log.info("Failed to load extra components '{}' - {}. Continuing without those components.",
+                        StringUtils.join(extraComponents), e.getMessage());
+                } else {
+                    throw e;
+                }
             }
         }
 

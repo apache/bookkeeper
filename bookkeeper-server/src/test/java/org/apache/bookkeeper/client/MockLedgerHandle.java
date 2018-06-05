@@ -27,7 +27,6 @@ import java.security.GeneralSecurityException;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.EnumSet;
 import java.util.Enumeration;
 import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
@@ -61,7 +60,7 @@ public class MockLedgerHandle extends LedgerHandle {
 
     MockLedgerHandle(MockBookKeeper bk, long id, DigestType digest, byte[] passwd) throws GeneralSecurityException {
         super(bk, id, new LedgerMetadata(3, 3, 2, DigestType.MAC, "".getBytes()), DigestType.MAC, "".getBytes(),
-                EnumSet.noneOf(WriteFlag.class));
+                WriteFlag.NONE);
         this.bk = bk;
         this.id = id;
         this.digest = digest;

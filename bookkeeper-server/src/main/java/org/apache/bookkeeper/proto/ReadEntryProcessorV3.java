@@ -65,6 +65,8 @@ class ReadEntryProcessorV3 extends PacketProcessorBaseV3 {
                                 BookieRequestProcessor requestProcessor,
                                 ExecutorService fenceThreadPool) {
         super(request, channel, requestProcessor);
+        requestProcessor.onReadRequestStart(channel);
+
         this.readRequest = request.getReadRequest();
         this.ledgerId = readRequest.getLedgerId();
         this.entryId = readRequest.getEntryId();
@@ -313,6 +315,7 @@ class ReadEntryProcessorV3 extends PacketProcessorBaseV3 {
         sendResponse(response.getStatus(),
                      response.build(),
                      reqStats);
+        requestProcessor.onReadRequestFinish();
     }
 
     //

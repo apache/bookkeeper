@@ -225,7 +225,7 @@ public class SortedLedgerStorageCheckpointTest extends LedgerStorageTestBase {
         EntryLogManagerForSingleEntryLog entryLogManager = (EntryLogManagerForSingleEntryLog) storage.getEntryLogger()
                 .getEntryLogManager();
         entryLogManager.createNewLog(EntryLogger.UNASSIGNED_LEDGERID);
-        long leastUnflushedLogId = storage.entryLogger.getLeastUnflushedLogId();
+        long leastUnflushedLogId = storage.getEntryLogger().getLeastUnflushedLogId();
         long currentLogId = entryLogManager.getCurrentLogId();
         log.info("Least unflushed entry log : current = {}, leastUnflushed = {}", currentLogId, leastUnflushedLogId);
 
@@ -244,8 +244,8 @@ public class SortedLedgerStorageCheckpointTest extends LedgerStorageTestBase {
         assertEquals(0, storage.memTable.kvmap.size());
         assertTrue(
             "current log " + currentLogId + " contains entries added from memtable should be forced to disk"
-            + " but least unflushed log is " + storage.entryLogger.getLeastUnflushedLogId(),
-            storage.entryLogger.getLeastUnflushedLogId() > currentLogId);
+            + " but least unflushed log is " + storage.getEntryLogger().getLeastUnflushedLogId(),
+            storage.getEntryLogger().getLeastUnflushedLogId() > currentLogId);
     }
 
 }

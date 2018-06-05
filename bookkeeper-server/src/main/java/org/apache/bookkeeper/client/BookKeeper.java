@@ -33,7 +33,6 @@ import io.netty.util.HashedWheelTimer;
 import io.netty.util.concurrent.DefaultThreadFactory;
 import java.io.IOException;
 import java.net.URI;
-import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -324,7 +323,6 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
      *          {@link AbstractConfiguration#getZkAvailableBookiesPath()}
      * @throws IOException
      * @throws InterruptedException
-     * @throws KeeperException
      */
     public BookKeeper(String servers) throws IOException, InterruptedException,
         BKException {
@@ -340,7 +338,6 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
      *          Client Configuration object
      * @throws IOException
      * @throws InterruptedException
-     * @throws KeeperException
      */
     public BookKeeper(final ClientConfiguration conf)
             throws IOException, InterruptedException, BKException {
@@ -375,7 +372,6 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
      *          the bookies have registered
      * @throws IOException
      * @throws InterruptedException
-     * @throws KeeperException
      */
     public BookKeeper(ClientConfiguration conf, ZooKeeper zk)
             throws IOException, InterruptedException, BKException {
@@ -871,7 +867,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
             }
             new LedgerCreateOp(BookKeeper.this, ensSize, writeQuorumSize,
                                ackQuorumSize, digestType, passwd, cb, ctx,
-                               customMetadata, EnumSet.noneOf(WriteFlag.class), getStatsLogger())
+                               customMetadata, WriteFlag.NONE, getStatsLogger())
                 .initiate();
         } finally {
             closeLock.readLock().unlock();
@@ -935,9 +931,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
     }
 
     /**
-     * Synchronous call to create ledger. Parameters match those of
-     * {@link #asyncCreateLedger(int, int, int, DigestType, byte[],
-     *                           AsyncCallback.CreateCallback, Object)}
+     * Synchronous call to create ledger. Parameters match those of asyncCreateLedger
      *
      * @param ensSize
      * @param writeQuorumSize
@@ -972,9 +966,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
     /**
      * Synchronous call to create ledger.
      * Creates a new ledger asynchronously and returns {@link LedgerHandleAdv} which can accept entryId.
-     * Parameters must match those of
-     * {@link #asyncCreateLedgerAdv(int, int, int, DigestType, byte[],
-     *                           AsyncCallback.CreateCallback, Object)}
+     * Parameters must match those of asyncCreateLedgerAdv
      *
      * @param ensSize
      * @param writeQuorumSize
@@ -995,9 +987,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
     /**
      * Synchronous call to create ledger.
      * Creates a new ledger asynchronously and returns {@link LedgerHandleAdv} which can accept entryId.
-     * Parameters must match those of
-     * {@link #asyncCreateLedgerAdv(int, int, int, DigestType, byte[],
-     *                           AsyncCallback.CreateCallback, Object)}
+     * Parameters must match those of asyncCreateLedgerAdv
      *
      * @param ensSize
      * @param writeQuorumSize
@@ -1075,7 +1065,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
             }
             new LedgerCreateOp(BookKeeper.this, ensSize, writeQuorumSize,
                                ackQuorumSize, digestType, passwd, cb, ctx,
-                               customMetadata, EnumSet.noneOf(WriteFlag.class), getStatsLogger())
+                               customMetadata, WriteFlag.NONE, getStatsLogger())
                                        .initiateAdv(-1L);
         } finally {
             closeLock.readLock().unlock();
@@ -1085,9 +1075,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
     /**
      * Synchronously creates a new ledger using the interface which accepts a ledgerId as input.
      * This method returns {@link LedgerHandleAdv} which can accept entryId.
-     * Parameters must match those of
-     * {@link #asyncCreateLedgerAdvWithLedgerId(byte[], long, int, int, int, DigestType, byte[],
-     *                           AsyncCallback.CreateCallback, Object)}
+     * Parameters must match those of asyncCreateLedgerAdvWithLedgerId
      * @param ledgerId
      * @param ensSize
      * @param writeQuorumSize
@@ -1144,8 +1132,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
      * {@link ClientConfiguration#getReadTimeout()}. Once the bookie failure is detected,
      * that bookie will be removed from the ensemble.
      *
-     * <p>The other parameters match those of {@link #asyncCreateLedger(long, int, int, DigestType, byte[],
-     *                                      AsyncCallback.CreateCallback, Object)}
+     * <p>The other parameters match those of asyncCreateLedger</p>
      *
      * @param ledgerId
      *          ledger Id to use for the newly created ledger
@@ -1186,7 +1173,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
             }
             new LedgerCreateOp(BookKeeper.this, ensSize, writeQuorumSize,
                                ackQuorumSize, digestType, passwd, cb, ctx,
-                               customMetadata, EnumSet.noneOf(WriteFlag.class), getStatsLogger())
+                               customMetadata, WriteFlag.NONE, getStatsLogger())
                     .initiateAdv(ledgerId);
         } finally {
             closeLock.readLock().unlock();

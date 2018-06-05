@@ -41,7 +41,7 @@ import org.apache.bookkeeper.client.LedgerEntry;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.conf.ClientConfiguration;
-import org.apache.bookkeeper.tests.BookKeeperClusterUtils;
+import org.apache.bookkeeper.tests.integration.utils.BookKeeperClusterUtils;
 import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.junit.Assert;
@@ -50,11 +50,14 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.MethodSorters;
 
+/**
+ * Smoke tests for ledger apis.
+ */
 @Slf4j
 @RunWith(Arquillian.class)
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class TestSmoke {
-    private static byte[] PASSWD = "foobar".getBytes();
+    private static final byte[] PASSWD = "foobar".getBytes();
 
     @ArquillianResource
     DockerClient docker;

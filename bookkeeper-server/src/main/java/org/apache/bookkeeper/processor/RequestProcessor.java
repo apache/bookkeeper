@@ -41,5 +41,4 @@ public interface RequestProcessor extends AutoCloseable {
      *          channel received the given request <i>r</i>
      */
     void processRequest(Object r, Channel channel);
-
 }
