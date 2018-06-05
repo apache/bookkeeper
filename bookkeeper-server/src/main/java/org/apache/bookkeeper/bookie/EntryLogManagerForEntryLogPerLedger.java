@@ -186,6 +186,12 @@ class EntryLogManagerForEntryLogPerLedger extends EntryLogManagerBase {
         lock.lock();
         try {
             BufferedLogChannel logChannel = logChannelWithDirInfo.getLogChannel();
+            // Append ledgers map at the end of entry log
+            try {
+                logChannel.appendLedgersMap();
+            } catch (Exception e) {
+                log.error("Got IOException while trying to appendLedgersMap in cacheEntryRemoval callback", e);
+            }
             replicaOfCurrentLogChannels.remove(logChannel.getLogId());
             rotatedLogChannels.add(logChannel);
         } finally {
