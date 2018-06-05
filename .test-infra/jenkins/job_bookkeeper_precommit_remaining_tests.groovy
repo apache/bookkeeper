@@ -43,7 +43,7 @@ freeStyleJob('bookkeeper_precommit_remaining_tests') {
     delegate,
     'All Other Tests',
     '.*(re)?run (remaining )?tests.*',
-    '.*\[skip (remaining )?tests\].*',
+    '.*\\[skip (remaining )?tests\\].*',
     true)
 
   steps {

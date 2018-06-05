@@ -39,7 +39,7 @@ freeStyleJob('bookkeeper_precommit_tls_tests') {
     delegate,
     'TLS Tests',
     '.*(re)?run (tls )?tests.*',
-    '.*\[skip (tls )?tests\].*',
+    '.*\\[skip (tls )?tests\\].*',
     true)
 
   steps {

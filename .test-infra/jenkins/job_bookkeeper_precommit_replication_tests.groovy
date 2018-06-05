@@ -39,7 +39,7 @@ freeStyleJob('bookkeeper_precommit_replication_tests') {
     delegate,
     'Replication Tests',
     '.*(re)?run (replication )?tests.*',
-    '.*\[skip (replication )?tests\].*',
+    '.*\\[skip (replication )?tests\\].*',
     true)
 
   steps {

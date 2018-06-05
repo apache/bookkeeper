@@ -39,7 +39,7 @@ freeStyleJob('bookkeeper_precommit_bookie_tests') {
     delegate,
     'Bookie Tests',
     '.*(re)?run (bookie )?tests.*',
-    '.*\[skip (bookie )?tests\].*',
+    '.*\\[skip (bookie )?tests\\].*',
     true)
 
   steps {

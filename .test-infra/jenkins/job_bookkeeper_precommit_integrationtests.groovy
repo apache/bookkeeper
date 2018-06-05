@@ -27,7 +27,7 @@ freeStyleJob('bookkeeper_precommit_integrationtests') {
         delegate,
         'master',
         'JDK 1.8 (latest)',
-        120,
+        200,
         'ubuntu',
         '${ghprbTargetBranch}')
 
@@ -41,7 +41,7 @@ freeStyleJob('bookkeeper_precommit_integrationtests') {
         delegate,
         'Integration Tests',
         '.*(re)?run integration tests.*',
-        '.*\[skip integration tests\].*')
+        '.*\\[skip integration tests\\].*')
 
     steps {
         // Temporary information gathering to see if full disks are causing the builds to flake
