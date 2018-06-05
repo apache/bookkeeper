@@ -126,8 +126,8 @@ class common_job_properties {
   // below to insulate callers from internal parameter defaults.
   private static void setPullRequestBuildTrigger(context,
                                                  String commitStatusContext,
-                                                 String successComment = '--none--',
                                                  String prTriggerPhrase = '',
+                                                 String prSkipBuildPhrase = '',
                                                  boolean onlyMaster = false) {
     context.triggers {
       githubPullRequest {
@@ -143,7 +143,9 @@ class common_job_properties {
         // required to start it.
         if (prTriggerPhrase) {
           triggerPhrase(prTriggerPhrase)
-          onlyTriggerPhrase()
+        }
+        if (prSkipBuildPhrase) {
+          skipBuildPhrase(prSkipBuildPhrase)
         }
         if (onlyMaster) {
           whiteListTargetBranches(['master'])
@@ -155,36 +157,7 @@ class common_job_properties {
             // for this Jenkins project.
             delegate.context("Jenkins: " + commitStatusContext)
           }
-
-          /*
-            This section is disabled, because of jenkinsci/ghprb-plugin#417 issue.
-            For the time being, an equivalent configure section below is added.
-
-          // Comment messages after build completes.
-          buildStatus {
-            completedStatus('SUCCESS', successComment)
-            completedStatus('FAILURE', '--none--')
-            completedStatus('ERROR', '--none--')
-          }
-          */
         }
-      }
-    }
-
-    // Comment messages after build completes.
-    context.configure {
-      def messages = it / triggers / 'org.jenkinsci.plugins.ghprb.GhprbTrigger' / extensions / 'org.jenkinsci.plugins.ghprb.extensions.comments.GhprbBuildStatus' / messages
-      messages << 'org.jenkinsci.plugins.ghprb.extensions.comments.GhprbBuildResultMessage' {
-        message(successComment)
-        result('SUCCESS')
-      }
-      messages << 'org.jenkinsci.plugins.ghprb.extensions.comments.GhprbBuildResultMessage' {
-        message('--none--')
-        result('ERROR')
-      }
-      messages << 'org.jenkinsci.plugins.ghprb.extensions.comments.GhprbBuildResultMessage' {
-        message('--none--')
-        result('FAILURE')
       }
     }
   }
@@ -213,10 +186,11 @@ class common_job_properties {
   // Sets common config for PreCommit jobs.
   static void setPreCommit(context,
                            String commitStatusName,
-                           String successComment = '--none--',
+                           String prTriggerPhrase = '',
+                           String prSkipBuildPhrase = '',
                            boolean onlyMaster = false) {
     // Set pull request build trigger.
-    setPullRequestBuildTrigger(context, commitStatusName, successComment, '', onlyMaster)
+    setPullRequestBuildTrigger(context, commitStatusName, prTriggerPhrase, prSkipBuildPhrase, onlyMaster)
   }
 
   // Enable triggering postcommit runs against pull requests. Users can comment the trigger phrase
@@ -228,7 +202,6 @@ class common_job_properties {
     setPullRequestBuildTrigger(
       context,
       commitStatusName,
-      '--none--',
       prTriggerPhrase)
   }
 

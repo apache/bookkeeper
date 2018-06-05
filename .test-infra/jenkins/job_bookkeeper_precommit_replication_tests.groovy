@@ -18,18 +18,9 @@
 
 import common_job_properties
 
-// This is the Java precommit which runs a maven install, and the current set of precommit tests.
-mavenJob('bookkeeper_precommit_pullrequest_java9') {
-  description('precommit verification for pull requests of <a href="http://bookkeeper.apache.org">Apache BookKeeper</a> in Java 9.')
-
-  // Temporary information gathering to see if full disks are causing the builds to flake
-  preBuildSteps {
-    shell("id")
-    shell("ulimit -a")
-    shell("pwd")
-    shell("df -h")
-    shell("ps aux")
-  }
+// test `org.apache.bookkeeper.replication.**`
+freeStyleJob('bookkeeper_precommit_replication_tests') {
+  description('Run bookkeeper replication tests in Java 8.')
 
   // Execute concurrent builds if necessary.
   concurrentBuild()
@@ -38,7 +29,7 @@ mavenJob('bookkeeper_precommit_pullrequest_java9') {
   common_job_properties.setTopLevelMainJobProperties(
     delegate,
     'master',
-    'JDK 1.9 (latest)',
+    'JDK 1.8 (latest)',
     200,
     'ubuntu',
     '${ghprbTargetBranch}')
@@ -46,13 +37,34 @@ mavenJob('bookkeeper_precommit_pullrequest_java9') {
   // Sets that this is a PreCommit job.
   common_job_properties.setPreCommit(
     delegate,
-    'Build (Java 9)',
-    '.*(re)?build( java9)?.*',
-    '.*\[skip build( java9)?\].*')
+    'Replication Tests',
+    '.*(re)?run (replication )?tests.*',
+    '.*\[skip (replication )?tests\].*',
+    true)
 
-  // Set Maven parameters.
-  common_job_properties.setMavenConfig(delegate)
+  steps {
+    // Temporary information gathering to see if full disks are causing the builds to flake
+    shell("id")
+    shell("ulimit -a")
+    shell("pwd")
+    shell("df -h")
+    shell("ps aux")
 
-  // Maven build project
-  goals('clean package spotbugs:check -Dstream -DskipBookKeeperServerTests')
+    // Build everything
+    maven {
+      // Set Maven parameters.
+      common_job_properties.setMavenConfig(delegate)
+
+      goals('-B -am -pl bookkeeper-server clean install -DskipTests')
+    }
+
+    // Test the package
+    maven {
+      // Set Maven parameters.
+      common_job_properties.setMavenConfig(delegate)
+
+      goals('-pl bookkeeper-server test -Dtest="org.apache.bookkeeper.replication.**"')
+    }
+  }
+
 }
