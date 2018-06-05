@@ -147,7 +147,7 @@
     <datasketches.version>0.8.3</datasketches.version>
     <protobuf.version>3.5.1</protobuf.version>
     <protoc-gen-grpc-java.version>1.12.0</protoc-gen-grpc-java.version>
-    <rocksdb.version>5.8.6</rocksdb.version>
+    <rocksdb.version>5.13.1</rocksdb.version>
     <shrinkwrap.version>3.0.1</shrinkwrap.version>
     <slf4j.version>1.7.25</slf4j.version>
     <spotbugs-annotations.version>3.1.1</spotbugs-annotations.version>
