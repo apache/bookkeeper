@@ -18,7 +18,6 @@
  */
 package org.apache.bookkeeper.tools.cli.commands.client;
 
-import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
@@ -43,7 +42,6 @@ public class SimpleTestCommandTest extends ClientCommandTestBase {
     @Test
     public void testCommandShortArgs() throws Exception {
         testCommand(
-            "simpletest",
             "-e", "5",
             "-w", "3",
             "-a", "3",
@@ -53,7 +51,6 @@ public class SimpleTestCommandTest extends ClientCommandTestBase {
     @Test
     public void testCommandLongArgs() throws Exception {
         testCommand(
-            "simpletest",
             "--ensemble-size", "5",
             "--write-quorum-size", "3",
             "--ack-quorum-size", "3",
@@ -74,8 +71,8 @@ public class SimpleTestCommandTest extends ClientCommandTestBase {
         when(createBuilder.withPassword(any(byte[].class))).thenReturn(createBuilder);
         when(mockBk.newCreateLedgerOp()).thenReturn(createBuilder);
 
-        CommandRunner runner = createCommandRunner(new SimpleTestCommand());
-        assertTrue(runner.runArgs(args));
+        SimpleTestCommand cmd = new SimpleTestCommand();
+        cmd.apply(bkFlags, args);
 
         // verify create builder
         verify(createBuilder, times(1)).withEnsembleSize(eq(5));

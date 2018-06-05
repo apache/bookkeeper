@@ -18,7 +18,9 @@
  */
 package org.apache.bookkeeper.tools.cli.helpers;
 
+import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.CALLS_REAL_METHODS;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -30,6 +32,7 @@ import org.apache.bookkeeper.client.api.BookKeeperBuilder;
 import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.tools.framework.CliFlags;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -44,12 +47,13 @@ import org.powermock.modules.junit4.PowerMockRunner;
 @PrepareForTest({ ClientCommand.class, BookKeeper.class })
 public class ClientCommandTest {
 
-    private ClientCommand cmd;
+    private ClientCommand<CliFlags> cmd;
     private ServerConfiguration serverConf;
     private ClientConfiguration clientConf;
     private BookKeeperBuilder bkBuilder;
     private BookKeeper bk;
 
+    @SuppressWarnings("unchecked")
     @Before
     public void setup() throws Exception {
         this.cmd = mock(ClientCommand.class, CALLS_REAL_METHODS);
@@ -72,9 +76,10 @@ public class ClientCommandTest {
 
     @Test
     public void testRun() throws Exception {
-        cmd.run(serverConf);
-        verify(cmd, times(1)).run(eq(clientConf));
-        verify(cmd, times(1)).run(eq(bk));
+        CliFlags flags = new CliFlags();
+        assertTrue(cmd.apply(serverConf, flags));
+        verify(cmd, times(1)).apply(eq(clientConf), same(flags));
+        verify(cmd, times(1)).run(eq(bk), same(flags));
         verify(bkBuilder, times(1)).build();
     }
 

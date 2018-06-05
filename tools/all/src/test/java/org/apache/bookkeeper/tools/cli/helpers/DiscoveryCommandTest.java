@@ -18,9 +18,11 @@
  */
 package org.apache.bookkeeper.tools.cli.helpers;
 
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Answers.CALLS_REAL_METHODS;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.powermock.api.mockito.PowerMockito.mock;
@@ -37,6 +39,7 @@ import org.apache.bookkeeper.discover.RegistrationClient;
 import org.apache.bookkeeper.meta.MetadataClientDriver;
 import org.apache.bookkeeper.meta.MetadataDrivers;
 import org.apache.bookkeeper.stats.NullStatsLogger;
+import org.apache.bookkeeper.tools.framework.CliFlags;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -51,13 +54,14 @@ import org.powermock.modules.junit4.PowerMockRunner;
 @PrepareForTest({ DiscoveryCommand.class, MetadataDrivers.class })
 public class DiscoveryCommandTest {
 
-    private DiscoveryCommand cmd;
+    private DiscoveryCommand<CliFlags> cmd;
     private ServerConfiguration serverConf;
     private ClientConfiguration clientConf;
     private RegistrationClient regClient;
     private MetadataClientDriver clientDriver;
     private ScheduledExecutorService executor;
 
+    @SuppressWarnings("unchecked")
     @Before
     public void setup() throws Exception {
         PowerMockito.mockStatic(Executors.class);
@@ -87,8 +91,9 @@ public class DiscoveryCommandTest {
 
     @Test
     public void testRun() throws Exception {
-        cmd.run(serverConf);
-        verify(cmd, times(1)).run(eq(regClient));
+        CliFlags cliFlags = new CliFlags();
+        assertTrue(cmd.apply(serverConf, cliFlags));
+        verify(cmd, times(1)).run(eq(regClient), same(cliFlags));
         verify(clientDriver, times(1))
             .initialize(eq(clientConf), eq(executor), eq(NullStatsLogger.INSTANCE), eq(Optional.empty()));
         verify(clientDriver, times(1)).getRegistrationClient();
