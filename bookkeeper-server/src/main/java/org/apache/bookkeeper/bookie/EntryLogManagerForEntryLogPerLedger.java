@@ -21,13 +21,22 @@
 
 package org.apache.bookkeeper.bookie;
 
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.ENTRYLOGS_PER_LEDGER;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.NUM_LEDGERS_HAVING_MULTIPLE_ENTRYLOGS;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.NUM_OF_WRITE_ACTIVE_LEDGERS;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.NUM_OF_WRITE_LEDGERS_REMOVED_CACHE_EXPIRY;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.NUM_OF_WRITE_LEDGERS_REMOVED_CACHE_MAXSIZE;
+
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
+import com.google.common.cache.RemovalCause;
 import com.google.common.cache.RemovalListener;
 import com.google.common.cache.RemovalNotification;
+
 import io.netty.buffer.ByteBuf;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
@@ -42,12 +51,17 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+
 import lombok.extern.slf4j.Slf4j;
+
 import org.apache.bookkeeper.bookie.EntryLogger.BufferedLogChannel;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.LedgerDirsListener;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.stats.Counter;
+import org.apache.bookkeeper.stats.OpStatsLogger;
+import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.collections.ConcurrentLongHashMap;
-import org.apache.commons.lang.mutable.MutableInt;
+import org.apache.commons.lang3.mutable.MutableInt;
 
 @Slf4j
 class EntryLogManagerForEntryLogPerLedger extends EntryLogManagerBase {
@@ -56,19 +70,19 @@ class EntryLogManagerForEntryLogPerLedger extends EntryLogManagerBase {
         private final BufferedLogChannel logChannel;
         volatile boolean ledgerDirFull = false;
 
-        BufferedLogChannelWithDirInfo(BufferedLogChannel logChannel) {
+        private BufferedLogChannelWithDirInfo(BufferedLogChannel logChannel) {
             this.logChannel = logChannel;
         }
 
-        public boolean isLedgerDirFull() {
+        private boolean isLedgerDirFull() {
             return ledgerDirFull;
         }
 
-        public void setLedgerDirFull(boolean ledgerDirFull) {
+        private void setLedgerDirFull(boolean ledgerDirFull) {
             this.ledgerDirFull = ledgerDirFull;
         }
 
-        public BufferedLogChannel getLogChannel() {
+        BufferedLogChannel getLogChannel() {
             return logChannel;
         }
     }
@@ -77,20 +91,124 @@ class EntryLogManagerForEntryLogPerLedger extends EntryLogManagerBase {
         private final Lock ledgerLock;
         private BufferedLogChannelWithDirInfo entryLogWithDirInfo;
 
-        public EntryLogAndLockTuple() {
+        private EntryLogAndLockTuple() {
             ledgerLock = new ReentrantLock();
         }
 
-        public Lock getLedgerLock() {
+        private Lock getLedgerLock() {
             return ledgerLock;
         }
 
-        public BufferedLogChannelWithDirInfo getEntryLogWithDirInfo() {
+        BufferedLogChannelWithDirInfo getEntryLogWithDirInfo() {
             return entryLogWithDirInfo;
         }
 
-        public void setEntryLogWithDirInfo(BufferedLogChannelWithDirInfo entryLogWithDirInfo) {
+        private void setEntryLogWithDirInfo(BufferedLogChannelWithDirInfo entryLogWithDirInfo) {
             this.entryLogWithDirInfo = entryLogWithDirInfo;
+        }
+    }
+
+    class EntryLogsPerLedgerCounter {
+        private final Counter numOfWriteActiveLedgers;
+        private final Counter numOfWriteLedgersRemovedCacheExpiry;
+        private final Counter numOfWriteLedgersRemovedCacheMaxSize;
+        private final Counter numLedgersHavingMultipleEntrylogs;
+        private final OpStatsLogger entryLogsPerLedger;
+        /*
+         * ledgerIdEntryLogCounterCacheMap cache will be used to store count of
+         * entrylogs as value for its ledgerid key. This cacheMap limits -
+         * 'expiry duration' and 'maximumSize' will be set to
+         * entryLogPerLedgerCounterLimitsMultFactor times of
+         * 'ledgerIdEntryLogMap' cache limits. This is needed because entries
+         * from 'ledgerIdEntryLogMap' can be removed from cache becasue of
+         * accesstime expiry or cache size limits, but to know the actual number
+         * of entrylogs per ledger, we should maintain this count for long time.
+         */
+        private final LoadingCache<Long, MutableInt> ledgerIdEntryLogCounterCacheMap;
+
+        EntryLogsPerLedgerCounter(StatsLogger statsLogger) {
+            this.numOfWriteActiveLedgers = statsLogger.getCounter(NUM_OF_WRITE_ACTIVE_LEDGERS);
+            this.numOfWriteLedgersRemovedCacheExpiry = statsLogger
+                    .getCounter(NUM_OF_WRITE_LEDGERS_REMOVED_CACHE_EXPIRY);
+            this.numOfWriteLedgersRemovedCacheMaxSize = statsLogger
+                    .getCounter(NUM_OF_WRITE_LEDGERS_REMOVED_CACHE_MAXSIZE);
+            this.numLedgersHavingMultipleEntrylogs = statsLogger.getCounter(NUM_LEDGERS_HAVING_MULTIPLE_ENTRYLOGS);
+            this.entryLogsPerLedger = statsLogger.getOpStatsLogger(ENTRYLOGS_PER_LEDGER);
+
+            ledgerIdEntryLogCounterCacheMap = CacheBuilder.newBuilder()
+                    .expireAfterAccess(entrylogMapAccessExpiryTimeInSeconds * entryLogPerLedgerCounterLimitsMultFactor,
+                            TimeUnit.SECONDS)
+                    .maximumSize(maximumNumberOfActiveEntryLogs * entryLogPerLedgerCounterLimitsMultFactor)
+                    .removalListener(new RemovalListener<Long, MutableInt>() {
+                        @Override
+                        public void onRemoval(RemovalNotification<Long, MutableInt> removedEntryFromCounterMap) {
+                            if ((removedEntryFromCounterMap != null)
+                                    && (removedEntryFromCounterMap.getValue() != null)) {
+                                synchronized (EntryLogsPerLedgerCounter.this) {
+                                    entryLogsPerLedger
+                                            .registerSuccessfulValue(removedEntryFromCounterMap.getValue().intValue());
+                                }
+                            }
+                        }
+                    }).build(new CacheLoader<Long, MutableInt>() {
+                        @Override
+                        public MutableInt load(Long key) throws Exception {
+                            synchronized (EntryLogsPerLedgerCounter.this) {
+                                return new MutableInt();
+                            }
+                        }
+                    });
+        }
+
+        private synchronized void openNewEntryLogForLedger(Long ledgerId, boolean newLedgerInEntryLogMapCache) {
+            int numOfEntrylogsForThisLedger = ledgerIdEntryLogCounterCacheMap.getUnchecked(ledgerId).incrementAndGet();
+            if (numOfEntrylogsForThisLedger == 2) {
+                numLedgersHavingMultipleEntrylogs.inc();
+            }
+            if (newLedgerInEntryLogMapCache) {
+                numOfWriteActiveLedgers.inc();
+            }
+        }
+
+        private synchronized void removedLedgerFromEntryLogMapCache(Long ledgerId, RemovalCause cause) {
+            numOfWriteActiveLedgers.dec();
+            if (cause.equals(RemovalCause.EXPIRED)) {
+                numOfWriteLedgersRemovedCacheExpiry.inc();
+            } else if (cause.equals(RemovalCause.SIZE)) {
+                numOfWriteLedgersRemovedCacheMaxSize.inc();
+            }
+        }
+
+        /*
+         * this is for testing purpose only. guava's cache doesnt cleanup
+         * completely (including calling expiry removal listener) automatically
+         * when access timeout elapses.
+         *
+         * https://google.github.io/guava/releases/19.0/api/docs/com/google/
+         * common/cache/CacheBuilder.html
+         *
+         * If expireAfterWrite or expireAfterAccess is requested entries may be
+         * evicted on each cache modification, on occasional cache accesses, or
+         * on calls to Cache.cleanUp(). Expired entries may be counted by
+         * Cache.size(), but will never be visible to read or write operations.
+         *
+         * Certain cache configurations will result in the accrual of periodic
+         * maintenance tasks which will be performed during write operations, or
+         * during occasional read operations in the absence of writes. The
+         * Cache.cleanUp() method of the returned cache will also perform
+         * maintenance, but calling it should not be necessary with a high
+         * throughput cache. Only caches built with removalListener,
+         * expireAfterWrite, expireAfterAccess, weakKeys, weakValues, or
+         * softValues perform periodic maintenance.
+         */
+        @VisibleForTesting
+        void doCounterMapCleanup() {
+            ledgerIdEntryLogCounterCacheMap.cleanUp();
+        }
+
+        @VisibleForTesting
+        ConcurrentMap<Long, MutableInt> getCounterMap() {
+            return ledgerIdEntryLogCounterCacheMap.asMap();
         }
     }
 
@@ -107,16 +225,24 @@ class EntryLogManagerForEntryLogPerLedger extends EntryLogManagerBase {
     private final EntryLogger.RecentEntryLogsStatus recentlyCreatedEntryLogsStatus;
     private final int entrylogMapAccessExpiryTimeInSeconds;
     private final int maximumNumberOfActiveEntryLogs;
+    private final int entryLogPerLedgerCounterLimitsMultFactor;
+
+    // Expose Stats
+    private final StatsLogger statsLogger;
+    final EntryLogsPerLedgerCounter entryLogsPerLedgerCounter;
 
     EntryLogManagerForEntryLogPerLedger(ServerConfiguration conf, LedgerDirsManager ledgerDirsManager,
             EntryLoggerAllocator entryLoggerAllocator, List<EntryLogger.EntryLogListener> listeners,
-            EntryLogger.RecentEntryLogsStatus recentlyCreatedEntryLogsStatus) throws IOException {
+            EntryLogger.RecentEntryLogsStatus recentlyCreatedEntryLogsStatus, StatsLogger statsLogger)
+            throws IOException {
         super(conf, ledgerDirsManager, entryLoggerAllocator, listeners);
         this.recentlyCreatedEntryLogsStatus = recentlyCreatedEntryLogsStatus;
         this.rotatedLogChannels = new CopyOnWriteArrayList<BufferedLogChannel>();
         this.replicaOfCurrentLogChannels = new ConcurrentLongHashMap<BufferedLogChannelWithDirInfo>();
         this.entrylogMapAccessExpiryTimeInSeconds = conf.getEntrylogMapAccessExpiryTimeInSeconds();
         this.maximumNumberOfActiveEntryLogs = conf.getMaximumNumberOfActiveEntryLogs();
+        this.entryLogPerLedgerCounterLimitsMultFactor = conf.getEntryLogPerLedgerCounterLimitsMultFactor();
+
         ledgerDirsManager.addLedgerDirsListener(getLedgerDirsListener());
         this.entryLogAndLockTupleCacheLoader = new CacheLoader<Long, EntryLogAndLockTuple>() {
             @Override
@@ -147,6 +273,9 @@ class EntryLogManagerForEntryLogPerLedger extends EntryLogManagerBase {
                         onCacheEntryRemoval(expiredLedgerEntryLogMapEntry);
                     }
                 }).build(entryLogAndLockTupleCacheLoader);
+
+        this.statsLogger = statsLogger;
+        this.entryLogsPerLedgerCounter = new EntryLogsPerLedgerCounter(this.statsLogger);
     }
 
     /*
@@ -194,6 +323,8 @@ class EntryLogManagerForEntryLogPerLedger extends EntryLogManagerBase {
             }
             replicaOfCurrentLogChannels.remove(logChannel.getLogId());
             rotatedLogChannels.add(logChannel);
+            entryLogsPerLedgerCounter.removedLedgerFromEntryLogMapCache(ledgerId,
+                    removedLedgerEntryLogMapEntry.getCause());
         } finally {
             lock.unlock();
         }
@@ -244,9 +375,11 @@ class EntryLogManagerForEntryLogPerLedger extends EntryLogManagerBase {
         lock.lock();
         try {
             BufferedLogChannel hasToRotateLogChannel = getCurrentLogForLedger(ledgerId);
+            boolean newLedgerInEntryLogMapCache = (hasToRotateLogChannel == null);
             logChannel.setLedgerIdAssigned(ledgerId);
             BufferedLogChannelWithDirInfo logChannelWithDirInfo = new BufferedLogChannelWithDirInfo(logChannel);
             ledgerIdEntryLogMap.get(ledgerId).setEntryLogWithDirInfo(logChannelWithDirInfo);
+            entryLogsPerLedgerCounter.openNewEntryLogForLedger(ledgerId, newLedgerInEntryLogMapCache);
             replicaOfCurrentLogChannels.put(logChannel.getLogId(), logChannelWithDirInfo);
             if (hasToRotateLogChannel != null) {
                 replicaOfCurrentLogChannels.remove(hasToRotateLogChannel.getLogId());

@@ -46,9 +46,9 @@ public class SlowInterleavedLedgerStorage extends InterleavedLedgerStorage {
         public volatile long addDelay = 0;
         public volatile long flushDelay = 0;
 
-        public SlowEntryLogger(ServerConfiguration conf, LedgerDirsManager ledgerDirsManager, EntryLogListener listener)
-                throws IOException {
-            super(conf, ledgerDirsManager, listener);
+        public SlowEntryLogger(ServerConfiguration conf, LedgerDirsManager ledgerDirsManager, EntryLogListener listener,
+                StatsLogger statsLogger) throws IOException {
+            super(conf, ledgerDirsManager, listener, statsLogger);
         }
 
         public SlowEntryLogger setAddDelay(long delay) {
@@ -119,7 +119,7 @@ public class SlowInterleavedLedgerStorage extends InterleavedLedgerStorage {
         long addDelay = conf.getLong(PROP_SLOW_STORAGE_ADD_DELAY, 0);
         long flushDelay = conf.getLong(PROP_SLOW_STORAGE_FLUSH_DELAY, 0);
 
-        entryLogger = new SlowEntryLogger(conf, ledgerDirsManager, this)
+        entryLogger = new SlowEntryLogger(conf, ledgerDirsManager, this, statsLogger)
                 .setAddDelay(addDelay)
                 .setGetDelay(getDelay)
                 .setFlushDelay(flushDelay);
