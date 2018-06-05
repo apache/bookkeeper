@@ -39,7 +39,7 @@ mavenJob('bookkeeper_precommit_pullrequest_validation') {
     delegate,
     'PR Validation',
     '.*(re)?run pr validation.*',
-    ''
+    '',
     true)
 
   // Set Maven parameters.
