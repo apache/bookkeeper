@@ -144,6 +144,9 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
     // minimum number of racks per write quorum
     public static final String MIN_NUM_RACKS_PER_WRITE_QUORUM = "minNumRacksPerWriteQuorum";
 
+    // enforce minimum number of racks per write quorum
+    public static final String ENFORCE_MIN_NUM_RACKS_PER_WRITE_QUORUM = "enforceMinNumRacksPerWriteQuorum";
+
     protected AbstractConfiguration() {
         super();
         if (READ_SYSTEM_PROPERTIES) {
@@ -793,6 +796,20 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      */
     public int getMinNumRacksPerWriteQuorum() {
         return getInteger(MIN_NUM_RACKS_PER_WRITE_QUORUM, 2);
+    }
+
+    /**
+     * Set the flag to enforce minimum number of racks per write quorum.
+     */
+    public void setEnforceMinNumRacksPerWriteQuorum(boolean enforceMinNumRacksPerWriteQuorum) {
+        setProperty(ENFORCE_MIN_NUM_RACKS_PER_WRITE_QUORUM, enforceMinNumRacksPerWriteQuorum);
+    }
+
+    /**
+     * Get the flag which enforces the minimum number of racks per write quorum.
+     */
+    public boolean getEnforceMinNumRacksPerWriteQuorum() {
+        return getBoolean(ENFORCE_MIN_NUM_RACKS_PER_WRITE_QUORUM, false);
     }
 
     /**
