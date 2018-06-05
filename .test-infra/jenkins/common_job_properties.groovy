@@ -160,6 +160,22 @@ class common_job_properties {
         }
       }
     }
+    // Comment messages after build completes.
+    context.configure {
+      def messages = it / triggers / 'org.jenkinsci.plugins.ghprb.GhprbTrigger' / extensions / 'org.jenkinsci.plugins.ghprb.extensions.comments.GhprbBuildStatus' / messages
+      messages << 'org.jenkinsci.plugins.ghprb.extensions.comments.GhprbBuildResultMessage' {
+        message(successComment)
+        result('SUCCESS')
+      }
+      messages << 'org.jenkinsci.plugins.ghprb.extensions.comments.GhprbBuildResultMessage' {
+        message('--none--')
+        result('ERROR')
+      }
+      messages << 'org.jenkinsci.plugins.ghprb.extensions.comments.GhprbBuildResultMessage' {
+        message('--none--')
+        result('FAILURE')
+      }
+    }
   }
 
   // Sets common config for Maven jobs.
