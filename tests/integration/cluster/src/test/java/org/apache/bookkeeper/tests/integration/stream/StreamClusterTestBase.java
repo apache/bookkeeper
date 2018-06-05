@@ -19,6 +19,7 @@
 package org.apache.bookkeeper.tests.integration.stream;
 
 import java.util.List;
+import java.util.Random;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.api.StorageClient;
@@ -29,7 +30,6 @@ import org.apache.bookkeeper.clients.utils.NetUtils;
 import org.apache.bookkeeper.stream.proto.common.Endpoint;
 import org.apache.bookkeeper.tests.integration.cluster.BookKeeperClusterTestBase;
 import org.apache.bookkeeper.tests.integration.topologies.BKClusterSpec;
-import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 
@@ -38,13 +38,18 @@ import org.junit.BeforeClass;
  * but enabled stream storage for testing stream storage related features.
  */
 @Slf4j
-@SuppressWarnings("deprecation")
 public abstract class StreamClusterTestBase extends BookKeeperClusterTestBase {
+
+    protected static Random rand = new Random();
 
     @BeforeClass
     public static void setupCluster() throws Exception {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < 8; i++) {
+            sb.append((char) (rand.nextInt(26) + 'a'));
+        }
         BKClusterSpec spec = BKClusterSpec.builder()
-            .clusterName(RandomStringUtils.randomAlphabetic(8))
+            .clusterName(sb.toString())
             .numBookies(3)
             .extraServerComponents("org.apache.bookkeeper.stream.server.StreamStorageLifecycleComponent")
             .build();

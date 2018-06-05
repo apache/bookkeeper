@@ -25,6 +25,7 @@ import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.Random;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.conf.ClientConfiguration;
@@ -34,7 +35,6 @@ import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.tests.integration.topologies.BKCluster;
 import org.apache.bookkeeper.tests.integration.topologies.BKClusterSpec;
-import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 
@@ -42,18 +42,22 @@ import org.junit.BeforeClass;
  * A docker container based bookkeeper cluster test base, providing similar facility like the one in unit test.
  */
 @Slf4j
-@SuppressWarnings("deprecation")
 public abstract class BookKeeperClusterTestBase {
 
     protected static BKCluster bkCluster;
     protected static URI metadataServiceUri;
     protected static MetadataClientDriver metadataClientDriver;
     protected static ScheduledExecutorService executor;
+    protected static Random rand = new Random();
 
     @BeforeClass
     public static void setupCluster() throws Exception {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < 8; i++) {
+            sb.append((char) (rand.nextInt(26) + 'a'));
+        }
         BKClusterSpec spec = BKClusterSpec.builder()
-            .clusterName(RandomStringUtils.randomAlphabetic(8))
+            .clusterName(sb.toString())
             .numBookies(0)
             .build();
 
