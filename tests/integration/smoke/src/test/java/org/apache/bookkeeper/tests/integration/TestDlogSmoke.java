@@ -34,7 +34,7 @@ import java.util.concurrent.TimeUnit;
 import lombok.Cleanup;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
-import org.apache.bookkeeper.tests.BookKeeperClusterUtils;
+import org.apache.bookkeeper.tests.integration.utils.BookKeeperClusterUtils;
 import org.apache.distributedlog.DLSN;
 import org.apache.distributedlog.DistributedLogConfiguration;
 import org.apache.distributedlog.LogRecord;
