@@ -18,17 +18,29 @@
  */
 package org.apache.bookkeeper.tools.cli.commands;
 
-import com.beust.jcommander.Parameters;
-import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.tools.cli.commands.cluster.ListBookiesCommand;
+import org.apache.bookkeeper.tools.cli.BKCtl;
+import org.apache.bookkeeper.tools.cli.commands.client.SimpleTestCommand;
+import org.apache.bookkeeper.tools.common.BKFlags;
+import org.apache.bookkeeper.tools.framework.CliCommandGroup;
+import org.apache.bookkeeper.tools.framework.CliSpec;
 
 /**
- * Commands that interact with a cluster, such as format.
+ * Client operations that interacts with a cluster, such as simpletest.
  */
-@Parameters(commandDescription = "Commands that operate a cluster")
-public class CmdCluster extends CmdBase {
-    public CmdCluster(ServerConfiguration conf) {
-        super("cluster", conf);
-        addSubCommand(new ListBookiesCommand());
+public class LedgerCommandGroup extends CliCommandGroup<BKFlags> {
+
+    private static final String NAME = "ledger";
+    private static final String DESC = "Commands on interacting with ledgers";
+
+    private static CliSpec<BKFlags> spec = CliSpec.<BKFlags>newBuilder()
+        .withName(NAME)
+        .withDescription(DESC)
+        .withParent(BKCtl.NAME)
+        .addCommand(new SimpleTestCommand())
+        .build();
+
+    public LedgerCommandGroup() {
+        super(spec);
     }
+
 }

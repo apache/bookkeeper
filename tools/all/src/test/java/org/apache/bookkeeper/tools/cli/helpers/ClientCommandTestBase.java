@@ -56,6 +56,9 @@ public abstract class ClientCommandTestBase extends CommandTestBase {
         this.clientConf = spy(new ClientConfiguration(conf));
         this.clientConf.setMetadataServiceUri("zk://127.0.0.1/path/to/ledgers");
         PowerMockito.whenNew(ClientConfiguration.class)
+            .withNoArguments()
+            .thenReturn(clientConf);
+        PowerMockito.whenNew(ClientConfiguration.class)
             .withParameterTypes(AbstractConfiguration.class)
             .withArguments(eq(conf))
             .thenReturn(clientConf);

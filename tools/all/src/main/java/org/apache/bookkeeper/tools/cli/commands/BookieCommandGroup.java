@@ -18,15 +18,28 @@
  */
 package org.apache.bookkeeper.tools.cli.commands;
 
-import com.beust.jcommander.Parameters;
-import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.tools.cli.BKCtl;
+import org.apache.bookkeeper.tools.cli.commands.bookie.LastMarkCommand;
+import org.apache.bookkeeper.tools.common.BKFlags;
+import org.apache.bookkeeper.tools.framework.CliCommandGroup;
+import org.apache.bookkeeper.tools.framework.CliSpec;
 
 /**
- *
+ * Commands that operates a single bookie.
  */
-@Parameters(commandDescription = "Commands that interact with metadata storage")
-public class CmdMetadata extends CmdBase {
-    public CmdMetadata(ServerConfiguration conf) {
-        super("metadata", conf);
+public class BookieCommandGroup extends CliCommandGroup<BKFlags> {
+
+    private static final String NAME = "bookie";
+    private static final String DESC = "Commands on operating a single bookie";
+
+    private static final CliSpec<BKFlags> spec = CliSpec.<BKFlags>newBuilder()
+        .withName(NAME)
+        .withDescription(DESC)
+        .withParent(BKCtl.NAME)
+        .addCommand(new LastMarkCommand())
+        .build();
+
+    public BookieCommandGroup() {
+        super(spec);
     }
 }

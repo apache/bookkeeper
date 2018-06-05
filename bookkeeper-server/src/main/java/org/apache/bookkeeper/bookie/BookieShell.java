@@ -107,8 +107,9 @@ import org.apache.bookkeeper.replication.ReplicationException.CompatibilityExcep
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.tools.cli.commands.bookie.LastMarkCommand;
+import org.apache.bookkeeper.tools.cli.commands.bookies.ListBookiesCommand;
 import org.apache.bookkeeper.tools.cli.commands.client.SimpleTestCommand;
-import org.apache.bookkeeper.tools.cli.commands.cluster.ListBookiesCommand;
+import org.apache.bookkeeper.tools.framework.CliFlags;
 import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.util.DiskChecker;
 import org.apache.bookkeeper.util.EntryFormatter;
@@ -1128,13 +1129,15 @@ public class BookieShell implements Tool {
             int ackQuorum = getOptionIntValue(cmdLine, "ackQuorum", 2);
             int numEntries = getOptionIntValue(cmdLine, "numEntries", 1000);
 
-            SimpleTestCommand command = new SimpleTestCommand()
+            SimpleTestCommand.Flags flags = new SimpleTestCommand.Flags()
                 .ensembleSize(ensemble)
                 .writeQuorumSize(writeQuorum)
                 .ackQuorumSize(ackQuorum)
                 .numEntries(numEntries);
 
-            command.run(bkConf);
+            SimpleTestCommand command = new SimpleTestCommand(flags);
+
+            command.apply(bkConf, flags);
             return 0;
         }
 
@@ -1482,7 +1485,7 @@ public class BookieShell implements Tool {
         @Override
         public int runCmd(CommandLine c) throws Exception {
             LastMarkCommand command = new LastMarkCommand();
-            command.run(bkConf);
+            command.apply(bkConf, new CliFlags());
             return 0;
         }
 
@@ -1527,10 +1530,13 @@ public class BookieShell implements Tool {
                 return 1;
             }
 
-            ListBookiesCommand command = new ListBookiesCommand()
+            ListBookiesCommand.Flags flags = new ListBookiesCommand.Flags()
                 .readwrite(readwrite)
                 .readonly(readonly);
-            command.run(bkConf);
+
+            ListBookiesCommand command = new ListBookiesCommand(flags);
+
+            command.apply(bkConf, flags);
             return 0;
         }
 
