@@ -33,12 +33,6 @@ job('bookkeeper-seed') {
       false,
       'issues@bookkeeper.apache.org')
 
-  // Allows triggering this build against pull requests.
-  common_job_properties.enablePhraseTriggeringFromPullRequest(
-    delegate,
-    'Seed Job',
-    '/seed')
-
   steps {
     folder('bookkeeper-jenkins-testing')
     dsl {

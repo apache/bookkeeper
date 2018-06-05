@@ -33,12 +33,6 @@ mavenJob('bookkeeper_release_branch_46') {
       'H 12 * * *',
       false)
 
-  // Allows triggering this build against pull requests.
-  common_job_properties.enablePhraseTriggeringFromPullRequest(
-      delegate,
-      'Release Branch 4.6 Test',
-      '/test-release-branch-46')
-  
   // Set maven parameters.
   common_job_properties.setMavenConfig(delegate)
 
