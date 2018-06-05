@@ -48,7 +48,7 @@ mavenJob('bookkeeper_precommit_pullrequest_java9') {
     delegate,
     'Build (Java 9)',
     '.*(re)?build( java9)?.*',
-    '.*\[skip build( java9)?\].*')
+    '.*\\[skip build( java9)?\\].*')
 
   // Set Maven parameters.
   common_job_properties.setMavenConfig(delegate)
