@@ -114,7 +114,7 @@
     <commons-configuration.version>1.10</commons-configuration.version>
     <commons-compress.version>1.15</commons-compress.version>
     <commons-lang.version>2.6</commons-lang.version>
-    <commons-lang3.version>3.3.2</commons-lang3.version>
+    <commons-lang3.version>3.6</commons-lang3.version>
     <commons-io.version>2.4</commons-io.version>
     <curator.version>4.0.1</curator.version>
     <dropwizard.version>3.1.0</dropwizard.version>

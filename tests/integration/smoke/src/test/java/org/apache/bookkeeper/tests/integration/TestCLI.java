@@ -33,7 +33,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.MethodSorters;
 
 /**
- * Test `bin/bookkeeper-cli`.
+ * Test `bin/bkctl`.
  */
 @Slf4j
 @RunWith(Arquillian.class)
@@ -44,11 +44,11 @@ public class TestCLI {
     private DockerClient docker;
 
     private String currentVersion = System.getProperty("currentVersion");
-    private String bkCLI;
+    private String bkctl;
 
     @Before
     public void setup() {
-        bkCLI = "/opt/bookkeeper/" + currentVersion + "/bin/bookkeeper-cli";
+        bkctl = "/opt/bookkeeper/" + currentVersion + "/bin/bkctl";
     }
 
     @Test
@@ -70,8 +70,8 @@ public class TestCLI {
     public void test001_SimpleTest() throws Exception {
         String bookie = BookKeeperClusterUtils.getAnyBookie();
         assertTrue(DockerUtils.runCommand(docker, bookie,
-            bkCLI,
-            "client",
+            bkctl,
+            "ledger",
             "simpletest",
             "--ensemble-size", "3",
             "--write-quorum-size", "3",
@@ -84,9 +84,9 @@ public class TestCLI {
     public void test002_ListROBookies() throws Exception {
         String bookie = BookKeeperClusterUtils.getAnyBookie();
         assertTrue(DockerUtils.runCommand(docker, bookie,
-            bkCLI,
-            "cluster",
-            "listbookies",
+            bkctl,
+            "bookies",
+            "list",
             "-ro"
         ).contains("No bookie exists!"));
     }
@@ -95,9 +95,9 @@ public class TestCLI {
     public void test003_ListRWBookies() throws Exception {
         String bookie = BookKeeperClusterUtils.getAnyBookie();
         assertTrue(DockerUtils.runCommand(docker, bookie,
-            bkCLI,
-            "cluster",
-            "listbookies",
+            bkctl,
+            "bookies",
+            "list",
             "-rw"
         ).contains("ReadWrite Bookies :"));
     }

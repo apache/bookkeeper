@@ -59,6 +59,10 @@ public class LastMarkCommandTest extends BookieCommandTestBase {
     public void setup() throws Exception {
         super.setup();
 
+        PowerMockito.whenNew(ServerConfiguration.class)
+            .withNoArguments()
+            .thenReturn(conf);
+
         PowerMockito.whenNew(LedgerDirsManager.class)
             .withParameterTypes(
                 ServerConfiguration.class,
@@ -91,9 +95,8 @@ public class LastMarkCommandTest extends BookieCommandTestBase {
 
     @Test
     public void testCommand() throws Exception {
-        CommandRunner runner = createCommandRunner(new LastMarkCommand());
-
-        runner.runArgs("lastmark");
+        LastMarkCommand cmd = new LastMarkCommand();
+        cmd.apply(bkFlags, new String[] { "" });
 
         PowerMockito.verifyNew(LedgerDirsManager.class, times(1))
             .withArguments(eq(conf), any(File[].class), any(DiskChecker.class));

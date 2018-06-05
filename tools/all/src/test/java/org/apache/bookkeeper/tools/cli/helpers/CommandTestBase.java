@@ -20,7 +20,7 @@ package org.apache.bookkeeper.tools.cli.helpers;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.tools.cli.commands.CmdBase;
+import org.apache.bookkeeper.tools.common.BKFlags;
 
 /**
  * A test base providing an environment for run a command.
@@ -28,32 +28,13 @@ import org.apache.bookkeeper.tools.cli.commands.CmdBase;
 @Slf4j
 public class CommandTestBase {
 
-    /**
-     * Command Runner to run commands inherited from {@link CmdBase}.
-     */
-    protected static class CommandRunner extends CmdBase {
-
-        public CommandRunner(ServerConfiguration conf, Command command) {
-            super("test-runner", conf);
-            commander.addCommand(command.name(), command);
-        }
-
-        public boolean runArgs(String... args) {
-            log.info("Executing command {}", args);
-            return run(args);
-        }
-
-    }
-
-    protected CommandRunner createCommandRunner(Command command) {
-        return new CommandRunner(conf, command);
-    }
-
+    protected final BKFlags bkFlags;
     protected final ServerConfiguration conf;
 
     public CommandTestBase() {
         this.conf = new ServerConfiguration();
         this.conf.setMetadataServiceUri("zk://127.0.0.1/path/to/ledgers");
+        this.bkFlags = new BKFlags();
     }
 
 }

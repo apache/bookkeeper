@@ -18,17 +18,28 @@
  */
 package org.apache.bookkeeper.tools.cli.commands;
 
-import com.beust.jcommander.Parameters;
-import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.tools.cli.commands.bookie.LastMarkCommand;
+import org.apache.bookkeeper.tools.cli.BKCtl;
+import org.apache.bookkeeper.tools.cli.commands.bookies.ListBookiesCommand;
+import org.apache.bookkeeper.tools.common.BKFlags;
+import org.apache.bookkeeper.tools.framework.CliCommandGroup;
+import org.apache.bookkeeper.tools.framework.CliSpec;
 
 /**
- * Commands that operates a single bookie.
+ * Commands that interact with a cluster of bookies.
  */
-@Parameters(commandDescription = "Commands on operating a single bookie")
-public class CmdBookie extends CmdBase {
-    public CmdBookie(ServerConfiguration conf) {
-        super("bookie", conf);
-        addSubCommand(new LastMarkCommand());
+public class BookiesCommandGroup extends CliCommandGroup<BKFlags> {
+
+    private static final String NAME = "bookies";
+    private static final String DESC = "Commands on operating a cluster of bookies";
+
+    private static final CliSpec<BKFlags> spec = CliSpec.<BKFlags>newBuilder()
+        .withName(NAME)
+        .withDescription(DESC)
+        .withParent(BKCtl.NAME)
+        .addCommand(new ListBookiesCommand())
+        .build();
+
+    public BookiesCommandGroup() {
+        super(spec);
     }
 }

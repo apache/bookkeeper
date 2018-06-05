@@ -16,44 +16,67 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.bookkeeper.tools.cli.commands.cluster;
+package org.apache.bookkeeper.tools.cli.commands.bookies;
 
 import static org.apache.bookkeeper.common.concurrent.FutureUtils.result;
 import static org.apache.bookkeeper.tools.cli.helpers.CommandHelpers.getBookieSocketAddrStringRepresentation;
 
 import com.beust.jcommander.Parameter;
-import com.beust.jcommander.Parameters;
 import java.util.Collection;
 import java.util.Set;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 import org.apache.bookkeeper.discover.RegistrationClient;
 import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.tools.cli.commands.bookies.ListBookiesCommand.Flags;
 import org.apache.bookkeeper.tools.cli.helpers.DiscoveryCommand;
+import org.apache.bookkeeper.tools.framework.CliFlags;
+import org.apache.bookkeeper.tools.framework.CliSpec;
 
 /**
  * Command to list available bookies.
  */
-@Accessors(fluent = true)
-@Setter
-@Parameters(commandDescription = "List the bookies, which are running as either readwrite or readonly mode.")
-public class ListBookiesCommand extends DiscoveryCommand {
+public class ListBookiesCommand extends DiscoveryCommand<Flags> {
 
-    @Parameter(names = { "-rw", "--readwrite" }, description = "Print readwrite bookies")
-    private boolean readwrite = false;
-    @Parameter(names = { "-ro", "--readonly" }, description = "Print readonly bookies")
-    private boolean readonly = false;
+    private static final String NAME = "list";
+    private static final String DESC = "List the bookies, which are running as either readwrite or readonly mode.";
+
+    public ListBookiesCommand() {
+        this(new Flags());
+    }
+
+    public ListBookiesCommand(Flags flags) {
+        super(CliSpec.<Flags>newBuilder()
+            .withName(NAME)
+            .withDescription(DESC)
+            .withFlags(flags)
+            .build());
+    }
+
+    /**
+     * Flags for list bookies command.
+     */
+    @Accessors(fluent = true)
+    @Setter
+    public static class Flags extends CliFlags {
+
+        @Parameter(names = { "-rw", "--readwrite" }, description = "Print readwrite bookies")
+        private boolean readwrite = false;
+        @Parameter(names = { "-ro", "--readonly" }, description = "Print readonly bookies")
+        private boolean readonly = false;
+
+    }
 
     @Override
-    protected void run(RegistrationClient regClient) throws Exception {
-        if (!readwrite && !readonly) {
+    protected void run(RegistrationClient regClient, Flags flags) throws Exception {
+        if (!flags.readwrite && !flags.readonly) {
             // case: no args is provided. list all the bookies by default.
-            readwrite = true;
-            readonly = true;
+            flags.readwrite = true;
+            flags.readonly = true;
         }
 
         boolean hasBookies = false;
-        if (readwrite) {
+        if (flags.readwrite) {
             Set<BookieSocketAddress> bookies = result(
                 regClient.getWritableBookies()
             ).getValue();
@@ -63,7 +86,7 @@ public class ListBookiesCommand extends DiscoveryCommand {
                 hasBookies = true;
             }
         }
-        if (readonly) {
+        if (flags.readonly) {
             Set<BookieSocketAddress> bookies = result(
                 regClient.getReadOnlyBookies()
             ).getValue();
@@ -84,8 +107,4 @@ public class ListBookiesCommand extends DiscoveryCommand {
         }
     }
 
-    @Override
-    public String name() {
-        return "listbookies";
-    }
 }

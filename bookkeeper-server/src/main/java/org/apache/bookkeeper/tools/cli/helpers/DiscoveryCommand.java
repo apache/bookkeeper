@@ -24,34 +24,51 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import lombok.Cleanup;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.bookkeeper.client.api.BookKeeper;
 import org.apache.bookkeeper.conf.ClientConfiguration;
-import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.discover.RegistrationClient;
 import org.apache.bookkeeper.meta.MetadataClientDriver;
 import org.apache.bookkeeper.meta.MetadataDrivers;
 import org.apache.bookkeeper.stats.NullStatsLogger;
+import org.apache.bookkeeper.tools.framework.CliFlags;
+import org.apache.bookkeeper.tools.framework.CliSpec;
 
 /**
  * This is a mixin for commands that talks to discovery service.
  */
 @Slf4j
-public abstract class DiscoveryCommand implements Command {
+public abstract class DiscoveryCommand<DiscoveryFlagsT extends CliFlags> extends ClientCommand<DiscoveryFlagsT> {
+
+    protected DiscoveryCommand(CliSpec<DiscoveryFlagsT> spec) {
+        super(spec);
+    }
 
     @Override
-    public void run(ServerConfiguration conf) throws Exception {
-        URI metadataServiceUri = URI.create(conf.getMetadataServiceUri());
-        @Cleanup("shutdown") ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
-        try (MetadataClientDriver driver = MetadataDrivers.getClientDriver(metadataServiceUri)) {
-            ClientConfiguration clientConf = new ClientConfiguration(conf);
-            driver.initialize(
-                clientConf,
-                executor,
-                NullStatsLogger.INSTANCE,
-                Optional.empty());
-            run(driver.getRegistrationClient());
+    protected boolean apply(ClientConfiguration clientConf, DiscoveryFlagsT cmdFlags) {
+        try {
+            URI metadataServiceUri = URI.create(clientConf.getMetadataServiceUri());
+            @Cleanup("shutdown") ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
+            try (MetadataClientDriver driver = MetadataDrivers.getClientDriver(metadataServiceUri)) {
+                driver.initialize(
+                    clientConf,
+                    executor,
+                    NullStatsLogger.INSTANCE,
+                    Optional.empty());
+                run(driver.getRegistrationClient(), cmdFlags);
+                return true;
+            }
+        } catch (Exception e) {
+            log.error("Fail to process command '{}'", name(), e);
+            return false;
         }
     }
 
-    protected abstract void run(RegistrationClient regClient) throws Exception;
+    @Override
+    protected void run(BookKeeper bk, DiscoveryFlagsT cmdFlags) throws Exception {
+        throw new IllegalStateException("It should never be called.");
+    }
+
+    protected abstract void run(RegistrationClient regClient, DiscoveryFlagsT cmdFlags)
+        throws Exception;
 
 }

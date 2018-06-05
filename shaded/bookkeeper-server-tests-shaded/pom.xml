@@ -49,6 +49,10 @@
         </exclusion>
         <exclusion>
           <groupId>org.apache.bookkeeper</groupId>
+          <artifactId>bookkeeper-tools-framework</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.bookkeeper</groupId>
           <artifactId>bookkeeper-proto</artifactId>
         </exclusion>
         <exclusion>

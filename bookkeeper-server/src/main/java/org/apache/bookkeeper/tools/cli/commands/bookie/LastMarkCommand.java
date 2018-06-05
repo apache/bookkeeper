@@ -18,8 +18,6 @@
  */
 package org.apache.bookkeeper.tools.cli.commands.bookie;
 
-import com.beust.jcommander.Parameters;
-
 import java.io.File;
 
 import org.apache.bookkeeper.bookie.Journal;
@@ -27,21 +25,28 @@ import org.apache.bookkeeper.bookie.LedgerDirsManager;
 import org.apache.bookkeeper.bookie.LogMark;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.tools.cli.helpers.BookieCommand;
+import org.apache.bookkeeper.tools.framework.CliFlags;
+import org.apache.bookkeeper.tools.framework.CliSpec;
 import org.apache.bookkeeper.util.DiskChecker;
 
 /**
  * A bookie command to print the last log marker.
  */
-@Parameters(commandDescription = "Print last log marker")
-public class LastMarkCommand extends BookieCommand {
+public class LastMarkCommand extends BookieCommand<CliFlags> {
 
-    @Override
-    public String name() {
-        return "lastmark";
+    private static final String NAME = "lastmark";
+    private static final String DESC = "Print last log marker";
+
+    public LastMarkCommand() {
+        super(CliSpec.newBuilder()
+            .withName(NAME)
+            .withFlags(new CliFlags())
+            .withDescription(DESC)
+            .build());
     }
 
     @Override
-    public void run(ServerConfiguration conf) throws Exception {
+    public boolean apply(ServerConfiguration conf, CliFlags flags) {
         LedgerDirsManager dirsManager = new LedgerDirsManager(
             conf, conf.getJournalDirs(),
             new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()));
@@ -54,5 +59,6 @@ public class LastMarkCommand extends BookieCommand {
                 + Long.toHexString(lastLogMark.getLogFileId()) + ".txn), Pos - "
                 + lastLogMark.getLogFileOffset());
         }
+        return true;
     }
 }

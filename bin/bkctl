@@ -26,7 +26,7 @@ BK_HOME=`cd ${BINDIR}/..;pwd`
 source ${BK_HOME}/bin/common.sh
 source ${BK_HOME}/conf/bk_cli_env.sh
 
-CLI_MODULE_PATH=bookkeeper-tools
+CLI_MODULE_PATH=tools/all
 CLI_MODULE_NAME="(org.apache.bookkeeper-)?bookkeeper-tools"
 CLI_MODULE_HOME=${BK_HOME}/${CLI_MODULE_PATH}
 
@@ -46,8 +46,8 @@ if [ -z "${CLI_LOG_CONF}" ]; then
   CLI_LOG_CONF=${DEFAULT_LOG_CONF}
 fi
 CLI_LOG_DIR=${CLI_LOG_DIR:-"$BK_HOME/logs"}
-CLI_LOG_FILE=${CLI_LOG_FILE:-"bookkeeper-cli.log"}
-CLI_ROOT_LOGGER=${CLI_ROOT_LOGGER:-"INFO,CONSOLE"}
+CLI_LOG_FILE=${CLI_LOG_FILE:-"bkctl.log"}
+CLI_ROOT_LOGGER=${CLI_ROOT_LOGGER:-"INFO,ROLLINGFILE"}
 
 # Configure the classpath
 CLI_CLASSPATH="$CLI_JAR:$CLI_CLASSPATH:$CLI_EXTRA_CLASSPATH"
@@ -55,12 +55,12 @@ CLI_CLASSPATH="`dirname $CLI_LOG_CONF`:$CLI_CLASSPATH"
 
 # Build the OPTs
 BOOKIE_OPTS=$(build_bookie_opts)
-GC_OPTS=$(build_cli_jvm_opts ${CLI_LOG_DIR} "bookkeeper-cli-gc.log")
+GC_OPTS=$(build_cli_jvm_opts ${CLI_LOG_DIR} "bkctl-gc.log")
 NETTY_OPTS=$(build_netty_opts)
-LOGGING_OPTS=$(build_logging_opts ${CLI_LOG_CONF} ${CLI_LOG_DIR} ${CLI_LOG_FILE} ${CLI_ROOT_LOGGER})
+LOGGING_OPTS=$(build_cli_logging_opts ${CLI_LOG_CONF} ${CLI_LOG_DIR} ${CLI_LOG_FILE} ${CLI_ROOT_LOGGER})
 
 OPTS="${OPTS} -cp ${CLI_CLASSPATH} ${BOOKIE_OPTS} ${GC_OPTS} ${NETTY_OPTS} ${LOGGING_OPTS} ${CLI_EXTRA_OPTS}"
 
 #Change to BK_HOME to support relative paths
 cd "$BK_HOME"
-exec ${JAVA} ${OPTS} org.apache.bookkeeper.tools.cli.BookKeeperCLI --conf ${CLI_CONF} $@
+exec ${JAVA} ${OPTS} org.apache.bookkeeper.tools.cli.BKCtl --conf ${CLI_CONF} $@
