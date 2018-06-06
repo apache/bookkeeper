@@ -79,7 +79,7 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
     int maxWeightMultiple;
     private Map<BookieNode, WeightedObject> bookieInfoMap = new HashMap<BookieNode, WeightedObject>();
     private WeightedRandomSelection<BookieNode> weightedSelection;
-    private int minNumRacksPerWriteQuorum;
+    protected int minNumRacksPerWriteQuorum;
 
     public static final String REPP_DNS_RESOLVER_CLASS = "reppDnsResolverClass";
     public static final String REPP_RANDOM_READ_REORDERING = "ensembleRandomReadReordering";
