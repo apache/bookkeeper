@@ -453,19 +453,20 @@ public class RocksdbKVStore<K, V> implements KVStore<K, V> {
     }
 
     private void putRaw(K key, byte[] keyBytes, V value, long revision) {
-        WriteBatch batch = new WriteBatch();
-        if (revision > 0) {
-            // last revision has been set to revision bytes
-            batch.put(metaCfHandle, LAST_REVISION, lastRevisionBytes);
-        }
-        if (null == value) {
-            // delete a key if value is null
-            batch.remove(dataCfHandle, keyBytes);
-        } else {
-            byte[] valBytes = valCoder.encode(value);
-            batch.put(dataCfHandle, keyBytes, valBytes);
-        }
         try {
+            WriteBatch batch = new WriteBatch();
+            if (revision > 0) {
+                // last revision has been set to revision bytes
+                batch.put(metaCfHandle, LAST_REVISION, lastRevisionBytes);
+            }
+            if (null == value) {
+                // delete a key if value is null
+                batch.delete(dataCfHandle, keyBytes);
+            } else {
+                byte[] valBytes = valCoder.encode(value);
+                batch.put(dataCfHandle, keyBytes, valBytes);
+            }
+
             db.write(writeOpts, batch);
         } catch (RocksDBException e) {
             throw new StateStoreRuntimeException("Error while updating key " + key
@@ -555,7 +556,11 @@ public class RocksdbKVStore<K, V> implements KVStore<K, V> {
         }
 
         private void putRaw(byte[] keyBytes, V value) {
-            batch.put(dataCfHandle, keyBytes, valCoder.encode(value));
+            try {
+                batch.put(dataCfHandle, keyBytes, valCoder.encode(value));
+            } catch (RocksDBException e) {
+                throw new StateStoreRuntimeException(e);
+            }
         }
 
         @Override
@@ -568,7 +573,11 @@ public class RocksdbKVStore<K, V> implements KVStore<K, V> {
         }
 
         private void deleteRaw(byte[] keyBytes) {
-            batch.remove(dataCfHandle, keyBytes);
+            try {
+                batch.delete(dataCfHandle, keyBytes);
+            } catch (RocksDBException e) {
+                throw new StateStoreRuntimeException(e);
+            }
         }
 
         @Override
@@ -579,7 +588,11 @@ public class RocksdbKVStore<K, V> implements KVStore<K, V> {
 
             byte[] fromBytes = keyCoder.encode(from);
             byte[] toBytes = keyCoder.encode(to);
-            batch.deleteRange(dataCfHandle, fromBytes, toBytes);
+            try {
+                batch.deleteRange(dataCfHandle, fromBytes, toBytes);
+            } catch (RocksDBException e) {
+                throw new StateStoreRuntimeException(e);
+            }
         }
 
         @Override
