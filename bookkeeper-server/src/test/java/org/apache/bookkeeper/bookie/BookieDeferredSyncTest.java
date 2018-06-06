@@ -27,6 +27,7 @@ import static org.junit.Assert.assertEquals;
 import java.util.EnumSet;
 import org.apache.bookkeeper.client.api.DigestType;
 import org.apache.bookkeeper.client.api.LedgerEntries;
+import org.apache.bookkeeper.client.api.LedgerEntry;
 import org.apache.bookkeeper.client.api.ReadHandle;
 import org.apache.bookkeeper.client.api.WriteFlag;
 import org.apache.bookkeeper.client.api.WriteHandle;
@@ -124,14 +125,14 @@ public class BookieDeferredSyncTest extends BookKeeperClusterTestCase {
 
                 try (LedgerEntries entries = readLh.read(0, n - 1)) {
                     for (int i = 0; i < n; i++) {
-                        org.apache.bookkeeper.client.api.LedgerEntry entry = entries.getEntry(i);
+                        LedgerEntry entry = entries.getEntry(i);
                         assertEquals("entry-" + i, new String(entry.getEntryBytes()));
                     }
                 }
 
                 try (LedgerEntries entries = readLh.readUnconfirmed(0, n - 1)) {
                     for (int i = 0; i < n; i++) {
-                        org.apache.bookkeeper.client.api.LedgerEntry entry = entries.getEntry(i);
+                        LedgerEntry entry = entries.getEntry(i);
                         assertEquals("entry-" + i, new String(entry.getEntryBytes()));
                     }
                 }
@@ -148,7 +149,7 @@ public class BookieDeferredSyncTest extends BookKeeperClusterTestCase {
                 // entry will be readable with readUnconfirmed
                 try (LedgerEntries entries = readLh.readUnconfirmed(0, n - 1)) {
                     for (int i = 0; i < n; i++) {
-                        org.apache.bookkeeper.client.api.LedgerEntry entry = entries.getEntry(i);
+                        LedgerEntry entry = entries.getEntry(i);
                         assertEquals("entry-" + i, new String(entry.getEntryBytes()));
                     }
                 }
