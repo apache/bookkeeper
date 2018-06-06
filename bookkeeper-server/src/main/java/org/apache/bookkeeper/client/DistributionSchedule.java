@@ -144,7 +144,7 @@ public interface DistributionSchedule {
     /**
      * Return the set of bookies indices to send the messages to the whole ensemble.
      *
-     * @param entryId entry id use to calculate the ensemble.
+     * @param entryId entry id used to calculate the ensemble.
      * @return the set of bookies indices to send the request.
      */
     WriteSet getEnsembleSet(long entryId);

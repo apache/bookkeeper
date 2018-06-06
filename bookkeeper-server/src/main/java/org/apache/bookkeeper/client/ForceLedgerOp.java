@@ -37,6 +37,7 @@ class ForceLedgerOp extends SafeRunnable implements ForceLedgerCallback {
 
     DistributionSchedule.AckSet ackSet;
     boolean completed = false;
+    boolean errored = false;
     int lastSeenError = BKException.Code.WriteException;
     ArrayList<BookieSocketAddress> currentEnsemble;
 
@@ -88,6 +89,11 @@ class ForceLedgerOp extends SafeRunnable implements ForceLedgerCallback {
 
         checkState(!completed, "We are waiting for all the bookies, it is not expected an early exit");
 
+        if (errored) {
+            // alredy failed, we alread called the callback reporting a failure
+            return;
+        }
+
         if (BKException.Code.OK != rc) {
             lastSeenError = rc;
         }
@@ -108,6 +114,12 @@ class ForceLedgerOp extends SafeRunnable implements ForceLedgerCallback {
             // at least one bookie failed, as we are waiting for all the bookies
             // we can fail immediately
             LOG.info("ForceLedger did not succeed: Ledger {} on {}", ledgerId, addr);
+            errored = true;
+
+            // fail all pending writes
+            lh.errorOutPendingAdds(rc);
+
+            // notify the failure
             FutureUtils.completeExceptionally(cb, BKException.create(lastSeenError));
         }
 
