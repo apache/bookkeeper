@@ -90,7 +90,7 @@ class ForceLedgerOp extends SafeRunnable implements ForceLedgerCallback {
         checkState(!completed, "We are waiting for all the bookies, it is not expected an early exit");
 
         if (errored) {
-            // alredy failed, we alread called the callback reporting a failure
+            // already failed, do not fire error callbacks twice
             return;
         }
 
