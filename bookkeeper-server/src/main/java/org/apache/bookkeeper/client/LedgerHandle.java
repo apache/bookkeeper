@@ -1128,7 +1128,7 @@ public class LedgerHandle implements WriteHandle {
         if (wasClosed) {
             // make sure the callback is triggered in main worker pool
             try {
-                bk.getMainWorkerPool().submit(new SafeRunnable() {
+                bk.getMainWorkerPool().executeOrdered(ledgerId, new SafeRunnable() {
                     @Override
                     public void safeRun() {
                         LOG.warn("Force() attempted on a closed ledger: {}", ledgerId);
@@ -1148,7 +1148,7 @@ public class LedgerHandle implements WriteHandle {
 
         // early exit: no write has been issued yet
         if (pendingAddsSequenceHead == INVALID_ENTRY_ID) {
-            bk.getMainWorkerPool().submit(new SafeRunnable() {
+            bk.getMainWorkerPool().executeOrdered(ledgerId, new SafeRunnable() {
                     @Override
                     public void safeRun() {
                         FutureUtils.complete(result, null);
@@ -1291,7 +1291,7 @@ public class LedgerHandle implements WriteHandle {
         if (wasClosed) {
             // make sure the callback is triggered in main worker pool
             try {
-                bk.getMainWorkerPool().submit(new SafeRunnable() {
+                bk.getMainWorkerPool().executeOrdered(ledgerId, new SafeRunnable() {
                     @Override
                     public void safeRun() {
                         LOG.warn("Attempt to add to closed ledger: {}", ledgerId);
