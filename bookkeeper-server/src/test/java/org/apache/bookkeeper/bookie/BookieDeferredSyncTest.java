@@ -25,6 +25,7 @@ import static org.apache.bookkeeper.common.concurrent.FutureUtils.result;
 import static org.junit.Assert.assertEquals;
 
 import java.util.EnumSet;
+import org.apache.bookkeeper.client.api.DigestType;
 import org.apache.bookkeeper.client.api.LedgerEntries;
 import org.apache.bookkeeper.client.api.ReadHandle;
 import org.apache.bookkeeper.client.api.WriteFlag;
@@ -44,12 +45,13 @@ public class BookieDeferredSyncTest extends BookKeeperClusterTestCase {
 
     @Test
     public void testWriteAndRecovery() throws Exception {
+        // this WriteHandle will not be closed
         WriteHandle lh = result(bkc.newCreateLedgerOp()
                 .withEnsembleSize(1)
                 .withWriteQuorumSize(1)
                 .withAckQuorumSize(1)
                 .withWriteFlags(WriteFlag.DEFERRED_SYNC)
-                .withDigestType(org.apache.bookkeeper.client.api.DigestType.CRC32C)
+                .withDigestType(DigestType.CRC32C)
                 .withPassword(new byte[0])
                 .execute());
 
@@ -60,8 +62,6 @@ public class BookieDeferredSyncTest extends BookKeeperClusterTestCase {
         for (int i = 0; i < n; i++) {
             lh.append(("entry-" + i).getBytes(UTF_8));
         }
-
-        restartBookies();
 
         try (ReadHandle readLh = result(bkc.newOpenLedgerOp()
                 .withLedgerId(ledgerId)
@@ -89,36 +89,33 @@ public class BookieDeferredSyncTest extends BookKeeperClusterTestCase {
     }
 
     private void testClose(boolean force) throws Exception {
-        WriteHandle lh = result(bkc.newCreateLedgerOp()
+        final int n = 10;
+        long ledgerId;
+        try (WriteHandle lh = result(bkc.newCreateLedgerOp()
                 .withEnsembleSize(1)
                 .withWriteQuorumSize(1)
                 .withAckQuorumSize(1)
                 .withWriteFlags(WriteFlag.DEFERRED_SYNC)
-                .withDigestType(org.apache.bookkeeper.client.api.DigestType.CRC32C)
+                .withDigestType(DigestType.CRC32C)
                 .withPassword(new byte[0])
-                .execute());
+                .execute())) {
 
-        int n = 10;
-
-        long ledgerId = lh.getId();
-
-        for (int i = 0; i < n; i++) {
-            lh.append(("entry-" + i).getBytes(UTF_8));
+            ledgerId = lh.getId();
+            for (int i = 0; i < n; i++) {
+                lh.append(("entry-" + i).getBytes(UTF_8));
+            }   if (force) {
+                // with force() LastAddConfirmed is updated
+                result(lh.force());
+                // on close metadata will have LastAddConfirmed = n - 1
+                assertEquals(n - 1, lh.getLastAddConfirmed());
+            } else {
+                // on close metadata will have LastAddConfirmed = -1
+                assertEquals(-1, lh.getLastAddConfirmed());
+            }
         }
 
         if (force) {
-            // with force() LastAddConfirmed is updated
-            result(lh.force());
-            // on close metadata will have LastAddConfirmed = n - 1
-            assertEquals(n - 1, lh.getLastAddConfirmed());
-        } else {
-            // on close metadata will have LastAddConfirmed = -1
-            assertEquals(-1, lh.getLastAddConfirmed());
-        }
-        lh.close();
-
-        if (force) {
-            // the read will be able to read
+            // the reader will be able to read
             try (ReadHandle readLh = result(bkc.newOpenLedgerOp()
                     .withLedgerId(ledgerId)
                     .withRecovery(true)
@@ -176,7 +173,7 @@ public class BookieDeferredSyncTest extends BookKeeperClusterTestCase {
                 .withWriteQuorumSize(1)
                 .withAckQuorumSize(1)
                 .withWriteFlags(writeFlags)
-                .withDigestType(org.apache.bookkeeper.client.api.DigestType.CRC32C)
+                .withDigestType(DigestType.CRC32C)
                 .withPassword(new byte[0])
                 .execute());) {
             int n = 10;

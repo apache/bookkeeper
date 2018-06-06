@@ -1904,7 +1904,7 @@ public class LedgerHandle implements WriteHandle {
             blockAddCompletions.decrementAndGet();
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Cannot perform ensemble change with write flags {}. "
-                        + "Retry sending to failed bookies {} for ledger {}.",
+                        + "Failed bookies {} for ledger {}.",
                     writeFlags, failedBookies, ledgerId);
             }
             handleUnrecoverableErrorDuringAdd(WriteException);
