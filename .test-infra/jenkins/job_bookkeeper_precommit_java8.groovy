@@ -41,14 +41,14 @@ mavenJob('bookkeeper_precommit_pullrequest_java8') {
     'JDK 1.8 (latest)',
     200,
     'ubuntu',
-    '${ghprbTargetBranch}')
+    '${ghprbActualCommit}')
 
   // Sets that this is a PreCommit job.
   common_job_properties.setPreCommit(
     delegate,
     'Build (Java 8)',
-    '.*(re)?build( java8)?.*',
-    '.*\[skip build( java8)?\].*')
+    '.*(re)?build java8?.*',
+    '.*\\[skip build java8?\\].*')
 
   // Set Maven parameters.
   common_job_properties.setMavenConfig(delegate)

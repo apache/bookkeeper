@@ -32,14 +32,14 @@ mavenJob('bookkeeper_precommit_pullrequest_validation') {
     'JDK 1.8 (latest)',
     200,
     'ubuntu',
-    '${ghprbTargetBranch}')
+    '${ghprbActualCommit}')
 
   // Sets that this is a PreCommit job.
   common_job_properties.setPreCommit(
     delegate,
     'PR Validation',
     '.*(re)?run pr validation.*',
-    ''
+    '',
     true)
 
   // Set Maven parameters.

@@ -31,12 +31,6 @@ freeStyleJob('bookkeeper_release_nightly_snapshot') {
       'H 12 * * *',
       false)
 
-  // Allows triggering this build against pull requests.
-  common_job_properties.enablePhraseTriggeringFromPullRequest(
-      delegate,
-      'Release Snapshot',
-      '/release-snapshot')
-
   parameters {
       stringParam(
           'sha1',

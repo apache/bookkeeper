@@ -32,12 +32,6 @@ mavenJob('bookkeeper_postcommit_validation_master') {
       'H 12 * * *',
       false)
 
-  // Allows triggering this build against pull requests.
-  common_job_properties.enablePhraseTriggeringFromPullRequest(
-      delegate,
-      'Postcommit Validation',
-      '/postcommit-validation')
-
   // Set maven parameters.
   common_job_properties.setMavenConfig(delegate)
 

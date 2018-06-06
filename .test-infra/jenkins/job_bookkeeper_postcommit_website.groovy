@@ -28,12 +28,6 @@ job('bookkeeper_postcommit_publish_website') {
   // Sets that this is a WebsitePostCommit job.
   common_job_properties.setWebsitePostCommit(delegate)
 
-  // Allows triggering this build against pull requests.
-  common_job_properties.enablePhraseTriggeringFromPullRequest(
-      delegate,
-      'Build Website',
-      '/build-website')
-
   steps {
     // Run the following shell script as a build step.
     shell '''
