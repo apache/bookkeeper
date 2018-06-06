@@ -199,7 +199,7 @@ public class BookieClient implements PerChannelBookieClientFactory {
         final PerChannelBookieClientPool client = lookupClient(addr);
         if (client == null) {
             cb.forceLedgerComplete(getRc(BKException.Code.BookieHandleNotAvailableException),
-                              ledgerId, addr, null);
+                              ledgerId, addr, ctx);
             return;
         }
 

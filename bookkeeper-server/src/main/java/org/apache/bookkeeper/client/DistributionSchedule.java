@@ -142,19 +142,12 @@ public interface DistributionSchedule {
     WriteSet getWriteSet(long entryId);
 
     /**
-     * Return the set of bookies indices to send the messages to for longpoll reads.
+     * Return the set of bookies indices to send the messages to the whole ensemble.
      *
-     * @param entryId expected next entry id to read.
-     * @return the set of bookies indices to read from.
+     * @param entryId entry id use to calculate the ensemble.
+     * @return the set of bookies indices to send the request.
      */
-    WriteSet getWriteSetForLongPoll(long entryId);
-
-    /**
-     * Return the set of bookies indices to send the messages to for force ledger.
-     *
-     * @return the set of bookies indices to send force request to.
-     */
-    WriteSet getWriteSetForForceLedger();
+    WriteSet getEnsembleSet(long entryId);
 
     /**
      * An ack set represents the set of bookies from which
@@ -208,7 +201,7 @@ public interface DistributionSchedule {
      * Returns an ackset object useful to wait for all bookies in the ensemble,
      * responses should be checked against this.
      */
-    AckSet getAckSetForForceLedger();
+    AckSet getEnsembleAckSet();
 
     /**
      * Interface to keep track of which bookies in an ensemble, an action

@@ -285,7 +285,6 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
                 // Update the stat to reflect it.
                 addOpUrCounter.inc();
                 if (!lh.bk.getDisableEnsembleChangeFeature().isAvailable()
-                        && !lh.writeFlags.contains(WriteFlag.DEFERRED_SYNC)
                         && !lh.bk.delayEnsembleChange) {
                     lh.getDelayedWriteFailedBookies().putIfAbsent(bookieIndex, addr);
                 }
