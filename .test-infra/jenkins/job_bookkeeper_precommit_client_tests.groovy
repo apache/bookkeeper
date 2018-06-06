@@ -32,14 +32,14 @@ freeStyleJob('bookkeeper_precommit_client_tests') {
     'JDK 1.8 (latest)',
     200,
     'ubuntu',
-    '${ghprbTargetBranch}')
+    '${ghprbActualCommit}')
 
   // Sets that this is a PreCommit job.
   common_job_properties.setPreCommit(
     delegate,
     'Client Tests',
     '.*(re)?run (client )?tests.*',
-    '.*\[skip (client )?tests\].*',
+    '.*\\[skip (client )?tests\\].*',
     true)
 
   steps {

@@ -41,14 +41,14 @@ mavenJob('bookkeeper_precommit_pullrequest_java9') {
     'JDK 1.9 (latest)',
     200,
     'ubuntu',
-    '${ghprbTargetBranch}')
+    '${ghprbActualCommit}')
 
   // Sets that this is a PreCommit job.
   common_job_properties.setPreCommit(
     delegate,
     'Build (Java 9)',
-    '.*(re)?build( java9)?.*',
-    '.*\[skip build( java9)?\].*')
+    '.*(re)?build java9?.*',
+    '.*\\[skip build java9?\\].*')
 
   // Set Maven parameters.
   common_job_properties.setMavenConfig(delegate)
