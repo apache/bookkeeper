@@ -32,7 +32,7 @@ freeStyleJob('bookkeeper_precommit_replication_tests') {
     'JDK 1.8 (latest)',
     200,
     'ubuntu',
-    '${ghprbTargetBranch}')
+    '${ghprbActualCommit}')
 
   // Sets that this is a PreCommit job.
   common_job_properties.setPreCommit(

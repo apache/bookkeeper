@@ -29,7 +29,7 @@ freeStyleJob('bookkeeper_precommit_integrationtests') {
         'JDK 1.8 (latest)',
         200,
         'ubuntu',
-        '${ghprbTargetBranch}')
+        '${ghprbActualCommit}')
 
     throttleConcurrentBuilds {
         // limit builds to 1 per node to avoid conflicts on building docker images
