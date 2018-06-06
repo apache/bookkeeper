@@ -234,7 +234,7 @@ Apache Software License, Version 2.
 - lib/org.eclipse.jetty-jetty-server-9.4.5.v20170502.jar [21]
 - lib/org.eclipse.jetty-jetty-servlet-9.4.5.v20170502.jar [21]
 - lib/org.eclipse.jetty-jetty-util-9.4.5.v20170502.jar [21]
-- lib/org.rocksdb-rocksdbjni-5.8.6.jar [22]
+- lib/org.rocksdb-rocksdbjni-5.13.1.jar [22]
 - lib/com.beust-jcommander-1.48.jar [23]
 - lib/com.yahoo.datasketches-memory-0.8.3.jar [24]
 - lib/com.yahoo.datasketches-sketches-core-0.8.3.jar [24]
@@ -285,7 +285,7 @@ Apache Software License, Version 2.
 [19] Source available at https://git-wip-us.apache.org/repos/asf?p=commons-lang.git;a=tag;h=3ad2e8
 [20] Source available at https://github.com/apache/zookeeper/tree/release-3.5.3
 [21] Source available at https://github.com/eclipse/jetty.project/tree/jetty-9.4.5.v20170502
-[22] Source available at https://github.com/facebook/rocksdb/tree/v5.8.6
+[22] Source available at https://github.com/facebook/rocksdb/tree/v5.13.1
 [23] Source available at https://github.com/cbeust/jcommander/tree/jcommander-1.48
 [24] Source available at https://github.com/DataSketches/sketches-core/tree/sketches-0.8.3
 [25] Source available at https://github.com/lz4/lz4-java/tree/1.3.0
@@ -371,7 +371,7 @@ interchange format, which can be obtained at:
     * https://github.com/google/protobuf
 
 ------------------------------------------------------------------------------------
-lib/org.rocksdb-rocksdbjni-5.8.6.jar is derived from leveldb, which is under the following license.
+lib/org.rocksdb-rocksdbjni-5.13.1.jar is derived from leveldb, which is under the following license.
 
 Copyright (c) 2011 The LevelDB Authors. All rights reserved.
 
