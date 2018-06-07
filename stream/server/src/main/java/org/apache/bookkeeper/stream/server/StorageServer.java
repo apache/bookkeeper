@@ -226,6 +226,7 @@ public class StorageServer {
         BookieWatchService bkWatchService;
         {
             DistributedLogConfiguration dlogConf = new DistributedLogConfiguration();
+            dlogConf.loadConf(dlConf);
             bkWatchService = new BookieWatchService(
                 dlogConf.getEnsembleSize(),
                 bkConf,
