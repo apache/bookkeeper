@@ -38,8 +38,8 @@ freeStyleJob('bookkeeper_precommit_client_tests') {
   common_job_properties.setPreCommit(
     delegate,
     'Client Tests',
-    '.*(re)?run (client )?tests.*',
-    '.*\\[skip (client )?tests\\].*',
+    '.*(re)?run bookkeeper-server (client )?tests.*',
+    '.*\\[x\\] \\[skip bookkeeper-server (client )?tests\\].*',
     true)
 
   steps {
