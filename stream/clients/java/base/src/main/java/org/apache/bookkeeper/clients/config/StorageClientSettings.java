@@ -18,13 +18,11 @@
 
 package org.apache.bookkeeper.clients.config;
 
-import static com.google.common.base.Preconditions.checkArgument;
-
-import io.grpc.ManagedChannelBuilder;
-import io.grpc.NameResolver;
-import java.util.List;
 import java.util.Optional;
-import org.apache.bookkeeper.stream.proto.common.Endpoint;
+import org.apache.bookkeeper.clients.resolver.EndpointResolver;
+import org.apache.bookkeeper.clients.utils.ClientConstants;
+import org.apache.bookkeeper.common.net.ServiceURI;
+import org.apache.bookkeeper.common.util.Backoff;
 import org.inferred.freebuilder.FreeBuilder;
 
 /**
@@ -41,25 +39,20 @@ public interface StorageClientSettings {
     int numWorkerThreads();
 
     /**
-     * Returns the name resolver factory used by zstream client.
+     * Returns the service uri that storage client should talk to.
      *
-     * @return name resolver factory.
+     * @return service uri
      */
-    Optional<NameResolver.Factory> nameResolverFactory();
+    String serviceUri();
 
     /**
-     * Returns the endpoints used by the client builder.
+     * Return the endpoint resolver for resolving individual endpoints.
      *
-     * @return the list of endpoints.
-     */
-    List<Endpoint> endpoints();
-
-    /**
-     * Returns the builder to create the managed channel.
+     * <p>The default resolver is an identity resolver.
      *
-     * @return
+     * @return the endpoint resolver for resolving endpoints.
      */
-    Optional<ManagedChannelBuilder> managedChannelBuilder();
+    EndpointResolver endpointResolver();
 
     /**
      * Use of a plaintext connection to the server. By default a secure connection mechanism
@@ -80,6 +73,15 @@ public interface StorageClientSettings {
     Optional<String> clientName();
 
     /**
+     * Configure a backoff policy for the client.
+     *
+     * <p>There are a few default backoff policies defined in {@link org.apache.bookkeeper.common.util.Backoff}.
+     *
+     * @return backoff policy provider
+     */
+    Backoff.Policy backoffPolicy();
+
+    /**
      * Builder of {@link StorageClientSettings} instances.
      */
     class Builder extends StorageClientSettings_Builder {
@@ -87,18 +89,19 @@ public interface StorageClientSettings {
         Builder() {
             numWorkerThreads(Runtime.getRuntime().availableProcessors());
             usePlaintext(true);
+            backoffPolicy(ClientConstants.DEFAULT_INFINIT_BACKOFF_POLICY);
+            endpointResolver(EndpointResolver.identity());
         }
 
         @Override
         public StorageClientSettings build() {
-            checkArgument(
-                nameResolverFactory().isPresent()
-                    || !endpoints().isEmpty()
-                    || managedChannelBuilder().isPresent(),
-                "No name resolver or endpoints or channel builder provided");
-            return super.build();
-        }
+            StorageClientSettings settings = super.build();
 
+            // create a service uri to ensure the service uri is valid
+            ServiceURI.create(serviceUri());
+
+            return settings;
+        }
     }
 
     static Builder newBuilder() {

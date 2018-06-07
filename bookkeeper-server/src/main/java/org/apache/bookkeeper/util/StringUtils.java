@@ -20,6 +20,8 @@ package org.apache.bookkeeper.util;
 
 import java.io.IOException;
 
+import org.apache.bookkeeper.proto.BookkeeperProtocol;
+
 /**
  * Provided utilites for parsing network addresses, ledger-id from node paths
  * etc.
@@ -161,4 +163,20 @@ public class StringUtils {
         }
     }
 
+    /**
+     * Builds string representation of teh request without extra (i.e. binary) data
+     *
+     * @param request
+     * @return string representation of request
+     */
+    public static String requestToString(Object request) {
+        if (request instanceof BookkeeperProtocol.Request) {
+            BookkeeperProtocol.BKPacketHeader header = ((BookkeeperProtocol.Request) request).getHeader();
+            return String.format("Req(txnId=%d,op=%s,version=%s)",
+                    header.getTxnId(), header.getOperation(),
+                    header.getVersion());
+        } else {
+            return request.toString();
+        }
+    }
 }

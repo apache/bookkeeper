@@ -28,12 +28,13 @@ import io.netty.buffer.ByteBuf;
 import io.netty.util.Recycler;
 import io.netty.util.Recycler.Handle;
 import io.netty.util.ReferenceCountUtil;
+import java.util.EnumSet;
 
 import java.util.Map;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
-
 import org.apache.bookkeeper.client.AsyncCallback.AddCallbackWithLatency;
+import org.apache.bookkeeper.client.api.WriteFlag;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
 import org.apache.bookkeeper.stats.Counter;
@@ -79,8 +80,10 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
     int pendingWriteRequests;
     boolean callbackTriggered;
     boolean hasRun;
-
-    static PendingAddOp create(LedgerHandle lh, ByteBuf payload, AddCallbackWithLatency cb, Object ctx) {
+    EnumSet<WriteFlag> writeFlags;
+    boolean allowFailFast = false;
+    static PendingAddOp create(LedgerHandle lh, ByteBuf payload, EnumSet<WriteFlag> writeFlags,
+                               AddCallbackWithLatency cb, Object ctx) {
         PendingAddOp op = RECYCLER.get();
         op.lh = lh;
         op.isRecoveryAdd = false;
@@ -100,7 +103,9 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
         op.callbackTriggered = false;
         op.hasRun = false;
         op.requestTimeNanos = Long.MAX_VALUE;
+        op.allowFailFast = false;
         op.qwcLatency = 0;
+        op.writeFlags = writeFlags;
         return op;
     }
 
@@ -110,6 +115,11 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
      */
     PendingAddOp enableRecoveryAdd() {
         isRecoveryAdd = true;
+        return this;
+    }
+
+    PendingAddOp allowFailFastOnUnwritableChannel() {
+        allowFailFast = true;
         return this;
     }
 
@@ -129,7 +139,7 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
         int flags = isRecoveryAdd ? FLAG_RECOVERY_ADD | FLAG_HIGH_PRIORITY : FLAG_NONE;
 
         lh.bk.getBookieClient().addEntry(lh.metadata.currentEnsemble.get(bookieIndex), lh.ledgerId, lh.ledgerKey,
-                entryId, toSend, this, bookieIndex, flags);
+                entryId, toSend, this, bookieIndex, flags, allowFailFast, lh.writeFlags);
         ++pendingWriteRequests;
     }
 
@@ -233,6 +243,12 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
                 entryId, lh.lastAddConfirmed, currentLedgerLength,
                 payload);
 
+        // We are about to send. Check if we need to make an ensemble change
+        // becasue of delayed write errors
+        Map <Integer, BookieSocketAddress> delayedWriteFailedBookies = lh.getDelayedWriteFailedBookies();
+        if (!delayedWriteFailedBookies.isEmpty()) {
+            lh.handleDelayedWriteBookieFailure();
+        }
         // Iterate over set and trigger the sendWriteRequests
         DistributionSchedule.WriteSet writeSet = lh.distributionSchedule.getWriteSet(entryId);
         try {
@@ -268,6 +284,9 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
                 // Got an error after satisfying AQ. This means we are under replicated at the create itself.
                 // Update the stat to reflect it.
                 addOpUrCounter.inc();
+                if (!lh.bk.getDisableEnsembleChangeFeature().isAvailable() && !lh.bk.delayEnsembleChange) {
+                    lh.getDelayedWriteFailedBookies().putIfAbsent(bookieIndex, addr);
+                }
             }
             // even the add operation is completed, but because we don't reset completed flag back to false when
             // #unsetSuccessAndSendWriteRequest doesn't break ack quorum constraint. we still have current pending
@@ -298,6 +317,10 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
         case BKException.Code.ClientClosedException:
             // bookie client is closed.
             lh.errorOutPendingAdds(rc);
+            return;
+        case BKException.Code.IllegalOpException:
+            // illegal operation requested, like using unsupported feature in v2 protocol
+            lh.handleUnrecoverableErrorDuringAdd(rc);
             return;
         case BKException.Code.LedgerFencedException:
             LOG.warn("Fencing exception on write: L{} E{} on {}",
@@ -444,6 +467,8 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
         pendingWriteRequests = 0;
         callbackTriggered = false;
         hasRun = false;
+        allowFailFast = false;
+        writeFlags = null;
 
         recyclerHandle.recycle(this);
     }

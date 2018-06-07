@@ -20,3 +20,12 @@ lib/
 log/
 target/
 dependency-reduced-pom.xml
+
+# Logs
+logs/
+
+# Vagrant
+**/.vagrant
+
+# Data directory
+data/

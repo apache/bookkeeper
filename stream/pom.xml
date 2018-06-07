@@ -31,14 +31,13 @@
 
   <modules>
     <module>common</module>
+    <module>tests-common</module>
     <module>statelib</module>
     <module>api</module>
     <module>proto</module>
     <module>clients</module>
     <module>storage</module>
     <module>server</module>
-    <module>cli</module>
-    <module>tests</module>
   </modules>
 
   <build>
@@ -57,7 +56,7 @@
         <configuration>
           <!-- only run tests when -DstreamTests is specified //-->
           <skipTests>true</skipTests>
-          <redirectTestOutputToFile>true</redirectTestOutputToFile>
+          <redirectTestOutputToFile>${redirectTestOutputToFile}</redirectTestOutputToFile>
           <argLine>-Xmx3G -Djava.net.preferIPv4Stack=true -XX:MaxDirectMemorySize=2G -Dio.netty.leakDetection.level=PARANOID</argLine>
           <forkMode>always</forkMode>
           <forkedProcessTimeoutInSeconds>1800</forkedProcessTimeoutInSeconds>

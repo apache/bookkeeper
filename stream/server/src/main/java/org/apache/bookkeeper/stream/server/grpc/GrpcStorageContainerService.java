@@ -23,7 +23,7 @@ import org.apache.bookkeeper.stream.proto.storage.OneStorageContainerEndpointRes
 import org.apache.bookkeeper.stream.proto.storage.StatusCode;
 import org.apache.bookkeeper.stream.proto.storage.StorageContainerEndpoint;
 import org.apache.bookkeeper.stream.proto.storage.StorageContainerServiceGrpc.StorageContainerServiceImplBase;
-import org.apache.bookkeeper.stream.storage.api.RangeStore;
+import org.apache.bookkeeper.stream.storage.api.StorageContainerStore;
 
 /**
  * Grpc based storage container service.
@@ -31,10 +31,10 @@ import org.apache.bookkeeper.stream.storage.api.RangeStore;
 @Slf4j
 class GrpcStorageContainerService extends StorageContainerServiceImplBase {
 
-    private final RangeStore rangeStore;
+    private final StorageContainerStore storageContainerStore;
 
-    GrpcStorageContainerService(RangeStore rangeStore) {
-        this.rangeStore = rangeStore;
+    GrpcStorageContainerService(StorageContainerStore storageContainerStore) {
+        this.storageContainerStore = storageContainerStore;
     }
 
     @Override
@@ -43,7 +43,7 @@ class GrpcStorageContainerService extends StorageContainerServiceImplBase {
         GetStorageContainerEndpointResponse.Builder responseBuilder = GetStorageContainerEndpointResponse.newBuilder()
             .setStatusCode(StatusCode.SUCCESS);
         for (int i = 0; i < request.getRequestsCount(); i++) {
-            Endpoint endpoint = rangeStore
+            Endpoint endpoint = storageContainerStore
                 .getRoutingService()
                 .getStorageContainer(request.getRequests(i).getStorageContainer());
             OneStorageContainerEndpointResponse.Builder oneRespBuilder;

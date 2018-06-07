@@ -27,24 +27,45 @@ import io.netty.buffer.ByteBuf;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.bookkeeper.bookie.Bookie.NoLedgerException;
+import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.stats.NullStatsLogger;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameters;
 
 /**
  * Test the EntryMemTable class.
  */
+@RunWith(Parameterized.class)
 public class TestEntryMemTable implements CacheCallback, SkipListFlusher, CheckpointSource {
 
+    private Class entryMemTableClass;
     private EntryMemTable memTable;
     private final Random random = new Random();
     private TestCheckPoint curCheckpoint = new TestCheckPoint(0, 0);
+
+    @Parameters
+    public static Collection<Object[]> memTableClass() {
+        return Arrays.asList(new Object[][] { { EntryMemTable.class }, { EntryMemTableWithParallelFlusher.class } });
+    }
+
+    public TestEntryMemTable(Class entryMemTableClass) {
+        this.entryMemTableClass = entryMemTableClass;
+    }
 
     @Override
     public Checkpoint newCheckpoint() {
@@ -58,8 +79,18 @@ public class TestEntryMemTable implements CacheCallback, SkipListFlusher, Checkp
 
     @Before
     public void setUp() throws Exception {
-        this.memTable = new EntryMemTable(TestBKConfiguration.newServerConfiguration(),
-                this, NullStatsLogger.INSTANCE);
+        if (entryMemTableClass.equals(EntryMemTableWithParallelFlusher.class)) {
+            ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+            this.memTable = new EntryMemTableWithParallelFlusher(conf, this, NullStatsLogger.INSTANCE);
+        } else {
+            this.memTable = new EntryMemTable(TestBKConfiguration.newServerConfiguration(), this,
+                    NullStatsLogger.INSTANCE);
+        }
+    }
+
+    @After
+    public void cleanup() throws Exception{
+        this.memTable.close();
     }
 
     @Test
@@ -134,9 +165,9 @@ public class TestEntryMemTable implements CacheCallback, SkipListFlusher, Checkp
     }
 
     private class KVFLusher implements SkipListFlusher {
-        final HashSet<EntryKeyValue> keyValues;
+        final Set<EntryKeyValue> keyValues;
 
-        KVFLusher(final HashSet<EntryKeyValue> keyValues) {
+        KVFLusher(final Set<EntryKeyValue> keyValues) {
             this.keyValues = keyValues;
         }
 
@@ -160,7 +191,7 @@ public class TestEntryMemTable implements CacheCallback, SkipListFlusher, Checkp
      */
     @Test
     public void testFlushLogMark() throws IOException {
-        HashSet<EntryKeyValue> flushedKVs = new HashSet<EntryKeyValue>();
+        Set<EntryKeyValue> flushedKVs = Collections.newSetFromMap(new ConcurrentHashMap<EntryKeyValue, Boolean>());
         KVFLusher flusher = new KVFLusher(flushedKVs);
 
         curCheckpoint.setCheckPoint(2, 2);
@@ -195,7 +226,7 @@ public class TestEntryMemTable implements CacheCallback, SkipListFlusher, Checkp
     @Test
     public void testFlushSnapshot() throws IOException {
         HashSet<EntryKeyValue> keyValues = new HashSet<EntryKeyValue>();
-        HashSet<EntryKeyValue> flushedKVs = new HashSet<EntryKeyValue>();
+        Set<EntryKeyValue> flushedKVs = Collections.newSetFromMap(new ConcurrentHashMap<EntryKeyValue, Boolean>());
         KVFLusher flusher = new KVFLusher(flushedKVs);
 
         byte[] data = new byte[10];

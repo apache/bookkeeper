@@ -18,16 +18,15 @@
 
 package org.apache.bookkeeper.stream.storage.api.sc;
 
+import io.grpc.Channel;
 import java.util.concurrent.CompletableFuture;
-import org.apache.bookkeeper.stream.storage.api.metadata.RangeStoreService;
 
 /**
  * A {@code StorageContainer} is a service container that can encapsulate metadata and data operations.
  *
  * <p>A {@link StorageContainer} is typically implemented by replicated state machine backed by a log.
  */
-public interface StorageContainer
-    extends AutoCloseable, RangeStoreService {
+public interface StorageContainer extends AutoCloseable {
 
     /**
      * Get the storage container id.
@@ -37,11 +36,18 @@ public interface StorageContainer
     long getId();
 
     /**
+     * Get the grpc channel to interact with grpc services registered in this container.
+     *
+     * @return grpc channel.
+     */
+    Channel getChannel();
+
+    /**
      * Start the storage container.
      *
      * @return a future represents the result of starting a storage container.
      */
-    CompletableFuture<Void> start();
+    CompletableFuture<StorageContainer> start();
 
     /**
      * Stop the storage container.

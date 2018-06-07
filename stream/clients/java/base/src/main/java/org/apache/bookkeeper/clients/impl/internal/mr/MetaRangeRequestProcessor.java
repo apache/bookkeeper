@@ -21,71 +21,62 @@ package org.apache.bookkeeper.clients.impl.internal.mr;
 import static org.apache.bookkeeper.clients.impl.internal.ProtocolInternalUtils.createMetaRangeException;
 
 import com.google.common.util.concurrent.ListenableFuture;
-import com.google.common.util.concurrent.SettableFuture;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Function;
 import org.apache.bookkeeper.clients.impl.channel.StorageServerChannel;
 import org.apache.bookkeeper.clients.impl.container.StorageContainerChannel;
 import org.apache.bookkeeper.clients.utils.ListenableFutureRpcProcessor;
+import org.apache.bookkeeper.common.util.Backoff;
+import org.apache.bookkeeper.stream.proto.storage.GetActiveRangesRequest;
+import org.apache.bookkeeper.stream.proto.storage.GetActiveRangesResponse;
 import org.apache.bookkeeper.stream.proto.storage.StatusCode;
-import org.apache.bookkeeper.stream.proto.storage.StorageContainerRequest;
-import org.apache.bookkeeper.stream.proto.storage.StorageContainerResponse;
 
 /**
  * Request Processor processing meta range request.
  */
 public class MetaRangeRequestProcessor<RespT>
-    extends ListenableFutureRpcProcessor<StorageContainerRequest, StorageContainerResponse, RespT> {
+    extends ListenableFutureRpcProcessor<GetActiveRangesRequest, GetActiveRangesResponse, RespT> {
 
     public static <T> MetaRangeRequestProcessor<T> of(
-        StorageContainerRequest request,
-        Function<StorageContainerResponse, T> responseFunc,
+        GetActiveRangesRequest request,
+        Function<GetActiveRangesResponse, T> responseFunc,
         StorageContainerChannel channel,
-        ScheduledExecutorService executor) {
-        return new MetaRangeRequestProcessor<>(request, responseFunc, channel, executor);
+        ScheduledExecutorService executor,
+        Backoff.Policy backoffPolicy) {
+        return new MetaRangeRequestProcessor<>(request, responseFunc, channel, executor, backoffPolicy);
     }
 
-    private final StorageContainerRequest request;
-    private final Function<StorageContainerResponse, RespT> responseFunc;
+    private final GetActiveRangesRequest request;
+    private final Function<GetActiveRangesResponse, RespT> responseFunc;
 
-    private MetaRangeRequestProcessor(StorageContainerRequest request,
-                                      Function<StorageContainerResponse, RespT> responseFunc,
+    private MetaRangeRequestProcessor(GetActiveRangesRequest request,
+                                      Function<GetActiveRangesResponse, RespT> responseFunc,
                                       StorageContainerChannel channel,
-                                      ScheduledExecutorService executor) {
-        super(channel, executor);
+                                      ScheduledExecutorService executor,
+                                      Backoff.Policy backoffPolicy) {
+        super(channel, executor, backoffPolicy);
         this.request = request;
         this.responseFunc = responseFunc;
     }
 
     @Override
-    protected StorageContainerRequest createRequest() {
+    protected GetActiveRangesRequest createRequest() {
         return request;
     }
 
     @Override
-    protected ListenableFuture<StorageContainerResponse> sendRPC(StorageServerChannel rsChannel,
-                                                                 StorageContainerRequest request) {
-        switch (request.getRequestCase()) {
-            case GET_ACTIVE_RANGES_REQ:
-                return rsChannel.getMetaRangeService().getActiveRanges(request);
-            default:
-                SettableFuture<StorageContainerResponse> respFuture = SettableFuture.create();
-                respFuture.setException(new Exception("Unknown request " + request));
-                return respFuture;
-        }
+    protected ListenableFuture<GetActiveRangesResponse> sendRPC(StorageServerChannel rsChannel,
+                                                                GetActiveRangesRequest request) {
+        return rsChannel.getMetaRangeService().getActiveRanges(request);
     }
 
-    private String getIdentifier(StorageContainerRequest request) {
-        switch (request.getRequestCase()) {
-            case GET_ACTIVE_RANGES_REQ:
-                return "" + request.getGetActiveRangesReq().getStreamId();
-            default:
-                return "";
-        }
+    private String getIdentifier(GetActiveRangesRequest request) {
+
+        return "" + request.getStreamId();
     }
 
     @Override
-    protected RespT processResponse(StorageContainerResponse response) throws Exception {
+    protected RespT processResponse(GetActiveRangesResponse response) throws Exception {
         if (StatusCode.SUCCESS == response.getCode()) {
             return responseFunc.apply(response);
         }

@@ -30,7 +30,6 @@ import io.grpc.ServerServiceDefinition;
 import io.grpc.Status;
 import io.grpc.StatusException;
 import io.grpc.StatusRuntimeException;
-import io.grpc.inprocess.InProcessChannelBuilder;
 import io.grpc.stub.StreamObserver;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -129,8 +128,7 @@ public class TestLocationClientImpl extends GrpcClientTestBase {
     protected void doSetup() throws Exception {
         StorageClientSettings settings =
             StorageClientSettings.newBuilder()
-                .managedChannelBuilder(InProcessChannelBuilder.forName(serverName).directExecutor())
-                .usePlaintext(true)
+                .serviceUri("bk+inprocess://" + serverName)
                 .build();
         locationClient = new LocationClientImpl(settings, scheduler);
         locationServiceDefinition = locationService.bindService();

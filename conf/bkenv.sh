@@ -21,16 +21,15 @@
 # Set JAVA_HOME here to override the environment setting
 # JAVA_HOME=
 
-# default settings for starting bookkeeper
+########################################
+# default settings for bookkeeper
+########################################
 
 # Configuration file of settings used in bookie server
 # BOOKIE_CONF=
 
-# Log4j configuration file
-# BOOKIE_LOG_CONF=
-
-# Logs location
-# BOOKIE_LOG_DIR=
+# Configuration file of settings used in zookeeper server
+# BOOKIE_ZK_CONF=
 
 # Extra options to be passed to the jvm
 # BOOKIE_EXTRA_OPTS=
@@ -49,3 +48,37 @@
 
 # this default config dir should match the 'localBookiesConfigDirectory' config value in the conf file of LocalBookKeeper
 # LOCALBOOKIES_CONFIG_DIR=/tmp/localbookies-config
+
+#################################
+# BookKeeper Logging Options
+#################################
+
+# Log4j configuration file
+# BOOKIE_LOG_CONF=
+
+# Logs location
+# BOOKIE_LOG_DIR=
+
+# Log file name
+# BOOKIE_LOG_FILE="bookkeeper.log"
+
+# Log level & appender
+# BOOKIE_ROOT_LOGGER="INFO,CONSOLE"
+
+#################################
+# BookKeeper JVM memory options
+#################################
+
+# BOOKIE_MAX_HEAP_MEMORY=1g
+# BOOKIE_MIN_HEAP_MEMORY=1g
+# BOOKIE_MAX_DIRECT_MEMORY=2g
+# BOOKIE_MEM_OPTS=
+
+# JVM GC options
+# BOOKIE_GC_OPTS=
+
+# JVM GC logging options
+# BOOKIE_GC_LOGGING_OPTS=
+
+# JVM performance options
+# BOOKIE_PERF_OPTS="-XX:+PerfDisableSharedMem -XX:+AlwaysPreTouch -XX:-UseBiasedLocking"

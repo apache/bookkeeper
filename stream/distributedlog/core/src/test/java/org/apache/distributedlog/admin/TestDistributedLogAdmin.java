@@ -23,6 +23,7 @@ import static org.junit.Assert.fail;
 
 import java.net.URI;
 import java.util.concurrent.CompletableFuture;
+import org.apache.bookkeeper.common.testing.annotations.FlakyTest;
 import org.apache.distributedlog.DLMTestUtil;
 import org.apache.distributedlog.DLSN;
 import org.apache.distributedlog.DistributedLogConfiguration;
@@ -35,7 +36,6 @@ import org.apache.distributedlog.api.AsyncLogReader;
 import org.apache.distributedlog.api.DistributedLogManager;
 import org.apache.distributedlog.api.namespace.Namespace;
 import org.apache.distributedlog.api.namespace.NamespaceBuilder;
-import org.apache.distributedlog.common.annotations.DistributedLogAnnotations;
 import org.apache.distributedlog.exceptions.UnexpectedException;
 import org.apache.distributedlog.metadata.DryrunLogSegmentMetadataStoreUpdater;
 import org.apache.distributedlog.metadata.LogSegmentMetadataStoreUpdater;
@@ -44,11 +44,8 @@ import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.ZooDefs;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 
 /**
  * TestDistributedLogAdmin.
@@ -73,12 +70,7 @@ public class TestDistributedLogAdmin extends TestDistributedLogBase {
         zooKeeperClient.close();
     }
 
-    /**
-     * {@link https://issues.apache.org/jira/browse/DL-44}.
-     */
-    @DistributedLogAnnotations.FlakyTest
-    @Ignore
-    @Test(timeout = 60000)
+    @FlakyTest("https://issues.apache.org/jira/browse/DL-44")
     @SuppressWarnings("deprecation")
     public void testChangeSequenceNumber() throws Exception {
         DistributedLogConfiguration confLocal = new DistributedLogConfiguration();

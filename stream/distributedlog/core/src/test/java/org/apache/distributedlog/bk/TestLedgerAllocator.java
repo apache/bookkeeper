@@ -31,6 +31,7 @@ import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.LedgerEntry;
 import org.apache.bookkeeper.client.LedgerHandle;
+import org.apache.bookkeeper.common.testing.annotations.FlakyTest;
 import org.apache.bookkeeper.versioning.LongVersion;
 import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.distributedlog.BookKeeperClient;
@@ -41,7 +42,6 @@ import org.apache.distributedlog.TestZooKeeperClientBuilder;
 import org.apache.distributedlog.ZooKeeperClient;
 import org.apache.distributedlog.bk.SimpleLedgerAllocator.AllocationException;
 import org.apache.distributedlog.bk.SimpleLedgerAllocator.Phase;
-import org.apache.distributedlog.common.annotations.DistributedLogAnnotations;
 import org.apache.distributedlog.exceptions.ZKException;
 import org.apache.distributedlog.util.Transaction.OpListener;
 import org.apache.distributedlog.util.Utils;
@@ -54,7 +54,6 @@ import org.apache.zookeeper.ZooDefs;
 import org.apache.zookeeper.data.Stat;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
@@ -125,12 +124,7 @@ public class TestLedgerAllocator extends TestDistributedLogBase {
         return Utils.ioResult(SimpleLedgerAllocator.of(allocationPath, null, newQuorumConfigProvider(conf), zkc, bkc));
     }
 
-    /**
-     * {@link https://issues.apache.org/jira/browse/DL-43}.
-     */
-    @DistributedLogAnnotations.FlakyTest
-    @Ignore
-    @Test(timeout = 60000)
+    @FlakyTest("https://issues.apache.org/jira/browse/DL-43")
     public void testAllocation() throws Exception {
         String allocationPath = "/allocation1";
         SimpleLedgerAllocator allocator = createAllocator(allocationPath);
@@ -310,12 +304,7 @@ public class TestLedgerAllocator extends TestDistributedLogBase {
                 dlConf.getBKDigestPW().getBytes(UTF_8));
     }
 
-    /**
-     * {@link https://issues.apache.org/jira/browse/DL-26}.
-     */
-    @DistributedLogAnnotations.FlakyTest
-    @Ignore
-    @Test(timeout = 60000)
+    @FlakyTest("https://issues.apache.org/jira/browse/DL-26")
     public void testCloseAllocatorAfterConfirm() throws Exception {
         String allocationPath = "/allocation2";
         SimpleLedgerAllocator allocator = createAllocator(allocationPath);

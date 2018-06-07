@@ -391,13 +391,21 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
         }
 
         @Override
-        public void put(byte[] key, byte[] value) {
-            writeBatch.put(key, value);
+        public void put(byte[] key, byte[] value) throws IOException {
+            try {
+                writeBatch.put(key, value);
+            } catch (RocksDBException e) {
+                throw new IOException("Failed to flush RocksDB batch", e);
+            }
         }
 
         @Override
-        public void remove(byte[] key) {
-            writeBatch.remove(key);
+        public void remove(byte[] key) throws IOException {
+            try {
+                writeBatch.delete(key);
+            } catch (RocksDBException e) {
+                throw new IOException("Failed to flush RocksDB batch", e);
+            }
         }
 
         @Override
@@ -406,8 +414,12 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
         }
 
         @Override
-        public void deleteRange(byte[] beginKey, byte[] endKey) {
-            writeBatch.deleteRange(beginKey, endKey);
+        public void deleteRange(byte[] beginKey, byte[] endKey) throws IOException {
+            try {
+                writeBatch.deleteRange(beginKey, endKey);
+            } catch (RocksDBException e) {
+                throw new IOException("Failed to flush RocksDB batch", e);
+            }
         }
 
         @Override

@@ -21,15 +21,12 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import org.apache.bookkeeper.common.testing.annotations.FlakyTest;
 import org.apache.bookkeeper.feature.Feature;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.distributedlog.DistributedLogConfiguration;
-import org.apache.distributedlog.common.annotations.DistributedLogAnnotations;
 import org.apache.distributedlog.common.config.PropertiesWriter;
-import org.junit.Ignore;
 import org.junit.Test;
-
-
 
 /**
  * Test case for dynamic configuration based feature provider.
@@ -79,12 +76,7 @@ public class TestDynamicConfigurationFeatureProvider {
         provider.stop();
     }
 
-    /**
-     * {@link https://issues.apache.org/jira/browse/DL-40}.
-     */
-    @DistributedLogAnnotations.FlakyTest
-    @Ignore
-    @Test(timeout = 60000)
+    @FlakyTest("https://issues.apache.org/jira/browse/DL-40")
     public void testLoadFeaturesFromOverlay() throws Exception {
         PropertiesWriter writer = new PropertiesWriter();
         writer.setProperty("feature_1", "10000");

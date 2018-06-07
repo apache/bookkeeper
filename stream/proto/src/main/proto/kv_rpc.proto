@@ -18,6 +18,7 @@
 syntax = "proto3";
 
 import "kv.proto";
+import "storage.proto";
 
 package bookkeeper.proto.kv.rpc;
 
@@ -34,7 +35,7 @@ message RoutingHeader {
   bytes r_key           = 3;
 }
 
-service KV {
+service TableService {
   // Range gets the keys in the range from the key-value store.
   // NOT supported yet.
   rpc Range(RangeRequest) returns (RangeResponse) {}
@@ -47,7 +48,7 @@ service KV {
   // DeleteRange deletes the given range from the key-value store.
   // A delete request increments the revision of the key-value store
   // and generates a delete event in the event history for every deleted key.
-  rpc DeleteRange(DeleteRangeRequest) returns (DeleteRangeResponse) {}
+  rpc Delete(DeleteRangeRequest) returns (DeleteRangeResponse) {}
 
   // Txn processes multiple requests in a single transaction.
   // A txn request increments the revision of the key-value store
@@ -55,20 +56,17 @@ service KV {
   // It is not allowed to modify the same key several times within one txn.
   rpc Txn(TxnRequest) returns (TxnResponse) {}
 
+  // Increment increments the amount associated with the keys
+  rpc Increment(IncrementRequest) returns (IncrementResponse) {}
+
 }
 
 message ResponseHeader {
-  // cluster_id is the ID of the cluster which sent the response.
-  uint64 cluster_id = 1;
-  // member_id is the ID of the member which sent the response.
-  uint64 member_id = 2;
-  // revision is the key-value store revision when the request was applied.
-  int64 revision = 3;
-  // raft_term is the raft term when the request was applied.
-  uint64 raft_term = 4;
+  // Status Code
+  storage.StatusCode code               = 1;
 
   // routing header
-  RoutingHeader routing_header = 99;
+  RoutingHeader routing_header  = 99;
 }
 
 message RangeRequest {

@@ -57,7 +57,6 @@
     <module>bookkeeper-stats</module>
     <module>bookkeeper-proto</module>
     <module>bookkeeper-server</module>
-    <module>bookkeeper-tools</module>
     <module>bookkeeper-benchmark</module>
     <module>bookkeeper-stats-providers</module>
     <module>bookkeeper-http</module>
@@ -66,6 +65,7 @@
     <module>bookkeeper-dist</module>
     <module>microbenchmarks</module>
     <module>stream/distributedlog</module>
+    <module>tools</module>
   </modules>
   <mailingLists>
     <mailingList>
@@ -103,6 +103,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <javac.target>1.8</javac.target>
+    <redirectTestOutputToFile>true</redirectTestOutputToFile>
     <!-- dependencies -->
     <arquillian-cube.version>1.15.1</arquillian-cube.version>
     <arquillian-junit.version>1.1.14.Final</arquillian-junit.version>
@@ -113,18 +114,20 @@
     <commons-configuration.version>1.10</commons-configuration.version>
     <commons-compress.version>1.15</commons-compress.version>
     <commons-lang.version>2.6</commons-lang.version>
-    <commons-lang3.version>3.3.2</commons-lang3.version>
+    <commons-lang3.version>3.6</commons-lang3.version>
     <commons-io.version>2.4</commons-io.version>
+    <curator.version>4.0.1</curator.version>
     <dropwizard.version>3.1.0</dropwizard.version>
     <finagle.version>6.44.0</finagle.version>
-    <freebuilder.version>1.12.3</freebuilder.version>
+    <freebuilder.version>1.14.9</freebuilder.version>
     <google.code.version>3.0.2</google.code.version>
     <google.errorprone.version>2.1.2</google.errorprone.version>
-    <grpc.version>1.5.0</grpc.version>
+    <grpc.version>1.12.0</grpc.version>
     <guava.version>21.0</guava.version>
     <hadoop.version>2.7.3</hadoop.version>
     <hamcrest.version>1.3</hamcrest.version>
     <jackson.version>2.8.9</jackson.version>
+    <jackson-mapper-asl.version>1.9.11</jackson-mapper-asl.version>
     <jcommander.version>1.48</jcommander.version>
     <jetty.version>9.4.5.v20170502</jetty.version>
     <jmh.version>1.19</jmh.version>
@@ -133,21 +136,23 @@
     <junit.version>4.12</junit.version>
     <libthrift5.version>0.5.0-1</libthrift5.version>
     <libthrift9.version>0.9.3</libthrift9.version>
-    <lombok.version>1.16.20</lombok.version>
+    <lombok.version>1.16.22</lombok.version>
     <lz4.version>1.3.0</lz4.version>
     <mockito.version>2.13.0</mockito.version>
-    <netty.version>4.1.12.Final</netty.version>
-    <netty-boringssl.version>2.0.3.Final</netty-boringssl.version>
+    <netty.version>4.1.22.Final</netty.version>
+    <netty-boringssl.version>2.0.7.Final</netty-boringssl.version>
     <ostrich.version>9.1.3</ostrich.version>
     <powermock.version>2.0.0-beta.5</powermock.version>
     <prometheus.version>0.0.21</prometheus.version>
     <datasketches.version>0.8.3</datasketches.version>
-    <protobuf.version>3.4.0</protobuf.version>
-    <protoc-gen-grpc-java.version>1.0.0</protoc-gen-grpc-java.version>
-    <rocksdb.version>5.8.6</rocksdb.version>
+    <protobuf.version>3.5.1</protobuf.version>
+    <protoc3.version>3.5.1-1</protoc3.version>
+    <protoc-gen-grpc-java.version>1.12.0</protoc-gen-grpc-java.version>
+    <rocksdb.version>5.13.1</rocksdb.version>
     <shrinkwrap.version>3.0.1</shrinkwrap.version>
     <slf4j.version>1.7.25</slf4j.version>
     <spotbugs-annotations.version>3.1.1</spotbugs-annotations.version>
+    <testcontainers.version>1.7.0</testcontainers.version>
     <twitter-server.version>1.29.0</twitter-server.version>
     <vertx.version>3.4.1</vertx.version>
     <zookeeper.version>3.5.3-beta</zookeeper.version>
@@ -158,19 +163,20 @@
     <dockerfile-maven-plugin.version>1.3.7</dockerfile-maven-plugin.version>
     <license-maven-plugin.version>1.6</license-maven-plugin.version>
     <jacoco-maven-plugin.version>0.8.0</jacoco-maven-plugin.version>
+    <maven-antrun-plugin.version>1.8</maven-antrun-plugin.version>
     <maven-assembly-plugin.version>3.1.0</maven-assembly-plugin.version>
     <maven-bundle-plugin.version>3.2.0</maven-bundle-plugin.version>
-    <maven-checkstyle-plugin.version>2.17</maven-checkstyle-plugin.version>
+    <maven-checkstyle-plugin.version>3.0.0</maven-checkstyle-plugin.version>
     <maven-clean-plugin.version>2.5</maven-clean-plugin.version>
     <maven-compiler-plugin.version>3.7.0</maven-compiler-plugin.version>
     <maven-dependency-plugin.version>3.0.2</maven-dependency-plugin.version>
     <maven-deploy-plugin.version>2.7</maven-deploy-plugin.version>
     <maven-install-plugin.version>2.5.1</maven-install-plugin.version>
     <maven-jar-plugin.version>2.4</maven-jar-plugin.version>
-    <maven-javadoc-plugin.version>2.10.4</maven-javadoc-plugin.version>
+    <maven-javadoc-plugin.version>3.0.0</maven-javadoc-plugin.version>
     <maven-shade-plugin.version>3.1.0</maven-shade-plugin.version>
     <maven-source-plugin.version>2.2.1</maven-source-plugin.version>
-    <maven-surefire-plugin.version>2.20.1</maven-surefire-plugin.version>
+    <maven-surefire-plugin.version>2.21.0</maven-surefire-plugin.version>
     <nar-maven-plugin.version>3.1.0</nar-maven-plugin.version>
     <os-maven-plugin.version>1.4.1.Final</os-maven-plugin.version>
     <protobuf-maven-plugin.version>0.5.0</protobuf-maven-plugin.version>
@@ -302,6 +308,12 @@
         <artifactId>jackson-annotations</artifactId>
         <version>${jackson.version}</version>
       </dependency>
+      <!-- dependency needed for zookeeper jetty admin server -->
+      <dependency>
+        <groupId>org.codehaus.jackson</groupId>
+        <artifactId>jackson-mapper-asl</artifactId>
+        <version>${jackson-mapper-asl.version}</version>
+      </dependency>
 
       <!-- protobuf dependencies -->
       <dependency>
@@ -409,6 +421,19 @@
           <exclusion>
             <groupId>io.netty</groupId>
             <artifactId>netty</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+
+      <!-- curator dependencies -->
+      <dependency>
+        <groupId>org.apache.curator</groupId>
+        <artifactId>curator-recipes</artifactId>
+        <version>${curator.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>org.apache.zookeeper</groupId>
+            <artifactId>zookeeper</artifactId>
           </exclusion>
         </exclusions>
       </dependency>
@@ -575,6 +600,11 @@
         <artifactId>shrinkwrap-resolver-api</artifactId>
         <version>${shrinkwrap.version}</version>
       </dependency>
+      <dependency>
+        <groupId>org.testcontainers</groupId>
+        <artifactId>testcontainers</artifactId>
+        <version>${testcontainers.version}</version>
+      </dependency>
 
       <!-- benchmark dependencies -->
       <dependency>
@@ -724,7 +754,7 @@
         <version>${maven-surefire-plugin.version}</version>
         <configuration>
           <argLine>-Xmx2G -Djava.net.preferIPv4Stack=true</argLine>
-          <redirectTestOutputToFile>true</redirectTestOutputToFile>
+          <redirectTestOutputToFile>${redirectTestOutputToFile}</redirectTestOutputToFile>
           <reuseForks>false</reuseForks>
           <forkedProcessTimeoutInSeconds>1800</forkedProcessTimeoutInSeconds>
           <rerunFailingTestsCount>2</rerunFailingTestsCount>
@@ -737,6 +767,7 @@
         <configuration>
           <!-- Prevent missing javadoc comments from being marked as errors -->
           <additionalparam>-Xdoclint:none -notimestamp</additionalparam>
+          <additionalOptions>-Xdoclint:none -notimestamp</additionalOptions>
           <subpackages>org.apache.bookkeeper.client:org.apache.bookkeeper.client.api:org.apache.bookkeeper.common.annotation:org.apache.bookkeeper.conf:org.apache.bookkeeper.feature:org.apache.bookkeeper.stats</subpackages>
           <groups>
             <group>
@@ -829,6 +860,12 @@
 
             <!-- logs -->
             <exclude>**/*.log</exclude>
+
+            <!-- data -->
+            <exclude>data/**</exclude>
+
+            <!-- vargrant -->
+            <exclude>dev/.vagrant/**</exclude>
           </excludes>
           <consoleOutput>true</consoleOutput>
         </configuration>
@@ -853,7 +890,7 @@
             <configuration>
               <!-- @{argLine} is a variable injected by JaCoCo-->
               <argLine>@{argLine} -Xmx2G -Djava.net.preferIPv4Stack=true</argLine>
-              <redirectTestOutputToFile>true</redirectTestOutputToFile>
+              <redirectTestOutputToFile>${redirectTestOutputToFile}</redirectTestOutputToFile>
               <reuseForks>false</reuseForks>
               <forkedProcessTimeoutInSeconds>1800</forkedProcessTimeoutInSeconds>
               <!-- we want build to complete even in case of failures -->
@@ -883,13 +920,6 @@
         <plugins>
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-checkstyle-plugin</artifactId>
-            <configuration>
-              <skip>true</skip>
-            </configuration>
-          </plugin>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-surefire-plugin</artifactId>
             <version>${maven-surefire-plugin.version}</version>
             <configuration>
@@ -908,13 +938,6 @@
       <id>dev-debug</id>
       <build>
         <plugins>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-checkstyle-plugin</artifactId>
-            <configuration>
-              <skip>true</skip>
-            </configuration>
-          </plugin>
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-surefire-plugin</artifactId>

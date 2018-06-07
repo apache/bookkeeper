@@ -23,6 +23,7 @@ import static com.google.common.base.Charsets.UTF_8;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Joiner;
 import com.google.protobuf.TextFormat;
+import com.google.protobuf.TextFormat.ParseException;
 
 import java.net.UnknownHostException;
 import java.util.AbstractMap;
@@ -810,5 +811,32 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
             Thread.currentThread().interrupt();
             throw new ReplicationException.UnavailableException("Interrupted while contacting zookeeper", ie);
         }
+    }
+
+    @Override
+    public String getReplicationWorkerIdRereplicatingLedger(long ledgerId)
+            throws ReplicationException.UnavailableException {
+        String replicationWorkerId = null;
+        try {
+            byte[] lockData = zkc.getData(getUrLedgerLockZnode(urLockPath, ledgerId), false, null);
+            LockDataFormat.Builder lockDataBuilder = LockDataFormat.newBuilder();
+            TextFormat.merge(new String(lockData, UTF_8), lockDataBuilder);
+            LockDataFormat lock = lockDataBuilder.build();
+            replicationWorkerId = lock.getBookieId();
+        } catch (KeeperException.NoNodeException e) {
+            // this is ok.
+        } catch (KeeperException e) {
+            LOG.error("Error while getting ReplicationWorkerId rereplicating Ledger", e);
+            throw new ReplicationException.UnavailableException(
+                    "Error while getting ReplicationWorkerId rereplicating Ledger", e);
+        } catch (InterruptedException e) {
+            LOG.error("Got interrupted while getting ReplicationWorkerId rereplicating Ledger", e);
+            Thread.currentThread().interrupt();
+            throw new ReplicationException.UnavailableException("Interrupted while contacting zookeeper", e);
+        } catch (ParseException e) {
+            LOG.error("Error while parsing ZK data of lock", e);
+            throw new ReplicationException.UnavailableException("Error while parsing ZK data of lock", e);
+        }
+        return replicationWorkerId;
     }
 }

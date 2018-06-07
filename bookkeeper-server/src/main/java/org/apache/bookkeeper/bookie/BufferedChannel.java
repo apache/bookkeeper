@@ -53,6 +53,7 @@ public class BufferedChannel extends BufferedReadChannel implements Closeable {
      * calling fileChannel.force
      */
     protected final long unpersistedBytesBound;
+    private final boolean doRegularFlushes;
 
     /*
      * it tracks the number of bytes which are not persisted yet by force
@@ -81,6 +82,7 @@ public class BufferedChannel extends BufferedReadChannel implements Closeable {
         this.writeBuffer = ByteBufAllocator.DEFAULT.directBuffer(writeCapacity);
         this.unpersistedBytes = new AtomicLong(0);
         this.unpersistedBytesBound = unpersistedBytesBound;
+        this.doRegularFlushes = unpersistedBytesBound > 0;
     }
 
     @Override
@@ -114,7 +116,7 @@ public class BufferedChannel extends BufferedReadChannel implements Closeable {
             }
             position.addAndGet(copied);
             unpersistedBytes.addAndGet(copied);
-            if (unpersistedBytesBound > 0) {
+            if (doRegularFlushes) {
                 if (unpersistedBytes.get() >= unpersistedBytesBound) {
                     flush();
                     shouldForceWrite = true;
@@ -154,6 +156,21 @@ public class BufferedChannel extends BufferedReadChannel implements Closeable {
     public void flushAndForceWrite(boolean forceMetadata) throws IOException {
         flush();
         forceWrite(forceMetadata);
+    }
+
+    /**
+     * calls both flush and forceWrite methods if regular flush is enabled.
+     *
+     * @param forceMetadata
+     *            - If true then this method is required to force changes to
+     *            both the file's content and metadata to be written to storage;
+     *            otherwise, it need only force content changes to be written
+     * @throws IOException
+     */
+    public void flushAndForceWriteIfRegularFlush(boolean forceMetadata) throws IOException {
+        if (doRegularFlushes) {
+            flushAndForceWrite(forceMetadata);
+        }
     }
 
     /**

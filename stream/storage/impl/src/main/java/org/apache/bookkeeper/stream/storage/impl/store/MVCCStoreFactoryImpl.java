@@ -41,7 +41,6 @@ import org.apache.bookkeeper.statelib.StateStores;
 import org.apache.bookkeeper.statelib.api.StateStoreSpec;
 import org.apache.bookkeeper.statelib.api.checkpoint.CheckpointStore;
 import org.apache.bookkeeper.statelib.api.mvcc.MVCCAsyncStore;
-import org.apache.bookkeeper.statelib.impl.rocksdb.checkpoint.fs.FSCheckpointManager;
 import org.apache.bookkeeper.stream.protocol.RangeId;
 import org.apache.bookkeeper.stream.storage.StorageResources;
 import org.apache.distributedlog.api.namespace.Namespace;
@@ -67,13 +66,15 @@ public class MVCCStoreFactoryImpl implements MVCCStoreFactory {
     // dirs
     private final File[] localStateDirs;
     // checkpoint manager
-    private final CheckpointStore checkpointStore;
+    private final Supplier<CheckpointStore> checkpointStoreSupplier;
+    private CheckpointStore checkpointStore;
     // stores
     private final Map<Long, Map<RangeId, MVCCAsyncStore<byte[], byte[]>>> stores;
     private final boolean serveReadOnlyTable;
     private boolean closed = false;
 
     public MVCCStoreFactoryImpl(Supplier<Namespace> namespaceSupplier,
+                                Supplier<CheckpointStore> checkpointStoreSupplier,
                                 File[] localStoreDirs,
                                 StorageResources storageResources,
                                 boolean serveReadOnlyTable) {
@@ -86,8 +87,7 @@ public class MVCCStoreFactoryImpl implements MVCCStoreFactory {
         this.checkpointScheduler =
             SharedResourceManager.shared().get(storageResources.checkpointScheduler());
         this.localStateDirs = localStoreDirs;
-        // TODO: change this cto dlog based checkpoint manager
-        this.checkpointStore = new FSCheckpointManager(new File(localStoreDirs[0], "checkpoints"));
+        this.checkpointStoreSupplier = checkpointStoreSupplier;
         this.stores = Maps.newHashMap();
         this.serveReadOnlyTable = serveReadOnlyTable;
     }
@@ -136,8 +136,8 @@ public class MVCCStoreFactoryImpl implements MVCCStoreFactory {
         if (null != oldStore) {
             store.closeAsync();
         } else {
-            log.info("Add store (scId = {}, streamId = {}, rangeId = {})",
-                scId, streamId, rangeId);
+            log.info("Add store (scId = {}, streamId = {}, rangeId = {}) at storage container ({})",
+                scId, streamId, rangeId, scId);
             scStores.put(rid, store);
         }
     }
@@ -169,6 +169,9 @@ public class MVCCStoreFactoryImpl implements MVCCStoreFactory {
             }
         }
 
+        log.info("Initializing stream({})/range({}) at storage container ({})",
+            streamId, rangeId, scId);
+
         MVCCAsyncStore<byte[], byte[]> store = storeSupplier.get();
 
         File targetDir = chooseLocalStoreDir(streamId);
@@ -184,6 +187,10 @@ public class MVCCStoreFactoryImpl implements MVCCStoreFactory {
             normalizedName(scId),
             normalizedName(streamId),
             normalizedName(rangeId));
+
+        if (null == checkpointStore) {
+            checkpointStore = checkpointStoreSupplier.get();
+        }
 
         // build a spec
         StateStoreSpec spec = StateStoreSpec.builder()
@@ -201,6 +208,8 @@ public class MVCCStoreFactoryImpl implements MVCCStoreFactory {
             .build();
 
         return store.init(spec).thenApply(ignored -> {
+            log.info("Successfully initialize stream({})/range({}) at storage container ({})",
+                streamId, rangeId, scId);
             addStore(scId, streamId, rangeId, store);
             return store;
         });
@@ -247,7 +256,10 @@ public class MVCCStoreFactoryImpl implements MVCCStoreFactory {
         } catch (Exception e) {
             log.info("Encountered issue on closing all the range stores opened by this range factory");
         }
-        checkpointStore.close();
+        if (null != checkpointStore) {
+            checkpointStore.close();
+            checkpointStore = null;
+        }
 
         SharedResourceManager.shared().release(
             storageResources.ioWriteScheduler(), writeIOScheduler);

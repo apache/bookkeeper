@@ -27,6 +27,23 @@
   <artifactId>integration-tests-topologies</artifactId>
   <packaging>jar</packaging>
 
-  <name>Apache BookKeeper :: Tests :: Common topologies for Arquillian based integration tests</name>
+  <name>Apache BookKeeper :: Tests :: Common topologies for Docker based integration tests</name>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>testcontainers</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.bookkeeper.tests</groupId>
+      <artifactId>integration-tests-utils</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+  </dependencies>
 
 </project>

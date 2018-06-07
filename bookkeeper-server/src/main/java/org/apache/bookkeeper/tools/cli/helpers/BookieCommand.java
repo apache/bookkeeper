@@ -18,8 +18,37 @@
  */
 package org.apache.bookkeeper.tools.cli.helpers;
 
+import org.apache.bookkeeper.common.net.ServiceURI;
+import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.tools.common.BKCommand;
+import org.apache.bookkeeper.tools.common.BKFlags;
+import org.apache.bookkeeper.tools.framework.CliFlags;
+import org.apache.bookkeeper.tools.framework.CliSpec;
+import org.apache.commons.configuration.CompositeConfiguration;
+
 /**
  * This is a mixin for bookie related commands to extends.
  */
-public abstract class BookieCommand implements Command {
+public abstract class BookieCommand<BookieFlagsT extends CliFlags> extends BKCommand<BookieFlagsT> {
+
+    protected BookieCommand(CliSpec<BookieFlagsT> spec) {
+        super(spec);
+    }
+
+    @Override
+    protected boolean apply(ServiceURI serviceURI,
+                            CompositeConfiguration conf,
+                            BKFlags globalFlags,
+                            BookieFlagsT cmdFlags) {
+        ServerConfiguration serverConf = new ServerConfiguration();
+        serverConf.loadConf(conf);
+
+        if (null != serviceURI) {
+            serverConf.setMetadataServiceUri(serviceURI.getUri().toString());
+        }
+
+        return apply(serverConf, cmdFlags);
+    }
+
+    public abstract boolean apply(ServerConfiguration conf, BookieFlagsT cmdFlags);
 }

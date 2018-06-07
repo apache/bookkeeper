@@ -20,29 +20,58 @@ package org.apache.bookkeeper.tools.cli.helpers;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.client.api.BookKeeper;
+import org.apache.bookkeeper.common.net.ServiceURI;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.tools.common.BKCommand;
+import org.apache.bookkeeper.tools.common.BKFlags;
+import org.apache.bookkeeper.tools.framework.CliFlags;
+import org.apache.bookkeeper.tools.framework.CliSpec;
+import org.apache.commons.configuration.CompositeConfiguration;
 
 /**
  * This is a mixin class for commands that needs a bookkeeper client.
  */
 @Slf4j
-public abstract class ClientCommand implements Command {
+public abstract class ClientCommand<ClientFlagsT extends CliFlags> extends BKCommand<ClientFlagsT> {
 
-    @Override
-    public void run(ServerConfiguration conf) throws Exception {
-        // cast the server configuration to a client configuration object.
-        ClientConfiguration clientConf = new ClientConfiguration(conf);
-        run(clientConf);
+    protected ClientCommand(CliSpec<ClientFlagsT> spec) {
+        super(spec);
     }
 
-    protected void run(ClientConfiguration conf) throws Exception {
+    @Override
+    protected boolean apply(ServiceURI serviceURI,
+                            CompositeConfiguration conf,
+                            BKFlags globalFlags,
+                            ClientFlagsT cmdFlags) {
+        ClientConfiguration clientConf = new ClientConfiguration();
+        clientConf.loadConf(conf);
+
+        if (null != serviceURI) {
+            clientConf.setMetadataServiceUri(serviceURI.getUri().toString());
+        }
+
+        return apply(clientConf, cmdFlags);
+    }
+
+    public boolean apply(ServerConfiguration conf,
+                         ClientFlagsT cmdFlags) {
+        ClientConfiguration clientConf = new ClientConfiguration(conf);
+        return apply(clientConf, cmdFlags);
+    }
+
+    protected boolean apply(ClientConfiguration conf,
+                            ClientFlagsT cmdFlags) {
         try (BookKeeper bk = BookKeeper.newBuilder(conf).build()) {
-            run(bk);
+            run(bk, cmdFlags);
+            return true;
+        } catch (Exception e) {
+            log.error("Faild to process command '{}'", name(), e);
+            return false;
         }
     }
 
-    protected abstract void run(BookKeeper bk) throws Exception;
-
+    protected abstract void run(BookKeeper bk, ClientFlagsT cmdFlags)
+        throws Exception;
 
 }

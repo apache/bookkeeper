@@ -176,7 +176,7 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
                 TransientLedgerInfo.LEDGER_INFO_CACHING_TIME_MINUTES,
                 TransientLedgerInfo.LEDGER_INFO_CACHING_TIME_MINUTES, TimeUnit.MINUTES);
 
-        entryLogger = new EntryLogger(conf, ledgerDirsManager);
+        entryLogger = new EntryLogger(conf, ledgerDirsManager, null, statsLogger);
         gcThread = new GarbageCollectorThread(conf, ledgerManager, this, statsLogger);
 
         stats.registerGauge("write-cache-size", new Gauge<Long>() {
@@ -521,7 +521,6 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
 
                     if (currentEntryLedgerId != orginalLedgerId) {
                         // Found an entry belonging to a different ledger, stopping read-ahead
-                        entry.release();
                         return;
                     }
 

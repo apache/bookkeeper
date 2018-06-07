@@ -18,22 +18,30 @@
 package org.apache.bookkeeper.stream.storage.api.kv;
 
 import java.util.concurrent.CompletableFuture;
-import org.apache.bookkeeper.stream.proto.storage.StorageContainerRequest;
-import org.apache.bookkeeper.stream.proto.storage.StorageContainerResponse;
+import org.apache.bookkeeper.stream.proto.kv.rpc.DeleteRangeRequest;
+import org.apache.bookkeeper.stream.proto.kv.rpc.DeleteRangeResponse;
+import org.apache.bookkeeper.stream.proto.kv.rpc.IncrementRequest;
+import org.apache.bookkeeper.stream.proto.kv.rpc.IncrementResponse;
+import org.apache.bookkeeper.stream.proto.kv.rpc.PutRequest;
+import org.apache.bookkeeper.stream.proto.kv.rpc.PutResponse;
+import org.apache.bookkeeper.stream.proto.kv.rpc.RangeRequest;
+import org.apache.bookkeeper.stream.proto.kv.rpc.RangeResponse;
+import org.apache.bookkeeper.stream.proto.kv.rpc.TxnRequest;
+import org.apache.bookkeeper.stream.proto.kv.rpc.TxnResponse;
 
 /**
  * The table store that stores and serves tables.
  */
 public interface TableStore {
 
-    CompletableFuture<StorageContainerResponse> range(StorageContainerRequest request);
+    CompletableFuture<RangeResponse> range(RangeRequest request);
 
-    CompletableFuture<StorageContainerResponse> put(StorageContainerRequest request);
+    CompletableFuture<PutResponse> put(PutRequest request);
 
-    CompletableFuture<StorageContainerResponse> delete(StorageContainerRequest request);
+    CompletableFuture<DeleteRangeResponse> delete(DeleteRangeRequest request);
 
-    CompletableFuture<StorageContainerResponse> txn(StorageContainerRequest request);
+    CompletableFuture<TxnResponse> txn(TxnRequest request);
 
-    CompletableFuture<StorageContainerResponse> incr(StorageContainerRequest request);
+    CompletableFuture<IncrementResponse> incr(IncrementRequest request);
 
 }

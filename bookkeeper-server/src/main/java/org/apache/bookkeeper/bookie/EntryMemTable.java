@@ -24,10 +24,12 @@ import static org.apache.bookkeeper.bookie.BookKeeperServerStats.SKIP_LIST_GET_E
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.SKIP_LIST_PUT_ENTRY;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.SKIP_LIST_SNAPSHOT;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.SKIP_LIST_THROTTLING;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.SKIP_LIST_THROTTLING_LATENCY;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
@@ -48,7 +50,7 @@ import org.slf4j.LoggerFactory;
  * We continue to serve edits out of new EntrySkipList and backing snapshot until
  * flusher reports in that the flush succeeded. At that point we let the snapshot go.
  */
-public class EntryMemTable {
+public class EntryMemTable implements AutoCloseable{
     private static Logger logger = LoggerFactory.getLogger(Journal.class);
 
     /**
@@ -103,6 +105,7 @@ public class EntryMemTable {
     final AtomicLong size;
 
     final long skipListSizeLimit;
+    final Semaphore skipListSemaphore;
 
     SkipListArena allocator;
 
@@ -117,8 +120,9 @@ public class EntryMemTable {
     private final OpStatsLogger snapshotStats;
     private final OpStatsLogger putEntryStats;
     private final OpStatsLogger getEntryStats;
-    private final Counter flushBytesCounter;
+    final Counter flushBytesCounter;
     private final Counter throttlingCounter;
+    private final OpStatsLogger throttlingStats;
 
     /**
     * Constructor.
@@ -136,12 +140,22 @@ public class EntryMemTable {
         // skip list size limit
         this.skipListSizeLimit = conf.getSkipListSizeLimit();
 
+        if (skipListSizeLimit > (Integer.MAX_VALUE - 1) / 2) {
+            // gives 2*1023MB for mem table.
+            // consider a way to create semaphore with long num of permits
+            // until that 1023MB should be enough for everything (tm)
+            throw new IllegalArgumentException("skiplist size over " + ((Integer.MAX_VALUE - 1) / 2));
+        }
+        // double the size for snapshot in progress + incoming data
+        this.skipListSemaphore = new Semaphore((int) skipListSizeLimit * 2);
+
         // Stats
         this.snapshotStats = statsLogger.getOpStatsLogger(SKIP_LIST_SNAPSHOT);
         this.putEntryStats = statsLogger.getOpStatsLogger(SKIP_LIST_PUT_ENTRY);
         this.getEntryStats = statsLogger.getOpStatsLogger(SKIP_LIST_GET_ENTRY);
         this.flushBytesCounter = statsLogger.getCounter(SKIP_LIST_FLUSH_BYTES);
         this.throttlingCounter = statsLogger.getCounter(SKIP_LIST_THROTTLING);
+        this.throttlingStats = statsLogger.getOpStatsLogger(SKIP_LIST_THROTTLING_LATENCY);
     }
 
     void dump() {
@@ -232,10 +246,14 @@ public class EntryMemTable {
     }
 
     /**
-     * Flush snapshot and clear it iff its data is before checkpoint.
-     * Only this function change non-empty this.snapshot.
+     * Flush snapshot and clear it iff its data is before checkpoint. Only this
+     * function change non-empty this.snapshot.
+     *
+     * <p>EntryMemTableWithParallelFlusher overrides this flushSnapshot method. So
+     * any change in functionality/behavior/characteristic of this method should
+     * also reflect in EntryMemTableWithParallelFlusher's flushSnapshot method.
      */
-    private long flushSnapshot(final SkipListFlusher flusher, Checkpoint checkpoint) throws IOException {
+    long flushSnapshot(final SkipListFlusher flusher, Checkpoint checkpoint) throws IOException {
         long size = 0;
         if (this.snapshot.compareTo(checkpoint) < 0) {
             long ledger, ledgerGC = -1;
@@ -260,6 +278,7 @@ public class EntryMemTable {
             }
         }
 
+        skipListSemaphore.release((int) size);
         return size;
     }
 
@@ -268,7 +287,7 @@ public class EntryMemTable {
      * @param keyValues The snapshot to clean out.
      * @see {@link #snapshot()}
      */
-    private void clearSnapshot(final EntrySkipList keyValues) {
+    void clearSnapshot(final EntrySkipList keyValues) {
         // Caller makes sure that keyValues not empty
         assert !keyValues.isEmpty();
         this.lock.writeLock().lock();
@@ -279,18 +298,6 @@ public class EntryMemTable {
         } finally {
             this.lock.writeLock().unlock();
         }
-    }
-
-    /**
-     * Throttling writer w/ 1 ms delay.
-     */
-    private void throttleWriters() {
-        try {
-            Thread.sleep(1);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        }
-        throttlingCounter.inc();
     }
 
     /**
@@ -310,9 +317,16 @@ public class EntryMemTable {
                 Checkpoint cp = snapshot();
                 if ((null != cp) || (!previousFlushSucceeded.get())) {
                     cb.onSizeLimitReached(cp);
-                } else {
-                    throttleWriters();
                 }
+            }
+
+            final int len = entry.remaining();
+            if (!skipListSemaphore.tryAcquire(len)) {
+                throttlingCounter.inc();
+                final long throttlingStartTimeNanos = MathUtils.nowInNano();
+                skipListSemaphore.acquireUninterruptibly(len);
+                throttlingStats.registerSuccessfulEvent(MathUtils.elapsedNanos(throttlingStartTimeNanos),
+                        TimeUnit.NANOSECONDS);
             }
 
             this.lock.readLock().lock();
@@ -451,5 +465,10 @@ public class EntryMemTable {
      */
     boolean isEmpty() {
         return size.get() == 0 && snapshot.isEmpty();
+    }
+
+    @Override
+    public void close() throws Exception {
+        // no-op
     }
 }

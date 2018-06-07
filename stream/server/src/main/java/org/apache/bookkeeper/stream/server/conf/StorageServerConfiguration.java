@@ -22,7 +22,9 @@ import org.apache.commons.configuration.CompositeConfiguration;
  */
 public class StorageServerConfiguration extends ComponentConfiguration {
 
-    private static final String COMPONENT_PREFIX = "rangeserver" + DELIMITER;
+    private static final String COMPONENT_PREFIX = "storageserver" + DELIMITER;
+
+    private static final String GRPC_PORT = "grpc.port";
 
     public static StorageServerConfiguration of(CompositeConfiguration conf) {
         return new StorageServerConfiguration(conf);
@@ -30,5 +32,14 @@ public class StorageServerConfiguration extends ComponentConfiguration {
 
     private StorageServerConfiguration(CompositeConfiguration conf) {
         super(conf, COMPONENT_PREFIX);
+    }
+
+    /**
+     * Returns the grpc port that serves requests coming into the stream storage server.
+     *
+     * @return grpc port
+     */
+    public int getGrpcPort() {
+        return getInt(GRPC_PORT, 4181);
     }
 }

@@ -97,7 +97,7 @@ public class CodahaleStatsLogger implements StatsLogger {
     @Override
     public StatsLogger scope(String scope) {
         String scopeName;
-        if (0 == basename.length()) {
+        if (basename == null || 0 == basename.length()) {
             scopeName = scope;
         } else {
             scopeName = name(basename, scope);

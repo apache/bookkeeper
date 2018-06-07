@@ -28,6 +28,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
+import org.apache.bookkeeper.common.util.Watcher;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.proto.BookieProtocol;
@@ -41,16 +42,23 @@ import org.slf4j.LoggerFactory;
  * entries will be first added into a {@code MemTable}, and then be flushed back to the
  * {@code InterleavedLedgerStorage} when the {@code MemTable} becomes full.
  */
-public class SortedLedgerStorage extends InterleavedLedgerStorage
-        implements LedgerStorage, CacheCallback, SkipListFlusher {
+public class SortedLedgerStorage
+        implements LedgerStorage, CacheCallback, SkipListFlusher,
+            CompactableLedgerStorage, EntryLogger.EntryLogListener {
     private static final Logger LOG = LoggerFactory.getLogger(SortedLedgerStorage.class);
 
     EntryMemTable memTable;
     private ScheduledExecutorService scheduler;
     private StateManager stateManager;
+    private final InterleavedLedgerStorage interleavedLedgerStorage;
 
     public SortedLedgerStorage() {
-        super();
+        this(new InterleavedLedgerStorage());
+    }
+
+    @VisibleForTesting
+    protected SortedLedgerStorage(InterleavedLedgerStorage ils) {
+        interleavedLedgerStorage = ils;
     }
 
     @Override
@@ -63,7 +71,8 @@ public class SortedLedgerStorage extends InterleavedLedgerStorage
                            Checkpointer checkpointer,
                            StatsLogger statsLogger)
             throws IOException {
-        super.initialize(
+
+        interleavedLedgerStorage.initialize(
             conf,
             ledgerManager,
             ledgerDirsManager,
@@ -72,7 +81,12 @@ public class SortedLedgerStorage extends InterleavedLedgerStorage
             checkpointSource,
             checkpointer,
             statsLogger);
-        this.memTable = new EntryMemTable(conf, checkpointSource, statsLogger);
+
+        if (conf.isEntryLogPerLedgerEnabled()) {
+            this.memTable = new EntryMemTableWithParallelFlusher(conf, checkpointSource, statsLogger);
+        } else {
+            this.memTable = new EntryMemTable(conf, checkpointSource, statsLogger);
+        }
         this.scheduler = Executors.newSingleThreadScheduledExecutor(
                 new ThreadFactoryBuilder()
                 .setNameFormat("SortedLedgerStorage-%d")
@@ -92,7 +106,7 @@ public class SortedLedgerStorage extends InterleavedLedgerStorage
         } catch (IOException e) {
             LOG.error("Exception thrown while flushing ledger cache.", e);
         }
-        super.start();
+        interleavedLedgerStorage.start();
     }
 
     @Override
@@ -102,20 +116,45 @@ public class SortedLedgerStorage extends InterleavedLedgerStorage
         if (!scheduler.awaitTermination(3, TimeUnit.SECONDS)) {
             scheduler.shutdownNow();
         }
-        super.shutdown();
+        try {
+            memTable.close();
+        } catch (Exception e) {
+            LOG.error("Error while closing the memtable", e);
+        }
+        interleavedLedgerStorage.shutdown();
     }
 
     @Override
     public boolean ledgerExists(long ledgerId) throws IOException {
         // Done this way because checking the skip list is an O(logN) operation compared to
         // the O(1) for the ledgerCache.
-        if (!super.ledgerExists(ledgerId)) {
+        if (!interleavedLedgerStorage.ledgerExists(ledgerId)) {
             EntryKeyValue kv = memTable.getLastEntry(ledgerId);
             if (null == kv) {
-                return super.ledgerExists(ledgerId);
+                return interleavedLedgerStorage.ledgerExists(ledgerId);
             }
         }
         return true;
+    }
+
+    @Override
+    public boolean setFenced(long ledgerId) throws IOException {
+        return interleavedLedgerStorage.setFenced(ledgerId);
+    }
+
+    @Override
+    public boolean isFenced(long ledgerId) throws IOException {
+        return interleavedLedgerStorage.isFenced(ledgerId);
+    }
+
+    @Override
+    public void setMasterKey(long ledgerId, byte[] masterKey) throws IOException {
+        interleavedLedgerStorage.setMasterKey(ledgerId, masterKey);
+    }
+
+    @Override
+    public byte[] readMasterKey(long ledgerId) throws IOException, BookieException {
+        return interleavedLedgerStorage.readMasterKey(ledgerId);
     }
 
     @Override
@@ -125,7 +164,7 @@ public class SortedLedgerStorage extends InterleavedLedgerStorage
         long lac = entry.getLong(entry.readerIndex() + 16);
 
         memTable.addEntry(ledgerId, entryId, entry.nioBuffer(), this);
-        ledgerCache.updateLastAddConfirmed(ledgerId, lac);
+        interleavedLedgerStorage.ledgerCache.updateLastAddConfirmed(ledgerId, lac);
         return entryId;
     }
 
@@ -140,7 +179,7 @@ public class SortedLedgerStorage extends InterleavedLedgerStorage
             return kv.getValueAsByteBuffer();
         }
         // If it doesn't exist in the skip list, then fallback to the ledger cache+index.
-        return super.getEntry(ledgerId, BookieProtocol.LAST_ADD_CONFIRMED);
+        return interleavedLedgerStorage.getEntry(ledgerId, BookieProtocol.LAST_ADD_CONFIRMED);
     }
 
     @Override
@@ -150,13 +189,13 @@ public class SortedLedgerStorage extends InterleavedLedgerStorage
         }
         ByteBuf buffToRet;
         try {
-            buffToRet = super.getEntry(ledgerId, entryId);
+            buffToRet = interleavedLedgerStorage.getEntry(ledgerId, entryId);
         } catch (Bookie.NoEntryException nee) {
             EntryKeyValue kv = memTable.getEntry(ledgerId, entryId);
             if (null == kv) {
                 // The entry might have been flushed since we last checked, so query the ledger cache again.
                 // If the entry truly doesn't exist, then this will throw a NoEntryException
-                buffToRet = super.getEntry(ledgerId, entryId);
+                buffToRet = interleavedLedgerStorage.getEntry(ledgerId, entryId);
             } else {
                 buffToRet = kv.getValueAsByteBuffer();
             }
@@ -166,28 +205,55 @@ public class SortedLedgerStorage extends InterleavedLedgerStorage
     }
 
     @Override
+    public long getLastAddConfirmed(long ledgerId) throws IOException {
+        return interleavedLedgerStorage.getLastAddConfirmed(ledgerId);
+    }
+
+    @Override
+    public boolean waitForLastAddConfirmedUpdate(long ledgerId,
+                                                 long previousLAC,
+                                                 Watcher<LastAddConfirmedUpdateNotification> watcher)
+            throws IOException {
+        return interleavedLedgerStorage.waitForLastAddConfirmedUpdate(ledgerId, previousLAC, watcher);
+    }
+
+    @Override
     public void checkpoint(final Checkpoint checkpoint) throws IOException {
         long numBytesFlushed = memTable.flush(this, checkpoint);
-        if (numBytesFlushed > 0) {
-            // if bytes are added between previous flush and this checkpoint,
-            // it means bytes might live at current active entry log, we need
-            // roll current entry log and then issue checkpoint to underlying
-            // interleaved ledger storage.
-            entryLogger.rollLog();
-        }
-        super.checkpoint(checkpoint);
+        interleavedLedgerStorage.getEntryLogger().prepareSortedLedgerStorageCheckpoint(numBytesFlushed);
+        interleavedLedgerStorage.checkpoint(checkpoint);
+    }
+
+    @Override
+    public void deleteLedger(long ledgerId) throws IOException {
+        interleavedLedgerStorage.deleteLedger(ledgerId);
+    }
+
+    @Override
+    public void registerLedgerDeletionListener(LedgerDeletionListener listener) {
+        interleavedLedgerStorage.registerLedgerDeletionListener(listener);
+    }
+
+    @Override
+    public void setExplicitlac(long ledgerId, ByteBuf lac) throws IOException {
+        interleavedLedgerStorage.setExplicitlac(ledgerId, lac);
+    }
+
+    @Override
+    public ByteBuf getExplicitLac(long ledgerId) {
+        return interleavedLedgerStorage.getExplicitLac(ledgerId);
     }
 
     @Override
     public void process(long ledgerId, long entryId,
                         ByteBuf buffer) throws IOException {
-        processEntry(ledgerId, entryId, buffer, false);
+        interleavedLedgerStorage.processEntry(ledgerId, entryId, buffer, false);
     }
 
     @Override
     public void flush() throws IOException {
         memTable.flush(this, Checkpoint.MAX);
-        super.flush();
+        interleavedLedgerStorage.flush();
     }
 
     // CacheCallback functions.
@@ -209,19 +275,12 @@ public class SortedLedgerStorage extends InterleavedLedgerStorage
             public void run() {
                 try {
                     LOG.info("Started flushing mem table.");
-                    long logIdBeforeFlush = entryLogger.getCurrentLogId();
+                    interleavedLedgerStorage.getEntryLogger().prepareEntryMemTableFlush();
                     memTable.flush(SortedLedgerStorage.this);
-                    long logIdAfterFlush = entryLogger.getCurrentLogId();
-                    // in any case that an entry log reaches the limit, we roll the log and start checkpointing.
-                    // if a memory table is flushed spanning over two entry log files, we also roll log. this is
-                    // for performance consideration: since we don't wanna checkpoint a new log file that ledger
-                    // storage is writing to.
-                    if (entryLogger.reachEntryLogLimit(0) || logIdAfterFlush != logIdBeforeFlush) {
-                        LOG.info("Rolling entry logger since it reached size limitation");
-                        entryLogger.rollLog();
-                        checkpointer.startCheckpoint(cp);
+                    if (interleavedLedgerStorage.getEntryLogger().commitEntryMemTableFlush()) {
+                        interleavedLedgerStorage.checkpointer.startCheckpoint(cp);
                     }
-                } catch (IOException e) {
+                } catch (Exception e) {
                     stateManager.transitionToReadOnlyMode();
                     LOG.error("Exception thrown while flushing skip list cache.", e);
                 }
@@ -241,4 +300,28 @@ public class SortedLedgerStorage extends InterleavedLedgerStorage
         return (BookieStateManager) stateManager;
     }
 
+    @Override
+    public EntryLogger getEntryLogger() {
+        return interleavedLedgerStorage.getEntryLogger();
+    }
+
+    @Override
+    public Iterable<Long> getActiveLedgersInRange(long firstLedgerId, long lastLedgerId) throws IOException {
+        return interleavedLedgerStorage.getActiveLedgersInRange(firstLedgerId, lastLedgerId);
+    }
+
+    @Override
+    public void updateEntriesLocations(Iterable<EntryLocation> locations) throws IOException {
+        interleavedLedgerStorage.updateEntriesLocations(locations);
+    }
+
+    @Override
+    public void flushEntriesLocationsIndex() throws IOException {
+        interleavedLedgerStorage.flushEntriesLocationsIndex();
+    }
+
+    @Override
+    public LedgerStorage getUnderlyingLedgerStorage() {
+        return interleavedLedgerStorage;
+    }
 }

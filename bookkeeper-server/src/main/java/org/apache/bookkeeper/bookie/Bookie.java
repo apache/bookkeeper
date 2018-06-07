@@ -23,6 +23,7 @@ package org.apache.bookkeeper.bookie;
 
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.BOOKIE_ADD_ENTRY;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.BOOKIE_ADD_ENTRY_BYTES;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.BOOKIE_FORCE_LEDGER;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.BOOKIE_READ_ENTRY;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.BOOKIE_READ_ENTRY_BYTES;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.BOOKIE_RECOVERY_ADD_ENTRY;
@@ -119,6 +120,7 @@ public class Bookie extends BookieCriticalThread {
 
     static final long METAENTRY_ID_LEDGER_KEY = -0x1000;
     static final long METAENTRY_ID_FENCE_KEY  = -0x2000;
+    public static final long METAENTRY_ID_FORCE_LEDGER  = -0x4000;
 
     private final LedgerDirsManager ledgerDirsManager;
     private LedgerDirsManager indexDirsManager;
@@ -139,6 +141,7 @@ public class Bookie extends BookieCriticalThread {
     private final StatsLogger statsLogger;
     private final Counter writeBytes;
     private final Counter readBytes;
+    private final Counter forceLedgerOps;
     // Bookie Operation Latency Stats
     private final OpStatsLogger addEntryStats;
     private final OpStatsLogger recoveryAddEntryStats;
@@ -734,6 +737,7 @@ public class Bookie extends BookieCriticalThread {
         // Expose Stats
         writeBytes = statsLogger.getCounter(WRITE_BYTES);
         readBytes = statsLogger.getCounter(READ_BYTES);
+        forceLedgerOps = statsLogger.getCounter(BOOKIE_FORCE_LEDGER);
         addEntryStats = statsLogger.getOpStatsLogger(BOOKIE_ADD_ENTRY);
         recoveryAddEntryStats = statsLogger.getOpStatsLogger(BOOKIE_RECOVERY_ADD_ENTRY);
         readEntryStats = statsLogger.getOpStatsLogger(BOOKIE_READ_ENTRY);
@@ -1199,6 +1203,21 @@ public class Bookie extends BookieCriticalThread {
             lac = handle.getExplicitLac();
         }
         return lac;
+    }
+
+    /**
+     * Force sync given 'ledgerId' entries on the journal to the disk.
+     * It works like a regular addEntry with ackBeforeSync=false.
+     * This is useful for ledgers with DEFERRED_SYNC write flag.
+     */
+    public void forceLedger(long ledgerId, WriteCallback cb,
+                            Object ctx) {
+        if (LOG.isTraceEnabled()) {
+            LOG.trace("Forcing ledger {}", ledgerId);
+        }
+        Journal journal = getJournal(ledgerId);
+        journal.forceLedger(ledgerId, cb, ctx);
+        forceLedgerOps.inc();
     }
 
     /**

@@ -29,6 +29,8 @@ import java.io.IOException;
 import java.net.UnknownHostException;
 import java.security.AccessControlException;
 import java.util.Arrays;
+import java.util.concurrent.TimeUnit;
+
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieCriticalThread;
 import org.apache.bookkeeper.bookie.BookieException;
@@ -127,6 +129,10 @@ public class BookieServer {
         running = true;
         deathWatcher = new DeathWatcher(conf);
         deathWatcher.start();
+
+        // fixes test flappers at random places until ISSUE#1400 is resolved
+        // https://github.com/apache/bookkeeper/issues/1400
+        TimeUnit.MILLISECONDS.sleep(250);
     }
 
     @VisibleForTesting
@@ -137,6 +143,11 @@ public class BookieServer {
     @VisibleForTesting
     public Bookie getBookie() {
         return bookie;
+    }
+
+    @VisibleForTesting
+    public BookieRequestProcessor getBookieRequestProcessor() {
+        return (BookieRequestProcessor) requestProcessor;
     }
 
     /**

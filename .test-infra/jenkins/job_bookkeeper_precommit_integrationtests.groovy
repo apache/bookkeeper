@@ -27,10 +27,21 @@ freeStyleJob('bookkeeper_precommit_integrationtests') {
         delegate,
         'master',
         'JDK 1.8 (latest)',
-        120)
+        200,
+        'ubuntu',
+        '${ghprbActualCommit}')
+
+    throttleConcurrentBuilds {
+        // limit builds to 1 per node to avoid conflicts on building docker images
+        maxPerNode(1)
+    }
 
     // Sets that this is a PreCommit job.
-    common_job_properties.setPreCommit(delegate, 'Integration Tests')
+    common_job_properties.setPreCommit(
+        delegate,
+        'Integration Tests',
+        '.*(re)?run integration tests.*',
+        '.*\\[x\\] \\[skip integration tests\\].*')
 
     steps {
         // Temporary information gathering to see if full disks are causing the builds to flake
@@ -49,7 +60,7 @@ freeStyleJob('bookkeeper_precommit_integrationtests') {
             // Set Maven parameters.
             common_job_properties.setMavenConfig(delegate)
 
-            goals('-B clean install -Pdocker')
+            goals('-B clean install -Dstream -Pdocker')
             properties(skipTests: true, interactiveMode: false)
         }
 
@@ -57,7 +68,7 @@ freeStyleJob('bookkeeper_precommit_integrationtests') {
             // Set Maven parameters.
             common_job_properties.setMavenConfig(delegate)
             rootPOM('tests/pom.xml')
-            goals('-B test -DintegrationTests')
+            goals('-B test -Dstream -DintegrationTests')
         }
 
         shell('kill $(cat docker-log.pid) || true')

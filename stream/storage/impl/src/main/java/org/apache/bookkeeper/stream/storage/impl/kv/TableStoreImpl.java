@@ -19,7 +19,6 @@ package org.apache.bookkeeper.stream.storage.impl.kv;
 
 import static org.apache.bookkeeper.stream.storage.impl.kv.TableStoreUtils.fromProtoCompare;
 import static org.apache.bookkeeper.stream.storage.impl.kv.TableStoreUtils.handleCause;
-import static org.apache.bookkeeper.stream.storage.impl.kv.TableStoreUtils.mvccCodeToStatusCode;
 import static org.apache.bookkeeper.stream.storage.impl.kv.TableStoreUtils.newStoreKey;
 import static org.apache.bookkeeper.stream.storage.impl.kv.TableStoreUtils.processDeleteResult;
 import static org.apache.bookkeeper.stream.storage.impl.kv.TableStoreUtils.processIncrementResult;
@@ -46,17 +45,18 @@ import org.apache.bookkeeper.api.kv.result.TxnResult;
 import org.apache.bookkeeper.statelib.api.mvcc.MVCCAsyncStore;
 import org.apache.bookkeeper.stream.proto.kv.rpc.Compare;
 import org.apache.bookkeeper.stream.proto.kv.rpc.DeleteRangeRequest;
+import org.apache.bookkeeper.stream.proto.kv.rpc.DeleteRangeResponse;
 import org.apache.bookkeeper.stream.proto.kv.rpc.IncrementRequest;
+import org.apache.bookkeeper.stream.proto.kv.rpc.IncrementResponse;
 import org.apache.bookkeeper.stream.proto.kv.rpc.PutRequest;
+import org.apache.bookkeeper.stream.proto.kv.rpc.PutResponse;
 import org.apache.bookkeeper.stream.proto.kv.rpc.RangeRequest;
 import org.apache.bookkeeper.stream.proto.kv.rpc.RangeResponse;
 import org.apache.bookkeeper.stream.proto.kv.rpc.RequestOp;
+import org.apache.bookkeeper.stream.proto.kv.rpc.ResponseHeader;
 import org.apache.bookkeeper.stream.proto.kv.rpc.RoutingHeader;
 import org.apache.bookkeeper.stream.proto.kv.rpc.TxnRequest;
 import org.apache.bookkeeper.stream.proto.kv.rpc.TxnResponse;
-import org.apache.bookkeeper.stream.proto.storage.StatusCode;
-import org.apache.bookkeeper.stream.proto.storage.StorageContainerRequest;
-import org.apache.bookkeeper.stream.proto.storage.StorageContainerResponse;
 import org.apache.bookkeeper.stream.storage.api.kv.TableStore;
 
 /**
@@ -72,13 +72,11 @@ public class TableStoreImpl implements TableStore {
     }
 
     @Override
-    public CompletableFuture<StorageContainerResponse> range(StorageContainerRequest request) {
-        RangeRequest rangeReq = request.getKvRangeReq();
-
+    public CompletableFuture<RangeResponse> range(RangeRequest rangeReq) {
         if (log.isTraceEnabled()) {
             log.trace("Received range request {}", rangeReq);
         }
-        return range(rangeReq)
+        return doRange(rangeReq)
             .thenApply(result -> {
                 try {
                     RangeResponse rangeResp = processRangeResult(
@@ -89,19 +87,18 @@ public class TableStoreImpl implements TableStore {
                     result.close();
                 }
             })
-            .thenApply(rangeResp -> StorageContainerResponse.newBuilder()
-                .setCode(StatusCode.SUCCESS)
-                .setKvRangeResp(rangeResp)
-                .build())
             .exceptionally(cause -> {
                 log.error("Failed to process range request {}", rangeReq, cause);
-                return StorageContainerResponse.newBuilder()
-                    .setCode(handleCause(cause))
+                return RangeResponse.newBuilder()
+                    .setHeader(ResponseHeader.newBuilder()
+                        .setCode(handleCause(cause))
+                        .setRoutingHeader(rangeReq.getHeader())
+                        .build())
                     .build();
             });
     }
 
-    private CompletableFuture<RangeResult<byte[], byte[]>> range(RangeRequest request) {
+    private CompletableFuture<RangeResult<byte[], byte[]>> doRange(RangeRequest request) {
         RangeOp<byte[], byte[]> op = buildRangeOp(request.getHeader(), request);
         return store.range(op)
             .whenComplete((rangeResult, throwable) -> op.close());
@@ -143,10 +140,8 @@ public class TableStoreImpl implements TableStore {
     }
 
     @Override
-    public CompletableFuture<StorageContainerResponse> put(StorageContainerRequest request) {
-        PutRequest putReq = request.getKvPutReq();
-
-        return put(putReq)
+    public CompletableFuture<PutResponse> put(PutRequest putReq) {
+        return doPut(putReq)
             .thenApply(result -> {
                 try {
                     return processPutResult(
@@ -156,19 +151,18 @@ public class TableStoreImpl implements TableStore {
                     result.close();
                 }
             })
-            .thenApply(putResp -> StorageContainerResponse.newBuilder()
-                .setCode(StatusCode.SUCCESS)
-                .setKvPutResp(putResp)
-                .build())
             .exceptionally(cause -> {
                 log.error("Failed to process put request {}", putReq, cause);
-                return StorageContainerResponse.newBuilder()
-                    .setCode(handleCause(cause))
+                return PutResponse.newBuilder()
+                    .setHeader(ResponseHeader.newBuilder()
+                        .setCode(handleCause(cause))
+                        .setRoutingHeader(putReq.getHeader())
+                        .build())
                     .build();
             });
     }
 
-    private CompletableFuture<PutResult<byte[], byte[]>> put(PutRequest request) {
+    private CompletableFuture<PutResult<byte[], byte[]>> doPut(PutRequest request) {
         PutOp<byte[], byte[]> op = buildPutOp(request.getHeader(), request);
         return store.put(op)
             .whenComplete((putResult, throwable) -> op.close());
@@ -187,10 +181,8 @@ public class TableStoreImpl implements TableStore {
     }
 
     @Override
-    public CompletableFuture<StorageContainerResponse> incr(StorageContainerRequest request) {
-        IncrementRequest incrementReq = request.getKvIncrReq();
-
-        return increment(incrementReq)
+    public CompletableFuture<IncrementResponse> incr(IncrementRequest incrementReq) {
+        return doIncrement(incrementReq)
             .thenApply(result -> {
                 try {
                     return processIncrementResult(
@@ -200,19 +192,18 @@ public class TableStoreImpl implements TableStore {
                     result.close();
                 }
             })
-            .thenApply(incrementResp -> StorageContainerResponse.newBuilder()
-                .setCode(StatusCode.SUCCESS)
-                .setKvIncrResp(incrementResp)
-                .build())
             .exceptionally(cause -> {
                 log.error("Failed to process increment request {}", incrementReq, cause);
-                return StorageContainerResponse.newBuilder()
-                    .setCode(handleCause(cause))
+                return IncrementResponse.newBuilder()
+                    .setHeader(ResponseHeader.newBuilder()
+                        .setCode(handleCause(cause))
+                        .setRoutingHeader(incrementReq.getHeader())
+                        .build())
                     .build();
             });
     }
 
-    private CompletableFuture<IncrementResult<byte[], byte[]>> increment(IncrementRequest request) {
+    private CompletableFuture<IncrementResult<byte[], byte[]>> doIncrement(IncrementRequest request) {
         IncrementOp<byte[], byte[]> op = buildIncrementOp(request.getHeader(), request);
         return store.increment(op)
             .whenComplete((incrementResult, throwable) -> op.close());
@@ -231,10 +222,8 @@ public class TableStoreImpl implements TableStore {
     }
 
     @Override
-    public CompletableFuture<StorageContainerResponse> delete(StorageContainerRequest request) {
-        DeleteRangeRequest deleteReq = request.getKvDeleteReq();
-
-        return delete(deleteReq)
+    public CompletableFuture<DeleteRangeResponse> delete(DeleteRangeRequest deleteReq) {
+        return doDelete(deleteReq)
             .thenApply(result -> {
                 try {
                     return processDeleteResult(
@@ -244,16 +233,15 @@ public class TableStoreImpl implements TableStore {
                     result.close();
                 }
             })
-            .thenApply(deleteResp -> StorageContainerResponse.newBuilder()
-                .setCode(StatusCode.SUCCESS)
-                .setKvDeleteResp(deleteResp)
-                .build())
-            .exceptionally(cause -> StorageContainerResponse.newBuilder()
-                .setCode(handleCause(cause))
+            .exceptionally(cause -> DeleteRangeResponse.newBuilder()
+                .setHeader(ResponseHeader.newBuilder()
+                    .setCode(handleCause(cause))
+                    .setRoutingHeader(deleteReq.getHeader())
+                    .build())
                 .build());
     }
 
-    private CompletableFuture<DeleteResult<byte[], byte[]>> delete(DeleteRangeRequest request) {
+    private CompletableFuture<DeleteResult<byte[], byte[]>> doDelete(DeleteRangeRequest request) {
         DeleteOp<byte[], byte[]> op = buildDeleteOp(request.getHeader(), request);
         return store.delete(op)
             .whenComplete((deleteResult, throwable) -> op.close());
@@ -277,30 +265,27 @@ public class TableStoreImpl implements TableStore {
     }
 
     @Override
-    public CompletableFuture<StorageContainerResponse> txn(StorageContainerRequest request) {
-        TxnRequest txnReq = request.getKvTxnReq();
-
+    public CompletableFuture<TxnResponse> txn(TxnRequest txnReq) {
         if (log.isTraceEnabled()) {
             log.trace("Received txn request : {}", txnReq);
         }
-        return txn(txnReq)
+        return doTxn(txnReq)
             .thenApply(txnResult -> {
                 try {
-                    TxnResponse txnResponse = processTxnResult(txnReq.getHeader(), txnResult);
-                    return StorageContainerResponse.newBuilder()
-                        .setCode(mvccCodeToStatusCode(txnResult.code()))
-                        .setKvTxnResp(txnResponse)
-                        .build();
+                    return processTxnResult(txnReq.getHeader(), txnResult);
                 } finally {
                     txnResult.close();
                 }
             })
-            .exceptionally(cause -> StorageContainerResponse.newBuilder()
-                .setCode(handleCause(cause))
+            .exceptionally(cause -> TxnResponse.newBuilder()
+                .setHeader(ResponseHeader.newBuilder()
+                    .setCode(handleCause(cause))
+                    .setRoutingHeader(txnReq.getHeader())
+                    .build())
                 .build());
     }
 
-    private CompletableFuture<TxnResult<byte[], byte[]>> txn(TxnRequest request) {
+    private CompletableFuture<TxnResult<byte[], byte[]>> doTxn(TxnRequest request) {
         TxnOp<byte[], byte[]> op = buildTxnOp(request);
         return store.txn(op)
             .whenComplete((txnResult, throwable) -> op.close());

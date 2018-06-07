@@ -89,6 +89,11 @@ class RequestUtils {
             stringHelper.add("ledgerId", writeLacRequest.getLedgerId());
             stringHelper.add("lac", writeLacRequest.getLac());
             return stringHelper.toString();
+        } else if (request.hasForceLedgerRequest()) {
+            BookkeeperProtocol.ForceLedgerRequest forceLedgerRequest = request.getForceLedgerRequest();
+            includeHeaderFields(stringHelper, header);
+            stringHelper.add("ledgerId", forceLedgerRequest.getLedgerId());
+            return stringHelper.toString();
         } else {
             return request.toString();
         }

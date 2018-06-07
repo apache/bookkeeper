@@ -427,6 +427,9 @@ class MVCCStoreImpl<K, V> extends RocksdbKVStore<K, V> implements MVCCStore<K, V
                 result.totalAmount(newAmount);
             }
             return result;
+        } catch (RocksDBException rde) {
+            result.close();
+            throw new StateStoreRuntimeException(rde);
         } catch (StateStoreRuntimeException e) {
             result.close();
             throw e;
@@ -524,15 +527,18 @@ class MVCCStoreImpl<K, V> extends RocksdbKVStore<K, V> implements MVCCStore<K, V
             result.code(Code.OK);
             if (null != oldRecord) {
                 KeyValueImpl<K, V> prevKV = oldRecord.asKVRecord(
-                    recordFactory,
-                    key,
-                    valCoder);
+                        recordFactory,
+                        key,
+                        valCoder);
                 result.prevKv(prevKV);
             }
             return result;
         } catch (StateStoreRuntimeException e) {
             result.close();
             throw e;
+        } catch (RocksDBException e) {
+            result.close();
+            throw new StateStoreRuntimeException(e);
         } finally {
             if (null != record) {
                 record.recycle();
@@ -632,13 +638,17 @@ class MVCCStoreImpl<K, V> extends RocksdbKVStore<K, V> implements MVCCStore<K, V
     void deleteBlind(WriteBatch batch,
                      byte[] key,
                      @Nullable byte[] endKey) {
-        if (null == endKey) {
-            batch.remove(key);
-        } else {
-            Pair<byte[], byte[]> realRange = getRealRange(key, endKey);
-            endKey = realRange.getRight();
-            ++endKey[endKey.length - 1];
-            batch.deleteRange(realRange.getLeft(), endKey);
+        try {
+            if (null == endKey) {
+                batch.delete(key);
+            } else {
+                Pair<byte[], byte[]> realRange = getRealRange(key, endKey);
+                endKey = realRange.getRight();
+                ++endKey[endKey.length - 1];
+                batch.deleteRange(realRange.getLeft(), endKey);
+            }
+        } catch (RocksDBException e) {
+            throw new StateStoreRuntimeException(e);
         }
     }
 
@@ -660,7 +670,11 @@ class MVCCStoreImpl<K, V> extends RocksdbKVStore<K, V> implements MVCCStore<K, V
                     record.recycle();
                 }
                 numKvs.add(1L);
-                batch.remove(rawKey);
+                try {
+                    batch.delete(rawKey);
+                } catch (RocksDBException e) {
+                    throw new StateStoreRuntimeException(e);
+                }
             }
         } else {
             Pair<byte[], byte[]> realRange = getRealRange(rawKey, rawEndKey);

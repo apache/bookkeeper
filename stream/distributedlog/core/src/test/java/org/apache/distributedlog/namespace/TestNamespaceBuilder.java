@@ -28,9 +28,6 @@ import org.apache.distributedlog.api.namespace.Namespace;
 import org.apache.distributedlog.api.namespace.NamespaceBuilder;
 import org.junit.Test;
 
-
-
-
 /**
  * Test Namespace Builder.
  */

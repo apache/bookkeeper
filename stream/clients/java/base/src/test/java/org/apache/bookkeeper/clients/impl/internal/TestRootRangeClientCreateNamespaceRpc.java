@@ -82,7 +82,7 @@ public class TestRootRangeClientCreateNamespaceRpc extends RootRangeClientImplTe
                                         StreamObserver<CreateNamespaceResponse> responseObserver) {
                 responseObserver.onNext(CreateNamespaceResponse.newBuilder()
                     .setCode(StatusCode.SUCCESS)
-                    .setColProps(colProps)
+                    .setNsProps(colProps)
                     .build());
                 responseObserver.onCompleted();
             }

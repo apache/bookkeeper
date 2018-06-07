@@ -23,6 +23,8 @@ usage() {
 Usage: bookkeeper-daemon.sh (start|stop) <command> <args...>
 where command is one of:
     bookie           Run the bookie server
+    autorecovery     Run the AutoRecovery service daemon
+    zookeeper        Run the zookeeper server
 
 where argument is one of:
     -force (accepted only with stop command): Decides whether to stop the Bookie Server forcefully if not stopped by normal shutdown
@@ -58,6 +60,9 @@ command=$1
 shift
 
 case $command in
+  (zookeeper)
+    echo "doing $startStop $command ..."
+    ;;
   (bookie)
     echo "doing $startStop $command ..."
     ;;

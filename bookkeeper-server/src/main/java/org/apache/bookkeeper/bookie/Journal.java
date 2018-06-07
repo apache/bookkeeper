@@ -36,6 +36,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -75,6 +76,19 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
     private interface JournalIdFilter {
         boolean accept(long journalId);
     }
+
+    /**
+     * For testability.
+     */
+    @FunctionalInterface
+    public interface BufferedChannelBuilder {
+        BufferedChannelBuilder DEFAULT_BCBUILDER =
+                (FileChannel fc, int capacity) -> new BufferedChannel(fc, capacity);
+
+        BufferedChannel create(FileChannel fc, int capacity) throws IOException;
+    }
+
+
 
     /**
      * List all journal ids by a specified journal id filer.
@@ -595,6 +609,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
 
     // Expose Stats
     private final OpStatsLogger journalAddEntryStats;
+    private final OpStatsLogger journalForceLedgerStats;
     private final OpStatsLogger journalSyncStats;
     private final OpStatsLogger journalCreationStats;
     private final OpStatsLogger journalFlushStats;
@@ -656,6 +671,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
 
         // Expose Stats
         journalAddEntryStats = statsLogger.getOpStatsLogger(BookKeeperServerStats.JOURNAL_ADD_ENTRY);
+        journalForceLedgerStats = statsLogger.getOpStatsLogger(BookKeeperServerStats.JOURNAL_FORCE_LEDGER);
         journalSyncStats = statsLogger.getOpStatsLogger(BookKeeperServerStats.JOURNAL_SYNC);
         journalCreationStats = statsLogger.getOpStatsLogger(BookKeeperServerStats.JOURNAL_CREATION_LATENCY);
         journalFlushStats = statsLogger.getOpStatsLogger(BookKeeperServerStats.JOURNAL_FLUSH_LATENCY);
@@ -869,6 +885,14 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                 journalAddEntryStats, journalQueueSize));
     }
 
+    void forceLedger(long ledgerId, WriteCallback cb, Object ctx) {
+        journalQueueSize.inc();
+        queue.add(QueueEntry.create(
+                null, false /* ackBeforeSync */,  ledgerId,
+                Bookie.METAENTRY_ID_FORCE_LEDGER, cb, ctx, MathUtils.nowInNano(),
+                journalForceLedgerStats, journalQueueSize));
+    }
+
     /**
      * Get the length of journal entries queue.
      *
@@ -925,11 +949,14 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
             while (true) {
                 // new journal file to write
                 if (null == logFile) {
+
                     logId = logId + 1;
 
                     journalCreationWatcher.reset().start();
                     logFile = new JournalChannel(journalDirectory, logId, journalPreAllocSize, journalWriteBufferSize,
-                                        journalAlignmentSize, removePagesFromCache, journalFormatVersionToWrite);
+                                        journalAlignmentSize, removePagesFromCache,
+                                        journalFormatVersionToWrite, getBufferedChannelBuilder());
+
                     journalCreationStats.registerSuccessfulEvent(
                             journalCreationWatcher.stop().elapsed(TimeUnit.NANOSECONDS), TimeUnit.NANOSECONDS);
 
@@ -1072,22 +1099,23 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                 if (qe == null) { // no more queue entry
                     continue;
                 }
+                if (qe.entryId != Bookie.METAENTRY_ID_FORCE_LEDGER) {
+                    int entrySize = qe.entry.readableBytes();
+                    journalWriteBytes.add(entrySize);
+                    journalQueueSize.dec();
 
-                int entrySize = qe.entry.readableBytes();
-                journalWriteBytes.add(entrySize);
-                journalQueueSize.dec();
+                    batchSize += (4 + entrySize);
 
-                batchSize += (4 + entrySize);
+                    lenBuff.clear();
+                    lenBuff.writeInt(entrySize);
 
-                lenBuff.clear();
-                lenBuff.writeInt(entrySize);
+                    // preAlloc based on size
+                    logFile.preAllocIfNeeded(4 + entrySize);
 
-                // preAlloc based on size
-                logFile.preAllocIfNeeded(4 + entrySize);
-
-                bc.write(lenBuff);
-                bc.write(qe.entry);
-                qe.entry.release();
+                    bc.write(lenBuff);
+                    bc.write(qe.entry);
+                    qe.entry.release();
+                }
 
                 toFlush.add(qe);
                 numEntriesToFlush++;
@@ -1108,6 +1136,10 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
             IOUtils.close(LOG, logFile);
         }
         LOG.info("Journal exited loop!");
+    }
+
+    public BufferedChannelBuilder getBufferedChannelBuilder() {
+        return BufferedChannelBuilder.DEFAULT_BCBUILDER;
     }
 
     /**
@@ -1159,4 +1191,5 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
     public void joinThread() throws InterruptedException {
         join();
     }
+
 }

@@ -25,16 +25,19 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import java.net.URI;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Function;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.discover.RegistrationManager;
 import org.apache.bookkeeper.meta.exceptions.Code;
@@ -316,6 +319,38 @@ public final class MetadataDrivers {
         checkArgument(schemeParts.length > 0,
                 "Invalid metadata service scheme found : " + uri);
         return getBookieDriver(schemeParts[0]);
+    }
+
+    /**
+     * Process the provided <i>function</i> with metadata client driver resolved
+     * from the metadata service uri returned by {@link ClientConfiguration#getMetadataServiceUri()}.
+     *
+     * @param conf client configuration
+     * @param function function to apply with metadata client driver.
+     * @param executorService executor service used by the metadata client driver.
+     * @throws MetadataException when failed to access metadata store
+     * @throws ExecutionException exception thrown when processing <tt>function</tt>.
+     */
+    public static <T> T runFunctionWithMetadataClientDriver(ClientConfiguration conf,
+                                                            Function<MetadataClientDriver, T> function,
+                                                            ScheduledExecutorService executorService)
+            throws MetadataException, ExecutionException {
+        try (MetadataClientDriver driver = MetadataDrivers.getClientDriver(
+            URI.create(conf.getMetadataServiceUri())
+        )) {
+            driver.initialize(conf, executorService, NullStatsLogger.INSTANCE, Optional.empty());
+            try {
+                return function.apply(driver);
+            } catch (Exception uee) {
+                if (uee.getCause() instanceof MetadataException) {
+                    throw (MetadataException) uee.getCause();
+                } else {
+                    throw new ExecutionException(uee.getMessage(), uee.getCause());
+                }
+            }
+        } catch (ConfigurationException e) {
+            throw new MetadataException(Code.INVALID_METADATA_SERVICE_URI, e);
+        }
     }
 
     /**

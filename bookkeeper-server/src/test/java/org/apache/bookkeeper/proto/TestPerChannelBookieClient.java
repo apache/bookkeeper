@@ -277,7 +277,8 @@ public class TestPerChannelBookieClient extends BookKeeperClusterTestCase {
                     return;
                 }
 
-                client.readEntry(1, 1, cb, null, BookieProtocol.FLAG_DO_FENCING, "00000111112222233333".getBytes());
+                client.readEntry(1, 1, cb, null, BookieProtocol.FLAG_DO_FENCING,
+                        "00000111112222233333".getBytes(), false);
             }
         });
 

@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import lombok.Cleanup;
 import org.apache.bookkeeper.clients.grpc.GrpcClientTestBase;
 import org.apache.bookkeeper.clients.impl.channel.StorageServerChannel;
 import org.apache.bookkeeper.clients.impl.channel.StorageServerChannelManager;
@@ -45,13 +46,12 @@ import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.bookkeeper.stream.proto.RangeProperties;
 import org.apache.bookkeeper.stream.proto.StreamConfiguration;
 import org.apache.bookkeeper.stream.proto.StreamProperties;
+import org.apache.bookkeeper.stream.proto.storage.GetActiveRangesRequest;
 import org.apache.bookkeeper.stream.proto.storage.GetActiveRangesResponse;
 import org.apache.bookkeeper.stream.proto.storage.MetaRangeServiceGrpc.MetaRangeServiceImplBase;
 import org.apache.bookkeeper.stream.proto.storage.RelatedRanges;
 import org.apache.bookkeeper.stream.proto.storage.RelationType;
 import org.apache.bookkeeper.stream.proto.storage.StatusCode;
-import org.apache.bookkeeper.stream.proto.storage.StorageContainerRequest;
-import org.apache.bookkeeper.stream.proto.storage.StorageContainerResponse;
 import org.junit.Test;
 
 /**
@@ -129,32 +129,29 @@ public class TestMetaRangeClientImpl extends GrpcClientTestBase {
 
         // create response
         GetActiveRangesResponse getActiveRangesResponse = GetActiveRangesResponse.newBuilder()
+            .setCode(StatusCode.SUCCESS)
             .addRanges(
                 buildRelatedRange(Long.MIN_VALUE, 0L, 123L, 1L, Lists.newArrayList(113L))
             ).addRanges(
                 buildRelatedRange(0L, Long.MAX_VALUE, 124L, 2L, Lists.newArrayList(114L))
             ).build();
-        StorageContainerResponse response = StorageContainerResponse.newBuilder()
-            .setCode(StatusCode.SUCCESS)
-            .setGetActiveRangesResp(getActiveRangesResponse)
-            .build();
 
         MetaRangeServiceImplBase metaRangeService = new MetaRangeServiceImplBase() {
             @Override
-            public void getActiveRanges(StorageContainerRequest request,
-                                        StreamObserver<StorageContainerResponse> responseObserver) {
-                responseObserver.onNext(response);
+            public void getActiveRanges(GetActiveRangesRequest request,
+                                        StreamObserver<GetActiveRangesResponse> responseObserver) {
+                responseObserver.onNext(getActiveRangesResponse);
                 responseObserver.onCompleted();
             }
         };
         serviceRegistry.addService(metaRangeService.bindService());
 
-        StorageServerChannel rsChannel = new StorageServerChannel(
+        @Cleanup StorageServerChannel rsChannel = new StorageServerChannel(
             InProcessChannelBuilder.forName(serverName).directExecutor().build(),
             Optional.empty());
         serviceFuture.complete(rsChannel);
 
-        HashStreamRanges expectedStream = createActiveRanges(response.getGetActiveRangesResp());
+        HashStreamRanges expectedStream = createActiveRanges(getActiveRangesResponse);
         CompletableFuture<HashStreamRanges> getFuture = metaRangeClient.getActiveDataRanges();
         assertEquals(expectedStream, getFuture.get());
     }
@@ -166,14 +163,14 @@ public class TestMetaRangeClientImpl extends GrpcClientTestBase {
 
         MetaRangeServiceImplBase metaRangeService = new MetaRangeServiceImplBase() {
             @Override
-            public void getActiveRanges(StorageContainerRequest request,
-                                        StreamObserver<StorageContainerResponse> responseObserver) {
+            public void getActiveRanges(GetActiveRangesRequest request,
+                                        StreamObserver<GetActiveRangesResponse> responseObserver) {
                 responseObserver.onError(new StatusRuntimeException(Status.INTERNAL));
             }
         };
         serviceRegistry.addService(metaRangeService.bindService());
 
-        StorageServerChannel rsChannel = new StorageServerChannel(
+        @Cleanup StorageServerChannel rsChannel = new StorageServerChannel(
             InProcessChannelBuilder.forName(serverName).directExecutor().build(),
             Optional.empty());
         serviceFuture.complete(rsChannel);

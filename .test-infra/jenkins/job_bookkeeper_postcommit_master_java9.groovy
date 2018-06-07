@@ -32,15 +32,9 @@ mavenJob('bookkeeper_postcommit_master_java9') {
       'H 12 * * *',
       false)
 
-  // Allows triggering this build against pull requests.
-  common_job_properties.enablePhraseTriggeringFromPullRequest(
-      delegate,
-      'Java 9 Test',
-      '/test-java9')
-
   // Set maven parameters.
   common_job_properties.setMavenConfig(delegate)
 
   // Maven build project.
-  goals('clean apache-rat:check package spotbugs:check -Ddistributedlog -Dstream -DstreamTests')
+  goals('clean package spotbugs:check -Ddistributedlog -Dstream -DstreamTests')
 }

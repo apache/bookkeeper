@@ -19,8 +19,8 @@ package org.apache.bookkeeper.tests.backwardcompat
 
 import com.github.dockerjava.api.DockerClient
 
-import org.apache.bookkeeper.tests.BookKeeperClusterUtils
-import org.apache.bookkeeper.tests.MavenClassLoader
+import org.apache.bookkeeper.tests.integration.utils.BookKeeperClusterUtils
+import org.apache.bookkeeper.tests.integration.utils.MavenClassLoader
 
 import org.jboss.arquillian.junit.Arquillian
 import org.jboss.arquillian.test.api.ArquillianResource
@@ -39,7 +39,8 @@ class TestCompatUpgradeWithHostnameBookieId {
 
     private def oldClientVersions = ["4.1.0", "4.2.0", "4.2.1", "4.2.2", "4.2.3", "4.2.4",
                                      "4.3.0", "4.3.1", "4.3.2", "4.4.0", "4.5.0", "4.5.1",
-                                     "4.6.0"]
+                                     "4.6.0", "4.6.1", "4.6.2",
+                                     "4.7.0"]
 
     @ArquillianResource
     DockerClient docker

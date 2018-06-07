@@ -19,7 +19,7 @@
 import common_job_properties
 
 // This job deploys a snapshot of latest master to artifactory nightly
-mavenJob('bookkeeper_release_nightly_snapshot') {
+freeStyleJob('bookkeeper_release_nightly_snapshot') {
   description('runs a `mvn clean deploy` of the nightly snapshot for bookkeeper.')
 
   // Set common parameters.
@@ -31,15 +31,43 @@ mavenJob('bookkeeper_release_nightly_snapshot') {
       'H 12 * * *',
       false)
 
-  // Allows triggering this build against pull requests.
-  common_job_properties.enablePhraseTriggeringFromPullRequest(
-      delegate,
-      'Release Snapshot',
-      '/release-snapshot')
+  parameters {
+      stringParam(
+          'sha1',
+          'master',
+          'Commit id or refname (eg: origin/pr/9/head) you want to build.')
+        
+      stringParam(
+          'PUBLISH_GITSHA',
+          'false',
+          'Whether to publish a snapshot with gitsha information. Options: (true|false).')
+  }
 
-  // Set maven parameters.
-  common_job_properties.setMavenConfig(delegate)
+  steps {
+    // update snapshot version if `PUBLISH_GITSHA` is `true`
+    shell '''
+export MAVEN_HOME=/home/jenkins/tools/maven/latest
+export PATH=$JAVA_HOME/bin:$MAVEN_HOME/bin:$PATH
+export MAVEN_OPTS=-Xmx2048m
 
-  // Maven build project.
-  goals('clean apache-rat:check package spotbugs:check -Dmaven.test.failure.ignore=true deploy -Ddistributedlog -Dstream -DstreamTests')
+./dev/update-snapshot-version.sh
+    '''.stripIndent().trim()
+
+    maven {
+      // Set maven parameters.
+      common_job_properties.setMavenConfig(delegate)
+
+      // Maven build project.
+      goals('clean package -Dmaven.test.failure.ignore=true deploy -Ddistributedlog -Dstream -DstreamTests -Pdocker')
+    }
+
+    // publish the docker images
+    shell '''
+export MAVEN_HOME=/home/jenkins/tools/maven/latest
+export PATH=$JAVA_HOME/bin:$MAVEN_HOME/bin:$PATH
+export MAVEN_OPTS=-Xmx2048m
+
+./dev/publish-docker-images.sh
+    '''.stripIndent().trim()
+  }
 }

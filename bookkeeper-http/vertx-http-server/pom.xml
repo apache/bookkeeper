@@ -27,14 +27,6 @@
   <artifactId>vertx-http-server</artifactId>
   <name>Apache BookKeeper :: Bookkeeper Http :: Vertx Http Server</name>
   <url>http://maven.apache.org</url>
-  <build>
-    <plugins>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-checkstyle-plugin</artifactId>
-      </plugin>
-    </plugins>
-  </build>
   <dependencies>
     <dependency>
       <groupId>io.vertx</groupId>

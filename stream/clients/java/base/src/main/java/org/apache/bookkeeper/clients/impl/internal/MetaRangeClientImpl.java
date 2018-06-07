@@ -29,6 +29,8 @@ import org.apache.bookkeeper.clients.impl.container.StorageContainerChannelManag
 import org.apache.bookkeeper.clients.impl.internal.api.HashStreamRanges;
 import org.apache.bookkeeper.clients.impl.internal.api.MetaRangeClient;
 import org.apache.bookkeeper.clients.impl.internal.mr.MetaRangeRequestProcessor;
+import org.apache.bookkeeper.clients.utils.ClientConstants;
+import org.apache.bookkeeper.common.util.Backoff;
 import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.bookkeeper.stream.proto.StreamProperties;
 
@@ -41,13 +43,23 @@ class MetaRangeClientImpl implements MetaRangeClient {
     private final StreamProperties streamProps;
     private final ScheduledExecutorService executor;
     private final StorageContainerChannel scClient;
+    private final Backoff.Policy backoffPolicy;
 
     MetaRangeClientImpl(StreamProperties streamProps,
                         OrderedScheduler scheduler,
                         StorageContainerChannelManager channelManager) {
+        this(streamProps, scheduler, channelManager, ClientConstants.DEFAULT_INFINIT_BACKOFF_POLICY);
+
+    }
+
+    MetaRangeClientImpl(StreamProperties streamProps,
+                        OrderedScheduler scheduler,
+                        StorageContainerChannelManager channelManager,
+                        Backoff.Policy backoffPolicy) {
         this.streamProps = streamProps;
         this.executor = scheduler.chooseThread(streamProps.getStreamId());
         this.scClient = channelManager.getOrCreate(streamProps.getStorageContainerId());
+        this.backoffPolicy = backoffPolicy;
     }
 
     @Override
@@ -66,12 +78,11 @@ class MetaRangeClientImpl implements MetaRangeClient {
     @Override
     public CompletableFuture<HashStreamRanges> getActiveDataRanges() {
         return MetaRangeRequestProcessor.of(
-            createGetActiveRangesRequest(
-                scClient.getStorageContainerId(),
-                streamProps),
-            (response) -> createActiveRanges(response.getGetActiveRangesResp()),
+            createGetActiveRangesRequest(streamProps),
+            (response) -> createActiveRanges(response),
             scClient,
-            executor
+            executor,
+            backoffPolicy
         ).process();
     }
 

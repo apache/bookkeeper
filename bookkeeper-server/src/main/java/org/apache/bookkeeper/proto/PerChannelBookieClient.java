@@ -26,6 +26,7 @@ import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Sets;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.ExtensionRegistry;
+import com.google.protobuf.UnsafeByteOperations;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
@@ -69,6 +70,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Queue;
@@ -86,6 +88,7 @@ import org.apache.bookkeeper.auth.ClientAuthProvider;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeperClientStats;
 import org.apache.bookkeeper.client.BookieInfoReader.BookieInfo;
+import org.apache.bookkeeper.client.api.WriteFlag;
 import org.apache.bookkeeper.common.util.OrderedExecutor;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.net.BookieSocketAddress;
@@ -123,6 +126,7 @@ import org.apache.bookkeeper.tls.SecurityHandlerFactory.NodeType;
 import org.apache.bookkeeper.util.ByteBufList;
 import org.apache.bookkeeper.util.MathUtils;
 import org.apache.bookkeeper.util.SafeRunnable;
+import org.apache.bookkeeper.util.StringUtils;
 import org.apache.bookkeeper.util.collections.ConcurrentOpenHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -213,6 +217,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
     private final ClientAuthProvider.Factory authProviderFactory;
     private final ExtensionRegistry extRegistry;
     private final SecurityHandlerFactory shFactory;
+    private volatile boolean isWritable = true;
 
     public PerChannelBookieClient(OrderedExecutor executor, EventLoopGroup eventLoopGroup,
                                   BookieSocketAddress addr) throws SecurityException {
@@ -336,7 +341,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
             public void disconnect() {
                 Channel c = channel;
                 if (c != null) {
-                    c.close();
+                    c.close().addListener(x -> makeWritable());
                 }
                 LOG.info("authplugin disconnected channel {}", channel);
             }
@@ -456,13 +461,29 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
 
         ChannelFuture future = bootstrap.connect(bookieAddr);
         future.addListener(new ConnectionFutureListener(startTime));
-
+        future.addListener(x -> makeWritable());
         return future;
     }
 
     void cleanDisconnectAndClose() {
         disconnect();
         close();
+    }
+
+    /**
+     *
+     * @return boolean, true is PCBC is writable
+     */
+    public boolean isWritable() {
+        return isWritable;
+    }
+
+    public void setWritable(boolean val) {
+        isWritable = val;
+    }
+
+    private void makeWritable() {
+        setWritable(true);
     }
 
     void connectIfNeededAndDoOp(GenericCallback<PerChannelBookieClient> op) {
@@ -524,11 +545,19 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                 .setVersion(ProtocolVersion.VERSION_THREE)
                 .setOperation(OperationType.WRITE_LAC)
                 .setTxnId(txnId);
+        ByteString body;
+        if (toSend.hasArray()) {
+            body = UnsafeByteOperations.unsafeWrap(toSend.array(), toSend.arrayOffset(), toSend.readableBytes());
+        } else if (toSend.size() == 1) {
+            body = UnsafeByteOperations.unsafeWrap(toSend.getBuffer(0).nioBuffer());
+        } else {
+            body = UnsafeByteOperations.unsafeWrap(toSend.toArray());
+        }
         WriteLacRequest.Builder writeLacBuilder = WriteLacRequest.newBuilder()
                 .setLedgerId(ledgerId)
                 .setLac(lac)
-                .setMasterKey(ByteString.copyFrom(masterKey))
-                .setBody(ByteString.copyFrom(toSend.toArray()));
+                .setMasterKey(UnsafeByteOperations.unsafeWrap(masterKey))
+                .setBody(body);
 
         final Request writeLacRequest = Request.newBuilder()
                 .setHeader(headerBuilder)
@@ -553,14 +582,23 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
      *          Write callback
      * @param ctx
      *          Write callback context
-     * @param options
-     *          Add options
+     * @param allowFastFail
+     *          allowFastFail flag
+     * @param writeFlags
+     *          WriteFlags
      */
     void addEntry(final long ledgerId, byte[] masterKey, final long entryId, ByteBufList toSend, WriteCallback cb,
-                  Object ctx, final int options) {
+                  Object ctx, final int options, boolean allowFastFail, final EnumSet<WriteFlag> writeFlags) {
         Object request = null;
         CompletionKey completionKey = null;
         if (useV2WireProtocol) {
+            if (writeFlags.contains(WriteFlag.DEFERRED_SYNC)) {
+                LOG.error("invalid writeflags {} for v2 protocol", writeFlags);
+                executor.executeOrdered(ledgerId, () -> {
+                    cb.writeComplete(BKException.Code.IllegalOpException, ledgerId, entryId, addr, ctx);
+                });
+                return;
+            }
             completionKey = acquireV2Key(ledgerId, entryId, OperationType.ADD_ENTRY);
             request = BookieProtocol.AddRequest.create(
                     BookieProtocol.CURRENT_PROTOCOL_VERSION, ledgerId, entryId,
@@ -578,17 +616,28 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                 headerBuilder.setPriority(DEFAULT_HIGH_PRIORITY_VALUE);
             }
 
-            byte[] toSendArray = toSend.toArray();
+            ByteString body;
+            if (toSend.hasArray()) {
+                body = UnsafeByteOperations.unsafeWrap(toSend.array(), toSend.arrayOffset(), toSend.readableBytes());
+            } else if (toSend.size() == 1) {
+                body = UnsafeByteOperations.unsafeWrap(toSend.getBuffer(0).nioBuffer());
+            } else {
+                body = UnsafeByteOperations.unsafeWrap(toSend.toArray());
+            }
             AddRequest.Builder addBuilder = AddRequest.newBuilder()
                     .setLedgerId(ledgerId)
                     .setEntryId(entryId)
-                    .setMasterKey(ByteString.copyFrom(masterKey))
-                    .setBody(ByteString.copyFrom(toSendArray));
+                    .setMasterKey(UnsafeByteOperations.unsafeWrap(masterKey))
+                    .setBody(body);
 
             if (((short) options & BookieProtocol.FLAG_RECOVERY_ADD) == BookieProtocol.FLAG_RECOVERY_ADD) {
                 addBuilder.setFlag(AddRequest.Flag.RECOVERY_ADD);
             }
 
+            if (!writeFlags.isEmpty()) {
+                // add flags only if needed, in order to be able to talk with old bookies
+                addBuilder.setWriteFlags(WriteFlag.getWriteFlagsValue(writeFlags));
+            }
 
             request = Request.newBuilder()
                     .setHeader(headerBuilder)
@@ -607,7 +656,8 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
             toSend.release();
             return;
         } else {
-            writeAndFlush(c, completionKey, request);
+            // addEntry times out on backpressure
+            writeAndFlush(c, completionKey, request, allowFastFail);
         }
     }
 
@@ -651,7 +701,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                                           ReadEntryCallback cb,
                                           Object ctx) {
         readEntryInternal(ledgerId, entryId, previousLAC, timeOutInMillis,
-                          piggyBackEntry, cb, ctx, (short) 0, null);
+                          piggyBackEntry, cb, ctx, (short) 0, null, false);
     }
 
     /**
@@ -662,9 +712,10 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                           ReadEntryCallback cb,
                           Object ctx,
                           int flags,
-                          byte[] masterKey) {
+                          byte[] masterKey,
+                          boolean allowFastFail) {
         readEntryInternal(ledgerId, entryId, null, null, false,
-                          cb, ctx, (short) flags, masterKey);
+                          cb, ctx, (short) flags, masterKey, allowFastFail);
     }
 
     private void readEntryInternal(final long ledgerId,
@@ -675,7 +726,8 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                                    final ReadEntryCallback cb,
                                    final Object ctx,
                                    int flags,
-                                   byte[] masterKey) {
+                                   byte[] masterKey,
+                                   boolean allowFastFail) {
         Object request = null;
         CompletionKey completionKey = null;
         if (useV2WireProtocol) {
@@ -749,7 +801,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
             }
         }
 
-        writeAndFlush(channel, completionKey, request);
+        writeAndFlush(channel, completionKey, request, allowFastFail);
     }
 
     public void getBookieInfo(final long requested, GetBookieInfoCallback cb, Object ctx) {
@@ -851,6 +903,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
             }
             toClose = channel;
             channel = null;
+            makeWritable();
         }
         if (toClose != null) {
             ChannelFuture cf = closeChannel(toClose);
@@ -864,15 +917,45 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         if (LOG.isDebugEnabled()) {
             LOG.debug("Closing channel {}", c);
         }
+        return c.close().addListener(x -> makeWritable());
+    }
 
-        return c.close();
+    @Override
+    public void channelWritabilityChanged(ChannelHandlerContext ctx) throws Exception {
+        final Channel c = channel;
+        if (c == null || c.isWritable()) {
+            makeWritable();
+        }
+        super.channelWritabilityChanged(ctx);
     }
 
     private void writeAndFlush(final Channel channel,
                                final CompletionKey key,
                                final Object request) {
+        writeAndFlush(channel, key, request, false);
+    }
+
+    private void writeAndFlush(final Channel channel,
+                           final CompletionKey key,
+                           final Object request,
+                           final boolean allowFastFail) {
         if (channel == null) {
+            LOG.warn("Operation {} failed: channel == null", StringUtils.requestToString(request));
             errorOut(key);
+            return;
+        }
+
+        final boolean isChannelWritable = channel.isWritable();
+        if (isWritable != isChannelWritable) {
+            // isWritable is volatile so simple "isWritable = channel.isWritable()" would be slower
+            isWritable = isChannelWritable;
+        }
+
+        if (allowFastFail && !isWritable) {
+            LOG.warn("Operation {} failed: TooManyRequestsException",
+                    StringUtils.requestToString(request));
+
+            errorOut(key, BKException.Code.TooManyRequestsException);
             return;
         }
 
@@ -893,19 +976,8 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
 
             channel.writeAndFlush(request, promise);
         } catch (Throwable e) {
-            LOG.warn("Operation {} failed", requestToString(request), e);
+            LOG.warn("Operation {} failed", StringUtils.requestToString(request), e);
             errorOut(key);
-        }
-    }
-
-    private static String requestToString(Object request) {
-        if (request instanceof BookkeeperProtocol.Request) {
-            BookkeeperProtocol.BKPacketHeader header = ((BookkeeperProtocol.Request) request).getHeader();
-            return String.format("Req(txnId=%d,op=%s,version=%s)",
-                                 header.getTxnId(), header.getOperation(),
-                                 header.getVersion());
-        } else {
-            return request.toString();
         }
     }
 
@@ -1304,6 +1376,8 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                         oldPendingOps = pendingOps;
                         pendingOps = new ArrayDeque<>();
                     }
+
+                    makeWritable();
 
                     for (GenericCallback<PerChannelBookieClient> pendingOp : oldPendingOps) {
                         pendingOp.operationComplete(rc, PerChannelBookieClient.this);
@@ -2019,6 +2093,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                     rc = BKException.Code.OK;
                     channel = future.channel();
                     if (shFactory != null) {
+                        makeWritable();
                         initiateTLS();
                         return;
                     } else {
@@ -2072,6 +2147,8 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
             for (GenericCallback<PerChannelBookieClient> pendingOp : oldPendingOps) {
                 pendingOp.operationComplete(rc, PerChannelBookieClient.this);
             }
+
+            makeWritable();
         }
     }
 

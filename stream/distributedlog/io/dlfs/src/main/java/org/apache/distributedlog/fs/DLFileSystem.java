@@ -29,6 +29,7 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.distributedlog.DLSN;
@@ -39,6 +40,7 @@ import org.apache.distributedlog.api.DistributedLogManager;
 import org.apache.distributedlog.api.LogReader;
 import org.apache.distributedlog.api.namespace.Namespace;
 import org.apache.distributedlog.api.namespace.NamespaceBuilder;
+import org.apache.distributedlog.exceptions.DLInterruptedException;
 import org.apache.distributedlog.exceptions.LogEmptyException;
 import org.apache.distributedlog.exceptions.LogNotFoundException;
 import org.apache.distributedlog.util.Utils;
@@ -315,7 +317,18 @@ public class DLFileSystem extends FileSystem {
     public boolean rename(Path src, Path dst) throws IOException {
         String srcLog = getStreamName(src);
         String dstLog = getStreamName(dst);
-        namespace.renameLog(srcLog, dstLog);
+        try {
+            namespace.renameLog(srcLog, dstLog).get();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new DLInterruptedException("Interrupted at renaming " + srcLog + " to " + dstLog, e);
+        } catch (ExecutionException e) {
+            if (e.getCause() instanceof IOException) {
+                throw (IOException) e.getCause();
+            } else {
+                throw new IOException("Failed to rename " + srcLog + " to " + dstLog, e.getCause());
+            }
+        }
         return true;
     }
 

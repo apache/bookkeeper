@@ -218,7 +218,7 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
         assertEquals(writeQuorumSize, metadata.getWriteQuorumSize());
         assertArrayEquals(password, metadata.getPassword());
         LedgerHandle lh = (LedgerHandle) writer;
-        assertEquals(EnumSet.noneOf(WriteFlag.class), lh.getWriteFlags());
+        assertEquals(WriteFlag.NONE, lh.getWriteFlags());
     }
 
     @Test

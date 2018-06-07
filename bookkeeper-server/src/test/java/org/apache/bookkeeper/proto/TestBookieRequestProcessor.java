@@ -47,6 +47,8 @@ import org.junit.Test;
  */
 public class TestBookieRequestProcessor {
 
+    final BookieRequestProcessor requestProcessor = mock(BookieRequestProcessor.class);
+
     @Test
     public void testConstructLongPollThreads() throws Exception {
         // long poll threads == read threads
@@ -134,7 +136,7 @@ public class TestBookieRequestProcessor {
                 .setBody(ByteString.copyFrom("entrydata".getBytes())).build();
         Request request = Request.newBuilder().setHeader(header).setAddRequest(addRequest).build();
 
-        WriteEntryProcessorV3 writeEntryProcessorV3 = new WriteEntryProcessorV3(request, null, null);
+        WriteEntryProcessorV3 writeEntryProcessorV3 = new WriteEntryProcessorV3(request, null, requestProcessor);
         String toString = writeEntryProcessorV3.toString();
         assertFalse("writeEntryProcessorV3's toString should have filtered out body", toString.contains("body"));
         assertFalse("writeEntryProcessorV3's toString should have filtered out masterKey",
@@ -152,7 +154,7 @@ public class TestBookieRequestProcessor {
                 .setBody(ByteString.copyFrom("entrydata".getBytes())).setFlag(Flag.RECOVERY_ADD).setWriteFlags(0)
                 .build();
         request = Request.newBuilder().setHeader(header).setAddRequest(addRequest).build();
-        writeEntryProcessorV3 = new WriteEntryProcessorV3(request, null, null);
+        writeEntryProcessorV3 = new WriteEntryProcessorV3(request, null, requestProcessor);
         toString = writeEntryProcessorV3.toString();
         assertFalse("writeEntryProcessorV3's toString should have filtered out body", toString.contains("body"));
         assertFalse("writeEntryProcessorV3's toString should have filtered out masterKey",
@@ -188,7 +190,7 @@ public class TestBookieRequestProcessor {
                 .setMasterKey(ByteString.copyFrom("masterKey".getBytes()))
                 .setBody(ByteString.copyFrom("entrydata".getBytes())).build();
         request = Request.newBuilder().setHeader(header).setWriteLacRequest(writeLacRequest).build();
-        WriteLacProcessorV3 writeLacProcessorV3 = new WriteLacProcessorV3(request, null, null);
+        WriteLacProcessorV3 writeLacProcessorV3 = new WriteLacProcessorV3(request, null, requestProcessor);
         toString = writeLacProcessorV3.toString();
         assertFalse("writeLacProcessorV3's toString should have filtered out body", toString.contains("body"));
         assertFalse("writeLacProcessorV3's toString should have filtered out masterKey",

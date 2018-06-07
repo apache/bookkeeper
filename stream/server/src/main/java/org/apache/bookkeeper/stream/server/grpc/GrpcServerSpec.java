@@ -23,7 +23,7 @@ import lombok.experimental.Accessors;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.stream.proto.common.Endpoint;
 import org.apache.bookkeeper.stream.server.conf.StorageServerConfiguration;
-import org.apache.bookkeeper.stream.storage.api.RangeStore;
+import org.apache.bookkeeper.stream.storage.api.StorageContainerStore;
 
 /**
  * Spec for building a grpc server.
@@ -39,7 +39,7 @@ public class GrpcServerSpec {
      *
      * @return store supplier for building grpc server.
      */
-    Supplier<RangeStore> storeSupplier;
+    Supplier<StorageContainerStore> storeSupplier;
 
     /**
      * Get the storage server configuration.

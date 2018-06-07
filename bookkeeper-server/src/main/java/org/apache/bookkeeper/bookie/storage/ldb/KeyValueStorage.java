@@ -149,11 +149,11 @@ public interface KeyValueStorage extends Closeable {
      * Interface for a batch to be written in the storage.
      */
     public interface Batch extends Closeable {
-        void put(byte[] key, byte[] value);
+        void put(byte[] key, byte[] value) throws IOException;
 
-        void remove(byte[] key);
+        void remove(byte[] key) throws IOException;
 
-        void deleteRange(byte[] beginKey, byte[] endKey);
+        void deleteRange(byte[] beginKey, byte[] endKey) throws IOException;
 
         void clear();
 

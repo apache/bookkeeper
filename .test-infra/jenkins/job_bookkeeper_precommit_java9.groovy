@@ -39,14 +39,20 @@ mavenJob('bookkeeper_precommit_pullrequest_java9') {
     delegate,
     'master',
     'JDK 1.9 (latest)',
-    200)
+    200,
+    'ubuntu',
+    '${ghprbActualCommit}')
 
   // Sets that this is a PreCommit job.
-  common_job_properties.setPreCommit(delegate, 'Maven clean install (Java 9)')
+  common_job_properties.setPreCommit(
+    delegate,
+    'Build (Java 9)',
+    '.*(re)?build java9.*',
+    '.*\\[x\\] \\[skip build java9\\].*')
 
   // Set Maven parameters.
   common_job_properties.setMavenConfig(delegate)
 
   // Maven build project
-  goals('clean apache-rat:check package spotbugs:check -Dstream')
+  goals('clean package spotbugs:check -Dstream -DskipBookKeeperServerTests')
 }

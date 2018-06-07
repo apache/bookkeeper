@@ -227,7 +227,7 @@ public class DbLedgerStorageTest {
         newEntry3.writeLong(4); // ledger id
         newEntry3.writeLong(3); // entry id
         newEntry3.writeBytes("new-entry-3".getBytes());
-        long location = entryLogger.addEntry(4, newEntry3, false);
+        long location = entryLogger.addEntry(4L, newEntry3, false);
 
         List<EntryLocation> locations = Lists.newArrayList(new EntryLocation(4, 3, location));
         singleDirStorage.updateEntriesLocations(locations);
@@ -241,10 +241,12 @@ public class DbLedgerStorageTest {
     @Test
     public void doubleDirectory() throws Exception {
         int gcWaitTime = 1000;
+        File firstDir = new File(tmpDir, "dir1");
+        File secondDir = new File(tmpDir, "dir2");
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
         conf.setGcWaitTime(gcWaitTime);
         conf.setLedgerStorageClass(DbLedgerStorage.class.getName());
-        conf.setLedgerDirNames(new String[] { "dir1", "dir2" });
+        conf.setLedgerDirNames(new String[] { firstDir.getCanonicalPath(), secondDir.getCanonicalPath() });
 
         // Should not fail
         Bookie bookie = new Bookie(conf);

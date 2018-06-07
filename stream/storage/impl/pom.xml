@@ -27,11 +27,6 @@
   <artifactId>stream-storage-service-impl</artifactId>
   <name>Apache BookKeeper :: Stream Storage :: Storage :: Impl</name>
 
-  <properties>
-    <!-- dependencies -->
-    <helix-core.version>0.6.7</helix-core.version>
-  </properties>
-
   <dependencies>
     <dependency>
       <groupId>org.apache.bookkeeper</groupId>
@@ -40,13 +35,17 @@
     </dependency>
     <dependency>
       <groupId>org.apache.bookkeeper</groupId>
+      <artifactId>stream-storage-java-client-base</artifactId>
+      <version>${project.parent.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.bookkeeper</groupId>
       <artifactId>statelib</artifactId>
       <version>${project.parent.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.apache.helix</groupId>
-      <artifactId>helix-core</artifactId>
-      <version>${helix-core.version}</version>
+      <groupId>org.apache.curator</groupId>
+      <artifactId>curator-recipes</artifactId>
     </dependency>
     <dependency>
       <groupId>org.apache.distributedlog</groupId>
@@ -54,6 +53,18 @@
       <version>${project.parent.version}</version>
       <classifier>tests</classifier>
       <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.bookkeeper</groupId>
+      <artifactId>bookkeeper-common</artifactId>
+      <version>${project.parent.version}</version>
+      <classifier>tests</classifier>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.bookkeeper.tests</groupId>
+      <artifactId>stream-storage-tests-common</artifactId>
+      <version>${project.version}</version>
     </dependency>
   </dependencies>
   <build>
