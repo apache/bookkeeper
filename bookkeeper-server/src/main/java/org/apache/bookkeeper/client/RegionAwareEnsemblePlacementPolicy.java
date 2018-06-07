@@ -75,7 +75,6 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
     protected boolean enableValidation = true;
     protected boolean enforceDurabilityInReplace = false;
     protected Feature disableDurabilityFeature;
-    protected int minNumRacksPerWriteQuorum;
 
     RegionAwareEnsemblePlacementPolicy() {
         super();
@@ -203,7 +202,6 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
                         conf.getString(REPP_DISABLE_DURABILITY_FEATURE_NAME,
                                 BookKeeperConstants.FEATURE_REPP_DISABLE_DURABILITY_ENFORCEMENT));
         }
-        this.minNumRacksPerWriteQuorum = conf.getMinNumRacksPerWriteQuorum();
         return this;
     }
 
