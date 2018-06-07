@@ -136,8 +136,8 @@ public class MVCCStoreFactoryImpl implements MVCCStoreFactory {
         if (null != oldStore) {
             store.closeAsync();
         } else {
-            log.info("Add store (scId = {}, streamId = {}, rangeId = {})",
-                scId, streamId, rangeId);
+            log.info("Add store (scId = {}, streamId = {}, rangeId = {}) at storage container ({})",
+                scId, streamId, rangeId, scId);
             scStores.put(rid, store);
         }
     }
@@ -168,6 +168,9 @@ public class MVCCStoreFactoryImpl implements MVCCStoreFactory {
                 return FutureUtils.exception(new ObjectClosedException("MVCCStoreFactory"));
             }
         }
+
+        log.info("Initializing stream({})/range({}) at storage container ({})",
+            streamId, rangeId, scId);
 
         MVCCAsyncStore<byte[], byte[]> store = storeSupplier.get();
 
@@ -205,6 +208,8 @@ public class MVCCStoreFactoryImpl implements MVCCStoreFactory {
             .build();
 
         return store.init(spec).thenApply(ignored -> {
+            log.info("Successfully initialize stream({})/range({}) at storage container ({})",
+                streamId, rangeId, scId);
             addStore(scId, streamId, rangeId, store);
             return store;
         });
