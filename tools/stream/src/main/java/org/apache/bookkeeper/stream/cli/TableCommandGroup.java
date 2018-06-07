@@ -15,23 +15,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.bookkeeper.stream.cli.commands;
+package org.apache.bookkeeper.stream.cli;
 
-import com.beust.jcommander.Parameters;
-import org.apache.bookkeeper.clients.config.StorageClientSettings.Builder;
 import org.apache.bookkeeper.stream.cli.commands.table.GetCommand;
 import org.apache.bookkeeper.stream.cli.commands.table.IncrementCommand;
 import org.apache.bookkeeper.stream.cli.commands.table.PutCommand;
+import org.apache.bookkeeper.tools.common.BKFlags;
+import org.apache.bookkeeper.tools.framework.CliCommandGroup;
+import org.apache.bookkeeper.tools.framework.CliSpec;
 
 /**
- * Commands that operates a single bookie.
+ * Commands that interact with tables.
  */
-@Parameters(commandDescription = "Commands on operating tables")
-public class CmdTable extends CmdBase {
-    public CmdTable(Builder settingsBuilder) {
-        super("table", settingsBuilder);
-        addSubCommand(new PutCommand());
-        addSubCommand(new GetCommand());
-        addSubCommand(new IncrementCommand());
+public class TableCommandGroup extends CliCommandGroup<BKFlags> {
+
+    private static final String NAME = "table";
+    private static final String DESC = "Commands on interacting with tables";
+
+    private static final CliSpec<BKFlags> spec = CliSpec.<BKFlags>newBuilder()
+        .withName(NAME)
+        .withDescription(DESC)
+        .withParent("bkctl")
+        .addCommand(new PutCommand())
+        .addCommand(new GetCommand())
+        .addCommand(new IncrementCommand())
+        .build();
+
+    public TableCommandGroup() {
+        super(spec);
     }
 }

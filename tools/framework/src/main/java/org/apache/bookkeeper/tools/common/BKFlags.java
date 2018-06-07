@@ -19,11 +19,13 @@
 package org.apache.bookkeeper.tools.common;
 
 import com.beust.jcommander.Parameter;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.bookkeeper.tools.framework.CliFlags;
 
 /**
  * Default BK flags.
  */
+@SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
 public final class BKFlags extends CliFlags {
 
     @Parameter(
@@ -39,5 +41,12 @@ public final class BKFlags extends CliFlags {
         },
         description = "Configuration file")
     public String configFile = null;
+
+    @Parameter(
+        names = {
+            "-n", "--namespace"
+        },
+        description = "Namespace scope to run commands (only valid for table service for now)")
+    public String namespace = "default";
 
 }

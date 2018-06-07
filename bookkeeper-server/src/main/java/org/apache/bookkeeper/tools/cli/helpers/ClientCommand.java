@@ -24,6 +24,7 @@ import org.apache.bookkeeper.common.net.ServiceURI;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.tools.common.BKCommand;
+import org.apache.bookkeeper.tools.common.BKFlags;
 import org.apache.bookkeeper.tools.framework.CliFlags;
 import org.apache.bookkeeper.tools.framework.CliSpec;
 import org.apache.commons.configuration.CompositeConfiguration;
@@ -41,6 +42,7 @@ public abstract class ClientCommand<ClientFlagsT extends CliFlags> extends BKCom
     @Override
     protected boolean apply(ServiceURI serviceURI,
                             CompositeConfiguration conf,
+                            BKFlags globalFlags,
                             ClientFlagsT cmdFlags) {
         ClientConfiguration clientConf = new ClientConfiguration();
         clientConf.loadConf(conf);

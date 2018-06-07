@@ -54,23 +54,30 @@ function gen_bookie_section() {
   local cluster=$1
   local bookie_name=$2
   local bookie_port=$3
-  local image=$4
+  local bookie_http_port=$4
+  local bookie_grpc_port=$5
+  local image=$6
   cat <<EOF
   ${bookie_name}:
     image: ${image}
     depends_on:
       - metadata-service
     environment:
+      # metadata service
       - BK_zkServers=metadata-service
-      - BK_metadataServiceUri=zk://metadata-service/ledgers
       - BK_zkLedgersRootPath=/ledgers
-      - BK_journalDirectory=/data/bookkeeper/journal
-      - BK_ledgerDirectories=/data/bookkeeper/ledgers
-      - BK_indexDirectories=/data/bookkeeper/ledgers
-      - BK_advertisedAddress=localhost
-      - BK_bookiePort=${bookie_port}
+      - BK_metadataServiceUri=zk://metadata-service/ledgers
+      # bookie
+      - BK_DATA_DIR=/data/bookkeeper
+      - BK_advertisedAddress=${bookie_name}
+      # bookie http
+      - BK_httpServerEnabled=true
+      # stream storage
+      - BK_extraServerComponents=org.apache.bookkeeper.stream.server.StreamStorageLifecycleComponent
     ports:
-      - "${bookie_port}:${bookie_port}"
+      - "${bookie_port}:3181"
+      - "${bookie_http_port}:8080"
+      - "${bookie_grpc_port}:4181"
     volumes:
       - "${DATA_ROOT_DIR}/${cluster}/${bookie_name}/journal:/data/bookkeeper/journal"
       - "${DATA_ROOT_DIR}/${cluster}/${bookie_name}/ledgers:/data/bookkeeper/ledgers"
@@ -94,7 +101,9 @@ function generate_docker_compose_file() {
   local BI=0
   while [ ${BI} -lt $((num_bookies)) ]; do
     local bookie_port=$((3181 + BI))
-    local bookie_section=$(gen_bookie_section ${cluster} "bookie-${BI}" ${bookie_port} ${image})
+    local bookie_http_port=$((8080 + BI))
+    local bookie_grpc_port=$((4181 + BI))
+    local bookie_section=$(gen_bookie_section ${cluster} "bookie-${BI}" ${bookie_port} ${bookie_http_port} ${bookie_grpc_port} ${image})
     echo "${bookie_section}"        >> ${docker_compose_file}
     let BI=BI+1
   done

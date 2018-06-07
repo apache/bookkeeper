@@ -17,42 +17,60 @@
  */
 package org.apache.bookkeeper.stream.cli.commands.namespace;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkArgument;
 import static org.apache.bookkeeper.common.concurrent.FutureUtils.result;
 import static org.apache.bookkeeper.stream.protocol.ProtocolConstants.DEFAULT_STREAM_CONF;
 
-import com.beust.jcommander.Parameter;
-import com.beust.jcommander.Parameters;
 import org.apache.bookkeeper.clients.admin.StorageAdminClient;
 import org.apache.bookkeeper.stream.cli.commands.AdminCommand;
+import org.apache.bookkeeper.stream.cli.commands.namespace.CreateNamespaceCommand.Flags;
 import org.apache.bookkeeper.stream.proto.NamespaceConfiguration;
 import org.apache.bookkeeper.stream.proto.NamespaceProperties;
+import org.apache.bookkeeper.tools.common.BKFlags;
+import org.apache.bookkeeper.tools.framework.CliFlags;
+import org.apache.bookkeeper.tools.framework.CliSpec;
 
 /**
  * Command to create a namespace.
  */
-@Parameters(commandDescription = "Create a namespace")
-public class CreateNamespaceCommand extends AdminCommand {
+public class CreateNamespaceCommand extends AdminCommand<Flags> {
 
-    @Parameter(names = { "-n", "--name" }, description = "namespace name")
-    private String namespaceName;
+    private static final String NAME = "create";
+    private static final String DESC = "Create a namespace";
+
+    /**
+     * Flags for the create namespace command.
+     */
+    public static class Flags extends CliFlags {
+    }
+
+    public CreateNamespaceCommand() {
+        super(CliSpec.<Flags>newBuilder()
+            .withName(NAME)
+            .withDescription(DESC)
+            .withFlags(new Flags())
+            .withArgumentsUsage("<namespace-name>")
+            .build());
+    }
 
     @Override
-    protected void run(String namespace, StorageAdminClient admin) throws Exception {
-        checkNotNull(namespaceName, "Namespace name is not provided");
-        System.out.println("Creating namespace '" + namespaceName + "' ...");
+    protected void run(StorageAdminClient admin,
+                       BKFlags globalFlags,
+                       Flags flags) throws Exception {
+        checkArgument(!flags.arguments.isEmpty(),
+            "Namespace name is not provided");
+
+        String namespaceName = flags.arguments.get(0);
+
+        spec.console().println("Creating namespace '" + namespaceName + "' ...");
         NamespaceProperties nsProps = result(
             admin.createNamespace(
                 namespaceName,
                 NamespaceConfiguration.newBuilder()
                     .setDefaultStreamConf(DEFAULT_STREAM_CONF)
                     .build()));
-        System.out.println("Successfully created namespace '" + namespaceName + "':");
-        System.out.println(nsProps);
+        spec.console().println("Successfully created namespace '" + namespaceName + "':");
+        spec.console().println(nsProps);
     }
 
-    @Override
-    public String name() {
-        return "create";
-    }
 }
