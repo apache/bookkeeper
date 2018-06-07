@@ -487,23 +487,39 @@ def check_ci_status(pr):
         else:
             check_individual_ci_status(ci_status, comments)
 
+def is_check_passed(check):
+    passed = check["state"] == "success"
+    if (not passed) and is_jenkins_check(check):
+        try:
+            return is_jenkins_passed(check["target_url"])
+        except:
+            fail("failed to fetch the jenkins build status for check '%s'.\nPlease manually check its build status at %s" % (check["context"], check["target_url"]))
+    return passed
+
+def is_jenkins_check(check):
+    return check["context"].startswith("Jenkins:")
+
+def is_jenkins_passed(url):
+    jenkins_status = get_json("%sapi/json" % (url))
+    return "SUCCESS" == jenkins_status['result'] 
+
+def is_integration_test_check(check):
+    return check["context"] == u"Jenkins: Integration Tests"
 
 def check_individual_ci_status(ci_status, comments):
-    postcommit_java9_success = False
-    postcommit_java8_success = False
-    integration_tests_success = False
-    travis_success = False
+    ci_failures = []
+    ci_integration_test_failures = []
     for status in ci_status["statuses"]:
-        if status["context"] == u"Jenkins: Maven clean install (Java 9)":
-            postcommit_java9_success = status["state"] == "success"
-        elif status["context"] == u"Jenkins: Maven clean install (Java 8)": 
-            postcommit_java8_success = status["state"] == "success"
-        elif status["context"] == u"Jenkins: Integration Tests": 
-            integration_tests_success = status["state"] == "success"
-        elif status["context"] == u"continuous-integration/travis-ci/pr":
-            travis_success = status["state"] == "success"
+        is_passed = is_check_passed(status) 
+        is_integration_test = is_integration_test_check(status)
 
-    if postcommit_java8_success and postcommit_java9_success and travis_success and not integration_tests_success:
+        if is_integration_test and (not is_passed):
+            ci_integration_test_failures.append(status)
+        else:
+            if not is_passed:
+                ci_failures.append(status)
+
+    if len(ci_integration_test_failures) != 0 and len(ci_failures) == 0:
         # all ci passed except integration tests
         ignore_it_ci_comments = [c for c in comments if c["body"].upper() == "IGNORE IT CI"]
         if len(ignore_it_ci_comments) > 0:
@@ -512,12 +528,14 @@ def check_individual_ci_status(ci_status, comments):
                 + "Proceed at your own peril!\n\n"
         else:
             fail("The PR has not passed integration tests CI")
-    else:
-        fail("The PR has not passed CI:\n" \
-            + "\t Travis: %s\n" % travis_success \
-            + "\t PostCommit (Java 8): %s\n" % postcommit_java8_success \
-            + "\t PostCommit (Java 9): %s\n" % postcommit_java9_success \
-            + "\t Integration Tests: %s\n" % integration_tests_success)
+    elif len(ci_failures) == 0 or len(ci_integration_test_failures) == 0:
+        fail_msg = "The PR has not passed CI:\n"
+        print ""
+        for status in ci_failures:
+            fail_msg += "\t %s = %s\n" % (status["context"], status["state"])
+        for status in ci_integration_test_failures:
+            fail_msg += "\t %s = %s\n" % (status["context"], status["state"])
+        fail(fail_msg)
 
 def ask_release_for_github_issues(branch, labels):
     print "=== Add release to github issues ==="
