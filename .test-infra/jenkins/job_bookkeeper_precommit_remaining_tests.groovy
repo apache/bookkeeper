@@ -42,8 +42,8 @@ freeStyleJob('bookkeeper_precommit_remaining_tests') {
   common_job_properties.setPreCommit(
     delegate,
     'All Other Tests',
-    '.*(re)?run (remaining )?tests.*',
-    '.*\\[skip (remaining )?tests\\].*',
+    '.*(re)?run bookkeeper-server (remaining )?tests.*',
+    '.*\\[x\\] \\[skip bookkeeper-server (remaining )?tests\\].*',
     true)
 
   steps {

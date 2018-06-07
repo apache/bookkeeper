@@ -41,7 +41,7 @@ freeStyleJob('bookkeeper_precommit_integrationtests') {
         delegate,
         'Integration Tests',
         '.*(re)?run integration tests.*',
-        '.*\\[skip integration tests\\].*')
+        '.*\\[x\\] \\[skip integration tests\\].*')
 
     steps {
         // Temporary information gathering to see if full disks are causing the builds to flake

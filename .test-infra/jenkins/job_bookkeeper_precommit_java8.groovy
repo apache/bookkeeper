@@ -47,8 +47,8 @@ mavenJob('bookkeeper_precommit_pullrequest_java8') {
   common_job_properties.setPreCommit(
     delegate,
     'Build (Java 8)',
-    '.*(re)?build java8?.*',
-    '.*\\[skip build java8?\\].*')
+    '.*(re)?build java8.*',
+    '.*\\[x\\] \\[skip build java8\\].*')
 
   // Set Maven parameters.
   common_job_properties.setMavenConfig(delegate)

@@ -38,8 +38,8 @@ freeStyleJob('bookkeeper_precommit_tls_tests') {
   common_job_properties.setPreCommit(
     delegate,
     'TLS Tests',
-    '.*(re)?run (tls )?tests.*',
-    '.*\\[skip (tls )?tests\\].*',
+    '.*(re)?run bookkeeper-server (tls )?tests.*',
+    '.*\\[x\\] \\[skip bookkeeper-server (tls )?tests\\].*',
     true)
 
   steps {
