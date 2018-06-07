@@ -528,7 +528,7 @@ def check_individual_ci_status(ci_status, comments):
                 + "Proceed at your own peril!\n\n"
         else:
             fail("The PR has not passed integration tests CI")
-    elif len(ci_failures) == 0 or len(ci_integration_test_failures) == 0:
+    elif len(ci_failures) != 0 or len(ci_integration_test_failures) != 0:
         fail_msg = "The PR has not passed CI:\n"
         print ""
         for status in ci_failures:
