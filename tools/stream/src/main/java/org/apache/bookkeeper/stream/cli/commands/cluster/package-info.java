@@ -15,19 +15,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.bookkeeper.stream.cli.commands;
-
-import com.beust.jcommander.Parameters;
-import org.apache.bookkeeper.clients.config.StorageClientSettings;
-import org.apache.bookkeeper.stream.cli.commands.namespace.CreateNamespaceCommand;
 
 /**
- * Commands that operates a single bookie.
+ * This package contains all the cluster related commands.
  */
-@Parameters(commandDescription = "Commands on operating namespaces")
-public class CmdNamespace extends CmdBase {
-    public CmdNamespace(StorageClientSettings.Builder settingsBuilder) {
-        super("namespace", settingsBuilder);
-        addSubCommand(new CreateNamespaceCommand());
-    }
-}
+package org.apache.bookkeeper.stream.cli.commands.cluster;

@@ -17,48 +17,57 @@
  */
 package org.apache.bookkeeper.stream.cli.commands.table;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkArgument;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.bookkeeper.common.concurrent.FutureUtils.result;
 
-import com.beust.jcommander.Parameter;
-import com.beust.jcommander.Parameters;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import org.apache.bookkeeper.api.StorageClient;
 import org.apache.bookkeeper.api.kv.Table;
 import org.apache.bookkeeper.stream.cli.commands.ClientCommand;
+import org.apache.bookkeeper.stream.cli.commands.table.IncrementCommand.Flags;
+import org.apache.bookkeeper.tools.framework.CliFlags;
+import org.apache.bookkeeper.tools.framework.CliSpec;
 
 /**
- * Commands to put kvs.
+ * Commands to increment amount of keys.
  */
-@Parameters(commandDescription = "Increment the amount of a key in a table")
-public class IncrementCommand extends ClientCommand {
+public class IncrementCommand extends ClientCommand<Flags> {
 
-    @Parameter(names = { "-t", "--table" }, description = "table name")
-    private String tableName = null;
+    private static final String NAME = "inc";
+    private static final String DESC = "Increment the amount of a key in a table";
 
-    @Parameter(names = { "-k", "--key" }, description = "key")
-    private String key = null;
+    /**
+     * Flags of the increment command.
+     */
+    public static class Flags extends CliFlags {
+    }
 
-    @Parameter(names = { "-a", "--amount" }, description = "amount to increment")
-    private long amount = 0;
+    public IncrementCommand() {
+        super(CliSpec.<Flags>newBuilder()
+            .withName(NAME)
+            .withDescription(DESC)
+            .withFlags(new Flags())
+            .withArgumentsUsage("<table> <key> <amount>")
+            .build());
+    }
 
     @Override
-    protected void run(StorageClient client) throws Exception {
-        checkNotNull(tableName, "Table name is not provided");
-        checkNotNull(key, "Key is not provided");
+    protected void run(StorageClient client, Flags flags) throws Exception {
+        checkArgument(flags.arguments.size() >= 3,
+            "table and key/amount are not provided");
+
+        String tableName = flags.arguments.get(0);
+        String key = flags.arguments.get(1);
+        long amount = Long.parseLong(flags.arguments.get(2));
 
         try (Table<ByteBuf, ByteBuf> table = result(client.openTable(tableName))) {
             result(table.increment(
                 Unpooled.wrappedBuffer(key.getBytes(UTF_8)),
                 amount));
-            System.out.println("Successfully increment kv: ('" + key + "', amount = '" + amount + "').");
+            spec.console().println("Successfully increment kv: ('" + key + "', amount = '" + amount + "').");
         }
     }
 
-    @Override
-    public String name() {
-        return "incr";
-    }
 }

@@ -21,6 +21,7 @@ package org.apache.bookkeeper.tools.cli.helpers;
 import org.apache.bookkeeper.common.net.ServiceURI;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.tools.common.BKCommand;
+import org.apache.bookkeeper.tools.common.BKFlags;
 import org.apache.bookkeeper.tools.framework.CliFlags;
 import org.apache.bookkeeper.tools.framework.CliSpec;
 import org.apache.commons.configuration.CompositeConfiguration;
@@ -37,6 +38,7 @@ public abstract class BookieCommand<BookieFlagsT extends CliFlags> extends BKCom
     @Override
     protected boolean apply(ServiceURI serviceURI,
                             CompositeConfiguration conf,
+                            BKFlags globalFlags,
                             BookieFlagsT cmdFlags) {
         ServerConfiguration serverConf = new ServerConfiguration();
         serverConf.loadConf(conf);

@@ -77,7 +77,7 @@ public abstract class BKCommand<CommandFlagsT extends CliFlags> extends CliComma
             }
         }
 
-        return apply(serviceURI, conf, cmdFlags);
+        return apply(serviceURI, conf, bkFlags, cmdFlags);
     }
 
     protected boolean acceptServiceUri(ServiceURI serviceURI) {
@@ -86,6 +86,7 @@ public abstract class BKCommand<CommandFlagsT extends CliFlags> extends CliComma
 
     protected abstract boolean apply(ServiceURI serviceURI,
                                      CompositeConfiguration conf,
+                                     BKFlags globalFlags,
                                      CommandFlagsT cmdFlags);
 
 }

@@ -231,6 +231,7 @@ public class Cli<CliFlagsT extends CliFlags> {
             try {
                 return command.apply(spec.flags(), subCmdArgs);
             } catch (Exception e) {
+                e.printStackTrace(spec.console());
                 usage(e.getMessage());
                 return false;
             }

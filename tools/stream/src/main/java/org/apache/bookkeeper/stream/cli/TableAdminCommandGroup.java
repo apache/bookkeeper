@@ -15,26 +15,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.bookkeeper.stream.cli.commands;
+package org.apache.bookkeeper.stream.cli;
 
-import org.apache.bookkeeper.api.StorageClient;
-import org.apache.bookkeeper.clients.StorageClientBuilder;
-import org.apache.bookkeeper.clients.config.StorageClientSettings;
+import org.apache.bookkeeper.stream.cli.commands.table.CreateTableCommand;
+import org.apache.bookkeeper.tools.common.BKFlags;
+import org.apache.bookkeeper.tools.framework.CliCommandGroup;
+import org.apache.bookkeeper.tools.framework.CliSpec;
 
 /**
- * An admin command interface provides a run method to execute admin commands.
+ * Commands that admin tables.
  */
-public abstract class ClientCommand implements SubCommand {
+public class TableAdminCommandGroup extends CliCommandGroup<BKFlags> {
 
-    @Override
-    public void run(String namespace, StorageClientSettings settings) throws Exception {
-        try (StorageClient client = StorageClientBuilder.newBuilder()
-            .withSettings(settings)
-            .withNamespace(namespace)
-            .build()) {
-            run(client);
-        }
+    private static final String NAME = "tables";
+    private static final String DESC = "Commands on operating tables";
+
+    private static final CliSpec<BKFlags> spec = CliSpec.<BKFlags>newBuilder()
+        .withName(NAME)
+        .withDescription(DESC)
+        .withParent("bkctl")
+        .addCommand(new CreateTableCommand())
+        .build();
+
+    public TableAdminCommandGroup() {
+        super(spec);
     }
-
-    protected abstract void run(StorageClient client) throws Exception;
 }

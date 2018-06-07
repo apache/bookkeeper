@@ -36,6 +36,11 @@
       <version>${project.parent.version}</version>
     </dependency>
     <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-log4j12</artifactId>
+      <scope>runtime</scope>
+    </dependency>
+    <dependency>
       <groupId>org.apache.bookkeeper</groupId>
       <artifactId>buildtools</artifactId>
       <version>${project.parent.version}</version>
@@ -49,4 +54,22 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
+  <profiles>
+    <profile>
+      <id>stream</id>
+      <activation>
+        <property>
+          <name>stream</name>
+        </property>
+      </activation>
+      <dependencies>
+        <!-- stream.storage -->
+        <dependency>
+          <groupId>org.apache.bookkeeper</groupId>
+          <artifactId>stream-storage-cli</artifactId>
+          <version>${project.version}</version>
+        </dependency>
+      </dependencies>
+    </profile>
+  </profiles>
 </project>

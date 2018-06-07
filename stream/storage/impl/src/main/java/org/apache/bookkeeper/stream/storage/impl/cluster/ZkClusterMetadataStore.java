@@ -42,6 +42,7 @@ import org.apache.curator.framework.recipes.cache.NodeCache;
 import org.apache.curator.framework.recipes.cache.NodeCacheListener;
 import org.apache.distributedlog.impl.metadata.BKDLConfig;
 import org.apache.distributedlog.metadata.DLMetadata;
+import org.apache.zookeeper.KeeperException;
 
 /**
  * A zookeeper based implementation of cluster metadata store.
@@ -93,7 +94,7 @@ public class ZkClusterMetadataStore implements ClusterMetadataStore {
     }
 
     @Override
-    public void initializeCluster(int numStorageContainers, Optional<String> segmentStorePath) {
+    public boolean initializeCluster(int numStorageContainers, Optional<String> segmentStorePath) {
         ClusterMetadata metadata = ClusterMetadata.newBuilder()
             .setNumStorageContainers(numStorageContainers)
             .build();
@@ -113,7 +114,13 @@ public class ZkClusterMetadataStore implements ClusterMetadataStore {
                     client.transactionOp().create().forPath(getServersPath(zkRootPath)),
                     client.transactionOp().create().forPath(getWritableServersPath(zkRootPath)),
                     client.transactionOp().create().forPath(getStoragePath(zkRootPath), dlogMetadata.serialize()));
+            return true;
         } catch (Exception e) {
+            if (e instanceof KeeperException.NodeExistsException) {
+                // the cluster already exists.
+                log.info("Stream storage cluster is already initialized.");
+                return false;
+            }
             throw new StorageRuntimeException("Failed to initialize storage cluster with "
                 + numStorageContainers + " storage containers", e);
         }

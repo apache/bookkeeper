@@ -51,7 +51,7 @@ public class ZkClusterInitializer implements ClusterInitializer  {
     }
 
     @Override
-    public void initializeCluster(URI metadataServiceUri, int numStorageContainers) {
+    public boolean initializeCluster(URI metadataServiceUri, int numStorageContainers) {
         String zkInternalConnectString = ZKMetadataDriverBase.getZKServersFromServiceUri(metadataServiceUri);
         // 1) `zkExternalConnectString` are the public endpoints, where the tool can interact with.
         //    It allows the tools running outside of the cluster. It is useful for being used in dockerized environment.
@@ -70,6 +70,7 @@ public class ZkClusterInitializer implements ClusterInitializer  {
             try {
                 metadata = store.getClusterMetadata();
                 log.info("Loaded cluster metadata : \n{}", metadata);
+                return false;
             } catch (StorageRuntimeException sre) {
                 if (sre.getCause() instanceof KeeperException.NoNodeException) {
                     log.info("Initializing the stream cluster with {} storage containers with segment store path {}.",
@@ -83,8 +84,9 @@ public class ZkClusterInitializer implements ClusterInitializer  {
                         segmentStorePath = Optional.of(ledgersPath);
                     }
 
-                    store.initializeCluster(numStorageContainers, segmentStorePath);
+                    boolean initialized = store.initializeCluster(numStorageContainers, segmentStorePath);
                     log.info("Successfully initialized the stream cluster : \n{}", store.getClusterMetadata());
+                    return initialized;
                 } else {
                     throw sre;
                 }
