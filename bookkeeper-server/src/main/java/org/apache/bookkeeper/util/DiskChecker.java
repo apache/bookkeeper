@@ -153,17 +153,17 @@ public class DiskChecker {
             float free = (float) usableSpace / (float) totalSpace;
             float used = 1f - free;
             if (used > diskUsageThreshold) {
-                LOG.error("Space left on device {} : {}, Used space fraction: {} < threshold {}.",
+                LOG.error("Space left on device {} : {}, Used space fraction: {} > threshold {}.",
                         dir, usableSpace, used, diskUsageThreshold);
                 throw new DiskOutOfSpaceException("Space left on device "
-                        + usableSpace + " Used space fraction:" + used + " < threshold " + diskUsageThreshold, used);
+                        + usableSpace + " Used space fraction:" + used + " > threshold " + diskUsageThreshold, used);
             }
             // Warn should be triggered only if disk usage threshold doesn't trigger first.
             if (used > diskUsageWarnThreshold) {
-                LOG.warn("Space left on device {} : {}, Used space fraction: {} < WarnThreshold {}.",
+                LOG.warn("Space left on device {} : {}, Used space fraction: {} > WarnThreshold {}.",
                         dir, usableSpace, used, diskUsageThreshold);
                 throw new DiskWarnThresholdException("Space left on device:"
-                        + usableSpace + " Used space fraction:" + used + " < WarnThreshold:" + diskUsageWarnThreshold,
+                        + usableSpace + " Used space fraction:" + used + " > WarnThreshold:" + diskUsageWarnThreshold,
                         used);
             }
             return used;
