@@ -500,7 +500,7 @@ def is_jenkins_check(check):
     return check["context"].startswith("Jenkins:")
 
 def is_jenkins_passed(url):
-    jenkins_status = get_json("%sapi/json" % (url))
+    jenkins_status = get_json("%sapi/json?tree=result" % (url))
     return "SUCCESS" == jenkins_status['result'] 
 
 def is_integration_test_check(check):
