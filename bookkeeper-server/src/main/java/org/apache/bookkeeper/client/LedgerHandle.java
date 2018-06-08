@@ -99,6 +99,8 @@ import org.slf4j.LoggerFactory;
 public class LedgerHandle implements WriteHandle {
     static final Logger LOG = LoggerFactory.getLogger(LedgerHandle.class);
 
+    static final long PENDINGREQ_NOTWRITABLE_MASK = 0x01L << 62;
+
     final byte[] ledgerKey;
     LedgerMetadata metadata;
     final BookKeeper bk;
@@ -224,7 +226,13 @@ public class LedgerHandle implements WriteHandle {
             @Override
             public long getBookiePendingRequests(BookieSocketAddress bookieSocketAddress) {
                 PerChannelBookieClientPool pcbcPool = bk.bookieClient.lookupClient(bookieSocketAddress);
-                return pcbcPool == null ? 0 : pcbcPool.getNumPendingCompletionRequests();
+                if (pcbcPool == null) {
+                    return 0;
+                } else if (pcbcPool.isWritable(ledgerId)) {
+                    return pcbcPool.getNumPendingCompletionRequests();
+                } else {
+                    return pcbcPool.getNumPendingCompletionRequests() | PENDINGREQ_NOTWRITABLE_MASK;
+                }
             }
         };
 
