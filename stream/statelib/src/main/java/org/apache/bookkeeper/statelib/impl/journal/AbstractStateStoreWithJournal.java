@@ -325,6 +325,10 @@ public abstract class AbstractStateStoreWithJournal<LocalStateStoreT extends Sta
                         record, record.getDlsn(), name());
                 }
                 try {
+                    if (log.isDebugEnabled()) {
+                        log.debug("Applying command transaction {} - record {} @ {} to mvcc store {}",
+                            record.getTransactionId(), record, record.getDlsn(), name());
+                    }
                     commandProcessor.applyCommand(record.getTransactionId(), record.getPayloadBuf(), localStore);
 
                     if (record.getDlsn().compareTo(endDLSN) >= 0) {
@@ -334,9 +338,15 @@ public abstract class AbstractStateStoreWithJournal<LocalStateStoreT extends Sta
                         return;
                     }
 
+                    if (log.isDebugEnabled()) {
+                        log.debug("Read next record after {} at mvcc store {}",
+                            record.getDlsn(), name());
+                    }
                     // read next record
                     replayJournal(reader, endDLSN, future);
-                } catch (StateStoreRuntimeException e) {
+                } catch (Exception e) {
+                    log.error("Exception is thrown when applying command record {} @ {} to mvcc store {}",
+                        record, record.getDlsn(), name());
                     FutureUtils.completeExceptionally(future, e);
                 }
             }

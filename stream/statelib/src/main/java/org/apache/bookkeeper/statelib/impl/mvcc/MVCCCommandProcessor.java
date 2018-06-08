@@ -25,15 +25,18 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.api.kv.op.DeleteOp;
 import org.apache.bookkeeper.api.kv.op.IncrementOp;
 import org.apache.bookkeeper.api.kv.op.PutOp;
+import org.apache.bookkeeper.api.kv.op.TxnOp;
 import org.apache.bookkeeper.api.kv.result.Code;
 import org.apache.bookkeeper.api.kv.result.DeleteResult;
 import org.apache.bookkeeper.api.kv.result.IncrementResult;
 import org.apache.bookkeeper.api.kv.result.PutResult;
+import org.apache.bookkeeper.api.kv.result.TxnResult;
 import org.apache.bookkeeper.statelib.api.exceptions.MVCCStoreException;
 import org.apache.bookkeeper.statelib.impl.journal.CommandProcessor;
 import org.apache.bookkeeper.statelib.impl.mvcc.op.proto.ProtoDeleteOpImpl;
 import org.apache.bookkeeper.statelib.impl.mvcc.op.proto.ProtoIncrementOpImpl;
 import org.apache.bookkeeper.statelib.impl.mvcc.op.proto.ProtoPutOpImpl;
+import org.apache.bookkeeper.statelib.impl.mvcc.op.proto.ProtoTxnOpImpl;
 import org.apache.bookkeeper.stream.proto.kv.store.Command;
 
 @Slf4j
@@ -89,7 +92,28 @@ class MVCCCommandProcessor implements CommandProcessor<MVCCStoreImpl<byte[], byt
 
     private void applyTxnCommand(long revision, Command command,
                                  MVCCStoreImpl<byte[], byte[]> store) {
-        throw new UnsupportedOperationException();
+        try (ProtoTxnOpImpl op = ProtoTxnOpImpl.newTxnOp(command.getTxnReq())) {
+            applyTxnOp(revision, op, true, store);
+        }
+    }
+
+    private void applyTxnOp(long revision,
+                            TxnOp<byte[], byte[]> op,
+                            boolean ignoreSmallerRevision,
+                            MVCCStoreImpl<byte[], byte[]> localStore) {
+        try (TxnResult<byte[], byte[]> result = localStore.processTxn(revision, op)) {
+            if (log.isDebugEnabled()) {
+                log.debug("Result after applying transaction {} : {} - success = {}",
+                    revision, result.code(), result.isSuccess());
+            }
+            if (Code.OK == result.code()
+                || (ignoreSmallerRevision && Code.SMALLER_REVISION == result.code())) {
+                return;
+            }
+            throw new MVCCStoreException(result.code(),
+                "Failed to apply command " + op + " at revision "
+                    + revision + " to the state store " + localStore.name());
+        }
     }
 
     private void applyIncrCommand(long revision, Command command,
