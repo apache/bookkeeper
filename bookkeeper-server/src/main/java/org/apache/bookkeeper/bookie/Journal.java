@@ -390,6 +390,16 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
             }
         }
 
+        @Override
+        public String toString() {
+            return "ForceWriteRequest{"
+                    + "forceWriteWaiters=" + forceWriteWaiters
+                    + ", shouldClose=" + shouldClose
+                    + ", isMarker=" + isMarker
+                    + ", lastFlushedPosition=" + lastFlushedPosition
+                    + ", logId=" + logId + '}';
+        }
+
         public void closeFileIfNecessary() {
             // Close if shouldClose is set
             if (shouldClose) {

@@ -302,6 +302,8 @@ public class BookieJournalForceTest {
         LinkedBlockingQueue<ForceWriteRequest> supportQueue = new LinkedBlockingQueue<>();
         BlockingQueue<ForceWriteRequest> forceWriteRequests = mock(BlockingQueue.class);
         doAnswer((Answer) (InvocationOnMock iom) -> {
+            log.error("something put " + iom.getArgument(0) + " on journal queue",
+                    new Exception().fillInStackTrace());
             supportQueue.put(iom.getArgument(0));
             return null;
         }).when(forceWriteRequests).put(any(ForceWriteRequest.class));
@@ -320,6 +322,7 @@ public class BookieJournalForceTest {
         Bookie.checkDirectoryStructure(Bookie.getCurrentDirectory(journalDir));
 
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setJournalFlushWhenQueueEmpty(false);
         conf.setJournalDirName(journalDir.getPath());
 
         JournalChannel jc = spy(new JournalChannel(journalDir, 1));
@@ -364,7 +367,8 @@ public class BookieJournalForceTest {
 
         verify(jc, atLeast(1)).forceWrite(false);
 
-        assertEquals(0, supportQueue.size());
+        assertEquals("SupportQueue should be empty but was " + supportQueue,
+                0,  supportQueue.size());
 
         // verify that log marker advanced
         LastLogMark lastLogMarkAfterForceWrite = journal.getLastLogMark();
