@@ -162,7 +162,7 @@ public class TestVarInt {
         return VarInt.decodeLong(stream);
     }
 
-    @Test(timeout = 10000)
+    @Test
     public void decodeValues() throws IOException {
         assertEquals(LONG_VALUES.length, LONG_ENCODED.length);
         for (int i = 0; i < LONG_ENCODED.length; ++i) {
@@ -181,7 +181,7 @@ public class TestVarInt {
         }
     }
 
-    @Test(timeout = 10000)
+    @Test
     public void encodeValuesAndGetLength() throws IOException {
         assertEquals(LONG_VALUES.length, LONG_ENCODED.length);
         for (int i = 0; i < LONG_VALUES.length; ++i) {
@@ -198,7 +198,7 @@ public class TestVarInt {
         }
     }
 
-    @Test(timeout = 10000)
+    @Test
     public void decodeThrowsExceptionForOverflow() throws IOException {
         final byte[] tooLargeNumber =
             {(byte) 0xff, (byte) 0xff, (byte) 0xff, (byte) 0xff, (byte) 0xff,
@@ -208,7 +208,7 @@ public class TestVarInt {
         decodeLong(tooLargeNumber);
     }
 
-    @Test(timeout = 10000)
+    @Test
     public void decodeThrowsExceptionForIntOverflow() throws IOException {
         byte[] encoded = encodeLong(1L << 32);
 
@@ -216,7 +216,7 @@ public class TestVarInt {
         decodeInt(encoded);
     }
 
-    @Test(timeout = 10000)
+    @Test
     public void decodeThrowsExceptionForIntUnderflow() throws IOException {
         byte[] encoded = encodeLong(-1);
 
@@ -224,7 +224,7 @@ public class TestVarInt {
         decodeInt(encoded);
     }
 
-    @Test(timeout = 10000)
+    @Test
     public void decodeThrowsExceptionForNonterminated() throws IOException {
         final byte[] nonTerminatedNumber =
             {(byte) 0xff, (byte) 0xff};
@@ -233,7 +233,7 @@ public class TestVarInt {
         decodeLong(nonTerminatedNumber);
     }
 
-    @Test(timeout = 10000)
+    @Test
     public void decodeParsesEncodedValues() throws IOException {
         ByteArrayOutputStream outStream = new ByteArrayOutputStream();
         for (int i = 10; i < Integer.MAX_VALUE; i = (int) (i * 1.1)) {
@@ -257,7 +257,7 @@ public class TestVarInt {
         }
     }
 
-    @Test(timeout = 10000)
+    @Test
     public void endOfFileThrowsException() throws Exception {
         ByteArrayInputStream inStream =
             new ByteArrayInputStream(new byte[0]);
@@ -265,7 +265,7 @@ public class TestVarInt {
         VarInt.decodeInt(inStream);
     }
 
-    @Test(timeout = 10000)
+    @Test
     public void unterminatedThrowsException() throws Exception {
         byte[] e = encodeLong(Long.MAX_VALUE);
         byte[] s = new byte[1];

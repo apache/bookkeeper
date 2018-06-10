@@ -33,7 +33,7 @@ public class TestVarIntCoder extends CoderBasicTestCase {
         Integer.MAX_VALUE,
         Integer.MIN_VALUE);
 
-    @Test(timeout = 10000)
+    @Test
     public void testDecodeEncodeEquals() throws Exception {
         for (Integer value : TEST_VALUES) {
             coderDecodeEncodeEqual(TEST_CODER, value);

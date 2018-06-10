@@ -34,7 +34,7 @@ public class TestStringUtf8Coder extends CoderBasicTestCase {
         "a string with a \n newline",
         "スタリング");
 
-    @Test(timeout = 10000)
+    @Test
     public void testDecodeEncodeEquals() throws Exception {
         for (String value : TEST_VALUES) {
             coderDecodeEncodeEqual(TEST_CODER, value);

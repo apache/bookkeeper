@@ -37,14 +37,14 @@ public class TestByteArrayCoder extends CoderBasicTestCase {
         new byte[]{0xd, 0xe},
         new byte[]{});
 
-    @Test(timeout = 10000)
+    @Test
     public void testDecodeEncodeEquals() throws Exception {
         for (byte[] value : TEST_VALUES) {
             coderDecodeEncodeEqual(TEST_CODER, value);
         }
     }
 
-    @Test(timeout = 10000)
+    @Test
     public void testEncodeThenMutate() throws Exception {
         byte[] input = {0x7, 0x3, 0xA, 0xf};
         byte[] encoded = encode(TEST_CODER, input);
