@@ -37,7 +37,11 @@ public interface Coder<T> extends Serializable {
      * @return the serialized bytes buf.
      */
     default ByteBuf encodeBuf(T value) {
-        return Unpooled.wrappedBuffer(encode(value));
+        int len = getSerializedSize(value);
+        ByteBuf buffer = Unpooled.buffer(len, len);
+        buffer.setIndex(0, 0);
+        encode(value, buffer);
+        return buffer;
     }
 
     /**
@@ -46,7 +50,13 @@ public interface Coder<T> extends Serializable {
      * @param value value to encode
      * @return the serialized bytes bytes.
      */
-    byte[] encode(T value);
+    default byte[] encode(T value) {
+        byte[] data = new byte[getSerializedSize(value)];
+        ByteBuf buf = Unpooled.wrappedBuffer(data);
+        buf.setIndex(0, 0);
+        encode(value, buf);
+        return data;
+    }
 
     /**
      * Encodes the given value of type {@code T} into the <tt>destBuf</tt>.
