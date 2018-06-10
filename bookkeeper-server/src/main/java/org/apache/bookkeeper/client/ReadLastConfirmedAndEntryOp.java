@@ -557,22 +557,28 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
             hasValidResponse = true;
 
             if (entryId != BookieProtocol.LAST_ADD_CONFIRMED) {
-                buffer.retain();
-                if (request.complete(rCtx.getBookieIndex(), bookie, buffer, entryId)) {
-                    // callback immediately
-                    if (rCtx.getLacUpdateTimestamp().isPresent()) {
-                        long elapsedMicros = TimeUnit.MILLISECONDS.toMicros(System.currentTimeMillis()
-                                - rCtx.getLacUpdateTimestamp().get());
-                        elapsedMicros = Math.max(elapsedMicros, 0);
-                        lh.bk.getReadLacAndEntryRespLogger()
-                            .registerSuccessfulEvent(elapsedMicros, TimeUnit.MICROSECONDS);
-                    }
+                if(requestComplete.get()){
+                    LOG.warn("Request is already completed, then right data come. (lac={}) from bookie({}) for (lid={}).",
+                            rCtx.getLastAddConfirmed(), bookie, ledgerId);
+                }
+                else {
+                    buffer.retain();
+                    if (request.complete(rCtx.getBookieIndex(), bookie, buffer, entryId)) {
+                        // callback immediately
+                        if (rCtx.getLacUpdateTimestamp().isPresent()) {
+                            long elapsedMicros = TimeUnit.MILLISECONDS.toMicros(System.currentTimeMillis()
+                                    - rCtx.getLacUpdateTimestamp().get());
+                            elapsedMicros = Math.max(elapsedMicros, 0);
+                            lh.bk.getReadLacAndEntryRespLogger()
+                                    .registerSuccessfulEvent(elapsedMicros, TimeUnit.MICROSECONDS);
+                        }
 
-                    submitCallback(BKException.Code.OK);
-                    requestComplete.set(true);
-                    heardFromHostsBitSet.set(rCtx.getBookieIndex(), true);
-                } else {
-                    buffer.release();
+                        submitCallback(BKException.Code.OK);
+                        requestComplete.set(true);
+                        heardFromHostsBitSet.set(rCtx.getBookieIndex(), true);
+                    } else {
+                        buffer.release();
+                    }
                 }
             } else {
                 emptyResponsesFromHostsBitSet.set(rCtx.getBookieIndex(), true);
