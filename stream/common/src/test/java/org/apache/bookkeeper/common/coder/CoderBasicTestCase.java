@@ -18,6 +18,7 @@
 package org.apache.bookkeeper.common.coder;
 
 import static org.hamcrest.CoreMatchers.equalTo;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 
 import io.netty.buffer.ByteBuf;
@@ -39,7 +40,9 @@ public abstract class CoderBasicTestCase {
     }
 
     private static <T> T decodeEncode(Coder<T> coder, T value) {
-        return decode(coder, encode(coder, value));
+        byte[] data = encode(coder, value);
+        assertEquals(coder.getSerializedSize(value), data.length);
+        return decode(coder, data);
     }
 
     public static <T> void coderDecodeEncodeEqual(Coder<T> coder, T value) {
