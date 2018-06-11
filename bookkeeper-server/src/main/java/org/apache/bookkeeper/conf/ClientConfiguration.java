@@ -1129,7 +1129,7 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
 
     /**
      * Get the threshold for the number of pending requests beyond which to reorder
-     * reads. If <= zero, this feature is turned off.
+     * reads. If &lt;= zero, this feature is turned off.
      *
      * @return the threshold for the number of pending requests beyond which to
      *         reorder reads.
