@@ -31,7 +31,7 @@ import org.apache.bookkeeper.stream.proto.kv.rpc.Compare.CompareTarget;
 import org.junit.Test;
 
 /**
- * Unit test {@link ProtoCompareImpl}
+ * Unit test {@link ProtoCompareImpl}.
  */
 public class ProtoCompareImplTest {
 
