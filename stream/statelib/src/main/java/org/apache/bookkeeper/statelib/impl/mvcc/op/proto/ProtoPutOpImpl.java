@@ -42,6 +42,12 @@ public class ProtoPutOpImpl implements PutOp<byte[], byte[]>, PutOption<byte[]> 
         return op;
     }
 
+    public static ProtoPutOpImpl newPutOp(PutRequest req) {
+        ProtoPutOpImpl op = RECYCLER.get();
+        op.setPutRequest(req);
+        return op;
+    }
+
     private static final Recycler<ProtoPutOpImpl> RECYCLER = new Recycler<ProtoPutOpImpl>() {
         @Override
         protected ProtoPutOpImpl newObject(Handle<ProtoPutOpImpl> handle) {
@@ -71,6 +77,10 @@ public class ProtoPutOpImpl implements PutOp<byte[], byte[]>, PutOption<byte[]> 
 
     public void setCommand(Command command) {
         this.req = command.getPutReq();
+    }
+
+    public void setPutRequest(PutRequest request) {
+        this.req = request;
     }
 
     @Override

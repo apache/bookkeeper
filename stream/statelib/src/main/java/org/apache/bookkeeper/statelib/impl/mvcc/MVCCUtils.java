@@ -45,6 +45,9 @@ import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.statelib.api.exceptions.MVCCStoreException;
 import org.apache.bookkeeper.statelib.api.exceptions.StateStoreRuntimeException;
 import org.apache.bookkeeper.statelib.impl.Constants;
+import org.apache.bookkeeper.statelib.impl.mvcc.op.proto.ProtoDeleteOpImpl;
+import org.apache.bookkeeper.statelib.impl.mvcc.op.proto.ProtoPutOpImpl;
+import org.apache.bookkeeper.statelib.impl.mvcc.op.proto.ProtoRangeOpImpl;
 import org.apache.bookkeeper.stream.proto.kv.rpc.Compare;
 import org.apache.bookkeeper.stream.proto.kv.rpc.DeleteRangeRequest;
 import org.apache.bookkeeper.stream.proto.kv.rpc.IncrementRequest;
@@ -144,6 +147,20 @@ public final class MVCCUtils {
         return requestOps;
     }
 
+    public static Op<byte[], byte[]> toApiOp(RequestOp protoOp) {
+        switch (protoOp.getRequestCase()) {
+            case REQUEST_PUT:
+                return ProtoPutOpImpl.newPutOp(protoOp.getRequestPut());
+            case REQUEST_RANGE:
+                return ProtoRangeOpImpl.newRangeOp(protoOp.getRequestRange());
+            case REQUEST_DELETE_RANGE:
+                return ProtoDeleteOpImpl.newDeleteOp(protoOp.getRequestDeleteRange());
+            default:
+                throw new IllegalArgumentException("Unknown request "
+                    + protoOp.getRequestCase() + " found in a txn request");
+        }
+    }
+
     private static List<Compare> toCompareList(List<CompareOp<byte[], byte[]>> ops) {
         List<Compare> compares = Lists.newArrayListWithExpectedSize(ops.size());
         for (CompareOp<byte[], byte[]> op : ops) {
@@ -193,6 +210,21 @@ public final class MVCCUtils {
         }
     }
 
+    public static CompareTarget toApiCompareTarget(Compare.CompareTarget target) {
+        switch (target) {
+            case MOD:
+                return CompareTarget.MOD;
+            case CREATE:
+                return CompareTarget.CREATE;
+            case VERSION:
+                return CompareTarget.VERSION;
+            case VALUE:
+                return CompareTarget.VALUE;
+            default:
+                throw new IllegalArgumentException("Invalid proto compare target " + target);
+        }
+    }
+
     private static Compare.CompareResult toProtoCompareResult(CompareResult result) {
         switch (result) {
             case LESS:
@@ -205,6 +237,21 @@ public final class MVCCUtils {
                 return Compare.CompareResult.NOT_EQUAL;
             default:
                 throw new IllegalArgumentException("Invalid compare result " + result);
+        }
+    }
+
+    public static CompareResult toApiCompareResult(Compare.CompareResult result) {
+        switch (result) {
+            case LESS:
+                return CompareResult.LESS;
+            case EQUAL:
+                return CompareResult.EQUAL;
+            case GREATER:
+                return CompareResult.GREATER;
+            case NOT_EQUAL:
+                return CompareResult.NOT_EQUAL;
+            default:
+                throw new IllegalArgumentException("Invalid proto compare result " + result);
         }
     }
 
