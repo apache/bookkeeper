@@ -302,7 +302,7 @@ public class BookieJournalForceTest {
         LinkedBlockingQueue<ForceWriteRequest> supportQueue = new LinkedBlockingQueue<>();
         BlockingQueue<ForceWriteRequest> forceWriteRequests = mock(BlockingQueue.class);
         doAnswer((Answer) (InvocationOnMock iom) -> {
-            log.error("something put " + iom.getArgument(0) + " on journal queue",
+            log.error("something put {} on journal queue", iom.getArgument(0),
                     new Exception().fillInStackTrace());
             supportQueue.put(iom.getArgument(0));
             return null;
