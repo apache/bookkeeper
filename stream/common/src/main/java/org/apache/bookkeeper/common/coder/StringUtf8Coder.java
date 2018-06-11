@@ -18,7 +18,10 @@
 
 package org.apache.bookkeeper.common.coder;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import com.google.common.base.Charsets;
+import com.google.common.base.Utf8;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
 import lombok.AccessLevel;
@@ -42,18 +45,13 @@ public final class StringUtf8Coder implements Coder<String> {
     private static final StringUtf8Coder INSTANCE = new StringUtf8Coder();
 
     @Override
-    public byte[] encode(String value) {
-        return value.getBytes(Charsets.UTF_8);
-    }
-
-    @Override
     public void encode(String value, ByteBuf destBuf) {
-        destBuf.writeCharSequence(value, Charsets.UTF_8);
+        destBuf.writeBytes(value.getBytes(UTF_8));
     }
 
     @Override
     public int getSerializedSize(String value) {
-        return value.length();
+        return Utf8.encodedLength(value);
     }
 
     @Override
