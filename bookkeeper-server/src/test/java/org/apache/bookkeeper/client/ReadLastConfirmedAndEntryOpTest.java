@@ -21,6 +21,8 @@ package org.apache.bookkeeper.client;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -34,10 +36,13 @@ import io.netty.buffer.Unpooled;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.client.BKException.Code;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
@@ -48,11 +53,13 @@ import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieClient;
+import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
+import org.apache.bookkeeper.proto.ReadLastConfirmedAndEntryContext;
 import org.apache.bookkeeper.proto.checksum.DigestManager;
 import org.apache.bookkeeper.proto.checksum.DummyDigestManager;
+import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.test.TestStatsProvider;
-import org.apache.bookkeeper.test.TestStatsProvider.TestOpStatsLogger;
 import org.apache.bookkeeper.util.ByteBufList;
 import org.junit.After;
 import org.junit.Before;
@@ -67,7 +74,7 @@ public class ReadLastConfirmedAndEntryOpTest {
     private static final long LEDGERID = System.currentTimeMillis();
 
     private final TestStatsProvider testStatsProvider = new TestStatsProvider();
-    private TestOpStatsLogger readLacAndEntryOpLogger;
+    private OpStatsLogger readLacAndEntryOpLogger;
     private BookieClient mockBookieClient;
     private BookKeeper mockBk;
     private LedgerHandle mockLh;
@@ -81,7 +88,8 @@ public class ReadLastConfirmedAndEntryOpTest {
     @Before
     public void setup() throws Exception {
         // stats
-        this.readLacAndEntryOpLogger = testStatsProvider.getOpStatsLogger("readLacAndEntry");
+        this.readLacAndEntryOpLogger = testStatsProvider
+            .getStatsLogger("").getOpStatsLogger("readLacAndEntry");
         // policy
         this.speculativePolicy = new DefaultSpeculativeRequestExecutionPolicy(
             100, 200, 2);
@@ -93,7 +101,7 @@ public class ReadLastConfirmedAndEntryOpTest {
             ensemble.add(new BookieSocketAddress("127.0.0.1", 3181 + i));
         }
         this.ledgerMetadata.addEnsemble(0L, ensemble);
-        this.distributionSchedule = new RoundRobinDistributionSchedule(3, 3, 2);
+        this.distributionSchedule = new RoundRobinDistributionSchedule(3, 2, 3);
         // schedulers
         this.scheduler = Executors.newSingleThreadScheduledExecutor();
         this.orderedScheduler = OrderedScheduler.newSchedulerBuilder()
@@ -108,6 +116,8 @@ public class ReadLastConfirmedAndEntryOpTest {
         when(mockBk.getBookieClient()).thenReturn(mockBookieClient);
         when(mockBk.getReadLacAndEntryOpLogger()).thenReturn(readLacAndEntryOpLogger);
         when(mockBk.getMainWorkerPool()).thenReturn(orderedScheduler);
+        EnsemblePlacementPolicy mockPlacementPolicy = mock(EnsemblePlacementPolicy.class);
+        when(mockBk.getPlacementPolicy()).thenReturn(mockPlacementPolicy);
         this.mockLh = mock(LedgerHandle.class);
         when(mockLh.getBk()).thenReturn(mockBk);
         when(mockLh.getId()).thenReturn(LEDGERID);
@@ -123,6 +133,15 @@ public class ReadLastConfirmedAndEntryOpTest {
         this.orderedScheduler.shutdown();
     }
 
+    @Data
+    static class ReadLastConfirmedAndEntryHolder {
+
+        private final BookieSocketAddress address;
+        private final ReadEntryCallback callback;
+        private final ReadLastConfirmedAndEntryContext context;
+
+    }
+
     /**
      * Test case: handling different speculative responses. one speculative response might return a valid response
      * with a read entry, while the other speculative response might return a valid response without an entry.
@@ -132,8 +151,8 @@ public class ReadLastConfirmedAndEntryOpTest {
      */
     @Test
     public void testSpeculativeResponses() throws Exception {
-        final long entryId = 3L;
-        final long lac = 2L;
+        final long entryId = 2L;
+        final long lac = 1L;
 
         ByteBuf data = Unpooled.copiedBuffer("test-speculative-responses", UTF_8);
         ByteBufList dataWithDigest = digestManager.computeDigestAndPackageForSending(
@@ -141,14 +160,18 @@ public class ReadLastConfirmedAndEntryOpTest {
         byte[] bytesWithDigest = new byte[dataWithDigest.readableBytes()];
         assertEquals(bytesWithDigest.length, dataWithDigest.getBytes(bytesWithDigest));
 
-        final Map<BookieSocketAddress, ReadEntryCallback> callbacks = Collections.synchronizedMap(new HashMap<>());
+        final Map<BookieSocketAddress, ReadLastConfirmedAndEntryHolder> callbacks =
+            Collections.synchronizedMap(new HashMap<>());
         doAnswer(invocationOnMock -> {
             BookieSocketAddress address = invocationOnMock.getArgument(0);
             ReadEntryCallback callback = invocationOnMock.getArgument(6);
+            ReadLastConfirmedAndEntryContext context = invocationOnMock.getArgument(7);
+
+            ReadLastConfirmedAndEntryHolder holder = new ReadLastConfirmedAndEntryHolder(address, callback, context);
 
             log.info("Received read request to bookie {}", address);
 
-            callbacks.put(address, callback);
+            callbacks.put(address, holder);
             return null;
         }).when(mockBookieClient).readEntryWaitForLACUpdate(
             any(BookieSocketAddress.class),
@@ -186,6 +209,37 @@ public class ReadLastConfirmedAndEntryOpTest {
         }
 
         log.info("All speculative reads are outstanding now.");
+
+        // once all the speculative reads are outstanding. complete the requests in following sequence:
+
+        // 1) complete one bookie with empty response (OK, entryId = INVALID_ENTRY_ID)
+        // 2) complete second bookie with valid entry response. this will trigger double-release bug described in
+        //    {@link https://github.com/apache/bookkeeper/issues/1476}
+
+        Iterator<Entry<BookieSocketAddress, ReadLastConfirmedAndEntryHolder>> iter = callbacks.entrySet().iterator();
+        assertTrue(iter.hasNext());
+        Entry<BookieSocketAddress, ReadLastConfirmedAndEntryHolder> firstBookieEntry = iter.next();
+        ReadLastConfirmedAndEntryHolder firstBookieHolder = firstBookieEntry.getValue();
+        ReadLastConfirmedAndEntryContext firstContext = firstBookieHolder.context;
+        firstContext.setLastAddConfirmed(entryId);
+        firstBookieHolder.getCallback()
+            .readEntryComplete(Code.OK, LEDGERID, BookieProtocol.INVALID_ENTRY_ID, null, firstContext);
+
+        assertTrue(iter.hasNext());
+        Entry<BookieSocketAddress, ReadLastConfirmedAndEntryHolder> secondBookieEntry = iter.next();
+        ReadLastConfirmedAndEntryHolder secondBookieHolder = secondBookieEntry.getValue();
+        ReadLastConfirmedAndEntryContext secondContext = secondBookieHolder.context;
+        secondContext.setLastAddConfirmed(entryId);
+        secondBookieHolder.getCallback().readEntryComplete(
+            Code.OK, LEDGERID, entryId, Unpooled.wrappedBuffer(bytesWithDigest), secondContext);
+
+
+        // wait for results
+
+        try (LastConfirmedAndEntry lacAndEntry = FutureUtils.result(resultFuture)) {
+            assertEquals(entryId, lacAndEntry.getLastAddConfirmed());
+            assertNull(lacAndEntry.getEntry());
+        }
     }
 
 }

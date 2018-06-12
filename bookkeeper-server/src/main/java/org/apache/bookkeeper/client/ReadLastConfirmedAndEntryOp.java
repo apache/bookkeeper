@@ -569,8 +569,10 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
                                 .registerSuccessfulEvent(elapsedMicros, TimeUnit.MICROSECONDS);
                     }
 
-                    submitCallback(BKException.Code.OK);
-                    requestComplete.set(true);
+                    // if the request has already completed, the buffer is not going to be used anymore, release it.
+                    if (!completeRequest()) {
+                        buffer.release();
+                    }
                     heardFromHostsBitSet.set(rCtx.getBookieIndex(), true);
                 } else {
                     buffer.release();
@@ -612,8 +614,9 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
         }
     }
 
-    private void completeRequest() {
-        if (requestComplete.compareAndSet(false, true)) {
+    private boolean completeRequest() {
+        boolean requestCompleted = requestComplete.compareAndSet(false, true);
+        if (requestCompleted) {
             if (!hasValidResponse) {
                 // no success called
                 submitCallback(request.getFirstError());
@@ -622,6 +625,7 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
                 submitCallback(BKException.Code.OK);
             }
         }
+        return requestCompleted;
     }
 
     @Override
