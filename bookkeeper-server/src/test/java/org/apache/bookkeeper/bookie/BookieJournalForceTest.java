@@ -78,7 +78,8 @@ public class BookieJournalForceTest {
 
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration()
             .setJournalDirName(journalDir.getPath())
-            .setMetadataServiceUri(null);
+            .setMetadataServiceUri(null)
+            .setJournalAdaptiveGroupWrites(false);
 
         JournalChannel jc = spy(new JournalChannel(journalDir, 1));
         whenNew(JournalChannel.class).withAnyArguments().thenReturn(jc);
@@ -140,7 +141,8 @@ public class BookieJournalForceTest {
 
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
         conf.setJournalDirName(journalDir.getPath())
-            .setMetadataServiceUri(null);
+            .setMetadataServiceUri(null)
+            .setJournalAdaptiveGroupWrites(false);
 
         JournalChannel jc = spy(new JournalChannel(journalDir, 1));
         whenNew(JournalChannel.class).withAnyArguments().thenReturn(jc);
@@ -195,7 +197,8 @@ public class BookieJournalForceTest {
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
         conf.setJournalDirName(journalDir.getPath())
             .setJournalBufferedEntriesThreshold(journalBufferedEntriesThreshold)
-            .setMetadataServiceUri(null);
+            .setMetadataServiceUri(null)
+            .setJournalAdaptiveGroupWrites(false);
 
         JournalChannel jc = spy(new JournalChannel(journalDir, 1));
         whenNew(JournalChannel.class).withAnyArguments().thenReturn(jc);
@@ -321,6 +324,7 @@ public class BookieJournalForceTest {
 
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
         conf.setJournalDirName(journalDir.getPath());
+        conf.setJournalAdaptiveGroupWrites(false);
 
         JournalChannel jc = spy(new JournalChannel(journalDir, 1));
         whenNew(JournalChannel.class).withAnyArguments().thenReturn(jc);
