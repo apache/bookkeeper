@@ -22,6 +22,7 @@
 package org.apache.bookkeeper.bookie;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.MoreObjects;
 import com.google.common.base.Stopwatch;
 import com.google.common.util.concurrent.MoreExecutors;
 
@@ -388,6 +389,17 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
             } finally {
                 closeFileIfNecessary();
             }
+        }
+
+        @Override
+        public String toString() {
+            return MoreObjects.toStringHelper(ForceWriteRequest.class)
+                .add("forceWriteWaiters", forceWriteWaiters)
+                .add("shouldClose", shouldClose)
+                .add("isMarker", isMarker)
+                .add("lastFlushedPosition", lastFlushedPosition)
+                .add("logId", logId)
+                .toString();
         }
 
         public void closeFileIfNecessary() {
