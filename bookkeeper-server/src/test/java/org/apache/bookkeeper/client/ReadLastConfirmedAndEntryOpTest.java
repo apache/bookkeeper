@@ -49,6 +49,7 @@ import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.ReadLastConfirmedAndEntryOp.LastConfirmedAndEntryCallback;
 import org.apache.bookkeeper.client.api.LastConfirmedAndEntry;
 import org.apache.bookkeeper.client.impl.LastConfirmedAndEntryImpl;
+import org.apache.bookkeeper.client.impl.LedgerEntryImpl;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.bookkeeper.net.BookieSocketAddress;
@@ -225,6 +226,10 @@ public class ReadLastConfirmedAndEntryOpTest {
         firstBookieHolder.getCallback()
             .readEntryComplete(Code.OK, LEDGERID, BookieProtocol.INVALID_ENTRY_ID, null, firstContext);
 
+        // readEntryComplete above will release the entry impl back to the object pools.
+        // we want to make sure after the entry is recycled, it will not be mutated by any future callbacks.
+        LedgerEntryImpl entry = LedgerEntryImpl.create(LEDGERID, Long.MAX_VALUE);
+
         assertTrue(iter.hasNext());
         Entry<BookieSocketAddress, ReadLastConfirmedAndEntryHolder> secondBookieEntry = iter.next();
         ReadLastConfirmedAndEntryHolder secondBookieHolder = secondBookieEntry.getValue();
@@ -233,9 +238,11 @@ public class ReadLastConfirmedAndEntryOpTest {
         secondBookieHolder.getCallback().readEntryComplete(
             Code.OK, LEDGERID, entryId, Unpooled.wrappedBuffer(bytesWithDigest), secondContext);
 
+        // the recycled entry shouldn't be updated by any future callbacks.
+        assertNull(entry.getEntryBuffer());
+        entry.close();
 
         // wait for results
-
         try (LastConfirmedAndEntry lacAndEntry = FutureUtils.result(resultFuture)) {
             assertEquals(entryId, lacAndEntry.getLastAddConfirmed());
             assertNull(lacAndEntry.getEntry());

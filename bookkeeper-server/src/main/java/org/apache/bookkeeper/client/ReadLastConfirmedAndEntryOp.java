@@ -465,7 +465,6 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
         return lh.getBk().getMainWorkerPool().submitOrdered(lh.getId(), new Callable<Boolean>() {
             @Override
             public Boolean call() throws Exception {
-                LOG.info("Attempt to issue specultive requests");
                 if (!requestComplete.get() && !request.isComplete()
                         && (null != request.maybeSendSpeculativeRead(heardFromHostsBitSet))) {
                     if (LOG.isDebugEnabled()) {
@@ -559,7 +558,7 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
 
             if (entryId != BookieProtocol.LAST_ADD_CONFIRMED) {
                 buffer.retain();
-                if (request.complete(rCtx.getBookieIndex(), bookie, buffer, entryId)) {
+                if (!requestComplete.get() && request.complete(rCtx.getBookieIndex(), bookie, buffer, entryId)) {
                     // callback immediately
                     if (rCtx.getLacUpdateTimestamp().isPresent()) {
                         long elapsedMicros = TimeUnit.MILLISECONDS.toMicros(System.currentTimeMillis()
