@@ -610,6 +610,12 @@ groups:
   - param: networkTopologyScriptNumberArgs
     description: |
       The max number of args used in the script provided at `networkTopologyScriptFileName`.
+  - param: minNumRacksPerWriteQuorum
+    description: |
+      minimum number of racks per write quorum. RackawareEnsemblePlacementPolicy will try to get bookies from atleast 'minNumRacksPerWriteQuorum' racks for a writeQuorum.
+  - param: enforceMinNumRacksPerWriteQuorum
+    description: |
+      'enforceMinNumRacksPerWriteQuorum' enforces RackawareEnsemblePlacementPolicy to pick bookies from 'minNumRacksPerWriteQuorum' racks for a writeQuorum. If it cann't find bookie then it would throw BKNotEnoughBookiesException instead of picking random one.
 
 - name: AutoRecovery auditor settings
   params:
