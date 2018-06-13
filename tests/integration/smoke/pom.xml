@@ -37,6 +37,13 @@
     </dependency>
 
     <dependency>
+      <groupId>org.apache.distributedlog</groupId>
+      <artifactId>distributedlog-core</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
       <groupId>org.apache.bookkeeper.tests</groupId>
       <artifactId>integration-tests-utils</artifactId>
       <version>${project.version}</version>
