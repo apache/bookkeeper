@@ -111,39 +111,6 @@ public class DeferredSyncTest extends MockBookKeeperTestCase {
     }
 
     @Test
-    public void testForceFailPendingAdds() throws Exception {
-        try (WriteAdvHandle wh = result(newCreateLedgerOp()
-                .withEnsembleSize(3)
-                .withWriteQuorumSize(3)
-                .withAckQuorumSize(2)
-                .withPassword(PASSWORD)
-                .withWriteFlags(WriteFlag.DEFERRED_SYNC)
-                .makeAdv()
-                .execute())) {
-            CompletableFuture<Long> w0 = wh.writeAsync(0, DATA);
-            CompletableFuture<Long> pendingWrite = wh.writeAsync(2, DATA);
-            result(w0);
-
-            BookieSocketAddress bookieAddress = wh.getLedgerMetadata().getEnsembleAt(0).get(0);
-            killBookie(bookieAddress);
-
-            try {
-                // force will fail
-                result(wh.force());
-                fail();
-            } catch (BKException.BKBookieException err){
-            }
-
-            // all pending writes should fail immediately
-            try {
-                result(pendingWrite);
-            } catch (BKException.BKWriteException err){
-            }
-
-        }
-    }
-
-    @Test
     public void testForceRequiresFullEnsemble() throws Exception {
         try (WriteHandle wh = result(newCreateLedgerOp()
                 .withEnsembleSize(3)

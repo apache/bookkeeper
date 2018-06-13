@@ -116,9 +116,6 @@ class ForceLedgerOp extends SafeRunnable implements ForceLedgerCallback {
             LOG.info("ForceLedger did not succeed: Ledger {} on {}", ledgerId, addr);
             errored = true;
 
-            // fail all pending writes
-            lh.errorOutPendingAdds(rc);
-
             // notify the failure
             FutureUtils.completeExceptionally(cb, BKException.create(lastSeenError));
         }
