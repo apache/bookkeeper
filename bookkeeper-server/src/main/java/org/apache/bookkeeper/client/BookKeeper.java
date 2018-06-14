@@ -742,6 +742,10 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
         }
     }
 
+    boolean shouldReorderReadSequence() {
+        return reorderReadSequence;
+    }
+
     ZooKeeper getZkHandle() {
         return ((ZKMetadataClientDriver) metadataDriver).getZk();
     }
