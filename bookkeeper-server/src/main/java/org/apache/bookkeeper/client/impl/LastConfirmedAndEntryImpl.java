@@ -41,11 +41,15 @@ public class LastConfirmedAndEntryImpl implements LastConfirmedAndEntry {
     public static LastConfirmedAndEntryImpl create(long lac, org.apache.bookkeeper.client.LedgerEntry entry) {
         LastConfirmedAndEntryImpl entryImpl = RECYCLER.get();
         entryImpl.lac = lac;
-        entryImpl.entry = LedgerEntryImpl.create(
-            entry.getLedgerId(),
-            entry.getEntryId(),
-            entry.getLength(),
-            entry.getEntryBuffer());
+        if (null == entry) {
+            entryImpl.entry = null;
+        } else {
+            entryImpl.entry = LedgerEntryImpl.create(
+                entry.getLedgerId(),
+                entry.getEntryId(),
+                entry.getLength(),
+                entry.getEntryBuffer());
+        }
         return entryImpl;
     }
 
