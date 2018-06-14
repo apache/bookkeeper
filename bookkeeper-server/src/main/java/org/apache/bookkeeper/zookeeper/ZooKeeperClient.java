@@ -77,6 +77,7 @@ public class ZooKeeperClient extends ZooKeeper implements Watcher {
     // ZooKeeper client connection variables
     private final String connectString;
     private final int sessionTimeoutMs;
+    private final boolean allowReadOnlyMode;
 
     // state for the zookeeper client
     private final AtomicReference<ZooKeeper> zk = new AtomicReference<ZooKeeper>();
@@ -172,6 +173,7 @@ public class ZooKeeperClient extends ZooKeeper implements Watcher {
         StatsLogger statsLogger = NullStatsLogger.INSTANCE;
         int retryExecThreadCount = DEFAULT_RETRY_EXECUTOR_THREAD_COUNT;
         double requestRateLimit = 0;
+        boolean allowReadOnlyMode = false;
 
         private Builder() {}
 
@@ -215,6 +217,11 @@ public class ZooKeeperClient extends ZooKeeper implements Watcher {
             return this;
         }
 
+        public Builder allowReadOnlyMode(boolean allowReadOnlyMode) {
+            this.allowReadOnlyMode = allowReadOnlyMode;
+            return this;
+        }
+
         public ZooKeeperClient build() throws IOException, KeeperException, InterruptedException {
             checkNotNull(connectString);
             checkArgument(sessionTimeoutMs > 0);
@@ -243,7 +250,8 @@ public class ZooKeeperClient extends ZooKeeper implements Watcher {
                     operationRetryPolicy,
                     statsLogger,
                     retryExecThreadCount,
-                    requestRateLimit
+                    requestRateLimit,
+                    allowReadOnlyMode
             );
             // Wait for connection to be established.
             try {
@@ -271,10 +279,12 @@ public class ZooKeeperClient extends ZooKeeper implements Watcher {
                     RetryPolicy operationRetryPolicy,
                     StatsLogger statsLogger,
                     int retryExecThreadCount,
-                    double rate) throws IOException {
-        super(connectString, sessionTimeoutMs, watcherManager);
+                    double rate,
+                    boolean allowReadOnlyMode) throws IOException {
+        super(connectString, sessionTimeoutMs, watcherManager, allowReadOnlyMode);
         this.connectString = connectString;
         this.sessionTimeoutMs = sessionTimeoutMs;
+        this.allowReadOnlyMode =  allowReadOnlyMode;
         this.watcherManager = watcherManager;
         this.connectRetryPolicy = connectRetryPolicy;
         this.operationRetryPolicy = operationRetryPolicy;
@@ -325,7 +335,7 @@ public class ZooKeeperClient extends ZooKeeper implements Watcher {
     }
 
     protected ZooKeeper createZooKeeper() throws IOException {
-        return new ZooKeeper(connectString, sessionTimeoutMs, watcherManager);
+        return new ZooKeeper(connectString, sessionTimeoutMs, watcherManager, allowReadOnlyMode);
     }
 
     @Override
