@@ -19,6 +19,7 @@
 package org.apache.bookkeeper.stream.storage.impl.cluster;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -67,7 +68,7 @@ public class ZkClusterMetadataStoreTest extends ZooKeeperClusterTestCase {
             new ExponentialBackoffRetry(200, 10, 5000));
         curatorClient.start();
         store = new ZkClusterMetadataStore(curatorClient, zkServers, "/" + runtime.getMethodName());
-        store.initializeCluster(NUM_STORAGE_CONTAINERS);
+        assertTrue(store.initializeCluster(NUM_STORAGE_CONTAINERS));
     }
 
     @After
@@ -107,14 +108,7 @@ public class ZkClusterMetadataStoreTest extends ZooKeeperClusterTestCase {
     @Test
     public void testInitialize() {
         int numStorageContainers = 2048;
-        try {
-            store.initializeCluster(numStorageContainers);
-            fail("Should fail to initialize cluster if already initialized");
-        } catch (StorageRuntimeException sre) {
-            assertTrue(sre.getCause() instanceof KeeperException);
-            KeeperException cause = (KeeperException) sre.getCause();
-            assertEquals(Code.NODEEXISTS, cause.code());
-        }
+        assertFalse(store.initializeCluster(numStorageContainers));
     }
 
     @Test

@@ -3,5 +3,5 @@ source 'https://rubygems.org'
 ruby '>=2.3.1'
 
 gem 'jekyll', '3.7.0'
-gem 'nokogiri'
+gem 'nokogiri', '1.8.2'
 gem 'jekyll-toc', '0.2.1'

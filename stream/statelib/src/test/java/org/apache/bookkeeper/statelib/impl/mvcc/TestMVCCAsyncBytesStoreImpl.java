@@ -29,11 +29,11 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import com.google.common.collect.Lists;
-import com.google.common.io.Files;
 import java.io.File;
 import java.net.URI;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.IntStream;
 import lombok.Cleanup;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.api.kv.op.PutOp;
@@ -45,7 +45,6 @@ import org.apache.bookkeeper.common.coder.ByteArrayCoder;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.statelib.api.StateStoreSpec;
 import org.apache.bookkeeper.statelib.api.exceptions.MVCCStoreException;
-import org.apache.commons.io.FileUtils;
 import org.apache.distributedlog.DLMTestUtil;
 import org.apache.distributedlog.TestDistributedLogBase;
 import org.apache.distributedlog.api.namespace.Namespace;
@@ -54,13 +53,18 @@ import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
 /**
  * Unit test of {@link MVCCAsyncBytesStoreImpl}.
  */
 @Slf4j
 public class TestMVCCAsyncBytesStoreImpl extends TestDistributedLogBase {
+
+    @Rule
+    public final TemporaryFolder testDir = new TemporaryFolder();
 
     private static URI uri;
     private static Namespace namespace;
@@ -96,7 +100,7 @@ public class TestMVCCAsyncBytesStoreImpl extends TestDistributedLogBase {
         super.setup();
         ensureURICreated(uri);
 
-        tempDir = Files.createTempDir();
+        tempDir = testDir.newFolder();
 
         store = new MVCCAsyncBytesStoreImpl(
             () -> new MVCCStoreImpl<>(),
@@ -122,9 +126,6 @@ public class TestMVCCAsyncBytesStoreImpl extends TestDistributedLogBase {
 
         if (null != store) {
             store.close();
-        }
-        if (null != tempDir) {
-            FileUtils.deleteDirectory(tempDir);
         }
         super.teardown();
     }
@@ -421,6 +422,50 @@ public class TestMVCCAsyncBytesStoreImpl extends TestDistributedLogBase {
             ++idx;
         }
         assertEquals(endKey + 1, idx);
+    }
+
+    @Test
+    public void testReplayJournal() throws Exception {
+        this.streamName = "test-replay-journal";
+        StateStoreSpec spec = initSpec(streamName);
+        result(store.init(spec));
+
+        int numKvs = 10;
+
+        // putIfAbsent
+        IntStream.range(0, numKvs)
+            .forEach(i -> {
+                try {
+                    result(store.putIfAbsent(getKey(i), getValue(100 + i)));
+                } catch (Exception e) {
+                    log.error("Failed to put kv pair ({})", i, e);
+                }
+            });
+
+        log.info("Closing the store '{}' ...", streamName);
+        // close the store
+        store.close();
+        log.info("Closed the store '{}' ...", streamName);
+
+        // open the store again to replay the journal.
+        store = new MVCCAsyncBytesStoreImpl(
+            () -> new MVCCStoreImpl<>(),
+            () -> namespace);
+        spec = StateStoreSpec.builder()
+            .name(streamName)
+            .keyCoder(ByteArrayCoder.of())
+            .valCoder(ByteArrayCoder.of())
+            .stream(streamName)
+            .localStateStoreDir(testDir.newFolder())
+            .build();
+        result(store.init(spec));
+
+        // verify the key/value pairs
+        for (int i = 0; i < numKvs; i++) {
+            byte[] value = result(store.get(getKey(i)));
+            assertNotNull(value);
+            assertArrayEquals(getValue(100 + i), value);
+        }
     }
 
 }

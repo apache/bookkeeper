@@ -209,9 +209,9 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
                             lh.ledgerId, eId, host);
                 }
             } else {
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug(errMsg + " while reading L{} E{} from bookie: {}",
-                            lh.ledgerId, eId, host);
+                if (LOG.isInfoEnabled()) {
+                    LOG.info("{} while reading L{} E{} from bookie: {}",
+                            errMsg, lh.ledgerId, eId, host);
                 }
             }
         }
