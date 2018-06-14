@@ -198,11 +198,13 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
     protected boolean reorderReadsRandom = false;
     protected boolean enforceDurability = false;
     protected int stabilizePeriodSeconds = 0;
+    protected int reorderThresholdPendingRequests = 0;
     // looks like these only assigned in the same thread as constructor, immediately after constructor;
     // no need to make volatile
     protected StatsLogger statsLogger = null;
     protected OpStatsLogger bookiesJoinedCounter = null;
     protected OpStatsLogger bookiesLeftCounter = null;
+    protected OpStatsLogger readReorderedCounter = null;
 
     private String defaultRack = NetworkTopology.DEFAULT_RACK;
 
@@ -232,6 +234,7 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
                                                               HashedWheelTimer timer,
                                                               boolean reorderReadsRandom,
                                                               int stabilizePeriodSeconds,
+                                                              int reorderThresholdPendingRequests,
                                                               boolean isWeighted,
                                                               int maxWeightMultiple,
                                                               int minNumRacksPerWriteQuorum,
@@ -240,8 +243,10 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
         this.statsLogger = statsLogger;
         this.bookiesJoinedCounter = statsLogger.getOpStatsLogger(BookKeeperServerStats.BOOKIES_JOINED);
         this.bookiesLeftCounter = statsLogger.getOpStatsLogger(BookKeeperServerStats.BOOKIES_LEFT);
+        this.readReorderedCounter = statsLogger.getOpStatsLogger(BookKeeperClientStats.READ_REQUESTS_REORDERED);
         this.reorderReadsRandom = reorderReadsRandom;
         this.stabilizePeriodSeconds = stabilizePeriodSeconds;
+        this.reorderThresholdPendingRequests = reorderThresholdPendingRequests;
         this.dnsResolver = new DNSResolverDecorator(dnsResolver, () -> this.getDefaultRack());
         this.timer = timer;
         this.minNumRacksPerWriteQuorum = minNumRacksPerWriteQuorum;
@@ -330,6 +335,7 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
                 timer,
                 conf.getBoolean(REPP_RANDOM_READ_REORDERING, false),
                 conf.getNetworkTopologyStabilizePeriodSeconds(),
+                conf.getReorderThresholdPendingRequests(),
                 conf.getDiskWeightBasedPlacementEnabled(),
                 conf.getBookieMaxWeightMultipleForWeightBasedPlacement(),
                 conf.getMinNumRacksPerWriteQuorum(),
@@ -952,7 +958,11 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
 
     @Override
     public void registerSlowBookie(BookieSocketAddress bookieSocketAddress, long entryId) {
-        slowBookies.put(bookieSocketAddress, entryId);
+        if (reorderThresholdPendingRequests <= 0) {
+            // only put bookies on slowBookies list if reorderThresholdPendingRequests is *not* set (0);
+            // otherwise, rely on reordering of reads based on reorderThresholdPendingRequests
+            slowBookies.put(bookieSocketAddress, entryId);
+        }
     }
 
     @Override
@@ -1026,7 +1036,45 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
             }
         }
 
+        boolean reordered = false;
+        if (reorderThresholdPendingRequests > 0) {
+            // if there are no slow or unavailable bookies, capture each bookie's number of
+            // pending request to reorder requests based on a threshold of pending requests
+
+            // number of pending requests per bookie (same index as writeSet)
+            long[] pendingReqs = new long[writeSet.size()];
+            int bestBookieIdx = -1;
+
+            for (int i = 0; i < writeSet.size(); i++) {
+                pendingReqs[i] = bookiesHealthInfo.getBookiePendingRequests(ensemble.get(writeSet.get(i)));
+                if (bestBookieIdx < 0 || pendingReqs[i] < pendingReqs[bestBookieIdx]) {
+                    bestBookieIdx = i;
+                }
+            }
+
+            // reorder the writeSet if the currently first bookie in our writeSet has at
+            // least
+            // reorderThresholdPendingRequests more outstanding request than the best bookie
+            if (bestBookieIdx > 0 && pendingReqs[0] >= pendingReqs[bestBookieIdx] + reorderThresholdPendingRequests) {
+                // We're not reordering the entire write set, but only move the best bookie
+                // to the first place. Chances are good that this bookie will be fast enough
+                // to not trigger the speculativeReadTimeout. But even if it hits that timeout,
+                // things may have changed by then so much that whichever bookie we put second
+                // may actually not be the second-best choice any more.
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("read set reordered from {} ({} pending) to {} ({} pending)",
+                            ensemble.get(writeSet.get(0)), pendingReqs[0], ensemble.get(writeSet.get(bestBookieIdx)),
+                            pendingReqs[bestBookieIdx]);
+                }
+                writeSet.moveAndShift(bestBookieIdx, 0);
+                reordered = true;
+            }
+        }
+
         if (!isAnyBookieUnavailable) {
+            if (reordered) {
+                readReorderedCounter.registerSuccessfulValue(1);
+            }
             return writeSet;
         }
 
@@ -1137,6 +1185,7 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
         for (int i = 0; i < writeSet.size(); i++) {
             writeSet.set(i, writeSet.get(i) & ~MASK_BITS);
         }
+        readReorderedCounter.registerSuccessfulValue(1);
         return writeSet;
     }
 

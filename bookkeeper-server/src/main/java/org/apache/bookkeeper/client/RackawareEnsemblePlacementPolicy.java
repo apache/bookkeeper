@@ -50,19 +50,22 @@ public class RackawareEnsemblePlacementPolicy extends RackawareEnsemblePlacement
                                                           HashedWheelTimer timer,
                                                           boolean reorderReadsRandom,
                                                           int stabilizePeriodSeconds,
+                                                          int reorderThresholdPendingRequests,
                                                           boolean isWeighted,
                                                           int maxWeightMultiple,
                                                           int minNumRacksPerWriteQuorum,
                                                           StatsLogger statsLogger) {
         if (stabilizePeriodSeconds > 0) {
-            super.initialize(dnsResolver, timer, reorderReadsRandom, 0, isWeighted, maxWeightMultiple,
-                    minNumRacksPerWriteQuorum, statsLogger);
+            super.initialize(dnsResolver, timer, reorderReadsRandom, 0, reorderThresholdPendingRequests, isWeighted,
+                    maxWeightMultiple, minNumRacksPerWriteQuorum, statsLogger);
             slave = new RackawareEnsemblePlacementPolicyImpl(enforceDurability);
-            slave.initialize(dnsResolver, timer, reorderReadsRandom, stabilizePeriodSeconds, isWeighted,
-                    maxWeightMultiple, minNumRacksPerWriteQuorum, statsLogger);
+            slave.initialize(dnsResolver, timer, reorderReadsRandom, stabilizePeriodSeconds,
+                    reorderThresholdPendingRequests, isWeighted, maxWeightMultiple,
+                    minNumRacksPerWriteQuorum, statsLogger);
         } else {
-            super.initialize(dnsResolver, timer, reorderReadsRandom, stabilizePeriodSeconds, isWeighted,
-                    maxWeightMultiple, minNumRacksPerWriteQuorum, statsLogger);
+            super.initialize(dnsResolver, timer, reorderReadsRandom, stabilizePeriodSeconds,
+                    reorderThresholdPendingRequests, isWeighted, maxWeightMultiple,
+                    minNumRacksPerWriteQuorum, statsLogger);
             slave = null;
         }
         return this;
