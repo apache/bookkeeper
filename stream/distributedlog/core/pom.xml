@@ -104,7 +104,7 @@
           <properties>
             <property>
               <name>listener</name>
-              <value>org.apache.distributedlog.common.util.TimedOutTestsListener</value>
+              <value>org.apache.bookkeeper.common.testing.util.TimedOutTestsListener</value>
             </property>
           </properties>
         </configuration>

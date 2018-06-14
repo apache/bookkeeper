@@ -185,6 +185,24 @@
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>${maven-surefire-plugin.version}</version>
+        <configuration>
+          <argLine>-Xmx2G -Djava.net.preferIPv4Stack=true</argLine>
+          <redirectTestOutputToFile>${redirectTestOutputToFile}</redirectTestOutputToFile>
+          <reuseForks>false</reuseForks>
+          <forkedProcessTimeoutInSeconds>1800</forkedProcessTimeoutInSeconds>
+          <rerunFailingTestsCount>2</rerunFailingTestsCount>
+          <properties>
+            <property>
+              <name>listener</name>
+              <value>org.apache.bookkeeper.common.testing.util.TimedOutTestsListener</value>
+            </property>
+          </properties>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-javadoc-plugin</artifactId>
         <version>${maven-javadoc-plugin.version}</version>
         <configuration>
