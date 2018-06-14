@@ -19,7 +19,7 @@
   <parent>
     <groupId>org.apache.bookkeeper.tests</groupId>
     <artifactId>docker-images</artifactId>
-    <version>4.7.1-SNAPSHOT</version>
+    <version>4.7.1</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.apache.bookkeeper.tests</groupId>
@@ -111,8 +111,8 @@
                 <configuration>
                   <tasks>
                     <echo>copying docker scripts</echo>
-                    <mkdir dir="${basedir}/target/scripts"/>
-                    <copydir src="${basedir}/../../../docker/scripts" dest="${basedir}/target/scripts"/>
+                    <mkdir dir="${basedir}/target/scripts" />
+                    <copydir src="${basedir}/../../../docker/scripts" dest="${basedir}/target/scripts" />
                   </tasks>
                 </configuration>
               </execution>
