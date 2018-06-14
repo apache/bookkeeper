@@ -372,6 +372,172 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         assertEquals(expectedSet, reorderSet);
     }
 
+    /*
+     * Tests the reordering of the writeSet based on number of pending requests.
+     * Expect the third bookie to be placed first since its number of pending requests
+     * is READ_REORDER_THRESHOLD_PENDING_REQUESTS=10 less than the originally first bookie.
+     */
+    @Test
+    public void testPendingRequestsReorder() throws Exception {
+        repp.uninitalize();
+        updateMyRack("/r1/rack1");
+
+        repp = new RackawareEnsemblePlacementPolicy();
+        ClientConfiguration conf = (ClientConfiguration) this.conf.clone();
+        conf.setReorderThresholdPendingRequests(10);
+        repp.initialize(conf, Optional.<DNSToSwitchMapping>empty(), timer, DISABLE_ALL, NullStatsLogger.INSTANCE);
+        repp.withDefaultRack(NetworkTopology.DEFAULT_REGION_AND_RACK);
+
+        // Update cluster
+        Set<BookieSocketAddress> addrs = new HashSet<BookieSocketAddress>();
+        addrs.add(addr1);
+        addrs.add(addr2);
+        addrs.add(addr3);
+        addrs.add(addr4);
+        repp.onClusterChanged(addrs, new HashSet<BookieSocketAddress>());
+        Map<BookieSocketAddress, Long> bookiePendingMap = new HashMap<>();
+        bookiePendingMap.put(addr1, 20L);
+        bookiePendingMap.put(addr2, 7L);
+        bookiePendingMap.put(addr3, 1L); // best bookie -> this one first
+        bookiePendingMap.put(addr4, 5L);
+
+        DistributionSchedule.WriteSet origWriteSet = writeSet.copy();
+        DistributionSchedule.WriteSet reorderSet = repp.reorderReadSequence(
+            ensemble, getBookiesHealthInfo(new HashMap<>(), bookiePendingMap), writeSet);
+        DistributionSchedule.WriteSet expectedSet = writeSetFromValues(2, 0, 1, 3);
+        LOG.info("reorder set : {}", reorderSet);
+        assertEquals("expect bookie idx 2 first", expectedSet, reorderSet);
+    }
+
+    /*
+     * Tests the reordering of the writeSet based on number of pending requests for
+     * an ensemble that is larger than the writeSet.
+     * Expect the sixth bookie to be placed first since its number of pending requests
+     * is READ_REORDER_THRESHOLD_PENDING_REQUESTS=10 less than the originally first bookie.
+     */
+    @Test
+    public void testPendingRequestsReorderLargeEnsemble() throws Exception {
+        repp.uninitalize();
+        updateMyRack("/r1/rack1");
+
+        repp = new RackawareEnsemblePlacementPolicy();
+        ClientConfiguration conf = (ClientConfiguration) this.conf.clone();
+        conf.setReorderThresholdPendingRequests(10);
+        repp.initialize(conf, Optional.<DNSToSwitchMapping>empty(), timer, DISABLE_ALL, NullStatsLogger.INSTANCE);
+        repp.withDefaultRack(NetworkTopology.DEFAULT_REGION_AND_RACK);
+
+        // Update cluster
+        BookieSocketAddress addr5 = new BookieSocketAddress("127.0.0.6", 3181);
+        BookieSocketAddress addr6 = new BookieSocketAddress("127.0.0.7", 3181);
+        BookieSocketAddress addr7 = new BookieSocketAddress("127.0.0.8", 3181);
+        Set<BookieSocketAddress> addrs = new HashSet<BookieSocketAddress>();
+        addrs.add(addr1);
+        addrs.add(addr2);
+        addrs.add(addr3);
+        addrs.add(addr4);
+        addrs.add(addr5);
+        addrs.add(addr6);
+        addrs.add(addr7);
+        repp.onClusterChanged(addrs, new HashSet<BookieSocketAddress>());
+        Map<BookieSocketAddress, Long> bookiePendingMap = new HashMap<>();
+        bookiePendingMap.put(addr1, 1L); // not in write set
+        bookiePendingMap.put(addr2, 20L);
+        bookiePendingMap.put(addr3, 0L); // not in write set
+        bookiePendingMap.put(addr4, 12L);
+        bookiePendingMap.put(addr5, 9L); // not in write set
+        bookiePendingMap.put(addr6, 2L); // best bookie -> this one first
+        bookiePendingMap.put(addr7, 10L);
+        ArrayList<BookieSocketAddress> ensemble = new ArrayList<BookieSocketAddress>();
+        ensemble.add(addr1);
+        ensemble.add(addr2);
+        ensemble.add(addr3);
+        ensemble.add(addr4);
+        ensemble.add(addr5);
+        ensemble.add(addr6);
+        ensemble.add(addr7);
+
+        DistributionSchedule.WriteSet writeSet = writeSetFromValues(1, 3, 5, 6);
+        DistributionSchedule.WriteSet origWriteSet = writeSet.copy();
+        DistributionSchedule.WriteSet reorderSet = repp.reorderReadSequence(
+                ensemble, getBookiesHealthInfo(new HashMap<>(), bookiePendingMap), writeSet);
+        DistributionSchedule.WriteSet expectedSet = writeSetFromValues(5, 1, 3, 6);
+        LOG.info("reorder set : {}", reorderSet);
+        assertEquals("expect bookie idx 5 first", expectedSet, reorderSet);
+    }
+
+    /*
+     * Tests the reordering of the writeSet based on number of pending requests.
+     * Expect no reordering in this case since the currently first bookie's number of
+     * pending requests is less than READ_REORDER_THRESHOLD_PENDING_REQUESTS=10 lower
+     * than the best bookie.
+     */
+    @Test
+    public void testPendingRequestsNoReorder1() throws Exception {
+        repp.uninitalize();
+        updateMyRack("/r1/rack1");
+
+        repp = new RackawareEnsemblePlacementPolicy();
+        ClientConfiguration conf = (ClientConfiguration) this.conf.clone();
+        conf.setReorderThresholdPendingRequests(10);
+        repp.initialize(conf, Optional.<DNSToSwitchMapping>empty(), timer, DISABLE_ALL, NullStatsLogger.INSTANCE);
+        repp.withDefaultRack(NetworkTopology.DEFAULT_REGION_AND_RACK);
+
+        // Update cluster
+        Set<BookieSocketAddress> addrs = new HashSet<BookieSocketAddress>();
+        addrs.add(addr1);
+        addrs.add(addr2);
+        addrs.add(addr3);
+        addrs.add(addr4);
+        repp.onClusterChanged(addrs, new HashSet<BookieSocketAddress>());
+        Map<BookieSocketAddress, Long> bookiePendingMap = new HashMap<>();
+        bookiePendingMap.put(addr1, 10L); // -> this one first
+        bookiePendingMap.put(addr2, 7L);
+        bookiePendingMap.put(addr3, 1L); // best bookie, but below threshold
+        bookiePendingMap.put(addr4, 5L);
+
+        DistributionSchedule.WriteSet origWriteSet = writeSet.copy();
+        DistributionSchedule.WriteSet reorderSet = repp.reorderReadSequence(
+            ensemble, getBookiesHealthInfo(new HashMap<>(), bookiePendingMap), writeSet);
+        LOG.info("reorder set : {}", reorderSet);
+        assertEquals("writeSet should be in original order", origWriteSet, reorderSet);
+    }
+
+    /*
+     * Tests the reordering of the writeSet based on number of pending requests.
+     * Expect no reordering in this case since the currently first bookie's number of
+     * pending requests is lowest among all bookies already.
+     */
+    @Test
+    public void testPendingRequestsNoReorder2() throws Exception {
+        repp.uninitalize();
+        updateMyRack("/r1/rack1");
+
+        repp = new RackawareEnsemblePlacementPolicy();
+        ClientConfiguration conf = (ClientConfiguration) this.conf.clone();
+        conf.setReorderThresholdPendingRequests(10);
+        repp.initialize(conf, Optional.<DNSToSwitchMapping>empty(), timer, DISABLE_ALL, NullStatsLogger.INSTANCE);
+        repp.withDefaultRack(NetworkTopology.DEFAULT_REGION_AND_RACK);
+
+        // Update cluster
+        Set<BookieSocketAddress> addrs = new HashSet<BookieSocketAddress>();
+        addrs.add(addr1);
+        addrs.add(addr2);
+        addrs.add(addr3);
+        addrs.add(addr4);
+        repp.onClusterChanged(addrs, new HashSet<BookieSocketAddress>());
+        Map<BookieSocketAddress, Long> bookiePendingMap = new HashMap<>();
+        bookiePendingMap.put(addr1, 1L); // -> this one first
+        bookiePendingMap.put(addr2, 7L);
+        bookiePendingMap.put(addr3, 1L);
+        bookiePendingMap.put(addr4, 5L);
+
+        DistributionSchedule.WriteSet origWriteSet = writeSet.copy();
+        DistributionSchedule.WriteSet reorderSet = repp.reorderReadSequence(
+            ensemble, getBookiesHealthInfo(new HashMap<>(), bookiePendingMap), writeSet);
+        LOG.info("reorder set : {}", reorderSet);
+        assertEquals("writeSet should be in original order", origWriteSet, reorderSet);
+    }
+
     @Test
     public void testReplaceBookieWithEnoughBookiesInSameRack() throws Exception {
         BookieSocketAddress addr1 = new BookieSocketAddress("127.0.0.2", 3181);
