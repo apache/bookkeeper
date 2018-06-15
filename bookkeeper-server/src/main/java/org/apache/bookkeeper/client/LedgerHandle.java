@@ -1109,6 +1109,68 @@ public class LedgerHandle implements WriteHandle {
     }
 
     /**
+     * {@inheritDoc}
+     */
+    @Override
+    public CompletableFuture<Void> force() {
+        CompletableFuture<Void> result = new CompletableFuture<>();
+        ForceLedgerOp op = new ForceLedgerOp(this, result);
+        boolean wasClosed = false;
+        synchronized (this) {
+            // synchronized on this to ensure that
+            // the ledger isn't closed between checking and
+            // updating lastAddPushed
+            if (metadata.isClosed()) {
+                wasClosed = true;
+            }
+        }
+
+        if (wasClosed) {
+            // make sure the callback is triggered in main worker pool
+            try {
+                bk.getMainWorkerPool().executeOrdered(ledgerId, new SafeRunnable() {
+                    @Override
+                    public void safeRun() {
+                        LOG.warn("Force() attempted on a closed ledger: {}", ledgerId);
+                        result.completeExceptionally(new BKException.BKLedgerClosedException());
+                    }
+
+                    @Override
+                    public String toString() {
+                        return String.format("force(lid=%d)", ledgerId);
+                    }
+                });
+            } catch (RejectedExecutionException e) {
+                result.completeExceptionally(new BKException.BKInterruptedException());
+            }
+            return result;
+        }
+
+        // early exit: no write has been issued yet
+        if (pendingAddsSequenceHead == INVALID_ENTRY_ID) {
+            bk.getMainWorkerPool().executeOrdered(ledgerId, new SafeRunnable() {
+                    @Override
+                    public void safeRun() {
+                        FutureUtils.complete(result, null);
+                    }
+
+                    @Override
+                    public String toString() {
+                        return String.format("force(lid=%d)", ledgerId);
+                    }
+                });
+            return result;
+        }
+
+        try {
+            bk.getMainWorkerPool().executeOrdered(ledgerId, op);
+        } catch (RejectedExecutionException e) {
+            result.completeExceptionally(new BKException.BKInterruptedException());
+        }
+        return result;
+    }
+
+    /**
      * Make a recovery add entry request. Recovery adds can add to a ledger even
      * if it has been fenced.
      *
@@ -1229,7 +1291,7 @@ public class LedgerHandle implements WriteHandle {
         if (wasClosed) {
             // make sure the callback is triggered in main worker pool
             try {
-                bk.getMainWorkerPool().submit(new SafeRunnable() {
+                bk.getMainWorkerPool().executeOrdered(ledgerId, new SafeRunnable() {
                     @Override
                     public void safeRun() {
                         LOG.warn("Attempt to add to closed ledger: {}", ledgerId);
@@ -1799,6 +1861,14 @@ public class LedgerHandle implements WriteHandle {
             }
             return;
         }
+        if (writeFlags.contains(WriteFlag.DEFERRED_SYNC)) {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Cannot perform ensemble change with writeflags {}."
+                        + "Failed bookies {} for ledger {}.",
+                        writeFlags, delayedWriteFailedBookies, ledgerId);
+            }
+            return;
+        }
         synchronized (metadata) {
             try {
                 EnsembleInfo ensembleInfo = replaceBookieInMetadata(delayedWriteFailedBookies, curNumEnsembleChanges);
@@ -1827,6 +1897,17 @@ public class LedgerHandle implements WriteHandle {
                     failedBookies, ledgerId);
             }
             unsetSuccessAndSendWriteRequest(failedBookies.keySet());
+            return;
+        }
+
+        if (writeFlags.contains(WriteFlag.DEFERRED_SYNC)) {
+            blockAddCompletions.decrementAndGet();
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Cannot perform ensemble change with write flags {}. "
+                        + "Failed bookies {} for ledger {}.",
+                    writeFlags, failedBookies, ledgerId);
+            }
+            handleUnrecoverableErrorDuringAdd(WriteException);
             return;
         }
 
