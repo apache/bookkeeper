@@ -81,7 +81,7 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
         ReadLACAndEntryRequest(ArrayList<BookieSocketAddress> ensemble, long lId, long eId) {
             this.entryImpl = LedgerEntryImpl.create(lId, eId);
             this.ensemble = ensemble;
-            this.writeSet = lh.getDistributionSchedule().getWriteSetForLongPoll(eId);
+            this.writeSet = lh.getDistributionSchedule().getEnsembleSet(eId);
             if (lh.getBk().shouldReorderReadSequence()) {
                 this.orderedEnsemble = lh.getBk().getPlacementPolicy().reorderReadLACSequence(ensemble,
                         lh.getBookiesHealthInfo(), writeSet.copy());

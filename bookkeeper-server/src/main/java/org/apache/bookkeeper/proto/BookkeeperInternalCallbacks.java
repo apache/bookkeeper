@@ -91,6 +91,13 @@ public class BookkeeperInternalCallbacks {
     }
 
     /**
+     * Force callback interface.
+     */
+    public interface ForceLedgerCallback {
+        void forceLedgerComplete(int rc, long ledgerId, BookieSocketAddress addr, Object ctx);
+    }
+
+    /**
      * A callback interface for a STARTTLS command.
      */
     public interface StartTLSCallback {

@@ -801,4 +801,21 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
         }
     }
 
+    @Test(expected = BKIllegalOpException.class)
+    public void testCannotUseForceOnV2Protocol() throws Exception {
+        ClientConfiguration conf = new ClientConfiguration(baseClientConf);
+        conf.setUseV2WireProtocol(true);
+        try (BookKeeperTestClient bkc = new BookKeeperTestClient(conf);) {
+            try (WriteHandle wh = result(bkc.newCreateLedgerOp()
+                    .withEnsembleSize(3)
+                    .withWriteQuorumSize(3)
+                    .withAckQuorumSize(2)
+                    .withPassword("".getBytes())
+                    .withWriteFlags(WriteFlag.NONE)
+                    .execute())) {
+               result(wh.appendAsync("".getBytes()));
+               result(wh.force());
+            }
+        }
+    }
 }

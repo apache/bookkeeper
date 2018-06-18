@@ -284,7 +284,8 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
                 // Got an error after satisfying AQ. This means we are under replicated at the create itself.
                 // Update the stat to reflect it.
                 addOpUrCounter.inc();
-                if (!lh.bk.getDisableEnsembleChangeFeature().isAvailable() && !lh.bk.delayEnsembleChange) {
+                if (!lh.bk.getDisableEnsembleChangeFeature().isAvailable()
+                        && !lh.bk.delayEnsembleChange) {
                     lh.getDelayedWriteFailedBookies().putIfAbsent(bookieIndex, addr);
                 }
             }

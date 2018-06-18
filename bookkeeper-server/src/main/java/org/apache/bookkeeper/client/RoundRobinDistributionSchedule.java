@@ -54,8 +54,8 @@ class RoundRobinDistributionSchedule implements DistributionSchedule {
     }
 
     @Override
-    public WriteSet getWriteSetForLongPoll(long entryId) {
-        // for long poll reads, we are trying all the bookies in the ensemble
+    public WriteSet getEnsembleSet(long entryId) {
+        // for long poll reads and force ledger , we are trying all the bookies in the ensemble
         // so we create a `WriteSet` with `writeQuorumSize == ensembleSize`.
         return WriteSetImpl.create(ensembleSize, ensembleSize /* writeQuorumSize */, entryId);
     }
@@ -250,6 +250,11 @@ class RoundRobinDistributionSchedule implements DistributionSchedule {
     @Override
     public AckSet getAckSet() {
         return AckSetImpl.create(ensembleSize, writeQuorumSize, ackQuorumSize);
+    }
+
+    @Override
+    public AckSet getEnsembleAckSet() {
+        return AckSetImpl.create(ensembleSize, ensembleSize, ensembleSize);
     }
 
     private static class AckSetImpl implements AckSet {
