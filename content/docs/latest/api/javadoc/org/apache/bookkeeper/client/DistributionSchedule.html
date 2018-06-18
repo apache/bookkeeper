@@ -18,7 +18,7 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":6,"i1":6,"i2":6,"i3":6,"i4":6};
+var methods = {"i0":6,"i1":6,"i2":6,"i3":6,"i4":6,"i5":6};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],4:["t3","Abstract Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -198,18 +198,25 @@ var activeTableTab = "activeTableTab";
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/DistributionSchedule.html#getCoverageSet--">getCoverageSet</a></span>()</code>&nbsp;</td>
 </tr>
 <tr id="i2" class="altColor">
+<td class="colFirst"><code><a href="../../../../org/apache/bookkeeper/client/DistributionSchedule.AckSet.html" title="interface in org.apache.bookkeeper.client">DistributionSchedule.AckSet</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/DistributionSchedule.html#getEnsembleAckSet--">getEnsembleAckSet</a></span>()</code>
+<div class="block">Returns an ackset object useful to wait for all bookies in the ensemble,
+ responses should be checked against this.</div>
+</td>
+</tr>
+<tr id="i3" class="rowColor">
+<td class="colFirst"><code><a href="../../../../org/apache/bookkeeper/client/DistributionSchedule.WriteSet.html" title="interface in org.apache.bookkeeper.client">DistributionSchedule.WriteSet</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/DistributionSchedule.html#getEnsembleSet-long-">getEnsembleSet</a></span>(long&nbsp;entryId)</code>
+<div class="block">Return the set of bookies indices to send the messages to the whole ensemble.</div>
+</td>
+</tr>
+<tr id="i4" class="altColor">
 <td class="colFirst"><code><a href="../../../../org/apache/bookkeeper/client/DistributionSchedule.WriteSet.html" title="interface in org.apache.bookkeeper.client">DistributionSchedule.WriteSet</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/DistributionSchedule.html#getWriteSet-long-">getWriteSet</a></span>(long&nbsp;entryId)</code>
 <div class="block">Return the set of bookie indices to send the message to.</div>
 </td>
 </tr>
-<tr id="i3" class="rowColor">
-<td class="colFirst"><code><a href="../../../../org/apache/bookkeeper/client/DistributionSchedule.WriteSet.html" title="interface in org.apache.bookkeeper.client">DistributionSchedule.WriteSet</a></code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/DistributionSchedule.html#getWriteSetForLongPoll-long-">getWriteSetForLongPoll</a></span>(long&nbsp;entryId)</code>
-<div class="block">Return the set of bookies indices to send the messages to for longpoll reads.</div>
-</td>
-</tr>
-<tr id="i4" class="altColor">
+<tr id="i5" class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/DistributionSchedule.html#hasEntry-long-int-">hasEntry</a></span>(long&nbsp;entryId,
         int&nbsp;bookieIndex)</code>
@@ -258,19 +265,19 @@ var activeTableTab = "activeTableTab";
 <div class="block">Return the set of bookie indices to send the message to.</div>
 </li>
 </ul>
-<a name="getWriteSetForLongPoll-long-">
+<a name="getEnsembleSet-long-">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
-<h4>getWriteSetForLongPoll</h4>
-<pre><a href="../../../../org/apache/bookkeeper/client/DistributionSchedule.WriteSet.html" title="interface in org.apache.bookkeeper.client">DistributionSchedule.WriteSet</a>&nbsp;getWriteSetForLongPoll(long&nbsp;entryId)</pre>
-<div class="block">Return the set of bookies indices to send the messages to for longpoll reads.</div>
+<h4>getEnsembleSet</h4>
+<pre><a href="../../../../org/apache/bookkeeper/client/DistributionSchedule.WriteSet.html" title="interface in org.apache.bookkeeper.client">DistributionSchedule.WriteSet</a>&nbsp;getEnsembleSet(long&nbsp;entryId)</pre>
+<div class="block">Return the set of bookies indices to send the messages to the whole ensemble.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>entryId</code> - expected next entry id to read.</dd>
+<dd><code>entryId</code> - entry id used to calculate the ensemble.</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
-<dd>the set of bookies indices to read from.</dd>
+<dd>the set of bookies indices to send the request.</dd>
 </dl>
 </li>
 </ul>
@@ -282,6 +289,17 @@ var activeTableTab = "activeTableTab";
 <h4>getAckSet</h4>
 <pre><a href="../../../../org/apache/bookkeeper/client/DistributionSchedule.AckSet.html" title="interface in org.apache.bookkeeper.client">DistributionSchedule.AckSet</a>&nbsp;getAckSet()</pre>
 <div class="block">Returns an ackset object, responses should be checked against this.</div>
+</li>
+</ul>
+<a name="getEnsembleAckSet--">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getEnsembleAckSet</h4>
+<pre><a href="../../../../org/apache/bookkeeper/client/DistributionSchedule.AckSet.html" title="interface in org.apache.bookkeeper.client">DistributionSchedule.AckSet</a>&nbsp;getEnsembleAckSet()</pre>
+<div class="block">Returns an ackset object useful to wait for all bookies in the ensemble,
+ responses should be checked against this.</div>
 </li>
 </ul>
 <a name="getCoverageSet--">
