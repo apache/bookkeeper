@@ -36,6 +36,9 @@ Here is a list of dependencies changed in 4.7.1:
 - [Protobuf](https://developers.google.com/protocol-buffers/) is upgraded from `3.4.0` to `3.5.1`. See [apache/bookkeeper#1466](https://github.com/apache/bookkeeper/pull/1466)
 - [RocksDB](http://rocksdb.org/) is upgraded from `5.8.6` to `5.13.1`. See [apache/bookkeeper#1466](https://github.com/apache/bookkeeper/pull/1466)
 
+`Reflective setAccessible(true)` is disabled by default in Netty while using java9+. This might result in performance degradation. Consider reenabling `Reflective setAccessible(true)` by setting
+environment value `io.netty.tryReflectionSetAccessible` to `true`. See [netty/netty#7650](https://github.com/netty/netty/pull/7650) for more details.
+
 ## Full list of changes
 
 - [https://github.com/apache/bookkeeper/issues?q=label%3Arelease%2F4.7.1+is%3Aclosed](https://github.com/apache/bookkeeper/issues?q=label%3Arelease%2F4.7.1+is%3Aclosed)
