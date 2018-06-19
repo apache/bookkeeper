@@ -62,6 +62,16 @@ Client Guide | API docs
 
 ## News
 
+### 19 June, 2018: Release 4.7.1 available
+
+This is the 11th release of Apache BookKeeper!
+
+The 4.7.1 release is a bugfix release which fixes a bunch of issues reported from users of 4.7.0. These fixes include
+bug fixes around ledger cache and object pooling, performance enhancement avoiding memory copies and such.
+
+See [BookKeeper 4.7.1 Release Notes](../docs/4.7.1/overview/releaseNotes) for details.
+
+
 ### 17 April, 2018: Release 4.7.0 available
 
 This is the 10th release of Apache BookKeeper!
