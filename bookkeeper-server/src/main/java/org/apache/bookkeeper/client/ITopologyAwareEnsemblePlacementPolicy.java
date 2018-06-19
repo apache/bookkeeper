@@ -20,6 +20,10 @@ package org.apache.bookkeeper.client;
 import java.util.ArrayList;
 import java.util.Set;
 
+import org.apache.bookkeeper.client.BKException.BKNotEnoughBookiesException;
+import org.apache.bookkeeper.client.ITopologyAwareEnsemblePlacementPolicy.Ensemble;
+import org.apache.bookkeeper.client.ITopologyAwareEnsemblePlacementPolicy.Predicate;
+import org.apache.bookkeeper.client.TopologyAwareEnsemblePlacementPolicy.BookieNode;
 import org.apache.bookkeeper.common.annotation.InterfaceAudience;
 import org.apache.bookkeeper.common.annotation.InterfaceStability;
 import org.apache.bookkeeper.net.BookieSocketAddress;
@@ -109,14 +113,62 @@ public interface ITopologyAwareEnsemblePlacementPolicy<T extends Node> extends E
      *          predicate to apply
      * @param ensemble
      *          ensemble
+     * @param fallbackToRandom
+     *          fallbackToRandom
      * @return the selected bookie.
      * @throws BKException.BKNotEnoughBookiesException
      */
     T selectFromNetworkLocation(String networkLoc,
                                 Set<Node> excludeBookies,
                                 Predicate<T> predicate,
-                                Ensemble<T> ensemble)
+                                Ensemble<T> ensemble,
+                                boolean fallbackToRandom)
             throws BKException.BKNotEnoughBookiesException;
+
+    /**
+     * Select a node from cluster excluding excludeBookies and bookie nodes of
+     * excludeRacks. If there isn't a BookieNode excluding those racks and
+     * nodes, then if fallbackToRandom is set to true then pick a random node
+     * from cluster just excluding excludeBookies.
+     *
+     * @param excludeRacks
+     * @param excludeBookies
+     * @param predicate
+     * @param ensemble
+     * @param fallbackToRandom
+     * @return
+     * @throws BKException.BKNotEnoughBookiesException
+     */
+    T selectFromNetworkLocation(Set<String> excludeRacks,
+                                Set<Node> excludeBookies,
+                                Predicate<BookieNode> predicate,
+                                Ensemble<BookieNode> ensemble,
+                                boolean fallbackToRandom)
+            throws BKException.BKNotEnoughBookiesException;
+
+    /**
+     * Select a node from networkLoc rack excluding excludeBookies. If there
+     * isn't any node in 'networkLoc', then it will try to get a node from
+     * cluster excluding excludeRacks and excludeBookies. If fallbackToRandom is
+     * set to true then it will get a random bookie from cluster excluding
+     * excludeBookies if it couldn't find a bookie
+     *
+     * @param networkLoc
+     * @param excludeRacks
+     * @param excludeBookies
+     * @param predicate
+     * @param ensemble
+     * @param fallbackToRandom
+     * @return
+     * @throws BKNotEnoughBookiesException
+     */
+    T selectFromNetworkLocation(String networkLoc,
+                                Set<String> excludeRacks,
+                                Set<Node> excludeBookies,
+                                Predicate<BookieNode> predicate,
+                                Ensemble<BookieNode> ensemble,
+                                boolean fallbackToRandom)
+            throws BKNotEnoughBookiesException;
 
     /**
      * Handle bookies that left.

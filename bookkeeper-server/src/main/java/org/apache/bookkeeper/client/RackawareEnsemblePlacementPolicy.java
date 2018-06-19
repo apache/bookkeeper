@@ -23,6 +23,10 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.bookkeeper.client.BKException.BKNotEnoughBookiesException;
+import org.apache.bookkeeper.client.ITopologyAwareEnsemblePlacementPolicy.Ensemble;
+import org.apache.bookkeeper.client.ITopologyAwareEnsemblePlacementPolicy.Predicate;
+import org.apache.bookkeeper.client.TopologyAwareEnsemblePlacementPolicy.BookieNode;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.net.DNSToSwitchMapping;
 import org.apache.bookkeeper.net.Node;
@@ -54,18 +58,19 @@ public class RackawareEnsemblePlacementPolicy extends RackawareEnsemblePlacement
                                                           boolean isWeighted,
                                                           int maxWeightMultiple,
                                                           int minNumRacksPerWriteQuorum,
-                                                          StatsLogger statsLogger) {
+                                                          boolean enforceMinNumRacksPerWriteQuorum,
+            StatsLogger statsLogger) {
         if (stabilizePeriodSeconds > 0) {
             super.initialize(dnsResolver, timer, reorderReadsRandom, 0, reorderThresholdPendingRequests, isWeighted,
-                    maxWeightMultiple, minNumRacksPerWriteQuorum, statsLogger);
+                    maxWeightMultiple, minNumRacksPerWriteQuorum, enforceMinNumRacksPerWriteQuorum, statsLogger);
             slave = new RackawareEnsemblePlacementPolicyImpl(enforceDurability);
             slave.initialize(dnsResolver, timer, reorderReadsRandom, stabilizePeriodSeconds,
-                    reorderThresholdPendingRequests, isWeighted, maxWeightMultiple,
-                    minNumRacksPerWriteQuorum, statsLogger);
+                    reorderThresholdPendingRequests, isWeighted, maxWeightMultiple, minNumRacksPerWriteQuorum,
+                    enforceMinNumRacksPerWriteQuorum, statsLogger);
         } else {
             super.initialize(dnsResolver, timer, reorderReadsRandom, stabilizePeriodSeconds,
-                    reorderThresholdPendingRequests, isWeighted, maxWeightMultiple,
-                    minNumRacksPerWriteQuorum, statsLogger);
+                    reorderThresholdPendingRequests, isWeighted, maxWeightMultiple, minNumRacksPerWriteQuorum,
+                    enforceMinNumRacksPerWriteQuorum, statsLogger);
             slave = null;
         }
         return this;
@@ -171,15 +176,60 @@ public class RackawareEnsemblePlacementPolicy extends RackawareEnsemblePlacement
             String networkLoc,
             Set<Node> excludeBookies,
             Predicate<BookieNode> predicate,
-            Ensemble<BookieNode> ensemble)
+            Ensemble<BookieNode> ensemble,
+            boolean fallbackToRandom)
             throws BKException.BKNotEnoughBookiesException {
         try {
-            return super.selectFromNetworkLocation(networkLoc, excludeBookies, predicate, ensemble);
+            return super.selectFromNetworkLocation(networkLoc, excludeBookies, predicate, ensemble,
+                    fallbackToRandom);
         } catch (BKException.BKNotEnoughBookiesException bnebe) {
             if (slave == null) {
                 throw bnebe;
             } else {
-                return slave.selectFromNetworkLocation(networkLoc, excludeBookies, predicate, ensemble);
+                return slave.selectFromNetworkLocation(networkLoc, excludeBookies, predicate, ensemble,
+                        fallbackToRandom);
+            }
+        }
+    }
+
+    @Override
+    public BookieNode selectFromNetworkLocation(
+            Set<String> excludeRacks,
+            Set<Node> excludeBookies,
+            Predicate<BookieNode> predicate,
+            Ensemble<BookieNode> ensemble,
+            boolean fallbackToRandom)
+                    throws BKException.BKNotEnoughBookiesException {
+        try {
+            return super.selectFromNetworkLocation(excludeRacks, excludeBookies, predicate, ensemble, fallbackToRandom);
+        } catch (BKException.BKNotEnoughBookiesException bnebe) {
+            if (slave == null) {
+                throw bnebe;
+            } else {
+                return slave.selectFromNetworkLocation(excludeRacks, excludeBookies, predicate, ensemble,
+                        fallbackToRandom);
+            }
+        }
+    }
+
+    @Override
+    public BookieNode selectFromNetworkLocation(
+            String networkLoc,
+            Set<String> excludeRacks,
+            Set<Node> excludeBookies,
+            Predicate<BookieNode> predicate,
+            Ensemble<BookieNode> ensemble,
+            boolean fallbackToRandom)
+            throws BKNotEnoughBookiesException {
+        try {
+            return super.selectFromNetworkLocation(networkLoc, excludeRacks, excludeBookies, predicate, ensemble,
+                    fallbackToRandom);
+        } catch (BKException.BKNotEnoughBookiesException bnebe) {
+            if (slave == null) {
+                throw bnebe;
+            } else {
+                return slave.selectFromNetworkLocation(networkLoc, excludeRacks, excludeBookies, predicate, ensemble,
+                        fallbackToRandom);
             }
         }
     }

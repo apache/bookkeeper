@@ -79,7 +79,9 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
     int maxWeightMultiple;
     private Map<BookieNode, WeightedObject> bookieInfoMap = new HashMap<BookieNode, WeightedObject>();
     private WeightedRandomSelection<BookieNode> weightedSelection;
+
     protected int minNumRacksPerWriteQuorum;
+    protected boolean enforceMinNumRacksPerWriteQuorum;
 
     public static final String REPP_DNS_RESOLVER_CLASS = "reppDnsResolverClass";
     public static final String REPP_RANDOM_READ_REORDERING = "ensembleRandomReadReordering";
@@ -238,6 +240,7 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
                                                               boolean isWeighted,
                                                               int maxWeightMultiple,
                                                               int minNumRacksPerWriteQuorum,
+                                                              boolean enforceMinNumRacksPerWriteQuorum,
                                                               StatsLogger statsLogger) {
         checkNotNull(statsLogger, "statsLogger should not be null, use NullStatsLogger instead.");
         this.statsLogger = statsLogger;
@@ -250,6 +253,7 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
         this.dnsResolver = new DNSResolverDecorator(dnsResolver, () -> this.getDefaultRack());
         this.timer = timer;
         this.minNumRacksPerWriteQuorum = minNumRacksPerWriteQuorum;
+        this.enforceMinNumRacksPerWriteQuorum = enforceMinNumRacksPerWriteQuorum;
 
         // create the network topology
         if (stabilizePeriodSeconds > 0) {
@@ -339,6 +343,7 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
                 conf.getDiskWeightBasedPlacementEnabled(),
                 conf.getBookieMaxWeightMultipleForWeightBasedPlacement(),
                 conf.getMinNumRacksPerWriteQuorum(),
+                conf.getEnforceMinNumRacksPerWriteQuorum(),
                 statsLogger);
     }
 
@@ -536,6 +541,10 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
             int numRacks = topology.getNumOfRacks();
             // only one rack, use the random algorithm.
             if (numRacks < 2) {
+                if (enforceMinNumRacksPerWriteQuorum && (minNumRacksPerWriteQuorumForThisEnsemble > 1)) {
+                    LOG.error("Only one rack available and minNumRacksPerWriteQuorum is enforced, so giving up");
+                    throw new BKNotEnoughBookiesException();
+                }
                 List<BookieNode> bns = selectRandom(ensembleSize, excludeNodes, TruePredicate.INSTANCE,
                         ensemble);
                 ArrayList<BookieSocketAddress> addrs = new ArrayList<BookieSocketAddress>(ensembleSize);
@@ -610,7 +619,9 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
                     }
                     curRack = sb.toString();
                 }
-                prevNode = selectFromNetworkLocation(curRack, excludeNodes, ensemble, ensemble);
+                boolean firstBookieInTheEnsemble = (null == prevNode);
+                prevNode = selectFromNetworkLocation(curRack, excludeNodes, ensemble, ensemble,
+                        !enforceMinNumRacksPerWriteQuorum || firstBookieInTheEnsemble);
                 racks[i] = prevNode.getNetworkLocation();
             }
             ArrayList<BookieSocketAddress> bookieList = ensemble.toList();
@@ -657,7 +668,8 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
                     networkLocationsToBeExcluded,
                     excludeNodes,
                     TruePredicate.INSTANCE,
-                    EnsembleForReplacementWithNoConstraints.INSTANCE);
+                    EnsembleForReplacementWithNoConstraints.INSTANCE,
+                    !enforceMinNumRacksPerWriteQuorum);
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Bookie {} is chosen to replace bookie {}.", candidate, bn);
             }
@@ -698,12 +710,20 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
             String networkLoc,
             Set<Node> excludeBookies,
             Predicate<BookieNode> predicate,
-            Ensemble<BookieNode> ensemble)
+            Ensemble<BookieNode> ensemble,
+            boolean fallbackToRandom)
             throws BKNotEnoughBookiesException {
         // select one from local rack
         try {
             return selectRandomFromRack(networkLoc, excludeBookies, predicate, ensemble);
         } catch (BKNotEnoughBookiesException e) {
+            if (!fallbackToRandom) {
+                LOG.error(
+                        "Failed to choose a bookie from {} : "
+                                + "excluded {}, enforceMinNumRacksPerWriteQuorum is enabled so giving up.",
+                        networkLoc, excludeBookies);
+                throw e;
+            }
             LOG.warn("Failed to choose a bookie from {} : "
                      + "excluded {}, fallback to choose bookie randomly from the cluster.",
                      networkLoc, excludeBookies);
@@ -712,28 +732,25 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
         }
     }
 
-    protected BookieNode selectFromNetworkLocation(String networkLoc,
+    @Override
+    public BookieNode selectFromNetworkLocation(String networkLoc,
                                                    Set<String> excludeRacks,
                                                    Set<Node> excludeBookies,
                                                    Predicate<BookieNode> predicate,
-                                                   Ensemble<BookieNode> ensemble)
+                                                   Ensemble<BookieNode> ensemble,
+                                                   boolean fallbackToRandom)
             throws BKNotEnoughBookiesException {
         // first attempt to select one from local rack
         try {
             return selectRandomFromRack(networkLoc, excludeBookies, predicate, ensemble);
         } catch (BKNotEnoughBookiesException e) {
-            if (isWeighted) {
-                // if weight based selection is enabled, randomly select one from the whole cluster
-                // based on weights and ignore the provided <tt>excludeRacks</tt>.
-                // randomly choose one from whole cluster, ignore the provided predicate.
-                return selectRandom(1, excludeBookies, predicate, ensemble).get(0);
-            } else {
-                // if weight based selection is disabled, and there is no enough bookie from local rack,
-                // select bookies from the whole cluster and exclude the racks specified at <tt>excludeRacks</tt>.
-                return selectFromNetworkLocation(excludeRacks, excludeBookies, predicate, ensemble);
-            }
+            /*
+             * there is no enough bookie from local rack, select bookies from
+             * the whole cluster and exclude the racks specified at
+             * <tt>excludeRacks</tt>.
+             */
+            return selectFromNetworkLocation(excludeRacks, excludeBookies, predicate, ensemble, fallbackToRandom);
         }
-
     }
 
 
@@ -742,27 +759,39 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
      * <i>excludeBookies</i> set. If it fails to find one, it selects a random {@link BookieNode} from the whole
      * cluster.
      */
-    protected BookieNode selectFromNetworkLocation(Set<String> excludeRacks,
+    @Override
+    public BookieNode selectFromNetworkLocation(Set<String> excludeRacks,
                                                    Set<Node> excludeBookies,
                                                    Predicate<BookieNode> predicate,
-                                                   Ensemble<BookieNode> ensemble)
+                                                   Ensemble<BookieNode> ensemble,
+                                                   boolean fallbackToRandom)
             throws BKNotEnoughBookiesException {
-        List<BookieNode> knownNodes = new ArrayList<>(knownBookies.values());
-        Collections.shuffle(knownNodes);
 
+        List<BookieNode> knownNodes = new ArrayList<>(knownBookies.values());
+        Set<Node> fullExclusionBookiesList = new HashSet<Node>(excludeBookies);
         for (BookieNode knownNode : knownNodes) {
-            if (excludeBookies.contains(knownNode)) {
-                continue;
-            }
             if (excludeRacks.contains(knownNode.getNetworkLocation())) {
-                continue;
+                fullExclusionBookiesList.add(knownNode);
             }
-            return knownNode;
         }
-        LOG.warn("Failed to choose a bookie: excluded {}, fallback to choose bookie randomly from the cluster.",
-                excludeBookies);
-        // randomly choose one from whole cluster
-        return selectRandom(1, excludeBookies, predicate, ensemble).get(0);
+
+        try {
+            return selectRandomInternal(knownNodes, 1, fullExclusionBookiesList, TruePredicate.INSTANCE,
+                    EnsembleForReplacementWithNoConstraints.INSTANCE).get(0);
+        } catch (BKNotEnoughBookiesException e) {
+            if (!fallbackToRandom) {
+                LOG.error(
+                        "Failed to choose a bookie excluding Racks: {} "
+                                + "Nodes: {}, enforceMinNumRacksPerWriteQuorum is enabled so giving up.",
+                        excludeRacks, excludeBookies);
+                throw e;
+            }
+
+            LOG.warn("Failed to choose a bookie: excluded {}, fallback to choose bookie randomly from the cluster.",
+                    excludeBookies);
+            // randomly choose one from whole cluster
+            return selectRandom(1, excludeBookies, predicate, ensemble).get(0);
+        }
     }
 
     private WeightedRandomSelection<BookieNode> prepareForWeightedSelection(List<Node> leaves) {
