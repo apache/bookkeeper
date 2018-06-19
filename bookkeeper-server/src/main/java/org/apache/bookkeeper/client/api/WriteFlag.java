@@ -32,6 +32,8 @@ public enum WriteFlag {
     /**
      * Writes will be acknowledged after writing to the filesystem
      * but not yet been persisted to disks.
+     *
+     * @see ForceableHandle#force()
      */
     DEFERRED_SYNC(0x1 << 0);
 

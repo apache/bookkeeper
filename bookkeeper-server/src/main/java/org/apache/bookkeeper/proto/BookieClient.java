@@ -55,6 +55,7 @@ import org.apache.bookkeeper.common.util.OrderedExecutor;
 import org.apache.bookkeeper.common.util.SafeRunnable;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ForceLedgerCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GetBookieInfoCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
@@ -191,6 +192,30 @@ public class BookieClient implements PerChannelBookieClientFactory {
             }
         }
         return clientPool;
+    }
+
+    public void forceLedger(final BookieSocketAddress addr, final long ledgerId,
+            final ForceLedgerCallback cb, final Object ctx) {
+        final PerChannelBookieClientPool client = lookupClient(addr);
+        if (client == null) {
+            cb.forceLedgerComplete(getRc(BKException.Code.BookieHandleNotAvailableException),
+                              ledgerId, addr, ctx);
+            return;
+        }
+
+        client.obtain((rc, pcbc) -> {
+            if (rc != BKException.Code.OK) {
+                try {
+                    executor.executeOrdered(ledgerId, safeRun(() -> {
+                        cb.forceLedgerComplete(rc, ledgerId, addr, ctx);
+                    }));
+                } catch (RejectedExecutionException re) {
+                    cb.forceLedgerComplete(getRc(BKException.Code.InterruptedException), ledgerId, addr, ctx);
+                }
+            } else {
+                pcbc.forceLedger(ledgerId, cb, ctx);
+            }
+        }, ledgerId);
     }
 
     public void writeLac(final BookieSocketAddress addr, final long ledgerId, final byte[] masterKey,

@@ -97,7 +97,7 @@ public class BKException extends Exception {
         case Code.QuorumException:
             return "Invalid quorum size on ensemble size";
         case Code.NoBookieAvailableException:
-            return "Invalid quorum size on ensemble size";
+            return "No bookie available";
         case Code.DigestNotInitializedException:
             return "Digest engine not initialized";
         case Code.DigestMatchException:

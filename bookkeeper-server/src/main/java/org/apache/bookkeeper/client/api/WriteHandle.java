@@ -38,7 +38,7 @@ import org.apache.bookkeeper.common.concurrent.FutureUtils;
  */
 @Public
 @Unstable
-public interface WriteHandle extends ReadHandle {
+public interface WriteHandle extends ReadHandle, ForceableHandle {
 
     /**
      * Add entry asynchronously to an open ledger.

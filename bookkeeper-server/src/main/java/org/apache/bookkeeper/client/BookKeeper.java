@@ -117,6 +117,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
     private OpStatsLogger readLacAndEntryOpLogger;
     private OpStatsLogger readLacAndEntryRespLogger;
     private OpStatsLogger addOpLogger;
+    private OpStatsLogger forceOpLogger;
     private OpStatsLogger writeLacOpLogger;
     private OpStatsLogger readLacOpLogger;
     private OpStatsLogger recoverAddEntriesStats;
@@ -734,6 +735,20 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
                     return DataFormats.LedgerMetadataFormat.DigestType.DUMMY;
                 default:
                     throw new IllegalArgumentException("Unable to convert digest type " + digestType);
+            }
+        }
+        public org.apache.bookkeeper.client.api.DigestType toApiDigestType() {
+            switch (this) {
+                case MAC:
+                    return org.apache.bookkeeper.client.api.DigestType.MAC;
+                case CRC32:
+                    return org.apache.bookkeeper.client.api.DigestType.CRC32;
+                case CRC32C:
+                    return org.apache.bookkeeper.client.api.DigestType.CRC32C;
+                case DUMMY:
+                    return org.apache.bookkeeper.client.api.DigestType.DUMMY;
+                default:
+                    throw new IllegalArgumentException("Unable to convert digest type " + this);
             }
         }
     }
@@ -1493,6 +1508,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
         readLacAndEntryRespLogger = stats.getOpStatsLogger(
                 BookKeeperClientStats.READ_LAST_CONFIRMED_AND_ENTRY_RESPONSE);
         addOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.ADD_OP);
+        forceOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.FORCE_OP);
         addOpUrCounter = stats.getCounter(BookKeeperClientStats.ADD_OP_UR);
         writeLacOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.WRITE_LAC_OP);
         readLacOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.READ_LAC_OP);
@@ -1525,6 +1541,9 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
     }
     OpStatsLogger getAddOpLogger() {
         return addOpLogger;
+    }
+    OpStatsLogger getForceOpLogger() {
+        return forceOpLogger;
     }
     OpStatsLogger getWriteLacOpLogger() {
         return writeLacOpLogger;
