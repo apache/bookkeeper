@@ -422,20 +422,6 @@ Once all issues have been resolved, you should go back and build a new release c
 
 Once the release candidate has been reviewed and approved by the community, the release should be finalized. This involves the final deployment of the release candidate to the release repositories, merging of the website changes, etc.
 
-### Advance version on release branch
-
-Use the Maven Release plugin in order to advance the version in all poms.
-
-> This command will upgrade the <version> tag on every pom.xml locally to your workspace.
-
-    mvn release:update-versions
-        -DdevelopmentVersion=${DEVELOPMENT_VERSION}
-
-For instance if you have released 4.5.1, you have to change version to 4.5.2-SNAPSHOT.
-Then you have to create a PR and submit it for review.
-
-Example PR: [release-4.7.0](https://github.com/apache/bookkeeper/pull/1350)
-
 ### Deploy artifacts to Maven Central Repository
 
 Use the Apache Nexus repository to release the staged binary artifacts to the Maven Central repository. In the `Staging Repositories` section, find the relevant release candidate `orgapachebookkeeper-XXX` entry and click `Release`. Drop all other release candidates that are not being released.
@@ -446,32 +432,20 @@ Copy the source release from the `dev` repository to the `release` repository at
 
     svn move https://dist.apache.org/repos/dist/dev/bookkeeper/bookkeeper-${VERSION}-rc${RC_NUM} https://dist.apache.org/repos/dist/release/bookkeeper/bookkeeper-${VERSION}
 
-### Git tag
-
-Create and push a new signed for the released version by copying the tag for the final release tag, as follows
-
-```shell
-git tag -s "${TAG}" "${RC_TAG}"
-git push apache "${TAG}"
-```
-
-Remove rc tags:
-
-```shell
-for num in $(seq 0 ${RC_NUM}); do
-    git tag -d "v${VERSION}-rc${num}"
-    git push apache :"v${VERSION}-rc${num}"
-done
-```
-
 ### Update Website
 
 1. Create the documentation for `${VERSION}`. Run the `release.sh` to generate the branch for `${VERSION}` and bump
-    the versions for website documentation.
+    the versions for website documentation; or run the `release_minor.sh` to release documentation when doing a
+    mintor release.
 
     ```shell
     $ cd site
-    $ ./site/release.sh
+
+    // use `release.sh` for major releases
+    $ ./scripts/release.sh
+
+    // or `release_minor.sh` for minor releases
+    $ ./scripts/release_minor.sh
     ```
 
     Once run the `release.sh`, please send a pull request for it and get approval from any committers, then merge it.
@@ -488,25 +462,6 @@ done
     send a pull request for review and get an approval from the community.
 
 2. Once the pull request is approved, merge this pull request into master and make sure it is cherry-picked into corresponding branch.
-
-3. After this pull request is merged, you need to cherry-pick the change to the release tag.
-
-    ```shell
-    // create a cherry-pick branch
-    $ git checkout ${TAG}
-    $ git checkout -b ${TAG}_cherrypick
-    $ git cherry-pick <GIT SHA>
-    // remove the release tag locally and remotely
-    $ git tag -d ${TAG}
-    $ git push apache :${TAG}
-    // re-tag based on the cherry-pick branch
-    $ git tag ${TAG}
-    $ git push apache ${TAG}
-    ```
-
-4. Verify the [docker hub](https://hub.docker.com/r/apache/bookkeeper/) to see if a new build for the given tag is build.
-
-5. Once the new docker image is built, update BC tests to include new docker image. Example: [release-4.7.0](https://github.com/apache/bookkeeper/pull/1352)
 
 ### Update DC/OS BookKeeper package
 
@@ -575,13 +530,61 @@ It is easy if only version need be bump.
     $ git commit -m "new bookkeeper version"
     ```
 
+### Git tag
+
+Create and push a new signed for the released version by copying the tag for the final release tag, as follows
+
+```shell
+git tag -s "${TAG}" "${RC_TAG}"
+git push apache "${TAG}"
+```
+
+Remove rc tags:
+
+```shell
+for num in $(seq 0 ${RC_NUM}); do
+    git tag -d "v${VERSION}-rc${num}"
+    git push apache :"v${VERSION}-rc${num}"
+done
+```
+
+### Verify Docker Image
+
+> After release tag is created, it will automatically trigger docker auto build. 
+
+1. Verify the [docker hub](https://hub.docker.com/r/apache/bookkeeper/) to see if a new build for the given tag is build.
+
+2. Once the new docker image is built, update BC tests to include new docker image. Example: [release-4.7.0](https://github.com/apache/bookkeeper/pull/1352)
+
+### Advance version on release branch
+
+> only do this for minor release
+
+Use the Maven Release plugin in order to advance the version in all poms.
+
+> This command will upgrade the <version> tag on every pom.xml locally to your workspace.
+
+    mvn release:update-versions
+        -DdevelopmentVersion=${DEVELOPMENT_VERSION}
+        -Dstream
+
+For instance if you have released 4.5.1, you have to change version to 4.5.2-SNAPSHOT.
+Then you have to create a PR and submit it for review.
+
+Example PR: [release-4.7.0](https://github.com/apache/bookkeeper/pull/1350)
+
+
 ### Mark the version as released in Github
+
+> only do this for feature release
 
 In Github, inside [milestones](https://github.com/apache/bookkeeper/milestones), hover over the current milestone and click `close` button to close a milestone and set today's date as due-date.
 
 ### Update Release Schedule
 
-Update the [release schedule](../releases) page (only do this for feature release):
+> only do this for feature release
+
+Update the [release schedule](../releases) page:
 
 - Bump the next feature release version and update its release window.
 - Update the release schedule to remove released version and add a new release.
