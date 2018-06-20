@@ -1967,6 +1967,20 @@ when using either RackawareEnsemblePlacementPolicy and RegionAwareEnsemblePlacem
 </td>
       <td></td>
     </tr>
+    
+    <tr id="minNumRacksPerWriteQuorum">
+      <td><code>minNumRacksPerWriteQuorum</code></td>
+      <td><p>minimum number of racks per write quorum. RackawareEnsemblePlacementPolicy will try to get bookies from atleast ‘minNumRacksPerWriteQuorum’ racks for a writeQuorum.</p>
+</td>
+      <td></td>
+    </tr>
+    
+    <tr id="enforceMinNumRacksPerWriteQuorum">
+      <td><code>enforceMinNumRacksPerWriteQuorum</code></td>
+      <td><p>‘enforceMinNumRacksPerWriteQuorum’ enforces RackawareEnsemblePlacementPolicy to pick bookies from ‘minNumRacksPerWriteQuorum’ racks for a writeQuorum. If it cann’t find bookie then it would throw BKNotEnoughBookiesException instead of picking random one.</p>
+</td>
+      <td></td>
+    </tr>
      <!-- for param in group.params -->
   </tbody>
 </table>
