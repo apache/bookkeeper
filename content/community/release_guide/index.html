@@ -283,13 +283,14 @@
     </ul>
   </li>
   <li><a href="#finalize-the-release" id="markdown-toc-finalize-the-release">Finalize the release</a>    <ul>
-      <li><a href="#advance-version-on-release-branch" id="markdown-toc-advance-version-on-release-branch">Advance version on release branch</a></li>
       <li><a href="#deploy-artifacts-to-maven-central-repository" id="markdown-toc-deploy-artifacts-to-maven-central-repository">Deploy artifacts to Maven Central Repository</a></li>
       <li><a href="#deploy-source-release-to-distapacheorg" id="markdown-toc-deploy-source-release-to-distapacheorg">Deploy source release to dist.apache.org</a></li>
-      <li><a href="#git-tag" id="markdown-toc-git-tag">Git tag</a></li>
       <li><a href="#update-website" id="markdown-toc-update-website">Update Website</a></li>
       <li><a href="#update-dockerfile" id="markdown-toc-update-dockerfile">Update Dockerfile</a></li>
       <li><a href="#update-dcos-bookkeeper-package" id="markdown-toc-update-dcos-bookkeeper-package">Update DC/OS BookKeeper package</a></li>
+      <li><a href="#git-tag" id="markdown-toc-git-tag">Git tag</a></li>
+      <li><a href="#verify-docker-image" id="markdown-toc-verify-docker-image">Verify Docker Image</a></li>
+      <li><a href="#advance-version-on-release-branch" id="markdown-toc-advance-version-on-release-branch">Advance version on release branch</a></li>
       <li><a href="#mark-the-version-as-released-in-github" id="markdown-toc-mark-the-version-as-released-in-github">Mark the version as released in Github</a></li>
       <li><a href="#update-release-schedule" id="markdown-toc-update-release-schedule">Update Release Schedule</a></li>
       <li><a href="#checklist-to-proceed-to-the-next-step-4" id="markdown-toc-checklist-to-proceed-to-the-next-step-4">Checklist to proceed to the next step</a></li>
@@ -763,23 +764,6 @@ Thanks everyone!
 
 <p>Once the release candidate has been reviewed and approved by the community, the release should be finalized. This involves the final deployment of the release candidate to the release repositories, merging of the website changes, etc.</p>
 
-<h3 id="advance-version-on-release-branch">Advance version on release branch</h3>
-
-<p>Use the Maven Release plugin in order to advance the version in all poms.</p>
-
-<blockquote>
-  <p>This command will upgrade the <version> tag on every pom.xml locally to your workspace.</version></p>
-</blockquote>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>mvn release:update-versions
-    -DdevelopmentVersion=${DEVELOPMENT_VERSION}
-</code></pre></div></div>
-
-<p>For instance if you have released 4.5.1, you have to change version to 4.5.2-SNAPSHOT.
-Then you have to create a PR and submit it for review.</p>
-
-<p>Example PR: <a href="https://github.com/apache/bookkeeper/pull/1350">release-4.7.0</a></p>
-
 <h3 id="deploy-artifacts-to-maven-central-repository">Deploy artifacts to Maven Central Repository</h3>
 
 <p>Use the Apache Nexus repository to release the staged binary artifacts to the Maven Central repository. In the <code class="highlighter-rouge">Staging Repositories</code> section, find the relevant release candidate <code class="highlighter-rouge">orgapachebookkeeper-XXX</code> entry and click <code class="highlighter-rouge">Release</code>. Drop all other release candidates that are not being released.</p>
@@ -791,31 +775,21 @@ Then you have to create a PR and submit it for review.</p>
 <div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>svn move https://dist.apache.org/repos/dist/dev/bookkeeper/bookkeeper-${VERSION}-rc${RC_NUM} https://dist.apache.org/repos/dist/release/bookkeeper/bookkeeper-${VERSION}
 </code></pre></div></div>
 
-<h3 id="git-tag">Git tag</h3>
-
-<p>Create and push a new signed for the released version by copying the tag for the final release tag, as follows</p>
-
-<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code>git tag <span class="nt">-s</span> <span class="s2">"</span><span class="k">${</span><span class="nv">TAG</span><span class="k">}</span><span class="s2">"</span> <span class="s2">"</span><span class="k">${</span><span class="nv">RC_TAG</span><span class="k">}</span><span class="s2">"</span>
-git push apache <span class="s2">"</span><span class="k">${</span><span class="nv">TAG</span><span class="k">}</span><span class="s2">"</span>
-</code></pre></div></div>
-
-<p>Remove rc tags:</p>
-
-<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">for </span>num <span class="k">in</span> <span class="k">$(</span><span class="nb">seq </span>0 <span class="k">${</span><span class="nv">RC_NUM</span><span class="k">})</span><span class="p">;</span> <span class="k">do
-    </span>git tag <span class="nt">-d</span> <span class="s2">"v</span><span class="k">${</span><span class="nv">VERSION</span><span class="k">}</span><span class="s2">-rc</span><span class="k">${</span><span class="nv">num</span><span class="k">}</span><span class="s2">"</span>
-    git push apache :<span class="s2">"v</span><span class="k">${</span><span class="nv">VERSION</span><span class="k">}</span><span class="s2">-rc</span><span class="k">${</span><span class="nv">num</span><span class="k">}</span><span class="s2">"</span>
-<span class="k">done</span>
-</code></pre></div></div>
-
 <h3 id="update-website">Update Website</h3>
 
 <ol>
   <li>
     <p>Create the documentation for <code class="highlighter-rouge">${VERSION}</code>. Run the <code class="highlighter-rouge">release.sh</code> to generate the branch for <code class="highlighter-rouge">${VERSION}</code> and bump
- the versions for website documentation.</p>
+ the versions for website documentation; or run the <code class="highlighter-rouge">release_minor.sh</code> to release documentation when doing a
+ mintor release.</p>
 
     <div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code> <span class="nv">$ </span><span class="nb">cd </span>site
- <span class="nv">$ </span>./site/release.sh
+
+ // use <span class="sb">`</span>release.sh<span class="sb">`</span> <span class="k">for </span>major releases
+ <span class="nv">$ </span>./scripts/release.sh
+
+ // or <span class="sb">`</span>release_minor.sh<span class="sb">`</span> <span class="k">for </span>minor releases
+ <span class="nv">$ </span>./scripts/release_minor.sh
 </code></pre></div>    </div>
 
     <p>Once run the <code class="highlighter-rouge">release.sh</code>, please send a pull request for it and get approval from any committers, then merge it.
@@ -840,27 +814,6 @@ git push apache <span class="s2">"</span><span class="k">${</span><span class="n
   </li>
   <li>
     <p>Once the pull request is approved, merge this pull request into master and make sure it is cherry-picked into corresponding branch.</p>
-  </li>
-  <li>
-    <p>After this pull request is merged, you need to cherry-pick the change to the release tag.</p>
-
-    <div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code> // create a cherry-pick branch
- <span class="nv">$ </span>git checkout <span class="k">${</span><span class="nv">TAG</span><span class="k">}</span>
- <span class="nv">$ </span>git checkout <span class="nt">-b</span> <span class="k">${</span><span class="nv">TAG</span><span class="k">}</span>_cherrypick
- <span class="nv">$ </span>git cherry-pick &lt;GIT SHA&gt;
- // remove the release tag locally and remotely
- <span class="nv">$ </span>git tag <span class="nt">-d</span> <span class="k">${</span><span class="nv">TAG</span><span class="k">}</span>
- <span class="nv">$ </span>git push apache :<span class="k">${</span><span class="nv">TAG</span><span class="k">}</span>
- // re-tag based on the cherry-pick branch
- <span class="nv">$ </span>git tag <span class="k">${</span><span class="nv">TAG</span><span class="k">}</span>
- <span class="nv">$ </span>git push apache <span class="k">${</span><span class="nv">TAG</span><span class="k">}</span>
-</code></pre></div>    </div>
-  </li>
-  <li>
-    <p>Verify the <a href="https://hub.docker.com/r/apache/bookkeeper/">docker hub</a> to see if a new build for the given tag is build.</p>
-  </li>
-  <li>
-    <p>Once the new docker image is built, update BC tests to include new docker image. Example: <a href="https://github.com/apache/bookkeeper/pull/1352">release-4.7.0</a></p>
   </li>
 </ol>
 
@@ -936,13 +889,74 @@ git push apache <span class="s2">"</span><span class="k">${</span><span class="n
   </li>
 </ol>
 
+<h3 id="git-tag">Git tag</h3>
+
+<p>Create and push a new signed for the released version by copying the tag for the final release tag, as follows</p>
+
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code>git tag <span class="nt">-s</span> <span class="s2">"</span><span class="k">${</span><span class="nv">TAG</span><span class="k">}</span><span class="s2">"</span> <span class="s2">"</span><span class="k">${</span><span class="nv">RC_TAG</span><span class="k">}</span><span class="s2">"</span>
+git push apache <span class="s2">"</span><span class="k">${</span><span class="nv">TAG</span><span class="k">}</span><span class="s2">"</span>
+</code></pre></div></div>
+
+<p>Remove rc tags:</p>
+
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">for </span>num <span class="k">in</span> <span class="k">$(</span><span class="nb">seq </span>0 <span class="k">${</span><span class="nv">RC_NUM</span><span class="k">})</span><span class="p">;</span> <span class="k">do
+    </span>git tag <span class="nt">-d</span> <span class="s2">"v</span><span class="k">${</span><span class="nv">VERSION</span><span class="k">}</span><span class="s2">-rc</span><span class="k">${</span><span class="nv">num</span><span class="k">}</span><span class="s2">"</span>
+    git push apache :<span class="s2">"v</span><span class="k">${</span><span class="nv">VERSION</span><span class="k">}</span><span class="s2">-rc</span><span class="k">${</span><span class="nv">num</span><span class="k">}</span><span class="s2">"</span>
+<span class="k">done</span>
+</code></pre></div></div>
+
+<h3 id="verify-docker-image">Verify Docker Image</h3>
+
+<blockquote>
+  <p>After release tag is created, it will automatically trigger docker auto build.</p>
+</blockquote>
+
+<ol>
+  <li>
+    <p>Verify the <a href="https://hub.docker.com/r/apache/bookkeeper/">docker hub</a> to see if a new build for the given tag is build.</p>
+  </li>
+  <li>
+    <p>Once the new docker image is built, update BC tests to include new docker image. Example: <a href="https://github.com/apache/bookkeeper/pull/1352">release-4.7.0</a></p>
+  </li>
+</ol>
+
+<h3 id="advance-version-on-release-branch">Advance version on release branch</h3>
+
+<blockquote>
+  <p>only do this for minor release</p>
+</blockquote>
+
+<p>Use the Maven Release plugin in order to advance the version in all poms.</p>
+
+<blockquote>
+  <p>This command will upgrade the <version> tag on every pom.xml locally to your workspace.</version></p>
+</blockquote>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>mvn release:update-versions
+    -DdevelopmentVersion=${DEVELOPMENT_VERSION}
+    -Dstream
+</code></pre></div></div>
+
+<p>For instance if you have released 4.5.1, you have to change version to 4.5.2-SNAPSHOT.
+Then you have to create a PR and submit it for review.</p>
+
+<p>Example PR: <a href="https://github.com/apache/bookkeeper/pull/1350">release-4.7.0</a></p>
+
 <h3 id="mark-the-version-as-released-in-github">Mark the version as released in Github</h3>
+
+<blockquote>
+  <p>only do this for feature release</p>
+</blockquote>
 
 <p>In Github, inside <a href="https://github.com/apache/bookkeeper/milestones">milestones</a>, hover over the current milestone and click <code class="highlighter-rouge">close</code> button to close a milestone and set today’s date as due-date.</p>
 
 <h3 id="update-release-schedule">Update Release Schedule</h3>
 
-<p>Update the <a href="../releases">release schedule</a> page (only do this for feature release):</p>
+<blockquote>
+  <p>only do this for feature release</p>
+</blockquote>
+
+<p>Update the <a href="../releases">release schedule</a> page:</p>
 
 <ul>
   <li>Bump the next feature release version and update its release window.</li>
