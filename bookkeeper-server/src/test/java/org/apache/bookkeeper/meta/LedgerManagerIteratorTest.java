@@ -52,6 +52,7 @@ import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.util.MathUtils;
 import org.apache.bookkeeper.util.ZkUtils;
 import org.apache.bookkeeper.versioning.Version;
+import org.apache.mina.util.ConcurrentHashSet;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.ZooDefs;
 import org.junit.After;
@@ -414,6 +415,7 @@ public class LedgerManagerIteratorTest extends LedgerManagerTestCase {
         final long start = MathUtils.nowInNano();
         final CountDownLatch latch = new CountDownLatch(1);
         ArrayList<Thread> threads = new ArrayList<>();
+        final ConcurrentHashSet<Long> createdLedgers = new ConcurrentHashSet<>();
         for (int i = 0; i < numWriters; ++i) {
             Thread thread = new Thread(safeWrapper(() -> {
                 LedgerManager writerLM = getIndependentLedgerManager();
@@ -431,7 +433,7 @@ public class LedgerManagerIteratorTest extends LedgerManagerTestCase {
                         if (!longRange) {
                             candidate %= 1000000;
                         }
-                    } while (mustExist.contains(candidate));
+                    } while (mustExist.contains(candidate) || !createdLedgers.add(candidate));
                     try {
                         createLedger(writerLM, candidate, Optional.empty());
                         removeLedger(writerLM, candidate, Optional.empty());
