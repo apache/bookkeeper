@@ -33,13 +33,19 @@
     {{- if . -}}
       ,
     {{- end -}}
-    {{- if eq $.Values.networkMode "host" -}}
-      127.0.0.1:{{ add ($.Values.zookeeper.clientPort | int) . }}
-    {{- else -}}
-      zookeeper-{{ . }}:2181
-    {{- end -}}
+    zookeeper-{{ . }}:2181
   {{- end -}}
 {{- end -}}
+
+{{- define "metadata_service_uri" }}
+  {{- range until (.Values.zookeeper.size | int) }}
+    {{- if . -}}
+      ;
+    {{- end -}}
+    zookeeper-{{ . }}:2181
+  {{- end -}}
+{{- end -}}
+
 
 {{- define "zookeeper_server_list" }} 
   {{- $zk := dict "servers" (list) -}}
@@ -74,5 +80,53 @@ services:
       - ZK_ID={{ . }}
       - ZK_SERVERS={{- template "zookeeper_server_list" $ }}
       - ZK_standaloneEnabled=false
+    healthcheck:
+      test: ["CMD", "curl", "-s", "http://localhost:{{ $zkAdminPort }}/commands/stat"]
+      interval: 60s
+      timeout: 3s
+      retries: 60
+    restart: on-failure
+  {{ end }}
+
+  {{- range until $bkSize }}
+  bookie-{{ . }}:
+    image: {{ $.Values.bookkeeper.image }}
+    hostname: bookie-{{ . }}
+    {{- if eq $.Values.networkMode "host" }}
+    network_mode: host
+    {{- else }}
+    ports:
+      {{- if eq $.Values.networkMode "host" }}
+      - "{{ add $bookiePort . }}:{{ $bookiePort }}"
+      {{- else }}
+      - "{{ add $bookiePort . }}:{{ add $bookiePort . }}"
+      {{- end }}
+      - "{{ add $bookieHttpPort . }}:{{ $bookieHttpPort }}"
+      - "{{ add $bookieGrpcPort . }}:{{ $bookieGrpcPort }}"
+    {{- end }}
+    volumes:
+      - {{ $.Values.dataDir }}/bookie-{{ . }}/journal:/data/bookkeeper/journal
+      - {{ $.Values.dataDir }}/bookie-{{ . }}/ledgers:/data/bookkeeper/ledgers
+    environment:
+      - BK_zkServers={{- template "zookeeper_servers" $ }}
+      - BK_zkLedgersRootPath=/ledgers
+      - BK_metadataServiceUri=zk://{{- template "metadata_service_uri" $ }}/ledgers
+      - BK_DATA_DIR=/data/bookkeeper
+      {{- if eq $.Values.networkMode "host" }}
+      - BK_bookiePort={{ $bookiePort }}
+      {{- else }}
+      - BK_advertisedAddress={{ $.Values.advertisedAddr }}
+      - BK_bookiePort={{ add $bookiePort . }}
+      {{- end }}
+      - BK_httpServerEnabled=true
+    depends_on:
+      {{- range until $zkSize }}
+      - "zookeeper-{{.}}"
+      {{- end }}
+    healthcheck:
+      test: ["CMD", "curl", "-s", "http://localhost:{{ $bookieHttpPort }}/heartbeat"]
+      interval: 60s
+      timeout: 3s
+      retries: 60
     restart: on-failure
   {{ end }}

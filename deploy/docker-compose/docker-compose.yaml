@@ -20,6 +20,11 @@ services:
       - ZK_ID=0
       - ZK_SERVERS=server.0=zookeeper-0:2888:3888:participant;0.0.0.0:2181 server.1=zookeeper-1:2888:3888:participant;0.0.0.0:2181 server.2=zookeeper-2:2888:3888:participant;0.0.0.0:2181
       - ZK_standaloneEnabled=false
+    healthcheck:
+      test: ["CMD", "curl", "-s", "http://localhost:8080/commands/stat"]
+      interval: 60s
+      timeout: 3s
+      retries: 60
     restart: on-failure
   
   zookeeper-1:
@@ -39,6 +44,11 @@ services:
       - ZK_ID=1
       - ZK_SERVERS=server.0=zookeeper-0:2888:3888:participant;0.0.0.0:2181 server.1=zookeeper-1:2888:3888:participant;0.0.0.0:2181 server.2=zookeeper-2:2888:3888:participant;0.0.0.0:2181
       - ZK_standaloneEnabled=false
+    healthcheck:
+      test: ["CMD", "curl", "-s", "http://localhost:8080/commands/stat"]
+      interval: 60s
+      timeout: 3s
+      retries: 60
     restart: on-failure
   
   zookeeper-2:
@@ -58,6 +68,98 @@ services:
       - ZK_ID=2
       - ZK_SERVERS=server.0=zookeeper-0:2888:3888:participant;0.0.0.0:2181 server.1=zookeeper-1:2888:3888:participant;0.0.0.0:2181 server.2=zookeeper-2:2888:3888:participant;0.0.0.0:2181
       - ZK_standaloneEnabled=false
+    healthcheck:
+      test: ["CMD", "curl", "-s", "http://localhost:8080/commands/stat"]
+      interval: 60s
+      timeout: 3s
+      retries: 60
+    restart: on-failure
+  
+  bookie-0:
+    image: apachebookkeeper/bookkeeper-current:latest
+    hostname: bookie-0
+    ports:
+      - "3181:3181"
+      - "8080:8080"
+      - "4181:4181"
+    volumes:
+      - ./data/bookie-0/journal:/data/bookkeeper/journal
+      - ./data/bookie-0/ledgers:/data/bookkeeper/ledgers
+    environment:
+      - BK_zkServers=zookeeper-0:2181,zookeeper-1:2181,zookeeper-2:2181
+      - BK_zkLedgersRootPath=/ledgers
+      - BK_metadataServiceUri=zk://zookeeper-0:2181;zookeeper-1:2181;zookeeper-2:2181/ledgers
+      - BK_DATA_DIR=/data/bookkeeper
+      - BK_advertisedAddress=127.0.0.1
+      - BK_bookiePort=3181
+      - BK_httpServerEnabled=true
+    depends_on:
+      - "zookeeper-0"
+      - "zookeeper-1"
+      - "zookeeper-2"
+    healthcheck:
+      test: ["CMD", "curl", "-s", "http://localhost:8080/heartbeat"]
+      interval: 60s
+      timeout: 3s
+      retries: 60
+    restart: on-failure
+  
+  bookie-1:
+    image: apachebookkeeper/bookkeeper-current:latest
+    hostname: bookie-1
+    ports:
+      - "3182:3182"
+      - "8081:8080"
+      - "4182:4181"
+    volumes:
+      - ./data/bookie-1/journal:/data/bookkeeper/journal
+      - ./data/bookie-1/ledgers:/data/bookkeeper/ledgers
+    environment:
+      - BK_zkServers=zookeeper-0:2181,zookeeper-1:2181,zookeeper-2:2181
+      - BK_zkLedgersRootPath=/ledgers
+      - BK_metadataServiceUri=zk://zookeeper-0:2181;zookeeper-1:2181;zookeeper-2:2181/ledgers
+      - BK_DATA_DIR=/data/bookkeeper
+      - BK_advertisedAddress=127.0.0.1
+      - BK_bookiePort=3182
+      - BK_httpServerEnabled=true
+    depends_on:
+      - "zookeeper-0"
+      - "zookeeper-1"
+      - "zookeeper-2"
+    healthcheck:
+      test: ["CMD", "curl", "-s", "http://localhost:8080/heartbeat"]
+      interval: 60s
+      timeout: 3s
+      retries: 60
+    restart: on-failure
+  
+  bookie-2:
+    image: apachebookkeeper/bookkeeper-current:latest
+    hostname: bookie-2
+    ports:
+      - "3183:3183"
+      - "8082:8080"
+      - "4183:4181"
+    volumes:
+      - ./data/bookie-2/journal:/data/bookkeeper/journal
+      - ./data/bookie-2/ledgers:/data/bookkeeper/ledgers
+    environment:
+      - BK_zkServers=zookeeper-0:2181,zookeeper-1:2181,zookeeper-2:2181
+      - BK_zkLedgersRootPath=/ledgers
+      - BK_metadataServiceUri=zk://zookeeper-0:2181;zookeeper-1:2181;zookeeper-2:2181/ledgers
+      - BK_DATA_DIR=/data/bookkeeper
+      - BK_advertisedAddress=127.0.0.1
+      - BK_bookiePort=3183
+      - BK_httpServerEnabled=true
+    depends_on:
+      - "zookeeper-0"
+      - "zookeeper-1"
+      - "zookeeper-2"
+    healthcheck:
+      test: ["CMD", "curl", "-s", "http://localhost:8080/heartbeat"]
+      interval: 60s
+      timeout: 3s
+      retries: 60
     restart: on-failure
   
 
