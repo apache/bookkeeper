@@ -1,0 +1,63 @@
+---
+# Source: apache-bookkeeper-docker-compose/templates/docker-compose.yml
+version: '3'
+
+services:
+  zookeeper-0:
+    image: apachebookkeeper/bookkeeper-current:latest
+    hostname: zookeeper-0
+    command: ["zookeeper"]
+    ports:
+      - "9080:8080"
+      - "2181:2181"
+    volumes:
+      - ./data/zookeeper-0/data:/data/zookeeper/data
+      - ./data/zookeeper-0/txlog:/data/zookeeper/txlog
+    environment:
+      - ZK_dataDir=/data/zookeeper/data
+      - ZK_dataLogDir=/data/zookeeper/txlog
+      - ZK_clientPort=2181
+      - ZK_ID=0
+      - ZK_SERVERS=server.0=zookeeper-0:2888:3888:participant;0.0.0.0:2181 server.1=zookeeper-1:2888:3888:participant;0.0.0.0:2181 server.2=zookeeper-2:2888:3888:participant;0.0.0.0:2181
+      - ZK_standaloneEnabled=false
+    restart: on-failure
+  
+  zookeeper-1:
+    image: apachebookkeeper/bookkeeper-current:latest
+    hostname: zookeeper-1
+    command: ["zookeeper"]
+    ports:
+      - "9081:8080"
+      - "2182:2181"
+    volumes:
+      - ./data/zookeeper-1/data:/data/zookeeper/data
+      - ./data/zookeeper-1/txlog:/data/zookeeper/txlog
+    environment:
+      - ZK_dataDir=/data/zookeeper/data
+      - ZK_dataLogDir=/data/zookeeper/txlog
+      - ZK_clientPort=2181
+      - ZK_ID=1
+      - ZK_SERVERS=server.0=zookeeper-0:2888:3888:participant;0.0.0.0:2181 server.1=zookeeper-1:2888:3888:participant;0.0.0.0:2181 server.2=zookeeper-2:2888:3888:participant;0.0.0.0:2181
+      - ZK_standaloneEnabled=false
+    restart: on-failure
+  
+  zookeeper-2:
+    image: apachebookkeeper/bookkeeper-current:latest
+    hostname: zookeeper-2
+    command: ["zookeeper"]
+    ports:
+      - "9082:8080"
+      - "2183:2181"
+    volumes:
+      - ./data/zookeeper-2/data:/data/zookeeper/data
+      - ./data/zookeeper-2/txlog:/data/zookeeper/txlog
+    environment:
+      - ZK_dataDir=/data/zookeeper/data
+      - ZK_dataLogDir=/data/zookeeper/txlog
+      - ZK_clientPort=2181
+      - ZK_ID=2
+      - ZK_SERVERS=server.0=zookeeper-0:2888:3888:participant;0.0.0.0:2181 server.1=zookeeper-1:2888:3888:participant;0.0.0.0:2181 server.2=zookeeper-2:2888:3888:participant;0.0.0.0:2181
+      - ZK_standaloneEnabled=false
+    restart: on-failure
+  
+
