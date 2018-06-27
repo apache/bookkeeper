@@ -23,8 +23,6 @@ dataDir: ./data
 # host network mode is useless on Mac, so in order to let clients
 # on the host accessing bookies in the docker network, we can set
 # the advertisedAddr to let bookies advertised in a host network.
-#
-# comment it out if you are not running on Mac
 advertisedAddr: 127.0.0.1
 
 # supported networkMode: bridge | host
