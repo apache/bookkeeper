@@ -32,6 +32,7 @@ import static org.apache.bookkeeper.bookie.BookKeeperServerStats.LD_INDEX_SCOPE;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.LD_LEDGER_SCOPE;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.READ_BYTES;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.WRITE_BYTES;
+import static org.apache.bookkeeper.bookie.Bookie.METAENTRY_ID_FENCE_KEY;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
@@ -121,6 +122,7 @@ public class Bookie extends BookieCriticalThread {
     static final long METAENTRY_ID_LEDGER_KEY = -0x1000;
     static final long METAENTRY_ID_FENCE_KEY  = -0x2000;
     public static final long METAENTRY_ID_FORCE_LEDGER  = -0x4000;
+    static final long METAENTRY_ID_LEDGER_EXPLICITLAC  = -0x8000;
 
     private final LedgerDirsManager ledgerDirsManager;
     private LedgerDirsManager indexDirsManager;
@@ -784,6 +786,23 @@ public class Bookie extends BookieCriticalThread {
                                     + " but layout version (" + journalVersion
                                     + ") is too old to hold this");
                         }
+                    } else if (entryId == METAENTRY_ID_LEDGER_EXPLICITLAC) {
+                        if (journalVersion >= JournalChannel.V5) {
+                            int explicitLacBufLength = recBuff.getInt();
+                            ByteBuf explicitLacBuf = Unpooled.buffer(explicitLacBufLength);
+                            byte[] explicitLacBufArray = new byte[explicitLacBufLength];
+                            recBuff.get(explicitLacBufArray);
+                            explicitLacBuf.writeBytes(explicitLacBufArray);
+                            byte[] key = masterKeyCache.get(ledgerId);
+                            if (key == null) {
+                                key = ledgerStorage.readMasterKey(ledgerId);
+                            }
+                            LedgerDescriptor handle = handles.getHandle(ledgerId, key);
+                            handle.setExplicitLac(explicitLacBuf);
+                        } else {
+                            throw new IOException("Invalid journal. Contains explicitLAC " + " but layout version ("
+                                    + journalVersion + ") is too old to hold this");
+                        }
                     } else {
                         byte[] key = masterKeyCache.get(ledgerId);
                         if (key == null) {
@@ -1182,13 +1201,24 @@ public class Bookie extends BookieCriticalThread {
         }
     }
 
-    public void setExplicitLac(ByteBuf entry, Object ctx, byte[] masterKey)
+    static ByteBuf createExplicitLACEntry(long ledgerId, ByteBuf explicitLac) {
+        ByteBuf bb = Unpooled.buffer(8 + 8 + 4 + explicitLac.capacity());
+        bb.writeLong(ledgerId);
+        bb.writeLong(METAENTRY_ID_LEDGER_EXPLICITLAC);
+        bb.writeInt(explicitLac.capacity());
+        bb.writeBytes(explicitLac);
+        return bb;
+    }
+
+    public void setExplicitLac(ByteBuf entry, WriteCallback writeCallback, Object ctx, byte[] masterKey)
             throws IOException, BookieException {
         try {
             long ledgerId = entry.getLong(entry.readerIndex());
             LedgerDescriptor handle = handles.getHandle(ledgerId, masterKey);
             synchronized (handle) {
                 handle.setExplicitLac(entry);
+                ByteBuf explicitLACEntry = createExplicitLACEntry(ledgerId, entry);
+                getJournal(ledgerId).logAddEntry(explicitLACEntry, false /* ackBeforeSync */, writeCallback, ctx);
             }
         } catch (NoWritableLedgerDirException e) {
             stateManager.transitionToReadOnlyMode();
