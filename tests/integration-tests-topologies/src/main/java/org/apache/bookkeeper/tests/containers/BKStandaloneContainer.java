@@ -23,6 +23,7 @@ import static java.time.temporal.ChronoUnit.SECONDS;
 import java.time.Duration;
 import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
+import org.testcontainers.containers.wait.strategy.HostPortWaitStrategy;
 import org.testcontainers.containers.wait.strategy.LogMessageWaitStrategy;
 
 /**
@@ -33,6 +34,7 @@ public class BKStandaloneContainer<SelfT extends BKStandaloneContainer<SelfT>> e
 
     private static final int ZK_PORT = 2181;
     private static final int BOOKIE_BASE_PORT = 3181;
+    private static final int BOOKIE_GRPC_BASE_PORT = 4181;
 
     private static final String IMAGE_NAME = "apachebookkeeper/bookkeeper-current:latest";
 
@@ -60,14 +62,19 @@ public class BKStandaloneContainer<SelfT extends BKStandaloneContainer<SelfT>> e
         }
         setCommand(
             "standalone",
-            "" + numBookies);
+            "--num-bookies",
+            String.valueOf(numBookies),
+            "--zk-port",
+            String.valueOf(ZK_PORT),
+            "--initial-bookie-port",
+            String.valueOf(BOOKIE_BASE_PORT),
+            "--initial-bookie-grpc-port",
+            String.valueOf(BOOKIE_GRPC_BASE_PORT));
     }
 
     @Override
     public void start() {
-        this.waitStrategy = new LogMessageWaitStrategy()
-            .withRegEx(".*ForceWrite Thread started.*\\s")
-            .withTimes(numBookies)
+        this.waitStrategy = new HostPortWaitStrategy()
             .withStartupTimeout(Duration.of(60, SECONDS));
         this.withCreateContainerCmdModifier(createContainerCmd -> {
             createContainerCmd.withHostName(STANDALONE_HOST_NAME);

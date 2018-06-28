@@ -111,7 +111,7 @@ function generate_docker_compose_file() {
 
 function show_help() {
   cat <<EOF
-Usage: standalone [-c <cluster_name>] [-h] <action:[up|down]>
+Usage: standalone.docker-compose [-c <cluster_name>] [-h] <action:[up|down]>
 EOF
 }
 
