@@ -38,6 +38,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.SettableFuture;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.buffer.Unpooled;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -1202,7 +1203,7 @@ public class Bookie extends BookieCriticalThread {
     }
 
     static ByteBuf createExplicitLACEntry(long ledgerId, ByteBuf explicitLac) {
-        ByteBuf bb = Unpooled.buffer(8 + 8 + 4 + explicitLac.capacity());
+        ByteBuf bb = PooledByteBufAllocator.DEFAULT.directBuffer(8 + 8 + 4 + explicitLac.capacity());
         bb.writeLong(ledgerId);
         bb.writeLong(METAENTRY_ID_LEDGER_EXPLICITLAC);
         bb.writeInt(explicitLac.capacity());
@@ -1216,7 +1217,9 @@ public class Bookie extends BookieCriticalThread {
             long ledgerId = entry.getLong(entry.readerIndex());
             LedgerDescriptor handle = handles.getHandle(ledgerId, masterKey);
             synchronized (handle) {
+                entry.markReaderIndex();
                 handle.setExplicitLac(entry);
+                entry.resetReaderIndex();
                 ByteBuf explicitLACEntry = createExplicitLACEntry(ledgerId, entry);
                 getJournal(ledgerId).logAddEntry(explicitLACEntry, false /* ackBeforeSync */, writeCallback, ctx);
             }

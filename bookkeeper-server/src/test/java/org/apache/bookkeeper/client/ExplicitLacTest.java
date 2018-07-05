@@ -18,6 +18,8 @@
  */
 package org.apache.bookkeeper.client;
 
+
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -33,6 +35,7 @@ import org.apache.bookkeeper.client.api.WriteFlag;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.util.TestUtils;
+import org.junit.Assume;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -122,6 +125,66 @@ public class ExplicitLacTest extends BookKeeperClusterTestCase {
         rlh.close();
         wlh.close();
         bkcWithNoExplicitLAC.close();
+    }
+
+    @Test
+    public void testExplicitLACIsPersisted() throws Exception {
+        /*
+         * In DbLedgerStorage scenario, TransientLedgerInfo is not persisted -
+         * https://github.com/apache/bookkeeper/issues/1533.
+         *
+         * So for this testcase we are ignoring DbLedgerStorage. It can/should
+         * be enabled when Issue-1533 is fixed.
+         */
+        Assume.assumeTrue(!baseConf.getLedgerStorageClass().equals(DbLedgerStorage.class.getName()));
+        ClientConfiguration confWithNoExplicitLAC = new ClientConfiguration();
+        confWithNoExplicitLAC.setMetadataServiceUri(zkUtil.getMetadataServiceUri());
+        // enable explicitLacFlush by setting non-zero value for
+        // explictLacInterval
+        long explictLacInterval = 100;
+        confWithNoExplicitLAC.setExplictLacInterval(50);
+
+        BookKeeper bkcWithExplicitLAC = new BookKeeper(confWithNoExplicitLAC);
+
+        LedgerHandle wlh = bkcWithExplicitLAC.createLedger(1, 1, 1, digestType, "testPasswd".getBytes());
+        long ledgerId = wlh.getId();
+        int numOfEntries = 5;
+        for (int i = 0; i < numOfEntries; i++) {
+            wlh.addEntry(("foobar" + i).getBytes());
+        }
+
+        LedgerHandle rlh = bkcWithExplicitLAC.openLedgerNoRecovery(ledgerId, digestType, "testPasswd".getBytes());
+        assertEquals("LAC of rlh", (long) numOfEntries - 2, rlh.getLastAddConfirmed());
+
+        for (int i = numOfEntries; i < 2 * numOfEntries; i++) {
+            wlh.addEntry(("foobar" + i).getBytes());
+        }
+
+        assertEquals("LAC of wlh", (2 * numOfEntries - 1), wlh.getLastAddConfirmed());
+        assertEquals("LAC of rlh", (long) numOfEntries - 2, rlh.getLastAddConfirmed());
+        assertEquals("Read LAC of rlh", (2 * numOfEntries - 2), rlh.readLastAddConfirmed());
+        assertEquals("Read explicit LAC of rlh", (2 * numOfEntries - 2), rlh.readExplicitLastConfirmed());
+
+        // we need to wait for atleast 2 explicitlacintervals,
+        // since in writehandle for the first call
+        // lh.getExplicitLastAddConfirmed() will be <
+        // lh.getPiggyBackedLastAddConfirmed(),
+        // so it wont make explicit writelac in the first run
+        long readExplicitLastConfirmed = TestUtils.waitUntilExplicitLacUpdated(rlh, 2 * numOfEntries - 1);
+        assertEquals("Read explicit LAC of rlh after wait for explicitlacflush", (2 * numOfEntries - 1),
+                readExplicitLastConfirmed);
+
+        // bookies have to be restarted
+        restartBookies();
+
+        /*
+         * since explicitLac is persisted we should be able to read explicitLac
+         * from the bookies.
+         */
+        LedgerHandle rlh2 = bkcWithExplicitLAC.openLedgerNoRecovery(ledgerId, digestType, "testPasswd".getBytes());
+        assertEquals("Read explicit LAC of rlh2 after bookies restart", (2 * numOfEntries - 1),
+                rlh2.readExplicitLastConfirmed());
+        bkcWithExplicitLAC.close();
     }
 
     @Test

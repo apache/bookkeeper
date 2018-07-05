@@ -244,6 +244,7 @@ class FileInfo extends Watchable<LastAddConfirmedUpdateNotification> {
                     byte[] explicitLacBufArray = new byte[explicitLacBufLength];
                     bb.get(explicitLacBufArray);
                     explicitLac.put(explicitLacBufArray);
+                    explicitLac.rewind();
                 } else {
                     throw new IOException("ExplicitLacBufLength " + explicitLacBufLength
                             + " is invalid while reading header for " + lf);
@@ -309,8 +310,10 @@ class FileInfo extends Watchable<LastAddConfirmedUpdateNotification> {
         bb.putInt(stateBits);
         if (this.headerVersion >= V1) {
             if (explicitLac != null) {
+                explicitLac.rewind();
                 bb.putInt(explicitLac.capacity());
                 bb.put(explicitLac);
+                explicitLac.rewind();
             } else {
                 bb.putInt(0);
             }
