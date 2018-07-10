@@ -99,7 +99,7 @@ class FileInfo extends Watchable<LastAddConfirmedUpdateNotification> {
     protected String mode;
 
     // this FileInfo Header Version
-    private int headerVersion;
+    int headerVersion;
 
     public FileInfo(File lf, byte[] masterKey) throws IOException {
         super(WATCHER_RECYCLER);

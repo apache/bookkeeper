@@ -27,10 +27,22 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufUtil;
+
 import java.io.File;
+import java.io.IOException;
+import java.io.RandomAccessFile;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
+import java.security.GeneralSecurityException;
+import java.util.Arrays;
+
 import org.apache.bookkeeper.bookie.FileInfoBackingCache.CachedFileInfo;
+import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.common.util.Watcher;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.proto.checksum.DigestManager;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.util.DiskChecker;
 import org.apache.bookkeeper.util.SnapshotMap;
@@ -38,15 +50,11 @@ import org.apache.commons.io.FileUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Test cases for IndexPersistenceMgr.
  */
 public class IndexPersistenceMgrTest {
-
-    private static final Logger logger = LoggerFactory.getLogger(IndexPersistenceMgr.class);
 
     ServerConfiguration conf;
     File journalDir, ledgerDir;
@@ -299,6 +307,113 @@ public class IndexPersistenceMgrTest {
             if (null != indexPersistenceMgr) {
                 indexPersistenceMgr.close();
             }
+        }
+    }
+
+    /*
+     * In this testcase index files (FileInfos) are precreated with different
+     * FileInfo header versions (FileInfo.V0 and FileInfo.V1) and it is
+     * validated that the current implementation of IndexPersistenceMgr (and
+     * corresponding FileInfo) is able to function as per the specifications of
+     * FileInfo header version. If it is FileInfo.V0 then explicitLac is not
+     * persisted and if it is FileInfo.V1 then explicitLac is persisted.
+     */
+    @Test
+    public void testFileInfosOfVariousHeaderVersions() throws Exception {
+        IndexPersistenceMgr indexPersistenceMgr = null;
+        try {
+            indexPersistenceMgr = createIndexPersistenceManager(1);
+            long ledgerIdWithVersionZero = 25L;
+            validateFileInfo(indexPersistenceMgr, ledgerIdWithVersionZero, FileInfo.V0);
+
+            long ledgerIdWithVersionOne = 135L;
+            validateFileInfo(indexPersistenceMgr, ledgerIdWithVersionOne, FileInfo.V1);
+        } finally {
+            if (null != indexPersistenceMgr) {
+                indexPersistenceMgr.close();
+            }
+        }
+    }
+
+    void validateFileInfo(IndexPersistenceMgr indexPersistenceMgr, long ledgerId, int headerVersion)
+            throws IOException, GeneralSecurityException {
+        BookKeeper.DigestType digestType = BookKeeper.DigestType.CRC32;
+        boolean getUseV2WireProtocol = true;
+
+        preCreateFileInfoForLedger(ledgerId, headerVersion);
+        DigestManager digestManager = DigestManager.instantiate(ledgerId, masterKey,
+                BookKeeper.DigestType.toProtoDigestType(digestType), getUseV2WireProtocol);
+
+        CachedFileInfo fileInfo = indexPersistenceMgr.getFileInfo(ledgerId, masterKey);
+        fileInfo.readHeader();
+        assertEquals("ExplicitLac should be null", null, fileInfo.getExplicitLac());
+        assertEquals("Header Version should match with precreated fileinfos headerversion", headerVersion,
+                fileInfo.headerVersion);
+        assertTrue("Masterkey should match with precreated fileinfos masterkey",
+                Arrays.equals(masterKey, fileInfo.masterKey));
+        long explicitLac = 22;
+        ByteBuf explicitLacByteBuf = digestManager.computeDigestAndPackageForSendingLac(explicitLac).getBuffer(0);
+        explicitLacByteBuf.markReaderIndex();
+        indexPersistenceMgr.setExplicitLac(ledgerId, explicitLacByteBuf);
+        explicitLacByteBuf.resetReaderIndex();
+        assertEquals("explicitLac ByteBuf contents should match", 0,
+                ByteBufUtil.compare(explicitLacByteBuf, indexPersistenceMgr.getExplicitLac(ledgerId)));
+        /*
+         * release fileInfo untill it is marked dead and closed, so that
+         * contents of it are persisted.
+         */
+        while (fileInfo.refCount.get() != FileInfoBackingCache.DEAD_REF) {
+            fileInfo.release();
+        }
+        /*
+         * reopen the fileinfo and readHeader, so that whatever was persisted
+         * would be read.
+         */
+        fileInfo = indexPersistenceMgr.getFileInfo(ledgerId, masterKey);
+        fileInfo.readHeader();
+        assertEquals("Header Version should match with precreated fileinfos headerversion even after reopening",
+                headerVersion, fileInfo.headerVersion);
+        assertTrue("Masterkey should match with precreated fileinfos masterkey",
+                Arrays.equals(masterKey, fileInfo.masterKey));
+        if (headerVersion == FileInfo.V0) {
+            assertEquals("Since it is V0 Header, explicitLac will not be persisted and should be null after reopening",
+                    null, indexPersistenceMgr.getExplicitLac(ledgerId));
+        } else {
+            explicitLacByteBuf.resetReaderIndex();
+            assertEquals("Since it is V1 Header, explicitLac will be persisted and should not be null after reopening",
+                    0, ByteBufUtil.compare(explicitLacByteBuf, indexPersistenceMgr.getExplicitLac(ledgerId)));
+        }
+    }
+
+    void preCreateFileInfoForLedger(long ledgerId, int headerVersion) throws IOException {
+        File ledgerCurDir = Bookie.getCurrentDirectory(ledgerDir);
+        String ledgerName = IndexPersistenceMgr.getLedgerName(ledgerId);
+        File indexFile = new File(ledgerCurDir, ledgerName);
+        indexFile.getParentFile().mkdirs();
+        indexFile.createNewFile();
+        /*
+         * precreate index file (FileInfo) for the ledger with specified
+         * headerversion. Even in FileInfo.V1 case, it is valid for
+         * explicitLacBufLength to be 0. If it is 0, then explicitLac is
+         * considered null (not set).
+         */
+        try (RandomAccessFile raf = new RandomAccessFile(indexFile, "rw")) {
+            FileChannel fcForIndexFile = raf.getChannel();
+            ByteBuffer bb = ByteBuffer.allocate((int) FileInfo.START_OF_DATA);
+            bb.putInt(FileInfo.SIGNATURE);
+            bb.putInt(headerVersion);
+            bb.putInt(masterKey.length);
+            bb.put(masterKey);
+            // statebits
+            bb.putInt(0);
+            if (headerVersion == FileInfo.V1) {
+                // explicitLacBufLength
+                bb.putInt(0);
+            }
+            bb.rewind();
+            fcForIndexFile.position(0);
+            fcForIndexFile.write(bb);
+            fcForIndexFile.close();
         }
     }
 }
