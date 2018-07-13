@@ -47,6 +47,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -602,6 +603,64 @@ public class Bookie extends BookieCriticalThread {
         this(conf, NullStatsLogger.INSTANCE);
     }
 
+    private static LedgerStorage buildLedgerStorage(ServerConfiguration conf) throws IOException {
+        // Instantiate the ledger storage implementation
+        String ledgerStorageClass = conf.getLedgerStorageClass();
+        LOG.info("Using ledger storage: {}", ledgerStorageClass);
+        return LedgerStorageFactory.createLedgerStorage(ledgerStorageClass);
+    }
+
+    /**
+     * Initialize LedgerStorage instance without checkpointing for use within the shell
+     * and other RO users.  ledgerStorage must not have already been initialized.
+     *
+     * @param conf Bookie config.
+     * @param ledgerStorage Instance to initialize.
+     * @return Passed ledgerStorage instance
+     * @throws IOException
+     */
+    static LedgerStorage mountLedgerStorageOffline(
+            ServerConfiguration conf,
+            LedgerStorage ledgerStorage) throws IOException {
+        StatsLogger statsLogger = NullStatsLogger.INSTANCE;
+        DiskChecker diskChecker = new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold());
+
+        LedgerDirsManager ledgerDirsManager = createLedgerDirsManager(
+                conf, diskChecker, statsLogger.scope(LD_LEDGER_SCOPE));
+        LedgerDirsManager indexDirsManager = createIndexDirsManager(
+                conf, diskChecker, statsLogger.scope(LD_INDEX_SCOPE), ledgerDirsManager);
+
+        if (null == ledgerStorage) {
+            ledgerStorage = buildLedgerStorage(conf);
+        }
+
+        CheckpointSource checkpointSource = new CheckpointSource() {
+            @Override
+            public Checkpoint newCheckpoint() {
+                return Checkpoint.MAX;
+            }
+
+            @Override
+            public void checkpointComplete(Checkpoint checkpoint, boolean compact)
+                    throws IOException {
+            }
+        };
+
+        Checkpointer checkpointer = Checkpointer.NULL;
+
+        ledgerStorage.initialize(
+                conf,
+                null,
+                ledgerDirsManager,
+                indexDirsManager,
+                null,
+                checkpointSource,
+                checkpointer,
+                statsLogger);
+
+        return ledgerStorage;
+    }
+
     public Bookie(ServerConfiguration conf, StatsLogger statsLogger)
             throws IOException, InterruptedException, BookieException {
         super("Bookie-" + conf.getBookiePort());
@@ -677,10 +736,7 @@ public class Bookie extends BookieCriticalThread {
         this.entryLogPerLedgerEnabled = conf.isEntryLogPerLedgerEnabled();
         CheckpointSource checkpointSource = new CheckpointSourceList(journals);
 
-        // Instantiate the ledger storage implementation
-        String ledgerStorageClass = conf.getLedgerStorageClass();
-        LOG.info("Using ledger storage: {}", ledgerStorageClass);
-        ledgerStorage = LedgerStorageFactory.createLedgerStorage(ledgerStorageClass);
+        ledgerStorage = buildLedgerStorage(conf);
 
         boolean isDbLedgerStorage = ledgerStorage instanceof DbLedgerStorage;
 
@@ -872,6 +928,25 @@ public class Bookie extends BookieCriticalThread {
             LOG.error("Error on executing a fully flush after replaying journals.");
             shutdown(ExitCode.BOOKIE_EXCEPTION);
         }
+
+        if (conf.isLocalConsistencyCheckOnStartup()) {
+            LOG.info("Running local consistency check on startup prior to accepting IO.");
+            List<LedgerStorage.DetectedInconsistency> errors = null;
+            try {
+                errors = ledgerStorage.localConsistencyCheck(Optional.empty());
+            } catch (IOException e) {
+                LOG.error("Got a fatal exception while checking store", e);
+                shutdown(ExitCode.BOOKIE_EXCEPTION);
+            }
+            if (errors != null && errors.size() > 0) {
+                LOG.error("Bookie failed local consistency check:");
+                for (LedgerStorage.DetectedInconsistency error : errors) {
+                    LOG.error("Ledger {}, entry {}: ", error.getLedgerId(), error.getEntryId(), error.getException());
+                }
+                shutdown(ExitCode.BOOKIE_EXCEPTION);
+            }
+        }
+
         LOG.info("Finished reading journal, starting bookie");
 
 
