@@ -19,6 +19,7 @@
 package org.apache.bookkeeper.server.service;
 
 import java.io.IOException;
+import java.lang.Thread.UncaughtExceptionHandler;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
@@ -40,6 +41,11 @@ public class BookieService extends ServerLifecycleComponent {
             throws Exception {
         super(NAME, conf, statsLogger);
         this.server = new BookieServer(conf.getServerConf(), statsLogger);
+    }
+
+    @Override
+    public void setExceptionHandler(UncaughtExceptionHandler handler) {
+        server.setExceptionHandler(handler);
     }
 
     public BookieServer getServer() {

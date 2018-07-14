@@ -45,6 +45,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import org.apache.bookkeeper.bookie.BookieException.DiskPartitionDuplicationException;
 import org.apache.bookkeeper.bookie.BookieException.MetadataStoreException;
@@ -53,6 +54,7 @@ import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
 import org.apache.bookkeeper.client.LedgerHandle;
+import org.apache.bookkeeper.common.component.ComponentStarter;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
@@ -63,6 +65,8 @@ import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.replication.ReplicationException.CompatibilityException;
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
+import org.apache.bookkeeper.server.conf.BookieConfiguration;
+import org.apache.bookkeeper.server.service.BookieService;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
@@ -468,6 +472,27 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
                 bs2.shutdown();
             }
         }
+    }
+
+    @Test
+    public void testBookieServiceExceptionHandler() throws Exception {
+        File tmpDir = createTempDir("bookie", "exception-handler");
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        int port = PortManager.nextFreePort();
+        conf.setBookiePort(port)
+            .setJournalDirName(tmpDir.getPath())
+            .setLedgerDirNames(new String[] { tmpDir.getPath() })
+            .setMetadataServiceUri(metadataServiceUri);
+
+        BookieConfiguration bkConf = new BookieConfiguration(conf);
+        BookieService service = new BookieService(bkConf, NullStatsLogger.INSTANCE);
+        CompletableFuture<Void> startFuture = ComponentStarter.startComponent(service);
+
+        // shutdown the bookie service
+        service.getServer().getBookie().shutdown();
+
+        // the bookie service lifecycle component should be shutdown.
+        startFuture.get();
     }
 
     /**

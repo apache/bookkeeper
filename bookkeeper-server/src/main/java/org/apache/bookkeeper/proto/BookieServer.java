@@ -26,6 +26,7 @@ import static org.apache.bookkeeper.conf.AbstractConfiguration.PERMITTED_STARTUP
 
 import com.google.common.annotations.VisibleForTesting;
 import java.io.IOException;
+import java.lang.Thread.UncaughtExceptionHandler;
 import java.net.UnknownHostException;
 import java.security.AccessControlException;
 import java.util.Arrays;
@@ -34,6 +35,7 @@ import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieCriticalThread;
 import org.apache.bookkeeper.bookie.BookieException;
+import org.apache.bookkeeper.bookie.BookieException.BookieDeadException;
 import org.apache.bookkeeper.bookie.ExitCode;
 import org.apache.bookkeeper.bookie.ReadOnlyBookie;
 import org.apache.bookkeeper.client.BKException;
@@ -73,6 +75,9 @@ public class BookieServer {
     // Expose Stats
     private final StatsLogger statsLogger;
 
+    // Exception handler
+    private volatile UncaughtExceptionHandler uncaughtExceptionHandler = null;
+
     public BookieServer(ServerConfiguration conf) throws IOException,
             KeeperException, InterruptedException, BookieException,
             UnavailableException, CompatibilityException, SecurityException {
@@ -108,6 +113,18 @@ public class BookieServer {
         this.requestProcessor = new BookieRequestProcessor(conf, bookie,
                 statsLogger.scope(SERVER_SCOPE), shFactory);
         this.nettyServer.setRequestProcessor(this.requestProcessor);
+    }
+
+    /**
+     * Currently the uncaught exception handler is used for DeathWatcher to notify
+     * lifecycle management that a bookie is dead for some reasons.
+     *
+     * <p>in future, we can register this <tt>exceptionHandler</tt> to critical threads
+     * so when those threads are dead, it will automatically trigger lifecycle management
+     * to shutdown the process.
+     */
+    public void setExceptionHandler(UncaughtExceptionHandler exceptionHandler) {
+        this.uncaughtExceptionHandler = exceptionHandler;
     }
 
     protected Bookie newBookie(ServerConfiguration conf)
@@ -249,6 +266,12 @@ public class BookieServer {
                 }
                 if (!isBookieRunning()) {
                     shutdown();
+                    if (null != uncaughtExceptionHandler) {
+                        uncaughtExceptionHandler.uncaughtException(
+                            this,
+                            new BookieDeadException("Bookie is not running any more")
+                                .fillInStackTrace());
+                    }
                     break;
                 }
             }

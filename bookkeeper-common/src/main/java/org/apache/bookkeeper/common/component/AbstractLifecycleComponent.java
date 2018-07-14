@@ -19,6 +19,7 @@
 package org.apache.bookkeeper.common.component;
 
 import java.io.IOException;
+import java.lang.Thread.UncaughtExceptionHandler;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 import lombok.extern.slf4j.Slf4j;
@@ -35,12 +36,18 @@ public abstract class AbstractLifecycleComponent<ConfT extends ComponentConfigur
     protected final Lifecycle lifecycle = new Lifecycle();
     private final Set<LifecycleListener> listeners = new CopyOnWriteArraySet<>();
     protected final StatsLogger statsLogger;
+    protected volatile UncaughtExceptionHandler uncaughtExceptionHandler;
 
     protected AbstractLifecycleComponent(String componentName,
                                          ConfT conf,
                                          StatsLogger statsLogger) {
         super(componentName, conf);
         this.statsLogger = statsLogger;
+    }
+
+    @Override
+    public void setExceptionHandler(UncaughtExceptionHandler handler) {
+        this.uncaughtExceptionHandler = handler;
     }
 
     protected StatsLogger getStatsLogger() {
