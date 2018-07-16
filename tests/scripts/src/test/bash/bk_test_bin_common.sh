@@ -172,6 +172,28 @@ testLoadEnvfiles() {
   unset BK_HOME
 }
 
+testSetModuleClasspath() {
+  TEST_DIR=${BK_TMPDIR}/test_set_module_classpath
+  mkdir -p ${TEST_DIR}
+  BK_HOME=${TEST_DIR}
+
+  # prepare the env files
+  mkdir -p ${BK_HOME}/conf
+  echo "" > ${BK_HOME}/conf/nettyenv.sh
+  echo "" > ${BK_HOME}/conf/bkenv.sh
+  echo "" > ${BK_HOME}/conf/bk_cli_env.sh
+
+  source ${BK_BINDIR}/common.sh
+
+  MODULE_PATH="testmodule"
+
+  mkdir -p ${BK_HOME}/${MODULE_PATH}/target
+  echo "test-classpath" > ${BK_HOME}/${MODULE_PATH}/target/cached_classpath.txt
+
+  local result=$(set_module_classpath ${MODULE_PATH})
+  assertEquals "test-classpath" ${result}
+}
+
 testBuildBookieJVMOpts() {
   source ${BK_BINDIR}/common.sh
 
