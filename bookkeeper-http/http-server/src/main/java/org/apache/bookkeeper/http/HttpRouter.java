@@ -32,6 +32,7 @@ public abstract class HttpRouter<Handler> {
   // Define endpoints here.
   public static final String HEARTBEAT                    = "/heartbeat";
   public static final String SERVER_CONFIG                = "/api/v1/config/server_config";
+  public static final String METRICS                      = "/api/v1/metrics";
 
   // ledger
   public static final String DELETE_LEDGER                = "/api/v1/ledger/delete";
@@ -58,6 +59,7 @@ public abstract class HttpRouter<Handler> {
   public HttpRouter(AbstractHttpHandlerFactory<Handler> handlerFactory) {
     this.endpointHandlers.put(HEARTBEAT, handlerFactory.newHandler(HttpServer.ApiType.HEARTBEAT));
     this.endpointHandlers.put(SERVER_CONFIG, handlerFactory.newHandler(HttpServer.ApiType.SERVER_CONFIG));
+    this.endpointHandlers.put(METRICS, handlerFactory.newHandler(HttpServer.ApiType.METRICS));
 
     // ledger
     this.endpointHandlers.put(DELETE_LEDGER, handlerFactory.newHandler(HttpServer.ApiType.DELETE_LEDGER));
