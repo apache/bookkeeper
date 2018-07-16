@@ -95,7 +95,7 @@ public class ConcurrentV2RecoveryTest extends BookKeeperClusterTestCase  {
                         });
                 futures.add(future);
             }
-            Thread.sleep(1000);
+
             latch.countDown();
             for (Future<?> f : futures) {
                 try {
