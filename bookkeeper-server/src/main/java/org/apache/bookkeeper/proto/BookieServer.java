@@ -35,7 +35,6 @@ import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieCriticalThread;
 import org.apache.bookkeeper.bookie.BookieException;
-import org.apache.bookkeeper.bookie.BookieException.BookieDeadException;
 import org.apache.bookkeeper.bookie.ExitCode;
 import org.apache.bookkeeper.bookie.ReadOnlyBookie;
 import org.apache.bookkeeper.client.BKException;
@@ -145,6 +144,9 @@ public class BookieServer {
 
         running = true;
         deathWatcher = new DeathWatcher(conf);
+        if (null != uncaughtExceptionHandler) {
+            deathWatcher.setUncaughtExceptionHandler(uncaughtExceptionHandler);
+        }
         deathWatcher.start();
 
         // fixes test flappers at random places until ISSUE#1400 is resolved
@@ -265,17 +267,13 @@ public class BookieServer {
                     Thread.currentThread().interrupt();
                 }
                 if (!isBookieRunning()) {
-                    shutdown();
-                    if (null != uncaughtExceptionHandler) {
-                        uncaughtExceptionHandler.uncaughtException(
-                            this,
-                            new BookieDeadException("Bookie is not running any more")
-                                .fillInStackTrace());
-                    }
-                    break;
+                    LOG.info("BookieDeathWatcher noticed the bookie is not running any more, exiting the watch loop!");
+                    // death watcher has noticed that bookie is not running any more
+                    // throw an exception to fail the death watcher thread and it will
+                    // trigger the uncaught exception handler to handle this "bookie not running" situation.
+                    throw new RuntimeException("Bookie is not running any more");
                 }
             }
-            LOG.info("BookieDeathWatcher exited loop!");
         }
     }
 

@@ -27,21 +27,26 @@ package org.apache.bookkeeper.bookie;
 @SuppressWarnings("serial")
 public abstract class BookieException extends Exception {
 
-    private int code;
+    private final int code;
+
     public BookieException(int code) {
+        super();
         this.code = code;
     }
 
     public BookieException(int code, Throwable t) {
         super(t);
+        this.code = code;
     }
 
     public BookieException(int code, String reason) {
         super(reason);
+        this.code = code;
     }
 
     public BookieException(int code, String reason, Throwable t) {
         super(reason, t);
+        this.code = code;
     }
 
     public static BookieException create(int code) {
@@ -62,8 +67,6 @@ public abstract class BookieException extends Exception {
             return new MetadataStoreException();
         case Code.UnknownBookieIdException:
             return new UnknownBookieIdException();
-        case Code.BookieDeadException:
-            return new BookieDeadException();
         default:
             return new BookieIllegalOpException();
         }
@@ -85,11 +88,6 @@ public abstract class BookieException extends Exception {
         int MetadataStoreException = -106;
         int UnknownBookieIdException = -107;
         int OperationRejectedException = -108;
-        int BookieDeadException = -109;
-    }
-
-    public void setCode(int code) {
-        this.code = code;
     }
 
     public int getCode() {
@@ -303,17 +301,4 @@ public abstract class BookieException extends Exception {
         }
     }
 
-    /**
-     * Signal when bookie is not running any more.
-     */
-    public static class BookieDeadException extends BookieException {
-
-        public BookieDeadException() {
-            super(Code.BookieDeadException);
-        }
-
-        public BookieDeadException(String msg) {
-            super(Code.BookieDeadException, msg);
-        }
-    }
 }
