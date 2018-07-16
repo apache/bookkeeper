@@ -683,7 +683,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                     .build();
         }
 
-        completionObjects.put(completionKey,
+        putCompletionKeyValue(completionKey,
                               acquireAddCompletion(completionKey,
                                                    cb, ctx, ledgerId, entryId));
         final Channel c = channel;
@@ -722,7 +722,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                     .setReadLacRequest(readLacBuilder)
                     .build();
         }
-        completionObjects.put(completionKey,
+        putCompletionKeyValue(completionKey,
                               new ReadLacCompletion(completionKey, cb,
                                                     ctx, ledgerId));
         writeAndFlush(channel, completionKey, request);
@@ -831,13 +831,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         }
 
         ReadCompletion readCompletion = new ReadCompletion(completionKey, cb, ctx, ledgerId, entryId);
-        CompletionValue existingValue = completionObjects.putIfAbsent(completionKey, readCompletion);
-        if (existingValue != null) {
-            // There's a pending read request on same ledger/entry. Use the multimap to track all of them
-            synchronized (completionObjectsV2Conflicts) {
-                completionObjectsV2Conflicts.put(completionKey, readCompletion);
-            }
-        }
+        putCompletionKeyValue(completionKey, readCompletion);
 
         writeAndFlush(channel, completionKey, request, allowFastFail);
     }
@@ -1200,17 +1194,8 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         StatusCode status = getStatusCodeFromErrorCode(response.errorCode);
 
         CompletionKey key = acquireV2Key(response.ledgerId, response.entryId, operationType);
-        CompletionValue completionValue = completionObjects.remove(key);
+        CompletionValue completionValue = getCompletionValue(key);
         key.release();
-        if (completionValue == null) {
-            // If there's no completion object here, try in the multimap
-            synchronized (this) {
-                if (completionObjectsV2Conflicts.containsKey(key)) {
-                    completionValue = completionObjectsV2Conflicts.get(key).get(0);
-                    completionObjectsV2Conflicts.remove(key, completionValue);
-                }
-            }
-        }
 
         if (null == completionValue) {
             // Unexpected response, so log it. The txnId should have been present.
@@ -2083,6 +2068,30 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
             default:
                 return BKException.Code.UNINITIALIZED;
         }
+    }
+
+    private void putCompletionKeyValue(CompletionKey key, CompletionValue value) {
+        CompletionValue existingValue = completionObjects.putIfAbsent(key, value);
+        if (existingValue != null) { // will only happen for V2 keys, as V3 have unique txnid
+            // There's a pending read request on same ledger/entry. Use the multimap to track all of them
+            synchronized (completionObjectsV2Conflicts) {
+                completionObjectsV2Conflicts.put(key, value);
+            }
+        }
+    }
+
+    private CompletionValue getCompletionValue(CompletionKey key) {
+        CompletionValue completionValue = completionObjects.remove(key);
+        if (completionValue == null) {
+            // If there's no completion object here, try in the multimap
+            synchronized (this) {
+                if (completionObjectsV2Conflicts.containsKey(key)) {
+                    completionValue = completionObjectsV2Conflicts.get(key).get(0);
+                    completionObjectsV2Conflicts.remove(key, completionValue);
+                }
+            }
+        }
+        return completionValue;
     }
 
     private long getTxnId() {
