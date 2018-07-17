@@ -462,6 +462,24 @@ public class TestRootRangeStoreImpl extends MVCCAsyncStoreTestBase {
     }
 
     @Test
+    public void testGetStreamByIdSuccess() throws Exception {
+        String nsName = name.getMethodName();
+        String streamName = name.getMethodName();
+
+        createNamespaceAndVerify(nsName, 0L);
+        createStreamAndVerify(nsName, streamName, MIN_DATA_STREAM_ID);
+        verifyStreamId(MIN_DATA_STREAM_ID);
+
+        CompletableFuture<GetStreamResponse> getFuture = rootRangeStore.getStream(
+            createGetStreamRequest(MIN_DATA_STREAM_ID));
+        GetStreamResponse getResp = FutureUtils.result(getFuture);
+        assertEquals(StatusCode.SUCCESS, getResp.getCode());
+        assertEquals(MIN_DATA_STREAM_ID, getResp.getStreamProps().getStreamId());
+        assertEquals(streamName, getResp.getStreamProps().getStreamName());
+        assertEquals(streamConf, getResp.getStreamProps().getStreamConf());
+    }
+
+    @Test
     public void testGetStreamNotFound() throws Exception {
         String nsName = name.getMethodName();
         String streamName = name.getMethodName();
@@ -472,6 +490,20 @@ public class TestRootRangeStoreImpl extends MVCCAsyncStoreTestBase {
 
         CompletableFuture<GetStreamResponse> getFuture = rootRangeStore.getStream(
             createGetStreamRequest(nsName, streamName));
+        GetStreamResponse response = FutureUtils.result(getFuture);
+        assertEquals(StatusCode.STREAM_NOT_FOUND, response.getCode());
+    }
+
+    @Test
+    public void testGetStreamByIdNotFound() throws Exception {
+        String nsName = name.getMethodName();
+
+        createNamespaceAndVerify(nsName, 0L);
+
+        verifyStreamId(-1);
+
+        CompletableFuture<GetStreamResponse> getFuture = rootRangeStore.getStream(
+            createGetStreamRequest(MIN_DATA_STREAM_ID));
         GetStreamResponse response = FutureUtils.result(getFuture);
         assertEquals(StatusCode.STREAM_NOT_FOUND, response.getCode());
     }

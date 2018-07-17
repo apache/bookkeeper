@@ -52,6 +52,7 @@ import org.apache.bookkeeper.stream.proto.storage.DeleteStreamResponse;
 import org.apache.bookkeeper.stream.proto.storage.GetNamespaceRequest;
 import org.apache.bookkeeper.stream.proto.storage.GetNamespaceResponse;
 import org.apache.bookkeeper.stream.proto.storage.GetStreamRequest;
+import org.apache.bookkeeper.stream.proto.storage.GetStreamRequest.IdCase;
 import org.apache.bookkeeper.stream.proto.storage.GetStreamResponse;
 import org.apache.bookkeeper.stream.proto.storage.StatusCode;
 import org.apache.bookkeeper.stream.protocol.util.StorageContainerPlacementPolicy;
@@ -66,11 +67,12 @@ public class RootRangeStoreImpl
 
     private static final byte SYSTEM_TAG = (byte) 0xff;
     private static final byte NS_NAME_TAG = (byte) 0x01;
-    private static final byte NS_ID_TAG = (byte) 0x01;
+    private static final byte NS_ID_TAG = (byte) 0x02;
 
     // separator used for separating streams within a same namespace
     private static final byte NS_STREAM_NAME_SEP = (byte) 0x03;
     private static final byte NS_STREAM_ID_SEP = (byte) 0x04;
+    private static final byte STREAM_ID_TAG = (byte) 0x05;
     private static final byte NS_END_SEP = (byte) 0xff;
 
     static final byte[] NS_ID_KEY = new byte[]{SYSTEM_TAG, 'n', 's', 'i', 'd'};
@@ -130,6 +132,16 @@ public class RootRangeStoreImpl
         Bytes.toBytes(nsId, streamIdBytes, 1);
         streamIdBytes[Long.BYTES + 1] = NS_STREAM_ID_SEP;
         Bytes.toBytes(streamId, streamIdBytes, Long.BYTES + 2);
+        return streamIdBytes;
+    }
+
+    /**
+     * stream id: [STREAM_ID_TAG][stream_id].
+     */
+    static final byte[] getStreamIdKey(long streamId) {
+        byte[] streamIdBytes = new byte[Long.BYTES + 1];
+        streamIdBytes[0] = STREAM_ID_TAG;
+        Bytes.toBytes(streamId, streamIdBytes, 1);
         return streamIdBytes;
     }
 
@@ -468,6 +480,8 @@ public class RootRangeStoreImpl
         byte[] streamNameVal = Bytes.toBytes(streamId);
         byte[] streamIdKey = getStreamIdKey(nsId, streamId);
         byte[] streamIdVal = streamProps.toByteArray();
+        byte[] streamReverseIndexKey = getStreamIdKey(streamId);
+        byte[] streamReverseIndexValue = Bytes.toBytes(nsId);
 
         TxnOp<byte[], byte[]> txn = store.newTxn()
             .If(
@@ -480,6 +494,7 @@ public class RootRangeStoreImpl
             .Then(
                 store.newPut(streamNameKey, streamNameVal),
                 store.newPut(streamIdKey, streamIdVal),
+                store.newPut(streamReverseIndexKey, streamReverseIndexValue),
                 store.newPut(STREAM_ID_KEY, Bytes.toBytes(streamId))
             )
             .build();
@@ -558,16 +573,19 @@ public class RootRangeStoreImpl
         byte[] nsIdKey = getNamespaceIdKey(nsId);
         byte[] streamNameKey = getStreamNameKey(nsId, streamName);
         byte[] streamIdKey = getStreamIdKey(nsId, streamId);
+        byte[] streamReverseIndexKey = getStreamIdKey(streamId);
 
         TxnOp<byte[], byte[]> txnOp = store.newTxn()
             .If(
                 store.newCompareValue(CompareResult.NOT_EQUAL, nsIdKey, null),
                 store.newCompareValue(CompareResult.NOT_EQUAL, streamNameKey, null),
-                store.newCompareValue(CompareResult.NOT_EQUAL, streamIdKey, null)
+                store.newCompareValue(CompareResult.NOT_EQUAL, streamIdKey, null),
+                store.newCompareValue(CompareResult.NOT_EQUAL, streamReverseIndexKey, null)
             )
             .Then(
                 store.newDelete(streamIdKey),
-                store.newDelete(streamNameKey)
+                store.newDelete(streamNameKey),
+                store.newDelete(streamReverseIndexKey)
             )
             .build();
 
@@ -586,40 +604,74 @@ public class RootRangeStoreImpl
         }).whenComplete((resp, cause) -> txnOp.close());
     }
 
+    private CompletableFuture<GetStreamResponse> streamPropertiesToResponse(
+        CompletableFuture<StreamProperties> propsFuture
+    ) {
+        GetStreamResponse.Builder respBuilder = GetStreamResponse.newBuilder();
+        return propsFuture.thenCompose(streamProps -> {
+            if (null == streamProps) {
+                return FutureUtils.value(respBuilder.setCode(StatusCode.STREAM_NOT_FOUND).build());
+            } else {
+                return FutureUtils.value(respBuilder
+                    .setCode(StatusCode.SUCCESS)
+                    .setStreamProps(streamProps)
+                    .build());
+            }
+        }).exceptionally(cause ->
+            respBuilder
+                .setCode(StatusCode.INTERNAL_SERVER_ERROR)
+                .build()
+        );
+    }
+
     @Override
     public CompletableFuture<GetStreamResponse> getStream(GetStreamRequest request) {
-        StreamName streamName = request.getStreamName();
+        if (IdCase.STREAM_ID == request.getIdCase()) {
+            return streamPropertiesToResponse(
+                getStreamProps(request.getStreamId()));
+        } else if (IdCase.STREAM_NAME == request.getIdCase()) {
+            return getStreamProps(request.getStreamName());
+        } else {
+            return FutureUtils.value(GetStreamResponse.newBuilder()
+                .setCode(StatusCode.ILLEGAL_OP)
+                .build());
+        }
+    }
 
+    CompletableFuture<StreamProperties> getStreamProps(long streamId) {
+        byte[] streamReverseIndexKey = getStreamIdKey(streamId);
+
+        return store.get(streamReverseIndexKey).thenCompose(nsIdBytes -> {
+            if (null == nsIdBytes) {
+                return FutureUtils.value(null);
+            }
+
+            long nsId = Bytes.toLong(nsIdBytes, 0);
+            return getStreamProps(nsId, streamId);
+        });
+    }
+
+    CompletableFuture<GetStreamResponse> getStreamProps(StreamName streamName) {
         StatusCode code = verifyStreamRequest(
-            streamName.getNamespaceName(),
-            streamName.getStreamName());
+                streamName.getNamespaceName(),
+                streamName.getStreamName());
         if (StatusCode.SUCCESS != code) {
-            return FutureUtils.value(GetStreamResponse.newBuilder().setCode(code).build());
+            return FutureUtils.value(GetStreamResponse.newBuilder()
+                .setCode(code).build());
         }
 
         byte[] nsNameKey = getNamespaceNameKey(streamName.getNamespaceName());
-        GetStreamResponse.Builder respBuilder = GetStreamResponse.newBuilder();
+
+
         return store.get(nsNameKey)
             .thenCompose(nsIdBytes -> {
                 if (null == nsIdBytes) {
-                    return FutureUtils.value(respBuilder.setCode(StatusCode.NAMESPACE_NOT_FOUND).build());
+                    return FutureUtils.value(GetStreamResponse.newBuilder()
+                        .setCode(StatusCode.NAMESPACE_NOT_FOUND).build());
                 }
-
                 long nsId = Bytes.toLong(nsIdBytes, 0);
-                return getStreamProps(nsId, streamName.getStreamName())
-                    .thenCompose(streamProps -> {
-                        if (null == streamProps) {
-                            return FutureUtils.value(respBuilder.setCode(StatusCode.STREAM_NOT_FOUND).build());
-                        } else {
-                            return FutureUtils.value(respBuilder
-                                .setCode(StatusCode.SUCCESS)
-                                .setStreamProps(streamProps)
-                                .build());
-                        }
-                    })
-                    .exceptionally(cause -> respBuilder
-                        .setCode(StatusCode.INTERNAL_SERVER_ERROR)
-                        .build());
+                return streamPropertiesToResponse(
+                    getStreamProps(nsId, streamName.getStreamName()));
             });
     }
 
