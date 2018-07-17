@@ -181,9 +181,9 @@ add_maven_deps_to_classpath() {
   # Need to generate classpath from maven pom. This is costly so generate it
   # and cache it. Save the file into our target dir so a mvn clean will get
   # clean it up and force us create a new one.
-  f="${MODULE_PATH}/target/cached_classpath.txt"
+  f="${BK_HOME}/${MODULE_PATH}/target/cached_classpath.txt"
   if [ ! -f ${f} ]; then
-    ${MVN} -f "${MODULE_PATH}/pom.xml" -Dstream dependency:build-classpath -Dmdep.outputFile="target/cached_classpath.txt" &> /dev/null
+    ${MVN} -f "${BK_HOME}/${MODULE_PATH}/pom.xml" -Dstream dependency:build-classpath -Dmdep.outputFile="target/cached_classpath.txt" &> /dev/null
   fi
 }
 
@@ -197,7 +197,7 @@ set_module_classpath() {
     echo ${BK_CLASSPATH}
   else
     add_maven_deps_to_classpath ${MODULE_PATH} >&2
-    cat ${MODULE_PATH}/target/cached_classpath.txt
+    cat ${BK_HOME}/${MODULE_PATH}/target/cached_classpath.txt
   fi
   return
 }
