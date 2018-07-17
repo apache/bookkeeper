@@ -255,6 +255,12 @@ public class BookieServer {
         DeathWatcher(ServerConfiguration conf) {
             super("BookieDeathWatcher-" + conf.getBookiePort());
             watchInterval = conf.getDeathWatchInterval();
+            // set a default uncaught exception handler to shutdown the bookie server
+            // when it notices the bookie is not running any more.
+            setUncaughtExceptionHandler((thread, cause) -> {
+                shutdown();
+                LOG.info("BookieDeathWatcher exited loop!");
+            });
         }
 
         @Override
