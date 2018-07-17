@@ -95,7 +95,7 @@ public class EntryLogTest {
     private EntryLogger entryLogger;
 
     public EntryLogTest() {
-        this.globalTimeout = Timeout.seconds(300);
+        this.globalTimeout = Timeout.seconds(30);
     }
 
     @Before
