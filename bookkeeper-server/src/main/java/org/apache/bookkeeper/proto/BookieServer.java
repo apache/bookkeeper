@@ -258,8 +258,9 @@ public class BookieServer {
             // set a default uncaught exception handler to shutdown the bookie server
             // when it notices the bookie is not running any more.
             setUncaughtExceptionHandler((thread, cause) -> {
+                LOG.info("BookieDeathWatcher exited loop due to uncaught exception from thread {}",
+                    thread.getName(), cause);
                 shutdown();
-                LOG.info("BookieDeathWatcher exited loop!");
             });
         }
 
