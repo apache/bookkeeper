@@ -114,6 +114,7 @@ public class EntryLogCompactor extends AbstractLogCompactor {
             try {
                 entryLogger.flush();
                 ledgerStorage.updateEntriesLocations(offsets);
+                ledgerStorage.flushEntriesLocationsIndex();
             } finally {
                 offsets.clear();
             }
