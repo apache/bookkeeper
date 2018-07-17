@@ -32,7 +32,7 @@ public abstract class HttpRouter<Handler> {
   // Define endpoints here.
   public static final String HEARTBEAT                    = "/heartbeat";
   public static final String SERVER_CONFIG                = "/api/v1/config/server_config";
-  public static final String METRICS                      = "/api/v1/metrics";
+  public static final String METRICS                      = "/metrics";
 
   // ledger
   public static final String DELETE_LEDGER                = "/api/v1/ledger/delete";

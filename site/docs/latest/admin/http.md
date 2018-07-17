@@ -62,7 +62,7 @@ Currently all the HTTP endpoints could be divided into these 4 components:
 
 ## Config
 
-### Endpoint: /api/v1/metrics
+### Endpoint: /metrics
 1. Method: GET
     * Description: Get all metrics by calling `writeAllMetrics()` of `statsProvider` internally
     * Response:  

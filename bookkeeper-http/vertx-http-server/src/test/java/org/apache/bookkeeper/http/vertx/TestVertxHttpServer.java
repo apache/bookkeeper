@@ -58,6 +58,21 @@ public class TestVertxHttpServer {
         httpServer.stopServer();
     }
 
+    @Test
+    public void testStartMetricsServiceOnRouterPath() throws Exception {
+        VertxHttpServer httpServer = new VertxHttpServer();
+        HttpServiceProvider httpServiceProvider = NullHttpServiceProvider.getInstance();
+        httpServer.initialize(httpServiceProvider);
+        int port = getNextPort();
+        while (!httpServer.startServer(port)) {
+            httpServer.stopServer();
+            port = getNextPort();
+        }
+        HttpResponse httpResponse = sendGet(getUrl(port, HttpRouter.METRICS));
+        assertEquals(HttpServer.StatusCode.OK.getValue(), httpResponse.responseCode);
+        httpServer.stopServer();
+    }
+
     // HTTP GET request
     private HttpResponse sendGet(String url) throws IOException {
         URL obj = new URL(url);
