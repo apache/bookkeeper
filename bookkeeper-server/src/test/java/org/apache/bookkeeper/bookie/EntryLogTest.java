@@ -64,7 +64,9 @@ import org.apache.commons.io.FileUtils;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.Timeout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -73,6 +75,9 @@ import org.slf4j.LoggerFactory;
  */
 public class EntryLogTest {
     private static final Logger LOG = LoggerFactory.getLogger(EntryLogTest.class);
+
+    @Rule
+    public final Timeout globalTimeout;
 
     final List<File> tempDirs = new ArrayList<File>();
     final Random rand = new Random();
@@ -88,6 +93,10 @@ public class EntryLogTest {
     private ServerConfiguration conf;
     private LedgerDirsManager dirsMgr;
     private EntryLogger entryLogger;
+
+    public EntryLogTest() {
+        this.globalTimeout = Timeout.seconds(300);
+    }
 
     @Before
     public void setUp() throws Exception {
