@@ -24,7 +24,6 @@ import java.time.Duration;
 import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 import org.testcontainers.containers.wait.strategy.HostPortWaitStrategy;
-import org.testcontainers.containers.wait.strategy.LogMessageWaitStrategy;
 
 /**
  * Test Container for Bookies.

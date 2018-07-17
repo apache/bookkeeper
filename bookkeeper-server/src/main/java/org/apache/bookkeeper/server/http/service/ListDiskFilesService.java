@@ -27,8 +27,8 @@ import java.io.File;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.common.util.JsonUtil;
+import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.http.HttpServer;
 import org.apache.bookkeeper.http.service.HttpEndpointService;
 import org.apache.bookkeeper.http.service.HttpServiceRequest;
