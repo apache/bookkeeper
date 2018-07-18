@@ -80,7 +80,9 @@ public class ProtoDeleteOpImpl implements DeleteOp<byte[], byte[]>, DeleteOption
         if (null != endKey) {
             return endKey;
         }
-        if (null == req.getRangeEnd()) {
+        if (null == req.getRangeEnd()
+            || 0 == req.getRangeEnd().size()
+            || (1 == req.getRangeEnd().size() && req.getRangeEnd().byteAt(0) == 0)) {
             endKey = null;
         } else {
             endKey = req.getRangeEnd().toByteArray();
