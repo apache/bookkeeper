@@ -91,12 +91,14 @@ public class ProtoRangeOpImpl implements RangeOp<byte[], byte[]>, RangeOption<by
         if (null != endKey) {
             return endKey;
         }
-        if (null == req.getRangeEnd()) {
-            key = null;
+        if (null == req.getRangeEnd()
+            || 0 == req.getRangeEnd().size()
+            || (1 == req.getRangeEnd().size() && req.getRangeEnd().byteAt(0) == 0)) {
+            endKey = null;
         } else {
-            key = req.getRangeEnd().toByteArray();
+            endKey = req.getRangeEnd().toByteArray();
         }
-        return key;
+        return endKey;
     }
 
     @Override
