@@ -982,78 +982,74 @@ public class BookieShell implements Tool {
             final String bookieidToBePartOfEnsemble = cmdLine.getOptionValue("bookieid");
             final BookieSocketAddress bookieAddress = StringUtils.isBlank(bookieidToBePartOfEnsemble) ? null
                     : new BookieSocketAddress(bookieidToBePartOfEnsemble);
-            ClientConfiguration conf = new ClientConfiguration();
-            conf.addConfiguration(bkConf);
 
-            try (BookKeeperAdmin bkAdmin = new BookKeeperAdmin(conf)) {
-                runFunctionWithLedgerManagerFactory(bkConf, mFactory -> {
-                    try (LedgerManager ledgerManager = mFactory.newLedgerManager()) {
+            runFunctionWithLedgerManagerFactory(bkConf, mFactory -> {
+                try (LedgerManager ledgerManager = mFactory.newLedgerManager()) {
 
-                        final AtomicInteger returnCode = new AtomicInteger(BKException.Code.OK);
-                        final CountDownLatch processDone = new CountDownLatch(1);
+                    final AtomicInteger returnCode = new AtomicInteger(BKException.Code.OK);
+                    final CountDownLatch processDone = new CountDownLatch(1);
 
-                        Processor<Long> ledgerProcessor = new Processor<Long>() {
-                            @Override
-                            public void process(Long ledgerId, VoidCallback cb) {
-                                if (!printMeta && (bookieAddress == null)) {
-                                    printLedgerMetadata(ledgerId, null, false);
-                                    cb.processResult(BKException.Code.OK, null, null);
-                                } else {
-                                    GenericCallback<LedgerMetadata> gencb = new GenericCallback<LedgerMetadata>() {
-                                        @Override
-                                        public void operationComplete(int rc, LedgerMetadata ledgerMetadata) {
-                                            if (rc == BKException.Code.OK) {
-                                                if ((bookieAddress == null)
-                                                        || bkAdmin.areEntriesOfLedgerStoredInTheBookie(ledgerId,
-                                                                bookieAddress, ledgerMetadata)) {
-                                                    /*
-                                                     * the print method has to
-                                                     * be in synchronized scope,
-                                                     * otherwise output of
-                                                     * printLedgerMetadata could
-                                                     * interleave since this
-                                                     * callback for different
-                                                     * ledgers can happen in
-                                                     * different threads.
-                                                     */
-                                                    synchronized (BookieShell.this) {
-                                                        printLedgerMetadata(ledgerId, ledgerMetadata, printMeta);
-                                                    }
+                    Processor<Long> ledgerProcessor = new Processor<Long>() {
+                        @Override
+                        public void process(Long ledgerId, VoidCallback cb) {
+                            if (!printMeta && (bookieAddress == null)) {
+                                printLedgerMetadata(ledgerId, null, false);
+                                cb.processResult(BKException.Code.OK, null, null);
+                            } else {
+                                GenericCallback<LedgerMetadata> gencb = new GenericCallback<LedgerMetadata>() {
+                                    @Override
+                                    public void operationComplete(int rc, LedgerMetadata ledgerMetadata) {
+                                        if (rc == BKException.Code.OK) {
+                                            if ((bookieAddress == null)
+                                                    || BookKeeperAdmin.areEntriesOfLedgerStoredInTheBookie(ledgerId,
+                                                            bookieAddress, ledgerMetadata)) {
+                                                /*
+                                                 * the print method has to be in
+                                                 * synchronized scope, otherwise
+                                                 * output of printLedgerMetadata
+                                                 * could interleave since this
+                                                 * callback for different
+                                                 * ledgers can happen in
+                                                 * different threads.
+                                                 */
+                                                synchronized (BookieShell.this) {
+                                                    printLedgerMetadata(ledgerId, ledgerMetadata, printMeta);
                                                 }
-                                            } else if (rc == BKException.Code.NoSuchLedgerExistsException) {
-                                                rc = BKException.Code.OK;
-                                            } else {
-                                                LOG.error("Unable to read the ledger: " + ledgerId + " information");
                                             }
-                                            cb.processResult(rc, null, null);
+                                        } else if (rc == BKException.Code.NoSuchLedgerExistsException) {
+                                            rc = BKException.Code.OK;
+                                        } else {
+                                            LOG.error("Unable to read the ledger: " + ledgerId + " information");
                                         }
-                                    };
-                                    ledgerManager.readLedgerMetadata(ledgerId, gencb);
-                                }
+                                        cb.processResult(rc, null, null);
+                                    }
+                                };
+                                ledgerManager.readLedgerMetadata(ledgerId, gencb);
                             }
-                        };
-
-                        ledgerManager.asyncProcessLedgers(ledgerProcessor, new AsyncCallback.VoidCallback() {
-                            @Override
-                            public void processResult(int rc, String s, Object obj) {
-                                returnCode.set(rc);
-                                processDone.countDown();
-                            }
-                        }, null, BKException.Code.OK, BKException.Code.ReadException);
-
-                        processDone.await();
-                        if (returnCode.get() != BKException.Code.OK) {
-                            LOG.error("Received error return value while processing ledgers: {}", returnCode.get());
-                            throw BKException.create(returnCode.get());
                         }
+                    };
 
-                    } catch (Exception ioe) {
-                        LOG.error("Received Exception while processing ledgers", ioe);
-                        throw new UncheckedExecutionException(ioe);
+                    ledgerManager.asyncProcessLedgers(ledgerProcessor, new AsyncCallback.VoidCallback() {
+                        @Override
+                        public void processResult(int rc, String s, Object obj) {
+                            returnCode.set(rc);
+                            processDone.countDown();
+                        }
+                    }, null, BKException.Code.OK, BKException.Code.ReadException);
+
+                    processDone.await();
+                    if (returnCode.get() != BKException.Code.OK) {
+                        LOG.error("Received error return value while processing ledgers: {}", returnCode.get());
+                        throw BKException.create(returnCode.get());
                     }
-                    return null;
-                });
-            }
+
+                } catch (Exception ioe) {
+                    LOG.error("Received Exception while processing ledgers", ioe);
+                    throw new UncheckedExecutionException(ioe);
+                }
+                return null;
+            });
+
             return 0;
         }
 

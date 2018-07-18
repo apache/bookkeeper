@@ -1520,7 +1520,7 @@ public class BookKeeperAdmin implements AutoCloseable {
         }
     }
 
-    public boolean areEntriesOfLedgerStoredInTheBookie(long ledgerId, BookieSocketAddress bookieAddress,
+    public static boolean areEntriesOfLedgerStoredInTheBookie(long ledgerId, BookieSocketAddress bookieAddress,
             LedgerManager ledgerManager) {
         ReadMetadataCallback cb = new ReadMetadataCallback(ledgerId);
         ledgerManager.readLedgerMetadata(ledgerId, cb);
@@ -1542,7 +1542,7 @@ public class BookKeeperAdmin implements AutoCloseable {
         }
     }
 
-    public boolean areEntriesOfLedgerStoredInTheBookie(long ledgerId, BookieSocketAddress bookieAddress,
+    public static boolean areEntriesOfLedgerStoredInTheBookie(long ledgerId, BookieSocketAddress bookieAddress,
             LedgerMetadata ledgerMetadata) {
         Collection<ArrayList<BookieSocketAddress>> ensemblesOfSegments = ledgerMetadata.getEnsembles().values();
         Iterator<ArrayList<BookieSocketAddress>> ensemblesOfSegmentsIterator = ensemblesOfSegments.iterator();
@@ -1559,7 +1559,7 @@ public class BookKeeperAdmin implements AutoCloseable {
         return false;
     }
 
-    private boolean areEntriesOfSegmentStoredInTheBookie(LedgerMetadata ledgerMetadata,
+    private static boolean areEntriesOfSegmentStoredInTheBookie(LedgerMetadata ledgerMetadata,
             BookieSocketAddress bookieAddress, int segmentNo) {
         boolean isLedgerClosed = ledgerMetadata.isClosed();
         int ensembleSize = ledgerMetadata.getEnsembleSize();
