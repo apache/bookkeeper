@@ -53,6 +53,12 @@ public class ExplicitLacTest extends BookKeeperClusterTestCase {
         super(1);
         this.digestType = DigestType.CRC32;
         baseConf.setLedgerStorageClass(storageClass.getName());
+        /*
+         * to persist explicitLac, journalFormatVersionToWrite should be atleast
+         * V6 and fileInfoFormatVersionToWrite should be atleast V1
+         */
+        baseConf.setJournalFormatVersionToWrite(6);
+        baseConf.setFileInfoFormatVersionToWrite(1);
     }
 
     @Parameters

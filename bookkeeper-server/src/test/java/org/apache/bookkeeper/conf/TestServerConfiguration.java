@@ -83,4 +83,32 @@ public class TestServerConfiguration {
         assertArrayEquals(components, serverConf.getExtraServerComponents());
     }
 
+    @Test(expected = ConfigurationException.class)
+    public void testMismatchofJournalAndFileInfoVersionsOlderJournalVersion() throws ConfigurationException {
+        ServerConfiguration conf = new ServerConfiguration();
+        conf.setJournalFormatVersionToWrite(5);
+        conf.setFileInfoFormatVersionToWrite(1);
+        conf.validate();
+    }
+
+    @Test(expected = ConfigurationException.class)
+    public void testMismatchofJournalAndFileInfoVersionsOlderFileInfoVersion() throws ConfigurationException {
+        ServerConfiguration conf = new ServerConfiguration();
+        conf.setJournalFormatVersionToWrite(6);
+        conf.setFileInfoFormatVersionToWrite(0);
+        conf.validate();
+    }
+
+    @Test
+    public void testValidityOfJournalAndFileInfoVersions() throws ConfigurationException {
+        ServerConfiguration conf = new ServerConfiguration();
+        conf.setJournalFormatVersionToWrite(5);
+        conf.setFileInfoFormatVersionToWrite(0);
+        conf.validate();
+
+        conf = new ServerConfiguration();
+        conf.setJournalFormatVersionToWrite(6);
+        conf.setFileInfoFormatVersionToWrite(1);
+        conf.validate();
+    }
 }

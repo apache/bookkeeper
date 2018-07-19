@@ -788,7 +788,7 @@ public class Bookie extends BookieCriticalThread {
                                     + ") is too old to hold this");
                         }
                     } else if (entryId == METAENTRY_ID_LEDGER_EXPLICITLAC) {
-                        if (journalVersion >= JournalChannel.V5) {
+                        if (journalVersion >= JournalChannel.V6) {
                             int explicitLacBufLength = recBuff.getInt();
                             ByteBuf explicitLacBuf = Unpooled.buffer(explicitLacBufLength);
                             byte[] explicitLacBufArray = new byte[explicitLacBufLength];
@@ -804,6 +804,18 @@ public class Bookie extends BookieCriticalThread {
                             throw new IOException("Invalid journal. Contains explicitLAC " + " but layout version ("
                                     + journalVersion + ") is too old to hold this");
                         }
+                    } else if (entryId < 0) {
+                        /*
+                         * this is possible if bookie code binary is rolledback
+                         * to older version but when it is trying to read
+                         * Journal which was created previously using newer
+                         * code/journalversion, which introduced new special
+                         * entry. So in anycase, if we see unrecognizable
+                         * special entry while replaying journal we should skip
+                         * (ignore) it.
+                         */
+                        LOG.warn("Read unrecognizable entryId: {} for ledger: {} while replaying Journal. Skipping it",
+                                entryId, ledgerId);
                     } else {
                         byte[] key = masterKeyCache.get(ledgerId);
                         if (key == null) {

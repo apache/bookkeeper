@@ -101,13 +101,13 @@ class FileInfo extends Watchable<LastAddConfirmedUpdateNotification> {
     // this FileInfo Header Version
     int headerVersion;
 
-    public FileInfo(File lf, byte[] masterKey) throws IOException {
+    public FileInfo(File lf, byte[] masterKey, int fileInfoVersionToWrite) throws IOException {
         super(WATCHER_RECYCLER);
 
         this.lf = lf;
         this.masterKey = masterKey;
         mode = "rw";
-        this.headerVersion = CURRENT_HEADER_VERSION;
+        this.headerVersion = fileInfoVersionToWrite;
     }
 
     synchronized Long getLastAddConfirmed() {

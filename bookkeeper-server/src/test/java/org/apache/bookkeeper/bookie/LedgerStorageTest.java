@@ -66,8 +66,30 @@ public class LedgerStorageTest extends BookKeeperClusterTestCase {
     }
 
     @Test
-    public void testExplicitLacWriteToJournal() throws Exception {
+    public void testExplicitLacWriteToJournalWithValidVersions() throws Exception {
+        /*
+         * to persist explicitLac, journalFormatVersionToWrite should be atleast
+         * V6 and fileInfoFormatVersionToWrite should be atleast V1
+         */
+        testExplicitLacWriteToJournal(6, 1);
+    }
+
+    @Test
+    public void testExplicitLacWriteToJournalWithOlderVersions() throws Exception {
+        /*
+         * to persist explicitLac, journalFormatVersionToWrite should be atleast
+         * V6 and fileInfoFormatVersionToWrite should be atleast V1
+         */
+        testExplicitLacWriteToJournal(5, 0);
+    }
+
+    public void testExplicitLacWriteToJournal(int journalFormatVersionToWrite, int fileInfoFormatVersionToWrite)
+            throws Exception {
         ServerConfiguration bookieServerConfig = bsConfs.get(0);
+        bookieServerConfig.setJournalFormatVersionToWrite(journalFormatVersionToWrite);
+        bookieServerConfig.setFileInfoFormatVersionToWrite(fileInfoFormatVersionToWrite);
+
+        restartBookies(bookieServerConfig);
 
         ClientConfiguration confWithExplicitLAC = new ClientConfiguration();
         confWithExplicitLAC.setMetadataServiceUri(zkUtil.getMetadataServiceUri());
@@ -104,7 +126,7 @@ public class LedgerStorageTest extends BookKeeperClusterTestCase {
         assertEquals("Read explicit LAC of rlh after wait for explicitlacflush", (numOfEntries - 1),
                 readExplicitLastConfirmed);
 
-        ServerConfiguration newBookieConf = new ServerConfiguration(bookieServerConfig);
+        ServerConfiguration newBookieConf = new ServerConfiguration(bsConfs.get(0));
         /*
          * by reusing bookieServerConfig and setting metadataServiceUri to null
          * we can create/start new Bookie instance using the same data
@@ -121,17 +143,42 @@ public class LedgerStorageTest extends BookKeeperClusterTestCase {
         newbookie.readJournal();
         ByteBuf explicitLacBuf = newbookie.getExplicitLac(ledgerId);
 
-        DigestManager digestManager = DigestManager.instantiate(ledgerId, passwdBytes,
-                BookKeeper.DigestType.toProtoDigestType(digestType), confWithExplicitLAC.getUseV2WireProtocol());
-        long explicitLacPersistedInJournal = digestManager.verifyDigestAndReturnLac(explicitLacBuf);
-        assertEquals("explicitLac persisted in journal", (numOfEntries - 1), explicitLacPersistedInJournal);
-
+        if ((journalFormatVersionToWrite >= 6) && (fileInfoFormatVersionToWrite >= 1)) {
+            DigestManager digestManager = DigestManager.instantiate(ledgerId, passwdBytes,
+                    BookKeeper.DigestType.toProtoDigestType(digestType), confWithExplicitLAC.getUseV2WireProtocol());
+            long explicitLacPersistedInJournal = digestManager.verifyDigestAndReturnLac(explicitLacBuf);
+            assertEquals("explicitLac persisted in journal", (numOfEntries - 1), explicitLacPersistedInJournal);
+        } else {
+            assertEquals("explicitLac is not expected to be persisted, so it should be null", null, explicitLacBuf);
+        }
         bkcWithExplicitLAC.close();
     }
 
     @Test
-    public void testExplicitLacWriteToFileInfo() throws Exception {
+    public void testExplicitLacWriteToFileInfoWithValidVersions() throws Exception {
+        /*
+         * to persist explicitLac, journalFormatVersionToWrite should be atleast
+         * V6 and fileInfoFormatVersionToWrite should be atleast V1
+         */
+        testExplicitLacWriteToFileInfo(6, 1);
+    }
+
+    @Test
+    public void testExplicitLacWriteToFileInfoWithOlderVersions() throws Exception {
+        /*
+         * to persist explicitLac, journalFormatVersionToWrite should be atleast
+         * V6 and fileInfoFormatVersionToWrite should be atleast V1
+         */
+        testExplicitLacWriteToFileInfo(5, 0);
+    }
+
+    public void testExplicitLacWriteToFileInfo(int journalFormatVersionToWrite, int fileInfoFormatVersionToWrite)
+            throws Exception {
         ServerConfiguration bookieServerConfig = bsConfs.get(0);
+        bookieServerConfig.setJournalFormatVersionToWrite(journalFormatVersionToWrite);
+        bookieServerConfig.setFileInfoFormatVersionToWrite(fileInfoFormatVersionToWrite);
+
+        restartBookies(bookieServerConfig);
 
         ClientConfiguration confWithExplicitLAC = new ClientConfiguration();
         confWithExplicitLAC.setMetadataServiceUri(zkUtil.getMetadataServiceUri());
@@ -177,10 +224,15 @@ public class LedgerStorageTest extends BookKeeperClusterTestCase {
         fileInfo.readHeader();
         ByteBuf explicitLacBufReadFromFileInfo = fileInfo.getExplicitLac();
 
-        DigestManager digestManager = DigestManager.instantiate(ledgerId, passwdBytes,
-                BookKeeper.DigestType.toProtoDigestType(digestType), confWithExplicitLAC.getUseV2WireProtocol());
-        long explicitLacReadFromFileInfo = digestManager.verifyDigestAndReturnLac(explicitLacBufReadFromFileInfo);
-        assertEquals("explicitLac persisted in FileInfo", (numOfEntries - 1), explicitLacReadFromFileInfo);
+        if ((journalFormatVersionToWrite >= 6) && (fileInfoFormatVersionToWrite >= 1)) {
+            DigestManager digestManager = DigestManager.instantiate(ledgerId, passwdBytes,
+                    BookKeeper.DigestType.toProtoDigestType(digestType), confWithExplicitLAC.getUseV2WireProtocol());
+            long explicitLacReadFromFileInfo = digestManager.verifyDigestAndReturnLac(explicitLacBufReadFromFileInfo);
+            assertEquals("explicitLac persisted in FileInfo", (numOfEntries - 1), explicitLacReadFromFileInfo);
+        } else {
+            assertEquals("explicitLac is not expected to be persisted, so it should be null", null,
+                    explicitLacBufReadFromFileInfo);
+        }
 
         bkcWithExplicitLAC.close();
     }
