@@ -34,13 +34,13 @@ import org.apache.bookkeeper.bookie.LedgerDirsManager.LedgerDirsListener;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirException;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.LedgerHandle;
+import org.apache.bookkeeper.common.testing.annotations.FlakyTest;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.util.DiskChecker;
 import org.apache.bookkeeper.util.TestUtils;
 import org.junit.Before;
-import org.junit.Test;
 
 /**
  * Test BookieStorage with a threshold.
@@ -140,7 +140,7 @@ public class BookieStorageThresholdTest extends BookKeeperClusterTestCase {
         }
     }
 
-    @Test
+    @FlakyTest(value = "https://github.com/apache/bookkeeper/issues/1562")
     public void testStorageThresholdCompaction() throws Exception {
         stopAllBookies();
         ServerConfiguration conf = newServerConfiguration();
