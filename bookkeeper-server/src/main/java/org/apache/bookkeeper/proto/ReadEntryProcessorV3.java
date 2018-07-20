@@ -221,8 +221,8 @@ class ReadEntryProcessorV3 extends PacketProcessorBaseV3 {
         } catch (Bookie.NoLedgerException e) {
             if (RequestUtils.isFenceRequest(readRequest)) {
                 LOG.info("No ledger found reading entry {} when fencing ledger {}", entryId, ledgerId);
-            } else {
-                LOG.info("No ledger found while reading entry: {} from ledger: {}", entryId, ledgerId);
+            } else if (LOG.isDebugEnabled()) {
+                LOG.debug("No ledger found while reading entry: {} from ledger: {}", entryId, ledgerId);
             }
             return buildResponse(readResponse, StatusCode.ENOLEDGER, startTimeSw);
         } catch (Bookie.NoEntryException e) {
