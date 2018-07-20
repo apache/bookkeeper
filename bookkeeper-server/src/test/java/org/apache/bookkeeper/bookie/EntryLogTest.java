@@ -55,6 +55,7 @@ import java.util.concurrent.locks.Lock;
 
 import org.apache.bookkeeper.bookie.EntryLogger.BufferedLogChannel;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirException;
+import org.apache.bookkeeper.common.testing.annotations.FlakyTest;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.util.DiskChecker;
@@ -636,7 +637,7 @@ public class EntryLogTest {
      * test concurrent write operations and then concurrent read operations
      * using InterleavedLedgerStorage.
      */
-    @Test
+    @FlakyTest(value = "https://github.com/apache/bookkeeper/issues/1516")
     public void testConcurrentWriteAndReadCallsOfInterleavedLedgerStorage() throws Exception {
         testConcurrentWriteAndReadCalls(InterleavedLedgerStorage.class.getName(), false);
     }
@@ -645,7 +646,7 @@ public class EntryLogTest {
      * test concurrent write operations and then concurrent read operations
      * using InterleavedLedgerStorage with EntryLogPerLedger enabled.
      */
-    @Test
+    @FlakyTest(value = "https://github.com/apache/bookkeeper/issues/1516")
     public void testConcurrentWriteAndReadCallsOfInterleavedLedgerStorageWithELPLEnabled() throws Exception {
         testConcurrentWriteAndReadCalls(InterleavedLedgerStorage.class.getName(), true);
     }
@@ -654,7 +655,7 @@ public class EntryLogTest {
      * test concurrent write operations and then concurrent read operations
      * using SortedLedgerStorage.
      */
-    @Test
+    @FlakyTest(value = "https://github.com/apache/bookkeeper/issues/1516")
     public void testConcurrentWriteAndReadCallsOfSortedLedgerStorage() throws Exception {
         testConcurrentWriteAndReadCalls(SortedLedgerStorage.class.getName(), false);
     }
@@ -663,7 +664,7 @@ public class EntryLogTest {
      * test concurrent write operations and then concurrent read operations
      * using SortedLedgerStorage with EntryLogPerLedger enabled.
      */
-    @Test
+    @FlakyTest(value = "https://github.com/apache/bookkeeper/issues/1516")
     public void testConcurrentWriteAndReadCallsOfSortedLedgerStorageWithELPLEnabled() throws Exception {
         testConcurrentWriteAndReadCalls(SortedLedgerStorage.class.getName(), true);
     }
