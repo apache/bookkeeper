@@ -1520,25 +1520,13 @@ public class BookKeeperAdmin implements AutoCloseable {
         }
     }
 
-    private boolean areEntriesOfLedgerStoredInTheBookie(long ledgerId, BookieSocketAddress bookieAddress,
+    public static boolean areEntriesOfLedgerStoredInTheBookie(long ledgerId, BookieSocketAddress bookieAddress,
             LedgerManager ledgerManager) {
         ReadMetadataCallback cb = new ReadMetadataCallback(ledgerId);
         ledgerManager.readLedgerMetadata(ledgerId, cb);
         try {
             LedgerMetadata ledgerMetadata = cb.get();
-            Collection<ArrayList<BookieSocketAddress>> ensemblesOfSegments = ledgerMetadata.getEnsembles().values();
-            Iterator<ArrayList<BookieSocketAddress>> ensemblesOfSegmentsIterator = ensemblesOfSegments.iterator();
-            ArrayList<BookieSocketAddress> ensemble;
-            int segmentNo = 0;
-            while (ensemblesOfSegmentsIterator.hasNext()) {
-                ensemble = ensemblesOfSegmentsIterator.next();
-                if (ensemble.contains(bookieAddress)) {
-                    if (areEntriesOfSegmentStoredInTheBookie(ledgerMetadata, bookieAddress, segmentNo++)) {
-                        return true;
-                    }
-                }
-            }
-            return false;
+            return areEntriesOfLedgerStoredInTheBookie(ledgerId, bookieAddress, ledgerMetadata);
         } catch (InterruptedException ie) {
             Thread.currentThread().interrupt();
             throw new RuntimeException(ie);
@@ -1554,7 +1542,24 @@ public class BookKeeperAdmin implements AutoCloseable {
         }
     }
 
-    private boolean areEntriesOfSegmentStoredInTheBookie(LedgerMetadata ledgerMetadata,
+    public static boolean areEntriesOfLedgerStoredInTheBookie(long ledgerId, BookieSocketAddress bookieAddress,
+            LedgerMetadata ledgerMetadata) {
+        Collection<ArrayList<BookieSocketAddress>> ensemblesOfSegments = ledgerMetadata.getEnsembles().values();
+        Iterator<ArrayList<BookieSocketAddress>> ensemblesOfSegmentsIterator = ensemblesOfSegments.iterator();
+        ArrayList<BookieSocketAddress> ensemble;
+        int segmentNo = 0;
+        while (ensemblesOfSegmentsIterator.hasNext()) {
+            ensemble = ensemblesOfSegmentsIterator.next();
+            if (ensemble.contains(bookieAddress)) {
+                if (areEntriesOfSegmentStoredInTheBookie(ledgerMetadata, bookieAddress, segmentNo++)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private static boolean areEntriesOfSegmentStoredInTheBookie(LedgerMetadata ledgerMetadata,
             BookieSocketAddress bookieAddress, int segmentNo) {
         boolean isLedgerClosed = ledgerMetadata.isClosed();
         int ensembleSize = ledgerMetadata.getEnsembleSize();
