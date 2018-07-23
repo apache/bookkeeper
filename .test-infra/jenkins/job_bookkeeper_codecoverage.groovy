@@ -23,6 +23,9 @@ mavenJob('bookkeeper_codecoverage') {
   description('runs a `mvn clean verify` of the nightly snapshot for bookkeeper,\n\
                 running tests and gathering code coverage metrics.')
 
+  // clean up the workspace before build
+  wrappers { preBuildCleanup() }
+
   // Set common parameters.
   common_job_properties.setTopLevelMainJobProperties(delegate)
 
