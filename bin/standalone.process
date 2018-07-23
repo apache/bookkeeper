@@ -19,47 +19,65 @@
 # * See the License for the specific language governing permissions and
 # * limitations under the License.
 # */
-usage() {
-    cat <<EOF
-Usage: standalone <runtime> (up|down)
-where runtime is one of:
-    process          Run a standalone cluster in one process
-    docker-compose   Run a standalone cluster in a docker-composed cluster
+
+function show_help() {
+  cat <<EOF
+Usage: standalone.process [-c <cluster_name>] [-h] <action:[up|down]>
 EOF
 }
 
 BINDIR=${BK_BINDIR:-"`dirname "$0"`"}
 
-if [ $# -lt 2 ]
-then
-  echo "Error: no enough arguments provided."
-  usage
+source ${BINDIR}/common.sh
+
+DATA_ROOT_DIR=${BK_DATA_DIR:-"${BK_HOME}/data"}
+mkdir -p ${DATA_ROOT_DIR}
+
+# main entrypoint
+
+CLUSTER_NAME="bk-standalone"
+OPTIND=1
+
+while getopts "h:c:" opt; do
+  case "${opt}" in
+  c )
+    CLUSTER_NAME=${OPTARG}
+    echo "use cluster = '${CLUSTER_NAME}'."
+    ;;
+  h|\? )
+    show_help
+    exit 1
+    ;;
+  esac
+done
+
+shift $((OPTIND-1))
+
+[ "${1:-}" = "--" ] && shift
+
+if [ $# -le 0 ]; then
+  show_help
   exit 1
 fi
 
-runtime=$1
-shift
-action=$1
-shift
-
-case $runtime in
-  (process)
-    ${BINDIR}/standalone.process $action $@
+ACTION=$1
+DAEMON_ACTION=""
+case "${ACTION}" in
+  up)
+    DAEMON_ACTION="start"
     ;;
-  (docker-compose)
-    DOCKER_COMPOSE=$(which docker-compose)
-    if [ $? != 0 ]; then
-      echo "Error: docker-compose is not found in ${PATH}." 1>&2
-      usage
-      exit 1
-    else
-      echo ${BINDIR}/standalone.docker-compose $action $@
-      ${BINDIR}/standalone.docker-compose $action $@
-    fi
+  down)
+    DAEMON_ACTION="stop"
     ;;
-  (*)
-    echo "Error: unknown runtime $command"
-    usage
+  *)
+    echo "Unknown action : ${ACTION}"
+    show_help
     exit 1
     ;;
 esac
+
+
+CLUSTER_DATA_ROOT="${DATA_ROOT_DIR}/${CLUSTER_NAME}"
+mkdir -p ${CLUSTER_DATA_ROOT}
+
+${BINDIR}/bookkeeper-daemon.sh ${DAEMON_ACTION} standalone --data-dir ${CLUSTER_DATA_ROOT}

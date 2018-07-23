@@ -21,9 +21,13 @@ package org.apache.bookkeeper.common.conf;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.net.URL;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
+import org.apache.bookkeeper.common.util.JsonUtil;
+import org.apache.bookkeeper.common.util.JsonUtil.ParseJsonException;
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
@@ -286,5 +290,32 @@ public abstract class ComponentConfiguration implements Configuration {
     @Override
     public List<Object> getList(String key, List<?> defaultValue) {
         return conf.getList(getKeyName(key), defaultValue);
+    }
+
+    /**
+     * returns the string representation of json format of this config.
+     *
+     * @return
+     * @throws ParseJsonException
+     */
+    public String asJson() {
+        try {
+            return JsonUtil.toJson(toMap());
+        } catch (ParseJsonException e) {
+            throw new RuntimeException("Failed to serialize the configuration as json", e);
+        }
+    }
+
+    private Map<String, Object> toMap() {
+        Map<String, Object> configMap = new HashMap<>();
+        Iterator<String> iterator = this.getKeys();
+        while (iterator.hasNext()) {
+            String key = iterator.next().toString();
+            Object property = this.getProperty(key);
+            if (property != null) {
+                configMap.put(key, property.toString());
+            }
+        }
+        return configMap;
     }
 }
