@@ -78,7 +78,7 @@ public class BookieJournalTest {
             throws Exception {
         File fn = new File(indexDir, IndexPersistenceMgr.getLedgerName(ledgerId));
         fn.getParentFile().mkdirs();
-        FileInfo fi = new FileInfo(fn, masterKey);
+        FileInfo fi = new FileInfo(fn, masterKey, FileInfo.CURRENT_HEADER_VERSION);
         // force creation of index file
         fi.write(new ByteBuffer[]{ ByteBuffer.allocate(0) }, 0);
         fi.close(true);
@@ -89,7 +89,7 @@ public class BookieJournalTest {
             throws Exception {
         File fn = new File(indexDir, IndexPersistenceMgr.getLedgerName(ledgerId));
         fn.getParentFile().mkdirs();
-        FileInfo fi = new FileInfo(fn, masterKey);
+        FileInfo fi = new FileInfo(fn, masterKey, FileInfo.CURRENT_HEADER_VERSION);
         // force creation of index file
         fi.write(new ByteBuffer[]{ ByteBuffer.allocate(0) }, 0);
         fi.close(true);

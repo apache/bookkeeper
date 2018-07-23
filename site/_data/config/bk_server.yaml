@@ -198,9 +198,11 @@ groups:
        3: ledger key was introduced
        4: fencing key was introduced
        5: expanding header to 512 and padding writes to align sector size configured by `journalAlignmentSize`
+       6: persisting explicitLac is introduced
 
       By default, it is `4`. If you'd like to enable `padding-writes` feature, you can set journal version to `5`.
       You can disable `padding-writes` by setting journal version back to `4`. This feature is available in 4.5.0 and onward versions.
+      If you'd like to enable persisting ExplicitLac, you can set this config to 6 and also fileInfoFormatVersionToWrite should be atleast 1. If there is mismatch then the serverconfig is considered invalid.
     default: 4
   - param: journalMaxSizeMB
     description: Max file size of journal file, in mega bytes. A new journal file will be created when the old one reaches the file size limitation.
@@ -412,6 +414,15 @@ groups:
     description: |
       The max idle time allowed for an open file info existed in the file info cache. If the file info is idle for a long time, exceed the given time period. The file info will be
       evicted and closed. If the value is zero or negative, the file info is evicted only when opened files reached `openFileLimit`.
+    default: 0
+  - param: fileInfoFormatVersionToWrite
+    description: |
+      The fileinfo format version to write.
+      Available formats are 0-1:
+       0: Initial version
+       1: persisting explicitLac is introduced
+
+      By default, it is `0`. If you'd like to enable persisting ExplicitLac, you can set this config to 1 and also journalFormatVersionToWrite should be atleast 6. If there is mismatch then the serverconfig is considered invalid.
     default: 0
   - param: pageSize
     description: |
