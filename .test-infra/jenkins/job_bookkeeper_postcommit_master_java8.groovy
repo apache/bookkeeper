@@ -22,6 +22,9 @@ import common_job_properties
 mavenJob('bookkeeper_postcommit_master_java8') {
   description('Runs nightly build for bookkeeper in Java 8.')
 
+  // clean up the workspace before build
+  wrappers { preBuildCleanup() }
+
   // Set common parameters.
   common_job_properties.setTopLevelMainJobProperties(
     delegate, 'master', 'JDK 1.8 (latest)')

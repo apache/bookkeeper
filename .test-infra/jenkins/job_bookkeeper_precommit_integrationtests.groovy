@@ -22,6 +22,9 @@ import common_job_properties
 freeStyleJob('bookkeeper_precommit_integrationtests') {
     description('precommit integration test verification for pull requests of <a href="http://bookkeeper.apache.org">Apache BookKeeper</a>.')
 
+    // clean up the workspace before build
+    wrappers { preBuildCleanup() }
+
     // Set common parameters.
     common_job_properties.setTopLevelMainJobProperties(
         delegate,

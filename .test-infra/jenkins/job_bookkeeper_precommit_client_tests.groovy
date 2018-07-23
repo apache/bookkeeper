@@ -22,6 +22,9 @@ import common_job_properties
 freeStyleJob('bookkeeper_precommit_client_tests') {
   description('Run bookkeeper client tests in Java 8.')
 
+  // clean up the workspace before build
+  wrappers { preBuildCleanup() }
+
   // Execute concurrent builds if necessary.
   concurrentBuild()
 
