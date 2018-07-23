@@ -23,9 +23,13 @@ BK_HOME=`cd ${BINDIR}/..;pwd`
 
 source ${BK_HOME}/bin/common.sh
 
-BOOKIE_MODULE_PATH=bookkeeper-server
-BOOKIE_MODULE_NAME="(org.apache.bookkeeper-)?bookkeeper-server"
-BOOKIE_MODULE_HOME=${BK_HOME}/${BOOKIE_MODULE_PATH}
+if [ "x$1" == "xstandalone" ]; then
+  BOOKIE_MODULE_PATH=stream/server
+  BOOKIE_MODULE_NAME="(org.apache.bookkeeper-)?stream-storage-server"
+else
+  BOOKIE_MODULE_PATH=bookkeeper-server
+  BOOKIE_MODULE_NAME="(org.apache.bookkeeper-)?bookkeeper-server"
+fi
 
 # find the module jar
 BOOKIE_JAR=$(find_module_jar ${BOOKIE_MODULE_PATH} ${BOOKIE_MODULE_NAME})
@@ -44,7 +48,7 @@ where command is one of:
     bookie              Run a bookie server
     autorecovery        Run AutoRecovery service daemon
     localbookie <n>     Run a test ensemble of <n> bookies locally
-    standalone <n>      Run a standalone cluster of <n> bookies locally
+    standalone          Run a standalone cluster (with all service components) locally
     upgrade             Upgrade bookie filesystem
     shell               Run shell for admin commands
     zookeeper           Run zookeeper server
@@ -130,10 +134,12 @@ if [ ${COMMAND} == "bookie" ]; then
   exec ${JAVA} ${OPTS} ${JMX_ARGS} org.apache.bookkeeper.server.Main --conf ${BOOKIE_CONF} $@
 elif [ ${COMMAND} == "autorecovery" ]; then
   exec ${JAVA} ${OPTS} ${JMX_ARGS} org.apache.bookkeeper.replication.AutoRecoveryMain --conf ${BOOKIE_CONF} $@
-elif [ ${COMMAND} == "localbookie" -o ${COMMAND} == "standalone" ]; then
+elif [ ${COMMAND} == "localbookie" ]; then
   NUMBER=$1
   shift
   exec ${JAVA} ${OPTS} ${JMX_ARGS} -Dzookeeper.4lw.commands.whitelist='*' org.apache.bookkeeper.util.LocalBookKeeper ${NUMBER} ${BOOKIE_CONF} $@
+elif [ ${COMMAND} == "standalone" ]; then
+  exec ${JAVA} ${OPTS} ${JMX_ARGS} -Dzookeeper.4lw.commands.whitelist='*' org.apache.bookkeeper.stream.cluster.StandaloneStarter --conf ${BK_HOME}/conf/standalone.conf $@
 elif [ ${COMMAND} == "upgrade" ]; then
   exec ${JAVA} ${OPTS} org.apache.bookkeeper.bookie.FileSystemUpgrade --conf ${BOOKIE_CONF} $@
 elif [ $COMMAND == "zookeeper" ]; then

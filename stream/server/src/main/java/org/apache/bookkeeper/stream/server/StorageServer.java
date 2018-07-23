@@ -206,10 +206,16 @@ public class StorageServer {
             StatsProviderService statsProviderService = new StatsProviderService(bkConf);
             rootStatsLogger = statsProviderService.getStatsProvider().getStatsLogger("");
             serverBuilder.addComponent(statsProviderService);
+            log.info("Bookie configuration : {}", bkConf.asJson());
         } else {
             rootStatsLogger = checkNotNull(externalStatsLogger,
                 "External stats logger is not provided while not starting stats provider");
         }
+
+        // dump configurations
+        log.info("Dlog configuration : {}", dlConf.asJson());
+        log.info("Storage configuration : {}", storageConf.asJson());
+        log.info("Server configuration : {}", serverConf.asJson());
 
         // Create the bookie service
         ServerConfiguration bkServerConf;

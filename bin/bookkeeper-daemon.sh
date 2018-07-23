@@ -69,6 +69,9 @@ case $command in
   (autorecovery)
     echo "doing $startStop $command ..."
     ;;
+  (standalone)
+    echo "doing $startStop $command ..."
+    ;;
   (*)
     echo "Error: unknown service name $command"
     usage
@@ -134,7 +137,7 @@ case $startStop in
 
         count=0
         location=$BOOKIE_LOG_DIR
-        while kill -0 $TARGET_PID > /dev/null;
+        while kill -0 $TARGET_PID > /dev/null 2>&1;
         do
           echo "Shutdown is in progress... Please wait..."
           sleep 1

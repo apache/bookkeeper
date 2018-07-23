@@ -14,17 +14,15 @@
 
 package org.apache.bookkeeper.stream.cluster;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
 import static org.apache.bookkeeper.common.concurrent.FutureUtils.result;
 import static org.apache.bookkeeper.stream.protocol.ProtocolConstants.DEFAULT_STREAM_CONF;
-import static org.apache.bookkeeper.stream.storage.StorageConstants.ZK_METADATA_ROOT_PATH;
-import static org.apache.bookkeeper.stream.storage.StorageConstants.getSegmentsRootPath;
-import static org.apache.bookkeeper.stream.storage.StorageConstants.getStoragePath;
 
 import com.google.common.collect.Lists;
 import java.io.File;
 import java.io.IOException;
 import java.net.BindException;
-import java.net.URI;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -34,10 +32,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.clients.StorageClientBuilder;
 import org.apache.bookkeeper.clients.admin.StorageAdminClient;
 import org.apache.bookkeeper.clients.config.StorageClientSettings;
-import org.apache.bookkeeper.clients.exceptions.NamespaceExistsException;
+import org.apache.bookkeeper.clients.exceptions.ClientException;
+import org.apache.bookkeeper.clients.exceptions.NamespaceNotFoundException;
 import org.apache.bookkeeper.clients.utils.NetUtils;
 import org.apache.bookkeeper.common.component.AbstractLifecycleComponent;
 import org.apache.bookkeeper.common.component.LifecycleComponent;
+import org.apache.bookkeeper.common.net.ServiceURI;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.MetadataDrivers;
 import org.apache.bookkeeper.shims.zk.ZooKeeperServerShim;
@@ -46,12 +46,11 @@ import org.apache.bookkeeper.stream.proto.NamespaceConfiguration;
 import org.apache.bookkeeper.stream.proto.NamespaceProperties;
 import org.apache.bookkeeper.stream.proto.common.Endpoint;
 import org.apache.bookkeeper.stream.server.StorageServer;
-import org.apache.bookkeeper.stream.storage.StorageConstants;
 import org.apache.bookkeeper.stream.storage.conf.StorageConfiguration;
 import org.apache.bookkeeper.stream.storage.exceptions.StorageRuntimeException;
 import org.apache.bookkeeper.stream.storage.impl.cluster.ZkClusterInitializer;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.distributedlog.DistributedLogConfiguration;
 import org.apache.distributedlog.LocalDLMEmulator;
 
 /**
@@ -73,10 +72,9 @@ public class StreamCluster
         return new StreamCluster(spec);
     }
 
-    private static ServerConfiguration newBookieConfiguration(String zkEnsemble) {
+    private static ServerConfiguration newBookieConfiguration(ServiceURI serviceURI) {
         ServerConfiguration serverConf = new ServerConfiguration();
-        serverConf.setMetadataServiceUri(
-            "zk://" + zkEnsemble + getSegmentsRootPath(StorageConstants.ZK_METADATA_ROOT_PATH));
+        serverConf.setMetadataServiceUri(serviceURI.getUri().toString());
         serverConf.setAllowLoopback(true);
         serverConf.setGcWaitTime(300000);
         serverConf.setDiskUsageWarnThreshold(0.9999f);
@@ -86,7 +84,7 @@ public class StreamCluster
 
     private final StreamClusterSpec spec;
     private final List<Endpoint> rpcEndpoints;
-    private String zkEnsemble;
+    private ServiceURI metadataServiceUri;
     private int zkPort;
     private ZooKeeperServerShim zks;
     private List<LifecycleComponent> servers;
@@ -109,24 +107,21 @@ public class StreamCluster
         return rpcEndpoints;
     }
 
-    public URI getDefaultBackendUri() {
-        return URI.create("distributedlog://" + zkEnsemble + getStoragePath(ZK_METADATA_ROOT_PATH));
-    }
-
     private void startZooKeeper() throws Exception {
         if (!spec.shouldStartZooKeeper()) {
-            zkPort = spec.zkPort();
-            zkEnsemble = spec.zkServers() + ":" + zkPort;
+            metadataServiceUri = checkNotNull(spec.metadataServiceUri,
+                "No metadata service uri is configured while configuring not to start zookeeper");
             return;
         }
 
         File zkDir = new File(spec.storageRootDir(), "zookeeper");
         Pair<ZooKeeperServerShim, Integer> zkServerAndPort =
-            LocalDLMEmulator.runZookeeperOnAnyPort(zkDir);
+            LocalDLMEmulator.runZookeeperOnAnyPort(spec.zkPort(), zkDir);
         zks = zkServerAndPort.getLeft();
         zkPort = zkServerAndPort.getRight();
         log.info("Started zookeeper at port {}.", zkPort);
-        zkEnsemble = "127.0.0.1:" + zkPort;
+        metadataServiceUri = ServiceURI.create(
+            "zk://127.0.0.1:" + zkPort + "/ledgers");
     }
 
     private void stopZooKeeper() {
@@ -137,12 +132,17 @@ public class StreamCluster
     }
 
     private void initializeCluster() throws Exception {
-        new ZkClusterInitializer(zkEnsemble).initializeCluster(
-            URI.create("zk://" + zkEnsemble),
+        checkArgument(ServiceURI.SERVICE_ZK.equals(metadataServiceUri.getServiceName()),
+            "Only support zookeeper based metadata service now");
+        String[] serviceHosts = metadataServiceUri.getServiceHosts();
+        String metadataServers = StringUtils.join(serviceHosts, ',');
+
+        new ZkClusterInitializer(metadataServers).initializeCluster(
+            metadataServiceUri.getUri(),
             spec.numServers() * 2);
 
         // format the bookkeeper cluster
-        MetadataDrivers.runFunctionWithMetadataBookieDriver(newBookieConfiguration(zkEnsemble), driver -> {
+        MetadataDrivers.runFunctionWithMetadataBookieDriver(newBookieConfiguration(metadataServiceUri), driver -> {
             try {
                 boolean initialized = driver.getRegistrationManager().initNewCluster();
                 if (initialized) {
@@ -170,23 +170,20 @@ public class StreamCluster
             }
             LifecycleComponent server = null;
             try {
-                ServerConfiguration serverConf = newBookieConfiguration(zkEnsemble);
+                ServerConfiguration serverConf = newBookieConfiguration(metadataServiceUri);
+                serverConf.loadConf(spec.baseConf());
                 serverConf.setBookiePort(bookiePort);
                 File bkDir = new File(spec.storageRootDir(), "bookie_" + bookiePort);
                 serverConf.setJournalDirName(bkDir.getPath());
                 serverConf.setLedgerDirNames(new String[]{bkDir.getPath()});
 
-                DistributedLogConfiguration dlConf = new DistributedLogConfiguration();
-                dlConf.loadConf(serverConf);
-
                 File rangesStoreDir = new File(spec.storageRootDir(), "ranges_" + grpcPort);
                 StorageConfiguration storageConf = new StorageConfiguration(serverConf);
                 storageConf.setRangeStoreDirNames(new String[]{rangesStoreDir.getPath()});
-                storageConf.setServeReadOnlyTables(spec.serveReadOnlyTable);
 
                 log.info("Attempting to start storage server at (bookie port = {}, grpc port = {})"
-                        + " : bkDir = {}, rangesStoreDir = {}, serveReadOnlyTables = {}",
-                    bookiePort, grpcPort, bkDir, rangesStoreDir, spec.serveReadOnlyTable);
+                        + " : bkDir = {}, rangesStoreDir = {}",
+                    bookiePort, grpcPort, bkDir, rangesStoreDir);
                 server = StorageServer.buildStorageServer(
                     serverConf,
                     grpcPort);
@@ -245,18 +242,27 @@ public class StreamCluster
             .withSettings(settings)
             .buildAdmin()) {
 
-            System.out.println("Creating namespace '" + namespaceName + "' ...");
-            try {
-                NamespaceProperties nsProps = result(
-                    admin.createNamespace(
-                        namespaceName,
-                        NamespaceConfiguration.newBuilder()
-                            .setDefaultStreamConf(DEFAULT_STREAM_CONF)
-                            .build()));
-                System.out.println("Successfully created namespace '" + namespaceName + "':");
-                System.out.println(nsProps);
-            } catch (NamespaceExistsException nee) {
-                System.out.println("Namespace '" + namespaceName + "' already exists.");
+            boolean created = false;
+            while (!created) {
+                try {
+                    result(admin.getNamespace(namespaceName));
+                    created = true;
+                } catch (NamespaceNotFoundException nnfe) {
+                    log.info("Namespace '{}' is not found.");
+                    log.info("Creating namespace '{}' ...", namespaceName);
+                    try {
+                        NamespaceProperties nsProps = result(
+                            admin.createNamespace(
+                                namespaceName,
+                                NamespaceConfiguration.newBuilder()
+                                    .setDefaultStreamConf(DEFAULT_STREAM_CONF)
+                                    .build()));
+                        log.info("Successfully created namespace '{}':", namespaceName);
+                        log.info("{}", nsProps);
+                    } catch (ClientException ce) {
+                        // encountered exception, try to fetch the namespace again
+                    }
+                }
             }
         }
     }

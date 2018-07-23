@@ -20,6 +20,7 @@ import lombok.Builder.Default;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
+import org.apache.bookkeeper.common.net.ServiceURI;
 import org.apache.commons.configuration.CompositeConfiguration;
 
 /**
@@ -47,12 +48,12 @@ public class StreamClusterSpec {
     CompositeConfiguration baseConf;
 
     /**
-     * Returns the zookeeper servers used in this cluster.
+     * Returns the metadata service uri that the servers will connect to.
      *
-     * @return the zookeeper servers used in this cluster.
+     * @return the metadata service uri that the servers will connect to.
      */
     @Default
-    String zkServers = "127.0.0.1";
+    ServiceURI metadataServiceUri = null;
 
     /**
      * Returns if should start zookeeper.
@@ -93,8 +94,5 @@ public class StreamClusterSpec {
      */
     @Default
     File storageRootDir = new File("data/bookkeeper");
-
-    @Default
-    boolean serveReadOnlyTable = false;
 
 }
