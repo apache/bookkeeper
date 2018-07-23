@@ -22,6 +22,9 @@ import common_job_properties
 job('bookkeeper_postcommit_publish_website') {
   description('Publish website to asf-site branch')
 
+  // clean up the workspace before build
+  wrappers { preBuildCleanup() }
+
   // Set common parameters.
   common_job_properties.setTopLevelWebsiteJobProperties(delegate)
 

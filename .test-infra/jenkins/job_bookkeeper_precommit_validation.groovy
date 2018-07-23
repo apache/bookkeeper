@@ -22,6 +22,9 @@ import common_job_properties
 mavenJob('bookkeeper_precommit_pullrequest_validation') {
   description('precommit validation for pull requests of <a href="http://bookkeeper.apache.org">Apache BookKeeper</a>.')
 
+  // clean up the workspace before build
+  wrappers { preBuildCleanup() }
+
   // Execute concurrent builds if necessary.
   concurrentBuild()
 
