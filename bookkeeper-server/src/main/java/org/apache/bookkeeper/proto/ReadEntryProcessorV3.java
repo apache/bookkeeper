@@ -219,8 +219,11 @@ class ReadEntryProcessorV3 extends PacketProcessorBaseV3 {
         } catch (Bookie.NoLedgerException e) {
             if (RequestUtils.isFenceRequest(readRequest)) {
                 LOG.info("No ledger found reading entry {} when fencing ledger {}", entryId, ledgerId);
-            } else {
+            } else if (entryId != BookieProtocol.LAST_ADD_CONFIRMED) {
                 LOG.info("No ledger found while reading entry: {} from ledger: {}", entryId, ledgerId);
+            } else if (LOG.isDebugEnabled()) {
+                // this is the case of a reader which is calling readLastAddConfirmed and the ledger is empty
+                LOG.debug("No ledger found while reading entry: {} from ledger: {}", entryId, ledgerId);
             }
             return buildResponse(readResponse, StatusCode.ENOLEDGER, startTimeSw);
         } catch (Bookie.NoEntryException e) {
