@@ -41,7 +41,19 @@ public class ReadOnlyBookie extends Bookie {
     public ReadOnlyBookie(ServerConfiguration conf, StatsLogger statsLogger)
             throws IOException, KeeperException, InterruptedException, BookieException {
         super(conf, statsLogger);
-        stateManager = new BookieStateManager(conf, statsLogger, metadataDriver, getLedgerDirsManager()) {
+        if (conf.isReadOnlyModeEnabled()) {
+            stateManager.forceToReadOnly();
+        } else {
+            String err = "Try to init ReadOnly Bookie, while ReadOnly mode is not enabled";
+            LOG.error(err);
+            throw new IOException(err);
+        }
+        LOG.info("Running bookie in force readonly mode.");
+    }
+
+    @Override
+    StateManager initializeStateManager() throws IOException {
+        return new BookieStateManager(conf, statsLogger, metadataDriver, getLedgerDirsManager()) {
 
             @Override
             public void doTransitionToWritableMode() {
@@ -55,13 +67,5 @@ public class ReadOnlyBookie extends Bookie {
                 LOG.info("Skip transition to readonly mode for readonly bookie");
             }
         };
-        if (conf.isReadOnlyModeEnabled()) {
-            stateManager.forceToReadOnly();
-        } else {
-            String err = "Try to init ReadOnly Bookie, while ReadOnly mode is not enabled";
-            LOG.error(err);
-            throw new IOException(err);
-        }
-        LOG.info("Running bookie in force readonly mode.");
     }
 }

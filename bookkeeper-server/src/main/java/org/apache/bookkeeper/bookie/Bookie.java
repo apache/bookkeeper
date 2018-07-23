@@ -138,7 +138,7 @@ public class Bookie extends BookieCriticalThread {
     protected StateManager stateManager;
 
     // Expose Stats
-    private final StatsLogger statsLogger;
+    final StatsLogger statsLogger;
     private final Counter writeBytes;
     private final Counter readBytes;
     private final Counter forceLedgerOps;
@@ -641,7 +641,7 @@ public class Bookie extends BookieCriticalThread {
         } catch (MetadataException e) {
             throw new MetadataStoreException("Failed to initialize ledger manager", e);
         }
-        stateManager = new BookieStateManager(conf, statsLogger, metadataDriver, ledgerDirsManager);
+        stateManager = initializeStateManager();
         // register shutdown handler using trigger mode
         stateManager.setShutdownHandler(exitCode -> triggerBookieShutdown(exitCode));
         // Initialise ledgerDirMonitor. This would look through all the
@@ -743,6 +743,10 @@ public class Bookie extends BookieCriticalThread {
         readEntryStats = statsLogger.getOpStatsLogger(BOOKIE_READ_ENTRY);
         addBytesStats = statsLogger.getOpStatsLogger(BOOKIE_ADD_ENTRY_BYTES);
         readBytesStats = statsLogger.getOpStatsLogger(BOOKIE_READ_ENTRY_BYTES);
+    }
+
+    StateManager initializeStateManager() throws IOException {
+        return new BookieStateManager(conf, statsLogger, metadataDriver, ledgerDirsManager);
     }
 
     void readJournal() throws IOException, BookieException {
