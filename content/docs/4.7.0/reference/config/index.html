@@ -962,10 +962,12 @@ Available formats are 1-5:
  2: a header section was added
  3: ledger key was introduced
  4: fencing key was introduced
- 5: expanding header to 512 and padding writes to align sector size configured by <code class="highlighter-rouge">journalAlignmentSize</code></p>
+ 5: expanding header to 512 and padding writes to align sector size configured by <code class="highlighter-rouge">journalAlignmentSize</code>
+ 6: persisting explicitLac is introduced</p>
 
 <p>By default, it is <code class="highlighter-rouge">4</code>. If you’d like to enable <code class="highlighter-rouge">padding-writes</code> feature, you can set journal version to <code class="highlighter-rouge">5</code>.
-You can disable <code class="highlighter-rouge">padding-writes</code> by setting journal version back to <code class="highlighter-rouge">4</code>. This feature is available in 4.5.0 and onward versions.</p>
+You can disable <code class="highlighter-rouge">padding-writes</code> by setting journal version back to <code class="highlighter-rouge">4</code>. This feature is available in 4.5.0 and onward versions.
+If you’d like to enable persisting ExplicitLac, you can set this config to 6 and also fileInfoFormatVersionToWrite should be atleast 1. If there is mismatch then the serverconfig is considered invalid.</p>
 </td>
       <td><code>4</code></td>
     </tr>
@@ -1461,6 +1463,18 @@ but setting this value unnecessarily high wastes memory. The default value is <c
       <td><code>fileInfoMaxIdleTime</code></td>
       <td><p>The max idle time allowed for an open file info existed in the file info cache. If the file info is idle for a long time, exceed the given time period. The file info will be
 evicted and closed. If the value is zero or negative, the file info is evicted only when opened files reached <code class="highlighter-rouge">openFileLimit</code>.</p>
+</td>
+      <td><code>0</code></td>
+    </tr>
+    
+    <tr id="fileInfoFormatVersionToWrite">
+      <td><code>fileInfoFormatVersionToWrite</code></td>
+      <td><p>The fileinfo format version to write.
+Available formats are 0-1:
+ 0: Initial version
+ 1: persisting explicitLac is introduced</p>
+
+<p>By default, it is <code class="highlighter-rouge">0</code>. If you’d like to enable persisting ExplicitLac, you can set this config to 1 and also journalFormatVersionToWrite should be atleast 6. If there is mismatch then the serverconfig is considered invalid.</p>
 </td>
       <td><code>0</code></td>
     </tr>
