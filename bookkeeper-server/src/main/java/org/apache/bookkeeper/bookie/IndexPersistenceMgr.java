@@ -110,7 +110,8 @@ public class IndexPersistenceMgr {
 
         // build the file info cache
         int concurrencyLevel = Math.max(1, Math.max(conf.getNumAddWorkerThreads(), conf.getNumReadWorkerThreads()));
-        fileInfoBackingCache = new FileInfoBackingCache(this::createFileInfoBackingFile);
+        fileInfoBackingCache = new FileInfoBackingCache(this::createFileInfoBackingFile,
+                conf.getFileInfoFormatVersionToWrite());
         RemovalListener<Long, CachedFileInfo> fileInfoEvictionListener = this::handleLedgerEviction;
         writeFileInfoCache = buildCache(
             concurrencyLevel,

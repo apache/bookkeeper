@@ -35,9 +35,11 @@ class FileInfoBackingCache {
     final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
     final ConcurrentLongHashMap<CachedFileInfo> fileInfos = new ConcurrentLongHashMap<>();
     final FileLoader fileLoader;
+    final int fileInfoVersionToWrite;
 
-    FileInfoBackingCache(FileLoader fileLoader) {
+    FileInfoBackingCache(FileLoader fileLoader, int fileInfoVersionToWrite) {
         this.fileLoader = fileLoader;
+        this.fileInfoVersionToWrite = fileInfoVersionToWrite;
     }
 
     /**
@@ -125,7 +127,7 @@ class FileInfoBackingCache {
         final AtomicInteger refCount;
 
         CachedFileInfo(long ledgerId, File lf, byte[] masterKey) throws IOException {
-            super(lf, masterKey);
+            super(lf, masterKey, fileInfoVersionToWrite);
             this.ledgerId = ledgerId;
             this.refCount = new AtomicInteger(0);
         }

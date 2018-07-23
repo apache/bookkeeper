@@ -28,6 +28,7 @@ import java.nio.ByteBuffer;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.bookkeeper.bookie.BookieException;
+import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.Request;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.Response;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.StatusCode;
@@ -66,12 +67,45 @@ class WriteLacProcessorV3 extends PacketProcessorBaseV3 implements Runnable {
             return writeLacResponse.build();
         }
 
+        BookkeeperInternalCallbacks.WriteCallback writeCallback = new BookkeeperInternalCallbacks.WriteCallback() {
+            @Override
+            public void writeComplete(int rc, long ledgerId, long entryId, BookieSocketAddress addr, Object ctx) {
+                if (BookieProtocol.EOK == rc) {
+                    requestProcessor.writeLacStats.registerSuccessfulEvent(MathUtils.elapsedNanos(startTimeNanos),
+                            TimeUnit.NANOSECONDS);
+                } else {
+                    requestProcessor.writeLacStats.registerFailedEvent(MathUtils.elapsedNanos(startTimeNanos),
+                            TimeUnit.NANOSECONDS);
+                }
+
+                StatusCode status;
+                switch (rc) {
+                case BookieProtocol.EOK:
+                    status = StatusCode.EOK;
+                    break;
+                case BookieProtocol.EIO:
+                    status = StatusCode.EIO;
+                    break;
+                default:
+                    status = StatusCode.EUA;
+                    break;
+                }
+                writeLacResponse.setStatus(status);
+                Response.Builder response = Response.newBuilder()
+                        .setHeader(getHeader())
+                        .setStatus(writeLacResponse.getStatus())
+                        .setWriteLacResponse(writeLacResponse);
+                Response resp = response.build();
+                sendResponse(status, resp, requestProcessor.writeLacRequestStats);
+            }
+        };
+
         StatusCode status = null;
         ByteBuffer lacToAdd = writeLacRequest.getBody().asReadOnlyByteBuffer();
         byte[] masterKey = writeLacRequest.getMasterKey().toByteArray();
 
         try {
-            requestProcessor.bookie.setExplicitLac(Unpooled.wrappedBuffer(lacToAdd), channel, masterKey);
+            requestProcessor.bookie.setExplicitLac(Unpooled.wrappedBuffer(lacToAdd), writeCallback, channel, masterKey);
             status = StatusCode.EOK;
         } catch (IOException e) {
             logger.error("Error saving lac {} for ledger:{}",
@@ -90,15 +124,13 @@ class WriteLacProcessorV3 extends PacketProcessorBaseV3 implements Runnable {
 
         // If everything is okay, we return null so that the calling function
         // dosn't return a response back to the caller.
-        if (status.equals(StatusCode.EOK)) {
-            requestProcessor.writeLacStats.registerSuccessfulEvent(MathUtils.elapsedNanos(startTimeNanos),
-                    TimeUnit.NANOSECONDS);
-        } else {
+        if (!status.equals(StatusCode.EOK)) {
             requestProcessor.writeLacStats.registerFailedEvent(MathUtils.elapsedNanos(startTimeNanos),
                     TimeUnit.NANOSECONDS);
+            writeLacResponse.setStatus(status);
+            return writeLacResponse.build();
         }
-        writeLacResponse.setStatus(status);
-        return writeLacResponse.build();
+        return null;
     }
 
     @Override

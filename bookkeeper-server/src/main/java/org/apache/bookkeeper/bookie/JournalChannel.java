@@ -66,11 +66,13 @@ class JournalChannel implements Closeable {
     // 1) expanding header to 512
     // 2) Padding writes to align sector size
     static final int V5 = 5;
+    // Adding explicitlac entry
+    public static final int V6 = 6;
 
     static final int HEADER_SIZE = SECTOR_SIZE; // align header to sector size
     static final int VERSION_HEADER_SIZE = 8; // 4byte magic word, 4 byte version
     static final int MIN_COMPAT_JOURNAL_FORMAT_VERSION = V1;
-    static final int CURRENT_JOURNAL_FORMAT_VERSION = V5;
+    static final int CURRENT_JOURNAL_FORMAT_VERSION = V6;
 
     private final long preAllocSize;
     private final int journalAlignSize;
