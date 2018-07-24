@@ -317,13 +317,8 @@ public class LedgerDirsManager {
     }
 
     boolean isDirWritableForNewIndexFile(File indexDir) {
-        List<File> writableDirsForNewIndexFile;
-        try {
-            writableDirsForNewIndexFile = getDirsAboveUsableThresholdSize(minUsableSizeForIndexFileCreation, true);
-        } catch (NoWritableLedgerDirException nwe) {
-            return false;
-        }
-        return writableDirsForNewIndexFile.contains(indexDir);
+        return (ledgerDirectories.contains(indexDir)
+                && (indexDir.getUsableSpace() > minUsableSizeForIndexFileCreation));
     }
 
     /**
