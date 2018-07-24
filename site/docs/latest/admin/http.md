@@ -60,6 +60,19 @@ Currently all the HTTP endpoints could be divided into these 4 components:
         |403 | Permission denied |
         |404 | Not found |
 
+## Config
+
+### Endpoint: /metrics
+1. Method: GET
+    * Description: Get all metrics by calling `writeAllMetrics()` of `statsProvider` internally
+    * Response:  
+    
+        | Code   | Description |
+        |:-------|:------------|
+        |200 | Successful operation |
+        |403 | Permission denied |
+        |404 | Not found |
+
 ## Ledger
 
 ### Endpoint: /api/v1/ledger/delete/?ledger_id=&lt;ledger_id&gt;
