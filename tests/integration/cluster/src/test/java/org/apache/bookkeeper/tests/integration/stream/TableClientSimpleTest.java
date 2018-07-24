@@ -43,6 +43,7 @@ import org.apache.bookkeeper.clients.config.StorageClientSettings;
 import org.apache.bookkeeper.common.testing.annotations.FlakyTest;
 import org.apache.bookkeeper.stream.proto.NamespaceConfiguration;
 import org.apache.bookkeeper.stream.proto.NamespaceProperties;
+import org.apache.bookkeeper.stream.proto.StorageType;
 import org.apache.bookkeeper.stream.proto.StreamConfiguration;
 import org.apache.bookkeeper.stream.proto.StreamProperties;
 import org.junit.After;
@@ -102,6 +103,7 @@ public class TableClientSimpleTest extends StreamClusterTestBase {
         // Create a stream
         String streamName = testName.getMethodName() + "_stream";
         StreamConfiguration streamConf = StreamConfiguration.newBuilder(DEFAULT_STREAM_CONF)
+            .setStorageType(StorageType.TABLE)
             .build();
         StreamProperties streamProps = result(
             adminClient.createStream(namespace, streamName, streamConf));
