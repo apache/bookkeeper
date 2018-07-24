@@ -611,6 +611,43 @@ To use this feature, set <code class="highlighter-rouge">httpServerEnabled</code
   </li>
 </ol>
 
+<h2 id="config-1">Config</h2>
+
+<h3 id="endpoint-metrics">Endpoint: /metrics</h3>
+<ol>
+  <li>Method: GET
+    <ul>
+      <li>Description: Get all metrics by calling <code class="highlighter-rouge">writeAllMetrics()</code> of <code class="highlighter-rouge">statsProvider</code> internally</li>
+      <li>
+        <p>Response:</p>
+
+        <table>
+          <thead>
+            <tr>
+              <th style="text-align: left">Code</th>
+              <th style="text-align: left">Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="text-align: left">200</td>
+              <td style="text-align: left">Successful operation</td>
+            </tr>
+            <tr>
+              <td style="text-align: left">403</td>
+              <td style="text-align: left">Permission denied</td>
+            </tr>
+            <tr>
+              <td style="text-align: left">404</td>
+              <td style="text-align: left">Not found</td>
+            </tr>
+          </tbody>
+        </table>
+      </li>
+    </ul>
+  </li>
+</ol>
+
 <h2 id="ledger">Ledger</h2>
 
 <h3 id="endpoint-apiv1ledgerdeleteledger_idledger_id">Endpoint: /api/v1/ledger/delete/?ledger_id=&lt;ledger_id&gt;</h3>
@@ -1551,6 +1588,8 @@ To use this feature, set <code class="highlighter-rouge">httpServerEnabled</code
 <li class="toc-entry toc-h3"><a href="#endpoint-heartbeat">Endpoint: /heartbeat</a></li>
 <li class="toc-entry toc-h2"><a href="#config">Config</a></li>
 <li class="toc-entry toc-h3"><a href="#endpoint-apiv1configserver_config">Endpoint: /api/v1/config/server_config</a></li>
+<li class="toc-entry toc-h2"><a href="#config-1">Config</a></li>
+<li class="toc-entry toc-h3"><a href="#endpoint-metrics">Endpoint: /metrics</a></li>
 <li class="toc-entry toc-h2"><a href="#ledger">Ledger</a></li>
 <li class="toc-entry toc-h3"><a href="#endpoint-apiv1ledgerdeleteledger_idledger_id">Endpoint: /api/v1/ledger/delete/?ledger_id=<ledger_id></a></li>
 <li class="toc-entry toc-h3"><a href="#endpoint-apiv1ledgerlistprint_metadatametadata">Endpoint: /api/v1/ledger/list/?print_metadata=<metadata></a></li>
