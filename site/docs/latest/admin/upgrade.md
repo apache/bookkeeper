@@ -51,7 +51,7 @@ In a rolling upgrade scenario, upgrade one Bookie at a time. In a downtime upgra
 
 For each Bookie:
 
-1. Stop the bookie. 
+1. Stop the bookie.
 2. Upgrade the software (either new binary or new configuration)
 2. Start the bookie.
 
@@ -169,5 +169,8 @@ However, we list a list of things that you might want to know.
 2. `multi journals` is a non-rollbackable feature. If you configure a bookie to use multiple journals on 4.5.x you can not roll the bookie back to use 4.4.x. You have
     to take a bookie out and recover it if you want to rollback to 4.4.x.
 
-If you are planning to upgrade a non-secured cluster to a secured cluster enabling security features in 4.5.0, please read [BookKeeper Security](../../security/overview) for more details.
+### 4.7.x to 4.8.X upgrade
 
+In 4.8.x new feature is added to persist explicitLac in FileInfo and explicitLac entry in Journal. Hence current journal format version is bumped to 6 and current FileInfo header version is bumped to 1. But since default config values of 'journalFormatVersionToWrite' and 'fileInfoFormatVersionToWrite' are set to older versions, this feature is off by default. To enable this feature those config values should be set to current versions. Once this is enabled then we cann't rollback to previous Bookie versions (4.7.x and older), since older version code won't be able to deal with explicitLac entry in Journal file while replaying journal and also reading Header of Index files / FileInfo would fail reading Index files with newer FileInfo version. So in summary, it is a non-rollbackable feature.
+
+If you are planning to upgrade a non-secured cluster to a secured cluster enabling security features in 4.5.0, please read [BookKeeper Security](../../security/overview) for more details.
