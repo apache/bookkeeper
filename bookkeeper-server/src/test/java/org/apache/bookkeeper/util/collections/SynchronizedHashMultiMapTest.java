@@ -25,10 +25,13 @@ import java.util.Optional;
 import org.junit.Assert;
 import org.junit.Test;
 
+/**
+ * Test for SynchronizedHashMultiMap.
+ */
 public class SynchronizedHashMultiMapTest {
     @Test
     public void testGetAnyKey() {
-        SynchronizedHashMultiMap<Integer,Integer> map = new SynchronizedHashMultiMap<>();
+        SynchronizedHashMultiMap<Integer, Integer> map = new SynchronizedHashMultiMap<>();
         Assert.assertFalse(map.getAnyKey().isPresent());
 
         map.put(1, 2);
@@ -41,13 +44,13 @@ public class SynchronizedHashMultiMapTest {
         int res = map.getAnyKey().get();
         Assert.assertTrue(res == 1 || res == 2);
 
-        map.removeIf((k,v) -> k == 1);
+        map.removeIf((k, v) -> k == 1);
         Assert.assertEquals(map.getAnyKey().get(), Integer.valueOf(2));
     }
 
     @Test
     public void testRemoveAny() {
-        SynchronizedHashMultiMap<Integer,Integer> map = new SynchronizedHashMultiMap<>();
+        SynchronizedHashMultiMap<Integer, Integer> map = new SynchronizedHashMultiMap<>();
         Assert.assertFalse(map.removeAny(1).isPresent());
 
         map.put(1, 2);
@@ -75,22 +78,22 @@ public class SynchronizedHashMultiMapTest {
 
     @Test
     public void testRemoveIf() {
-        SynchronizedHashMultiMap<Integer,Integer> map = new SynchronizedHashMultiMap<>();
-        Assert.assertEquals(map.removeIf((k,v) -> true), 0);
+        SynchronizedHashMultiMap<Integer, Integer> map = new SynchronizedHashMultiMap<>();
+        Assert.assertEquals(map.removeIf((k, v) -> true), 0);
 
         map.put(1, 2);
         map.put(1, 3);
         map.put(2, 4);
         map.put(2, 4);
 
-        Assert.assertEquals(map.removeIf((k,v) -> v == 4), 1);
-        Assert.assertEquals(map.removeIf((k,v) -> k == 1), 2);
+        Assert.assertEquals(map.removeIf((k, v) -> v == 4), 1);
+        Assert.assertEquals(map.removeIf((k, v) -> k == 1), 2);
 
         map.put(1, 2);
         map.put(1, 3);
         map.put(2, 4);
 
-        Assert.assertEquals(map.removeIf((k,v) -> false), 0);
-        Assert.assertEquals(map.removeIf((k,v) -> true), 3);
+        Assert.assertEquals(map.removeIf((k, v) -> false), 0);
+        Assert.assertEquals(map.removeIf((k, v) -> true), 3);
     }
 }

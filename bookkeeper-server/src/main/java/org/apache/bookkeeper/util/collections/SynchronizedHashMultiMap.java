@@ -32,20 +32,20 @@ import org.apache.commons.lang3.tuple.Pair;
 /**
  * Simple multimap implementation that only stores key reference once.
  *
- * Implementation is aimed at storing PerChannelBookieClient completions when there
+ * <p>Implementation is aimed at storing PerChannelBookieClient completions when there
  * are duplicates. If the key is a pooled object, it must not exist once the value
  * has been removed from the map, which can happen with guava multimap implemenations.
  *
- * With this map is implemented with pretty heavy locking, but this shouldn't be an
+ * <p>With this map is implemented with pretty heavy locking, but this shouldn't be an
  * issue as the multimap only needs to be used in rare cases, i.e. when a user tries
  * to read or the same entry twice at the same time. This class should *NOT*  be used
  * in critical path code.
  *
- * A unique key-value pair will only be stored once.
+ * <p>A unique key-value pair will only be stored once.
  */
 public class SynchronizedHashMultiMap<K, V> {
 
-    HashMap<Integer,Set<Pair<K,V>>> map = new HashMap<>();
+    HashMap<Integer, Set<Pair<K, V>>> map = new HashMap<>();
 
     public synchronized void put(K k, V v) {
         map.computeIfAbsent(k.hashCode(), (ignore) -> new HashSet<>()).add(Pair.of(k, v));
@@ -56,8 +56,8 @@ public class SynchronizedHashMultiMap<K, V> {
     }
 
     public synchronized Optional<V> removeAny(K k) {
-        Set<Pair<K,V>> set = map.getOrDefault(k.hashCode(), Collections.emptySet());
-        Optional<Pair<K,V>> pair = set.stream().filter(p -> p.getLeft().equals(k)).findAny();
+        Set<Pair<K, V>> set = map.getOrDefault(k.hashCode(), Collections.emptySet());
+        Optional<Pair<K, V>> pair = set.stream().filter(p -> p.getLeft().equals(k)).findAny();
         pair.ifPresent(p -> set.remove(p));
         return pair.map(p -> p.getRight());
     }
@@ -67,9 +67,9 @@ public class SynchronizedHashMultiMap<K, V> {
                 pairs -> {
                     int removed = 0;
                     // Can't use removeIf because we need the count
-                    Iterator<Pair<K,V>> iter = pairs.iterator();
+                    Iterator<Pair<K, V>> iter = pairs.iterator();
                     while (iter.hasNext()) {
-                        Pair<K,V> kv = iter.next();
+                        Pair<K, V> kv = iter.next();
                         if (predicate.test(kv.getLeft(), kv.getRight())) {
                             iter.remove();
                             removed++;
