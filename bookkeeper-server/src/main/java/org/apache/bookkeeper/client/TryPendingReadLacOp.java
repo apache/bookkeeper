@@ -67,7 +67,6 @@ class TryPendingReadLacOp implements ReadLacCallback {
     public void readLacComplete(int rc, long ledgerId, final ByteBuf lacBuffer, final ByteBuf lastEntryBuffer,
             Object ctx) {
         int bookieIndex = (Integer) ctx;
-        LOG.info("readLacComplete "+rc+", "+ledgerId+" index "+bookieIndex+", numResponsesPending "+numResponsesPending+", completed:"+completed);
 
         numResponsesPending--;
 
