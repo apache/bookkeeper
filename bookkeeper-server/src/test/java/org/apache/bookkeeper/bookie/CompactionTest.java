@@ -37,6 +37,7 @@ import static org.junit.Assert.fail;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -624,6 +625,99 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
             readEntryBuf.readBytes(readEntryBytes);
             assertEquals(msg, new String(readEntryBytes));
         }
+    }
+
+    @Test
+    public void testCompactionWhenLedgerDirsAreFull() throws Exception {
+        /*
+         * for this test scenario we are assuming that there will be only one
+         * bookie in the cluster
+         */
+        assertEquals("Numbers of Bookies in this cluster", 1, bsConfs.size());
+        ServerConfiguration serverConfig = bsConfs.get(0);
+        File ledgerDir = serverConfig.getLedgerDirs()[0];
+        assertEquals("Number of Ledgerdirs for this bookie", 1, serverConfig.getLedgerDirs().length);
+        assertTrue("indexdirs should be configured to null", null == serverConfig.getIndexDirs());
+        /*
+         * this test is for validating EntryLogCompactor, so make sure
+         * TransactionalCompaction is not enabled.
+         */
+        assertFalse("Bookies must be using EntryLogCompactor", baseConf.getUseTransactionalCompaction());
+        // prepare data
+        LedgerHandle[] lhs = prepareData(3, true);
+
+        for (LedgerHandle lh : lhs) {
+            lh.close();
+        }
+
+        bs.get(0).getBookie().getLedgerStorage().flush();
+        assertTrue(
+                "entry log file ([0,1,2].log should be available in ledgerDirectory: "
+                        + serverConfig.getLedgerDirs()[0],
+                TestUtils.hasLogFiles(serverConfig.getLedgerDirs()[0], false, 0, 1, 2));
+
+        long usableSpace = ledgerDir.getUsableSpace();
+        long totalSpace = ledgerDir.getTotalSpace();
+
+        baseConf.setForceReadOnlyBookie(true);
+        baseConf.setIsForceGCAllowWhenNoSpace(true);
+        // disable minor compaction
+        baseConf.setMinorCompactionThreshold(0.0f);
+        baseConf.setGcWaitTime(60000);
+        baseConf.setMinorCompactionInterval(120000);
+        baseConf.setMajorCompactionInterval(240000);
+        baseConf.setMinUsableSizeForEntryLogCreation(1);
+        baseConf.setMinUsableSizeForIndexFileCreation(1);
+        baseConf.setDiskUsageThreshold((1.0f - ((float) usableSpace / (float) totalSpace)) * 0.9f);
+        baseConf.setDiskUsageWarnThreshold(0.0f);
+
+        /*
+         * because of the value set for diskUsageThreshold, when bookie is
+         * restarted it wouldn't find any writableledgerdir. But we have set
+         * very low values for minUsableSizeForEntryLogCreation and
+         * minUsableSizeForIndexFileCreation, so it should be able to create
+         * EntryLog file and Index file for doing compaction.
+         */
+
+        // restart bookies
+        restartBookies(baseConf);
+
+        assertFalse("There shouldn't be any writable ledgerDir",
+                bs.get(0).getBookie().getLedgerDirsManager().hasWritableLedgerDirs());
+
+        long lastMinorCompactionTime = getGCThread().lastMinorCompactionTime;
+        long lastMajorCompactionTime = getGCThread().lastMajorCompactionTime;
+        assertTrue(getGCThread().enableMajorCompaction);
+        assertFalse(getGCThread().enableMinorCompaction);
+
+        // remove ledger1 and ledger3
+        bkc.deleteLedger(lhs[0].getId());
+        bkc.deleteLedger(lhs[2].getId());
+        LOG.info("Finished deleting the ledgers contains most entries.");
+        getGCThread().enableForceGC();
+        getGCThread().triggerGC().get();
+
+        // after garbage collection, minor compaction should not be executed
+        assertTrue(getGCThread().lastMinorCompactionTime > lastMinorCompactionTime);
+        assertTrue(getGCThread().lastMajorCompactionTime > lastMajorCompactionTime);
+
+        /*
+         * GarbageCollection should have succeeded, so no previous entrylog
+         * should be available.
+         */
+
+        // entry logs ([0,1,2].log) should be compacted
+        for (File ledgerDirectory : tmpDirs) {
+            assertFalse("Found entry log file ([0,1,2].log that should have not been compacted in ledgerDirectory: "
+                    + ledgerDirectory, TestUtils.hasLogFiles(ledgerDirectory, true, 0, 1, 2));
+        }
+
+        // even entry log files are removed, we still can access entries for
+        // ledger2
+        // since those entries has been compacted to new entry log
+        long ledgerId = lhs[1].getId();
+        long lastAddConfirmed = lhs[1].getLastAddConfirmed();
+        verifyLedger(ledgerId, 0, lastAddConfirmed);
     }
 
     @Test
