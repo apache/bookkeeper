@@ -1335,6 +1335,7 @@ public class LedgerHandle implements WriteHandle {
      */
 
     public void asyncReadLastConfirmed(final ReadLastConfirmedCallback cb, final Object ctx) {
+        if (useLegacyMode) {
         boolean isClosed;
         long lastEntryId;
         synchronized (this) {
@@ -1360,6 +1361,9 @@ public class LedgerHandle implements WriteHandle {
             };
 
         new ReadLastConfirmedOp(this, clientCtx.getBookieClient(), getCurrentEnsemble(), innercb).initiate();
+        } else {
+        asyncReadExplicitLastConfirmed(cb, ctx);
+        }
     }
 
     /**
@@ -1377,6 +1381,7 @@ public class LedgerHandle implements WriteHandle {
      *          callback context
      */
     public void asyncTryReadLastConfirmed(final ReadLastConfirmedCallback cb, final Object ctx) {
+        if (legacyMode) {
         boolean isClosed;
         long lastEntryId;
         synchronized (this) {
@@ -1407,6 +1412,9 @@ public class LedgerHandle implements WriteHandle {
         };
         new TryReadLastConfirmedOp(this, clientCtx.getBookieClient(), getCurrentEnsemble(),
                                    innercb, getLastAddConfirmed()).initiate();
+} else {
+        asyncTryReadExplicitLastConfirmed(cb, ctx);
+}
     }
 
     /**
@@ -1659,6 +1667,36 @@ public class LedgerHandle implements WriteHandle {
             }
         };
         new PendingReadLacOp(this, clientCtx.getBookieClient(), getCurrentEnsemble(), innercb).initiate();
+    }
+
+    void asyncTryReadExplicitLastConfirmed(final ReadLastConfirmedCallback cb, final Object ctx) {
+        boolean isClosed;
+        synchronized (this) {
+            isClosed = metadata.isClosed();
+            if (isClosed) {
+                lastAddConfirmed = metadata.getLastEntryId();
+                length = metadata.getLength();
+            }
+        }
+        if (isClosed) {
+            cb.readLastConfirmedComplete(BKException.Code.OK, lastAddConfirmed, ctx);
+            return;
+        }
+
+        TryPendingReadLacOp.LacCallback innercb = new TryPendingReadLacOp.LacCallback() {
+
+            @Override
+            public void getLacComplete(int rc, long lac) {
+                if (rc == BKException.Code.OK) {
+                    // here we are trying to update lac only but not length
+                    updateLastConfirmed(lac, 0);
+                    cb.readLastConfirmedComplete(rc, lac, ctx);
+                } else {
+                    cb.readLastConfirmedComplete(rc, INVALID_ENTRY_ID, ctx);
+                }
+            }
+        };
+        new TryPendingReadLacOp(this, innercb).initiate();
     }
 
     /*
