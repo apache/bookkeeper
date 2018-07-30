@@ -1030,13 +1030,8 @@ These flags are applied only during write operations and are not recorded on met
   <tbody>
     <tr>
       <td style="text-align: left">DEFERRED_SYNC</td>
-      <td style="text-align: left">Writes are acknowledged early, without waiting for</td>
-      <td style="text-align: left"> </td>
-    </tr>
-    <tr>
-      <td style="text-align: left">guarantees of durability</td>
+      <td style="text-align: left">Writes are acknowledged early, without waiting for guarantees of durability</td>
       <td style="text-align: left">Data will be only written to the OS page cache, without forcing an fsync.</td>
-      <td style="text-align: left"> </td>
     </tr>
   </tbody>
 </table>
@@ -1269,6 +1264,44 @@ repeatable read consistency.</p>
     <span class="o">.</span><span class="na">get</span><span class="o">();</span>
 </code></pre></div></div>
 
+<h3 id="relaxing-durability">Relaxing Durability</h3>
+
+<p>In BookKeeper by default each write will be acklowledged to the client if and only if it has been persisted durably (fsync called on the file system) by a quorum of bookies.
+In this case the LastAddConfirmed pointer is updated on the writer side, this is the guarantee for the writer that data will not be lost and it will
+be always readable by other clients.</p>
+
+<p>On the client side you can temporary relax this constraint by using the <a href="../javadoc/org/apache/bookkeeper/client/api/WriteFlag"><code class="highlighter-rouge">DEFERRED_SYNC</code></a> Write flag. Using this flag bookies will acknowledge each entry after
+writing the entry to SO buffers without waiting for an fsync.
+In this case the LastAddConfirmed pointer is not advanced to the writer side neither is updated on the reader’s side, this is because <strong>there is some chance to lose the entry</strong>.
+Such entries will be still readable using readUnconfirmed() API, but they won’t be readable using Long Poll reads or regular read() API.</p>
+
+<p>In order to get guarantees of durability the writer must use explicitly the <a href="../javadoc/org/apache/bookkeeper/client/api/ForceableHandle">force()</a> API which will return only after all the bookies in the ensemble ackknowledge the call after
+performing an fsync to the disk which is storing the journal.
+This way the LastAddConfirmed pointer is advanced on the writer side and it will be eventually available to the readers.</p>
+
+<p>The <em>close()</em> operation on the writer writes on ledger’s metadata the current LastAddConfirmed pointer, <strong>it is up to the application to call force() before issuing the close command</strong>.
+In case that you never call explicitly <a href="../javadoc/org/apache/bookkeeper/client/api/ForceableHandle">force()</a> the LastAddConfirmed will remain unset (-1) on ledger metadata and regular readers won’t be able to access data.</p>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">BookKeeper</span> <span class="n">bk</span> <span class="o">=</span> <span class="o">...;</span>
+<span class="kt">long</span> <span class="n">ledgerId</span> <span class="o">=</span> <span class="o">...;</span>
+
+<span class="n">WriteHandle</span> <span class="n">wh</span> <span class="o">=</span> <span class="n">bk</span><span class="o">.</span><span class="na">newCreateLedgerOp</span><span class="o">()</span>
+    <span class="o">.</span><span class="na">withDigestType</span><span class="o">(</span><span class="n">DigestType</span><span class="o">.</span><span class="na">CRC32</span><span class="o">)</span>
+    <span class="o">.</span><span class="na">withPassword</span><span class="o">(</span><span class="n">password</span><span class="o">)</span>
+    <span class="o">.</span><span class="na">withEnsembleSize</span><span class="o">(</span><span class="mi">3</span><span class="o">)</span>
+    <span class="o">.</span><span class="na">withWriteQuorumSize</span><span class="o">(</span><span class="mi">3</span><span class="o">)</span>
+    <span class="o">.</span><span class="na">withAckQuorumSize</span><span class="o">(</span><span class="mi">2</span><span class="o">)</span>
+    <span class="o">.</span><span class="na">withWriteFlags</span><span class="o">(</span><span class="n">DEFERRED_SYNC</span><span class="o">)</span>
+    <span class="o">.</span><span class="na">execute</span><span class="o">()</span>          <span class="c1">// execute the creation op</span>
+    <span class="o">.</span><span class="na">get</span><span class="o">();</span>             <span class="c1">// wait for the execution to complete</span>
+
+
+<span class="n">wh</span><span class="o">.</span><span class="na">force</span><span class="o">().</span><span class="na">get</span><span class="o">();</span>  <span class="c1">// wait for fsync, make data available to readers and to the replicator</span>
+
+<span class="n">wh</span><span class="o">.</span><span class="na">close</span><span class="o">();</span> <span class="c1">// seal the ledger</span>
+    
+</code></pre></div></div>
+
         </section>
 
         
@@ -1316,6 +1349,7 @@ repeatable read consistency.</p>
 <li class="toc-entry toc-h4"><a href="#polling">Polling</a></li>
 <li class="toc-entry toc-h4"><a href="#long-polling">Long Polling</a></li>
 <li class="toc-entry toc-h3"><a href="#delete-ledgers">Delete ledgers</a></li>
+<li class="toc-entry toc-h3"><a href="#relaxing-durability">Relaxing Durability</a></li>
 </ul>
 </div>
 
