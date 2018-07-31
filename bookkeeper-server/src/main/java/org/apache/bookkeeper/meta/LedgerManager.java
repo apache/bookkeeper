@@ -47,14 +47,15 @@ public interface LedgerManager extends Closeable {
      * @param metadata
      *            Metadata provided when creating the new ledger
      * @param cb
-     *            Callback when creating a new ledger. Return code:<ul>
+     *            Callback when creating a new ledger, returning the written metadata.
+     *            Return code:<ul>
      *            <li>{@link BKException.Code.OK} if success</li>
      *            <li>{@link BKException.Code.LedgerExistException} if given ledger id exist</li>
      *            <li>{@link BKException.Code.ZKException}/{@link BKException.Code.MetaStoreException}
      *                 for other issue</li>
      *            </ul>
      */
-    void createLedgerMetadata(long ledgerId, LedgerMetadata metadata, GenericCallback<Void> cb);
+    void createLedgerMetadata(long ledgerId, LedgerMetadata metadata, GenericCallback<LedgerMetadata> cb);
 
     /**
      * Remove a specified ledger metadata by ledgerId and version.
@@ -95,13 +96,14 @@ public interface LedgerManager extends Closeable {
      * @param metadata
      *          Ledger Metadata to write
      * @param cb
-     *          Callback when finished writing ledger metadata. Return code:<ul>
+     *          Callback when finished writing ledger metadata, returning the written metadata.
+     *          Return code:<ul>
      *          <li>{@link BKException.Code.OK} if success</li>
      *          <li>{@link BKException.Code.MetadataVersionException} if version in metadata doesn't match</li>
      *          <li>{@link BKException.Code.ZKException} for other issue</li>
      *          </ul>
      */
-    void writeLedgerMetadata(long ledgerId, LedgerMetadata metadata, GenericCallback<Void> cb);
+    void writeLedgerMetadata(long ledgerId, LedgerMetadata metadata, GenericCallback<LedgerMetadata> cb);
 
     /**
      * Register the ledger metadata <i>listener</i> on <i>ledgerId</i>.

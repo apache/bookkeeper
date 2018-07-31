@@ -395,7 +395,7 @@ public class LedgerFragmentReplicator {
      * MetadataVersionException and update ensemble again. On successfull
      * updation, it will also notify to super call back
      */
-    private static class UpdateEnsembleCb implements GenericCallback<Void> {
+    private static class UpdateEnsembleCb implements GenericCallback<LedgerMetadata> {
         final AsyncCallback.VoidCallback ensembleUpdatedCb;
         final LedgerHandle lh;
         final long fragmentStartId;
@@ -411,7 +411,7 @@ public class LedgerFragmentReplicator {
         }
 
         @Override
-        public void operationComplete(int rc, Void result) {
+        public void operationComplete(int rc, LedgerMetadata writtenMetadata) {
             if (rc == BKException.Code.MetadataVersionException) {
                 LOG.warn("Two fragments attempted update at once; ledger id: "
                         + lh.getId() + " startid: " + fragmentStartId);

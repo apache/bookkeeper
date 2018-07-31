@@ -376,7 +376,7 @@ public class MSLedgerManagerFactory extends AbstractZkLedgerManagerFactory {
 
         @Override
         public void createLedgerMetadata(final long lid, final LedgerMetadata metadata,
-                                         final GenericCallback<Void> ledgerCb) {
+                                         final GenericCallback<LedgerMetadata> ledgerCb) {
             MetastoreCallback<Version> msCallback = new MetastoreCallback<Version>() {
                 @Override
                 public void complete(int rc, Version version, Object ctx) {
@@ -393,7 +393,7 @@ public class MSLedgerManagerFactory extends AbstractZkLedgerManagerFactory {
                     }
                     // update version
                     metadata.setVersion(version);
-                    ledgerCb.operationComplete(BKException.Code.OK, null);
+                    ledgerCb.operationComplete(BKException.Code.OK, metadata);
                 }
             };
 
@@ -457,7 +457,7 @@ public class MSLedgerManagerFactory extends AbstractZkLedgerManagerFactory {
 
         @Override
         public void writeLedgerMetadata(final long ledgerId, final LedgerMetadata metadata,
-                final GenericCallback<Void> cb) {
+                final GenericCallback<LedgerMetadata> cb) {
             Value data = new Value().setField(META_FIELD, metadata.serialize());
 
             if (LOG.isDebugEnabled()) {
@@ -484,7 +484,7 @@ public class MSLedgerManagerFactory extends AbstractZkLedgerManagerFactory {
                         bkRc = BKException.Code.MetaStoreException;
                     }
 
-                    cb.operationComplete(bkRc, null);
+                    cb.operationComplete(bkRc, metadata);
                 }
             };
             ledgerTable.put(key, data, metadata.getVersion(), msCallback, null);

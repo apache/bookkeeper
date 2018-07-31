@@ -232,9 +232,9 @@ public class UpdateLedgerOp {
                 future.set(null);
                 return; // ledger doesn't contains the given curBookieId
             }
-            final GenericCallback<Void> writeCb = new GenericCallback<Void>() {
+            final GenericCallback<LedgerMetadata> writeCb = new GenericCallback<LedgerMetadata>() {
                 @Override
-                public void operationComplete(int rc, Void result) {
+                public void operationComplete(int rc, LedgerMetadata result) {
                     if (rc != BKException.Code.OK) {
                         // metadata update failed
                         LOG.error("Ledger {} metadata update failed. Error code {}", ledgerId, rc);

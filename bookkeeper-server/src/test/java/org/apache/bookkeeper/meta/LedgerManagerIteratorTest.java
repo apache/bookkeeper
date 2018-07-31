@@ -87,13 +87,43 @@ public class LedgerManagerIteratorTest extends LedgerManagerTestCase {
         }
     }
 
-    class RCCheckCB implements GenericCallback<Void> {
+    class RCCheckCB implements GenericCallback<LedgerMetadata> {
         private final String opType;
         private final CountDownLatch latch;
         private final Optional<Integer> rcExpected;
         private final long ledgerId;
 
         public RCCheckCB(String opType, CountDownLatch latch, Optional<Integer> rcExpected, long ledgerId) {
+            this.opType = opType;
+            this.latch = latch;
+            this.rcExpected = rcExpected;
+            this.ledgerId = ledgerId;
+        }
+
+        @Override
+        public void operationComplete(int rc, LedgerMetadata writtenMetadata) {
+            safeWrapper(() -> {
+                try {
+                    rcExpected.map((Integer expected) -> {
+                        assertEquals(
+                                "Incorrect rc on ledger: " + ledgerId + ", op type: " + opType,
+                                expected.longValue(), rc);
+                        return null;
+                    });
+                } finally {
+                    latch.countDown();
+                }
+            }).run();
+        }
+    }
+
+    class VoidRCCheckCB implements GenericCallback<Void> {
+        private final String opType;
+        private final CountDownLatch latch;
+        private final Optional<Integer> rcExpected;
+        private final long ledgerId;
+
+        public VoidRCCheckCB(String opType, CountDownLatch latch, Optional<Integer> rcExpected, long ledgerId) {
             this.opType = opType;
             this.latch = latch;
             this.rcExpected = rcExpected;
@@ -128,7 +158,7 @@ public class LedgerManagerIteratorTest extends LedgerManagerTestCase {
     void removeLedger(LedgerManager lm, Long ledgerId, Optional<Integer> rcExpected) throws Throwable {
         CountDownLatch latch = new CountDownLatch(1);
         lm.removeLedgerMetadata(
-                ledgerId, Version.ANY, new RCCheckCB("removeLedger", latch, rcExpected, ledgerId));
+                ledgerId, Version.ANY, new VoidRCCheckCB("removeLedger", latch, rcExpected, ledgerId));
         latch.await();
         throwAsyncErrors();
 
