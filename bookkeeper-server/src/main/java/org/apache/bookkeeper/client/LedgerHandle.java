@@ -2334,7 +2334,7 @@ public class LedgerHandle implements WriteHandle {
                             if (rc != BKException.Code.OK) {
                                 cb.operationComplete(rc, null);
                             } else {
-                                metadata = newMeta;
+                                LedgerHandle.this.metadata = newMeta;
                                 recover(cb, listener, forceRecovery);
                             }
                         }
