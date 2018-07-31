@@ -337,6 +337,7 @@ public class LedgerHandle implements WriteHandle {
 
     boolean setLedgerMetadata(LedgerMetadata expected, LedgerMetadata newMetadata) {
         synchronized (this) {
+            // ensure that we only update the metadata if it is the object we expect it to be
             if (metadata == expected) {
                 metadata = newMetadata;
                 return true;
