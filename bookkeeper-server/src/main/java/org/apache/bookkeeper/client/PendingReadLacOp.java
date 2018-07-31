@@ -60,13 +60,14 @@ class PendingReadLacOp implements ReadLacCallback {
     PendingReadLacOp(LedgerHandle lh, LacCallback cb) {
         this.lh = lh;
         this.cb = cb;
-        this.numResponsesPending = lh.metadata.getEnsembleSize();
+        this.numResponsesPending = lh.getLedgerMetadata().getEnsembleSize();
         this.coverageSet = lh.distributionSchedule.getCoverageSet();
     }
 
     public void initiate() {
-        for (int i = 0; i < lh.metadata.currentEnsemble.size(); i++) {
-            lh.bk.getBookieClient().readLac(lh.metadata.currentEnsemble.get(i),
+        LedgerMetadata metadata = lh.getLedgerMetadata();
+        for (int i = 0; i < metadata.currentEnsemble.size(); i++) {
+            lh.bk.getBookieClient().readLac(metadata.currentEnsemble.get(i),
                     lh.ledgerId, this, i);
         }
     }
@@ -117,7 +118,7 @@ class PendingReadLacOp implements ReadLacCallback {
                 // Too bad, this bookie did not give us a valid answer, we
                 // still might be able to recover. So, continue
                 LOG.error("Mac mismatch while reading  ledger: " + ledgerId + " LAC from bookie: "
-                        + lh.metadata.currentEnsemble.get(bookieIndex));
+                        + lh.getLedgerMetadata().currentEnsemble.get(bookieIndex));
                 rc = BKException.Code.DigestMatchException;
             }
         }
