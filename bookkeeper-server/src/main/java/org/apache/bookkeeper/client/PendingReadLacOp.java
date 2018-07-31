@@ -65,8 +65,9 @@ class PendingReadLacOp implements ReadLacCallback {
     }
 
     public void initiate() {
-        for (int i = 0; i < lh.getLedgerMetadata().currentEnsemble.size(); i++) {
-            lh.bk.getBookieClient().readLac(lh.getLedgerMetadata().currentEnsemble.get(i),
+        LedgerMetadata metadata = lh.getLedgerMetadata();
+        for (int i = 0; i < metadata.currentEnsemble.size(); i++) {
+            lh.bk.getBookieClient().readLac(metadata.currentEnsemble.get(i),
                     lh.ledgerId, this, i);
         }
     }

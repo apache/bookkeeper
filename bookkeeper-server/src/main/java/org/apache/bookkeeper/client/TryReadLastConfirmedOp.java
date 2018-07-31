@@ -50,8 +50,9 @@ class TryReadLastConfirmedOp implements ReadEntryCallback {
     }
 
     public void initiate() {
-        for (int i = 0; i < lh.getLedgerMetadata().currentEnsemble.size(); i++) {
-            lh.bk.getBookieClient().readEntry(lh.getLedgerMetadata().currentEnsemble.get(i),
+        LedgerMetadata metadata = lh.getLedgerMetadata();
+        for (int i = 0; i < metadata.currentEnsemble.size(); i++) {
+            lh.bk.getBookieClient().readEntry(metadata.currentEnsemble.get(i),
                                          lh.ledgerId,
                                          BookieProtocol.LAST_ADD_CONFIRMED,
                                          this, i, BookieProtocol.FLAG_NONE);
