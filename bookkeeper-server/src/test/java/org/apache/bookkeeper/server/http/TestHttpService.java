@@ -26,6 +26,7 @@ import static org.junit.Assert.assertTrue;
 import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import java.io.File;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -646,6 +647,7 @@ public class TestHttpService extends BookKeeperClusterTestCase {
             try {
                 testListUnderReplicatedLedgerService(mFactory);
             } catch (Exception e) {
+                LOG.info("Exception in test", e);
                 throw new UncheckedExecutionException(e.getMessage(), e.getCause());
             }
             return null;
@@ -671,8 +673,9 @@ public class TestHttpService extends BookKeeperClusterTestCase {
 
         LedgerHandle lh = bkc.createLedger(3, 3, BookKeeper.DigestType.CRC32, "passwd".getBytes());
         LedgerMetadata md = LedgerHandleAdapter.getLedgerMetadata(lh);
-        List<BookieSocketAddress> ensemble = md.getEnsembles().get(0L);
+        List<BookieSocketAddress> ensemble = new ArrayList<>(md.getEnsembles().get(0L));
         ensemble.set(0, new BookieSocketAddress("1.1.1.1", 1000));
+        md.updateEnsemble(0L, ensemble);
 
         TestCallbacks.GenericCallbackFuture<LedgerMetadata> cb =
             new TestCallbacks.GenericCallbackFuture<LedgerMetadata>();

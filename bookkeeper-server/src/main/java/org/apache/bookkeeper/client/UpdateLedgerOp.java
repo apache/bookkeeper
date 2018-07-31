@@ -30,6 +30,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
@@ -221,10 +223,12 @@ public class UpdateLedgerOp {
                 return;
             }
             boolean updateEnsemble = false;
-            for (ArrayList<BookieSocketAddress> ensembles : metadata.getEnsembles().values()) {
-                int index = ensembles.indexOf(curBookieAddr);
+            for (Map.Entry<Long, ? extends List<BookieSocketAddress>> e : metadata.getEnsembles().entrySet()) {
+                List<BookieSocketAddress> newEnsemble = new ArrayList<>(e.getValue());
+                int index = newEnsemble.indexOf(curBookieAddr);
                 if (-1 != index) {
-                    ensembles.set(index, toBookieAddr);
+                    newEnsemble.set(index, toBookieAddr);
+                    metadata.updateEnsemble(e.getKey(), newEnsemble);
                     updateEnsemble = true;
                 }
             }

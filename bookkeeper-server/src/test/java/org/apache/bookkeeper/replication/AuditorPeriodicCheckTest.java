@@ -366,7 +366,7 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
     private BookieSocketAddress replaceBookieWithWriteFailingBookie(LedgerHandle lh) throws Exception {
         int bookieIdx = -1;
         Long entryId = LedgerHandleAdapter.getLedgerMetadata(lh).getEnsembles().firstKey();
-        ArrayList<BookieSocketAddress> curEnsemble = LedgerHandleAdapter
+        List<BookieSocketAddress> curEnsemble = LedgerHandleAdapter
                 .getLedgerMetadata(lh).getEnsembles().get(entryId);
 
         // Identify a bookie in the current ledger ensemble to be replaced
@@ -463,9 +463,9 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
         // check that ensemble has changed and the bookie that rejected writes has
         // been replaced in the ensemble
         LedgerHandle newLh = bkc.openLedger(lh.getId(), DigestType.CRC32, "passwd".getBytes());
-        for (Map.Entry<Long, ArrayList<BookieSocketAddress>> e : LedgerHandleAdapter.getLedgerMetadata(newLh).
+        for (Map.Entry<Long, ? extends List<BookieSocketAddress>> e : LedgerHandleAdapter.getLedgerMetadata(newLh).
                 getEnsembles().entrySet()) {
-            ArrayList<BookieSocketAddress> ensemble = e.getValue();
+            List<BookieSocketAddress> ensemble = e.getValue();
             assertFalse("Ensemble hasn't been updated", ensemble.contains(replacedBookie));
         }
         newLh.close();

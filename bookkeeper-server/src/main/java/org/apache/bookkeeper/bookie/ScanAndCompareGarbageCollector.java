@@ -26,7 +26,6 @@ import static org.apache.bookkeeper.bookie.BookKeeperServerStats.DELETED_LEDGER_
 
 import com.google.common.collect.Sets;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.NavigableSet;
 import java.util.Set;
@@ -248,8 +247,9 @@ public class ScanAndCompareGarbageCollector implements GarbageCollector{
                                 release();
                                 return;
                             }
-                            SortedMap<Long, ArrayList<BookieSocketAddress>> ensembles = ledgerMetadata.getEnsembles();
-                            for (ArrayList<BookieSocketAddress> ensemble : ensembles.values()) {
+                            SortedMap<Long, ? extends List<BookieSocketAddress>> ensembles =
+                                ledgerMetadata.getEnsembles();
+                            for (List<BookieSocketAddress> ensemble : ensembles.values()) {
                                 // check if this bookie is supposed to have this ledger
                                 if (ensemble.contains(selfBookieAddress)) {
                                     release();

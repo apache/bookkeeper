@@ -372,9 +372,9 @@ public class LedgerHandle implements WriteHandle {
      * @return count of unique bookies
      */
     public synchronized long getNumBookies() {
-        Map<Long, ArrayList<BookieSocketAddress>> m = getLedgerMetadata().getEnsembles();
+        Map<Long, ? extends List<BookieSocketAddress>> m = getLedgerMetadata().getEnsembles();
         Set<BookieSocketAddress> s = Sets.newHashSet();
-        for (ArrayList<BookieSocketAddress> aList : m.values()) {
+        for (List<BookieSocketAddress> aList : m.values()) {
             s.addAll(aList);
         }
         return s.size();

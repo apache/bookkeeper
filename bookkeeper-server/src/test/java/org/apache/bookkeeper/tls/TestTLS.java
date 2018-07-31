@@ -28,11 +28,11 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Enumeration;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 
@@ -436,8 +436,8 @@ public class TestTLS extends BookKeeperClusterTestCase {
         ClientConfiguration clientConf = new ClientConfiguration(baseClientConf);
         LedgerMetadata metadata = testClient(clientConf, 2);
         assertTrue(metadata.getEnsembles().size() > 0);
-        Collection<ArrayList<BookieSocketAddress>> ensembles = metadata.getEnsembles().values();
-        for (ArrayList<BookieSocketAddress> bookies : ensembles) {
+        Collection<? extends List<BookieSocketAddress>> ensembles = metadata.getEnsembles().values();
+        for (List<BookieSocketAddress> bookies : ensembles) {
             for (BookieSocketAddress bookieAddress : bookies) {
                 int port = bookieAddress.getPort();
                 assertTrue(tlsBookiePorts.contains(port));

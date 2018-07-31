@@ -25,8 +25,8 @@ import static org.junit.Assert.fail;
 
 import com.google.common.collect.Sets;
 
-import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.SortedMap;
@@ -111,12 +111,10 @@ public class TestLedgerFragmentReplication extends BookKeeperClusterTestCase {
         }
 
         // Killing all bookies except newly replicated bookie
-        SortedMap<Long, ArrayList<BookieSocketAddress>> allBookiesBeforeReplication = lh
+        SortedMap<Long, ? extends List<BookieSocketAddress>> allBookiesBeforeReplication = lh
                 .getLedgerMetadata().getEnsembles();
-        Set<Entry<Long, ArrayList<BookieSocketAddress>>> entrySet = allBookiesBeforeReplication
-                .entrySet();
-        for (Entry<Long, ArrayList<BookieSocketAddress>> entry : entrySet) {
-            ArrayList<BookieSocketAddress> bookies = entry.getValue();
+        for (Entry<Long, ? extends List<BookieSocketAddress>> entry : allBookiesBeforeReplication.entrySet()) {
+            List<BookieSocketAddress> bookies = entry.getValue();
             for (BookieSocketAddress bookie : bookies) {
                 if (newBkAddr.equals(bookie)) {
                     continue;
@@ -237,7 +235,7 @@ public class TestLedgerFragmentReplication extends BookKeeperClusterTestCase {
         LedgerMetadata metadata = new LedgerMetadata(3, 3, 3, TEST_DIGEST_TYPE,
                 TEST_PSSWD) {
             @Override
-            ArrayList<BookieSocketAddress> getEnsemble(long entryId) {
+            List<BookieSocketAddress> getEnsemble(long entryId) {
                 return null;
             }
 

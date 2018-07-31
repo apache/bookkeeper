@@ -17,7 +17,7 @@
  */
 package org.apache.bookkeeper.client;
 
-import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 import org.apache.bookkeeper.client.BKException.BKNotEnoughBookiesException;
@@ -66,7 +66,7 @@ public interface ITopologyAwareEnsemblePlacementPolicy<T extends Node> extends E
         /**
          * @return list of addresses representing the ensemble
          */
-        ArrayList<BookieSocketAddress> toList();
+        List<BookieSocketAddress> toList();
 
         /**
          * Validates if an ensemble is valid.
@@ -93,7 +93,7 @@ public interface ITopologyAwareEnsemblePlacementPolicy<T extends Node> extends E
      * @return list of bookies forming the ensemble
      * @throws BKException.BKNotEnoughBookiesException
      */
-    ArrayList<BookieSocketAddress> newEnsemble(
+    List<BookieSocketAddress> newEnsemble(
             int ensembleSize,
             int writeQuorumSize,
             int ackQuorumSize,

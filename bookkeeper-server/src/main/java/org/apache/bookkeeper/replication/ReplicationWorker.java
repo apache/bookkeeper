@@ -31,9 +31,9 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedMap;
@@ -369,8 +369,8 @@ public class ReplicationWorker implements Runnable {
             return false;
         }
 
-        SortedMap<Long, ArrayList<BookieSocketAddress>> ensembles = admin.getLedgerMetadata(lh).getEnsembles();
-        ArrayList<BookieSocketAddress> finalEnsemble = ensembles.get(ensembles.lastKey());
+        SortedMap<Long, ? extends List<BookieSocketAddress>> ensembles = admin.getLedgerMetadata(lh).getEnsembles();
+        List<BookieSocketAddress> finalEnsemble = ensembles.get(ensembles.lastKey());
         Collection<BookieSocketAddress> available = admin.getAvailableBookies();
         for (BookieSocketAddress b : finalEnsemble) {
             if (!available.contains(b)) {

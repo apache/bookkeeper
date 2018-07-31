@@ -25,6 +25,7 @@ import static org.junit.Assert.assertEquals;
 
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import java.util.List;
+import java.util.ArrayList;
 import lombok.Cleanup;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.LedgerHandle;
@@ -106,8 +107,9 @@ public class AuditorPeriodicBookieCheckTest extends BookKeeperClusterTestCase {
 
                 LedgerHandle lh = bkc.createLedger(3, 3, DigestType.CRC32, "passwd".getBytes());
                 LedgerMetadata md = LedgerHandleAdapter.getLedgerMetadata(lh);
-                List<BookieSocketAddress> ensemble = md.getEnsembles().get(0L);
+                List<BookieSocketAddress> ensemble = new ArrayList<>(md.getEnsembles().get(0L));
                 ensemble.set(0, new BookieSocketAddress("1.1.1.1", 1000));
+                md.updateEnsemble(0L, ensemble);
 
                 TestCallbacks.GenericCallbackFuture<LedgerMetadata> cb =
                     new TestCallbacks.GenericCallbackFuture<LedgerMetadata>();
