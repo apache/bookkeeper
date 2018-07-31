@@ -274,7 +274,9 @@ public class LedgerHandle implements WriteHandle {
     }
 
     protected void initializeExplicitLacFlushPolicy() {
-        if (!getLedgerMetadata().isClosed() && !(this instanceof ReadOnlyLedgerHandle) && bk.getExplicitLacInterval() > 0) {
+        if (!getLedgerMetadata().isClosed()
+            && !(this instanceof ReadOnlyLedgerHandle)
+            && bk.getExplicitLacInterval() > 0) {
             explicitLacFlushPolicy = new ExplicitLacFlushPolicy.ExplicitLacFlushPolicyImpl(this);
         } else {
             explicitLacFlushPolicy = ExplicitLacFlushPolicy.VOID_EXPLICITLAC_FLUSH_POLICY;
