@@ -245,7 +245,7 @@ public abstract class AbstractZkLedgerManager implements LedgerManager, Watcher 
 
     @Override
     public void createLedgerMetadata(final long ledgerId, final LedgerMetadata metadata,
-            final GenericCallback<Void> ledgerCb) {
+            final GenericCallback<LedgerMetadata> ledgerCb) {
         String ledgerPath = getLedgerPath(ledgerId);
         StringCallback scb = new StringCallback() {
             @Override
@@ -253,7 +253,7 @@ public abstract class AbstractZkLedgerManager implements LedgerManager, Watcher 
                 if (rc == Code.OK.intValue()) {
                     // update version
                     metadata.setVersion(new LongVersion(0));
-                    ledgerCb.operationComplete(BKException.Code.OK, null);
+                    ledgerCb.operationComplete(BKException.Code.OK, metadata);
                 } else if (rc == Code.NODEEXISTS.intValue()) {
                     LOG.warn("Failed to create ledger metadata for {} which already exist", ledgerId);
                     ledgerCb.operationComplete(BKException.Code.LedgerExistException, null);
@@ -425,7 +425,7 @@ public abstract class AbstractZkLedgerManager implements LedgerManager, Watcher 
 
     @Override
     public void writeLedgerMetadata(final long ledgerId, final LedgerMetadata metadata,
-                                    final GenericCallback<Void> cb) {
+                                    final GenericCallback<LedgerMetadata> cb) {
         Version v = metadata.getVersion();
         if (!(v instanceof LongVersion)) {
             cb.operationComplete(BKException.Code.MetadataVersionException, null);
@@ -442,7 +442,7 @@ public abstract class AbstractZkLedgerManager implements LedgerManager, Watcher 
                 } else if (KeeperException.Code.OK.intValue() == rc) {
                     // update metadata version
                     metadata.setVersion(zv.setLongVersion(stat.getVersion()));
-                    cb.operationComplete(BKException.Code.OK, null);
+                    cb.operationComplete(BKException.Code.OK, metadata);
                 } else if (KeeperException.Code.NONODE.intValue() == rc) {
                     LOG.warn("Ledger node does not exist in ZooKeeper: ledgerId={}", ledgerId);
                     cb.operationComplete(BKException.Code.NoSuchLedgerExistsException, null);

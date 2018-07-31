@@ -423,7 +423,7 @@ public class LedgerHandle implements WriteHandle {
         return bookiesHealthInfo;
     }
 
-    void writeLedgerConfig(GenericCallback<Void> writeCb) {
+    void writeLedgerConfig(GenericCallback<LedgerMetadata> writeCb) {
         if (LOG.isDebugEnabled()) {
             LOG.debug("Writing metadata to ledger manager: {}, {}", this.ledgerId, metadata.getVersion());
         }
@@ -560,13 +560,13 @@ public class LedgerHandle implements WriteHandle {
                               + metadata.getLastEntryId() + " with this many bytes: " + metadata.getLength());
                 }
 
-                final class CloseCb extends OrderedGenericCallback<Void> {
+                final class CloseCb extends OrderedGenericCallback<LedgerMetadata> {
                     CloseCb() {
                         super(bk.getMainWorkerPool(), ledgerId);
                     }
 
                     @Override
-                    public void safeOperationComplete(final int rc, Void result) {
+                    public void safeOperationComplete(final int rc, LedgerMetadata writtenMetadata) {
                         if (rc == BKException.Code.MetadataVersionException) {
                             rereadMetadata(new OrderedGenericCallback<LedgerMetadata>(bk.getMainWorkerPool(),
                                                                                           ledgerId) {
@@ -1974,7 +1974,7 @@ public class LedgerHandle implements WriteHandle {
      * reformed ensemble. On MetadataVersionException, will reread latest
      * ledgerMetadata and act upon.
      */
-    private final class ChangeEnsembleCb extends OrderedGenericCallback<Void> {
+    private final class ChangeEnsembleCb extends OrderedGenericCallback<LedgerMetadata> {
         private final EnsembleInfo ensembleInfo;
         private final int curBlockAddCompletions;
         private final int ensembleChangeIdx;
@@ -1992,7 +1992,7 @@ public class LedgerHandle implements WriteHandle {
         }
 
         @Override
-        public void safeOperationComplete(final int rc, Void result) {
+        public void safeOperationComplete(final int rc, LedgerMetadata writtenMetadata) {
             if (rc == BKException.Code.MetadataVersionException) {
                 // We changed the ensemble, but got a version exception. We
                 // should still consider this as an ensemble change
@@ -2300,9 +2300,9 @@ public class LedgerHandle implements WriteHandle {
             return;
         }
 
-        writeLedgerConfig(new OrderedGenericCallback<Void>(bk.getMainWorkerPool(), ledgerId) {
+        writeLedgerConfig(new OrderedGenericCallback<LedgerMetadata>(bk.getMainWorkerPool(), ledgerId) {
             @Override
-            public void safeOperationComplete(final int rc, Void result) {
+            public void safeOperationComplete(final int rc, LedgerMetadata writtenMetadata) {
                 if (rc == BKException.Code.MetadataVersionException) {
                     rereadMetadata(new OrderedGenericCallback<LedgerMetadata>(bk.getMainWorkerPool(),
                                                                                   ledgerId) {

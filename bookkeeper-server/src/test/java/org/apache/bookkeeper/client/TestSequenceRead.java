@@ -68,9 +68,9 @@ public class TestSequenceRead extends BookKeeperClusterTestCase {
         // update the ledger metadata with duplicated bookies
         final CountDownLatch latch = new CountDownLatch(1);
         bkc.getLedgerManager().writeLedgerMetadata(lh.getId(), lh.getLedgerMetadata(),
-                new BookkeeperInternalCallbacks.GenericCallback<Void>() {
+                new BookkeeperInternalCallbacks.GenericCallback<LedgerMetadata>() {
             @Override
-            public void operationComplete(int rc, Void result) {
+            public void operationComplete(int rc, LedgerMetadata result) {
                 if (BKException.Code.OK == rc) {
                     latch.countDown();
                 } else {
