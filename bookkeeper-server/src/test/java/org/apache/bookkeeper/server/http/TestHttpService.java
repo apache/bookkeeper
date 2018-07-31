@@ -674,7 +674,8 @@ public class TestHttpService extends BookKeeperClusterTestCase {
         List<BookieSocketAddress> ensemble = md.getEnsembles().get(0L);
         ensemble.set(0, new BookieSocketAddress("1.1.1.1", 1000));
 
-        TestCallbacks.GenericCallbackFuture<Void> cb = new TestCallbacks.GenericCallbackFuture<Void>();
+        TestCallbacks.GenericCallbackFuture<LedgerMetadata> cb =
+            new TestCallbacks.GenericCallbackFuture<LedgerMetadata>();
         ledgerManager.writeLedgerMetadata(lh.getId(), md, cb);
         cb.get();
 

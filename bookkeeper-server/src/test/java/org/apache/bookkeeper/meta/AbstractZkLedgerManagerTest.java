@@ -156,7 +156,7 @@ public class AbstractZkLedgerManagerTest extends MockZooKeeperTestCase {
 
         assertEquals(Version.NEW, metadata.getVersion());
 
-        GenericCallbackFuture<Void> callbackFuture = new GenericCallbackFuture<>();
+        GenericCallbackFuture<LedgerMetadata> callbackFuture = new GenericCallbackFuture<>();
         ledgerManager.createLedgerMetadata(ledgerId, metadata, callbackFuture);
         callbackFuture.get();
 
@@ -173,7 +173,7 @@ public class AbstractZkLedgerManagerTest extends MockZooKeeperTestCase {
 
         assertEquals(Version.NEW, metadata.getVersion());
 
-        GenericCallbackFuture<Void> callbackFuture = new GenericCallbackFuture<>();
+        GenericCallbackFuture<LedgerMetadata> callbackFuture = new GenericCallbackFuture<>();
         ledgerManager.createLedgerMetadata(ledgerId, metadata, callbackFuture);
         try {
             result(callbackFuture);
@@ -198,7 +198,7 @@ public class AbstractZkLedgerManagerTest extends MockZooKeeperTestCase {
 
         assertEquals(Version.NEW, metadata.getVersion());
 
-        GenericCallbackFuture<Void> callbackFuture = new GenericCallbackFuture<>();
+        GenericCallbackFuture<LedgerMetadata> callbackFuture = new GenericCallbackFuture<>();
         ledgerManager.createLedgerMetadata(ledgerId, metadata, callbackFuture);
         try {
             result(callbackFuture);
@@ -479,7 +479,7 @@ public class AbstractZkLedgerManagerTest extends MockZooKeeperTestCase {
 
         assertEquals(new LongVersion(1234L), metadata.getVersion());
 
-        GenericCallbackFuture<Void> callbackFuture = new GenericCallbackFuture<>();
+        GenericCallbackFuture<LedgerMetadata> callbackFuture = new GenericCallbackFuture<>();
         ledgerManager.writeLedgerMetadata(ledgerId, metadata, callbackFuture);
         result(callbackFuture);
 
@@ -501,7 +501,7 @@ public class AbstractZkLedgerManagerTest extends MockZooKeeperTestCase {
 
         assertEquals(new LongVersion(1234L), metadata.getVersion());
 
-        GenericCallbackFuture<Void> callbackFuture = new GenericCallbackFuture<>();
+        GenericCallbackFuture<LedgerMetadata> callbackFuture = new GenericCallbackFuture<>();
         ledgerManager.writeLedgerMetadata(ledgerId, metadata, callbackFuture);
         try {
             result(callbackFuture);
@@ -529,7 +529,7 @@ public class AbstractZkLedgerManagerTest extends MockZooKeeperTestCase {
 
         assertEquals(new LongVersion(1234L), metadata.getVersion());
 
-        GenericCallbackFuture<Void> callbackFuture = new GenericCallbackFuture<>();
+        GenericCallbackFuture<LedgerMetadata> callbackFuture = new GenericCallbackFuture<>();
         ledgerManager.writeLedgerMetadata(ledgerId, metadata, callbackFuture);
         try {
             result(callbackFuture);
@@ -562,7 +562,7 @@ public class AbstractZkLedgerManagerTest extends MockZooKeeperTestCase {
 
         metadata.setVersion(invalidVersion);
 
-        GenericCallbackFuture<Void> callbackFuture = new GenericCallbackFuture<>();
+        GenericCallbackFuture<LedgerMetadata> callbackFuture = new GenericCallbackFuture<>();
         ledgerManager.writeLedgerMetadata(ledgerId, metadata, callbackFuture);
         try {
             result(callbackFuture);

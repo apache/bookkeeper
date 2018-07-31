@@ -134,10 +134,10 @@ public class TestWatchEnsembleChange extends BookKeeperClusterTestCase {
             @Override
             public void operationComplete(int rc, final Long lid) {
                 manager.createLedgerMetadata(lid, new LedgerMetadata(4, 2, 2, digestType, "fpj was here".getBytes()),
-                         new BookkeeperInternalCallbacks.GenericCallback<Void>(){
+                         new BookkeeperInternalCallbacks.GenericCallback<LedgerMetadata>(){
 
                     @Override
-                    public void operationComplete(int rc, Void result) {
+                    public void operationComplete(int rc, LedgerMetadata result) {
                         bbLedgerId.putLong(lid);
                         bbLedgerId.flip();
                         createLatch.countDown();
