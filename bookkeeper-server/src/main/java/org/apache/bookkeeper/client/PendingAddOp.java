@@ -138,7 +138,7 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
     void sendWriteRequest(int bookieIndex) {
         int flags = isRecoveryAdd ? FLAG_RECOVERY_ADD | FLAG_HIGH_PRIORITY : FLAG_NONE;
 
-        lh.bk.getBookieClient().addEntry(lh.metadata.currentEnsemble.get(bookieIndex), lh.ledgerId, lh.ledgerKey,
+        lh.bk.getBookieClient().addEntry(lh.getLedgerMetadata().currentEnsemble.get(bookieIndex), lh.ledgerId, lh.ledgerKey,
                 entryId, toSend, this, bookieIndex, flags, allowFailFast, lh.writeFlags);
         ++pendingWriteRequests;
     }
@@ -265,7 +265,7 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
         int bookieIndex = (Integer) ctx;
         --pendingWriteRequests;
 
-        if (!lh.metadata.currentEnsemble.get(bookieIndex).equals(addr)) {
+        if (!lh.getLedgerMetadata().currentEnsemble.get(bookieIndex).equals(addr)) {
             // ensemble has already changed, failure of this addr is immaterial
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Write did not succeed: " + ledgerId + ", " + entryId + ". But we have already fixed it.");

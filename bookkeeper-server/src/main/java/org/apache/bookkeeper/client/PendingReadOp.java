@@ -493,7 +493,7 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
     }
 
     protected LedgerMetadata getLedgerMetadata() {
-        return lh.metadata;
+        return lh.getLedgerMetadata();
     }
 
     protected void cancelSpeculativeTask(boolean mayInterruptIfRunning) {

@@ -430,7 +430,14 @@ public class LedgerFragmentReplicator {
                                     ensembleUpdatedCb.processResult(rc, null,
                                             null);
                                 } else {
-                                    lh.metadata = newMeta;
+                                    while (true) {
+                                        // temporary change, metadata really shouldn't be updated
+                                        // until the new metadata has been written successfully
+                                        LedgerMetadata currentMetadata = lh.getLedgerMetadata();
+                                        if (lh.setLedgerMetadata(currentMetadata, newMeta)) {
+                                            break;
+                                        }
+                                    }
                                     updateEnsembleInfo(ensembleUpdatedCb,
                                             fragmentStartId, lh, oldBookie2NewBookie);
                                 }

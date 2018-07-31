@@ -102,7 +102,7 @@ public class LedgerHandle implements WriteHandle {
     static final long PENDINGREQ_NOTWRITABLE_MASK = 0x01L << 62;
 
     final byte[] ledgerKey;
-    LedgerMetadata metadata;
+    private LedgerMetadata metadata;
     final BookKeeper bk;
     final long ledgerId;
     long lastAddPushed;
@@ -274,7 +274,7 @@ public class LedgerHandle implements WriteHandle {
     }
 
     protected void initializeExplicitLacFlushPolicy() {
-        if (!metadata.isClosed() && !(this instanceof ReadOnlyLedgerHandle) && bk.getExplicitLacInterval() > 0) {
+        if (!getLedgerMetadata().isClosed() && !(this instanceof ReadOnlyLedgerHandle) && bk.getExplicitLacInterval() > 0) {
             explicitLacFlushPolicy = new ExplicitLacFlushPolicy.ExplicitLacFlushPolicyImpl(this);
         } else {
             explicitLacFlushPolicy = ExplicitLacFlushPolicy.VOID_EXPLICITLAC_FLUSH_POLICY;
@@ -333,13 +333,24 @@ public class LedgerHandle implements WriteHandle {
         return metadata;
     }
 
+    boolean setLedgerMetadata(LedgerMetadata expected, LedgerMetadata newMetadata) {
+        synchronized (this) {
+            if (metadata == expected) {
+                metadata = newMetadata;
+                return true;
+            } else {
+                return false;
+            }
+        }
+    }
+
     /**
      * Get this ledger's customMetadata map.
      *
      * @return map containing user provided customMetadata.
      */
     public Map<String, byte[]> getCustomMetadata() {
-        return metadata.getCustomMetadata();
+        return getLedgerMetadata().getCustomMetadata();
     }
 
     /**
@@ -348,7 +359,7 @@ public class LedgerHandle implements WriteHandle {
      * @return the count of fragments
      */
     public synchronized long getNumFragments() {
-        return metadata.getEnsembles().size();
+        return getLedgerMetadata().getEnsembles().size();
     }
 
     /**
@@ -358,7 +369,7 @@ public class LedgerHandle implements WriteHandle {
      * @return count of unique bookies
      */
     public synchronized long getNumBookies() {
-        Map<Long, ArrayList<BookieSocketAddress>> m = metadata.getEnsembles();
+        Map<Long, ArrayList<BookieSocketAddress>> m = getLedgerMetadata().getEnsembles();
         Set<BookieSocketAddress> s = Sets.newHashSet();
         for (ArrayList<BookieSocketAddress> aList : m.values()) {
             s.addAll(aList);
@@ -402,7 +413,7 @@ public class LedgerHandle implements WriteHandle {
      * @return the ledger creation time
      */
     public long getCtime() {
-        return this.metadata.getCtime();
+        return getLedgerMetadata().getCtime();
     }
 
     /**
@@ -425,10 +436,10 @@ public class LedgerHandle implements WriteHandle {
 
     void writeLedgerConfig(GenericCallback<LedgerMetadata> writeCb) {
         if (LOG.isDebugEnabled()) {
-            LOG.debug("Writing metadata to ledger manager: {}, {}", this.ledgerId, metadata.getVersion());
+            LOG.debug("Writing metadata to ledger manager: {}, {}", this.ledgerId, getLedgerMetadata().getVersion());
         }
 
-        bk.getLedgerManager().writeLedgerMetadata(ledgerId, metadata, writeCb);
+        bk.getLedgerManager().writeLedgerMetadata(ledgerId, getLedgerMetadata(), writeCb);
     }
 
     /**
@@ -476,7 +487,7 @@ public class LedgerHandle implements WriteHandle {
      */
     @Override
     public synchronized boolean isClosed() {
-        return metadata.isClosed();
+        return getLedgerMetadata().isClosed();
     }
 
     void asyncCloseInternal(final CloseCallback cb, final Object ctx, final int rc) {
@@ -536,6 +547,7 @@ public class LedgerHandle implements WriteHandle {
                 }
 
                 synchronized (LedgerHandle.this) {
+                    LedgerMetadata metadata = getLedgerMetadata();
                     prevState = metadata.getState();
                     prevLastEntryId = metadata.getLastEntryId();
                     prevLength = metadata.getLength();
@@ -556,6 +568,7 @@ public class LedgerHandle implements WriteHandle {
                 errorOutPendingAdds(rc, pendingAdds);
 
                 if (LOG.isDebugEnabled()) {
+                    LedgerMetadata metadata = getLedgerMetadata();
                     LOG.debug("Closing ledger: " + ledgerId + " at entryId: "
                               + metadata.getLastEntryId() + " with this many bytes: " + metadata.getLength());
                 }
@@ -577,6 +590,7 @@ public class LedgerHandle implements WriteHandle {
                                                 ledgerId, BKException.codeLogger(newrc));
                                         cb.closeComplete(rc, LedgerHandle.this, ctx);
                                     } else {
+                                        LedgerMetadata metadata = getLedgerMetadata();
                                         metadata.setState(prevState);
                                         if (prevState.equals(State.CLOSED)) {
                                             metadata.close(prevLastEntryId);
@@ -1120,7 +1134,7 @@ public class LedgerHandle implements WriteHandle {
             // synchronized on this to ensure that
             // the ledger isn't closed between checking and
             // updating lastAddPushed
-            if (metadata.isClosed()) {
+            if (getLedgerMetadata().isClosed()) {
                 wasClosed = true;
             }
         }
@@ -1198,7 +1212,7 @@ public class LedgerHandle implements WriteHandle {
 
         int nonWritableCount = 0;
         for (int i = 0; i < sz; i++) {
-            if (!bk.getBookieClient().isWritable(metadata.currentEnsemble.get(i), key)) {
+            if (!bk.getBookieClient().isWritable(getLedgerMetadata().currentEnsemble.get(i), key)) {
                 nonWritableCount++;
                 if (nonWritableCount >= allowedNonWritableCount) {
                     return false;
@@ -1277,7 +1291,7 @@ public class LedgerHandle implements WriteHandle {
             // synchronized on this to ensure that
             // the ledger isn't closed between checking and
             // updating lastAddPushed
-            if (metadata.isClosed()) {
+            if (getLedgerMetadata().isClosed()) {
                 wasClosed = true;
             } else {
                 long entryId = ++lastAddPushed;
@@ -1358,6 +1372,7 @@ public class LedgerHandle implements WriteHandle {
         boolean isClosed;
         long lastEntryId;
         synchronized (this) {
+            LedgerMetadata metadata = getLedgerMetadata();
             isClosed = metadata.isClosed();
             lastEntryId = metadata.getLastEntryId();
         }
@@ -1399,6 +1414,7 @@ public class LedgerHandle implements WriteHandle {
         boolean isClosed;
         long lastEntryId;
         synchronized (this) {
+            LedgerMetadata metadata = getLedgerMetadata();
             isClosed = metadata.isClosed();
             lastEntryId = metadata.getLastEntryId();
         }
@@ -1486,6 +1502,7 @@ public class LedgerHandle implements WriteHandle {
         boolean isClosed;
         long lac;
         synchronized (this) {
+            LedgerMetadata metadata = getLedgerMetadata();
             isClosed = metadata.isClosed();
             lac = metadata.getLastEntryId();
         }
@@ -1653,6 +1670,7 @@ public class LedgerHandle implements WriteHandle {
     public void asyncReadExplicitLastConfirmed(final ReadLastConfirmedCallback cb, final Object ctx) {
         boolean isClosed;
         synchronized (this) {
+            LedgerMetadata metadata = getLedgerMetadata();
             isClosed = metadata.isClosed();
             if (isClosed) {
                 lastAddConfirmed = metadata.getLastEntryId();
@@ -1714,7 +1732,7 @@ public class LedgerHandle implements WriteHandle {
 
     // close the ledger and send fails to all the adds in the pipeline
     void handleUnrecoverableErrorDuringAdd(int rc) {
-        if (metadata.isInRecovery()) {
+        if (getLedgerMetadata().isInRecovery()) {
             // we should not close ledger if ledger is recovery mode
             // otherwise we may lose entry.
             errorOutPendingAdds(rc);
@@ -1796,6 +1814,7 @@ public class LedgerHandle implements WriteHandle {
         final ArrayList<BookieSocketAddress> newEnsemble = new ArrayList<BookieSocketAddress>();
         final long newEnsembleStartEntry = getLastAddConfirmed() + 1;
         final HashSet<Integer> replacedBookies = new HashSet<Integer>();
+        final LedgerMetadata metadata = getLedgerMetadata();
         synchronized (metadata) {
             newEnsemble.addAll(metadata.currentEnsemble);
             for (Map.Entry<Integer, BookieSocketAddress> entry : failedBookies.entrySet()) {
@@ -1869,6 +1888,7 @@ public class LedgerHandle implements WriteHandle {
             }
             return;
         }
+        LedgerMetadata metadata = getLedgerMetadata();
         synchronized (metadata) {
             try {
                 EnsembleInfo ensembleInfo = replaceBookieInMetadata(delayedWriteFailedBookies, curNumEnsembleChanges);
@@ -1922,6 +1942,7 @@ public class LedgerHandle implements WriteHandle {
             handleUnrecoverableErrorDuringAdd(WriteException);
             return;
         }
+        LedgerMetadata metadata = getLedgerMetadata();
         synchronized (metadata) {
             try {
                 EnsembleInfo ensembleInfo = replaceBookieInMetadata(failedBookies, curNumEnsembleChanges);
@@ -2075,7 +2096,7 @@ public class LedgerHandle implements WriteHandle {
                     LOG.error("[EnsembleChange-L{}-{}] : could not resolve ledger metadata conflict"
                                     + " while changing ensemble to: {}, local meta data is \n {} \n,"
                                     + " zk meta data is \n {} \n, closing ledger",
-                            ledgerId, ensembleChangeIdx, ensembleInfo.newEnsemble, metadata, newMeta);
+                            ledgerId, ensembleChangeIdx, ensembleInfo.newEnsemble, getLedgerMetadata(), newMeta);
                     handleUnrecoverableErrorDuringAdd(rc);
                 }
             }
@@ -2096,6 +2117,7 @@ public class LedgerHandle implements WriteHandle {
          * </p>
          */
         private boolean resolveConflict(LedgerMetadata newMeta) {
+            LedgerMetadata metadata = getLedgerMetadata();
             if (LOG.isDebugEnabled()) {
                 LOG.debug("[EnsembleChange-L{}-{}] : resolving conflicts - local metadata = \n {} \n,"
                     + " zk metadata = \n {} \n", ledgerId, ensembleChangeIdx, metadata, newMeta);
@@ -2125,7 +2147,7 @@ public class LedgerHandle implements WriteHandle {
                 }
                 if (-1 == diff) {
                     // Case 1: metadata is changed by other ones (e.g. Recovery)
-                    return updateMetadataIfPossible(newMeta);
+                    return updateMetadataIfPossible(metadata, newMeta);
                 }
                 return false;
             }
@@ -2142,7 +2164,7 @@ public class LedgerHandle implements WriteHandle {
                 // didn't finish, so try to resolve conflicts with the metadata read from zookeeper and
                 // update ensemble changed metadata again.
                 if (areFailedBookiesReplaced(metadata, ensembleInfo)) {
-                    return updateMetadataIfPossible(newMeta);
+                    return updateMetadataIfPossible(metadata, newMeta);
                 }
             } else {
                 ensembleChangeCounter.inc();
@@ -2177,7 +2199,7 @@ public class LedgerHandle implements WriteHandle {
             return replaced;
         }
 
-        private boolean updateMetadataIfPossible(LedgerMetadata newMeta) {
+        private boolean updateMetadataIfPossible(LedgerMetadata metadata, LedgerMetadata newMeta) {
             // if the local metadata is newer than zookeeper metadata, it means that metadata is updated
             // again when it was trying re-reading the metatada, re-kick the reread again
             if (metadata.isNewerThan(newMeta)) {
@@ -2260,6 +2282,7 @@ public class LedgerHandle implements WriteHandle {
         boolean wasClosed = false;
         boolean wasInRecovery = false;
 
+        LedgerMetadata metadata = getLedgerMetadata();
         synchronized (this) {
             if (metadata.isClosed()) {
                 if (forceRecovery) {
