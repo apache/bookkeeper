@@ -26,7 +26,6 @@ import io.netty.buffer.Unpooled;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashSet;
-import com.google.common.collect.ImmutableList;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -387,8 +386,7 @@ public class LedgerFragmentReplicator {
                 LOG.info("Bookie {} doesn't exist in ensemble {} anymore.", entry.getKey(), ensemble);
             }
         }
-        List<BookieSocketAddress> immutable = ImmutableList.copyOf(newEnsemble);
-        lh.getLedgerMetadata().updateEnsemble(fragmentStartId, immutable);
+        lh.getLedgerMetadata().updateEnsemble(fragmentStartId, newEnsemble);
         lh.writeLedgerConfig(new UpdateEnsembleCb(ensembleUpdatedCb,
                 fragmentStartId, lh, oldBookie2NewBookie));
     }

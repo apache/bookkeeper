@@ -24,8 +24,8 @@ import static org.apache.bookkeeper.meta.MetadataDrivers.runFunctionWithLedgerMa
 import static org.junit.Assert.assertEquals;
 
 import com.google.common.util.concurrent.UncheckedExecutionException;
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
 import lombok.Cleanup;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.LedgerHandle;

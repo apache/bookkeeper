@@ -18,10 +18,10 @@
 package org.apache.bookkeeper.client;
 
 import static com.google.common.base.Charsets.UTF_8;
+import static com.google.common.base.Preconditions.checkArgument;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Optional;
-import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
 import com.google.protobuf.ByteString;
@@ -289,14 +289,14 @@ public class LedgerMetadata implements org.apache.bookkeeper.client.api.LedgerMe
     }
 
     public void addEnsemble(long startEntryId, List<BookieSocketAddress> ensemble) {
-        Preconditions.checkArgument(ensembles.isEmpty() || startEntryId >= ensembles.lastKey());
+        checkArgument(ensembles.isEmpty() || startEntryId >= ensembles.lastKey());
 
         ensembles.put(startEntryId, ImmutableList.copyOf(ensemble));
         currentEnsemble = ensemble;
     }
 
     public void updateEnsemble(long startEntryId, List<BookieSocketAddress> ensemble) {
-        Preconditions.checkArgument(ensembles.containsKey(startEntryId));
+        checkArgument(ensembles.containsKey(startEntryId));
         ensembles.put(startEntryId, ImmutableList.copyOf(ensemble));
     }
 
