@@ -34,6 +34,7 @@ import org.apache.bookkeeper.http.service.HttpServiceRequest;
 import org.apache.bookkeeper.http.service.HttpServiceResponse;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
+import org.apache.bookkeeper.meta.LedgerUnderreplicationManager.UnderreplicatedLedger;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
@@ -101,8 +102,7 @@ public class ListUnderReplicatedLedgerService implements HttpEndpointService {
                 Map<Long, List<String>> outputLedgersWithMissingReplica = null;
                 LedgerManagerFactory mFactory = bookieServer.getBookie().getLedgerManagerFactory();
                 LedgerUnderreplicationManager underreplicationManager = mFactory.newLedgerUnderreplicationManager();
-                Iterator<Map.Entry<Long, List<String>>> iter = underreplicationManager
-                        .listLedgersToRereplicate(predicate, printMissingReplica);
+                Iterator<UnderreplicatedLedger> iter = underreplicationManager.listLedgersToRereplicate(predicate);
 
                 hasURLedgers = iter.hasNext();
                 if (hasURLedgers) {
@@ -114,11 +114,11 @@ public class ListUnderReplicatedLedgerService implements HttpEndpointService {
                 }
                 while (iter.hasNext()) {
                     if (printMissingReplica) {
-                        Map.Entry<Long, List<String>> urlWithMissingReplica = iter.next();
-                        outputLedgersWithMissingReplica.put(urlWithMissingReplica.getKey(),
-                                urlWithMissingReplica.getValue());
+                        UnderreplicatedLedger underreplicatedLedger = iter.next();
+                        outputLedgersWithMissingReplica.put(underreplicatedLedger.getLedgerId(),
+                                underreplicatedLedger.getReplicaList());
                     } else {
-                        outputLedgers.add(iter.next().getKey());
+                        outputLedgers.add(iter.next().getLedgerId());
                     }
                 }
                 if (!hasURLedgers) {
