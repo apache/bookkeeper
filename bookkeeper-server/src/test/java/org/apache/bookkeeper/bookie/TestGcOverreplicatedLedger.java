@@ -25,7 +25,6 @@ import com.google.common.collect.Lists;
 
 import java.io.IOException;
 import java.net.UnknownHostException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -149,8 +148,8 @@ public class TestGcOverreplicatedLedger extends LedgerManagerTestCase {
             Assert.fail("No ledger metadata found");
         }
         BookieSocketAddress address = null;
-        SortedMap<Long, ArrayList<BookieSocketAddress>> ensembleMap = newLedgerMetadata.get().getEnsembles();
-        for (ArrayList<BookieSocketAddress> ensemble : ensembleMap.values()) {
+        SortedMap<Long, ? extends List<BookieSocketAddress>> ensembleMap = newLedgerMetadata.get().getEnsembles();
+        for (List<BookieSocketAddress> ensemble : ensembleMap.values()) {
             address = ensemble.get(0);
         }
         ServerConfiguration bkConf = getBkConf(address);
@@ -236,8 +235,8 @@ public class TestGcOverreplicatedLedger extends LedgerManagerTestCase {
         for (BookieServer bk : bs) {
             allAddresses.add(bk.getLocalAddress());
         }
-        SortedMap<Long, ArrayList<BookieSocketAddress>> ensembles = ledgerMetadata.getEnsembles();
-        for (ArrayList<BookieSocketAddress> fragmentEnsembles : ensembles.values()) {
+        SortedMap<Long, ? extends List<BookieSocketAddress>> ensembles = ledgerMetadata.getEnsembles();
+        for (List<BookieSocketAddress> fragmentEnsembles : ensembles.values()) {
             allAddresses.removeAll(fragmentEnsembles);
         }
         Assert.assertEquals(allAddresses.size(), 1);

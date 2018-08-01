@@ -24,6 +24,7 @@ import com.google.common.collect.Sets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import org.apache.bookkeeper.net.BookieSocketAddress;
@@ -51,7 +52,7 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
 
         public static final EnsembleForReplacementWithNoConstraints INSTANCE =
             new EnsembleForReplacementWithNoConstraints();
-        static final ArrayList<BookieSocketAddress> EMPTY_LIST = new ArrayList<BookieSocketAddress>(0);
+        static final List<BookieSocketAddress> EMPTY_LIST = new ArrayList<BookieSocketAddress>(0);
 
         @Override
         public boolean addNode(BookieNode node) {
@@ -60,7 +61,7 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
         }
 
         @Override
-        public ArrayList<BookieSocketAddress> toList() {
+        public List<BookieSocketAddress> toList() {
             return EMPTY_LIST;
         }
 
@@ -301,7 +302,7 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
         final int ackQuorumSize;
         final int minRacksOrRegionsForDurability;
         final int minNumRacksPerWriteQuorum;
-        final ArrayList<BookieNode> chosenNodes;
+        final List<BookieNode> chosenNodes;
         final Set<String> racksOrRegions;
         private final CoverageSet[] quorums;
         final Predicate<BookieNode> parentPredicate;
@@ -453,7 +454,7 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
         }
 
         @Override
-        public ArrayList<BookieSocketAddress> toList() {
+        public List<BookieSocketAddress> toList() {
             ArrayList<BookieSocketAddress> addresses = new ArrayList<BookieSocketAddress>(ensembleSize);
             for (BookieNode bn : chosenNodes) {
                 addresses.add(bn.getAddr());
@@ -490,7 +491,7 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
 
     @Override
     public DistributionSchedule.WriteSet reorderReadSequence(
-            ArrayList<BookieSocketAddress> ensemble,
+            List<BookieSocketAddress> ensemble,
             BookiesHealthInfo bookiesHealthInfo,
             DistributionSchedule.WriteSet writeSet) {
         return writeSet;
@@ -498,7 +499,7 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
 
     @Override
     public DistributionSchedule.WriteSet reorderReadLACSequence(
-            ArrayList<BookieSocketAddress> ensemble,
+            List<BookieSocketAddress> ensemble,
             BookiesHealthInfo bookiesHealthInfo,
             DistributionSchedule.WriteSet writeSet) {
         DistributionSchedule.WriteSet retList = reorderReadSequence(

@@ -817,7 +817,7 @@ public class BookKeeperAdmin implements AutoCloseable {
                  */
                 Map<Long, Long> ledgerFragmentsRange = new HashMap<Long, Long>();
                 Long curEntryId = null;
-                for (Map.Entry<Long, ArrayList<BookieSocketAddress>> entry : lh.getLedgerMetadata().getEnsembles()
+                for (Map.Entry<Long, ? extends List<BookieSocketAddress>> entry : lh.getLedgerMetadata().getEnsembles()
                          .entrySet()) {
                     if (curEntryId != null) {
                         ledgerFragmentsRange.put(curEntryId, entry.getKey() - 1);
@@ -863,7 +863,7 @@ public class BookKeeperAdmin implements AutoCloseable {
                  */
                 for (final Long startEntryId : ledgerFragmentsToRecover) {
                     Long endEntryId = ledgerFragmentsRange.get(startEntryId);
-                    ArrayList<BookieSocketAddress> ensemble = lh.getLedgerMetadata().getEnsembles().get(startEntryId);
+                    List<BookieSocketAddress> ensemble = lh.getLedgerMetadata().getEnsembles().get(startEntryId);
                     // Get bookies to replace
                     Map<Integer, BookieSocketAddress> targetBookieAddresses;
                     try {
@@ -910,7 +910,7 @@ public class BookKeeperAdmin implements AutoCloseable {
             }, null);
     }
 
-    static String formatEnsemble(ArrayList<BookieSocketAddress> ensemble, Set<BookieSocketAddress> bookiesSrc,
+    static String formatEnsemble(List<BookieSocketAddress> ensemble, Set<BookieSocketAddress> bookiesSrc,
             char marker) {
         StringBuilder sb = new StringBuilder();
         sb.append("[");
@@ -1060,7 +1060,7 @@ public class BookKeeperAdmin implements AutoCloseable {
     }
 
     private static Map<BookieSocketAddress, BookieSocketAddress> getReplacementBookiesMap(
-            ArrayList<BookieSocketAddress> ensemble,
+            List<BookieSocketAddress> ensemble,
             Map<Integer, BookieSocketAddress> targetBookieAddresses) {
         Map<BookieSocketAddress, BookieSocketAddress> bookiesMap =
                 new HashMap<BookieSocketAddress, BookieSocketAddress>();
@@ -1091,11 +1091,11 @@ public class BookKeeperAdmin implements AutoCloseable {
             return false;
         }
         Long lastKey = lm.getEnsembles().lastKey();
-        ArrayList<BookieSocketAddress> lastEnsemble = lm.getEnsembles().get(lastKey);
+        List<BookieSocketAddress> lastEnsemble = lm.getEnsembles().get(lastKey);
         return containBookies(lastEnsemble, bookies);
     }
 
-    private static boolean containBookies(ArrayList<BookieSocketAddress> ensemble,
+    private static boolean containBookies(List<BookieSocketAddress> ensemble,
                                           Set<BookieSocketAddress> bookies) {
         for (BookieSocketAddress bookie : ensemble) {
             if (bookies.contains(bookie)) {
@@ -1544,9 +1544,9 @@ public class BookKeeperAdmin implements AutoCloseable {
 
     public static boolean areEntriesOfLedgerStoredInTheBookie(long ledgerId, BookieSocketAddress bookieAddress,
             LedgerMetadata ledgerMetadata) {
-        Collection<ArrayList<BookieSocketAddress>> ensemblesOfSegments = ledgerMetadata.getEnsembles().values();
-        Iterator<ArrayList<BookieSocketAddress>> ensemblesOfSegmentsIterator = ensemblesOfSegments.iterator();
-        ArrayList<BookieSocketAddress> ensemble;
+        Collection<? extends List<BookieSocketAddress>> ensemblesOfSegments = ledgerMetadata.getEnsembles().values();
+        Iterator<? extends List<BookieSocketAddress>> ensemblesOfSegmentsIterator = ensemblesOfSegments.iterator();
+        List<BookieSocketAddress> ensemble;
         int segmentNo = 0;
         while (ensemblesOfSegmentsIterator.hasNext()) {
             ensemble = ensemblesOfSegmentsIterator.next();
@@ -1565,9 +1565,8 @@ public class BookKeeperAdmin implements AutoCloseable {
         int ensembleSize = ledgerMetadata.getEnsembleSize();
         int writeQuorumSize = ledgerMetadata.getWriteQuorumSize();
 
-        List<Entry<Long, ArrayList<BookieSocketAddress>>> segments =
-            new LinkedList<Entry<Long, ArrayList<BookieSocketAddress>>>(
-                ledgerMetadata.getEnsembles().entrySet());
+        List<Entry<Long, ? extends List<BookieSocketAddress>>> segments =
+            new LinkedList<>(ledgerMetadata.getEnsembles().entrySet());
 
         boolean lastSegment = (segmentNo == (segments.size() - 1));
 
@@ -1617,7 +1616,7 @@ public class BookKeeperAdmin implements AutoCloseable {
         DistributionSchedule distributionSchedule = new RoundRobinDistributionSchedule(
                 ledgerMetadata.getWriteQuorumSize(), ledgerMetadata.getAckQuorumSize(),
                 ledgerMetadata.getEnsembleSize());
-        ArrayList<BookieSocketAddress> currentSegmentEnsemble = segments.get(segmentNo).getValue();
+        List<BookieSocketAddress> currentSegmentEnsemble = segments.get(segmentNo).getValue();
         int thisBookieIndexInCurrentEnsemble = currentSegmentEnsemble.indexOf(bookieAddress);
         long firstEntryId = segments.get(segmentNo).getKey();
         long lastEntryId = lastSegment ? ledgerMetadata.getLastEntryId() : segments.get(segmentNo + 1).getKey() - 1;

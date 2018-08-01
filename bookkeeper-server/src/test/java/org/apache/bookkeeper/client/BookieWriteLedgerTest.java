@@ -144,7 +144,7 @@ public class BookieWriteLedgerTest extends
         startNewBookie();
 
         // Shutdown three bookies in the last ensemble and continue writing
-        ArrayList<BookieSocketAddress> ensemble = lh.getLedgerMetadata()
+        List<BookieSocketAddress> ensemble = lh.getLedgerMetadata()
                 .getEnsembles().entrySet().iterator().next().getValue();
         killBookie(ensemble.get(0));
         killBookie(ensemble.get(1));
@@ -189,7 +189,7 @@ public class BookieWriteLedgerTest extends
 
         CountDownLatch sleepLatch1 = new CountDownLatch(1);
         CountDownLatch sleepLatch2 = new CountDownLatch(1);
-        ArrayList<BookieSocketAddress> ensemble = lh.getLedgerMetadata()
+        List<BookieSocketAddress> ensemble = lh.getLedgerMetadata()
                 .getEnsembles().entrySet().iterator().next().getValue();
 
         sleepBookie(ensemble.get(0), sleepLatch1);
@@ -383,7 +383,7 @@ public class BookieWriteLedgerTest extends
         startNewBookie();
 
         // Shutdown one bookie in the last ensemble and continue writing
-        ArrayList<BookieSocketAddress> ensemble = lh.getLedgerMetadata().getEnsembles().entrySet().iterator().next()
+        List<BookieSocketAddress> ensemble = lh.getLedgerMetadata().getEnsembles().entrySet().iterator().next()
                 .getValue();
         killBookie(ensemble.get(0));
 
@@ -522,7 +522,7 @@ public class BookieWriteLedgerTest extends
         startNewBookie();
 
         // Shutdown one bookie in the last ensemble and continue writing
-        ArrayList<BookieSocketAddress> ensemble = lh.getLedgerMetadata().getEnsembles().entrySet().iterator().next()
+        List<BookieSocketAddress> ensemble = lh.getLedgerMetadata().getEnsembles().entrySet().iterator().next()
                 .getValue();
         killBookie(ensemble.get(0));
 
@@ -840,7 +840,7 @@ public class BookieWriteLedgerTest extends
         startNewBookie();
 
         // Shutdown three bookies in the last ensemble and continue writing
-        ArrayList<BookieSocketAddress> ensemble = lh.getLedgerMetadata()
+        List<BookieSocketAddress> ensemble = lh.getLedgerMetadata()
                 .getEnsembles().entrySet().iterator().next().getValue();
         killBookie(ensemble.get(0));
         killBookie(ensemble.get(1));
@@ -913,7 +913,7 @@ public class BookieWriteLedgerTest extends
         }
         // Start One more bookie and shutdown one from last ensemble before reading
         startNewBookie();
-        ArrayList<BookieSocketAddress> ensemble = lh.getLedgerMetadata().getEnsembles().entrySet().iterator().next()
+        List<BookieSocketAddress> ensemble = lh.getLedgerMetadata().getEnsembles().entrySet().iterator().next()
                 .getValue();
         killBookie(ensemble.get(0));
 
@@ -981,7 +981,7 @@ public class BookieWriteLedgerTest extends
         }
 
         CountDownLatch sleepLatch1 = new CountDownLatch(1);
-        ArrayList<BookieSocketAddress> ensemble;
+        List<BookieSocketAddress> ensemble;
 
         ensemble = lh.getLedgerMetadata().getEnsembles().entrySet().iterator().next().getValue();
 
@@ -1067,7 +1067,7 @@ public class BookieWriteLedgerTest extends
                 if (j == numEntriesToWrite / 2) {
                     // Start One more bookie and shutdown one from last ensemble at half-way
                     startNewBookie();
-                    ArrayList<BookieSocketAddress> ensemble = lh.getLedgerMetadata().getEnsembles().entrySet()
+                    List<BookieSocketAddress> ensemble = lh.getLedgerMetadata().getEnsembles().entrySet()
                             .iterator().next().getValue();
                     killBookie(ensemble.get(0));
                 }
@@ -1136,7 +1136,7 @@ public class BookieWriteLedgerTest extends
         }
         // Start One more bookie and shutdown one from last ensemble before reading
         startNewBookie();
-        ArrayList<BookieSocketAddress> ensemble = lh.getLedgerMetadata().getEnsembles().entrySet().iterator().next()
+        List<BookieSocketAddress> ensemble = lh.getLedgerMetadata().getEnsembles().entrySet().iterator().next()
                 .getValue();
         killBookie(ensemble.get(0));
 
