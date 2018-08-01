@@ -25,11 +25,10 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.net.URI;
-import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.List;
 import java.util.Map.Entry;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import lombok.Cleanup;
@@ -689,10 +688,9 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
     private void killAllBookies(LedgerHandle lh, BookieSocketAddress excludeBK)
             throws Exception {
         // Killing all bookies except newly replicated bookie
-        Set<Entry<Long, ArrayList<BookieSocketAddress>>> entrySet = LedgerHandleAdapter
-                .getLedgerMetadata(lh).getEnsembles().entrySet();
-        for (Entry<Long, ArrayList<BookieSocketAddress>> entry : entrySet) {
-            ArrayList<BookieSocketAddress> bookies = entry.getValue();
+        for (Entry<Long, ? extends List<BookieSocketAddress>> entry :
+                 lh.getLedgerMetadata().getEnsembles().entrySet()) {
+            List<BookieSocketAddress> bookies = entry.getValue();
             for (BookieSocketAddress bookie : bookies) {
                 if (bookie.equals(excludeBK)) {
                     continue;

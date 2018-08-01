@@ -24,8 +24,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
@@ -229,7 +229,7 @@ public class TestReadEntryListener extends BookKeeperClusterTestCase {
 
         LedgerHandle lh = bkc.openLedger(id, digestType, passwd);
 
-        ArrayList<BookieSocketAddress> ensemble =
+        List<BookieSocketAddress> ensemble =
                 lh.getLedgerMetadata().getEnsemble(5);
         // kill two bookies
         killBookie(ensemble.get(0));
@@ -269,7 +269,7 @@ public class TestReadEntryListener extends BookKeeperClusterTestCase {
 
         LedgerHandle lh = bkc.openLedger(id, digestType, passwd);
 
-        ArrayList<BookieSocketAddress> ensemble =
+        List<BookieSocketAddress> ensemble =
             lh.getLedgerMetadata().getEnsemble(5);
         // kill bookies
         killBookie(ensemble.get(0));

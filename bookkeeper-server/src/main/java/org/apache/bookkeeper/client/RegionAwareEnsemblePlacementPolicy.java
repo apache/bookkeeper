@@ -225,7 +225,7 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
 
 
     @Override
-    public ArrayList<BookieSocketAddress> newEnsemble(int ensembleSize, int writeQuorumSize, int ackQuorumSize,
+    public List<BookieSocketAddress> newEnsemble(int ensembleSize, int writeQuorumSize, int ackQuorumSize,
             Map<String, byte[]> customMetadata, Set<BookieSocketAddress> excludeBookies)
             throws BKException.BKNotEnoughBookiesException {
 
@@ -394,7 +394,7 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
                 }
             } while ((remainingEnsemble > 0) && (remainingEnsemble < remainingEnsembleBeforeIteration));
 
-            ArrayList<BookieSocketAddress> bookieList = ensemble.toList();
+            List<BookieSocketAddress> bookieList = ensemble.toList();
             if (ensembleSize != bookieList.size()) {
                 LOG.error("Not enough {} bookies are available to form an ensemble : {}.",
                           ensembleSize, bookieList);
@@ -522,7 +522,7 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
 
     @Override
     public final DistributionSchedule.WriteSet reorderReadSequence(
-            ArrayList<BookieSocketAddress> ensemble,
+            List<BookieSocketAddress> ensemble,
             BookiesHealthInfo bookiesHealthInfo,
             DistributionSchedule.WriteSet writeSet) {
         if (UNKNOWN_REGION.equals(myRegion)) {
@@ -540,7 +540,7 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
 
     @Override
     public final DistributionSchedule.WriteSet reorderReadLACSequence(
-            ArrayList<BookieSocketAddress> ensemble,
+            List<BookieSocketAddress> ensemble,
             BookiesHealthInfo bookiesHealthInfo,
             DistributionSchedule.WriteSet writeSet) {
         if (UNKNOWN_REGION.equals(myRegion)) {

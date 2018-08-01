@@ -18,7 +18,7 @@
 package org.apache.bookkeeper.client;
 
 import io.netty.util.HashedWheelTimer;
-import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -152,8 +152,8 @@ import org.apache.bookkeeper.stats.StatsLogger;
  *
  * <h3>How to choose bookies to do speculative reads?</h3>
  *
- * <p>{@link #reorderReadSequence(ArrayList, BookiesHealthInfo, WriteSet)} and
- * {@link #reorderReadLACSequence(ArrayList, BookiesHealthInfo, WriteSet)} are
+ * <p>{@link #reorderReadSequence(List, BookiesHealthInfo, WriteSet)} and
+ * {@link #reorderReadLACSequence(List, BookiesHealthInfo, WriteSet)} are
  * two methods exposed by the placement policy, to help client determine a better read sequence according to the
  * network topology and the bookie failure history.
  *
@@ -258,9 +258,9 @@ public interface EnsemblePlacementPolicy {
      *                       provides in {@link BookKeeper#createLedger(int, int, int, BookKeeper.DigestType, byte[])}
      * @param excludeBookies Bookies that should not be considered as targets.
      * @throws BKNotEnoughBookiesException if not enough bookies available.
-     * @return the ArrayList&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;
+     * @return the List&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;
      */
-    ArrayList<BookieSocketAddress> newEnsemble(int ensembleSize,
+    List<BookieSocketAddress> newEnsemble(int ensembleSize,
                                                int writeQuorumSize,
                                                int ackQuorumSize,
                                                Map<String, byte[]> customMetadata,
@@ -318,7 +318,7 @@ public interface EnsemblePlacementPolicy {
      * @since 4.5
      */
     DistributionSchedule.WriteSet reorderReadSequence(
-            ArrayList<BookieSocketAddress> ensemble,
+            List<BookieSocketAddress> ensemble,
             BookiesHealthInfo bookiesHealthInfo,
             DistributionSchedule.WriteSet writeSet);
 
@@ -338,7 +338,7 @@ public interface EnsemblePlacementPolicy {
      * @since 4.5
      */
     DistributionSchedule.WriteSet reorderReadLACSequence(
-            ArrayList<BookieSocketAddress> ensemble,
+            List<BookieSocketAddress> ensemble,
             BookiesHealthInfo bookiesHealthInfo,
             DistributionSchedule.WriteSet writeSet);
 

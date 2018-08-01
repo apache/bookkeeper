@@ -27,8 +27,8 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import org.apache.bookkeeper.client.BKException.Code;
@@ -151,8 +151,7 @@ public class TestParallelRead extends BookKeeperClusterTestCase {
 
         LedgerHandle lh = bkc.openLedger(id, digestType, passwd);
 
-        ArrayList<BookieSocketAddress> ensemble =
-                lh.getLedgerMetadata().getEnsemble(10);
+        List<BookieSocketAddress> ensemble = lh.getLedgerMetadata().getEnsemble(10);
         CountDownLatch latch1 = new CountDownLatch(1);
         CountDownLatch latch2 = new CountDownLatch(1);
         // sleep two bookie
@@ -184,8 +183,7 @@ public class TestParallelRead extends BookKeeperClusterTestCase {
 
         LedgerHandle lh = bkc.openLedger(id, digestType, passwd);
 
-        ArrayList<BookieSocketAddress> ensemble =
-                lh.getLedgerMetadata().getEnsemble(5);
+        List<BookieSocketAddress> ensemble = lh.getLedgerMetadata().getEnsemble(5);
         // kill two bookies
         killBookie(ensemble.get(0));
         killBookie(ensemble.get(1));
@@ -222,8 +220,7 @@ public class TestParallelRead extends BookKeeperClusterTestCase {
 
         LedgerHandle lh = bkc.openLedger(id, digestType, passwd);
 
-        ArrayList<BookieSocketAddress> ensemble =
-                lh.getLedgerMetadata().getEnsemble(5);
+        List<BookieSocketAddress> ensemble = lh.getLedgerMetadata().getEnsemble(5);
         // kill two bookies
         killBookie(ensemble.get(0));
         killBookie(ensemble.get(1));

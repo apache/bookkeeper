@@ -83,7 +83,7 @@ public class LedgerReader {
         bookieClient = bkc.getBookieClient();
     }
 
-    public static SortedMap<Long, ArrayList<BookieSocketAddress>> bookiesForLedger(final LedgerHandle lh) {
+    public static SortedMap<Long, ? extends List<BookieSocketAddress>> bookiesForLedger(final LedgerHandle lh) {
         return lh.getLedgerMetadata().getEnsembles();
     }
 
@@ -120,7 +120,7 @@ public class LedgerReader {
             }
         };
 
-        ArrayList<BookieSocketAddress> ensemble = lh.getLedgerMetadata().getEnsemble(eid);
+        List<BookieSocketAddress> ensemble = lh.getLedgerMetadata().getEnsemble(eid);
         for (int i = 0; i < writeSet.size(); i++) {
             int idx = writeSet.get(i);
             bookieClient.readEntry(ensemble.get(idx), lh.getId(), eid, readEntryCallback,
@@ -225,7 +225,7 @@ public class LedgerReader {
             }
         };
 
-        ArrayList<BookieSocketAddress> ensemble = lh.getLedgerMetadata().getEnsemble(eid);
+        List<BookieSocketAddress> ensemble = lh.getLedgerMetadata().getEnsemble(eid);
         for (int i = 0; i < writeSet.size(); i++) {
             int idx = writeSet.get(i);
             bookieClient.readEntry(ensemble.get(idx), lh.getId(), eid, readEntryCallback,

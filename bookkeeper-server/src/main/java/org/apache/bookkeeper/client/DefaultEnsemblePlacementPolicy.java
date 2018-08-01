@@ -159,7 +159,7 @@ public class DefaultEnsemblePlacementPolicy implements EnsemblePlacementPolicy {
 
     @Override
     public DistributionSchedule.WriteSet reorderReadSequence(
-            ArrayList<BookieSocketAddress> ensemble,
+            List<BookieSocketAddress> ensemble,
             BookiesHealthInfo bookiesHealthInfo,
             DistributionSchedule.WriteSet writeSet) {
         return writeSet;
@@ -167,7 +167,7 @@ public class DefaultEnsemblePlacementPolicy implements EnsemblePlacementPolicy {
 
     @Override
     public DistributionSchedule.WriteSet reorderReadLACSequence(
-            ArrayList<BookieSocketAddress> ensemble,
+            List<BookieSocketAddress> ensemble,
             BookiesHealthInfo bookiesHealthInfo,
             DistributionSchedule.WriteSet writeSet) {
         writeSet.addMissingIndices(ensemble.size());

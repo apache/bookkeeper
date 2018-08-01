@@ -27,10 +27,10 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Enumeration;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -308,7 +308,7 @@ public class TestSpeculativeRead extends BookKeeperClusterTestCase {
 
         LedgerHandle l = bkspec.openLedger(id, digestType, passwd);
 
-        ArrayList<BookieSocketAddress> ensemble = l.getLedgerMetadata().getEnsembles().get(0L);
+        List<BookieSocketAddress> ensemble = l.getLedgerMetadata().getEnsembles().get(0L);
         BitSet allHosts = new BitSet(ensemble.size());
         for (int i = 0; i < ensemble.size(); i++) {
             allHosts.set(i, true);

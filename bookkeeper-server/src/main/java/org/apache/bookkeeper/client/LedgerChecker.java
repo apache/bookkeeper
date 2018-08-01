@@ -20,9 +20,9 @@
 package org.apache.bookkeeper.client;
 
 import io.netty.buffer.ByteBuf;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
@@ -321,8 +321,8 @@ public class LedgerChecker {
         final Set<LedgerFragment> fragments = new HashSet<LedgerFragment>();
 
         Long curEntryId = null;
-        ArrayList<BookieSocketAddress> curEnsemble = null;
-        for (Map.Entry<Long, ArrayList<BookieSocketAddress>> e : lh
+        List<BookieSocketAddress> curEnsemble = null;
+        for (Map.Entry<Long, ? extends List<BookieSocketAddress>> e : lh
                 .getLedgerMetadata().getEnsembles().entrySet()) {
             if (curEntryId != null) {
                 Set<Integer> bookieIndexes = new HashSet<Integer>();
