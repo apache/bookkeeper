@@ -1037,7 +1037,7 @@ import org.slf4j.LoggerFactory;
             LedgerHandle lh = bkc.client().get().openLedgerNoRecovery(segment.getLogSegmentId(),
                     BookKeeper.DigestType.CRC32, getConf().getBKDigestPW().getBytes(UTF_8));
             long eidFirst = 0;
-            for (SortedMap.Entry<Long, ArrayList<BookieSocketAddress>>
+            for (SortedMap.Entry<Long, ? extends List<BookieSocketAddress>>
                     entry : LedgerReader.bookiesForLedger(lh).entrySet()) {
                 long eidLast = entry.getKey().longValue();
                 long count = eidLast - eidFirst + 1;
