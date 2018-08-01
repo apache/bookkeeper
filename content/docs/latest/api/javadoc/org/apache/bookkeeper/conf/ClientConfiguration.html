@@ -3605,11 +3605,11 @@ public&nbsp;<a href="../../../../org/apache/bookkeeper/conf/ClientConfiguration.
 <div class="block">Enable/disable reordering read sequence on reading entries.
 
  <p>If this flag is enabled, the client will use
- <a href="../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.html#reorderReadSequence-java.util.ArrayList-org.apache.bookkeeper.client.BookiesHealthInfo-org.apache.bookkeeper.client.DistributionSchedule.WriteSet-"><code>EnsemblePlacementPolicy.reorderReadSequence(java.util.ArrayList,
- org.apache.bookkeeper.client.BookiesHealthInfo, org.apache.bookkeeper.client.DistributionSchedule.WriteSet)</code></a>
+ <code>EnsemblePlacementPolicy#reorderReadSequence(java.util.ArrayList,
+ org.apache.bookkeeper.client.BookiesHealthInfo, org.apache.bookkeeper.client.DistributionSchedule.WriteSet)</code>
  to figure out a better read sequence to attempt reads from replicas and use
- <a href="../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.html#reorderReadLACSequence-java.util.ArrayList-org.apache.bookkeeper.client.BookiesHealthInfo-org.apache.bookkeeper.client.DistributionSchedule.WriteSet-"><code>EnsemblePlacementPolicy.reorderReadLACSequence(java.util.ArrayList,
- org.apache.bookkeeper.client.BookiesHealthInfo, org.apache.bookkeeper.client.DistributionSchedule.WriteSet)</code></a>
+ <code>EnsemblePlacementPolicy#reorderReadLACSequence(java.util.ArrayList,
+ org.apache.bookkeeper.client.BookiesHealthInfo, org.apache.bookkeeper.client.DistributionSchedule.WriteSet)</code>
  to figure out a better read sequence to attempt long poll reads from replicas.
 
  <p>The order of read sequence is determined by the placement policy implementations.</div>
