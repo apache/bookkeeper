@@ -41,7 +41,7 @@ import org.apache.bookkeeper.versioning.Version;
  * the public write operations from LedgerHandle.
  * It should be returned for BookKeeper#openLedger operations.
  */
-class ReadOnlyLedgerHandle extends LedgerHandle implements LedgerMetadataListener {
+class ReadOnlyLedgerHandle extends LedgerHandle {
 
     class MetadataUpdater extends SafeRunnable {
 
