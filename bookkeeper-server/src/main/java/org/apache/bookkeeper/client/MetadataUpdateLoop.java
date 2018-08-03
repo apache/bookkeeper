@@ -19,7 +19,6 @@
  */
 package org.apache.bookkeeper.client;
 
-import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiPredicate;
@@ -89,8 +88,8 @@ class MetadataUpdateLoop {
         this.transform = transform;
         this.updateLocalValue = updateLocalValue;
 
-        this.logContext = String.format("UpdateLoop(ledgerId=%d,loopId=%s)",
-                                        ledgerId, UUID.randomUUID().toString().substring(0, 8));
+        this.logContext = String.format("UpdateLoop(ledgerId=%d,loopId=%08x)",
+                                        ledgerId, System.identityHashCode(this));
     }
 
     CompletableFuture<LedgerMetadata> run() {
