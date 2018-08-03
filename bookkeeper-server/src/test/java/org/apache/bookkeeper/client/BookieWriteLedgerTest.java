@@ -55,13 +55,13 @@ import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.api.LedgerEntries;
 import org.apache.bookkeeper.client.api.ReadHandle;
 import org.apache.bookkeeper.client.api.WriteAdvHandle;
-import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
 import org.apache.bookkeeper.meta.LongHierarchicalLedgerManagerFactory;
 import org.apache.bookkeeper.meta.MetadataBookieDriver;
 import org.apache.bookkeeper.meta.MetadataDrivers;
+import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.replication.ReplicationTestUtil;
 import org.apache.bookkeeper.replication.ReplicationWorker;
@@ -124,7 +124,6 @@ public class BookieWriteLedgerTest extends
     }
 
     private void setUpReplication() throws Exception {
-        this.baseConf.setZkServers(zkUtil.getZooKeeperConnectString());
         this.driver = MetadataDrivers.getBookieDriver(
             URI.create(baseConf.getMetadataServiceUri()));
         this.driver.initialize(
@@ -224,8 +223,9 @@ public class BookieWriteLedgerTest extends
             lh.addEntry(entry.array());
         }
 
+        List<BookieSocketAddress> ensemble1;
         // Shutdown a bookie in the last ensemble and continue writing
-        ArrayList<BookieSocketAddress> ensemble1, ensemble2, ensemble1n;
+        List<BookieSocketAddress> ensemble2, ensemble1n;
         ensemble1 = lh.getLedgerMetadata()
                 .getEnsembles().entrySet().iterator().next().getValue();
 
@@ -247,15 +247,20 @@ public class BookieWriteLedgerTest extends
         // Grab the first ensemble after ensemble change.
         ensemble1n = lh.getLedgerMetadata().getEnsembles().entrySet().iterator().next().getValue();
 
-        assertEquals("first bookie of first ensembe must remain same as Replication did not kickin.", ensemble1.get(0), ensemble1n.get(0));
-        assertNotEquals("first bookie of first ensembe and second ensemble must be different.", ensemble1.get(0), ensemble2.get(0));
+        assertEquals("first bookie of first ensembe must remain same as Replication did not kickin.",
+                ensemble1.get(0), ensemble1n.get(0));
+        assertNotEquals("first bookie of first ensembe and second ensemble must be different.",
+                ensemble1.get(0), ensemble2.get(0));
 
         // Start the ReplicationWorker
         ReplicationWorker rw = new ReplicationWorker(zkc, baseConf);
         rw.start();
-        basePath = baseClientConf.getZkLedgersRootPath() + '/'
+        String zkLedgersRootPath = ZKMetadataDriverBase.resolveZkLedgersRootPath(baseClientConf);
+
+        basePath = zkLedgersRootPath + '/'
                 + BookKeeperConstants.UNDER_REPLICATION_NODE
                 + BookKeeperConstants.DEFAULT_ZK_LEDGERS_ROOT_PATH;
+
         try {
             underReplicationManager.markLedgerUnderreplicated(lh.getId(),
                     ensemble1.get(0).toString());
@@ -271,7 +276,8 @@ public class BookieWriteLedgerTest extends
         ensemble1n = lh.getLedgerMetadata()
                 .getEnsembles().entrySet().iterator().next().getValue();
 
-        assertNotEquals("first bookie of first ensembe must remain same as Replication did not kickin.", ensemble1.get(0), ensemble1n.get(0));
+        assertNotEquals("first bookie of first ensembe must remain same as Replication did not kickin.",
+                ensemble1.get(0), ensemble1n.get(0));
 
         // write third batch
         for (i = 0; i < numEntriesToWrite; i++) {
@@ -281,7 +287,8 @@ public class BookieWriteLedgerTest extends
             lh.addEntry(entry.array());
         }
         lh.close();
-        assertEquals("At the end, make sure there are two Ensembles", lh.getLedgerMetadata().getEnsembles().entrySet().size(), 2);
+        assertEquals("At the end, make sure there are two Ensembles",
+                lh.getLedgerMetadata().getEnsembles().entrySet().size(), 2);
     }
 
     /**
