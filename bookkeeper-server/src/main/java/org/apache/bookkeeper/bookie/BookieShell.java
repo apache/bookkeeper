@@ -2490,25 +2490,28 @@ public class BookieShell implements Tool {
     }
 
     /**
-     * Command to trigger AuditTask by resetting lostBookieRecoveryDelay and then make sure the
-     * ledgers stored in the bookie are properly replicated.
+     * Command to trigger AuditTask by resetting lostBookieRecoveryDelay and
+     * then make sure the ledgers stored in the bookie are properly replicated
+     * and Cookie of the decommissioned bookie should be deleted from metadata
+     * server.
      */
     class DecommissionBookieCmd extends MyCommand {
         Options lOpts = new Options();
 
         DecommissionBookieCmd() {
             super(CMD_DECOMMISSIONBOOKIE);
+            lOpts.addOption("bookieid", true, "decommission a remote bookie");
         }
 
         @Override
         String getDescription() {
             return "Force trigger the Audittask and make sure all the ledgers stored in the decommissioning bookie"
-                    + " are replicated.";
+                    + " are replicated and cookie of the decommissioned bookie is deleted from metadata server.";
         }
 
         @Override
         String getUsage() {
-            return CMD_DECOMMISSIONBOOKIE;
+            return CMD_DECOMMISSIONBOOKIE + " [-bookieid <bookieaddress>]";
         }
 
         @Override
@@ -2521,8 +2524,28 @@ public class BookieShell implements Tool {
             ClientConfiguration adminConf = new ClientConfiguration(bkConf);
             BookKeeperAdmin admin = new BookKeeperAdmin(adminConf);
             try {
-                BookieSocketAddress thisBookieAddress = Bookie.getBookieAddress(bkConf);
-                admin.decommissionBookie(thisBookieAddress);
+                final String remoteBookieidToDecommission = cmdLine.getOptionValue("bookieid");
+                final BookieSocketAddress bookieAddressToDecommission = (StringUtils
+                        .isBlank(remoteBookieidToDecommission) ? Bookie.getBookieAddress(bkConf)
+                                : new BookieSocketAddress(remoteBookieidToDecommission));
+                admin.decommissionBookie(bookieAddressToDecommission);
+                LOG.info("The ledgers stored in the given decommissioning bookie: {} are properly replicated",
+                        bookieAddressToDecommission);
+                runFunctionWithRegistrationManager(bkConf, rm -> {
+                    try {
+                        Versioned<Cookie> cookie = Cookie.readFromRegistrationManager(rm, bookieAddressToDecommission);
+                        cookie.getValue().deleteFromRegistrationManager(rm, bookieAddressToDecommission,
+                                cookie.getVersion());
+                    } catch (CookieNotFoundException nne) {
+                        LOG.warn("No cookie to remove for the decommissioning bookie: {}, it could be deleted already",
+                                bookieAddressToDecommission, nne);
+                    } catch (BookieException be) {
+                        throw new UncheckedExecutionException(be.getMessage(), be);
+                    }
+                    return 0;
+                });
+                LOG.info("Cookie of the decommissioned bookie: {} is deleted successfully",
+                        bookieAddressToDecommission);
                 return 0;
             } catch (Exception e) {
                 LOG.error("Received exception in DecommissionBookieCmd ", e);
