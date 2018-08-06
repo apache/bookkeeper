@@ -2511,7 +2511,7 @@ public class BookieShell implements Tool {
 
         @Override
         String getUsage() {
-            return "decommissionbookie [-bookieid <bookieaddress>]";
+            return CMD_DECOMMISSIONBOOKIE + " [-bookieid <bookieaddress>]";
         }
 
         @Override
@@ -2529,14 +2529,16 @@ public class BookieShell implements Tool {
                         .isBlank(remoteBookieidToDecommission) ? Bookie.getBookieAddress(bkConf)
                                 : new BookieSocketAddress(remoteBookieidToDecommission));
                 admin.decommissionBookie(bookieAddressToDecommission);
-                LOG.info("The ledgers stored in the given decommissioning bookie are properly replicated");
+                LOG.info("The ledgers stored in the given decommissioning bookie: {} are properly replicated",
+                        bookieAddressToDecommission);
                 runFunctionWithRegistrationManager(bkConf, rm -> {
                     try {
                         Versioned<Cookie> cookie = Cookie.readFromRegistrationManager(rm, bookieAddressToDecommission);
                         cookie.getValue().deleteFromRegistrationManager(rm, bookieAddressToDecommission,
                                 cookie.getVersion());
                     } catch (CookieNotFoundException nne) {
-                        LOG.warn("No cookie to remove, it could be deleted already : ", nne);
+                        LOG.warn("No cookie to remove for the decommissioning bookie: " + bookieAddressToDecommission
+                                + ", it could be deleted already : ", nne);
                     } catch (BookieException be) {
                         throw new UncheckedExecutionException(be.getMessage(), be);
                     }
