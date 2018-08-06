@@ -2537,8 +2537,8 @@ public class BookieShell implements Tool {
                         cookie.getValue().deleteFromRegistrationManager(rm, bookieAddressToDecommission,
                                 cookie.getVersion());
                     } catch (CookieNotFoundException nne) {
-                        LOG.warn("No cookie to remove for the decommissioning bookie: " + bookieAddressToDecommission
-                                + ", it could be deleted already : ", nne);
+                        LOG.warn("No cookie to remove for the decommissioning bookie: {}, it could be deleted already",
+                                bookieAddressToDecommission, nne);
                     } catch (BookieException be) {
                         throw new UncheckedExecutionException(be.getMessage(), be);
                     }
