@@ -20,7 +20,9 @@ package org.apache.bookkeeper.client;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 
-import java.util.HashMap;
+import com.google.common.collect.ImmutableMap;
+
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -38,13 +40,13 @@ class LedgerMetadataBuilder {
     private LedgerMetadataFormat.State state = LedgerMetadataFormat.State.OPEN;
     private Optional<Long> lastEntryId = Optional.empty();
 
-    private Map<Long, List<BookieSocketAddress>> ensembles = new HashMap<>();
+    private Map<Long, List<BookieSocketAddress>> ensembles = Collections.emptyMap();
 
     private DigestType digestType = DigestType.CRC32C;
     private Optional<byte[]> password = Optional.empty();
 
     private Optional<Long> ctime = Optional.empty();
-    private Map<String, byte[]> customMetadata = new HashMap<>();
+    private Map<String, byte[]> customMetadata = Collections.emptyMap();
 
     private Version version = Version.NEW;
 
@@ -75,7 +77,7 @@ class LedgerMetadataBuilder {
         if (other.storeSystemtimeAsLedgerCreationTime) {
             builder.ctime = Optional.of(other.getCtime());
         }
-        builder.customMetadata.putAll(other.getCustomMetadata());
+        builder.customMetadata = ImmutableMap.copyOf(other.getCustomMetadata());
 
         builder.version = other.getVersion();
 
@@ -83,7 +85,7 @@ class LedgerMetadataBuilder {
     }
 
     LedgerMetadataBuilder withEnsembleSize(int ensembleSize) {
-        checkState(ensembles.size() == 0, "Can only set ensemble size when ensembles is empty");
+        checkState(ensembles.size() == 0, "Can only set ensemble size before adding ensembles to the builder");
         this.ensembleSize = ensembleSize;
         return this;
     }

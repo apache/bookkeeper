@@ -20,12 +20,11 @@
 package org.apache.bookkeeper.client;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.BiPredicate;
-import java.util.function.Function;
+import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.function.Supplier;
 
 import org.apache.bookkeeper.meta.LedgerManager;
+import org.apache.bookkeeper.versioning.Version;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,34 +52,46 @@ class MetadataUpdateLoop {
     private final long ledgerId;
     private final Supplier<LedgerMetadata> currentLocalValue;
     private final NeedsUpdatePredicate needsTransformation;
-    private final Function<LedgerMetadata, LedgerMetadata> transform;
-    private final BiPredicate<LedgerMetadata, LedgerMetadata> updateLocalValue;
+    private final MetadataTransform transform;
+    private final LocalValueUpdater updateLocalValue;
 
     private final String logContext;
-    private final AtomicInteger writeLoopCounter = new AtomicInteger(0);
+    private volatile int writeLoopCount = 0;
+    private static final AtomicIntegerFieldUpdater<MetadataUpdateLoop> WRITE_LOOP_COUNT_UPDATER =
+        AtomicIntegerFieldUpdater.newUpdater(MetadataUpdateLoop.class, "writeLoopCount");
 
     interface NeedsUpdatePredicate {
         boolean needsUpdate(LedgerMetadata metadata) throws Exception;
+    }
+
+    interface MetadataTransform {
+        LedgerMetadata transform(LedgerMetadata metadata) throws Exception;
+    }
+
+    interface LocalValueUpdater {
+        boolean updateValue(LedgerMetadata oldValue, LedgerMetadata newValue);
     }
 
     /**
      * Construct the loop. This takes a set of functions which may be called multiple times
      * during the loop.
      *
-     * @param currentLocalValue should return the current local value of the metadata.
+     * @param lm the ledger manager used for reading and writing metadata
+     * @param ledgerId the id of the ledger we will be operating on
+     * @param currentLocalValue should return the current local value of the metadata
      * @param needsTransformation should return true, if the metadata needs to be modified.
      *                            should throw an exception, if this update doesn't make sense.
      * @param transform takes a metadata objects, transforms, and returns it, without modifying
-     *                  the original.
+     *                  the original
      * @param updateLocalValue if the local value matches the first parameter, update it to the
-     *                         second parameter and return true, return false otherwise.
+     *                         second parameter and return true, return false otherwise
      */
     MetadataUpdateLoop(LedgerManager lm,
                        long ledgerId,
                        Supplier<LedgerMetadata> currentLocalValue,
                        NeedsUpdatePredicate needsTransformation,
-                       Function<LedgerMetadata, LedgerMetadata> transform,
-                       BiPredicate<LedgerMetadata, LedgerMetadata> updateLocalValue) {
+                       MetadataTransform transform,
+                       LocalValueUpdater updateLocalValue) {
         this.lm = lm;
         this.ledgerId = ledgerId;
         this.currentLocalValue = currentLocalValue;
@@ -101,39 +112,39 @@ class MetadataUpdateLoop {
     }
 
     private void writeLoop(LedgerMetadata currentLocal, CompletableFuture<LedgerMetadata> promise) {
-        LOG.info("{} starting write loop iteration, attempt {}", logContext, writeLoopCounter.incrementAndGet());
+        LOG.debug("{} starting write loop iteration, attempt {}",
+                  logContext, WRITE_LOOP_COUNT_UPDATER.incrementAndGet(this));
         try {
             if (needsTransformation.needsUpdate(currentLocal)) {
-                LedgerMetadata transformed = transform.apply(currentLocal);
+                LedgerMetadata transformed = transform.transform(currentLocal);
 
                 writeToStore(ledgerId, transformed)
                     .whenComplete((writtenMetadata, ex) -> {
                             if (ex == null) {
-                                if (updateLocalValue.test(currentLocal, writtenMetadata)) {
-                                    LOG.info("{} success", logContext);
+                                if (updateLocalValue.updateValue(currentLocal, writtenMetadata)) {
+                                    LOG.debug("{} success", logContext);
                                     promise.complete(writtenMetadata);
                                 } else {
-                                    LOG.info("{} local value changed while we were writing, try again", logContext);
+                                    LOG.debug("{} local value changed while we were writing, try again", logContext);
                                     writeLoop(currentLocalValue.get(), promise);
                                 }
                             } else if (ex instanceof BKException.BKMetadataVersionException) {
                                 LOG.info("{} conflict writing metadata to store, update local value and try again",
                                          logContext);
-                                updateFromStore(ledgerId).whenComplete((readMetadata, readEx) -> {
+                                updateLocalValueFromStore(ledgerId).whenComplete((readMetadata, readEx) -> {
                                         if (readEx == null) {
                                             writeLoop(readMetadata, promise);
                                         } else {
-                                            LOG.info("{} error updating local value", logContext);
                                             promise.completeExceptionally(readEx);
                                         }
                                     });
                             } else {
-                                LOG.info("{} Error writing metadata to store", logContext, ex);
+                                LOG.error("{} Error writing metadata to store", logContext, ex);
                                 promise.completeExceptionally(ex);
                             }
                         });
             } else {
-                LOG.info("{} Update not needed, completing", logContext);
+                LOG.debug("{} Update not needed, completing", logContext);
                 promise.complete(currentLocal);
             }
         } catch (Exception e) {
@@ -142,7 +153,7 @@ class MetadataUpdateLoop {
         }
     }
 
-    private CompletableFuture<LedgerMetadata> updateFromStore(long ledgerId) {
+    private CompletableFuture<LedgerMetadata> updateLocalValueFromStore(long ledgerId) {
         CompletableFuture<LedgerMetadata> promise = new CompletableFuture<>();
 
         readLoop(ledgerId, promise);
@@ -156,14 +167,19 @@ class MetadataUpdateLoop {
         lm.readLedgerMetadata(ledgerId,
                               (rc, read) -> {
                                   if (rc != BKException.Code.OK) {
+                                      LOG.error("{} Failed to read metadata from store, rc = {}",
+                                                logContext, rc);
                                       promise.completeExceptionally(BKException.create(rc));
-                                  } else if (current.getVersion().equals(read.getVersion())) {
+                                  } else if (current.getVersion().compare(read.getVersion())
+                                             == Version.Occurred.CONCURRENTLY) {
                                       // no update needed, these are the same in the immutable world
                                       promise.complete(current);
-                                  } else if (updateLocalValue.test(current, read)) {
+                                  } else if (updateLocalValue.updateValue(current, read)) {
                                       // updated local value successfully
                                       promise.complete(read);
                                   } else {
+                                      // local value changed while we were reading,
+                                      // look at new value, and try to read again
                                       readLoop(ledgerId, promise);
                                   }
                               });
