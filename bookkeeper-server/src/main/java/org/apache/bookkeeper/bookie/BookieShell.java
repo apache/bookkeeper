@@ -96,7 +96,7 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.discover.RegistrationManager;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
-import org.apache.bookkeeper.meta.LedgerUnderreplicationManager.UnderreplicatedLedger;
+import org.apache.bookkeeper.meta.UnderreplicatedLedger;
 import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieClient;
@@ -938,7 +938,7 @@ public class BookieShell implements Tool {
                     long urLedgerId = underreplicatedLedger.getLedgerId();
                     System.out.println(ledgerIdFormatter.formatLedgerId(urLedgerId));
                     long ctime = underreplicatedLedger.getCtime();
-                    if (ctime != -1) {
+                    if (ctime != UnderreplicatedLedger.UNASSIGNED_CTIME) {
                         System.out.println("\tCtime : " + ctime);
                     }
                     if (printMissingReplica) {

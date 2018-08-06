@@ -28,40 +28,6 @@ import org.apache.bookkeeper.replication.ReplicationException;
  * Interface for marking ledgers which need to be rereplicated.
  */
 public interface LedgerUnderreplicationManager extends AutoCloseable {
-
-    /**
-     * UnderReplicated ledger representation info.
-     */
-    class UnderreplicatedLedger {
-        private final long ledgerId;
-        private long ctime;
-        private List<String> replicaList;
-
-        protected UnderreplicatedLedger(long ledgerId) {
-            this.ledgerId = ledgerId;
-        }
-
-        public long getCtime() {
-            return ctime;
-        }
-
-        protected void setCtime(long ctime) {
-            this.ctime = ctime;
-        }
-
-        public List<String> getReplicaList() {
-            return replicaList;
-        }
-
-        protected void setReplicaList(List<String> replicaList) {
-            this.replicaList = replicaList;
-        }
-
-        public long getLedgerId() {
-            return ledgerId;
-        }
-    }
-
     /**
      * Mark a ledger as underreplicated. The replication should
      * then check which fragments are underreplicated and rereplicate them

@@ -34,7 +34,7 @@ import org.apache.bookkeeper.http.service.HttpServiceRequest;
 import org.apache.bookkeeper.http.service.HttpServiceResponse;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
-import org.apache.bookkeeper.meta.LedgerUnderreplicationManager.UnderreplicatedLedger;
+import org.apache.bookkeeper.meta.UnderreplicatedLedger;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;

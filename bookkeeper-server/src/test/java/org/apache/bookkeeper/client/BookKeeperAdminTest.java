@@ -37,7 +37,7 @@ import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.meta.LedgerUnderreplicationManager.UnderreplicatedLedger;
+import org.apache.bookkeeper.meta.UnderreplicatedLedger;
 import org.apache.bookkeeper.meta.ZkLedgerUnderreplicationManager;
 import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
 import org.apache.bookkeeper.proto.BookieServer;
@@ -146,7 +146,8 @@ public class BookKeeperAdminTest extends BookKeeperClusterTestCase {
             assertTrue("ctime of underreplicated ledger should be greater than test starttime",
                     (ctimeOfURL > testStartSystime) && (ctimeOfURL < System.currentTimeMillis()));
         } else {
-            assertEquals("ctime of underreplicated ledger should not be set", -1L, underreplicatedLedger.getCtime());
+            assertEquals("ctime of underreplicated ledger should not be set", UnderreplicatedLedger.UNASSIGNED_CTIME,
+                    underreplicatedLedger.getCtime());
         }
         bkAdmin.close();
     }

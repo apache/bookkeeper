@@ -394,7 +394,8 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
                                             getLedgerUnreplicationInfo(ledgerId);
                                     List<String> replicaList = underreplicatedLedgerFormat.getReplicaList();
                                     long ctime = (underreplicatedLedgerFormat.hasCtime()
-                                            ? underreplicatedLedgerFormat.getCtime() : -1L);
+                                            ? underreplicatedLedgerFormat.getCtime()
+                                            : UnderreplicatedLedger.UNASSIGNED_CTIME);
                                     if ((predicate == null) || predicate.test(replicaList)) {
                                         UnderreplicatedLedger underreplicatedLedger = new UnderreplicatedLedger(
                                                 ledgerId);
