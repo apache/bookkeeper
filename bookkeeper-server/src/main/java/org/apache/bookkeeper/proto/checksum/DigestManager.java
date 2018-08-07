@@ -23,6 +23,7 @@ import io.netty.buffer.Unpooled;
 
 import java.security.GeneralSecurityException;
 
+import io.netty.util.ReferenceCountUtil;
 import org.apache.bookkeeper.client.BKException.BKDigestMatchException;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.DigestType;
@@ -127,6 +128,7 @@ public abstract class DigestManager {
             populateValueAndReset(sendBuffer);
 
             sendBuffer.writeBytes(data, data.readerIndex(), data.readableBytes());
+            ReferenceCountUtil.release(data);
 
             return ByteBufList.get(sendBuffer);
         }

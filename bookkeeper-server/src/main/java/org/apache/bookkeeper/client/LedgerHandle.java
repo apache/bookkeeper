@@ -1067,7 +1067,6 @@ public class LedgerHandle implements WriteHandle {
     }
 
     public void asyncAddEntry(ByteBuf data, final AddCallback cb, final Object ctx) {
-        data.retain();
         PendingAddOp op = PendingAddOp.create(this, data, writeFlags, cb, ctx);
         doAsyncAddEntry(op);
     }
