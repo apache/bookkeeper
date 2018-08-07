@@ -50,9 +50,9 @@ public class DeferredSyncTest extends MockBookKeeperTestCase {
                 .withWriteFlags(WriteFlag.DEFERRED_SYNC)
                 .execute())) {
             for (int i = 0; i < NUM_ENTRIES - 1; i++) {
-                result(wh.appendAsync(DATA));
+                result(wh.appendAsync(DATA.retainedDuplicate()));
             }
-            long lastEntryID = result(wh.appendAsync(DATA));
+            long lastEntryID = result(wh.appendAsync(DATA.retainedDuplicate()));
             assertEquals(NUM_ENTRIES - 1, lastEntryID);
             assertEquals(NUM_ENTRIES - 1, wh.getLastAddPushed());
             assertEquals(-1, wh.getLastAddConfirmed());
@@ -69,9 +69,9 @@ public class DeferredSyncTest extends MockBookKeeperTestCase {
                 .withWriteFlags(WriteFlag.DEFERRED_SYNC)
                 .execute())) {
             for (int i = 0; i < NUM_ENTRIES - 1; i++) {
-                result(wh.appendAsync(DATA));
+                result(wh.appendAsync(DATA.retainedDuplicate()));
             }
-            long lastEntryID = result(wh.appendAsync(DATA));
+            long lastEntryID = result(wh.appendAsync(DATA.retainedDuplicate()));
             assertEquals(NUM_ENTRIES - 1, lastEntryID);
             assertEquals(NUM_ENTRIES - 1, wh.getLastAddPushed());
             assertEquals(-1, wh.getLastAddConfirmed());
@@ -90,20 +90,20 @@ public class DeferredSyncTest extends MockBookKeeperTestCase {
                 .withWriteFlags(WriteFlag.DEFERRED_SYNC)
                 .makeAdv()
                 .execute())) {
-            CompletableFuture<Long> w0 = wh.writeAsync(0, DATA);
-            CompletableFuture<Long> w2 = wh.writeAsync(2, DATA);
-            CompletableFuture<Long> w3 = wh.writeAsync(3, DATA);
+            CompletableFuture<Long> w0 = wh.writeAsync(0, DATA.retainedDuplicate());
+            CompletableFuture<Long> w2 = wh.writeAsync(2, DATA.retainedDuplicate());
+            CompletableFuture<Long> w3 = wh.writeAsync(3, DATA.retainedDuplicate());
             result(w0);
             result(wh.force());
             assertEquals(0, wh.getLastAddConfirmed());
-            CompletableFuture<Long> w1 = wh.writeAsync(1, DATA);
+            CompletableFuture<Long> w1 = wh.writeAsync(1, DATA.retainedDuplicate());
             result(w3);
             assertTrue(w1.isDone());
             assertTrue(w2.isDone());
-            CompletableFuture<Long> w5 = wh.writeAsync(5, DATA);
+            CompletableFuture<Long> w5 = wh.writeAsync(5, DATA.retainedDuplicate());
             result(wh.force());
             assertEquals(3, wh.getLastAddConfirmed());
-            wh.writeAsync(4, DATA);
+            wh.writeAsync(4, DATA.retainedDuplicate());
             result(w5);
             result(wh.force());
             assertEquals(5, wh.getLastAddConfirmed());
@@ -120,9 +120,9 @@ public class DeferredSyncTest extends MockBookKeeperTestCase {
                 .withWriteFlags(WriteFlag.DEFERRED_SYNC)
                 .execute())) {
             for (int i = 0; i < NUM_ENTRIES - 1; i++) {
-                result(wh.appendAsync(DATA));
+                result(wh.appendAsync(DATA.retainedDuplicate()));
             }
-            long lastEntryID = result(wh.appendAsync(DATA));
+            long lastEntryID = result(wh.appendAsync(DATA.retainedDuplicate()));
             assertEquals(NUM_ENTRIES - 1, lastEntryID);
             assertEquals(NUM_ENTRIES - 1, wh.getLastAddPushed());
             assertEquals(-1, wh.getLastAddConfirmed());
@@ -131,7 +131,7 @@ public class DeferredSyncTest extends MockBookKeeperTestCase {
             killBookie(bookieAddress);
 
             // write should succeed (we still have 2 bookies out of 3)
-            result(wh.appendAsync(DATA));
+            result(wh.appendAsync(DATA.retainedDuplicate()));
 
             // force cannot go, it must be acknowledged by all of the bookies in the ensamble
             try {
@@ -154,9 +154,9 @@ public class DeferredSyncTest extends MockBookKeeperTestCase {
                 .withWriteFlags(WriteFlag.DEFERRED_SYNC)
                 .execute())) {
             for (int i = 0; i < NUM_ENTRIES - 1; i++) {
-                result(wh.appendAsync(DATA));
+                result(wh.appendAsync(DATA.retainedDuplicate()));
             }
-            long lastEntryIdBeforeSuspend = result(wh.appendAsync(DATA));
+            long lastEntryIdBeforeSuspend = result(wh.appendAsync(DATA.retainedDuplicate()));
             assertEquals(NUM_ENTRIES - 1, lastEntryIdBeforeSuspend);
             assertEquals(-1, wh.getLastAddConfirmed());
 
@@ -170,7 +170,7 @@ public class DeferredSyncTest extends MockBookKeeperTestCase {
             assertEquals(-1, wh.getLastAddConfirmed());
 
             // send an entry and receive ack
-            long lastEntry = wh.append(DATA);
+            long lastEntry = wh.append(DATA.retainedDuplicate());
 
             // receive the ack for forceLedger
             resumeBookieWriteAcks(bookieAddress);
@@ -195,7 +195,7 @@ public class DeferredSyncTest extends MockBookKeeperTestCase {
                 .withWriteFlags(WriteFlag.DEFERRED_SYNC)
                 .execute())) {
             for (int i = 0; i < NUM_ENTRIES - 1; i++) {
-                wh.append(DATA);
+                wh.append(DATA.retainedDuplicate());
             }
 
             assertEquals(1, availableBookies.size());
@@ -207,7 +207,7 @@ public class DeferredSyncTest extends MockBookKeeperTestCase {
 
             try {
                 // we cannot switch to the new bookie with DEFERRED_SYNC
-                wh.append(DATA);
+                wh.append(DATA.retainedDuplicate());
                 fail("since ensemble change is disable we cannot be able to write any more");
             } catch (BKException.BKWriteException ex) {
                 // expected
