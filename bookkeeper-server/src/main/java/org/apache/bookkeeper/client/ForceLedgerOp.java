@@ -39,7 +39,7 @@ class ForceLedgerOp extends SafeRunnable implements ForceLedgerCallback {
     boolean completed = false;
     boolean errored = false;
     int lastSeenError = BKException.Code.WriteException;
-    List<BookieSocketAddress> currentEnsemble;
+    final List<BookieSocketAddress> currentEnsemble;
 
     long currentNonDurableLastAddConfirmed = LedgerHandle.INVALID_ENTRY_ID;
 
@@ -48,6 +48,7 @@ class ForceLedgerOp extends SafeRunnable implements ForceLedgerCallback {
     ForceLedgerOp(LedgerHandle lh, CompletableFuture<Void> cb) {
         this.lh = lh;
         this.cb = cb;
+        this.currentEnsemble = lh.getCurrentEnsemble();
     }
 
     void sendForceLedgerRequest(int bookieIndex) {
@@ -69,7 +70,6 @@ class ForceLedgerOp extends SafeRunnable implements ForceLedgerCallback {
             LOG.debug("force {} clientNonDurableLac {}", lh.ledgerId, currentNonDurableLastAddConfirmed);
         }
         // we need to send the request to every bookie in the ensamble
-        this.currentEnsemble = lh.getLedgerMetadata().currentEnsemble;
         this.ackSet = lh.distributionSchedule.getEnsembleAckSet();
 
         DistributionSchedule.WriteSet writeSet = lh.getDistributionSchedule()

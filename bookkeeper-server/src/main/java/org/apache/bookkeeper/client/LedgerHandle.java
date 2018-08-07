@@ -1215,7 +1215,7 @@ public class LedgerHandle implements WriteHandle {
 
         int nonWritableCount = 0;
         for (int i = 0; i < sz; i++) {
-            if (!bk.getBookieClient().isWritable(getLedgerMetadata().currentEnsemble.get(i), key)) {
+            if (!bk.getBookieClient().isWritable(getCurrentEnsemble().get(i), key)) {
                 nonWritableCount++;
                 if (nonWritableCount >= allowedNonWritableCount) {
                     return false;
@@ -1819,7 +1819,7 @@ public class LedgerHandle implements WriteHandle {
         final HashSet<Integer> replacedBookies = new HashSet<Integer>();
         final LedgerMetadata metadata = getLedgerMetadata();
         synchronized (metadata) {
-            newEnsemble.addAll(metadata.currentEnsemble);
+            newEnsemble.addAll(getCurrentEnsemble());
             for (Map.Entry<Integer, BookieSocketAddress> entry : failedBookies.entrySet()) {
                 int idx = entry.getKey();
                 BookieSocketAddress addr = entry.getValue();
@@ -1858,7 +1858,7 @@ public class LedgerHandle implements WriteHandle {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("[EnsembleChange-L{}-{}] : changing ensemble from: {} to: {} starting at entry: {},"
                     + " failed bookies: {}, replaced bookies: {}",
-                        ledgerId, ensembleChangeIdx, metadata.currentEnsemble, newEnsemble,
+                        ledgerId, ensembleChangeIdx, getCurrentEnsemble(), newEnsemble,
                         (getLastAddConfirmed() + 1), failedBookies, replacedBookies);
             }
             metadata.addEnsemble(newEnsembleStartEntry, newEnsemble);
@@ -2196,7 +2196,8 @@ public class LedgerHandle implements WriteHandle {
             boolean replaced = true;
             for (Integer replacedBookieIdx : ensembleInfo.replacedBookies) {
                 BookieSocketAddress failedBookieAddr = ensembleInfo.failedBookies.get(replacedBookieIdx);
-                BookieSocketAddress replacedBookieAddr = newMeta.currentEnsemble.get(replacedBookieIdx);
+                BookieSocketAddress replacedBookieAddr = newMeta.getEnsembles()
+                    .lastEntry().getValue().get(replacedBookieIdx);
                 replaced &= !Objects.equal(replacedBookieAddr, failedBookieAddr);
             }
             return replaced;
@@ -2382,4 +2383,10 @@ public class LedgerHandle implements WriteHandle {
         }
     }
 
+    List<BookieSocketAddress> getCurrentEnsemble() {
+        // Getting current ensemble from the metadata is only a temporary
+        // thing until metadata is immutable. At that point, current ensemble
+        // becomes a property of the LedgerHandle itself.
+        return metadata.getCurrentEnsemble();
+    }
 }

@@ -81,7 +81,7 @@ public class TestAddEntryQuorumTimeout extends BookKeeperClusterTestCase impleme
     public void testBasicTimeout() throws Exception {
         BookKeeperTestClient bkc = new BookKeeperTestClient(baseClientConf);
         LedgerHandle lh = bkc.createLedger(3, 3, 3, digestType, testPasswd);
-        List<BookieSocketAddress> curEns = lh.getLedgerMetadata().currentEnsemble;
+        List<BookieSocketAddress> curEns = lh.getCurrentEnsemble();
         byte[] data = "foobar".getBytes();
         lh.addEntry(data);
         sleepBookie(curEns.get(0), 5).await();
@@ -105,7 +105,7 @@ public class TestAddEntryQuorumTimeout extends BookKeeperClusterTestCase impleme
     public void testTimeoutWithPendingOps() throws Exception {
         BookKeeperTestClient bkc = new BookKeeperTestClient(baseClientConf);
         LedgerHandle lh = bkc.createLedger(3, 3, 3, digestType, testPasswd);
-        List<BookieSocketAddress> curEns = lh.getLedgerMetadata().currentEnsemble;
+        List<BookieSocketAddress> curEns = lh.getCurrentEnsemble();
         byte[] data = "foobar".getBytes();
 
         SyncObj syncObj1 = new SyncObj();
@@ -130,7 +130,7 @@ public class TestAddEntryQuorumTimeout extends BookKeeperClusterTestCase impleme
     public void testLedgerClosedAfterTimeout() throws Exception {
         BookKeeperTestClient bkc = new BookKeeperTestClient(baseClientConf);
         LedgerHandle lh = bkc.createLedger(3, 3, 3, digestType, testPasswd);
-        List<BookieSocketAddress> curEns = lh.getLedgerMetadata().currentEnsemble;
+        List<BookieSocketAddress> curEns = lh.getCurrentEnsemble();
         byte[] data = "foobar".getBytes();
         CountDownLatch b0latch = sleepBookie(curEns.get(0), 5);
         try {

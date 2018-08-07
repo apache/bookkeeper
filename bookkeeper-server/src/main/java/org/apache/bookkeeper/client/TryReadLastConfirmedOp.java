@@ -18,8 +18,10 @@
 package org.apache.bookkeeper.client;
 
 import io.netty.buffer.ByteBuf;
+import java.util.List;
 
 import org.apache.bookkeeper.client.ReadLastConfirmedOp.LastConfirmedDataCallback;
+import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
 import org.apache.bookkeeper.proto.checksum.DigestManager.RecoveryData;
@@ -41,18 +43,20 @@ class TryReadLastConfirmedOp implements ReadEntryCallback {
     volatile boolean hasValidResponse = false;
     volatile boolean completed = false;
     RecoveryData maxRecoveredData;
+    final List<BookieSocketAddress> currentEnsemble;
 
     TryReadLastConfirmedOp(LedgerHandle lh, LastConfirmedDataCallback cb, long lac) {
         this.lh = lh;
         this.cb = cb;
         this.maxRecoveredData = new RecoveryData(lac, 0);
         this.numResponsesPending = lh.getLedgerMetadata().getEnsembleSize();
+        this.currentEnsemble = lh.getCurrentEnsemble();
     }
 
     public void initiate() {
         LedgerMetadata metadata = lh.getLedgerMetadata();
-        for (int i = 0; i < metadata.currentEnsemble.size(); i++) {
-            lh.bk.getBookieClient().readEntry(metadata.currentEnsemble.get(i),
+        for (int i = 0; i < currentEnsemble.size(); i++) {
+            lh.bk.getBookieClient().readEntry(currentEnsemble.get(i),
                                          lh.ledgerId,
                                          BookieProtocol.LAST_ADD_CONFIRMED,
                                          this, i, BookieProtocol.FLAG_NONE);
@@ -84,7 +88,7 @@ class TryReadLastConfirmedOp implements ReadEntryCallback {
             } catch (BKException.BKDigestMatchException e) {
                 LOG.error("Mac mismatch for ledger: " + ledgerId + ", entry: " + entryId
                           + " while reading last entry from bookie: "
-                          + lh.getLedgerMetadata().currentEnsemble.get(bookieIndex));
+                          + currentEnsemble.get(bookieIndex));
             }
         } else if (BKException.Code.UnauthorizedAccessException == rc && !completed) {
             cb.readLastConfirmedDataComplete(rc, maxRecoveredData);

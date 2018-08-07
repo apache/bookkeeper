@@ -84,7 +84,7 @@ public class LedgerMetadata implements org.apache.bookkeeper.client.api.LedgerMe
 
     private LedgerMetadataFormat.State state;
     private TreeMap<Long, ImmutableList<BookieSocketAddress>> ensembles =  new TreeMap<>();
-    List<BookieSocketAddress> currentEnsemble;
+    private List<BookieSocketAddress> currentEnsemble;
     volatile Version version = Version.NEW;
 
     private boolean hasPassword = false;
@@ -334,6 +334,10 @@ public class LedgerMetadata implements org.apache.bookkeeper.client.api.LedgerMe
 
         ensembles.put(startEntryId, ImmutableList.copyOf(ensemble));
         currentEnsemble = ensemble;
+    }
+
+    List<BookieSocketAddress> getCurrentEnsemble() {
+        return currentEnsemble;
     }
 
     public void updateEnsemble(long startEntryId, List<BookieSocketAddress> ensemble) {

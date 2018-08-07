@@ -64,6 +64,7 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
     private final long prevEntryId;
     private long lastAddConfirmed;
     private long timeOutInMillis;
+    private final List<BookieSocketAddress> currentEnsemble;
 
     abstract class ReadLACAndEntryRequest implements AutoCloseable {
 
@@ -435,6 +436,8 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
         this.lastAddConfirmed = lh.getLastAddConfirmed();
         this.timeOutInMillis = timeOutInMillis;
         this.numResponsesPending = 0;
+
+        this.currentEnsemble = lh.getCurrentEnsemble();
         // since long poll is effectively reading lac with waits, lac can be potentially
         // be advanced in different write quorums, so we need to make sure to cover enough
         // bookies before claiming lac is not advanced.
@@ -480,9 +483,9 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
 
     public void initiate() {
         if (parallelRead) {
-            request = new ParallelReadRequest(lh.getLedgerMetadata().currentEnsemble, lh.getId(), prevEntryId + 1);
+            request = new ParallelReadRequest(currentEnsemble, lh.getId(), prevEntryId + 1);
         } else {
-            request = new SequenceReadRequest(lh.getLedgerMetadata().currentEnsemble, lh.getId(), prevEntryId + 1);
+            request = new SequenceReadRequest(currentEnsemble, lh.getId(), prevEntryId + 1);
         }
         request.read();
 

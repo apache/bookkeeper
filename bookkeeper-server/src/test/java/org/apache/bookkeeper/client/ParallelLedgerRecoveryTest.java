@@ -300,8 +300,8 @@ public class ParallelLedgerRecoveryTest extends BookKeeperClusterTestCase {
         final LedgerHandle lh = newBk.createLedger(numBookies, 2, 2, digestType, "".getBytes());
         CountDownLatch latch1 = new CountDownLatch(1);
         CountDownLatch latch2 = new CountDownLatch(1);
-        sleepBookie(lh.getLedgerMetadata().currentEnsemble.get(0), latch1);
-        sleepBookie(lh.getLedgerMetadata().currentEnsemble.get(1), latch2);
+        sleepBookie(lh.getCurrentEnsemble().get(0), latch1);
+        sleepBookie(lh.getCurrentEnsemble().get(1), latch2);
 
         int numEntries = (numBookies * 3) + 1;
         final AtomicInteger numPendingAdds = new AtomicInteger(numEntries);
@@ -428,7 +428,7 @@ public class ParallelLedgerRecoveryTest extends BookKeeperClusterTestCase {
         final CountDownLatch addLatch = new CountDownLatch(1);
         final AtomicBoolean addSuccess = new AtomicBoolean(false);
         LOG.info("Add entry {} with lac = {}", entryId, lac);
-        lh.bk.getBookieClient().addEntry(lh.getLedgerMetadata().currentEnsemble.get(0),
+        lh.bk.getBookieClient().addEntry(lh.getCurrentEnsemble().get(0),
                                          lh.getId(), lh.ledgerKey, entryId, toSend,
                                          new WriteCallback() {
                                              @Override
@@ -587,7 +587,7 @@ public class ParallelLedgerRecoveryTest extends BookKeeperClusterTestCase {
         LOG.info("Create ledger {}", lh0.getId());
 
         // 0) place the bookie with a fake bookie
-        BookieSocketAddress address = lh0.getLedgerMetadata().currentEnsemble.get(0);
+        BookieSocketAddress address = lh0.getCurrentEnsemble().get(0);
         ServerConfiguration conf = killBookie(address);
         conf.setLedgerStorageClass(InterleavedLedgerStorage.class.getName());
         DelayResponseBookie fakeBookie = new DelayResponseBookie(conf);

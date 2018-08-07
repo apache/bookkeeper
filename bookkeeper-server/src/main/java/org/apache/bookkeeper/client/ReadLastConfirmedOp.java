@@ -18,8 +18,10 @@
 package org.apache.bookkeeper.client;
 
 import io.netty.buffer.ByteBuf;
+import java.util.List;
 
 import org.apache.bookkeeper.client.BKException.BKDigestMatchException;
+import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
 import org.apache.bookkeeper.proto.checksum.DigestManager.RecoveryData;
@@ -40,6 +42,7 @@ class ReadLastConfirmedOp implements ReadEntryCallback {
 
     LastConfirmedDataCallback cb;
     final DistributionSchedule.QuorumCoverageSet coverageSet;
+    final List<BookieSocketAddress> currentEnsemble;
 
     /**
      * Wrapper to get all recovered data from the request.
@@ -54,12 +57,13 @@ class ReadLastConfirmedOp implements ReadEntryCallback {
         this.lh = lh;
         this.numResponsesPending = lh.getLedgerMetadata().getEnsembleSize();
         this.coverageSet = lh.distributionSchedule.getCoverageSet();
+        this.currentEnsemble = lh.getCurrentEnsemble();
     }
 
     public void initiate() {
         LedgerMetadata metadata = lh.getLedgerMetadata();
-        for (int i = 0; i < metadata.currentEnsemble.size(); i++) {
-            lh.bk.getBookieClient().readEntry(metadata.currentEnsemble.get(i),
+        for (int i = 0; i < currentEnsemble.size(); i++) {
+            lh.bk.getBookieClient().readEntry(currentEnsemble.get(i),
                                          lh.ledgerId,
                                          BookieProtocol.LAST_ADD_CONFIRMED,
                                          this, i, BookieProtocol.FLAG_NONE);
@@ -68,8 +72,8 @@ class ReadLastConfirmedOp implements ReadEntryCallback {
 
     public void initiateWithFencing() {
         LedgerMetadata metadata = lh.getLedgerMetadata();
-        for (int i = 0; i < metadata.currentEnsemble.size(); i++) {
-            lh.bk.getBookieClient().readEntry(metadata.currentEnsemble.get(i),
+        for (int i = 0; i < currentEnsemble.size(); i++) {
+            lh.bk.getBookieClient().readEntry(currentEnsemble.get(i),
                                               lh.ledgerId,
                                               BookieProtocol.LAST_ADD_CONFIRMED,
                                               this, i, BookieProtocol.FLAG_DO_FENCING,
@@ -98,7 +102,7 @@ class ReadLastConfirmedOp implements ReadEntryCallback {
                 // still might be able to recover though so continue
                 LOG.error("Mac mismatch for ledger: " + ledgerId + ", entry: " + entryId
                           + " while reading last entry from bookie: "
-                          + lh.getLedgerMetadata().currentEnsemble.get(bookieIndex));
+                          + currentEnsemble.get(bookieIndex));
             }
         }
 

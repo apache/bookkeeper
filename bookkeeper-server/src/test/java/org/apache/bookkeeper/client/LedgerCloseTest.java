@@ -145,12 +145,12 @@ public class LedgerCloseTest extends BookKeeperClusterTestCase {
         final CountDownLatch recoverDoneLatch = new CountDownLatch(1);
         final CountDownLatch failedLatch = new CountDownLatch(1);
         // kill first bookie to replace with a unauthorize bookie
-        BookieSocketAddress bookie = lh.getLedgerMetadata().currentEnsemble.get(0);
+        BookieSocketAddress bookie = lh.getCurrentEnsemble().get(0);
         ServerConfiguration conf = killBookie(bookie);
         // replace a unauthorize bookie
         startUnauthorizedBookie(conf, addDoneLatch);
         // kill second bookie to replace with a dead bookie
-        bookie = lh.getLedgerMetadata().currentEnsemble.get(1);
+        bookie = lh.getCurrentEnsemble().get(1);
         conf = killBookie(bookie);
         // replace a slow dead bookie
         startDeadBookie(conf, deadIOLatch);
