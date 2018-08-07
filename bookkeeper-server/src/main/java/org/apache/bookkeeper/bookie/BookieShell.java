@@ -96,6 +96,7 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.discover.RegistrationManager;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
+import org.apache.bookkeeper.meta.UnderreplicatedLedger;
 import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieClient;
@@ -931,14 +932,17 @@ public class BookieShell implements Tool {
                     Thread.currentThread().interrupt();
                     throw new UncheckedExecutionException("Interrupted on newing ledger underreplicated manager", e);
                 }
-                Iterator<Map.Entry<Long, List<String>>> iter = underreplicationManager
-                        .listLedgersToRereplicate(predicate, printMissingReplica);
+                Iterator<UnderreplicatedLedger> iter = underreplicationManager.listLedgersToRereplicate(predicate);
                 while (iter.hasNext()) {
-                    Map.Entry<Long, List<String>> urLedgerMapEntry = iter.next();
-                    long urLedgerId = urLedgerMapEntry.getKey();
+                    UnderreplicatedLedger underreplicatedLedger = iter.next();
+                    long urLedgerId = underreplicatedLedger.getLedgerId();
                     System.out.println(ledgerIdFormatter.formatLedgerId(urLedgerId));
+                    long ctime = underreplicatedLedger.getCtime();
+                    if (ctime != UnderreplicatedLedger.UNASSIGNED_CTIME) {
+                        System.out.println("\tCtime : " + ctime);
+                    }
                     if (printMissingReplica) {
-                        urLedgerMapEntry.getValue().forEach((missingReplica) -> {
+                        underreplicatedLedger.getReplicaList().forEach((missingReplica) -> {
                             System.out.println("\tMissingReplica : " + missingReplica);
                         });
                     }

@@ -19,7 +19,6 @@ package org.apache.bookkeeper.meta;
 
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map.Entry;
 import java.util.function.Predicate;
 
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
@@ -44,21 +43,16 @@ public interface LedgerUnderreplicationManager extends AutoCloseable {
             throws ReplicationException.UnavailableException;
 
     /**
-     * Get a list of all the ledgers which have been
+     * Get a list of all the underreplicated ledgers which have been
      * marked for rereplication, filtered by the predicate on the missing replicas list.
      *
      * <p>Missing replicas list of an underreplicated ledger is the list of the bookies which are part of
      * the ensemble of this ledger and are currently unavailable/down.
      *
-     * <p>If filtering is not needed then it is suggested to pass null for predicate,
-     * otherwise it will read the content of the ZNode to decide on filtering.
-     *
      * @param predicate filter to use while listing under replicated ledgers. 'null' if filtering is not required
-     * @param includeReplicaList whether to include missing replicalist in the output
-     * @return an iterator which returns ledger ids
+     * @return an iterator which returns underreplicated ledgers.
      */
-    Iterator<Entry<Long, List<String>>> listLedgersToRereplicate(Predicate<List<String>> predicate,
-            boolean includeReplicaList);
+    Iterator<UnderreplicatedLedger> listLedgersToRereplicate(Predicate<List<String>> predicate);
 
     /**
      * Acquire a underreplicated ledger for rereplication. The ledger
