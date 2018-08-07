@@ -23,6 +23,7 @@ import static com.google.common.base.Preconditions.checkState;
 import com.google.common.collect.ImmutableMap;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -40,7 +41,7 @@ class LedgerMetadataBuilder {
     private LedgerMetadataFormat.State state = LedgerMetadataFormat.State.OPEN;
     private Optional<Long> lastEntryId = Optional.empty();
 
-    private Map<Long, List<BookieSocketAddress>> ensembles = Collections.emptyMap();
+    private Map<Long, List<BookieSocketAddress>> ensembles = new HashMap<>();
 
     private DigestType digestType = DigestType.CRC32C;
     private Optional<byte[]> password = Optional.empty();
