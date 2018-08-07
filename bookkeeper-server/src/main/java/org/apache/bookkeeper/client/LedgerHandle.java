@@ -1214,8 +1214,9 @@ public class LedgerHandle implements WriteHandle {
         final int requiredWritable = sz - allowedNonWritableCount;
 
         int nonWritableCount = 0;
+        List<BookieSocketAddress> currentEnsemble = getCurrentEnsemble();
         for (int i = 0; i < sz; i++) {
-            if (!bk.getBookieClient().isWritable(getCurrentEnsemble().get(i), key)) {
+            if (!bk.getBookieClient().isWritable(currentEnsemble.get(i), key)) {
                 nonWritableCount++;
                 if (nonWritableCount >= allowedNonWritableCount) {
                     return false;

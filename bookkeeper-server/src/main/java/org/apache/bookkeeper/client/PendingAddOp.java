@@ -135,10 +135,10 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
         return this.entryId;
     }
 
-    void sendWriteRequest(int bookieIndex) {
+    void sendWriteRequest(List<BookieSocketAddress> ensemble, int bookieIndex) {
         int flags = isRecoveryAdd ? FLAG_RECOVERY_ADD | FLAG_HIGH_PRIORITY : FLAG_NONE;
 
-        lh.bk.getBookieClient().addEntry(lh.getCurrentEnsemble().get(bookieIndex),
+        lh.bk.getBookieClient().addEntry(ensemble.get(bookieIndex),
                                          lh.ledgerId, lh.ledgerKey, entryId, toSend, this, bookieIndex,
                                          flags, allowFailFast, lh.writeFlags);
         ++pendingWriteRequests;
@@ -220,7 +220,7 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
             completed = false;
         }
 
-        sendWriteRequest(bookieIndex);
+        sendWriteRequest(lh.getCurrentEnsemble(), bookieIndex);
     }
 
     /**
@@ -252,9 +252,10 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
         }
         // Iterate over set and trigger the sendWriteRequests
         DistributionSchedule.WriteSet writeSet = lh.distributionSchedule.getWriteSet(entryId);
+        List<BookieSocketAddress> ensemble = lh.getCurrentEnsemble();
         try {
             for (int i = 0; i < writeSet.size(); i++) {
-                sendWriteRequest(writeSet.get(i));
+                sendWriteRequest(ensemble, writeSet.get(i));
             }
         } finally {
             writeSet.recycle();
