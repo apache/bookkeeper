@@ -34,6 +34,7 @@ import io.netty.buffer.AbstractByteBufAllocator;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.buffer.Unpooled;
+import io.netty.buffer.UnpooledByteBufAllocator;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -50,7 +51,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import io.netty.buffer.UnpooledByteBufAllocator;
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
@@ -1350,7 +1350,7 @@ public class BookieWriteLedgerTest extends
     @Test
     @SuppressWarnings("unchecked")
     public void testLedgerCreateByteBufRefCnt() throws Exception {
-        final LedgerHandle lh = bkc.createLedger(5, 3, 2, digestType, ledgerPassword, null);;
+        final LedgerHandle lh = bkc.createLedger(5, 3, 2, digestType, ledgerPassword, null);
 
         final List<AbstractByteBufAllocator> allocs = Lists.newArrayList(
                 new PooledByteBufAllocator(true),
