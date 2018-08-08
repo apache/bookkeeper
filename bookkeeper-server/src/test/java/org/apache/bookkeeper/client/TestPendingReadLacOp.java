@@ -51,7 +51,8 @@ public class TestPendingReadLacOp extends BookKeeperClusterTestCase {
         lh.append(data);
 
         final CompletableFuture<Long> result = new CompletableFuture<>();
-        PendingReadLacOp pro = new PendingReadLacOp(lh, (rc, lac) -> result.complete(lac)) {
+        PendingReadLacOp pro = new PendingReadLacOp(lh, lh.getCurrentEnsemble(),
+            (rc, lac) -> result.complete(lac)) {
             @Override
             public void initiate() {
                 for (int i = 0; i < lh.getCurrentEnsemble().size(); i++) {
@@ -87,7 +88,8 @@ public class TestPendingReadLacOp extends BookKeeperClusterTestCase {
         lh.append(data);
 
         final CompletableFuture<Long> result = new CompletableFuture<>();
-        PendingReadLacOp pro = new PendingReadLacOp(lh, (rc, lac) -> result.complete(lac)) {
+        PendingReadLacOp pro = new PendingReadLacOp(lh, lh.getCurrentEnsemble(),
+            (rc, lac) -> result.complete(lac)) {
             @Override
             public void initiate() {
                 for (int i = 0; i < lh.getCurrentEnsemble().size(); i++) {

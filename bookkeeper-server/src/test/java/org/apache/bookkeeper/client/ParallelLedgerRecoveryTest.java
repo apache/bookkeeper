@@ -667,7 +667,8 @@ public class ParallelLedgerRecoveryTest extends BookKeeperClusterTestCase {
         final AtomicLong lacHolder = new AtomicLong(-1234L);
         final AtomicInteger rcHolder = new AtomicInteger(-1234);
         final CountDownLatch doneLatch = new CountDownLatch(1);
-        new ReadLastConfirmedOp(readLh, new ReadLastConfirmedOp.LastConfirmedDataCallback() {
+        new ReadLastConfirmedOp(readLh, readLh.getCurrentEnsemble(),
+            new ReadLastConfirmedOp.LastConfirmedDataCallback() {
             @Override
             public void readLastConfirmedDataComplete(int rc, DigestManager.RecoveryData data) {
                 rcHolder.set(rc);

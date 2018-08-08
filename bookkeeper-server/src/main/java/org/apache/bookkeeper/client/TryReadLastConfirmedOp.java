@@ -45,12 +45,12 @@ class TryReadLastConfirmedOp implements ReadEntryCallback {
     RecoveryData maxRecoveredData;
     final List<BookieSocketAddress> currentEnsemble;
 
-    TryReadLastConfirmedOp(LedgerHandle lh, LastConfirmedDataCallback cb, long lac) {
+    TryReadLastConfirmedOp(LedgerHandle lh, List<BookieSocketAddress> ensemble, LastConfirmedDataCallback cb, long lac) {
         this.lh = lh;
         this.cb = cb;
         this.maxRecoveredData = new RecoveryData(lac, 0);
         this.numResponsesPending = lh.getLedgerMetadata().getEnsembleSize();
-        this.currentEnsemble = lh.getCurrentEnsemble();
+        this.currentEnsemble = ensemble;
     }
 
     public void initiate() {

@@ -54,14 +54,14 @@ class PendingWriteLacOp implements WriteLacCallback {
 
     final List<BookieSocketAddress> currentEnsemble;
 
-    PendingWriteLacOp(LedgerHandle lh, AddLacCallback cb, Object ctx) {
+    PendingWriteLacOp(LedgerHandle lh, List<BookieSocketAddress> ensemble, AddLacCallback cb, Object ctx) {
         this.lh = lh;
         this.cb = cb;
         this.ctx = ctx;
         this.lac = LedgerHandle.INVALID_ENTRY_ID;
         ackSet = lh.distributionSchedule.getAckSet();
         putLacOpLogger = lh.bk.getWriteLacOpLogger();
-        currentEnsemble = lh.getCurrentEnsemble();
+        currentEnsemble = ensemble;
     }
 
     void setLac(long lac) {

@@ -45,10 +45,10 @@ class ForceLedgerOp extends SafeRunnable implements ForceLedgerCallback {
 
     final LedgerHandle lh;
 
-    ForceLedgerOp(LedgerHandle lh, CompletableFuture<Void> cb) {
+    ForceLedgerOp(LedgerHandle lh, List<BookieSocketAddress> ensemble, CompletableFuture<Void> cb) {
         this.lh = lh;
         this.cb = cb;
-        this.currentEnsemble = lh.getCurrentEnsemble();
+        this.currentEnsemble = ensemble;
     }
 
     void sendForceLedgerRequest(int bookieIndex) {

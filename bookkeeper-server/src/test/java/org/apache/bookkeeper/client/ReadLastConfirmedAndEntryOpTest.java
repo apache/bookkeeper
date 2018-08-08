@@ -197,6 +197,7 @@ public class ReadLastConfirmedAndEntryOpTest {
 
         ReadLastConfirmedAndEntryOp op = new ReadLastConfirmedAndEntryOp(
             mockLh,
+            mockLh.getCurrentEnsemble(),
             resultCallback,
             1L,
             10000,

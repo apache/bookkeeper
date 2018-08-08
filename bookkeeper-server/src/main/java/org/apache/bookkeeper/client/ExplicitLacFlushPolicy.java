@@ -129,7 +129,7 @@ interface ExplicitLacFlushPolicy {
          */
         void asyncExplicitLacFlush(final long explicitLac) {
             final LastAddConfirmedCallback cb = LastAddConfirmedCallback.INSTANCE;
-            final PendingWriteLacOp op = new PendingWriteLacOp(lh, cb, null);
+            final PendingWriteLacOp op = new PendingWriteLacOp(lh, lh.getCurrentEnsemble(), cb, null);
             op.setLac(explicitLac);
             try {
                 if (LOG.isDebugEnabled()) {

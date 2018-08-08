@@ -51,13 +51,13 @@ class ReadLastConfirmedOp implements ReadEntryCallback {
         void readLastConfirmedDataComplete(int rc, RecoveryData data);
     }
 
-    public ReadLastConfirmedOp(LedgerHandle lh, LastConfirmedDataCallback cb) {
+    public ReadLastConfirmedOp(LedgerHandle lh, List<BookieSocketAddress> ensemble, LastConfirmedDataCallback cb) {
         this.cb = cb;
         this.maxRecoveredData = new RecoveryData(LedgerHandle.INVALID_ENTRY_ID, 0);
         this.lh = lh;
         this.numResponsesPending = lh.getLedgerMetadata().getEnsembleSize();
         this.coverageSet = lh.distributionSchedule.getCoverageSet();
-        this.currentEnsemble = lh.getCurrentEnsemble();
+        this.currentEnsemble = ensemble;
     }
 
     public void initiate() {

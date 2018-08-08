@@ -62,7 +62,7 @@ public class PendingAddOpTest {
     public void testExecuteAfterCancelled() {
         AtomicInteger rcHolder = new AtomicInteger(-0xdead);
         PendingAddOp op = PendingAddOp.create(
-            lh, payload, WriteFlag.NONE, (rc, handle, entryId, qwcLatency, ctx) -> {
+            lh, lh.getCurrentEnsemble(), payload, WriteFlag.NONE, (rc, handle, entryId, qwcLatency, ctx) -> {
                 rcHolder.set(rc);
             }, null);
         assertSame(lh, op.lh);

@@ -1068,7 +1068,8 @@ public class LedgerHandle implements WriteHandle {
 
     public void asyncAddEntry(ByteBuf data, final AddCallback cb, final Object ctx) {
         data.retain();
-        PendingAddOp op = PendingAddOp.create(this, data, writeFlags, cb, ctx);
+        PendingAddOp op = PendingAddOp.create(this, getCurrentEnsemble(),
+                                              data, writeFlags, cb, ctx);
         doAsyncAddEntry(op);
     }
 
@@ -1131,7 +1132,7 @@ public class LedgerHandle implements WriteHandle {
     @Override
     public CompletableFuture<Void> force() {
         CompletableFuture<Void> result = new CompletableFuture<>();
-        ForceLedgerOp op = new ForceLedgerOp(this, result);
+        ForceLedgerOp op = new ForceLedgerOp(this, getCurrentEnsemble(), result);
         boolean wasClosed = false;
         synchronized (this) {
             // synchronized on this to ensure that
@@ -1198,7 +1199,8 @@ public class LedgerHandle implements WriteHandle {
      */
     void asyncRecoveryAddEntry(final byte[] data, final int offset, final int length,
                                final AddCallback cb, final Object ctx) {
-        PendingAddOp op = PendingAddOp.create(this, Unpooled.wrappedBuffer(data, offset, length),
+        PendingAddOp op = PendingAddOp.create(this, getCurrentEnsemble(),
+                                              Unpooled.wrappedBuffer(data, offset, length),
                                               writeFlags, cb, ctx)
                 .enableRecoveryAdd();
         doAsyncAddEntry(op);
@@ -1397,7 +1399,7 @@ public class LedgerHandle implements WriteHandle {
                 }
             };
 
-        new ReadLastConfirmedOp(this, innercb).initiate();
+        new ReadLastConfirmedOp(this, getCurrentEnsemble(), innercb).initiate();
     }
 
     /**
@@ -1443,7 +1445,7 @@ public class LedgerHandle implements WriteHandle {
                 }
             }
         };
-        new TryReadLastConfirmedOp(this, innercb, getLastAddConfirmed()).initiate();
+        new TryReadLastConfirmedOp(this, getCurrentEnsemble(), innercb, getLastAddConfirmed()).initiate();
     }
 
     /**
@@ -1553,6 +1555,7 @@ public class LedgerHandle implements WriteHandle {
             }
         };
         new ReadLastConfirmedAndEntryOp(this,
+            getCurrentEnsemble(),
             innercb,
             entryId - 1,
             timeOutInMillis,
@@ -1699,7 +1702,7 @@ public class LedgerHandle implements WriteHandle {
                 }
             }
         };
-        new PendingReadLacOp(this, innercb).initiate();
+        new PendingReadLacOp(this, getCurrentEnsemble(), innercb).initiate();
     }
 
     /*
@@ -1920,7 +1923,7 @@ public class LedgerHandle implements WriteHandle {
                 LOG.debug("Ensemble change is disabled. Retry sending to failed bookies {} for ledger {}.",
                     failedBookies, ledgerId);
             }
-            unsetSuccessAndSendWriteRequest(failedBookies.keySet());
+            unsetSuccessAndSendWriteRequest(getCurrentEnsemble(), failedBookies.keySet());
             return;
         }
 
@@ -1972,7 +1975,7 @@ public class LedgerHandle implements WriteHandle {
 
     // Contains newly reformed ensemble, bookieIndex, failedBookieAddress
     static final class EnsembleInfo {
-        private final ArrayList<BookieSocketAddress> newEnsemble;
+        final ArrayList<BookieSocketAddress> newEnsemble;
         private final Map<Integer, BookieSocketAddress> failedBookies;
         final Set<Integer> replacedBookies;
 
@@ -2057,7 +2060,7 @@ public class LedgerHandle implements WriteHandle {
 
             if (addEntryFailureRecovery) {
                 // the failed bookie has been replaced
-                unsetSuccessAndSendWriteRequest(ensembleInfo.replacedBookies);
+                unsetSuccessAndSendWriteRequest(ensembleInfo.newEnsemble, ensembleInfo.replacedBookies);
             }
         }
 
@@ -2175,7 +2178,7 @@ public class LedgerHandle implements WriteHandle {
                 // We've successfully changed an ensemble
                 // the failed bookie has been replaced
                 int newBlockAddCompletions = blockAddCompletions.decrementAndGet();
-                unsetSuccessAndSendWriteRequest(ensembleInfo.replacedBookies);
+                unsetSuccessAndSendWriteRequest(ensembleInfo.newEnsemble, ensembleInfo.replacedBookies);
                 if (LOG.isDebugEnabled()) {
                     LOG.info("[EnsembleChange-L{}-{}] : resolved conflicts, block add complectiosn {} => {}.",
                             ledgerId, ensembleChangeIdx, curBlockAddCompletions, newBlockAddCompletions);
@@ -2244,10 +2247,10 @@ public class LedgerHandle implements WriteHandle {
         }
     }
 
-    void unsetSuccessAndSendWriteRequest(final Set<Integer> bookies) {
+    void unsetSuccessAndSendWriteRequest(List<BookieSocketAddress> ensemble, final Set<Integer> bookies) {
         for (PendingAddOp pendingAddOp : pendingAddOps) {
             for (Integer bookieIndex: bookies) {
-                pendingAddOp.unsetSuccessAndSendWriteRequest(bookieIndex);
+                pendingAddOp.unsetSuccessAndSendWriteRequest(ensemble, bookieIndex);
             }
         }
     }
@@ -2384,6 +2387,19 @@ public class LedgerHandle implements WriteHandle {
         }
     }
 
+    /**
+     * Get the current ensemble from the ensemble list. The current ensemble
+     * is the last ensemble in the list. The ledger handle uses this ensemble when
+     * triggering operations which work on the end of the ledger, such as adding new
+     * entries or reading the last add confirmed.
+     *
+     * This method is also used by ReadOnlyLedgerHandle during recovery, and when
+     * tailing a ledger.
+     *
+     * Generally, this method should only be called by LedgerHandle and not by the
+     * operations themselves, to avoid adding more dependencies between the classes.
+     * There are too many already.
+     */
     List<BookieSocketAddress> getCurrentEnsemble() {
         // Getting current ensemble from the metadata is only a temporary
         // thing until metadata is immutable. At that point, current ensemble

@@ -61,12 +61,12 @@ class PendingReadLacOp implements ReadLacCallback {
         void getLacComplete(int rc, long lac);
     }
 
-    PendingReadLacOp(LedgerHandle lh, LacCallback cb) {
+    PendingReadLacOp(LedgerHandle lh, List<BookieSocketAddress> ensemble, LacCallback cb) {
         this.lh = lh;
         this.cb = cb;
         this.numResponsesPending = lh.getLedgerMetadata().getEnsembleSize();
         this.coverageSet = lh.distributionSchedule.getCoverageSet();
-        this.currentEnsemble = lh.getCurrentEnsemble();
+        this.currentEnsemble = ensemble;
     }
 
     public void initiate() {

@@ -139,7 +139,7 @@ class ReadOnlyLedgerHandle extends LedgerHandle implements LedgerMetadataListene
                 }
                 blockAddCompletions.decrementAndGet();
                 // the failed bookie has been replaced
-                unsetSuccessAndSendWriteRequest(ensembleInfo.replacedBookies);
+                unsetSuccessAndSendWriteRequest(ensembleInfo.newEnsemble, ensembleInfo.replacedBookies);
             } catch (BKException.BKNotEnoughBookiesException e) {
                 LOG.error("Could not get additional bookie to "
                           + "remake ensemble, closing ledger: " + ledgerId);

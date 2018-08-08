@@ -426,6 +426,7 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
     }
 
     ReadLastConfirmedAndEntryOp(LedgerHandle lh,
+                                List<BookieSocketAddress> ensemble,
                                 LastConfirmedAndEntryCallback cb,
                                 long prevEntryId,
                                 long timeOutInMillis,
@@ -437,7 +438,7 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
         this.timeOutInMillis = timeOutInMillis;
         this.numResponsesPending = 0;
 
-        this.currentEnsemble = lh.getCurrentEnsemble();
+        this.currentEnsemble = ensemble;
         // since long poll is effectively reading lac with waits, lac can be potentially
         // be advanced in different write quorums, so we need to make sure to cover enough
         // bookies before claiming lac is not advanced.
