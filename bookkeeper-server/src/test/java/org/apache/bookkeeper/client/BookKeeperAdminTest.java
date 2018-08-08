@@ -32,13 +32,12 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Random;
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.meta.UnderreplicatedLedger;
 import org.apache.bookkeeper.meta.ZkLedgerUnderreplicationManager;
 import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
 import org.apache.bookkeeper.proto.BookieServer;
@@ -89,8 +88,25 @@ public class BookKeeperAdminTest extends BookKeeperClusterTestCase {
     }
 
     @Test
-    public void testTriggerAudit() throws Exception {
-        ZkLedgerUnderreplicationManager urLedgerMgr = new ZkLedgerUnderreplicationManager(baseClientConf, zkc);
+    public void testTriggerAuditWithStoreSystemTimeAsLedgerUnderreplicatedMarkTime() throws Exception {
+        testTriggerAudit(true);
+    }
+
+    @Test
+    public void testTriggerAuditWithoutStoreSystemTimeAsLedgerUnderreplicatedMarkTime() throws Exception {
+        testTriggerAudit(false);
+    }
+
+    public void testTriggerAudit(boolean storeSystemTimeAsLedgerUnderreplicatedMarkTime) throws Exception {
+        ServerConfiguration thisServerConf = new ServerConfiguration(baseConf);
+        thisServerConf
+                .setStoreSystemTimeAsLedgerUnderreplicatedMarkTime(storeSystemTimeAsLedgerUnderreplicatedMarkTime);
+        restartBookies(thisServerConf);
+        ClientConfiguration thisClientConf = new ClientConfiguration(baseClientConf);
+        thisClientConf
+                .setStoreSystemTimeAsLedgerUnderreplicatedMarkTime(storeSystemTimeAsLedgerUnderreplicatedMarkTime);
+        long testStartSystime = System.currentTimeMillis();
+        ZkLedgerUnderreplicationManager urLedgerMgr = new ZkLedgerUnderreplicationManager(thisClientConf, zkc);
         BookKeeperAdmin bkAdmin = new BookKeeperAdmin(zkUtil.getZooKeeperConnectString());
         int lostBookieRecoveryDelayValue = bkAdmin.getLostBookieRecoveryDelay();
         urLedgerMgr.disableLedgerReplication();
@@ -119,13 +135,20 @@ public class BookKeeperAdminTest extends BookKeeperClusterTestCase {
          */
         bkAdmin.triggerAudit();
         Thread.sleep(500);
-        Iterator<Map.Entry<Long, List<String>>> ledgersToRereplicate = urLedgerMgr.listLedgersToRereplicate(null,
-                true);
-        assertTrue("There are supposed to be underreplicatedledgers", ledgersToRereplicate.hasNext());
-        Entry<Long, List<String>> urlWithReplicaList = ledgersToRereplicate.next();
-        assertEquals("Underreplicated ledgerId", ledgerId, urlWithReplicaList.getKey().longValue());
+        Iterator<UnderreplicatedLedger> underreplicatedLedgerItr = urLedgerMgr.listLedgersToRereplicate(null);
+        assertTrue("There are supposed to be underreplicatedledgers", underreplicatedLedgerItr.hasNext());
+        UnderreplicatedLedger underreplicatedLedger = underreplicatedLedgerItr.next();
+        assertEquals("Underreplicated ledgerId", ledgerId, underreplicatedLedger.getLedgerId());
         assertTrue("Missingreplica of Underreplicated ledgerId should contain " + bookieToKill.getLocalAddress(),
-                urlWithReplicaList.getValue().contains(bookieToKill.getLocalAddress().toString()));
+                underreplicatedLedger.getReplicaList().contains(bookieToKill.getLocalAddress().toString()));
+        if (storeSystemTimeAsLedgerUnderreplicatedMarkTime) {
+            long ctimeOfURL = underreplicatedLedger.getCtime();
+            assertTrue("ctime of underreplicated ledger should be greater than test starttime",
+                    (ctimeOfURL > testStartSystime) && (ctimeOfURL < System.currentTimeMillis()));
+        } else {
+            assertEquals("ctime of underreplicated ledger should not be set", UnderreplicatedLedger.UNASSIGNED_CTIME,
+                    underreplicatedLedger.getCtime());
+        }
         bkAdmin.close();
     }
 
