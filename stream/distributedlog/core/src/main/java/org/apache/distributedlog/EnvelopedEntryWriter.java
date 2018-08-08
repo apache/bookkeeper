@@ -165,7 +165,7 @@ class EnvelopedEntryWriter implements Writer {
         if (null == finalizedBuffer) {
             finalizedBuffer = finalizeBuffer();
         }
-        return finalizedBuffer.slice();
+        return finalizedBuffer.retainedSlice();
     }
 
     private ByteBuf finalizeBuffer() {
