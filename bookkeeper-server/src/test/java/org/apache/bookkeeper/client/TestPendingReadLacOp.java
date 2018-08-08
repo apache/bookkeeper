@@ -51,7 +51,8 @@ public class TestPendingReadLacOp extends BookKeeperClusterTestCase {
         lh.append(data);
 
         final CompletableFuture<Long> result = new CompletableFuture<>();
-        PendingReadLacOp pro = new PendingReadLacOp(lh, (rc, lac) -> result.complete(lac)) {
+        PendingReadLacOp pro = new PendingReadLacOp(lh, bkc.getBookieClient(),
+                                                    (rc, lac) -> result.complete(lac)) {
             @Override
             public void initiate() {
                 for (int i = 0; i < lh.getLedgerMetadata().currentEnsemble.size(); i++) {
@@ -70,7 +71,7 @@ public class TestPendingReadLacOp extends BookKeeperClusterTestCase {
                                 index);
 
                     }, 0, TimeUnit.SECONDS);
-                    lh.bk.getBookieClient().readLac(lh.getLedgerMetadata().currentEnsemble.get(i),
+                    bookieClient.readLac(lh.getLedgerMetadata().currentEnsemble.get(i),
                             lh.ledgerId, this, i);
                 }
             }
@@ -87,7 +88,7 @@ public class TestPendingReadLacOp extends BookKeeperClusterTestCase {
         lh.append(data);
 
         final CompletableFuture<Long> result = new CompletableFuture<>();
-        PendingReadLacOp pro = new PendingReadLacOp(lh, (rc, lac) -> result.complete(lac)) {
+        PendingReadLacOp pro = new PendingReadLacOp(lh, bkc.getBookieClient(), (rc, lac) -> result.complete(lac)) {
             @Override
             public void initiate() {
                 for (int i = 0; i < lh.getLedgerMetadata().currentEnsemble.size(); i++) {
@@ -101,7 +102,7 @@ public class TestPendingReadLacOp extends BookKeeperClusterTestCase {
                                 null,
                                 index);
                     }, 0, TimeUnit.SECONDS);
-                    lh.bk.getBookieClient().readLac(lh.getLedgerMetadata().currentEnsemble.get(i),
+                    bookieClient.readLac(lh.getLedgerMetadata().currentEnsemble.get(i),
                             lh.ledgerId, this, i);
                 }
             }

@@ -21,6 +21,7 @@ import java.util.BitSet;
 
 import org.apache.bookkeeper.client.AsyncCallback.AddLacCallback;
 import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.proto.BookieClient;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteLacCallback;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.util.ByteBufList;
@@ -49,15 +50,19 @@ class PendingWriteLacOp implements WriteLacCallback {
     int lastSeenError = BKException.Code.WriteException;
 
     LedgerHandle lh;
+    BookieClient bookieClient;
     OpStatsLogger putLacOpLogger;
 
-    PendingWriteLacOp(LedgerHandle lh, AddLacCallback cb, Object ctx) {
+    PendingWriteLacOp(LedgerHandle lh, BookieClient bookieClient,
+                      BookKeeperClientStats clientStats,
+                      AddLacCallback cb, Object ctx) {
         this.lh = lh;
+        this.bookieClient = bookieClient;
         this.cb = cb;
         this.ctx = ctx;
         this.lac = LedgerHandle.INVALID_ENTRY_ID;
         ackSet = lh.distributionSchedule.getAckSet();
-        putLacOpLogger = lh.bk.getWriteLacOpLogger();
+        putLacOpLogger = clientStats.getWriteLacOpLogger();
     }
 
     void setLac(long lac) {
@@ -70,7 +75,7 @@ class PendingWriteLacOp implements WriteLacCallback {
     }
 
     void sendWriteLacRequest(int bookieIndex) {
-        lh.bk.getBookieClient().writeLac(lh.getLedgerMetadata().currentEnsemble.get(bookieIndex),
+        bookieClient.writeLac(lh.getLedgerMetadata().currentEnsemble.get(bookieIndex),
                                          lh.ledgerId, lh.ledgerKey, lac, toSend, this, bookieIndex);
     }
 

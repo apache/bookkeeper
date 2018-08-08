@@ -18,11 +18,15 @@
 package org.apache.bookkeeper.client;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Optional;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.AsyncCallback.CloseCallback;
+import org.apache.bookkeeper.common.util.OrderedExecutor;
+import org.apache.bookkeeper.common.util.OrderedScheduler;
+import org.apache.bookkeeper.proto.BookieClient;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryListener;
 import org.apache.bookkeeper.proto.checksum.DigestManager.RecoveryData;
@@ -42,6 +46,15 @@ class LedgerRecoveryOp implements ReadEntryListener, AddCallback {
     static final Logger LOG = LoggerFactory.getLogger(LedgerRecoveryOp.class);
 
     final LedgerHandle lh;
+    final BookieClient bookieClient;
+    final ClientInternalConf conf;
+    final OrderedScheduler scheduler;
+    final OrderedExecutor mainWorkerPool;
+    final EnsemblePlacementPolicy placementPolicy;
+    final Optional<SpeculativeRequestExecutionPolicy> speculativeRequestPolicy;
+    final BookKeeperClientStats clientStats;
+    final boolean isReorderReadSequence;
+
     final AtomicLong readCount, writeCount;
     volatile boolean readDone;
     final AtomicBoolean callbackDone;
@@ -50,8 +63,9 @@ class LedgerRecoveryOp implements ReadEntryListener, AddCallback {
     final GenericCallback<Void> cb;
     // keep a copy of metadata for recovery.
     LedgerMetadata metadataForRecovery;
-    boolean parallelRead = false;
-    int readBatchSize = 1;
+
+    final boolean parallelRead;
+    final int readBatchSize;
 
     // EntryListener Hook
     @VisibleForTesting
@@ -59,10 +73,18 @@ class LedgerRecoveryOp implements ReadEntryListener, AddCallback {
 
     class RecoveryReadOp extends ListenerBasedPendingReadOp {
 
-        RecoveryReadOp(LedgerHandle lh, ScheduledExecutorService scheduler,
+        RecoveryReadOp(LedgerHandle lh,
+                       ClientInternalConf conf,
+                       EnsemblePlacementPolicy placementPolicy,
+                       BookieClient bookieClient,
+                       OrderedExecutor mainWorkerPool,
+                       ScheduledExecutorService scheduler,
+                       BookKeeperClientStats clientStats,
                        long startEntryId, long endEntryId,
                        ReadEntryListener cb, Object ctx) {
-            super(lh, scheduler, startEntryId, endEntryId, cb, ctx, true);
+            super(lh, conf, placementPolicy, bookieClient,
+                  mainWorkerPool, scheduler, clientStats,
+                  startEntryId, endEntryId, cb, ctx, true);
         }
 
         @Override
@@ -72,23 +94,29 @@ class LedgerRecoveryOp implements ReadEntryListener, AddCallback {
 
     }
 
-    public LedgerRecoveryOp(LedgerHandle lh, GenericCallback<Void> cb) {
+    public LedgerRecoveryOp(LedgerHandle lh, ClientInternalConf conf,
+                            EnsemblePlacementPolicy placementPolicy,
+                            BookieClient bookieClient,
+                            OrderedExecutor mainWorkerPool,
+                            OrderedScheduler scheduler,
+                            BookKeeperClientStats clientStats,
+                            GenericCallback<Void> cb) {
         readCount = new AtomicLong(0);
         writeCount = new AtomicLong(0);
         readDone = false;
         callbackDone = new AtomicBoolean(false);
         this.cb = cb;
         this.lh = lh;
-    }
-
-    LedgerRecoveryOp parallelRead(boolean enabled) {
-        this.parallelRead = enabled;
-        return this;
-    }
-
-    LedgerRecoveryOp readBatchSize(int batchSize) {
-        this.readBatchSize = batchSize;
-        return this;
+        this.conf = conf;
+        this.bookieClient = bookieClient;
+        this.scheduler = scheduler;
+        this.mainWorkerPool = mainWorkerPool;
+        this.placementPolicy = placementPolicy;
+        this.speculativeRequestPolicy = conf.readSpeculativeRequestPolicy;
+        this.clientStats = clientStats;
+        this.isReorderReadSequence = conf.enableReorderReadSequence;
+        this.parallelRead = conf.enableParallelRecoveryRead;
+        this.readBatchSize = conf.recoveryReadBatchSize;
     }
 
     /**
@@ -105,7 +133,7 @@ class LedgerRecoveryOp implements ReadEntryListener, AddCallback {
     }
 
     public void initiate() {
-        ReadLastConfirmedOp rlcop = new ReadLastConfirmedOp(lh,
+        ReadLastConfirmedOp rlcop = new ReadLastConfirmedOp(lh, bookieClient,
                 new ReadLastConfirmedOp.LastConfirmedDataCallback() {
                     public void readLastConfirmedDataComplete(int rc, RecoveryData data) {
                         if (rc == BKException.Code.OK) {
@@ -137,11 +165,11 @@ class LedgerRecoveryOp implements ReadEntryListener, AddCallback {
 
     private void submitCallback(int rc) {
         if (BKException.Code.OK == rc) {
-            lh.bk.getRecoverAddCountLogger().registerSuccessfulValue(writeCount.get());
-            lh.bk.getRecoverReadCountLogger().registerSuccessfulValue(readCount.get());
+            clientStats.getRecoverAddCountLogger().registerSuccessfulValue(writeCount.get());
+            clientStats.getRecoverReadCountLogger().registerSuccessfulValue(readCount.get());
         } else {
-            lh.bk.getRecoverAddCountLogger().registerFailedValue(writeCount.get());
-            lh.bk.getRecoverReadCountLogger().registerFailedValue(readCount.get());
+            clientStats.getRecoverAddCountLogger().registerFailedValue(writeCount.get());
+            clientStats.getRecoverReadCountLogger().registerFailedValue(readCount.get());
         }
         cb.operationComplete(rc, null);
     }
@@ -153,8 +181,11 @@ class LedgerRecoveryOp implements ReadEntryListener, AddCallback {
         if (!callbackDone.get()) {
             startEntryToRead = endEntryToRead + 1;
             endEntryToRead = endEntryToRead + readBatchSize;
-            new RecoveryReadOp(lh, lh.bk.getScheduler(), startEntryToRead, endEntryToRead, this, null)
-                    .parallelRead(parallelRead).initiate();
+            new RecoveryReadOp(lh, conf, placementPolicy,
+                               bookieClient, mainWorkerPool, scheduler,
+                               clientStats,
+                               startEntryToRead, endEntryToRead, this, null)
+                .initiate();
         }
     }
 

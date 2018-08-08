@@ -25,6 +25,9 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.bookkeeper.client.SyncCallbackUtils.LastAddConfirmedCallback;
+import org.apache.bookkeeper.common.util.OrderedExecutor;
+import org.apache.bookkeeper.common.util.OrderedScheduler;
+import org.apache.bookkeeper.proto.BookieClient;
 import org.apache.bookkeeper.util.ByteBufList;
 import org.apache.bookkeeper.util.SafeRunnable;
 import org.slf4j.Logger;
@@ -53,10 +56,25 @@ interface ExplicitLacFlushPolicy {
         volatile long piggyBackedLac = LedgerHandle.INVALID_ENTRY_ID;
         volatile long explicitLac = LedgerHandle.INVALID_ENTRY_ID;
         final LedgerHandle lh;
+        final int explicitLacIntervalInMs;
+        final OrderedExecutor mainWorkerPool;
+        final OrderedScheduler scheduler;
+        final BookieClient bookieClient;
+        final BookKeeperClientStats clientStats;
         ScheduledFuture<?> scheduledFuture;
 
-        ExplicitLacFlushPolicyImpl(LedgerHandle lh) {
+        ExplicitLacFlushPolicyImpl(LedgerHandle lh,
+                                   OrderedExecutor mainWorkerPool,
+                                   OrderedScheduler scheduler,
+                                   BookieClient bookieClient,
+                                   BookKeeperClientStats clientStats,
+                                   int explicitLacIntervalInMs) {
             this.lh = lh;
+            this.mainWorkerPool = mainWorkerPool;
+            this.scheduler = scheduler;
+            this.bookieClient = bookieClient;
+            this.clientStats = clientStats;
+            this.explicitLacIntervalInMs = explicitLacIntervalInMs;
             scheduleExplictLacFlush();
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Scheduled Explicit Last Add Confirmed Update");
@@ -80,7 +98,6 @@ interface ExplicitLacFlushPolicy {
         }
 
         private void scheduleExplictLacFlush() {
-            int explicitLacIntervalInMs = lh.bk.getExplicitLacInterval();
             final SafeRunnable updateLacTask = new SafeRunnable() {
                 @Override
                 public void safeRun() {
@@ -116,7 +133,7 @@ interface ExplicitLacFlushPolicy {
                 }
             };
             try {
-                scheduledFuture = lh.bk.getScheduler().scheduleAtFixedRateOrdered(lh.getId(), updateLacTask,
+                scheduledFuture = scheduler.scheduleAtFixedRateOrdered(lh.getId(), updateLacTask,
                         explicitLacIntervalInMs, explicitLacIntervalInMs, TimeUnit.MILLISECONDS);
             } catch (RejectedExecutionException re) {
                 LOG.error("Scheduling of ExplictLastAddConfirmedFlush for ledger: {} has failed because of {}",
@@ -129,13 +146,13 @@ interface ExplicitLacFlushPolicy {
          */
         void asyncExplicitLacFlush(final long explicitLac) {
             final LastAddConfirmedCallback cb = LastAddConfirmedCallback.INSTANCE;
-            final PendingWriteLacOp op = new PendingWriteLacOp(lh, cb, null);
+            final PendingWriteLacOp op = new PendingWriteLacOp(lh, bookieClient, clientStats, cb, null);
             op.setLac(explicitLac);
             try {
                 if (LOG.isDebugEnabled()) {
                     LOG.debug("Sending Explicit LAC: {}", explicitLac);
                 }
-                lh.bk.getMainWorkerPool().submit(new SafeRunnable() {
+                mainWorkerPool.submit(new SafeRunnable() {
                     @Override
                     public void safeRun() {
                         ByteBufList toSend = lh.macManager
@@ -144,7 +161,8 @@ interface ExplicitLacFlushPolicy {
                     }
                 });
             } catch (RejectedExecutionException e) {
-                cb.addLacComplete(lh.bk.getReturnRc(BKException.Code.InterruptedException), lh, null);
+                cb.addLacComplete(BookKeeper.getReturnRc(bookieClient, BKException.Code.InterruptedException),
+                                  lh, null);
             }
         }
 

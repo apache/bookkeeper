@@ -66,6 +66,22 @@ public class TestParallelRead extends BookKeeperClusterTestCase {
         return lh.getId();
     }
 
+    PendingReadOp createReadOp(LedgerHandle lh, long from, long to) {
+        return new PendingReadOp(lh, bkc.getInternalConf(),
+                                 bkc.getPlacementPolicy(), bkc.getBookieClient(),
+                                 bkc.getMainWorkerPool(), bkc.getScheduler(),
+                                 bkc.getClientStats(),
+                                 from, to, false);
+    }
+
+    PendingReadOp createRecoveryReadOp(LedgerHandle lh, long from, long to) {
+        return new PendingReadOp(lh, bkc.getInternalConf(),
+                                 bkc.getPlacementPolicy(), bkc.getBookieClient(),
+                                 bkc.getMainWorkerPool(), bkc.getScheduler(),
+                                 bkc.getClientStats(),
+                                 from, to, true);
+    }
+
     @Test
     public void testNormalParallelRead() throws Exception {
         int numEntries = 10;
@@ -75,8 +91,7 @@ public class TestParallelRead extends BookKeeperClusterTestCase {
 
         // read single entry
         for (int i = 0; i < numEntries; i++) {
-            PendingReadOp readOp =
-                    new PendingReadOp(lh, lh.bk.scheduler, i, i);
+            PendingReadOp readOp = createReadOp(lh, i, i);
             readOp.parallelRead(true).submit();
             Iterator<LedgerEntry> entries = readOp.future().get().iterator();
             assertTrue(entries.hasNext());
@@ -88,8 +103,7 @@ public class TestParallelRead extends BookKeeperClusterTestCase {
         }
 
         // read multiple entries
-        PendingReadOp readOp =
-                new PendingReadOp(lh, lh.bk.scheduler, 0, numEntries - 1);
+        PendingReadOp readOp = createReadOp(lh, 0, numEntries - 1);
         readOp.parallelRead(true).submit();
         Iterator<LedgerEntry> iterator = readOp.future().get().iterator();
 
@@ -125,13 +139,12 @@ public class TestParallelRead extends BookKeeperClusterTestCase {
         LedgerHandle lh = bkc.openLedger(id, digestType, passwd);
 
         // read single entry
-        PendingReadOp readOp =
-                new PendingReadOp(lh, lh.bk.scheduler, 11, 11);
+        PendingReadOp readOp = createReadOp(lh, 11, 11);
         readOp.parallelRead(true).submit();
         expectFail(readOp.future(), Code.NoSuchEntryException);
 
         // read multiple entries
-        readOp = new PendingReadOp(lh, lh.bk.scheduler, 8, 11);
+        readOp = createReadOp(lh, 8, 11);
         readOp.parallelRead(true).submit();
         expectFail(readOp.future(), Code.NoSuchEntryException);
 
@@ -158,8 +171,7 @@ public class TestParallelRead extends BookKeeperClusterTestCase {
         sleepBookie(ensemble.get(0), latch1);
         sleepBookie(ensemble.get(1), latch2);
 
-        PendingReadOp readOp =
-                new PendingReadOp(lh, lh.bk.scheduler, 10, 10, true);
+        PendingReadOp readOp = createRecoveryReadOp(lh, 10, 10);
         readOp.parallelRead(true).submit();
         // would fail immediately if found missing entries don't cover ack quorum
         expectFail(readOp.future(), Code.NoSuchEntryException);
@@ -189,8 +201,7 @@ public class TestParallelRead extends BookKeeperClusterTestCase {
         killBookie(ensemble.get(1));
 
         // read multiple entries
-        PendingReadOp readOp =
-                new PendingReadOp(lh, lh.bk.scheduler, 0, numEntries - 1);
+        PendingReadOp readOp = createReadOp(lh, 0, numEntries - 1);
         readOp.parallelRead(true).submit();
         Iterator<LedgerEntry> entries = readOp.future().get().iterator();
 
@@ -227,8 +238,7 @@ public class TestParallelRead extends BookKeeperClusterTestCase {
         killBookie(ensemble.get(2));
 
         // read multiple entries
-        PendingReadOp readOp =
-                new PendingReadOp(lh, lh.bk.scheduler, 0, numEntries - 1);
+        PendingReadOp readOp = createReadOp(lh, 0, numEntries - 1);
         readOp.parallelRead(true).submit();
         expectFail(readOp.future(), Code.BookieHandleNotAvailableException);
 

@@ -23,14 +23,18 @@ package org.apache.bookkeeper.client;
 import java.security.GeneralSecurityException;
 import java.util.Map;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.function.BooleanSupplier;
 
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.AsyncCallback.CloseCallback;
 import org.apache.bookkeeper.client.AsyncCallback.ReadCallback;
 import org.apache.bookkeeper.client.AsyncCallback.ReadLastConfirmedCallback;
-import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.api.WriteFlag;
+import org.apache.bookkeeper.common.util.OrderedExecutor;
+import org.apache.bookkeeper.common.util.OrderedScheduler;
+import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.proto.BookieClient;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.LedgerMetadataListener;
 import org.apache.bookkeeper.util.SafeRunnable;
 import org.apache.bookkeeper.versioning.Version;
@@ -79,24 +83,36 @@ class ReadOnlyLedgerHandle extends LedgerHandle implements LedgerMetadataListene
         }
     }
 
-    ReadOnlyLedgerHandle(BookKeeper bk, long ledgerId, LedgerMetadata metadata,
-                         DigestType digestType, byte[] password, boolean watch)
+    ReadOnlyLedgerHandle(ClientInternalConf conf,
+                         LedgerManager ledgerManager,
+                         BookieWatcher bookieWatcher,
+                         EnsemblePlacementPolicy placementPolicy,
+                         BookieClient bookieClient,
+                         OrderedExecutor mainWorkerPool,
+                         OrderedScheduler scheduler,
+                         BooleanSupplier clientClosed,
+                         BookKeeperClientStats clientStats,
+                         long ledgerId, LedgerMetadata metadata,
+                         BookKeeper.DigestType digestType, byte[] password,
+                         boolean watch)
             throws GeneralSecurityException, NumberFormatException {
-        super(bk, ledgerId, metadata, digestType, password, WriteFlag.NONE);
+        super(conf, ledgerManager, bookieWatcher, placementPolicy, bookieClient,
+              mainWorkerPool, scheduler, clientClosed, clientStats,
+              ledgerId, metadata, digestType, password, WriteFlag.NONE);
         if (watch) {
-            bk.getLedgerManager().registerLedgerMetadataListener(ledgerId, this);
+            ledgerManager.registerLedgerMetadataListener(ledgerId, this);
         }
     }
 
     @Override
     public void close()
             throws InterruptedException, BKException {
-        bk.getLedgerManager().unregisterLedgerMetadataListener(ledgerId, this);
+        ledgerManager.unregisterLedgerMetadataListener(ledgerId, this);
     }
 
     @Override
     public void asyncClose(CloseCallback cb, Object ctx) {
-        bk.getLedgerManager().unregisterLedgerMetadataListener(ledgerId, this);
+        ledgerManager.unregisterLedgerMetadataListener(ledgerId, this);
         cb.closeComplete(BKException.Code.OK, this, ctx);
     }
 
@@ -168,7 +184,7 @@ class ReadOnlyLedgerHandle extends LedgerHandle implements LedgerMetadataListene
         }
         if (Version.Occurred.BEFORE == occurred) { // the metadata is updated
             try {
-                bk.getMainWorkerPool().executeOrdered(ledgerId, new MetadataUpdater(newMetadata));
+                mainWorkerPool.executeOrdered(ledgerId, new MetadataUpdater(newMetadata));
             } catch (RejectedExecutionException ree) {
                 LOG.error("Failed on submitting updater to update ledger metadata on ledger {} : {}",
                         ledgerId, newMetadata);

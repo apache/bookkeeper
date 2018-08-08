@@ -30,7 +30,6 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import com.google.common.base.Optional;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import java.util.ArrayList;
@@ -52,6 +51,7 @@ import org.apache.bookkeeper.client.impl.LastConfirmedAndEntryImpl;
 import org.apache.bookkeeper.client.impl.LedgerEntryImpl;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.common.util.OrderedScheduler;
+import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieClient;
 import org.apache.bookkeeper.proto.BookieProtocol;
@@ -59,7 +59,6 @@ import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback
 import org.apache.bookkeeper.proto.ReadLastConfirmedAndEntryContext;
 import org.apache.bookkeeper.proto.checksum.DigestManager;
 import org.apache.bookkeeper.proto.checksum.DummyDigestManager;
-import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.test.TestStatsProvider;
 import org.apache.bookkeeper.util.ByteBufList;
 import org.junit.After;
@@ -75,13 +74,13 @@ public class ReadLastConfirmedAndEntryOpTest {
     private static final long LEDGERID = System.currentTimeMillis();
 
     private final TestStatsProvider testStatsProvider = new TestStatsProvider();
-    private OpStatsLogger readLacAndEntryOpLogger;
+    private BookKeeperClientStats clientStats;
     private BookieClient mockBookieClient;
-    private BookKeeper mockBk;
     private LedgerHandle mockLh;
     private ScheduledExecutorService scheduler;
     private OrderedScheduler orderedScheduler;
-    private SpeculativeRequestExecutionPolicy speculativePolicy;
+    private ClientInternalConf internalConf;
+    private EnsemblePlacementPolicy mockPlacementPolicy;
     private LedgerMetadata ledgerMetadata;
     private DistributionSchedule distributionSchedule;
     private DigestManager digestManager;
@@ -89,11 +88,15 @@ public class ReadLastConfirmedAndEntryOpTest {
     @Before
     public void setup() throws Exception {
         // stats
-        this.readLacAndEntryOpLogger = testStatsProvider
-            .getStatsLogger("").getOpStatsLogger("readLacAndEntry");
+        clientStats = BookKeeperClientStats.newInstance(testStatsProvider.getStatsLogger(""));
         // policy
-        this.speculativePolicy = new DefaultSpeculativeRequestExecutionPolicy(
-            100, 200, 2);
+        ClientConfiguration conf = new ClientConfiguration();
+        conf.setFirstSpeculativeReadLACTimeout(100);
+        conf.setMaxSpeculativeReadLACTimeout(200);
+        conf.setSpeculativeReadLACTimeoutBackoffMultiplier(2);
+
+        internalConf = ClientInternalConf.fromConfig(conf);
+
         // metadata
         this.ledgerMetadata =
             new LedgerMetadata(3, 3, 2, DigestType.CRC32, new byte[0]);
@@ -111,16 +114,10 @@ public class ReadLastConfirmedAndEntryOpTest {
             .build();
 
         this.mockBookieClient = mock(BookieClient.class);
+        this.mockPlacementPolicy = mock(EnsemblePlacementPolicy.class);
 
-        this.mockBk = mock(BookKeeper.class);
-        when(mockBk.getReadLACSpeculativeRequestPolicy()).thenReturn(Optional.of(speculativePolicy));
-        when(mockBk.getBookieClient()).thenReturn(mockBookieClient);
-        when(mockBk.getReadLacAndEntryOpLogger()).thenReturn(readLacAndEntryOpLogger);
-        when(mockBk.getMainWorkerPool()).thenReturn(orderedScheduler);
-        EnsemblePlacementPolicy mockPlacementPolicy = mock(EnsemblePlacementPolicy.class);
-        when(mockBk.getPlacementPolicy()).thenReturn(mockPlacementPolicy);
         this.mockLh = mock(LedgerHandle.class);
-        when(mockLh.getBk()).thenReturn(mockBk);
+
         when(mockLh.getId()).thenReturn(LEDGERID);
         when(mockLh.getLedgerMetadata()).thenReturn(ledgerMetadata);
         when(mockLh.getDistributionSchedule()).thenReturn(distributionSchedule);
@@ -195,12 +192,8 @@ public class ReadLastConfirmedAndEntryOpTest {
         };
 
         ReadLastConfirmedAndEntryOp op = new ReadLastConfirmedAndEntryOp(
-            mockLh,
-            resultCallback,
-            1L,
-            10000,
-            scheduler
-        );
+                mockLh, internalConf, mockPlacementPolicy, mockBookieClient, orderedScheduler, orderedScheduler,
+                clientStats, resultCallback, 1L, 10000);
         op.initiate();
 
         // wait until all speculative requests are sent

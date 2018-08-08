@@ -32,6 +32,8 @@ import org.apache.bookkeeper.client.DistributionSchedule.WriteSet;
 import org.apache.bookkeeper.client.api.LedgerEntries;
 import org.apache.bookkeeper.client.impl.LedgerEntryImpl;
 import org.apache.bookkeeper.common.concurrent.FutureEventListener;
+import org.apache.bookkeeper.common.util.OrderedExecutor;
+import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieClient;
 import org.apache.bookkeeper.proto.BookieProtocol;
@@ -78,9 +80,17 @@ public class LedgerReader {
     }
 
     private final BookieClient bookieClient;
+    private final OrderedScheduler scheduler;
+    private final OrderedExecutor mainWorkerPool;
+    private final EnsemblePlacementPolicy placementPolicy;
+    private final BookKeeperClientStats clientStats;
 
     public LedgerReader(BookKeeper bkc) {
         bookieClient = bkc.getBookieClient();
+        scheduler = bkc.getScheduler();
+        mainWorkerPool = bkc.getMainWorkerPool();
+        placementPolicy = bkc.getPlacementPolicy();
+        clientStats = bkc.getClientStats();
     }
 
     public static SortedMap<Long, ? extends List<BookieSocketAddress>> bookiesForLedger(final LedgerHandle lh) {
@@ -143,7 +153,13 @@ public class LedgerReader {
         final FutureEventListener<LedgerEntries> readListener = new FutureEventListener<LedgerEntries>() {
 
             private void readNext(long entryId) {
-                PendingReadOp op = new PendingReadOp(lh, lh.bk.scheduler, entryId, entryId, false);
+                PendingReadOp op = new PendingReadOp(lh, bookieClient,
+                                                     scheduler, mainWorkerPool,
+                                                     placementPolicy,
+                                                     lh.readSpeculativeRequestPolicy,
+                                                     clientStats,
+                                                     entryId, entryId, false,
+                                                     lh.enableReorderReadSequence);
                 op.future().whenComplete(this);
                 op.submit();
             }
@@ -193,12 +209,18 @@ public class LedgerReader {
             }
 
             long entryId = recoveryData.getLastAddConfirmed();
-            PendingReadOp op = new PendingReadOp(lh, lh.bk.scheduler, entryId, entryId, false);
+            PendingReadOp op = new PendingReadOp(lh, bookieClient,
+                                                 scheduler, mainWorkerPool,
+                                                 placementPolicy,
+                                                 lh.readSpeculativeRequestPolicy,
+                                                 clientStats,
+                                                 entryId, entryId, false,
+                                                 lh.enableReorderReadSequence);
             op.future().whenComplete(readListener);
             op.submit();
         };
         // Read Last AddConfirmed
-        new ReadLastConfirmedOp(lh, readLACCallback).initiate();
+        new ReadLastConfirmedOp(lh, bookieClient, readLACCallback).initiate();
     }
 
     public void readLacs(final LedgerHandle lh, long eid,

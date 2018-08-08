@@ -30,6 +30,8 @@ import io.netty.buffer.Unpooled;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.bookkeeper.client.BKException.Code;
 import org.apache.bookkeeper.client.api.WriteFlag;
+import org.apache.bookkeeper.common.util.OrderedExecutor;
+import org.apache.bookkeeper.proto.BookieClient;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.junit.Before;
 import org.junit.Test;
@@ -39,18 +41,19 @@ import org.junit.Test;
  */
 public class PendingAddOpTest {
 
-    private BookKeeper bk;
     private LedgerHandle lh;
+    private BookieClient bookieClient;
+    private OrderedExecutor mainWorkerPool;
+    private BookKeeperClientStats clientStats;
     private ByteBuf payload;
 
     @Before
     public void setup() {
-        bk = mock(BookKeeper.class);
-        when(bk.getAddEntryQuorumTimeoutNanos()).thenReturn(1000L);
-        when(bk.getAddOpLogger()).thenReturn(NullStatsLogger.INSTANCE.getOpStatsLogger("test"));
-        when(bk.getAddOpUrCounter()).thenReturn(NullStatsLogger.INSTANCE.getCounter("test"));
+        clientStats = BookKeeperClientStats.newInstance(NullStatsLogger.INSTANCE);
+        bookieClient = mock(BookieClient.class);
+        mainWorkerPool = mock(OrderedExecutor.class);
+
         lh = mock(LedgerHandle.class);
-        when(lh.getBk()).thenReturn(bk);
         when(lh.getDistributionSchedule())
             .thenReturn(new RoundRobinDistributionSchedule(3, 3, 2));
         byte[] data = "test-pending-add-op".getBytes(UTF_8);
@@ -62,9 +65,12 @@ public class PendingAddOpTest {
     public void testExecuteAfterCancelled() {
         AtomicInteger rcHolder = new AtomicInteger(-0xdead);
         PendingAddOp op = PendingAddOp.create(
-            lh, payload, WriteFlag.NONE, (rc, handle, entryId, qwcLatency, ctx) -> {
-                rcHolder.set(rc);
-            }, null);
+                lh, ClientInternalConf.defaultValues(),
+                bookieClient, mainWorkerPool, clientStats,
+                payload, WriteFlag.NONE,
+                (rc, handle, entryId, qwcLatency, ctx) -> {
+                    rcHolder.set(rc);
+                }, null);
         assertSame(lh, op.lh);
 
         // cancel the op.

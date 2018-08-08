@@ -244,8 +244,12 @@ public class TestLedgerFragmentReplication extends BookKeeperClusterTestCase {
                 return true;
             }
         };
-        LedgerHandle lh = new LedgerHandle(bkc, 0, metadata, TEST_DIGEST_TYPE,
-                TEST_PSSWD, WriteFlag.NONE);
+        LedgerHandle lh = new LedgerHandle(bkc.getInternalConf(), bkc.getLedgerManager(),
+                                           bkc.getBookieWatcher(), bkc.getPlacementPolicy(),
+                                           bkc.getBookieClient(), bkc.getMainWorkerPool(),
+                                           bkc.getScheduler(), () -> bkc.isClosed(),
+                                           bkc.getClientStats(), 0, metadata, TEST_DIGEST_TYPE,
+                                           TEST_PSSWD, WriteFlag.NONE);
         testSplitIntoSubFragments(10, 21, -1, 1, lh);
         testSplitIntoSubFragments(10, 21, 20, 1, lh);
         testSplitIntoSubFragments(0, 0, 10, 1, lh);

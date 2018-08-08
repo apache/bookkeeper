@@ -23,6 +23,8 @@ package org.apache.bookkeeper.client;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.bookkeeper.common.util.OrderedExecutor;
+import org.apache.bookkeeper.proto.BookieClient;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryListener;
 import org.apache.bookkeeper.util.MathUtils;
 
@@ -33,29 +35,20 @@ class ListenerBasedPendingReadOp extends PendingReadOp {
     final Object ctx;
 
     ListenerBasedPendingReadOp(LedgerHandle lh,
+                               ClientInternalConf conf,
+                               EnsemblePlacementPolicy placementPolicy,
+                               BookieClient bookieClient,
+                               OrderedExecutor mainWorkerPool,
                                ScheduledExecutorService scheduler,
-                               long startEntryId,
-                               long endEntryId,
-                               ReadEntryListener listener,
-                               Object ctx) {
-        this(
-            lh,
-            scheduler,
-            startEntryId,
-            endEntryId,
-            listener,
-            ctx,
-            false);
-    }
-
-    ListenerBasedPendingReadOp(LedgerHandle lh,
-                               ScheduledExecutorService scheduler,
+                               BookKeeperClientStats clientStats,
                                long startEntryId,
                                long endEntryId,
                                ReadEntryListener listener,
                                Object ctx,
                                boolean isRecoveryRead) {
-        super(lh, scheduler, startEntryId, endEntryId, isRecoveryRead);
+        super(lh, conf, placementPolicy, bookieClient,
+              mainWorkerPool, scheduler, clientStats,
+              startEntryId, endEntryId, isRecoveryRead);
         this.listener = listener;
         this.ctx = ctx;
     }

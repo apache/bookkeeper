@@ -62,14 +62,15 @@ class LedgerDeleteOp extends OrderedGenericCallback<Void> {
      * @param ctx
      *            optional control object
      */
-    LedgerDeleteOp(BookKeeper bk, long ledgerId, DeleteCallback cb, Object ctx) {
+    LedgerDeleteOp(BookKeeper bk, BookKeeperClientStats clientStats,
+                   long ledgerId, DeleteCallback cb, Object ctx) {
         super(bk.getMainWorkerPool(), ledgerId);
         this.bk = bk;
         this.ledgerId = ledgerId;
         this.cb = cb;
         this.ctx = ctx;
         this.startTime = MathUtils.nowInNano();
-        this.deleteOpLogger = bk.getDeleteOpLogger();
+        this.deleteOpLogger = clientStats.getDeleteOpLogger();
     }
 
     /**
@@ -135,7 +136,7 @@ class LedgerDeleteOp extends OrderedGenericCallback<Void> {
                 cb.deleteComplete(BKException.Code.IncorrectParameterException, null);
                 return;
             }
-            LedgerDeleteOp op = new LedgerDeleteOp(bk, ledgerId, cb, null);
+            LedgerDeleteOp op = new LedgerDeleteOp(bk, bk.getClientStats(), ledgerId, cb, null);
             ReentrantReadWriteLock closeLock = bk.getCloseLock();
             closeLock.readLock().lock();
             try {

@@ -52,6 +52,7 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BooleanSupplier;
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.AsyncCallback.AddCallbackWithLatency;
 import org.apache.bookkeeper.client.AsyncCallback.CloseCallback;
@@ -74,7 +75,11 @@ import org.apache.bookkeeper.client.impl.LedgerEntryImpl;
 import org.apache.bookkeeper.common.concurrent.FutureEventListener;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.common.util.MathUtils;
+import org.apache.bookkeeper.common.util.OrderedExecutor;
+import org.apache.bookkeeper.common.util.OrderedScheduler;
+import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.proto.BookieClient;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
@@ -101,9 +106,18 @@ public class LedgerHandle implements WriteHandle {
 
     static final long PENDINGREQ_NOTWRITABLE_MASK = 0x01L << 62;
 
+    final ClientInternalConf conf;
+    final BookieClient bookieClient;
+    private final BookieWatcher bookieWatcher;
+    private final EnsemblePlacementPolicy placementPolicy;
+    final OrderedExecutor mainWorkerPool;
+    private final OrderedScheduler scheduler;
+    final LedgerManager ledgerManager;
+    private final BooleanSupplier clientClosed;
+    final BookKeeperClientStats clientStats;
+
     final byte[] ledgerKey;
     private LedgerMetadata metadata;
-    final BookKeeper bk;
     final long ledgerId;
     long lastAddPushed;
 
@@ -124,13 +138,11 @@ public class LedgerHandle implements WriteHandle {
     final DistributionSchedule distributionSchedule;
     final RateLimiter throttler;
     final LoadingCache<BookieSocketAddress, Long> bookieFailureHistory;
-    final boolean enableParallelRecoveryRead;
-    final int recoveryReadBatchSize;
     final BookiesHealthInfo bookiesHealthInfo;
     final EnumSet<WriteFlag> writeFlags;
+
     ScheduledFuture<?> timeoutFuture = null;
 
-    final long waitForWriteSetMs;
     private final Map<Integer, BookieSocketAddress> delayedWriteFailedBookies =
             new HashMap<Integer, BookieSocketAddress>();
 
@@ -148,7 +160,6 @@ public class LedgerHandle implements WriteHandle {
 
     final AtomicInteger blockAddCompletions = new AtomicInteger(0);
     final AtomicInteger numEnsembleChanges = new AtomicInteger(0);
-    final int maxAllowedEnsembleChanges;
     Queue<PendingAddOp> pendingAddOps;
     ExplicitLacFlushPolicy explicitLacFlushPolicy;
 
@@ -171,17 +182,30 @@ public class LedgerHandle implements WriteHandle {
         return delayedWriteFailedBookies;
     }
 
-    LedgerHandle(BookKeeper bk, long ledgerId, LedgerMetadata metadata,
+    LedgerHandle(ClientInternalConf conf,
+                 LedgerManager ledgerManager,
+                 BookieWatcher bookieWatcher,
+                 EnsemblePlacementPolicy placementPolicy,
+                 BookieClient bookieClient,
+                 OrderedExecutor mainWorkerPool,
+                 OrderedScheduler scheduler,
+                 BooleanSupplier clientClosed,
+                 BookKeeperClientStats clientStats,
+                 long ledgerId, LedgerMetadata metadata,
                  BookKeeper.DigestType digestType, byte[] password, EnumSet<WriteFlag> writeFlags)
             throws GeneralSecurityException, NumberFormatException {
-        this.bk = bk;
+        this.conf = conf;
+        this.ledgerManager = ledgerManager;
+        this.bookieClient = bookieClient;
+        this.bookieWatcher = bookieWatcher;
+        this.placementPolicy = placementPolicy;
+        this.mainWorkerPool = mainWorkerPool;
+        this.scheduler = scheduler;
+        this.clientClosed = clientClosed;
+        this.clientStats = clientStats;
         this.metadata = metadata;
         this.pendingAddOps = new ConcurrentLinkedQueue<PendingAddOp>();
-        this.enableParallelRecoveryRead = bk.getConf().getEnableParallelRecoveryRead();
-        this.recoveryReadBatchSize = bk.getConf().getRecoveryReadBatchSize();
         this.writeFlags = writeFlags;
-        this.waitForWriteSetMs = bk.getConf().getWaitTimeoutOnBackpressureMillis();
-
         if (metadata.isClosed()) {
             lastAddConfirmed = lastAddPushed = metadata.getLastEntryId();
             length = metadata.getLength();
@@ -194,14 +218,14 @@ public class LedgerHandle implements WriteHandle {
 
         this.ledgerId = ledgerId;
 
-        if (bk.getConf().getThrottleValue() > 0) {
-            this.throttler = RateLimiter.create(bk.getConf().getThrottleValue());
+        if (conf.throttleValue > 0) {
+            this.throttler = RateLimiter.create(conf.throttleValue);
         } else {
             this.throttler = null;
         }
 
         macManager = DigestManager.instantiate(ledgerId, password, BookKeeper.DigestType.toProtoDigestType(digestType),
-                bk.getConf().getUseV2WireProtocol());
+                                               conf.useV2WireProtocol);
 
         // If the password is empty, pass the same random ledger key which is generated by the hash of the empty
         // password, so that the bookie can avoid processing the keys for each entry
@@ -209,7 +233,7 @@ public class LedgerHandle implements WriteHandle {
         distributionSchedule = new RoundRobinDistributionSchedule(
                 metadata.getWriteQuorumSize(), metadata.getAckQuorumSize(), metadata.getEnsembleSize());
         this.bookieFailureHistory = CacheBuilder.newBuilder()
-            .expireAfterWrite(bk.getConf().getBookieFailureHistoryExpirationMSec(), TimeUnit.MILLISECONDS)
+            .expireAfterWrite(conf.bookieFailureHistoryExpirationMSec, TimeUnit.MILLISECONDS)
             .build(new CacheLoader<BookieSocketAddress, Long>() {
             @Override
             public Long load(BookieSocketAddress key) {
@@ -225,7 +249,7 @@ public class LedgerHandle implements WriteHandle {
 
             @Override
             public long getBookiePendingRequests(BookieSocketAddress bookieSocketAddress) {
-                PerChannelBookieClientPool pcbcPool = bk.bookieClient.lookupClient(bookieSocketAddress);
+                PerChannelBookieClientPool pcbcPool = bookieClient.lookupClient(bookieSocketAddress);
                 if (pcbcPool == null) {
                     return 0;
                 } else if (pcbcPool.isWritable(ledgerId)) {
@@ -236,48 +260,43 @@ public class LedgerHandle implements WriteHandle {
             }
         };
 
-        maxAllowedEnsembleChanges = bk.getConf().getMaxAllowedEnsembleChanges();
-        ensembleChangeCounter = bk.getStatsLogger().getCounter(BookKeeperClientStats.ENSEMBLE_CHANGES);
-        lacUpdateHitsCounter = bk.getStatsLogger().getCounter(BookKeeperClientStats.LAC_UPDATE_HITS);
-        lacUpdateMissesCounter = bk.getStatsLogger().getCounter(BookKeeperClientStats.LAC_UPDATE_MISSES);
-        clientChannelWriteWaitStats = bk.getStatsLogger()
-                .getOpStatsLogger(BookKeeperClientStats.CLIENT_CHANNEL_WRITE_WAIT);
-        bk.getStatsLogger().registerGauge(BookKeeperClientStats.PENDING_ADDS,
-                                          new Gauge<Integer>() {
-                                              @Override
-                                            public Integer getDefaultValue() {
-                                                  return 0;
-                                              }
-                                              @Override
-                                            public Integer getSample() {
-                                                  return pendingAddOps.size();
-                                              }
-                                          });
+        ensembleChangeCounter = clientStats.getEnsembleChangeCounter();
+        lacUpdateHitsCounter = clientStats.getLacUpdateHitsCounter();
+        lacUpdateMissesCounter = clientStats.getLacUpdateMissesCounter();
+        clientChannelWriteWaitStats = clientStats.getClientChannelWriteWaitLogger();
+
+        clientStats.registerPendingAddsGauge(new Gauge<Integer>() {
+                @Override
+                public Integer getDefaultValue() {
+                    return 0;
+                }
+                @Override
+                public Integer getSample() {
+                    return pendingAddOps.size();
+                }
+            });
         initializeExplicitLacFlushPolicy();
 
-        if (bk.getConf().getAddEntryQuorumTimeout() > 0) {
+        if (conf.addEntryQuorumTimeoutNanos > 0) {
             SafeRunnable monitor = new SafeRunnable() {
                     @Override
                     public void safeRun() {
                         monitorPendingAddOps();
                     }
                 };
-            this.timeoutFuture = bk.scheduler.scheduleAtFixedRate(monitor,
-                                                                  bk.getConf().getTimeoutMonitorIntervalSec(),
-                                                                  bk.getConf().getTimeoutMonitorIntervalSec(),
-                                                                  TimeUnit.SECONDS);
+            this.timeoutFuture = scheduler.scheduleAtFixedRate(monitor,
+                                                               conf.timeoutMonitorIntervalSec,
+                                                               conf.timeoutMonitorIntervalSec,
+                                                               TimeUnit.SECONDS);
         }
-    }
-
-    BookKeeper getBk() {
-        return bk;
     }
 
     protected void initializeExplicitLacFlushPolicy() {
         if (!getLedgerMetadata().isClosed()
             && !(this instanceof ReadOnlyLedgerHandle)
-            && bk.getExplicitLacInterval() > 0) {
-            explicitLacFlushPolicy = new ExplicitLacFlushPolicy.ExplicitLacFlushPolicyImpl(this);
+            && conf.explicitLacInterval > 0) {
+            explicitLacFlushPolicy = new ExplicitLacFlushPolicy.ExplicitLacFlushPolicyImpl(
+                    this, mainWorkerPool, scheduler, bookieClient, clientStats, conf.explicitLacInterval);
         } else {
             explicitLacFlushPolicy = ExplicitLacFlushPolicy.VOID_EXPLICITLAC_FLUSH_POLICY;
         }
@@ -442,7 +461,7 @@ public class LedgerHandle implements WriteHandle {
             LOG.debug("Writing metadata to ledger manager: {}, {}", this.ledgerId, getLedgerMetadata().getVersion());
         }
 
-        bk.getLedgerManager().writeLedgerMetadata(ledgerId, getLedgerMetadata(), writeCb);
+        ledgerManager.writeLedgerMetadata(ledgerId, getLedgerMetadata(), writeCb);
     }
 
     /**
@@ -500,8 +519,8 @@ public class LedgerHandle implements WriteHandle {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Failed to close ledger {} : ", ledgerId, re);
             }
-            errorOutPendingAdds(bk.getReturnRc(rc));
-            cb.closeComplete(bk.getReturnRc(BKException.Code.InterruptedException), this, ctx);
+            errorOutPendingAdds(BookKeeper.getReturnRc(bookieClient, rc));
+            cb.closeComplete(BookKeeper.getReturnRc(bookieClient, BKException.Code.InterruptedException), this, ctx);
         }
     }
 
@@ -515,7 +534,7 @@ public class LedgerHandle implements WriteHandle {
      * @param rc
      */
     void doAsyncCloseInternal(final CloseCallback cb, final Object ctx, final int rc) {
-        bk.getMainWorkerPool().executeOrdered(ledgerId, new SafeRunnable() {
+        mainWorkerPool.executeOrdered(ledgerId, new SafeRunnable() {
             @Override
             public void safeRun() {
                 final long prevLastEntryId;
@@ -578,14 +597,14 @@ public class LedgerHandle implements WriteHandle {
 
                 final class CloseCb extends OrderedGenericCallback<LedgerMetadata> {
                     CloseCb() {
-                        super(bk.getMainWorkerPool(), ledgerId);
+                        super(mainWorkerPool, ledgerId);
                     }
 
                     @Override
                     public void safeOperationComplete(final int rc, LedgerMetadata writtenMetadata) {
                         if (rc == BKException.Code.MetadataVersionException) {
-                            rereadMetadata(new OrderedGenericCallback<LedgerMetadata>(bk.getMainWorkerPool(),
-                                                                                          ledgerId) {
+                            rereadMetadata(new OrderedGenericCallback<LedgerMetadata>(mainWorkerPool,
+                                                                                      ledgerId) {
                                 @Override
                                 public void safeOperationComplete(int newrc, LedgerMetadata newMeta) {
                                     if (newrc != BKException.Code.OK) {
@@ -826,7 +845,7 @@ public class LedgerHandle implements WriteHandle {
 
     void asyncReadEntriesInternal(long firstEntry, long lastEntry, ReadCallback cb,
                                   Object ctx, boolean isRecoveryRead) {
-        if (!bk.isClosed()) {
+        if (!clientClosed.getAsBoolean()) {
             readEntriesInternalAsync(firstEntry, lastEntry, isRecoveryRead)
                 .whenCompleteAsync(new FutureEventListener<LedgerEntries>() {
                     @Override
@@ -852,7 +871,7 @@ public class LedgerHandle implements WriteHandle {
                             cb.readComplete(Code.UnexpectedConditionException, LedgerHandle.this, null, ctx);
                         }
                     }
-                }, bk.getMainWorkerPool().chooseThread(ledgerId));
+                    }, mainWorkerPool.chooseThread(ledgerId));
         } else {
             cb.readComplete(Code.ClientClosedException, LedgerHandle.this, null, ctx);
         }
@@ -893,8 +912,10 @@ public class LedgerHandle implements WriteHandle {
     CompletableFuture<LedgerEntries> readEntriesInternalAsync(long firstEntry,
                                                               long lastEntry,
                                                               boolean isRecoveryRead) {
-        PendingReadOp op = new PendingReadOp(this, bk.getScheduler(), firstEntry, lastEntry, isRecoveryRead);
-        if (!bk.isClosed()) {
+        PendingReadOp op = new PendingReadOp(this, conf, placementPolicy, bookieClient,
+                                             mainWorkerPool, scheduler, clientStats,
+                                             firstEntry, lastEntry, isRecoveryRead);
+        if (!clientClosed.getAsBoolean()) {
             // Waiting on the first one.
             // This is not very helpful if there are multiple ensembles or if bookie goes into unresponsive
             // state later after N requests sent.
@@ -909,14 +930,14 @@ public class LedgerHandle implements WriteHandle {
             // unresponsive thus helpful enough.
             DistributionSchedule.WriteSet ws = distributionSchedule.getWriteSet(firstEntry);
             try {
-                if (!waitForWritable(ws, firstEntry, ws.size() - 1, waitForWriteSetMs)) {
+                if (!waitForWritable(ws, firstEntry, ws.size() - 1, conf.waitForWriteSetMs)) {
                     op.allowFailFastOnUnwritableChannel();
                 }
             } finally {
                 ws.recycle();
             }
 
-            bk.getMainWorkerPool().executeOrdered(ledgerId, op);
+            mainWorkerPool.executeOrdered(ledgerId, op);
         } else {
             op.future().completeExceptionally(BKException.create(ClientClosedException));
         }
@@ -1068,7 +1089,9 @@ public class LedgerHandle implements WriteHandle {
 
     public void asyncAddEntry(ByteBuf data, final AddCallback cb, final Object ctx) {
         data.retain();
-        PendingAddOp op = PendingAddOp.create(this, data, writeFlags, cb, ctx);
+        PendingAddOp op = PendingAddOp.create(this, conf, bookieClient, mainWorkerPool,
+                                              clientStats, data, writeFlags,
+                                              cb, ctx);
         doAsyncAddEntry(op);
     }
 
@@ -1131,7 +1154,7 @@ public class LedgerHandle implements WriteHandle {
     @Override
     public CompletableFuture<Void> force() {
         CompletableFuture<Void> result = new CompletableFuture<>();
-        ForceLedgerOp op = new ForceLedgerOp(this, result);
+        ForceLedgerOp op = new ForceLedgerOp(this, bookieClient, result);
         boolean wasClosed = false;
         synchronized (this) {
             // synchronized on this to ensure that
@@ -1145,7 +1168,7 @@ public class LedgerHandle implements WriteHandle {
         if (wasClosed) {
             // make sure the callback is triggered in main worker pool
             try {
-                bk.getMainWorkerPool().executeOrdered(ledgerId, new SafeRunnable() {
+                mainWorkerPool.executeOrdered(ledgerId, new SafeRunnable() {
                     @Override
                     public void safeRun() {
                         LOG.warn("Force() attempted on a closed ledger: {}", ledgerId);
@@ -1165,7 +1188,7 @@ public class LedgerHandle implements WriteHandle {
 
         // early exit: no write has been issued yet
         if (pendingAddsSequenceHead == INVALID_ENTRY_ID) {
-            bk.getMainWorkerPool().executeOrdered(ledgerId, new SafeRunnable() {
+            mainWorkerPool.executeOrdered(ledgerId, new SafeRunnable() {
                     @Override
                     public void safeRun() {
                         FutureUtils.complete(result, null);
@@ -1180,7 +1203,7 @@ public class LedgerHandle implements WriteHandle {
         }
 
         try {
-            bk.getMainWorkerPool().executeOrdered(ledgerId, op);
+            mainWorkerPool.executeOrdered(ledgerId, op);
         } catch (RejectedExecutionException e) {
             result.completeExceptionally(new BKException.BKInterruptedException());
         }
@@ -1198,7 +1221,8 @@ public class LedgerHandle implements WriteHandle {
      */
     void asyncRecoveryAddEntry(final byte[] data, final int offset, final int length,
                                final AddCallback cb, final Object ctx) {
-        PendingAddOp op = PendingAddOp.create(this, Unpooled.wrappedBuffer(data, offset, length),
+        PendingAddOp op = PendingAddOp.create(this, conf, bookieClient, mainWorkerPool, clientStats,
+                                              Unpooled.wrappedBuffer(data, offset, length),
                                               writeFlags, cb, ctx)
                 .enableRecoveryAdd();
         doAsyncAddEntry(op);
@@ -1215,7 +1239,7 @@ public class LedgerHandle implements WriteHandle {
 
         int nonWritableCount = 0;
         for (int i = 0; i < sz; i++) {
-            if (!bk.getBookieClient().isWritable(getLedgerMetadata().currentEnsemble.get(i), key)) {
+            if (!bookieClient.isWritable(getLedgerMetadata().currentEnsemble.get(i), key)) {
                 nonWritableCount++;
                 if (nonWritableCount >= allowedNonWritableCount) {
                     return false;
@@ -1308,7 +1332,7 @@ public class LedgerHandle implements WriteHandle {
         if (wasClosed) {
             // make sure the callback is triggered in main worker pool
             try {
-                bk.getMainWorkerPool().executeOrdered(ledgerId, new SafeRunnable() {
+                mainWorkerPool.executeOrdered(ledgerId, new SafeRunnable() {
                     @Override
                     public void safeRun() {
                         LOG.warn("Attempt to add to closed ledger: {}", ledgerId);
@@ -1322,7 +1346,8 @@ public class LedgerHandle implements WriteHandle {
                     }
                 });
             } catch (RejectedExecutionException e) {
-                op.cb.addCompleteWithLatency(bk.getReturnRc(BKException.Code.InterruptedException),
+                op.cb.addCompleteWithLatency(BookKeeper.getReturnRc(bookieClient,
+                                                                    BKException.Code.InterruptedException),
                         LedgerHandle.this, INVALID_ENTRY_ID, 0, op.ctx);
             }
             return;
@@ -1330,7 +1355,7 @@ public class LedgerHandle implements WriteHandle {
 
         DistributionSchedule.WriteSet ws = distributionSchedule.getWriteSet(op.getEntryId());
         try {
-            if (!waitForWritable(ws, op.getEntryId(), 0, waitForWriteSetMs)) {
+            if (!waitForWritable(ws, op.getEntryId(), 0, conf.waitForWriteSetMs)) {
                 op.allowFailFastOnUnwritableChannel();
             }
         } finally {
@@ -1338,9 +1363,10 @@ public class LedgerHandle implements WriteHandle {
         }
 
         try {
-            bk.getMainWorkerPool().executeOrdered(ledgerId, op);
+            mainWorkerPool.executeOrdered(ledgerId, op);
         } catch (RejectedExecutionException e) {
-            op.cb.addCompleteWithLatency(bk.getReturnRc(BKException.Code.InterruptedException),
+            op.cb.addCompleteWithLatency(
+                    BookKeeper.getReturnRc(bookieClient, BKException.Code.InterruptedException),
                     LedgerHandle.this, INVALID_ENTRY_ID, 0, op.ctx);
         }
     }
@@ -1396,7 +1422,7 @@ public class LedgerHandle implements WriteHandle {
                 }
             };
 
-        new ReadLastConfirmedOp(this, innercb).initiate();
+        new ReadLastConfirmedOp(this, bookieClient, innercb).initiate();
     }
 
     /**
@@ -1442,7 +1468,7 @@ public class LedgerHandle implements WriteHandle {
                 }
             }
         };
-        new TryReadLastConfirmedOp(this, innercb, getLastAddConfirmed()).initiate();
+        new TryReadLastConfirmedOp(this, bookieClient, innercb, getLastAddConfirmed()).initiate();
     }
 
     /**
@@ -1551,11 +1577,10 @@ public class LedgerHandle implements WriteHandle {
                 }
             }
         };
-        new ReadLastConfirmedAndEntryOp(this,
-            innercb,
-            entryId - 1,
-            timeOutInMillis,
-            bk.getScheduler())
+        new ReadLastConfirmedAndEntryOp(
+                this, conf, placementPolicy, bookieClient,
+                mainWorkerPool, scheduler, clientStats,
+                innercb, entryId - 1, timeOutInMillis)
             .parallelRead(parallel)
             .initiate();
     }
@@ -1698,7 +1723,7 @@ public class LedgerHandle implements WriteHandle {
                 }
             }
         };
-        new PendingReadLacOp(this, innercb).initiate();
+        new PendingReadLacOp(this, bookieClient, innercb).initiate();
     }
 
     /*
@@ -1836,7 +1861,7 @@ public class LedgerHandle implements WriteHandle {
                     continue;
                 }
                 try {
-                    BookieSocketAddress newBookie = bk.getBookieWatcher().replaceBookie(
+                    BookieSocketAddress newBookie = bookieWatcher.replaceBookie(
                         metadata.getEnsembleSize(),
                         metadata.getWriteQuorumSize(),
                         metadata.getAckQuorumSize(),
@@ -1868,7 +1893,7 @@ public class LedgerHandle implements WriteHandle {
 
     void handleDelayedWriteBookieFailure() {
         int curBlockAddCompletions = blockAddCompletions.get();
-        if (bk.getDisableEnsembleChangeFeature().isAvailable()) {
+        if (conf.disableEnsembleChangeFeature.isAvailable()) {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Ensemble change is disabled. Failed bookies {} for ledger {}.",
                         delayedWriteFailedBookies, ledgerId);
@@ -1876,10 +1901,10 @@ public class LedgerHandle implements WriteHandle {
             return;
         }
         int curNumEnsembleChanges = numEnsembleChanges.incrementAndGet();
-        if (curNumEnsembleChanges > maxAllowedEnsembleChanges) {
+        if (curNumEnsembleChanges > conf.maxAllowedEnsembleChanges) {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Exceeding maxAllowedEnsembeChanges {}. Failed bookies {} for ledger {}.",
-                        maxAllowedEnsembleChanges, delayedWriteFailedBookies, ledgerId);
+                        conf.maxAllowedEnsembleChanges, delayedWriteFailedBookies, ledgerId);
             }
             return;
         }
@@ -1913,7 +1938,7 @@ public class LedgerHandle implements WriteHandle {
 
     void handleBookieFailure(final Map<Integer, BookieSocketAddress> failedBookies) {
         int curBlockAddCompletions = blockAddCompletions.incrementAndGet();
-        if (bk.getDisableEnsembleChangeFeature().isAvailable()) {
+        if (conf.disableEnsembleChangeFeature.isAvailable()) {
             blockAddCompletions.decrementAndGet();
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Ensemble change is disabled. Retry sending to failed bookies {} for ledger {}.",
@@ -1937,10 +1962,10 @@ public class LedgerHandle implements WriteHandle {
         int curNumEnsembleChanges = numEnsembleChanges.incrementAndGet();
 
         // when the ensemble changes are too frequent, close handle
-        if (curNumEnsembleChanges > maxAllowedEnsembleChanges) {
+        if (curNumEnsembleChanges > conf.maxAllowedEnsembleChanges) {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Ledger {} reaches max allowed ensemble change number {}",
-                        ledgerId, maxAllowedEnsembleChanges);
+                        ledgerId, conf.maxAllowedEnsembleChanges);
             }
             handleUnrecoverableErrorDuringAdd(WriteException);
             return;
@@ -2008,7 +2033,7 @@ public class LedgerHandle implements WriteHandle {
                          int curBlockAddCompletions,
                          int ensembleChangeIdx,
                          boolean addEntryFailureRecovery) {
-            super(bk.getMainWorkerPool(), ledgerId);
+            super(mainWorkerPool, ledgerId);
             this.ensembleInfo = ensembleInfo;
             this.curBlockAddCompletions = curBlockAddCompletions;
             this.ensembleChangeIdx = ensembleChangeIdx;
@@ -2080,7 +2105,7 @@ public class LedgerHandle implements WriteHandle {
                                EnsembleInfo ensembleInfo,
                                int curBlockAddCompletions,
                                int ensembleChangeIdx) {
-            super(bk.getMainWorkerPool(), ledgerId);
+            super(mainWorkerPool, ledgerId);
             this.rc = rc;
             this.ensembleInfo = ensembleInfo;
             this.curBlockAddCompletions = curBlockAddCompletions;
@@ -2251,11 +2276,11 @@ public class LedgerHandle implements WriteHandle {
     }
 
     void rereadMetadata(final GenericCallback<LedgerMetadata> cb) {
-        bk.getLedgerManager().readLedgerMetadata(ledgerId, cb);
+        ledgerManager.readLedgerMetadata(ledgerId, cb);
     }
 
     void registerOperationFailureOnBookie(BookieSocketAddress bookie, long entryId) {
-        if (bk.getConf().getEnableBookieFailureTracking()) {
+        if (conf.enableBookieFailureTracking) {
             bookieFailureHistory.put(bookie, entryId);
         }
     }
@@ -2281,7 +2306,7 @@ public class LedgerHandle implements WriteHandle {
         final GenericCallback<Void> cb = new TimedGenericCallback<Void>(
             finalCb,
             BKException.Code.OK,
-            bk.getRecoverOpLogger());
+            clientStats.getRecoverOpLogger());
         boolean wasClosed = false;
         boolean wasInRecovery = false;
 
@@ -2318,20 +2343,20 @@ public class LedgerHandle implements WriteHandle {
         if (wasInRecovery) {
             // if metadata is already in recover, dont try to write again,
             // just do the recovery from the starting point
-            new LedgerRecoveryOp(LedgerHandle.this, cb)
-                    .parallelRead(enableParallelRecoveryRead)
-                    .readBatchSize(recoveryReadBatchSize)
+            new LedgerRecoveryOp(LedgerHandle.this, conf, placementPolicy,
+                                 bookieClient, mainWorkerPool, scheduler,
+                                 clientStats, cb)
                     .setEntryListener(listener)
                     .initiate();
             return;
         }
 
-        writeLedgerConfig(new OrderedGenericCallback<LedgerMetadata>(bk.getMainWorkerPool(), ledgerId) {
+        writeLedgerConfig(new OrderedGenericCallback<LedgerMetadata>(mainWorkerPool, ledgerId) {
             @Override
             public void safeOperationComplete(final int rc, LedgerMetadata writtenMetadata) {
                 if (rc == BKException.Code.MetadataVersionException) {
-                    rereadMetadata(new OrderedGenericCallback<LedgerMetadata>(bk.getMainWorkerPool(),
-                                                                                  ledgerId) {
+                    rereadMetadata(new OrderedGenericCallback<LedgerMetadata>(mainWorkerPool,
+                                                                              ledgerId) {
                         @Override
                         public void safeOperationComplete(int rc, LedgerMetadata newMeta) {
                             if (rc != BKException.Code.OK) {
@@ -2352,9 +2377,9 @@ public class LedgerHandle implements WriteHandle {
                     // in recovery otherwise, it couldn't prevent us advancing last confirmed while the other writer is
                     // closing the ledger, which will cause inconsistent last add confirmed on bookies & zookeeper
                     // metadata.
-                    new LedgerRecoveryOp(LedgerHandle.this, cb)
-                        .parallelRead(enableParallelRecoveryRead)
-                        .readBatchSize(recoveryReadBatchSize)
+                    new LedgerRecoveryOp(LedgerHandle.this, conf, placementPolicy,
+                                         bookieClient, mainWorkerPool, scheduler,
+                                         clientStats, cb)
                         .setEntryListener(listener)
                         .initiate();
                 } else {
