@@ -1335,7 +1335,7 @@ public class BookieWriteLedgerTest extends
             int rc = cf.get();
             assertEquals("rc code is OK", BKException.Code.OK, rc);
 
-            for (int i =0; i < 10; i++) {
+            for (int i = 0; i < 10; i++) {
                 if (data.refCnt() == 0) {
                     break;
                 }
@@ -1378,7 +1378,7 @@ public class BookieWriteLedgerTest extends
             int rc = cf.get();
             assertEquals("rc code is OK", BKException.Code.OK, rc);
 
-            for (int i =0; i < 10; i++) {
+            for (int i = 0; i < 10; i++) {
                 if (data.refCnt() == 0) {
                     break;
                 }
