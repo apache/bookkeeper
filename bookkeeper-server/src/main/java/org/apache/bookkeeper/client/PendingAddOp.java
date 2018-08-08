@@ -92,7 +92,6 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
         op.entryId = LedgerHandle.INVALID_ENTRY_ID;
         op.currentLedgerLength = -1;
         op.payload = payload;
-        op.payload.retain();
         op.entryLength = payload.readableBytes();
 
         op.completed = false;
@@ -244,6 +243,8 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
         this.toSend = lh.macManager.computeDigestAndPackageForSending(
                 entryId, lh.lastAddConfirmed, currentLedgerLength,
                 payload);
+        // ownership of RefCounted ByteBuf was passed to computeDigestAndPackageForSending
+        payload = null;
 
         // We are about to send. Check if we need to make an ensemble change
         // becasue of delayed write errors
@@ -457,8 +458,10 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
     private void recyclePendAddOpObject() {
         entryId = LedgerHandle.INVALID_ENTRY_ID;
         currentLedgerLength = -1;
-        ReferenceCountUtil.release(payload);
-        payload = null;
+        if (payload != null) {
+            ReferenceCountUtil.release(payload);
+            payload = null;
+        }
         cb = null;
         ctx = null;
         ackSet.recycle();

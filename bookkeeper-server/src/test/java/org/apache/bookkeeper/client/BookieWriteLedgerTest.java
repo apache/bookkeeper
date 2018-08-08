@@ -1335,7 +1335,12 @@ public class BookieWriteLedgerTest extends
             int rc = cf.get();
             assertEquals("rc code is OK", BKException.Code.OK, rc);
 
-            TimeUnit.MILLISECONDS.sleep(250); // recycler runs asynchronously
+            for (int i =0; i < 10; i++) {
+                if (data.refCnt() == 0) {
+                    break;
+                }
+                TimeUnit.MILLISECONDS.sleep(250); // recycler runs asynchronously
+            }
             assertEquals("writing entry with id " + entryId + ", ref count on ByteBuf should be 0 ",
                     0, data.refCnt());
 
@@ -1373,7 +1378,12 @@ public class BookieWriteLedgerTest extends
             int rc = cf.get();
             assertEquals("rc code is OK", BKException.Code.OK, rc);
 
-            TimeUnit.MILLISECONDS.sleep(250); // recycler runs asynchronously
+            for (int i =0; i < 10; i++) {
+                if (data.refCnt() == 0) {
+                    break;
+                }
+                TimeUnit.MILLISECONDS.sleep(250); // recycler runs asynchronously
+            }
             assertEquals("writing entry with id " + entryId + ", ref count on ByteBuf should be 0 ",
                     0, data.refCnt());
 
