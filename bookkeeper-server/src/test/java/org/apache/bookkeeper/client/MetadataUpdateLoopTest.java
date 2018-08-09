@@ -25,13 +25,10 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
-import com.google.common.base.Optional;
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -43,18 +40,14 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import org.apache.bookkeeper.meta.LedgerManager;
+import org.apache.bookkeeper.meta.MockLedgerManager;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
-import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.LedgerMetadataListener;
-import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.Processor;
 
 import org.apache.bookkeeper.test.TestCallbacks.GenericCallbackFuture;
-import org.apache.bookkeeper.versioning.LongVersion;
 import org.apache.bookkeeper.versioning.Version;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
-import org.apache.zookeeper.AsyncCallback;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -411,7 +404,7 @@ public class MetadataUpdateLoopTest {
                 new ThreadFactoryBuilder().setNameFormat("non-deter-%d").build());
 
         @Override
-        void executeCallback(Runnable r) {
+        public void executeCallback(Runnable r) {
             cbExecutor.execute(r);
         }
 
@@ -482,110 +475,5 @@ public class MetadataUpdateLoopTest {
                 super.writeLedgerMetadata(ledgerId, metadata, cb);
             }
         };
-    }
-
-    static class MockLedgerManager implements LedgerManager {
-        final Map<Long, Pair<LongVersion, byte[]>> metadataMap = new HashMap<>();
-        final ExecutorService executor = Executors.newSingleThreadExecutor((r) -> new Thread(r, "MockLedgerManager"));
-
-        private LedgerMetadata readMetadata(long ledgerId) throws Exception {
-            Pair<LongVersion, byte[]> pair = metadataMap.get(ledgerId);
-            if (pair == null) {
-                return null;
-            } else {
-                return LedgerMetadata.parseConfig(pair.getRight(), pair.getLeft(), Optional.absent());
-            }
-        }
-
-        void executeCallback(Runnable r) {
-            r.run();
-        }
-
-        @Override
-        public void createLedgerMetadata(long ledgerId, LedgerMetadata metadata, GenericCallback<LedgerMetadata> cb) {
-            executor.submit(() -> {
-                    if (metadataMap.containsKey(ledgerId)) {
-                        executeCallback(() -> cb.operationComplete(BKException.Code.LedgerExistException, null));
-                    } else {
-                        metadataMap.put(ledgerId, Pair.of(new LongVersion(0L), metadata.serialize()));
-                        try {
-                            LedgerMetadata readBack = readMetadata(ledgerId);
-                            executeCallback(() -> cb.operationComplete(BKException.Code.OK, readBack));
-                        } catch (Exception e) {
-                            LOG.error("Error reading back written metadata", e);
-                            executeCallback(() -> cb.operationComplete(BKException.Code.MetaStoreException, null));
-                        }
-                    }
-                });
-        }
-
-        @Override
-        public void removeLedgerMetadata(long ledgerId, Version version, GenericCallback<Void> cb) {}
-
-        @Override
-        public void readLedgerMetadata(long ledgerId, GenericCallback<LedgerMetadata> cb) {
-            executor.submit(() -> {
-                    try {
-                        LedgerMetadata metadata = readMetadata(ledgerId);
-                        if (metadata == null) {
-                            executeCallback(
-                                    () -> cb.operationComplete(BKException.Code.NoSuchLedgerExistsException, null));
-                        } else {
-                            executeCallback(() -> cb.operationComplete(BKException.Code.OK, metadata));
-                        }
-                    } catch (Exception e) {
-                        LOG.error("Error reading metadata", e);
-                        executeCallback(() -> cb.operationComplete(BKException.Code.MetaStoreException, null));
-                    }
-                });
-        }
-
-        @Override
-        public void writeLedgerMetadata(long ledgerId, LedgerMetadata metadata, GenericCallback<LedgerMetadata> cb) {
-            executor.submit(() -> {
-                    try {
-                        LedgerMetadata oldMetadata = readMetadata(ledgerId);
-                        if (oldMetadata == null) {
-                            executeCallback(
-                                    () -> cb.operationComplete(BKException.Code.NoSuchLedgerExistsException, null));
-                        } else if (!oldMetadata.getVersion().equals(metadata.getVersion())) {
-                            executeCallback(
-                                    () -> cb.operationComplete(BKException.Code.MetadataVersionException, null));
-                        } else {
-                            LongVersion oldVersion = (LongVersion) oldMetadata.getVersion();
-                            metadataMap.put(ledgerId, Pair.of(new LongVersion(oldVersion.getLongVersion() + 1),
-                                                              metadata.serialize()));
-                            LedgerMetadata readBack = readMetadata(ledgerId);
-                            executeCallback(() -> cb.operationComplete(BKException.Code.OK, readBack));
-                        }
-                    } catch (Exception e) {
-                        LOG.error("Error writing metadata", e);
-                        executeCallback(
-                                () -> cb.operationComplete(BKException.Code.MetaStoreException, null));
-                    }
-                });
-
-        }
-
-        @Override
-        public void registerLedgerMetadataListener(long ledgerId, LedgerMetadataListener listener) {}
-
-        @Override
-        public void unregisterLedgerMetadataListener(long ledgerId, LedgerMetadataListener listener) {}
-
-        @Override
-        public void asyncProcessLedgers(Processor<Long> processor, AsyncCallback.VoidCallback finalCb,
-                Object context, int successRc, int failureRc) {
-        }
-
-        @Override
-        public LedgerRangeIterator getLedgerRanges() {
-            return null;
-        }
-
-        @Override
-        public void close() {
-            executor.shutdownNow();
-        }
     }
 }
