@@ -84,6 +84,7 @@ public class LedgerReader {
     private final OrderedExecutor mainWorkerPool;
     private final EnsemblePlacementPolicy placementPolicy;
     private final BookKeeperClientStats clientStats;
+    private final ClientInternalConf internalConf;
 
     public LedgerReader(BookKeeper bkc) {
         bookieClient = bkc.getBookieClient();
@@ -91,6 +92,7 @@ public class LedgerReader {
         mainWorkerPool = bkc.getMainWorkerPool();
         placementPolicy = bkc.getPlacementPolicy();
         clientStats = bkc.getClientStats();
+        internalConf = bkc.getInternalConf();
     }
 
     public static SortedMap<Long, ? extends List<BookieSocketAddress>> bookiesForLedger(final LedgerHandle lh) {
@@ -153,13 +155,10 @@ public class LedgerReader {
         final FutureEventListener<LedgerEntries> readListener = new FutureEventListener<LedgerEntries>() {
 
             private void readNext(long entryId) {
-                PendingReadOp op = new PendingReadOp(lh, bookieClient,
-                                                     scheduler, mainWorkerPool,
-                                                     placementPolicy,
-                                                     lh.readSpeculativeRequestPolicy,
+                PendingReadOp op = new PendingReadOp(lh, internalConf, placementPolicy,
+                                                     bookieClient, mainWorkerPool, scheduler,
                                                      clientStats,
-                                                     entryId, entryId, false,
-                                                     lh.enableReorderReadSequence);
+                                                     entryId, entryId, false);
                 op.future().whenComplete(this);
                 op.submit();
             }
@@ -209,13 +208,9 @@ public class LedgerReader {
             }
 
             long entryId = recoveryData.getLastAddConfirmed();
-            PendingReadOp op = new PendingReadOp(lh, bookieClient,
-                                                 scheduler, mainWorkerPool,
-                                                 placementPolicy,
-                                                 lh.readSpeculativeRequestPolicy,
-                                                 clientStats,
-                                                 entryId, entryId, false,
-                                                 lh.enableReorderReadSequence);
+            PendingReadOp op = new PendingReadOp(lh, internalConf, placementPolicy,
+                                                 bookieClient, mainWorkerPool, scheduler,
+                                                 clientStats, entryId, entryId, false);
             op.future().whenComplete(readListener);
             op.submit();
         };
