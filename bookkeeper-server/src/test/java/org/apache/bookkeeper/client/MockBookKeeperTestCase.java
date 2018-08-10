@@ -511,6 +511,7 @@ public abstract class MockBookKeeperTestCase {
             boolean isRecoveryAdd =
                 ((short) options & BookieProtocol.FLAG_RECOVERY_ADD) == BookieProtocol.FLAG_RECOVERY_ADD;
 
+            toSend.retain();
             executor.executeOrdered(ledgerId, () -> {
                 byte[] entry;
                 try {
@@ -518,6 +519,7 @@ public abstract class MockBookKeeperTestCase {
                 } catch (BKDigestMatchException e) {
                     callback.writeComplete(Code.DigestMatchException,
                             ledgerId, entryId, bookieSocketAddress, ctx);
+                    toSend.release();
                     return;
                 }
                 boolean fenced = fencedLedgers.contains(ledgerId);
@@ -528,6 +530,7 @@ public abstract class MockBookKeeperTestCase {
                     if (failedBookies.contains(bookieSocketAddress)) {
                         callback.writeComplete(NoBookieAvailableException,
                                 ledgerId, entryId, bookieSocketAddress, ctx);
+                        toSend.release();
                         return;
                     }
                     if (getMockLedgerContentsInBookie(ledgerId, bookieSocketAddress).isEmpty()) {
@@ -538,6 +541,7 @@ public abstract class MockBookKeeperTestCase {
                     callback.writeComplete(BKException.Code.OK,
                             ledgerId, entryId, bookieSocketAddress, ctx);
                 }
+                toSend.release();
             });
 
             return null;
