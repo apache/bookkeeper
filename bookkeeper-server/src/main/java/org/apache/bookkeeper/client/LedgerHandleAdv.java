@@ -60,21 +60,11 @@ public class LedgerHandleAdv extends LedgerHandle implements WriteAdvHandle {
         }
     }
 
-    LedgerHandleAdv(ClientInternalConf conf,
-                    LedgerManager ledgerManager,
-                    BookieWatcher bookieWatcher,
-                    EnsemblePlacementPolicy placementPolicy,
-                    BookieClient bookieClient,
-                    OrderedExecutor mainWorkerPool,
-                    OrderedScheduler scheduler,
-                    BooleanSupplier clientClosed,
-                    BookKeeperClientStats clientStats,
+    LedgerHandleAdv(ClientContext clientCtx,
                     long ledgerId, LedgerMetadata metadata,
                     BookKeeper.DigestType digestType, byte[] password, EnumSet<WriteFlag> writeFlags)
             throws GeneralSecurityException, NumberFormatException {
-        super(conf, ledgerManager, bookieWatcher, placementPolicy, bookieClient,
-              mainWorkerPool, scheduler, clientClosed, clientStats,
-              ledgerId, metadata, digestType, password, writeFlags);
+        super(clientCtx, ledgerId, metadata, digestType, password, writeFlags);
         pendingAddOps = new PriorityBlockingQueue<PendingAddOp>(10, new PendingOpsComparator());
     }
 
@@ -195,10 +185,7 @@ public class LedgerHandleAdv extends LedgerHandle implements WriteAdvHandle {
 
     private void asyncAddEntry(final long entryId, ByteBuf data,
             final AddCallbackWithLatency cb, final Object ctx) {
-        PendingAddOp op = PendingAddOp.create(this, conf, bookieClient,
-                                              mainWorkerPool, clientStats,
-                                              data, writeFlags,
-                                              cb, ctx);
+        PendingAddOp op = PendingAddOp.create(this, clientCtx, data, writeFlags, cb, ctx);
         op.setEntryId(entryId);
 
         if ((entryId <= this.lastAddConfirmed) || pendingAddOps.contains(op)) {
@@ -237,7 +224,7 @@ public class LedgerHandleAdv extends LedgerHandle implements WriteAdvHandle {
         if (wasClosed) {
             // make sure the callback is triggered in main worker pool
             try {
-                mainWorkerPool.submit(new SafeRunnable() {
+                clientCtx.getMainWorkerPool().submit(new SafeRunnable() {
                     @Override
                     public void safeRun() {
                         LOG.warn("Attempt to add to closed ledger: {}", ledgerId);
@@ -250,7 +237,7 @@ public class LedgerHandleAdv extends LedgerHandle implements WriteAdvHandle {
                     }
                 });
             } catch (RejectedExecutionException e) {
-                op.cb.addCompleteWithLatency(BookKeeper.getReturnRc(bookieClient,
+                op.cb.addCompleteWithLatency(BookKeeper.getReturnRc(clientCtx.getBookieClient(),
                                                                     BKException.Code.InterruptedException),
                         LedgerHandleAdv.this, op.getEntryId(), 0, op.ctx);
             }
@@ -258,14 +245,15 @@ public class LedgerHandleAdv extends LedgerHandle implements WriteAdvHandle {
         }
 
         if (!waitForWritable(distributionSchedule.getWriteSet(op.getEntryId()),
-                op.getEntryId(), 0, conf.waitForWriteSetMs)) {
+                    op.getEntryId(), 0, clientCtx.getConf().waitForWriteSetMs)) {
             op.allowFailFastOnUnwritableChannel();
         }
 
         try {
-            mainWorkerPool.executeOrdered(ledgerId, op);
+            clientCtx.getMainWorkerPool().executeOrdered(ledgerId, op);
         } catch (RejectedExecutionException e) {
-            op.cb.addCompleteWithLatency(BookKeeper.getReturnRc(bookieClient, BKException.Code.InterruptedException),
+            op.cb.addCompleteWithLatency(BookKeeper.getReturnRc(clientCtx.getBookieClient(),
+                                                                BKException.Code.InterruptedException),
                               LedgerHandleAdv.this, op.getEntryId(), 0, op.ctx);
         }
     }

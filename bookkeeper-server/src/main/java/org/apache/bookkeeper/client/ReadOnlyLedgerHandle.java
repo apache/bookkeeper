@@ -83,36 +83,26 @@ class ReadOnlyLedgerHandle extends LedgerHandle implements LedgerMetadataListene
         }
     }
 
-    ReadOnlyLedgerHandle(ClientInternalConf conf,
-                         LedgerManager ledgerManager,
-                         BookieWatcher bookieWatcher,
-                         EnsemblePlacementPolicy placementPolicy,
-                         BookieClient bookieClient,
-                         OrderedExecutor mainWorkerPool,
-                         OrderedScheduler scheduler,
-                         BooleanSupplier clientClosed,
-                         BookKeeperClientStats clientStats,
+    ReadOnlyLedgerHandle(ClientContext clientCtx,
                          long ledgerId, LedgerMetadata metadata,
                          BookKeeper.DigestType digestType, byte[] password,
                          boolean watch)
             throws GeneralSecurityException, NumberFormatException {
-        super(conf, ledgerManager, bookieWatcher, placementPolicy, bookieClient,
-              mainWorkerPool, scheduler, clientClosed, clientStats,
-              ledgerId, metadata, digestType, password, WriteFlag.NONE);
+        super(clientCtx, ledgerId, metadata, digestType, password, WriteFlag.NONE);
         if (watch) {
-            ledgerManager.registerLedgerMetadataListener(ledgerId, this);
+            clientCtx.getLedgerManager().registerLedgerMetadataListener(ledgerId, this);
         }
     }
 
     @Override
     public void close()
             throws InterruptedException, BKException {
-        ledgerManager.unregisterLedgerMetadataListener(ledgerId, this);
+        clientCtx.getLedgerManager().unregisterLedgerMetadataListener(ledgerId, this);
     }
 
     @Override
     public void asyncClose(CloseCallback cb, Object ctx) {
-        ledgerManager.unregisterLedgerMetadataListener(ledgerId, this);
+        clientCtx.getLedgerManager().unregisterLedgerMetadataListener(ledgerId, this);
         cb.closeComplete(BKException.Code.OK, this, ctx);
     }
 
@@ -184,7 +174,7 @@ class ReadOnlyLedgerHandle extends LedgerHandle implements LedgerMetadataListene
         }
         if (Version.Occurred.BEFORE == occurred) { // the metadata is updated
             try {
-                mainWorkerPool.executeOrdered(ledgerId, new MetadataUpdater(newMetadata));
+                clientCtx.getMainWorkerPool().executeOrdered(ledgerId, new MetadataUpdater(newMetadata));
             } catch (RejectedExecutionException ree) {
                 LOG.error("Failed on submitting updater to update ledger metadata on ledger {} : {}",
                         ledgerId, newMetadata);

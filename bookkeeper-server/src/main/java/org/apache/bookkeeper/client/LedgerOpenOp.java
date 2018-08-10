@@ -167,12 +167,7 @@ class LedgerOpenOp implements GenericCallback<LedgerMetadata> {
 
         // get the ledger metadata back
         try {
-            lh = new ReadOnlyLedgerHandle(bk.getInternalConf(), bk.getLedgerManager(),
-                                          bk.getBookieWatcher(), bk.getPlacementPolicy(),
-                                          bk.getBookieClient(),
-                                          bk.getMainWorkerPool(), bk.getScheduler(),
-                                          () -> bk.isClosed(), bk.getClientStats(),
-                                          ledgerId, metadata, digestType,
+            lh = new ReadOnlyLedgerHandle(bk.getClientCtx(), ledgerId, metadata, digestType,
                                           passwd, !doRecovery);
         } catch (GeneralSecurityException e) {
             LOG.error("Security exception while opening ledger: " + ledgerId, e);
@@ -255,7 +250,7 @@ class LedgerOpenOp implements GenericCallback<LedgerMetadata> {
                 return;
             }
 
-            LedgerOpenOp op = new LedgerOpenOp(bk, bk.getClientStats(),
+            LedgerOpenOp op = new LedgerOpenOp(bk, bk.getClientCtx().getClientStats(),
                                                ledgerId, fromApiDigestType(digestType),
                                                password, cb, null);
             ReentrantReadWriteLock closeLock = bk.getCloseLock();

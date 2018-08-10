@@ -46,14 +46,7 @@ class LedgerRecoveryOp implements ReadEntryListener, AddCallback {
     static final Logger LOG = LoggerFactory.getLogger(LedgerRecoveryOp.class);
 
     final LedgerHandle lh;
-    final BookieClient bookieClient;
-    final ClientInternalConf conf;
-    final OrderedScheduler scheduler;
-    final OrderedExecutor mainWorkerPool;
-    final EnsemblePlacementPolicy placementPolicy;
-    final Optional<SpeculativeRequestExecutionPolicy> speculativeRequestPolicy;
-    final BookKeeperClientStats clientStats;
-    final boolean isReorderReadSequence;
+    final ClientContext clientCtx;
 
     final AtomicLong readCount, writeCount;
     volatile boolean readDone;
@@ -64,9 +57,6 @@ class LedgerRecoveryOp implements ReadEntryListener, AddCallback {
     // keep a copy of metadata for recovery.
     LedgerMetadata metadataForRecovery;
 
-    final boolean parallelRead;
-    final int readBatchSize;
-
     // EntryListener Hook
     @VisibleForTesting
     ReadEntryListener entryListener = null;
@@ -74,17 +64,10 @@ class LedgerRecoveryOp implements ReadEntryListener, AddCallback {
     class RecoveryReadOp extends ListenerBasedPendingReadOp {
 
         RecoveryReadOp(LedgerHandle lh,
-                       ClientInternalConf conf,
-                       EnsemblePlacementPolicy placementPolicy,
-                       BookieClient bookieClient,
-                       OrderedExecutor mainWorkerPool,
-                       ScheduledExecutorService scheduler,
-                       BookKeeperClientStats clientStats,
+                       ClientContext clientCtx,
                        long startEntryId, long endEntryId,
                        ReadEntryListener cb, Object ctx) {
-            super(lh, conf, placementPolicy, bookieClient,
-                  mainWorkerPool, scheduler, clientStats,
-                  startEntryId, endEntryId, cb, ctx, true);
+            super(lh, clientCtx, startEntryId, endEntryId, cb, ctx, true);
         }
 
         @Override
@@ -94,12 +77,7 @@ class LedgerRecoveryOp implements ReadEntryListener, AddCallback {
 
     }
 
-    public LedgerRecoveryOp(LedgerHandle lh, ClientInternalConf conf,
-                            EnsemblePlacementPolicy placementPolicy,
-                            BookieClient bookieClient,
-                            OrderedExecutor mainWorkerPool,
-                            OrderedScheduler scheduler,
-                            BookKeeperClientStats clientStats,
+    public LedgerRecoveryOp(LedgerHandle lh, ClientContext clientCtx,
                             GenericCallback<Void> cb) {
         readCount = new AtomicLong(0);
         writeCount = new AtomicLong(0);
@@ -107,16 +85,7 @@ class LedgerRecoveryOp implements ReadEntryListener, AddCallback {
         callbackDone = new AtomicBoolean(false);
         this.cb = cb;
         this.lh = lh;
-        this.conf = conf;
-        this.bookieClient = bookieClient;
-        this.scheduler = scheduler;
-        this.mainWorkerPool = mainWorkerPool;
-        this.placementPolicy = placementPolicy;
-        this.speculativeRequestPolicy = conf.readSpeculativeRequestPolicy;
-        this.clientStats = clientStats;
-        this.isReorderReadSequence = conf.enableReorderReadSequence;
-        this.parallelRead = conf.enableParallelRecoveryRead;
-        this.readBatchSize = conf.recoveryReadBatchSize;
+        this.clientCtx = clientCtx;
     }
 
     /**
@@ -133,7 +102,7 @@ class LedgerRecoveryOp implements ReadEntryListener, AddCallback {
     }
 
     public void initiate() {
-        ReadLastConfirmedOp rlcop = new ReadLastConfirmedOp(lh, bookieClient,
+        ReadLastConfirmedOp rlcop = new ReadLastConfirmedOp(lh, clientCtx.getBookieClient(),
                 new ReadLastConfirmedOp.LastConfirmedDataCallback() {
                     public void readLastConfirmedDataComplete(int rc, RecoveryData data) {
                         if (rc == BKException.Code.OK) {
@@ -165,11 +134,11 @@ class LedgerRecoveryOp implements ReadEntryListener, AddCallback {
 
     private void submitCallback(int rc) {
         if (BKException.Code.OK == rc) {
-            clientStats.getRecoverAddCountLogger().registerSuccessfulValue(writeCount.get());
-            clientStats.getRecoverReadCountLogger().registerSuccessfulValue(readCount.get());
+            clientCtx.getClientStats().getRecoverAddCountLogger().registerSuccessfulValue(writeCount.get());
+            clientCtx.getClientStats().getRecoverReadCountLogger().registerSuccessfulValue(readCount.get());
         } else {
-            clientStats.getRecoverAddCountLogger().registerFailedValue(writeCount.get());
-            clientStats.getRecoverReadCountLogger().registerFailedValue(readCount.get());
+            clientCtx.getClientStats().getRecoverAddCountLogger().registerFailedValue(writeCount.get());
+            clientCtx.getClientStats().getRecoverReadCountLogger().registerFailedValue(readCount.get());
         }
         cb.operationComplete(rc, null);
     }
@@ -180,11 +149,8 @@ class LedgerRecoveryOp implements ReadEntryListener, AddCallback {
     private void doRecoveryRead() {
         if (!callbackDone.get()) {
             startEntryToRead = endEntryToRead + 1;
-            endEntryToRead = endEntryToRead + readBatchSize;
-            new RecoveryReadOp(lh, conf, placementPolicy,
-                               bookieClient, mainWorkerPool, scheduler,
-                               clientStats,
-                               startEntryToRead, endEntryToRead, this, null)
+            endEntryToRead = endEntryToRead + clientCtx.getConf().recoveryReadBatchSize;
+            new RecoveryReadOp(lh, clientCtx, startEntryToRead, endEntryToRead, this, null)
                 .initiate();
         }
     }

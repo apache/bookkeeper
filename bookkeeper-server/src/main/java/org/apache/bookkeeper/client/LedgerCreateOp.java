@@ -199,19 +199,9 @@ class LedgerCreateOp implements GenericCallback<LedgerMetadata> {
 
         try {
             if (adv) {
-                lh = new LedgerHandleAdv(bk.getInternalConf(), bk.getLedgerManager(),
-                                         bk.getBookieWatcher(), bk.getPlacementPolicy(),
-                                         bk.getBookieClient(), bk.getMainWorkerPool(),
-                                         bk.getScheduler(), () -> bk.isClosed(),
-                                         bk.getClientStats(), ledgerId, metadata, digestType,
-                                         passwd, writeFlags);
+                lh = new LedgerHandleAdv(bk.getClientCtx(), ledgerId, metadata, digestType, passwd, writeFlags);
             } else {
-                lh = new LedgerHandle(bk.getInternalConf(), bk.getLedgerManager(),
-                                      bk.getBookieWatcher(), bk.getPlacementPolicy(),
-                                      bk.getBookieClient(), bk.getMainWorkerPool(),
-                                      bk.getScheduler(), () -> bk.isClosed(),
-                                      bk.getClientStats(), ledgerId, metadata, digestType,
-                                      passwd, writeFlags);
+                lh = new LedgerHandle(bk.getClientCtx(), ledgerId, metadata, digestType, passwd, writeFlags);
             }
         } catch (GeneralSecurityException e) {
             LOG.error("Security exception while creating ledger: " + ledgerId, e);
@@ -363,7 +353,8 @@ class LedgerCreateOp implements GenericCallback<LedgerMetadata> {
             }
             LedgerCreateOp op = new LedgerCreateOp(bk, builderEnsembleSize,
                 builderWriteQuorumSize, builderAckQuorumSize, DigestType.fromApiDigestType(builderDigestType),
-                builderPassword, cb, null, builderCustomMetadata, builderWriteFlags, bk.getClientStats());
+                builderPassword, cb, null, builderCustomMetadata, builderWriteFlags,
+                bk.getClientCtx().getClientStats());
             ReentrantReadWriteLock closeLock = bk.getCloseLock();
             closeLock.readLock().lock();
             try {
@@ -423,7 +414,7 @@ class LedgerCreateOp implements GenericCallback<LedgerMetadata> {
                     DigestType.fromApiDigestType(parent.builderDigestType),
                     parent.builderPassword, cb, null, parent.builderCustomMetadata,
                     parent.builderWriteFlags,
-                    parent.bk.getClientStats());
+                    parent.bk.getClientCtx().getClientStats());
             ReentrantReadWriteLock closeLock = parent.bk.getCloseLock();
             closeLock.readLock().lock();
             try {

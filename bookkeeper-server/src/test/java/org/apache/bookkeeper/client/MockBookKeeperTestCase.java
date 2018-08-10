@@ -160,7 +160,53 @@ public abstract class MockBookKeeperTestCase {
         setBookKeeperConfig(new ClientConfiguration());
         when(bk.getStatsLogger()).thenReturn(NullStatsLogger.INSTANCE);
         BookKeeperClientStats clientStats = BookKeeperClientStats.newInstance(NullStatsLogger.INSTANCE);
-        when(bk.getClientStats()).thenReturn(clientStats);
+        ClientContext clientCtx = new ClientContext() {
+                @Override
+                public ClientInternalConf getConf() {
+                    return ClientInternalConf.fromConfig(bk.getConf());
+                }
+
+                @Override
+                public LedgerManager getLedgerManager() {
+                    return ledgerManager;
+                }
+
+                @Override
+                public BookieWatcher getBookieWatcher() {
+                    return bookieWatcher;
+                }
+
+                @Override
+                public EnsemblePlacementPolicy getPlacementPolicy() {
+                    return null;
+                }
+
+                @Override
+                public BookieClient getBookieClient() {
+                    return bookieClient;
+                }
+
+                @Override
+                public OrderedExecutor getMainWorkerPool() {
+                    return scheduler;
+                }
+
+                @Override
+                public OrderedScheduler getScheduler() {
+                    return scheduler;
+                }
+
+                @Override
+                public BookKeeperClientStats getClientStats() {
+                    return clientStats;
+                }
+
+                @Override
+                public boolean isClientClosed() {
+                    return bk.isClosed();
+                }
+            };
+        when(bk.getClientCtx()).thenReturn(clientCtx);
         when(bk.getLedgerManager()).thenReturn(ledgerManager);
         when(bk.getLedgerIdGenerator()).thenReturn(ledgerIdGenerator);
         when(bk.getReturnRc(anyInt())).thenAnswer(invocationOnMock -> invocationOnMock.getArgument(0));
@@ -181,8 +227,6 @@ public abstract class MockBookKeeperTestCase {
 
     protected void setBookKeeperConfig(ClientConfiguration conf) {
         when(bk.getConf()).thenReturn(conf);
-        ClientInternalConf internalConf = ClientInternalConf.fromConfig(conf);
-        when(bk.getInternalConf()).thenReturn(internalConf);
     }
 
     private DigestManager getDigestType(long ledgerId) throws GeneralSecurityException {

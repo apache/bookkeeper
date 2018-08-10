@@ -42,16 +42,20 @@ import org.junit.Test;
 public class PendingAddOpTest {
 
     private LedgerHandle lh;
-    private BookieClient bookieClient;
-    private OrderedExecutor mainWorkerPool;
-    private BookKeeperClientStats clientStats;
+    private ClientContext mockClientContext;
+
     private ByteBuf payload;
 
     @Before
     public void setup() {
-        clientStats = BookKeeperClientStats.newInstance(NullStatsLogger.INSTANCE);
-        bookieClient = mock(BookieClient.class);
-        mainWorkerPool = mock(OrderedExecutor.class);
+        BookKeeperClientStats clientStats = BookKeeperClientStats.newInstance(NullStatsLogger.INSTANCE);
+        BookieClient bookieClient = mock(BookieClient.class);
+        OrderedExecutor mainWorkerPool = mock(OrderedExecutor.class);
+        mockClientContext = mock(ClientContext.class);
+        when(mockClientContext.getBookieClient()).thenReturn(bookieClient);
+        when(mockClientContext.getConf()).thenReturn(ClientInternalConf.defaultValues());
+        when(mockClientContext.getMainWorkerPool()).thenReturn(mainWorkerPool);
+        when(mockClientContext.getClientStats()).thenReturn(clientStats);
 
         lh = mock(LedgerHandle.class);
         when(lh.getDistributionSchedule())
@@ -65,8 +69,7 @@ public class PendingAddOpTest {
     public void testExecuteAfterCancelled() {
         AtomicInteger rcHolder = new AtomicInteger(-0xdead);
         PendingAddOp op = PendingAddOp.create(
-                lh, ClientInternalConf.defaultValues(),
-                bookieClient, mainWorkerPool, clientStats,
+                lh, mockClientContext,
                 payload, WriteFlag.NONE,
                 (rc, handle, entryId, qwcLatency, ctx) -> {
                     rcHolder.set(rc);

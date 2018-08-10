@@ -35,20 +35,13 @@ class ListenerBasedPendingReadOp extends PendingReadOp {
     final Object ctx;
 
     ListenerBasedPendingReadOp(LedgerHandle lh,
-                               ClientInternalConf conf,
-                               EnsemblePlacementPolicy placementPolicy,
-                               BookieClient bookieClient,
-                               OrderedExecutor mainWorkerPool,
-                               ScheduledExecutorService scheduler,
-                               BookKeeperClientStats clientStats,
+                               ClientContext clientCtx,
                                long startEntryId,
                                long endEntryId,
                                ReadEntryListener listener,
                                Object ctx,
                                boolean isRecoveryRead) {
-        super(lh, conf, placementPolicy, bookieClient,
-              mainWorkerPool, scheduler, clientStats,
-              startEntryId, endEntryId, isRecoveryRead);
+        super(lh, clientCtx, startEntryId, endEntryId, isRecoveryRead);
         this.listener = listener;
         this.ctx = ctx;
     }
@@ -64,11 +57,13 @@ class ListenerBasedPendingReadOp extends PendingReadOp {
             long latencyNanos = MathUtils.elapsedNanos(requestTimeNanos);
             LedgerEntry entry;
             if (BKException.Code.OK == request.getRc()) {
-                readOpLogger.registerSuccessfulEvent(latencyNanos, TimeUnit.NANOSECONDS);
+                clientCtx.getClientStats().getReadOpLogger()
+                    .registerSuccessfulEvent(latencyNanos, TimeUnit.NANOSECONDS);
                 // callback with completed entry
                 entry = new LedgerEntry(request.entryImpl);
             } else {
-                readOpLogger.registerFailedEvent(latencyNanos, TimeUnit.NANOSECONDS);
+                clientCtx.getClientStats().getReadOpLogger()
+                    .registerFailedEvent(latencyNanos, TimeUnit.NANOSECONDS);
                 entry = null;
             }
             request.close();

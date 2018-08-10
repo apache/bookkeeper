@@ -318,13 +318,7 @@ public class TestSpeculativeRead extends BookKeeperClusterTestCase {
         secondHostOnly.set(1, true);
         PendingReadOp.LedgerEntryRequest req0 = null, req2 = null, req4 = null;
         try {
-            PendingReadOp op = new PendingReadOp(l, bkspec.getInternalConf(),
-                                                 bkspec.getPlacementPolicy(),
-                                                 bkspec.getBookieClient(),
-                                                 bkspec.getMainWorkerPool(),
-                                                 bkspec.getScheduler(),
-                                                 bkspec.getClientStats(), 0, 5,
-                                                 false);
+            PendingReadOp op = new PendingReadOp(l, bkspec.getClientCtx(), 0, 5, false);
             // if we've already heard from all hosts,
             // we only send the initial read
             req0 = op.new SequenceReadRequest(ensemble, l.getId(), 0);

@@ -50,19 +50,16 @@ class PendingWriteLacOp implements WriteLacCallback {
     int lastSeenError = BKException.Code.WriteException;
 
     LedgerHandle lh;
-    BookieClient bookieClient;
-    OpStatsLogger putLacOpLogger;
+    ClientContext clientCtx;
 
-    PendingWriteLacOp(LedgerHandle lh, BookieClient bookieClient,
-                      BookKeeperClientStats clientStats,
+    PendingWriteLacOp(LedgerHandle lh, ClientContext clientCtx,
                       AddLacCallback cb, Object ctx) {
         this.lh = lh;
-        this.bookieClient = bookieClient;
+        this.clientCtx = clientCtx;
         this.cb = cb;
         this.ctx = ctx;
         this.lac = LedgerHandle.INVALID_ENTRY_ID;
         ackSet = lh.distributionSchedule.getAckSet();
-        putLacOpLogger = clientStats.getWriteLacOpLogger();
     }
 
     void setLac(long lac) {
@@ -75,8 +72,8 @@ class PendingWriteLacOp implements WriteLacCallback {
     }
 
     void sendWriteLacRequest(int bookieIndex) {
-        bookieClient.writeLac(lh.getLedgerMetadata().currentEnsemble.get(bookieIndex),
-                                         lh.ledgerId, lh.ledgerKey, lac, toSend, this, bookieIndex);
+        clientCtx.getBookieClient().writeLac(lh.getLedgerMetadata().currentEnsemble.get(bookieIndex),
+                                             lh.ledgerId, lh.ledgerKey, lac, toSend, this, bookieIndex);
     }
 
     void initiate(ByteBufList toSend) {

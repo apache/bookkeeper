@@ -75,6 +75,7 @@ public class ReadLastConfirmedAndEntryOpTest {
 
     private final TestStatsProvider testStatsProvider = new TestStatsProvider();
     private BookKeeperClientStats clientStats;
+    private ClientContext mockClientCtx;
     private BookieClient mockBookieClient;
     private LedgerHandle mockLh;
     private ScheduledExecutorService scheduler;
@@ -115,7 +116,12 @@ public class ReadLastConfirmedAndEntryOpTest {
 
         this.mockBookieClient = mock(BookieClient.class);
         this.mockPlacementPolicy = mock(EnsemblePlacementPolicy.class);
-
+        this.mockClientCtx = mock(ClientContext.class);
+        when(mockClientCtx.getBookieClient()).thenReturn(mockBookieClient);
+        when(mockClientCtx.getPlacementPolicy()).thenReturn(mockPlacementPolicy);
+        when(mockClientCtx.getConf()).thenReturn(internalConf);
+        when(mockClientCtx.getScheduler()).thenReturn(orderedScheduler);
+        when(mockClientCtx.getMainWorkerPool()).thenReturn(orderedScheduler);
         this.mockLh = mock(LedgerHandle.class);
 
         when(mockLh.getId()).thenReturn(LEDGERID);
@@ -192,8 +198,7 @@ public class ReadLastConfirmedAndEntryOpTest {
         };
 
         ReadLastConfirmedAndEntryOp op = new ReadLastConfirmedAndEntryOp(
-                mockLh, internalConf, mockPlacementPolicy, mockBookieClient, orderedScheduler, orderedScheduler,
-                clientStats, resultCallback, 1L, 10000);
+                mockLh, mockClientCtx, resultCallback, 1L, 10000);
         op.initiate();
 
         // wait until all speculative requests are sent

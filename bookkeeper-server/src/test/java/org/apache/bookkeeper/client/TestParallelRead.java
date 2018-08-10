@@ -67,19 +67,11 @@ public class TestParallelRead extends BookKeeperClusterTestCase {
     }
 
     PendingReadOp createReadOp(LedgerHandle lh, long from, long to) {
-        return new PendingReadOp(lh, bkc.getInternalConf(),
-                                 bkc.getPlacementPolicy(), bkc.getBookieClient(),
-                                 bkc.getMainWorkerPool(), bkc.getScheduler(),
-                                 bkc.getClientStats(),
-                                 from, to, false);
+        return new PendingReadOp(lh, bkc.getClientCtx(), from, to, false);
     }
 
     PendingReadOp createRecoveryReadOp(LedgerHandle lh, long from, long to) {
-        return new PendingReadOp(lh, bkc.getInternalConf(),
-                                 bkc.getPlacementPolicy(), bkc.getBookieClient(),
-                                 bkc.getMainWorkerPool(), bkc.getScheduler(),
-                                 bkc.getClientStats(),
-                                 from, to, true);
+        return new PendingReadOp(lh, bkc.getClientCtx(), from, to, true);
     }
 
     @Test

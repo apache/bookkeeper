@@ -49,7 +49,6 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
 
     static final Logger LOG = LoggerFactory.getLogger(ReadLastConfirmedAndEntryOp.class);
 
-    private final ScheduledExecutorService scheduler;
     ReadLACAndEntryRequest request;
     final BitSet heardFromHostsBitSet;
     final BitSet emptyResponsesFromHostsBitSet;
@@ -59,14 +58,7 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
 
     final long requestTimeNano;
     private final LedgerHandle lh;
-    private final BookieClient bookieClient;
-    private final EnsemblePlacementPolicy placementPolicy;
-    private final OrderedExecutor mainWorkerPool;
-    private final Optional<SpeculativeRequestExecutionPolicy> readSpeculativeRequestPolicy;
-    private final Optional<SpeculativeRequestExecutionPolicy> readLACSpeculativeRequestPolicy;
-
-    private final BookKeeperClientStats clientStats;
-
+    private final ClientContext clientCtx;
     private final LastConfirmedAndEntryCallback cb;
 
     private int numResponsesPending;
@@ -75,8 +67,6 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
     private final long prevEntryId;
     private long lastAddConfirmed;
     private long timeOutInMillis;
-
-    private final boolean isReorderReadSequence;
 
     abstract class ReadLACAndEntryRequest implements AutoCloseable {
 
@@ -95,8 +85,8 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
             this.entryImpl = LedgerEntryImpl.create(lId, eId);
             this.ensemble = ensemble;
             this.writeSet = lh.getDistributionSchedule().getEnsembleSet(eId);
-            if (isReorderReadSequence) {
-                this.orderedEnsemble = placementPolicy.reorderReadLACSequence(ensemble,
+            if (clientCtx.getConf().enableReorderReadSequence) {
+                this.orderedEnsemble = clientCtx.getPlacementPolicy().reorderReadLACSequence(ensemble,
                         lh.getBookiesHealthInfo(), writeSet.copy());
             } else {
                 this.orderedEnsemble = writeSet.copy();
@@ -430,7 +420,7 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
                 for (int i = 0; i < numReplicasTried; i++) {
                     int slowBookieIndex = orderedEnsemble.get(i);
                     BookieSocketAddress slowBookieSocketAddress = ensemble.get(slowBookieIndex);
-                    placementPolicy.registerSlowBookie(slowBookieSocketAddress, entryId);
+                    clientCtx.getPlacementPolicy().registerSlowBookie(slowBookieSocketAddress, entryId);
                 }
             }
             return completed;
@@ -438,28 +428,16 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
     }
 
     ReadLastConfirmedAndEntryOp(LedgerHandle lh,
-                                ClientInternalConf conf,
-                                EnsemblePlacementPolicy placementPolicy,
-                                BookieClient bookieClient,
-                                OrderedExecutor mainWorkerPool,
-                                ScheduledExecutorService scheduler,
-                                BookKeeperClientStats clientStats,
+                                ClientContext clientCtx,
                                 LastConfirmedAndEntryCallback cb,
                                 long prevEntryId,
                                 long timeOutInMillis) {
         this.lh = lh;
-        this.bookieClient = bookieClient;
-        this.scheduler = scheduler;
-        this.mainWorkerPool = mainWorkerPool;
-        this.placementPolicy = placementPolicy;
-        this.readSpeculativeRequestPolicy = conf.readSpeculativeRequestPolicy;
-        this.readLACSpeculativeRequestPolicy = conf.readLACSpeculativeRequestPolicy;
-        this.clientStats = clientStats;
+        this.clientCtx = clientCtx;
         this.cb = cb;
         this.prevEntryId = prevEntryId;
         this.lastAddConfirmed = lh.getLastAddConfirmed();
         this.timeOutInMillis = timeOutInMillis;
-        this.isReorderReadSequence = conf.enableReorderReadSequence;
         this.numResponsesPending = 0;
         // since long poll is effectively reading lac with waits, lac can be potentially
         // be advanced in different write quorums, so we need to make sure to cover enough
@@ -488,7 +466,7 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
      */
     @Override
     public ListenableFuture<Boolean> issueSpeculativeRequest() {
-        return mainWorkerPool.submitOrdered(lh.getId(), new Callable<Boolean>() {
+        return clientCtx.getMainWorkerPool().submitOrdered(lh.getId(), new Callable<Boolean>() {
             @Override
             public Boolean call() throws Exception {
                 if (!requestComplete.get() && !request.isComplete()
@@ -512,8 +490,9 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
         }
         request.read();
 
-        if (!parallelRead && readLACSpeculativeRequestPolicy.isPresent()) {
-            readLACSpeculativeRequestPolicy.get().initiateSpeculativeRequest(scheduler, this);
+        if (!parallelRead && clientCtx.getConf().readLACSpeculativeRequestPolicy.isPresent()) {
+            clientCtx.getConf().readLACSpeculativeRequestPolicy.get()
+                .initiateSpeculativeRequest(clientCtx.getScheduler(), this);
         }
     }
 
@@ -522,7 +501,7 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
             LOG.debug("Calling Read LAC and Entry with {} and long polling interval {} on Bookie {} - Parallel {}",
                     prevEntryId, timeOutInMillis, to, parallelRead);
         }
-        bookieClient.readEntryWaitForLACUpdate(to,
+        clientCtx.getBookieClient().readEntryWaitForLACUpdate(to,
             lh.getId(),
             BookieProtocol.LAST_ADD_CONFIRMED,
             prevEntryId,
@@ -543,12 +522,12 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
         long latencyMicros = MathUtils.elapsedMicroSec(requestTimeNano);
         LedgerEntry entry;
         if (BKException.Code.OK != rc) {
-            clientStats.getReadLacAndEntryOpLogger()
+            clientCtx.getClientStats().getReadLacAndEntryOpLogger()
                 .registerFailedEvent(latencyMicros, TimeUnit.MICROSECONDS);
             entry = null;
         } else {
             // could received advanced lac, with no entry
-            clientStats.getReadLacAndEntryOpLogger()
+            clientCtx.getClientStats().getReadLacAndEntryOpLogger()
                 .registerSuccessfulEvent(latencyMicros, TimeUnit.MICROSECONDS);
             if (request.entryImpl.getEntryBuffer() != null) {
                 entry = new LedgerEntry(request.entryImpl);
@@ -590,7 +569,7 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
                         long elapsedMicros = TimeUnit.MILLISECONDS.toMicros(System.currentTimeMillis()
                                 - rCtx.getLacUpdateTimestamp().get());
                         elapsedMicros = Math.max(elapsedMicros, 0);
-                        clientStats.getReadLacAndEntryRespLogger()
+                        clientCtx.getClientStats().getReadLacAndEntryRespLogger()
                                 .registerSuccessfulEvent(elapsedMicros, TimeUnit.MICROSECONDS);
                     }
 

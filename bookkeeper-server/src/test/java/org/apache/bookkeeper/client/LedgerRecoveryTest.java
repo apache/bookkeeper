@@ -482,9 +482,7 @@ public class LedgerRecoveryTest extends BookKeeperClusterTestCase {
         final CountDownLatch recoverLatch = new CountDownLatch(1);
         final AtomicBoolean success = new AtomicBoolean(false);
         LedgerRecoveryOp recoveryOp = new LedgerRecoveryOp(
-                recoverLh, bkc.getInternalConf(), bkc.getPlacementPolicy(),
-                bkc.getBookieClient(), bkc.getMainWorkerPool(), bkc.getScheduler(),
-                bkc.getClientStats(),
+                recoverLh, bkc.getClientCtx(),
                 new BookkeeperInternalCallbacks.GenericCallback<Void>() {
                     @Override
                     public void operationComplete(int rc, Void result) {

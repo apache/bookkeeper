@@ -685,16 +685,8 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
         return conf;
     }
 
-    ClientInternalConf getInternalConf() {
-        return internalConf;
-    }
-
     StatsLogger getStatsLogger() {
         return statsLogger;
-    }
-
-    BookKeeperClientStats getClientStats() {
-        return clientStats;
     }
 
     /**
@@ -1441,4 +1433,54 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
         return new LedgerDeleteOp.DeleteBuilderImpl(this);
     }
 
+    private final ClientContext clientCtx = new ClientContext() {
+            @Override
+            public ClientInternalConf getConf() {
+                return internalConf;
+            }
+
+            @Override
+            public LedgerManager getLedgerManager() {
+                return BookKeeper.this.getLedgerManager();
+            }
+
+            @Override
+            public BookieWatcher getBookieWatcher() {
+                return BookKeeper.this.getBookieWatcher();
+            }
+
+            @Override
+            public EnsemblePlacementPolicy getPlacementPolicy() {
+                return BookKeeper.this.getPlacementPolicy();
+            }
+
+            @Override
+            public BookieClient getBookieClient() {
+                return BookKeeper.this.getBookieClient();
+            }
+
+            @Override
+            public OrderedExecutor getMainWorkerPool() {
+                return BookKeeper.this.getMainWorkerPool();
+            }
+
+            @Override
+            public OrderedScheduler getScheduler() {
+                return BookKeeper.this.getScheduler();
+            }
+
+            @Override
+            public BookKeeperClientStats getClientStats() {
+                return clientStats;
+            }
+
+            @Override
+            public boolean isClientClosed() {
+                return BookKeeper.this.isClosed();
+            }
+        };
+
+    ClientContext getClientCtx() {
+        return clientCtx;
+    }
 }

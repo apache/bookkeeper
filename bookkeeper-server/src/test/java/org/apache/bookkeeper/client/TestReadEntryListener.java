@@ -110,10 +110,7 @@ public class TestReadEntryListener extends BookKeeperClusterTestCase {
     }
 
     ListenerBasedPendingReadOp createReadOp(LedgerHandle lh, long from, long to, ReadEntryListener listener) {
-        return new ListenerBasedPendingReadOp(lh, bkc.getInternalConf(),
-                                              bkc.getPlacementPolicy(), bkc.getBookieClient(),
-                                              bkc.getMainWorkerPool(), bkc.getScheduler(),
-                                              bkc.getClientStats(), from, to, listener, null, false);
+        return new ListenerBasedPendingReadOp(lh, bkc.getClientCtx(), from, to, listener, null, false);
     }
 
     void basicReadTest(boolean parallelRead) throws Exception {
