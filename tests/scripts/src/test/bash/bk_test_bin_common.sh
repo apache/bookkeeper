@@ -32,7 +32,8 @@ testDefaultVariables() {
   assertEquals "BINDIR is not set correctly" "${BK_BINDIR}" "${BINDIR}"
   assertEquals "BK_HOME is not set correctly" "${BK_HOMEDIR}" "${BK_HOME}"
   assertEquals "DEFAULT_LOG_CONF is not set correctly" "${BK_CONFDIR}/log4j.properties" "${DEFAULT_LOG_CONF}"
-  assertEquals "NETTY_LEAK_DETECTION_LEVEL is not set correctly" "disabled" "${NETTY_LEAK_DETECTION_LEVEL}"
+  assertEquals "NETTY_LEAK_DETECTION_LEVEL is not set correctly" "disabled" "${NETTY_LEAK
+_DETECTION_LEVEL}"
   assertEquals "NETTY_RECYCLER_MAXCAPACITY is not set correctly" "1000" "${NETTY_RECYCLER_MAXCAPACITY}"
   assertEquals "NETTY_RECYCLER_LINKCAPACITY is not set correctly" "1024" "${NETTY_RECYCLER_LINKCAPACITY}"
   assertEquals "BOOKIE_MAX_HEAP_MEMORY is not set correctly" "1g" "${BOOKIE_MAX_HEAP_MEMORY}"
@@ -62,13 +63,13 @@ testFindModuleJarAt() {
   # case 2: SNAPSHOT jar
   TEST_FILES=(
     "invalid-${MODULE}.jar"
-    "invalid-${MODULE}-4.8.0.jar"
-    "invalid-${MODULE}-4.8.0-SNAPSHOT.jar"
+    "invalid-${MODULE}-4.9.0.jar"
+    "invalid-${MODULE}-4.9.0-SNAPSHOT.jar"
     "${MODULE}.jar.invalid"
-    "${MODULE}-4.8.0.jar.invalid"
-    "${MODULE}-4.8.0-SNAPSHOT.jar.invalid"
+    "${MODULE}-4.9.0.jar.invalid"
+    "${MODULE}-4.9.0-SNAPSHOT.jar.invalid"
     "${MODULE}.jar"
-    "${MODULE}-4.8.0-SNAPSHOT.jar"
+    "${MODULE}-4.9.0-SNAPSHOT.jar"
   )
 
   TEST_DIR2=${BK_TMPDIR}/testdir2
@@ -80,18 +81,18 @@ testFindModuleJarAt() {
     count=$(( $count + 1 ))
   done
   MODULE_JAR2=$(find_module_jar_at ${TEST_DIR2} ${MODULE})
-  assertEquals "${MODULE}-4.8.0-SNAPSHOT.jar is not found" "${TEST_DIR2}/${MODULE}-4.8.0-SNAPSHOT.jar" "${MODULE_JAR2}"
+  assertEquals "${MODULE}-4.9.0-SNAPSHOT.jar is not found" "${TEST_DIR2}/${MODULE}-4.9.0-SNAPSHOT.jar" "${MODULE_JAR2}"
 
   # case 3: release jar
   TEST_FILES=(
     "invalid-${MODULE}.jar"
-    "invalid-${MODULE}-4.8.0.jar"
-    "invalid-${MODULE}-4.8.0-SNAPSHOT.jar"
+    "invalid-${MODULE}-4.9.0.jar"
+    "invalid-${MODULE}-4.9.0-SNAPSHOT.jar"
     "${MODULE}.jar.invalid"
-    "${MODULE}-4.8.0.jar.invalid"
-    "${MODULE}-4.8.0-SNAPSHOT.jar.invalid"
+    "${MODULE}-4.9.0.jar.invalid"
+    "${MODULE}-4.9.0-SNAPSHOT.jar.invalid"
     "${MODULE}.jar"
-    "${MODULE}-4.8.0.jar"
+    "${MODULE}-4.9.0.jar"
   )
 
   TEST_DIR3=${BK_TMPDIR}/testdir3
@@ -103,7 +104,7 @@ testFindModuleJarAt() {
     count=$(( $count + 1 ))
   done
   MODULE_JAR3=$(find_module_jar_at ${TEST_DIR3} ${MODULE})
-  assertEquals "${MODULE}-4.8.0.jar is not found" "${TEST_DIR3}/${MODULE}-4.8.0.jar" "${MODULE_JAR3}"
+  assertEquals "${MODULE}-4.9.0.jar is not found" "${TEST_DIR3}/${MODULE}-4.9.0.jar" "${MODULE_JAR3}"
 }
 
 testFindModuleJar() {
@@ -118,7 +119,7 @@ testFindModuleJar() {
 
   MODULE="test-module"
   MODULE_PATH="testmodule"
-  VERSION="4.8.0"
+  VERSION="4.9.0"
 
   TEST_FILES=(
     "${MODULE}-${VERSION}.jar"
