@@ -494,7 +494,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
     @VisibleForTesting
     BookKeeper() {
         conf = new ClientConfiguration();
-        internalConf = ClientInternalConf.defaultValues();
+        internalConf = ClientInternalConf.fromConfig(conf);
         statsLogger = NullStatsLogger.INSTANCE;
         clientStats = BookKeeperClientStats.newInstance(statsLogger);
         scheduler = null;
