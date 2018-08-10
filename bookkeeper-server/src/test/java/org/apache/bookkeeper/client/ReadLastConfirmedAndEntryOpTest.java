@@ -122,6 +122,7 @@ public class ReadLastConfirmedAndEntryOpTest {
         when(mockClientCtx.getConf()).thenReturn(internalConf);
         when(mockClientCtx.getScheduler()).thenReturn(orderedScheduler);
         when(mockClientCtx.getMainWorkerPool()).thenReturn(orderedScheduler);
+        when(mockClientCtx.getClientStats()).thenReturn(clientStats);
         this.mockLh = mock(LedgerHandle.class);
 
         when(mockLh.getId()).thenReturn(LEDGERID);
