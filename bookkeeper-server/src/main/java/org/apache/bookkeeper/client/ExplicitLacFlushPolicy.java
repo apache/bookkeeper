@@ -25,9 +25,6 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.bookkeeper.client.SyncCallbackUtils.LastAddConfirmedCallback;
-import org.apache.bookkeeper.common.util.OrderedExecutor;
-import org.apache.bookkeeper.common.util.OrderedScheduler;
-import org.apache.bookkeeper.proto.BookieClient;
 import org.apache.bookkeeper.util.ByteBufList;
 import org.apache.bookkeeper.util.SafeRunnable;
 import org.slf4j.Logger;

@@ -20,11 +20,8 @@
  */
 package org.apache.bookkeeper.client;
 
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.bookkeeper.common.util.OrderedExecutor;
-import org.apache.bookkeeper.proto.BookieClient;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryListener;
 import org.apache.bookkeeper.util.MathUtils;
 

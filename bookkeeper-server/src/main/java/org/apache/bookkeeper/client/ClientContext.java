@@ -20,10 +20,10 @@
  */
 package org.apache.bookkeeper.client;
 
-import org.apache.bookkeeper.meta.LedgerManager;
-import org.apache.bookkeeper.proto.BookieClient;
 import org.apache.bookkeeper.common.util.OrderedExecutor;
 import org.apache.bookkeeper.common.util.OrderedScheduler;
+import org.apache.bookkeeper.meta.LedgerManager;
+import org.apache.bookkeeper.proto.BookieClient;
 
 interface ClientContext {
     ClientInternalConf getConf();

@@ -20,19 +20,15 @@
  */
 package org.apache.bookkeeper.client;
 
-import com.google.common.base.Optional;
 import com.google.common.util.concurrent.ListenableFuture;
 import io.netty.buffer.ByteBuf;
 import java.util.BitSet;
 import java.util.List;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.bookkeeper.client.impl.LedgerEntryImpl;
-import org.apache.bookkeeper.common.util.OrderedExecutor;
 import org.apache.bookkeeper.net.BookieSocketAddress;
-import org.apache.bookkeeper.proto.BookieClient;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks;
 import org.apache.bookkeeper.proto.ReadLastConfirmedAndEntryContext;
