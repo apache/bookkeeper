@@ -22,11 +22,9 @@ package org.apache.bookkeeper.test;
 
 import com.google.common.util.concurrent.AbstractFuture;
 
-import java.util.concurrent.CompletableFuture;
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.LedgerHandle;
-import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,21 +34,6 @@ import org.slf4j.LoggerFactory;
 public class TestCallbacks {
 
     private static final Logger logger = LoggerFactory.getLogger(TestCallbacks.class);
-
-    /**
-     * Generic callback future.
-     */
-    public static class GenericCallbackFuture<T>
-        extends CompletableFuture<T> implements GenericCallback<T> {
-        @Override
-        public void operationComplete(int rc, T value) {
-            if (rc != BKException.Code.OK) {
-                completeExceptionally(BKException.create(rc));
-            } else {
-                complete(value);
-            }
-        }
-    }
 
     /**
      * Add callback future implementation.

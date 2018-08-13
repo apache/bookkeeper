@@ -134,7 +134,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
     boolean ownEventLoopGroup = false;
 
     final BookieClient bookieClient;
-    final BookieWatcher bookieWatcher;
+    final BookieWatcherImpl bookieWatcher;
 
     final OrderedExecutor mainWorkerPool;
     final OrderedScheduler scheduler;
@@ -510,7 +510,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
         // initialize bookie client
         this.bookieClient = new BookieClientImpl(conf, this.eventLoopGroup, this.mainWorkerPool,
                                                  scheduler, statsLogger);
-        this.bookieWatcher = new BookieWatcher(
+        this.bookieWatcher = new BookieWatcherImpl(
                 conf, this.placementPolicy, metadataDriver.getRegistrationClient(),
                 this.statsLogger.scope(WATCHER_SCOPE));
         if (conf.getDiskWeightBasedPlacementEnabled()) {
