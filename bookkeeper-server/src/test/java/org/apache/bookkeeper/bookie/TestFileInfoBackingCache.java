@@ -89,7 +89,7 @@ public class TestFileInfoBackingCache {
                     File f = new File(baseDir, String.valueOf(ledgerId));
                     f.deleteOnExit();
                     return f;
-                });
+                }, FileInfo.CURRENT_HEADER_VERSION);
         CachedFileInfo fi = cache.loadFileInfo(1, masterKey);
         Assert.assertEquals(fi.getRefCount(), 1);
         CachedFileInfo fi2 = cache.loadFileInfo(2, masterKey);
@@ -116,7 +116,7 @@ public class TestFileInfoBackingCache {
                 (ledgerId, createIfNotFound) -> {
                     Assert.assertFalse(createIfNotFound);
                     throw new Bookie.NoLedgerException(ledgerId);
-                });
+                }, FileInfo.CURRENT_HEADER_VERSION);
         cache.loadFileInfo(1, null);
     }
 
@@ -135,7 +135,7 @@ public class TestFileInfoBackingCache {
                     File f = new File(baseDir, String.valueOf(ledgerId));
                     f.deleteOnExit();
                     return f;
-                });
+                }, FileInfo.CURRENT_HEADER_VERSION);
         Iterable<Future<Set<CachedFileInfo>>> futures =
             IntStream.range(0, numRunners).mapToObj(
                     (i) -> {
@@ -194,7 +194,7 @@ public class TestFileInfoBackingCache {
                     File f = new File(baseDir, String.valueOf(ledgerId));
                     f.deleteOnExit();
                     return f;
-                });
+                }, FileInfo.CURRENT_HEADER_VERSION);
 
         Iterable<Future<Set<CachedFileInfo>>> futures =
             IntStream.range(0, 2).mapToObj(
@@ -239,7 +239,7 @@ public class TestFileInfoBackingCache {
                     File f = new File(baseDir, String.valueOf(ledgerId));
                     f.deleteOnExit();
                     return f;
-                });
+                }, FileInfo.CURRENT_HEADER_VERSION);
 
         Cache<Long, CachedFileInfo> guavaCache = CacheBuilder.newBuilder()
             .maximumSize(1)

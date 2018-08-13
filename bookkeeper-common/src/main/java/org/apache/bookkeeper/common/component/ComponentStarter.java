@@ -62,8 +62,19 @@ public class ComponentStarter {
      */
     public static CompletableFuture<Void> startComponent(LifecycleComponent component) {
         CompletableFuture<Void> future = new CompletableFuture<>();
-        Runtime.getRuntime().addShutdownHook(new Thread(
-            new ComponentShutdownHook(component, future), "component-shutdown-thread"));
+        final Thread shutdownHookThread = new Thread(
+            new ComponentShutdownHook(component, future),
+            "component-shutdown-thread"
+        );
+
+        // register a shutdown hook
+        Runtime.getRuntime().addShutdownHook(shutdownHookThread);
+
+        // register a component exception handler
+        component.setExceptionHandler((t, e) -> {
+            // start the shutdown hook when an uncaught exception happen in the lifecycle component.
+            shutdownHookThread.start();
+        });
 
         log.info("Starting component {}.", component.getName());
         component.start();

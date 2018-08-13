@@ -66,6 +66,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     protected static final String PAGE_SIZE = "pageSize";
     protected static final String FILEINFO_CACHE_INITIAL_CAPACITY = "fileInfoCacheInitialCapacity";
     protected static final String FILEINFO_MAX_IDLE_TIME = "fileInfoMaxIdleTime";
+    protected static final String FILEINFO_FORMAT_VERSION_TO_WRITE = "fileInfoFormatVersionToWrite";
     // Journal Parameters
     protected static final String MAX_JOURNAL_SIZE = "journalMaxSizeMB";
     protected static final String MAX_BACKUP_JOURNALS = "journalMaxBackups";
@@ -543,6 +544,27 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      */
     public ServerConfiguration setFileInfoMaxIdleTime(long idleTime) {
         setProperty(FILEINFO_MAX_IDLE_TIME, idleTime);
+        return this;
+    }
+
+    /**
+     * Get fileinfo format version to write.
+     *
+     * @return fileinfo format version to write.
+     */
+    public int getFileInfoFormatVersionToWrite() {
+        return this.getInt(FILEINFO_FORMAT_VERSION_TO_WRITE, 0);
+    }
+
+    /**
+     * Set fileinfo format version to write.
+     *
+     * @param version
+     *            fileinfo format version to write.
+     * @return server configuration.
+     */
+    public ServerConfiguration setFileInfoFormatVersionToWrite(int version) {
+        this.setProperty(FILEINFO_FORMAT_VERSION_TO_WRITE, version);
         return this;
     }
 
@@ -2431,6 +2453,10 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
         if (isEntryLogPerLedgerEnabled() && getUseTransactionalCompaction()) {
             throw new ConfigurationException(
                     "When entryLogPerLedger is enabled , it is unnecessary to use transactional compaction");
+        }
+        if ((getJournalFormatVersionToWrite() >= 6) ^ (getFileInfoFormatVersionToWrite() >= 1)) {
+            throw new ConfigurationException("For persisiting explicitLac, journalFormatVersionToWrite should be >= 6"
+                    + "and FileInfoFormatVersionToWrite should be >= 1");
         }
     }
 

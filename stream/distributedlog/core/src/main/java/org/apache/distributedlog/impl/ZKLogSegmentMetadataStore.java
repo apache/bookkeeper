@@ -476,8 +476,12 @@ public class ZKLogSegmentMetadataStore implements LogSegmentMetadataStore, Watch
             return;
         }
         this.submitTask(logSegmentsPath, () -> {
-            for (LogSegmentNamesListener listener : listeners.keySet()) {
-                listener.onLogStreamDeleted();
+            // the listener map might be updated in different threads (e.g. unregisterLogSegmentListener)
+            // so access it under a synchronization block
+            synchronized (listeners) {
+                for (LogSegmentNamesListener listener : listeners.keySet()) {
+                    listener.onLogStreamDeleted();
+                }
             }
         });
 
@@ -490,8 +494,12 @@ public class ZKLogSegmentMetadataStore implements LogSegmentMetadataStore, Watch
             return;
         }
         this.submitTask(logSegmentsPath, () -> {
-            for (VersionedLogSegmentNamesListener listener : listeners.values()) {
-                listener.onSegmentsUpdated(segments);
+            // the listener map might be updated in different threads (e.g. unregisterLogSegmentListener)
+            // so access it under a synchronization block
+            synchronized (listeners) {
+                for (VersionedLogSegmentNamesListener listener : listeners.values()) {
+                    listener.onSegmentsUpdated(segments);
+                }
             }
         });
     }

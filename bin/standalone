@@ -19,13 +19,47 @@
 # * See the License for the specific language governing permissions and
 # * limitations under the License.
 # */
+usage() {
+    cat <<EOF
+Usage: standalone <runtime> (up|down)
+where runtime is one of:
+    process          Run a standalone cluster in one process
+    docker-compose   Run a standalone cluster in a docker-composed cluster
+EOF
+}
 
 BINDIR=${BK_BINDIR:-"`dirname "$0"`"}
 
-DOCKER_COMPOSE=$(which docker-compose)
-if [ $? != 0 ]; then
-  echo "Error: docker-compose is not found in ${PATH}." 1>&2
+if [ $# -lt 2 ]
+then
+  echo "Error: no enough arguments provided."
+  usage
   exit 1
-else
-  ${BINDIR}/standalone.docker-compose $@
 fi
+
+runtime=$1
+shift
+action=$1
+shift
+
+case $runtime in
+  (process)
+    ${BINDIR}/standalone.process $action $@
+    ;;
+  (docker-compose)
+    DOCKER_COMPOSE=$(which docker-compose)
+    if [ $? != 0 ]; then
+      echo "Error: docker-compose is not found in ${PATH}." 1>&2
+      usage
+      exit 1
+    else
+      echo ${BINDIR}/standalone.docker-compose $action $@
+      ${BINDIR}/standalone.docker-compose $action $@
+    fi
+    ;;
+  (*)
+    echo "Error: unknown runtime $command"
+    usage
+    exit 1
+    ;;
+esac

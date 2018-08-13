@@ -23,6 +23,7 @@ package org.apache.bookkeeper.client;
 import static org.junit.Assert.assertEquals;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -54,10 +55,10 @@ public class TestSequenceRead extends BookKeeperClusterTestCase {
     private LedgerHandle createLedgerWithDuplicatedBookies() throws Exception {
         final LedgerHandle lh = bkc.createLedger(3, 3, 3, digestType, passwd);
         // introduce duplicated bookies in an ensemble.
-        SortedMap<Long, ArrayList<BookieSocketAddress>> ensembles = lh.getLedgerMetadata().getEnsembles();
-        TreeMap<Long, ArrayList<BookieSocketAddress>> newEnsembles = new TreeMap<>();
-        for (Map.Entry<Long, ArrayList<BookieSocketAddress>> entry : ensembles.entrySet()) {
-            ArrayList<BookieSocketAddress> newList = new ArrayList<BookieSocketAddress>(entry.getValue().size());
+        SortedMap<Long, ? extends List<BookieSocketAddress>> ensembles = lh.getLedgerMetadata().getEnsembles();
+        TreeMap<Long, List<BookieSocketAddress>> newEnsembles = new TreeMap<>();
+        for (Map.Entry<Long, ? extends List<BookieSocketAddress>> entry : ensembles.entrySet()) {
+            List<BookieSocketAddress> newList = new ArrayList<BookieSocketAddress>(entry.getValue().size());
             BookieSocketAddress firstBookie = entry.getValue().get(0);
             for (BookieSocketAddress ignored : entry.getValue()) {
                 newList.add(firstBookie);
@@ -68,9 +69,9 @@ public class TestSequenceRead extends BookKeeperClusterTestCase {
         // update the ledger metadata with duplicated bookies
         final CountDownLatch latch = new CountDownLatch(1);
         bkc.getLedgerManager().writeLedgerMetadata(lh.getId(), lh.getLedgerMetadata(),
-                new BookkeeperInternalCallbacks.GenericCallback<Void>() {
+                new BookkeeperInternalCallbacks.GenericCallback<LedgerMetadata>() {
             @Override
-            public void operationComplete(int rc, Void result) {
+            public void operationComplete(int rc, LedgerMetadata result) {
                 if (BKException.Code.OK == rc) {
                     latch.countDown();
                 } else {

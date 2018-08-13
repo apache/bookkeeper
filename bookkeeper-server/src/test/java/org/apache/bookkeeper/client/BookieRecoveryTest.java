@@ -506,7 +506,7 @@ public class BookieRecoveryTest extends BookKeeperClusterTestCase {
     private boolean verifyFullyReplicated(LedgerHandle lh, long untilEntry) throws Exception {
         LedgerMetadata md = getLedgerMetadata(lh);
 
-        Map<Long, ArrayList<BookieSocketAddress>> ensembles = md.getEnsembles();
+        Map<Long, ? extends List<BookieSocketAddress>> ensembles = md.getEnsembles();
 
         HashMap<Long, Long> ranges = new HashMap<Long, Long>();
         ArrayList<Long> keyList = Collections.list(
@@ -517,7 +517,7 @@ public class BookieRecoveryTest extends BookKeeperClusterTestCase {
         }
         ranges.put(keyList.get(keyList.size() - 1), untilEntry);
 
-        for (Map.Entry<Long, ArrayList<BookieSocketAddress>> e : ensembles.entrySet()) {
+        for (Map.Entry<Long, ? extends List<BookieSocketAddress>> e : ensembles.entrySet()) {
             int quorum = md.getAckQuorumSize();
             long startEntryId = e.getKey();
             long endEntryId = ranges.get(startEntryId);
@@ -586,7 +586,7 @@ public class BookieRecoveryTest extends BookKeeperClusterTestCase {
         long numDupes = 0;
         for (LedgerHandle lh : lhs) {
             LedgerMetadata md = getLedgerMetadata(lh);
-            for (Map.Entry<Long, ArrayList<BookieSocketAddress>> e : md.getEnsembles().entrySet()) {
+            for (Map.Entry<Long, ? extends List<BookieSocketAddress>> e : md.getEnsembles().entrySet()) {
                 HashSet<BookieSocketAddress> set = new HashSet<BookieSocketAddress>();
                 long fragment = e.getKey();
 
@@ -619,7 +619,7 @@ public class BookieRecoveryTest extends BookKeeperClusterTestCase {
         closeLedgers(lhs);
 
         // Shutdown last bookie server in last ensemble
-        ArrayList<BookieSocketAddress> lastEnsemble = lhs.get(0).getLedgerMetadata().getEnsembles()
+        List<BookieSocketAddress> lastEnsemble = lhs.get(0).getLedgerMetadata().getEnsembles()
           .entrySet().iterator().next().getValue();
         BookieSocketAddress bookieToKill = lastEnsemble.get(lastEnsemble.size() - 1);
         killBookie(bookieToKill);
@@ -648,7 +648,7 @@ public class BookieRecoveryTest extends BookKeeperClusterTestCase {
         writeEntriestoLedgers(numMsgs, 0, lhs);
 
         // Shutdown the first bookie server
-        ArrayList<BookieSocketAddress> lastEnsemble = lhs.get(0).getLedgerMetadata().getEnsembles()
+        List<BookieSocketAddress> lastEnsemble = lhs.get(0).getLedgerMetadata().getEnsembles()
           .entrySet().iterator().next().getValue();
         BookieSocketAddress bookieToKill = lastEnsemble.get(lastEnsemble.size() - 1);
         killBookie(bookieToKill);
@@ -684,7 +684,7 @@ public class BookieRecoveryTest extends BookKeeperClusterTestCase {
         writeEntriestoLedgers(numMsgs, 0, lhs);
 
         // Shutdown the first bookie server
-        ArrayList<BookieSocketAddress> lastEnsemble = lhs.get(0).getLedgerMetadata().getEnsembles()
+        List<BookieSocketAddress> lastEnsemble = lhs.get(0).getLedgerMetadata().getEnsembles()
           .entrySet().iterator().next().getValue();
         // removed bookie
         BookieSocketAddress bookieToKill = lastEnsemble.get(0);
@@ -727,7 +727,7 @@ public class BookieRecoveryTest extends BookKeeperClusterTestCase {
         List<LedgerHandle> newLhs = openLedgers(lhs);
         for (LedgerHandle newLh : newLhs) {
             // first ensemble should contains bookieToKill2 and not contain bookieToKill
-            Map.Entry<Long, ArrayList<BookieSocketAddress>> entry =
+            Map.Entry<Long, ? extends List<BookieSocketAddress>> entry =
               newLh.getLedgerMetadata().getEnsembles().entrySet().iterator().next();
             assertFalse(entry.getValue().contains(bookieToKill));
             assertTrue(entry.getValue().contains(bookieToKill2));

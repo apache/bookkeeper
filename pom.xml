@@ -23,7 +23,7 @@
   </parent>
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.apache.bookkeeper</groupId>
-  <version>4.8.0-SNAPSHOT</version>
+  <version>4.9.0-SNAPSHOT</version>
   <artifactId>bookkeeper</artifactId>
   <packaging>pom</packaging>
   <name>Apache BookKeeper :: Parent</name>
@@ -104,6 +104,8 @@
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <javac.target>1.8</javac.target>
     <redirectTestOutputToFile>true</redirectTestOutputToFile>
+    <testRetryCount>2</testRetryCount>
+
     <!-- dependencies -->
     <arquillian-cube.version>1.15.1</arquillian-cube.version>
     <arquillian-junit.version>1.1.14.Final</arquillian-junit.version>
@@ -697,15 +699,10 @@
               <artifactId>checkstyle</artifactId>
               <version>${puppycrawl.checkstyle.version}</version>
             </dependency>
-            <dependency>
-              <groupId>org.apache.bookkeeper</groupId>
-              <artifactId>buildtools</artifactId>
-              <version>${project.version}</version>
-            </dependency>
           </dependencies>
           <configuration>
-            <configLocation>bookkeeper/checkstyle.xml</configLocation>
-            <suppressionsLocation>bookkeeper/suppressions.xml</suppressionsLocation>
+            <configLocation>buildtools/src/main/resources/bookkeeper/checkstyle.xml</configLocation>
+            <suppressionsLocation>buildtools/src/main/resources/bookkeeper/suppressions.xml</suppressionsLocation>
             <encoding>UTF-8</encoding>
             <consoleOutput>true</consoleOutput>
             <failOnViolation>true</failOnViolation>
@@ -757,7 +754,7 @@
           <redirectTestOutputToFile>${redirectTestOutputToFile}</redirectTestOutputToFile>
           <reuseForks>false</reuseForks>
           <forkedProcessTimeoutInSeconds>1800</forkedProcessTimeoutInSeconds>
-          <rerunFailingTestsCount>2</rerunFailingTestsCount>
+          <rerunFailingTestsCount>${testRetryCount}</rerunFailingTestsCount>
         </configuration>
       </plugin>
       <plugin>

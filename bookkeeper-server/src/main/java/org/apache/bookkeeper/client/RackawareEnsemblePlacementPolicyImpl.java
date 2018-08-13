@@ -479,17 +479,17 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
     }
 
     @Override
-    public ArrayList<BookieSocketAddress> newEnsemble(int ensembleSize, int writeQuorumSize, int ackQuorumSize,
+    public List<BookieSocketAddress> newEnsemble(int ensembleSize, int writeQuorumSize, int ackQuorumSize,
             Map<String, byte[]> customMetadata, Set<BookieSocketAddress> excludeBookies)
             throws BKNotEnoughBookiesException {
         return newEnsembleInternal(ensembleSize, writeQuorumSize, excludeBookies, null, null);
     }
 
-    protected ArrayList<BookieSocketAddress> newEnsembleInternal(int ensembleSize,
-                                                               int writeQuorumSize,
-                                                               Set<BookieSocketAddress> excludeBookies,
-                                                               Ensemble<BookieNode> parentEnsemble,
-                                                               Predicate<BookieNode> parentPredicate)
+    protected List<BookieSocketAddress> newEnsembleInternal(int ensembleSize,
+                                                            int writeQuorumSize,
+                                                            Set<BookieSocketAddress> excludeBookies,
+                                                            Ensemble<BookieNode> parentEnsemble,
+                                                            Predicate<BookieNode> parentPredicate)
             throws BKNotEnoughBookiesException {
         return newEnsembleInternal(
                 ensembleSize,
@@ -501,12 +501,12 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
     }
 
     @Override
-    public ArrayList<BookieSocketAddress> newEnsemble(int ensembleSize,
-                                                    int writeQuorumSize,
-                                                    int ackQuorumSize,
-                                                    Set<BookieSocketAddress> excludeBookies,
-                                                    Ensemble<BookieNode> parentEnsemble,
-                                                    Predicate<BookieNode> parentPredicate)
+    public List<BookieSocketAddress> newEnsemble(int ensembleSize,
+                                                 int writeQuorumSize,
+                                                 int ackQuorumSize,
+                                                 Set<BookieSocketAddress> excludeBookies,
+                                                 Ensemble<BookieNode> parentEnsemble,
+                                                 Predicate<BookieNode> parentPredicate)
             throws BKNotEnoughBookiesException {
         return newEnsembleInternal(
                 ensembleSize,
@@ -517,7 +517,7 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
                 parentPredicate);
     }
 
-    protected ArrayList<BookieSocketAddress> newEnsembleInternal(
+    protected List<BookieSocketAddress> newEnsembleInternal(
             int ensembleSize,
             int writeQuorumSize,
             int ackQuorumSize,
@@ -624,7 +624,7 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
                         !enforceMinNumRacksPerWriteQuorum || firstBookieInTheEnsemble);
                 racks[i] = prevNode.getNetworkLocation();
             }
-            ArrayList<BookieSocketAddress> bookieList = ensemble.toList();
+            List<BookieSocketAddress> bookieList = ensemble.toList();
             if (ensembleSize != bookieList.size()) {
                 LOG.error("Not enough {} bookies are available to form an ensemble : {}.",
                           ensembleSize, bookieList);
@@ -996,7 +996,7 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
 
     @Override
     public DistributionSchedule.WriteSet reorderReadSequence(
-            ArrayList<BookieSocketAddress> ensemble,
+            List<BookieSocketAddress> ensemble,
             BookiesHealthInfo bookiesHealthInfo,
             DistributionSchedule.WriteSet writeSet) {
         Map<Integer, String> writeSetWithRegion = new HashMap<>();
@@ -1037,7 +1037,7 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
      * @return ordering of bookies to send read to
      */
     DistributionSchedule.WriteSet reorderReadSequenceWithRegion(
-        ArrayList<BookieSocketAddress> ensemble,
+        List<BookieSocketAddress> ensemble,
         DistributionSchedule.WriteSet writeSet,
         Map<Integer, String> writeSetWithRegion,
         BookiesHealthInfo bookiesHealthInfo,

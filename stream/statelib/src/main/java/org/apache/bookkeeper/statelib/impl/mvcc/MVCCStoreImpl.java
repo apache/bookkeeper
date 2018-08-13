@@ -26,6 +26,7 @@ import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
 import com.google.common.collect.PeekingIterator;
 import com.google.common.primitives.UnsignedBytes;
+import com.google.protobuf.TextFormat;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.buffer.Unpooled;
@@ -763,7 +764,8 @@ class MVCCStoreImpl<K, V> extends RocksdbKVStore<K, V> implements MVCCStore<K, V
             record = getKeyRecord(key, rawKey);
             if (null == record) {
                 if (CompareTarget.VALUE != op.target()) {
-                    throw new MVCCStoreException(Code.KEY_NOT_FOUND, "Key " + key + " is not found");
+                    throw new MVCCStoreException(Code.KEY_NOT_FOUND,
+                        "Key '" + TextFormat.escapeBytes(rawKey) + "' is not found");
                 }
             }
             return processCompareOp(record, op);

@@ -24,6 +24,8 @@ import static org.apache.bookkeeper.stream.protocol.ProtocolConstants.DEFAULT_ST
 import org.apache.bookkeeper.clients.admin.StorageAdminClient;
 import org.apache.bookkeeper.stream.cli.commands.AdminCommand;
 import org.apache.bookkeeper.stream.cli.commands.table.CreateTableCommand.Flags;
+import org.apache.bookkeeper.stream.proto.StorageType;
+import org.apache.bookkeeper.stream.proto.StreamConfiguration;
 import org.apache.bookkeeper.stream.proto.StreamProperties;
 import org.apache.bookkeeper.tools.common.BKFlags;
 import org.apache.bookkeeper.tools.framework.CliFlags;
@@ -66,7 +68,9 @@ public class CreateTableCommand extends AdminCommand<Flags> {
             admin.createStream(
                 globalFlags.namespace,
                 streamName,
-                DEFAULT_STREAM_CONF));
+                StreamConfiguration.newBuilder(DEFAULT_STREAM_CONF)
+                    .setStorageType(StorageType.TABLE)
+                    .build()));
         spec.console().println("Successfully created stream '" + streamName + "':");
         spec.console().println(nsProps);
     }

@@ -23,7 +23,6 @@ package org.apache.bookkeeper.client;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.security.GeneralSecurityException;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
@@ -55,7 +54,7 @@ import org.slf4j.LoggerFactory;
  * Encapsulates asynchronous ledger create operation.
  *
  */
-class LedgerCreateOp implements GenericCallback<Void> {
+class LedgerCreateOp implements GenericCallback<LedgerMetadata> {
 
     static final Logger LOG = LoggerFactory.getLogger(LedgerCreateOp.class);
 
@@ -131,7 +130,7 @@ class LedgerCreateOp implements GenericCallback<Void> {
          * Adding bookies to ledger handle
          */
 
-        ArrayList<BookieSocketAddress> ensemble;
+        List<BookieSocketAddress> ensemble;
         try {
             ensemble = bk.getBookieWatcher()
                     .newEnsemble(metadata.getEnsembleSize(),
@@ -189,7 +188,7 @@ class LedgerCreateOp implements GenericCallback<Void> {
      * Callback when created ledger.
      */
     @Override
-    public void operationComplete(int rc, Void result) {
+    public void operationComplete(int rc, LedgerMetadata writtenMetadata) {
         if (this.generateLedgerId && (BKException.Code.LedgerExistException == rc)) {
             // retry to generate a new ledger id
             generateLedgerIdAndCreateLedger();

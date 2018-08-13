@@ -35,6 +35,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import org.apache.bookkeeper.common.util.Watchable;
 import org.apache.bookkeeper.common.util.Watcher;
+import org.apache.bookkeeper.proto.checksum.DigestManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -74,7 +75,13 @@ class FileInfo extends Watchable<LastAddConfirmedUpdateNotification> {
      * The fingerprint of a ledger index file.
      */
     public static final int SIGNATURE = ByteBuffer.wrap("BKLE".getBytes(UTF_8)).getInt();
-    public static final int HEADER_VERSION = 0;
+
+    // No explicitLac
+    static final int V0 = 0;
+    // Adding explicitLac
+    static final int V1 = 1;
+    // current version of FileInfo header is V1
+    public static final int CURRENT_HEADER_VERSION = V1;
 
     static final long START_OF_DATA = 1024;
     private long size;
@@ -91,12 +98,16 @@ class FileInfo extends Watchable<LastAddConfirmedUpdateNotification> {
     // file access mode
     protected String mode;
 
-    public FileInfo(File lf, byte[] masterKey) throws IOException {
+    // this FileInfo Header Version
+    int headerVersion;
+
+    public FileInfo(File lf, byte[] masterKey, int fileInfoVersionToWrite) throws IOException {
         super(WATCHER_RECYCLER);
 
         this.lf = lf;
         this.masterKey = masterKey;
         mode = "rw";
+        this.headerVersion = fileInfoVersionToWrite;
     }
 
     synchronized Long getLastAddConfirmed() {
@@ -182,6 +193,7 @@ class FileInfo extends Watchable<LastAddConfirmedUpdateNotification> {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("fileInfo:SetLac: {}", explicitLac);
             }
+            needFlushHeader = true;
         }
         setLastAddConfirmed(explicitLacValue);
     }
@@ -206,9 +218,11 @@ class FileInfo extends Watchable<LastAddConfirmedUpdateNotification> {
                 throw new IOException("Missing ledger signature while reading header for " + lf);
             }
             int version = bb.getInt();
-            if (version != HEADER_VERSION) {
+            if (version > CURRENT_HEADER_VERSION) {
                 throw new IOException("Incompatible ledger version " + version + " while reading header for " + lf);
             }
+            this.headerVersion = version;
+
             int length = bb.getInt();
             if (length < 0) {
                 throw new IOException("Length " + length + " is invalid while reading header for " + lf);
@@ -218,6 +232,25 @@ class FileInfo extends Watchable<LastAddConfirmedUpdateNotification> {
             masterKey = new byte[length];
             bb.get(masterKey);
             stateBits = bb.getInt();
+
+            if (this.headerVersion >= V1) {
+                int explicitLacBufLength = bb.getInt();
+                if (explicitLacBufLength == 0) {
+                    explicitLac = null;
+                } else if (explicitLacBufLength >= DigestManager.LAC_METADATA_LENGTH) {
+                    if (explicitLac == null) {
+                        explicitLac = ByteBuffer.allocate(explicitLacBufLength);
+                    }
+                    byte[] explicitLacBufArray = new byte[explicitLacBufLength];
+                    bb.get(explicitLacBufArray);
+                    explicitLac.put(explicitLacBufArray);
+                    explicitLac.rewind();
+                } else {
+                    throw new IOException("ExplicitLacBufLength " + explicitLacBufLength
+                            + " is invalid while reading header for " + lf);
+                }
+            }
+
             needFlushHeader = false;
         } else {
             throw new IOException("Ledger index file " + lf + " does not exist");
@@ -271,10 +304,20 @@ class FileInfo extends Watchable<LastAddConfirmedUpdateNotification> {
     private void writeHeader() throws IOException {
         ByteBuffer bb = ByteBuffer.allocate((int) START_OF_DATA);
         bb.putInt(SIGNATURE);
-        bb.putInt(HEADER_VERSION);
+        bb.putInt(this.headerVersion);
         bb.putInt(masterKey.length);
         bb.put(masterKey);
         bb.putInt(stateBits);
+        if (this.headerVersion >= V1) {
+            if (explicitLac != null) {
+                explicitLac.rewind();
+                bb.putInt(explicitLac.capacity());
+                bb.put(explicitLac);
+                explicitLac.rewind();
+            } else {
+                bb.putInt(0);
+            }
+        }
         bb.rewind();
         fc.position(0);
         fc.write(bb);

@@ -83,7 +83,7 @@ public class BookieWatchService
             bookies = FutureUtils.result(client.getWritableBookies()).getValue();
             log.info("Only {} bookies are live since {} seconds elapsed, "
                 + "wait for another {} bookies for another 1 second",
-                bookies.size(), minNumBookies - bookies.size(), stopwatch.elapsed(TimeUnit.SECONDS));
+                bookies.size(), stopwatch.elapsed(TimeUnit.SECONDS), minNumBookies - bookies.size());
         }
     }
 

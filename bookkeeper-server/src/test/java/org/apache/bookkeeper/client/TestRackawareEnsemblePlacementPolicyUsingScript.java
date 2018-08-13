@@ -30,8 +30,8 @@ import static org.junit.Assert.fail;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 import io.netty.util.HashedWheelTimer;
-import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -257,9 +257,9 @@ public class TestRackawareEnsemblePlacementPolicyUsingScript {
         addrs.add(addr4);
         repp.onClusterChanged(addrs, new HashSet<BookieSocketAddress>());
         try {
-            ArrayList<BookieSocketAddress> ensemble = repp.newEnsemble(3, 2, 2, null, new HashSet<>());
+            List<BookieSocketAddress> ensemble = repp.newEnsemble(3, 2, 2, null, new HashSet<>());
             assertEquals(0, getNumCoveredWriteQuorums(ensemble, 2));
-            ArrayList<BookieSocketAddress> ensemble2 = repp.newEnsemble(4, 2, 2, null, new HashSet<>());
+            List<BookieSocketAddress> ensemble2 = repp.newEnsemble(4, 2, 2, null, new HashSet<>());
             assertEquals(0, getNumCoveredWriteQuorums(ensemble2, 2));
         } catch (BKNotEnoughBookiesException bnebe) {
             fail("Should not get not enough bookies exception even there is only one rack.");
@@ -281,10 +281,10 @@ public class TestRackawareEnsemblePlacementPolicyUsingScript {
         addrs.add(addr4);
         repp.onClusterChanged(addrs, new HashSet<BookieSocketAddress>());
         try {
-            ArrayList<BookieSocketAddress> ensemble = repp.newEnsemble(3, 2, 2, null, new HashSet<>());
+            List<BookieSocketAddress> ensemble = repp.newEnsemble(3, 2, 2, null, new HashSet<>());
             int numCovered = getNumCoveredWriteQuorums(ensemble, 2);
             assertTrue(numCovered == 2);
-            ArrayList<BookieSocketAddress> ensemble2 = repp.newEnsemble(4, 2, 2, null, new HashSet<>());
+            List<BookieSocketAddress> ensemble2 = repp.newEnsemble(4, 2, 2, null, new HashSet<>());
             numCovered = getNumCoveredWriteQuorums(ensemble2, 2);
             assertTrue(numCovered == 2);
         } catch (BKNotEnoughBookiesException bnebe) {
@@ -315,9 +315,9 @@ public class TestRackawareEnsemblePlacementPolicyUsingScript {
         addrs.add(addr8);
         repp.onClusterChanged(addrs, new HashSet<BookieSocketAddress>());
         try {
-            ArrayList<BookieSocketAddress> ensemble1 = repp.newEnsemble(3, 2, 2, null, new HashSet<>());
+            List<BookieSocketAddress> ensemble1 = repp.newEnsemble(3, 2, 2, null, new HashSet<>());
             assertEquals(3, getNumCoveredWriteQuorums(ensemble1, 2));
-            ArrayList<BookieSocketAddress> ensemble2 = repp.newEnsemble(4, 2, 2, null, new HashSet<>());
+            List<BookieSocketAddress> ensemble2 = repp.newEnsemble(4, 2, 2, null, new HashSet<>());
             assertEquals(4, getNumCoveredWriteQuorums(ensemble2, 2));
         } catch (BKNotEnoughBookiesException bnebe) {
             fail("Should not get not enough bookies exception.");
@@ -346,7 +346,7 @@ public class TestRackawareEnsemblePlacementPolicyUsingScript {
         repp.onClusterChanged(addrs, new HashSet<BookieSocketAddress>());
     }
 
-    private int getNumCoveredWriteQuorums(ArrayList<BookieSocketAddress> ensemble, int writeQuorumSize)
+    private int getNumCoveredWriteQuorums(List<BookieSocketAddress> ensemble, int writeQuorumSize)
             throws Exception {
         int ensembleSize = ensemble.size();
         int numCoveredWriteQuorums = 0;

@@ -110,7 +110,8 @@ public class IndexPersistenceMgr {
 
         // build the file info cache
         int concurrencyLevel = Math.max(1, Math.max(conf.getNumAddWorkerThreads(), conf.getNumReadWorkerThreads()));
-        fileInfoBackingCache = new FileInfoBackingCache(this::createFileInfoBackingFile);
+        fileInfoBackingCache = new FileInfoBackingCache(this::createFileInfoBackingFile,
+                conf.getFileInfoFormatVersionToWrite());
         RemovalListener<Long, CachedFileInfo> fileInfoEvictionListener = this::handleLedgerEviction;
         writeFileInfoCache = buildCache(
             concurrencyLevel,
@@ -494,7 +495,20 @@ public class IndexPersistenceMgr {
     private void relocateIndexFileAndFlushHeader(long ledger, FileInfo fi) throws IOException {
         File currentDir = getLedgerDirForLedger(fi);
         if (ledgerDirsManager.isDirFull(currentDir)) {
-            moveLedgerIndexFile(ledger, fi);
+            try {
+                moveLedgerIndexFile(ledger, fi);
+            } catch (NoWritableLedgerDirException nwe) {
+                /*
+                 * if there is no other indexDir, which could accommodate new
+                 * indexFile but the current indexDir has enough space
+                 * (minUsableSizeForIndexFileCreation) for this flushHeader
+                 * operation, then it is ok to proceed without moving
+                 * LedgerIndexFile.
+                 */
+                if (!ledgerDirsManager.isDirWritableForNewIndexFile(currentDir)) {
+                    throw nwe;
+                }
+            }
         }
         fi.flushHeader();
     }

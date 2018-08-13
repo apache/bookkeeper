@@ -93,7 +93,7 @@ public class ParallelLedgerRecoveryTest extends BookKeeperClusterTestCase {
         }
 
         @Override
-        public void createLedgerMetadata(long ledgerId, LedgerMetadata metadata, GenericCallback<Void> cb) {
+        public void createLedgerMetadata(long ledgerId, LedgerMetadata metadata, GenericCallback<LedgerMetadata> cb) {
             lm.createLedgerMetadata(ledgerId, metadata, cb);
         }
 
@@ -114,7 +114,7 @@ public class ParallelLedgerRecoveryTest extends BookKeeperClusterTestCase {
 
         @Override
         public void writeLedgerMetadata(final long ledgerId, final LedgerMetadata metadata,
-                                        final GenericCallback<Void> cb) {
+                                        final GenericCallback<LedgerMetadata> cb) {
             final CountDownLatch cdl = waitLatch;
             if (null != cdl) {
                 executorService.submit(new Runnable() {
@@ -368,9 +368,9 @@ public class ParallelLedgerRecoveryTest extends BookKeeperClusterTestCase {
                 newRecoverLh.getLedgerMetadata().markLedgerInRecovery();
                 final CountDownLatch updateLatch = new CountDownLatch(1);
                 final AtomicInteger updateResult = new AtomicInteger(0x12345);
-                newRecoverLh.writeLedgerConfig(new GenericCallback<Void>() {
+                newRecoverLh.writeLedgerConfig(new GenericCallback<LedgerMetadata>() {
                     @Override
-                    public void operationComplete(int rc, Void result) {
+                    public void operationComplete(int rc, LedgerMetadata result) {
                         updateResult.set(rc);
                         updateLatch.countDown();
                     }
@@ -428,14 +428,16 @@ public class ParallelLedgerRecoveryTest extends BookKeeperClusterTestCase {
         final CountDownLatch addLatch = new CountDownLatch(1);
         final AtomicBoolean addSuccess = new AtomicBoolean(false);
         LOG.info("Add entry {} with lac = {}", entryId, lac);
-        lh.bk.getBookieClient().addEntry(lh.metadata.currentEnsemble.get(0), lh.getId(), lh.ledgerKey, entryId, toSend,
-            new WriteCallback() {
-                @Override
-                public void writeComplete(int rc, long ledgerId, long entryId, BookieSocketAddress addr, Object ctx) {
-                    addSuccess.set(BKException.Code.OK == rc);
-                    addLatch.countDown();
-                }
-            }, 0, BookieProtocol.FLAG_NONE, false, WriteFlag.NONE);
+        lh.bk.getBookieClient().addEntry(lh.getLedgerMetadata().currentEnsemble.get(0),
+                                         lh.getId(), lh.ledgerKey, entryId, toSend,
+                                         new WriteCallback() {
+                                             @Override
+                                             public void writeComplete(int rc, long ledgerId, long entryId,
+                                                                       BookieSocketAddress addr, Object ctx) {
+                                                 addSuccess.set(BKException.Code.OK == rc);
+                                                 addLatch.countDown();
+                                             }
+                                         }, 0, BookieProtocol.FLAG_NONE, false, WriteFlag.NONE);
         addLatch.await();
         assertTrue("add entry 14 should succeed", addSuccess.get());
 

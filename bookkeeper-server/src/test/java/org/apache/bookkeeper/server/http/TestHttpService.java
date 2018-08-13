@@ -26,6 +26,7 @@ import static org.junit.Assert.assertTrue;
 import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import java.io.File;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -35,6 +36,7 @@ import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.LedgerHandleAdapter;
 import org.apache.bookkeeper.client.LedgerMetadata;
+import org.apache.bookkeeper.common.util.JsonUtil;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.http.HttpServer;
@@ -48,7 +50,6 @@ import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.replication.AuditorElector;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.test.TestCallbacks;
-import org.apache.bookkeeper.util.JsonUtil;
 import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
 import org.apache.zookeeper.ZooKeeper;
 import org.junit.Before;
@@ -646,6 +647,7 @@ public class TestHttpService extends BookKeeperClusterTestCase {
             try {
                 testListUnderReplicatedLedgerService(mFactory);
             } catch (Exception e) {
+                LOG.info("Exception in test", e);
                 throw new UncheckedExecutionException(e.getMessage(), e.getCause());
             }
             return null;
@@ -671,10 +673,12 @@ public class TestHttpService extends BookKeeperClusterTestCase {
 
         LedgerHandle lh = bkc.createLedger(3, 3, BookKeeper.DigestType.CRC32, "passwd".getBytes());
         LedgerMetadata md = LedgerHandleAdapter.getLedgerMetadata(lh);
-        List<BookieSocketAddress> ensemble = md.getEnsembles().get(0L);
+        List<BookieSocketAddress> ensemble = new ArrayList<>(md.getEnsembles().get(0L));
         ensemble.set(0, new BookieSocketAddress("1.1.1.1", 1000));
+        md.updateEnsemble(0L, ensemble);
 
-        TestCallbacks.GenericCallbackFuture<Void> cb = new TestCallbacks.GenericCallbackFuture<Void>();
+        TestCallbacks.GenericCallbackFuture<LedgerMetadata> cb =
+            new TestCallbacks.GenericCallbackFuture<LedgerMetadata>();
         ledgerManager.writeLedgerMetadata(lh.getId(), md, cb);
         cb.get();
 

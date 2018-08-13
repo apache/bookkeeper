@@ -91,12 +91,12 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
         int firstError = BKException.Code.OK;
         int numBookiesMissingEntry = 0;
 
-        final ArrayList<BookieSocketAddress> ensemble;
+        final List<BookieSocketAddress> ensemble;
         final DistributionSchedule.WriteSet writeSet;
         final LedgerEntryImpl entryImpl;
         final long eId;
 
-        LedgerEntryRequest(ArrayList<BookieSocketAddress> ensemble, long lId, long eId) {
+        LedgerEntryRequest(List<BookieSocketAddress> ensemble, long lId, long eId) {
             this.entryImpl = LedgerEntryImpl.create(lId, eId);
             this.ensemble = ensemble;
             this.eId = eId;
@@ -278,7 +278,7 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
 
         int numPendings;
 
-        ParallelReadRequest(ArrayList<BookieSocketAddress> ensemble, long lId, long eId) {
+        ParallelReadRequest(List<BookieSocketAddress> ensemble, long lId, long eId) {
             super(ensemble, lId, eId);
             numPendings = writeSet.size();
         }
@@ -328,7 +328,7 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
         final BitSet sentReplicas;
         final BitSet erroredReplicas;
 
-        SequenceReadRequest(ArrayList<BookieSocketAddress> ensemble, long lId, long eId) {
+        SequenceReadRequest(List<BookieSocketAddress> ensemble, long lId, long eId) {
             super(ensemble, lId, eId);
 
             this.sentReplicas = new BitSet(lh.getLedgerMetadata().getWriteQuorumSize());
@@ -493,7 +493,7 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
     }
 
     protected LedgerMetadata getLedgerMetadata() {
-        return lh.metadata;
+        return lh.getLedgerMetadata();
     }
 
     protected void cancelSpeculativeTask(boolean mayInterruptIfRunning) {
@@ -519,7 +519,7 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
     void initiate() {
         long nextEnsembleChange = startEntryId, i = startEntryId;
         this.requestTimeNanos = MathUtils.nowInNano();
-        ArrayList<BookieSocketAddress> ensemble = null;
+        List<BookieSocketAddress> ensemble = null;
         do {
             if (i == nextEnsembleChange) {
                 ensemble = getLedgerMetadata().getEnsemble(i);

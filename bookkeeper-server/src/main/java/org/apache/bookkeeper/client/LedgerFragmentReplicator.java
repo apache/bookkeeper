@@ -374,18 +374,19 @@ public class LedgerFragmentReplicator {
          * Update the ledger metadata's ensemble info to point to the new
          * bookie.
          */
-        ArrayList<BookieSocketAddress> ensemble = lh.getLedgerMetadata()
-                .getEnsembles().get(fragmentStartId);
+        List<BookieSocketAddress> ensemble = lh.getLedgerMetadata().getEnsembles().get(fragmentStartId);
+        List<BookieSocketAddress> newEnsemble = new ArrayList<>(ensemble);
         for (Map.Entry<BookieSocketAddress, BookieSocketAddress> entry : oldBookie2NewBookie.entrySet()) {
-            int deadBookieIndex = ensemble.indexOf(entry.getKey());
+            int deadBookieIndex = newEnsemble.indexOf(entry.getKey());
             // update ensemble info might happen after re-read ledger metadata, so the ensemble might already
             // change. if ensemble is already changed, skip replacing the bookie doesn't exist.
             if (deadBookieIndex >= 0) {
-                ensemble.set(deadBookieIndex, entry.getValue());
+                newEnsemble.set(deadBookieIndex, entry.getValue());
             } else {
                 LOG.info("Bookie {} doesn't exist in ensemble {} anymore.", entry.getKey(), ensemble);
             }
         }
+        lh.getLedgerMetadata().updateEnsemble(fragmentStartId, newEnsemble);
         lh.writeLedgerConfig(new UpdateEnsembleCb(ensembleUpdatedCb,
                 fragmentStartId, lh, oldBookie2NewBookie));
     }
@@ -395,7 +396,7 @@ public class LedgerFragmentReplicator {
      * MetadataVersionException and update ensemble again. On successfull
      * updation, it will also notify to super call back
      */
-    private static class UpdateEnsembleCb implements GenericCallback<Void> {
+    private static class UpdateEnsembleCb implements GenericCallback<LedgerMetadata> {
         final AsyncCallback.VoidCallback ensembleUpdatedCb;
         final LedgerHandle lh;
         final long fragmentStartId;
@@ -411,7 +412,7 @@ public class LedgerFragmentReplicator {
         }
 
         @Override
-        public void operationComplete(int rc, Void result) {
+        public void operationComplete(int rc, LedgerMetadata writtenMetadata) {
             if (rc == BKException.Code.MetadataVersionException) {
                 LOG.warn("Two fragments attempted update at once; ledger id: "
                         + lh.getId() + " startid: " + fragmentStartId);
@@ -430,7 +431,14 @@ public class LedgerFragmentReplicator {
                                     ensembleUpdatedCb.processResult(rc, null,
                                             null);
                                 } else {
-                                    lh.metadata = newMeta;
+                                    while (true) {
+                                        // temporary change, metadata really shouldn't be updated
+                                        // until the new metadata has been written successfully
+                                        LedgerMetadata currentMetadata = lh.getLedgerMetadata();
+                                        if (lh.setLedgerMetadata(currentMetadata, newMeta)) {
+                                            break;
+                                        }
+                                    }
                                     updateEnsembleInfo(ensembleUpdatedCb,
                                             fragmentStartId, lh, oldBookie2NewBookie);
                                 }

@@ -63,7 +63,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
     static final Logger LOG = LoggerFactory.getLogger(TestRackawareEnsemblePlacementPolicy.class);
 
     RackawareEnsemblePlacementPolicy repp;
-    final ArrayList<BookieSocketAddress> ensemble = new ArrayList<BookieSocketAddress>();
+    final List<BookieSocketAddress> ensemble = new ArrayList<BookieSocketAddress>();
     DistributionSchedule.WriteSet writeSet = DistributionSchedule.NULL_WRITE_SET;
     ClientConfiguration conf = new ClientConfiguration();
     BookieSocketAddress addr1, addr2, addr3, addr4;
@@ -453,7 +453,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         bookiePendingMap.put(addr5, 9L); // not in write set
         bookiePendingMap.put(addr6, 2L); // best bookie -> this one first
         bookiePendingMap.put(addr7, 10L);
-        ArrayList<BookieSocketAddress> ensemble = new ArrayList<BookieSocketAddress>();
+        List<BookieSocketAddress> ensemble = new ArrayList<BookieSocketAddress>();
         ensemble.add(addr1);
         ensemble.add(addr2);
         ensemble.add(addr3);
@@ -669,9 +669,9 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         addrs.add(addr4);
         repp.onClusterChanged(addrs, new HashSet<BookieSocketAddress>());
         try {
-            ArrayList<BookieSocketAddress> ensemble = repp.newEnsemble(3, 2, 2, null, new HashSet<>());
+            List<BookieSocketAddress> ensemble = repp.newEnsemble(3, 2, 2, null, new HashSet<>());
             assertEquals(0, getNumCoveredWriteQuorums(ensemble, 2, conf.getMinNumRacksPerWriteQuorum()));
-            ArrayList<BookieSocketAddress> ensemble2 = repp.newEnsemble(4, 2, 2, null, new HashSet<>());
+            List<BookieSocketAddress> ensemble2 = repp.newEnsemble(4, 2, 2, null, new HashSet<>());
             assertEquals(0, getNumCoveredWriteQuorums(ensemble2, 2, conf.getMinNumRacksPerWriteQuorum()));
         } catch (BKNotEnoughBookiesException bnebe) {
             fail("Should not get not enough bookies exception even there is only one rack.");
@@ -703,7 +703,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         addrs.add(addr4);
         repp.onClusterChanged(addrs, new HashSet<BookieSocketAddress>());
 
-        ArrayList<BookieSocketAddress> ensemble;
+        List<BookieSocketAddress> ensemble;
         try {
             ensemble = repp.newEnsemble(3, 2, 2, null, new HashSet<>());
             fail("Should get not enough bookies exception since there is only one rack.");
@@ -765,7 +765,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
          * and there are enough bookies in 3 racks, this newEnsemble calls should
          * succeed.
          */
-        ArrayList<BookieSocketAddress> ensemble;
+        List<BookieSocketAddress> ensemble;
         int ensembleSize = numOfRacks * numOfBookiesPerRack;
         int writeQuorumSize = numOfRacks;
         int ackQuorumSize = numOfRacks;
@@ -821,7 +821,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
          * ensembleSizes (as long as there are enough number of bookies in each
          * rack).
          */
-        ArrayList<BookieSocketAddress> ensemble;
+        List<BookieSocketAddress> ensemble;
         for (int ensembleSize = effectiveMinNumRacksPerWriteQuorum; ensembleSize < 40; ensembleSize++) {
             ensemble = repp.newEnsemble(ensembleSize, writeQuorumSize, ackQuorumSize, null, new HashSet<>());
             assertEquals("Number of writeQuorum sets covered", ensembleSize,
@@ -872,7 +872,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
          * and there are enough bookies in 3 racks, this newEnsemble call should
          * succeed.
          */
-        ArrayList<BookieSocketAddress> ensemble;
+        List<BookieSocketAddress> ensemble;
         int ensembleSize = numOfRacks * numOfBookiesPerRack;
         int writeQuorumSize = numOfRacks;
         int ackQuorumSize = numOfRacks;
@@ -1198,12 +1198,12 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
             int ensembleSize = 3;
             int writeQuorumSize = 2;
             int acqQuorumSize = 2;
-            ArrayList<BookieSocketAddress> ensemble = repp.newEnsemble(ensembleSize, writeQuorumSize, acqQuorumSize,
+            List<BookieSocketAddress> ensemble = repp.newEnsemble(ensembleSize, writeQuorumSize, acqQuorumSize,
                     null, new HashSet<>());
             int numCovered = getNumCoveredWriteQuorums(ensemble, 2, conf.getMinNumRacksPerWriteQuorum());
             assertTrue(numCovered >= 1 && numCovered < 3);
             ensembleSize = 4;
-            ArrayList<BookieSocketAddress> ensemble2 = repp.newEnsemble(ensembleSize, writeQuorumSize, acqQuorumSize,
+            List<BookieSocketAddress> ensemble2 = repp.newEnsemble(ensembleSize, writeQuorumSize, acqQuorumSize,
                     null, new HashSet<>());
             numCovered = getNumCoveredWriteQuorums(ensemble2, 2, conf.getMinNumRacksPerWriteQuorum());
             assertTrue(numCovered >= 1 && numCovered < 3);
@@ -1276,7 +1276,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         repp.withDefaultRack(NetworkTopology.DEFAULT_REGION_AND_RACK);
         repp.onClusterChanged(addrs, new HashSet<BookieSocketAddress>());
 
-        ArrayList<BookieSocketAddress> ensemble = repp.newEnsemble(ensembleSize, writeQuorumSize, writeQuorumSize, null,
+        List<BookieSocketAddress> ensemble = repp.newEnsemble(ensembleSize, writeQuorumSize, writeQuorumSize, null,
                 new HashSet<>());
         int numCovered = getNumCoveredWriteQuorums(ensemble, writeQuorumSize, minNumRacksPerWriteQuorum);
         assertEquals("minimum number of racks covered for writequorum ensemble: " + ensemble, ensembleSize, numCovered);
@@ -1317,12 +1317,12 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
             int ensembleSize = 3;
             int writeQuorumSize = 3;
             int ackQuorumSize = 2;
-            ArrayList<BookieSocketAddress> ensemble1 = repp.newEnsemble(ensembleSize, writeQuorumSize, ackQuorumSize,
+            List<BookieSocketAddress> ensemble1 = repp.newEnsemble(ensembleSize, writeQuorumSize, ackQuorumSize,
                     null, new HashSet<>());
             assertEquals(ensembleSize, getNumCoveredWriteQuorums(ensemble1, 2, conf.getMinNumRacksPerWriteQuorum()));
             ensembleSize = 4;
             writeQuorumSize = 4;
-            ArrayList<BookieSocketAddress> ensemble2 = repp.newEnsemble(ensembleSize, writeQuorumSize, 2, null,
+            List<BookieSocketAddress> ensemble2 = repp.newEnsemble(ensembleSize, writeQuorumSize, 2, null,
                     new HashSet<>());
             assertEquals(ensembleSize, getNumCoveredWriteQuorums(ensemble2, 2, conf.getMinNumRacksPerWriteQuorum()));
         } catch (BKNotEnoughBookiesException bnebe) {
@@ -1554,7 +1554,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         int numTries = 10000;
 
         Set<BookieSocketAddress> excludeList = new HashSet<BookieSocketAddress>();
-        ArrayList<BookieSocketAddress> ensemble;
+        List<BookieSocketAddress> ensemble;
         int ensembleSize = 3;
         int writeQuorumSize = 2;
         int acqQuorumSize = 2;
@@ -1625,7 +1625,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
 
         repp.updateBookieInfo(bookieInfoMap);
 
-        ArrayList<BookieSocketAddress> ensemble = new ArrayList<BookieSocketAddress>();
+        List<BookieSocketAddress> ensemble = new ArrayList<BookieSocketAddress>();
         Set<BookieSocketAddress> excludeList = new HashSet<BookieSocketAddress>();
         try {
             excludeList.add(addr1);
@@ -1644,7 +1644,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         }
     }
 
-    static int getNumCoveredWriteQuorums(ArrayList<BookieSocketAddress> ensemble, int writeQuorumSize,
+    static int getNumCoveredWriteQuorums(List<BookieSocketAddress> ensemble, int writeQuorumSize,
             int minNumRacksPerWriteQuorumConfValue) throws Exception {
         int ensembleSize = ensemble.size();
         int numCoveredWriteQuorums = 0;
@@ -1722,13 +1722,13 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
 
         // we will never use addr4 even it is in the stabilized network topology
         for (int i = 0; i < 5; i++) {
-            ArrayList<BookieSocketAddress> ensemble =
+            List<BookieSocketAddress> ensemble =
                     repp.newEnsemble(3, 3, 3, null, new HashSet<BookieSocketAddress>());
             assertFalse(ensemble.contains(addr4));
         }
 
         // we could still use addr4 for urgent allocation if it is just bookie flapping
-        ArrayList<BookieSocketAddress> ensemble = repp.newEnsemble(4, 4, 4, null, new HashSet<BookieSocketAddress>());
+        List<BookieSocketAddress> ensemble = repp.newEnsemble(4, 4, 4, null, new HashSet<BookieSocketAddress>());
         assertTrue(ensemble.contains(addr4));
     }
 

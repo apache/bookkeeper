@@ -23,10 +23,9 @@ package org.apache.bookkeeper.replication;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.List;
 import java.util.Map.Entry;
-import java.util.Set;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.LedgerEntry;
 import org.apache.bookkeeper.client.LedgerHandle;
@@ -88,10 +87,9 @@ public class TestAutoRecoveryAlongWithBookieServers extends
         }
 
         // Killing all bookies except newly replicated bookie
-        Set<Entry<Long, ArrayList<BookieSocketAddress>>> entrySet = LedgerHandleAdapter
-                .getLedgerMetadata(lh).getEnsembles().entrySet();
-        for (Entry<Long, ArrayList<BookieSocketAddress>> entry : entrySet) {
-            ArrayList<BookieSocketAddress> bookies = entry.getValue();
+        for (Entry<Long, ? extends List<BookieSocketAddress>> entry :
+                 lh.getLedgerMetadata().getEnsembles().entrySet()) {
+            List<BookieSocketAddress> bookies = entry.getValue();
             for (BookieSocketAddress bookie : bookies) {
                 if (bookie.equals(newBkAddr)) {
                     continue;

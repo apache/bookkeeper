@@ -94,7 +94,7 @@ public class UpdateLedgerCmdTest extends BookKeeperClusterTestCase {
 
     private int getUpdatedLedgersCount(BookKeeper bk, List<LedgerHandle> ledgers, BookieSocketAddress toBookieAddr)
             throws InterruptedException, BKException {
-        ArrayList<BookieSocketAddress> ensemble;
+        List<BookieSocketAddress> ensemble;
         int updatedLedgersCount = 0;
         for (LedgerHandle lh : ledgers) {
             // ledger#close() would hit BadVersion exception as rename

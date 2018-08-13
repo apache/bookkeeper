@@ -26,9 +26,9 @@ import static org.junit.Assert.assertTrue;
 
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import lombok.Cleanup;
@@ -92,7 +92,7 @@ public class TestWatchEnsembleChange extends BookKeeperClusterTestCase {
         LedgerHandle readLh = bkc.openLedgerNoRecovery(lh.getId(), digestType, "".getBytes());
         long lastLAC = readLh.getLastAddConfirmed();
         assertEquals(numEntries - 2, lastLAC);
-        ArrayList<BookieSocketAddress> ensemble =
+        List<BookieSocketAddress> ensemble =
                 lh.getLedgerMetadata().currentEnsemble;
         for (BookieSocketAddress addr : ensemble) {
             killBookie(addr);
@@ -134,10 +134,10 @@ public class TestWatchEnsembleChange extends BookKeeperClusterTestCase {
             @Override
             public void operationComplete(int rc, final Long lid) {
                 manager.createLedgerMetadata(lid, new LedgerMetadata(4, 2, 2, digestType, "fpj was here".getBytes()),
-                         new BookkeeperInternalCallbacks.GenericCallback<Void>(){
+                         new BookkeeperInternalCallbacks.GenericCallback<LedgerMetadata>(){
 
                     @Override
-                    public void operationComplete(int rc, Void result) {
+                    public void operationComplete(int rc, LedgerMetadata result) {
                         bbLedgerId.putLong(lid);
                         bbLedgerId.flip();
                         createLatch.countDown();

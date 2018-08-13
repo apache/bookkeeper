@@ -19,10 +19,17 @@
 package org.apache.bookkeeper.common.component;
 
 import static org.junit.Assert.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.lang.Thread.UncaughtExceptionHandler;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicReference;
 import org.junit.Test;
 
 /**
@@ -111,6 +118,56 @@ public class TestLifecycleComponentStack {
     stack.close();
     verify(component1).close();
     verify(component2).close();
+  }
+
+  @Test
+  public void testSetExceptionHandler() {
+    LifecycleComponent component1 = mock(LifecycleComponent.class);
+    LifecycleComponent component2 = mock(LifecycleComponent.class);
+
+    LifecycleComponentStack stack = LifecycleComponentStack.newBuilder()
+        .withName("set-exception-handler-stack")
+        .addComponent(component1)
+        .addComponent(component2)
+        .build();
+
+    UncaughtExceptionHandler handler = mock(UncaughtExceptionHandler.class);
+
+    stack.setExceptionHandler(handler);
+    verify(component1, times(1)).setExceptionHandler(eq(handler));
+    verify(component2, times(1)).setExceptionHandler(eq(handler));
+  }
+
+  @Test
+  public void testExceptionHandlerShutdownLifecycleComponentStack() throws Exception {
+    LifecycleComponent component1 = mock(LifecycleComponent.class);
+    LifecycleComponent component2 = mock(LifecycleComponent.class);
+    AtomicReference<UncaughtExceptionHandler> handlerRef1 = new AtomicReference<>();
+    doAnswer(invocationOnMock -> {
+        handlerRef1.set(invocationOnMock.getArgument(0));
+        return null;
+    }).when(component1).setExceptionHandler(any(UncaughtExceptionHandler.class));
+
+    LifecycleComponentStack stack = LifecycleComponentStack.newBuilder()
+        .withName("exception-handler-shutdown-lifecycle-component-stack")
+        .addComponent(component1)
+        .addComponent(component2)
+        .build();
+
+    CompletableFuture<Void> startFuture = ComponentStarter.startComponent(stack);
+    verify(component1, times(1)).start();
+    verify(component1, times(1)).setExceptionHandler(eq(handlerRef1.get()));
+    verify(component2, times(1)).start();
+    verify(component2, times(1)).setExceptionHandler(eq(handlerRef1.get()));
+
+    // if an exception is signaled through any component,
+    // the startFuture will be completed and all the components will be shutdown
+    handlerRef1.get().uncaughtException(
+        Thread.currentThread(), new Exception("exception-handler-shutdown-lifecycle-component-stack"));
+
+    startFuture.get();
+    verify(component1, times(1)).close();
+    verify(component2, times(1)).close();
   }
 
 }

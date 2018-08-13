@@ -23,6 +23,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.api.StorageClient;
+import org.apache.bookkeeper.api.exceptions.ApiException;
 import org.apache.bookkeeper.api.kv.PTable;
 import org.apache.bookkeeper.api.kv.Table;
 import org.apache.bookkeeper.clients.config.StorageClientSettings;
@@ -36,6 +37,7 @@ import org.apache.bookkeeper.common.util.AbstractAutoAsyncCloseable;
 import org.apache.bookkeeper.common.util.ExceptionUtils;
 import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.bookkeeper.common.util.SharedResourceManager;
+import org.apache.bookkeeper.stream.proto.StorageType;
 import org.apache.bookkeeper.stream.proto.StreamProperties;
 
 /**
@@ -65,7 +67,7 @@ class StorageClientImpl extends AbstractAutoAsyncCloseable implements StorageCli
 
     }
 
-    private CompletableFuture<StreamProperties> getStreamProperties(String streamName) {
+    CompletableFuture<StreamProperties> getStreamProperties(String streamName) {
         return this.serverManager.getRootRangeClient().getStream(namespaceName, streamName);
     }
 
@@ -92,7 +94,12 @@ class StorageClientImpl extends AbstractAutoAsyncCloseable implements StorageCli
         FutureUtils.proxyTo(
             getStreamProperties(streamName).thenComposeAsync(props -> {
                 if (log.isInfoEnabled()) {
-                    log.info("Retrieved stream properties for stream {} : {}", streamName, props);
+                    log.info("Retrieved table properties for table {} : {}", streamName, props);
+                }
+                if (StorageType.TABLE != props.getStreamConf().getStorageType()) {
+                    return FutureUtils.exception(new ApiException(
+                        "Can't open a non-table storage entity : " + props.getStreamConf().getStorageType())
+                    );
                 }
                 return new PByteBufTableImpl(
                     streamName,

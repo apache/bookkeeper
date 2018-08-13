@@ -26,6 +26,7 @@ import static org.apache.bookkeeper.conf.AbstractConfiguration.PERMITTED_STARTUP
 
 import com.google.common.annotations.VisibleForTesting;
 import java.io.IOException;
+import java.lang.Thread.UncaughtExceptionHandler;
 import java.net.UnknownHostException;
 import java.security.AccessControlException;
 import java.util.Arrays;
@@ -37,6 +38,7 @@ import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.ExitCode;
 import org.apache.bookkeeper.bookie.ReadOnlyBookie;
 import org.apache.bookkeeper.client.BKException;
+import org.apache.bookkeeper.common.util.JsonUtil.ParseJsonException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.processor.RequestProcessor;
@@ -48,7 +50,6 @@ import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.tls.SecurityException;
 import org.apache.bookkeeper.tls.SecurityHandlerFactory;
 import org.apache.bookkeeper.tls.SecurityProviderFactoryFactory;
-import org.apache.bookkeeper.util.JsonUtil.ParseJsonException;
 import org.apache.zookeeper.KeeperException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -72,6 +73,9 @@ public class BookieServer {
 
     // Expose Stats
     private final StatsLogger statsLogger;
+
+    // Exception handler
+    private volatile UncaughtExceptionHandler uncaughtExceptionHandler = null;
 
     public BookieServer(ServerConfiguration conf) throws IOException,
             KeeperException, InterruptedException, BookieException,
@@ -110,6 +114,18 @@ public class BookieServer {
         this.nettyServer.setRequestProcessor(this.requestProcessor);
     }
 
+    /**
+     * Currently the uncaught exception handler is used for DeathWatcher to notify
+     * lifecycle management that a bookie is dead for some reasons.
+     *
+     * <p>in future, we can register this <tt>exceptionHandler</tt> to critical threads
+     * so when those threads are dead, it will automatically trigger lifecycle management
+     * to shutdown the process.
+     */
+    public void setExceptionHandler(UncaughtExceptionHandler exceptionHandler) {
+        this.uncaughtExceptionHandler = exceptionHandler;
+    }
+
     protected Bookie newBookie(ServerConfiguration conf)
         throws IOException, KeeperException, InterruptedException, BookieException {
         return conf.isForceReadOnlyBookie()
@@ -128,6 +144,9 @@ public class BookieServer {
 
         running = true;
         deathWatcher = new DeathWatcher(conf);
+        if (null != uncaughtExceptionHandler) {
+            deathWatcher.setUncaughtExceptionHandler(uncaughtExceptionHandler);
+        }
         deathWatcher.start();
 
         // fixes test flappers at random places until ISSUE#1400 is resolved
@@ -236,6 +255,13 @@ public class BookieServer {
         DeathWatcher(ServerConfiguration conf) {
             super("BookieDeathWatcher-" + conf.getBookiePort());
             watchInterval = conf.getDeathWatchInterval();
+            // set a default uncaught exception handler to shutdown the bookie server
+            // when it notices the bookie is not running any more.
+            setUncaughtExceptionHandler((thread, cause) -> {
+                LOG.info("BookieDeathWatcher exited loop due to uncaught exception from thread {}",
+                    thread.getName(), cause);
+                shutdown();
+            });
         }
 
         @Override
@@ -248,11 +274,13 @@ public class BookieServer {
                     Thread.currentThread().interrupt();
                 }
                 if (!isBookieRunning()) {
-                    shutdown();
-                    break;
+                    LOG.info("BookieDeathWatcher noticed the bookie is not running any more, exiting the watch loop!");
+                    // death watcher has noticed that bookie is not running any more
+                    // throw an exception to fail the death watcher thread and it will
+                    // trigger the uncaught exception handler to handle this "bookie not running" situation.
+                    throw new RuntimeException("Bookie is not running any more");
                 }
             }
-            LOG.info("BookieDeathWatcher exited loop!");
         }
     }
 

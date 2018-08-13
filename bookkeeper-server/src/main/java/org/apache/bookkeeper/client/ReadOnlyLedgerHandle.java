@@ -45,24 +45,30 @@ class ReadOnlyLedgerHandle extends LedgerHandle implements LedgerMetadataListene
 
     class MetadataUpdater extends SafeRunnable {
 
-        final LedgerMetadata m;
+        final LedgerMetadata newMetadata;
 
         MetadataUpdater(LedgerMetadata metadata) {
-            this.m = metadata;
+            this.newMetadata = metadata;
         }
 
         @Override
         public void safeRun() {
-            Version.Occurred occurred =
-                    ReadOnlyLedgerHandle.this.metadata.getVersion().compare(this.m.getVersion());
-            if (Version.Occurred.BEFORE == occurred) {
-                LOG.info("Updated ledger metadata for ledger {} to {}.", ledgerId, this.m.toSafeString());
-                synchronized (ReadOnlyLedgerHandle.this) {
-                    if (this.m.isClosed()) {
-                            ReadOnlyLedgerHandle.this.lastAddConfirmed = this.m.getLastEntryId();
-                            ReadOnlyLedgerHandle.this.length = this.m.getLength();
+            while (true) {
+                LedgerMetadata currentMetadata = getLedgerMetadata();
+                Version.Occurred occurred = currentMetadata.getVersion().compare(newMetadata.getVersion());
+                if (Version.Occurred.BEFORE == occurred) {
+                    LOG.info("Updated ledger metadata for ledger {} to {}.", ledgerId, newMetadata.toSafeString());
+                    synchronized (ReadOnlyLedgerHandle.this) {
+                        if (newMetadata.isClosed()) {
+                            ReadOnlyLedgerHandle.this.lastAddConfirmed = newMetadata.getLastEntryId();
+                            ReadOnlyLedgerHandle.this.length = newMetadata.getLength();
+                        }
+                        if (setLedgerMetadata(currentMetadata, newMetadata)) {
+                            break;
+                        }
                     }
-                    ReadOnlyLedgerHandle.this.metadata = this.m;
+                } else {
+                    break;
                 }
             }
         }
@@ -123,7 +129,7 @@ class ReadOnlyLedgerHandle extends LedgerHandle implements LedgerMetadataListene
     @Override
     void handleBookieFailure(final Map<Integer, BookieSocketAddress> failedBookies) {
         blockAddCompletions.incrementAndGet();
-        synchronized (metadata) {
+        synchronized (getLedgerMetadata()) {
             try {
                 EnsembleInfo ensembleInfo = replaceBookieInMetadata(failedBookies,
                         numEnsembleChanges.incrementAndGet());
@@ -154,11 +160,11 @@ class ReadOnlyLedgerHandle extends LedgerHandle implements LedgerMetadataListene
         if (null == newMetadata) {
             return;
         }
-        Version.Occurred occurred =
-                this.metadata.getVersion().compare(newMetadata.getVersion());
+        LedgerMetadata currentMetadata = getLedgerMetadata();
+        Version.Occurred occurred = currentMetadata.getVersion().compare(newMetadata.getVersion());
         if (LOG.isDebugEnabled()) {
             LOG.debug("Try to update metadata from {} to {} : {}",
-                    this.metadata, newMetadata, occurred);
+                      currentMetadata, newMetadata, occurred);
         }
         if (Version.Occurred.BEFORE == occurred) { // the metadata is updated
             try {

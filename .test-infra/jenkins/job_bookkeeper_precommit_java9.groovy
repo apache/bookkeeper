@@ -22,6 +22,9 @@ import common_job_properties
 mavenJob('bookkeeper_precommit_pullrequest_java9') {
   description('precommit verification for pull requests of <a href="http://bookkeeper.apache.org">Apache BookKeeper</a> in Java 9.')
 
+  // clean up the workspace before build
+  wrappers { preBuildCleanup() }
+
   // Temporary information gathering to see if full disks are causing the builds to flake
   preBuildSteps {
     shell("id")

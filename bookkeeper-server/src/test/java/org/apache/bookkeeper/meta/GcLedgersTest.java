@@ -106,9 +106,10 @@ public class GcLedgersTest extends LedgerManagerTestCase {
                     }
 
                     getLedgerManager().createLedgerMetadata(ledgerId,
-                            new LedgerMetadata(1, 1, 1, DigestType.MAC, "".getBytes()), new GenericCallback<Void>() {
+                            new LedgerMetadata(1, 1, 1, DigestType.MAC, "".getBytes()),
+                            new GenericCallback<LedgerMetadata>() {
                                 @Override
-                                public void operationComplete(int rc, Void result) {
+                                public void operationComplete(int rc, LedgerMetadata writtenMetadata) {
                                     if (rc == BKException.Code.OK) {
                                         activeLedgers.put(ledgerId, true);
                                         createdLedgers.add(ledgerId);

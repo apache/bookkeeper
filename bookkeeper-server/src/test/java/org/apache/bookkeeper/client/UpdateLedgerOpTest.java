@@ -98,7 +98,7 @@ public class UpdateLedgerOpTest extends BookKeeperClusterTestCase {
             ledgers.add(createLedgerWithEntries(bk, 0));
         }
 
-        ArrayList<BookieSocketAddress> ensemble = lh1.getLedgerMetadata().getEnsemble(0);
+        List<BookieSocketAddress> ensemble = lh1.getLedgerMetadata().getEnsemble(0);
 
         BookieSocketAddress curBookieAddr = ensemble.get(0);
         baseConf.setUseHostNameAsBookieID(true);
@@ -139,7 +139,7 @@ public class UpdateLedgerOpTest extends BookKeeperClusterTestCase {
             ledgers.add(createLedgerWithEntries(bk, 0));
         }
 
-        ArrayList<BookieSocketAddress> ensemble = lh1.getLedgerMetadata().getEnsemble(0);
+        List<BookieSocketAddress> ensemble = lh1.getLedgerMetadata().getEnsemble(0);
 
         BookieSocketAddress curBookieAddr = ensemble.get(0);
         baseConf.setUseHostNameAsBookieID(true);
@@ -194,7 +194,7 @@ public class UpdateLedgerOpTest extends BookKeeperClusterTestCase {
         LedgerHandle lh = createLedgerWithEntries(bk, 100);
 
         BookieServer bookieServer = bs.get(0);
-        ArrayList<BookieSocketAddress> ensemble = lh.getLedgerMetadata().getEnsemble(0);
+        List<BookieSocketAddress> ensemble = lh.getLedgerMetadata().getEnsemble(0);
         BookieSocketAddress curBookieAddr = null;
         for (BookieSocketAddress bookieSocketAddress : ensemble) {
             if (bookieServer.getLocalAddress().equals(bookieSocketAddress)) {
@@ -276,7 +276,7 @@ public class UpdateLedgerOpTest extends BookKeeperClusterTestCase {
             }
         };
         th.start();
-        ArrayList<BookieSocketAddress> ensemble = lh.getLedgerMetadata().getEnsemble(0);
+        List<BookieSocketAddress> ensemble = lh.getLedgerMetadata().getEnsemble(0);
         BookieSocketAddress curBookieAddr = ensemble.get(0);
         BookieSocketAddress toBookieAddr = new BookieSocketAddress("localhost:" + curBookieAddr.getPort());
         UpdateLedgerOp updateLedgerOp = new UpdateLedgerOp(bk, bkadmin);
@@ -297,7 +297,7 @@ public class UpdateLedgerOpTest extends BookKeeperClusterTestCase {
 
     private int getUpdatedLedgersCount(BookKeeper bk, List<LedgerHandle> ledgers, BookieSocketAddress toBookieAddr)
             throws InterruptedException, BKException {
-        ArrayList<BookieSocketAddress> ensemble;
+        List<BookieSocketAddress> ensemble;
         int updatedLedgersCount = 0;
         for (LedgerHandle lh : ledgers) {
             // ledger#close() would hit BadVersion exception as rename

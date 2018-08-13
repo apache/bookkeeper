@@ -18,7 +18,7 @@
 package org.apache.bookkeeper.client;
 
 import static com.google.common.base.Preconditions.checkState;
-import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.net.BookieSocketAddress;
@@ -39,7 +39,7 @@ class ForceLedgerOp extends SafeRunnable implements ForceLedgerCallback {
     boolean completed = false;
     boolean errored = false;
     int lastSeenError = BKException.Code.WriteException;
-    ArrayList<BookieSocketAddress> currentEnsemble;
+    List<BookieSocketAddress> currentEnsemble;
 
     long currentNonDurableLastAddConfirmed = LedgerHandle.INVALID_ENTRY_ID;
 
@@ -69,7 +69,7 @@ class ForceLedgerOp extends SafeRunnable implements ForceLedgerCallback {
             LOG.debug("force {} clientNonDurableLac {}", lh.ledgerId, currentNonDurableLastAddConfirmed);
         }
         // we need to send the request to every bookie in the ensamble
-        this.currentEnsemble = lh.metadata.currentEnsemble;
+        this.currentEnsemble = lh.getLedgerMetadata().currentEnsemble;
         this.ackSet = lh.distributionSchedule.getEnsembleAckSet();
 
         DistributionSchedule.WriteSet writeSet = lh.getDistributionSchedule()

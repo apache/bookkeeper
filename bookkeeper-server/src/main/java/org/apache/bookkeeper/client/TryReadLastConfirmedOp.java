@@ -46,12 +46,13 @@ class TryReadLastConfirmedOp implements ReadEntryCallback {
         this.lh = lh;
         this.cb = cb;
         this.maxRecoveredData = new RecoveryData(lac, 0);
-        this.numResponsesPending = lh.metadata.getEnsembleSize();
+        this.numResponsesPending = lh.getLedgerMetadata().getEnsembleSize();
     }
 
     public void initiate() {
-        for (int i = 0; i < lh.metadata.currentEnsemble.size(); i++) {
-            lh.bk.getBookieClient().readEntry(lh.metadata.currentEnsemble.get(i),
+        LedgerMetadata metadata = lh.getLedgerMetadata();
+        for (int i = 0; i < metadata.currentEnsemble.size(); i++) {
+            lh.bk.getBookieClient().readEntry(metadata.currentEnsemble.get(i),
                                          lh.ledgerId,
                                          BookieProtocol.LAST_ADD_CONFIRMED,
                                          this, i, BookieProtocol.FLAG_NONE);
@@ -83,7 +84,7 @@ class TryReadLastConfirmedOp implements ReadEntryCallback {
             } catch (BKException.BKDigestMatchException e) {
                 LOG.error("Mac mismatch for ledger: " + ledgerId + ", entry: " + entryId
                           + " while reading last entry from bookie: "
-                          + lh.metadata.currentEnsemble.get(bookieIndex));
+                          + lh.getLedgerMetadata().currentEnsemble.get(bookieIndex));
             }
         } else if (BKException.Code.UnauthorizedAccessException == rc && !completed) {
             cb.readLastConfirmedDataComplete(rc, maxRecoveredData);

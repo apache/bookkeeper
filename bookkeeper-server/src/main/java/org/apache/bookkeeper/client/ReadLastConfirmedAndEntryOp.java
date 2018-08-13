@@ -22,8 +22,8 @@ package org.apache.bookkeeper.client;
 
 import com.google.common.util.concurrent.ListenableFuture;
 import io.netty.buffer.ByteBuf;
-import java.util.ArrayList;
 import java.util.BitSet;
+import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -73,12 +73,12 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
         int firstError = BKException.Code.OK;
         int numMissedEntryReads = 0;
 
-        final ArrayList<BookieSocketAddress> ensemble;
+        final List<BookieSocketAddress> ensemble;
         final DistributionSchedule.WriteSet writeSet;
         final DistributionSchedule.WriteSet orderedEnsemble;
         final LedgerEntryImpl entryImpl;
 
-        ReadLACAndEntryRequest(ArrayList<BookieSocketAddress> ensemble, long lId, long eId) {
+        ReadLACAndEntryRequest(List<BookieSocketAddress> ensemble, long lId, long eId) {
             this.entryImpl = LedgerEntryImpl.create(lId, eId);
             this.ensemble = ensemble;
             this.writeSet = lh.getDistributionSchedule().getEnsembleSet(eId);
@@ -243,7 +243,7 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
 
         int numPendings;
 
-        ParallelReadRequest(ArrayList<BookieSocketAddress> ensemble, long lId, long eId) {
+        ParallelReadRequest(List<BookieSocketAddress> ensemble, long lId, long eId) {
             super(ensemble, lId, eId);
             numPendings = orderedEnsemble.size();
         }
@@ -293,7 +293,7 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
         final BitSet erroredReplicas;
         final BitSet emptyResponseReplicas;
 
-        SequenceReadRequest(ArrayList<BookieSocketAddress> ensemble, long lId, long eId) {
+        SequenceReadRequest(List<BookieSocketAddress> ensemble, long lId, long eId) {
             super(ensemble, lId, eId);
 
             this.sentReplicas = new BitSet(orderedEnsemble.size());

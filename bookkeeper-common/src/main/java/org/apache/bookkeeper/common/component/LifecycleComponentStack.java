@@ -24,6 +24,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
+import java.lang.Thread.UncaughtExceptionHandler;
 import java.util.List;
 
 /**
@@ -120,5 +121,10 @@ public class LifecycleComponentStack implements LifecycleComponent {
     @Override
     public void close() {
         components.reverse().forEach(component -> component.close());
+    }
+
+    @Override
+    public void setExceptionHandler(UncaughtExceptionHandler handler) {
+        components.forEach(component -> component.setExceptionHandler(handler));
     }
 }

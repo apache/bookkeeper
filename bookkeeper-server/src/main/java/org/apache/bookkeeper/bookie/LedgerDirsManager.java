@@ -316,6 +316,11 @@ public class LedgerDirsManager {
         return pickRandomDir(writableDirsForNewIndexFile, excludedDir);
     }
 
+    boolean isDirWritableForNewIndexFile(File indexDir) {
+        return (ledgerDirectories.contains(indexDir)
+                && (indexDir.getUsableSpace() > minUsableSizeForIndexFileCreation));
+    }
+
     /**
      * Return one dir from all dirs, regardless writable or not.
      */
