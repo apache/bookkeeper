@@ -699,15 +699,10 @@
               <artifactId>checkstyle</artifactId>
               <version>${puppycrawl.checkstyle.version}</version>
             </dependency>
-            <dependency>
-              <groupId>org.apache.bookkeeper</groupId>
-              <artifactId>buildtools</artifactId>
-              <version>${project.version}</version>
-            </dependency>
           </dependencies>
           <configuration>
-            <configLocation>bookkeeper/checkstyle.xml</configLocation>
-            <suppressionsLocation>bookkeeper/suppressions.xml</suppressionsLocation>
+            <configLocation>buildtools/src/main/resources/bookkeeper/checkstyle.xml</configLocation>
+            <suppressionsLocation>buildtools/src/main/resources/bookkeeper/suppressions.xml</suppressionsLocation>
             <encoding>UTF-8</encoding>
             <consoleOutput>true</consoleOutput>
             <failOnViolation>true</failOnViolation>
