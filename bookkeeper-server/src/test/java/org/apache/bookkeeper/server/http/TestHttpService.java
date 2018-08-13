@@ -47,9 +47,9 @@ import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
 import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallbackFuture;
 import org.apache.bookkeeper.replication.AuditorElector;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
-import org.apache.bookkeeper.test.TestCallbacks;
 import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
 import org.apache.zookeeper.ZooKeeper;
 import org.junit.Before;
@@ -677,8 +677,8 @@ public class TestHttpService extends BookKeeperClusterTestCase {
         ensemble.set(0, new BookieSocketAddress("1.1.1.1", 1000));
         md.updateEnsemble(0L, ensemble);
 
-        TestCallbacks.GenericCallbackFuture<LedgerMetadata> cb =
-            new TestCallbacks.GenericCallbackFuture<LedgerMetadata>();
+        GenericCallbackFuture<LedgerMetadata> cb =
+            new GenericCallbackFuture<LedgerMetadata>();
         ledgerManager.writeLedgerMetadata(lh.getId(), md, cb);
         cb.get();
 
