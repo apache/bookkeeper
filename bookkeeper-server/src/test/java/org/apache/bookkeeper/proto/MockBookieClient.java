@@ -101,13 +101,13 @@ public class MockBookieClient implements BookieClient {
     }
 
     @Override
-    public boolean isWritable(BookieSocketAddress address, long key) {
+    public boolean isWritable(BookieSocketAddress address, long ledgerId) {
         return true;
     }
 
     @Override
-    public PerChannelBookieClientPool lookupClient(BookieSocketAddress addr) {
-        return null;
+    public long getNumPendingRequests(BookieSocketAddress address, long ledgerId) {
+        return 0;
     }
 
     @Override
@@ -249,11 +249,11 @@ public class MockBookieClient implements BookieClient {
     public void close() {
     }
 
-    ConcurrentHashMap<Long, LedgerData> getBookieData(BookieSocketAddress addr) {
+    private ConcurrentHashMap<Long, LedgerData> getBookieData(BookieSocketAddress addr) {
         return data.computeIfAbsent(addr, (key) -> new ConcurrentHashMap<>());
     }
 
-    static ByteBuf copyData(ByteBufList list) {
+    private static ByteBuf copyData(ByteBufList list) {
         ByteBuf buf = Unpooled.buffer(list.readableBytes());
         for (int i = 0; i < list.size(); i++) {
             buf.writeBytes(list.getBuffer(i).slice());
@@ -261,7 +261,7 @@ public class MockBookieClient implements BookieClient {
         return buf;
     }
 
-    static class LedgerData {
+    private static class LedgerData {
         final long ledgerId;
         private TreeMap<Long, ByteBuf> entries = new TreeMap<>();
         LedgerData(long ledgerId) {

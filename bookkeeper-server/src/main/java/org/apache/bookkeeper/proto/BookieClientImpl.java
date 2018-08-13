@@ -76,6 +76,7 @@ import org.slf4j.LoggerFactory;
  */
 public class BookieClientImpl implements BookieClient, PerChannelBookieClientFactory {
     static final Logger LOG = LoggerFactory.getLogger(BookieClient.class);
+    static final long PENDINGREQ_NOTWRITABLE_MASK = 0x01L << 62;
 
     // This is global state that should be across all BookieClients
     AtomicLong totalBytesOutstanding = new AtomicLong();
@@ -139,6 +140,7 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
         }
     }
 
+    @Override
     public List<BookieSocketAddress> getFaultyBookies() {
         List<BookieSocketAddress> faultyBookies = Lists.newArrayList();
         for (PerChannelBookieClientPool channelPool : channels.values()) {
@@ -152,10 +154,23 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
         return faultyBookies;
     }
 
+    @Override
     public boolean isWritable(BookieSocketAddress address, long key) {
         final PerChannelBookieClientPool pcbcPool = lookupClient(address);
         // if null, let the write initiate connect of fail with whatever error it produces
         return pcbcPool == null || pcbcPool.isWritable(key);
+    }
+
+    @Override
+    public long getNumPendingRequests(BookieSocketAddress address, long ledgerId) {
+        PerChannelBookieClientPool pcbcPool = lookupClient(address);
+        if (pcbcPool == null) {
+            return 0;
+        } else if (pcbcPool.isWritable(ledgerId)) {
+            return pcbcPool.getNumPendingCompletionRequests();
+        } else {
+            return pcbcPool.getNumPendingCompletionRequests() | PENDINGREQ_NOTWRITABLE_MASK;
+        }
     }
 
     @Override
@@ -194,6 +209,7 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
         return clientPool;
     }
 
+    @Override
     public void forceLedger(final BookieSocketAddress addr, final long ledgerId,
             final ForceLedgerCallback cb, final Object ctx) {
         final PerChannelBookieClientPool client = lookupClient(addr);
@@ -218,6 +234,7 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
         }, ledgerId);
     }
 
+    @Override
     public void writeLac(final BookieSocketAddress addr, final long ledgerId, final byte[] masterKey,
             final long lac, final ByteBufList toSend, final WriteLacCallback cb, final Object ctx) {
         final PerChannelBookieClientPool client = lookupClient(addr);
@@ -267,6 +284,7 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
         }
     }
 
+    @Override
     public void addEntry(final BookieSocketAddress addr,
                          final long ledgerId,
                          final byte[] masterKey,
