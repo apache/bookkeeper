@@ -76,10 +76,6 @@ import org.slf4j.LoggerFactory;
  */
 public class BookieClientImpl implements BookieClient, PerChannelBookieClientFactory {
     static final Logger LOG = LoggerFactory.getLogger(BookieClient.class);
-    static final long PENDINGREQ_NOTWRITABLE_MASK = 0x01L << 62;
-
-    // This is global state that should be across all BookieClients
-    AtomicLong totalBytesOutstanding = new AtomicLong();
 
     OrderedExecutor executor;
     ScheduledExecutorService scheduler;
