@@ -85,7 +85,7 @@ using Google Doc.
 
 This section lists all the _bookkeeper proposals_ made to BookKeeper.
 
-*Next Proposal Number: 34*
+*Next Proposal Number: 35*
 
 ### Inprogress
 
@@ -105,6 +105,7 @@ Proposal | State
 [BP-31: BookKeeper Durability Anchor](../../bps/BP-31-durability) | Accepted
 [BP-32: Advisory (optimistic) write close](../../bps/BP-32-advisory-write-close) | Accepted
 [BP-33: Move releasing docker images out of main repo](../../bps/BP-33-building-official-docker-imags) | Draft
+[BP-34: Cluster Metadata Checker](../../bps/BP-34-cluster-metadata-checker) | Draft
 
 ### Adopted
 
