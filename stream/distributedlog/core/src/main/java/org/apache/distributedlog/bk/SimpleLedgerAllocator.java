@@ -488,7 +488,7 @@ public class SimpleLedgerAllocator implements LedgerAllocator, FutureEventListen
                     @Override
                     public void onFailure(Throwable cause) {
                         LOG.debug("Fail to obtain the allocated ledger handle when closing the allocator : ", cause);
-                        closePromise.complete(null);
+                        FutureUtils.complete(closePromise, null);
                     }
                 });
             }
@@ -496,7 +496,7 @@ public class SimpleLedgerAllocator implements LedgerAllocator, FutureEventListen
             @Override
             public void onFailure(Throwable cause) {
                 LOG.debug("Fail to obtain the allocated ledger handle when closing the allocator : ", cause);
-                closePromise.complete(null);
+                FutureUtils.complete(closePromise, null);
             }
         });
 
