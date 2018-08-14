@@ -25,6 +25,12 @@ import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.proto.BookieClient;
 
+/**
+ * Collection of client objects used by LedgerHandle to interact with
+ * the outside world. Normally these are instantiated by the BookKeeper object
+ * but they are present to the LedgerHandle through this interface to allow
+ * tests to easily inject mocked versions.
+ */
 interface ClientContext {
     ClientInternalConf getConf();
     LedgerManager getLedgerManager();
