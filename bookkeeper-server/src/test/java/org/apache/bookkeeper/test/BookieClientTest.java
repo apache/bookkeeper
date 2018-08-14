@@ -47,6 +47,7 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieClient;
+import org.apache.bookkeeper.proto.BookieClientImpl;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GetBookieInfoCallback;
@@ -156,8 +157,8 @@ public class BookieClientTest {
         BookieSocketAddress addr = bs.getLocalAddress();
         ResultStruct arc = new ResultStruct();
 
-        BookieClient bc = new BookieClient(new ClientConfiguration(), eventLoopGroup, executor,
-                                           scheduler, NullStatsLogger.INSTANCE);
+        BookieClient bc = new BookieClientImpl(new ClientConfiguration(), eventLoopGroup, executor,
+                                               scheduler, NullStatsLogger.INSTANCE);
         ByteBufList bb = createByteBuffer(1, 1, 1);
         bc.addEntry(addr, 1, passwd, 1, bb, wrcb, arc, BookieProtocol.FLAG_NONE, false, WriteFlag.NONE);
         synchronized (arc) {
@@ -257,8 +258,8 @@ public class BookieClientTest {
     public void testNoLedger() throws Exception {
         ResultStruct arc = new ResultStruct();
         BookieSocketAddress addr = bs.getLocalAddress();
-        BookieClient bc = new BookieClient(new ClientConfiguration(), eventLoopGroup, executor,
-                                           scheduler, NullStatsLogger.INSTANCE);
+        BookieClient bc = new BookieClientImpl(new ClientConfiguration(), eventLoopGroup, executor,
+                                               scheduler, NullStatsLogger.INSTANCE);
         synchronized (arc) {
             bc.readEntry(addr, 2, 13, recb, arc, BookieProtocol.FLAG_NONE);
             arc.wait(1000);
@@ -269,8 +270,8 @@ public class BookieClientTest {
     @Test
     public void testGetBookieInfo() throws IOException, InterruptedException {
         BookieSocketAddress addr = bs.getLocalAddress();
-        BookieClient bc = new BookieClient(new ClientConfiguration(), new NioEventLoopGroup(), executor,
-                                           scheduler, NullStatsLogger.INSTANCE);
+        BookieClient bc = new BookieClientImpl(new ClientConfiguration(), new NioEventLoopGroup(), executor,
+                                               scheduler, NullStatsLogger.INSTANCE);
         long flags = BookkeeperProtocol.GetBookieInfoRequest.Flags.FREE_DISK_SPACE_VALUE
                 | BookkeeperProtocol.GetBookieInfoRequest.Flags.TOTAL_DISK_CAPACITY_VALUE;
 
