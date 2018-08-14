@@ -1,0 +1,132 @@
+{{- /*
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+*/ -}}
+{{- $zkSize := .Values.zookeeper.size | int }}
+{{- $bkSize := .Values.bookkeeper.size | int }}
+{{- $zkAdminPort := .Values.zookeeper.adminPort | int }}
+{{- $zkClientPort := .Values.zookeeper.clientPort | int }}
+{{- $zkPeerPort := .Values.zookeeper.peerPort | int }}
+{{- $zkLeaderPort := .Values.zookeeper.leaderPort | int }}
+{{- $bookiePort := .Values.bookkeeper.bookiePort | int }}
+{{- $bookieGrpcPort := .Values.bookkeeper.bookieGrpcPort | int }}
+{{- $bookieHttpPort := .Values.bookkeeper.bookieHttpPort | int }}
+
+{{- define "zookeeper_servers" }}
+  {{- range until (.Values.zookeeper.size | int) }}
+    {{- if . -}}
+      ,
+    {{- end -}}
+    zookeeper-{{ . }}:2181
+  {{- end -}}
+{{- end -}}
+
+{{- define "metadata_service_uri" }}
+  {{- range until (.Values.zookeeper.size | int) }}
+    {{- if . -}}
+      ;
+    {{- end -}}
+    zookeeper-{{ . }}:2181
+  {{- end -}}
+{{- end -}}
+
+
+{{- define "zookeeper_server_list" }} 
+  {{- $zk := dict "servers" (list) -}}
+  {{- range until (.Values.zookeeper.size | int) }}
+    {{- $noop := printf "server.%d=zookeeper-%d:%d:%d:participant;0.0.0.0:%d" . . ($.Values.zookeeper.peerPort | int) ($.Values.zookeeper.leaderPort | int) ($.Values.zookeeper.clientPort | int) | append $zk.servers | set $zk "servers" -}} 
+  {{- end -}}
+  {{- join " " $zk.servers -}}
+{{- end -}}
+
+version: '3'
+
+services:
+  {{- range until $zkSize }}
+  zookeeper-{{ . }}:
+    image: {{ $.Values.zookeeper.image }}
+    hostname: zookeeper-{{ . }}
+    command: ["zookeeper"]
+    {{- if eq $.Values.networkMode "host" }}
+    network_mode: host
+    {{- else }}
+    ports:
+      - "{{ add $zkAdminPort . 1000 }}:{{ $zkAdminPort }}"
+      - "{{ add $zkClientPort . }}:{{ $zkClientPort }}"
+    {{- end }}
+    volumes:
+      - {{ $.Values.dataDir }}/zookeeper-{{ . }}/data:/data/zookeeper/data
+      - {{ $.Values.dataDir }}/zookeeper-{{ . }}/txlog:/data/zookeeper/txlog
+    environment:
+      - ZK_dataDir=/data/zookeeper/data
+      - ZK_dataLogDir=/data/zookeeper/txlog
+      - ZK_clientPort={{ $zkClientPort }}
+      - ZK_ID={{ . }}
+      - ZK_SERVERS={{- template "zookeeper_server_list" $ }}
+      - ZK_standaloneEnabled=false
+    healthcheck:
+      test: ["CMD", "curl", "-s", "http://localhost:{{ $zkAdminPort }}/commands/stat"]
+      interval: 60s
+      timeout: 3s
+      retries: 60
+    restart: on-failure
+  {{ end }}
+
+  {{- range until $bkSize }}
+  bookie-{{ . }}:
+    image: {{ $.Values.bookkeeper.image }}
+    hostname: bookie-{{ . }}
+    {{- if eq $.Values.networkMode "host" }}
+    network_mode: host
+    {{- else }}
+    ports:
+      {{- if eq $.Values.networkMode "host" }}
+      - "{{ add $bookiePort . }}:{{ $bookiePort }}"
+      {{- else }}
+      - "{{ add $bookiePort . }}:{{ add $bookiePort . }}"
+      {{- end }}
+      - "{{ add $bookieHttpPort . }}:{{ $bookieHttpPort }}"
+      - "{{ add $bookieGrpcPort . }}:{{ $bookieGrpcPort }}"
+    {{- end }}
+    volumes:
+      - {{ $.Values.dataDir }}/bookie-{{ . }}/journal:/data/bookkeeper/journal
+      - {{ $.Values.dataDir }}/bookie-{{ . }}/ledgers:/data/bookkeeper/ledgers
+    environment:
+      - BK_zkServers={{- template "zookeeper_servers" $ }}
+      - BK_zkLedgersRootPath=/ledgers
+      - BK_metadataServiceUri=zk://{{- template "metadata_service_uri" $ }}/ledgers
+      - BK_DATA_DIR=/data/bookkeeper
+      {{- if eq $.Values.networkMode "host" }}
+      - BK_bookiePort={{ $bookiePort }}
+      {{- else }}
+      - BK_advertisedAddress={{ $.Values.advertisedAddr }}
+      - BK_bookiePort={{ add $bookiePort . }}
+      {{- end }}
+      - BK_httpServerEnabled=true
+    depends_on:
+      {{- range until $zkSize }}
+      - "zookeeper-{{.}}"
+      {{- end }}
+    healthcheck:
+      test: ["CMD", "curl", "-s", "http://localhost:{{ $bookieHttpPort }}/heartbeat"]
+      interval: 60s
+      timeout: 3s
+      retries: 60
+    restart: on-failure
+  {{ end }}

@@ -80,7 +80,6 @@ import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.TimedGenericCallback;
 import org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.State;
-import org.apache.bookkeeper.proto.PerChannelBookieClientPool;
 import org.apache.bookkeeper.proto.checksum.DigestManager;
 import org.apache.bookkeeper.proto.checksum.MacDigestManager;
 import org.apache.bookkeeper.stats.Counter;
@@ -98,8 +97,6 @@ import org.slf4j.LoggerFactory;
  */
 public class LedgerHandle implements WriteHandle {
     static final Logger LOG = LoggerFactory.getLogger(LedgerHandle.class);
-
-    static final long PENDINGREQ_NOTWRITABLE_MASK = 0x01L << 62;
 
     final ClientContext clientCtx;
 
@@ -222,14 +219,7 @@ public class LedgerHandle implements WriteHandle {
 
             @Override
             public long getBookiePendingRequests(BookieSocketAddress bookieSocketAddress) {
-                PerChannelBookieClientPool pcbcPool = clientCtx.getBookieClient().lookupClient(bookieSocketAddress);
-                if (pcbcPool == null) {
-                    return 0;
-                } else if (pcbcPool.isWritable(ledgerId)) {
-                    return pcbcPool.getNumPendingCompletionRequests();
-                } else {
-                    return pcbcPool.getNumPendingCompletionRequests() | PENDINGREQ_NOTWRITABLE_MASK;
-                }
+                return clientCtx.getBookieClient().getNumPendingRequests(bookieSocketAddress, ledgerId);
             }
         };
 
@@ -1861,48 +1851,15 @@ public class LedgerHandle implements WriteHandle {
     }
 
     void handleDelayedWriteBookieFailure() {
-        int curBlockAddCompletions = blockAddCompletions.get();
-        if (clientCtx.getConf().disableEnsembleChangeFeature.isAvailable()) {
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Ensemble change is disabled. Failed bookies {} for ledger {}.",
-                        delayedWriteFailedBookies, ledgerId);
-            }
-            return;
-        }
-        int curNumEnsembleChanges = numEnsembleChanges.incrementAndGet();
-        if (curNumEnsembleChanges > clientCtx.getConf().maxAllowedEnsembleChanges) {
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Exceeding maxAllowedEnsembeChanges {}. Failed bookies {} for ledger {}.",
-                        clientCtx.getConf().maxAllowedEnsembleChanges, delayedWriteFailedBookies, ledgerId);
-            }
-            return;
-        }
-        if (writeFlags.contains(WriteFlag.DEFERRED_SYNC)) {
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Cannot perform ensemble change with writeflags {}."
-                        + "Failed bookies {} for ledger {}.",
-                        writeFlags, delayedWriteFailedBookies, ledgerId);
-            }
-            return;
-        }
-        LedgerMetadata metadata = getLedgerMetadata();
-        synchronized (metadata) {
-            try {
-                EnsembleInfo ensembleInfo = replaceBookieInMetadata(delayedWriteFailedBookies, curNumEnsembleChanges);
-                if (ensembleInfo.replacedBookies.isEmpty()) {
-                    return;
-                }
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("[EnsembleChange-L{}-{}] : writing new ensemble info = {}",
-                            getId(), curNumEnsembleChanges, ensembleInfo);
-                }
-                writeLedgerConfig(new ChangeEnsembleCb(ensembleInfo, curBlockAddCompletions,
-                        curNumEnsembleChanges, false));
-            } catch (BKException.BKNotEnoughBookiesException e) {
-                LOG.error("Could not get additional bookie to remake ensemble: {}", ledgerId);
-            }
-            delayedWriteFailedBookies.clear();
-        }
+        final Map<Integer, BookieSocketAddress> copyDelayedWriteFailedBookies =
+                new HashMap<Integer, BookieSocketAddress>(delayedWriteFailedBookies);
+        delayedWriteFailedBookies.clear();
+
+        // Original intent of this change is to do a best-effort ensemble change.
+        // But this is not possible until the local metadata is completely immutable.
+        // Until the feature "Make LedgerMetadata Immutable #610" Is complete we will use
+        // handleBookieFailure() to handle delayed writes as regular bookie failures.
+        handleBookieFailure(copyDelayedWriteFailedBookies);
     }
 
     void handleBookieFailure(final Map<Integer, BookieSocketAddress> failedBookies) {
@@ -1952,7 +1909,7 @@ public class LedgerHandle implements WriteHandle {
                             getId(), curNumEnsembleChanges, ensembleInfo, curBlockAddCompletions);
                 }
                 writeLedgerConfig(new ChangeEnsembleCb(ensembleInfo, curBlockAddCompletions,
-                        curNumEnsembleChanges, true));
+                        curNumEnsembleChanges));
                 // clear if there are any delayed write failures were recorded.
                 delayedWriteFailedBookies.clear();
             } catch (BKException.BKNotEnoughBookiesException e) {
@@ -1996,17 +1953,14 @@ public class LedgerHandle implements WriteHandle {
         private final EnsembleInfo ensembleInfo;
         private final int curBlockAddCompletions;
         private final int ensembleChangeIdx;
-        private final boolean addEntryFailureRecovery;
 
         ChangeEnsembleCb(EnsembleInfo ensembleInfo,
                          int curBlockAddCompletions,
-                         int ensembleChangeIdx,
-                         boolean addEntryFailureRecovery) {
+                         int ensembleChangeIdx) {
             super(clientCtx.getMainWorkerPool(), ledgerId);
             this.ensembleInfo = ensembleInfo;
             this.curBlockAddCompletions = curBlockAddCompletions;
             this.ensembleChangeIdx = ensembleChangeIdx;
-            this.addEntryFailureRecovery = addEntryFailureRecovery;
         }
 
         @Override
@@ -2027,17 +1981,11 @@ public class LedgerHandle implements WriteHandle {
             } else if (rc != BKException.Code.OK) {
                 LOG.error("[EnsembleChange-L{}-{}] : could not persist ledger metadata : info = {}, "
                         + "closing ledger : {}.", getId(), ensembleChangeIdx, ensembleInfo, rc);
-                if (addEntryFailureRecovery) {
-                    handleUnrecoverableErrorDuringAdd(rc);
-                }
+                handleUnrecoverableErrorDuringAdd(rc);
                 return;
             }
-            int newBlockAddCompletions;
-            if (addEntryFailureRecovery) {
-                newBlockAddCompletions = blockAddCompletions.decrementAndGet();
-            } else {
-                newBlockAddCompletions = blockAddCompletions.get();
-            }
+            int newBlockAddCompletions = blockAddCompletions.decrementAndGet();
+
 
             if (LOG.isDebugEnabled()) {
                 LOG.info("[EnsembleChange-L{}-{}] : completed ensemble change, block add completion {} => {}",
@@ -2048,10 +1996,8 @@ public class LedgerHandle implements WriteHandle {
             ensembleChangeCounter.inc();
             LOG.info("New Ensemble: {} for ledger: {}", ensembleInfo.newEnsemble, ledgerId);
 
-            if (addEntryFailureRecovery) {
-                // the failed bookie has been replaced
-                unsetSuccessAndSendWriteRequest(ensembleInfo.replacedBookies);
-            }
+            // the failed bookie has been replaced
+            unsetSuccessAndSendWriteRequest(ensembleInfo.replacedBookies);
         }
 
         @Override
@@ -2226,7 +2172,7 @@ public class LedgerHandle implements WriteHandle {
             // since they might be modified by recovery tool.
             metadata.mergeEnsembles(newMeta.getEnsembles());
             writeLedgerConfig(new ChangeEnsembleCb(ensembleInfo, curBlockAddCompletions,
-                    ensembleChangeIdx, true));
+                    ensembleChangeIdx));
             return true;
         }
 
