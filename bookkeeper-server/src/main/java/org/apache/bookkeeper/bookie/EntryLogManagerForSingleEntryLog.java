@@ -36,6 +36,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.bookie.EntryLogger.BufferedLogChannel;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.LedgerDirsListener;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.util.IOUtils;
 
 @Slf4j
 class EntryLogManagerForSingleEntryLog extends EntryLogManagerBase {
@@ -202,7 +203,7 @@ class EntryLogManagerForSingleEntryLog extends EntryLogManagerBase {
             // since this channel is only used for writing, after flushing the channel,
             // we had to close the underlying file channel. Otherwise, we might end up
             // leaking fds which cause the disk spaces could not be reclaimed.
-            EntryLogger.closeFileChannel(channel);
+            channel.close();
             recentlyCreatedEntryLogsStatus.flushRotatedEntryLog(channel.getLogId());
             log.info("Synced entry logger {} to disk.", channel.getLogId());
         }
@@ -211,15 +212,13 @@ class EntryLogManagerForSingleEntryLog extends EntryLogManagerBase {
     @Override
     public void close() throws IOException {
         if (activeLogChannel != null) {
-            EntryLogger.closeFileChannel(activeLogChannel);
+            activeLogChannel.close();
         }
     }
 
     @Override
     public void forceClose() {
-        if (activeLogChannel != null) {
-            EntryLogger.forceCloseFileChannel(activeLogChannel);
-        }
+        IOUtils.close(log, activeLogChannel);
     }
 
     @Override

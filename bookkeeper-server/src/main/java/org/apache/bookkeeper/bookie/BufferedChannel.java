@@ -23,6 +23,7 @@ package org.apache.bookkeeper.bookie;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
+import io.netty.util.ReferenceCountUtil;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -39,7 +40,7 @@ public class BufferedChannel extends BufferedReadChannel implements Closeable {
     // The position of the file channel's write pointer.
     protected AtomicLong writeBufferStartPosition = new AtomicLong(0);
     // The buffer used to write operations.
-    protected final ByteBuf writeBuffer;
+    protected ByteBuf writeBuffer;
     // The absolute position of the next write operation.
     protected final AtomicLong position;
 
@@ -87,7 +88,11 @@ public class BufferedChannel extends BufferedReadChannel implements Closeable {
 
     @Override
     public synchronized void close() throws IOException {
-        writeBuffer.release();
+        if (writeBuffer != null) {
+            ReferenceCountUtil.safeRelease(writeBuffer);
+            writeBuffer = null;
+        }
+
         fileChannel.close();
     }
 
