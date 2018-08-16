@@ -215,10 +215,10 @@ public class ConcurrentLongHashMap<V> {
     // A section is a portion of the hash map that is covered by a single
     @SuppressWarnings("serial")
     private static final class Section<V> extends StampedLock {
-        private long[] keys;
-        private V[] values;
+        private volatile long[] keys;
+        private volatile V[] values;
 
-        private int capacity;
+        private volatile int capacity;
         private volatile int size;
         private int usedBuckets;
         private int resizeThreshold;
@@ -507,10 +507,12 @@ public class ConcurrentLongHashMap<V> {
                 }
             }
 
-            capacity = newCapacity;
             keys = newKeys;
             values = newValues;
             usedBuckets = size;
+            // Capacity needs to be updated after the values, so that we won't see
+            // a capacity value bigger than the actual array size
+            capacity = newCapacity;
             resizeThreshold = (int) (capacity * MapFillFactor);
         }
 
