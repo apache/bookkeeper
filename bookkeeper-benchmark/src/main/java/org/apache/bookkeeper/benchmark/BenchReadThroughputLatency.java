@@ -187,7 +187,6 @@ public class BenchReadThroughputLatency {
         }
 
         final CountDownLatch shutdownLatch = new CountDownLatch(1);
-        final CountDownLatch connectedLatch = new CountDownLatch(1);
         final String nodepath = String.format("/ledgers/L%010d", ledger.get());
 
         final ClientConfiguration conf = new ClientConfiguration();
@@ -202,10 +201,7 @@ public class BenchReadThroughputLatency {
                     @Override
                     public void process(WatchedEvent event) {
                         try {
-                            if (event.getState() == Event.KeeperState.SyncConnected
-                                && event.getType() == Event.EventType.None) {
-                                connectedLatch.countDown();
-                            } else if (event.getType() == Event.EventType.NodeCreated
+                            if (event.getType() == Event.EventType.NodeCreated
                                        && event.getPath().equals(nodepath)) {
                                 readLedger(conf, ledger.get(), passwd);
                                 shutdownLatch.countDown();
@@ -253,7 +249,7 @@ public class BenchReadThroughputLatency {
                         }
                     }
                 });
-            connectedLatch.await();
+
             if (ledger.get() != 0) {
                 if (zk.exists(nodepath, true) != null) {
                     readLedger(conf, ledger.get(), passwd);
