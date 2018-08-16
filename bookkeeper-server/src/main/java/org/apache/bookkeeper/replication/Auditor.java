@@ -32,6 +32,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
@@ -640,47 +641,51 @@ public class Auditor {
                         return;
                     }
 
-                    LedgerHandle lh = null;
-                    try {
-                        lh = admin.openLedgerNoRecovery(ledgerId);
-                        checker.checkLedger(lh,
-                            new ProcessLostFragmentsCb(lh, callback),
-                            conf.getAuditorLedgerVerificationPercentage());
-                        // we collect the following stats to get a measure of the
-                        // distribution of a single ledger within the bk cluster
-                        // the higher the number of fragments/bookies, the more distributed it is
-                        numFragmentsPerLedger.registerSuccessfulValue(lh.getNumFragments());
-                        numBookiesPerLedger.registerSuccessfulValue(lh.getNumBookies());
-                        numLedgersChecked.inc();
-                    } catch (BKException.BKNoSuchLedgerExistsException bknsle) {
-                        if (LOG.isDebugEnabled()) {
-                            LOG.debug("Ledger was deleted before we could check it", bknsle);
-                        }
-                        callback.processResult(BKException.Code.OK,
-                                               null, null);
-                        return;
-                    } catch (BKException bke) {
-                        LOG.error("Couldn't open ledger " + ledgerId, bke);
-                        callback.processResult(BKException.Code.BookieHandleNotAvailableException,
-                                         null, null);
-                        return;
-                    } catch (InterruptedException ie) {
-                        LOG.error("Interrupted opening ledger", ie);
-                        Thread.currentThread().interrupt();
-                        callback.processResult(BKException.Code.InterruptedException, null, null);
-                        return;
-                    } finally {
-                        if (lh != null) {
-                            try {
-                                lh.close();
-                            } catch (BKException bke) {
-                                LOG.warn("Couldn't close ledger " + ledgerId, bke);
-                            } catch (InterruptedException ie) {
-                                LOG.warn("Interrupted closing ledger " + ledgerId, ie);
-                                Thread.currentThread().interrupt();
+                    // Do not perform blocking calls that involve making ZK calls from within the ZK
+                    // event thread. Jump to background thread instead to avoid deadlock.
+                    ForkJoinPool.commonPool().execute(() -> {
+                        LedgerHandle lh = null;
+                        try {
+                            lh = admin.openLedgerNoRecovery(ledgerId);
+                            checker.checkLedger(lh,
+                                    new ProcessLostFragmentsCb(lh, callback),
+                                    conf.getAuditorLedgerVerificationPercentage());
+                            // we collect the following stats to get a measure of the
+                            // distribution of a single ledger within the bk cluster
+                            // the higher the number of fragments/bookies, the more distributed it is
+                            numFragmentsPerLedger.registerSuccessfulValue(lh.getNumFragments());
+                            numBookiesPerLedger.registerSuccessfulValue(lh.getNumBookies());
+                            numLedgersChecked.inc();
+                        } catch (BKException.BKNoSuchLedgerExistsException bknsle) {
+                            if (LOG.isDebugEnabled()) {
+                                LOG.debug("Ledger was deleted before we could check it", bknsle);
+                            }
+                            callback.processResult(BKException.Code.OK,
+                                    null, null);
+                            return;
+                        } catch (BKException bke) {
+                            LOG.error("Couldn't open ledger " + ledgerId, bke);
+                            callback.processResult(BKException.Code.BookieHandleNotAvailableException,
+                                    null, null);
+                            return;
+                        } catch (InterruptedException ie) {
+                            LOG.error("Interrupted opening ledger", ie);
+                            Thread.currentThread().interrupt();
+                            callback.processResult(BKException.Code.InterruptedException, null, null);
+                            return;
+                        } finally {
+                            if (lh != null) {
+                                try {
+                                    lh.close();
+                                } catch (BKException bke) {
+                                    LOG.warn("Couldn't close ledger " + ledgerId, bke);
+                                } catch (InterruptedException ie) {
+                                    LOG.warn("Interrupted closing ledger " + ledgerId, ie);
+                                    Thread.currentThread().interrupt();
+                                }
                             }
                         }
-                    }
+                    });
                 }
             };
 
