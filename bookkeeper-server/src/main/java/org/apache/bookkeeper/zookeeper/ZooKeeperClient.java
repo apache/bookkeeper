@@ -44,7 +44,6 @@ import org.apache.bookkeeper.zookeeper.ZooWorker.ZooCallable;
 import org.apache.zookeeper.AsyncCallback.ACLCallback;
 import org.apache.zookeeper.AsyncCallback.Children2Callback;
 import org.apache.zookeeper.AsyncCallback.ChildrenCallback;
-import org.apache.zookeeper.AsyncCallback.Create2Callback;
 import org.apache.zookeeper.AsyncCallback.DataCallback;
 import org.apache.zookeeper.AsyncCallback.MultiCallback;
 import org.apache.zookeeper.AsyncCallback.StatCallback;
@@ -68,7 +67,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Provide a zookeeper client to handle session expire.
  */
-public class ZooKeeperClient extends ZooKeeper implements Watcher {
+public class ZooKeeperClient extends ZooKeeper implements Watcher, AutoCloseable {
 
     private static final Logger logger = LoggerFactory.getLogger(ZooKeeperClient.class);
 
@@ -761,74 +760,6 @@ public class ZooKeeperClient extends ZooKeeper implements Watcher {
     }
 
     @Override
-    public String create(final String path,
-                         final byte[] data,
-                         final List<ACL> acl,
-                         final CreateMode createMode,
-                         final Stat stat)
-            throws KeeperException, InterruptedException {
-        return ZooWorker.syncCallWithRetries(this, new ZooCallable<String>() {
-
-            @Override
-            public String call() throws KeeperException, InterruptedException {
-                ZooKeeper zkHandle = zk.get();
-                if (null == zkHandle) {
-                    return ZooKeeperClient.super.create(path, data, acl, createMode);
-                }
-                return zkHandle.create(path, data, acl, createMode);
-            }
-
-            @Override
-            public String toString() {
-                return String.format("create (%s, acl = %s, mode = %s)", path, acl, createMode);
-            }
-
-        }, operationRetryPolicy, rateLimiter, createStats);
-    }
-
-    @Override
-    public void create(final String path,
-                       final byte[] data,
-                       final List<ACL> acl,
-                       final CreateMode createMode,
-                       final Create2Callback cb,
-                       final Object context) {
-        final Runnable proc = new ZkRetryRunnable(operationRetryPolicy, rateLimiter, createStats) {
-
-            final Create2Callback createCb = new Create2Callback() {
-
-                @Override
-                public void processResult(int rc, String path, Object ctx, String name, Stat stat) {
-                    ZooWorker worker = (ZooWorker) ctx;
-                    if (allowRetry(worker, rc)) {
-                        backOffAndRetry(that, worker.nextRetryWaitTime());
-                    } else {
-                        cb.processResult(rc, path, context, name, stat);
-                    }
-                }
-
-            };
-
-            @Override
-            void zkRun() {
-                ZooKeeper zkHandle = zk.get();
-                if (null == zkHandle) {
-                    ZooKeeperClient.super.create(path, data, acl, createMode, createCb, worker);
-                } else {
-                    zkHandle.create(path, data, acl, createMode, createCb, worker);
-                }
-            }
-
-            @Override
-            public String toString() {
-                return String.format("create (%s, acl = %s, mode = %s)", path, acl, createMode);
-            }
-        };
-        // execute it immediately
-        proc.run();
-    }
-
-    @Override
     public void delete(final String path, final int version) throws KeeperException, InterruptedException {
         ZooWorker.syncCallWithRetries(this, new ZooCallable<Void>() {
 
@@ -1426,53 +1357,5 @@ public class ZooKeeperClient extends ZooKeeper implements Watcher {
         // execute it immediately
         proc.run();
     }
-
-    @Override
-    public void removeWatches(String path, Watcher watcher, WatcherType watcherType, boolean local)
-            throws InterruptedException, KeeperException {
-        ZooKeeper zkHandle = zk.get();
-        if (null == zkHandle) {
-            ZooKeeperClient.super.removeWatches(path, watcher, watcherType, local);
-        } else {
-            zkHandle.removeWatches(path, watcher, watcherType, local);
-        }
-    }
-
-    @Override
-    public void removeWatches(String path,
-                              Watcher watcher,
-                              WatcherType watcherType,
-                              boolean local,
-                              VoidCallback cb,
-                              Object ctx) {
-        ZooKeeper zkHandle = zk.get();
-        if (null == zkHandle) {
-            ZooKeeperClient.super.removeWatches(path, watcher, watcherType, local, cb, ctx);
-        } else {
-            zkHandle.removeWatches(path, watcher, watcherType, local, cb, ctx);
-        }
-    }
-
-    @Override
-    public void removeAllWatches(String path, WatcherType watcherType, boolean local)
-            throws InterruptedException, KeeperException {
-        ZooKeeper zkHandle = zk.get();
-        if (null == zkHandle) {
-            ZooKeeperClient.super.removeAllWatches(path, watcherType, local);
-        } else {
-            zkHandle.removeAllWatches(path, watcherType, local);
-        }
-    }
-
-    @Override
-    public void removeAllWatches(String path, WatcherType watcherType, boolean local, VoidCallback cb, Object ctx) {
-        ZooKeeper zkHandle = zk.get();
-        if (null == zkHandle) {
-            ZooKeeperClient.super.removeAllWatches(path, watcherType, local, cb, ctx);
-        } else {
-            zkHandle.removeAllWatches(path, watcherType, local, cb, ctx);
-        }
-    }
-
 
 }

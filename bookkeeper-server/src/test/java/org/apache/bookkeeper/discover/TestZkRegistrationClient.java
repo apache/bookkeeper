@@ -33,8 +33,6 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
@@ -42,6 +40,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.google.common.collect.Lists;
+
 import java.time.Duration;
 import java.util.HashSet;
 import java.util.List;
@@ -49,7 +48,9 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
+
 import lombok.extern.slf4j.Slf4j;
+
 import org.apache.bookkeeper.client.BKException.ZKException;
 import org.apache.bookkeeper.common.testing.executors.MockExecutorController;
 import org.apache.bookkeeper.discover.RegistrationClient.RegistrationListener;
@@ -60,12 +61,10 @@ import org.apache.bookkeeper.versioning.LongVersion;
 import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.bookkeeper.zookeeper.MockZooKeeperTestCase;
 import org.apache.zookeeper.AsyncCallback.Children2Callback;
-import org.apache.zookeeper.AsyncCallback.VoidCallback;
 import org.apache.zookeeper.KeeperException.Code;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.Watcher.Event.EventType;
 import org.apache.zookeeper.Watcher.Event.KeeperState;
-import org.apache.zookeeper.Watcher.WatcherType;
 import org.apache.zookeeper.data.Stat;
 import org.junit.After;
 import org.junit.Before;
@@ -94,6 +93,7 @@ public class TestZkRegistrationClient extends MockZooKeeperTestCase {
     private ScheduledExecutorService mockExecutor;
     private MockExecutorController controller;
 
+    @Override
     @Before
     public void setup() throws Exception {
         super.setup();
@@ -372,17 +372,6 @@ public class TestZkRegistrationClient extends MockZooKeeperTestCase {
             zkRegistrationClient.unwatchReadOnlyBookies(secondListener);
             assertEquals(1, zkRegistrationClient.getWatchReadOnlyBookiesTask().getNumListeners());
         }
-        // the watch task will not be closed since there is still a listener
-        verify(mockZk, times(0))
-            .removeWatches(
-                eq(isWritable ? regPath : regReadonlyPath),
-                same(isWritable ? zkRegistrationClient.getWatchWritableBookiesTask()
-                    : zkRegistrationClient.getWatchReadOnlyBookiesTask()),
-                eq(WatcherType.Children),
-                eq(true),
-                any(VoidCallback.class),
-                any()
-            );
 
         // trigger watcher
         notifyWatchedEvent(
@@ -421,15 +410,6 @@ public class TestZkRegistrationClient extends MockZooKeeperTestCase {
         }
         // the watch task will not be closed since there is still a listener
         assertTrue(expectedWatcher.isClosed());
-        verify(mockZk, times(1))
-            .removeWatches(
-                eq(isWritable ? regPath : regReadonlyPath),
-                same(expectedWatcher),
-                eq(WatcherType.Children),
-                eq(true),
-                any(VoidCallback.class),
-                any()
-            );
     }
 
     @Test

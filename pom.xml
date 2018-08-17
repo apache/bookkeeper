@@ -157,7 +157,7 @@
     <testcontainers.version>1.7.0</testcontainers.version>
     <twitter-server.version>1.29.0</twitter-server.version>
     <vertx.version>3.4.1</vertx.version>
-    <zookeeper.version>3.5.3-beta</zookeeper.version>
+    <zookeeper.version>3.4.13</zookeeper.version>
     <!-- plugin dependencies -->
     <apache-rat-plugin.version>0.12</apache-rat-plugin.version>
     <cobertura-maven-plugin.version>2.7</cobertura-maven-plugin.version>
