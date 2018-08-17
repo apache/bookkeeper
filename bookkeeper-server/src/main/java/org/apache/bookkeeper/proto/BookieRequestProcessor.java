@@ -406,8 +406,8 @@ public class BookieRequestProcessor implements RequestProcessor {
                               r.getReadRequest().getLedgerId(), r.getReadRequest().getEntryId());
                 }
                 BookkeeperProtocol.ReadResponse.Builder readResponse = BookkeeperProtocol.ReadResponse.newBuilder()
-                    .setLedgerId(r.getAddRequest().getLedgerId())
-                    .setEntryId(r.getAddRequest().getEntryId())
+                    .setLedgerId(r.getReadRequest().getLedgerId())
+                    .setEntryId(r.getReadRequest().getEntryId())
                     .setStatus(BookkeeperProtocol.StatusCode.ETOOMANYREQUESTS);
                 BookkeeperProtocol.Response.Builder response = BookkeeperProtocol.Response.newBuilder()
                     .setHeader(read.getHeader())
