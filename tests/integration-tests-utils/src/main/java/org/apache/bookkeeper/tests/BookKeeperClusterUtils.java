@@ -29,6 +29,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.net.Socket;
 
+import lombok.Cleanup;
+
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.ZooDefs.Ids;
@@ -77,21 +79,21 @@ public class BookKeeperClusterUtils {
     }
 
     public static void legacyMetadataFormat(DockerClient docker) throws Exception {
-        try (ZooKeeper zk = BookKeeperClusterUtils.zookeeperClient(docker)) {
-            zk.create("/ledgers", new byte[0], Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-            zk.create("/ledgers/available", new byte[0], Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-        }
+        @Cleanup
+        ZooKeeper zk = BookKeeperClusterUtils.zookeeperClient(docker);
+        zk.create("/ledgers", new byte[0], Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+        zk.create("/ledgers/available", new byte[0], Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
     }
 
     public static boolean metadataFormatIfNeeded(DockerClient docker, String version) throws Exception {
-        try (ZooKeeper zk = BookKeeperClusterUtils.zookeeperClient(docker)) {
-            if (zk.exists("/ledgers", false) == null) {
-                String bookkeeper = "/opt/bookkeeper/" + version + "/bin/bookkeeper";
-                runOnAnyBookie(docker, bookkeeper, "shell", "metaformat", "-nonInteractive");
-                return true;
-            } else {
-                return false;
-            }
+        @Cleanup
+        ZooKeeper zk = BookKeeperClusterUtils.zookeeperClient(docker);
+        if (zk.exists("/ledgers", false) == null) {
+            String bookkeeper = "/opt/bookkeeper/" + version + "/bin/bookkeeper";
+            runOnAnyBookie(docker, bookkeeper, "shell", "metaformat", "-nonInteractive");
+            return true;
+        } else {
+            return false;
         }
     }
 
@@ -100,17 +102,18 @@ public class BookKeeperClusterUtils {
                                                      String namespace) throws Exception {
         String zkServers = BookKeeperClusterUtils.zookeeperConnectString(docker);
         String dlogUri = "distributedlog://" + zkServers + namespace;
-        try (ZooKeeper zk = BookKeeperClusterUtils.zookeeperClient(docker)) {
-            if (zk.exists(namespace, false) == null) {
-                String dlog = "/opt/bookkeeper/" + version + "/bin/dlog";
 
-                runOnAnyBookie(docker, dlog,
-                    "admin",
-                    "bind",
-                    "-l", "/ledgers",
-                    "-s", zkServers,
-                    "-c", dlogUri);
-            }
+        @Cleanup
+        ZooKeeper zk = BookKeeperClusterUtils.zookeeperClient(docker);
+        if (zk.exists(namespace, false) == null) {
+            String dlog = "/opt/bookkeeper/" + version + "/bin/dlog";
+
+            runOnAnyBookie(docker, dlog,
+                "admin",
+                "bind",
+                "-l", "/ledgers",
+                "-s", zkServers,
+                "-c", dlogUri);
         }
         return dlogUri;
     }
@@ -167,7 +170,9 @@ public class BookKeeperClusterUtils {
         long timeoutMillis = timeoutUnit.toMillis(timeout);
         long pollMillis = 1000;
         String bookieId = DockerUtils.getContainerIP(docker, containerId) + ":3181";
-        try (ZooKeeper zk = BookKeeperClusterUtils.zookeeperClient(docker)) {
+        try {
+            @Cleanup
+            ZooKeeper zk = BookKeeperClusterUtils.zookeeperClient(docker);
             String path = "/ledgers/available/" + bookieId;
             while (timeoutMillis > 0) {
                 if ((zk.exists(path, false) != null) == upOrDown) {

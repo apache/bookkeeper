@@ -22,7 +22,7 @@ import static java.time.temporal.ChronoUnit.SECONDS;
 
 import java.time.Duration;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.bookkeeper.tests.containers.wait.HttpWaitStrategy;
+import org.apache.bookkeeper.tests.containers.wait.ZKWaitStrategy;
 
 @Slf4j
 public class ZKContainer<SELF extends ZKContainer<SELF>> extends MetadataStoreContainer<SELF> {
@@ -59,11 +59,8 @@ public class ZKContainer<SELF extends ZKContainer<SELF>> extends MetadataStoreCo
 
     @Override
     public void start() {
-        this.waitStrategy = new HttpWaitStrategy()
-            .forPath("/commands/ruok")
-            .forStatusCode(200)
-            .forPort(ZK_HTTP_PORT)
-            .withStartupTimeout(Duration.of(60, SECONDS));
+        this.waitStrategy = new ZKWaitStrategy(ZK_PORT)
+                .withStartupTimeout(Duration.of(60, SECONDS));
 
         this.withCreateContainerCmdModifier(createContainerCmd -> createContainerCmd.withHostName(HOST_NAME));
 

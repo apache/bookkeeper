@@ -262,7 +262,7 @@ Apache Software License, Version 2.
 - lib/net.java.dev.jna-jna-3.2.7.jar [30]
 - lib/org.apache.commons-commons-collections4-4.1.jar [31]
 - lib/org.apache.commons-commons-lang3-3.3.2.jar [32]
-- lib/org.apache.zookeeper-zookeeper-3.5.3-beta.jar [33]
+- lib/org.apache.zookeeper-zookeeper-3.4.13.jar [33]
 - lib/org.eclipse.jetty-jetty-http-9.4.5.v20170502.jar [34]
 - lib/org.eclipse.jetty-jetty-io-9.4.5.v20170502.jar [34]
 - lib/org.eclipse.jetty-jetty-security-9.4.5.v20170502.jar [34]
@@ -298,6 +298,7 @@ Apache Software License, Version 2.
 - lib/org.apache.curator-curator-recipes-4.0.1.jar [47]
 - lib/org.inferred-freebuilder-1.14.9.jar [48]
 - lib/com.google.errorprone-error_prone_annotations-2.1.2.jar [49]
+- lib/org.apache.yetus-audience-annotations-0.5.0.jar [50]
 
 [1] Source available at https://github.com/FasterXML/jackson-annotations/tree/jackson-annotations-2.8.9
 [2] Source available at https://github.com/FasterXML/jackson-core/tree/jackson-core-2.8.9
@@ -330,7 +331,7 @@ Apache Software License, Version 2.
 [30] Source available at https://github.com/java-native-access/jna/tree/3.2.7
 [31] Source available at https://git-wip-us.apache.org/repos/asf?p=commons-collections.git;a=tag;h=a3a5ad
 [32] Source available at https://git-wip-us.apache.org/repos/asf?p=commons-lang.git;a=tag;h=3ad2e8
-[33] Source available at https://github.com/apache/zookeeper/tree/release-3.5.3
+[33] Source available at https://github.com/apache/zookeeper/tree/release-3.4.13
 [34] Source available at https://github.com/eclipse/jetty.project/tree/jetty-9.4.5.v20170502
 [35] Source available at https://github.com/facebook/rocksdb/tree/v5.13.1
 [36] Source available at https://github.com/cbeust/jcommander/tree/jcommander-1.48
@@ -347,6 +348,7 @@ Apache Software License, Version 2.
 [47] Source available at https://github.com/apache/curator/tree/apache-curator-4.0.1
 [48] Source available at https://github.com/inferred/FreeBuilder/tree/v1.14.9
 [49] Source available at https://github.com/google/error-prone/tree/v2.1.2
+[50] Source available at https://github.com/apache/yetus/tree/rel/0.5.0
 
 
 ------------------------------------------------------------------------------------
@@ -547,4 +549,10 @@ license. For details, see deps/google-auth-library-credentials-0.9.0/LICENSE
 Bundled as
   - lib/com.google.auth-google-auth-library-credentials-0.9.0.jar
 Source available at https://github.com/google/google-auth-library-java/tree/0.9.0
+------------------------------------------------------------------------------------
+This product bundles the JLine Library, which is available under a "2-clause BSD"
+license. For details, see deps/jline-0.9.94/LICENSE
+
+Bundled as
+  - lib/jline-jline-0.9.94.jar
 
