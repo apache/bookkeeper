@@ -55,6 +55,8 @@ message GetListOfEntriesOfALedgerResponse {
 }
 ```
 
+For the sake of future extensibility it would be helpful to add version info (and possibly some metadata in the future) at the beginning of the 'availabilityOfEntriesOfLedger'. So the first 64 bytes will be considered reserved space, with the first byte specifying the version for now and the rest of the bytes in the reserved space will be 0's.
+
 Here Bookie is expected to attain this information just from just LedgerCache (Index Files) - IndexPersistenceMgr and IndexInMemPageMgr but it doesn’t actually check the availability of this entry in Entrylogger. Since the intention of this checker is limited to do just metadata validation at cluster level.
 
 ### Compatibility, Deprecation, and Migration Plan
