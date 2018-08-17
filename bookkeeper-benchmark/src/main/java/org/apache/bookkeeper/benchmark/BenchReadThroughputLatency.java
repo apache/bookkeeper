@@ -35,6 +35,7 @@ import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.LedgerEntry;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.conf.ClientConfiguration;
+import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.HelpFormatter;
@@ -42,7 +43,6 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.PosixParser;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
-import org.apache.zookeeper.ZooKeeper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -55,6 +55,7 @@ public class BenchReadThroughputLatency {
     private static final Pattern LEDGER_PATTERN = Pattern.compile("L([0-9]+)$");
 
     private static final Comparator<String> ZK_LEDGER_COMPARE = new Comparator<String>() {
+        @Override
         public int compare(String o1, String o2) {
             try {
                 Matcher m1 = LEDGER_PATTERN.matcher(o1);
@@ -186,28 +187,21 @@ public class BenchReadThroughputLatency {
         }
 
         final CountDownLatch shutdownLatch = new CountDownLatch(1);
-        final CountDownLatch connectedLatch = new CountDownLatch(1);
         final String nodepath = String.format("/ledgers/L%010d", ledger.get());
 
         final ClientConfiguration conf = new ClientConfiguration();
         conf.setReadTimeout(sockTimeout).setZkServers(servers);
 
-        try (ZooKeeper zk = new ZooKeeper(servers, 3000, new Watcher() {
-                public void process(WatchedEvent event) {
-                    if (event.getState() == Event.KeeperState.SyncConnected
-                            && event.getType() == Event.EventType.None) {
-                        connectedLatch.countDown();
-                    }
-                }
-        })) {
+        try (ZooKeeperClient zk = ZooKeeperClient.newBuilder()
+                .connectString(servers)
+                .sessionTimeoutMs(3000)
+                .build()) {
             final Set<String> processedLedgers = new HashSet<String>();
             zk.register(new Watcher() {
+                    @Override
                     public void process(WatchedEvent event) {
                         try {
-                            if (event.getState() == Event.KeeperState.SyncConnected
-                                && event.getType() == Event.EventType.None) {
-                                connectedLatch.countDown();
-                            } else if (event.getType() == Event.EventType.NodeCreated
+                            if (event.getType() == Event.EventType.NodeCreated
                                        && event.getPath().equals(nodepath)) {
                                 readLedger(conf, ledger.get(), passwd);
                                 shutdownLatch.countDown();
@@ -233,6 +227,7 @@ public class BenchReadThroughputLatency {
                                             final Long ledgerId = Long.valueOf(m.group(1));
                                             processedLedgers.add(ledger);
                                             Thread t = new Thread() {
+                                                @Override
                                                 public void run() {
                                                     readLedger(conf, ledgerId, passwd);
                                                 }
@@ -254,7 +249,7 @@ public class BenchReadThroughputLatency {
                         }
                     }
                 });
-            connectedLatch.await();
+
             if (ledger.get() != 0) {
                 if (zk.exists(nodepath, true) != null) {
                     readLedger(conf, ledger.get(), passwd);
