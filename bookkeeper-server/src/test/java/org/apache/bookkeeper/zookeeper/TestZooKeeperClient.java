@@ -36,7 +36,6 @@ import org.apache.bookkeeper.test.ZooKeeperUtil;
 import org.apache.zookeeper.AsyncCallback;
 import org.apache.zookeeper.AsyncCallback.ACLCallback;
 import org.apache.zookeeper.AsyncCallback.Children2Callback;
-import org.apache.zookeeper.AsyncCallback.Create2Callback;
 import org.apache.zookeeper.AsyncCallback.DataCallback;
 import org.apache.zookeeper.AsyncCallback.StatCallback;
 import org.apache.zookeeper.AsyncCallback.StringCallback;
@@ -226,7 +225,7 @@ public class TestZooKeeperClient extends TestCase {
 
         expireZooKeeperSession(client, timeout);
         logger.info("Create children under znode " + path);
-        client.create(path + "/children2", data, Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT, new Stat());
+        client.create(path + "/children2", data, Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
 
         expireZooKeeperSession(client, timeout);
         List<String> children = client.getChildren(path, false, newStat);
@@ -791,16 +790,10 @@ public class TestZooKeeperClient extends TestCase {
         expireZooKeeperSession(client, timeout);
         logger.info("Create znode " + path);
         final CountDownLatch create2Latch = new CountDownLatch(1);
-        client.create(path, data, Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT,
-                new Create2Callback() {
-
-            @Override
-            public void processResult(int rc, String path, Object ctx, String name, Stat stat) {
-                if (KeeperException.Code.NODEEXISTS.intValue() == rc) {
-                    create2Latch.countDown();
-                }
+        client.create(path, data, Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT, (rc, path1, ctx, name) -> {
+            if (KeeperException.Code.NODEEXISTS.intValue() == rc) {
+                create2Latch.countDown();
             }
-
         }, null);
         create2Latch.await();
         logger.info("Created znode " + path);
