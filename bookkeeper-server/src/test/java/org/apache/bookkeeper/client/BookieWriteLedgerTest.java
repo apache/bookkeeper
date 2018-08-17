@@ -28,8 +28,13 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+
+import com.google.common.collect.Lists;
+import io.netty.buffer.AbstractByteBufAllocator;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.buffer.Unpooled;
+import io.netty.buffer.UnpooledByteBufAllocator;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -43,6 +48,7 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import org.apache.bookkeeper.bookie.Bookie;
@@ -1292,6 +1298,101 @@ public class BookieWriteLedgerTest extends
         }
         // Close the ledger
         lh.close();
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void testLedgerCreateAdvByteBufRefCnt() throws Exception {
+        long ledgerId = rng.nextLong();
+        ledgerId &= Long.MAX_VALUE;
+        if (!baseConf.getLedgerManagerFactoryClass().equals(LongHierarchicalLedgerManagerFactory.class)) {
+            // since LongHierarchicalLedgerManager supports ledgerIds of
+            // decimal length upto 19 digits but other
+            // LedgerManagers only upto 10 decimals
+            ledgerId %= 9999999999L;
+        }
+
+        final LedgerHandle lh = bkc.createLedgerAdv(ledgerId, 5, 3, 2, digestType, ledgerPassword, null);
+
+        final List<AbstractByteBufAllocator> allocs = Lists.newArrayList(
+                new PooledByteBufAllocator(true),
+                new PooledByteBufAllocator(false),
+                new UnpooledByteBufAllocator(true),
+                new UnpooledByteBufAllocator(false));
+
+        long entryId = 0;
+        for (AbstractByteBufAllocator alloc: allocs) {
+            final ByteBuf data = alloc.buffer(10);
+            data.writeBytes(("fragment0" + entryId).getBytes());
+            assertEquals("ref count on ByteBuf should be 1", 1, data.refCnt());
+
+            CompletableFuture<Integer> cf = new CompletableFuture<>();
+            lh.asyncAddEntry(entryId, data, (rc, handle, eId, qwcLatency, ctx) -> {
+                CompletableFuture<Integer> future = (CompletableFuture<Integer>) ctx;
+                future.complete(rc);
+            }, cf);
+
+            int rc = cf.get();
+            assertEquals("rc code is OK", BKException.Code.OK, rc);
+
+            for (int i = 0; i < 10; i++) {
+                if (data.refCnt() == 0) {
+                    break;
+                }
+                TimeUnit.MILLISECONDS.sleep(250); // recycler runs asynchronously
+            }
+            assertEquals("writing entry with id " + entryId + ", ref count on ByteBuf should be 0 ",
+                    0, data.refCnt());
+
+            org.apache.bookkeeper.client.api.LedgerEntry e = lh.read(entryId, entryId).getEntry(entryId);
+            assertEquals("entry data is correct", "fragment0" + entryId, new String(e.getEntryBytes()));
+            entryId++;
+        }
+
+        bkc.deleteLedger(lh.ledgerId);
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void testLedgerCreateByteBufRefCnt() throws Exception {
+        final LedgerHandle lh = bkc.createLedger(5, 3, 2, digestType, ledgerPassword, null);
+
+        final List<AbstractByteBufAllocator> allocs = Lists.newArrayList(
+                new PooledByteBufAllocator(true),
+                new PooledByteBufAllocator(false),
+                new UnpooledByteBufAllocator(true),
+                new UnpooledByteBufAllocator(false));
+
+        int entryId = 0;
+        for (AbstractByteBufAllocator alloc: allocs) {
+            final ByteBuf data = alloc.buffer(10);
+            data.writeBytes(("fragment0" + entryId).getBytes());
+            assertEquals("ref count on ByteBuf should be 1", 1, data.refCnt());
+
+            CompletableFuture<Integer> cf = new CompletableFuture<>();
+            lh.asyncAddEntry(data, (rc, handle, eId, ctx) -> {
+                CompletableFuture<Integer> future = (CompletableFuture<Integer>) ctx;
+                future.complete(rc);
+            }, cf);
+
+            int rc = cf.get();
+            assertEquals("rc code is OK", BKException.Code.OK, rc);
+
+            for (int i = 0; i < 10; i++) {
+                if (data.refCnt() == 0) {
+                    break;
+                }
+                TimeUnit.MILLISECONDS.sleep(250); // recycler runs asynchronously
+            }
+            assertEquals("writing entry with id " + entryId + ", ref count on ByteBuf should be 0 ",
+                    0, data.refCnt());
+
+            org.apache.bookkeeper.client.api.LedgerEntry e = lh.read(entryId, entryId).getEntry(entryId);
+            assertEquals("entry data is correct", "fragment0" + entryId, new String(e.getEntryBytes()));
+            entryId++;
+        }
+
+        bkc.deleteLedger(lh.ledgerId);
     }
 
     private void readEntries(LedgerHandle lh, List<byte[]> entries) throws InterruptedException, BKException {
