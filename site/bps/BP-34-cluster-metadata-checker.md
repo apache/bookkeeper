@@ -1,7 +1,7 @@
 ---
 title: "BP-34: Cluster Metadata Checker“
 issue: https://github.com/apache/bookkeeper/issues/1602
-state: Under Discussion
+state: Accepted
 release: N/A
 ---
 
