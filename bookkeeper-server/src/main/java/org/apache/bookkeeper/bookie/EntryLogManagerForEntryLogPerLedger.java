@@ -555,7 +555,9 @@ class EntryLogManagerForEntryLogPerLedger extends EntryLogManagerBase {
     public void close() throws IOException {
         Set<BufferedLogChannelWithDirInfo> copyOfCurrentLogsWithDirInfo = getCopyOfCurrentLogs();
         for (BufferedLogChannelWithDirInfo currentLogWithDirInfo : copyOfCurrentLogsWithDirInfo) {
-            IOUtils.close(log, currentLogWithDirInfo.getLogChannel());
+            if (currentLogWithDirInfo.getLogChannel() != null) {
+                currentLogWithDirInfo.getLogChannel().close();
+            }
         }
     }
 

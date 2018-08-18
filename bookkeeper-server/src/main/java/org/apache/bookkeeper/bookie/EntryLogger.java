@@ -679,8 +679,8 @@ public class EntryLogger {
                 try {
                     compactionLogChannel.close();
                 } catch (IOException e) {
-                    LOG.error("Failed to close file channel for compaction log {}: {}", compactionLogChannel.getLogId(),
-                            e.getMessage());
+                    LOG.error("Failed to close file channel for compaction log {}", compactionLogChannel.getLogId(),
+                            e);
                 }
                 compactionLogChannel = null;
             }
