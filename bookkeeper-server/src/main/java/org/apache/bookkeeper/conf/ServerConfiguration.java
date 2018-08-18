@@ -106,6 +106,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     protected static final String SERVER_SOCK_LINGER = "serverTcpLinger";
     protected static final String SERVER_WRITEBUFFER_LOW_WATER_MARK = "serverWriteBufferLowWaterMark";
     protected static final String SERVER_WRITEBUFFER_HIGH_WATER_MARK = "serverWriteBufferHighWaterMark";
+    protected static final String SERVER_NUM_IO_THREADS = "serverNumIOThreads";
 
     // Zookeeper Parameters
     protected static final String ZK_RETRY_BACKOFF_START_MS = "zkRetryBackoffStartMs";
@@ -1112,6 +1113,32 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      */
     public ServerConfiguration setServerTcpNoDelay(boolean noDelay) {
         setProperty(SERVER_TCP_NODELAY, Boolean.toString(noDelay));
+        return this;
+    }
+
+    /**
+     * Get the number of IO threads. This is the number of
+     * threads used by Netty to handle TCP connections.
+     *
+     * @return the number of IO threads
+     */
+    public int getServerNumIOThreads() {
+        return getInt(SERVER_NUM_IO_THREADS, 2 * Runtime.getRuntime().availableProcessors());
+    }
+
+    /**
+     * Set the number of IO threads.
+     *
+     * <p>
+     * This is the number of threads used by Netty to handle TCP connections.
+     * </p>
+     *
+     * @see #getNumIOThreads()
+     * @param numThreads number of IO threads used for bookkeeper
+     * @return client configuration
+     */
+    public ServerConfiguration setServerNumIOThreads(int numThreads) {
+        setProperty(SERVER_NUM_IO_THREADS, Integer.toString(numThreads));
         return this;
     }
 

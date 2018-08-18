@@ -143,8 +143,9 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
     protected static final String GET_BOOKIE_INFO_TIMEOUT_SECS = "getBookieInfoTimeoutSecs";
     protected static final String START_TLS_TIMEOUT_SECS = "startTLSTimeoutSecs";
 
-    // Number Woker Threads
+    // Number of Threads
     protected static final String NUM_WORKER_THREADS = "numWorkerThreads";
+    protected static final String NUM_IO_THREADS = "numIOThreads";
 
     // Ensemble Placement Policy
     protected static final String ENSEMBLE_PLACEMENT_POLICY = "ensemblePlacementPolicy";
@@ -847,6 +848,37 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
      */
     public ClientConfiguration setNumWorkerThreads(int numThreads) {
         setProperty(NUM_WORKER_THREADS, numThreads);
+        return this;
+    }
+
+    /**
+     * Get the number of IO threads. This is the number of
+     * threads used by Netty to handle TCP connections.
+     *
+     * @return the number of IO threads
+     */
+    public int getNumIOThreads() {
+        return getInt(NUM_IO_THREADS, 2 * Runtime.getRuntime().availableProcessors());
+    }
+
+    /**
+     * Set the number of IO threads.
+     *
+     * <p>
+     * This is the number of threads used by Netty to handle TCP connections.
+     * </p>
+     *
+     * <p>
+     * NOTE: setting the number of IO threads after BookKeeper object is constructed
+     * will not take any effect on the number of threads in the pool.
+     * </p>
+     *
+     * @see #getNumIOThreads()
+     * @param numThreads number of IO threads used for bookkeeper
+     * @return client configuration
+     */
+    public ClientConfiguration setNumIOThreads(int numThreads) {
+        setProperty(NUM_IO_THREADS, numThreads);
         return this;
     }
 
