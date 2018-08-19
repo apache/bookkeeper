@@ -33,7 +33,9 @@ import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.ChannelPipeline;
+import io.netty.channel.DefaultEventLoop;
 import io.netty.channel.DefaultEventLoopGroup;
+import io.netty.channel.EventLoop;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.WriteBufferWaterMark;
 import io.netty.channel.epoll.EpollEventLoopGroup;
@@ -43,7 +45,6 @@ import io.netty.channel.group.ChannelGroupFuture;
 import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.channel.local.LocalChannel;
 import io.netty.channel.local.LocalServerChannel;
-import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
@@ -60,7 +61,8 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.ThreadFactory;
+import java.util.Queue;
+import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -71,11 +73,13 @@ import org.apache.bookkeeper.auth.BookKeeperPrincipal;
 import org.apache.bookkeeper.auth.BookieAuthProvider;
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException;
+import org.apache.bookkeeper.common.collections.BlockingMpscQueue;
+import org.apache.bookkeeper.common.util.affinity.CpuAffinity;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.processor.RequestProcessor;
 import org.apache.bookkeeper.util.ByteBufList;
-import org.apache.commons.lang.SystemUtils;
+import org.apache.bookkeeper.util.EventLoopUtil;
 import org.apache.zookeeper.KeeperException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -111,29 +115,43 @@ class BookieNettyServer {
         this.authProviderFactory = AuthProviderFactoryFactory.newBookieAuthProviderFactory(conf);
 
         if (!conf.isDisableServerSocketBind()) {
-            ThreadFactory threadFactory = new DefaultThreadFactory("bookie-io");
-            final int numThreads = conf.getServerNumIOThreads();
-
-            EventLoopGroup eventLoopGroup;
-            if (SystemUtils.IS_OS_LINUX) {
-                try {
-                    eventLoopGroup = new EpollEventLoopGroup(numThreads, threadFactory);
-                } catch (ExceptionInInitializerError | NoClassDefFoundError | UnsatisfiedLinkError e) {
-                    LOG.warn("Could not use Netty Epoll event loop for bookie server: {}", e.getMessage());
-                    eventLoopGroup = new NioEventLoopGroup(numThreads, threadFactory);
-                }
-            } else {
-                eventLoopGroup = new NioEventLoopGroup(numThreads, threadFactory);
-            }
-
-            this.eventLoopGroup = eventLoopGroup;
+            this.eventLoopGroup = EventLoopUtil.getServerEventLoopGroup(conf, new DefaultThreadFactory("bookie-io"));
             allChannels = new CleanupChannelGroup(eventLoopGroup);
         } else {
             this.eventLoopGroup = null;
         }
 
         if (conf.isEnableLocalTransport()) {
-            jvmEventLoopGroup = new DefaultEventLoopGroup();
+            jvmEventLoopGroup = new DefaultEventLoopGroup(conf.getServerNumIOThreads()) {
+                @Override
+                protected EventLoop newChild(Executor executor, Object... args) throws Exception {
+                    return new DefaultEventLoop(this, executor) {
+                        @Override
+                        protected Queue<Runnable> newTaskQueue(int maxPendingTasks) {
+                            if (conf.isBusyWaitEnabled()) {
+                                return new BlockingMpscQueue<>(Math.min(maxPendingTasks, 10_000));
+                            } else {
+                                return super.newTaskQueue(maxPendingTasks);
+                            }
+                        }
+                    };
+                }
+            };
+
+            // Enable CPU affinity on IO threads
+            if (conf.isBusyWaitEnabled()) {
+                for (int i = 0; i < conf.getServerNumIOThreads(); i++) {
+                    jvmEventLoopGroup.next().submit(() -> {
+                        try {
+                            CpuAffinity.acquireCore();
+                        } catch (Throwable t) {
+                            LOG.warn("Failed to acquire CPU core for thread {}", Thread.currentThread().getName(),
+                                    t.getMessage(), t);
+                        }
+                    });
+                }
+            }
+
             allChannels = new CleanupChannelGroup(jvmEventLoopGroup);
         } else {
             jvmEventLoopGroup = null;
