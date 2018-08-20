@@ -1098,6 +1098,52 @@ public class EntryLogTest {
         }
     }
 
+    @Test
+    public void testLongLedgerIdsWithEntryLogPerLedger() throws Exception {
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setEntryLogFilePreAllocationEnabled(true);
+        conf.setEntryLogPerLedgerEnabled(true);
+        conf.setLedgerDirNames(createAndGetLedgerDirs(1));
+        conf.setLedgerStorageClass(InterleavedLedgerStorage.class.getName());
+
+        LedgerDirsManager ledgerDirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs(),
+                new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()));
+
+        EntryLogger entryLogger = new EntryLogger(conf, ledgerDirsManager);
+        EntryLogManagerForEntryLogPerLedger entryLogManager = (EntryLogManagerForEntryLogPerLedger) entryLogger
+                .getEntryLogManager();
+
+        int numOfLedgers = 5;
+        int numOfEntries = 4;
+        long[][] pos = new long[numOfLedgers][numOfEntries];
+        for (int i = 0; i < numOfLedgers; i++) {
+            long ledgerId = Long.MAX_VALUE - i;
+            entryLogManager.createNewLog(ledgerId);
+            for (int entryId = 0; entryId < numOfEntries; entryId++) {
+                pos[i][entryId] = entryLogger.addEntry(ledgerId, generateEntry(ledgerId, entryId).nioBuffer());
+            }
+        }
+        /*
+         * do checkpoint to make sure entrylog files are persisted
+         */
+        entryLogger.checkpoint();
+
+        for (int i = 0; i < numOfLedgers; i++) {
+            long ledgerId = Long.MAX_VALUE - i;
+            for (int entryId = 0; entryId < numOfEntries; entryId++) {
+                String expectedValue = generateDataString(ledgerId, entryId);
+                ByteBuf buf = entryLogger.readEntry(ledgerId, entryId, pos[i][entryId]);
+                long readLedgerId = buf.readLong();
+                long readEntryId = buf.readLong();
+                byte[] readData = new byte[buf.readableBytes()];
+                buf.readBytes(readData);
+                assertEquals("LedgerId ", ledgerId, readLedgerId);
+                assertEquals("EntryId ", entryId, readEntryId);
+                assertEquals("Entry Data ", expectedValue, new String(readData));
+            }
+        }
+    }
+
     /*
      * when entrylog for ledger is removed from ledgerIdEntryLogMap, then
      * ledgermap should be appended to that entrylog, before moving that

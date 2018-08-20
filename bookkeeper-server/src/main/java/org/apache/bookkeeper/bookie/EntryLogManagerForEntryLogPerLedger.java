@@ -94,7 +94,7 @@ class EntryLogManagerForEntryLogPerLedger extends EntryLogManagerBase {
         private BufferedLogChannelWithDirInfo entryLogWithDirInfo;
 
         private EntryLogAndLockTuple(long ledgerId) {
-            int lockIndex = Long.hashCode(ledgerId) % lockArrayPool.length();
+            int lockIndex = Math.abs(Long.hashCode(ledgerId) % lockArrayPool.length());
             if (lockArrayPool.get(lockIndex) == null) {
                 lockArrayPool.compareAndSet(lockIndex, null, new ReentrantLock());
             }
