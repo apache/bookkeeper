@@ -69,13 +69,13 @@ public class TestAuth extends BookKeeperClusterTestCase {
     private void connectAndWriteToBookie(ClientConfiguration conf, AtomicLong ledgerWritten)
             throws Exception {
         LOG.info("Connecting to bookie");
-        BookKeeper bkc = new BookKeeper(conf, zkc);
-        LedgerHandle l = bkc.createLedger(1, 1, DigestType.CRC32,
-                PASSWD);
-        ledgerWritten.set(l.getId());
-        l.addEntry(ENTRY);
-        l.close();
-        bkc.close();
+        try (BookKeeper bkc = new BookKeeper(conf, zkc);
+            LedgerHandle l = bkc.createLedger(1, 1, DigestType.CRC32,
+                    PASSWD)) {
+            ledgerWritten.set(l.getId());
+            l.addEntry(ENTRY);
+            l.close();
+        }
     }
 
     /**
@@ -94,18 +94,19 @@ public class TestAuth extends BookKeeperClusterTestCase {
 
         restartBookies();
 
-        BookKeeper bkc = new BookKeeper(clientConf, zkc);
-        LedgerHandle lh = bkc.openLedger(ledgerId, DigestType.CRC32,
-                                         PASSWD);
-        if (lh.getLastAddConfirmed() < 0) {
-            return 0;
-        }
-        Enumeration<LedgerEntry> e = lh.readEntries(0, lh.getLastAddConfirmed());
         int count = 0;
-        while (e.hasMoreElements()) {
-            count++;
-            assertTrue("Should match what we wrote",
-                       Arrays.equals(e.nextElement().getEntry(), ENTRY));
+        try (BookKeeper bkc = new BookKeeper(clientConf, zkc);
+            LedgerHandle lh = bkc.openLedger(ledgerId, DigestType.CRC32,
+                                         PASSWD)) {
+            if (lh.getLastAddConfirmed() < 0) {
+                return 0;
+            }
+            Enumeration<LedgerEntry> e = lh.readEntries(0, lh.getLastAddConfirmed());
+            while (e.hasMoreElements()) {
+                count++;
+                assertTrue("Should match what we wrote",
+                        Arrays.equals(e.nextElement().getEntry(), ENTRY));
+            }
         }
         return count;
     }

@@ -442,7 +442,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
 
         // initialize bookie client
         this.bookieClient = new BookieClientImpl(conf, this.eventLoopGroup, this.mainWorkerPool,
-                scheduler, rootStatsLogger);
+                scheduler, statsLogger);
 
         if (null == requestTimer) {
             this.requestTimer = new HashedWheelTimer(
@@ -459,7 +459,55 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
         this.placementPolicy = initializeEnsemblePlacementPolicy(conf,
                 dnsResolver, this.requestTimer, this.featureProvider, this.statsLogger);
 
+<<<<<<< HEAD
+        // initialize bookie client
+        this.bookieClient = new BookieClientImpl(conf, this.eventLoopGroup, this.mainWorkerPool,
+                                                 scheduler, rootStatsLogger);
+||||||| merged common ancestors
+        if (conf.getFirstSpeculativeReadTimeout() > 0) {
+            this.readSpeculativeRequestPolicy =
+                    Optional.of(new DefaultSpeculativeRequestExecutionPolicy(
+                        conf.getFirstSpeculativeReadTimeout(),
+                        conf.getMaxSpeculativeReadTimeout(),
+                        conf.getSpeculativeReadTimeoutBackoffMultiplier()));
+        } else {
+            this.readSpeculativeRequestPolicy = Optional.<SpeculativeRequestExecutionPolicy>absent();
+        }
 
+        if (conf.getFirstSpeculativeReadLACTimeout() > 0) {
+            this.readLACSpeculativeRequestPolicy =
+                    Optional.of((SpeculativeRequestExecutionPolicy) (new DefaultSpeculativeRequestExecutionPolicy(
+                        conf.getFirstSpeculativeReadLACTimeout(),
+                        conf.getMaxSpeculativeReadLACTimeout(),
+                        conf.getSpeculativeReadLACTimeoutBackoffMultiplier())));
+        } else {
+            this.readLACSpeculativeRequestPolicy = Optional.<SpeculativeRequestExecutionPolicy>absent();
+        }
+        // initialize bookie client
+        this.bookieClient = new BookieClientImpl(conf, this.eventLoopGroup, this.mainWorkerPool,
+                                                 scheduler, statsLogger);
+=======
+        if (conf.getFirstSpeculativeReadTimeout() > 0) {
+            this.readSpeculativeRequestPolicy =
+                    Optional.of(new DefaultSpeculativeRequestExecutionPolicy(
+                        conf.getFirstSpeculativeReadTimeout(),
+                        conf.getMaxSpeculativeReadTimeout(),
+                        conf.getSpeculativeReadTimeoutBackoffMultiplier()));
+        } else {
+            this.readSpeculativeRequestPolicy = Optional.<SpeculativeRequestExecutionPolicy>absent();
+        }
+
+        if (conf.getFirstSpeculativeReadLACTimeout() > 0) {
+            this.readLACSpeculativeRequestPolicy =
+                    Optional.of((SpeculativeRequestExecutionPolicy) (new DefaultSpeculativeRequestExecutionPolicy(
+                        conf.getFirstSpeculativeReadLACTimeout(),
+                        conf.getMaxSpeculativeReadLACTimeout(),
+                        conf.getSpeculativeReadLACTimeoutBackoffMultiplier())));
+        } else {
+            this.readLACSpeculativeRequestPolicy = Optional.<SpeculativeRequestExecutionPolicy>absent();
+        }
+
+>>>>>>> Issue #1610: netty leak detector logs 'LEAK: HashedWheelTimer.release() was not called before it's garbage-collected.' in unit tests
         this.bookieWatcher = new BookieWatcherImpl(
                 conf, this.placementPolicy, metadataDriver.getRegistrationClient(),
                 this.statsLogger.scope(WATCHER_SCOPE));
