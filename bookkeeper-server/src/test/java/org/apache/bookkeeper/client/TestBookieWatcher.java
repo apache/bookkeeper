@@ -104,38 +104,39 @@ public class TestBookieWatcher extends BookKeeperClusterTestCase {
         ClientConfiguration conf = new ClientConfiguration();
         conf.setMetadataServiceUri(metadataServiceUri);
 
-        BookKeeper bkc = new BookKeeper(conf, zk);
+        try (BookKeeper bkc = new BookKeeper(conf, zk)) {
 
-        LedgerHandle lh;
-        try {
-            lh = bkc.createLedger(3, 2, 2, BookKeeper.DigestType.CRC32, new byte[] {});
-            fail("Should fail to create ledger due to not enough bookies.");
-        } catch (BKException bke) {
-            // expected
-        }
-
-        // make zookeeper session expired
-        expireZooKeeperSession(bkc.getZkHandle(), timeout);
-        TimeUnit.MILLISECONDS.sleep(3 * timeout);
-
-        // start four new bookies
-        for (int i = 0; i < 2; i++) {
-            startNewBookie();
-        }
-
-        // wait for bookie watcher backoff time.
-        TimeUnit.SECONDS.sleep(1);
-
-        // should success to detect newly added bookies
-        try {
-            lh = bkc.createLedger(3, 2, 2, BookKeeper.DigestType.CRC32, new byte[] {});
-            lh.close();
-            if (!reconnectable) {
-                fail("Should fail to create ledger due to bookie watcher could not survive after session expire.");
+            LedgerHandle lh;
+            try {
+                lh = bkc.createLedger(3, 2, 2, BookKeeper.DigestType.CRC32, new byte[]{});
+                fail("Should fail to create ledger due to not enough bookies.");
+            } catch (BKException bke) {
+                // expected
             }
-        } catch (BKException bke) {
-            if (reconnectable) {
-                fail("Should not fail to create ledger due to bookie watcher could survive after session expire.");
+
+            // make zookeeper session expired
+            expireZooKeeperSession(bkc.getZkHandle(), timeout);
+            TimeUnit.MILLISECONDS.sleep(3 * timeout);
+
+            // start four new bookies
+            for (int i = 0; i < 2; i++) {
+                startNewBookie();
+            }
+
+            // wait for bookie watcher backoff time.
+            TimeUnit.SECONDS.sleep(1);
+
+            // should success to detect newly added bookies
+            try {
+                lh = bkc.createLedger(3, 2, 2, BookKeeper.DigestType.CRC32, new byte[]{});
+                lh.close();
+                if (!reconnectable) {
+                    fail("Should fail to create ledger due to bookie watcher could not survive after session expire.");
+                }
+            } catch (BKException bke) {
+                if (reconnectable) {
+                    fail("Should not fail to create ledger due to bookie watcher could survive after session expire.");
+                }
             }
         }
     }

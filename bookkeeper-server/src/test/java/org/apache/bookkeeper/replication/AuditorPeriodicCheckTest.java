@@ -336,12 +336,13 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
             }
             lh.close();
         }
-        final Auditor auditor = new Auditor(
+
+        try (final Auditor auditor = new Auditor(
                 Bookie.getBookieAddress(bsConfs.get(0)).toString(),
-                bsConfs.get(0), zkc, NullStatsLogger.INSTANCE);
-        final AtomicBoolean exceptionCaught = new AtomicBoolean(false);
-        final CountDownLatch latch = new CountDownLatch(1);
-        Thread t = new Thread() {
+                bsConfs.get(0), zkc, NullStatsLogger.INSTANCE)) {
+            final AtomicBoolean exceptionCaught = new AtomicBoolean(false);
+            final CountDownLatch latch = new CountDownLatch(1);
+            Thread t = new Thread() {
                 public void run() {
                     try {
                         latch.countDown();
@@ -354,13 +355,14 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
                     }
                 }
             };
-        t.start();
-        latch.await();
-        for (Long id : ids) {
-            bkc.deleteLedger(id);
+            t.start();
+            latch.await();
+            for (Long id : ids) {
+                bkc.deleteLedger(id);
+            }
+            t.join();
+            assertFalse("Shouldn't have thrown exception", exceptionCaught.get());
         }
-        t.join();
-        assertFalse("Shouldn't have thrown exception", exceptionCaught.get());
     }
 
     private BookieSocketAddress replaceBookieWithWriteFailingBookie(LedgerHandle lh) throws Exception {
