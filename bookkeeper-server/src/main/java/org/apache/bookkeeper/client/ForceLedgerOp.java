@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.proto.BookieClient;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ForceLedgerCallback;
 import org.apache.bookkeeper.util.SafeRunnable;
 import org.slf4j.Logger;
@@ -44,15 +45,19 @@ class ForceLedgerOp extends SafeRunnable implements ForceLedgerCallback {
     long currentNonDurableLastAddConfirmed = LedgerHandle.INVALID_ENTRY_ID;
 
     final LedgerHandle lh;
+    final BookieClient bookieClient;
 
-    ForceLedgerOp(LedgerHandle lh, List<BookieSocketAddress> ensemble, CompletableFuture<Void> cb) {
+    ForceLedgerOp(LedgerHandle lh, BookieClient bookieClient,
+                  List<BookieSocketAddress> ensemble,
+                  CompletableFuture<Void> cb) {
         this.lh = lh;
+        this.bookieClient = bookieClient;
         this.cb = cb;
         this.currentEnsemble = ensemble;
     }
 
     void sendForceLedgerRequest(int bookieIndex) {
-        lh.bk.getBookieClient().forceLedger(currentEnsemble.get(bookieIndex), lh.ledgerId, this, bookieIndex);
+        bookieClient.forceLedger(currentEnsemble.get(bookieIndex), lh.ledgerId, this, bookieIndex);
     }
 
     @Override

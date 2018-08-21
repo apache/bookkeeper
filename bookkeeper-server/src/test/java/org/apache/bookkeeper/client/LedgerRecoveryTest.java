@@ -441,6 +441,7 @@ public class LedgerRecoveryTest extends BookKeeperClusterTestCase {
         ClientConfiguration newConf = new ClientConfiguration()
             .setReadEntryTimeout(60000)
             .setAddEntryTimeout(60000)
+            .setEnableParallelRecoveryRead(false)
             .setRecoveryReadBatchSize(batchSize);
 
         newConf.setMetadataServiceUri(zkUtil.getMetadataServiceUri());
@@ -480,14 +481,19 @@ public class LedgerRecoveryTest extends BookKeeperClusterTestCase {
 
         final CountDownLatch recoverLatch = new CountDownLatch(1);
         final AtomicBoolean success = new AtomicBoolean(false);
-        LedgerRecoveryOp recoveryOp = new LedgerRecoveryOp(recoverLh,
+
+        MockClientContext parallelReadCtx = MockClientContext.copyOf(bkc.getClientCtx())
+            .setConf(ClientInternalConf.fromConfig(newConf.setEnableParallelRecoveryRead(true)));
+
+        LedgerRecoveryOp recoveryOp = new LedgerRecoveryOp(
+                recoverLh, parallelReadCtx,
                 new BookkeeperInternalCallbacks.GenericCallback<Void>() {
-            @Override
-            public void operationComplete(int rc, Void result) {
-                success.set(BKException.Code.OK == rc);
-                recoverLatch.countDown();
-            }
-        }).parallelRead(true).readBatchSize(newConf.getRecoveryReadBatchSize());
+                    @Override
+                    public void operationComplete(int rc, Void result) {
+                        success.set(BKException.Code.OK == rc);
+                        recoverLatch.countDown();
+                    }
+                });
         recoveryOp.initiate();
         recoverLatch.await(10, TimeUnit.SECONDS);
         assertTrue(success.get());

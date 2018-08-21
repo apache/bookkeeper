@@ -23,6 +23,7 @@ import java.util.List;
 
 import org.apache.bookkeeper.client.BKException.BKDigestMatchException;
 import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.proto.BookieClient;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadLacCallback;
 import org.apache.bookkeeper.proto.checksum.DigestManager.RecoveryData;
 import org.slf4j.Logger;
@@ -46,6 +47,7 @@ import org.slf4j.LoggerFactory;
 class PendingReadLacOp implements ReadLacCallback {
     static final Logger LOG = LoggerFactory.getLogger(PendingReadLacOp.class);
     LedgerHandle lh;
+    BookieClient bookieClient;
     LacCallback cb;
     int numResponsesPending;
     volatile boolean completed = false;
@@ -61,18 +63,18 @@ class PendingReadLacOp implements ReadLacCallback {
         void getLacComplete(int rc, long lac);
     }
 
-    PendingReadLacOp(LedgerHandle lh, List<BookieSocketAddress> ensemble, LacCallback cb) {
+    PendingReadLacOp(LedgerHandle lh, BookieClient bookieClient, List<BookieSocketAddress> ensemble, LacCallback cb) {
         this.lh = lh;
+        this.bookieClient = bookieClient;
         this.cb = cb;
-        this.numResponsesPending = lh.getLedgerMetadata().getEnsembleSize();
+        this.numResponsesPending = ensemble.size();
         this.coverageSet = lh.distributionSchedule.getCoverageSet();
         this.currentEnsemble = ensemble;
     }
 
     public void initiate() {
         for (int i = 0; i < currentEnsemble.size(); i++) {
-            lh.bk.getBookieClient().readLac(currentEnsemble.get(i),
-                    lh.ledgerId, this, i);
+            bookieClient.readLac(currentEnsemble.get(i), lh.ledgerId, this, i);
         }
     }
 

@@ -1003,10 +1003,17 @@ public class EntryLogTest {
         latchToStart.countDown();
         Thread.sleep(1000);
         /*
-         * since there are only "numOfLedgers" ledgers, only "numOfLedgers" threads should have been able to acquire
-         * lock. After acquiring the lock there must be waiting on 'latchToWait' latch
+         * since there are only "numOfLedgers" ledgers, only < "numOfLedgers"
+         * threads should have been able to acquire lock, because multiple
+         * ledgers can end up getting same lock because their hashcode might
+         * fall in the same bucket.
+         *
+         *
+         * After acquiring the lock there must be waiting on 'latchToWait' latch
          */
-        assertEquals("Number Of Threads acquired Lock", numOfLedgers, numberOfThreadsAcquiredLock.get());
+        int currentNumberOfThreadsAcquiredLock = numberOfThreadsAcquiredLock.get();
+        assertTrue("Number Of Threads acquired Lock " + currentNumberOfThreadsAcquiredLock,
+                (currentNumberOfThreadsAcquiredLock > 0) && (currentNumberOfThreadsAcquiredLock <= numOfLedgers));
         latchToWait.countDown();
         Thread.sleep(2000);
         assertEquals("Number Of Threads acquired Lock", numOfLedgers * numOfThreadsPerLedger,

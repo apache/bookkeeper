@@ -1,0 +1,184 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+
+---
+# Source: apache-bookkeeper-docker-compose/templates/docker-compose.yml
+version: '3'
+
+services:
+  zookeeper-0:
+    image: apachebookkeeper/bookkeeper-current:latest
+    hostname: zookeeper-0
+    command: ["zookeeper"]
+    ports:
+      - "9080:8080"
+      - "2181:2181"
+    volumes:
+      - ./data/zookeeper-0/data:/data/zookeeper/data
+      - ./data/zookeeper-0/txlog:/data/zookeeper/txlog
+    environment:
+      - ZK_dataDir=/data/zookeeper/data
+      - ZK_dataLogDir=/data/zookeeper/txlog
+      - ZK_clientPort=2181
+      - ZK_ID=0
+      - ZK_SERVERS=server.0=zookeeper-0:2888:3888:participant;0.0.0.0:2181 server.1=zookeeper-1:2888:3888:participant;0.0.0.0:2181 server.2=zookeeper-2:2888:3888:participant;0.0.0.0:2181
+      - ZK_standaloneEnabled=false
+    healthcheck:
+      test: ["CMD", "curl", "-s", "http://localhost:8080/commands/stat"]
+      interval: 60s
+      timeout: 3s
+      retries: 60
+    restart: on-failure
+  
+  zookeeper-1:
+    image: apachebookkeeper/bookkeeper-current:latest
+    hostname: zookeeper-1
+    command: ["zookeeper"]
+    ports:
+      - "9081:8080"
+      - "2182:2181"
+    volumes:
+      - ./data/zookeeper-1/data:/data/zookeeper/data
+      - ./data/zookeeper-1/txlog:/data/zookeeper/txlog
+    environment:
+      - ZK_dataDir=/data/zookeeper/data
+      - ZK_dataLogDir=/data/zookeeper/txlog
+      - ZK_clientPort=2181
+      - ZK_ID=1
+      - ZK_SERVERS=server.0=zookeeper-0:2888:3888:participant;0.0.0.0:2181 server.1=zookeeper-1:2888:3888:participant;0.0.0.0:2181 server.2=zookeeper-2:2888:3888:participant;0.0.0.0:2181
+      - ZK_standaloneEnabled=false
+    healthcheck:
+      test: ["CMD", "curl", "-s", "http://localhost:8080/commands/stat"]
+      interval: 60s
+      timeout: 3s
+      retries: 60
+    restart: on-failure
+  
+  zookeeper-2:
+    image: apachebookkeeper/bookkeeper-current:latest
+    hostname: zookeeper-2
+    command: ["zookeeper"]
+    ports:
+      - "9082:8080"
+      - "2183:2181"
+    volumes:
+      - ./data/zookeeper-2/data:/data/zookeeper/data
+      - ./data/zookeeper-2/txlog:/data/zookeeper/txlog
+    environment:
+      - ZK_dataDir=/data/zookeeper/data
+      - ZK_dataLogDir=/data/zookeeper/txlog
+      - ZK_clientPort=2181
+      - ZK_ID=2
+      - ZK_SERVERS=server.0=zookeeper-0:2888:3888:participant;0.0.0.0:2181 server.1=zookeeper-1:2888:3888:participant;0.0.0.0:2181 server.2=zookeeper-2:2888:3888:participant;0.0.0.0:2181
+      - ZK_standaloneEnabled=false
+    healthcheck:
+      test: ["CMD", "curl", "-s", "http://localhost:8080/commands/stat"]
+      interval: 60s
+      timeout: 3s
+      retries: 60
+    restart: on-failure
+  
+  bookie-0:
+    image: apachebookkeeper/bookkeeper-current:latest
+    hostname: bookie-0
+    ports:
+      - "3181:3181"
+      - "8080:8080"
+      - "4181:4181"
+    volumes:
+      - ./data/bookie-0/journal:/data/bookkeeper/journal
+      - ./data/bookie-0/ledgers:/data/bookkeeper/ledgers
+    environment:
+      - BK_zkServers=zookeeper-0:2181,zookeeper-1:2181,zookeeper-2:2181
+      - BK_zkLedgersRootPath=/ledgers
+      - BK_metadataServiceUri=zk://zookeeper-0:2181;zookeeper-1:2181;zookeeper-2:2181/ledgers
+      - BK_DATA_DIR=/data/bookkeeper
+      - BK_advertisedAddress=127.0.0.1
+      - BK_bookiePort=3181
+      - BK_httpServerEnabled=true
+    depends_on:
+      - "zookeeper-0"
+      - "zookeeper-1"
+      - "zookeeper-2"
+    healthcheck:
+      test: ["CMD", "curl", "-s", "http://localhost:8080/heartbeat"]
+      interval: 60s
+      timeout: 3s
+      retries: 60
+    restart: on-failure
+  
+  bookie-1:
+    image: apachebookkeeper/bookkeeper-current:latest
+    hostname: bookie-1
+    ports:
+      - "3182:3182"
+      - "8081:8080"
+      - "4182:4181"
+    volumes:
+      - ./data/bookie-1/journal:/data/bookkeeper/journal
+      - ./data/bookie-1/ledgers:/data/bookkeeper/ledgers
+    environment:
+      - BK_zkServers=zookeeper-0:2181,zookeeper-1:2181,zookeeper-2:2181
+      - BK_zkLedgersRootPath=/ledgers
+      - BK_metadataServiceUri=zk://zookeeper-0:2181;zookeeper-1:2181;zookeeper-2:2181/ledgers
+      - BK_DATA_DIR=/data/bookkeeper
+      - BK_advertisedAddress=127.0.0.1
+      - BK_bookiePort=3182
+      - BK_httpServerEnabled=true
+    depends_on:
+      - "zookeeper-0"
+      - "zookeeper-1"
+      - "zookeeper-2"
+    healthcheck:
+      test: ["CMD", "curl", "-s", "http://localhost:8080/heartbeat"]
+      interval: 60s
+      timeout: 3s
+      retries: 60
+    restart: on-failure
+  
+  bookie-2:
+    image: apachebookkeeper/bookkeeper-current:latest
+    hostname: bookie-2
+    ports:
+      - "3183:3183"
+      - "8082:8080"
+      - "4183:4181"
+    volumes:
+      - ./data/bookie-2/journal:/data/bookkeeper/journal
+      - ./data/bookie-2/ledgers:/data/bookkeeper/ledgers
+    environment:
+      - BK_zkServers=zookeeper-0:2181,zookeeper-1:2181,zookeeper-2:2181
+      - BK_zkLedgersRootPath=/ledgers
+      - BK_metadataServiceUri=zk://zookeeper-0:2181;zookeeper-1:2181;zookeeper-2:2181/ledgers
+      - BK_DATA_DIR=/data/bookkeeper
+      - BK_advertisedAddress=127.0.0.1
+      - BK_bookiePort=3183
+      - BK_httpServerEnabled=true
+    depends_on:
+      - "zookeeper-0"
+      - "zookeeper-1"
+      - "zookeeper-2"
+    healthcheck:
+      test: ["CMD", "curl", "-s", "http://localhost:8080/heartbeat"]
+      interval: 60s
+      timeout: 3s
+      retries: 60
+    restart: on-failure
+  
+

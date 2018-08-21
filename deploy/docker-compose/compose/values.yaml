@@ -1,0 +1,45 @@
+#/**
+# * Licensed to the Apache Software Foundation (ASF) under one
+# * or more contributor license agreements.  See the NOTICE file
+# * distributed with this work for additional information
+# * regarding copyright ownership.  The ASF licenses this file
+# * to you under the Apache License, Version 2.0 (the
+# * "License"); you may not use this file except in compliance
+# * with the License.  You may obtain a copy of the License at
+# *
+# *     http://www.apache.org/licenses/LICENSE-2.0
+# *
+# * Unless required by applicable law or agreed to in writing, software
+# * distributed under the License is distributed on an "AS IS" BASIS,
+# * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# * See the License for the specific language governing permissions and
+# * limitations under the License.
+# */
+
+# data directories
+dataDir: ./data
+
+# advertised address that bookies used for advertising themselves.
+# host network mode is useless on Mac, so in order to let clients
+# on the host accessing bookies in the docker network, we can set
+# the advertisedAddr to let bookies advertised in a host network.
+advertisedAddr: 127.0.0.1
+
+# supported networkMode: bridge | host
+# host network mode is useless on Mac
+networkMode: bridge
+
+zookeeper:
+  size: 3
+  image: apachebookkeeper/bookkeeper-current:latest
+  adminPort: 8080
+  clientPort: 2181
+  peerPort: 2888
+  leaderPort: 3888
+
+bookkeeper:
+  size: 3
+  image: apachebookkeeper/bookkeeper-current:latest
+  bookiePort: 3181
+  bookieGrpcPort: 4181
+  bookieHttpPort: 8080

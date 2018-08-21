@@ -655,7 +655,7 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
      */
     @Test
     public void testRWZKConnectionLost() throws Exception {
-        try (ZooKeeper zk = ZooKeeperClient.newBuilder()
+        try (ZooKeeperClient zk = ZooKeeperClient.newBuilder()
                 .connectString(zkUtil.getZooKeeperConnectString())
                 .sessionTimeoutMs(10000)
                 .build()) {

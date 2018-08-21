@@ -24,7 +24,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.WATCHER_SCOPE;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Optional;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.epoll.EpollEventLoopGroup;
@@ -60,7 +59,6 @@ import org.apache.bookkeeper.common.util.OrderedExecutor;
 import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.apache.bookkeeper.conf.ClientConfiguration;
-import org.apache.bookkeeper.feature.Feature;
 import org.apache.bookkeeper.feature.FeatureProvider;
 import org.apache.bookkeeper.feature.SettableFeatureProvider;
 import org.apache.bookkeeper.meta.CleanupLedgerManager;
@@ -74,11 +72,10 @@ import org.apache.bookkeeper.meta.zk.ZKMetadataClientDriver;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.net.DNSToSwitchMapping;
 import org.apache.bookkeeper.proto.BookieClient;
+import org.apache.bookkeeper.proto.BookieClientImpl;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.DataFormats;
-import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.NullStatsLogger;
-import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.ReflectionUtils;
 import org.apache.bookkeeper.util.SafeRunnable;
@@ -109,31 +106,14 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
 
     // The stats logger for this client.
     private final StatsLogger statsLogger;
-    private OpStatsLogger createOpLogger;
-    private OpStatsLogger openOpLogger;
-    private OpStatsLogger deleteOpLogger;
-    private OpStatsLogger recoverOpLogger;
-    private OpStatsLogger readOpLogger;
-    private OpStatsLogger readLacAndEntryOpLogger;
-    private OpStatsLogger readLacAndEntryRespLogger;
-    private OpStatsLogger addOpLogger;
-    private OpStatsLogger forceOpLogger;
-    private OpStatsLogger writeLacOpLogger;
-    private OpStatsLogger readLacOpLogger;
-    private OpStatsLogger recoverAddEntriesStats;
-    private OpStatsLogger recoverReadEntriesStats;
-
-    private Counter speculativeReadCounter;
-    private Counter readOpDmCounter;
-    private Counter addOpUrCounter;
-
+    private final BookKeeperClientStats clientStats;
 
     // whether the event loop group is one we created, or is owned by whoever
     // instantiated us
     boolean ownEventLoopGroup = false;
 
     final BookieClient bookieClient;
-    final BookieWatcher bookieWatcher;
+    final BookieWatcherImpl bookieWatcher;
 
     final OrderedExecutor mainWorkerPool;
     final OrderedScheduler scheduler;
@@ -141,9 +121,6 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
     final boolean ownTimer;
     final FeatureProvider featureProvider;
     final ScheduledExecutorService bookieInfoScheduler;
-
-    // Features
-    final Feature disableEnsembleChangeFeature;
 
     final MetadataClientDriver metadataDriver;
     // Ledger manager responsible for how to store ledger meta data
@@ -156,13 +133,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
     BookieInfoReader bookieInfoReader;
 
     final ClientConfiguration conf;
-    final int explicitLacInterval;
-    final boolean delayEnsembleChange;
-    final boolean reorderReadSequence;
-    final long addEntryQuorumTimeoutNanos;
-
-    final Optional<SpeculativeRequestExecutionPolicy> readSpeculativeRequestPolicy;
-    final Optional<SpeculativeRequestExecutionPolicy> readLACSpeculativeRequestPolicy;
+    final ClientInternalConf internalConf;
 
     // Close State
     boolean closed = false;
@@ -409,37 +380,34 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
     BookKeeper(ClientConfiguration conf,
                        ZooKeeper zkc,
                        EventLoopGroup eventLoopGroup,
-                       StatsLogger statsLogger,
+                       StatsLogger rootStatsLogger,
                        DNSToSwitchMapping dnsResolver,
                        HashedWheelTimer requestTimer,
                        FeatureProvider featureProvider)
             throws IOException, InterruptedException, BKException {
         this.conf = conf;
-        this.delayEnsembleChange = conf.getDelayEnsembleChange();
-        this.reorderReadSequence = conf.isReorderReadSequenceEnabled();
-
-        // initialize resources
-        this.scheduler = OrderedScheduler.newSchedulerBuilder().numThreads(1).name("BookKeeperClientScheduler").build();
-        this.mainWorkerPool = OrderedExecutor.newBuilder()
-                .name("BookKeeperClientWorker")
-                .numThreads(conf.getNumWorkerThreads())
-                .statsLogger(statsLogger)
-                .traceTaskExecution(conf.getEnableTaskExecutionStats())
-                .traceTaskWarnTimeMicroSec(conf.getTaskExecutionWarnTimeMicros())
-                .build();
-
-        // initialize stats logger
-        this.statsLogger = statsLogger.scope(BookKeeperClientStats.CLIENT_SCOPE);
-        initOpLoggers(this.statsLogger);
-
         // initialize feature provider
         if (null == featureProvider) {
             this.featureProvider = SettableFeatureProvider.DISABLE_ALL;
         } else {
             this.featureProvider = featureProvider;
         }
-        this.disableEnsembleChangeFeature =
-            this.featureProvider.getFeature(conf.getDisableEnsembleChangeFeatureName());
+
+        this.internalConf = ClientInternalConf.fromConfigAndFeatureProvider(conf, this.featureProvider);
+
+        // initialize resources
+        this.scheduler = OrderedScheduler.newSchedulerBuilder().numThreads(1).name("BookKeeperClientScheduler").build();
+        this.mainWorkerPool = OrderedExecutor.newBuilder()
+                .name("BookKeeperClientWorker")
+                .numThreads(conf.getNumWorkerThreads())
+                .statsLogger(rootStatsLogger)
+                .traceTaskExecution(conf.getEnableTaskExecutionStats())
+                .traceTaskWarnTimeMicroSec(conf.getTaskExecutionWarnTimeMicros())
+                .build();
+
+        // initialize stats logger
+        this.statsLogger = rootStatsLogger.scope(BookKeeperClientStats.CLIENT_SCOPE);
+        this.clientStats = BookKeeperClientStats.newInstance(this.statsLogger);
 
         // initialize metadata driver
         try {
@@ -453,7 +421,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
             this.metadataDriver.initialize(
                 conf,
                 scheduler,
-                statsLogger,
+                rootStatsLogger,
                 java.util.Optional.ofNullable(zkc));
         } catch (ConfigurationException ce) {
             LOG.error("Failed to initialize metadata client driver using invalid metadata service uri", ce);
@@ -487,29 +455,10 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
         this.placementPolicy = initializeEnsemblePlacementPolicy(conf,
                 dnsResolver, this.requestTimer, this.featureProvider, this.statsLogger);
 
-        if (conf.getFirstSpeculativeReadTimeout() > 0) {
-            this.readSpeculativeRequestPolicy =
-                    Optional.of(new DefaultSpeculativeRequestExecutionPolicy(
-                        conf.getFirstSpeculativeReadTimeout(),
-                        conf.getMaxSpeculativeReadTimeout(),
-                        conf.getSpeculativeReadTimeoutBackoffMultiplier()));
-        } else {
-            this.readSpeculativeRequestPolicy = Optional.<SpeculativeRequestExecutionPolicy>absent();
-        }
-
-        if (conf.getFirstSpeculativeReadLACTimeout() > 0) {
-            this.readLACSpeculativeRequestPolicy =
-                    Optional.of((SpeculativeRequestExecutionPolicy) (new DefaultSpeculativeRequestExecutionPolicy(
-                        conf.getFirstSpeculativeReadLACTimeout(),
-                        conf.getMaxSpeculativeReadLACTimeout(),
-                        conf.getSpeculativeReadLACTimeoutBackoffMultiplier())));
-        } else {
-            this.readLACSpeculativeRequestPolicy = Optional.<SpeculativeRequestExecutionPolicy>absent();
-        }
         // initialize bookie client
-        this.bookieClient = new BookieClient(conf, this.eventLoopGroup, this.mainWorkerPool,
-                                             scheduler, statsLogger);
-        this.bookieWatcher = new BookieWatcher(
+        this.bookieClient = new BookieClientImpl(conf, this.eventLoopGroup, this.mainWorkerPool,
+                                                 scheduler, rootStatsLogger);
+        this.bookieWatcher = new BookieWatcherImpl(
                 conf, this.placementPolicy, metadataDriver.getRegistrationClient(),
                 this.statsLogger.scope(WATCHER_SCOPE));
         if (conf.getDiskWeightBasedPlacementEnabled()) {
@@ -536,13 +485,8 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
         }
         this.ledgerManager = new CleanupLedgerManager(ledgerManagerFactory.newLedgerManager());
         this.ledgerIdGenerator = ledgerManagerFactory.newLedgerIdGenerator();
-        this.explicitLacInterval = conf.getExplictLacInterval();
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Explicit LAC Interval : {}", this.explicitLacInterval);
-        }
 
-        this.addEntryQuorumTimeoutNanos = TimeUnit.SECONDS.toNanos(conf.getAddEntryQuorumTimeout());
-        scheduleBookieHealthCheckIfEnabled();
+        scheduleBookieHealthCheckIfEnabled(conf);
     }
 
     /**
@@ -550,13 +494,13 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
      */
     @VisibleForTesting
     BookKeeper() {
+        conf = new ClientConfiguration();
+        internalConf = ClientInternalConf.fromConfig(conf);
         statsLogger = NullStatsLogger.INSTANCE;
+        clientStats = BookKeeperClientStats.newInstance(statsLogger);
         scheduler = null;
         requestTimer = null;
-        reorderReadSequence = false;
         metadataDriver = null;
-        readSpeculativeRequestPolicy = Optional.absent();
-        readLACSpeculativeRequestPolicy = Optional.absent();
         placementPolicy = null;
         ownTimer = false;
         mainWorkerPool = null;
@@ -564,24 +508,10 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
         ledgerManager = null;
         ledgerIdGenerator = null;
         featureProvider = null;
-        explicitLacInterval = 0;
         eventLoopGroup = null;
-        disableEnsembleChangeFeature = null;
-        delayEnsembleChange = false;
-        conf = new ClientConfiguration();
         bookieWatcher = null;
         bookieInfoScheduler = null;
         bookieClient = null;
-        addEntryQuorumTimeoutNanos = 0;
-    }
-
-    long getAddEntryQuorumTimeoutNanos() {
-        return addEntryQuorumTimeoutNanos;
-    }
-
-
-    public int getExplicitLacInterval() {
-        return explicitLacInterval;
     }
 
     private EnsemblePlacementPolicy initializeEnsemblePlacementPolicy(ClientConfiguration conf,
@@ -600,6 +530,10 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
     }
 
     int getReturnRc(int rc) {
+        return getReturnRc(bookieClient, rc);
+    }
+
+    static int getReturnRc(BookieClient bookieClient, int rc) {
         if (BKException.Code.OK == rc) {
             return rc;
         } else {
@@ -611,7 +545,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
         }
     }
 
-    void scheduleBookieHealthCheckIfEnabled() {
+    void scheduleBookieHealthCheckIfEnabled(ClientConfiguration conf) {
         if (conf.isBookieHealthCheckEnabled()) {
             scheduler.scheduleAtFixedRate(new SafeRunnable() {
 
@@ -634,10 +568,6 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
     /**
      * Returns ref to speculative read counter, needed in PendingReadOp.
      */
-    Counter getSpeculativeReadCounter() {
-        return speculativeReadCounter;
-    }
-
     @VisibleForTesting
     public LedgerManager getLedgerManager() {
         return ledgerManager;
@@ -681,11 +611,6 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
     @VisibleForTesting
     EnsemblePlacementPolicy getPlacementPolicy() {
         return placementPolicy;
-    }
-
-    @VisibleForTesting
-    boolean isReorderReadSequence() {
-        return reorderReadSequence;
     }
 
     @VisibleForTesting
@@ -753,10 +678,6 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
         }
     }
 
-    boolean shouldReorderReadSequence() {
-        return reorderReadSequence;
-    }
-
     ZooKeeper getZkHandle() {
         return ((ZKMetadataClientDriver) metadataDriver).getZk();
     }
@@ -767,23 +688,6 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
 
     StatsLogger getStatsLogger() {
         return statsLogger;
-    }
-
-    public Optional<SpeculativeRequestExecutionPolicy> getReadSpeculativeRequestPolicy() {
-        return readSpeculativeRequestPolicy;
-    }
-
-    public Optional<SpeculativeRequestExecutionPolicy> getReadLACSpeculativeRequestPolicy() {
-        return readLACSpeculativeRequestPolicy;
-    }
-
-    /**
-     * Get the disableEnsembleChangeFeature.
-     *
-     * @return disableEnsembleChangeFeature for the BookKeeper instance.
-     */
-    Feature getDisableEnsembleChangeFeature() {
-        return disableEnsembleChangeFeature;
     }
 
     /**
@@ -886,7 +790,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
             }
             new LedgerCreateOp(BookKeeper.this, ensSize, writeQuorumSize,
                                ackQuorumSize, digestType, passwd, cb, ctx,
-                               customMetadata, WriteFlag.NONE, getStatsLogger())
+                               customMetadata, WriteFlag.NONE, clientStats)
                 .initiate();
         } finally {
             closeLock.readLock().unlock();
@@ -1084,7 +988,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
             }
             new LedgerCreateOp(BookKeeper.this, ensSize, writeQuorumSize,
                                ackQuorumSize, digestType, passwd, cb, ctx,
-                               customMetadata, WriteFlag.NONE, getStatsLogger())
+                               customMetadata, WriteFlag.NONE, clientStats)
                                        .initiateAdv(-1L);
         } finally {
             closeLock.readLock().unlock();
@@ -1192,7 +1096,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
             }
             new LedgerCreateOp(BookKeeper.this, ensSize, writeQuorumSize,
                                ackQuorumSize, digestType, passwd, cb, ctx,
-                               customMetadata, WriteFlag.NONE, getStatsLogger())
+                               customMetadata, WriteFlag.NONE, clientStats)
                     .initiateAdv(ledgerId);
         } finally {
             closeLock.readLock().unlock();
@@ -1233,7 +1137,8 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
                 cb.openComplete(BKException.Code.ClientClosedException, null, ctx);
                 return;
             }
-            new LedgerOpenOp(BookKeeper.this, lId, digestType, passwd, cb, ctx).initiate();
+            new LedgerOpenOp(BookKeeper.this, clientStats,
+                             lId, digestType, passwd, cb, ctx).initiate();
         } finally {
             closeLock.readLock().unlock();
         }
@@ -1277,7 +1182,8 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
                 cb.openComplete(BKException.Code.ClientClosedException, null, ctx);
                 return;
             }
-            new LedgerOpenOp(BookKeeper.this, lId, digestType, passwd, cb, ctx).initiateWithoutRecovery();
+            new LedgerOpenOp(BookKeeper.this, clientStats,
+                             lId, digestType, passwd, cb, ctx).initiateWithoutRecovery();
         } finally {
             closeLock.readLock().unlock();
         }
@@ -1356,7 +1262,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
                 cb.deleteComplete(BKException.Code.ClientClosedException, ctx);
                 return;
             }
-            new LedgerDeleteOp(BookKeeper.this, lId, cb, ctx).initiate();
+            new LedgerDeleteOp(BookKeeper.this, clientStats, lId, cb, ctx).initiate();
         } finally {
             closeLock.readLock().unlock();
         }
@@ -1497,72 +1403,6 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
         this.metadataDriver.close();
     }
 
-    private void initOpLoggers(StatsLogger stats) {
-        createOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.CREATE_OP);
-        deleteOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.DELETE_OP);
-        openOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.OPEN_OP);
-        recoverOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.RECOVER_OP);
-        readOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.READ_OP);
-        readOpDmCounter = stats.getCounter(BookKeeperClientStats.READ_OP_DM);
-        readLacAndEntryOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.READ_LAST_CONFIRMED_AND_ENTRY);
-        readLacAndEntryRespLogger = stats.getOpStatsLogger(
-                BookKeeperClientStats.READ_LAST_CONFIRMED_AND_ENTRY_RESPONSE);
-        addOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.ADD_OP);
-        forceOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.FORCE_OP);
-        addOpUrCounter = stats.getCounter(BookKeeperClientStats.ADD_OP_UR);
-        writeLacOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.WRITE_LAC_OP);
-        readLacOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.READ_LAC_OP);
-        recoverAddEntriesStats = stats.getOpStatsLogger(BookKeeperClientStats.LEDGER_RECOVER_ADD_ENTRIES);
-        recoverReadEntriesStats = stats.getOpStatsLogger(BookKeeperClientStats.LEDGER_RECOVER_READ_ENTRIES);
-
-        speculativeReadCounter = stats.getCounter(BookKeeperClientStats.SPECULATIVE_READ_COUNT);
-    }
-
-    OpStatsLogger getCreateOpLogger() {
-        return createOpLogger;
-    }
-    OpStatsLogger getOpenOpLogger() {
-        return openOpLogger;
-    }
-    OpStatsLogger getDeleteOpLogger() {
-        return deleteOpLogger;
-    }
-    OpStatsLogger getRecoverOpLogger() {
-        return recoverOpLogger;
-    }
-    OpStatsLogger getReadOpLogger() {
-        return readOpLogger;
-    }
-    OpStatsLogger getReadLacAndEntryOpLogger() {
-        return readLacAndEntryOpLogger;
-    }
-    OpStatsLogger getReadLacAndEntryRespLogger() {
-        return readLacAndEntryRespLogger;
-    }
-    OpStatsLogger getAddOpLogger() {
-        return addOpLogger;
-    }
-    OpStatsLogger getForceOpLogger() {
-        return forceOpLogger;
-    }
-    OpStatsLogger getWriteLacOpLogger() {
-        return writeLacOpLogger;
-    }
-    OpStatsLogger getReadLacOpLogger() {
-        return readLacOpLogger;
-    }
-    OpStatsLogger getRecoverAddCountLogger() {
-        return recoverAddEntriesStats;
-    }
-    OpStatsLogger getRecoverReadCountLogger() {
-        return recoverReadEntriesStats;
-    }
-    Counter getReadOpDmCounter() {
-        return readOpDmCounter;
-    }
-    Counter getAddOpUrCounter() {
-        return addOpUrCounter;
-    }
     static EventLoopGroup getDefaultEventLoopGroup() {
         ThreadFactory threadFactory = new DefaultThreadFactory("bookkeeper-io");
         final int numThreads = Runtime.getRuntime().availableProcessors() * 2;
@@ -1594,4 +1434,54 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
         return new LedgerDeleteOp.DeleteBuilderImpl(this);
     }
 
+    private final ClientContext clientCtx = new ClientContext() {
+            @Override
+            public ClientInternalConf getConf() {
+                return internalConf;
+            }
+
+            @Override
+            public LedgerManager getLedgerManager() {
+                return BookKeeper.this.getLedgerManager();
+            }
+
+            @Override
+            public BookieWatcher getBookieWatcher() {
+                return BookKeeper.this.getBookieWatcher();
+            }
+
+            @Override
+            public EnsemblePlacementPolicy getPlacementPolicy() {
+                return BookKeeper.this.getPlacementPolicy();
+            }
+
+            @Override
+            public BookieClient getBookieClient() {
+                return BookKeeper.this.getBookieClient();
+            }
+
+            @Override
+            public OrderedExecutor getMainWorkerPool() {
+                return BookKeeper.this.getMainWorkerPool();
+            }
+
+            @Override
+            public OrderedScheduler getScheduler() {
+                return BookKeeper.this.getScheduler();
+            }
+
+            @Override
+            public BookKeeperClientStats getClientStats() {
+                return clientStats;
+            }
+
+            @Override
+            public boolean isClientClosed() {
+                return BookKeeper.this.isClosed();
+            }
+        };
+
+    ClientContext getClientCtx() {
+        return clientCtx;
+    }
 }

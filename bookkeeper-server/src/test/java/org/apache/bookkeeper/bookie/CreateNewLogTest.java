@@ -34,10 +34,12 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.Lock;
 import java.util.stream.IntStream;
 
 import org.apache.bookkeeper.bookie.EntryLogManagerForEntryLogPerLedger.BufferedLogChannelWithDirInfo;
 import org.apache.bookkeeper.bookie.EntryLogger.BufferedLogChannel;
+import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.stats.Counter;
@@ -768,5 +770,120 @@ public class CreateNewLogTest {
         for (int i = 0; i < numOfTimes; i++) {
             entrylogManager.createNewLog(ledgerId);
         }
+    }
+
+    @Test
+    public void testLockConsistency() throws Exception {
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+
+        conf.setLedgerDirNames(ledgerDirs);
+        conf.setEntryLogFilePreAllocationEnabled(false);
+        conf.setEntryLogPerLedgerEnabled(true);
+        conf.setMaximumNumberOfActiveEntryLogs(5);
+
+        CountDownLatch latch = new CountDownLatch(1);
+        AtomicInteger count = new AtomicInteger(0);
+
+        /*
+         * Inject wait operation in 'getWritableLedgerDirsForNewLog' method of
+         * ledgerDirsManager. getWritableLedgerDirsForNewLog will be called when
+         * entryLogManager.createNewLog is called.
+         */
+        LedgerDirsManager ledgerDirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs(),
+                new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold())) {
+            /*
+             * getWritableLedgerDirsForNewLog is called for the first time, it
+             * will await on 'latch' latch before calling super
+             * getWritableLedgerDirsForNewLog.
+             */
+            @Override
+            public List<File> getWritableLedgerDirsForNewLog() throws NoWritableLedgerDirException {
+                if (count.incrementAndGet() == 1) {
+                    try {
+                        latch.await();
+                    } catch (InterruptedException e) {
+                        LOG.error("Got InterruptedException while awaiting for latch countdown", e);
+                    }
+                }
+                return super.getWritableLedgerDirsForNewLog();
+            }
+        };
+
+        EntryLogger el = new EntryLogger(conf, ledgerDirsManager);
+        EntryLogManagerForEntryLogPerLedger entryLogManager = (EntryLogManagerForEntryLogPerLedger) el
+                .getEntryLogManager();
+
+        long firstLedgerId = 100L;
+        AtomicBoolean newLogCreated = new AtomicBoolean(false);
+
+        Assert.assertFalse("EntryLogManager cacheMap should not contain entry for firstLedgerId",
+                entryLogManager.getCacheAsMap().containsKey(firstLedgerId));
+        Assert.assertEquals("Value of the count should be 0", 0, count.get());
+        /*
+         * In a new thread, create newlog for 'firstLedgerId' and then set
+         * 'newLogCreated' to true. Since this is the first createNewLog call,
+         * it is going to be blocked untill latch is countdowned to 0.
+         */
+        new Thread() {
+            @Override
+            public void run() {
+                try {
+                    entryLogManager.createNewLog(firstLedgerId);
+                    newLogCreated.set(true);
+                } catch (IOException e) {
+                    LOG.error("Got IOException while creating new log", e);
+                }
+            }
+        }.start();
+
+        /*
+         * Wait until entry for 'firstLedgerId' is created in cacheMap. It will
+         * be created because in the other thread createNewLog is called.
+         */
+        while (!entryLogManager.getCacheAsMap().containsKey(firstLedgerId)) {
+            Thread.sleep(200);
+        }
+        Lock firstLedgersLock = entryLogManager.getLock(firstLedgerId);
+
+        /*
+         * since 'latch' is not counteddown, newlog should not be created even
+         * after waitign for 2 secs.
+         */
+        Thread.sleep(2000);
+        Assert.assertFalse("New log shouldn't have created", newLogCreated.get());
+
+        /*
+         * create MaximumNumberOfActiveEntryLogs of entrylogs and do cache
+         * cleanup, so that the earliest entry from cache will be removed.
+         */
+        for (int i = 1; i <= conf.getMaximumNumberOfActiveEntryLogs(); i++) {
+            entryLogManager.createNewLog(firstLedgerId + i);
+        }
+        entryLogManager.doEntryLogMapCleanup();
+        Assert.assertFalse("Entry for that ledger shouldn't be there",
+                entryLogManager.getCacheAsMap().containsKey(firstLedgerId));
+
+        /*
+         * now countdown the latch, so that the other thread can make progress
+         * with createNewLog and since this entry is evicted from cache,
+         * entrylog of the newly created entrylog will be added to
+         * rotatedentrylogs.
+         */
+        latch.countDown();
+        while (!newLogCreated.get()) {
+            Thread.sleep(200);
+        }
+        while (entryLogManager.getRotatedLogChannels().size() < 1) {
+            Thread.sleep(200);
+        }
+
+        /*
+         * Entry for 'firstLedgerId' is removed from cache, but even in this
+         * case when we get lock for the 'firstLedgerId' it should be the same
+         * as we got earlier.
+         */
+        Lock lockForThatLedgerAfterRemoval = entryLogManager.getLock(firstLedgerId);
+        Assert.assertEquals("For a given ledger lock should be the same before and after removal", firstLedgersLock,
+                lockForThatLedgerAfterRemoval);
     }
 }

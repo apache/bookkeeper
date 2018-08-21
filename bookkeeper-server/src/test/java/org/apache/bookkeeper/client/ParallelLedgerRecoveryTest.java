@@ -428,16 +428,17 @@ public class ParallelLedgerRecoveryTest extends BookKeeperClusterTestCase {
         final CountDownLatch addLatch = new CountDownLatch(1);
         final AtomicBoolean addSuccess = new AtomicBoolean(false);
         LOG.info("Add entry {} with lac = {}", entryId, lac);
-        lh.bk.getBookieClient().addEntry(lh.getCurrentEnsemble().get(0),
-                                         lh.getId(), lh.ledgerKey, entryId, toSend,
-                                         new WriteCallback() {
-                                             @Override
-                                             public void writeComplete(int rc, long ledgerId, long entryId,
-                                                                       BookieSocketAddress addr, Object ctx) {
-                                                 addSuccess.set(BKException.Code.OK == rc);
-                                                 addLatch.countDown();
-                                             }
-                                         }, 0, BookieProtocol.FLAG_NONE, false, WriteFlag.NONE);
+
+        bkc.getBookieClient().addEntry(lh.getCurrentEnsemble().get(0),
+                                       lh.getId(), lh.ledgerKey, entryId, toSend,
+                                       new WriteCallback() {
+                                           @Override
+                                           public void writeComplete(int rc, long ledgerId, long entryId,
+                                                                     BookieSocketAddress addr, Object ctx) {
+                                               addSuccess.set(BKException.Code.OK == rc);
+                                               addLatch.countDown();
+                                           }
+                                       }, 0, BookieProtocol.FLAG_NONE, false, WriteFlag.NONE);
         addLatch.await();
         assertTrue("add entry 14 should succeed", addSuccess.get());
 
@@ -667,15 +668,16 @@ public class ParallelLedgerRecoveryTest extends BookKeeperClusterTestCase {
         final AtomicLong lacHolder = new AtomicLong(-1234L);
         final AtomicInteger rcHolder = new AtomicInteger(-1234);
         final CountDownLatch doneLatch = new CountDownLatch(1);
-        new ReadLastConfirmedOp(readLh, readLh.getCurrentEnsemble(),
-            new ReadLastConfirmedOp.LastConfirmedDataCallback() {
-            @Override
-            public void readLastConfirmedDataComplete(int rc, DigestManager.RecoveryData data) {
-                rcHolder.set(rc);
-                lacHolder.set(data.getLastAddConfirmed());
-                doneLatch.countDown();
-            }
-        }).initiate();
+
+        new ReadLastConfirmedOp(readLh, bkc.getBookieClient(), readLh.getCurrentEnsemble(),
+                new ReadLastConfirmedOp.LastConfirmedDataCallback() {
+                    @Override
+                    public void readLastConfirmedDataComplete(int rc, DigestManager.RecoveryData data) {
+                        rcHolder.set(rc);
+                        lacHolder.set(data.getLastAddConfirmed());
+                        doneLatch.countDown();
+                    }
+                }).initiate();
         doneLatch.await();
         assertEquals(BKException.Code.OK, rcHolder.get());
         assertEquals(1L, lacHolder.get());

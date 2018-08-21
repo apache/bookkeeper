@@ -109,6 +109,10 @@ public class TestReadEntryListener extends BookKeeperClusterTestCase {
         }
     }
 
+    ListenerBasedPendingReadOp createReadOp(LedgerHandle lh, long from, long to, ReadEntryListener listener) {
+        return new ListenerBasedPendingReadOp(lh, bkc.getClientCtx(), from, to, listener, null, false);
+    }
+
     void basicReadTest(boolean parallelRead) throws Exception {
         int numEntries = 10;
 
@@ -118,8 +122,7 @@ public class TestReadEntryListener extends BookKeeperClusterTestCase {
         // read single entry
         for (int i = 0; i < numEntries; i++) {
             LatchListener listener = new LatchListener(i, 1);
-            ListenerBasedPendingReadOp readOp =
-                    new ListenerBasedPendingReadOp(lh, lh.bk.scheduler, i, i, listener, null);
+            ListenerBasedPendingReadOp readOp = createReadOp(lh, i, i, listener);
             readOp.parallelRead(parallelRead).submit();
             listener.expectComplete();
             assertEquals(1, listener.resultCodes.size());
@@ -132,8 +135,7 @@ public class TestReadEntryListener extends BookKeeperClusterTestCase {
 
         // read multiple entries
         LatchListener listener = new LatchListener(0L, numEntries);
-        ListenerBasedPendingReadOp readOp =
-                new ListenerBasedPendingReadOp(lh, lh.bk.scheduler, 0, numEntries - 1, listener, null);
+        ListenerBasedPendingReadOp readOp = createReadOp(lh, 0, numEntries - 1, listener);
         readOp.parallelRead(parallelRead).submit();
         listener.expectComplete();
         assertEquals(numEntries, listener.resultCodes.size());
@@ -166,8 +168,7 @@ public class TestReadEntryListener extends BookKeeperClusterTestCase {
 
         // read single entry
         LatchListener listener = new LatchListener(11L, 1);
-        ListenerBasedPendingReadOp readOp =
-                new ListenerBasedPendingReadOp(lh, lh.bk.scheduler, 11, 11, listener, null);
+        ListenerBasedPendingReadOp readOp = createReadOp(lh, 11, 11, listener);
         readOp.parallelRead(parallelRead).submit();
         listener.expectComplete();
         assertEquals(1, listener.resultCodes.size());
@@ -178,7 +179,7 @@ public class TestReadEntryListener extends BookKeeperClusterTestCase {
 
         // read multiple missing entries
         listener = new LatchListener(11L, 3);
-        readOp = new ListenerBasedPendingReadOp(lh, lh.bk.scheduler, 11, 13, listener, null);
+        readOp = createReadOp(lh, 11, 13, listener);
         readOp.parallelRead(parallelRead).submit();
         listener.expectComplete();
         assertEquals(3, listener.resultCodes.size());
@@ -192,7 +193,7 @@ public class TestReadEntryListener extends BookKeeperClusterTestCase {
 
         // read multiple entries with missing entries
         listener = new LatchListener(5L, 10);
-        readOp = new ListenerBasedPendingReadOp(lh, lh.bk.scheduler, 5L, 14L, listener, null);
+        readOp = createReadOp(lh, 5L, 14L, listener);
         readOp.parallelRead(parallelRead).submit();
         listener.expectComplete();
         assertEquals(10, listener.resultCodes.size());
@@ -237,8 +238,7 @@ public class TestReadEntryListener extends BookKeeperClusterTestCase {
 
         // read multiple entries
         LatchListener listener = new LatchListener(0L, numEntries);
-        ListenerBasedPendingReadOp readOp =
-                new ListenerBasedPendingReadOp(lh, lh.bk.scheduler, 0, numEntries - 1, listener, null);
+        ListenerBasedPendingReadOp readOp = createReadOp(lh, 0, numEntries - 1, listener);
         readOp.parallelRead(parallelRead).submit();
         listener.expectComplete();
         assertEquals(numEntries, listener.resultCodes.size());
@@ -278,8 +278,7 @@ public class TestReadEntryListener extends BookKeeperClusterTestCase {
 
         // read multiple entries
         LatchListener listener = new LatchListener(0L, numEntries);
-        ListenerBasedPendingReadOp readOp =
-            new ListenerBasedPendingReadOp(lh, lh.bk.scheduler, 0, numEntries - 1, listener, null);
+        ListenerBasedPendingReadOp readOp = createReadOp(lh, 0, numEntries - 1, listener);
         readOp.parallelRead(parallelRead).submit();
         listener.expectComplete();
         assertEquals(numEntries, listener.resultCodes.size());

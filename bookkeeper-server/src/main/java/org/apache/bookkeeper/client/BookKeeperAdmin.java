@@ -68,6 +68,7 @@ import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManager.LedgerRangeIterator;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
+import org.apache.bookkeeper.meta.UnderreplicatedLedger;
 import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
@@ -266,7 +267,7 @@ public class BookKeeperAdmin implements AutoCloseable {
      * @see BookKeeper#asyncOpenLedger
      */
     public void asyncOpenLedger(final long lId, final OpenCallback cb, final Object ctx) {
-        new LedgerOpenOp(bkc, lId, cb, ctx).initiate();
+        new LedgerOpenOp(bkc, bkc.getClientCtx().getClientStats(), lId, cb, ctx).initiate();
     }
 
     /**
@@ -283,7 +284,7 @@ public class BookKeeperAdmin implements AutoCloseable {
         CompletableFuture<LedgerHandle> future = new CompletableFuture<>();
         SyncOpenCallback result = new SyncOpenCallback(future);
 
-        new LedgerOpenOp(bkc, lId, result, null).initiate();
+        new LedgerOpenOp(bkc, bkc.getClientCtx().getClientStats(), lId, result, null).initiate();
 
         return SyncCallbackUtils.waitForResult(future);
     }
@@ -303,7 +304,7 @@ public class BookKeeperAdmin implements AutoCloseable {
      * @see BookKeeper#asyncOpenLedgerNoRecovery
      */
     public void asyncOpenLedgerNoRecovery(final long lId, final OpenCallback cb, final Object ctx) {
-        new LedgerOpenOp(bkc, lId, cb, ctx).initiateWithoutRecovery();
+        new LedgerOpenOp(bkc, bkc.getClientCtx().getClientStats(), lId, cb, ctx).initiateWithoutRecovery();
     }
 
     /**
@@ -321,7 +322,7 @@ public class BookKeeperAdmin implements AutoCloseable {
         CompletableFuture<LedgerHandle> future = new CompletableFuture<>();
         SyncOpenCallback result = new SyncOpenCallback(future);
 
-        new LedgerOpenOp(bkc, lId, result, null)
+        new LedgerOpenOp(bkc, bkc.getClientCtx().getClientStats(), lId, result, null)
                 .initiateWithoutRecovery();
 
         return SyncCallbackUtils.waitForResult(future);
@@ -892,6 +893,7 @@ public class BookKeeperAdmin implements AutoCloseable {
                         try {
                             LedgerFragmentReplicator.SingleFragmentCallback cb =
                                 new LedgerFragmentReplicator.SingleFragmentCallback(ledgerFragmentsMcb, lh,
+                                                                                    bkc.getMainWorkerPool(),
                                         startEntryId, getReplacementBookiesMap(ensemble, targetBookieAddresses));
                             LedgerFragment ledgerFragment = new LedgerFragment(lh,
                                 startEntryId, endEntryId, targetBookieAddresses.keySet());
@@ -1045,6 +1047,7 @@ public class BookKeeperAdmin implements AutoCloseable {
         SingleFragmentCallback cb = new SingleFragmentCallback(
             resultCallBack,
             lh,
+            bkc.getMainWorkerPool(),
             ledgerFragment.getFirstEntryId(),
             getReplacementBookiesMap(ledgerFragment, targetBookieAddresses));
 
@@ -1422,7 +1425,7 @@ public class BookKeeperAdmin implements AutoCloseable {
         }
 
         BookieSocketAddress auditorId =
-            AuditorElector.getCurrentAuditor(new ServerConfiguration(bkc.conf), bkc.getZkHandle());
+            AuditorElector.getCurrentAuditor(new ServerConfiguration(bkc.getConf()), bkc.getZkHandle());
         if (auditorId == null) {
             LOG.error("No auditor elected, though Autorecovery is enabled. So giving up.");
             throw new UnavailableException("No auditor elected, though Autorecovery is enabled. So giving up.");
@@ -1490,15 +1493,14 @@ public class BookKeeperAdmin implements AutoCloseable {
 
         // for double-checking, check if any ledgers are listed as underreplicated because of this bookie
         Predicate<List<String>> predicate = replicasList -> replicasList.contains(bookieAddress.toString());
-        Iterator<Map.Entry<Long, List<String>>> urLedgerIterator = underreplicationManager
-                .listLedgersToRereplicate(predicate, false);
+        Iterator<UnderreplicatedLedger> urLedgerIterator = underreplicationManager.listLedgersToRereplicate(predicate);
         if (urLedgerIterator.hasNext()) {
             //if there are any then wait and make sure those ledgers are replicated properly
             LOG.info("Still in some underreplicated ledgers metadata, this bookie is part of its ensemble. "
                     + "Have to make sure that those ledger fragments are rereplicated");
             List<Long> urLedgers = new ArrayList<>();
             urLedgerIterator.forEachRemaining((urLedger) -> {
-                urLedgers.add(urLedger.getKey());
+                urLedgers.add(urLedger.getLedgerId());
             });
             waitForLedgersToBeReplicated(urLedgers, bookieAddress, bkc.ledgerManager);
         }

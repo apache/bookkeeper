@@ -66,7 +66,7 @@ public class ZKRegistrationClient implements RegistrationClient {
 
         private final String regPath;
         private final Set<RegistrationListener> listeners;
-        private boolean closed = false;
+        private volatile boolean closed = false;
         private Set<BookieSocketAddress> bookies = null;
         private Version version = Version.NEW;
         private final CompletableFuture<Void> firstRunFuture;
@@ -154,23 +154,12 @@ public class ZKRegistrationClient implements RegistrationClient {
             scheduleWatchTask(0L);
         }
 
-        synchronized boolean isClosed() {
+        boolean isClosed() {
             return closed;
         }
 
         @Override
-        public synchronized void close() {
-            if (closed) {
-                return;
-            }
-            zk.removeWatches(
-                regPath,
-                this,
-                WatcherType.Children,
-                true,
-                (rc, path, ctx) -> {},
-                null
-            );
+        public void close() {
             closed = true;
         }
     }

@@ -18,12 +18,14 @@
 package org.apache.distributedlog.bk;
 
 import com.google.common.collect.Lists;
+
 import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Function;
+
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.common.concurrent.FutureEventListener;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
@@ -41,7 +43,6 @@ import org.apache.distributedlog.zk.ZKTransaction;
 import org.apache.distributedlog.zk.ZKVersionedSetOp;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.data.Stat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -129,21 +130,19 @@ public class SimpleLedgerAllocator implements LedgerAllocator, FutureEventListen
             final CompletableFuture<Versioned<byte[]>> promise = new CompletableFuture<Versioned<byte[]>>();
             zkc.get().create(allocatePath, DistributedLogConstants.EMPTY_BYTES,
                     zkc.getDefaultACL(), CreateMode.PERSISTENT,
-                    new org.apache.zookeeper.AsyncCallback.Create2Callback() {
-                        @Override
-                        public void processResult(int rc, String path, Object ctx, String name, Stat stat) {
-                            if (KeeperException.Code.OK.intValue() == rc) {
-                                promise.complete(new Versioned<byte[]>(DistributedLogConstants.EMPTY_BYTES,
-                                        new LongVersion(stat.getVersion())));
-                            } else if (KeeperException.Code.NODEEXISTS.intValue() == rc) {
-                                FutureUtils.proxyTo(
-                                  Utils.zkGetData(zkc, allocatePath, false),
-                                  promise
-                                );
-                            } else {
-                                promise.completeExceptionally(Utils.zkException(
-                                        KeeperException.create(KeeperException.Code.get(rc)), allocatePath));
-                            }
+                    (rc, path, ctx, name) -> {
+                        if (KeeperException.Code.OK.intValue() == rc) {
+                            // Since the z-node was just created, we are sure at this point the version is 0
+                            promise.complete(new Versioned<byte[]>(DistributedLogConstants.EMPTY_BYTES,
+                                    new LongVersion(0)));
+                        } else if (KeeperException.Code.NODEEXISTS.intValue() == rc) {
+                            FutureUtils.proxyTo(
+                              Utils.zkGetData(zkc, allocatePath, false),
+                              promise
+                            );
+                        } else {
+                            promise.completeExceptionally(Utils.zkException(
+                                    KeeperException.create(KeeperException.Code.get(rc)), allocatePath));
                         }
                     }, null);
             return promise;
@@ -489,7 +488,7 @@ public class SimpleLedgerAllocator implements LedgerAllocator, FutureEventListen
                     @Override
                     public void onFailure(Throwable cause) {
                         LOG.debug("Fail to obtain the allocated ledger handle when closing the allocator : ", cause);
-                        closePromise.complete(null);
+                        FutureUtils.complete(closePromise, null);
                     }
                 });
             }
@@ -497,7 +496,7 @@ public class SimpleLedgerAllocator implements LedgerAllocator, FutureEventListen
             @Override
             public void onFailure(Throwable cause) {
                 LOG.debug("Fail to obtain the allocated ledger handle when closing the allocator : ", cause);
-                closePromise.complete(null);
+                FutureUtils.complete(closePromise, null);
             }
         });
 

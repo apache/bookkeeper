@@ -34,6 +34,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.proto.BookieClientImpl;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.junit.Test;
@@ -296,7 +297,7 @@ public class SlowBookieTest extends BookKeeperClusterTestCase {
 
     private void setTargetChannelState(BookKeeper bkc, BookieSocketAddress address,
                                        long key, boolean state) throws Exception {
-        bkc.getBookieClient().lookupClient(address).obtain((rc, pcbc) -> {
+        ((BookieClientImpl) bkc.getBookieClient()).lookupClient(address).obtain((rc, pcbc) -> {
             pcbc.setWritable(state);
         }, key);
     }

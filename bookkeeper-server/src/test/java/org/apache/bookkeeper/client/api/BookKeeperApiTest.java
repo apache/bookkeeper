@@ -212,7 +212,7 @@ public class BookKeeperApiTest extends MockBookKeeperTestCase {
     private void testOpenLedgerDigestUnmatched(boolean autodetection) throws Exception {
         ClientConfiguration conf = new ClientConfiguration();
         conf.setEnableDigestTypeAutodetection(autodetection);
-        mockBookKeeperGetConf(conf);
+        setBookKeeperConfig(conf);
 
         long lId;
         try (WriteHandle writer = result(newCreateLedgerOp()

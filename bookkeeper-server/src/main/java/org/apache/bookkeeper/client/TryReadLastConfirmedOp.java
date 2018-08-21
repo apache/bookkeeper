@@ -22,6 +22,7 @@ import java.util.List;
 
 import org.apache.bookkeeper.client.ReadLastConfirmedOp.LastConfirmedDataCallback;
 import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.proto.BookieClient;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
 import org.apache.bookkeeper.proto.checksum.DigestManager.RecoveryData;
@@ -37,6 +38,7 @@ class TryReadLastConfirmedOp implements ReadEntryCallback {
     static final Logger LOG = LoggerFactory.getLogger(TryReadLastConfirmedOp.class);
 
     final LedgerHandle lh;
+    final BookieClient bookieClient;
     final LastConfirmedDataCallback cb;
 
     int numResponsesPending;
@@ -45,8 +47,10 @@ class TryReadLastConfirmedOp implements ReadEntryCallback {
     RecoveryData maxRecoveredData;
     final List<BookieSocketAddress> currentEnsemble;
 
-    TryReadLastConfirmedOp(LedgerHandle lh, List<BookieSocketAddress> ensemble, LastConfirmedDataCallback cb, long lac) {
+    TryReadLastConfirmedOp(LedgerHandle lh, BookieClient bookieClient,
+                           List<BookieSocketAddress> ensemble, LastConfirmedDataCallback cb, long lac) {
         this.lh = lh;
+        this.bookieClient = bookieClient;
         this.cb = cb;
         this.maxRecoveredData = new RecoveryData(lac, 0);
         this.numResponsesPending = lh.getLedgerMetadata().getEnsembleSize();
@@ -54,12 +58,11 @@ class TryReadLastConfirmedOp implements ReadEntryCallback {
     }
 
     public void initiate() {
-        LedgerMetadata metadata = lh.getLedgerMetadata();
         for (int i = 0; i < currentEnsemble.size(); i++) {
-            lh.bk.getBookieClient().readEntry(currentEnsemble.get(i),
-                                         lh.ledgerId,
-                                         BookieProtocol.LAST_ADD_CONFIRMED,
-                                         this, i, BookieProtocol.FLAG_NONE);
+            bookieClient.readEntry(currentEnsemble.get(i),
+                                   lh.ledgerId,
+                                   BookieProtocol.LAST_ADD_CONFIRMED,
+                                   this, i, BookieProtocol.FLAG_NONE);
         }
     }
 
