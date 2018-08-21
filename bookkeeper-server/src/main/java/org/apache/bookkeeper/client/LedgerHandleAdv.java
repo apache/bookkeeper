@@ -177,8 +177,23 @@ public class LedgerHandleAdv extends LedgerHandle implements WriteAdvHandle {
         asyncAddEntry(entryId, Unpooled.wrappedBuffer(data, offset, length), cb, ctx);
     }
 
-    private void asyncAddEntry(final long entryId, ByteBuf data,
-            final AddCallbackWithLatency cb, final Object ctx) {
+    /**
+     * Add entry asynchronously to an open ledger, using an offset and range.
+     * This can be used only with {@link LedgerHandleAdv} returned through
+     * ledgers created with {@link createLedgerAdv(int, int, int, DigestType, byte[])}.
+     *
+     * @param entryId
+     *            entryId of the entry to add.
+     * @param data
+     *            io.netty.buffer.ByteBuf of bytes to be written
+     * @param cb
+     *            object implementing callbackinterface
+     * @param ctx
+     *            some control object
+     */
+    @Override
+    public void asyncAddEntry(final long entryId, ByteBuf data,
+                              final AddCallbackWithLatency cb, final Object ctx) {
         PendingAddOp op = PendingAddOp.create(this, data, writeFlags, cb, ctx);
         op.setEntryId(entryId);
 
