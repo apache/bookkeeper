@@ -20,6 +20,7 @@ package org.apache.bookkeeper.client;
 import io.netty.buffer.ByteBuf;
 
 import org.apache.bookkeeper.client.BKException.BKDigestMatchException;
+import org.apache.bookkeeper.proto.BookieClient;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
 import org.apache.bookkeeper.proto.checksum.DigestManager.RecoveryData;
@@ -33,6 +34,7 @@ import org.slf4j.LoggerFactory;
 class ReadLastConfirmedOp implements ReadEntryCallback {
     static final Logger LOG = LoggerFactory.getLogger(ReadLastConfirmedOp.class);
     LedgerHandle lh;
+    BookieClient bookieClient;
     int numResponsesPending;
     RecoveryData maxRecoveredData;
     volatile boolean completed = false;
@@ -48,8 +50,10 @@ class ReadLastConfirmedOp implements ReadEntryCallback {
         void readLastConfirmedDataComplete(int rc, RecoveryData data);
     }
 
-    public ReadLastConfirmedOp(LedgerHandle lh, LastConfirmedDataCallback cb) {
+    public ReadLastConfirmedOp(LedgerHandle lh, BookieClient bookieClient,
+                               LastConfirmedDataCallback cb) {
         this.cb = cb;
+        this.bookieClient = bookieClient;
         this.maxRecoveredData = new RecoveryData(LedgerHandle.INVALID_ENTRY_ID, 0);
         this.lh = lh;
         this.numResponsesPending = lh.getLedgerMetadata().getEnsembleSize();
@@ -59,21 +63,21 @@ class ReadLastConfirmedOp implements ReadEntryCallback {
     public void initiate() {
         LedgerMetadata metadata = lh.getLedgerMetadata();
         for (int i = 0; i < metadata.currentEnsemble.size(); i++) {
-            lh.bk.getBookieClient().readEntry(metadata.currentEnsemble.get(i),
-                                         lh.ledgerId,
-                                         BookieProtocol.LAST_ADD_CONFIRMED,
-                                         this, i, BookieProtocol.FLAG_NONE);
+            bookieClient.readEntry(metadata.currentEnsemble.get(i),
+                                   lh.ledgerId,
+                                   BookieProtocol.LAST_ADD_CONFIRMED,
+                                   this, i, BookieProtocol.FLAG_NONE);
         }
     }
 
     public void initiateWithFencing() {
         LedgerMetadata metadata = lh.getLedgerMetadata();
         for (int i = 0; i < metadata.currentEnsemble.size(); i++) {
-            lh.bk.getBookieClient().readEntry(metadata.currentEnsemble.get(i),
-                                              lh.ledgerId,
-                                              BookieProtocol.LAST_ADD_CONFIRMED,
-                                              this, i, BookieProtocol.FLAG_DO_FENCING,
-                                              lh.ledgerKey);
+            bookieClient.readEntry(metadata.currentEnsemble.get(i),
+                                   lh.ledgerId,
+                                   BookieProtocol.LAST_ADD_CONFIRMED,
+                                   this, i, BookieProtocol.FLAG_DO_FENCING,
+                                   lh.ledgerKey);
         }
     }
 

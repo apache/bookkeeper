@@ -45,7 +45,6 @@ import org.apache.bookkeeper.meta.LedgerIdGenerator;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.stats.OpStatsLogger;
-import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.MathUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -69,9 +68,9 @@ class LedgerCreateOp implements GenericCallback<LedgerMetadata> {
     final EnumSet<WriteFlag> writeFlags;
     final long startTime;
     final OpStatsLogger createOpLogger;
+    final BookKeeperClientStats clientStats;
     boolean adv = false;
     boolean generateLedgerId = true;
-    private final StatsLogger statsLogger;
 
     /**
      * Constructor.
@@ -100,7 +99,7 @@ class LedgerCreateOp implements GenericCallback<LedgerMetadata> {
             BookKeeper bk, int ensembleSize, int writeQuorumSize, int ackQuorumSize, DigestType digestType,
             byte[] passwd, CreateCallback cb, Object ctx, final Map<String, byte[]> customMetadata,
             EnumSet<WriteFlag> writeFlags,
-            StatsLogger statsLogger) {
+            BookKeeperClientStats clientStats) {
         this.bk = bk;
         this.metadata = new LedgerMetadata(
             ensembleSize,
@@ -116,8 +115,8 @@ class LedgerCreateOp implements GenericCallback<LedgerMetadata> {
         this.cb = cb;
         this.ctx = ctx;
         this.startTime = MathUtils.nowInNano();
-        this.createOpLogger = bk.getCreateOpLogger();
-        this.statsLogger = statsLogger;
+        this.createOpLogger = clientStats.getCreateOpLogger();
+        this.clientStats = clientStats;
     }
 
     /**
@@ -200,11 +199,9 @@ class LedgerCreateOp implements GenericCallback<LedgerMetadata> {
 
         try {
             if (adv) {
-                lh = new LedgerHandleAdv(bk, ledgerId, metadata, digestType,
-                        passwd, writeFlags);
+                lh = new LedgerHandleAdv(bk.getClientCtx(), ledgerId, metadata, digestType, passwd, writeFlags);
             } else {
-                lh = new LedgerHandle(bk, ledgerId, metadata, digestType,
-                        passwd, writeFlags);
+                lh = new LedgerHandle(bk.getClientCtx(), ledgerId, metadata, digestType, passwd, writeFlags);
             }
         } catch (GeneralSecurityException e) {
             LOG.error("Security exception while creating ledger: " + ledgerId, e);
@@ -220,8 +217,7 @@ class LedgerCreateOp implements GenericCallback<LedgerMetadata> {
         LOG.info("Ensemble: {} for ledger: {}", curEns, lh.getId());
 
         for (BookieSocketAddress bsa : curEns) {
-            String ensSpread = BookKeeperClientStats.LEDGER_ENSEMBLE_BOOKIE_DISTRIBUTION + "-" + bsa;
-            statsLogger.getCounter(ensSpread).inc();
+            clientStats.getEnsembleBookieDistributionCounter(bsa.toString()).inc();
         }
 
         // return the ledger handle back
@@ -357,7 +353,8 @@ class LedgerCreateOp implements GenericCallback<LedgerMetadata> {
             }
             LedgerCreateOp op = new LedgerCreateOp(bk, builderEnsembleSize,
                 builderWriteQuorumSize, builderAckQuorumSize, DigestType.fromApiDigestType(builderDigestType),
-                builderPassword, cb, null, builderCustomMetadata, builderWriteFlags, bk.getStatsLogger());
+                builderPassword, cb, null, builderCustomMetadata, builderWriteFlags,
+                bk.getClientCtx().getClientStats());
             ReentrantReadWriteLock closeLock = bk.getCloseLock();
             closeLock.readLock().lock();
             try {
@@ -417,7 +414,7 @@ class LedgerCreateOp implements GenericCallback<LedgerMetadata> {
                     DigestType.fromApiDigestType(parent.builderDigestType),
                     parent.builderPassword, cb, null, parent.builderCustomMetadata,
                     parent.builderWriteFlags,
-                    parent.bk.getStatsLogger());
+                    parent.bk.getClientCtx().getClientStats());
             ReentrantReadWriteLock closeLock = parent.bk.getCloseLock();
             closeLock.readLock().lock();
             try {

@@ -20,6 +20,7 @@ package org.apache.bookkeeper.client;
 import io.netty.buffer.ByteBuf;
 
 import org.apache.bookkeeper.client.ReadLastConfirmedOp.LastConfirmedDataCallback;
+import org.apache.bookkeeper.proto.BookieClient;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
 import org.apache.bookkeeper.proto.checksum.DigestManager.RecoveryData;
@@ -35,6 +36,7 @@ class TryReadLastConfirmedOp implements ReadEntryCallback {
     static final Logger LOG = LoggerFactory.getLogger(TryReadLastConfirmedOp.class);
 
     final LedgerHandle lh;
+    final BookieClient bookieClient;
     final LastConfirmedDataCallback cb;
 
     int numResponsesPending;
@@ -42,8 +44,10 @@ class TryReadLastConfirmedOp implements ReadEntryCallback {
     volatile boolean completed = false;
     RecoveryData maxRecoveredData;
 
-    TryReadLastConfirmedOp(LedgerHandle lh, LastConfirmedDataCallback cb, long lac) {
+    TryReadLastConfirmedOp(LedgerHandle lh, BookieClient bookieClient,
+                           LastConfirmedDataCallback cb, long lac) {
         this.lh = lh;
+        this.bookieClient = bookieClient;
         this.cb = cb;
         this.maxRecoveredData = new RecoveryData(lac, 0);
         this.numResponsesPending = lh.getLedgerMetadata().getEnsembleSize();
@@ -52,10 +56,10 @@ class TryReadLastConfirmedOp implements ReadEntryCallback {
     public void initiate() {
         LedgerMetadata metadata = lh.getLedgerMetadata();
         for (int i = 0; i < metadata.currentEnsemble.size(); i++) {
-            lh.bk.getBookieClient().readEntry(metadata.currentEnsemble.get(i),
-                                         lh.ledgerId,
-                                         BookieProtocol.LAST_ADD_CONFIRMED,
-                                         this, i, BookieProtocol.FLAG_NONE);
+            bookieClient.readEntry(metadata.currentEnsemble.get(i),
+                                   lh.ledgerId,
+                                   BookieProtocol.LAST_ADD_CONFIRMED,
+                                   this, i, BookieProtocol.FLAG_NONE);
         }
     }
 

@@ -37,8 +37,6 @@ import org.apache.bookkeeper.client.AsyncCallback.AddCallbackWithLatency;
 import org.apache.bookkeeper.client.api.WriteFlag;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
-import org.apache.bookkeeper.stats.Counter;
-import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.util.ByteBufList;
 import org.apache.bookkeeper.util.MathUtils;
 import org.apache.bookkeeper.util.SafeRunnable;
@@ -68,24 +66,24 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
     boolean completed = false;
 
     LedgerHandle lh;
+    ClientContext clientCtx;
     boolean isRecoveryAdd = false;
     long requestTimeNanos;
     long qwcLatency; // Quorum Write Completion Latency after response from quorum bookies.
 
-    long timeoutNanos;
-
-    OpStatsLogger addOpLogger;
-    Counter addOpUrCounter;
     long currentLedgerLength;
     int pendingWriteRequests;
     boolean callbackTriggered;
     boolean hasRun;
     EnumSet<WriteFlag> writeFlags;
     boolean allowFailFast = false;
-    static PendingAddOp create(LedgerHandle lh, ByteBuf payload, EnumSet<WriteFlag> writeFlags,
+
+    static PendingAddOp create(LedgerHandle lh, ClientContext clientCtx,
+                               ByteBuf payload, EnumSet<WriteFlag> writeFlags,
                                AddCallbackWithLatency cb, Object ctx) {
         PendingAddOp op = RECYCLER.get();
         op.lh = lh;
+        op.clientCtx = clientCtx;
         op.isRecoveryAdd = false;
         op.cb = cb;
         op.ctx = ctx;
@@ -96,9 +94,6 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
 
         op.completed = false;
         op.ackSet = lh.getDistributionSchedule().getAckSet();
-        op.addOpLogger = lh.getBk().getAddOpLogger();
-        op.addOpUrCounter = lh.getBk().getAddOpUrCounter();
-        op.timeoutNanos = lh.getBk().getAddEntryQuorumTimeoutNanos();
         op.pendingWriteRequests = 0;
         op.callbackTriggered = false;
         op.hasRun = false;
@@ -106,6 +101,7 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
         op.allowFailFast = false;
         op.qwcLatency = 0;
         op.writeFlags = writeFlags;
+
         return op;
     }
 
@@ -138,14 +134,14 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
     void sendWriteRequest(int bookieIndex) {
         int flags = isRecoveryAdd ? FLAG_RECOVERY_ADD | FLAG_HIGH_PRIORITY : FLAG_NONE;
 
-        lh.bk.getBookieClient().addEntry(lh.getLedgerMetadata().currentEnsemble.get(bookieIndex),
-                                         lh.ledgerId, lh.ledgerKey, entryId, toSend, this, bookieIndex,
-                                         flags, allowFailFast, lh.writeFlags);
+        clientCtx.getBookieClient().addEntry(lh.getLedgerMetadata().currentEnsemble.get(bookieIndex),
+                                             lh.ledgerId, lh.ledgerKey, entryId, toSend, this, bookieIndex,
+                                             flags, allowFailFast, lh.writeFlags);
         ++pendingWriteRequests;
     }
 
     boolean maybeTimeout() {
-        if (MathUtils.elapsedNanos(requestTimeNanos) >= timeoutNanos) {
+        if (MathUtils.elapsedNanos(requestTimeNanos) >= clientCtx.getConf().addEntryQuorumTimeoutNanos) {
             timeoutQuorumWait();
             return true;
         }
@@ -154,7 +150,7 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
 
     void timeoutQuorumWait() {
         try {
-            lh.bk.getMainWorkerPool().executeOrdered(lh.ledgerId, new SafeRunnable() {
+            clientCtx.getMainWorkerPool().executeOrdered(lh.ledgerId, new SafeRunnable() {
                 @Override
                 public void safeRun() {
                     if (completed) {
@@ -286,9 +282,9 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
             if (rc != BKException.Code.OK) {
                 // Got an error after satisfying AQ. This means we are under replicated at the create itself.
                 // Update the stat to reflect it.
-                addOpUrCounter.inc();
-                if (!lh.bk.getDisableEnsembleChangeFeature().isAvailable()
-                        && !lh.bk.delayEnsembleChange) {
+                clientCtx.getClientStats().getAddOpUrCounter().inc();
+                if (!clientCtx.getConf().disableEnsembleChangeFeature.isAvailable()
+                        && !clientCtx.getConf().delayEnsembleChange) {
                     lh.getDelayedWriteFailedBookies().putIfAbsent(bookieIndex, addr);
                 }
             }
@@ -337,7 +333,7 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
             lh.handleUnrecoverableErrorDuringAdd(rc);
             return;
         default:
-            if (lh.bk.delayEnsembleChange) {
+            if (clientCtx.getConf().delayEnsembleChange) {
                 if (ackSet.failBookieAndCheck(bookieIndex, addr)
                         || rc == BKException.Code.WriteOnReadOnlyBookieException) {
                     Map<Integer, BookieSocketAddress> failedBookies = ackSet.getFailedBookies();
@@ -379,11 +375,11 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
 
         long latencyNanos = MathUtils.elapsedNanos(requestTimeNanos);
         if (rc != BKException.Code.OK) {
-            addOpLogger.registerFailedEvent(latencyNanos, TimeUnit.NANOSECONDS);
+            clientCtx.getClientStats().getAddOpLogger().registerFailedEvent(latencyNanos, TimeUnit.NANOSECONDS);
             LOG.error("Write of ledger entry to quorum failed: L{} E{}",
                       lh.getId(), entryId);
         } else {
-            addOpLogger.registerSuccessfulEvent(latencyNanos, TimeUnit.NANOSECONDS);
+            clientCtx.getClientStats().getAddOpLogger().registerSuccessfulEvent(latencyNanos, TimeUnit.NANOSECONDS);
         }
         cb.addCompleteWithLatency(rc, lh, entryId, qwcLatency, ctx);
         callbackTriggered = true;
@@ -467,9 +463,8 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
         ackSet.recycle();
         ackSet = null;
         lh = null;
+        clientCtx = null;
         isRecoveryAdd = false;
-        addOpLogger = null;
-        addOpUrCounter = null;
         completed = false;
         pendingWriteRequests = 0;
         callbackTriggered = false;
