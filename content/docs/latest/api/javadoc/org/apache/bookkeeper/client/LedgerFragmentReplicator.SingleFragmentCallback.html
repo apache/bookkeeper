@@ -170,6 +170,10 @@ implements org.apache.zookeeper.AsyncCallback.VoidCallback</pre>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerFragmentReplicator.SingleFragmentCallback.html#lh">lh</a></span></code>&nbsp;</td>
 </tr>
 <tr class="rowColor">
+<td class="colFirst"><code>(package private) org.apache.bookkeeper.common.util.OrderedExecutor</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerFragmentReplicator.SingleFragmentCallback.html#mainWorkerPool">mainWorkerPool</a></span></code>&nbsp;</td>
+</tr>
+<tr class="altColor">
 <td class="colFirst"><code>(package private) <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util">Map</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress,org.apache.bookkeeper.net.BookieSocketAddress&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerFragmentReplicator.SingleFragmentCallback.html#oldBookie2NewBookie">oldBookie2NewBookie</a></span></code>&nbsp;</td>
 </tr>
@@ -188,8 +192,9 @@ implements org.apache.zookeeper.AsyncCallback.VoidCallback</pre>
 <th class="colOne" scope="col">Constructor and Description</th>
 </tr>
 <tr class="altColor">
-<td class="colOne"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerFragmentReplicator.SingleFragmentCallback.html#SingleFragmentCallback-org.apache.zookeeper.AsyncCallback.VoidCallback-org.apache.bookkeeper.client.LedgerHandle-long-java.util.Map-">SingleFragmentCallback</a></span>(org.apache.zookeeper.AsyncCallback.VoidCallback&nbsp;ledgerFragmentsMcb,
+<td class="colOne"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerFragmentReplicator.SingleFragmentCallback.html#SingleFragmentCallback-org.apache.zookeeper.AsyncCallback.VoidCallback-org.apache.bookkeeper.client.LedgerHandle-org.apache.bookkeeper.common.util.OrderedExecutor-long-java.util.Map-">SingleFragmentCallback</a></span>(org.apache.zookeeper.AsyncCallback.VoidCallback&nbsp;ledgerFragmentsMcb,
                       <a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
+                      org.apache.bookkeeper.common.util.OrderedExecutor&nbsp;mainWorkerPool,
                       long&nbsp;fragmentStartId,
                       <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util">Map</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress,org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;oldBookie2NewBookie)</code>&nbsp;</td>
 </tr>
@@ -254,6 +259,15 @@ implements org.apache.zookeeper.AsyncCallback.VoidCallback</pre>
 <pre>final&nbsp;<a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a> lh</pre>
 </li>
 </ul>
+<a name="mainWorkerPool">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>mainWorkerPool</h4>
+<pre>final&nbsp;org.apache.bookkeeper.common.util.OrderedExecutor mainWorkerPool</pre>
+</li>
+</ul>
 <a name="fragmentStartId">
 <!--   -->
 </a>
@@ -280,7 +294,7 @@ implements org.apache.zookeeper.AsyncCallback.VoidCallback</pre>
 <!--   -->
 </a>
 <h3>Constructor Detail</h3>
-<a name="SingleFragmentCallback-org.apache.zookeeper.AsyncCallback.VoidCallback-org.apache.bookkeeper.client.LedgerHandle-long-java.util.Map-">
+<a name="SingleFragmentCallback-org.apache.zookeeper.AsyncCallback.VoidCallback-org.apache.bookkeeper.client.LedgerHandle-org.apache.bookkeeper.common.util.OrderedExecutor-long-java.util.Map-">
 <!--   -->
 </a>
 <ul class="blockListLast">
@@ -288,6 +302,7 @@ implements org.apache.zookeeper.AsyncCallback.VoidCallback</pre>
 <h4>SingleFragmentCallback</h4>
 <pre>SingleFragmentCallback(org.apache.zookeeper.AsyncCallback.VoidCallback&nbsp;ledgerFragmentsMcb,
                        <a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
+                       org.apache.bookkeeper.common.util.OrderedExecutor&nbsp;mainWorkerPool,
                        long&nbsp;fragmentStartId,
                        <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util">Map</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress,org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;oldBookie2NewBookie)</pre>
 </li>

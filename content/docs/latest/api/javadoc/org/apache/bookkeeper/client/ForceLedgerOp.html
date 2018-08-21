@@ -145,30 +145,34 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ForceLedgerCa
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/ForceLedgerOp.html#ackSet">ackSet</a></span></code>&nbsp;</td>
 </tr>
 <tr class="rowColor">
+<td class="colFirst"><code>(package private) org.apache.bookkeeper.proto.BookieClient</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/ForceLedgerOp.html#bookieClient">bookieClient</a></span></code>&nbsp;</td>
+</tr>
+<tr class="altColor">
 <td class="colFirst"><code>(package private) <a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Void.html?is-external=true" title="class or interface in java.lang">Void</a>&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/ForceLedgerOp.html#cb">cb</a></span></code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>(package private) boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/ForceLedgerOp.html#completed">completed</a></span></code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>(package private) <a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/ForceLedgerOp.html#currentEnsemble">currentEnsemble</a></span></code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>(package private) long</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/ForceLedgerOp.html#currentNonDurableLastAddConfirmed">currentNonDurableLastAddConfirmed</a></span></code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>(package private) boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/ForceLedgerOp.html#errored">errored</a></span></code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>(package private) int</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/ForceLedgerOp.html#lastSeenError">lastSeenError</a></span></code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>(package private) <a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/ForceLedgerOp.html#lh">lh</a></span></code>&nbsp;</td>
 </tr>
@@ -194,7 +198,8 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ForceLedgerCa
 <th class="colOne" scope="col">Constructor and Description</th>
 </tr>
 <tr class="altColor">
-<td class="colOne"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/ForceLedgerOp.html#ForceLedgerOp-org.apache.bookkeeper.client.LedgerHandle-java.util.concurrent.CompletableFuture-">ForceLedgerOp</a></span>(<a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
+<td class="colOne"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/ForceLedgerOp.html#ForceLedgerOp-org.apache.bookkeeper.client.LedgerHandle-org.apache.bookkeeper.proto.BookieClient-java.util.concurrent.CompletableFuture-">ForceLedgerOp</a></span>(<a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
+             org.apache.bookkeeper.proto.BookieClient&nbsp;bookieClient,
              <a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Void.html?is-external=true" title="class or interface in java.lang">Void</a>&gt;&nbsp;cb)</code>&nbsp;</td>
 </tr>
 </table>
@@ -333,10 +338,19 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ForceLedgerCa
 <a name="lh">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>lh</h4>
 <pre>final&nbsp;<a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a> lh</pre>
+</li>
+</ul>
+<a name="bookieClient">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>bookieClient</h4>
+<pre>final&nbsp;org.apache.bookkeeper.proto.BookieClient bookieClient</pre>
 </li>
 </ul>
 </li>
@@ -347,13 +361,14 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ForceLedgerCa
 <!--   -->
 </a>
 <h3>Constructor Detail</h3>
-<a name="ForceLedgerOp-org.apache.bookkeeper.client.LedgerHandle-java.util.concurrent.CompletableFuture-">
+<a name="ForceLedgerOp-org.apache.bookkeeper.client.LedgerHandle-org.apache.bookkeeper.proto.BookieClient-java.util.concurrent.CompletableFuture-">
 <!--   -->
 </a>
 <ul class="blockListLast">
 <li class="blockList">
 <h4>ForceLedgerOp</h4>
 <pre>ForceLedgerOp(<a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
+              org.apache.bookkeeper.proto.BookieClient&nbsp;bookieClient,
               <a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Void.html?is-external=true" title="class or interface in java.lang">Void</a>&gt;&nbsp;cb)</pre>
 </li>
 </ul>

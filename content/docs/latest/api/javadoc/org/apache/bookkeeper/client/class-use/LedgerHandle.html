@@ -405,7 +405,8 @@
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>(package private) static <a href="../../../../../org/apache/bookkeeper/client/PendingAddOp.html" title="class in org.apache.bookkeeper.client">PendingAddOp</a></code></td>
-<td class="colLast"><span class="typeNameLabel">PendingAddOp.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/PendingAddOp.html#create-org.apache.bookkeeper.client.LedgerHandle-io.netty.buffer.ByteBuf-java.util.EnumSet-org.apache.bookkeeper.client.AsyncCallback.AddCallbackWithLatency-java.lang.Object-">create</a></span>(<a href="../../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
+<td class="colLast"><span class="typeNameLabel">PendingAddOp.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/PendingAddOp.html#create-org.apache.bookkeeper.client.LedgerHandle-org.apache.bookkeeper.client.ClientContext-io.netty.buffer.ByteBuf-java.util.EnumSet-org.apache.bookkeeper.client.AsyncCallback.AddCallbackWithLatency-java.lang.Object-">create</a></span>(<a href="../../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
+      <a href="../../../../../org/apache/bookkeeper/client/ClientContext.html" title="interface in org.apache.bookkeeper.client">ClientContext</a>&nbsp;clientCtx,
       io.netty.buffer.ByteBuf&nbsp;payload,
       <a href="https://docs.oracle.com/javase/8/docs/api/java/util/EnumSet.html?is-external=true" title="class or interface in java.util">EnumSet</a>&lt;<a href="../../../../../org/apache/bookkeeper/client/api/WriteFlag.html" title="enum in org.apache.bookkeeper.client.api">WriteFlag</a>&gt;&nbsp;writeFlags,
       <a href="../../../../../org/apache/bookkeeper/client/AsyncCallback.AddCallbackWithLatency.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.AddCallbackWithLatency</a>&nbsp;cb,
@@ -553,10 +554,12 @@
 </tr>
 <tbody>
 <tr class="altColor">
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/ExplicitLacFlushPolicy.ExplicitLacFlushPolicyImpl.html#ExplicitLacFlushPolicyImpl-org.apache.bookkeeper.client.LedgerHandle-">ExplicitLacFlushPolicyImpl</a></span>(<a href="../../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh)</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/ExplicitLacFlushPolicy.ExplicitLacFlushPolicyImpl.html#ExplicitLacFlushPolicyImpl-org.apache.bookkeeper.client.LedgerHandle-org.apache.bookkeeper.client.ClientContext-">ExplicitLacFlushPolicyImpl</a></span>(<a href="../../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
+                          <a href="../../../../../org/apache/bookkeeper/client/ClientContext.html" title="interface in org.apache.bookkeeper.client">ClientContext</a>&nbsp;clientCtx)</code>&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/ForceLedgerOp.html#ForceLedgerOp-org.apache.bookkeeper.client.LedgerHandle-java.util.concurrent.CompletableFuture-">ForceLedgerOp</a></span>(<a href="../../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/ForceLedgerOp.html#ForceLedgerOp-org.apache.bookkeeper.client.LedgerHandle-org.apache.bookkeeper.proto.BookieClient-java.util.concurrent.CompletableFuture-">ForceLedgerOp</a></span>(<a href="../../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
+             org.apache.bookkeeper.proto.BookieClient&nbsp;bookieClient,
              <a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Void.html?is-external=true" title="class or interface in java.lang">Void</a>&gt;&nbsp;cb)</code>&nbsp;</td>
 </tr>
 <tr class="altColor">
@@ -566,75 +569,67 @@
               <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Integer.html?is-external=true" title="class or interface in java.lang">Integer</a>&gt;&nbsp;bookieIndexes)</code>&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/LedgerRecoveryOp.html#LedgerRecoveryOp-org.apache.bookkeeper.client.LedgerHandle-org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback-">LedgerRecoveryOp</a></span>(<a href="../../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/LedgerRecoveryOp.html#LedgerRecoveryOp-org.apache.bookkeeper.client.LedgerHandle-org.apache.bookkeeper.client.ClientContext-org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback-">LedgerRecoveryOp</a></span>(<a href="../../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
+                <a href="../../../../../org/apache/bookkeeper/client/ClientContext.html" title="interface in org.apache.bookkeeper.client">ClientContext</a>&nbsp;clientCtx,
                 org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Void.html?is-external=true" title="class or interface in java.lang">Void</a>&gt;&nbsp;cb)</code>&nbsp;</td>
 </tr>
 <tr class="altColor">
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/ListenerBasedPendingReadOp.html#ListenerBasedPendingReadOp-org.apache.bookkeeper.client.LedgerHandle-java.util.concurrent.ScheduledExecutorService-long-long-org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryListener-java.lang.Object-">ListenerBasedPendingReadOp</a></span>(<a href="../../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
-                          <a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/ScheduledExecutorService.html?is-external=true" title="class or interface in java.util.concurrent">ScheduledExecutorService</a>&nbsp;scheduler,
-                          long&nbsp;startEntryId,
-                          long&nbsp;endEntryId,
-                          org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryListener&nbsp;listener,
-                          <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&nbsp;ctx)</code>&nbsp;</td>
-</tr>
-<tr class="rowColor">
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/ListenerBasedPendingReadOp.html#ListenerBasedPendingReadOp-org.apache.bookkeeper.client.LedgerHandle-java.util.concurrent.ScheduledExecutorService-long-long-org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryListener-java.lang.Object-boolean-">ListenerBasedPendingReadOp</a></span>(<a href="../../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
-                          <a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/ScheduledExecutorService.html?is-external=true" title="class or interface in java.util.concurrent">ScheduledExecutorService</a>&nbsp;scheduler,
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/ListenerBasedPendingReadOp.html#ListenerBasedPendingReadOp-org.apache.bookkeeper.client.LedgerHandle-org.apache.bookkeeper.client.ClientContext-long-long-org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryListener-java.lang.Object-boolean-">ListenerBasedPendingReadOp</a></span>(<a href="../../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
+                          <a href="../../../../../org/apache/bookkeeper/client/ClientContext.html" title="interface in org.apache.bookkeeper.client">ClientContext</a>&nbsp;clientCtx,
                           long&nbsp;startEntryId,
                           long&nbsp;endEntryId,
                           org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryListener&nbsp;listener,
                           <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&nbsp;ctx,
                           boolean&nbsp;isRecoveryRead)</code>&nbsp;</td>
 </tr>
-<tr class="altColor">
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/PendingReadLacOp.html#PendingReadLacOp-org.apache.bookkeeper.client.LedgerHandle-org.apache.bookkeeper.client.PendingReadLacOp.LacCallback-">PendingReadLacOp</a></span>(<a href="../../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
+<tr class="rowColor">
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/PendingReadLacOp.html#PendingReadLacOp-org.apache.bookkeeper.client.LedgerHandle-org.apache.bookkeeper.proto.BookieClient-org.apache.bookkeeper.client.PendingReadLacOp.LacCallback-">PendingReadLacOp</a></span>(<a href="../../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
+                org.apache.bookkeeper.proto.BookieClient&nbsp;bookieClient,
                 <a href="../../../../../org/apache/bookkeeper/client/PendingReadLacOp.LacCallback.html" title="interface in org.apache.bookkeeper.client">PendingReadLacOp.LacCallback</a>&nbsp;cb)</code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/PendingReadOp.html#PendingReadOp-org.apache.bookkeeper.client.LedgerHandle-java.util.concurrent.ScheduledExecutorService-long-long-">PendingReadOp</a></span>(<a href="../../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
-             <a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/ScheduledExecutorService.html?is-external=true" title="class or interface in java.util.concurrent">ScheduledExecutorService</a>&nbsp;scheduler,
-             long&nbsp;startEntryId,
-             long&nbsp;endEntryId)</code>&nbsp;</td>
-</tr>
 <tr class="altColor">
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/PendingReadOp.html#PendingReadOp-org.apache.bookkeeper.client.LedgerHandle-java.util.concurrent.ScheduledExecutorService-long-long-boolean-">PendingReadOp</a></span>(<a href="../../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
-             <a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/ScheduledExecutorService.html?is-external=true" title="class or interface in java.util.concurrent">ScheduledExecutorService</a>&nbsp;scheduler,
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/PendingReadOp.html#PendingReadOp-org.apache.bookkeeper.client.LedgerHandle-org.apache.bookkeeper.client.ClientContext-long-long-boolean-">PendingReadOp</a></span>(<a href="../../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
+             <a href="../../../../../org/apache/bookkeeper/client/ClientContext.html" title="interface in org.apache.bookkeeper.client">ClientContext</a>&nbsp;clientCtx,
              long&nbsp;startEntryId,
              long&nbsp;endEntryId,
              boolean&nbsp;isRecoveryRead)</code>&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/PendingWriteLacOp.html#PendingWriteLacOp-org.apache.bookkeeper.client.LedgerHandle-org.apache.bookkeeper.client.AsyncCallback.AddLacCallback-java.lang.Object-">PendingWriteLacOp</a></span>(<a href="../../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/PendingWriteLacOp.html#PendingWriteLacOp-org.apache.bookkeeper.client.LedgerHandle-org.apache.bookkeeper.client.ClientContext-org.apache.bookkeeper.client.AsyncCallback.AddLacCallback-java.lang.Object-">PendingWriteLacOp</a></span>(<a href="../../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
+                 <a href="../../../../../org/apache/bookkeeper/client/ClientContext.html" title="interface in org.apache.bookkeeper.client">ClientContext</a>&nbsp;clientCtx,
                  <a href="../../../../../org/apache/bookkeeper/client/AsyncCallback.AddLacCallback.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.AddLacCallback</a>&nbsp;cb,
                  <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&nbsp;ctx)</code>&nbsp;</td>
 </tr>
 <tr class="altColor">
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/ReadLastConfirmedAndEntryOp.html#ReadLastConfirmedAndEntryOp-org.apache.bookkeeper.client.LedgerHandle-org.apache.bookkeeper.client.ReadLastConfirmedAndEntryOp.LastConfirmedAndEntryCallback-long-long-java.util.concurrent.ScheduledExecutorService-">ReadLastConfirmedAndEntryOp</a></span>(<a href="../../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/ReadLastConfirmedAndEntryOp.html#ReadLastConfirmedAndEntryOp-org.apache.bookkeeper.client.LedgerHandle-org.apache.bookkeeper.client.ClientContext-org.apache.bookkeeper.client.ReadLastConfirmedAndEntryOp.LastConfirmedAndEntryCallback-long-long-">ReadLastConfirmedAndEntryOp</a></span>(<a href="../../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
+                           <a href="../../../../../org/apache/bookkeeper/client/ClientContext.html" title="interface in org.apache.bookkeeper.client">ClientContext</a>&nbsp;clientCtx,
                            <a href="../../../../../org/apache/bookkeeper/client/ReadLastConfirmedAndEntryOp.LastConfirmedAndEntryCallback.html" title="interface in org.apache.bookkeeper.client">ReadLastConfirmedAndEntryOp.LastConfirmedAndEntryCallback</a>&nbsp;cb,
                            long&nbsp;prevEntryId,
-                           long&nbsp;timeOutInMillis,
-                           <a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/ScheduledExecutorService.html?is-external=true" title="class or interface in java.util.concurrent">ScheduledExecutorService</a>&nbsp;scheduler)</code>&nbsp;</td>
+                           long&nbsp;timeOutInMillis)</code>&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/ReadLastConfirmedOp.html#ReadLastConfirmedOp-org.apache.bookkeeper.client.LedgerHandle-org.apache.bookkeeper.client.ReadLastConfirmedOp.LastConfirmedDataCallback-">ReadLastConfirmedOp</a></span>(<a href="../../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/ReadLastConfirmedOp.html#ReadLastConfirmedOp-org.apache.bookkeeper.client.LedgerHandle-org.apache.bookkeeper.proto.BookieClient-org.apache.bookkeeper.client.ReadLastConfirmedOp.LastConfirmedDataCallback-">ReadLastConfirmedOp</a></span>(<a href="../../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
+                   org.apache.bookkeeper.proto.BookieClient&nbsp;bookieClient,
                    <a href="../../../../../org/apache/bookkeeper/client/ReadLastConfirmedOp.LastConfirmedDataCallback.html" title="interface in org.apache.bookkeeper.client">ReadLastConfirmedOp.LastConfirmedDataCallback</a>&nbsp;cb)</code>&nbsp;</td>
 </tr>
 <tr class="altColor">
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/LedgerRecoveryOp.RecoveryReadOp.html#RecoveryReadOp-org.apache.bookkeeper.client.LedgerHandle-java.util.concurrent.ScheduledExecutorService-long-long-org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryListener-java.lang.Object-">RecoveryReadOp</a></span>(<a href="../../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
-              <a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/ScheduledExecutorService.html?is-external=true" title="class or interface in java.util.concurrent">ScheduledExecutorService</a>&nbsp;scheduler,
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/LedgerRecoveryOp.RecoveryReadOp.html#RecoveryReadOp-org.apache.bookkeeper.client.LedgerHandle-org.apache.bookkeeper.client.ClientContext-long-long-org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryListener-java.lang.Object-">RecoveryReadOp</a></span>(<a href="../../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
+              <a href="../../../../../org/apache/bookkeeper/client/ClientContext.html" title="interface in org.apache.bookkeeper.client">ClientContext</a>&nbsp;clientCtx,
               long&nbsp;startEntryId,
               long&nbsp;endEntryId,
               org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryListener&nbsp;cb,
               <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&nbsp;ctx)</code>&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/LedgerFragmentReplicator.SingleFragmentCallback.html#SingleFragmentCallback-org.apache.zookeeper.AsyncCallback.VoidCallback-org.apache.bookkeeper.client.LedgerHandle-long-java.util.Map-">SingleFragmentCallback</a></span>(org.apache.zookeeper.AsyncCallback.VoidCallback&nbsp;ledgerFragmentsMcb,
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/LedgerFragmentReplicator.SingleFragmentCallback.html#SingleFragmentCallback-org.apache.zookeeper.AsyncCallback.VoidCallback-org.apache.bookkeeper.client.LedgerHandle-org.apache.bookkeeper.common.util.OrderedExecutor-long-java.util.Map-">SingleFragmentCallback</a></span>(org.apache.zookeeper.AsyncCallback.VoidCallback&nbsp;ledgerFragmentsMcb,
                       <a href="../../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
+                      org.apache.bookkeeper.common.util.OrderedExecutor&nbsp;mainWorkerPool,
                       long&nbsp;fragmentStartId,
                       <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util">Map</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress,org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;oldBookie2NewBookie)</code>&nbsp;</td>
 </tr>
 <tr class="altColor">
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/TryReadLastConfirmedOp.html#TryReadLastConfirmedOp-org.apache.bookkeeper.client.LedgerHandle-org.apache.bookkeeper.client.ReadLastConfirmedOp.LastConfirmedDataCallback-long-">TryReadLastConfirmedOp</a></span>(<a href="../../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/TryReadLastConfirmedOp.html#TryReadLastConfirmedOp-org.apache.bookkeeper.client.LedgerHandle-org.apache.bookkeeper.proto.BookieClient-org.apache.bookkeeper.client.ReadLastConfirmedOp.LastConfirmedDataCallback-long-">TryReadLastConfirmedOp</a></span>(<a href="../../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
+                      org.apache.bookkeeper.proto.BookieClient&nbsp;bookieClient,
                       <a href="../../../../../org/apache/bookkeeper/client/ReadLastConfirmedOp.LastConfirmedDataCallback.html" title="interface in org.apache.bookkeeper.client">ReadLastConfirmedOp.LastConfirmedDataCallback</a>&nbsp;cb,
                       long&nbsp;lac)</code>&nbsp;</td>
 </tr>
