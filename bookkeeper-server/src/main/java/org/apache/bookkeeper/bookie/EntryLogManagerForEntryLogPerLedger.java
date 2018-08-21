@@ -49,6 +49,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReferenceArray;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -87,12 +88,16 @@ class EntryLogManagerForEntryLogPerLedger extends EntryLogManagerBase {
         }
     }
 
-    static class EntryLogAndLockTuple {
+    class EntryLogAndLockTuple {
         private final Lock ledgerLock;
         private BufferedLogChannelWithDirInfo entryLogWithDirInfo;
 
-        private EntryLogAndLockTuple() {
-            ledgerLock = new ReentrantLock();
+        private EntryLogAndLockTuple(long ledgerId) {
+            int lockIndex = Long.hashCode(ledgerId) % lockArrayPool.length();
+            if (lockArrayPool.get(lockIndex) == null) {
+                lockArrayPool.compareAndSet(lockIndex, null, new ReentrantLock());
+            }
+            ledgerLock = lockArrayPool.get(lockIndex);
         }
 
         private Lock getLedgerLock() {
@@ -212,6 +217,7 @@ class EntryLogManagerForEntryLogPerLedger extends EntryLogManagerBase {
         }
     }
 
+    private final AtomicReferenceArray<Lock> lockArrayPool;
     private final LoadingCache<Long, EntryLogAndLockTuple> ledgerIdEntryLogMap;
     /*
      * every time active logChannel is accessed from ledgerIdEntryLogMap
@@ -244,10 +250,11 @@ class EntryLogManagerForEntryLogPerLedger extends EntryLogManagerBase {
         this.entryLogPerLedgerCounterLimitsMultFactor = conf.getEntryLogPerLedgerCounterLimitsMultFactor();
 
         ledgerDirsManager.addLedgerDirsListener(getLedgerDirsListener());
+        this.lockArrayPool = new AtomicReferenceArray<Lock>(maximumNumberOfActiveEntryLogs * 2);
         this.entryLogAndLockTupleCacheLoader = new CacheLoader<Long, EntryLogAndLockTuple>() {
             @Override
             public EntryLogAndLockTuple load(Long key) throws Exception {
-                return new EntryLogAndLockTuple();
+                return new EntryLogAndLockTuple(key);
             }
         };
         /*
