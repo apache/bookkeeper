@@ -77,7 +77,7 @@ import org.slf4j.LoggerFactory;
  *
  * <p>TODO: eliminate the direct usage of zookeeper here {@link https://github.com/apache/bookkeeper/issues/1332}
  */
-public class Auditor {
+public class Auditor implements AutoCloseable {
     private static final Logger LOG = LoggerFactory.getLogger(Auditor.class);
     private final ServerConfiguration conf;
     private BookKeeper bkc;
@@ -733,6 +733,11 @@ public class Auditor {
         } catch (BKException bke) {
             LOG.warn("Exception while shutting down auditor bookie", bke);
         }
+    }
+
+    @Override
+    public void close() {
+        shutdown();
     }
 
     /**

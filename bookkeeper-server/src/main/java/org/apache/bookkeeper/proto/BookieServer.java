@@ -138,6 +138,7 @@ public class BookieServer {
         // fail fast, when bookie startup is not successful
         if (!this.bookie.isRunning()) {
             exitCode = bookie.getExitCode();
+            this.requestProcessor.close();
             return;
         }
         this.nettyServer.start();
