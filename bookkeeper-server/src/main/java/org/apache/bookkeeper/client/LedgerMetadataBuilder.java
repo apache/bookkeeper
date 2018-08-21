@@ -23,10 +23,10 @@ import static com.google.common.base.Preconditions.checkState;
 import com.google.common.collect.ImmutableMap;
 
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.TreeMap;
 
 import org.apache.bookkeeper.client.api.DigestType;
 import org.apache.bookkeeper.net.BookieSocketAddress;
@@ -41,7 +41,7 @@ class LedgerMetadataBuilder {
     private LedgerMetadataFormat.State state = LedgerMetadataFormat.State.OPEN;
     private Optional<Long> lastEntryId = Optional.empty();
 
-    private Map<Long, List<BookieSocketAddress>> ensembles = new HashMap<>();
+    private TreeMap<Long, List<BookieSocketAddress>> ensembles = new TreeMap<>();
 
     private DigestType digestType = DigestType.CRC32C;
     private Optional<byte[]> password = Optional.empty();
@@ -91,13 +91,25 @@ class LedgerMetadataBuilder {
         return this;
     }
 
-    LedgerMetadataBuilder withEnsembleEntry(long firstEntry, List<BookieSocketAddress> ensemble) {
+    LedgerMetadataBuilder newEnsembleEntry(long firstEntry, List<BookieSocketAddress> ensemble) {
         checkArgument(ensemble.size() == ensembleSize,
                       "Size of passed in ensemble must match the ensembleSize of the builder");
-
+        checkArgument(ensembles.isEmpty() || firstEntry > ensembles.lastKey(),
+                      "New entry must have a first entry greater than any existing ensemble key");
         ensembles.put(firstEntry, ensemble);
         return this;
     }
+
+    LedgerMetadataBuilder replaceEnsembleEntry(long firstEntry, List<BookieSocketAddress> ensemble) {
+        checkArgument(ensemble.size() == ensembleSize,
+                      "Size of passed in ensemble must match the ensembleSize of the builder");
+        checkArgument(ensembles.containsKey(firstEntry),
+                      "Ensemble must replace an existing ensemble in the ensemble map");
+        ensembles.put(firstEntry, ensemble);
+        return this;
+    }
+
+
 
     LedgerMetadataBuilder closingAtEntry(long lastEntryId) {
         this.lastEntryId = Optional.of(lastEntryId);

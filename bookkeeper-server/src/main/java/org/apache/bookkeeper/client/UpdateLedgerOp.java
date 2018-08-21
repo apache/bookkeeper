@@ -18,16 +18,9 @@
 
 package org.apache.bookkeeper.client;
 
-import com.google.common.util.concurrent.FutureCallback;
-import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.RateLimiter;
-import com.google.common.util.concurrent.SettableFuture;
-
-import io.netty.util.concurrent.DefaultThreadFactory;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
@@ -36,12 +29,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
@@ -49,7 +37,6 @@ import java.util.stream.Collectors;
 import org.apache.bookkeeper.bookie.BookieShell.UpdateLedgerNotifier;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.net.BookieSocketAddress;
-import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallbackFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -92,14 +79,14 @@ public class UpdateLedgerOp {
 
         final AtomicInteger issuedLedgerCnt = new AtomicInteger();
         final AtomicInteger updatedLedgerCnt = new AtomicInteger();
-        final AtomicBoolean errorOccurred = new AtomicBoolean(false);
+        final CompletableFuture<Void> finalPromise = new CompletableFuture<>();
         final Set<CompletableFuture<?>> outstanding =
             Collections.newSetFromMap(new ConcurrentHashMap<CompletableFuture<?>, Boolean>());
         final RateLimiter throttler = RateLimiter.create(rate);
         final Iterator<Long> ledgerItr = admin.listLedgers().iterator();
 
         // iterate through all the ledgers
-        while (ledgerItr.hasNext() && !errorOccurred.get()
+        while (ledgerItr.hasNext() && !finalPromise.isDone()
                && (limit == Integer.MIN_VALUE || issuedLedgerCnt.get() < limit)) {
             // throttler to control updates per second
             throttler.acquire();
@@ -107,9 +94,9 @@ public class UpdateLedgerOp {
             final long ledgerId = ledgerItr.next();
             issuedLedgerCnt.incrementAndGet();
 
-            GenericCallbackFuture<LedgerMetadata> promise = new GenericCallbackFuture<>();
-            lm.readLedgerMetadata(ledgerId, promise);
-            promise.thenCompose((readMetadata) -> {
+            GenericCallbackFuture<LedgerMetadata> readPromise = new GenericCallbackFuture<>();
+            lm.readLedgerMetadata(ledgerId, readPromise);
+            CompletableFuture<LedgerMetadata> writePromise = readPromise.thenCompose((readMetadata) -> {
                     AtomicReference<LedgerMetadata> ref = new AtomicReference<>(readMetadata);
                     return new MetadataUpdateLoop(
                             lm, ledgerId,
@@ -124,29 +111,49 @@ public class UpdateLedgerOp {
                                 return replaceBookieInEnsembles(metadata, oldBookieId, newBookieId);
                             },
                             ref::compareAndSet).run();
-                }).whenComplete((metadata, ex) -> {
-                        LOG.info("Update of {} finished", ledgerId);
+                });
+
+            outstanding.add(writePromise);
+            writePromise.whenComplete((metadata, ex) -> {
                         if (ex != null
                             && !(ex instanceof BKException.BKNoSuchLedgerExistsException)) {
-                            LOG.error("Updating ledger metadata {} failed", ledgerId, ex);
-                            errorOccurred.set(true);
+                            String error = String.format("Failed to update ledger metadata %s, replacing %s with %s",
+                                                         ledgerId, oldBookieId, newBookieId);
+                            LOG.error(error, ex);
+                            finalPromise.completeExceptionally(new IOException(error, ex));
                         } else {
+                            LOG.info("Updated ledger {} metadata, replacing {} with {}",
+                                     ledgerId, oldBookieId, newBookieId);
+
                             updatedLedgerCnt.incrementAndGet();
                             progressable.progress(updatedLedgerCnt.get(), issuedLedgerCnt.get());
                         }
+                        outstanding.remove(writePromise);
                     });
-
-            outstanding.add(promise);
-            promise.whenComplete((metadata, ex) -> outstanding.remove(promise));
         }
 
+        CompletableFuture.allOf(outstanding.stream().toArray(CompletableFuture[]::new))
+            .whenComplete((res, ex) -> {
+                    if (ex != null) {
+                        finalPromise.completeExceptionally(ex);
+                    } else {
+                        finalPromise.complete(null);
+                    }
+                });
+
         try {
-            CompletableFuture.allOf(outstanding.stream().toArray(CompletableFuture[]::new)).get();
+            finalPromise.get();
             LOG.info("Total number of ledgers issued={} updated={}",
                      issuedLedgerCnt.get(), updatedLedgerCnt.get());
         } catch (ExecutionException e) {
-            LOG.info("Error in execution", e);
-            throw new IOException("Error executing update", e);
+            String error = String.format("Error waiting for ledger metadata updates to complete (replacing %s with %s)",
+                                         oldBookieId, newBookieId);
+            LOG.info(error, e);
+            if (e.getCause() instanceof IOException) {
+                throw (IOException) e.getCause();
+            } else {
+                throw new IOException(error, e);
+            }
         }
     }
 
@@ -158,7 +165,7 @@ public class UpdateLedgerOp {
             List<BookieSocketAddress> newEnsemble = e.getValue().stream()
                 .map(b -> b.equals(oldBookieId) ? newBookieId : b)
                 .collect(Collectors.toList());
-            builder.withEnsembleEntry(e.getKey(), newEnsemble);
+            builder.replaceEnsembleEntry(e.getKey(), newEnsemble);
         }
 
         return builder.build();
