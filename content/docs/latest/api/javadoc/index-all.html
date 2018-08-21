@@ -2517,7 +2517,7 @@
 <dd>
 <div class="block">Get bookie death watch interval.</div>
 </dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeper.html#getDefaultEventLoopGroup--">getDefaultEventLoopGroup()</a></span> - Static method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeper.html" title="class in org.apache.bookkeeper.client">BookKeeper</a></dt>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeper.html#getDefaultEventLoopGroup-org.apache.bookkeeper.conf.ClientConfiguration-">getDefaultEventLoopGroup(ClientConfiguration)</a></span> - Static method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeper.html" title="class in org.apache.bookkeeper.client">BookKeeper</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html#getDefaultRack--">getDefaultRack()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html" title="class in org.apache.bookkeeper.client">RackawareEnsemblePlacementPolicyImpl</a></dt>
 <dd>&nbsp;</dd>
@@ -3237,6 +3237,10 @@
 <div class="block">Get the number of threads that should be used for high priority requests
  (i.e.</div>
 </dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ClientConfiguration.html#getNumIOThreads--">getNumIOThreads()</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a></dt>
+<dd>
+<div class="block">Get the number of IO threads.</div>
+</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#getNumJournalCallbackThreads--">getNumJournalCallbackThreads()</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
 <dd>
 <div class="block">Get the number of threads that should handle journal callbacks.</div>
@@ -3460,6 +3464,10 @@
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/SyncCounter.html#getSequence--">getSequence()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/SyncCounter.html" title="class in org.apache.bookkeeper.client">SyncCounter</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#getServerNumIOThreads--">getServerNumIOThreads()</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
+<dd>
+<div class="block">Get the number of IO threads.</div>
+</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#getServerSockKeepalive--">getServerSockKeepalive()</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
 <dd>
 <div class="block">Get socket keepalive.</div>
@@ -5062,6 +5070,8 @@
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ClientConfiguration.html#NUM_CHANNELS_PER_BOOKIE">NUM_CHANNELS_PER_BOOKIE</a></span> - Static variable in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#NUM_HIGH_PRIORITY_WORKER_THREADS">NUM_HIGH_PRIORITY_WORKER_THREADS</a></span> - Static variable in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
+<dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ClientConfiguration.html#NUM_IO_THREADS">NUM_IO_THREADS</a></span> - Static variable in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#NUM_JOURNAL_CALLBACK_THREADS">NUM_JOURNAL_CALLBACK_THREADS</a></span> - Static variable in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
 <dd>&nbsp;</dd>
@@ -12432,6 +12442,8 @@
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/prometheus/PrometheusMetricsProvider.html#server">server</a></span> - Variable in class org.apache.bookkeeper.stats.prometheus.<a href="org/apache/bookkeeper/stats/prometheus/PrometheusMetricsProvider.html" title="class in org.apache.bookkeeper.stats.prometheus">PrometheusMetricsProvider</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#SERVER_NUM_IO_THREADS">SERVER_NUM_IO_THREADS</a></span> - Static variable in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#SERVER_SOCK_KEEPALIVE">SERVER_SOCK_KEEPALIVE</a></span> - Static variable in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#SERVER_SOCK_LINGER">SERVER_SOCK_LINGER</a></span> - Static variable in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
@@ -13033,6 +13045,10 @@
 <div class="block">Set the number of threads that should be used for high priority requests
  (i.e.</div>
 </dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ClientConfiguration.html#setNumIOThreads-int-">setNumIOThreads(int)</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a></dt>
+<dd>
+<div class="block">Set the number of IO threads.</div>
+</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#setNumJournalCallbackThreads-int-">setNumJournalCallbackThreads(int)</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
 <dd>
 <div class="block">Set the number of threads that would handle journal callbacks.</div>
@@ -13166,6 +13182,10 @@
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/SyncCounter.html#setSequence-java.util.Enumeration-">setSequence(Enumeration&lt;LedgerEntry&gt;)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/SyncCounter.html" title="class in org.apache.bookkeeper.client">SyncCounter</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#setServerNumIOThreads-int-">setServerNumIOThreads(int)</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
+<dd>
+<div class="block">Set the number of IO threads.</div>
+</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#setServerSockKeepalive-boolean-">setServerSockKeepalive(boolean)</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
 <dd>
 <div class="block">Set socket keepalive setting.</div>
