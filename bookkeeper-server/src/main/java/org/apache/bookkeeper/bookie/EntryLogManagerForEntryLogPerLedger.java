@@ -62,6 +62,7 @@ import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.IOUtils;
+import org.apache.bookkeeper.util.MathUtils;
 import org.apache.bookkeeper.util.collections.ConcurrentLongHashMap;
 import org.apache.commons.lang3.mutable.MutableInt;
 
@@ -94,7 +95,7 @@ class EntryLogManagerForEntryLogPerLedger extends EntryLogManagerBase {
         private BufferedLogChannelWithDirInfo entryLogWithDirInfo;
 
         private EntryLogAndLockTuple(long ledgerId) {
-            int lockIndex = Long.hashCode(ledgerId) % lockArrayPool.length();
+            int lockIndex = MathUtils.signSafeMod(Long.hashCode(ledgerId), lockArrayPool.length());
             if (lockArrayPool.get(lockIndex) == null) {
                 lockArrayPool.compareAndSet(lockIndex, null, new ReentrantLock());
             }
