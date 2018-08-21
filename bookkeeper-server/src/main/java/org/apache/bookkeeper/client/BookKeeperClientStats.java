@@ -21,6 +21,11 @@
 
 package org.apache.bookkeeper.client;
 
+import org.apache.bookkeeper.stats.Counter;
+import org.apache.bookkeeper.stats.Gauge;
+import org.apache.bookkeeper.stats.OpStatsLogger;
+import org.apache.bookkeeper.stats.StatsLogger;
+
 /**
  * List of constants for defining client stats names.
  */
@@ -84,4 +89,144 @@ public interface BookKeeperClientStats {
     String ACTIVE_TLS_CHANNEL_COUNTER = "ACTIVE_TLS_CHANNEL_COUNTER";
     String FAILED_CONNECTION_COUNTER = "FAILED_CONNECTION_COUNTER";
     String FAILED_TLS_HANDSHAKE_COUNTER = "FAILED_TLS_HANDSHAKE_COUNTER";
+
+    OpStatsLogger getCreateOpLogger();
+    OpStatsLogger getOpenOpLogger();
+    OpStatsLogger getDeleteOpLogger();
+    OpStatsLogger getRecoverOpLogger();
+    OpStatsLogger getReadOpLogger();
+    OpStatsLogger getReadLacAndEntryOpLogger();
+    OpStatsLogger getReadLacAndEntryRespLogger();
+    OpStatsLogger getAddOpLogger();
+    OpStatsLogger getForceOpLogger();
+    OpStatsLogger getWriteLacOpLogger();
+    OpStatsLogger getReadLacOpLogger();
+    OpStatsLogger getRecoverAddCountLogger();
+    OpStatsLogger getRecoverReadCountLogger();
+    Counter getReadOpDmCounter();
+    Counter getAddOpUrCounter();
+    Counter getSpeculativeReadCounter();
+    Counter getEnsembleBookieDistributionCounter(String bookie);
+    Counter getEnsembleChangeCounter();
+    Counter getLacUpdateHitsCounter();
+    Counter getLacUpdateMissesCounter();
+    OpStatsLogger getClientChannelWriteWaitLogger();
+    void registerPendingAddsGauge(Gauge<Integer> gauge);
+
+    static BookKeeperClientStats newInstance(StatsLogger stats) {
+        OpStatsLogger createOpLogger = stats.getOpStatsLogger(CREATE_OP);
+        OpStatsLogger deleteOpLogger = stats.getOpStatsLogger(DELETE_OP);
+        OpStatsLogger openOpLogger = stats.getOpStatsLogger(OPEN_OP);
+        OpStatsLogger recoverOpLogger = stats.getOpStatsLogger(RECOVER_OP);
+        OpStatsLogger readOpLogger = stats.getOpStatsLogger(READ_OP);
+        Counter readOpDmCounter = stats.getCounter(READ_OP_DM);
+        OpStatsLogger readLacAndEntryOpLogger = stats.getOpStatsLogger(READ_LAST_CONFIRMED_AND_ENTRY);
+        OpStatsLogger readLacAndEntryRespLogger = stats.getOpStatsLogger(READ_LAST_CONFIRMED_AND_ENTRY_RESPONSE);
+        OpStatsLogger addOpLogger = stats.getOpStatsLogger(ADD_OP);
+        OpStatsLogger forceOpLogger = stats.getOpStatsLogger(FORCE_OP);
+        Counter addOpUrCounter = stats.getCounter(ADD_OP_UR);
+        OpStatsLogger writeLacOpLogger = stats.getOpStatsLogger(WRITE_LAC_OP);
+        OpStatsLogger readLacOpLogger = stats.getOpStatsLogger(READ_LAC_OP);
+        OpStatsLogger recoverAddEntriesStats = stats.getOpStatsLogger(LEDGER_RECOVER_ADD_ENTRIES);
+        OpStatsLogger recoverReadEntriesStats = stats.getOpStatsLogger(LEDGER_RECOVER_READ_ENTRIES);
+
+        Counter ensembleChangeCounter = stats.getCounter(ENSEMBLE_CHANGES);
+        Counter lacUpdateHitsCounter = stats.getCounter(LAC_UPDATE_HITS);
+        Counter lacUpdateMissesCounter = stats.getCounter(LAC_UPDATE_MISSES);
+        OpStatsLogger clientChannelWriteWaitStats = stats.getOpStatsLogger(CLIENT_CHANNEL_WRITE_WAIT);
+
+        Counter speculativeReadCounter = stats.getCounter(SPECULATIVE_READ_COUNT);
+
+        return new BookKeeperClientStats() {
+            @Override
+            public OpStatsLogger getCreateOpLogger() {
+                return createOpLogger;
+            }
+            @Override
+            public OpStatsLogger getOpenOpLogger() {
+                return openOpLogger;
+            }
+            @Override
+            public OpStatsLogger getDeleteOpLogger() {
+                return deleteOpLogger;
+            }
+            @Override
+            public OpStatsLogger getRecoverOpLogger() {
+                return recoverOpLogger;
+            }
+            @Override
+            public OpStatsLogger getReadOpLogger() {
+                return readOpLogger;
+            }
+            @Override
+            public OpStatsLogger getReadLacAndEntryOpLogger() {
+                return readLacAndEntryOpLogger;
+            }
+            @Override
+            public OpStatsLogger getReadLacAndEntryRespLogger() {
+                return readLacAndEntryRespLogger;
+            }
+            @Override
+            public OpStatsLogger getAddOpLogger() {
+                return addOpLogger;
+            }
+            @Override
+            public OpStatsLogger getForceOpLogger() {
+                return forceOpLogger;
+            }
+            @Override
+            public OpStatsLogger getWriteLacOpLogger() {
+                return writeLacOpLogger;
+            }
+            @Override
+            public OpStatsLogger getReadLacOpLogger() {
+                return readLacOpLogger;
+            }
+            @Override
+            public OpStatsLogger getRecoverAddCountLogger() {
+                return recoverAddEntriesStats;
+            }
+            @Override
+            public OpStatsLogger getRecoverReadCountLogger() {
+                return recoverReadEntriesStats;
+            }
+            @Override
+            public Counter getReadOpDmCounter() {
+                return readOpDmCounter;
+            }
+            @Override
+            public Counter getAddOpUrCounter() {
+                return addOpUrCounter;
+            }
+            @Override
+            public Counter getSpeculativeReadCounter() {
+                return speculativeReadCounter;
+            }
+            @Override
+            public Counter getEnsembleChangeCounter() {
+                return ensembleChangeCounter;
+            }
+            @Override
+            public Counter getLacUpdateHitsCounter() {
+                return lacUpdateHitsCounter;
+            }
+            @Override
+            public Counter getLacUpdateMissesCounter() {
+                return lacUpdateMissesCounter;
+            }
+            @Override
+            public OpStatsLogger getClientChannelWriteWaitLogger() {
+                return clientChannelWriteWaitStats;
+            }
+            @Override
+            public Counter getEnsembleBookieDistributionCounter(String bookie) {
+                return stats.getCounter(LEDGER_ENSEMBLE_BOOKIE_DISTRIBUTION + "-" + bookie);
+            }
+            @Override
+            public void registerPendingAddsGauge(Gauge<Integer> gauge) {
+                stats.registerGauge(PENDING_ADDS, gauge);
+            }
+        };
+    }
+
 }

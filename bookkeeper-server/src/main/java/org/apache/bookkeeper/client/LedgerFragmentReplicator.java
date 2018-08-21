@@ -36,6 +36,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.bookkeeper.client.AsyncCallback.ReadCallback;
 import org.apache.bookkeeper.client.api.WriteFlag;
+import org.apache.bookkeeper.common.util.OrderedExecutor;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
@@ -340,14 +341,16 @@ public class LedgerFragmentReplicator {
     static class SingleFragmentCallback implements AsyncCallback.VoidCallback {
         final AsyncCallback.VoidCallback ledgerFragmentsMcb;
         final LedgerHandle lh;
+        final OrderedExecutor mainWorkerPool;
         final long fragmentStartId;
         final Map<BookieSocketAddress, BookieSocketAddress> oldBookie2NewBookie;
 
         SingleFragmentCallback(AsyncCallback.VoidCallback ledgerFragmentsMcb,
-                LedgerHandle lh, long fragmentStartId,
+                               LedgerHandle lh, OrderedExecutor mainWorkerPool, long fragmentStartId,
                 Map<BookieSocketAddress, BookieSocketAddress> oldBookie2NewBookie) {
             this.ledgerFragmentsMcb = ledgerFragmentsMcb;
             this.lh = lh;
+            this.mainWorkerPool = mainWorkerPool;
             this.fragmentStartId = fragmentStartId;
             this.oldBookie2NewBookie = oldBookie2NewBookie;
         }
@@ -360,7 +363,7 @@ public class LedgerFragmentReplicator {
                 ledgerFragmentsMcb.processResult(rc, null, null);
                 return;
             }
-            updateEnsembleInfo(ledgerFragmentsMcb, fragmentStartId, lh, oldBookie2NewBookie);
+            updateEnsembleInfo(ledgerFragmentsMcb, fragmentStartId, lh, mainWorkerPool, oldBookie2NewBookie);
         }
     }
 
@@ -369,7 +372,8 @@ public class LedgerFragmentReplicator {
      */
     private static void updateEnsembleInfo(
             AsyncCallback.VoidCallback ensembleUpdatedCb, long fragmentStartId,
-            LedgerHandle lh, Map<BookieSocketAddress, BookieSocketAddress> oldBookie2NewBookie) {
+            LedgerHandle lh, OrderedExecutor mainWorkerPool,
+            Map<BookieSocketAddress, BookieSocketAddress> oldBookie2NewBookie) {
         /*
          * Update the ledger metadata's ensemble info to point to the new
          * bookie.
@@ -388,7 +392,7 @@ public class LedgerFragmentReplicator {
         }
         lh.getLedgerMetadata().updateEnsemble(fragmentStartId, newEnsemble);
         lh.writeLedgerConfig(new UpdateEnsembleCb(ensembleUpdatedCb,
-                fragmentStartId, lh, oldBookie2NewBookie));
+                                                  fragmentStartId, lh, mainWorkerPool, oldBookie2NewBookie));
     }
 
     /**
@@ -399,14 +403,17 @@ public class LedgerFragmentReplicator {
     private static class UpdateEnsembleCb implements GenericCallback<LedgerMetadata> {
         final AsyncCallback.VoidCallback ensembleUpdatedCb;
         final LedgerHandle lh;
+        final OrderedExecutor mainWorkerPool;
         final long fragmentStartId;
         final Map<BookieSocketAddress, BookieSocketAddress> oldBookie2NewBookie;
 
         public UpdateEnsembleCb(AsyncCallback.VoidCallback ledgerFragmentsMcb,
                 long fragmentStartId, LedgerHandle lh,
+                OrderedExecutor mainWorkerPool,
                 Map<BookieSocketAddress, BookieSocketAddress> oldBookie2NewBookie) {
             this.ensembleUpdatedCb = ledgerFragmentsMcb;
             this.lh = lh;
+            this.mainWorkerPool = mainWorkerPool;
             this.fragmentStartId = fragmentStartId;
             this.oldBookie2NewBookie = oldBookie2NewBookie;
         }
@@ -419,8 +426,7 @@ public class LedgerFragmentReplicator {
                 // try again, the previous success (with which this has
                 // conflicted) will have updated the stat other operations
                 // such as (addEnsemble) would update it too.
-                lh.rereadMetadata(new OrderedGenericCallback<LedgerMetadata>(
-                                lh.bk.mainWorkerPool, lh.getId()) {
+                lh.rereadMetadata(new OrderedGenericCallback<LedgerMetadata>(mainWorkerPool, lh.getId()) {
                             @Override
                             public void safeOperationComplete(int rc,
                                     LedgerMetadata newMeta) {
@@ -440,7 +446,7 @@ public class LedgerFragmentReplicator {
                                         }
                                     }
                                     updateEnsembleInfo(ensembleUpdatedCb,
-                                            fragmentStartId, lh, oldBookie2NewBookie);
+                                                       fragmentStartId, lh, mainWorkerPool, oldBookie2NewBookie);
                                 }
                             }
                             @Override

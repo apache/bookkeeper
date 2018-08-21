@@ -55,10 +55,11 @@ public class LedgerHandleAdv extends LedgerHandle implements WriteAdvHandle {
         }
     }
 
-    LedgerHandleAdv(BookKeeper bk, long ledgerId, LedgerMetadata metadata,
+    LedgerHandleAdv(ClientContext clientCtx,
+                    long ledgerId, LedgerMetadata metadata,
                     BookKeeper.DigestType digestType, byte[] password, EnumSet<WriteFlag> writeFlags)
             throws GeneralSecurityException, NumberFormatException {
-        super(bk, ledgerId, metadata, digestType, password, writeFlags);
+        super(clientCtx, ledgerId, metadata, digestType, password, writeFlags);
         pendingAddOps = new PriorityBlockingQueue<PendingAddOp>(10, new PendingOpsComparator());
     }
 
@@ -194,7 +195,7 @@ public class LedgerHandleAdv extends LedgerHandle implements WriteAdvHandle {
     @Override
     public void asyncAddEntry(final long entryId, ByteBuf data,
                               final AddCallbackWithLatency cb, final Object ctx) {
-        PendingAddOp op = PendingAddOp.create(this, data, writeFlags, cb, ctx);
+        PendingAddOp op = PendingAddOp.create(this, clientCtx, data, writeFlags, cb, ctx);
         op.setEntryId(entryId);
 
         if ((entryId <= this.lastAddConfirmed) || pendingAddOps.contains(op)) {
@@ -233,7 +234,7 @@ public class LedgerHandleAdv extends LedgerHandle implements WriteAdvHandle {
         if (wasClosed) {
             // make sure the callback is triggered in main worker pool
             try {
-                bk.getMainWorkerPool().submit(new SafeRunnable() {
+                clientCtx.getMainWorkerPool().submit(new SafeRunnable() {
                     @Override
                     public void safeRun() {
                         LOG.warn("Attempt to add to closed ledger: {}", ledgerId);
@@ -246,21 +247,23 @@ public class LedgerHandleAdv extends LedgerHandle implements WriteAdvHandle {
                     }
                 });
             } catch (RejectedExecutionException e) {
-                op.cb.addCompleteWithLatency(bk.getReturnRc(BKException.Code.InterruptedException),
+                op.cb.addCompleteWithLatency(BookKeeper.getReturnRc(clientCtx.getBookieClient(),
+                                                                    BKException.Code.InterruptedException),
                         LedgerHandleAdv.this, op.getEntryId(), 0, op.ctx);
             }
             return;
         }
 
         if (!waitForWritable(distributionSchedule.getWriteSet(op.getEntryId()),
-                op.getEntryId(), 0, waitForWriteSetMs)) {
+                    op.getEntryId(), 0, clientCtx.getConf().waitForWriteSetMs)) {
             op.allowFailFastOnUnwritableChannel();
         }
 
         try {
-            bk.getMainWorkerPool().executeOrdered(ledgerId, op);
+            clientCtx.getMainWorkerPool().executeOrdered(ledgerId, op);
         } catch (RejectedExecutionException e) {
-            op.cb.addCompleteWithLatency(bk.getReturnRc(BKException.Code.InterruptedException),
+            op.cb.addCompleteWithLatency(BookKeeper.getReturnRc(clientCtx.getBookieClient(),
+                                                                BKException.Code.InterruptedException),
                               LedgerHandleAdv.this, op.getEntryId(), 0, op.ctx);
         }
     }

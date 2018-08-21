@@ -28,7 +28,6 @@ import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.AsyncCallback.CloseCallback;
 import org.apache.bookkeeper.client.AsyncCallback.ReadCallback;
 import org.apache.bookkeeper.client.AsyncCallback.ReadLastConfirmedCallback;
-import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.api.WriteFlag;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.LedgerMetadataListener;
@@ -79,24 +78,26 @@ class ReadOnlyLedgerHandle extends LedgerHandle implements LedgerMetadataListene
         }
     }
 
-    ReadOnlyLedgerHandle(BookKeeper bk, long ledgerId, LedgerMetadata metadata,
-                         DigestType digestType, byte[] password, boolean watch)
+    ReadOnlyLedgerHandle(ClientContext clientCtx,
+                         long ledgerId, LedgerMetadata metadata,
+                         BookKeeper.DigestType digestType, byte[] password,
+                         boolean watch)
             throws GeneralSecurityException, NumberFormatException {
-        super(bk, ledgerId, metadata, digestType, password, WriteFlag.NONE);
+        super(clientCtx, ledgerId, metadata, digestType, password, WriteFlag.NONE);
         if (watch) {
-            bk.getLedgerManager().registerLedgerMetadataListener(ledgerId, this);
+            clientCtx.getLedgerManager().registerLedgerMetadataListener(ledgerId, this);
         }
     }
 
     @Override
     public void close()
             throws InterruptedException, BKException {
-        bk.getLedgerManager().unregisterLedgerMetadataListener(ledgerId, this);
+        clientCtx.getLedgerManager().unregisterLedgerMetadataListener(ledgerId, this);
     }
 
     @Override
     public void asyncClose(CloseCallback cb, Object ctx) {
-        bk.getLedgerManager().unregisterLedgerMetadataListener(ledgerId, this);
+        clientCtx.getLedgerManager().unregisterLedgerMetadataListener(ledgerId, this);
         cb.closeComplete(BKException.Code.OK, this, ctx);
     }
 
@@ -168,7 +169,7 @@ class ReadOnlyLedgerHandle extends LedgerHandle implements LedgerMetadataListene
         }
         if (Version.Occurred.BEFORE == occurred) { // the metadata is updated
             try {
-                bk.getMainWorkerPool().executeOrdered(ledgerId, new MetadataUpdater(newMetadata));
+                clientCtx.getMainWorkerPool().executeOrdered(ledgerId, new MetadataUpdater(newMetadata));
             } catch (RejectedExecutionException ree) {
                 LOG.error("Failed on submitting updater to update ledger metadata on ledger {} : {}",
                         ledgerId, newMetadata);

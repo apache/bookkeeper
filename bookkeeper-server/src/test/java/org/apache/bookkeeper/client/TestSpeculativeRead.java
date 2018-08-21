@@ -159,7 +159,7 @@ public class TestSpeculativeRead extends BookKeeperClusterTestCase {
             speccb.expectSuccess(4000);
             nospeccb.expectTimeout(4000);
             // Check that the second bookie is registered as slow at entryId 1
-            RackawareEnsemblePlacementPolicy rep = (RackawareEnsemblePlacementPolicy) lspec.bk.placementPolicy;
+            RackawareEnsemblePlacementPolicy rep = (RackawareEnsemblePlacementPolicy) bkspec.getPlacementPolicy();
             assertTrue(rep.slowBookies.asMap().size() == 1);
 
             assertTrue(
@@ -220,7 +220,7 @@ public class TestSpeculativeRead extends BookKeeperClusterTestCase {
             Set<BookieSocketAddress> expectedSlowBookies = new HashSet<>();
             expectedSlowBookies.add(l.getLedgerMetadata().getEnsembles().get(0L).get(1));
             expectedSlowBookies.add(l.getLedgerMetadata().getEnsembles().get(0L).get(2));
-            assertEquals(((RackawareEnsemblePlacementPolicy) l.bk.placementPolicy).slowBookies.asMap().keySet(),
+            assertEquals(((RackawareEnsemblePlacementPolicy) bkspec.getPlacementPolicy()).slowBookies.asMap().keySet(),
                 expectedSlowBookies);
 
             // third should not hit timeouts since bookies 1 & 2 are registered as slow
@@ -318,8 +318,7 @@ public class TestSpeculativeRead extends BookKeeperClusterTestCase {
         secondHostOnly.set(1, true);
         PendingReadOp.LedgerEntryRequest req0 = null, req2 = null, req4 = null;
         try {
-            PendingReadOp op = new PendingReadOp(l, bkspec.scheduler, 0, 5);
-
+            PendingReadOp op = new PendingReadOp(l, bkspec.getClientCtx(), 0, 5, false);
             // if we've already heard from all hosts,
             // we only send the initial read
             req0 = op.new SequenceReadRequest(ensemble, l.getId(), 0);
