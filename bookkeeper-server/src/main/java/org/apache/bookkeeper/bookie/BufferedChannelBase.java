@@ -49,11 +49,4 @@ public abstract class BufferedChannelBase {
         return validateAndGetFileChannel().size();
     }
 
-    /**
-     * Get the {@link FileChannel} that this BufferedChannel wraps around.
-     * @return
-     */
-    public FileChannel getFileChannel() {
-        return fileChannel;
-    }
 }
