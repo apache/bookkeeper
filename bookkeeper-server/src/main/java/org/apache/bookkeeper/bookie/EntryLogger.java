@@ -650,7 +650,7 @@ public class EntryLogger {
                 // since this channel is only used for writing, after flushing the channel,
                 // we had to close the underlying file channel. Otherwise, we might end up
                 // leaking fds which cause the disk spaces could not be reclaimed.
-                closeFileChannel(compactionLogChannel);
+                compactionLogChannel.close();
             } else {
                 throw new IOException("Failed to flush compaction log which has already been removed.");
             }
@@ -675,10 +675,12 @@ public class EntryLogger {
                 if (!compactionLogChannel.getLogFile().delete()) {
                     LOG.warn("Could not delete compaction log file {}", compactionLogChannel.getLogFile());
                 }
+
                 try {
-                    closeFileChannel(compactionLogChannel);
+                    compactionLogChannel.close();
                 } catch (IOException e) {
-                    LOG.error("Failed to close file channel for compaction log {}", compactionLogChannel.getLogId());
+                    LOG.error("Failed to close file channel for compaction log {}", compactionLogChannel.getLogId(),
+                            e);
                 }
                 compactionLogChannel = null;
             }
@@ -1069,8 +1071,10 @@ public class EntryLogger {
             logid2FileChannel.clear();
             entryLogManager.close();
             synchronized (compactionLogLock) {
-                closeFileChannel(compactionLogChannel);
-                compactionLogChannel = null;
+                if (compactionLogChannel != null) {
+                    compactionLogChannel.close();
+                    compactionLogChannel = null;
+                }
             }
         } catch (IOException ie) {
             // we have no idea how to avoid io exception during shutting down, so just ignore it
@@ -1082,32 +1086,11 @@ public class EntryLogger {
 
             entryLogManager.forceClose();
             synchronized (compactionLogLock) {
-                forceCloseFileChannel(compactionLogChannel);
+                IOUtils.close(LOG, compactionLogChannel);
             }
         }
         // shutdown the pre-allocation thread
         entryLoggerAllocator.stop();
-    }
-
-    static void closeFileChannel(BufferedChannelBase channel) throws IOException {
-        if (null == channel) {
-            return;
-        }
-
-        FileChannel fileChannel = channel.getFileChannel();
-        if (null != fileChannel) {
-            fileChannel.close();
-        }
-    }
-
-    static void forceCloseFileChannel(BufferedChannelBase channel) {
-        if (null == channel) {
-            return;
-        }
-        FileChannel fileChannel = channel.getFileChannel();
-        if (null != fileChannel) {
-            IOUtils.close(LOG, fileChannel);
-        }
     }
 
     protected LedgerDirsManager getLedgerDirsManager() {

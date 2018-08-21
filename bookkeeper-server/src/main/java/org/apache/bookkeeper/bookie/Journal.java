@@ -1084,9 +1084,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                             // check whether journal file is over file limit
                             if (shouldRolloverJournal) {
                                 // if the journal file is rolled over, the journal file will be closed after last
-                                // entry is force written to disk. the `bc` is not used anymore, so close it to release
-                                // the buffers in `bc`.
-                                IOUtils.close(LOG, bc);
+                                // entry is force written to disk.
                                 logFile = null;
                                 continue;
                             }
@@ -1146,7 +1144,6 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
             // close will flush the file system cache making any previous
             // cached writes durable so this is fine as well.
             IOUtils.close(LOG, bc);
-            IOUtils.close(LOG, logFile);
         }
         LOG.info("Journal exited loop!");
     }
