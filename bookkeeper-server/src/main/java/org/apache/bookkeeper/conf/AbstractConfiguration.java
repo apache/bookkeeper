@@ -82,6 +82,8 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
     protected static final String ZK_REQUEST_RATE_LIMIT = "zkRequestRateLimit";
     protected static final String AVAILABLE_NODE = "available";
     protected static final String REREPLICATION_ENTRY_BATCH_SIZE = "rereplicationEntryBatchSize";
+    protected static final String STORE_SYSTEMTIME_AS_LEDGER_UNDERREPLICATED_MARK_TIME =
+            "storeSystemTimeAsLedgerUnderreplicatedMarkTime";
 
     // Metastore settings, only being used when LEDGER_MANAGER_FACTORY_CLASS is MSLedgerManagerFactory
     protected static final String METASTORE_IMPL_CLASS = "metastoreImplClass";
@@ -810,6 +812,33 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      */
     public boolean getEnforceMinNumRacksPerWriteQuorum() {
         return getBoolean(ENFORCE_MIN_NUM_RACKS_PER_WRITE_QUORUM, false);
+    }
+
+    /**
+     * Enable the Auditor to use system time as underreplicated ledger mark
+     * time.
+     *
+     * <p>If this is enabled, Auditor will write a ctime field into the
+     * underreplicated ledger znode.
+     *
+     * @param enabled
+     *            flag to enable/disable Auditor using system time as
+     *            underreplicated ledger mark time.
+     */
+    public T setStoreSystemTimeAsLedgerUnderreplicatedMarkTime(boolean enabled) {
+        setProperty(STORE_SYSTEMTIME_AS_LEDGER_UNDERREPLICATED_MARK_TIME, enabled);
+        return getThis();
+    }
+
+    /**
+     * Return the flag that indicates whether auditor is using system time as
+     * underreplicated ledger mark time.
+     *
+     * @return the flag that indicates whether auditor is using system time as
+     *         underreplicated ledger mark time.
+     */
+    public boolean getStoreSystemTimeAsLedgerUnderreplicatedMarkTime() {
+        return getBoolean(STORE_SYSTEMTIME_AS_LEDGER_UNDERREPLICATED_MARK_TIME, false);
     }
 
     /**

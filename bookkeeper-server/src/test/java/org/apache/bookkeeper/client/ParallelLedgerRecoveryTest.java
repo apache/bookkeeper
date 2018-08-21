@@ -428,7 +428,7 @@ public class ParallelLedgerRecoveryTest extends BookKeeperClusterTestCase {
         final CountDownLatch addLatch = new CountDownLatch(1);
         final AtomicBoolean addSuccess = new AtomicBoolean(false);
         LOG.info("Add entry {} with lac = {}", entryId, lac);
-        lh.bk.getBookieClient().addEntry(lh.getLedgerMetadata().currentEnsemble.get(0),
+        bkc.getBookieClient().addEntry(lh.getLedgerMetadata().currentEnsemble.get(0),
                                          lh.getId(), lh.ledgerKey, entryId, toSend,
                                          new WriteCallback() {
                                              @Override
@@ -667,7 +667,7 @@ public class ParallelLedgerRecoveryTest extends BookKeeperClusterTestCase {
         final AtomicLong lacHolder = new AtomicLong(-1234L);
         final AtomicInteger rcHolder = new AtomicInteger(-1234);
         final CountDownLatch doneLatch = new CountDownLatch(1);
-        new ReadLastConfirmedOp(readLh, new ReadLastConfirmedOp.LastConfirmedDataCallback() {
+        new ReadLastConfirmedOp(readLh, bkc.getBookieClient(), new ReadLastConfirmedOp.LastConfirmedDataCallback() {
             @Override
             public void readLastConfirmedDataComplete(int rc, DigestManager.RecoveryData data) {
                 rcHolder.set(rc);

@@ -69,6 +69,7 @@ message LedgerRereplicationLayoutFormat {
  
 message UnderreplicatedLedgerFormat {
     repeated string replica = 1;
+    optional int64 ctime = 2;
 }
 
 /**

@@ -152,7 +152,7 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
     public void testFailDigestTypeNullAndAutodetectionTrue() throws Exception {
         ClientConfiguration config = new ClientConfiguration();
         config.setEnableDigestTypeAutodetection(true);
-        setBookkeeperConfig(config);
+        setBookKeeperConfig(config);
         result(newCreateLedgerOp()
             .withDigestType(null)
             .withPassword(password)
@@ -163,7 +163,7 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
     public void testFailDigestTypeNullAndAutodetectionFalse() throws Exception {
         ClientConfiguration config = new ClientConfiguration();
         config.setEnableDigestTypeAutodetection(false);
-        setBookkeeperConfig(config);
+        setBookKeeperConfig(config);
         result(newCreateLedgerOp()
             .withDigestType(null)
             .withPassword(password)

@@ -73,7 +73,8 @@ class LedgerOpenOp implements GenericCallback<LedgerMetadata> {
      * @param cb
      * @param ctx
      */
-    public LedgerOpenOp(BookKeeper bk, long ledgerId, DigestType digestType, byte[] passwd,
+    public LedgerOpenOp(BookKeeper bk, BookKeeperClientStats clientStats,
+                        long ledgerId, DigestType digestType, byte[] passwd,
                         OpenCallback cb, Object ctx) {
         this.bk = bk;
         this.ledgerId = ledgerId;
@@ -82,10 +83,11 @@ class LedgerOpenOp implements GenericCallback<LedgerMetadata> {
         this.ctx = ctx;
         this.enableDigestAutodetection = bk.getConf().getEnableDigestTypeAutodetection();
         this.suggestedDigestType = digestType;
-        this.openOpLogger = bk.getOpenOpLogger();
+        this.openOpLogger = clientStats.getOpenOpLogger();
     }
 
-    public LedgerOpenOp(BookKeeper bk, long ledgerId, OpenCallback cb, Object ctx) {
+    public LedgerOpenOp(BookKeeper bk, BookKeeperClientStats clientStats,
+                        long ledgerId, OpenCallback cb, Object ctx) {
         this.bk = bk;
         this.ledgerId = ledgerId;
         this.cb = cb;
@@ -95,7 +97,7 @@ class LedgerOpenOp implements GenericCallback<LedgerMetadata> {
         this.administrativeOpen = true;
         this.enableDigestAutodetection = false;
         this.suggestedDigestType = bk.conf.getBookieRecoveryDigestType();
-        this.openOpLogger = bk.getOpenOpLogger();
+        this.openOpLogger = clientStats.getOpenOpLogger();
     }
 
     /**
@@ -165,7 +167,8 @@ class LedgerOpenOp implements GenericCallback<LedgerMetadata> {
 
         // get the ledger metadata back
         try {
-            lh = new ReadOnlyLedgerHandle(bk, ledgerId, metadata, digestType, passwd, !doRecovery);
+            lh = new ReadOnlyLedgerHandle(bk.getClientCtx(), ledgerId, metadata, digestType,
+                                          passwd, !doRecovery);
         } catch (GeneralSecurityException e) {
             LOG.error("Security exception while opening ledger: " + ledgerId, e);
             openComplete(BKException.Code.DigestNotInitializedException, null);
@@ -247,7 +250,8 @@ class LedgerOpenOp implements GenericCallback<LedgerMetadata> {
                 return;
             }
 
-            LedgerOpenOp op = new LedgerOpenOp(bk, ledgerId, fromApiDigestType(digestType),
+            LedgerOpenOp op = new LedgerOpenOp(bk, bk.getClientCtx().getClientStats(),
+                                               ledgerId, fromApiDigestType(digestType),
                                                password, cb, null);
             ReentrantReadWriteLock closeLock = bk.getCloseLock();
             closeLock.readLock().lock();

@@ -316,13 +316,23 @@ public class Bookie extends BookieCriticalThread {
         // we need to loop through all possible bookie identifiers to ensure it is treated as a new environment
         // just because of bad configuration
         List<BookieSocketAddress> addresses = Lists.newArrayListWithExpectedSize(3);
+        // we are checking all possibilities here, so we don't need to fail if we can only get
+        // loopback address. it will fail anyway when the bookie attempts to listen on loopback address.
         try {
             // ip address
             addresses.add(getBookieAddress(
-                new ServerConfiguration(conf).setUseHostNameAsBookieID(false).setAdvertisedAddress(null)));
+                new ServerConfiguration(conf)
+                    .setUseHostNameAsBookieID(false)
+                    .setAdvertisedAddress(null)
+                    .setAllowLoopback(true)
+            ));
             // host name
             addresses.add(getBookieAddress(
-                new ServerConfiguration(conf).setUseHostNameAsBookieID(true).setAdvertisedAddress(null)));
+                new ServerConfiguration(conf)
+                    .setUseHostNameAsBookieID(true)
+                    .setAdvertisedAddress(null)
+                    .setAllowLoopback(true)
+            ));
             // advertised address
             if (null != conf.getAdvertisedAddress()) {
                 addresses.add(getBookieAddress(conf));
@@ -569,7 +579,10 @@ public class Bookie extends BookieCriticalThread {
             && !conf.getAllowLoopback()) {
             throw new UnknownHostException("Trying to listen on loopback address, "
                     + addr + " but this is forbidden by default "
-                    + "(see ServerConfiguration#getAllowLoopback())");
+                    + "(see ServerConfiguration#getAllowLoopback()).\n"
+                    + "If this happen, you can consider specifying the network interface"
+                    + " to listen on (e.g. listeningInterface=eth0) or specifying the"
+                    + " advertised address (e.g. advertisedAddress=172.x.y.z)");
         }
         return addr;
     }
