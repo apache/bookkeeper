@@ -433,7 +433,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
 
         // initialize event loop group
         if (null == eventLoopGroup) {
-            this.eventLoopGroup = getDefaultEventLoopGroup();
+            this.eventLoopGroup = getDefaultEventLoopGroup(conf);
             this.ownEventLoopGroup = true;
         } else {
             this.eventLoopGroup = eventLoopGroup;
@@ -1299,6 +1299,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
      */
     public void asyncIsClosed(long lId, final IsClosedCallback cb, final Object ctx){
         ledgerManager.readLedgerMetadata(lId, new GenericCallback<LedgerMetadata>(){
+            @Override
             public void operationComplete(int rc, LedgerMetadata lm){
                 if (rc == BKException.Code.OK) {
                     cb.isClosedComplete(rc, lm.isClosed(), ctx);
@@ -1328,6 +1329,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
         final Result result = new Result();
 
         final IsClosedCallback cb = new IsClosedCallback(){
+            @Override
             public void isClosedComplete(int rc, boolean isClosed, Object ctx){
                     result.isClosed = isClosed;
                     result.rc = rc;
@@ -1405,9 +1407,9 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
         this.metadataDriver.close();
     }
 
-    static EventLoopGroup getDefaultEventLoopGroup() {
+    static EventLoopGroup getDefaultEventLoopGroup(ClientConfiguration conf) {
         ThreadFactory threadFactory = new DefaultThreadFactory("bookkeeper-io");
-        final int numThreads = Runtime.getRuntime().availableProcessors() * 2;
+        final int numThreads = conf.getNumIOThreads();
 
         if (SystemUtils.IS_OS_LINUX) {
             try {

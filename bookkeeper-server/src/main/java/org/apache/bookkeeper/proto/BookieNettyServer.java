@@ -112,7 +112,7 @@ class BookieNettyServer {
 
         if (!conf.isDisableServerSocketBind()) {
             ThreadFactory threadFactory = new DefaultThreadFactory("bookie-io");
-            final int numThreads = Runtime.getRuntime().availableProcessors() * 2;
+            final int numThreads = conf.getServerNumIOThreads();
 
             EventLoopGroup eventLoopGroup;
             if (SystemUtils.IS_OS_LINUX) {
