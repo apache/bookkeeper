@@ -33,7 +33,6 @@ import org.apache.bookkeeper.client.api.LedgerEntries;
 import org.apache.bookkeeper.client.impl.LedgerEntryImpl;
 import org.apache.bookkeeper.common.concurrent.FutureEventListener;
 import org.apache.bookkeeper.net.BookieSocketAddress;
-import org.apache.bookkeeper.proto.BookieClient;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
@@ -77,10 +76,10 @@ public class LedgerReader {
         }
     }
 
-    private final BookieClient bookieClient;
+    private final ClientContext clientCtx;
 
     public LedgerReader(BookKeeper bkc) {
-        bookieClient = bkc.getBookieClient();
+        clientCtx = bkc.getClientCtx();
     }
 
     public static SortedMap<Long, ? extends List<BookieSocketAddress>> bookiesForLedger(final LedgerHandle lh) {
@@ -123,7 +122,7 @@ public class LedgerReader {
         List<BookieSocketAddress> ensemble = lh.getLedgerMetadata().getEnsemble(eid);
         for (int i = 0; i < writeSet.size(); i++) {
             int idx = writeSet.get(i);
-            bookieClient.readEntry(ensemble.get(idx), lh.getId(), eid, readEntryCallback,
+            clientCtx.getBookieClient().readEntry(ensemble.get(idx), lh.getId(), eid, readEntryCallback,
                                    ensemble.get(idx), BookieProtocol.FLAG_NONE);
         }
     }
@@ -143,7 +142,7 @@ public class LedgerReader {
         final FutureEventListener<LedgerEntries> readListener = new FutureEventListener<LedgerEntries>() {
 
             private void readNext(long entryId) {
-                PendingReadOp op = new PendingReadOp(lh, lh.bk.scheduler, entryId, entryId, false);
+                PendingReadOp op = new PendingReadOp(lh, clientCtx, entryId, entryId, false);
                 op.future().whenComplete(this);
                 op.submit();
             }
@@ -193,12 +192,12 @@ public class LedgerReader {
             }
 
             long entryId = recoveryData.getLastAddConfirmed();
-            PendingReadOp op = new PendingReadOp(lh, lh.bk.scheduler, entryId, entryId, false);
+            PendingReadOp op = new PendingReadOp(lh, clientCtx, entryId, entryId, false);
             op.future().whenComplete(readListener);
             op.submit();
         };
         // Read Last AddConfirmed
-        new ReadLastConfirmedOp(lh, readLACCallback).initiate();
+        new ReadLastConfirmedOp(lh, clientCtx.getBookieClient(), readLACCallback).initiate();
     }
 
     public void readLacs(final LedgerHandle lh, long eid,
@@ -228,7 +227,7 @@ public class LedgerReader {
         List<BookieSocketAddress> ensemble = lh.getLedgerMetadata().getEnsemble(eid);
         for (int i = 0; i < writeSet.size(); i++) {
             int idx = writeSet.get(i);
-            bookieClient.readEntry(ensemble.get(idx), lh.getId(), eid, readEntryCallback,
+            clientCtx.getBookieClient().readEntry(ensemble.get(idx), lh.getId(), eid, readEntryCallback,
                                    ensemble.get(idx), BookieProtocol.FLAG_NONE);
         }
     }

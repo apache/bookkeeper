@@ -59,8 +59,9 @@ public class MockLedgerHandle extends LedgerHandle {
     boolean fenced = false;
 
     MockLedgerHandle(MockBookKeeper bk, long id, DigestType digest, byte[] passwd) throws GeneralSecurityException {
-        super(bk, id, new LedgerMetadata(3, 3, 2, DigestType.MAC, "".getBytes()), DigestType.MAC, "".getBytes(),
-                WriteFlag.NONE);
+        super(bk.getClientCtx(), id,
+              new LedgerMetadata(3, 3, 2, DigestType.MAC, "".getBytes()), DigestType.MAC, "".getBytes(),
+              WriteFlag.NONE);
         this.bk = bk;
         this.id = id;
         this.digest = digest;

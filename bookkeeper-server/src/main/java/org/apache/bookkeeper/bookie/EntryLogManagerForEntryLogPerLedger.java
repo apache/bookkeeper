@@ -61,6 +61,7 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
+import org.apache.bookkeeper.util.IOUtils;
 import org.apache.bookkeeper.util.collections.ConcurrentLongHashMap;
 import org.apache.commons.lang3.mutable.MutableInt;
 
@@ -554,7 +555,9 @@ class EntryLogManagerForEntryLogPerLedger extends EntryLogManagerBase {
     public void close() throws IOException {
         Set<BufferedLogChannelWithDirInfo> copyOfCurrentLogsWithDirInfo = getCopyOfCurrentLogs();
         for (BufferedLogChannelWithDirInfo currentLogWithDirInfo : copyOfCurrentLogsWithDirInfo) {
-            EntryLogger.closeFileChannel(currentLogWithDirInfo.getLogChannel());
+            if (currentLogWithDirInfo.getLogChannel() != null) {
+                currentLogWithDirInfo.getLogChannel().close();
+            }
         }
     }
 
@@ -562,7 +565,7 @@ class EntryLogManagerForEntryLogPerLedger extends EntryLogManagerBase {
     public void forceClose() {
         Set<BufferedLogChannelWithDirInfo> copyOfCurrentLogsWithDirInfo = getCopyOfCurrentLogs();
         for (BufferedLogChannelWithDirInfo currentLogWithDirInfo : copyOfCurrentLogsWithDirInfo) {
-            EntryLogger.forceCloseFileChannel(currentLogWithDirInfo.getLogChannel());
+            IOUtils.close(log, currentLogWithDirInfo.getLogChannel());
         }
     }
 
@@ -652,7 +655,7 @@ class EntryLogManagerForEntryLogPerLedger extends EntryLogManagerBase {
             // since this channel is only used for writing, after flushing the channel,
             // we had to close the underlying file channel. Otherwise, we might end up
             // leaking fds which cause the disk spaces could not be reclaimed.
-            EntryLogger.closeFileChannel(channel);
+            channel.close();
             recentlyCreatedEntryLogsStatus.flushRotatedEntryLog(channel.getLogId());
             rotatedLogChannels.remove(channel);
             log.info("Synced entry logger {} to disk.", channel.getLogId());

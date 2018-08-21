@@ -267,7 +267,7 @@ public class BookKeeperAdmin implements AutoCloseable {
      * @see BookKeeper#asyncOpenLedger
      */
     public void asyncOpenLedger(final long lId, final OpenCallback cb, final Object ctx) {
-        new LedgerOpenOp(bkc, lId, cb, ctx).initiate();
+        new LedgerOpenOp(bkc, bkc.getClientCtx().getClientStats(), lId, cb, ctx).initiate();
     }
 
     /**
@@ -284,7 +284,7 @@ public class BookKeeperAdmin implements AutoCloseable {
         CompletableFuture<LedgerHandle> future = new CompletableFuture<>();
         SyncOpenCallback result = new SyncOpenCallback(future);
 
-        new LedgerOpenOp(bkc, lId, result, null).initiate();
+        new LedgerOpenOp(bkc, bkc.getClientCtx().getClientStats(), lId, result, null).initiate();
 
         return SyncCallbackUtils.waitForResult(future);
     }
@@ -304,7 +304,7 @@ public class BookKeeperAdmin implements AutoCloseable {
      * @see BookKeeper#asyncOpenLedgerNoRecovery
      */
     public void asyncOpenLedgerNoRecovery(final long lId, final OpenCallback cb, final Object ctx) {
-        new LedgerOpenOp(bkc, lId, cb, ctx).initiateWithoutRecovery();
+        new LedgerOpenOp(bkc, bkc.getClientCtx().getClientStats(), lId, cb, ctx).initiateWithoutRecovery();
     }
 
     /**
@@ -322,7 +322,7 @@ public class BookKeeperAdmin implements AutoCloseable {
         CompletableFuture<LedgerHandle> future = new CompletableFuture<>();
         SyncOpenCallback result = new SyncOpenCallback(future);
 
-        new LedgerOpenOp(bkc, lId, result, null)
+        new LedgerOpenOp(bkc, bkc.getClientCtx().getClientStats(), lId, result, null)
                 .initiateWithoutRecovery();
 
         return SyncCallbackUtils.waitForResult(future);
@@ -893,6 +893,7 @@ public class BookKeeperAdmin implements AutoCloseable {
                         try {
                             LedgerFragmentReplicator.SingleFragmentCallback cb =
                                 new LedgerFragmentReplicator.SingleFragmentCallback(ledgerFragmentsMcb, lh,
+                                                                                    bkc.getMainWorkerPool(),
                                         startEntryId, getReplacementBookiesMap(ensemble, targetBookieAddresses));
                             LedgerFragment ledgerFragment = new LedgerFragment(lh,
                                 startEntryId, endEntryId, targetBookieAddresses.keySet());
@@ -1046,6 +1047,7 @@ public class BookKeeperAdmin implements AutoCloseable {
         SingleFragmentCallback cb = new SingleFragmentCallback(
             resultCallBack,
             lh,
+            bkc.getMainWorkerPool(),
             ledgerFragment.getFirstEntryId(),
             getReplacementBookiesMap(ledgerFragment, targetBookieAddresses));
 
@@ -1423,7 +1425,7 @@ public class BookKeeperAdmin implements AutoCloseable {
         }
 
         BookieSocketAddress auditorId =
-            AuditorElector.getCurrentAuditor(new ServerConfiguration(bkc.conf), bkc.getZkHandle());
+            AuditorElector.getCurrentAuditor(new ServerConfiguration(bkc.getConf()), bkc.getZkHandle());
         if (auditorId == null) {
             LOG.error("No auditor elected, though Autorecovery is enabled. So giving up.");
             throw new UnavailableException("No auditor elected, though Autorecovery is enabled. So giving up.");

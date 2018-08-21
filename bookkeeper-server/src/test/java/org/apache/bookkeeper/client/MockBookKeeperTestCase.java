@@ -30,8 +30,6 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import com.google.common.base.Optional;
-
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
@@ -58,7 +56,6 @@ import org.apache.bookkeeper.client.api.OpenBuilder;
 import org.apache.bookkeeper.common.util.OrderedExecutor;
 import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.bookkeeper.conf.ClientConfiguration;
-import org.apache.bookkeeper.feature.Feature;
 import org.apache.bookkeeper.meta.LedgerIdGenerator;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.net.BookieSocketAddress;
@@ -150,22 +147,66 @@ public abstract class MockBookKeeperTestCase {
 
         bk = mock(BookKeeper.class);
 
-        NullStatsLogger nullStatsLogger = setupLoggers();
-
         failedBookies = new ArrayList<>();
         availableBookies = new HashSet<>();
 
         when(bk.getCloseLock()).thenReturn(new ReentrantReadWriteLock());
         when(bk.isClosed()).thenReturn(false);
         when(bk.getBookieWatcher()).thenReturn(bookieWatcher);
-        when(bk.getDisableEnsembleChangeFeature()).thenReturn(mock(Feature.class));
-        when(bk.getExplicitLacInterval()).thenReturn(0);
         when(bk.getMainWorkerPool()).thenReturn(executor);
         when(bk.getBookieClient()).thenReturn(bookieClient);
         when(bk.getScheduler()).thenReturn(scheduler);
-        when(bk.getReadSpeculativeRequestPolicy()).thenReturn(Optional.absent());
-        mockBookKeeperGetConf(new ClientConfiguration());
-        when(bk.getStatsLogger()).thenReturn(nullStatsLogger);
+
+        setBookKeeperConfig(new ClientConfiguration());
+        when(bk.getStatsLogger()).thenReturn(NullStatsLogger.INSTANCE);
+        BookKeeperClientStats clientStats = BookKeeperClientStats.newInstance(NullStatsLogger.INSTANCE);
+        ClientContext clientCtx = new ClientContext() {
+                @Override
+                public ClientInternalConf getConf() {
+                    return ClientInternalConf.fromConfig(bk.getConf());
+                }
+
+                @Override
+                public LedgerManager getLedgerManager() {
+                    return ledgerManager;
+                }
+
+                @Override
+                public BookieWatcher getBookieWatcher() {
+                    return bookieWatcher;
+                }
+
+                @Override
+                public EnsemblePlacementPolicy getPlacementPolicy() {
+                    return null;
+                }
+
+                @Override
+                public BookieClient getBookieClient() {
+                    return bookieClient;
+                }
+
+                @Override
+                public OrderedExecutor getMainWorkerPool() {
+                    return scheduler;
+                }
+
+                @Override
+                public OrderedScheduler getScheduler() {
+                    return scheduler;
+                }
+
+                @Override
+                public BookKeeperClientStats getClientStats() {
+                    return clientStats;
+                }
+
+                @Override
+                public boolean isClientClosed() {
+                    return bk.isClosed();
+                }
+            };
+        when(bk.getClientCtx()).thenReturn(clientCtx);
         when(bk.getLedgerManager()).thenReturn(ledgerManager);
         when(bk.getLedgerIdGenerator()).thenReturn(ledgerIdGenerator);
         when(bk.getReturnRc(anyInt())).thenAnswer(invocationOnMock -> invocationOnMock.getArgument(0));
@@ -184,22 +225,8 @@ public abstract class MockBookKeeperTestCase {
         setupBookieClientForceLedger();
     }
 
-    protected void mockBookKeeperGetConf(ClientConfiguration conf) {
+    protected void setBookKeeperConfig(ClientConfiguration conf) {
         when(bk.getConf()).thenReturn(conf);
-    }
-
-    protected NullStatsLogger setupLoggers() {
-        NullStatsLogger nullStatsLogger = NullStatsLogger.INSTANCE;
-        when(bk.getOpenOpLogger()).thenReturn(nullStatsLogger.getOpStatsLogger("mock"));
-        when(bk.getRecoverOpLogger()).thenReturn(nullStatsLogger.getOpStatsLogger("mock"));
-        when(bk.getAddOpLogger()).thenReturn(nullStatsLogger.getOpStatsLogger("mock"));
-        when(bk.getReadOpLogger()).thenReturn(nullStatsLogger.getOpStatsLogger("mock"));
-        when(bk.getDeleteOpLogger()).thenReturn(nullStatsLogger.getOpStatsLogger("mock"));
-        when(bk.getCreateOpLogger()).thenReturn(nullStatsLogger.getOpStatsLogger("mock"));
-        when(bk.getRecoverAddCountLogger()).thenReturn(nullStatsLogger.getOpStatsLogger("mock"));
-        when(bk.getRecoverReadCountLogger()).thenReturn(nullStatsLogger.getOpStatsLogger("mock"));
-        when(bk.getAddOpUrCounter()).thenReturn(nullStatsLogger.getCounter("mock"));
-        return nullStatsLogger;
     }
 
     private DigestManager getDigestType(long ledgerId) throws GeneralSecurityException {
@@ -216,10 +243,6 @@ public abstract class MockBookKeeperTestCase {
     public void tearDown() {
         scheduler.shutdown();
         executor.shutdown();
-    }
-
-    protected void setBookkeeperConfig(ClientConfiguration config) {
-        when(bk.getConf()).thenReturn(config);
     }
 
     protected CreateBuilder newCreateLedgerOp() {

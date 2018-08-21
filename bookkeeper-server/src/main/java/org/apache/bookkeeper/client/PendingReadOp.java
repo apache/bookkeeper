@@ -30,7 +30,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -44,8 +43,6 @@ import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallbackCtx;
 import org.apache.bookkeeper.proto.checksum.DigestManager;
-import org.apache.bookkeeper.stats.Counter;
-import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.util.MathUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -60,7 +57,6 @@ import org.slf4j.LoggerFactory;
 class PendingReadOp implements ReadEntryCallback, SafeRunnable {
     private static final Logger LOG = LoggerFactory.getLogger(PendingReadOp.class);
 
-    private final ScheduledExecutorService scheduler;
     private ScheduledFuture<?> speculativeTask = null;
     protected final List<LedgerEntryRequest> seq;
     private final CompletableFuture<LedgerEntries> future;
@@ -68,13 +64,12 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
     private final BitSet heardFromHostsBitSet;
     private final Set<BookieSocketAddress> sentToHosts = new HashSet<BookieSocketAddress>();
     LedgerHandle lh;
+    final ClientContext clientCtx;
+
     long numPendingEntries;
-    long startEntryId;
-    long endEntryId;
+    final long startEntryId;
+    final long endEntryId;
     long requestTimeNanos;
-    OpStatsLogger readOpLogger;
-    Counter readOpDmCounter;
-    private final Counter speculativeReadCounter;
 
     final int requiredBookiesMissingEntryForRecovery;
     final boolean isRecoveryRead;
@@ -101,9 +96,8 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
             this.ensemble = ensemble;
             this.eId = eId;
 
-            if (lh.bk.isReorderReadSequence()) {
-                writeSet = lh.bk.getPlacementPolicy()
-                    .reorderReadSequence(
+            if (clientCtx.getConf().enableReorderReadSequence) {
+                writeSet = clientCtx.getPlacementPolicy().reorderReadSequence(
                             ensemble,
                             lh.getBookiesHealthInfo(),
                             lh.distributionSchedule.getWriteSet(eId));
@@ -138,7 +132,7 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
             try {
                 content = lh.macManager.verifyDigestAndReturnData(eId, buffer);
             } catch (BKDigestMatchException e) {
-                readOpDmCounter.inc();
+                clientCtx.getClientStats().getReadOpDmCounter().inc();
                 logErrorAndReattemptRead(bookieIndex, host, "Mac mismatch", BKException.Code.DigestMatchException);
                 return false;
             }
@@ -257,7 +251,7 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
          */
         @Override
         public ListenableFuture<Boolean> issueSpeculativeRequest() {
-            return lh.bk.getMainWorkerPool().submitOrdered(lh.getId(), new Callable<Boolean>() {
+            return clientCtx.getMainWorkerPool().submitOrdered(lh.getId(), new Callable<Boolean>() {
                 @Override
                 public Boolean call() throws Exception {
                     if (!isComplete() && null != maybeSendSpeculativeRead(heardFromHostsBitSet)) {
@@ -372,7 +366,7 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
             // (even for other entries) from any of the other bookies we have sent the
             // request to
             if (sentTo.cardinality() == 0) {
-                speculativeReadCounter.inc();
+                clientCtx.getClientStats().getSpeculativeReadCounter().inc();
                 return sendNextRead();
             } else {
                 return null;
@@ -445,7 +439,7 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
                 for (int i = 0; i < numReplicasTried - 1; i++) {
                     int slowBookieIndex = writeSet.get(i);
                     BookieSocketAddress slowBookieSocketAddress = ensemble.get(slowBookieIndex);
-                    lh.bk.placementPolicy.registerSlowBookie(slowBookieSocketAddress, eId);
+                    clientCtx.getPlacementPolicy().registerSlowBookie(slowBookieSocketAddress, eId);
                 }
             }
             return completed;
@@ -453,39 +447,24 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
     }
 
     PendingReadOp(LedgerHandle lh,
-                  ScheduledExecutorService scheduler,
-                  long startEntryId,
-                  long endEntryId) {
-        this(
-            lh,
-            scheduler,
-            startEntryId,
-            endEntryId,
-            false);
-    }
-
-    PendingReadOp(LedgerHandle lh,
-                  ScheduledExecutorService scheduler,
+                  ClientContext clientCtx,
                   long startEntryId,
                   long endEntryId,
                   boolean isRecoveryRead) {
         this.seq = new ArrayList<>((int) ((endEntryId + 1) - startEntryId));
         this.future = new CompletableFuture<>();
         this.lh = lh;
+        this.clientCtx = clientCtx;
         this.startEntryId = startEntryId;
         this.endEntryId = endEntryId;
-        this.scheduler = scheduler;
         this.isRecoveryRead = isRecoveryRead;
+
         this.allowFailFast = false;
         numPendingEntries = endEntryId - startEntryId + 1;
         requiredBookiesMissingEntryForRecovery = getLedgerMetadata().getWriteQuorumSize()
                 - getLedgerMetadata().getAckQuorumSize() + 1;
         heardFromHosts = new HashSet<>();
         heardFromHostsBitSet = new BitSet(getLedgerMetadata().getEnsembleSize());
-
-        readOpLogger = lh.bk.getReadOpLogger();
-        readOpDmCounter = lh.bk.getReadOpDmCounter();
-        speculativeReadCounter = lh.bk.getSpeculativeReadCounter();
     }
 
     CompletableFuture<LedgerEntries> future() {
@@ -503,6 +482,7 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
         }
     }
 
+    // I don't think this is ever used in production code -Ivan
     PendingReadOp parallelRead(boolean enabled) {
         this.parallelRead = enabled;
         return this;
@@ -513,7 +493,7 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
     }
 
     public void submit() {
-        lh.bk.getMainWorkerPool().executeOrdered(lh.ledgerId, this);
+        clientCtx.getMainWorkerPool().executeOrdered(lh.ledgerId, this);
     }
 
     void initiate() {
@@ -537,8 +517,9 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
         // read the entries.
         for (LedgerEntryRequest entry : seq) {
             entry.read();
-            if (!parallelRead && lh.bk.getReadSpeculativeRequestPolicy().isPresent()) {
-                lh.bk.getReadSpeculativeRequestPolicy().get().initiateSpeculativeRequest(scheduler, entry);
+            if (!parallelRead && clientCtx.getConf().readSpeculativeRequestPolicy.isPresent()) {
+                clientCtx.getConf().readSpeculativeRequestPolicy.get()
+                    .initiateSpeculativeRequest(clientCtx.getScheduler(), entry);
             }
         }
     }
@@ -577,9 +558,8 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
         }
 
         int flags = isRecoveryRead ? BookieProtocol.FLAG_HIGH_PRIORITY : BookieProtocol.FLAG_NONE;
-        lh.bk.getBookieClient().readEntry(to, lh.ledgerId, entry.eId,
-                                          this, new ReadContext(bookieIndex, to, entry),
-                                          flags);
+        clientCtx.getBookieClient().readEntry(to, lh.ledgerId, entry.eId,
+                                              this, new ReadContext(bookieIndex, to, entry), flags);
     }
 
     @Override
@@ -641,12 +621,12 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
                             + "Heard from {} : bitset = {}. First unread entry is {}",
                     lh.getId(), startEntryId, endEntryId, sentToHosts, heardFromHosts, heardFromHostsBitSet,
                     firstUnread);
-            readOpLogger.registerFailedEvent(latencyNanos, TimeUnit.NANOSECONDS);
+            clientCtx.getClientStats().getReadOpLogger().registerFailedEvent(latencyNanos, TimeUnit.NANOSECONDS);
             // release the entries
             seq.forEach(LedgerEntryRequest::close);
             future.completeExceptionally(BKException.create(code));
         } else {
-            readOpLogger.registerSuccessfulEvent(latencyNanos, TimeUnit.NANOSECONDS);
+            clientCtx.getClientStats().getReadOpLogger().registerSuccessfulEvent(latencyNanos, TimeUnit.NANOSECONDS);
             future.complete(LedgerEntriesImpl.create(Lists.transform(seq, input -> input.entryImpl)));
         }
     }
