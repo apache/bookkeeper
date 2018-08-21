@@ -214,14 +214,15 @@ public class BookieRequestProcessor implements RequestProcessor {
                 this.serverCfg.getNumHighPriorityWorkerThreads(),
                 "BookieHighPriorityThread-" + serverCfg.getBookiePort(),
                 OrderedExecutor.NO_TASK_LIMIT, statsLogger);
-        this.requestTimer = new HashedWheelTimer(
-            new ThreadFactoryBuilder().setNameFormat("BookieRequestTimer-%d").build(),
-            this.serverCfg.getRequestTimerTickDurationMs(),
-            TimeUnit.MILLISECONDS, this.serverCfg.getRequestTimerNumTicks());
         this.shFactory = shFactory;
         if (shFactory != null) {
             shFactory.init(NodeType.Server, serverCfg);
         }
+
+        this.requestTimer = new HashedWheelTimer(
+                new ThreadFactoryBuilder().setNameFormat("BookieRequestTimer-%d").build(),
+                this.serverCfg.getRequestTimerTickDurationMs(),
+                TimeUnit.MILLISECONDS, this.serverCfg.getRequestTimerNumTicks());
 
         if (waitTimeoutOnBackpressureMillis > 0) {
             blacklistedChannels = Optional.of(CacheBuilder.newBuilder()
@@ -396,6 +397,7 @@ public class BookieRequestProcessor implements RequestProcessor {
             shutdownExecutor(longPollThreadPool);
         }
         shutdownExecutor(highPriorityThreadPool);
+        requestTimer.stop();
     }
 
     private OrderedExecutor createExecutor(
