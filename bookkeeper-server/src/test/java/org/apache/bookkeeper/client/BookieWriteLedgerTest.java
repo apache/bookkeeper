@@ -26,6 +26,7 @@ import static org.apache.bookkeeper.client.BookKeeperClientStats.CLIENT_SCOPE;
 import static org.apache.bookkeeper.client.BookKeeperClientStats.READ_OP_DM;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -37,6 +38,7 @@ import io.netty.buffer.Unpooled;
 import io.netty.buffer.UnpooledByteBufAllocator;
 
 import java.io.IOException;
+import java.net.URI;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Enumeration;
@@ -60,9 +62,18 @@ import org.apache.bookkeeper.client.api.LedgerEntries;
 import org.apache.bookkeeper.client.api.ReadHandle;
 import org.apache.bookkeeper.client.api.WriteAdvHandle;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.meta.LedgerManagerFactory;
+import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
 import org.apache.bookkeeper.meta.LongHierarchicalLedgerManagerFactory;
+import org.apache.bookkeeper.meta.MetadataBookieDriver;
+import org.apache.bookkeeper.meta.MetadataDrivers;
+import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
 import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.replication.ReplicationTestUtil;
+import org.apache.bookkeeper.replication.ReplicationWorker;
+import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
+import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.zookeeper.KeeperException;
 import org.junit.Assert;
@@ -93,6 +104,10 @@ public class BookieWriteLedgerTest extends
     ArrayList<byte[]> entries2; // generated entries
 
     private final DigestType digestType;
+    private MetadataBookieDriver driver;
+    private LedgerManagerFactory mFactory;
+    private LedgerUnderreplicationManager underReplicationManager;
+    private String basePath = "";
 
     private static class SyncObj {
         volatile int counter;
@@ -111,6 +126,31 @@ public class BookieWriteLedgerTest extends
         // Number Generator
         entries1 = new ArrayList<byte[]>(); // initialize the entries list
         entries2 = new ArrayList<byte[]>(); // initialize the entries list
+        setUpReplication();
+    }
+
+    private void setUpReplication() throws Exception {
+        this.driver = MetadataDrivers.getBookieDriver(
+            URI.create(baseConf.getMetadataServiceUri()));
+        this.driver.initialize(
+            baseConf,
+            () -> {},
+            NullStatsLogger.INSTANCE);
+        // initialize urReplicationManager
+        this.mFactory = driver.getLedgerManagerFactory();
+        this.underReplicationManager = this.mFactory.newLedgerUnderreplicationManager();
+    }
+
+    @Override
+    public void tearDown() throws Exception {
+        super.tearDown();
+        if (null != underReplicationManager){
+            underReplicationManager.close();
+            underReplicationManager = null;
+        }
+        if (null != driver) {
+            driver.close();
+        }
     }
 
     public BookieWriteLedgerTest() {
@@ -168,6 +208,93 @@ public class BookieWriteLedgerTest extends
         }
         readEntries(lh, entries1);
         lh.close();
+    }
+
+    /**
+     * Verify the write ledger handle can receive and process replication worker
+     * ensemble changes to facilitate reads on the write ledger handle.
+     */
+    @Test
+    public void testWriteAndReadOnWriteLedgerHandleWithReplication() throws Exception {
+        // Create a ledger
+        lh = bkc.createLedger(3, 3, 2, digestType, ledgerPassword);
+        // write 10 entries
+        int numEntriesToWrite = 10;
+        int i;
+
+        for (i = 0; i < numEntriesToWrite; i++) {
+            ByteBuffer entry = ByteBuffer.allocate(4);
+            entry.putInt(rng.nextInt(maxInt));
+            entry.position(0);
+            lh.addEntry(entry.array());
+        }
+
+        List<BookieSocketAddress> ensemble1;
+        // Shutdown a bookie in the last ensemble and continue writing
+        List<BookieSocketAddress> ensemble2, ensemble1n;
+        ensemble1 = lh.getLedgerMetadata()
+                .getEnsembles().entrySet().iterator().next().getValue();
+
+        // kill a bookie to force ensemble change
+        killBookie(ensemble1.get(0));
+
+        // write second batch
+        for (i = 0; i < numEntriesToWrite; i++) {
+            ByteBuffer entry = ByteBuffer.allocate(4);
+            entry.putInt(rng.nextInt(maxInt));
+            entry.position(0);
+            lh.addEntry(entry.array());
+        }
+        // Get the latest ensemble
+        ensemble2 = lh.getLedgerMetadata().currentEnsemble;
+
+        assertEquals("Make sure there are two Ensembles", lh.getLedgerMetadata().getEnsembles().entrySet().size(), 2);
+
+        // Grab the first ensemble after ensemble change.
+        ensemble1n = lh.getLedgerMetadata().getEnsembles().entrySet().iterator().next().getValue();
+
+        assertEquals("first bookie of first ensembe must remain same as Replication did not kickin.",
+                ensemble1.get(0), ensemble1n.get(0));
+        assertNotEquals("first bookie of first ensembe and second ensemble must be different.",
+                ensemble1.get(0), ensemble2.get(0));
+
+        // Start the ReplicationWorker
+        ReplicationWorker rw = new ReplicationWorker(zkc, baseConf);
+        rw.start();
+        String zkLedgersRootPath = ZKMetadataDriverBase.resolveZkLedgersRootPath(baseClientConf);
+
+        basePath = zkLedgersRootPath + '/'
+                + BookKeeperConstants.UNDER_REPLICATION_NODE
+                + BookKeeperConstants.DEFAULT_ZK_LEDGERS_ROOT_PATH;
+
+        try {
+            underReplicationManager.markLedgerUnderreplicated(lh.getId(),
+                    ensemble1.get(0).toString());
+            while (ReplicationTestUtil.isLedgerInUnderReplication(zkc, lh
+                    .getId(), basePath)) {
+                Thread.sleep(100);
+            }
+        } finally {
+            rw.shutdown();
+        }
+
+        // After replication get the first ensemble set as it must have changed.
+        ensemble1n = lh.getLedgerMetadata()
+                .getEnsembles().entrySet().iterator().next().getValue();
+
+        assertNotEquals("first bookie of first ensembe must remain same as Replication did not kickin.",
+                ensemble1.get(0), ensemble1n.get(0));
+
+        // write third batch
+        for (i = 0; i < numEntriesToWrite; i++) {
+            ByteBuffer entry = ByteBuffer.allocate(4);
+            entry.putInt(rng.nextInt(maxInt));
+            entry.position(0);
+            lh.addEntry(entry.array());
+        }
+        lh.close();
+        assertEquals("At the end, make sure there are two Ensembles",
+                lh.getLedgerMetadata().getEnsembles().entrySet().size(), 2);
     }
 
     /**
@@ -269,6 +396,7 @@ public class BookieWriteLedgerTest extends
                         .get() > 0);
         lh.close();
     }
+
     /**
      * Verty delayedWriteError causes ensemble changes.
      */
@@ -338,6 +466,7 @@ public class BookieWriteLedgerTest extends
                         bookie1.equals(bookie2));
         lh.close();
     }
+
     /**
      * Verify the functionality Ledgers with different digests.
      *

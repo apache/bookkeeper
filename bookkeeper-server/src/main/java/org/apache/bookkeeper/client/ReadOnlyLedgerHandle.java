@@ -30,7 +30,6 @@ import org.apache.bookkeeper.client.AsyncCallback.ReadCallback;
 import org.apache.bookkeeper.client.AsyncCallback.ReadLastConfirmedCallback;
 import org.apache.bookkeeper.client.api.WriteFlag;
 import org.apache.bookkeeper.net.BookieSocketAddress;
-import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.LedgerMetadataListener;
 import org.apache.bookkeeper.util.SafeRunnable;
 import org.apache.bookkeeper.versioning.Version;
 
@@ -40,7 +39,7 @@ import org.apache.bookkeeper.versioning.Version;
  * the public write operations from LedgerHandle.
  * It should be returned for BookKeeper#openLedger operations.
  */
-class ReadOnlyLedgerHandle extends LedgerHandle implements LedgerMetadataListener {
+class ReadOnlyLedgerHandle extends LedgerHandle {
 
     class MetadataUpdater extends SafeRunnable {
 

@@ -78,6 +78,7 @@ import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
+import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.LedgerMetadataListener;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.TimedGenericCallback;
 import org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.State;
 import org.apache.bookkeeper.proto.checksum.DigestManager;
@@ -87,6 +88,7 @@ import org.apache.bookkeeper.stats.Gauge;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.util.OrderedGenericCallback;
 import org.apache.bookkeeper.util.SafeRunnable;
+import org.apache.bookkeeper.versioning.Version;
 import org.apache.commons.collections4.IteratorUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -95,7 +97,7 @@ import org.slf4j.LoggerFactory;
  * Ledger handle contains ledger metadata and is used to access the read and
  * write operations to a ledger.
  */
-public class LedgerHandle implements WriteHandle {
+public class LedgerHandle implements WriteHandle, LedgerMetadataListener{
     static final Logger LOG = LoggerFactory.getLogger(LedgerHandle.class);
 
     final ClientContext clientCtx;
@@ -193,6 +195,7 @@ public class LedgerHandle implements WriteHandle {
         } else {
             this.throttler = null;
         }
+        bk.getLedgerManager().registerLedgerMetadataListener(ledgerId, this);
 
         macManager = DigestManager.instantiate(ledgerId, password, BookKeeper.DigestType.toProtoDigestType(digestType),
                                                clientCtx.getConf().useV2WireProtocol);
@@ -444,6 +447,7 @@ public class LedgerHandle implements WriteHandle {
     public CompletableFuture<Void> closeAsync() {
         CompletableFuture<Void> result = new CompletableFuture<>();
         SyncCloseCallback callback = new SyncCloseCallback(result);
+        bk.getLedgerManager().unregisterLedgerMetadataListener(ledgerId, this);
         asyncClose(callback, null);
         explicitLacFlushPolicy.stopExplicitLacFlush();
         if (timeoutFuture != null) {
@@ -2337,4 +2341,60 @@ public class LedgerHandle implements WriteHandle {
         }
     }
 
+    class MetadataMerger extends SafeRunnable {
+
+        final LedgerMetadata m;
+
+        MetadataMerger(LedgerMetadata metadata) {
+            this.m = metadata;
+        }
+
+        @Override
+        public void safeRun() {
+            Version.Occurred occurred =
+                    LedgerHandle.this.metadata.getVersion().compare(this.m.getVersion());
+            if (Version.Occurred.BEFORE == occurred) {
+                LOG.info("Updated ledger metadata for ledger {} to {}.", ledgerId, this.m.toSafeString());
+                synchronized (LedgerHandle.this) {
+                    LedgerHandle.this.metadata.setVersion(m.getVersion());
+                    LedgerHandle.this.metadata.mergeEnsembles(m.getEnsembles());
+                }
+            }
+        }
+
+        @Override
+        public String toString() {
+            return String.format("MetadataMerger(%d)", ledgerId);
+        }
+    }
+
+    @Override
+    public void onChanged(long ledgerId, LedgerMetadata newMetadata) {
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Received ledger metadata update on writeHandle {} : {}",
+                    ledgerId, newMetadata);
+        }
+        if (this.ledgerId != ledgerId) {
+            // Ignore
+            return;
+        }
+        if (null == newMetadata) {
+            // Ignore
+            return;
+        }
+        Version.Occurred occurred =
+                this.metadata.getVersion().compare(newMetadata.getVersion());
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Try to merge metadata from {} to {} : {}",
+                    this.metadata, newMetadata, occurred);
+        }
+        if (Version.Occurred.BEFORE == occurred) { // the metadata is updated
+            try {
+                bk.getMainWorkerPool().executeOrdered(ledgerId, new MetadataMerger(newMetadata));
+            } catch (RejectedExecutionException ree) {
+                LOG.error("Failed on submitting updater to merge ledger metadata on ledger {} : {}",
+                        ledgerId, newMetadata);
+            }
+        }
+    }
 }

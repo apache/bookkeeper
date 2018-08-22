@@ -32,7 +32,7 @@ public class ReplicationTestUtil {
     /**
      * Checks whether ledger is in under-replication.
      */
-    static boolean isLedgerInUnderReplication(ZooKeeper zkc, long id,
+    public static boolean isLedgerInUnderReplication(ZooKeeper zkc, long id,
             String basePath) throws KeeperException, InterruptedException {
         List<String> children;
         try {
