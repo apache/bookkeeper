@@ -149,22 +149,26 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCall
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/TryReadLastConfirmedOp.html#completed">completed</a></span></code>&nbsp;</td>
 </tr>
 <tr class="rowColor">
+<td class="colFirst"><code>(package private) <a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/TryReadLastConfirmedOp.html#currentEnsemble">currentEnsemble</a></span></code>&nbsp;</td>
+</tr>
+<tr class="altColor">
 <td class="colFirst"><code>(package private) boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/TryReadLastConfirmedOp.html#hasValidResponse">hasValidResponse</a></span></code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>(package private) <a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/TryReadLastConfirmedOp.html#lh">lh</a></span></code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>(package private) static org.slf4j.Logger</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/TryReadLastConfirmedOp.html#LOG">LOG</a></span></code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>(package private) org.apache.bookkeeper.proto.checksum.DigestManager.RecoveryData</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/TryReadLastConfirmedOp.html#maxRecoveredData">maxRecoveredData</a></span></code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>(package private) int</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/TryReadLastConfirmedOp.html#numResponsesPending">numResponsesPending</a></span></code>&nbsp;</td>
 </tr>
@@ -183,8 +187,9 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCall
 <th class="colOne" scope="col">Constructor and Description</th>
 </tr>
 <tr class="altColor">
-<td class="colOne"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/TryReadLastConfirmedOp.html#TryReadLastConfirmedOp-org.apache.bookkeeper.client.LedgerHandle-org.apache.bookkeeper.proto.BookieClient-org.apache.bookkeeper.client.ReadLastConfirmedOp.LastConfirmedDataCallback-long-">TryReadLastConfirmedOp</a></span>(<a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
+<td class="colOne"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/TryReadLastConfirmedOp.html#TryReadLastConfirmedOp-org.apache.bookkeeper.client.LedgerHandle-org.apache.bookkeeper.proto.BookieClient-java.util.List-org.apache.bookkeeper.client.ReadLastConfirmedOp.LastConfirmedDataCallback-long-">TryReadLastConfirmedOp</a></span>(<a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
                       org.apache.bookkeeper.proto.BookieClient&nbsp;bookieClient,
+                      <a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;ensemble,
                       <a href="../../../../org/apache/bookkeeper/client/ReadLastConfirmedOp.LastConfirmedDataCallback.html" title="interface in org.apache.bookkeeper.client">ReadLastConfirmedOp.LastConfirmedDataCallback</a>&nbsp;cb,
                       long&nbsp;lac)</code>&nbsp;</td>
 </tr>
@@ -303,10 +308,19 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCall
 <a name="maxRecoveredData">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>maxRecoveredData</h4>
 <pre>org.apache.bookkeeper.proto.checksum.DigestManager.RecoveryData maxRecoveredData</pre>
+</li>
+</ul>
+<a name="currentEnsemble">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>currentEnsemble</h4>
+<pre>final&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt; currentEnsemble</pre>
 </li>
 </ul>
 </li>
@@ -317,7 +331,7 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCall
 <!--   -->
 </a>
 <h3>Constructor Detail</h3>
-<a name="TryReadLastConfirmedOp-org.apache.bookkeeper.client.LedgerHandle-org.apache.bookkeeper.proto.BookieClient-org.apache.bookkeeper.client.ReadLastConfirmedOp.LastConfirmedDataCallback-long-">
+<a name="TryReadLastConfirmedOp-org.apache.bookkeeper.client.LedgerHandle-org.apache.bookkeeper.proto.BookieClient-java.util.List-org.apache.bookkeeper.client.ReadLastConfirmedOp.LastConfirmedDataCallback-long-">
 <!--   -->
 </a>
 <ul class="blockListLast">
@@ -325,6 +339,7 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCall
 <h4>TryReadLastConfirmedOp</h4>
 <pre>TryReadLastConfirmedOp(<a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
                        org.apache.bookkeeper.proto.BookieClient&nbsp;bookieClient,
+                       <a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;ensemble,
                        <a href="../../../../org/apache/bookkeeper/client/ReadLastConfirmedOp.LastConfirmedDataCallback.html" title="interface in org.apache.bookkeeper.client">ReadLastConfirmedOp.LastConfirmedDataCallback</a>&nbsp;cb,
                        long&nbsp;lac)</pre>
 </li>

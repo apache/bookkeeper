@@ -182,22 +182,26 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadLacCallba
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/PendingReadLacOp.html#coverageSet">coverageSet</a></span></code>&nbsp;</td>
 </tr>
 <tr class="altColor">
+<td class="colFirst"><code>(package private) <a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/PendingReadLacOp.html#currentEnsemble">currentEnsemble</a></span></code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
 <td class="colFirst"><code>(package private) int</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/PendingReadLacOp.html#lastSeenError">lastSeenError</a></span></code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>(package private) <a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/PendingReadLacOp.html#lh">lh</a></span></code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>(package private) static org.slf4j.Logger</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/PendingReadLacOp.html#LOG">LOG</a></span></code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>(package private) long</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/PendingReadLacOp.html#maxLac">maxLac</a></span></code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>(package private) int</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/PendingReadLacOp.html#numResponsesPending">numResponsesPending</a></span></code>&nbsp;</td>
 </tr>
@@ -216,8 +220,9 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadLacCallba
 <th class="colOne" scope="col">Constructor and Description</th>
 </tr>
 <tr class="altColor">
-<td class="colOne"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/PendingReadLacOp.html#PendingReadLacOp-org.apache.bookkeeper.client.LedgerHandle-org.apache.bookkeeper.proto.BookieClient-org.apache.bookkeeper.client.PendingReadLacOp.LacCallback-">PendingReadLacOp</a></span>(<a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
+<td class="colOne"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/PendingReadLacOp.html#PendingReadLacOp-org.apache.bookkeeper.client.LedgerHandle-org.apache.bookkeeper.proto.BookieClient-java.util.List-org.apache.bookkeeper.client.PendingReadLacOp.LacCallback-">PendingReadLacOp</a></span>(<a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
                 org.apache.bookkeeper.proto.BookieClient&nbsp;bookieClient,
+                <a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;ensemble,
                 <a href="../../../../org/apache/bookkeeper/client/PendingReadLacOp.LacCallback.html" title="interface in org.apache.bookkeeper.client">PendingReadLacOp.LacCallback</a>&nbsp;cb)</code>&nbsp;</td>
 </tr>
 </table>
@@ -344,10 +349,19 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadLacCallba
 <a name="maxLac">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>maxLac</h4>
 <pre>long maxLac</pre>
+</li>
+</ul>
+<a name="currentEnsemble">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>currentEnsemble</h4>
+<pre>final&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt; currentEnsemble</pre>
 </li>
 </ul>
 </li>
@@ -358,7 +372,7 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadLacCallba
 <!--   -->
 </a>
 <h3>Constructor Detail</h3>
-<a name="PendingReadLacOp-org.apache.bookkeeper.client.LedgerHandle-org.apache.bookkeeper.proto.BookieClient-org.apache.bookkeeper.client.PendingReadLacOp.LacCallback-">
+<a name="PendingReadLacOp-org.apache.bookkeeper.client.LedgerHandle-org.apache.bookkeeper.proto.BookieClient-java.util.List-org.apache.bookkeeper.client.PendingReadLacOp.LacCallback-">
 <!--   -->
 </a>
 <ul class="blockListLast">
@@ -366,6 +380,7 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadLacCallba
 <h4>PendingReadLacOp</h4>
 <pre>PendingReadLacOp(<a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
                  org.apache.bookkeeper.proto.BookieClient&nbsp;bookieClient,
+                 <a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;ensemble,
                  <a href="../../../../org/apache/bookkeeper/client/PendingReadLacOp.LacCallback.html" title="interface in org.apache.bookkeeper.client">PendingReadLacOp.LacCallback</a>&nbsp;cb)</pre>
 </li>
 </ul>
