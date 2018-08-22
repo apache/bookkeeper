@@ -66,6 +66,7 @@
     <module>microbenchmarks</module>
     <module>stream/distributedlog</module>
     <module>tools</module>
+    <module>cpu-affinity</module>
   </modules>
   <mailingLists>
     <mailingList>
@@ -179,7 +180,7 @@
     <maven-shade-plugin.version>3.1.0</maven-shade-plugin.version>
     <maven-source-plugin.version>2.2.1</maven-source-plugin.version>
     <maven-surefire-plugin.version>2.21.0</maven-surefire-plugin.version>
-    <nar-maven-plugin.version>3.1.0</nar-maven-plugin.version>
+    <nar-maven-plugin.version>3.5.2</nar-maven-plugin.version>
     <os-maven-plugin.version>1.4.1.Final</os-maven-plugin.version>
     <protobuf-maven-plugin.version>0.5.0</protobuf-maven-plugin.version>
     <puppycrawl.checkstyle.version>6.19</puppycrawl.checkstyle.version>
