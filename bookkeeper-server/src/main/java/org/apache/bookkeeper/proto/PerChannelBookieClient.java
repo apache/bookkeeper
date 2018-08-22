@@ -21,8 +21,6 @@ package org.apache.bookkeeper.proto;
 import static org.apache.bookkeeper.client.LedgerHandle.INVALID_ENTRY_ID;
 
 import com.google.common.base.Joiner;
-import com.google.common.collect.LinkedListMultimap;
-import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Sets;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.ExtensionRegistry;
@@ -70,8 +68,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
+import java.util.Optional;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -125,6 +123,7 @@ import org.apache.bookkeeper.util.ByteBufList;
 import org.apache.bookkeeper.util.MathUtils;
 import org.apache.bookkeeper.util.SafeRunnable;
 import org.apache.bookkeeper.util.collections.ConcurrentOpenHashMap;
+import org.apache.bookkeeper.util.collections.SynchronizedHashMultiMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -163,8 +162,8 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
 
     // Map that hold duplicated read requests. The idea is to only use this map (synchronized) when there is a duplicate
     // read request for the same ledgerId/entryId
-    private final ListMultimap<CompletionKey, CompletionValue> completionObjectsV2Conflicts =
-        LinkedListMultimap.create();
+    private final SynchronizedHashMultiMap<CompletionKey, CompletionValue> completionObjectsV2Conflicts =
+        new SynchronizedHashMultiMap<>();
 
     private final StatsLogger statsLogger;
     private final OpStatsLogger readEntryOpLogger;
@@ -760,9 +759,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         CompletionValue existingValue = completionObjects.putIfAbsent(completionKey, readCompletion);
         if (existingValue != null) {
             // There's a pending read request on same ledger/entry. Use the multimap to track all of them
-            synchronized (completionObjectsV2Conflicts) {
-                completionObjectsV2Conflicts.put(completionKey, readCompletion);
-            }
+            completionObjectsV2Conflicts.put(completionKey, readCompletion);
         }
 
         writeAndFlush(channel, completionKey, request);
@@ -799,16 +796,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
     public void checkTimeoutOnPendingOperations() {
         int timedOutOperations = completionObjects.removeIf(timeoutCheck);
 
-        synchronized (this) {
-            Iterator<CompletionValue> iterator = completionObjectsV2Conflicts.values().iterator();
-            while (iterator.hasNext()) {
-                CompletionValue value = iterator.next();
-                if (value.maybeTimeout()) {
-                    ++timedOutOperations;
-                    iterator.remove();
-                }
-            }
-        }
+        timedOutOperations += completionObjectsV2Conflicts.removeIf(timeoutCheck);
 
         if (timedOutOperations > 0) {
             LOG.info("Timed-out {} operations to channel {} for {}",
@@ -932,6 +920,9 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         CompletionValue completion = completionObjects.remove(key);
         if (completion != null) {
             completion.errorOut();
+        } else {
+            // If there's no completion object here, try in the multimap
+            completionObjectsV2Conflicts.removeAny(key).ifPresent(c -> c.errorOut());
         }
     }
 
@@ -944,14 +935,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
             completion.errorOut(rc);
         } else {
             // If there's no completion object here, try in the multimap
-            synchronized (completionObjectsV2Conflicts) {
-                if (completionObjectsV2Conflicts.containsKey(key)) {
-                    completion = completionObjectsV2Conflicts.get(key).get(0);
-                    completionObjectsV2Conflicts.remove(key, completion);
-
-                    completion.errorOut(rc);
-                }
-            }
+            completionObjectsV2Conflicts.removeAny(key).ifPresent(c -> c.errorOut(rc));
         }
     }
 
@@ -980,16 +964,10 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
      */
 
     void errorOutOutstandingEntries(int rc) {
-        // DO NOT rewrite these using Map.Entry iterations. We want to iterate
-        // on keys and see if we are successfully able to remove the key from
-        // the map. Because the add and the read methods also do the same thing
-        // in case they get a write failure on the socket. The one who
-        // successfully removes the key from the map is the one responsible for
-        // calling the application callback.
-        for (CompletionKey key : completionObjectsV2Conflicts.keySet()) {
-            while (completionObjectsV2Conflicts.get(key).size() > 0) {
-                errorOut(key, rc);
-            }
+        Optional<CompletionKey> multikey = completionObjectsV2Conflicts.getAnyKey();
+        while (multikey.isPresent()) {
+            multikey.ifPresent(k -> errorOut(k, rc));
+            multikey = completionObjectsV2Conflicts.getAnyKey();
         }
         for (CompletionKey key : completionObjects.keys()) {
             errorOut(key, rc);
@@ -1110,12 +1088,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         key.release();
         if (completionValue == null) {
             // If there's no completion object here, try in the multimap
-            synchronized (this) {
-                if (completionObjectsV2Conflicts.containsKey(key)) {
-                    completionValue = completionObjectsV2Conflicts.get(key).get(0);
-                    completionObjectsV2Conflicts.remove(key, completionValue);
-                }
-            }
+            completionValue = completionObjectsV2Conflicts.removeAny(key).orElse(null);
         }
 
         if (null == completionValue) {
