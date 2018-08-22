@@ -30,6 +30,7 @@ import io.netty.util.Recycler.Handle;
 import io.netty.util.ReferenceCountUtil;
 import java.util.EnumSet;
 
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -77,8 +78,10 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
     boolean hasRun;
     EnumSet<WriteFlag> writeFlags;
     boolean allowFailFast = false;
+    List<BookieSocketAddress> ensemble;
 
     static PendingAddOp create(LedgerHandle lh, ClientContext clientCtx,
+                               List<BookieSocketAddress> ensemble,
                                ByteBuf payload, EnumSet<WriteFlag> writeFlags,
                                AddCallbackWithLatency cb, Object ctx) {
         PendingAddOp op = RECYCLER.get();
@@ -93,6 +96,7 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
         op.entryLength = payload.readableBytes();
 
         op.completed = false;
+        op.ensemble = ensemble;
         op.ackSet = lh.getDistributionSchedule().getAckSet();
         op.pendingWriteRequests = 0;
         op.callbackTriggered = false;
@@ -131,10 +135,10 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
         return this.entryId;
     }
 
-    void sendWriteRequest(int bookieIndex) {
+    void sendWriteRequest(List<BookieSocketAddress> ensemble, int bookieIndex) {
         int flags = isRecoveryAdd ? FLAG_RECOVERY_ADD | FLAG_HIGH_PRIORITY : FLAG_NONE;
 
-        clientCtx.getBookieClient().addEntry(lh.getLedgerMetadata().currentEnsemble.get(bookieIndex),
+        clientCtx.getBookieClient().addEntry(ensemble.get(bookieIndex),
                                              lh.ledgerId, lh.ledgerKey, entryId, toSend, this, bookieIndex,
                                              flags, allowFailFast, lh.writeFlags);
         ++pendingWriteRequests;
@@ -168,7 +172,10 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
         }
     }
 
-    void unsetSuccessAndSendWriteRequest(int bookieIndex) {
+    void unsetSuccessAndSendWriteRequest(List<BookieSocketAddress> ensemble, int bookieIndex) {
+        // update the ensemble
+        this.ensemble = ensemble;
+
         if (toSend == null) {
             // this addOp hasn't yet had its mac computed. When the mac is
             // computed, its write requests will be sent, so no need to send it
@@ -216,7 +223,7 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
             completed = false;
         }
 
-        sendWriteRequest(bookieIndex);
+        sendWriteRequest(ensemble, bookieIndex);
     }
 
     /**
@@ -250,9 +257,10 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
         }
         // Iterate over set and trigger the sendWriteRequests
         DistributionSchedule.WriteSet writeSet = lh.distributionSchedule.getWriteSet(entryId);
+
         try {
             for (int i = 0; i < writeSet.size(); i++) {
-                sendWriteRequest(writeSet.get(i));
+                sendWriteRequest(ensemble, writeSet.get(i));
             }
         } finally {
             writeSet.recycle();
@@ -264,7 +272,7 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
         int bookieIndex = (Integer) ctx;
         --pendingWriteRequests;
 
-        if (!lh.getLedgerMetadata().currentEnsemble.get(bookieIndex).equals(addr)) {
+        if (!ensemble.get(bookieIndex).equals(addr)) {
             // ensemble has already changed, failure of this addr is immaterial
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Write did not succeed: " + ledgerId + ", " + entryId + ". But we have already fixed it.");
@@ -460,6 +468,7 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
         }
         cb = null;
         ctx = null;
+        ensemble = null;
         ackSet.recycle();
         ackSet = null;
         lh = null;

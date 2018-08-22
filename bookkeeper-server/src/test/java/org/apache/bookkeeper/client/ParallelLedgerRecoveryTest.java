@@ -300,8 +300,8 @@ public class ParallelLedgerRecoveryTest extends BookKeeperClusterTestCase {
         final LedgerHandle lh = newBk.createLedger(numBookies, 2, 2, digestType, "".getBytes());
         CountDownLatch latch1 = new CountDownLatch(1);
         CountDownLatch latch2 = new CountDownLatch(1);
-        sleepBookie(lh.getLedgerMetadata().currentEnsemble.get(0), latch1);
-        sleepBookie(lh.getLedgerMetadata().currentEnsemble.get(1), latch2);
+        sleepBookie(lh.getCurrentEnsemble().get(0), latch1);
+        sleepBookie(lh.getCurrentEnsemble().get(1), latch2);
 
         int numEntries = (numBookies * 3) + 1;
         final AtomicInteger numPendingAdds = new AtomicInteger(numEntries);
@@ -428,16 +428,17 @@ public class ParallelLedgerRecoveryTest extends BookKeeperClusterTestCase {
         final CountDownLatch addLatch = new CountDownLatch(1);
         final AtomicBoolean addSuccess = new AtomicBoolean(false);
         LOG.info("Add entry {} with lac = {}", entryId, lac);
-        bkc.getBookieClient().addEntry(lh.getLedgerMetadata().currentEnsemble.get(0),
-                                         lh.getId(), lh.ledgerKey, entryId, toSend,
-                                         new WriteCallback() {
-                                             @Override
-                                             public void writeComplete(int rc, long ledgerId, long entryId,
-                                                                       BookieSocketAddress addr, Object ctx) {
-                                                 addSuccess.set(BKException.Code.OK == rc);
-                                                 addLatch.countDown();
-                                             }
-                                         }, 0, BookieProtocol.FLAG_NONE, false, WriteFlag.NONE);
+
+        bkc.getBookieClient().addEntry(lh.getCurrentEnsemble().get(0),
+                                       lh.getId(), lh.ledgerKey, entryId, toSend,
+                                       new WriteCallback() {
+                                           @Override
+                                           public void writeComplete(int rc, long ledgerId, long entryId,
+                                                                     BookieSocketAddress addr, Object ctx) {
+                                               addSuccess.set(BKException.Code.OK == rc);
+                                               addLatch.countDown();
+                                           }
+                                       }, 0, BookieProtocol.FLAG_NONE, false, WriteFlag.NONE);
         addLatch.await();
         assertTrue("add entry 14 should succeed", addSuccess.get());
 
@@ -587,7 +588,7 @@ public class ParallelLedgerRecoveryTest extends BookKeeperClusterTestCase {
         LOG.info("Create ledger {}", lh0.getId());
 
         // 0) place the bookie with a fake bookie
-        BookieSocketAddress address = lh0.getLedgerMetadata().currentEnsemble.get(0);
+        BookieSocketAddress address = lh0.getCurrentEnsemble().get(0);
         ServerConfiguration conf = killBookie(address);
         conf.setLedgerStorageClass(InterleavedLedgerStorage.class.getName());
         DelayResponseBookie fakeBookie = new DelayResponseBookie(conf);
@@ -667,14 +668,16 @@ public class ParallelLedgerRecoveryTest extends BookKeeperClusterTestCase {
         final AtomicLong lacHolder = new AtomicLong(-1234L);
         final AtomicInteger rcHolder = new AtomicInteger(-1234);
         final CountDownLatch doneLatch = new CountDownLatch(1);
-        new ReadLastConfirmedOp(readLh, bkc.getBookieClient(), new ReadLastConfirmedOp.LastConfirmedDataCallback() {
-            @Override
-            public void readLastConfirmedDataComplete(int rc, DigestManager.RecoveryData data) {
-                rcHolder.set(rc);
-                lacHolder.set(data.getLastAddConfirmed());
-                doneLatch.countDown();
-            }
-        }).initiate();
+
+        new ReadLastConfirmedOp(readLh, bkc.getBookieClient(), readLh.getCurrentEnsemble(),
+                new ReadLastConfirmedOp.LastConfirmedDataCallback() {
+                    @Override
+                    public void readLastConfirmedDataComplete(int rc, DigestManager.RecoveryData data) {
+                        rcHolder.set(rc);
+                        lacHolder.set(data.getLastAddConfirmed());
+                        doneLatch.countDown();
+                    }
+                }).initiate();
         doneLatch.await();
         assertEquals(BKException.Code.OK, rcHolder.get());
         assertEquals(1L, lacHolder.get());

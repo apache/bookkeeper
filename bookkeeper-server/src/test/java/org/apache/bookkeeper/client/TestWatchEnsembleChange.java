@@ -93,7 +93,7 @@ public class TestWatchEnsembleChange extends BookKeeperClusterTestCase {
         long lastLAC = readLh.getLastAddConfirmed();
         assertEquals(numEntries - 2, lastLAC);
         List<BookieSocketAddress> ensemble =
-                lh.getLedgerMetadata().currentEnsemble;
+            lh.getCurrentEnsemble();
         for (BookieSocketAddress addr : ensemble) {
             killBookie(addr);
         }

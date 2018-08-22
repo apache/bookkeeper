@@ -51,11 +51,11 @@ public class TestPendingReadLacOp extends BookKeeperClusterTestCase {
         lh.append(data);
 
         final CompletableFuture<Long> result = new CompletableFuture<>();
-        PendingReadLacOp pro = new PendingReadLacOp(lh, bkc.getBookieClient(),
+        PendingReadLacOp pro = new PendingReadLacOp(lh, bkc.getBookieClient(), lh.getCurrentEnsemble(),
                                                     (rc, lac) -> result.complete(lac)) {
             @Override
             public void initiate() {
-                for (int i = 0; i < lh.getLedgerMetadata().currentEnsemble.size(); i++) {
+                for (int i = 0; i < lh.getCurrentEnsemble().size(); i++) {
                     final int index = i;
                     ByteBufList buffer = lh.getDigestManager().computeDigestAndPackageForSending(
                             2,
@@ -71,8 +71,8 @@ public class TestPendingReadLacOp extends BookKeeperClusterTestCase {
                                 index);
 
                     }, 0, TimeUnit.SECONDS);
-                    bookieClient.readLac(lh.getLedgerMetadata().currentEnsemble.get(i),
-                            lh.ledgerId, this, i);
+                    bookieClient.readLac(lh.getCurrentEnsemble().get(i),
+                                         lh.ledgerId, this, i);
                 }
             }
         };
@@ -88,10 +88,11 @@ public class TestPendingReadLacOp extends BookKeeperClusterTestCase {
         lh.append(data);
 
         final CompletableFuture<Long> result = new CompletableFuture<>();
-        PendingReadLacOp pro = new PendingReadLacOp(lh, bkc.getBookieClient(), (rc, lac) -> result.complete(lac)) {
+        PendingReadLacOp pro = new PendingReadLacOp(lh, bkc.getBookieClient(), lh.getCurrentEnsemble(),
+            (rc, lac) -> result.complete(lac)) {
             @Override
             public void initiate() {
-                for (int i = 0; i < lh.getLedgerMetadata().currentEnsemble.size(); i++) {
+                for (int i = 0; i < lh.getCurrentEnsemble().size(); i++) {
                     final int index = i;
                     ByteBufList buffer = lh.getDigestManager().computeDigestAndPackageForSendingLac(1);
                     bkc.scheduler.schedule(() -> {
@@ -102,7 +103,7 @@ public class TestPendingReadLacOp extends BookKeeperClusterTestCase {
                                 null,
                                 index);
                     }, 0, TimeUnit.SECONDS);
-                    bookieClient.readLac(lh.getLedgerMetadata().currentEnsemble.get(i),
+                    bookieClient.readLac(lh.getCurrentEnsemble().get(i),
                             lh.ledgerId, this, i);
                 }
             }

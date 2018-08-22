@@ -153,7 +153,7 @@ public class TestReadLastConfirmedLongPoll extends BookKeeperClusterTestCase {
             ServerConfiguration[] confs = new ServerConfiguration[numEntries - 1];
             for (int j = 0; j < numEntries - 1; j++) {
                 int idx = (i + 1 + j) % numEntries;
-                confs[j] = killBookie(lh.getLedgerMetadata().currentEnsemble.get(idx));
+                confs[j] = killBookie(lh.getCurrentEnsemble().get(idx));
             }
 
             final AtomicBoolean entryAsExpected = new AtomicBoolean(false);
