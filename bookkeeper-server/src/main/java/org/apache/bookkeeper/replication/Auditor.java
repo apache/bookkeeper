@@ -22,6 +22,7 @@ package org.apache.bookkeeper.replication;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Stopwatch;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.SettableFuture;
 import java.io.IOException;
@@ -30,20 +31,21 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 import org.apache.bookkeeper.client.BKException;
+import org.apache.bookkeeper.client.BKException.Code;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
 import org.apache.bookkeeper.client.LedgerChecker;
 import org.apache.bookkeeper.client.LedgerFragment;
 import org.apache.bookkeeper.client.LedgerHandle;
+import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.AbstractZkLedgerManagerFactory;
@@ -366,8 +368,6 @@ public class Auditor implements AutoCloseable {
                             } catch (InterruptedException ie) {
                                 Thread.currentThread().interrupt();
                                 LOG.error("Interrupted while running periodic check", ie);
-                            } catch (BKAuditException bkae) {
-                                LOG.error("Exception while running periodic check", bkae);
                             } catch (BKException bke) {
                                 LOG.error("Exception running periodic check", bke);
                             } catch (IOException ioe) {
@@ -467,8 +467,6 @@ public class Auditor implements AutoCloseable {
             LOG.error("Interrupted while watching available bookies ", ie);
         } catch (BKAuditException bke) {
             LOG.error("Exception while watching available bookies", bke);
-        } catch (KeeperException ke) {
-            LOG.error("Exception reading bookie list", ke);
         }
         if (shutDownTask) {
             submitShutdownTask();
@@ -477,8 +475,7 @@ public class Auditor implements AutoCloseable {
 
     @SuppressWarnings("unchecked")
     private void auditBookies()
-            throws BKAuditException, KeeperException,
-            InterruptedException, BKException {
+            throws BKAuditException, InterruptedException, BKException {
         try {
             waitIfLedgerReplicationDisabled();
         } catch (UnavailableException ue) {
@@ -512,7 +509,12 @@ public class Auditor implements AutoCloseable {
         bookieToLedgersMapCreationTime.registerSuccessfulEvent(stopwatch.elapsed(TimeUnit.MILLISECONDS),
                 TimeUnit.MILLISECONDS);
         if (lostBookies.size() > 0) {
-            handleLostBookies(lostBookies, ledgerDetails);
+            try {
+                FutureUtils.result(
+                    handleLostBookiesAsync(lostBookies, ledgerDetails), ReplicationException.EXCEPTION_HANDLER);
+            } catch (ReplicationException e) {
+                throw new BKAuditException(e.getMessage(), e.getCause());
+            }
             uRLPublishTimeForLostBookies.registerSuccessfulEvent(stopwatch.stop().elapsed(TimeUnit.MILLISECONDS),
                     TimeUnit.MILLISECONDS);
         }
@@ -524,38 +526,33 @@ public class Auditor implements AutoCloseable {
         return bookieLedgerIndexer.getBookieToLedgerIndex();
     }
 
-    private void handleLostBookies(Collection<String> lostBookies,
-            Map<String, Set<Long>> ledgerDetails) throws BKAuditException {
-        LOG.info("Following are the failed bookies: " + lostBookies
-                + " and searching its ledgers for re-replication");
+    private CompletableFuture<?> handleLostBookiesAsync(Collection<String> lostBookies,
+                                                        Map<String, Set<Long>> ledgerDetails) {
+        LOG.info("Following are the failed bookies: {},"
+                + " and searching its ledgers for re-replication", lostBookies);
 
-        for (String bookieIP : lostBookies) {
-            // identify all the ledgers in bookieIP and publishing these ledgers
-            // as under-replicated.
-            publishSuspectedLedgers(bookieIP, ledgerDetails.get(bookieIP));
-        }
+        return FutureUtils.processList(
+            Lists.newArrayList(lostBookies),
+            bookieIP -> publishSuspectedLedgersAsync(
+                Lists.newArrayList(bookieIP), ledgerDetails.get(bookieIP)),
+            null
+        );
     }
 
-    private void publishSuspectedLedgers(String bookieIP, Set<Long> ledgers)
-            throws BKAuditException {
+    private CompletableFuture<?> publishSuspectedLedgersAsync(Collection<String> missingBookies, Set<Long> ledgers) {
         if (null == ledgers || ledgers.size() == 0) {
             // there is no ledgers available for this bookie and just
             // ignoring the bookie failures
-            LOG.info("There is no ledgers for the failed bookie: {}", bookieIP);
-            return;
+            LOG.info("There is no ledgers for the failed bookie: {}", missingBookies);
+            return FutureUtils.Void();
         }
-        LOG.info("Following ledgers: {} of bookie: {} are identified as underreplicated", ledgers, bookieIP);
+        LOG.info("Following ledgers: {} of bookie: {} are identified as underreplicated", ledgers, missingBookies);
         numUnderReplicatedLedger.registerSuccessfulValue(ledgers.size());
-        for (Long ledgerId : ledgers) {
-            try {
-                ledgerUnderreplicationManager.markLedgerUnderreplicated(
-                        ledgerId, bookieIP);
-            } catch (UnavailableException ue) {
-                throw new BKAuditException(
-                        "Failed to publish underreplicated ledger: " + ledgerId
-                                + " of bookie: " + bookieIP, ue);
-            }
-        }
+        return FutureUtils.processList(
+            Lists.newArrayList(ledgers),
+            ledgerId -> ledgerUnderreplicationManager.markLedgerUnderreplicatedAsync(ledgerId, missingBookies),
+            null
+        );
     }
 
     /**
@@ -571,36 +568,29 @@ public class Auditor implements AutoCloseable {
         }
 
         public void operationComplete(int rc, Set<LedgerFragment> fragments) {
-            try {
-                if (rc == BKException.Code.OK) {
-                    Set<BookieSocketAddress> bookies = Sets.newHashSet();
-                    for (LedgerFragment f : fragments) {
-                        bookies.addAll(f.getAddresses());
+            if (rc == BKException.Code.OK) {
+                Set<BookieSocketAddress> bookies = Sets.newHashSet();
+                for (LedgerFragment f : fragments) {
+                    bookies.addAll(f.getAddresses());
+                }
+                publishSuspectedLedgersAsync(
+                    bookies.stream().map(BookieSocketAddress::toString).collect(Collectors.toList()),
+                    Sets.newHashSet(lh.getId())
+                ).whenComplete((result, cause) -> {
+                    if (null != cause) {
+                        callback.processResult(Code.ReplicationException, null, null);
+                    } else {
+                        callback.processResult(Code.OK, null, null);
                     }
-                    for (BookieSocketAddress bookie : bookies) {
-                        publishSuspectedLedgers(bookie.toString(), Sets.newHashSet(lh.getId()));
-                    }
-                }
-                lh.close();
-            } catch (BKException bke) {
-                LOG.error("Error closing lh", bke);
-                if (rc == BKException.Code.OK) {
-                    rc = BKException.Code.ReplicationException;
-                }
-            } catch (InterruptedException ie) {
-                LOG.error("Interrupted publishing suspected ledger", ie);
-                Thread.currentThread().interrupt();
-                if (rc == BKException.Code.OK) {
-                    rc = BKException.Code.InterruptedException;
-                }
-            } catch (BKAuditException bkae) {
-                LOG.error("Auditor exception publishing suspected ledger", bkae);
-                if (rc == BKException.Code.OK) {
-                    rc = BKException.Code.ReplicationException;
-                }
+                });
+            } else {
+                callback.processResult(rc, null, null);
             }
-
-            callback.processResult(rc, null, null);
+            lh.closeAsync().whenComplete((result, cause) -> {
+                if (null != cause) {
+                    LOG.warn("Error closing ledger {} : {}", lh.getId(), cause.getMessage());
+                }
+            });
         }
     }
 
@@ -608,8 +598,7 @@ public class Auditor implements AutoCloseable {
      * List all the ledgers and check them individually. This should not
      * be run very often.
      */
-    void checkAllLedgers() throws BKAuditException, BKException,
-            IOException, InterruptedException, KeeperException {
+    void checkAllLedgers() throws BKException, IOException, InterruptedException, KeeperException {
         ZooKeeper newzk = ZooKeeperClient.newBuilder()
                 .connectString(ZKMetadataDriverBase.resolveZkServers(conf))
                 .sessionTimeoutMs(conf.getZkTimeout())
@@ -622,91 +611,54 @@ public class Auditor implements AutoCloseable {
         try {
             final LedgerChecker checker = new LedgerChecker(client);
 
-            final AtomicInteger returnCode = new AtomicInteger(BKException.Code.OK);
-            final CountDownLatch processDone = new CountDownLatch(1);
+            final CompletableFuture<Void> processFuture = new CompletableFuture<>();
 
-            Processor<Long> checkLedgersProcessor = new Processor<Long>() {
-                @Override
-                public void process(final Long ledgerId,
-                                    final AsyncCallback.VoidCallback callback) {
-                    try {
-                        if (!ledgerUnderreplicationManager.isLedgerReplicationEnabled()) {
-                            LOG.info("Ledger rereplication has been disabled, aborting periodic check");
-                            processDone.countDown();
-                            return;
-                        }
-                    } catch (ReplicationException.UnavailableException ue) {
-                        LOG.error("Underreplication manager unavailable running periodic check", ue);
-                        processDone.countDown();
+            Processor<Long> checkLedgersProcessor = (ledgerId, callback) -> {
+                try {
+                    if (!ledgerUnderreplicationManager.isLedgerReplicationEnabled()) {
+                        LOG.info("Ledger rereplication has been disabled, aborting periodic check");
+                        FutureUtils.complete(processFuture, null);
                         return;
                     }
-
-                    // Do not perform blocking calls that involve making ZK calls from within the ZK
-                    // event thread. Jump to background thread instead to avoid deadlock.
-                    ForkJoinPool.commonPool().execute(() -> {
-                        LedgerHandle lh = null;
-                        try {
-                            lh = admin.openLedgerNoRecovery(ledgerId);
-                            checker.checkLedger(lh,
-                                    new ProcessLostFragmentsCb(lh, callback),
-                                    conf.getAuditorLedgerVerificationPercentage());
-                            // we collect the following stats to get a measure of the
-                            // distribution of a single ledger within the bk cluster
-                            // the higher the number of fragments/bookies, the more distributed it is
-                            numFragmentsPerLedger.registerSuccessfulValue(lh.getNumFragments());
-                            numBookiesPerLedger.registerSuccessfulValue(lh.getNumBookies());
-                            numLedgersChecked.inc();
-                        } catch (BKException.BKNoSuchLedgerExistsException bknsle) {
-                            if (LOG.isDebugEnabled()) {
-                                LOG.debug("Ledger was deleted before we could check it", bknsle);
-                            }
-                            callback.processResult(BKException.Code.OK,
-                                    null, null);
-                            return;
-                        } catch (BKException bke) {
-                            LOG.error("Couldn't open ledger " + ledgerId, bke);
-                            callback.processResult(BKException.Code.BookieHandleNotAvailableException,
-                                    null, null);
-                            return;
-                        } catch (InterruptedException ie) {
-                            LOG.error("Interrupted opening ledger", ie);
-                            Thread.currentThread().interrupt();
-                            callback.processResult(BKException.Code.InterruptedException, null, null);
-                            return;
-                        } finally {
-                            if (lh != null) {
-                                try {
-                                    lh.close();
-                                } catch (BKException bke) {
-                                    LOG.warn("Couldn't close ledger " + ledgerId, bke);
-                                } catch (InterruptedException ie) {
-                                    LOG.warn("Interrupted closing ledger " + ledgerId, ie);
-                                    Thread.currentThread().interrupt();
-                                }
-                            }
-                        }
-                    });
+                } catch (UnavailableException ue) {
+                    LOG.error("Underreplication manager unavailable running periodic check", ue);
+                    FutureUtils.complete(processFuture, null);
+                    return;
                 }
+
+                admin.asyncOpenLedgerNoRecovery(ledgerId, (rc, lh, ctx) -> {
+                    if (Code.OK == rc) {
+                        checker.checkLedger(lh,
+                                // the ledger handle will be closed after checkLedger is done.
+                                new ProcessLostFragmentsCb(lh, callback),
+                                conf.getAuditorLedgerVerificationPercentage());
+                        // we collect the following stats to get a measure of the
+                        // distribution of a single ledger within the bk cluster
+                        // the higher the number of fragments/bookies, the more distributed it is
+                        numFragmentsPerLedger.registerSuccessfulValue(lh.getNumFragments());
+                        numBookiesPerLedger.registerSuccessfulValue(lh.getNumBookies());
+                        numLedgersChecked.inc();
+                    } else if (Code.NoSuchLedgerExistsException == rc) {
+                        if (LOG.isDebugEnabled()) {
+                            LOG.debug("Ledger {} was deleted before we could check it", ledgerId);
+                        }
+                        callback.processResult(Code.OK, null, null);
+                    } else {
+                        LOG.error("Couldn't open ledger {} to check : {}", ledgerId, BKException.getMessage(rc));
+                        callback.processResult(rc, null, null);
+                    }
+                }, null);
             };
 
             ledgerManager.asyncProcessLedgers(checkLedgersProcessor,
-                    new AsyncCallback.VoidCallback() {
-                        @Override
-                        public void processResult(int rc, String s, Object obj) {
-                            returnCode.set(rc);
-                            processDone.countDown();
-                        }
-                    }, null, BKException.Code.OK, BKException.Code.ReadException);
-            try {
-                processDone.await();
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new BKAuditException(
-                        "Exception while checking ledgers", e);
-            }
-            if (returnCode.get() != BKException.Code.OK) {
-                throw BKException.create(returnCode.get());
-            }
+                (rc, path, ctx) -> {
+                    if (Code.OK == rc) {
+                        FutureUtils.complete(processFuture, null);
+                    } else {
+                        FutureUtils.completeExceptionally(processFuture, BKException.create(rc));
+                    }
+                }, null, BKException.Code.OK, BKException.Code.ReadException);
+            FutureUtils.result(processFuture, BKException.HANDLER);
         } finally {
             admin.close();
             client.close();

@@ -18,10 +18,24 @@
 
 package org.apache.bookkeeper.replication;
 
+import java.util.function.Function;
+
 /**
  * Exceptions for use within the replication service.
  */
 public abstract class ReplicationException extends Exception {
+
+    public static final Function<Throwable, ReplicationException> EXCEPTION_HANDLER = cause -> {
+        if (cause instanceof ReplicationException) {
+            return (ReplicationException) cause;
+        } else {
+            if (cause instanceof InterruptedException) {
+                Thread.currentThread().interrupt();
+            }
+            return new UnavailableException(cause.getMessage(), cause);
+        }
+    };
+
     protected ReplicationException(String message, Throwable cause) {
         super(message, cause);
     }

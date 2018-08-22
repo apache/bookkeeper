@@ -20,6 +20,8 @@
  */
 package org.apache.bookkeeper.client;
 
+import java.util.function.Function;
+
 /**
  * Class the enumerates all the possible error conditions.
  *
@@ -27,6 +29,25 @@ package org.apache.bookkeeper.client;
  */
 @SuppressWarnings("serial")
 public abstract class BKException extends org.apache.bookkeeper.client.api.BKException {
+
+    public static final Function<Throwable, BKException> HANDLER = cause -> {
+        if (cause == null) {
+            return null;
+        }
+        if (cause instanceof BKException) {
+            return (BKException) cause;
+        } else {
+            BKException ex;
+            if (cause instanceof InterruptedException) {
+                Thread.currentThread().interrupt();
+                ex = new BKInterruptedException();
+            } else {
+                ex = new BKUnexpectedConditionException();
+            }
+            ex.initCause(cause);
+            return ex;
+        }
+    };
 
     BKException(int code) {
         super(code);
