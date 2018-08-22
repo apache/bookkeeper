@@ -126,6 +126,7 @@ public class ReadLastConfirmedAndEntryOpTest {
         this.mockLh = mock(LedgerHandle.class);
 
         when(mockLh.getId()).thenReturn(LEDGERID);
+        when(mockLh.getCurrentEnsemble()).thenReturn(ensemble);
         when(mockLh.getLedgerMetadata()).thenReturn(ledgerMetadata);
         when(mockLh.getDistributionSchedule()).thenReturn(distributionSchedule);
         digestManager = new DummyDigestManager(LEDGERID, false);
@@ -199,7 +200,7 @@ public class ReadLastConfirmedAndEntryOpTest {
         };
 
         ReadLastConfirmedAndEntryOp op = new ReadLastConfirmedAndEntryOp(
-                mockLh, mockClientCtx, resultCallback, 1L, 10000);
+                mockLh, mockClientCtx, mockLh.getCurrentEnsemble(), resultCallback, 1L, 10000);
         op.initiate();
 
         // wait until all speculative requests are sent

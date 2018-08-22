@@ -146,8 +146,8 @@ public class TestDelayEnsembleChange extends BookKeeperClusterTestCase {
         }
 
         // kill two bookies, but we still have 3 bookies for the ack quorum.
-        ServerConfiguration conf0 = killBookie(lh.getLedgerMetadata().currentEnsemble.get(0));
-        ServerConfiguration conf1 = killBookie(lh.getLedgerMetadata().currentEnsemble.get(1));
+        ServerConfiguration conf0 = killBookie(lh.getCurrentEnsemble().get(0));
+        ServerConfiguration conf1 = killBookie(lh.getCurrentEnsemble().get(1));
 
         for (int i = numEntries; i < 2 * numEntries; i++) {
             lh.addEntry(data);
@@ -213,7 +213,7 @@ public class TestDelayEnsembleChange extends BookKeeperClusterTestCase {
         logger.info("Kill bookie 0 and write {} entries.", numEntries);
 
         // kill two bookies, but we still have 3 bookies for the ack quorum.
-        ServerConfiguration conf0 = killBookie(lh.getLedgerMetadata().currentEnsemble.get(0));
+        ServerConfiguration conf0 = killBookie(lh.getCurrentEnsemble().get(0));
 
         for (int i = numEntries; i < 2 * numEntries; i++) {
             lh.addEntry(data);
@@ -230,7 +230,7 @@ public class TestDelayEnsembleChange extends BookKeeperClusterTestCase {
 
         logger.info("Kill bookie 1 and write another {} entries.", numEntries);
 
-        ServerConfiguration conf1 = killBookie(lh.getLedgerMetadata().currentEnsemble.get(1));
+        ServerConfiguration conf1 = killBookie(lh.getCurrentEnsemble().get(1));
 
         for (int i = 2 * numEntries; i < 3 * numEntries; i++) {
             lh.addEntry(data);
@@ -242,7 +242,7 @@ public class TestDelayEnsembleChange extends BookKeeperClusterTestCase {
 
         logger.info("Kill bookie 2 and write another {} entries.", numEntries);
 
-        ServerConfiguration conf2 = killBookie(lh.getLedgerMetadata().currentEnsemble.get(2));
+        ServerConfiguration conf2 = killBookie(lh.getCurrentEnsemble().get(2));
 
         for (int i = 3 * numEntries; i < 4 * numEntries; i++) {
             lh.addEntry(data);
@@ -304,9 +304,9 @@ public class TestDelayEnsembleChange extends BookKeeperClusterTestCase {
         logger.info("Killed 3 bookies and add {} more entries : {}", numEntries, lh.getLedgerMetadata());
 
         // kill three bookies, but we only have 2 new bookies for ensemble change.
-        ServerConfiguration conf0 = killBookie(lh.getLedgerMetadata().currentEnsemble.get(0));
-        ServerConfiguration conf1 = killBookie(lh.getLedgerMetadata().currentEnsemble.get(1));
-        ServerConfiguration conf2 = killBookie(lh.getLedgerMetadata().currentEnsemble.get(2));
+        ServerConfiguration conf0 = killBookie(lh.getCurrentEnsemble().get(0));
+        ServerConfiguration conf1 = killBookie(lh.getCurrentEnsemble().get(1));
+        ServerConfiguration conf2 = killBookie(lh.getCurrentEnsemble().get(2));
 
         for (int i = numEntries; i < 2 * numEntries; i++) {
             lh.addEntry(data);
@@ -360,7 +360,7 @@ public class TestDelayEnsembleChange extends BookKeeperClusterTestCase {
         // kill 5 bookies to introduce more bookie failure
         List<ServerConfiguration> confs = new ArrayList<ServerConfiguration>(5);
         for (int i = 0; i < 5; i++) {
-            confs.add(killBookie(lh.getLedgerMetadata().currentEnsemble.get(i)));
+            confs.add(killBookie(lh.getCurrentEnsemble().get(i)));
         }
 
         for (int i = numEntries; i < 2 * numEntries; i++) {
@@ -406,7 +406,7 @@ public class TestDelayEnsembleChange extends BookKeeperClusterTestCase {
         }
 
         // kill two bookies, but we still have 3 bookies for the ack quorum.
-        setBookieToReadOnly(lh.getLedgerMetadata().currentEnsemble.get(0));
+        setBookieToReadOnly(lh.getCurrentEnsemble().get(0));
 
         for (int i = numEntries; i < 2 * numEntries; i++) {
             lh.addEntry(data);
@@ -429,8 +429,8 @@ public class TestDelayEnsembleChange extends BookKeeperClusterTestCase {
             lh.addEntry(data);
         }
 
-        BookieSocketAddress failedBookie = lh.getLedgerMetadata().currentEnsemble.get(0);
-        BookieSocketAddress readOnlyBookie = lh.getLedgerMetadata().currentEnsemble.get(1);
+        BookieSocketAddress failedBookie = lh.getCurrentEnsemble().get(0);
+        BookieSocketAddress readOnlyBookie = lh.getCurrentEnsemble().get(1);
         ServerConfiguration conf0 = killBookie(failedBookie);
 
         for (int i = 0; i < numEntries; i++) {
@@ -450,9 +450,9 @@ public class TestDelayEnsembleChange extends BookKeeperClusterTestCase {
         // ensure there is no ensemble changed
         assertEquals("The ensemble should change when a bookie is readonly even if we delay ensemble change.",
             2, lh.getLedgerMetadata().getEnsembles().size());
-        assertEquals(3, lh.getLedgerMetadata().currentEnsemble.size());
-        assertFalse(lh.getLedgerMetadata().currentEnsemble.contains(failedBookie));
-        assertFalse(lh.getLedgerMetadata().currentEnsemble.contains(readOnlyBookie));
+        assertEquals(3, lh.getCurrentEnsemble().size());
+        assertFalse(lh.getCurrentEnsemble().contains(failedBookie));
+        assertFalse(lh.getCurrentEnsemble().contains(readOnlyBookie));
     }
 
 }

@@ -292,7 +292,7 @@ public class BookieWriteLedgerTest extends
         CountDownLatch sleepLatch1 = new CountDownLatch(1);
 
         // get bookie at index-0
-        BookieSocketAddress bookie1 = lh.getLedgerMetadata().currentEnsemble.get(0);
+        BookieSocketAddress bookie1 = lh.getCurrentEnsemble().get(0);
         sleepBookie(bookie1, sleepLatch1);
 
         int i = numEntriesToWrite;
@@ -331,7 +331,7 @@ public class BookieWriteLedgerTest extends
 
         sleepLatch1.countDown();
         // get the bookie at index-0 again, this must be different.
-        BookieSocketAddress bookie2 = lh.getLedgerMetadata().currentEnsemble.get(0);
+        BookieSocketAddress bookie2 = lh.getCurrentEnsemble().get(0);
 
         assertFalse(
                 "Delayed write error must have forced ensemble change",

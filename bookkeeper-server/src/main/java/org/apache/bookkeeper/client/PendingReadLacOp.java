@@ -19,7 +19,10 @@ package org.apache.bookkeeper.client;
 
 import io.netty.buffer.ByteBuf;
 
+import java.util.List;
+
 import org.apache.bookkeeper.client.BKException.BKDigestMatchException;
+import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieClient;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadLacCallback;
 import org.apache.bookkeeper.proto.checksum.DigestManager.RecoveryData;
@@ -51,6 +54,7 @@ class PendingReadLacOp implements ReadLacCallback {
     int lastSeenError = BKException.Code.ReadException;
     final DistributionSchedule.QuorumCoverageSet coverageSet;
     long maxLac = LedgerHandle.INVALID_ENTRY_ID;
+    final List<BookieSocketAddress> currentEnsemble;
 
     /*
      * Wrapper to get Lac from the request
@@ -59,18 +63,18 @@ class PendingReadLacOp implements ReadLacCallback {
         void getLacComplete(int rc, long lac);
     }
 
-    PendingReadLacOp(LedgerHandle lh, BookieClient bookieClient, LacCallback cb) {
+    PendingReadLacOp(LedgerHandle lh, BookieClient bookieClient, List<BookieSocketAddress> ensemble, LacCallback cb) {
         this.lh = lh;
         this.bookieClient = bookieClient;
         this.cb = cb;
-        this.numResponsesPending = lh.getLedgerMetadata().getEnsembleSize();
+        this.numResponsesPending = ensemble.size();
         this.coverageSet = lh.distributionSchedule.getCoverageSet();
+        this.currentEnsemble = ensemble;
     }
 
     public void initiate() {
-        LedgerMetadata metadata = lh.getLedgerMetadata();
-        for (int i = 0; i < metadata.currentEnsemble.size(); i++) {
-            bookieClient.readLac(metadata.currentEnsemble.get(i), lh.ledgerId, this, i);
+        for (int i = 0; i < currentEnsemble.size(); i++) {
+            bookieClient.readLac(currentEnsemble.get(i), lh.ledgerId, this, i);
         }
     }
 
@@ -120,7 +124,7 @@ class PendingReadLacOp implements ReadLacCallback {
                 // Too bad, this bookie did not give us a valid answer, we
                 // still might be able to recover. So, continue
                 LOG.error("Mac mismatch while reading  ledger: " + ledgerId + " LAC from bookie: "
-                        + lh.getLedgerMetadata().currentEnsemble.get(bookieIndex));
+                        + currentEnsemble.get(bookieIndex));
                 rc = BKException.Code.DigestMatchException;
             }
         }

@@ -197,7 +197,7 @@ public class LedgerReader {
             op.submit();
         };
         // Read Last AddConfirmed
-        new ReadLastConfirmedOp(lh, clientCtx.getBookieClient(), readLACCallback).initiate();
+        new ReadLastConfirmedOp(lh, clientCtx.getBookieClient(), lh.getCurrentEnsemble(), readLACCallback).initiate();
     }
 
     public void readLacs(final LedgerHandle lh, long eid,
