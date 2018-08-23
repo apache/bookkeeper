@@ -66,12 +66,12 @@ public class MetadataUpdateLoopTest {
     public void testBasicUpdate() throws Exception {
         try (LedgerManager lm = new MockLedgerManager()) {
             LedgerMetadata initMeta = LedgerMetadataBuilder.create().withEnsembleSize(5)
-                .withEnsembleEntry(0L, Lists.newArrayList(
-                                           new BookieSocketAddress("0.0.0.0:3181"),
-                                           new BookieSocketAddress("0.0.0.1:3181"),
-                                           new BookieSocketAddress("0.0.0.2:3181"),
-                                           new BookieSocketAddress("0.0.0.3:3181"),
-                                           new BookieSocketAddress("0.0.0.4:3181"))).build();
+                .newEnsembleEntry(0L, Lists.newArrayList(
+                                          new BookieSocketAddress("0.0.0.0:3181"),
+                                          new BookieSocketAddress("0.0.0.1:3181"),
+                                          new BookieSocketAddress("0.0.0.2:3181"),
+                                          new BookieSocketAddress("0.0.0.3:3181"),
+                                          new BookieSocketAddress("0.0.0.4:3181"))).build();
             GenericCallbackFuture<LedgerMetadata> promise = new GenericCallbackFuture<>();
             long ledgerId = 1234L;
             lm.createLedgerMetadata(ledgerId, initMeta, promise);
@@ -88,7 +88,7 @@ public class MetadataUpdateLoopTest {
                     (currentMetadata) -> {
                         List<BookieSocketAddress> ensemble = Lists.newArrayList(currentMetadata.getEnsemble(0L));
                         ensemble.set(0, newAddress);
-                        return LedgerMetadataBuilder.from(currentMetadata).withEnsembleEntry(0L, ensemble).build();
+                        return LedgerMetadataBuilder.from(currentMetadata).replaceEnsembleEntry(0L, ensemble).build();
                     },
                     reference::compareAndSet);
             loop.run().get();
@@ -114,7 +114,7 @@ public class MetadataUpdateLoopTest {
             BookieSocketAddress b3 = new BookieSocketAddress("0.0.0.3:3181");
 
             LedgerMetadata initMeta = LedgerMetadataBuilder.create().withEnsembleSize(2)
-                .withEnsembleEntry(0L, Lists.newArrayList(b0, b1)).build();
+                .newEnsembleEntry(0L, Lists.newArrayList(b0, b1)).build();
             GenericCallbackFuture<LedgerMetadata> promise = new GenericCallbackFuture<>();
             lm.createLedgerMetadata(ledgerId, initMeta, promise);
             LedgerMetadata writtenMetadata = promise.get();
@@ -128,7 +128,7 @@ public class MetadataUpdateLoopTest {
                     (currentMetadata) -> {
                         List<BookieSocketAddress> ensemble = Lists.newArrayList(currentMetadata.getEnsemble(0L));
                         ensemble.set(0, b2);
-                        return LedgerMetadataBuilder.from(currentMetadata).withEnsembleEntry(0L, ensemble).build();
+                        return LedgerMetadataBuilder.from(currentMetadata).replaceEnsembleEntry(0L, ensemble).build();
                     },
                     reference1::compareAndSet).run();
 
@@ -141,7 +141,7 @@ public class MetadataUpdateLoopTest {
                     (currentMetadata) -> {
                         List<BookieSocketAddress> ensemble = Lists.newArrayList(currentMetadata.getEnsemble(0L));
                         ensemble.set(1, b3);
-                        return LedgerMetadataBuilder.from(currentMetadata).withEnsembleEntry(0L, ensemble).build();
+                        return LedgerMetadataBuilder.from(currentMetadata).replaceEnsembleEntry(0L, ensemble).build();
                     },
                     reference2::compareAndSet).run();
 
@@ -181,7 +181,7 @@ public class MetadataUpdateLoopTest {
             BookieSocketAddress b2 = new BookieSocketAddress("0.0.0.2:3181");
 
             LedgerMetadata initMeta = LedgerMetadataBuilder.create().withEnsembleSize(2)
-                .withEnsembleEntry(0L, Lists.newArrayList(b0, b1)).build();
+                .newEnsembleEntry(0L, Lists.newArrayList(b0, b1)).build();
             GenericCallbackFuture<LedgerMetadata> promise = new GenericCallbackFuture<>();
             lm.createLedgerMetadata(ledgerId, initMeta, promise);
             LedgerMetadata writtenMetadata = promise.get();
@@ -196,7 +196,7 @@ public class MetadataUpdateLoopTest {
                     (currentMetadata) -> {
                         List<BookieSocketAddress> ensemble = Lists.newArrayList(currentMetadata.getEnsemble(0L));
                         ensemble.set(0, b2);
-                        return LedgerMetadataBuilder.from(currentMetadata).withEnsembleEntry(0L, ensemble).build();
+                        return LedgerMetadataBuilder.from(currentMetadata).replaceEnsembleEntry(0L, ensemble).build();
                     },
                     reference::compareAndSet).run();
             CompletableFuture<LedgerMetadata> loop2 = new MetadataUpdateLoop(
@@ -207,7 +207,7 @@ public class MetadataUpdateLoopTest {
                     (currentMetadata) -> {
                         List<BookieSocketAddress> ensemble = Lists.newArrayList(currentMetadata.getEnsemble(0L));
                         ensemble.set(0, b2);
-                        return LedgerMetadataBuilder.from(currentMetadata).withEnsembleEntry(0L, ensemble).build();
+                        return LedgerMetadataBuilder.from(currentMetadata).replaceEnsembleEntry(0L, ensemble).build();
                     },
                     reference::compareAndSet).run();
 
@@ -237,7 +237,7 @@ public class MetadataUpdateLoopTest {
             BookieSocketAddress b3 = new BookieSocketAddress("0.0.0.3:3181");
 
             LedgerMetadata initMeta = LedgerMetadataBuilder.create().withEnsembleSize(2)
-                .withEnsembleEntry(0L, Lists.newArrayList(b0, b1)).build();
+                .newEnsembleEntry(0L, Lists.newArrayList(b0, b1)).build();
             GenericCallbackFuture<LedgerMetadata> promise = new GenericCallbackFuture<>();
             lm.createLedgerMetadata(ledgerId, initMeta, promise);
             LedgerMetadata writtenMetadata = promise.get();
@@ -252,7 +252,7 @@ public class MetadataUpdateLoopTest {
                     (currentMetadata) -> {
                         List<BookieSocketAddress> ensemble = Lists.newArrayList(currentMetadata.getEnsemble(0L));
                         ensemble.set(0, b2);
-                        return LedgerMetadataBuilder.from(currentMetadata).withEnsembleEntry(0L, ensemble).build();
+                        return LedgerMetadataBuilder.from(currentMetadata).replaceEnsembleEntry(0L, ensemble).build();
                     },
                     reference::compareAndSet).run();
 
@@ -265,7 +265,7 @@ public class MetadataUpdateLoopTest {
                     (currentMetadata) -> {
                         List<BookieSocketAddress> ensemble = Lists.newArrayList(currentMetadata.getEnsemble(0L));
                         ensemble.set(1, b3);
-                        return LedgerMetadataBuilder.from(currentMetadata).withEnsembleEntry(0L, ensemble).build();
+                        return LedgerMetadataBuilder.from(currentMetadata).replaceEnsembleEntry(0L, ensemble).build();
                     },
                     reference::compareAndSet).run();
             Assert.assertEquals(loop2.get(), reference.get());
@@ -305,7 +305,7 @@ public class MetadataUpdateLoopTest {
                 .collect(Collectors.toList());
 
             LedgerMetadata initMeta = LedgerMetadataBuilder.create().withEnsembleSize(ensembleSize)
-                .withEnsembleEntry(0L, initialEnsemble).build();
+                .newEnsembleEntry(0L, initialEnsemble).build();
             GenericCallbackFuture<LedgerMetadata> promise = new GenericCallbackFuture<>();
             lm.createLedgerMetadata(ledgerId, initMeta, promise);
             LedgerMetadata writtenMetadata = promise.get();
@@ -325,7 +325,7 @@ public class MetadataUpdateLoopTest {
                     (currentMetadata) -> {
                         List<BookieSocketAddress> ensemble = Lists.newArrayList(currentMetadata.getEnsemble(0L));
                         ensemble.set(i, replacementBookies.get(i));
-                        return LedgerMetadataBuilder.from(currentMetadata).withEnsembleEntry(0L, ensemble).build();
+                        return LedgerMetadataBuilder.from(currentMetadata).replaceEnsembleEntry(0L, ensemble).build();
                     },
                     reference::compareAndSet).run())
                 .collect(Collectors.toList());
@@ -350,7 +350,7 @@ public class MetadataUpdateLoopTest {
             BookieSocketAddress b1 = new BookieSocketAddress("0.0.0.1:3181");
 
             LedgerMetadata initMeta = LedgerMetadataBuilder.create().withEnsembleSize(1)
-                .withEnsembleEntry(0L, Lists.newArrayList(b0)).build();
+                .newEnsembleEntry(0L, Lists.newArrayList(b0)).build();
             GenericCallbackFuture<LedgerMetadata> promise = new GenericCallbackFuture<>();
             lm.createLedgerMetadata(ledgerId, initMeta, promise);
             LedgerMetadata writtenMetadata = promise.get();
@@ -377,7 +377,7 @@ public class MetadataUpdateLoopTest {
                     (currentMetadata) -> {
                         List<BookieSocketAddress> ensemble = Lists.newArrayList(currentMetadata.getEnsemble(0L));
                         ensemble.set(0, b1);
-                        return LedgerMetadataBuilder.from(currentMetadata).withEnsembleEntry(0L, ensemble).build();
+                        return LedgerMetadataBuilder.from(currentMetadata).replaceEnsembleEntry(0L, ensemble).build();
                     },
                     reference::compareAndSet).run();
             lm.releaseWrites();
