@@ -578,6 +578,8 @@ public class Auditor implements AutoCloseable {
                     Sets.newHashSet(lh.getId())
                 ).whenComplete((result, cause) -> {
                     if (null != cause) {
+                        LOG.error("Auditor exception publishing suspected ledger {} with lost bookies {}",
+                            lh.getId(), bookies, cause);
                         callback.processResult(Code.ReplicationException, null, null);
                     } else {
                         callback.processResult(Code.OK, null, null);
