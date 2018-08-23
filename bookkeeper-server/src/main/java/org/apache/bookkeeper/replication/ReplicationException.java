@@ -29,9 +29,6 @@ public abstract class ReplicationException extends Exception {
         if (cause instanceof ReplicationException) {
             return (ReplicationException) cause;
         } else {
-            if (cause instanceof InterruptedException) {
-                Thread.currentThread().interrupt();
-            }
             return new UnavailableException(cause.getMessage(), cause);
         }
     };

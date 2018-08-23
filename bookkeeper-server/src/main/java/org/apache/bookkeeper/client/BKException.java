@@ -37,13 +37,7 @@ public abstract class BKException extends org.apache.bookkeeper.client.api.BKExc
         if (cause instanceof BKException) {
             return (BKException) cause;
         } else {
-            BKException ex;
-            if (cause instanceof InterruptedException) {
-                Thread.currentThread().interrupt();
-                ex = new BKInterruptedException();
-            } else {
-                ex = new BKUnexpectedConditionException();
-            }
+            BKException ex = new BKUnexpectedConditionException();
             ex.initCause(cause);
             return ex;
         }
