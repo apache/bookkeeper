@@ -18,33 +18,26 @@
 
 package org.apache.bookkeeper.client;
 
-import com.google.common.util.concurrent.FutureCallback;
-import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.RateLimiter;
-import com.google.common.util.concurrent.SettableFuture;
-
-import io.netty.util.concurrent.DefaultThreadFactory;
 
 import java.io.IOException;
-import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
 import org.apache.bookkeeper.bookie.BookieShell.UpdateLedgerNotifier;
+import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.net.BookieSocketAddress;
-import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
+import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallbackFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -54,11 +47,11 @@ import org.slf4j.LoggerFactory;
 public class UpdateLedgerOp {
 
     private static final Logger LOG = LoggerFactory.getLogger(UpdateLedgerOp.class);
-    private final BookKeeper bkc;
+    private final LedgerManager lm;
     private final BookKeeperAdmin admin;
 
     public UpdateLedgerOp(final BookKeeper bkc, final BookKeeperAdmin admin) {
-        this.bkc = bkc;
+        this.lm = bkc.getLedgerManager();
         this.admin = admin;
     }
 
@@ -81,174 +74,100 @@ public class UpdateLedgerOp {
      *             metadata
      */
     public void updateBookieIdInLedgers(final BookieSocketAddress oldBookieId, final BookieSocketAddress newBookieId,
-            final int rate, final int limit, final UpdateLedgerNotifier progressable) throws IOException {
+                                        final int rate, final int limit, final UpdateLedgerNotifier progressable)
+            throws IOException, InterruptedException {
 
-        final ExecutorService executor = Executors
-                .newSingleThreadExecutor(new DefaultThreadFactory("UpdateLedgerThread", true));
         final AtomicInteger issuedLedgerCnt = new AtomicInteger();
         final AtomicInteger updatedLedgerCnt = new AtomicInteger();
-        final Future<?> updateBookieCb = executor.submit(new Runnable() {
+        final CompletableFuture<Void> finalPromise = new CompletableFuture<>();
+        final Set<CompletableFuture<?>> outstanding =
+            Collections.newSetFromMap(new ConcurrentHashMap<CompletableFuture<?>, Boolean>());
+        final RateLimiter throttler = RateLimiter.create(rate);
+        final Iterator<Long> ledgerItr = admin.listLedgers().iterator();
 
-            @Override
-            public void run() {
-                updateLedgers(oldBookieId, newBookieId, rate, limit, progressable);
-            }
+        // iterate through all the ledgers
+        while (ledgerItr.hasNext() && !finalPromise.isDone()
+               && (limit == Integer.MIN_VALUE || issuedLedgerCnt.get() < limit)) {
+            // throttler to control updates per second
+            throttler.acquire();
 
-            private void updateLedgers(final BookieSocketAddress oldBookieId, final BookieSocketAddress newBookieId,
-                    final int rate, final int limit, final UpdateLedgerNotifier progressable) {
-                try {
-                    final AtomicBoolean stop = new AtomicBoolean(false);
-                    final Set<Long> outstandings = Collections.newSetFromMap(new ConcurrentHashMap<Long, Boolean>());
-                    final RateLimiter throttler = RateLimiter.create(rate);
-                    final Iterator<Long> ledgerItr = admin.listLedgers().iterator();
-                    final CountDownLatch syncObj = new CountDownLatch(1);
+            final long ledgerId = ledgerItr.next();
+            issuedLedgerCnt.incrementAndGet();
 
-                    // iterate through all the ledgers
-                    while (ledgerItr.hasNext() && !stop.get()) {
-                        // throttler to control updates per second
-                        throttler.acquire();
+            GenericCallbackFuture<LedgerMetadata> readPromise = new GenericCallbackFuture<>();
+            lm.readLedgerMetadata(ledgerId, readPromise);
+            CompletableFuture<LedgerMetadata> writePromise = readPromise.thenCompose((readMetadata) -> {
+                    AtomicReference<LedgerMetadata> ref = new AtomicReference<>(readMetadata);
+                    return new MetadataUpdateLoop(
+                            lm, ledgerId,
+                            ref::get,
+                            (metadata) -> {
+                                return metadata.getEnsembles().values().stream()
+                                    .flatMap(Collection::stream)
+                                    .filter(b -> b.equals(oldBookieId))
+                                    .count() > 0;
+                            },
+                            (metadata) -> {
+                                return replaceBookieInEnsembles(metadata, oldBookieId, newBookieId);
+                            },
+                            ref::compareAndSet).run();
+                });
 
-                        final Long lId = ledgerItr.next();
-                        final ReadLedgerMetadataCb readCb = new ReadLedgerMetadataCb(bkc, lId, oldBookieId,
-                                newBookieId);
-                        outstandings.add(lId);
+            outstanding.add(writePromise);
+            writePromise.whenComplete((metadata, ex) -> {
+                        if (ex != null
+                            && !(ex instanceof BKException.BKNoSuchLedgerExistsException)) {
+                            String error = String.format("Failed to update ledger metadata %s, replacing %s with %s",
+                                                         ledgerId, oldBookieId, newBookieId);
+                            LOG.error(error, ex);
+                            finalPromise.completeExceptionally(new IOException(error, ex));
+                        } else {
+                            LOG.info("Updated ledger {} metadata, replacing {} with {}",
+                                     ledgerId, oldBookieId, newBookieId);
 
-                        FutureCallback<Void> updateLedgerCb = new UpdateLedgerCb(lId, stop, issuedLedgerCnt,
-                                updatedLedgerCnt, outstandings, syncObj, progressable);
-                        Futures.addCallback(readCb.getFutureListener(), updateLedgerCb);
-
-                        issuedLedgerCnt.incrementAndGet();
-                        if (limit != Integer.MIN_VALUE && issuedLedgerCnt.get() >= limit || !ledgerItr.hasNext()) {
-                            stop.set(true);
+                            updatedLedgerCnt.incrementAndGet();
+                            progressable.progress(updatedLedgerCnt.get(), issuedLedgerCnt.get());
                         }
-                        bkc.getLedgerManager().readLedgerMetadata(lId, readCb);
+                        outstanding.remove(writePromise);
+                    });
+        }
+
+        CompletableFuture.allOf(outstanding.stream().toArray(CompletableFuture[]::new))
+            .whenComplete((res, ex) -> {
+                    if (ex != null) {
+                        finalPromise.completeExceptionally(ex);
+                    } else {
+                        finalPromise.complete(null);
                     }
-                    // waiting till all the issued ledgers are finished
-                    syncObj.await();
-                } catch (IOException ioe) {
-                    LOG.error("Exception while updating ledger", ioe);
-                    throw new RuntimeException("Exception while updating ledger", ioe.getCause());
-                } catch (InterruptedException ie) {
-                    LOG.error("Exception while updating ledger metadata", ie);
-                    Thread.currentThread().interrupt();
-                    throw new RuntimeException("Exception while updating ledger", ie.getCause());
-                }
-            }
-        });
+                });
+
         try {
-            // Wait to finish the issued ledgers.
-            updateBookieCb.get();
-        } catch (ExecutionException ee) {
-            throw new IOException("Exception while updating ledger", ee);
-        } catch (InterruptedException ie) {
-            Thread.currentThread().interrupt();
-            throw new IOException("Exception while updating ledger", ie);
-        } finally {
-            executor.shutdown();
-        }
-    }
-
-    private static final class UpdateLedgerCb implements FutureCallback<Void> {
-        final long ledgerId;
-        final AtomicBoolean stop;
-        final AtomicInteger issuedLedgerCnt;
-        final AtomicInteger updatedLedgerCnt;
-        final Set<Long> outstandings;
-        final CountDownLatch syncObj;
-        final UpdateLedgerNotifier progressable;
-
-        public UpdateLedgerCb(long ledgerId, AtomicBoolean stop, AtomicInteger issuedLedgerCnt,
-                AtomicInteger updatedLedgerCnt, Set<Long> outstandings, CountDownLatch syncObj,
-                UpdateLedgerNotifier progressable) {
-            this.ledgerId = ledgerId;
-            this.stop = stop;
-            this.issuedLedgerCnt = issuedLedgerCnt;
-            this.updatedLedgerCnt = updatedLedgerCnt;
-            this.outstandings = outstandings;
-            this.syncObj = syncObj;
-            this.progressable = progressable;
-        }
-
-        @Override
-        public void onFailure(Throwable th) {
-            LOG.error("Error updating ledger {}", ledgerId, th);
-            stop.set(true);
-            finishUpdateLedger();
-        }
-
-        @Override
-        public void onSuccess(Void obj) {
-            updatedLedgerCnt.incrementAndGet();
-            // may print progress
-            progressable.progress(updatedLedgerCnt.get(), issuedLedgerCnt.get());
-            finishUpdateLedger();
-        }
-
-        private void finishUpdateLedger() {
-            outstandings.remove(ledgerId);
-            if (outstandings.isEmpty() && stop.get()) {
-                LOG.info("Total number of ledgers issued={} updated={}", issuedLedgerCnt.get(), updatedLedgerCnt.get());
-                syncObj.countDown();
+            finalPromise.get();
+            LOG.info("Total number of ledgers issued={} updated={}",
+                     issuedLedgerCnt.get(), updatedLedgerCnt.get());
+        } catch (ExecutionException e) {
+            String error = String.format("Error waiting for ledger metadata updates to complete (replacing %s with %s)",
+                                         oldBookieId, newBookieId);
+            LOG.info(error, e);
+            if (e.getCause() instanceof IOException) {
+                throw (IOException) e.getCause();
+            } else {
+                throw new IOException(error, e);
             }
         }
     }
 
-    private static final class ReadLedgerMetadataCb implements GenericCallback<LedgerMetadata> {
-        final BookKeeper bkc;
-        final Long ledgerId;
-        final BookieSocketAddress curBookieAddr;
-        final BookieSocketAddress toBookieAddr;
-        SettableFuture<Void> future = SettableFuture.create();
-        public ReadLedgerMetadataCb(BookKeeper bkc, Long ledgerId, BookieSocketAddress curBookieAddr,
-                BookieSocketAddress toBookieAddr) {
-            this.bkc = bkc;
-            this.ledgerId = ledgerId;
-            this.curBookieAddr = curBookieAddr;
-            this.toBookieAddr = toBookieAddr;
+    private static LedgerMetadata replaceBookieInEnsembles(LedgerMetadata metadata,
+                                                           BookieSocketAddress oldBookieId,
+                                                           BookieSocketAddress newBookieId) {
+        LedgerMetadataBuilder builder = LedgerMetadataBuilder.from(metadata);
+        for (Map.Entry<Long, ? extends List<BookieSocketAddress>> e : metadata.getEnsembles().entrySet()) {
+            List<BookieSocketAddress> newEnsemble = e.getValue().stream()
+                .map(b -> b.equals(oldBookieId) ? newBookieId : b)
+                .collect(Collectors.toList());
+            builder.replaceEnsembleEntry(e.getKey(), newEnsemble);
         }
 
-        ListenableFuture<Void> getFutureListener() {
-            return future;
-        }
-
-        @Override
-        public void operationComplete(int rc, LedgerMetadata metadata) {
-            if (BKException.Code.NoSuchLedgerExistsException == rc) {
-                future.set(null);
-                return; // this is OK
-            } else if (BKException.Code.OK != rc) {
-                // open ledger failed.
-                LOG.error("Get ledger metadata {} failed: {}", ledgerId, BKException.codeLogger(rc));
-                future.setException(BKException.create(rc));
-                return;
-            }
-            boolean updateEnsemble = false;
-            for (Map.Entry<Long, ? extends List<BookieSocketAddress>> e : metadata.getEnsembles().entrySet()) {
-                List<BookieSocketAddress> newEnsemble = new ArrayList<>(e.getValue());
-                int index = newEnsemble.indexOf(curBookieAddr);
-                if (-1 != index) {
-                    newEnsemble.set(index, toBookieAddr);
-                    metadata.updateEnsemble(e.getKey(), newEnsemble);
-                    updateEnsemble = true;
-                }
-            }
-            if (!updateEnsemble) {
-                future.set(null);
-                return; // ledger doesn't contains the given curBookieId
-            }
-            final GenericCallback<LedgerMetadata> writeCb = new GenericCallback<LedgerMetadata>() {
-                @Override
-                public void operationComplete(int rc, LedgerMetadata result) {
-                    if (rc != BKException.Code.OK) {
-                        // metadata update failed
-                        LOG.error("Ledger {} metadata update failed. Error code {}", ledgerId, rc);
-                        future.setException(BKException.create(rc));
-                        return;
-                    }
-                    future.set(null);
-                }
-            };
-            bkc.getLedgerManager().writeLedgerMetadata(ledgerId, metadata, writeCb);
-        }
+        return builder.build();
     }
 }
