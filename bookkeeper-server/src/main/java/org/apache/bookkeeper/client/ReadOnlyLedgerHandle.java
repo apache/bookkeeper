@@ -211,14 +211,14 @@ class ReadOnlyLedgerHandle extends LedgerHandle implements LedgerMetadataListene
                                                        List<BookieSocketAddress> oldEnsemble,
                                                        Map<Integer, BookieSocketAddress> failedBookies)
             throws BKException.BKNotEnoughBookiesException {
-        List<BookieSocketAddress> newEnsemble = new ArrayList<BookieSocketAddress>(oldEnsemble);
+        List<BookieSocketAddress> newEnsemble = new ArrayList<>(oldEnsemble);
 
         int ensembleSize = metadata.getEnsembleSize();
         int writeQ = metadata.getWriteQuorumSize();
         int ackQ = metadata.getAckQuorumSize();
         Map<String, byte[]> customMetadata = metadata.getCustomMetadata();
 
-        Set<BookieSocketAddress> exclude = new HashSet<BookieSocketAddress>(failedBookies.values());
+        Set<BookieSocketAddress> exclude = new HashSet<>(failedBookies.values());
 
         int replaced = 0;
         for (Map.Entry<Integer, BookieSocketAddress> entry : failedBookies.entrySet()) {
@@ -252,7 +252,7 @@ class ReadOnlyLedgerHandle extends LedgerHandle implements LedgerMetadataListene
     private static Set<Integer> diffEnsemble(List<BookieSocketAddress> e1,
                                              List<BookieSocketAddress> e2) {
         checkArgument(e1.size() == e2.size(), "Ensembles must be of same size");
-        Set<Integer> diff = new HashSet<Integer>();
+        Set<Integer> diff = new HashSet<>();
         for (int i = 0; i < e1.size(); i++) {
             if (!e1.get(i).equals(e2.get(i))) {
                 diff.add(i);
@@ -261,6 +261,13 @@ class ReadOnlyLedgerHandle extends LedgerHandle implements LedgerMetadataListene
         return diff;
     }
 
+    /**
+     * For a read only ledger handle, this method will only ever be called during recovery,
+     * when we are reading forward from LAC and writing back those entries. As such,
+     * unlike with LedgerHandle, we do not want to persist changes to the metadata as they occur,
+     * but rather, we want to defer the persistence until recovery has completed, and do it all
+     * on the close.
+     */
     @Override
     void handleBookieFailure(final Map<Integer, BookieSocketAddress> failedBookies) {
         blockAddCompletions.incrementAndGet();
