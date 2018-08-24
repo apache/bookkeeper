@@ -31,17 +31,10 @@ import org.apache.bookkeeper.versioning.Versioned;
 
 /**
  * Mock implementation of registration client.
+ * All actions take place in a single thread executor, so they are async
+ * w.r.t. the caller.
  */
 public class MockRegistrationClient implements RegistrationClient {
-    /**
-     * Listener to receive changes from the registration service.
-     */
-    /*interface RegistrationListener {
-
-        void onBookiesChanged(Versioned<Set<BookieSocketAddress>> bookies);
-
-        }*/
-
     final ExecutorService executor;
     private long currentVersion = 0;
     private Set<BookieSocketAddress> bookies = new HashSet<BookieSocketAddress>();
