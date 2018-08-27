@@ -26,6 +26,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import lombok.Cleanup;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.proto.DataFormats.UnderreplicatedLedgerFormat;
@@ -215,28 +216,27 @@ public class ZkLedgerUnderreplicationManagerTest extends BookKeeperClusterTestSu
     @Test
     public void testMarkLedgerUnderreplicatedWhenSessionExpired() throws Exception {
         final long ledgerId = 0xabbd00;
-        try (ZooKeeper zk = new ZooKeeper(getZooKeeperConnectString(), 60000, null)) {
-            try (LedgerUnderreplicationManager urMgr = new ZkLedgerUnderreplicationManager(baseServerConf, zk)) {
-                // open another zookeeper client to expire current session
-                try (ZooKeeper newZk = new ZooKeeper(
-                    getZooKeeperConnectString(), 60000, null, zk.getSessionId(), zk.getSessionPasswd()
-                )) {
-                    try {
-                        FutureUtils.result(urMgr.markLedgerUnderreplicatedAsync(
-                            ledgerId, Lists.newArrayList("bookie-1")));
-                        fail("Should fail if encountered zookeeper exceptions");
-                    } catch (KeeperException ke) {
-                        // expected
-                    }
-                    try {
-                        UnderreplicatedLedgerFormat urLedgerFormat =
-                            ZkLedgerUnderreplicationManagerTest.this.urMgr.getLedgerUnreplicationInfo(ledgerId);
-                        fail("The ledger shouldn't been marked as underreplicated");
-                    } catch (NoNodeException nee) {
-                        // expected
-                    }
-                }
-            }
+        @Cleanup
+        ZooKeeper zk = new ZooKeeper(getZooKeeperConnectString(), 60000, null);
+        @Cleanup
+        LedgerUnderreplicationManager urMgr = new ZkLedgerUnderreplicationManager(baseServerConf, zk);
+        // open another zookeeper client to expire current session
+        @Cleanup
+        ZooKeeper newZk = new ZooKeeper(
+            getZooKeeperConnectString(), 60000, null, zk.getSessionId(), zk.getSessionPasswd());
+        try {
+            FutureUtils.result(urMgr.markLedgerUnderreplicatedAsync(
+                ledgerId, Lists.newArrayList("bookie-1")));
+            fail("Should fail if encountered zookeeper exceptions");
+        } catch (KeeperException ke) {
+            // expected
+        }
+        try {
+            UnderreplicatedLedgerFormat urLedgerFormat =
+                ZkLedgerUnderreplicationManagerTest.this.urMgr.getLedgerUnreplicationInfo(ledgerId);
+            fail("The ledger shouldn't been marked as underreplicated");
+        } catch (NoNodeException nee) {
+            // expected
         }
     }
 
