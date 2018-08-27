@@ -52,7 +52,6 @@ import org.apache.bookkeeper.meta.ZkLayoutManager;
 import org.apache.bookkeeper.meta.ZkLedgerUnderreplicationManager;
 import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
 import org.apache.bookkeeper.proto.DataFormats.UnderreplicatedLedgerFormat;
-import org.apache.bookkeeper.replication.ReplicationException.CompatibilityException;
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
 import org.apache.bookkeeper.test.ZooKeeperUtil;
 import org.apache.bookkeeper.util.BookKeeperConstants;
@@ -724,8 +723,7 @@ public class TestLedgerUnderreplicationManager {
     }
 
     private void verifyMarkLedgerUnderreplicated(Collection<String> missingReplica)
-            throws KeeperException, InterruptedException,
-            CompatibilityException, UnavailableException {
+            throws KeeperException, InterruptedException, ReplicationException {
         Long ledgerA = 0xfeadeefdacL;
         String znodeA = getUrLedgerZnode(ledgerA);
         LedgerUnderreplicationManager replicaMgr = lmf1

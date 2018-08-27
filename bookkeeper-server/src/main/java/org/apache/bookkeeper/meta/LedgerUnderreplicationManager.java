@@ -17,11 +17,15 @@
  */
 package org.apache.bookkeeper.meta;
 
+import com.google.common.collect.Lists;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Predicate;
 
+import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.replication.ReplicationException;
 
@@ -29,12 +33,26 @@ import org.apache.bookkeeper.replication.ReplicationException;
  * Interface for marking ledgers which need to be rereplicated.
  */
 public interface LedgerUnderreplicationManager extends AutoCloseable {
+
     /**
      * Mark a ledger as underreplicated. The replication should
      * then check which fragments are underreplicated and rereplicate them
      */
-    void markLedgerUnderreplicated(long ledgerId, String missingReplica)
-            throws ReplicationException.UnavailableException;
+    default void markLedgerUnderreplicated(long ledgerId, String missingReplica) throws ReplicationException {
+        FutureUtils.result(
+            markLedgerUnderreplicatedAsync(
+                ledgerId, Lists.newArrayList(missingReplica)), ReplicationException.EXCEPTION_HANDLER);
+    }
+
+    /**
+     * Mark a ledger as underreplicated with missing bookies. The replication should then
+     * check which fragements are underreplicated and rereplicate them.
+     *
+     * @param ledgerId ledger id
+     * @param missingReplicas missing replicas
+     * @return a future presents the mark result.
+     */
+    CompletableFuture<Void> markLedgerUnderreplicatedAsync(long ledgerId, Collection<String> missingReplicas);
 
     /**
      * Mark a ledger as fully replicated. If the ledger is not
