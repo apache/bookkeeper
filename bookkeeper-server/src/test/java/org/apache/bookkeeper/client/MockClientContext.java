@@ -33,6 +33,7 @@ import org.apache.bookkeeper.meta.MockLedgerManager;
 import org.apache.bookkeeper.proto.BookieClient;
 import org.apache.bookkeeper.proto.MockBookieClient;
 import org.apache.bookkeeper.stats.NullStatsLogger;
+import org.mockito.Mockito;
 
 /**
  * Mock client context to allow testing client functionality with no external dependencies.
@@ -97,38 +98,38 @@ public class MockClientContext implements ClientContext {
         return (MockBookieClient) bookieClient;
     }
 
-    public MockClientContext setConf(ClientInternalConf conf) {
-        this.internalConf = internalConf;
+    public MockClientContext setConf(ClientInternalConf internalConf) {
+        this.internalConf = maybeSpy(internalConf);
         return this;
     }
 
     public MockClientContext setLedgerManager(LedgerManager ledgerManager) {
-        this.ledgerManager = ledgerManager;
+        this.ledgerManager = maybeSpy(ledgerManager);
         return this;
     }
 
     public MockClientContext setBookieWatcher(BookieWatcher bookieWatcher) {
-        this.bookieWatcher = bookieWatcher;
+        this.bookieWatcher = maybeSpy(bookieWatcher);
         return this;
     }
 
     public MockClientContext setPlacementPolicy(EnsemblePlacementPolicy placementPolicy) {
-        this.placementPolicy = placementPolicy;
+        this.placementPolicy = maybeSpy(placementPolicy);
         return this;
     }
 
     public MockClientContext setBookieClient(BookieClient bookieClient) {
-        this.bookieClient = bookieClient;
+        this.bookieClient = maybeSpy(bookieClient);
         return this;
     }
 
     public MockClientContext setMainWorkerPool(OrderedExecutor mainWorkerPool) {
-        this.mainWorkerPool = mainWorkerPool;
+        this.mainWorkerPool = maybeSpy(mainWorkerPool);
         return this;
     }
 
     public MockClientContext setScheduler(OrderedScheduler scheduler) {
-        this.scheduler = scheduler;
+        this.scheduler = maybeSpy(scheduler);
         return this;
     }
 
@@ -143,8 +144,16 @@ public class MockClientContext implements ClientContext {
     }
 
     public MockClientContext setRegistrationClient(MockRegistrationClient regClient) {
-        this.regClient = regClient;
+        this.regClient = maybeSpy(regClient);
         return this;
+    }
+
+    private static <T> T maybeSpy(T orig) {
+        if (Mockito.mockingDetails(orig).isSpy()) {
+            return orig;
+        } else {
+            return Mockito.spy(orig);
+        }
     }
 
     @Override
