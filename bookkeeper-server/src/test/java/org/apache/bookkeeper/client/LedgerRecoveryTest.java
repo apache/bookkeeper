@@ -481,7 +481,7 @@ public class LedgerRecoveryTest extends BookKeeperClusterTestCase {
             .setConf(ClientInternalConf.fromConfig(newConf.setEnableParallelRecoveryRead(true)));
 
         LedgerRecoveryOp recoveryOp = new LedgerRecoveryOp(recoverLh, parallelReadCtx);
-        CompletableFuture<Void> f = recoveryOp.initiate();
+        CompletableFuture<LedgerHandle> f = recoveryOp.initiate();
         f.get(10, TimeUnit.SECONDS);
 
         assertEquals(numEntries, recoveryOp.readCount.get());

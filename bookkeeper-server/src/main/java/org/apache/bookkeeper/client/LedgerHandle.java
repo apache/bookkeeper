@@ -2257,12 +2257,4 @@ public class LedgerHandle implements WriteHandle {
         // becomes a property of the LedgerHandle itself.
         return metadata.getCurrentEnsemble();
     }
-
-    static int getExceptionCode(Throwable t, int defaultCode) {
-        if (t instanceof BKException) {
-            return ((BKException) t).getCode();
-        } else {
-            return defaultCode;
-        }
-    }
 }

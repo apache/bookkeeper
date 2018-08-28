@@ -22,7 +22,6 @@ import com.google.common.annotations.VisibleForTesting;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicLong;
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
-import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryListener;
 import org.apache.bookkeeper.proto.checksum.DigestManager.RecoveryData;
 import org.slf4j.Logger;
@@ -40,7 +39,7 @@ class LedgerRecoveryOp implements ReadEntryListener, AddCallback {
 
     final LedgerHandle lh;
     final ClientContext clientCtx;
-    final CompletableFuture<Void> promise;
+    final CompletableFuture<LedgerHandle> promise;
 
     final AtomicLong readCount, writeCount;
     volatile boolean readDone;
@@ -92,7 +91,7 @@ class LedgerRecoveryOp implements ReadEntryListener, AddCallback {
         return this;
     }
 
-    public CompletableFuture<Void> initiate() {
+    public CompletableFuture<LedgerHandle> initiate() {
         ReadLastConfirmedOp rlcop = new ReadLastConfirmedOp(lh, clientCtx.getBookieClient(), lh.getCurrentEnsemble(),
                 new ReadLastConfirmedOp.LastConfirmedDataCallback() {
                     public void readLastConfirmedDataComplete(int rc, RecoveryData data) {
@@ -129,7 +128,7 @@ class LedgerRecoveryOp implements ReadEntryListener, AddCallback {
         if (BKException.Code.OK == rc) {
             clientCtx.getClientStats().getRecoverAddCountLogger().registerSuccessfulValue(writeCount.get());
             clientCtx.getClientStats().getRecoverReadCountLogger().registerSuccessfulValue(readCount.get());
-            FutureUtils.complete(promise, null);
+            promise.complete(lh);
         } else {
             clientCtx.getClientStats().getRecoverAddCountLogger().registerFailedValue(writeCount.get());
             clientCtx.getClientStats().getRecoverReadCountLogger().registerFailedValue(readCount.get());

@@ -60,9 +60,10 @@ import org.slf4j.LoggerFactory;
  * It should be returned for BookKeeper#openLedger operations.
  */
 class ReadOnlyLedgerHandle extends LedgerHandle implements LedgerMetadataListener {
-    static final Logger LOG = LoggerFactory.getLogger(ReadOnlyLedgerHandle.class);
+    private static final Logger LOG = LoggerFactory.getLogger(ReadOnlyLedgerHandle.class);
 
-    private NavigableMap<Long, List<BookieSocketAddress>> newEnsemblesFromRecovery = new TreeMap<>();
+    private Object metadataLock = new Object();
+    private final NavigableMap<Long, List<BookieSocketAddress>> newEnsemblesFromRecovery = new TreeMap<>();
 
     class MetadataUpdater extends SafeRunnable {
 
@@ -225,11 +226,15 @@ class ReadOnlyLedgerHandle extends LedgerHandle implements LedgerMetadataListene
         for (Map.Entry<Integer, BookieSocketAddress> entry : failedBookies.entrySet()) {
             int idx = entry.getKey();
             BookieSocketAddress addr = entry.getValue();
-            LOG.debug("[EnsembleChange-L{}] replacing bookie: {} index: {}", getId(), addr, idx);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("[EnsembleChange-L{}] replacing bookie: {} index: {}", getId(), addr, idx);
+            }
 
             if (!newEnsemble.get(idx).equals(addr)) {
-                LOG.debug("[EnsembleChange-L{}] Not changing failed bookie {} at index {}, already changed to {}",
-                          getId(), addr, idx, newEnsemble.get(idx));
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("[EnsembleChange-L{}] Not changing failed bookie {} at index {}, already changed to {}",
+                              getId(), addr, idx, newEnsemble.get(idx));
+                }
                 continue;
             }
             try {
@@ -276,7 +281,7 @@ class ReadOnlyLedgerHandle extends LedgerHandle implements LedgerMetadataListene
         // handleBookieFailure should always run in the ordered executor thread for this
         // ledger, so this synchronized should be unnecessary, but putting it here now
         // just in case (can be removed when we validate threads)
-        synchronized (this) {
+        synchronized (metadataLock) {
             long lac = getLastAddConfirmed();
             LedgerMetadata metadata = getLedgerMetadata();
             List<BookieSocketAddress> currentEnsemble = getCurrentEnsemble();
@@ -342,7 +347,7 @@ class ReadOnlyLedgerHandle extends LedgerHandle implements LedgerMetadataListene
             .run()
             .thenCompose((metadata) -> {
                     if (metadata.isClosed()) {
-                        return CompletableFuture.<Void>completedFuture(null);
+                        return CompletableFuture.completedFuture(ReadOnlyLedgerHandle.this);
                     } else {
                         return new LedgerRecoveryOp(ReadOnlyLedgerHandle.this, clientCtx)
                             .setEntryListener(listener)
@@ -352,7 +357,8 @@ class ReadOnlyLedgerHandle extends LedgerHandle implements LedgerMetadataListene
             .thenCompose((ignore) -> closeRecovered())
             .whenComplete((ignore, ex) -> {
                     if (ex != null) {
-                        cb.operationComplete(getExceptionCode(ex, BKException.Code.UnexpectedConditionException), null);
+                        cb.operationComplete(
+                                BKException.getExceptionCode(ex, BKException.Code.UnexpectedConditionException), null);
                     } else {
                         cb.operationComplete(BKException.Code.OK, null);
                     }
@@ -375,28 +381,38 @@ class ReadOnlyLedgerHandle extends LedgerHandle implements LedgerMetadataListene
                     Optional<Long> lastEnsembleKey = metadata.getLastEnsembleKey();
                     checkState(lastEnsembleKey.isPresent(),
                                "Metadata shouldn't have been created without at least one ensemble");
-                    newEnsemblesFromRecovery.entrySet().forEach(
-                            (e) -> {
-                                // Occurs when a bookie need to be replaced at very start of recovery
-                                if (lastEnsembleKey.get().equals(e.getKey())) {
-                                    builder.replaceEnsembleEntry(e.getKey(), e.getValue());
-                                } else {
-                                    builder.newEnsembleEntry(e.getKey(), e.getValue());
-                                }
-                            });
+                    synchronized (metadataLock) {
+                        newEnsemblesFromRecovery.entrySet().forEach(
+                                (e) -> {
+                                    checkState(e.getKey() >= lastEnsembleKey.get(),
+                                               "Once a ledger is in recovery, noone can add ensembles without closing");
+                                    // Occurs when a bookie need to be replaced at very start of recovery
+                                    if (lastEnsembleKey.get().equals(e.getKey())) {
+                                        builder.replaceEnsembleEntry(e.getKey(), e.getValue());
+                                    } else {
+                                        builder.newEnsembleEntry(e.getKey(), e.getValue());
+                                    }
+                                });
+                    }
                     return builder.closingAt(lac, len).build();
                 },
                 this::setLedgerMetadata).run();
-        f.thenRun(() -> newEnsemblesFromRecovery.clear());
+        f.thenRun(() -> {
+                synchronized (metadataLock) {
+                    newEnsemblesFromRecovery.clear();
+                }
+            });
         return f;
     }
 
     @Override
     List<BookieSocketAddress> getCurrentEnsemble() {
-        if (newEnsemblesFromRecovery.size() > 0) {
-            return newEnsemblesFromRecovery.lastEntry().getValue();
-        } else {
-            return super.getCurrentEnsemble();
+        synchronized (metadataLock) {
+            if (!newEnsemblesFromRecovery.isEmpty()) {
+                return newEnsemblesFromRecovery.lastEntry().getValue();
+            } else {
+                return super.getCurrentEnsemble();
+            }
         }
     }
 

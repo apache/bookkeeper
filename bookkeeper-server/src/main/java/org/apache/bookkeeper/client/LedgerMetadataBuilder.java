@@ -22,6 +22,7 @@ import static com.google.common.base.Preconditions.checkState;
 
 import com.google.common.collect.ImmutableMap;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -88,6 +89,11 @@ class LedgerMetadataBuilder {
         builder.version = other.getVersion();
 
         return builder;
+    }
+
+    LedgerMetadataBuilder withPassword(byte[] password) {
+        this.password = Optional.of(Arrays.copyOf(password, password.length));
+        return this;
     }
 
     LedgerMetadataBuilder withEnsembleSize(int ensembleSize) {
