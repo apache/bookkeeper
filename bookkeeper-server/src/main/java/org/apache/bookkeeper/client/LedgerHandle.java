@@ -236,15 +236,25 @@ public class LedgerHandle implements WriteHandle {
                     return pendingAddOps.size();
                 }
             });
-        initializeExplicitLacFlushPolicy();
+
+        initializeWriteHandleState();
+    }
+
+    protected void initializeWriteHandleState() {
+        if (clientCtx.getConf().explicitLacInterval > 0) {
+            explicitLacFlushPolicy = new ExplicitLacFlushPolicy.ExplicitLacFlushPolicyImpl(
+                    this, clientCtx);
+        } else {
+            explicitLacFlushPolicy = ExplicitLacFlushPolicy.VOID_EXPLICITLAC_FLUSH_POLICY;
+        }
 
         if (clientCtx.getConf().addEntryQuorumTimeoutNanos > 0) {
             SafeRunnable monitor = new SafeRunnable() {
-                    @Override
-                    public void safeRun() {
-                        monitorPendingAddOps();
-                    }
-                };
+                @Override
+                public void safeRun() {
+                    monitorPendingAddOps();
+                }
+            };
             this.timeoutFuture = clientCtx.getScheduler().scheduleAtFixedRate(
                     monitor,
                     clientCtx.getConf().timeoutMonitorIntervalSec,
@@ -253,14 +263,10 @@ public class LedgerHandle implements WriteHandle {
         }
     }
 
-    protected void initializeExplicitLacFlushPolicy() {
-        if (!getLedgerMetadata().isClosed()
-            && !(this instanceof ReadOnlyLedgerHandle)
-            && clientCtx.getConf().explicitLacInterval > 0) {
-            explicitLacFlushPolicy = new ExplicitLacFlushPolicy.ExplicitLacFlushPolicyImpl(
-                    this, clientCtx);
-        } else {
-            explicitLacFlushPolicy = ExplicitLacFlushPolicy.VOID_EXPLICITLAC_FLUSH_POLICY;
+    private void tearDownWriteHandleState() {
+        explicitLacFlushPolicy.stopExplicitLacFlush();
+        if (timeoutFuture != null) {
+            timeoutFuture.cancel(false);
         }
     }
 
@@ -447,10 +453,6 @@ public class LedgerHandle implements WriteHandle {
         CompletableFuture<Void> result = new CompletableFuture<>();
         SyncCloseCallback callback = new SyncCloseCallback(result);
         asyncClose(callback, null);
-        explicitLacFlushPolicy.stopExplicitLacFlush();
-        if (timeoutFuture != null) {
-            timeoutFuture.cancel(false);
-        }
         return result;
     }
 
@@ -627,7 +629,7 @@ public class LedgerHandle implements WriteHandle {
                 }
 
                 writeLedgerConfig(new CloseCb());
-
+                tearDownWriteHandleState();
             }
 
             @Override
