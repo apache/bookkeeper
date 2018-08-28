@@ -183,7 +183,8 @@ class ReadOnlyLedgerHandle extends LedgerHandle implements LedgerMetadataListene
     }
 
     @Override
-    protected void initializeExplicitLacFlushPolicy() {
+    protected void initializeWriteHandleState() {
+        // Essentially a noop, we don't want to set up write handle state here for a ReadOnlyLedgerHandle
         explicitLacFlushPolicy = ExplicitLacFlushPolicy.VOID_EXPLICITLAC_FLUSH_POLICY;
     }
 
