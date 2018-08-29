@@ -213,7 +213,7 @@ public class DeferredSyncTest extends MockBookKeeperTestCase {
                 // expected
             }
             LedgerHandle lh = (LedgerHandle) wh;
-            assertTrue(lh.getDelayedWriteFailedBookies().isEmpty());
+            assertTrue(lh.delayedWriteFailedBookies.isEmpty());
         }
     }
 

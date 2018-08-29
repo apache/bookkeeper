@@ -19,6 +19,7 @@ package org.apache.bookkeeper.client;
 
 import static com.google.common.base.Charsets.UTF_8;
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkState;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Optional;
@@ -148,9 +149,14 @@ public class LedgerMetadata implements org.apache.bookkeeper.client.api.LedgerMe
         this.writeQuorumSize = writeQuorumSize;
         this.ackQuorumSize = ackQuorumSize;
         this.state = state;
-        lastEntryId.ifPresent((eid) -> this.lastEntryId = eid);
+        if (lastEntryId.isPresent()) {
+            this.lastEntryId = lastEntryId.get();
+        } else {
+            this.lastEntryId = LedgerHandle.INVALID_ENTRY_ID;
+        }
         length.ifPresent((l) -> this.length = l);
         setEnsembles(ensembles);
+
         if (state != LedgerMetadataFormat.State.CLOSED) {
             currentEnsemble = this.ensembles.lastEntry().getValue();
         }
@@ -788,11 +794,13 @@ public class LedgerMetadata implements org.apache.bookkeeper.client.api.LedgerMe
         return bookies;
     }
 
-    java.util.Optional<Long> getLastEnsembleKey() {
-        if (ensembles.size() > 0) {
-            return java.util.Optional.of(ensembles.lastKey());
-        } else {
-            return java.util.Optional.empty();
-        }
+    List<BookieSocketAddress> getLastEnsembleValue() {
+        checkState(!ensembles.isEmpty(), "Metadata should never be created with no ensembles");
+        return ensembles.lastEntry().getValue();
+    }
+
+    Long getLastEnsembleKey() {
+        checkState(!ensembles.isEmpty(), "Metadata should never be created with no ensembles");
+        return ensembles.lastKey();
     }
 }

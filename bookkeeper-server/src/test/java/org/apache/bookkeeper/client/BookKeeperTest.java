@@ -536,12 +536,9 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
                 }
             }
 
-            try {
-                writeLh.close();
-                fail("should not be able to close the first LedgerHandler as a recovery has been performed");
-            } catch (BKException.BKMetadataVersionException expected) {
-            }
-
+            // should still be able to close as long as recovery closed the ledger
+            // with the same last entryId and length as in the write handle.
+            writeLh.close();
         }
     }
 
