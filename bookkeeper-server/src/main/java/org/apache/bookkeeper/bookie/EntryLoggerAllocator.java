@@ -206,11 +206,12 @@ class EntryLoggerAllocator {
         // wait until the preallocation finished.
         allocatorExecutor.shutdown();
         try {
-            if (!allocatorExecutor.awaitTermination(3, TimeUnit.SECONDS)) {
+            if (!allocatorExecutor.awaitTermination(5, TimeUnit.SECONDS)) {
                 log.warn("Timedout while awaiting for allocatorExecutor's termination, so force shuttingdown");
             }
         } catch (InterruptedException e) {
             log.warn("Got InterruptedException while awaiting termination of allocatorExecutor, so force shuttingdown");
+            Thread.currentThread().interrupt();
         }
         allocatorExecutor.shutdownNow();
 
