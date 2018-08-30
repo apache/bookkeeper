@@ -24,6 +24,8 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.Unpooled;
 import io.netty.util.ReferenceCountUtil;
+
+import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.proto.BookieProtoEncoding.EnDecoder;
@@ -43,9 +45,10 @@ import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
+import org.slf4j.MDC;
 
 /**
- * Benchmarking serialization and deserilization.
+ * Benchmarking serialization and deserialization.
  */
 @BenchmarkMode({ Mode.Throughput })
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
@@ -82,7 +85,7 @@ public class ProtocolBenchmark {
 
     @Benchmark
     public void testAddEntryV2() throws Exception {
-        ByteBufList list = ByteBufList.get(entry.slice());
+        ByteBufList list = ByteBufList.get(entry.retainedSlice());
         BookieProtocol.AddRequest req = BookieProtocol.AddRequest.create(
                 BookieProtocol.CURRENT_PROTOCOL_VERSION,
                 ledgerId,
@@ -122,4 +125,76 @@ public class ProtocolBenchmark {
         ReferenceCountUtil.release(res);
     }
 
+    @Benchmark
+    public void testAddEntryV3WithMdc() throws Exception {
+        MDC.put("parent_id", "LetsPutSomeLongParentRequestIdHere");
+        MDC.put("request_id", "LetsPutSomeLongRequestIdHere");
+        // Build the request and calculate the total size to be included in the packet.
+        BKPacketHeader.Builder headerBuilder = BKPacketHeader.newBuilder()
+                .setVersion(ProtocolVersion.VERSION_THREE)
+                .setOperation(OperationType.ADD_ENTRY)
+                .setTxnId(0L);
+
+        ByteBuf toSend = entry.slice();
+        byte[] toSendArray = new byte[toSend.readableBytes()];
+        toSend.getBytes(toSend.readerIndex(), toSendArray);
+        AddRequest.Builder addBuilder = AddRequest.newBuilder()
+                .setLedgerId(ledgerId)
+                .setEntryId(entryId)
+                .setMasterKey(ByteString.copyFrom(masterKey))
+                .setBody(ByteString.copyFrom(toSendArray))
+                .setFlag(AddRequest.Flag.RECOVERY_ADD);
+
+        Request request = PerChannelBookieClient.appendRequestContext(Request.newBuilder())
+                .setHeader(headerBuilder)
+                .setAddRequest(addBuilder)
+                .build();
+
+        Object res = this.reqEnDeV3.encode(request, ByteBufAllocator.DEFAULT);
+        ReferenceCountUtil.release(res);
+        MDC.clear();
+    }
+
+    static Request.Builder appendRequestContextNoMdc(Request.Builder builder) {
+        final BookkeeperProtocol.ContextPair context1 = BookkeeperProtocol.ContextPair.newBuilder()
+                .setKey("parent_id")
+                .setValue("LetsPutSomeLongParentRequestIdHere")
+                .build();
+        builder.addRequestContext(context1);
+
+        final BookkeeperProtocol.ContextPair context2 = BookkeeperProtocol.ContextPair.newBuilder()
+                .setKey("request_id")
+                .setValue("LetsPutSomeLongRequestIdHere")
+                .build();
+        builder.addRequestContext(context2);
+
+        return builder;
+    }
+
+    @Benchmark
+    public void testAddEntryV3WithExtraContextDataNoMdc() throws Exception {
+        // Build the request and calculate the total size to be included in the packet.
+        BKPacketHeader.Builder headerBuilder = BKPacketHeader.newBuilder()
+                .setVersion(ProtocolVersion.VERSION_THREE)
+                .setOperation(OperationType.ADD_ENTRY)
+                .setTxnId(0L);
+
+        ByteBuf toSend = entry.slice();
+        byte[] toSendArray = new byte[toSend.readableBytes()];
+        toSend.getBytes(toSend.readerIndex(), toSendArray);
+        AddRequest.Builder addBuilder = AddRequest.newBuilder()
+                .setLedgerId(ledgerId)
+                .setEntryId(entryId)
+                .setMasterKey(ByteString.copyFrom(masterKey))
+                .setBody(ByteString.copyFrom(toSendArray))
+                .setFlag(AddRequest.Flag.RECOVERY_ADD);
+
+        Request request = appendRequestContextNoMdc(Request.newBuilder())
+                .setHeader(headerBuilder)
+                .setAddRequest(addBuilder)
+                .build();
+
+        Object res = this.reqEnDeV3.encode(request, ByteBufAllocator.DEFAULT);
+        ReferenceCountUtil.release(res);
+    }
 }
