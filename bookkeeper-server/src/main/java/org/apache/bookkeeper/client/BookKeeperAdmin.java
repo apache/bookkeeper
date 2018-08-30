@@ -893,7 +893,7 @@ public class BookKeeperAdmin implements AutoCloseable {
                         try {
                             LedgerFragmentReplicator.SingleFragmentCallback cb =
                                 new LedgerFragmentReplicator.SingleFragmentCallback(ledgerFragmentsMcb, lh,
-                                                                                    bkc.getMainWorkerPool(),
+                                                                                    bkc.getLedgerManager(),
                                         startEntryId, getReplacementBookiesMap(ensemble, targetBookieAddresses));
                             LedgerFragment ledgerFragment = new LedgerFragment(lh,
                                 startEntryId, endEntryId, targetBookieAddresses.keySet());
@@ -1047,7 +1047,7 @@ public class BookKeeperAdmin implements AutoCloseable {
         SingleFragmentCallback cb = new SingleFragmentCallback(
             resultCallBack,
             lh,
-            bkc.getMainWorkerPool(),
+            bkc.getLedgerManager(),
             ledgerFragment.getFirstEntryId(),
             getReplacementBookiesMap(ledgerFragment, targetBookieAddresses));
 
