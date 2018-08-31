@@ -9,6 +9,7 @@ twitter_url: https://twitter.com/asfbookkeeper
 
 versions:
 # [next_version_placeholder]
+- "4.7.2"
 - "4.7.1"
 - "4.7.0"
 - "4.6.2"
@@ -30,9 +31,9 @@ archived_versions:
 - "4.1.0"
 - "4.0.0"
 latest_version: "4.8.0-SNAPSHOT"
-latest_release: "4.7.1"
+latest_release: "4.7.2"
 stable_release: "4.6.2"
-distributedlog_version: "4.7.1"
+distributedlog_version: "4.7.2"
 
 defaults:
 - scope:

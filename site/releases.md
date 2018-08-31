@@ -62,6 +62,16 @@ Client Guide | API docs
 
 ## News
 
+### 29 August, 2018: Release 4.7.2 available
+
+This is the 12th release of Apache BookKeeper!
+
+The 4.7.2 release is a bugfix release which fixes a bunch of issues reported from users of 4.7.1. These fixes include
+bug fixes around DbLedgerStorage, failure handling around ensemble changes, bookie shutdown and such.
+
+See [BookKeeper 4.7.2 Release Notes](../docs/4.7.2/overview/releaseNotes) for details.
+
+
 ### 19 June, 2018: Release 4.7.1 available
 
 This is the 11th release of Apache BookKeeper!
