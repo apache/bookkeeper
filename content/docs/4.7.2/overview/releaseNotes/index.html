@@ -475,60 +475,48 @@
 
       <div class="content">
         <section class="bk-main-content">
-          <p>This is the eleventh release of Apache BookKeeper!</p>
+          <p>This is the 12th release of Apache BookKeeper!</p>
 
-<p>The 4.7.2 release is a bugfix release which fixes a bunch of issues reported from users of 4.7.0.</p>
+<p>The 4.7.2 release is a bugfix release which fixes a bunch of issues reported from users of 4.7.1.</p>
 
-<p>Apache BookKeeper users who are using 4.7.0 are encouraged to upgrade to 4.7.2. The technical details of this release are summarized
+<p>Apache BookKeeper users who are using 4.7.1 are encouraged to upgrade to 4.7.2. The technical details of this release are summarized
 below.</p>
 
 <h2 id="highlights">Highlights</h2>
 
 <ul>
   <li>
-    <p>Performance enhancement on eliminating bytes copying in <code class="highlighter-rouge">AddEntry</code> code path, see <a href="https://github.com/apache/bookkeeper/pull/1361">apache/bookkeeper#1361</a></p>
+    <p>Fix high cpu usage issue in DbLedgerStorage by avoiding using RocksDD#deleteRange, see <a href="https://github.com/apache/bookkeeper/pull/1620">apache/bookkeeper#1620</a></p>
   </li>
   <li>
-    <p>Introduce Fast and Garbage-Free Statistics Timers in Codahale Stats Provider, see <a href="https://github.com/apache/bookkeeper/pull/1364">apache/bookkeeper#1364</a></p>
+    <p>Fix deadlock in Auditor blocking zookeeper thread, see <a href="https://github.com/apache/bookkeeper/pull/1619">apache/bookkeeper#1619</a></p>
   </li>
   <li>
-    <p>Fix OrderedScheduler handling null key, see <a href="https://github.com/apache/bookkeeper/pull/1372">apache/bookkeeper#1372</a></p>
+    <p>Fix ArrayIndexOutOfBoundsException on ConcurrentLongHashMap, see <a href="https://github.com/apache/bookkeeper/pull/1606">apache/bookkeeper#1606</a></p>
   </li>
   <li>
-    <p>Fix zookeeper ledger manager on handling no ledger exists, see <a href="https://github.com/apache/bookkeeper/pull/1382">apache/bookkeeper#1382</a></p>
+    <p>Fix deferred failure handling causes data loss, see <a href="https://github.com/apache/bookkeeper/pull/1591">apache/bookkeeper#1591</a></p>
   </li>
   <li>
-    <p>Fix long poll reads when ensemble size is larger than write quorum size, see <a href="https://github.com/apache/bookkeeper/pull/1404">apache/bookkeeper#1404</a></p>
+    <p>Fix ConcurrentModificationException using nonblocking logReader#readNext, see <a href="https://github.com/apache/bookkeeper/pull/1544">apache/bookkeeper#1544</a></p>
   </li>
   <li>
-    <p>Fix IllegalReferenceCount on filling readahead cache for DbLedgerStorage, see <a href="https://github.com/apache/bookkeeper/issues/1487">apache/bookkeeper#1487</a></p>
+    <p>Fix Bookie shutdown fails to exit, see <a href="https://github.com/apache/bookkeeper/issues/1543">apache/bookkeeper#1543</a></p>
   </li>
   <li>
-    <p>Fix LedgerEntry recycling issue on long poll speculative reads, see <a href="https://github.com/apache/bookkeeper/pull/1509">apache/bookkeeper#1509</a></p>
-  </li>
-  <li>
-    <p>Various bug fixes and improvements around bookkeeper table service, see changes under <a href="https://github.com/apache/bookkeeper/issues?utf8=%E2%9C%93&amp;q=is%3Aclosed+label%3Aarea%2Ftableservice+label%3Arelease%2F4.7.1">apache/bookkeeper#release/4.7.2</a></p>
+    <p>Fix race conditions on accessing guava multimap in PCBC when using v2 protocol, see <a href="https://github.com/apache/bookkeeper/pull/1618">apache/bookkeeper#1618</a></p>
   </li>
 </ul>
 
-<h3 id="dependencies-upgrade">Dependencies Upgrade</h3>
+<h3 id="dependency-changes">Dependency Changes</h3>
 
-<p>Here is a list of dependencies changed in 4.7.2:</p>
-
-<ul>
-  <li><a href="https://grpc.io/">Grpc</a> is upgraded from <code class="highlighter-rouge">1.5.0</code> to <code class="highlighter-rouge">1.12.0</code>. See <a href="https://github.com/apache/bookkeeper/pull/1441">apache/bookkeeper#1441</a></li>
-  <li><a href="http://netty.io/">Netty</a> is upgraded from <code class="highlighter-rouge">4.1.12</code> to <code class="highlighter-rouge">4.1.22</code>. See <a href="https://github.com/apache/bookkeeper/pull/1441">apache/bookkeeper#1441</a></li>
-  <li><a href="https://developers.google.com/protocol-buffers/">Protobuf</a> is upgraded from <code class="highlighter-rouge">3.4.0</code> to <code class="highlighter-rouge">3.5.1</code>. See <a href="https://github.com/apache/bookkeeper/pull/1466">apache/bookkeeper#1466</a></li>
-  <li><a href="http://rocksdb.org/">RocksDB</a> is upgraded from <code class="highlighter-rouge">5.8.6</code> to <code class="highlighter-rouge">5.13.1</code>. See <a href="https://github.com/apache/bookkeeper/pull/1466">apache/bookkeeper#1466</a></li>
-</ul>
-
-<p><code class="highlighter-rouge">Reflective setAccessible(true)</code> is disabled by default in Netty while using java9+. This might result in performance degradation. Consider reenabling <code class="highlighter-rouge">Reflective setAccessible(true)</code> by setting
-environment value <code class="highlighter-rouge">io.netty.tryReflectionSetAccessible</code> to <code class="highlighter-rouge">true</code>. See <a href="https://github.com/netty/netty/pull/7650">netty/netty#7650</a> for more details.</p>
+<p>In 4.7.2, <a href="https://zookeeper.apache.org/">Zookeeper</a> version is downgraded from <code class="highlighter-rouge">3.5.3-beta</code> to <code class="highlighter-rouge">3.4.13</code> to avoid having a <code class="highlighter-rouge">beta</code> dependency and address maturity concerns.
+The downgrade is safe and smooth. No extra actions are required from switching bookkeeper 4.7.1 to 4.7.2.</p>
 
 <h2 id="full-list-of-changes">Full list of changes</h2>
 
 <ul>
-  <li><a href="https://github.com/apache/bookkeeper/issues?q=label%3Arelease%2F4.7.1+is%3Aclosed">https://github.com/apache/bookkeeper/issues?q=label%3Arelease%2F4.7.2+is%3Aclosed</a></li>
+  <li><a href="https://github.com/apache/bookkeeper/issues?q=label%3Arelease%2F4.7.2+is%3Aclosed">https://github.com/apache/bookkeeper/issues?q=label%3Arelease%2F4.7.2+is%3Aclosed</a></li>
 </ul>
 
         </section>
@@ -544,7 +532,7 @@ environment value <code class="highlighter-rouge">io.netty.tryReflectionSetAcces
   <h2 class="title">Apache BookKeeper 4.7.2 Release Notes</h2>
   <ul class="section-nav">
 <li class="toc-entry toc-h2"><a href="#highlights">Highlights</a></li>
-<li class="toc-entry toc-h3"><a href="#dependencies-upgrade">Dependencies Upgrade</a></li>
+<li class="toc-entry toc-h3"><a href="#dependency-changes">Dependency Changes</a></li>
 <li class="toc-entry toc-h2"><a href="#full-list-of-changes">Full list of changes</a></li>
 </ul>
 </div>
