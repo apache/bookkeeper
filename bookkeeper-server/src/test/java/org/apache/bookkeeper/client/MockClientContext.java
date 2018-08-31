@@ -20,15 +20,27 @@
  */
 package org.apache.bookkeeper.client;
 
+import static com.google.common.base.Preconditions.checkState;
+
 import java.util.function.BooleanSupplier;
 
 import org.apache.bookkeeper.common.util.OrderedExecutor;
 import org.apache.bookkeeper.common.util.OrderedScheduler;
+import org.apache.bookkeeper.conf.ClientConfiguration;
+import org.apache.bookkeeper.discover.MockRegistrationClient;
 import org.apache.bookkeeper.meta.LedgerManager;
+import org.apache.bookkeeper.meta.MockLedgerManager;
 import org.apache.bookkeeper.proto.BookieClient;
+import org.apache.bookkeeper.proto.MockBookieClient;
+import org.apache.bookkeeper.stats.NullStatsLogger;
+import org.mockito.Mockito;
 
-class MockClientContext implements ClientContext {
-    private ClientInternalConf conf;
+/**
+ * Mock client context to allow testing client functionality with no external dependencies.
+ * The client context can be created with defaults, copied from another context or constructed from scratch.
+ */
+public class MockClientContext implements ClientContext {
+    private ClientInternalConf internalConf;
     private LedgerManager ledgerManager;
     private BookieWatcher bookieWatcher;
     private EnsemblePlacementPolicy placementPolicy;
@@ -37,6 +49,26 @@ class MockClientContext implements ClientContext {
     private OrderedScheduler scheduler;
     private BookKeeperClientStats clientStats;
     private BooleanSupplier isClientClosed;
+    private MockRegistrationClient regClient;
+
+    static MockClientContext create() {
+        ClientConfiguration conf = new ClientConfiguration();
+        OrderedScheduler scheduler = OrderedScheduler.newSchedulerBuilder().name("mock-executor").numThreads(1).build();
+        MockRegistrationClient regClient = new MockRegistrationClient();
+        EnsemblePlacementPolicy placementPolicy = new DefaultEnsemblePlacementPolicy();
+
+        return new MockClientContext()
+            .setConf(ClientInternalConf.fromConfig(conf))
+            .setLedgerManager(new MockLedgerManager())
+            .setBookieWatcher(new BookieWatcherImpl(conf, placementPolicy, regClient, NullStatsLogger.INSTANCE))
+            .setPlacementPolicy(placementPolicy)
+            .setRegistrationClient(regClient)
+            .setBookieClient(new MockBookieClient(scheduler))
+            .setMainWorkerPool(scheduler)
+            .setScheduler(scheduler)
+            .setClientStats(BookKeeperClientStats.newInstance(NullStatsLogger.INSTANCE))
+            .setIsClientClosed(() -> false);
+    }
 
     static MockClientContext copyOf(ClientContext other) {
         return new MockClientContext()
@@ -51,54 +83,82 @@ class MockClientContext implements ClientContext {
             .setIsClientClosed(other::isClientClosed);
     }
 
-    MockClientContext setConf(ClientInternalConf conf) {
-        this.conf = conf;
+    public MockRegistrationClient getMockRegistrationClient() {
+        checkState(regClient != null);
+        return regClient;
+    }
+
+    public MockLedgerManager getMockLedgerManager() {
+        checkState(ledgerManager instanceof MockLedgerManager);
+        return (MockLedgerManager) ledgerManager;
+    }
+
+    public MockBookieClient getMockBookieClient() {
+        checkState(bookieClient instanceof MockBookieClient);
+        return (MockBookieClient) bookieClient;
+    }
+
+    public MockClientContext setConf(ClientInternalConf internalConf) {
+        this.internalConf = maybeSpy(internalConf);
         return this;
     }
 
-    MockClientContext setLedgerManager(LedgerManager ledgerManager) {
-        this.ledgerManager = ledgerManager;
+    public MockClientContext setLedgerManager(LedgerManager ledgerManager) {
+        this.ledgerManager = maybeSpy(ledgerManager);
         return this;
     }
 
-    MockClientContext setBookieWatcher(BookieWatcher bookieWatcher) {
-        this.bookieWatcher = bookieWatcher;
+    public MockClientContext setBookieWatcher(BookieWatcher bookieWatcher) {
+        this.bookieWatcher = maybeSpy(bookieWatcher);
         return this;
     }
 
-    MockClientContext setPlacementPolicy(EnsemblePlacementPolicy placementPolicy) {
-        this.placementPolicy = placementPolicy;
+    public MockClientContext setPlacementPolicy(EnsemblePlacementPolicy placementPolicy) {
+        this.placementPolicy = maybeSpy(placementPolicy);
         return this;
     }
 
-    MockClientContext setBookieClient(BookieClient bookieClient) {
-        this.bookieClient = bookieClient;
+    public MockClientContext setBookieClient(BookieClient bookieClient) {
+        this.bookieClient = maybeSpy(bookieClient);
         return this;
     }
 
-    MockClientContext setMainWorkerPool(OrderedExecutor mainWorkerPool) {
-        this.mainWorkerPool = mainWorkerPool;
+    public MockClientContext setMainWorkerPool(OrderedExecutor mainWorkerPool) {
+        this.mainWorkerPool = maybeSpy(mainWorkerPool);
         return this;
     }
 
-    MockClientContext setScheduler(OrderedScheduler scheduler) {
-        this.scheduler = scheduler;
+    public MockClientContext setScheduler(OrderedScheduler scheduler) {
+        this.scheduler = maybeSpy(scheduler);
         return this;
     }
 
-    MockClientContext setClientStats(BookKeeperClientStats clientStats) {
+    public MockClientContext setClientStats(BookKeeperClientStats clientStats) {
         this.clientStats = clientStats;
         return this;
     }
 
-    MockClientContext setIsClientClosed(BooleanSupplier isClientClosed) {
+    public MockClientContext setIsClientClosed(BooleanSupplier isClientClosed) {
         this.isClientClosed = isClientClosed;
         return this;
     }
 
+    public MockClientContext setRegistrationClient(MockRegistrationClient regClient) {
+        this.regClient = maybeSpy(regClient);
+        return this;
+    }
+
+    private static <T> T maybeSpy(T orig) {
+        if (Mockito.mockingDetails(orig).isSpy()) {
+            return orig;
+        } else {
+            return Mockito.spy(orig);
+        }
+    }
+
     @Override
     public ClientInternalConf getConf() {
-        return this.conf;
+        return this.internalConf;
     }
 
     @Override
