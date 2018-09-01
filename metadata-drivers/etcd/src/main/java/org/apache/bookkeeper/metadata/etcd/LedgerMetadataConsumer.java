@@ -14,6 +14,7 @@
 
 package org.apache.bookkeeper.metadata.etcd;
 
+import java.util.Objects;
 import java.util.function.Consumer;
 import org.apache.bookkeeper.client.LedgerMetadata;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.LedgerMetadataListener;
@@ -48,14 +49,14 @@ class LedgerMetadataConsumer implements Consumer<Versioned<LedgerMetadata>> {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof LedgerMetadataListener) {
-            return listener.equals(obj);
-        } else if (obj instanceof LedgerMetadataConsumer) {
-            LedgerMetadataConsumer otherConsumer = (LedgerMetadataConsumer) obj;
-            return listener.equals(otherConsumer.listener);
-        } else {
+        if (!(obj instanceof LedgerMetadataConsumer)) {
             return false;
         }
+
+        LedgerMetadataConsumer another = (LedgerMetadataConsumer) obj;
+        return ledgerId == another.ledgerId
+            && Objects.equals(listener, another.listener)
+            && Objects.equals(onDeletedConsumer, another.onDeletedConsumer);
     }
 
     @Override
