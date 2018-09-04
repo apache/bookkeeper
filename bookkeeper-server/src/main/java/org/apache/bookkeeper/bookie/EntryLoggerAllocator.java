@@ -40,6 +40,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.bookie.EntryLogger.BufferedLogChannel;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -203,6 +205,16 @@ class EntryLoggerAllocator {
     void stop() {
         // wait until the preallocation finished.
         allocatorExecutor.shutdown();
+        try {
+            if (!allocatorExecutor.awaitTermination(5, TimeUnit.SECONDS)) {
+                log.warn("Timedout while awaiting for allocatorExecutor's termination, so force shuttingdown");
+            }
+        } catch (InterruptedException e) {
+            log.warn("Got InterruptedException while awaiting termination of allocatorExecutor, so force shuttingdown");
+            Thread.currentThread().interrupt();
+        }
+        allocatorExecutor.shutdownNow();
+
         log.info("Stopped entry logger preallocator.");
     }
 
