@@ -187,6 +187,7 @@ public class BookieShell implements Tool {
     static final String CMD_CONVERT_TO_DB_STORAGE = "convert-to-db-storage";
     static final String CMD_CONVERT_TO_INTERLEAVED_STORAGE = "convert-to-interleaved-storage";
     static final String CMD_REBUILD_DB_LEDGER_LOCATIONS_INDEX = "rebuild-db-ledger-locations-index";
+    static final String CMD_REGENERATE_INTERLEAVED_STORAGE_INDEX_FILE = "regenerate-interleaved-storage-index-file";
     static final String CMD_HELP = "help";
 
     final ServerConfiguration bkConf = new ServerConfiguration();
@@ -2816,6 +2817,50 @@ public class BookieShell implements Tool {
         }
     }
 
+    /**
+     * Regenerate an index file for interleaved storage.
+     */
+    class RegenerateInterleavedStorageIndexFile extends MyCommand {
+        Options opts = new Options();
+
+        public RegenerateInterleavedStorageIndexFile() {
+            super(CMD_REGENERATE_INTERLEAVED_STORAGE_INDEX_FILE);
+            Option ledgerOption = new Option("l", "ledger", true,
+                                             "Ledger whose index needs to be regenerated.");
+            ledgerOption.setRequired(true);
+            opts.addOption(ledgerOption);
+            opts.addOption("dryRun", false,
+                           "Process the entryLogger, but don't write anything.");
+        }
+
+        @Override
+        Options getOptions() {
+            return opts;
+        }
+
+        @Override
+        String getDescription() {
+            return "Regenerate an interleaved storage index file, from available entrylogger files.";
+        }
+
+        @Override
+        String getUsage() {
+            return CMD_REGENERATE_INTERLEAVED_STORAGE_INDEX_FILE;
+        }
+
+        @Override
+        int runCmd(CommandLine cmdLine) throws Exception {
+            long ledgerId = Long.parseLong(cmdLine.getOptionValue("ledger"));
+            boolean dryRun = cmdLine.hasOption("dryRun");
+
+            LOG.info("=== Rebuilding index file for {} ===", ledgerId);
+            ServerConfiguration conf = new ServerConfiguration(bkConf);
+            new InterleavedStorageRegenerateIndexOp(conf, ledgerId).initiate(dryRun);
+            LOG.info("-- Done rebuilding index file for {} --", ledgerId);
+            return 0;
+        }
+    }
+
     final Map<String, MyCommand> commands = new HashMap<String, MyCommand>();
 
     {
@@ -2849,6 +2894,7 @@ public class BookieShell implements Tool {
         commands.put(CMD_CONVERT_TO_DB_STORAGE, new ConvertToDbStorageCmd());
         commands.put(CMD_CONVERT_TO_INTERLEAVED_STORAGE, new ConvertToInterleavedStorageCmd());
         commands.put(CMD_REBUILD_DB_LEDGER_LOCATIONS_INDEX, new RebuildDbLedgerLocationsIndexCmd());
+        commands.put(CMD_REGENERATE_INTERLEAVED_STORAGE_INDEX_FILE, new RegenerateInterleavedStorageIndexFile());
         commands.put(CMD_HELP, new HelpCmd());
         commands.put(CMD_LOSTBOOKIERECOVERYDELAY, new LostBookieRecoveryDelayCmd());
         commands.put(CMD_TRIGGERAUDIT, new TriggerAuditCmd());
