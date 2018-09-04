@@ -76,9 +76,7 @@ import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.common.util.MathUtils;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieProtocol;
-import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
-import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.TimedGenericCallback;
 import org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.State;
 import org.apache.bookkeeper.proto.checksum.DigestManager;
 import org.apache.bookkeeper.proto.checksum.MacDigestManager;
@@ -329,6 +327,10 @@ public class LedgerHandle implements WriteHandle {
             // ensure that we only update the metadata if it is the object we expect it to be
             if (metadata == expected) {
                 metadata = newMetadata;
+                if (metadata.isClosed()) {
+                    lastAddConfirmed = lastAddPushed = metadata.getLastEntryId();
+                    length = metadata.getLength();
+                }
                 return true;
             } else {
                 return false;
@@ -2222,112 +2224,6 @@ public class LedgerHandle implements WriteHandle {
         if (clientCtx.getConf().enableBookieFailureTracking) {
             bookieFailureHistory.put(bookie, entryId);
         }
-    }
-
-
-    void recover(GenericCallback<Void> finalCb) {
-        recover(finalCb, null, false);
-    }
-
-    /**
-     * Recover the ledger.
-     *
-     * @param finalCb
-     *          callback after recovery is done.
-     * @param listener
-     *          read entry listener on recovery reads.
-     * @param forceRecovery
-     *          force the recovery procedure even the ledger metadata shows the ledger is closed.
-     */
-    void recover(GenericCallback<Void> finalCb,
-                 final @VisibleForTesting BookkeeperInternalCallbacks.ReadEntryListener listener,
-                 final boolean forceRecovery) {
-        final GenericCallback<Void> cb = new TimedGenericCallback<Void>(
-            finalCb,
-            BKException.Code.OK,
-            clientCtx.getClientStats().getRecoverOpLogger());
-        boolean wasClosed = false;
-        boolean wasInRecovery = false;
-
-        LedgerMetadata metadata = getLedgerMetadata();
-        synchronized (this) {
-            if (metadata.isClosed()) {
-                if (forceRecovery) {
-                    wasClosed = false;
-                    // mark the ledger back to in recovery state, so it would proceed ledger recovery again.
-                    wasInRecovery = false;
-                    metadata.markLedgerInRecovery();
-                } else {
-                    lastAddConfirmed = lastAddPushed = metadata.getLastEntryId();
-                    length = metadata.getLength();
-                    wasClosed = true;
-                }
-            } else {
-                wasClosed = false;
-                if (metadata.isInRecovery()) {
-                    wasInRecovery = true;
-                } else {
-                    wasInRecovery = false;
-                    metadata.markLedgerInRecovery();
-                }
-            }
-        }
-
-        if (wasClosed) {
-            // We are already closed, nothing to do
-            cb.operationComplete(BKException.Code.OK, null);
-            return;
-        }
-
-        if (wasInRecovery) {
-            // if metadata is already in recover, dont try to write again,
-            // just do the recovery from the starting point
-            new LedgerRecoveryOp(LedgerHandle.this, clientCtx, cb)
-                    .setEntryListener(listener)
-                    .initiate();
-            return;
-        }
-
-        writeLedgerConfig(new OrderedGenericCallback<LedgerMetadata>(clientCtx.getMainWorkerPool(), ledgerId) {
-            @Override
-            public void safeOperationComplete(final int rc, LedgerMetadata writtenMetadata) {
-                if (rc == BKException.Code.MetadataVersionException) {
-                    rereadMetadata(new OrderedGenericCallback<LedgerMetadata>(clientCtx.getMainWorkerPool(),
-                                                                              ledgerId) {
-                        @Override
-                        public void safeOperationComplete(int rc, LedgerMetadata newMeta) {
-                            if (rc != BKException.Code.OK) {
-                                cb.operationComplete(rc, null);
-                            } else {
-                                LedgerHandle.this.metadata = newMeta;
-                                recover(cb, listener, forceRecovery);
-                            }
-                        }
-
-                        @Override
-                        public String toString() {
-                            return String.format("ReReadMetadataForRecover(%d)", ledgerId);
-                        }
-                    });
-                } else if (rc == BKException.Code.OK) {
-                    // we only could issue recovery operation after we successfully update the ledger state to
-                    // in recovery otherwise, it couldn't prevent us advancing last confirmed while the other writer is
-                    // closing the ledger, which will cause inconsistent last add confirmed on bookies & zookeeper
-                    // metadata.
-                    new LedgerRecoveryOp(LedgerHandle.this, clientCtx, cb)
-                        .setEntryListener(listener)
-                        .initiate();
-                } else {
-                    LOG.error("Error writing ledger {} config: {}", ledgerId, BKException.codeLogger(rc));
-                    cb.operationComplete(rc, null);
-                }
-            }
-
-            @Override
-            public String toString() {
-                return String.format("WriteLedgerConfigForRecover(%d)", ledgerId);
-            }
-        });
     }
 
     static class NoopCloseCallback implements CloseCallback {

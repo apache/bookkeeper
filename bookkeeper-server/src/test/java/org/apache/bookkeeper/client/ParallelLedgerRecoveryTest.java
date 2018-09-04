@@ -342,7 +342,7 @@ public class ParallelLedgerRecoveryTest extends BookKeeperClusterTestCase {
 
         final CountDownLatch recoverLatch = new CountDownLatch(1);
         final AtomicBoolean success = new AtomicBoolean(false);
-        recoverLh.recover(new GenericCallback<Void>() {
+        ((ReadOnlyLedgerHandle) recoverLh).recover(new GenericCallback<Void>() {
             @Override
             public void operationComplete(int rc, Void result) {
                 LOG.info("Recovering ledger {} completed : {}.", lh.getId(), rc);
@@ -459,7 +459,7 @@ public class ParallelLedgerRecoveryTest extends BookKeeperClusterTestCase {
         final AtomicBoolean isMetadataClosed = new AtomicBoolean(false);
         final AtomicInteger numSuccessCalls = new AtomicInteger(0);
         final AtomicInteger numFailureCalls = new AtomicInteger(0);
-        recoverLh.recover(new GenericCallback<Void>() {
+        ((ReadOnlyLedgerHandle) recoverLh).recover(new GenericCallback<Void>() {
             @Override
             public void operationComplete(int rc, Void result) {
                 if (BKException.Code.OK == rc) {
@@ -639,7 +639,7 @@ public class ParallelLedgerRecoveryTest extends BookKeeperClusterTestCase {
         tlm1.setLatch(metadataLatch);
         final CountDownLatch recoverLatch = new CountDownLatch(1);
         final AtomicBoolean recoverSuccess = new AtomicBoolean(false);
-        lh1.recover(new GenericCallback<Void>() {
+        ((ReadOnlyLedgerHandle) lh1).recover(new GenericCallback<Void>() {
             @Override
             public void operationComplete(int rc, Void result) {
                 LOG.info("Recovering ledger {} completed : {}", lh1.getId(), rc);

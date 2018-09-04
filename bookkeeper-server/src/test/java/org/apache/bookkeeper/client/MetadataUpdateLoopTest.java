@@ -361,7 +361,7 @@ public class MetadataUpdateLoopTest {
                     ledgerId,
                     reference::get,
                     (currentMetadata) -> !currentMetadata.isClosed(),
-                    (currentMetadata) -> LedgerMetadataBuilder.from(currentMetadata).closingAtEntry(10L).build(),
+                    (currentMetadata) -> LedgerMetadataBuilder.from(currentMetadata).closingAt(10L, 100L).build(),
                     reference::compareAndSet).run();
             CompletableFuture<LedgerMetadata> loop2 = new MetadataUpdateLoop(
                     lm,
