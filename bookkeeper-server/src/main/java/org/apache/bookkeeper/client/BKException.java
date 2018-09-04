@@ -426,4 +426,17 @@ public abstract class BKException extends org.apache.bookkeeper.client.api.BKExc
             super(Code.LedgerIdOverflowException);
         }
     }
+
+    /**
+     * Extract an exception code from an BKException, or use a default if it's another type.
+     */
+    public static int getExceptionCode(Throwable t, int defaultCode) {
+        if (t instanceof BKException) {
+            return ((BKException) t).getCode();
+        } else if (t.getCause() != null) {
+            return getExceptionCode(t.getCause(), defaultCode);
+        } else {
+            return defaultCode;
+        }
+    }
 }

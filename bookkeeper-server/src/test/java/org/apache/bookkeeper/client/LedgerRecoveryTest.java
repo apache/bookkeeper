@@ -29,9 +29,9 @@ import io.netty.buffer.ByteBuf;
 
 import java.io.IOException;
 import java.util.Enumeration;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.bookkeeper.bookie.Bookie;
@@ -42,7 +42,6 @@ import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieProtocol;
-import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.junit.Test;
@@ -357,7 +356,6 @@ public class LedgerRecoveryTest extends BookKeeperClusterTestCase {
 
         // start a new good server
         startNewBookie();
-
         LedgerHandle lhafter = bkc.openLedger(lhbefore.getId(), digestType,
                 "".getBytes());
         assertEquals("Fenced ledger should have correct lastAddConfirmed",
@@ -479,24 +477,13 @@ public class LedgerRecoveryTest extends BookKeeperClusterTestCase {
         LedgerHandle recoverLh = newBk.openLedgerNoRecovery(lh.getId(), digestType, "".getBytes());
         assertEquals(BookieProtocol.INVALID_ENTRY_ID, recoverLh.getLastAddConfirmed());
 
-        final CountDownLatch recoverLatch = new CountDownLatch(1);
-        final AtomicBoolean success = new AtomicBoolean(false);
-
         MockClientContext parallelReadCtx = MockClientContext.copyOf(bkc.getClientCtx())
             .setConf(ClientInternalConf.fromConfig(newConf.setEnableParallelRecoveryRead(true)));
 
-        LedgerRecoveryOp recoveryOp = new LedgerRecoveryOp(
-                recoverLh, parallelReadCtx,
-                new BookkeeperInternalCallbacks.GenericCallback<Void>() {
-                    @Override
-                    public void operationComplete(int rc, Void result) {
-                        success.set(BKException.Code.OK == rc);
-                        recoverLatch.countDown();
-                    }
-                });
-        recoveryOp.initiate();
-        recoverLatch.await(10, TimeUnit.SECONDS);
-        assertTrue(success.get());
+        LedgerRecoveryOp recoveryOp = new LedgerRecoveryOp(recoverLh, parallelReadCtx);
+        CompletableFuture<LedgerHandle> f = recoveryOp.initiate();
+        f.get(10, TimeUnit.SECONDS);
+
         assertEquals(numEntries, recoveryOp.readCount.get());
         assertEquals(numEntries, recoveryOp.writeCount.get());
 

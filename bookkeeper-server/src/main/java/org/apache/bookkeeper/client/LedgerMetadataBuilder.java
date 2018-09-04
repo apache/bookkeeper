@@ -22,6 +22,7 @@ import static com.google.common.base.Preconditions.checkState;
 
 import com.google.common.collect.ImmutableMap;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -40,6 +41,7 @@ class LedgerMetadataBuilder {
 
     private LedgerMetadataFormat.State state = LedgerMetadataFormat.State.OPEN;
     private Optional<Long> lastEntryId = Optional.empty();
+    private Optional<Long> length = Optional.empty();
 
     private TreeMap<Long, List<BookieSocketAddress>> ensembles = new TreeMap<>();
 
@@ -67,6 +69,10 @@ class LedgerMetadataBuilder {
         if (lastEntryId != LedgerHandle.INVALID_ENTRY_ID) {
             builder.lastEntryId = Optional.of(lastEntryId);
         }
+        long length = other.getLength();
+        if (length > 0) {
+            builder.length = Optional.of(length);
+        }
 
         builder.ensembles.putAll(other.getEnsembles());
 
@@ -83,6 +89,11 @@ class LedgerMetadataBuilder {
         builder.version = other.getVersion();
 
         return builder;
+    }
+
+    LedgerMetadataBuilder withPassword(byte[] password) {
+        this.password = Optional.of(Arrays.copyOf(password, password.length));
+        return this;
     }
 
     LedgerMetadataBuilder withEnsembleSize(int ensembleSize) {
@@ -109,17 +120,21 @@ class LedgerMetadataBuilder {
         return this;
     }
 
+    LedgerMetadataBuilder withInRecoveryState() {
+        this.state = LedgerMetadataFormat.State.IN_RECOVERY;
+        return this;
+    }
 
-
-    LedgerMetadataBuilder closingAtEntry(long lastEntryId) {
+    LedgerMetadataBuilder closingAt(long lastEntryId, long length) {
         this.lastEntryId = Optional.of(lastEntryId);
+        this.length = Optional.of(length);
         this.state = LedgerMetadataFormat.State.CLOSED;
         return this;
     }
 
     LedgerMetadata build() {
         return new LedgerMetadata(ensembleSize, writeQuorumSize, ackQuorumSize,
-                                  state, lastEntryId, ensembles,
+                                  state, lastEntryId, length, ensembles,
                                   digestType, password, ctime, customMetadata,
                                   version);
     }

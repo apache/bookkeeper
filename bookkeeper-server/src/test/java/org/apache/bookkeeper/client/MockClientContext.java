@@ -51,16 +51,19 @@ public class MockClientContext implements ClientContext {
     private BooleanSupplier isClientClosed;
     private MockRegistrationClient regClient;
 
-    static MockClientContext create() {
+    static MockClientContext create() throws Exception {
         ClientConfiguration conf = new ClientConfiguration();
         OrderedScheduler scheduler = OrderedScheduler.newSchedulerBuilder().name("mock-executor").numThreads(1).build();
         MockRegistrationClient regClient = new MockRegistrationClient();
         EnsemblePlacementPolicy placementPolicy = new DefaultEnsemblePlacementPolicy();
+        BookieWatcherImpl bookieWatcherImpl = new BookieWatcherImpl(conf, placementPolicy,
+                                                                    regClient, NullStatsLogger.INSTANCE);
+        bookieWatcherImpl.initialBlockingBookieRead();
 
         return new MockClientContext()
             .setConf(ClientInternalConf.fromConfig(conf))
             .setLedgerManager(new MockLedgerManager())
-            .setBookieWatcher(new BookieWatcherImpl(conf, placementPolicy, regClient, NullStatsLogger.INSTANCE))
+            .setBookieWatcher(bookieWatcherImpl)
             .setPlacementPolicy(placementPolicy)
             .setRegistrationClient(regClient)
             .setBookieClient(new MockBookieClient(scheduler))

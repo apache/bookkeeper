@@ -53,7 +53,7 @@ class LedgerOpenOp implements GenericCallback<LedgerMetadata> {
     final long ledgerId;
     final OpenCallback cb;
     final Object ctx;
-    LedgerHandle lh;
+    ReadOnlyLedgerHandle lh;
     final byte[] passwd;
     boolean doRecovery = true;
     boolean administrativeOpen = false;

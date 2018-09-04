@@ -17,6 +17,8 @@
  */
 package org.apache.bookkeeper.client;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks;
 
@@ -31,7 +33,9 @@ public class BookKeeperAccessor {
 
     public static void forceRecoverLedger(LedgerHandle lh,
                                           BookkeeperInternalCallbacks.GenericCallback<Void> cb) {
-        lh.recover(cb, null, true);
+        checkArgument(lh instanceof ReadOnlyLedgerHandle,
+                      "Recovery can only run on ReadOnlyLedgerHandle");
+        ((ReadOnlyLedgerHandle) lh).recover(cb, null, true);
     }
 
     public static LedgerMetadata getLedgerMetadata(LedgerHandle lh) {
