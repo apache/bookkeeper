@@ -135,6 +135,7 @@ public class LedgerMetadata implements org.apache.bookkeeper.client.api.LedgerMe
                    int ackQuorumSize,
                    LedgerMetadataFormat.State state,
                    java.util.Optional<Long> lastEntryId,
+                   java.util.Optional<Long> length,
                    Map<Long, List<BookieSocketAddress>> ensembles,
                    DigestType digestType,
                    java.util.Optional<byte[]> password,
@@ -148,7 +149,7 @@ public class LedgerMetadata implements org.apache.bookkeeper.client.api.LedgerMe
         this.ackQuorumSize = ackQuorumSize;
         this.state = state;
         lastEntryId.ifPresent((eid) -> this.lastEntryId = eid);
-
+        length.ifPresent((l) -> this.length = l);
         setEnsembles(ensembles);
         if (state != LedgerMetadataFormat.State.CLOSED) {
             currentEnsemble = this.ensembles.lastEntry().getValue();
@@ -787,4 +788,11 @@ public class LedgerMetadata implements org.apache.bookkeeper.client.api.LedgerMe
         return bookies;
     }
 
+    java.util.Optional<Long> getLastEnsembleKey() {
+        if (ensembles.size() > 0) {
+            return java.util.Optional.of(ensembles.lastKey());
+        } else {
+            return java.util.Optional.empty();
+        }
+    }
 }
