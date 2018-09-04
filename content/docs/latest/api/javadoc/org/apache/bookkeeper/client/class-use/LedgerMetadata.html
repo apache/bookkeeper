@@ -182,10 +182,14 @@
 </tr>
 <tbody>
 <tr class="altColor">
+<td class="colFirst"><code>(package private) <a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="../../../../../org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a>&gt;</code></td>
+<td class="colLast"><span class="typeNameLabel">ReadOnlyLedgerHandle.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/ReadOnlyLedgerHandle.html#closeRecovered--">closeRecovered</a></span>()</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/SortedMap.html?is-external=true" title="class or interface in java.util">SortedMap</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>,<a href="../../../../../org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a>&gt;</code></td>
 <td class="colLast"><span class="typeNameLabel">BookKeeperAdmin.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/BookKeeperAdmin.html#getLedgersContainBookies-java.util.Set-">getLedgersContainBookies</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;bookies)</code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>(package private) <a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="../../../../../org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a>&gt;</code></td>
 <td class="colLast"><span class="typeNameLabel">MetadataUpdateLoop.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/MetadataUpdateLoop.html#run--">run</a></span>()</code>&nbsp;</td>
 </tr>
@@ -254,15 +258,21 @@
                    <a href="https://docs.oracle.com/javase/8/docs/api/java/io/BufferedReader.html?is-external=true" title="class or interface in java.io">BufferedReader</a>&nbsp;reader)</code>&nbsp;</td>
 </tr>
 <tr class="altColor">
+<td class="colFirst"><code>(package private) <a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;</code></td>
+<td class="colLast"><span class="typeNameLabel">ReadOnlyLedgerHandle.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/ReadOnlyLedgerHandle.html#replaceBookiesInEnsemble-org.apache.bookkeeper.client.LedgerMetadata-java.util.List-java.util.Map-">replaceBookiesInEnsemble</a></span>(<a href="../../../../../org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a>&nbsp;metadata,
+                        <a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;oldEnsemble,
+                        <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util">Map</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Integer.html?is-external=true" title="class or interface in java.lang">Integer</a>,org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;failedBookies)</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
 <td class="colFirst"><code>(package private) boolean</code></td>
 <td class="colLast"><span class="typeNameLabel">LedgerHandle.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/LedgerHandle.html#setLedgerMetadata-org.apache.bookkeeper.client.LedgerMetadata-org.apache.bookkeeper.client.LedgerMetadata-">setLedgerMetadata</a></span>(<a href="../../../../../org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a>&nbsp;expected,
                  <a href="../../../../../org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a>&nbsp;newMetadata)</code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a></code></td>
 <td class="colLast"><span class="typeNameLabel">MetadataUpdateLoop.MetadataTransform.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/MetadataUpdateLoop.MetadataTransform.html#transform-org.apache.bookkeeper.client.LedgerMetadata-">transform</a></span>(<a href="../../../../../org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a>&nbsp;metadata)</code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
 <td class="colLast"><span class="typeNameLabel">MetadataUpdateLoop.LocalValueUpdater.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/MetadataUpdateLoop.LocalValueUpdater.html#updateValue-org.apache.bookkeeper.client.LedgerMetadata-org.apache.bookkeeper.client.LedgerMetadata-">updateValue</a></span>(<a href="../../../../../org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a>&nbsp;oldValue,
            <a href="../../../../../org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a>&nbsp;newValue)</code>&nbsp;</td>

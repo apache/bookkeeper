@@ -18,7 +18,7 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10,"i15":10,"i16":10,"i17":10,"i18":10,"i19":10,"i20":10,"i21":10,"i22":10,"i23":10,"i24":10,"i25":10,"i26":10,"i27":10,"i28":10,"i29":10,"i30":10,"i31":10,"i32":10,"i33":10,"i34":10,"i35":10,"i36":10,"i37":10,"i38":10,"i39":10,"i40":10,"i41":10,"i42":10,"i43":10,"i44":10,"i45":10,"i46":10,"i47":10,"i48":10,"i49":10,"i50":10,"i51":10,"i52":10,"i53":10,"i54":10,"i55":10,"i56":10,"i57":10,"i58":10,"i59":10,"i60":10,"i61":10,"i62":10,"i63":10,"i64":10,"i65":10,"i66":10,"i67":10,"i68":10,"i69":10,"i70":10,"i71":10,"i72":10,"i73":10,"i74":10,"i75":10,"i76":10};
+var methods = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10,"i15":10,"i16":10,"i17":10,"i18":10,"i19":10,"i20":10,"i21":10,"i22":10,"i23":10,"i24":10,"i25":10,"i26":10,"i27":10,"i28":10,"i29":10,"i30":10,"i31":10,"i32":10,"i33":10,"i34":10,"i35":10,"i36":10,"i37":10,"i38":10,"i39":10,"i40":10,"i41":10,"i42":10,"i43":10,"i44":10,"i45":10,"i46":10,"i47":10,"i48":10,"i49":10,"i50":10,"i51":10,"i52":10,"i53":10,"i54":10,"i55":10,"i56":10,"i57":10,"i58":10,"i59":10,"i60":10,"i61":10,"i62":10,"i63":10,"i64":10,"i65":10,"i66":10,"i67":10,"i68":10,"i69":10,"i70":10,"i71":10,"i72":10,"i73":10,"i74":10};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -729,74 +729,62 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.htm
 </tr>
 <tr id="i63" class="rowColor">
 <td class="colFirst"><code>(package private) void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html#recover-org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback-">recover</a></span>(org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Void.html?is-external=true" title="class or interface in java.lang">Void</a>&gt;&nbsp;finalCb)</code>&nbsp;</td>
-</tr>
-<tr id="i64" class="altColor">
-<td class="colFirst"><code>(package private) void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html#recover-org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback-org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryListener-boolean-">recover</a></span>(org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Void.html?is-external=true" title="class or interface in java.lang">Void</a>&gt;&nbsp;finalCb,
-       org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryListener&nbsp;listener,
-       boolean&nbsp;forceRecovery)</code>
-<div class="block">Recover the ledger.</div>
-</td>
-</tr>
-<tr id="i65" class="rowColor">
-<td class="colFirst"><code>(package private) void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html#registerOperationFailureOnBookie-org.apache.bookkeeper.net.BookieSocketAddress-long-">registerOperationFailureOnBookie</a></span>(org.apache.bookkeeper.net.BookieSocketAddress&nbsp;bookie,
                                 long&nbsp;entryId)</code>&nbsp;</td>
 </tr>
-<tr id="i66" class="altColor">
+<tr id="i64" class="altColor">
 <td class="colFirst"><code>(package private) <a href="../../../../org/apache/bookkeeper/client/LedgerHandle.EnsembleInfo.html" title="class in org.apache.bookkeeper.client">LedgerHandle.EnsembleInfo</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html#replaceBookieInMetadata-java.util.Map-int-">replaceBookieInMetadata</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util">Map</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Integer.html?is-external=true" title="class or interface in java.lang">Integer</a>,org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;failedBookies,
                        int&nbsp;ensembleChangeIdx)</code>&nbsp;</td>
 </tr>
-<tr id="i67" class="rowColor">
+<tr id="i65" class="rowColor">
 <td class="colFirst"><code>(package private) void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html#rereadMetadata-org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback-">rereadMetadata</a></span>(org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback&lt;<a href="../../../../org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a>&gt;&nbsp;cb)</code>&nbsp;</td>
 </tr>
-<tr id="i68" class="altColor">
+<tr id="i66" class="altColor">
 <td class="colFirst"><code>(package private) void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html#sendAddSuccessCallbacks--">sendAddSuccessCallbacks</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i69" class="rowColor">
+<tr id="i67" class="rowColor">
 <td class="colFirst"><code>(package private) void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html#setLastAddConfirmed-long-">setLastAddConfirmed</a></span>(long&nbsp;lac)</code>&nbsp;</td>
 </tr>
-<tr id="i70" class="altColor">
+<tr id="i68" class="altColor">
 <td class="colFirst"><code>(package private) boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html#setLedgerMetadata-org.apache.bookkeeper.client.LedgerMetadata-org.apache.bookkeeper.client.LedgerMetadata-">setLedgerMetadata</a></span>(<a href="../../../../org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a>&nbsp;expected,
                  <a href="../../../../org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a>&nbsp;newMetadata)</code>&nbsp;</td>
 </tr>
-<tr id="i71" class="rowColor">
+<tr id="i69" class="rowColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html#tryReadLastAddConfirmedAsync--">tryReadLastAddConfirmedAsync</a></span>()</code>
 <div class="block">Obtains asynchronously the last confirmed write from a quorum of bookies
  but it doesn't wait all the responses from the quorum.</div>
 </td>
 </tr>
-<tr id="i72" class="altColor">
+<tr id="i70" class="altColor">
 <td class="colFirst"><code>long</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html#tryReadLastConfirmed--">tryReadLastConfirmed</a></span>()</code>
 <div class="block">Obtains synchronously the last confirmed write from a quorum of bookies.</div>
 </td>
 </tr>
-<tr id="i73" class="rowColor">
+<tr id="i71" class="rowColor">
 <td class="colFirst"><code>(package private) void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html#unsetSuccessAndSendWriteRequest-java.util.List-java.util.Set-">unsetSuccessAndSendWriteRequest</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;ensemble,
                                <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Integer.html?is-external=true" title="class or interface in java.lang">Integer</a>&gt;&nbsp;bookies)</code>&nbsp;</td>
 </tr>
-<tr id="i74" class="altColor">
+<tr id="i72" class="altColor">
 <td class="colFirst"><code>(package private) void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html#updateLastConfirmed-long-long-">updateLastConfirmed</a></span>(long&nbsp;lac,
                    long&nbsp;len)</code>&nbsp;</td>
 </tr>
-<tr id="i75" class="rowColor">
+<tr id="i73" class="rowColor">
 <td class="colFirst"><code>protected boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html#waitForWritable-org.apache.bookkeeper.client.DistributionSchedule.WriteSet-long-int-long-">waitForWritable</a></span>(<a href="../../../../org/apache/bookkeeper/client/DistributionSchedule.WriteSet.html" title="interface in org.apache.bookkeeper.client">DistributionSchedule.WriteSet</a>&nbsp;writeSet,
                long&nbsp;key,
                int&nbsp;allowedNonWritableCount,
                long&nbsp;durationMs)</code>&nbsp;</td>
 </tr>
-<tr id="i76" class="altColor">
+<tr id="i74" class="altColor">
 <td class="colFirst"><code>(package private) void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html#writeLedgerConfig-org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback-">writeLedgerConfig</a></span>(org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback&lt;<a href="../../../../org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a>&gt;&nbsp;writeCb)</code>&nbsp;</td>
 </tr>
@@ -2400,33 +2388,6 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.htm
 <h4>registerOperationFailureOnBookie</h4>
 <pre>void&nbsp;registerOperationFailureOnBookie(org.apache.bookkeeper.net.BookieSocketAddress&nbsp;bookie,
                                       long&nbsp;entryId)</pre>
-</li>
-</ul>
-<a name="recover-org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback-">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>recover</h4>
-<pre>void&nbsp;recover(org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Void.html?is-external=true" title="class or interface in java.lang">Void</a>&gt;&nbsp;finalCb)</pre>
-</li>
-</ul>
-<a name="recover-org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback-org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryListener-boolean-">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>recover</h4>
-<pre>void&nbsp;recover(org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Void.html?is-external=true" title="class or interface in java.lang">Void</a>&gt;&nbsp;finalCb,
-             org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryListener&nbsp;listener,
-             boolean&nbsp;forceRecovery)</pre>
-<div class="block">Recover the ledger.</div>
-<dl>
-<dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>finalCb</code> - callback after recovery is done.</dd>
-<dd><code>listener</code> - read entry listener on recovery reads.</dd>
-<dd><code>forceRecovery</code> - force the recovery procedure even the ledger metadata shows the ledger is closed.</dd>
-</dl>
 </li>
 </ul>
 <a name="getCurrentEnsemble--">
