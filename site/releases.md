@@ -24,8 +24,8 @@ If you want to download older, archived releases, they are available in the [Apa
 
 Release | Link | Crypto files
 :-------|:-----|:------------
-Source | [bookkeeper-{{ site.latest_release }}-src.tar.gz]({{ latest_source_url }}) | [asc]({{ latest_source_dist_url }}.asc), [sha1]({{ latest_source_dist_url }}.sha1)
-Binary | [bookkeeper-server-{{ site.latest_release }}-bin.tar.gz]({{ latest_bin_url }}) | [asc]({{ latest_bin_dist_url }}.asc), [sha1]({{ latest_bin_dist_url }}.sha1)
+Source | [bookkeeper-{{ site.latest_release }}-src.tar.gz]({{ latest_source_url }}) | [asc]({{ latest_source_dist_url }}.asc), [sha512]({{ latest_source_dist_url }}.sha512)
+Binary | [bookkeeper-server-{{ site.latest_release }}-bin.tar.gz]({{ latest_bin_url }}) | [asc]({{ latest_bin_dist_url }}.asc), [sha512]({{ latest_bin_dist_url }}.sha512)
 
 ## Latest stable release (version {{ site.stable_release }})
 
