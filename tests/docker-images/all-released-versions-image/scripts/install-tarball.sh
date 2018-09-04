@@ -25,6 +25,9 @@ TARBALL=$1
 if [ -f $TARBALL.sha1 ]; then
     sha1sum --check $TARBALL.sha1 > /dev/null
 fi
+if [ -f $TARBALL.sha512 ]; then
+    sha512sum --check $TARBALL.sha512 > /dev/null
+fi
 if [ -f $T.md5 ]; then
     md5sum --check $TARBALL.md5 > /dev/null
 fi
