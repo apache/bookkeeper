@@ -20,7 +20,7 @@
 FROM centos:7
 MAINTAINER Apache BookKeeper <dev@bookkeeper.apache.org>
 
-ARG BK_VERSION=4.7.1
+ARG BK_VERSION=4.7.2
 ARG DISTRO_NAME=bookkeeper-server-${BK_VERSION}-bin
 ARG GPG_KEY=FD74402C
 
@@ -39,13 +39,13 @@ RUN set -x \
     && cd /opt \
     && wget -q "https://archive.apache.org/dist/bookkeeper/bookkeeper-${BK_VERSION}/${DISTRO_NAME}.tar.gz" \
     && wget -q "https://archive.apache.org/dist/bookkeeper/bookkeeper-${BK_VERSION}/${DISTRO_NAME}.tar.gz.asc" \
-    && wget -q "https://archive.apache.org/dist/bookkeeper/bookkeeper-${BK_VERSION}/${DISTRO_NAME}.tar.gz.sha1" \
-    && sha1sum -c ${DISTRO_NAME}.tar.gz.sha1 \
+    && wget -q "https://archive.apache.org/dist/bookkeeper/bookkeeper-${BK_VERSION}/${DISTRO_NAME}.tar.gz.sha512" \
+    && sha512sum -c ${DISTRO_NAME}.tar.gz.sha512 \
     && gpg --keyserver ha.pool.sks-keyservers.net --recv-key "$GPG_KEY" \
     && gpg --batch --verify "$DISTRO_NAME.tar.gz.asc" "$DISTRO_NAME.tar.gz" \
     && tar -xzf "$DISTRO_NAME.tar.gz" \
     && mv bookkeeper-server-${BK_VERSION}/ /opt/bookkeeper/ \
-    && rm -rf "$DISTRO_NAME.tar.gz" "$DISTRO_NAME.tar.gz.asc" "$DISTRO_NAME.tar.gz.sha1" \
+    && rm -rf "$DISTRO_NAME.tar.gz" "$DISTRO_NAME.tar.gz.asc" "$DISTRO_NAME.tar.gz.sha512" \
     && yum remove -y wget \
     && yum clean all
 
