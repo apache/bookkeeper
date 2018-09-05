@@ -18,31 +18,14 @@
  * under the License.
  *
  */
+package org.apache.bookkeeper.common.util.affinity.impl;
 
-package org.apache.bookkeeper.utils.affinity;
+import java.io.IOException;
 
-import lombok.experimental.UtilityClass;
+public class CpuAffinityJni {
+    static native final boolean isRoot();
 
-import org.apache.bookkeeper.utils.affinity.impl.CpuAffinityImpl;
+    static native final boolean isAvailable();
 
-@UtilityClass
-public class CpuAffinity {
-
-    /**
-     * Acquire ownership of one CPU core for the current thread.
-     *
-     * Notes:
-     *
-     * <ol>
-     * <li>This method will only consider CPUs that are "isolated" by the OS. Eg: boot the kernel with
-     * <code>isolcpus=2,3,6,7</code> parameter
-     * <li>
-     * <li>This method will disable hyper-threading on the owned core
-     * <li>Once a thread successfully acquires a CPU, ownership will be retained, even if the thread exits, for as long
-     * as the JVM process is alive.
-     * </ol>
-     */
-    public static void acquireCore() {
-        CpuAffinityImpl.acquireCore();
-    }
+    static native final void setAffinity(int cpuId) throws IOException;
 }

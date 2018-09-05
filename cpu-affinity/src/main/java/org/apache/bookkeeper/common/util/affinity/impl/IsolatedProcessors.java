@@ -19,7 +19,7 @@
  *
  */
 
-package org.apache.bookkeeper.utils.affinity.impl;
+package org.apache.bookkeeper.common.util.affinity.impl;
 
 import java.io.IOException;
 import java.nio.file.Files;

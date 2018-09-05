@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-package org.apache.bookkeeper.utils.affinity.impl;
+package org.apache.bookkeeper.common.util.affinity.impl;
 
 import static com.google.common.base.Preconditions.checkArgument;
 

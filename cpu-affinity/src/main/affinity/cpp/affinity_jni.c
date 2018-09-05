@@ -54,34 +54,34 @@ static const int IS_AVAILABLE = 0;
 #include <errno.h>
 #include <string.h>
 
-#include <org_apache_bookkeeper_utils_affinity_impl_CpuAffinityJni.h>
+#include <org_apache_bookkeeper_common_util_affinity_impl_CpuAffinityJni.h>
 
 /*
- * Class:     org_apache_bookkeeper_utils_affinity_impl_CpuAffinityJni
+ * Class:     org_apache_bookkeeper_common_util_affinity_impl_CpuAffinityJni
  * Method:    isRoot
  * Signature: ()Z
  */
-JNIEXPORT jboolean JNICALL Java_org_apache_bookkeeper_utils_affinity_impl_CpuAffinityJni_isRoot(
+JNIEXPORT jboolean JNICALL Java_org_apache_bookkeeper_common_util_affinity_impl_CpuAffinityJni_isRoot(
 		JNIEnv *env, jclass cls) {
 	return getuid() == 0;
 }
 
 /*
- * Class:     org_apache_bookkeeper_utils_affinity_impl_CpuAffinityJni
+ * Class:     org_apache_bookkeeper_common_util_affinity_impl_CpuAffinityJni
  * Method:    isAvailable
  * Signature: ()Z
  */
-JNIEXPORT jboolean JNICALL Java_org_apache_bookkeeper_utils_affinity_impl_CpuAffinityJni_isAvailable(
+JNIEXPORT jboolean JNICALL Java_org_apache_bookkeeper_common_util_affinity_impl_CpuAffinityJni_isAvailable(
 		JNIEnv * env, jclass cls) {
 	return IS_AVAILABLE == 1;
 }
 
 /*
- * Class:     org_apache_bookkeeper_utils_affinity_impl_CpuAffinityJni
+ * Class:     org_apache_bookkeeper_common_util_affinity_impl_CpuAffinityJni
  * Method:    setAffinity
  * Signature: (I)V
  */
-JNIEXPORT void JNICALL Java_org_apache_bookkeeper_utils_affinity_impl_CpuAffinityJni_setAffinity(JNIEnv * env, jclass cls, jint cpuid) {
+JNIEXPORT void JNICALL Java_org_apache_bookkeeper_common_util_affinity_impl_CpuAffinityJni_setAffinity(JNIEnv * env, jclass cls, jint cpuid) {
 	int res = set_affinity(cpuid);
 
 	if (res == 0) {

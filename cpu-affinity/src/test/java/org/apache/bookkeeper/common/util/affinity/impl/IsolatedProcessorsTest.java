@@ -18,12 +18,13 @@
  * under the License.
  *
  */
-package org.apache.bookkeeper.utils.affinity.impl;
+package org.apache.bookkeeper.common.util.affinity.impl;
 
 import static org.junit.Assert.assertEquals;
 
 import com.google.common.collect.Sets;
 
+import org.apache.bookkeeper.common.util.affinity.impl.IsolatedProcessors;
 import org.junit.Test;
 
 public class IsolatedProcessorsTest {
