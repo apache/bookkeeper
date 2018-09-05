@@ -20,10 +20,10 @@
  */
 package org.apache.bookkeeper.bookie;
 
-
 import io.netty.buffer.ByteBuf;
 
 import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -32,6 +32,7 @@ import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.bookie.EntryLogger.EntryLogScanner;
 import org.apache.bookkeeper.common.util.Watcher;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.proto.checksum.DigestManager;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.util.DiskChecker;
 import org.apache.bookkeeper.util.SnapshotMap;
@@ -47,10 +48,13 @@ public class InterleavedStorageRegenerateIndexOp {
 
     private final ServerConfiguration conf;
     private final Set<Long> ledgerIds;
+    private final byte[] masterKey;
 
-    public InterleavedStorageRegenerateIndexOp(ServerConfiguration conf, Set<Long> ledgerIds) {
+    public InterleavedStorageRegenerateIndexOp(ServerConfiguration conf, Set<Long> ledgerIds, byte[] password)
+            throws NoSuchAlgorithmException {
         this.conf = conf;
         this.ledgerIds = ledgerIds;
+        this.masterKey = DigestManager.generateMasterKey(password);
     }
 
     static class RecoveryStats {
@@ -125,9 +129,7 @@ public class InterleavedStorageRegenerateIndexOp {
                     }
 
                     if (!ledgerCache.ledgerExists(ledgerId)) {
-                        // set dummy master key and set fenced.
-                        // master key is only used on write operations
-                        ledgerCache.setMasterKey(ledgerId, new byte[0]);
+                        ledgerCache.setMasterKey(ledgerId, masterKey);
                         ledgerCache.setFenced(ledgerId);
                     }
                     ledgerCache.putEntryOffset(ledgerId, entryId, location);

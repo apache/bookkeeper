@@ -18,13 +18,10 @@
 
 package org.apache.bookkeeper.tests.integration;
 
-import static org.junit.Assert.assertTrue;
 import static java.nio.charset.StandardCharsets.UTF_8;
-
+import static org.junit.Assert.assertTrue;
 
 import com.github.dockerjava.api.DockerClient;
-import java.util.List;
-import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
 import org.apache.bookkeeper.client.BKException;
@@ -115,7 +112,8 @@ public class TestBookieShellCluster extends BookieShellTestBase {
     private static void validateNEntries(BookKeeper bk, long ledgerId, int n) throws Exception {
         try (ReadHandle reader = bk.newOpenLedgerOp()
              .withLedgerId(ledgerId)
-             .withPassword(PASSWORD).execute().get();
+             .withPassword(PASSWORD)
+             .execute().get();
              LedgerEntries entries = reader.read(0, n - 1)) {
             Assert.assertEquals(reader.getLastAddConfirmed(), n - 1);
 
@@ -144,10 +142,12 @@ public class TestBookieShellCluster extends BookieShellTestBase {
             validateNEntries(bk, ledgerId1, numEntries);
             validateNEntries(bk, ledgerId2, numEntries);
 
-            String indexFileName1 = String.format("/opt/bookkeeper/data/ledgers/current/0/%d/%d.idx", ledgerId1, ledgerId1);
-            String indexFileName2 = String.format("/opt/bookkeeper/data/ledgers/current/0/%d/%d.idx", ledgerId2, ledgerId2);
+            String indexFileName1 = String.format("/opt/bookkeeper/data/ledgers/current/0/%d/%d.idx",
+                                                  ledgerId1, ledgerId1);
+            String indexFileName2 = String.format("/opt/bookkeeper/data/ledgers/current/0/%d/%d.idx",
+                                                  ledgerId2, ledgerId2);
 
-            log.info("Stop bookies to flush, delete the index and restart to flush cache");
+            log.info("Stop bookies to flush, delete the index and start again");
             assertTrue(BookKeeperClusterUtils.stopAllBookies(docker));
 
             BookKeeperClusterUtils.runOnAllBookies(docker, "rm", indexFileName1, indexFileName2);
@@ -172,7 +172,8 @@ public class TestBookieShellCluster extends BookieShellTestBase {
             log.info("Regenerate the index file");
             BookKeeperClusterUtils.runOnAllBookies(docker,
                     bkScript, "shell", "regenerate-interleaved-storage-index-file",
-                    "--ledgerIds", String.format("%d,%d", ledgerId1, ledgerId2));
+                    "--ledgerIds", String.format("%d,%d", ledgerId1, ledgerId2),
+                    "--password", new String(PASSWORD, UTF_8));
             assertTrue(BookKeeperClusterUtils.startAllBookiesWithVersion(docker, currentVersion));
 
             log.info("Validate that we can read back, after regeneration");

@@ -18,7 +18,7 @@
 
 package org.apache.bookkeeper.bookie;
 
-import static com.google.common.base.Charsets.UTF_8;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.bookkeeper.meta.MetadataDrivers.runFunctionWithLedgerManagerFactory;
 import static org.apache.bookkeeper.meta.MetadataDrivers.runFunctionWithMetadataBookieDriver;
 import static org.apache.bookkeeper.meta.MetadataDrivers.runFunctionWithRegistrationManager;
@@ -51,6 +51,7 @@ import java.nio.file.attribute.FileTime;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -2836,6 +2837,11 @@ public class BookieShell implements Tool {
             opts.addOption(ledgerOption);
             opts.addOption("dryRun", false,
                            "Process the entryLogger, but don't write anything.");
+            opts.addOption("password", true,
+                           "The bookie stores the password in the index file, so we need it to regenerate. "
+                           + "This must match the value in the ledger metadata.");
+            opts.addOption("b64password", true,
+                           "The password in base64 encoding, for cases where the password is not UTF-8.");
         }
 
         @Override
@@ -2855,14 +2861,23 @@ public class BookieShell implements Tool {
 
         @Override
         int runCmd(CommandLine cmdLine) throws Exception {
-            Set<Long> ledgerId = Arrays.stream(cmdLine.getOptionValues("ledgerIds"))
+            byte[] password;
+            if (cmdLine.hasOption("password")) {
+                password = cmdLine.getOptionValue("password").getBytes(UTF_8);
+            } else if (cmdLine.hasOption("b64password")) {
+                password = Base64.getDecoder().decode(cmdLine.getOptionValue("b64password"));
+            } else {
+                LOG.error("The password must be specified to regenerate the index file.");
+                return 1;
+            }
+            Set<Long> ledgerIds = Arrays.stream(cmdLine.getOptionValues("ledgerIds"))
                 .map((id) -> Long.parseLong(id)).collect(Collectors.toSet());
             boolean dryRun = cmdLine.hasOption("dryRun");
 
-            LOG.info("=== Rebuilding index file for {} ===", ledgerId);
+            LOG.info("=== Rebuilding index file for {} ===", ledgerIds);
             ServerConfiguration conf = new ServerConfiguration(bkConf);
-            new InterleavedStorageRegenerateIndexOp(conf, ledgerId).initiate(dryRun);
-            LOG.info("-- Done rebuilding index file for {} --", ledgerId);
+            new InterleavedStorageRegenerateIndexOp(conf, ledgerIds, password).initiate(dryRun);
+            LOG.info("-- Done rebuilding index file for {} --", ledgerIds);
             return 0;
         }
     }
