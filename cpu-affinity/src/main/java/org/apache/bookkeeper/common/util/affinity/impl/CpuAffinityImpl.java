@@ -83,7 +83,7 @@ public class CpuAffinityImpl {
      * <p>We use file-locks to ensure that other processes are aware of which CPUs are taken and that these locks are
      * automatically released if the process crashes.
      */
-    private static int pickAvailableCpu() throws IOException {
+    private static synchronized int pickAvailableCpu() throws IOException {
         if (isolatedProcessors == null) {
             isolatedProcessors = IsolatedProcessors.get();
         }

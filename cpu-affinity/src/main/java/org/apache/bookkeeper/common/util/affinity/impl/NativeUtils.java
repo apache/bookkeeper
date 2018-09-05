@@ -45,14 +45,12 @@ public class NativeUtils {
      * @throws Exception
      */
     public static void loadLibraryFromJar(String path) throws Exception {
-
-        checkArgument(path.startsWith("/"), "absolute path must start with  /");
+        checkArgument(path.startsWith("/"), "absolute path must start with /");
 
         String[] parts = path.split("/");
         String filename = (parts.length > 0) ? parts[parts.length - 1] : null;
 
         File dir = File.createTempFile("native", "");
-        dir.delete();
         if (!(dir.mkdir())) {
             throw new IOException("Failed to create temp directory " + dir.getAbsolutePath());
         }
@@ -63,19 +61,16 @@ public class NativeUtils {
         byte[] buffer = new byte[1024];
         int read;
 
-        InputStream input = NativeUtils.class.getResourceAsStream(path);
-        if (input == null) {
-            throw new FileNotFoundException("Couldn't find file into jar " + path);
-        }
-
-        OutputStream out = new FileOutputStream(temp);
-        try {
-            while ((read = input.read(buffer)) != -1) {
-                out.write(buffer, 0, read);
+        try (InputStream input = NativeUtils.class.getResourceAsStream(path)) {
+            if (input == null) {
+                throw new FileNotFoundException("Couldn't find file into jar " + path);
             }
-        } finally {
-            out.close();
-            input.close();
+
+            try (OutputStream out = new FileOutputStream(temp)) {
+                while ((read = input.read(buffer)) != -1) {
+                    out.write(buffer, 0, read);
+                }
+            }
         }
 
         if (!temp.exists()) {

@@ -21,7 +21,11 @@
 
 package org.apache.bookkeeper.common.util.affinity.impl;
 
+import com.google.common.base.Charsets;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -38,10 +42,13 @@ import org.apache.commons.lang3.StringUtils;
 @Slf4j
 class IsolatedProcessors {
 
+    private static final Charset ENCODING = Charsets.US_ASCII;
+
     private static final String ISOLATED_CPU_PATH = "/sys/devices/system/cpu/isolated";
 
+    @SuppressFBWarnings("DMI_HARDCODED_ABSOLUTE_FILENAME")
     static SortedSet<Integer> get() throws IOException {
-        return parseProcessorRange(new String(Files.readAllBytes(Paths.get(ISOLATED_CPU_PATH))));
+        return parseProcessorRange(new String(Files.readAllBytes(Paths.get(ISOLATED_CPU_PATH)), ENCODING));
     }
 
     static SortedSet<Integer> parseProcessorRange(String range) {
@@ -84,10 +91,11 @@ class IsolatedProcessors {
     private static void changeCpuStatus(int cpu, boolean enable) throws IOException {
         Path cpuPath = Paths.get(String.format("/sys/devices/system/cpu/cpu%d/online", cpu));
 
-        boolean currentState = Integer.parseInt(StringUtils.trim(new String(Files.readAllBytes(cpuPath)))) != 0;
+        boolean currentState = Integer
+                .parseInt(StringUtils.trim(new String(Files.readAllBytes(cpuPath), ENCODING))) != 0;
 
         if (currentState != enable) {
-            Files.write(cpuPath, (enable ? "1\n" : "0\n").getBytes(), StandardOpenOption.TRUNCATE_EXISTING);
+            Files.write(cpuPath, (enable ? "1\n" : "0\n").getBytes(ENCODING), StandardOpenOption.TRUNCATE_EXISTING);
             log.info("{} CPU {}", enable ? "Enabled" : "Disabled", cpu);
         }
     }

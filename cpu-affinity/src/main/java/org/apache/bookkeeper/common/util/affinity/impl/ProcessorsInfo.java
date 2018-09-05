@@ -22,7 +22,10 @@ package org.apache.bookkeeper.common.util.affinity.impl;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
+import com.google.common.base.Charsets;
+
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Map;
@@ -36,6 +39,8 @@ import org.apache.commons.lang3.StringUtils;
  * Discover the list of processors from /proc/cpuinfo.
  */
 class ProcessorsInfo {
+
+    private static final Charset ENCODING = Charsets.US_ASCII;
 
     /**
      * Given one cpu id, return all CPUs that are sharing the same core.
@@ -86,7 +91,7 @@ class ProcessorsInfo {
 
     static ProcessorsInfo parseCpuInfo() {
         try {
-            return parseCpuInfo(new String(Files.readAllBytes(Paths.get("/proc/cpuinfo"))));
+            return parseCpuInfo(new String(Files.readAllBytes(Paths.get("/proc/cpuinfo")), ENCODING));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
