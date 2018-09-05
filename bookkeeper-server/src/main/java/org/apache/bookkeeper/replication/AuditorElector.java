@@ -33,6 +33,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -206,9 +207,9 @@ public class AuditorElector {
         }
     }
 
-    public void start() {
+    public Future<?> start() {
         running.set(true);
-        submitElectionTask();
+        return submitElectionTask();
     }
 
     /**
@@ -242,7 +243,7 @@ public class AuditorElector {
      * Auditor.
      */
     @VisibleForTesting
-    void submitElectionTask() {
+    Future<?> submitElectionTask() {
 
         Runnable r = new Runnable() {
                 public void run() {
@@ -302,7 +303,7 @@ public class AuditorElector {
                     }
                 }
             };
-        executor.submit(r);
+        return executor.submit(r);
     }
 
     @VisibleForTesting

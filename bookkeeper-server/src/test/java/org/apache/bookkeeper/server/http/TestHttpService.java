@@ -31,6 +31,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Future;
 import lombok.Cleanup;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.LedgerHandle;
@@ -586,7 +587,7 @@ public class TestHttpService extends BookKeeperClusterTestCase {
 
     ZooKeeper auditorZookeeper;
     AuditorElector auditorElector;
-    private void startAuditorElector() throws Exception {
+    private Future<?> startAuditorElector() throws Exception {
         auditorZookeeper = ZooKeeperClient.newBuilder()
           .connectString(zkUtil.getZooKeeperConnectString())
           .sessionTimeoutMs(10000)
@@ -597,7 +598,7 @@ public class TestHttpService extends BookKeeperClusterTestCase {
         conf.setMetadataServiceUri("zk://" + zkUtil.getZooKeeperConnectString() + "/ledgers");
         auditorElector = new AuditorElector(addr, conf,
           auditorZookeeper);
-        auditorElector.start();
+        return auditorElector.start();
     }
 
     private void stopAuditorElector() throws Exception {
@@ -628,7 +629,8 @@ public class TestHttpService extends BookKeeperClusterTestCase {
 
     @Test
     public void testWhoIsAuditorService() throws Exception {
-        startAuditorElector();
+        // start the auditor elector and wait until auditor finishes election.
+        startAuditorElector().get();
 
         HttpEndpointService whoIsAuditorService = bkHttpServiceProvider
           .provideHttpEndpointService(HttpServer.ApiType.WHO_IS_AUDITOR);
