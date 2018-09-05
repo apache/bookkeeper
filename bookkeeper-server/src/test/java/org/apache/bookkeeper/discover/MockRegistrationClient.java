@@ -55,7 +55,7 @@ public class MockRegistrationClient implements RegistrationClient {
         return new Versioned<>(Collections.unmodifiableSet(bookies), new LongVersion(version));
     }
 
-    CompletableFuture<Void> addBookies(BookieSocketAddress... bookies) {
+    public CompletableFuture<Void> addBookies(BookieSocketAddress... bookies) {
         CompletableFuture<Void> promise = new CompletableFuture<>();
         executor.submit(() -> {
                 currentVersion++;
@@ -68,7 +68,7 @@ public class MockRegistrationClient implements RegistrationClient {
         return promise;
     }
 
-    CompletableFuture<Void> removeBookies(BookieSocketAddress... bookies) {
+    public CompletableFuture<Void> removeBookies(BookieSocketAddress... bookies) {
         CompletableFuture<Void> promise = new CompletableFuture<>();
         executor.submit(() -> {
                 currentVersion++;
@@ -81,7 +81,7 @@ public class MockRegistrationClient implements RegistrationClient {
         return promise;
     }
 
-    CompletableFuture<Void> addReadOnlyBookies(BookieSocketAddress... bookies) {
+    public CompletableFuture<Void> addReadOnlyBookies(BookieSocketAddress... bookies) {
         CompletableFuture<Void> promise = new CompletableFuture<>();
         executor.submit(() -> {
                 currentVersion++;
@@ -94,7 +94,7 @@ public class MockRegistrationClient implements RegistrationClient {
         return promise;
     }
 
-    CompletableFuture<Void> removeReadOnlyBookies(BookieSocketAddress... bookies) {
+    public CompletableFuture<Void> removeReadOnlyBookies(BookieSocketAddress... bookies) {
         CompletableFuture<Void> promise = new CompletableFuture<>();
         executor.submit(() -> {
                 currentVersion++;

@@ -52,11 +52,12 @@ cp ${SRC_DIR}/bookkeeper-dist/all/target/bookkeeper-all-${VERSION}-bin.tar.gz   
 cp ${SRC_DIR}/bookkeeper-dist/all/target/bookkeeper-all-${VERSION}-bin.tar.gz.asc       ${DEST_DIR}/bookkeeper-all-${VERSION}-bin.tar.gz.asc
 echo "Copied packages."
 
-echo "Generating sha1 files ..."
-sha1sum ${DEST_DIR}/bookkeeper-${VERSION}-src.tar.gz            > ${DEST_DIR}/bookkeeper-${VERSION}-src.tar.gz.sha1
-sha1sum ${DEST_DIR}/bookkeeper-server-${VERSION}-bin.tar.gz     > ${DEST_DIR}/bookkeeper-server-${VERSION}-bin.tar.gz.sha1
-sha1sum ${DEST_DIR}/bookkeeper-all-${VERSION}-bin.tar.gz        > ${DEST_DIR}/bookkeeper-all-${VERSION}-bin.tar.gz.sha1
-echo "Generated sha1 files."
+echo "Generating sha512 files ..."
+cd ${DEST_DIR}
+shasum -a 512 bookkeeper-${VERSION}-src.tar.gz            > bookkeeper-${VERSION}-src.tar.gz.sha512
+shasum -a 512 bookkeeper-server-${VERSION}-bin.tar.gz     > bookkeeper-server-${VERSION}-bin.tar.gz.sha512
+shasum -a 512 bookkeeper-all-${VERSION}-bin.tar.gz        > bookkeeper-all-${VERSION}-bin.tar.gz.sha512
+echo "Generated sha512 files."
 
 cd ${DIST_DEV_DIR}/bookkeeper
 svn add ${RC_DIR}

@@ -430,16 +430,17 @@ public abstract class MockBookKeeperTestCase {
     @SuppressWarnings("unchecked")
     private void setupWriteLedgerMetadata() {
         doAnswer(invocation -> {
-            Object[] args = invocation.getArguments();
-            Long ledgerId = (Long) args[0];
-            LedgerMetadata metadata = (LedgerMetadata) args[1];
-            BookkeeperInternalCallbacks.GenericCallback cb = (BookkeeperInternalCallbacks.GenericCallback) args[2];
-            executor.executeOrdered(ledgerId, () -> {
-                mockLedgerMetadataRegistry.put(ledgerId, new LedgerMetadata(metadata));
-                cb.operationComplete(BKException.Code.OK, null);
-            });
-            return null;
-        }).when(ledgerManager).writeLedgerMetadata(anyLong(), any(), any());
+                Object[] args = invocation.getArguments();
+                Long ledgerId = (Long) args[0];
+                LedgerMetadata metadata = (LedgerMetadata) args[1];
+                BookkeeperInternalCallbacks.GenericCallback cb = (BookkeeperInternalCallbacks.GenericCallback) args[2];
+                executor.executeOrdered(ledgerId, () -> {
+                        LedgerMetadata newMetadata = LedgerMetadataBuilder.from(metadata).build();
+                        mockLedgerMetadataRegistry.put(ledgerId, newMetadata);
+                        cb.operationComplete(BKException.Code.OK, newMetadata);
+                    });
+                return null;
+            }).when(ledgerManager).writeLedgerMetadata(anyLong(), any(), any());
     }
 
     @SuppressWarnings("unchecked")

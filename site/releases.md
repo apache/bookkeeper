@@ -3,7 +3,7 @@ title: Apache BookKeeper&trade; Releases
 layout: community
 ---
 
-{% capture mirror_url %}https://www.apache.org/dyn/mirrors/mirrors.cgi?action=download&filename=bookkeeper{% endcapture %}
+{% capture mirror_url %}https://www.apache.org/dyn/closer.lua/bookkeeper{% endcapture %}
 {% capture latest_source_url %}{{ mirror_url }}/bookkeeper-{{ site.latest_release }}/bookkeeper-{{ site.latest_release }}-src.tar.gz{% endcapture %}
 {% capture latest_bin_url %}{{ mirror_url }}/bookkeeper-{{ site.latest_release }}/bookkeeper-server-{{ site.latest_release }}-bin.tar.gz{% endcapture %}
 {% capture dist_url %}https://www.apache.org/dist/bookkeeper{% endcapture %}
@@ -24,8 +24,8 @@ If you want to download older, archived releases, they are available in the [Apa
 
 Release | Link | Crypto files
 :-------|:-----|:------------
-Source | [bookkeeper-{{ site.latest_release }}-src.tar.gz]({{ latest_source_url }}) | [asc]({{ latest_source_dist_url }}.asc), [sha1]({{ latest_source_dist_url }}.sha1)
-Binary | [bookkeeper-server-{{ site.latest_release }}-bin.tar.gz]({{ latest_bin_url }}) | [asc]({{ latest_bin_dist_url }}.asc), [sha1]({{ latest_bin_dist_url }}.sha1)
+Source | [bookkeeper-{{ site.latest_release }}-src.tar.gz]({{ latest_source_url }}) | [asc]({{ latest_source_dist_url }}.asc), [sha512]({{ latest_source_dist_url }}.sha512)
+Binary | [bookkeeper-server-{{ site.latest_release }}-bin.tar.gz]({{ latest_bin_url }}) | [asc]({{ latest_bin_dist_url }}.asc), [sha512]({{ latest_bin_dist_url }}.sha512)
 
 ## Latest stable release (version {{ site.stable_release }})
 
@@ -61,6 +61,16 @@ Client Guide | API docs
 [The DistributedLog Library]({{ site.baseurl }}docs/latest/api/distributedlog-api) | [Javadoc](https://distributedlog.io/docs/latest/api/java)
 
 ## News
+
+### 29 August, 2018: Release 4.7.2 available
+
+This is the 12th release of Apache BookKeeper!
+
+The 4.7.2 release is a bugfix release which fixes a bunch of issues reported from users of 4.7.1. These fixes include
+bug fixes around DbLedgerStorage, failure handling around ensemble changes, bookie shutdown and such.
+
+See [BookKeeper 4.7.2 Release Notes](../docs/4.7.2/overview/releaseNotes) for details.
+
 
 ### 19 June, 2018: Release 4.7.1 available
 
