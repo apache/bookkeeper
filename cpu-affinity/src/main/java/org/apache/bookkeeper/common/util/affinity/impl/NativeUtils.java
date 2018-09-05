@@ -31,6 +31,9 @@ import java.io.OutputStream;
 
 import lombok.experimental.UtilityClass;
 
+/**
+ * Utility class to load jni library from inside a JAR.
+ */
 @UtilityClass
 public class NativeUtils {
     /**

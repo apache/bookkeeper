@@ -33,12 +33,12 @@ import java.util.TreeSet;
 import org.apache.commons.lang3.StringUtils;
 
 /**
- * Discover the list of processors from /proc/cpuinfo
+ * Discover the list of processors from /proc/cpuinfo.
  */
 class ProcessorsInfo {
 
     /**
-     * Given one cpu id, return all CPUs that are sharing the same core
+     * Given one cpu id, return all CPUs that are sharing the same core.
      */
     public Set<Integer> getCpusOnSameCore(int targetCpu) {
         Set<Integer> result = new TreeSet<>();

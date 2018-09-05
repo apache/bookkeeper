@@ -25,13 +25,16 @@ import lombok.experimental.UtilityClass;
 
 import org.apache.bookkeeper.common.util.affinity.impl.CpuAffinityImpl;
 
+/**
+ * Utilities for enabling thread to CPU affinity.
+ */
 @UtilityClass
 public class CpuAffinity {
 
     /**
      * Acquire ownership of one CPU core for the current thread.
      *
-     * Notes:
+     * <p>Notes:
      *
      * <ol>
      * <li>This method will only consider CPUs that are "isolated" by the OS. Eg: boot the kernel with

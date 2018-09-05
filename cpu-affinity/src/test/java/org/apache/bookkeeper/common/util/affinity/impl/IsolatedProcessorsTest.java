@@ -24,9 +24,11 @@ import static org.junit.Assert.assertEquals;
 
 import com.google.common.collect.Sets;
 
-import org.apache.bookkeeper.common.util.affinity.impl.IsolatedProcessors;
 import org.junit.Test;
 
+/**
+ * Tests for {@link IsolatedProcessors}.
+ */
 public class IsolatedProcessorsTest {
 
     @Test

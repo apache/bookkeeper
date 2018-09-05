@@ -22,10 +22,16 @@ package org.apache.bookkeeper.common.util.affinity.impl;
 
 import java.io.IOException;
 
+import lombok.experimental.UtilityClass;
+
+/**
+ * JNI wrapper of native functions for CPU affinity.
+ */
+@UtilityClass
 public class CpuAffinityJni {
-    static native final boolean isRoot();
+    static native boolean isRoot();
 
-    static native final boolean isAvailable();
+    static native boolean isAvailable();
 
-    static native final void setAffinity(int cpuId) throws IOException;
+    static native void setAffinity(int cpuId) throws IOException;
 }

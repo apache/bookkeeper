@@ -36,6 +36,9 @@ import java.util.TreeSet;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * Implementation of CPU Affinity functionality.
+ */
 @UtilityClass
 @Slf4j
 public class CpuAffinityImpl {
@@ -51,7 +54,7 @@ public class CpuAffinityImpl {
 
     private static ProcessorsInfo processorsInfo = null;
 
-    public synchronized static void acquireCore() {
+    public static synchronized void acquireCore() {
         if (!SUPPORTED) {
             throw new RuntimeException("CPU Affinity not supported in current environment");
         }
@@ -77,7 +80,7 @@ public class CpuAffinityImpl {
      * Other than the cores acquired by this process, there might be other processes on the same host trying to acquire
      * the available cores.
      *
-     * We use file-locks to ensure that other processes are aware of which CPUs are taken and that these locks are
+     * <p>We use file-locks to ensure that other processes are aware of which CPUs are taken and that these locks are
      * automatically released if the process crashes.
      */
     private static int pickAvailableCpu() throws IOException {
@@ -140,7 +143,7 @@ public class CpuAffinityImpl {
     }
 
     /**
-     * Try to acquire a lock on a particular cpu
+     * Try to acquire a lock on a particular cpu.
      *
      * @return null if the lock was not available
      * @return a {@link Closeable} lock object if the lock was acquired

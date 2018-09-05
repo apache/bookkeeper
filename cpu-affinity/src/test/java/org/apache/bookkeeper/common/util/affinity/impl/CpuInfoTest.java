@@ -28,9 +28,11 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.util.stream.Collectors;
 
-import org.apache.bookkeeper.common.util.affinity.impl.ProcessorsInfo;
 import org.junit.Test;
 
+/**
+ * Tests for CpuInfo class.
+ */
 public class CpuInfoTest {
 
     @Test
