@@ -117,7 +117,8 @@ public class ZKMetadataDriverBase implements AutoCloseable {
                         + schemeParts[1] + "' at uri : " + metadataServiceUri);
             }
         } else {
-            ledgerManagerFactoryClass = HierarchicalLedgerManagerFactory.class;
+            // behave as in the +null case, infer the layout from the store or fall back to the default
+            ledgerManagerFactoryClass = null;
         }
         return ledgerManagerFactoryClass;
     }
