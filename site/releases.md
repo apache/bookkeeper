@@ -3,7 +3,7 @@ title: Apache BookKeeper&trade; Releases
 layout: community
 ---
 
-{% capture mirror_url %}https://www.apache.org/dyn/mirrors/mirrors.cgi?action=download&filename=bookkeeper{% endcapture %}
+{% capture mirror_url %}https://www.apache.org/dyn/closer.lua/bookkeeper{% endcapture %}
 {% capture latest_source_url %}{{ mirror_url }}/bookkeeper-{{ site.latest_release }}/bookkeeper-{{ site.latest_release }}-src.tar.gz{% endcapture %}
 {% capture latest_bin_url %}{{ mirror_url }}/bookkeeper-{{ site.latest_release }}/bookkeeper-server-{{ site.latest_release }}-bin.tar.gz{% endcapture %}
 {% capture dist_url %}https://www.apache.org/dist/bookkeeper{% endcapture %}
