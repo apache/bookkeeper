@@ -24,9 +24,10 @@ package org.apache.bookkeeper.bookie;
 import io.netty.buffer.ByteBuf;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.bookkeeper.bookie.EntryLogger.EntryLogScanner;
 import org.apache.bookkeeper.common.util.Watcher;
@@ -45,11 +46,39 @@ public class InterleavedStorageRegenerateIndexOp {
     private static final Logger LOG = LoggerFactory.getLogger(InterleavedStorageRegenerateIndexOp.class);
 
     private final ServerConfiguration conf;
-    private final long ledgerId;
+    private final Set<Long> ledgerIds;
 
-    public InterleavedStorageRegenerateIndexOp(ServerConfiguration conf, long ledgerId) {
+    public InterleavedStorageRegenerateIndexOp(ServerConfiguration conf, Set<Long> ledgerIds) {
         this.conf = conf;
-        this.ledgerId = ledgerId;
+        this.ledgerIds = ledgerIds;
+    }
+
+    static class RecoveryStats {
+        long firstEntry = Long.MAX_VALUE;
+        long lastEntry = Long.MIN_VALUE;
+        long numEntries = 0;
+
+        void registerEntry(long entryId) {
+            numEntries++;
+            if (entryId < firstEntry) {
+                firstEntry = entryId;
+            }
+            if (entryId > lastEntry) {
+                lastEntry = entryId;
+            }
+        }
+
+        long getNumEntries() {
+            return numEntries;
+        }
+
+        long getFirstEntry() {
+            return firstEntry;
+        }
+
+        long getLastEntry() {
+            return lastEntry;
+        }
     }
 
     public void initiate(boolean dryRun) throws IOException {
@@ -77,9 +106,7 @@ public class InterleavedStorageRegenerateIndexOp {
 
         LOG.info("Scanning {} entry logs", totalEntryLogs);
 
-        AtomicLong firstEntry = new AtomicLong(Long.MAX_VALUE);
-        AtomicLong lastEntry = new AtomicLong(0);
-        AtomicLong numEntries = new AtomicLong(0);
+        Map<Long, RecoveryStats> stats = new HashMap<>();
         for (long entryLogId : entryLogs) {
             LOG.info("Scanning {}", entryLogId);
             entryLogger.scanEntryLog(entryLogId, new EntryLogScanner() {
@@ -87,13 +114,7 @@ public class InterleavedStorageRegenerateIndexOp {
                 public void process(long ledgerId, long offset, ByteBuf entry) throws IOException {
                     long entryId = entry.getLong(8);
 
-                    if (entryId < firstEntry.get()) {
-                        firstEntry.set(entryId);
-                    }
-                    if (entryId > lastEntry.get()) {
-                        lastEntry.set(entryId);
-                    }
-                    numEntries.incrementAndGet();
+                    stats.computeIfAbsent(ledgerId, (ignore) -> new RecoveryStats()).registerEntry(entryId);
 
                     // Actual location indexed is pointing past the entry size
                     long location = (entryLogId << 32L) | (offset + 4);
@@ -114,7 +135,7 @@ public class InterleavedStorageRegenerateIndexOp {
 
                 @Override
                 public boolean accept(long ledgerId) {
-                    return ledgerId == InterleavedStorageRegenerateIndexOp.this.ledgerId;
+                    return ledgerIds.contains(ledgerId);
                 }
             });
 
@@ -125,10 +146,18 @@ public class InterleavedStorageRegenerateIndexOp {
                     totalEntryLogs);
         }
 
-        String duration = DurationFormatUtils.formatDurationHMS(
-                TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime));
-        LOG.info("Rebuilding index for ledger {} is done. {} entries found, first {}, last {}. Total time: {}",
-                 ledgerId, numEntries.get(), firstEntry.get(), lastEntry.get(), duration);
+        LOG.info("Rebuilding indices done");
+        for (long ledgerId : ledgerIds) {
+            RecoveryStats ledgerStats = stats.get(ledgerId);
+            if (ledgerStats == null || ledgerStats.getNumEntries() == 0) {
+                LOG.info(" {} - No entries found", ledgerId);
+            } else {
+                LOG.info(" {} - Found {} entries, from {} to {}", ledgerId,
+                         ledgerStats.getNumEntries(), ledgerStats.getFirstEntry(), ledgerStats.getLastEntry());
+            }
+        }
+        LOG.info("Total time: {}", DurationFormatUtils.formatDurationHMS(
+                         TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime)));
     }
 
 

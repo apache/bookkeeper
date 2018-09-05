@@ -659,15 +659,6 @@ public class Bookie extends BookieCriticalThread {
         this.ledgerMonitor = new LedgerDirsMonitor(conf, diskChecker, ledgerDirsManager);
         try {
             this.ledgerMonitor.init();
-
-            // if the index and ledger are sharing directories we can use the same monitor,
-            // if not, create a new one for the index
-            if (indexDirsManager == ledgerDirsManager) {
-                this.idxMonitor = this.ledgerMonitor;
-            } else {
-                this.idxMonitor = new LedgerDirsMonitor(conf, diskChecker, indexDirsManager);
-                this.idxMonitor.init();
-            }
         } catch (NoWritableLedgerDirException nle) {
             // start in read-only mode if no writable dirs and read-only allowed
             if (!conf.isReadOnlyModeEnabled()) {
@@ -676,6 +667,23 @@ public class Bookie extends BookieCriticalThread {
                 this.stateManager.transitionToReadOnlyMode();
             }
         }
+
+        if (ledgerDirsManager == indexDirsManager) {
+            this.idxMonitor = this.ledgerMonitor;
+        } else {
+            this.idxMonitor = new LedgerDirsMonitor(conf, diskChecker, indexDirsManager);
+            try {
+                this.idxMonitor.init();
+            } catch (NoWritableLedgerDirException nle) {
+                // start in read-only mode if no writable dirs and read-only allowed
+                if (!conf.isReadOnlyModeEnabled()) {
+                    throw nle;
+                } else {
+                    this.stateManager.transitionToReadOnlyMode();
+                }
+            }
+        }
+
 
         // instantiate the journals
         journals = Lists.newArrayList();

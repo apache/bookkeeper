@@ -72,6 +72,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 import org.apache.bookkeeper.bookie.BookieException.CookieNotFoundException;
 import org.apache.bookkeeper.bookie.BookieException.InvalidCookieException;
@@ -2825,9 +2826,13 @@ public class BookieShell implements Tool {
 
         public RegenerateInterleavedStorageIndexFile() {
             super(CMD_REGENERATE_INTERLEAVED_STORAGE_INDEX_FILE);
-            Option ledgerOption = new Option("l", "ledger", true,
-                                             "Ledger whose index needs to be regenerated.");
+            Option ledgerOption = new Option("l", "ledgerIds", true,
+                                             "Ledger(s) whose index needs to be regenerated."
+                                             + " Multiple can be specified, comma separated.");
             ledgerOption.setRequired(true);
+            ledgerOption.setValueSeparator(',');
+            ledgerOption.setArgs(Option.UNLIMITED_VALUES);
+
             opts.addOption(ledgerOption);
             opts.addOption("dryRun", false,
                            "Process the entryLogger, but don't write anything.");
@@ -2850,7 +2855,8 @@ public class BookieShell implements Tool {
 
         @Override
         int runCmd(CommandLine cmdLine) throws Exception {
-            long ledgerId = Long.parseLong(cmdLine.getOptionValue("ledger"));
+            Set<Long> ledgerId = Arrays.stream(cmdLine.getOptionValues("ledgerIds"))
+                .map((id) -> Long.parseLong(id)).collect(Collectors.toSet());
             boolean dryRun = cmdLine.hasOption("dryRun");
 
             LOG.info("=== Rebuilding index file for {} ===", ledgerId);
