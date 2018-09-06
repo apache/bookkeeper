@@ -14,13 +14,14 @@ layout: community
 {% capture stable_source_url %}{{ archive_url }}/bookkeeper-{{ site.stable_release }}/bookkeeper-{{ site.stable_release }}-src.tar.gz{% endcapture %}
 {% capture stable_bin_url %}{{ archive_url }}/bookkeeper-{{ site.stable_release }}/bookkeeper-server-{{ site.stable_release }}-bin.tar.gz{% endcapture %}
 
-Version **{{ site.latest_release }}** is the [latest release](#latest-releases-version-{{ site.latest_release | remove: "." }}) of BookKeeper. The current [stable version](#latest-stable-releases-version-{{ site.stable_release | remove: "." }}) is **{{ site.stable_release }}**.
+Version **{{ site.latest_release }}** is the [latest release](#latest-release) of BookKeeper. The current [stable version](#latest-stable-release) is **{{ site.stable_release }}**.
 
 > You can verify your download by following these [procedures](http://www.apache.org/info/verification.html) and using these [KEYS](https://www.apache.org/dist/bookkeeper/KEYS).
 
 If you want to download older, archived releases, they are available in the [Apache archive](http://archive.apache.org/dist/bookkeeper/).
 
 ## Latest release (version {{ site.latest_release }})
+<a name="latest-release"></a>
 
 Release | Link | Crypto files
 :-------|:-----|:------------
@@ -28,6 +29,7 @@ Source | [bookkeeper-{{ site.latest_release }}-src.tar.gz]({{ latest_source_url 
 Binary | [bookkeeper-server-{{ site.latest_release }}-bin.tar.gz]({{ latest_bin_url }}) | [asc]({{ latest_bin_dist_url }}.asc), [sha512]({{ latest_bin_dist_url }}.sha512)
 
 ## Latest stable release (version {{ site.stable_release }})
+<a name="latest-stable-release"></a>
 
 Release | Link | Crypto files
 :-------|:-----|:------------
