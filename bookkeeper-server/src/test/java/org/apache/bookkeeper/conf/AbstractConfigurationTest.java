@@ -26,6 +26,7 @@ import org.apache.bookkeeper.meta.AbstractZkLedgerManagerFactory;
 import org.apache.bookkeeper.meta.HierarchicalLedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LongHierarchicalLedgerManagerFactory;
+import org.apache.commons.configuration.ConfigurationException;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -76,7 +77,7 @@ public class AbstractConfigurationTest {
     }
 
     @SuppressWarnings({ "unchecked" })
-    @Test(expected = UnsupportedOperationException.class)
+    @Test(expected = ConfigurationException.class)
     public void testUnsupportedLedgerManagerFactory() throws Exception {
         LedgerManagerFactory mockFactory = mock(LedgerManagerFactory.class, CALLS_REAL_METHODS);
         conf.setLedgerManagerFactoryClass(mockFactory.getClass());
