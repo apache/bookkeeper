@@ -24,6 +24,7 @@ import com.github.dockerjava.api.DockerClient;
 import java.io.IOException;
 import java.net.Socket;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -136,13 +137,13 @@ public class BookKeeperClusterUtils {
 
     public static void updateAllBookieConf(DockerClient docker, String version, String key, String value)
             throws Exception {
-        for (String b : DockerUtils.cubeIdsMatching("bookkeeper")) {
+        for (String b : allBookies()) {
             updateBookieConf(docker, b, version, key, value);
         }
     }
 
     public static boolean runOnAnyBookie(DockerClient docker, String... cmds) throws Exception {
-        Optional<String> bookie = DockerUtils.cubeIdsMatching("bookkeeper").stream().findAny();
+        Optional<String> bookie = allBookies().stream().findAny();
         if (bookie.isPresent()) {
             DockerUtils.runCommand(docker, bookie.get(), cmds);
             return true;
@@ -152,7 +153,7 @@ public class BookKeeperClusterUtils {
     }
 
     public static String getAnyBookie() throws Exception {
-        Optional<String> bookie = DockerUtils.cubeIdsMatching("bookkeeper").stream().findAny();
+        Optional<String> bookie = allBookies().stream().findAny();
         if (bookie.isPresent()) {
             return bookie.get();
         } else {
@@ -161,9 +162,13 @@ public class BookKeeperClusterUtils {
     }
 
     public static void runOnAllBookies(DockerClient docker, String... cmds) throws Exception {
-        for (String b : DockerUtils.cubeIdsMatching("bookkeeper")) {
+        for (String b : allBookies()) {
             DockerUtils.runCommand(docker, b, cmds);
         }
+    }
+
+    public static Set<String> allBookies() {
+        return DockerUtils.cubeIdsMatching("bookkeeper");
     }
 
     private static boolean waitBookieState(DockerClient docker, String containerId,
@@ -219,7 +224,7 @@ public class BookKeeperClusterUtils {
 
     public static boolean startAllBookiesWithVersion(DockerClient docker, String version)
             throws Exception {
-        return DockerUtils.cubeIdsMatching("bookkeeper").stream()
+        return allBookies().stream()
             .map((b) -> startBookieWithVersion(docker, b, version))
             .reduce(true, BookKeeperClusterUtils::allTrue);
     }
@@ -235,13 +240,13 @@ public class BookKeeperClusterUtils {
     }
 
     public static boolean stopAllBookies(DockerClient docker) {
-        return DockerUtils.cubeIdsMatching("bookkeeper").stream()
+        return allBookies().stream()
             .map((b) -> stopBookie(docker, b))
             .reduce(true, BookKeeperClusterUtils::allTrue);
     }
 
     public static boolean waitAllBookieUp(DockerClient docker) {
-        return DockerUtils.cubeIdsMatching("bookkeeper").stream()
+        return allBookies().stream()
             .map((b) -> waitBookieUp(docker, b, 10, TimeUnit.SECONDS))
             .reduce(true, BookKeeperClusterUtils::allTrue);
     }
