@@ -492,7 +492,7 @@ a "3-clause BSD" license.  For details, see deps/jsr-305/LICENSE.
 Bundled as lib/com.google.code.findbugs-jsr305-3.0.2.jar
 Source available at https://storage.googleapis.com/google-code-archive-source/v2/code.google.com/jsr-305/source-archive.zip
 ------------------------------------------------------------------------------------
-This product bundles Google Protocal Buffers, which is available under a "3-clause BSD"
+This product bundles Google Protocol Buffers, which is available under a "3-clause BSD"
 license.
 
 Bundled as
