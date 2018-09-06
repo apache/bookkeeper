@@ -35,6 +35,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.apache.bookkeeper.client.AsyncCallback.CreateCallback;
 import org.apache.bookkeeper.client.AsyncCallback.DeleteCallback;
 import org.apache.bookkeeper.client.AsyncCallback.OpenCallback;
+import org.apache.bookkeeper.client.api.BKException.Code;
 import org.apache.bookkeeper.client.api.OpenBuilder;
 import org.apache.bookkeeper.client.api.ReadHandle;
 import org.apache.bookkeeper.client.impl.OpenBuilderBase;
@@ -221,8 +222,9 @@ public class MockBookKeeper extends BookKeeper {
             public CompletableFuture<ReadHandle> execute() {
                 CompletableFuture<ReadHandle> promise = new CompletableFuture<ReadHandle>();
 
-                if (!validate()) {
-                    promise.completeExceptionally(new BKException.BKNoSuchLedgerExistsException());
+                final int validateRc = validate();
+                if (Code.OK != validateRc) {
+                    promise.completeExceptionally(BKException.create(validateRc));
                     return promise;
                 } else if (getProgrammedFailStatus()) {
                     if (failReturnCode != BkTimeoutOperation) {

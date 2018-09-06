@@ -33,6 +33,7 @@ import org.apache.bookkeeper.client.AsyncCallback.OpenCallback;
 import org.apache.bookkeeper.client.AsyncCallback.ReadLastConfirmedCallback;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.SyncCallbackUtils.SyncOpenCallback;
+import org.apache.bookkeeper.client.api.BKException.Code;
 import org.apache.bookkeeper.client.api.ReadHandle;
 import org.apache.bookkeeper.client.impl.OpenBuilderBase;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
@@ -245,8 +246,9 @@ class LedgerOpenOp implements GenericCallback<LedgerMetadata> {
         }
 
         private void open(OpenCallback cb) {
-            if (!validate()) {
-                cb.openComplete(BKException.Code.NoSuchLedgerExistsException, null, null);
+            final int validateRc = validate();
+            if (Code.OK != validateRc) {
+                cb.openComplete(validateRc, null, null);
                 return;
             }
 

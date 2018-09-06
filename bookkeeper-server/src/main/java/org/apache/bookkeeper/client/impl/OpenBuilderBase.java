@@ -21,6 +21,7 @@ package org.apache.bookkeeper.client.impl;
 import java.util.Arrays;
 
 import org.apache.bookkeeper.client.LedgerHandle;
+import org.apache.bookkeeper.client.api.BKException.Code;
 import org.apache.bookkeeper.client.api.DigestType;
 import org.apache.bookkeeper.client.api.OpenBuilder;
 
@@ -62,11 +63,11 @@ public abstract class OpenBuilderBase implements OpenBuilder {
         return this;
     }
 
-    protected boolean validate() {
+    protected int validate() {
         if (ledgerId < 0) {
             LOG.error("invalid ledgerId {} < 0", ledgerId);
-            return false;
+            return Code.NoSuchLedgerExistsException;
         }
-        return true;
+        return Code.OK;
     }
 }
