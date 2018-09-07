@@ -315,6 +315,10 @@ public abstract class BookKeeperClusterTestCase {
         return zkUtil.getMetadataServiceUri(ledgersRootPath);
     }
 
+    protected String newMetadataServiceUri(String ledgersRootPath, String type) {
+        return zkUtil.getMetadataServiceUri(ledgersRootPath, type);
+    }
+
     /**
      * Get bookie address for bookie at index.
      */
