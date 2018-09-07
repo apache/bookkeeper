@@ -37,7 +37,6 @@ import java.util.List;
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.client.BKException;
-import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
 import org.apache.bookkeeper.proto.BookieServer;
@@ -47,6 +46,7 @@ import org.apache.bookkeeper.shims.zk.ZooKeeperServerShim;
 import org.apache.bookkeeper.shims.zk.ZooKeeperServerShimFactory;
 import org.apache.bookkeeper.tls.SecurityException;
 import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
+import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.io.FileUtils;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
@@ -62,8 +62,8 @@ public class LocalBookKeeper {
     protected static final Logger LOG = LoggerFactory.getLogger(LocalBookKeeper.class);
     public static final int CONNECTION_TIMEOUT = 30000;
 
-    private static String newMetadataServiceUri(String zkServers, int port) {
-        return "zk://" + zkServers + ":" + port + "/ledgers";
+    private static String newMetadataServiceUri(String zkServers, int port, String layout, String ledgerPath) {
+        return "zk+" + layout + "://" + zkServers + ":" + port + ledgerPath;
     }
 
     int numberOfBookies;
@@ -73,13 +73,18 @@ public class LocalBookKeeper {
     }
 
     public LocalBookKeeper(int numberOfBookies) {
-        this(numberOfBookies, 5000, defaultLocalBookiesConfigDir);
+        this(numberOfBookies, 5000, new ServerConfiguration(), defaultLocalBookiesConfigDir);
     }
 
-    public LocalBookKeeper(int numberOfBookies, int initialPort, String localBookiesConfigDirName) {
+    public LocalBookKeeper(
+            int numberOfBookies,
+            int initialPort,
+            ServerConfiguration baseConf,
+            String localBookiesConfigDirName) {
         this.numberOfBookies = numberOfBookies;
         this.initialPort = initialPort;
         this.localBookiesConfigDir = new File(localBookiesConfigDirName);
+        this.baseConf = baseConf;
         LOG.info("Running {} bookie(s) on zkServer {}.", this.numberOfBookies);
     }
 
@@ -94,6 +99,7 @@ public class LocalBookKeeper {
     BookieServer bs[];
     ServerConfiguration bsConfs[];
     Integer initialPort = 5000;
+    private ServerConfiguration baseConf;
 
     File localBookiesConfigDir;
     /**
@@ -121,7 +127,7 @@ public class LocalBookKeeper {
     }
 
     @SuppressWarnings("deprecation")
-    private void initializeZookeeper(AbstractConfiguration conf, String zkHost, int zkPort) throws IOException {
+    private void initializeZookeeper(String zkHost, int zkPort) throws IOException {
         LOG.info("Instantiate ZK Client");
         //initialize the zk client with values
         try (ZooKeeperClient zkc = ZooKeeperClient.newBuilder()
@@ -129,7 +135,7 @@ public class LocalBookKeeper {
                     .sessionTimeoutMs(zkSessionTimeOut)
                     .build()) {
             List<Op> multiOps = Lists.newArrayListWithExpectedSize(3);
-            String zkLedgersRootPath = ZKMetadataDriverBase.resolveZkLedgersRootPath(conf);
+            String zkLedgersRootPath = ZKMetadataDriverBase.resolveZkLedgersRootPath(baseConf);
             multiOps.add(
                 Op.create(zkLedgersRootPath, new byte[0], Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT));
             multiOps.add(
@@ -158,12 +164,13 @@ public class LocalBookKeeper {
         }
     }
 
-    private List<File> runBookies(ServerConfiguration baseConf, String dirSuffix)
+    private List<File> runBookies(String dirSuffix)
             throws IOException, KeeperException, InterruptedException, BookieException,
-            UnavailableException, CompatibilityException, SecurityException, BKException {
+            UnavailableException, CompatibilityException, SecurityException, BKException,
+            ConfigurationException {
         List<File> tempDirs = new ArrayList<File>();
         try {
-            runBookies(baseConf, tempDirs, dirSuffix);
+            runBookies(tempDirs, dirSuffix);
             return tempDirs;
         } catch (IOException ioe) {
             cleanupDirectories(tempDirs);
@@ -188,9 +195,9 @@ public class LocalBookKeeper {
     }
 
     @SuppressWarnings("deprecation")
-    private void runBookies(ServerConfiguration baseConf, List<File> tempDirs, String dirSuffix)
+    private void runBookies(List<File> tempDirs, String dirSuffix)
             throws IOException, KeeperException, InterruptedException, BookieException, UnavailableException,
-            CompatibilityException, SecurityException, BKException {
+            CompatibilityException, SecurityException, BKException, ConfigurationException {
         LOG.info("Starting Bookie(s)");
         // Create Bookie Servers (B1, B2, B3)
 
@@ -256,8 +263,7 @@ public class LocalBookKeeper {
             }
 
             if (null == baseConf.getMetadataServiceUriUnchecked()) {
-                bsConfs[i].setMetadataServiceUri(
-                    newMetadataServiceUri(InetAddress.getLocalHost().getHostAddress(), zooKeeperDefaultPort));
+                bsConfs[i].setMetadataServiceUri(baseConf.getMetadataServiceUri());
             }
 
             bsConfs[i].setJournalDirName(journalDirs[i].getPath());
@@ -285,8 +291,7 @@ public class LocalBookKeeper {
         ServerConfiguration baseConfWithCorrectZKServers = new ServerConfiguration(
                 (ServerConfiguration) baseConf.clone());
         if (null == baseConf.getMetadataServiceUriUnchecked()) {
-            baseConfWithCorrectZKServers.setMetadataServiceUri(
-                newMetadataServiceUri(InetAddress.getLocalHost().getHostAddress(), zooKeeperDefaultPort));
+            baseConfWithCorrectZKServers.setMetadataServiceUri(baseConf.getMetadataServiceUri());
         }
         serializeLocalBookieConfig(baseConfWithCorrectZKServers, "baseconf.conf");
     }
@@ -340,7 +345,14 @@ public class LocalBookKeeper {
                                           String zkDataDir,
                                           String localBookiesConfigDirName)
             throws Exception {
-        LocalBookKeeper lb = new LocalBookKeeper(numBookies, initialBookiePort, localBookiesConfigDirName);
+
+        conf.setMetadataServiceUri(
+                newMetadataServiceUri(
+                        zkHost,
+                        zkPort,
+                        conf.getLedgerManagerLayoutStringFromFactoryClass(),
+                        conf.getZkLedgersRootPath()));
+        LocalBookKeeper lb = new LocalBookKeeper(numBookies, initialBookiePort, conf, localBookiesConfigDirName);
 
         ZooKeeperServerShim zks = null;
         File zkTmpDir = null;
@@ -363,10 +375,8 @@ public class LocalBookKeeper {
                 zks = LocalBookKeeper.runZookeeper(1000, zkPort, zkTmpDir);
             }
 
-            conf.setMetadataServiceUri(newMetadataServiceUri(zkHost, zkPort));
-
-            lb.initializeZookeeper(conf, zkHost, zkPort);
-            bkTmpDirs = lb.runBookies(conf, dirSuffix);
+            lb.initializeZookeeper(zkHost, zkPort);
+            bkTmpDirs = lb.runBookies(dirSuffix);
 
             try {
                 while (true) {
