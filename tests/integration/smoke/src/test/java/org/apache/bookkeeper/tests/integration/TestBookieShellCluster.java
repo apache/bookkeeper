@@ -18,14 +18,23 @@
 
 package org.apache.bookkeeper.tests.integration;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertTrue;
 
 import com.github.dockerjava.api.DockerClient;
 import lombok.extern.slf4j.Slf4j;
+
+import org.apache.bookkeeper.client.BKException;
+import org.apache.bookkeeper.client.api.BookKeeper;
+import org.apache.bookkeeper.client.api.LedgerEntries;
+import org.apache.bookkeeper.client.api.ReadHandle;
+import org.apache.bookkeeper.client.api.WriteHandle;
+import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.tests.integration.utils.BookKeeperClusterUtils;
 import org.apache.bookkeeper.tests.integration.utils.DockerUtils;
 import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.arquillian.test.api.ArquillianResource;
+import org.junit.Assert;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -43,6 +52,8 @@ public class TestBookieShellCluster extends BookieShellTestBase {
     private DockerClient docker;
 
     private String currentVersion = System.getProperty("currentVersion");
+
+    private static final byte[] PASSWORD = "foobar".getBytes(UTF_8);
 
     @Test
     @Override
@@ -83,4 +94,92 @@ public class TestBookieShellCluster extends BookieShellTestBase {
     public void test003_ListRWBookies() throws Exception {
         super.test003_ListRWBookies();
     }
+
+    private static long writeNEntries(BookKeeper bk, int n, int numBookies) throws Exception {
+        try (WriteHandle writer = bk.newCreateLedgerOp().withEnsembleSize(numBookies)
+             .withWriteQuorumSize(numBookies).withAckQuorumSize(numBookies)
+             .withPassword(PASSWORD).execute().get()) {
+            int i = 0;
+            for (; i < n - 1; i++) {
+                writer.appendAsync(("entry" + i).getBytes(UTF_8));
+            }
+            writer.append(("entry" + i).getBytes(UTF_8));
+
+            return writer.getId();
+        }
+    }
+
+    private static void validateNEntries(BookKeeper bk, long ledgerId, int n) throws Exception {
+        try (ReadHandle reader = bk.newOpenLedgerOp()
+             .withLedgerId(ledgerId)
+             .withPassword(PASSWORD)
+             .execute().get();
+             LedgerEntries entries = reader.read(0, n - 1)) {
+            Assert.assertEquals(reader.getLastAddConfirmed(), n - 1);
+
+            for (int i = 0; i < n; i++) {
+                Assert.assertEquals("entry" + i, new String(entries.getEntry(i).getEntryBytes(), UTF_8));
+            }
+        }
+    }
+
+    /**
+     * These tests on being able to access cluster internals, so can't be put in test base.
+     */
+    @Test
+    public void test101_RegenerateIndex() throws Exception {
+        String zookeeper = String.format("zk+hierarchical://%s/ledgers",
+                                         BookKeeperClusterUtils.zookeeperConnectString(docker));
+        int numEntries = 100;
+
+        try (BookKeeper bk = BookKeeper.newBuilder(
+                     new ClientConfiguration().setMetadataServiceUri(zookeeper)).build()) {
+            log.info("Writing entries");
+            long ledgerId1 = writeNEntries(bk, numEntries, BookKeeperClusterUtils.allBookies().size());
+            long ledgerId2 = writeNEntries(bk, numEntries, BookKeeperClusterUtils.allBookies().size());
+
+            log.info("Validate that we can read back");
+            validateNEntries(bk, ledgerId1, numEntries);
+            validateNEntries(bk, ledgerId2, numEntries);
+
+            String indexFileName1 = String.format("/opt/bookkeeper/data/ledgers/current/0/%d/%d.idx",
+                                                  ledgerId1, ledgerId1);
+            String indexFileName2 = String.format("/opt/bookkeeper/data/ledgers/current/0/%d/%d.idx",
+                                                  ledgerId2, ledgerId2);
+
+            log.info("Stop bookies to flush, delete the index and start again");
+            assertTrue(BookKeeperClusterUtils.stopAllBookies(docker));
+
+            BookKeeperClusterUtils.runOnAllBookies(docker, "rm", indexFileName1, indexFileName2);
+            assertTrue(BookKeeperClusterUtils.startAllBookiesWithVersion(docker, currentVersion));
+
+            log.info("Validate that we cannot read back");
+            try {
+                validateNEntries(bk, ledgerId1, numEntries);
+                Assert.fail("Shouldn't have been able to find anything");
+            } catch (BKException.BKNoSuchLedgerExistsException e) {
+                // expected
+            }
+            try {
+                validateNEntries(bk, ledgerId2, numEntries);
+                Assert.fail("Shouldn't have been able to find anything");
+            } catch (BKException.BKNoSuchLedgerExistsException e) {
+                // expected
+            }
+
+            assertTrue(BookKeeperClusterUtils.stopAllBookies(docker));
+
+            log.info("Regenerate the index file");
+            BookKeeperClusterUtils.runOnAllBookies(docker,
+                    bkScript, "shell", "regenerate-interleaved-storage-index-file",
+                    "--ledgerIds", String.format("%d,%d", ledgerId1, ledgerId2),
+                    "--password", new String(PASSWORD, UTF_8));
+            assertTrue(BookKeeperClusterUtils.startAllBookiesWithVersion(docker, currentVersion));
+
+            log.info("Validate that we can read back, after regeneration");
+            validateNEntries(bk, ledgerId1, numEntries);
+            validateNEntries(bk, ledgerId2, numEntries);
+        }
+    }
+
 }
