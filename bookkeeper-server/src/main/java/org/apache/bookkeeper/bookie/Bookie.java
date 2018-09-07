@@ -629,17 +629,10 @@ public class Bookie extends BookieCriticalThread {
         for (File journalDirectory : conf.getJournalDirs()) {
             this.journalDirectories.add(getCurrentDirectory(journalDirectory));
         }
-        DiskChecker diskChecker = new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold());
-        this.ledgerDirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs(), diskChecker,
-                statsLogger.scope(LD_LEDGER_SCOPE));
-
-        File[] idxDirs = conf.getIndexDirs();
-        if (null == idxDirs) {
-            this.indexDirsManager = this.ledgerDirsManager;
-        } else {
-            this.indexDirsManager = new LedgerDirsManager(conf, idxDirs, diskChecker,
-                    statsLogger.scope(LD_INDEX_SCOPE));
-        }
+        DiskChecker diskChecker = createDiskChecker(conf);
+        this.ledgerDirsManager = createLedgerDirsManager(conf, diskChecker, statsLogger.scope(LD_LEDGER_SCOPE));
+        this.indexDirsManager = createIndexDirsManager(conf, diskChecker, statsLogger.scope(LD_INDEX_SCOPE),
+                                                       this.ledgerDirsManager);
 
         // instantiate zookeeper client to initialize ledger manager
         this.metadataDriver = instantiateMetadataDriver(conf);
@@ -675,7 +668,7 @@ public class Bookie extends BookieCriticalThread {
             }
         }
 
-        if (null == idxDirs) {
+        if (ledgerDirsManager == indexDirsManager) {
             this.idxMonitor = this.ledgerMonitor;
         } else {
             this.idxMonitor = new LedgerDirsMonitor(conf, diskChecker, indexDirsManager);
@@ -1546,4 +1539,22 @@ public class Bookie extends BookieCriticalThread {
         return exitCode;
     }
 
+    static DiskChecker createDiskChecker(ServerConfiguration conf) {
+        return new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold());
+    }
+
+    static LedgerDirsManager createLedgerDirsManager(ServerConfiguration conf, DiskChecker diskChecker,
+                                                     StatsLogger statsLogger) {
+        return new LedgerDirsManager(conf, conf.getLedgerDirs(), diskChecker, statsLogger);
+    }
+
+    static LedgerDirsManager createIndexDirsManager(ServerConfiguration conf, DiskChecker diskChecker,
+                                                    StatsLogger statsLogger, LedgerDirsManager fallback) {
+        File[] idxDirs = conf.getIndexDirs();
+        if (null == idxDirs) {
+            return fallback;
+        } else {
+            return new LedgerDirsManager(conf, idxDirs, diskChecker, statsLogger);
+        }
+    }
 }

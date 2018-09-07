@@ -30,8 +30,8 @@ import org.junit.Test;
 @Slf4j
 public abstract class BookieShellTestBase {
 
-    private String currentVersion = System.getProperty("currentVersion");
-    private String bkScript;
+    String currentVersion = System.getProperty("currentVersion");
+    String bkScript;
 
     @Before
     public void setup() {

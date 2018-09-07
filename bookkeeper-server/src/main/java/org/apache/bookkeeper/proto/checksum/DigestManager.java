@@ -23,6 +23,7 @@ import io.netty.buffer.Unpooled;
 import io.netty.util.ReferenceCountUtil;
 
 import java.security.GeneralSecurityException;
+import java.security.NoSuchAlgorithmException;
 
 import org.apache.bookkeeper.client.BKException.BKDigestMatchException;
 import org.apache.bookkeeper.client.LedgerHandle;
@@ -84,6 +85,10 @@ public abstract class DigestManager {
         default:
             throw new GeneralSecurityException("Unknown checksum type: " + digestType);
         }
+    }
+
+    public static byte[] generateMasterKey(byte[] password) throws NoSuchAlgorithmException {
+        return password.length > 0 ? MacDigestManager.genDigest("ledger", password) : MacDigestManager.EMPTY_LEDGER_KEY;
     }
 
     /**

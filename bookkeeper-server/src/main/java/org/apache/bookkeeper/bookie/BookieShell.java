@@ -18,7 +18,7 @@
 
 package org.apache.bookkeeper.bookie;
 
-import static com.google.common.base.Charsets.UTF_8;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.bookkeeper.meta.MetadataDrivers.runFunctionWithLedgerManagerFactory;
 import static org.apache.bookkeeper.meta.MetadataDrivers.runFunctionWithMetadataBookieDriver;
 import static org.apache.bookkeeper.meta.MetadataDrivers.runFunctionWithRegistrationManager;
@@ -51,6 +51,7 @@ import java.nio.file.attribute.FileTime;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -72,6 +73,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 import org.apache.bookkeeper.bookie.BookieException.CookieNotFoundException;
 import org.apache.bookkeeper.bookie.BookieException.InvalidCookieException;
@@ -187,6 +189,7 @@ public class BookieShell implements Tool {
     static final String CMD_CONVERT_TO_DB_STORAGE = "convert-to-db-storage";
     static final String CMD_CONVERT_TO_INTERLEAVED_STORAGE = "convert-to-interleaved-storage";
     static final String CMD_REBUILD_DB_LEDGER_LOCATIONS_INDEX = "rebuild-db-ledger-locations-index";
+    static final String CMD_REGENERATE_INTERLEAVED_STORAGE_INDEX_FILE = "regenerate-interleaved-storage-index-file";
     static final String CMD_HELP = "help";
 
     final ServerConfiguration bkConf = new ServerConfiguration();
@@ -2816,6 +2819,69 @@ public class BookieShell implements Tool {
         }
     }
 
+    /**
+     * Regenerate an index file for interleaved storage.
+     */
+    class RegenerateInterleavedStorageIndexFile extends MyCommand {
+        Options opts = new Options();
+
+        public RegenerateInterleavedStorageIndexFile() {
+            super(CMD_REGENERATE_INTERLEAVED_STORAGE_INDEX_FILE);
+            Option ledgerOption = new Option("l", "ledgerIds", true,
+                                             "Ledger(s) whose index needs to be regenerated."
+                                             + " Multiple can be specified, comma separated.");
+            ledgerOption.setRequired(true);
+            ledgerOption.setValueSeparator(',');
+            ledgerOption.setArgs(Option.UNLIMITED_VALUES);
+
+            opts.addOption(ledgerOption);
+            opts.addOption("dryRun", false,
+                           "Process the entryLogger, but don't write anything.");
+            opts.addOption("password", true,
+                           "The bookie stores the password in the index file, so we need it to regenerate. "
+                           + "This must match the value in the ledger metadata.");
+            opts.addOption("b64password", true,
+                           "The password in base64 encoding, for cases where the password is not UTF-8.");
+        }
+
+        @Override
+        Options getOptions() {
+            return opts;
+        }
+
+        @Override
+        String getDescription() {
+            return "Regenerate an interleaved storage index file, from available entrylogger files.";
+        }
+
+        @Override
+        String getUsage() {
+            return CMD_REGENERATE_INTERLEAVED_STORAGE_INDEX_FILE;
+        }
+
+        @Override
+        int runCmd(CommandLine cmdLine) throws Exception {
+            byte[] password;
+            if (cmdLine.hasOption("password")) {
+                password = cmdLine.getOptionValue("password").getBytes(UTF_8);
+            } else if (cmdLine.hasOption("b64password")) {
+                password = Base64.getDecoder().decode(cmdLine.getOptionValue("b64password"));
+            } else {
+                LOG.error("The password must be specified to regenerate the index file.");
+                return 1;
+            }
+            Set<Long> ledgerIds = Arrays.stream(cmdLine.getOptionValues("ledgerIds"))
+                .map((id) -> Long.parseLong(id)).collect(Collectors.toSet());
+            boolean dryRun = cmdLine.hasOption("dryRun");
+
+            LOG.info("=== Rebuilding index file for {} ===", ledgerIds);
+            ServerConfiguration conf = new ServerConfiguration(bkConf);
+            new InterleavedStorageRegenerateIndexOp(conf, ledgerIds, password).initiate(dryRun);
+            LOG.info("-- Done rebuilding index file for {} --", ledgerIds);
+            return 0;
+        }
+    }
+
     final Map<String, MyCommand> commands = new HashMap<String, MyCommand>();
 
     {
@@ -2849,6 +2915,7 @@ public class BookieShell implements Tool {
         commands.put(CMD_CONVERT_TO_DB_STORAGE, new ConvertToDbStorageCmd());
         commands.put(CMD_CONVERT_TO_INTERLEAVED_STORAGE, new ConvertToInterleavedStorageCmd());
         commands.put(CMD_REBUILD_DB_LEDGER_LOCATIONS_INDEX, new RebuildDbLedgerLocationsIndexCmd());
+        commands.put(CMD_REGENERATE_INTERLEAVED_STORAGE_INDEX_FILE, new RegenerateInterleavedStorageIndexFile());
         commands.put(CMD_HELP, new HelpCmd());
         commands.put(CMD_LOSTBOOKIERECOVERYDELAY, new LostBookieRecoveryDelayCmd());
         commands.put(CMD_TRIGGERAUDIT, new TriggerAuditCmd());
