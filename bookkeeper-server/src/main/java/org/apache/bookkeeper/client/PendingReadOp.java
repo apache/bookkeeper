@@ -482,6 +482,10 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
         }
     }
 
+    public ScheduledFuture<?> getSpeculativeTask() {
+        return speculativeTask;
+    }
+
     // I don't think this is ever used in production code -Ivan
     PendingReadOp parallelRead(boolean enabled) {
         this.parallelRead = enabled;
@@ -518,7 +522,7 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
         for (LedgerEntryRequest entry : seq) {
             entry.read();
             if (!parallelRead && clientCtx.getConf().readSpeculativeRequestPolicy.isPresent()) {
-                clientCtx.getConf().readSpeculativeRequestPolicy.get()
+                speculativeTask = clientCtx.getConf().readSpeculativeRequestPolicy.get()
                     .initiateSpeculativeRequest(clientCtx.getScheduler(), entry);
             }
         }
