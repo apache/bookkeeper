@@ -25,6 +25,7 @@ import static org.apache.bookkeeper.meta.MetadataDrivers.runFunctionWithRegistra
 import static org.apache.bookkeeper.tools.cli.helpers.CommandHelpers.getBookieSocketAddrStringRepresentation;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Optional;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.AbstractFuture;
@@ -105,6 +106,7 @@ import org.apache.bookkeeper.proto.BookieClient;
 import org.apache.bookkeeper.proto.BookieClientImpl;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
+import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallbackFuture;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.Processor;
 import org.apache.bookkeeper.replication.AuditorElector;
 import org.apache.bookkeeper.replication.ReplicationException;
@@ -1084,28 +1086,6 @@ public class BookieShell implements Tool {
         }
     }
 
-    static class ReadMetadataCallback extends AbstractFuture<LedgerMetadata>
-            implements GenericCallback<LedgerMetadata> {
-        final long ledgerId;
-
-        ReadMetadataCallback(long ledgerId) {
-            this.ledgerId = ledgerId;
-        }
-
-        long getLedgerId() {
-            return ledgerId;
-        }
-
-        @Override
-        public void operationComplete(int rc, LedgerMetadata result) {
-            if (rc != 0) {
-                setException(BKException.create(rc));
-            } else {
-                set(result);
-            }
-        }
-    }
-
     /**
      * Print the metadata for a ledger.
      */
@@ -1115,6 +1095,8 @@ public class BookieShell implements Tool {
         LedgerMetadataCmd() {
             super(CMD_LEDGERMETADATA);
             lOpts.addOption("l", "ledgerid", true, "Ledger ID");
+            lOpts.addOption("dumptofile", true, "Dump metadata for ledger, to a file");
+            lOpts.addOption("restorefromfile", true, "Restore metadata for ledger, from a file");
         }
 
         @Override
@@ -1127,9 +1109,23 @@ public class BookieShell implements Tool {
 
             runFunctionWithLedgerManagerFactory(bkConf, mFactory -> {
                 try (LedgerManager m = mFactory.newLedgerManager()) {
-                    ReadMetadataCallback cb = new ReadMetadataCallback(lid);
-                    m.readLedgerMetadata(lid, cb);
-                    printLedgerMetadata(lid, cb.get(), true);
+                    if (cmdLine.hasOption("dumptofile")) {
+                        GenericCallbackFuture<LedgerMetadata> cb = new GenericCallbackFuture<>();
+                        m.readLedgerMetadata(lid, cb);
+                        Files.write(FileSystems.getDefault().getPath(cmdLine.getOptionValue("dumptofile")),
+                                    cb.join().serialize());
+                    } else if (cmdLine.hasOption("restorefromfile")) {
+                        byte[] serialized = Files.readAllBytes(
+                                FileSystems.getDefault().getPath(cmdLine.getOptionValue("restorefromfile")));
+                        LedgerMetadata md = LedgerMetadata.parseConfig(serialized, Version.NEW, Optional.absent());
+                        GenericCallbackFuture<LedgerMetadata> cb = new GenericCallbackFuture<>();
+                        m.createLedgerMetadata(lid, md, cb);
+                        cb.join();
+                    } else {
+                        GenericCallbackFuture<LedgerMetadata> cb = new GenericCallbackFuture<>();
+                        m.readLedgerMetadata(lid, cb);
+                        printLedgerMetadata(lid, cb.get(), true);
+                    }
                 } catch (Exception e) {
                     throw new UncheckedExecutionException(e);
                 }
@@ -1141,12 +1137,12 @@ public class BookieShell implements Tool {
 
         @Override
         String getDescription() {
-            return "Print the metadata for a ledger.";
+            return "Print the metadata for a ledger, or optionally dump to a file.";
         }
 
         @Override
         String getUsage() {
-            return "ledgermetadata -ledgerid <ledgerid>";
+            return "ledgermetadata -ledgerid <ledgerid> [--dump-to-file FILENAME|--restore-from-file FILENAME]";
         }
 
         @Override
