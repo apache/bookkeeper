@@ -635,6 +635,7 @@ def main():
         if line.startswith('>'):
             continue
         modified_body = modified_body + line + "\n"
+    modified_body = modified_body.rstrip("\n")
     if modified_body != body:
         print "I've re-written the body as follows to match the standard formats:"
         print "Original: "
