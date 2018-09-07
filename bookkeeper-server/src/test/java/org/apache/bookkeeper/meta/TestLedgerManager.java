@@ -183,7 +183,7 @@ public class TestLedgerManager extends BookKeeperClusterTestCase {
         String root0 = "/badzk0";
         zkc.create(root0, new byte[0],
                    Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-        conf.setMetadataServiceUri(newMetadataServiceUri(root0));
+        conf.setMetadataServiceUri(newMetadataServiceUri(root0, HierarchicalLedgerManagerFactory.NAME));
 
         LedgerLayout layout = new LedgerLayout("DoesNotExist",
                          0xdeadbeef);
