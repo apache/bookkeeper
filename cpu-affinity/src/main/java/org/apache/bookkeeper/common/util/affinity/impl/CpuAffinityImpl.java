@@ -67,9 +67,9 @@ public class CpuAffinityImpl {
             int cpu = pickAvailableCpu();
             CpuAffinityJni.setAffinity(cpu);
 
-            log.info("Thread {} has successfully acquired ownership of cpu {}", cpu);
+            log.info("Thread {} has successfully acquired ownership of cpu {}", Thread.currentThread().getName(), cpu);
         } catch (IOException e) {
-            throw new RuntimeException("Failed to acquire CPU core");
+            throw new RuntimeException("Failed to acquire CPU core: " + e.getMessage());
         }
     }
 
@@ -88,6 +88,9 @@ public class CpuAffinityImpl {
             isolatedProcessors = IsolatedProcessors.get();
         }
         for (int isolatedCpu : isolatedProcessors) {
+            if (log.isDebugEnabled()) {
+                log.debug("Checking CPU {}", isolatedCpu);
+            }
             if (acquiredProcessors.contains(isolatedCpu)) {
                 if (log.isDebugEnabled()) {
                     log.debug("Ignoring CPU {} since it's already acquired", isolatedCpu);
@@ -96,6 +99,9 @@ public class CpuAffinityImpl {
             }
 
             if (tryAcquireCpu(isolatedCpu)) {
+                if (log.isDebugEnabled()) {
+                    log.debug("Using CPU {}", isolatedCpu);
+                }
                 return isolatedCpu;
             }
         }
@@ -116,6 +122,10 @@ public class CpuAffinityImpl {
         for (int cpu : cpusToAcquire) {
             Closeable lock = tryAcquireFileLock(cpu);
             if (lock == null) {
+                if (log.isDebugEnabled()) {
+                    log.debug("Failed to acquire lock on CPU {}", cpu);
+                }
+
                 // Failed to acquire one cpu, release the rest that were already locked
                 for (Closeable l : acquiredCpus) {
                     l.close();
