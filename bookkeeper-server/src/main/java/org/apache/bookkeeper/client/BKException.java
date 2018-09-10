@@ -47,6 +47,10 @@ public abstract class BKException extends org.apache.bookkeeper.client.api.BKExc
         super(code);
     }
 
+    BKException(int code, Throwable cause) {
+        super(code, cause);
+    }
+
     /**
      * Create an exception from an error code.
      * @param code return error code
@@ -298,6 +302,10 @@ public abstract class BKException extends org.apache.bookkeeper.client.api.BKExc
     public static class MetaStoreException extends BKException {
         public MetaStoreException() {
             super(Code.MetaStoreException);
+        }
+
+        public MetaStoreException(Throwable cause) {
+            super(Code.MetaStoreException, cause);
         }
     }
 
