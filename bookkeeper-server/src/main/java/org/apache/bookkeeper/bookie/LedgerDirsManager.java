@@ -157,7 +157,6 @@ public class LedgerDirsManager {
             String errMsg = "All ledger directories are non writable";
             NoWritableLedgerDirException e = new NoWritableLedgerDirException(
                     errMsg);
-            LOG.error(errMsg, e);
             throw e;
         }
         return writableLedgerDirectories;
