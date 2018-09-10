@@ -21,6 +21,7 @@
 package org.apache.bookkeeper.client;
 
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 
 /**
  * Define a policy for speculative request execution.
@@ -37,6 +38,8 @@ public interface SpeculativeRequestExecutionPolicy {
      *
      * @param scheduler The scheduler service to issue the speculative request
      * @param requestExectuor The executor is used to issue the actual speculative requests
+     * @return ScheduledFuture, in case caller needs to cancel it.
      */
-    void initiateSpeculativeRequest(ScheduledExecutorService scheduler, SpeculativeRequestExecutor requestExectuor);
+    ScheduledFuture<?> initiateSpeculativeRequest(ScheduledExecutorService scheduler,
+            SpeculativeRequestExecutor requestExectuor);
 }
