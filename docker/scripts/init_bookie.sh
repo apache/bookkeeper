@@ -24,23 +24,23 @@ source ${SCRIPTS_DIR}/common.sh
 
 function wait_for_zookeeper() {
     echo "wait for zookeeper"
-    until /opt/bookkeeper/bin/bookkeeper org.apache.zookeeper.ZooKeeperMain -server ${BK_zkServers} ls /; do sleep 5; done
+    until zk-shell --run-once "ls /" ${BK_zkServers}; do sleep 5; done
 }
 
 function create_zk_root() {
     echo "create the zk root dir for bookkeeper"
-    /opt/bookkeeper/bin/bookkeeper org.apache.zookeeper.ZooKeeperMain -server ${BK_zkServers} create ${BK_CLUSTER_ROOT_PATH}
+    zk-shell --run-once "create ${BK_CLUSTER_ROOT_PATH} '' false false true" ${BK_zkServers}
 }
 
 # Init the cluster if required znodes not exist in Zookeeper.
 # Use ephemeral zk node as lock to keep initialize atomic.
 function init_cluster() {
-    /opt/bookkeeper/bin/bookkeeper org.apache.zookeeper.ZooKeeperMain -server ${BK_zkServers} stat ${BK_zkLedgersRootPath}/available/readonly
+    zk-shell --run-once "ls ${BK_zkLedgersRootPath}/available/readonly" ${BK_zkServers}
     if [ $? -eq 0 ]; then
         echo "Metadata of cluster already exists, no need format"
     else
         # create ephemeral zk node bkInitLock, initiator who this node, then do init; other initiators will wait.
-        /opt/bookkeeper/bin/bookkeeper org.apache.zookeeper.ZooKeeperMain -server ${BK_zkServers} create -e ${BK_CLUSTER_ROOT_PATH}/bkInitLock
+        zk-shell --run-once "create ${BK_CLUSTER_ROOT_PATH}/bkInitLock '' true false false" ${BK_zkServers}
         if [ $? -eq 0 ]; then
             # bkInitLock created success, this is the successor to do znode init
             echo "Bookkeeper znodes not exist in Zookeeper, do the init to create them."
@@ -57,7 +57,7 @@ function init_cluster() {
             while [ ${tenSeconds} -lt 10 ]
             do
                 sleep 10
-                /opt/bookkeeper/bin/bookkeeper org.apache.zookeeper.ZooKeeperMain -server ${BK_zkServers} stat ${BK_zkLedgersRootPath}/available/readonly
+                zk-shell --run-once "ls ${BK_zkLedgersRootPath}/available/readonly" ${BK_zkServers}
                 if [ $? -eq 0 ]; then
                     echo "Waited $tenSeconds * 10 seconds, bookkeeper inited"
                     break
@@ -79,12 +79,12 @@ function init_cluster() {
 # Create default dlog namespace
 # Use ephemeral zk node as lock to keep initialize atomic.
 function create_dlog_namespace() {
-    /opt/bookkeeper/bin/bookkeeper org.apache.zookeeper.ZooKeeperMain -server ${BK_zkServers} stat ${BK_dlogRootPath}
+    zk-shell --run-once "ls ${BK_dlogRootPath}" ${BK_zkServers}
     if [ $? -eq 0 ]; then
         echo "Dlog namespace already created, no need to create another one"
     else
         # create ephemeral zk node dlogInitLock, initiator who this node, then do init; other initiators will wait.
-        /opt/bookkeeper/bin/bookkeeper org.apache.zookeeper.ZooKeeperMain -server ${BK_zkServers} create -e ${BK_CLUSTER_ROOT_PATH}/dlogInitLock
+        zk-shell --run-once "create ${BK_CLUSTER_ROOT_PATH}/dlogInitLock '' true false false" ${BK_zkServers}
         if [ $? -eq 0 ]; then
             # dlogInitLock created success, this is the successor to do znode init
             echo "Dlog namespace not exist, do the init to create them."
@@ -101,7 +101,7 @@ function create_dlog_namespace() {
             while [ ${tenSeconds} -lt 10 ]
             do
                 sleep 10
-                /opt/bookkeeper/bin/bookkeeper org.apache.zookeeper.ZooKeeperMain -server ${BK_zkServers} stat ${BK_dlogRootPath}
+                zk-shell --run-once "ls ${BK_dlogRootPath}" ${BK_zkServers}
                 if [ $? -eq 0 ]; then
                     echo "Waited $tenSeconds * 10 seconds, dlog namespace created"
                     break
