@@ -503,6 +503,10 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
         }
     }
 
+    public ScheduledFuture<?> getSpeculativeTask() {
+        return speculativeTask;
+    }
+
     PendingReadOp parallelRead(boolean enabled) {
         this.parallelRead = enabled;
         return this;
@@ -538,7 +542,7 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
         for (LedgerEntryRequest entry : seq) {
             entry.read();
             if (!parallelRead && lh.bk.getReadSpeculativeRequestPolicy().isPresent()) {
-                lh.bk.getReadSpeculativeRequestPolicy().get().initiateSpeculativeRequest(scheduler, entry);
+                speculativeTask = lh.bk.getReadSpeculativeRequestPolicy().get().initiateSpeculativeRequest(scheduler, entry);
             }
         }
     }
