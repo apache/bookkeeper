@@ -18,7 +18,7 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10};
+var methods = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -238,24 +238,28 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCall
 <th class="colLast" scope="col">Method and Description</th>
 </tr>
 <tr id="i0" class="altColor">
+<td class="colFirst"><code>protected void</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/ReadLastConfirmedAndEntryOp.html#cancelSpeculativeTask-boolean-">cancelSpeculativeTask</a></span>(boolean&nbsp;mayInterruptIfRunning)</code>&nbsp;</td>
+</tr>
+<tr id="i1" class="rowColor">
 <td class="colFirst"><code>protected <a href="../../../../org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/ReadLastConfirmedAndEntryOp.html#getLedgerMetadata--">getLedgerMetadata</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i1" class="rowColor">
+<tr id="i2" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/ReadLastConfirmedAndEntryOp.html#initiate--">initiate</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i2" class="altColor">
+<tr id="i3" class="rowColor">
 <td class="colFirst"><code>com.google.common.util.concurrent.ListenableFuture&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Boolean.html?is-external=true" title="class or interface in java.lang">Boolean</a>&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/ReadLastConfirmedAndEntryOp.html#issueSpeculativeRequest--">issueSpeculativeRequest</a></span>()</code>
 <div class="block">Speculative Read Logic.</div>
 </td>
 </tr>
-<tr id="i3" class="rowColor">
+<tr id="i4" class="altColor">
 <td class="colFirst"><code>(package private) <a href="../../../../org/apache/bookkeeper/client/ReadLastConfirmedAndEntryOp.html" title="class in org.apache.bookkeeper.client">ReadLastConfirmedAndEntryOp</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/ReadLastConfirmedAndEntryOp.html#parallelRead-boolean-">parallelRead</a></span>(boolean&nbsp;enabled)</code>&nbsp;</td>
 </tr>
-<tr id="i4" class="altColor">
+<tr id="i5" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/ReadLastConfirmedAndEntryOp.html#readEntryComplete-int-long-long-io.netty.buffer.ByteBuf-java.lang.Object-">readEntryComplete</a></span>(int&nbsp;rc,
                  long&nbsp;ledgerId,
@@ -263,13 +267,13 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCall
                  io.netty.buffer.ByteBuf&nbsp;buffer,
                  <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&nbsp;ctx)</code>&nbsp;</td>
 </tr>
-<tr id="i5" class="rowColor">
+<tr id="i6" class="altColor">
 <td class="colFirst"><code>(package private) void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/ReadLastConfirmedAndEntryOp.html#sendReadTo-int-org.apache.bookkeeper.net.BookieSocketAddress-org.apache.bookkeeper.client.ReadLastConfirmedAndEntryOp.ReadLACAndEntryRequest-">sendReadTo</a></span>(int&nbsp;bookieIndex,
           org.apache.bookkeeper.net.BookieSocketAddress&nbsp;to,
           <a href="../../../../org/apache/bookkeeper/client/ReadLastConfirmedAndEntryOp.ReadLACAndEntryRequest.html" title="class in org.apache.bookkeeper.client">ReadLastConfirmedAndEntryOp.ReadLACAndEntryRequest</a>&nbsp;entry)</code>&nbsp;</td>
 </tr>
-<tr id="i6" class="altColor">
+<tr id="i7" class="rowColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/ReadLastConfirmedAndEntryOp.html#toString--">toString</a></span>()</code>&nbsp;</td>
 </tr>
@@ -413,6 +417,15 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCall
 <li class="blockList">
 <h4>parallelRead</h4>
 <pre><a href="../../../../org/apache/bookkeeper/client/ReadLastConfirmedAndEntryOp.html" title="class in org.apache.bookkeeper.client">ReadLastConfirmedAndEntryOp</a>&nbsp;parallelRead(boolean&nbsp;enabled)</pre>
+</li>
+</ul>
+<a name="cancelSpeculativeTask-boolean-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>cancelSpeculativeTask</h4>
+<pre>protected&nbsp;void&nbsp;cancelSpeculativeTask(boolean&nbsp;mayInterruptIfRunning)</pre>
 </li>
 </ul>
 <a name="issueSpeculativeRequest--">

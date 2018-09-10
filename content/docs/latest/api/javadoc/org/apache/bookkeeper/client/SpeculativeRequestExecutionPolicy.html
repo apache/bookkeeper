@@ -133,7 +133,7 @@ var activeTableTab = "activeTableTab";
 <th class="colLast" scope="col">Method and Description</th>
 </tr>
 <tr id="i0" class="altColor">
-<td class="colFirst"><code>void</code></td>
+<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/ScheduledFuture.html?is-external=true" title="class or interface in java.util.concurrent">ScheduledFuture</a>&lt;?&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/SpeculativeRequestExecutionPolicy.html#initiateSpeculativeRequest-java.util.concurrent.ScheduledExecutorService-org.apache.bookkeeper.client.SpeculativeRequestExecutor-">initiateSpeculativeRequest</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/ScheduledExecutorService.html?is-external=true" title="class or interface in java.util.concurrent">ScheduledExecutorService</a>&nbsp;scheduler,
                           <a href="../../../../org/apache/bookkeeper/client/SpeculativeRequestExecutor.html" title="interface in org.apache.bookkeeper.client">SpeculativeRequestExecutor</a>&nbsp;requestExectuor)</code>
 <div class="block">Initialize the speculative request execution policy and initiate requests.</div>
@@ -160,13 +160,15 @@ var activeTableTab = "activeTableTab";
 <ul class="blockListLast">
 <li class="blockList">
 <h4>initiateSpeculativeRequest</h4>
-<pre>void&nbsp;initiateSpeculativeRequest(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/ScheduledExecutorService.html?is-external=true" title="class or interface in java.util.concurrent">ScheduledExecutorService</a>&nbsp;scheduler,
-                                <a href="../../../../org/apache/bookkeeper/client/SpeculativeRequestExecutor.html" title="interface in org.apache.bookkeeper.client">SpeculativeRequestExecutor</a>&nbsp;requestExectuor)</pre>
+<pre><a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/ScheduledFuture.html?is-external=true" title="class or interface in java.util.concurrent">ScheduledFuture</a>&lt;?&gt;&nbsp;initiateSpeculativeRequest(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/ScheduledExecutorService.html?is-external=true" title="class or interface in java.util.concurrent">ScheduledExecutorService</a>&nbsp;scheduler,
+                                              <a href="../../../../org/apache/bookkeeper/client/SpeculativeRequestExecutor.html" title="interface in org.apache.bookkeeper.client">SpeculativeRequestExecutor</a>&nbsp;requestExectuor)</pre>
 <div class="block">Initialize the speculative request execution policy and initiate requests.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>scheduler</code> - The scheduler service to issue the speculative request</dd>
 <dd><code>requestExectuor</code> - The executor is used to issue the actual speculative requests</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>ScheduledFuture, in case caller needs to cancel it.</dd>
 </dl>
 </li>
 </ul>
