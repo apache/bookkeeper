@@ -204,6 +204,12 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Exception.h
 <div class="block">Create a new exception.</div>
 </td>
 </tr>
+<tr class="rowColor">
+<td class="colOne"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/api/BKException.html#BKException-int-java.lang.Throwable-">BKException</a></span>(int&nbsp;code,
+           <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Throwable.html?is-external=true" title="class or interface in java.lang">Throwable</a>&nbsp;cause)</code>
+<div class="block">Create a new exception with the <tt>cause</tt>.</div>
+</td>
+</tr>
 </table>
 </li>
 </ul>
@@ -295,7 +301,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Exception.h
 <a name="BKException-int-">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>BKException</h4>
 <pre>public&nbsp;BKException(int&nbsp;code)</pre>
@@ -305,6 +311,22 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Exception.h
 <dd><code>code</code> - the error code</dd>
 <dt><span class="seeLabel">See Also:</span></dt>
 <dd><a href="../../../../../org/apache/bookkeeper/client/api/BKException.Code.html" title="interface in org.apache.bookkeeper.client.api"><code>BKException.Code</code></a></dd>
+</dl>
+</li>
+</ul>
+<a name="BKException-int-java.lang.Throwable-">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>BKException</h4>
+<pre>public&nbsp;BKException(int&nbsp;code,
+                   <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Throwable.html?is-external=true" title="class or interface in java.lang">Throwable</a>&nbsp;cause)</pre>
+<div class="block">Create a new exception with the <tt>cause</tt>.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>code</code> - exception code</dd>
+<dd><code>cause</code> - the exception cause</dd>
 </dl>
 </li>
 </ul>
