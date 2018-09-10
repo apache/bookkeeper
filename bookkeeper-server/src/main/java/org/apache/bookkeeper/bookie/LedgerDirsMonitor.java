@@ -108,6 +108,7 @@ class LedgerDirsMonitor {
             // bookie cannot get writable dir but considered to be writable
             ldm.getWritableLedgerDirs();
         } catch (NoWritableLedgerDirException e) {
+            LOG.warn("LedgerDirsMonitor check process: All ledger directories are non writable");
             boolean highPriorityWritesAllowed = true;
             try {
                 // disk check can be frequent, so disable 'loggingNoWritable' to avoid log flooding.
