@@ -298,6 +298,26 @@ public class TestSpeculativeRead extends BookKeeperClusterTestCase {
     }
 
     /**
+     * Unit test to check if the scheduled speculative task gets cancelled
+     * on successful read.
+     */
+    @Test
+    public void testSpeculativeReadScheduledTaskCancel() throws Exception {
+        long id = getLedgerToRead(3, 2);
+        int timeout = 1000;
+        BookKeeper bkspec = createClient(timeout);
+        LedgerHandle l = bkspec.openLedger(id, digestType, passwd);
+        PendingReadOp op = null;
+        try {
+            op = new PendingReadOp(l, bkspec.getClientCtx(), 0, 5, false);
+            op.initiate();
+            op.future().get();
+        } finally {
+            assertNull("Speculative Read tasks must be null", op.getSpeculativeTask());
+        }
+    }
+
+    /**
      * Unit test for the speculative read scheduling method.
      */
     @Test
@@ -353,7 +373,7 @@ public class TestSpeculativeRead extends BookKeeperClusterTestCase {
                         }
                         Thread.sleep(1000);
                     }
-                    assertTrue("Request should be done", req0.isComplete());
+                    assertTrue("Request should be done", req.isComplete());
                 }
             }
 

@@ -26,6 +26,7 @@ import com.google.common.util.concurrent.ListenableFuture;
 
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
@@ -64,18 +65,19 @@ public class DefaultSpeculativeRequestExecutionPolicy implements SpeculativeRequ
      *
      * @param scheduler The scheduler service to issue the speculative request
      * @param requestExecutor The executor is used to issue the actual speculative requests
+     * @return ScheduledFuture, in case caller needs to cancel it.
      */
     @Override
-    public void initiateSpeculativeRequest(final ScheduledExecutorService scheduler,
+    public ScheduledFuture<?> initiateSpeculativeRequest(final ScheduledExecutorService scheduler,
             final SpeculativeRequestExecutor requestExecutor) {
-        scheduleSpeculativeRead(scheduler, requestExecutor, firstSpeculativeRequestTimeout);
+        return scheduleSpeculativeRead(scheduler, requestExecutor, firstSpeculativeRequestTimeout);
     }
 
-    private void scheduleSpeculativeRead(final ScheduledExecutorService scheduler,
+    private ScheduledFuture<?> scheduleSpeculativeRead(final ScheduledExecutorService scheduler,
                                          final SpeculativeRequestExecutor requestExecutor,
                                          final int speculativeRequestTimeout) {
         try {
-            scheduler.schedule(new Runnable() {
+            return scheduler.schedule(new Runnable() {
                 @Override
                 public void run() {
                     ListenableFuture<Boolean> issueNextRequest = requestExecutor.issueSpeculativeRequest();
@@ -107,5 +109,6 @@ public class DefaultSpeculativeRequestExecutionPolicy implements SpeculativeRequ
                         requestExecutor, speculativeRequestTimeout, re);
             }
         }
+        return null;
     }
 }

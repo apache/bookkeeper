@@ -25,6 +25,7 @@ import io.netty.buffer.ByteBuf;
 import java.util.BitSet;
 import java.util.List;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.bookkeeper.client.impl.LedgerEntryImpl;
@@ -64,6 +65,7 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
     private long lastAddConfirmed;
     private long timeOutInMillis;
     private final List<BookieSocketAddress> currentEnsemble;
+    private ScheduledFuture<?> speculativeTask = null;
 
     abstract class ReadLACAndEntryRequest implements AutoCloseable {
 
@@ -461,6 +463,12 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
         return this;
     }
 
+    protected void cancelSpeculativeTask(boolean mayInterruptIfRunning) {
+        if (speculativeTask != null) {
+            speculativeTask.cancel(mayInterruptIfRunning);
+            speculativeTask = null;
+        }
+    }
     /**
      * Speculative Read Logic.
      */
@@ -491,7 +499,7 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
         request.read();
 
         if (!parallelRead && clientCtx.getConf().readLACSpeculativeRequestPolicy.isPresent()) {
-            clientCtx.getConf().readLACSpeculativeRequestPolicy.get()
+            speculativeTask = clientCtx.getConf().readLACSpeculativeRequestPolicy.get()
                 .initiateSpeculativeRequest(clientCtx.getScheduler(), this);
         }
     }
@@ -521,6 +529,7 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
     private void submitCallback(int rc) {
         long latencyMicros = MathUtils.elapsedMicroSec(requestTimeNano);
         LedgerEntry entry;
+        cancelSpeculativeTask(true);
         if (BKException.Code.OK != rc) {
             clientCtx.getClientStats().getReadLacAndEntryOpLogger()
                 .registerFailedEvent(latencyMicros, TimeUnit.MICROSECONDS);
