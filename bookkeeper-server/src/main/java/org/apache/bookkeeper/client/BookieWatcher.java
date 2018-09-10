@@ -62,7 +62,7 @@ class BookieWatcher {
             log.error("Interrupted reading bookie list : ", cause);
             return new BKInterruptedException();
         } else {
-            return new MetaStoreException();
+            return new MetaStoreException(cause);
         }
     };
 
