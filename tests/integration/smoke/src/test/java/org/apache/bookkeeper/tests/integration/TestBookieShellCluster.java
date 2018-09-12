@@ -189,21 +189,10 @@ public class TestBookieShellCluster extends BookieShellTestBase {
                                          BookKeeperClusterUtils.zookeeperConnectString(docker));
         int numEntries = 100;
 
-        long ledgerId = 0;
         try (BookKeeper bk = BookKeeper.newBuilder(
                      new ClientConfiguration().setMetadataServiceUri(zookeeper)).build()) {
             log.info("Writing entries");
-            try (WriteHandle writer = bk.newCreateLedgerOp().withEnsembleSize(1)
-                    .withWriteQuorumSize(1).withAckQuorumSize(1)
-                    .withPassword("".getBytes()).execute().get()) {
-                int i = 0;
-                for (; i < numEntries - 1; i++) {
-                    writer.appendAsync(("entry" + i).getBytes());
-                }
-                writer.append(("entry" + i).getBytes());
-
-                ledgerId = ledgerId;
-            }
+            long ledgerId = writeNEntries(bk, numEntries, 1);
 
             log.info("Dumping ledger metadata to file");
             String bookie = BookKeeperClusterUtils.getAnyBookie();
@@ -218,9 +207,8 @@ public class TestBookieShellCluster extends BookieShellTestBase {
 
             // hopefully ledger gc doesn't kick in
             log.info("Verify that we cannot open ledger");
-            try (ReadHandle reader = bk.newOpenLedgerOp()
-                 .withLedgerId(ledgerId)
-                 .withPassword("".getBytes()).execute().get()) {
+            try {
+                validateNEntries(bk, ledgerId, numEntries);
                 Assert.fail("Shouldn't have been able to find anything");
             } catch (ExecutionException ee) {
                 Assert.assertEquals(ee.getCause().getClass(), BKException.BKNoSuchLedgerExistsException.class);
@@ -233,16 +221,7 @@ public class TestBookieShellCluster extends BookieShellTestBase {
                                    "--restorefromfile", dumpFile);
 
             log.info("Validate that we can read back, after regeneration");
-            try (ReadHandle reader = bk.newOpenLedgerOp()
-                    .withLedgerId(ledgerId)
-                    .withPassword("".getBytes()).execute().get();
-                 LedgerEntries entries = reader.read(0, numEntries - 1)) {
-                Assert.assertEquals(reader.getLastAddConfirmed(), numEntries - 1);
-
-                for (int i = 0; i < numEntries; i++) {
-                    Assert.assertEquals(new String(entries.getEntry(i).getEntryBytes()), "entry" + i);
-                }
-            }
+            validateNEntries(bk, ledgerId, numEntries);
         }
     }
 
