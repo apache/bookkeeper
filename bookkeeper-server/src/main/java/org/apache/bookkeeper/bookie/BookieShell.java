@@ -1107,6 +1107,10 @@ public class BookieShell implements Tool {
                 return -1;
             }
 
+            if (cmdLine.hasOption("dumptofile") && cmdLine.hasOption("restorefromfile")) {
+                System.err.println("Only one of --dumptofile and --restorefromfile can be specified");
+                return -2;
+            }
             runFunctionWithLedgerManagerFactory(bkConf, mFactory -> {
                 try (LedgerManager m = mFactory.newLedgerManager()) {
                     if (cmdLine.hasOption("dumptofile")) {
