@@ -225,35 +225,12 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      * @return metadata service uri.
      * @throws ConfigurationException if the metadata service uri is invalid.
      */
-    @SuppressWarnings("deprecation")
     public String getMetadataServiceUri() throws ConfigurationException {
         String serviceUri = getString(METADATA_SERVICE_URI);
         if (null == serviceUri) {
             // no service uri is defined, fallback to old settings
             String ledgerManagerType;
-            Class<? extends LedgerManagerFactory> factoryClass = getLedgerManagerFactoryClass();
-            if (factoryClass == null) {
-                // set the ledger manager type to "null", so the driver implementation knows that the type is not set.
-                ledgerManagerType = "null";
-            } else {
-                if (!AbstractZkLedgerManagerFactory.class.isAssignableFrom(factoryClass)) {
-                    // this is a non-zk implementation
-                    throw new UnsupportedOperationException("metadata service uri is not supported for "
-                        + factoryClass);
-                }
-                if (factoryClass == HierarchicalLedgerManagerFactory.class) {
-                    ledgerManagerType = HierarchicalLedgerManagerFactory.NAME;
-                } else if (factoryClass == org.apache.bookkeeper.meta.FlatLedgerManagerFactory.class) {
-                    ledgerManagerType = org.apache.bookkeeper.meta.FlatLedgerManagerFactory.NAME;
-                } else if (factoryClass == LongHierarchicalLedgerManagerFactory.class) {
-                    ledgerManagerType = LongHierarchicalLedgerManagerFactory.NAME;
-                } else if (factoryClass == org.apache.bookkeeper.meta.MSLedgerManagerFactory.class) {
-                    ledgerManagerType = org.apache.bookkeeper.meta.MSLedgerManagerFactory.NAME;
-                } else {
-                    throw new IllegalArgumentException("Unknown zookeeper based ledger manager factory : "
-                        + factoryClass);
-                }
-            }
+            ledgerManagerType = getLedgerManagerLayoutStringFromFactoryClass();
             String zkServers = getZkServers();
             if (null != zkServers) {
                 // URI doesn't accept ','
@@ -424,6 +401,39 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      */
     public String getLedgerManagerFactoryClassName() {
         return getString(LEDGER_MANAGER_FACTORY_CLASS);
+    }
+
+    /**
+     * Get layout string ("null" if unconfigured).
+     *
+     * @return null, hierarchical, longhierarchical, or flat based on LEDGER_MANAGER_FACTORY_CLASS
+     */
+    @SuppressWarnings("deprecation")
+    public String getLedgerManagerLayoutStringFromFactoryClass() throws ConfigurationException {
+        String ledgerManagerType;
+        Class<? extends LedgerManagerFactory> factoryClass = getLedgerManagerFactoryClass();
+        if (factoryClass == null) {
+            // set the ledger manager type to "null", so the driver implementation knows that the type is not set.
+            ledgerManagerType = "null";
+        } else {
+            if (!AbstractZkLedgerManagerFactory.class.isAssignableFrom(factoryClass)) {
+                // this is a non-zk implementation
+                throw new ConfigurationException("metadata service uri is not supported for " + factoryClass);
+            }
+            if (factoryClass == HierarchicalLedgerManagerFactory.class) {
+                ledgerManagerType = HierarchicalLedgerManagerFactory.NAME;
+            } else if (factoryClass == org.apache.bookkeeper.meta.FlatLedgerManagerFactory.class) {
+                ledgerManagerType = org.apache.bookkeeper.meta.FlatLedgerManagerFactory.NAME;
+            } else if (factoryClass == LongHierarchicalLedgerManagerFactory.class) {
+                ledgerManagerType = LongHierarchicalLedgerManagerFactory.NAME;
+            } else if (factoryClass == org.apache.bookkeeper.meta.MSLedgerManagerFactory.class) {
+                ledgerManagerType = org.apache.bookkeeper.meta.MSLedgerManagerFactory.NAME;
+            } else {
+                throw new IllegalArgumentException("Unknown zookeeper based ledger manager factory : "
+                        + factoryClass);
+            }
+        }
+        return ledgerManagerType;
     }
 
     /**
