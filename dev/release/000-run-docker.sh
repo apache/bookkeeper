@@ -107,8 +107,8 @@ docker run -i -t \
   --rm=true \
   -w ${BOOKKEEPER_ROOT} \
   -u "${USER}" \
-  -v "${BOOKKEEPER_ROOT}:$(realpath $BOOKKEEPER_ROOT)" \
-  -v "${LOCAL_HOME}:$(realpath ~)" \
+  -v "$(realpath $BOOKKEEPER_ROOT):${BOOKKEEPER_ROOT}" \
+  -v "$(realpath ~):${LOCAL_HOME}" \
   -e VERSION=${VERSION} \
   -e MAJOR_VERSION=${MAJOR_VERSION} \
   -e NEXT_VERSION=${NEXT_VERSION} \
