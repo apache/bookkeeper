@@ -21,7 +21,6 @@ The main features in 4.8.0 cover are around following areas:
 - Durability
 - ExplicitLAC feature
 - New Table Storage Service
-- Official Docker image distribution channel
 - Bug Fixes
 
 
@@ -70,12 +69,6 @@ If you are writing with Ack Quorum = 2 and Write Quorum = 3, writes will succeee
 now BookKeeper will trigger an *ensemble change* and replace the failed bookie earlier.
 
 See [Ensemble change on Delayed Write Failure](https://github.com/apache/bookkeeper/issues/1390)
-
-## BP-33: Move releasing official docker images out of main repo
-
-From this version we are delivering Docker images on a private docker repository managed by Apache BookKeeper project PMC.
-
-See [BP-33: Move releasing official docker images out of main repo](https://github.com/apache/bookkeeper/pull/1450)
 
 ## Full list of changes
 
