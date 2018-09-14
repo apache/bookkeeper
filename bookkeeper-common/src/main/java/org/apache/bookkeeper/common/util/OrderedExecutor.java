@@ -374,7 +374,7 @@ public class OrderedExecutor implements ExecutorService {
 
     /**
      * Flag describing executor's expectation in regards of MDC.
-     * All tasks submittedt through executor's submit/execute methods will automatically respect this.
+     * All tasks submitted through executor's submit/execute methods will automatically respect this.
      *
      * @return true if runnable/callable is expected to preserve MDC, false otherwise.
      */
