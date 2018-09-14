@@ -30,7 +30,8 @@ import os
 import re
 import subprocess
 import sys
-import urllib2
+from urllib.request import urlopen, Request
+from urllib.error import HTTPError
 
 PROJECT_NAME = "bookkeeper"
 
@@ -61,13 +62,13 @@ DEFAULT_FIX_VERSION = os.environ.get("DEFAULT_FIX_VERSION", "0.9.1.0")
 
 def get_json(url, preview_api = False):
     try:
-        request = urllib2.Request(url)
+        request = Request(url)
         if GITHUB_OAUTH_KEY:
             request.add_header('Authorization', 'token %s' % GITHUB_OAUTH_KEY)
         if preview_api:
             request.add_header('Accept', 'application/vnd.github.black-cat-preview+json')
-        return json.load(urllib2.urlopen(request))
-    except urllib2.HTTPError as e:
+        return json.loads(urlopen(request).read())
+    except HTTPError as e:
         if "X-RateLimit-Remaining" in e.headers and e.headers["X-RateLimit-Remaining"] == '0':
             print("Exceeded the GitHub API rate limit; see the instructions in " + \
                   "bk-merge-pr.py to configure an OAuth token for making authenticated " + \
@@ -78,10 +79,10 @@ def get_json(url, preview_api = False):
 
 def post_json(url, data):
     try:
-        request = urllib2.Request(url, data, { 'Content-Type': 'application/json' })
+        request = Request(url, data.encode(encoding='utf-8'), { 'Content-Type': 'application/json' })
         request.add_header('Authorization', 'token %s' % GITHUB_OAUTH_KEY)
-        return json.load(urllib2.urlopen(request))
-    except urllib2.HTTPError as e:
+        return json.loads(urlopen(request).read())
+    except HTTPError as e:
         if "X-RateLimit-Remaining" in e.headers and e.headers["X-RateLimit-Remaining"] == '0':
             print("Exceeded the GitHub API rate limit; see the instructions in " + \
                   "bk-merge-pr.py to configure an OAuth token for making authenticated " + \
@@ -92,11 +93,11 @@ def post_json(url, data):
 
 def put_json(url, data):
     try:
-        request = urllib2.Request(url, data, { 'Content-Type': 'application/json' })
+        request = Request(url, data.encode(encoding='utf-8'), { 'Content-Type': 'application/json' })
         request.get_method = lambda: 'PUT'
         request.add_header('Authorization', 'token %s' % GITHUB_OAUTH_KEY)
-        return json.load(urllib2.urlopen(request))
-    except urllib2.HTTPError as e:
+        return json.loads(urlopen(request).read())
+    except HTTPError as e:
         if "X-RateLimit-Remaining" in e.headers and e.headers["X-RateLimit-Remaining"] == '0':
             print("Exceeded the GitHub API rate limit; see the instructions in " + \
                   "bk-merge-pr.py to configure an OAuth token for making authenticated " + \
@@ -116,13 +117,13 @@ def fail(msg):
 def run_cmd(cmd):
     print(cmd)
     if isinstance(cmd, list):
-        return subprocess.check_output(cmd)
+        return subprocess.check_output(cmd).decode(encoding='utf-8')
     else:
-        return subprocess.check_output(cmd.split(" "))
+        return subprocess.check_output(cmd.split(" ")).decode(encoding='utf-8')
 
 
 def continue_maybe(prompt):
-    result = raw_input("\n%s (y/n): " % prompt)
+    result = input("\n%s (y/n): " % prompt)
     if result.lower() != "y":
         fail("Okay, exiting")
 
@@ -133,7 +134,7 @@ def clean_up():
 
     branches = run_cmd("git branch").replace(" ", "").split("\n")
 
-    for branch in filter(lambda x: x.startswith(TEMP_BRANCH_PREFIX), branches):
+    for branch in list(filter(lambda x: x.startswith(TEMP_BRANCH_PREFIX), branches)):
         print("Deleting local branch %s" % branch)
         run_cmd("git branch -D %s" % branch)
 
@@ -145,7 +146,7 @@ def get_milestones():
 
 def get_all_labels():
     result = get_json("https://api.github.com/repos/%s/%s/labels?per_page=%s" % (GITHUB_USER, PROJECT_NAME, GITHUB_PAGE_SIZE))
-    return map(lambda x: x['name'], result)
+    return list(map(lambda x: x['name'], result))
 
 # merge the requested PR and return the merge hash
 def merge_pr(pr_num, target_ref, title, body, default_pr_reviewers, pr_repo_desc):
@@ -156,13 +157,13 @@ def merge_pr(pr_num, target_ref, title, body, default_pr_reviewers, pr_repo_desc
                              '--pretty=format:%an <%ae>']).split("\n")
     distinct_authors = sorted(set(commit_authors),
                               key=lambda x: commit_authors.count(x), reverse=True)
-    primary_author = raw_input(
+    primary_author = input(
         "Enter primary author in the format of \"name <email>\" [%s]: " %
         distinct_authors[0])
     if primary_author == "":
         primary_author = distinct_authors[0]
 
-    reviewers = raw_input("Enter reviewers [%s]: " % default_pr_reviewers).strip()
+    reviewers = input("Enter reviewers [%s]: " % default_pr_reviewers).strip()
     if reviewers == '':
         reviewers = default_pr_reviewers
 
@@ -170,7 +171,7 @@ def merge_pr(pr_num, target_ref, title, body, default_pr_reviewers, pr_repo_desc
                       '--pretty=format:%h [%an] %s']).split("\n")
     
     if len(commits) > 1:
-        result = raw_input("List pull request commits in squashed commit message? (y/n): ")
+        result = input("List pull request commits in squashed commit message? (y/n): ")
         if result.lower() == "y":
           should_list_commits = True
         else:
@@ -231,7 +232,7 @@ def merge_pr(pr_num, target_ref, title, body, default_pr_reviewers, pr_repo_desc
     return merge_hash, merge_log
 
 def ask_for_branch(default_branch):
-    pick_ref = raw_input("Enter a branch name [%s]: " % default_branch)
+    pick_ref = input("Enter a branch name [%s]: " % default_branch)
     if pick_ref == "":
         pick_ref = default_branch
     return pick_ref
@@ -270,13 +271,13 @@ def cherry_pick(pr_num, merge_hash, pick_ref):
 def fix_version_from_branch(branch, versions, target_ref):
     # Note: Assumes this is a sorted (newest->oldest) list of un-released versions
     if branch == target_ref:
-        versions = filter(lambda x: x == DEFAULT_FIX_VERSION, versions)
+        versions = list(filter(lambda x: x == DEFAULT_FIX_VERSION, versions))
         if len(versions) > 0:
             return versions[0]
         else:
             return None
     else:
-        versions = filter(lambda x: x.startswith(branch), versions)
+        versions = list(filter(lambda x: x.startswith(branch), versions))
         if len(versions) > 0:
             return versions[-1]
         else:
@@ -359,7 +360,7 @@ def get_reviewers(pr_num):
             username = user['name'].strip()
         if username is None:
             continue
-        reviewers_emails.append('{0} <{1}>'.format(username.encode('utf8'), useremail))
+        reviewers_emails.append('{0} <{1}>'.format(username, useremail))
     return ', '.join(reviewers_emails)
 
 def check_ci_status(pr):
@@ -437,7 +438,7 @@ def ask_release_for_github_issues(branch, labels):
         print("Fix Releases: %s" % ', '.join(fix_releases))
         print("")
 
-        if raw_input("Would you like to add these releases to github issues? (y/n): ") == "y":
+        if input("Would you like to add these releases to github issues? (y/n): ") == "y":
             break
     return fix_releases
 
@@ -453,7 +454,7 @@ def ask_updates_for_github_issues(milestones, labels, issue_labels, milestone_re
             print("Fix Milestone: %s" % fix_milestone)
         print("")
 
-        if raw_input("Would you like to update github issues with these labels? (y/n): ") == "y":
+        if input("Would you like to update github issues with these labels? (y/n): ") == "y":
             break
 
     return fix_milestone, fix_milestone_number, fix_areas, fix_types
@@ -464,10 +465,10 @@ def get_updates_for_github_issues(milestones, labels, issue_labels, milestone_re
     fix_milestone_number = ""
     if milestone_required:
         default_milestone_name = milestones[0]['title']
-        milestone_list = map(lambda x: x['title'], milestones)
+        milestone_list = list(map(lambda x: x['title'], milestones))
         milestone_map = dict((milestone['title'], milestone['number']) for milestone in milestones)
         while True:
-            fix_milestone = raw_input("Choose fix milestone : options are [%s] - default: [%s]: " % (', '.join(milestone_list).strip(), default_milestone_name))
+            fix_milestone = input("Choose fix milestone : options are [%s] - default: [%s]: " % (', '.join(milestone_list).strip(), default_milestone_name))
             fix_milestone = fix_milestone.strip()
             if fix_milestone == "":
                 fix_milestone = default_milestone_name
@@ -487,10 +488,10 @@ def get_updates_for_github_issues(milestones, labels, issue_labels, milestone_re
     return fix_milestone, fix_milestone_number, fix_areas, fix_types
 
 def ask_for_labels(prefix, labels, issue_labels):
-    issue_filtered_labels = map(lambda l: l.split('/')[1], filter(lambda x: x.startswith(prefix), issue_labels))
-    filtered_labels = map(lambda l: l.split('/')[1], filter(lambda x: x.startswith(prefix), labels))
+    issue_filtered_labels = list(map(lambda l: l.split('/')[1], filter(lambda x: x.startswith(prefix), issue_labels)))
+    filtered_labels = list(map(lambda l: l.split('/')[1], filter(lambda x: x.startswith(prefix), labels)))
     while True:
-        fix_labels = raw_input("Choose label '%s' - options are: [%s] - default: [%s] (comma separated): "
+        fix_labels = input("Choose label '%s' - options are: [%s] - default: [%s] (comma separated): "
             % (prefix, ', '.join(filtered_labels).strip(), ', '.join(issue_filtered_labels).strip()))
         if fix_labels == "":
             if not issue_filtered_labels:
@@ -527,7 +528,7 @@ def get_assignees_url(github_issue_id):
 def get_github_issue_labels(github_issue_id):
     url = "https://api.github.com/repos/%s/%s/issues/%s/labels" % (GITHUB_USER, PROJECT_NAME, github_issue_id) 
     result = get_json(url)
-    return map(lambda x: x["name"], result)
+    return list(map(lambda x: x["name"], result))
 
 def add_release_to_github_issues(github_issue_ids, labels, fix_release):
     for github_issue_id in github_issue_ids:
@@ -545,8 +546,8 @@ def add_release_to_github_issue(github_issue_id, labels, fix_release):
 
 def update_github_issue(github_issue_id, fix_milestone_number, fix_milestone, fix_areas, fix_types, other_labels):
     url = get_github_issue_url(github_issue_id)
-    labels = other_labels + map(lambda x: "area/%s" % x, fix_areas)
-    labels = labels + map(lambda x: "type/%s" % x, fix_types)
+    labels = other_labels + list(map(lambda x: ("area/%s" % x), fix_areas))
+    labels = labels + list(map(lambda x: ("type/%s" % x), fix_types))
     if fix_milestone_number == '':
         data = json.dumps({
             'labels': labels,
@@ -596,12 +597,12 @@ def main():
     milestones = get_milestones()
     labels = get_all_labels()
     branches = get_json("%s/branches" % GITHUB_API_BASE)
-    branch_names = filter(lambda x: x.startswith(RELEASE_BRANCH_PREFIX), [x['name'] for x in branches])
+    branch_names = list(filter(lambda x: x.startswith(RELEASE_BRANCH_PREFIX), [x['name'] for x in branches]))
     # Assumes branch names can be sorted lexicographically
     latest_branch = sorted(branch_names, reverse=True)[0]
 
     # 2. retrieve the details for a given pull request
-    pr_num = raw_input("Which pull request would you like to merge? (e.g. 34): ")
+    pr_num = input("Which pull request would you like to merge? (e.g. 34): ")
     pr = get_json("%s/pulls/%s" % (GITHUB_API_BASE, pr_num))
     pr_events = get_json("%s/issues/%s/events" % (GITHUB_API_BASE, pr_num))
     pr_reviewers = get_reviewers(pr_num)
@@ -611,7 +612,7 @@ def main():
 
     # 3. repair the title for commit message
     pr_title = pr["title"]
-    commit_title = raw_input("Commit title [%s]: " % pr_title.encode("utf-8")).decode("utf-8")
+    commit_title = input("Commit title [%s]: " % pr_title)
     if commit_title == "":
         commit_title = pr_title
 
@@ -621,7 +622,7 @@ def main():
         print("I've re-written the title as follows to match the standard format:")
         print("Original: %s" % commit_title)
         print("Modified: %s" % modified_title)
-        result = raw_input("Would you like to use the modified title? (y/n): ")
+        result = input("Would you like to use the modified title? (y/n): ")
         if result.lower() == "y":
             commit_title = modified_title
             print("Using modified title:")
@@ -642,7 +643,7 @@ def main():
         print(body)
         print("Modified: ")
         print(modified_body)
-        result = raw_input("Would you like to use the modified body? (y/n): ")
+        result = input("Would you like to use the modified body? (y/n): ")
         if result.lower() == "y":
             body = modified_body
             print("Using modified body.")
@@ -667,7 +668,7 @@ def main():
     fix_milestone, fix_milestone_number, fix_areas, fix_types = \
         ask_updates_for_github_issues(milestones, labels, issue_labels, target_ref == "master")
     # update issues with fix milestone, are and type
-    other_labels = filter(lambda x: not x.startswith("area"), issue_labels)
+    other_labels = list(filter(lambda x: not x.startswith("area"), issue_labels))
     all_issue_labels = update_github_issues( \
         github_issue_ids, \
         fix_milestone_number, \
@@ -727,7 +728,7 @@ def main():
     run_cmd("git fetch %s" % PR_REMOTE_NAME)
 
     pick_prompt = "Would you like to pick %s into another branch?" % merge_hash
-    while raw_input("\n%s (y/n): " % pick_prompt).lower() == "y":
+    while input("\n%s (y/n): " % pick_prompt).lower() == "y":
         pick_ref = ask_for_branch(latest_branch) 
         branch_version = pick_ref.split('-')[1]
         # add releases
