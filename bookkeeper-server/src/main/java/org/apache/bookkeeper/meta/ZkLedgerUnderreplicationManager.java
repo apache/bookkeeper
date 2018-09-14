@@ -115,6 +115,7 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
     private final String layoutZNode;
     private final AbstractConfiguration conf;
     private final String lostBookieRecoveryDelayZnode;
+    private final String checkAllLedgersCtimeZnode;
     private final ZooKeeper zkc;
     private final SubTreeCache subTreeCache;
 
@@ -127,7 +128,7 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
                 + BookKeeperConstants.DEFAULT_ZK_LEDGERS_ROOT_PATH;
         urLockPath = basePath + '/' + BookKeeperConstants.UNDER_REPLICATION_LOCK;
         lostBookieRecoveryDelayZnode = basePath + '/' + BookKeeperConstants.LOSTBOOKIERECOVERYDELAY_NODE;
-
+        checkAllLedgersCtimeZnode = basePath + '/' + BookKeeperConstants.CHECK_ALL_LEDGERS_CTIME;
         idExtractionPattern = Pattern.compile("urL(\\d+)$");
         this.zkc = zkc;
         this.subTreeCache = new SubTreeCache(new SubTreeCache.TreeProvider() {
@@ -883,5 +884,40 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
             throw new ReplicationException.UnavailableException("Error while parsing ZK data of lock", e);
         }
         return replicationWorkerId;
+    }
+
+    @Override
+    public void setCheckAllLedgersCTime(long checkAllLedgersCTime) throws UnavailableException {
+        LOG.debug("setCheckAllLedgersCTime");
+        try {
+            if (zkc.exists(checkAllLedgersCtimeZnode, false) != null) {
+                zkc.setData(checkAllLedgersCtimeZnode, Long.toString(checkAllLedgersCTime).getBytes(UTF_8), -1);
+            } else {
+                zkc.create(checkAllLedgersCtimeZnode, Long.toString(checkAllLedgersCTime).getBytes(UTF_8),
+                        Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+            }
+        } catch (KeeperException ke) {
+            throw new ReplicationException.UnavailableException("Error contacting zookeeper", ke);
+        } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
+            throw new ReplicationException.UnavailableException("Interrupted while contacting zookeeper", ie);
+        }
+    }
+
+    @Override
+    public long getCheckAllLedgersCTime() throws UnavailableException {
+        LOG.debug("getCheckAllLedgersCTime");
+        try {
+            byte[] data = zkc.getData(checkAllLedgersCtimeZnode, false, null);
+            return Long.parseLong(new String(data, UTF_8));
+        } catch (KeeperException.NoNodeException ne) {
+            LOG.warn("checkAllLedgersCtimeZnode is not yet available");
+            return -1;
+        } catch (KeeperException ke) {
+            throw new ReplicationException.UnavailableException("Error contacting zookeeper", ke);
+        } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
+            throw new ReplicationException.UnavailableException("Interrupted while contacting zookeeper", ie);
+        }
     }
 }

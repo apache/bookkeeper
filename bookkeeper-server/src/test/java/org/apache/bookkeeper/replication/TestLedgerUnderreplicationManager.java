@@ -27,6 +27,9 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import com.google.protobuf.TextFormat;
+
+import lombok.Cleanup;
+
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -762,6 +765,21 @@ public class TestLedgerUnderreplicationManager {
             LOG.info("s: {}", s);
         }
         assertEquals("All hierarchies should be cleaned up", 0, children.size());
+    }
+
+    @Test
+    public void testCheckAllLedgersCTime() throws Exception {
+        @Cleanup
+        LedgerUnderreplicationManager underReplicaMgr1 = lmf1.newLedgerUnderreplicationManager();
+        @Cleanup
+        LedgerUnderreplicationManager underReplicaMgr2 = lmf2.newLedgerUnderreplicationManager();
+        assertEquals(-1, underReplicaMgr1.getCheckAllLedgersCTime());
+        long curTime = System.currentTimeMillis();
+        underReplicaMgr2.setCheckAllLedgersCTime(curTime);
+        assertEquals(curTime, underReplicaMgr1.getCheckAllLedgersCTime());
+        curTime = System.currentTimeMillis();
+        underReplicaMgr2.setCheckAllLedgersCTime(curTime);
+        assertEquals(curTime, underReplicaMgr1.getCheckAllLedgersCTime());
     }
 
     private void verifyMarkLedgerUnderreplicated(Collection<String> missingReplica)
