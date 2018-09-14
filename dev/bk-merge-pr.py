@@ -69,11 +69,11 @@ def get_json(url, preview_api = False):
         return json.load(urllib2.urlopen(request))
     except urllib2.HTTPError as e:
         if "X-RateLimit-Remaining" in e.headers and e.headers["X-RateLimit-Remaining"] == '0':
-            print "Exceeded the GitHub API rate limit; see the instructions in " + \
+            print("Exceeded the GitHub API rate limit; see the instructions in " + \
                   "bk-merge-pr.py to configure an OAuth token for making authenticated " + \
-                  "GitHub requests."
+                  "GitHub requests.")
         else:
-            print "Unable to fetch URL, exiting: %s" % url
+            print("Unable to fetch URL, exiting: %s" % url)
         sys.exit(-1)
 
 def post_json(url, data):
@@ -83,11 +83,11 @@ def post_json(url, data):
         return json.load(urllib2.urlopen(request))
     except urllib2.HTTPError as e:
         if "X-RateLimit-Remaining" in e.headers and e.headers["X-RateLimit-Remaining"] == '0':
-            print "Exceeded the GitHub API rate limit; see the instructions in " + \
+            print("Exceeded the GitHub API rate limit; see the instructions in " + \
                   "bk-merge-pr.py to configure an OAuth token for making authenticated " + \
-                  "GitHub requests."
+                  "GitHub requests.")
         else:
-            print "Unable to fetch URL, exiting: %s - %s" % (url, e)
+            print("Unable to fetch URL, exiting: %s - %s" % (url, e))
         sys.exit(-1)
 
 def put_json(url, data):
@@ -98,23 +98,23 @@ def put_json(url, data):
         return json.load(urllib2.urlopen(request))
     except urllib2.HTTPError as e:
         if "X-RateLimit-Remaining" in e.headers and e.headers["X-RateLimit-Remaining"] == '0':
-            print "Exceeded the GitHub API rate limit; see the instructions in " + \
+            print("Exceeded the GitHub API rate limit; see the instructions in " + \
                   "bk-merge-pr.py to configure an OAuth token for making authenticated " + \
-                  "GitHub requests."
+                  "GitHub requests.")
         else:
-            print "Unable to fetch URL, exiting: %s - %s" % (url, e)
-            print e
+            print("Unable to fetch URL, exiting: %s - %s" % (url, e))
+            print(e)
         sys.exit(-1)
 
 
 def fail(msg):
-    print msg
+    print(msg)
     clean_up()
     sys.exit(-1)
 
 
 def run_cmd(cmd):
-    print cmd
+    print(cmd)
     if isinstance(cmd, list):
         return subprocess.check_output(cmd)
     else:
@@ -128,13 +128,13 @@ def continue_maybe(prompt):
 
 def clean_up():
     if original_head != get_current_branch():
-        print "Restoring head pointer to %s" % original_head
+        print("Restoring head pointer to %s" % original_head)
         run_cmd("git checkout %s" % original_head)
 
     branches = run_cmd("git branch").replace(" ", "").split("\n")
 
     for branch in filter(lambda x: x.startswith(TEMP_BRANCH_PREFIX), branches):
-        print "Deleting local branch %s" % branch
+        print("Deleting local branch %s" % branch)
         run_cmd("git branch -D %s" % branch)
 
 def get_current_branch():
@@ -369,9 +369,9 @@ def check_ci_status(pr):
         comments = get_json(pr["comments_url"])
         ignore_ci_comments = [c for c in comments if c["body"].upper() == "IGNORE CI"]
         if len(ignore_ci_comments) > 0:
-            print "\n\nWARNING: The PR has not passed CI (state is %s)" % (state) \
+            print("\n\nWARNING: The PR has not passed CI (state is %s)" % (state) \
                 + ", but this has been overridden by %s. \n" % (ignore_ci_comments[0]["user"]["login"]) \
-                + "Proceed at your own peril!\n\n"
+                + "Proceed at your own peril!\n\n")
         else:
             check_individual_ci_status(ci_status, comments)
 
@@ -411,14 +411,14 @@ def check_individual_ci_status(ci_status, comments):
         # all ci passed except integration tests
         ignore_it_ci_comments = [c for c in comments if c["body"].upper() == "IGNORE IT CI"]
         if len(ignore_it_ci_comments) > 0:
-            print "\n\nWARNING: The PR has not passed integration tests CI" \
+            print("\n\nWARNING: The PR has not passed integration tests CI" \
                 + ", but this has been overridden by %s. \n" % (ignore_it_ci_comments[0]["user"]["login"]) \
-                + "Proceed at your own peril!\n\n"
+                + "Proceed at your own peril!\n\n")
         else:
             fail("The PR has not passed integration tests CI")
     elif len(ci_failures) != 0 or len(ci_integration_test_failures) != 0:
         fail_msg = "The PR has not passed CI:\n"
-        print ""
+        print("")
         for status in ci_failures:
             fail_msg += "\t %s = %s\n" % (status["context"], status["state"])
         for status in ci_integration_test_failures:
@@ -426,16 +426,16 @@ def check_individual_ci_status(ci_status, comments):
         fail(fail_msg)
 
 def ask_release_for_github_issues(branch, labels):
-    print "=== Add release to github issues ==="
+    print("=== Add release to github issues ===")
     while True:
         fix_releases = ask_for_labels("release/%s" % branch, labels, [])
         if len(fix_releases) != 1:
-            print "Please choose only one release to add for branch '%s'." % branch
+            print("Please choose only one release to add for branch '%s'." % branch)
             continue
 
-        print "=== Apply following releases to github issues ==" 
-        print "Fix Releases: %s" % ', '.join(fix_releases)
-        print ""
+        print("=== Apply following releases to github issues ==")
+        print("Fix Releases: %s" % ', '.join(fix_releases))
+        print("")
 
         if raw_input("Would you like to add these releases to github issues? (y/n): ") == "y":
             break
@@ -446,12 +446,12 @@ def ask_updates_for_github_issues(milestones, labels, issue_labels, milestone_re
         fix_milestone, fix_milestone_number, fix_areas, fix_types = \
             get_updates_for_github_issues(milestones, labels, issue_labels, milestone_required)
 
-        print "=== Apply following milestone, area, type to github issues ==" 
-        print "Fix Types: %s" % ', '.join(fix_types)
-        print "Fix Areas: %s" % ', '.join(fix_areas)
+        print("=== Apply following milestone, area, type to github issues ==")
+        print("Fix Types: %s" % ', '.join(fix_types))
+        print("Fix Areas: %s" % ', '.join(fix_areas))
         if milestone_required:
-            print "Fix Milestone: %s" % fix_milestone
-        print ""
+            print("Fix Milestone: %s" % fix_milestone)
+        print("")
 
         if raw_input("Would you like to update github issues with these labels? (y/n): ") == "y":
             break
@@ -475,7 +475,7 @@ def get_updates_for_github_issues(milestones, labels, issue_labels, milestone_re
             elif fix_milestone in milestone_map:
                 break
             else:
-                print "Invalid milestone: %s." % fix_milestone
+                print("Invalid milestone: %s." % fix_milestone)
         fix_milestone_number = milestone_map[fix_milestone]
 
     # get area
@@ -494,19 +494,19 @@ def ask_for_labels(prefix, labels, issue_labels):
             % (prefix, ', '.join(filtered_labels).strip(), ', '.join(issue_filtered_labels).strip()))
         if fix_labels == "":
             if not issue_filtered_labels:
-                print "Please specify a '%s' label to close the issue!" % prefix
+                print("Please specify a '%s' label to close the issue!" % prefix)
                 continue
             else:
                 fix_labels = issue_filtered_labels
                 break
         fix_labels = fix_labels.replace(" ", "").split(",")
         if not fix_labels:
-            print "Please specify a '%s' label to close the issue!" % prefix
+            print("Please specify a '%s' label to close the issue!" % prefix)
             continue
         invalid_label = False
         for label in fix_labels:
             if label not in filtered_labels:
-                print "Invalid '%s' label: %s." % (prefix, label)
+                print("Invalid '%s' label: %s." % (prefix, label))
                 invalid_label = True
                 break
         if invalid_label:
@@ -581,12 +581,12 @@ def main():
     global original_head
 
     if not GITHUB_OAUTH_KEY:
-        print "OAuth key is needed for merging bookkeeper pull requests."
-        print "If environment variable 'GITHUB_OAUTH_KEY' is not defined,"
-        print "then requests will be unauthenticated."
-        print "You can create an OAuth key at https://github.com/settings/tokens"
-        print "and set it to the environment variable 'GITHUB_OAUTH_KEY'."
-        print "(This token only needs the 'public_repo' scope permissions)"
+        print("OAuth key is needed for merging bookkeeper pull requests.")
+        print("If environment variable 'GITHUB_OAUTH_KEY' is not defined,")
+        print("then requests will be unauthenticated.")
+        print("You can create an OAuth key at https://github.com/settings/tokens")
+        print("and set it to the environment variable 'GITHUB_OAUTH_KEY'.")
+        print("(This token only needs the 'public_repo' scope permissions)")
         exit(-1)
 
     # 0. get the current state so we can go back
@@ -618,16 +618,16 @@ def main():
     # Decide whether to use the modified title or not
     modified_title, github_issue_ids = standardize_issue_ref(commit_title)
     if modified_title != commit_title:
-        print "I've re-written the title as follows to match the standard format:"
-        print "Original: %s" % commit_title
-        print "Modified: %s" % modified_title
+        print("I've re-written the title as follows to match the standard format:")
+        print("Original: %s" % commit_title)
+        print("Modified: %s" % modified_title)
         result = raw_input("Would you like to use the modified title? (y/n): ")
         if result.lower() == "y":
             commit_title = modified_title
-            print "Using modified title:"
+            print("Using modified title:")
         else:
-            print "Using original title:"
-        print commit_title
+            print("Using original title:")
+        print(commit_title)
 
     body = pr["body"]
     modified_body = ""
@@ -637,17 +637,17 @@ def main():
         modified_body = modified_body + line + "\n"
     modified_body = modified_body.rstrip("\n")
     if modified_body != body:
-        print "I've re-written the body as follows to match the standard formats:"
-        print "Original: "
-        print body
-        print "Modified: "
-        print modified_body
+        print("I've re-written the body as follows to match the standard formats:")
+        print("Original: ")
+        print(body)
+        print("Modified: ")
+        print(modified_body)
         result = raw_input("Would you like to use the modified body? (y/n): ")
         if result.lower() == "y":
             body = modified_body
-            print "Using modified body."
+            print("Using modified body.")
         else:
-            print "Using original body."
+            print("Using original body.")
 
     target_ref = pr["base"]["ref"]
     user_login = pr["user"]["login"]
@@ -698,13 +698,13 @@ def main():
         merge_hash = merge_commits[0]["commit_id"]
         message = get_json("%s/commits/%s" % (GITHUB_API_BASE, merge_hash))["commit"]["message"]
 
-        print "Pull request %s has already been merged, assuming you want to backport" % pr_num
+        print("Pull request %s has already been merged, assuming you want to backport" % pr_num)
         commit_is_downloaded = run_cmd(['git', 'rev-parse', '--quiet', '--verify',
                                     "%s^{commit}" % merge_hash]).strip() != ""
         if not commit_is_downloaded:
             fail("Couldn't find any merge commit for #%s, you may need to update HEAD." % pr_num)
 
-        print "Found commit %s:\n%s" % (merge_hash, message)
+        print("Found commit %s:\n%s" % (merge_hash, message))
         
         cherry_pick(pr_num, merge_hash, ask_for_branch(latest_branch))
         sys.exit(0)
@@ -714,8 +714,8 @@ def main():
             "You may need to rebase the PR."
         fail(msg)
 
-    print ("\n=== Pull Request #%s ===" % pr_num)
-    print ("PR title\t%s\nCommit title\t%s\nSource\t\t%s\nTarget\t\t%s\nURL\t\t%s" % (
+    print("\n=== Pull Request #%s ===" % pr_num)
+    print("PR title\t%s\nCommit title\t%s\nSource\t\t%s\nTarget\t\t%s\nURL\t\t%s" % (
         pr_title, commit_title, pr_repo_desc, target_ref, url))
     continue_maybe("Proceed with merging pull request #%s?" % pr_num)
 
