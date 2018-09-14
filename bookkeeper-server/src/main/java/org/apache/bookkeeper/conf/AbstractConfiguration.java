@@ -105,7 +105,7 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
     // Default formatter classes
     protected static final Class<? extends EntryFormatter> DEFAULT_ENTRY_FORMATTER = StringEntryFormatter.class;
     protected static final Class<? extends LedgerIdFormatter> DEFAULT_LEDGERID_FORMATTER =
-            LedgerIdFormatter.UUIDLedgerIdFormatter.class;
+            LedgerIdFormatter.LongLedgerIdFormatter.class;
 
     /**
      * This list will be passed to {@link SSLEngine#setEnabledCipherSuites(java.lang.String[]) }.

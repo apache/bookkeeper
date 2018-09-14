@@ -62,8 +62,8 @@ public abstract class LedgerIdFormatter {
             formatter = ReflectionUtils.newInstance(ledgerIdFormatterClass);
         } catch (Exception e) {
             LOG.warn("No formatter class found", e);
-            LOG.warn("Using Default UUID Formatter.");
-            formatter = new UUIDLedgerIdFormatter();
+            LOG.warn("Using Default Long Formatter.");
+            formatter = new LongLedgerIdFormatter();
         }
         return formatter;
     }

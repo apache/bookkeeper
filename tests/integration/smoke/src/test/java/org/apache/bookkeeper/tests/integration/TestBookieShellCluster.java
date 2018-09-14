@@ -22,6 +22,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertTrue;
 
 import com.github.dockerjava.api.DockerClient;
+import java.util.concurrent.ExecutionException;
 import lombok.extern.slf4j.Slf4j;
 
 import org.apache.bookkeeper.client.BKException;
@@ -179,6 +180,48 @@ public class TestBookieShellCluster extends BookieShellTestBase {
             log.info("Validate that we can read back, after regeneration");
             validateNEntries(bk, ledgerId1, numEntries);
             validateNEntries(bk, ledgerId2, numEntries);
+        }
+    }
+
+    @Test
+    public void test102_DumpRestoreMetadata() throws Exception {
+        String zookeeper = String.format("zk+hierarchical://%s/ledgers",
+                                         BookKeeperClusterUtils.zookeeperConnectString(docker));
+        int numEntries = 100;
+
+        try (BookKeeper bk = BookKeeper.newBuilder(
+                     new ClientConfiguration().setMetadataServiceUri(zookeeper)).build()) {
+            log.info("Writing entries");
+            long ledgerId = writeNEntries(bk, numEntries, 1);
+
+            log.info("Dumping ledger metadata to file");
+            String bookie = BookKeeperClusterUtils.getAnyBookie();
+            String dumpFile = String.format("/tmp/ledger-%d-%d", ledgerId, System.nanoTime());
+            DockerUtils.runCommand(docker, bookie,
+                                   bkScript, "shell", "ledgermetadata",
+                                   "--ledgerid", String.valueOf(ledgerId),
+                                   "--dumptofile", dumpFile);
+
+            log.info("Delete the ledger metadata");
+            bk.newDeleteLedgerOp().withLedgerId(ledgerId).execute().get();
+
+            // hopefully ledger gc doesn't kick in
+            log.info("Verify that we cannot open ledger");
+            try {
+                validateNEntries(bk, ledgerId, numEntries);
+                Assert.fail("Shouldn't have been able to find anything");
+            } catch (ExecutionException ee) {
+                Assert.assertEquals(ee.getCause().getClass(), BKException.BKNoSuchLedgerExistsException.class);
+            }
+
+            log.info("Restore the ledger metadata");
+            DockerUtils.runCommand(docker, bookie,
+                                   bkScript, "shell", "ledgermetadata",
+                                   "--ledgerid", String.valueOf(ledgerId),
+                                   "--restorefromfile", dumpFile);
+
+            log.info("Validate that we can read back, after regeneration");
+            validateNEntries(bk, ledgerId, numEntries);
         }
     }
 
