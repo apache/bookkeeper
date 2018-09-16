@@ -46,6 +46,10 @@
   </Match>
   <Match>
     <!-- generated code -->
+    <Class name="~org\.apache\.bookkeeper\.tests\.proto.*"/>
+  </Match>
+  <Match>
+    <!-- generated code -->
     <Class name="~org\.apache\.bookkeeper\.client\.generated.*"/>
   </Match>
   <Match>
