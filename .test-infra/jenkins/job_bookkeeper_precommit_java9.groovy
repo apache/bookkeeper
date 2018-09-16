@@ -57,5 +57,5 @@ mavenJob('bookkeeper_precommit_pullrequest_java9') {
   common_job_properties.setMavenConfig(delegate)
 
   // Maven build project
-  goals('clean package spotbugs:check -Dstream -DskipBookKeeperServerTests')
+  goals('clean package spotbugs:check -DskipBookKeeperServerTests')
 }

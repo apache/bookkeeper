@@ -28,20 +28,6 @@
   <modules>
     <module>framework</module>
     <module>all</module>
+    <module>stream</module>
   </modules>
-  <profiles>
-  <!-- include stream storage cli only when -Dstream is provided -->
-    <profile>
-      <id>stream</id>
-      <activation>
-        <property>
-          <name>stream</name>
-        </property>
-      </activation>
-      <modules>
-        <!-- enable building stream storage cli -->
-        <module>stream</module>
-      </modules>
-    </profile>
-  </profiles>
 </project>

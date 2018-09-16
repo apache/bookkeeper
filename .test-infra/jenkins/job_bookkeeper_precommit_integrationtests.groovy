@@ -63,7 +63,7 @@ freeStyleJob('bookkeeper_precommit_integrationtests') {
             // Set Maven parameters.
             common_job_properties.setMavenConfig(delegate)
 
-            goals('-B clean install -Dstream -Pdocker')
+            goals('-B clean install -Pdocker')
             properties(skipTests: true, interactiveMode: false)
         }
 
@@ -71,7 +71,7 @@ freeStyleJob('bookkeeper_precommit_integrationtests') {
             // Set Maven parameters.
             common_job_properties.setMavenConfig(delegate)
             rootPOM('tests/pom.xml')
-            goals('-B test -Dstream -DintegrationTests')
+            goals('-B test')
         }
 
         shell('kill $(cat docker-log.pid) || true')

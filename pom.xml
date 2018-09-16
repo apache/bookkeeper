@@ -64,7 +64,7 @@
     <module>tests</module>
     <module>bookkeeper-dist</module>
     <module>microbenchmarks</module>
-    <module>stream/distributedlog</module>
+    <module>stream</module>
     <module>tools</module>
   </modules>
   <mailingLists>
@@ -956,18 +956,5 @@
       </build>
     </profile>
 
-    <!-- enable building table service module only when -Dstream is provided -->
-    <profile>
-      <id>stream</id>
-      <activation>
-        <property>
-          <name>stream</name>
-        </property>
-      </activation>
-      <modules>
-        <!-- enable building table service -->
-        <module>stream</module>
-      </modules>
-    </profile>
   </profiles>
 </project>
