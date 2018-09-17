@@ -61,16 +61,24 @@ public class NativeUtils {
         byte[] buffer = new byte[1024];
         int read;
 
-        try (InputStream input = NativeUtils.class.getResourceAsStream(path)) {
+        InputStream input = NativeUtils.class.getResourceAsStream(path);
+        try {
             if (input == null) {
                 throw new FileNotFoundException("Couldn't find file into jar " + path);
             }
 
-            try (OutputStream out = new FileOutputStream(temp)) {
+            OutputStream out = new FileOutputStream(temp);
+            try {
                 while ((read = input.read(buffer)) != -1) {
                     out.write(buffer, 0, read);
                 }
+
+            } finally {
+                out.close();
             }
+
+        } finally {
+            input.close();
         }
 
         if (!temp.exists()) {
