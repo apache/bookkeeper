@@ -28,6 +28,7 @@ import io.netty.util.concurrent.DefaultThreadFactory;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -38,6 +39,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.stream.Collectors;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -46,6 +48,7 @@ import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.commons.lang.StringUtils;
+import org.slf4j.MDC;
 
 /**
  * This class provides 2 things over the java {@link ExecutorService}.
@@ -73,6 +76,7 @@ public class OrderedExecutor implements ExecutorService {
     final OpStatsLogger taskExecutionStats;
     final OpStatsLogger taskPendingStats;
     final boolean traceTaskExecution;
+    final boolean preserveMdcForTaskExecution;
     final long warnTimeMicroSec;
     final int maxTasksInQueue;
 
@@ -92,7 +96,8 @@ public class OrderedExecutor implements ExecutorService {
                 threadFactory = new DefaultThreadFactory("bookkeeper-ordered-safe-executor");
             }
             return new OrderedExecutor(name, numThreads, threadFactory, statsLogger,
-                                           traceTaskExecution, warnTimeMicroSec, maxTasksInQueue);
+                                           traceTaskExecution, preserveMdcForTaskExecution,
+                                           warnTimeMicroSec, maxTasksInQueue);
         }
     }
 
@@ -105,6 +110,7 @@ public class OrderedExecutor implements ExecutorService {
         protected ThreadFactory threadFactory = null;
         protected StatsLogger statsLogger = NullStatsLogger.INSTANCE;
         protected boolean traceTaskExecution = false;
+        protected boolean preserveMdcForTaskExecution = false;
         protected long warnTimeMicroSec = WARN_TIME_MICRO_SEC_DEFAULT;
         protected int maxTasksInQueue = NO_TASK_LIMIT;
 
@@ -138,6 +144,11 @@ public class OrderedExecutor implements ExecutorService {
             return this;
         }
 
+        public AbstractBuilder<T> preserveMdcForTaskExecution(boolean enabled) {
+            this.preserveMdcForTaskExecution = enabled;
+            return this;
+        }
+
         public AbstractBuilder<T> traceTaskWarnTimeMicroSec(long warnTimeMicroSec) {
             this.warnTimeMicroSec = warnTimeMicroSec;
             return this;
@@ -154,6 +165,7 @@ public class OrderedExecutor implements ExecutorService {
                 threadFactory,
                 statsLogger,
                 traceTaskExecution,
+                preserveMdcForTaskExecution,
                 warnTimeMicroSec,
                 maxTasksInQueue);
         }
@@ -185,6 +197,81 @@ public class OrderedExecutor implements ExecutorService {
         }
     }
 
+    /**
+     * Decorator class for a callable that measure the execution time.
+     */
+    protected class TimedCallable<T> implements Callable<T> {
+        final Callable<T> callable;
+        final long initNanos;
+
+        TimedCallable(Callable<T> callable) {
+            this.callable = callable;
+            this.initNanos = MathUtils.nowInNano();
+        }
+
+        @Override
+        public T call() throws Exception {
+            taskPendingStats.registerSuccessfulEvent(MathUtils.elapsedNanos(initNanos), TimeUnit.NANOSECONDS);
+            long startNanos = MathUtils.nowInNano();
+            try {
+                return this.callable.call();
+            } finally {
+                long elapsedMicroSec = MathUtils.elapsedMicroSec(startNanos);
+                taskExecutionStats.registerSuccessfulEvent(elapsedMicroSec, TimeUnit.MICROSECONDS);
+                if (elapsedMicroSec >= warnTimeMicroSec) {
+                    log.warn("Callable {}:{} took too long {} micros to execute.", callable, callable.getClass(),
+                            elapsedMicroSec);
+                }
+            }
+        }
+    }
+
+    /**
+     * Decorator class for a runnable that preserves MDC context.
+     */
+    static class ContextPreservingRunnable implements Runnable {
+        private final Runnable runnable;
+        private final Map<String, String> mdcContextMap;
+
+        ContextPreservingRunnable(Runnable runnable) {
+            this.runnable = runnable;
+            this.mdcContextMap = MDC.getCopyOfContextMap();
+        }
+
+        @Override
+        public void run() {
+            MdcUtils.restoreContext(mdcContextMap);
+            try {
+                runnable.run();
+            } finally {
+                MDC.clear();
+            }
+        }
+    }
+
+    /**
+     * Decorator class for a callable that preserves MDC context.
+     */
+    static class ContextPreservingCallable<T> implements Callable<T> {
+        private final Callable<T> callable;
+        private final Map<String, String> mdcContextMap;
+
+        ContextPreservingCallable(Callable<T> callable) {
+            this.callable = callable;
+            this.mdcContextMap = MDC.getCopyOfContextMap();
+        }
+
+        @Override
+        public T call() throws Exception {
+            MdcUtils.restoreContext(mdcContextMap);
+            try {
+                return callable.call();
+            } finally {
+                MDC.clear();
+            }
+        }
+    }
+
     protected ThreadPoolExecutor createSingleThreadExecutor(ThreadFactory factory) {
         return new ThreadPoolExecutor(1, 1, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>(), factory);
     }
@@ -206,6 +293,8 @@ public class OrderedExecutor implements ExecutorService {
      *            - for reporting executor stats
      * @param traceTaskExecution
      *            - should we stat task execution
+     * @param preserveMdcForTaskExecution
+     *            - should we preserve MDC for task execution
      * @param warnTimeMicroSec
      *            - log long task exec warning after this interval
      * @param maxTasksInQueue
@@ -213,7 +302,7 @@ public class OrderedExecutor implements ExecutorService {
      */
     protected OrderedExecutor(String baseName, int numThreads, ThreadFactory threadFactory,
                                 StatsLogger statsLogger, boolean traceTaskExecution,
-                                long warnTimeMicroSec, int maxTasksInQueue) {
+                                boolean preserveMdcForTaskExecution, long warnTimeMicroSec, int maxTasksInQueue) {
         checkArgument(numThreads > 0);
         checkArgument(!StringUtils.isBlank(baseName));
 
@@ -280,6 +369,17 @@ public class OrderedExecutor implements ExecutorService {
         this.taskExecutionStats = statsLogger.scope(name).getOpStatsLogger("task_execution");
         this.taskPendingStats = statsLogger.scope(name).getOpStatsLogger("task_queued");
         this.traceTaskExecution = traceTaskExecution;
+        this.preserveMdcForTaskExecution = preserveMdcForTaskExecution;
+    }
+
+    /**
+     * Flag describing executor's expectation in regards of MDC.
+     * All tasks submitted through executor's submit/execute methods will automatically respect this.
+     *
+     * @return true if runnable/callable is expected to preserve MDC, false otherwise.
+     */
+    public boolean preserveMdc() {
+        return preserveMdcForTaskExecution;
     }
 
     /**
@@ -369,12 +469,23 @@ public class OrderedExecutor implements ExecutorService {
         return threads[MathUtils.signSafeMod(orderingKey, threads.length)];
     }
 
-    private Runnable timedRunnable(Runnable r) {
-        if (traceTaskExecution) {
-            return new TimedRunnable(r);
-        } else {
-            return r;
+    protected Runnable timedRunnable(Runnable r) {
+        final Runnable runMe = traceTaskExecution ? new TimedRunnable(r) : r;
+        return preserveMdcForTaskExecution ? new ContextPreservingRunnable(runMe) : runMe;
+    }
+
+    protected <T> Callable<T> timedCallable(Callable<T> c) {
+        final Callable<T> callMe = traceTaskExecution ? new TimedCallable<>(c) : c;
+        return preserveMdcForTaskExecution ? new ContextPreservingCallable<>(callMe) : callMe;
+    }
+
+    protected <T> Collection<? extends Callable<T>> timedCallables(Collection<? extends Callable<T>> tasks) {
+        if (traceTaskExecution || preserveMdcForTaskExecution) {
+            return tasks.stream()
+                    .map(this::timedCallable)
+                    .collect(Collectors.toList());
         }
+        return tasks;
     }
 
     /**
@@ -382,7 +493,7 @@ public class OrderedExecutor implements ExecutorService {
      */
     @Override
     public <T> Future<T> submit(Callable<T> task) {
-        return chooseThread().submit(task);
+        return chooseThread().submit(timedCallable(task));
     }
 
     /**
@@ -407,7 +518,7 @@ public class OrderedExecutor implements ExecutorService {
     @Override
     public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks)
         throws InterruptedException {
-        return chooseThread().invokeAll(tasks);
+        return chooseThread().invokeAll(timedCallables(tasks));
     }
 
     /**
@@ -418,7 +529,7 @@ public class OrderedExecutor implements ExecutorService {
                                          long timeout,
                                          TimeUnit unit)
         throws InterruptedException {
-        return chooseThread().invokeAll(tasks, timeout, unit);
+        return chooseThread().invokeAll(timedCallables(tasks), timeout, unit);
     }
 
     /**
@@ -427,7 +538,7 @@ public class OrderedExecutor implements ExecutorService {
     @Override
     public <T> T invokeAny(Collection<? extends Callable<T>> tasks)
         throws InterruptedException, ExecutionException {
-        return chooseThread().invokeAny(tasks);
+        return chooseThread().invokeAny(timedCallables(tasks));
     }
 
     /**
@@ -436,7 +547,7 @@ public class OrderedExecutor implements ExecutorService {
     @Override
     public <T> T invokeAny(Collection<? extends Callable<T>> tasks, long timeout, TimeUnit unit)
         throws InterruptedException, ExecutionException, TimeoutException {
-        return chooseThread().invokeAny(tasks, timeout, unit);
+        return chooseThread().invokeAny(timedCallables(tasks), timeout, unit);
     }
 
     /**
@@ -444,7 +555,7 @@ public class OrderedExecutor implements ExecutorService {
      */
     @Override
     public void execute(Runnable command) {
-        chooseThread().execute(command);
+        chooseThread().execute(timedRunnable(command));
     }
 
 

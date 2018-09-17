@@ -102,6 +102,9 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
     // Enable authentication of the other connection end point (mutual authentication)
     protected static final String TLS_CLIENT_AUTHENTICATION = "tlsClientAuthentication";
 
+    // Preserve MDC or not for tasks in executor
+    protected static final String PRESERVE_MDC_FOR_TASK_EXECUTION = "preserveMdcForTaskExecution";
+
     // Default formatter classes
     protected static final Class<? extends EntryFormatter> DEFAULT_ENTRY_FORMATTER = StringEntryFormatter.class;
     protected static final Class<? extends LedgerIdFormatter> DEFAULT_LEDGERID_FORMATTER =
@@ -851,6 +854,26 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
         return getBoolean(STORE_SYSTEMTIME_AS_LEDGER_UNDERREPLICATED_MARK_TIME, false);
     }
 
+    /**
+     * Whether to preserve MDC for tasks in Executor.
+     *
+     * @return flag to enable/disable MDC preservation in Executor.
+     */
+    public boolean getPreserveMdcForTaskExecution() {
+        return getBoolean(PRESERVE_MDC_FOR_TASK_EXECUTION, false);
+    }
+
+    /**
+     * Whether to preserve MDC for tasks in Executor.
+     *
+     * @param enabled
+     *          flag to enable/disable MDC preservation in Executor.
+     * @return configuration.
+     */
+    public T setPreserveMdcForTaskExecution(boolean enabled) {
+        setProperty(PRESERVE_MDC_FOR_TASK_EXECUTION, enabled);
+        return getThis();
+    }
     /**
      * Trickery to allow inheritance with fluent style.
      */
