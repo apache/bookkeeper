@@ -275,30 +275,30 @@ Apache Software License, Version 2.
 - lib/com.yahoo.datasketches-sketches-core-0.8.3.jar [37]
 - lib/net.jpountz.lz4-lz4-1.3.0.jar [38]
 - lib/org.codehaus.jackson-jackson-core-asl-1.9.11.jar [39]
-- lib/org.codehaus.jackson-jackson-mapper-asl-1.9.11.jar [40]
-- lib/com.google.api.grpc-proto-google-common-protos-1.0.0.jar [41]
-- lib/com.google.code.gson-gson-2.7.jar [42]
-- lib/io.opencensus-opencensus-api-0.11.0.jar [43]
-- lib/io.opencensus-opencensus-contrib-grpc-metrics-0.11.0.jar [43]
-- lib/com.squareup.okhttp-okhttp-2.5.0.jar [44]
-- lib/com.squareup.okio-okio-1.13.0.jar [45]
-- lib/io.grpc-grpc-all-1.12.0.jar [46]
-- lib/io.grpc-grpc-auth-1.12.0.jar [46]
-- lib/io.grpc-grpc-context-1.12.0.jar [46]
-- lib/io.grpc-grpc-core-1.12.0.jar [46]
-- lib/io.grpc-grpc-netty-1.12.0.jar [46]
-- lib/io.grpc-grpc-okhttp-1.12.0.jar [46]
-- lib/io.grpc-grpc-protobuf-1.12.0.jar [46]
-- lib/io.grpc-grpc-protobuf-lite-1.12.0.jar [46]
-- lib/io.grpc-grpc-protobuf-nano-1.12.0.jar [46]
-- lib/io.grpc-grpc-stub-1.12.0.jar [46]
-- lib/io.grpc-grpc-testing-1.12.0.jar [46]
-- lib/org.apache.curator-curator-client-4.0.1.jar [47]
-- lib/org.apache.curator-curator-framework-4.0.1.jar [47]
-- lib/org.apache.curator-curator-recipes-4.0.1.jar [47]
-- lib/org.inferred-freebuilder-1.14.9.jar [48]
-- lib/com.google.errorprone-error_prone_annotations-2.1.2.jar [49]
-- lib/org.apache.yetus-audience-annotations-0.5.0.jar [50]
+- lib/org.codehaus.jackson-jackson-mapper-asl-1.9.11.jar [39]
+- lib/com.google.api.grpc-proto-google-common-protos-1.0.0.jar [40]
+- lib/com.google.code.gson-gson-2.7.jar [41]
+- lib/io.opencensus-opencensus-api-0.11.0.jar [42]
+- lib/io.opencensus-opencensus-contrib-grpc-metrics-0.11.0.jar [42]
+- lib/com.squareup.okhttp-okhttp-2.5.0.jar [43]
+- lib/com.squareup.okio-okio-1.13.0.jar [44]
+- lib/io.grpc-grpc-all-1.12.0.jar [45]
+- lib/io.grpc-grpc-auth-1.12.0.jar [45]
+- lib/io.grpc-grpc-context-1.12.0.jar [45]
+- lib/io.grpc-grpc-core-1.12.0.jar [45]
+- lib/io.grpc-grpc-netty-1.12.0.jar [45]
+- lib/io.grpc-grpc-okhttp-1.12.0.jar [45]
+- lib/io.grpc-grpc-protobuf-1.12.0.jar [45]
+- lib/io.grpc-grpc-protobuf-lite-1.12.0.jar [45]
+- lib/io.grpc-grpc-protobuf-nano-1.12.0.jar [45]
+- lib/io.grpc-grpc-stub-1.12.0.jar [45]
+- lib/io.grpc-grpc-testing-1.12.0.jar [45]
+- lib/org.apache.curator-curator-client-4.0.1.jar [46]
+- lib/org.apache.curator-curator-framework-4.0.1.jar [46]
+- lib/org.apache.curator-curator-recipes-4.0.1.jar [46]
+- lib/org.inferred-freebuilder-1.14.9.jar [47]
+- lib/com.google.errorprone-error_prone_annotations-2.1.2.jar [48]
+- lib/org.apache.yetus-audience-annotations-0.5.0.jar [49]
 
 [1] Source available at https://github.com/FasterXML/jackson-annotations/tree/jackson-annotations-2.8.9
 [2] Source available at https://github.com/FasterXML/jackson-core/tree/jackson-core-2.8.9
@@ -311,7 +311,7 @@ Apache Software License, Version 2.
 [9] Source available at https://github.com/ben-manes/caffeine/tree/v2.3.4
 [10] Source available at http://svn.apache.org/viewvc/commons/proper/configuration/tags/CONFIGURATION_1_10/
 [11] Source available at https://git-wip-us.apache.org/repos/asf?p=commons-io.git;a=tag;h=603579
-[12] Source available at https://git-wip-us.apache.org/repos/asf?p=commons-lang.git;a=tag;h=375459
+[12] Source available at https://git-wip-us.apache.org/repos/asf?p=commons-lang.git;a=shortlog;h=refs/tags/LANG_3_6
 [13] Source available at http://svn.apache.org/viewvc/commons/proper/logging/tags/commons-logging-1.1.1/
 [14] Source available at https://github.com/twitter/finagle/tree/finagle-6.44.0
 [15] Source available at https://github.com/twitter/finagle/tree/finagle-6.43.0
@@ -337,18 +337,17 @@ Apache Software License, Version 2.
 [36] Source available at https://github.com/cbeust/jcommander/tree/jcommander-1.48
 [37] Source available at https://github.com/DataSketches/sketches-core/tree/sketches-0.8.3
 [38] Source available at https://github.com/lz4/lz4-java/tree/1.3.0
-[39] Source available at https://github.com/codehaus/jackson/tree/1.9
-[40] Source available at https://github.com/codehaus/jackson/tree/1.9
-[41] Source available at https://github.com/googleapis/googleapis
-[42] Source available at https://github.com/google/gson/tree/gson-parent-2.7
-[43] Source available at https://github.com/census-instrumentation/opencensus-java/tree/v0.11.0
-[44] Source available at https://github.com/square/okhttp/tree/parent-2.5.0
-[45] Source available at https://github.com/square/okio/tree/okio-parent-1.13.0
-[46] Source available at https://github.com/grpc/grpc-java/tree/v1.12.0
-[47] Source available at https://github.com/apache/curator/tree/apache-curator-4.0.1
-[48] Source available at https://github.com/inferred/FreeBuilder/tree/v1.14.9
-[49] Source available at https://github.com/google/error-prone/tree/v2.1.2
-[50] Source available at https://github.com/apache/yetus/tree/rel/0.5.0
+[39] Source available at https://github.com/codehaus/jackson/tree/d1c26ec538a8701cff7548009254fd6183b71873
+[40] Source available at https://github.com/googleapis/googleapis
+[41] Source available at https://github.com/google/gson/tree/gson-parent-2.7
+[42] Source available at https://github.com/census-instrumentation/opencensus-java/tree/v0.11.0
+[43] Source available at https://github.com/square/okhttp/tree/parent-2.5.0
+[44] Source available at https://github.com/square/okio/tree/okio-parent-1.13.0
+[45] Source available at https://github.com/grpc/grpc-java/tree/v1.12.0
+[46] Source available at https://github.com/apache/curator/tree/apache-curator-4.0.1
+[47] Source available at https://github.com/inferred/FreeBuilder/tree/v1.14.9
+[48] Source available at https://github.com/google/error-prone/tree/v2.1.2
+[49] Source available at https://github.com/apache/yetus/tree/rel/0.5.0
 
 
 ------------------------------------------------------------------------------------
