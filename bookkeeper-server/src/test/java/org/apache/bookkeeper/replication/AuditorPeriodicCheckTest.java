@@ -27,7 +27,6 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
 import io.netty.buffer.ByteBuf;
-import junit.framework.Assert;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -47,7 +46,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.apache.bookkeeper.bookie.BookKeeperServerStats;
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieAccessor;
 import org.apache.bookkeeper.bookie.BookieException;
@@ -58,13 +56,10 @@ import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.LedgerHandleAdapter;
 import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.meta.AbstractZkLedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
 import org.apache.bookkeeper.meta.MetadataBookieDriver;
 import org.apache.bookkeeper.meta.MetadataDrivers;
-import org.apache.bookkeeper.meta.ZkLayoutManager;
-import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
@@ -74,7 +69,6 @@ import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.test.TestStatsProvider;
 import org.apache.bookkeeper.test.TestStatsProvider.TestOpStatsLogger;
 import org.apache.bookkeeper.test.TestStatsProvider.TestStatsLogger;
-import org.apache.bookkeeper.util.ZkUtils;
 import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooKeeper;
@@ -227,7 +221,7 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
         out.close();
 
         long underReplicatedLedger = -1;
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < 15; i++) {
             underReplicatedLedger = underReplicationManager.pollLedgerToRereplicate();
             if (underReplicatedLedger != -1) {
                 break;
@@ -415,7 +409,7 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
         long checkAllLedgersCTime = -1;
         long initialDelayInMsecs = -1;
         long nextExpectedCheckAllLedgersExecutionTime = -1;
-        long bufferTimeInMsecs = 10000l;
+        long bufferTimeInMsecs = 12000l;
         if (timeSinceLastExecutedInSecs == -1) {
             /*
              * if we are setting checkAllLedgersCTime to -1, it means that

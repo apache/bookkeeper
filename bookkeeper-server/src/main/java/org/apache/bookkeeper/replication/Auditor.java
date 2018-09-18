@@ -222,7 +222,7 @@ public class Auditor implements AutoCloseable {
             executor.submit(new Runnable() {
                     public void run() {
                         synchronized (Auditor.this) {
-                            LOG.error("Shutting down Auditor's Executor");
+                            LOG.info("Shutting down Auditor's Executor");
                             executor.shutdown();
                         }
                     }
@@ -418,18 +418,25 @@ public class Auditor implements AutoCloseable {
                         interval);
 
                 long checkAllLedgersLastExecutedCTime = -1;
+                long durationSinceLastExecutionInSecs = 0;
+                long initialDelay = 0;
                 try {
                     checkAllLedgersLastExecutedCTime = ledgerUnderreplicationManager.getCheckAllLedgersCTime();
                 } catch (UnavailableException ue) {
                     LOG.error("Got UnavailableException while trying to get checkAllLedgersCTime", ue);
                 }
-                long durationSinceLastExecutionInSecs = (System.currentTimeMillis() - checkAllLedgersLastExecutedCTime)
-                        / 1000;
-                long initialDelay = durationSinceLastExecutionInSecs > interval ? 0
-                        : (interval - durationSinceLastExecutionInSecs);
+                if (checkAllLedgersLastExecutedCTime == -1) {
+                    durationSinceLastExecutionInSecs = -1;
+                    initialDelay = 0;
+                } else {
+                    durationSinceLastExecutionInSecs = (System.currentTimeMillis() - checkAllLedgersLastExecutedCTime)
+                            / 1000;
+                    initialDelay = durationSinceLastExecutionInSecs > interval ? 0
+                            : (interval - durationSinceLastExecutionInSecs);
+                }
                 LOG.info(
                         "checkAllLedgers scheduling info.  checkAllLedgersLastExecutedCTime: {} "
-                        + "durationSinceLastExecutionInSecs: {} initialDelay: {} interval: {}",
+                                + "durationSinceLastExecutionInSecs: {} initialDelay: {} interval: {}",
                         checkAllLedgersLastExecutedCTime, durationSinceLastExecutionInSecs, initialDelay, interval);
 
                 executor.scheduleAtFixedRate(new Runnable() {
