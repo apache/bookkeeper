@@ -28,15 +28,11 @@
     <groupId>org.apache.bookkeeper.metadata.drivers</groupId>
     <artifactId>metadata-stores-etcd</artifactId>
     <name>Apache BookKeeper :: Metadata Drivers:: Etcd</name>
-    <url>http://maven.apache.org</url>
-    <properties>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    </properties>
     <dependencies>
         <dependency>
             <groupId>org.apache.bookkeeper</groupId>
             <artifactId>bookkeeper-server</artifactId>
-            <version>${project.parent.version}</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>com.coreos</groupId>
