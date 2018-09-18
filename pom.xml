@@ -764,7 +764,9 @@
         <configuration>
           <!-- Prevent missing javadoc comments from being marked as errors -->
           <additionalparam>-Xdoclint:none -notimestamp</additionalparam>
-          <additionalOptions>-Xdoclint:none -notimestamp</additionalOptions>
+          <additionalOptions>
+            <additionalOption>-Xdoclint:none -notimestamp</additionalOption>
+          </additionalOptions>
           <subpackages>org.apache.bookkeeper.client:org.apache.bookkeeper.client.api:org.apache.bookkeeper.common.annotation:org.apache.bookkeeper.conf:org.apache.bookkeeper.feature:org.apache.bookkeeper.stats</subpackages>
           <groups>
             <group>
