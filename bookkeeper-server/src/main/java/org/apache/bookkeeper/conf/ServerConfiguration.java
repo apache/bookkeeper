@@ -554,7 +554,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return fileinfo format version to write.
      */
     public int getFileInfoFormatVersionToWrite() {
-        return this.getInt(FILEINFO_FORMAT_VERSION_TO_WRITE, 0);
+        return this.getInt(FILEINFO_FORMAT_VERSION_TO_WRITE, 1);
     }
 
     /**
@@ -657,7 +657,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return journal format version to write.
      */
     public int getJournalFormatVersionToWrite() {
-        return this.getInt(JOURNAL_FORMAT_VERSION_TO_WRITE, 4);
+        return this.getInt(JOURNAL_FORMAT_VERSION_TO_WRITE, 6);
     }
 
     /**
