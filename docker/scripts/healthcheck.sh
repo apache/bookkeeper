@@ -31,4 +31,4 @@ DEFAULT_HEALTH_CHECK_CMD="/opt/bookkeeper/bin/bookkeeper shell bookiesanity"
 
 HEALTH_CHECK_CMD=${HEALTH_CHECK_CMD:-"${DEFAULT_HEALTH_CHECK_CMD}"}
 
-exec "${HEALTH_CHECK_CMD}"
+eval "${HEALTH_CHECK_CMD}"
