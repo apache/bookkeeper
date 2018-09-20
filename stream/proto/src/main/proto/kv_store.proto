@@ -17,7 +17,6 @@
  */
 syntax = "proto3";
 
-import "kv.proto";
 import "kv_rpc.proto";
 
 package bookkeeper.proto.kv.store;
