@@ -77,6 +77,11 @@ public class MetadataDriversTest {
         }
 
         @Override
+        public AuditorSelector getAuditorSelector(String bookieId) {
+            return mock(AuditorSelector.class);
+        }
+
+        @Override
         public void close() {
         }
     }

@@ -64,17 +64,18 @@ import org.apache.bookkeeper.client.SyncCallbackUtils.SyncReadCallback;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.discover.RegistrationClient.RegistrationListener;
+import org.apache.bookkeeper.meta.AuditorSelector;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManager.LedgerRangeIterator;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
 import org.apache.bookkeeper.meta.UnderreplicatedLedger;
+import org.apache.bookkeeper.meta.exceptions.MetadataException;
 import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.MultiCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.Processor;
-import org.apache.bookkeeper.replication.AuditorElector;
 import org.apache.bookkeeper.replication.BookieLedgerIndexer;
 import org.apache.bookkeeper.replication.ReplicationException.BKAuditException;
 import org.apache.bookkeeper.replication.ReplicationException.CompatibilityException;
@@ -96,19 +97,13 @@ public class BookKeeperAdmin implements AutoCloseable {
     private static final Logger VERBOSE = LoggerFactory.getLogger("verbose");
 
     // BookKeeper client instance
-    private BookKeeper bkc;
+    private final BookKeeper bkc;
     private final boolean ownsBK;
 
     // LedgerFragmentReplicator instance
-    private LedgerFragmentReplicator lfr;
+    private final LedgerFragmentReplicator lfr;
 
-    /*
-     * Random number generator used to choose an available bookie server to
-     * replicate data from a dead bookie.
-     */
-    private Random rand = new Random();
-
-    private LedgerManagerFactory mFactory;
+    private final LedgerManagerFactory mFactory;
 
     /*
      * underreplicationManager is not initialized as part of constructor use its
@@ -187,6 +182,10 @@ public class BookKeeperAdmin implements AutoCloseable {
 
     public ClientConfiguration getConf() {
         return bkc.getConf();
+    }
+
+    public BookKeeper getBkc() {
+        return bkc;
     }
 
     /**
@@ -1424,11 +1423,15 @@ public class BookKeeperAdmin implements AutoCloseable {
             throw new UnavailableException("Autorecovery is disabled. So giving up!");
         }
 
-        BookieSocketAddress auditorId =
-            AuditorElector.getCurrentAuditor(new ServerConfiguration(bkc.getConf()), bkc.getZkHandle());
-        if (auditorId == null) {
-            LOG.error("No auditor elected, though Autorecovery is enabled. So giving up.");
-            throw new UnavailableException("No auditor elected, though Autorecovery is enabled. So giving up.");
+        // we are using auditor selector to query the leader, so the `bookieId` here is not used anyway
+        try (AuditorSelector selector = bkc.getMetadataClientDriver().getAuditorSelector("")) {
+            BookieSocketAddress auditorId = selector.getCurrentAuditor();
+            if (auditorId == null) {
+                LOG.error("No auditor elected, though Autorecovery is enabled. So giving up.");
+                throw new UnavailableException("No auditor elected, though Autorecovery is enabled. So giving up.");
+            }
+        } catch (MetadataException e) {
+            throw new UnavailableException("Failed to get current auditor from metadata store", e);
         }
 
         int previousLostBookieRecoveryDelayValue = urlManager.getLostBookieRecoveryDelay();

@@ -40,7 +40,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.Serializable;
 import java.math.RoundingMode;
-import java.net.URI;
 import java.nio.ByteBuffer;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
@@ -96,10 +95,12 @@ import org.apache.bookkeeper.common.util.OrderedExecutor;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.discover.RegistrationManager;
+import org.apache.bookkeeper.meta.AuditorSelector;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
+import org.apache.bookkeeper.meta.MetadataDrivers;
 import org.apache.bookkeeper.meta.UnderreplicatedLedger;
-import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
+import org.apache.bookkeeper.meta.exceptions.MetadataException;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieClient;
 import org.apache.bookkeeper.proto.BookieClientImpl;
@@ -107,7 +108,6 @@ import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallbackFuture;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.Processor;
-import org.apache.bookkeeper.replication.AuditorElector;
 import org.apache.bookkeeper.replication.ReplicationException;
 import org.apache.bookkeeper.replication.ReplicationException.CompatibilityException;
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
@@ -125,7 +125,6 @@ import org.apache.bookkeeper.util.MathUtils;
 import org.apache.bookkeeper.util.Tool;
 import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.versioning.Versioned;
-import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
 import org.apache.commons.cli.BasicParser;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.HelpFormatter;
@@ -143,7 +142,6 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.apache.zookeeper.AsyncCallback;
 import org.apache.zookeeper.AsyncCallback.VoidCallback;
 import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.ZooKeeper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -1874,27 +1872,30 @@ public class BookieShell implements Tool {
 
         @Override
         int runCmd(CommandLine cmdLine) throws Exception {
-            ZooKeeper zk = null;
+            ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
             try {
-                String metadataServiceUri = bkConf.getMetadataServiceUri();
-                String zkServers = ZKMetadataDriverBase.getZKServersFromServiceUri(URI.create(metadataServiceUri));
-                zk = ZooKeeperClient.newBuilder()
-                        .connectString(zkServers)
-                        .sessionTimeoutMs(bkConf.getZkTimeout())
-                        .build();
-                BookieSocketAddress bookieId = AuditorElector.getCurrentAuditor(bkConf, zk);
-                if (bookieId == null) {
-                    LOG.info("No auditor elected");
-                    return -1;
-                }
-                LOG.info("Auditor: " + getBookieSocketAddrStringRepresentation(bookieId));
+                ClientConfiguration bkClientConf = new ClientConfiguration(bkConf);
+                return MetadataDrivers.runFunctionWithMetadataClientDriver(bkClientConf, metadataClientDriver -> {
+                    try (AuditorSelector selector = metadataClientDriver.getAuditorSelector("")) {
+                        BookieSocketAddress bookieId = null;
+                        try {
+                            bookieId = selector.getCurrentAuditor();
+                        } catch (MetadataException e) {
+                            // it is in a closure, we can't throw checked exception, so rethrow it
+                            // as runtime exception.
+                            throw e.asRuntimeException();
+                        }
+                        if (bookieId == null) {
+                            LOG.info("No auditor elected");
+                            return -1;
+                        }
+                        LOG.info("Auditor: " + getBookieSocketAddrStringRepresentation(bookieId));
+                        return 0;
+                    }
+                }, executor);
             } finally {
-                if (zk != null) {
-                    zk.close();
-                }
+                executor.shutdown();
             }
-
-            return 0;
         }
     }
 

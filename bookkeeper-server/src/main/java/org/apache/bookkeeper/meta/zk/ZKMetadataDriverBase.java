@@ -33,7 +33,9 @@ import lombok.Setter;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.conf.AbstractConfiguration;
+import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.AbstractZkLedgerManagerFactory;
+import org.apache.bookkeeper.meta.AuditorSelector;
 import org.apache.bookkeeper.meta.HierarchicalLedgerManagerFactory;
 import org.apache.bookkeeper.meta.LayoutManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
@@ -250,8 +252,11 @@ public class ZKMetadataDriverBase implements AutoCloseable {
         return lmFactory;
     }
 
-    @Override
-    public void close() {
+    public AuditorSelector getAuditorSelector(String bookieId) {
+        return new ZkAuditorSelector(bookieId, zk, new ServerConfiguration(conf));
+    }
+
+    protected void closeLedgerManagerFactory() {
         if (null != lmFactory) {
             try {
                 lmFactory.close();
@@ -260,6 +265,9 @@ public class ZKMetadataDriverBase implements AutoCloseable {
             }
             lmFactory = null;
         }
+    }
+
+    protected void closeZooKeeper() {
         if (ownZKHandle && null != zk) {
             try {
                 zk.close();
@@ -269,5 +277,11 @@ public class ZKMetadataDriverBase implements AutoCloseable {
             }
             zk = null;
         }
+    }
+
+    @Override
+    public void close() {
+        closeLedgerManagerFactory();
+        closeZooKeeper();
     }
 }

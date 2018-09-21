@@ -81,6 +81,14 @@ public interface MetadataClientDriver extends AutoCloseable {
      */
     LayoutManager getLayoutManager();
 
+    /**
+     * Return the auditor selector.
+     *
+     * @param bookieId bookie id
+     * @return the auditor selector.
+     */
+    AuditorSelector getAuditorSelector(String bookieId);
+
     @Override
     void close();
 
