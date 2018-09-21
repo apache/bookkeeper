@@ -58,8 +58,6 @@ import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
-import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
-import org.apache.zookeeper.ZooKeeper;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -76,7 +74,6 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
 
     private MetadataBookieDriver driver;
     private HashMap<String, AuditorElector> auditorElectors = new HashMap<String, AuditorElector>();
-    private List<ZooKeeper> zkClients = new LinkedList<ZooKeeper>();
 
     private static final int CHECK_INTERVAL = 1; // run every second
 
@@ -96,14 +93,7 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
 
             String addr = bs.get(i).getLocalAddress().toString();
 
-            ZooKeeper zk = ZooKeeperClient.newBuilder()
-                    .connectString(zkUtil.getZooKeeperConnectString())
-                    .sessionTimeoutMs(10000)
-                    .build();
-            zkClients.add(zk);
-
-            AuditorElector auditorElector = new AuditorElector(addr,
-                                                               conf, zk);
+            AuditorElector auditorElector = new AuditorElector(addr, conf);
             auditorElectors.put(addr, auditorElector);
             auditorElector.start();
             LOG.debug("Starting Auditor Elector");
@@ -127,10 +117,6 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
         for (AuditorElector e : auditorElectors.values()) {
             e.shutdown();
         }
-        for (ZooKeeper zk : zkClients) {
-            zk.close();
-        }
-        zkClients.clear();
         super.tearDown();
     }
 
@@ -339,7 +325,7 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
 
         try (final Auditor auditor = new Auditor(
                 Bookie.getBookieAddress(bsConfs.get(0)).toString(),
-                bsConfs.get(0), zkc, NullStatsLogger.INSTANCE)) {
+                bsConfs.get(0), NullStatsLogger.INSTANCE)) {
             final AtomicBoolean exceptionCaught = new AtomicBoolean(false);
             final CountDownLatch latch = new CountDownLatch(1);
             Thread t = new Thread() {
