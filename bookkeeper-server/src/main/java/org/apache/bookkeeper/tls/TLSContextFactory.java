@@ -135,7 +135,6 @@ public class TLSContextFactory implements SecurityHandlerFactory {
 
             sslContextBuilder = SslContextBuilder.forClient()
                     .trustManager(trustChain)
-                    .ciphers(null)
                     .sessionCacheSize(0)
                     .sessionTimeout(0)
                     .sslProvider(provider)
@@ -155,7 +154,6 @@ public class TLSContextFactory implements SecurityHandlerFactory {
 
             sslContextBuilder = SslContextBuilder.forClient()
                     .trustManager(tmf)
-                    .ciphers(null)
                     .sessionCacheSize(0)
                     .sessionTimeout(0)
                     .sslProvider(provider)
