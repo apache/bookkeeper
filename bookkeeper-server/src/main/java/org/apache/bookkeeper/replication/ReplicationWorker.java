@@ -67,7 +67,6 @@ import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.ZooKeeper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -83,7 +82,6 @@ public class ReplicationWorker implements Runnable {
 
     private final LedgerUnderreplicationManager underreplicationManager;
     private final ServerConfiguration conf;
-    private final ZooKeeper zkc;
     private volatile boolean workerRunning = false;
     private final BookKeeperAdmin admin;
     private final LedgerChecker ledgerChecker;
@@ -107,16 +105,13 @@ public class ReplicationWorker implements Runnable {
      * UnderReplicationManager to the targetBookie. This target bookie will be a
      * local bookie.
      *
-     * @param zkc
-     *            - ZK instance
      * @param conf
      *            - configurations
      */
-    public ReplicationWorker(final ZooKeeper zkc,
-                             final ServerConfiguration conf)
+    public ReplicationWorker(final ServerConfiguration conf)
             throws CompatibilityException, KeeperException,
             InterruptedException, IOException {
-        this(zkc, conf, NullStatsLogger.INSTANCE);
+        this(conf, NullStatsLogger.INSTANCE);
     }
 
     /**
@@ -124,19 +119,15 @@ public class ReplicationWorker implements Runnable {
      * UnderReplicationManager to the targetBookie. This target bookie will be a
      * local bookie.
      *
-     * @param zkc
-     *            - ZK instance
      * @param conf
      *            - configurations
      * @param statsLogger
      *            - stats logger
      */
-    public ReplicationWorker(final ZooKeeper zkc,
-                             final ServerConfiguration conf,
+    public ReplicationWorker(final ServerConfiguration conf,
                              StatsLogger statsLogger)
             throws CompatibilityException, KeeperException,
             InterruptedException, IOException {
-        this.zkc = zkc;
         this.conf = conf;
         try {
             this.bkc = BookKeeper.forConfig(new ClientConfiguration(conf))
