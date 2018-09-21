@@ -162,7 +162,9 @@ class EtcdBookieRegister implements AutoCloseable, Runnable, Supplier<Long> {
             }
         }
         CompletableFuture<Void> closeFuture = new CompletableFuture<>();
-        executor.submit(() -> FutureUtils.complete(closeFuture, null));
+        executor.submit(() -> {
+            FutureUtils.complete(closeFuture, (Void) null);
+        });
         closeFuture.join();
     }
 
