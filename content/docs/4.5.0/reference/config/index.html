@@ -970,11 +970,11 @@ Available formats are 1-5:
  5: expanding header to 512 and padding writes to align sector size configured by <code class="highlighter-rouge">journalAlignmentSize</code>
  6: persisting explicitLac is introduced</p>
 
-<p>By default, it is <code class="highlighter-rouge">4</code>. If you’d like to enable <code class="highlighter-rouge">padding-writes</code> feature, you can set journal version to <code class="highlighter-rouge">5</code>.
-You can disable <code class="highlighter-rouge">padding-writes</code> by setting journal version back to <code class="highlighter-rouge">4</code>. This feature is available in 4.5.0 and onward versions.
-If you’d like to enable persisting ExplicitLac, you can set this config to 6 and also fileInfoFormatVersionToWrite should be atleast 1. If there is mismatch then the serverconfig is considered invalid.</p>
+<p>By default, it is <code class="highlighter-rouge">6</code>. 
+If you’d like to disable persisting ExplicitLac, you can set this config to &lt; <code class="highlighter-rouge">6</code> and also fileInfoFormatVersionToWrite should be set to 0. If there is mismatch then the serverconfig is considered invalid.
+You can disable <code class="highlighter-rouge">padding-writes</code> by setting journal version back to <code class="highlighter-rouge">4</code>. This feature is available in 4.5.0 and onward versions.</p>
 </td>
-      <td><code>4</code></td>
+      <td><code>6</code></td>
     </tr>
     
     <tr id="journalMaxSizeMB">
@@ -1479,9 +1479,9 @@ Available formats are 0-1:
  0: Initial version
  1: persisting explicitLac is introduced</p>
 
-<p>By default, it is <code class="highlighter-rouge">0</code>. If you’d like to enable persisting ExplicitLac, you can set this config to 1 and also journalFormatVersionToWrite should be atleast 6. If there is mismatch then the serverconfig is considered invalid.</p>
+<p>By default, it is <code class="highlighter-rouge">1</code>. If you’d like to disable persisting ExplicitLac, you can set this config to 0 and also journalFormatVersionToWrite should be set to &lt; 6. If there is mismatch then the serverconfig is considered invalid.</p>
 </td>
-      <td><code>0</code></td>
+      <td><code>1</code></td>
     </tr>
     
     <tr id="pageSize">
