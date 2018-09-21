@@ -200,10 +200,10 @@ groups:
        5: expanding header to 512 and padding writes to align sector size configured by `journalAlignmentSize`
        6: persisting explicitLac is introduced
 
-      By default, it is `4`. If you'd like to enable `padding-writes` feature, you can set journal version to `5`.
+      By default, it is `6`. 
+      If you'd like to disable persisting ExplicitLac, you can set this config to < `6` and also fileInfoFormatVersionToWrite should be set to 0. If there is mismatch then the serverconfig is considered invalid.
       You can disable `padding-writes` by setting journal version back to `4`. This feature is available in 4.5.0 and onward versions.
-      If you'd like to enable persisting ExplicitLac, you can set this config to 6 and also fileInfoFormatVersionToWrite should be atleast 1. If there is mismatch then the serverconfig is considered invalid.
-    default: 4
+    default: 6
   - param: journalMaxSizeMB
     description: Max file size of journal file, in mega bytes. A new journal file will be created when the old one reaches the file size limitation.
     default: 2048
@@ -422,8 +422,8 @@ groups:
        0: Initial version
        1: persisting explicitLac is introduced
 
-      By default, it is `0`. If you'd like to enable persisting ExplicitLac, you can set this config to 1 and also journalFormatVersionToWrite should be atleast 6. If there is mismatch then the serverconfig is considered invalid.
-    default: 0
+      By default, it is `1`. If you'd like to disable persisting ExplicitLac, you can set this config to 0 and also journalFormatVersionToWrite should be set to < 6. If there is mismatch then the serverconfig is considered invalid.
+    default: 1
   - param: pageSize
     description: |
       Size of a index page in ledger cache, in bytes. A larger index page can improve performance writing page to disk, which is efficent when you have small number of ledgers and these ledgers have similar number of entries. If you have large number of ledgers and each ledger has fewer entries, smaller index page would improve memory usage.
