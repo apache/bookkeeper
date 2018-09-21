@@ -851,7 +851,7 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      *         underreplicated ledger mark time.
      */
     public boolean getStoreSystemTimeAsLedgerUnderreplicatedMarkTime() {
-        return getBoolean(STORE_SYSTEMTIME_AS_LEDGER_UNDERREPLICATED_MARK_TIME, false);
+        return getBoolean(STORE_SYSTEMTIME_AS_LEDGER_UNDERREPLICATED_MARK_TIME, true);
     }
 
     /**
