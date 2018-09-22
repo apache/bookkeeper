@@ -216,17 +216,19 @@ public class Auditor implements AutoCloseable {
 
     private void submitShutdownTask() {
         synchronized (this) {
+            LOG.info("Executing submitShutdownTask");
             if (executor.isShutdown()) {
+                LOG.info("executor is already shutdown");
                 return;
             }
             executor.submit(new Runnable() {
-                    public void run() {
-                        synchronized (Auditor.this) {
-                            LOG.info("Shutting down Auditor's Executor");
-                            executor.shutdown();
-                        }
+                public void run() {
+                    synchronized (Auditor.this) {
+                        LOG.info("Shutting down Auditor's Executor");
+                        executor.shutdown();
                     }
-                });
+                }
+            });
         }
     }
 
@@ -417,13 +419,14 @@ public class Auditor implements AutoCloseable {
                 LOG.info("Auditor periodic ledger checking enabled" + " 'auditorPeriodicCheckInterval' {} seconds",
                         interval);
 
-                long checkAllLedgersLastExecutedCTime = -1;
-                long durationSinceLastExecutionInSecs = 0;
-                long initialDelay = 0;
+                long checkAllLedgersLastExecutedCTime;
+                long durationSinceLastExecutionInSecs;
+                long initialDelay;
                 try {
                     checkAllLedgersLastExecutedCTime = ledgerUnderreplicationManager.getCheckAllLedgersCTime();
                 } catch (UnavailableException ue) {
                     LOG.error("Got UnavailableException while trying to get checkAllLedgersCTime", ue);
+                    checkAllLedgersLastExecutedCTime = -1;
                 }
                 if (checkAllLedgersLastExecutedCTime == -1) {
                     durationSinceLastExecutionInSecs = -1;
@@ -431,6 +434,10 @@ public class Auditor implements AutoCloseable {
                 } else {
                     durationSinceLastExecutionInSecs = (System.currentTimeMillis() - checkAllLedgersLastExecutedCTime)
                             / 1000;
+                    if (durationSinceLastExecutionInSecs < 0) {
+                        // this can happen if there is no strict time ordering
+                        durationSinceLastExecutionInSecs = 0;
+                    }
                     initialDelay = durationSinceLastExecutionInSecs > interval ? 0
                             : (interval - durationSinceLastExecutionInSecs);
                 }
@@ -440,33 +447,32 @@ public class Auditor implements AutoCloseable {
                         checkAllLedgersLastExecutedCTime, durationSinceLastExecutionInSecs, initialDelay, interval);
 
                 executor.scheduleAtFixedRate(new Runnable() {
-                        public void run() {
-                            try {
-                                if (!ledgerUnderreplicationManager.isLedgerReplicationEnabled()) {
-                                    LOG.info("Ledger replication disabled, skipping checkAllLedgers");
-                                    return;
-                                }
-
-                                Stopwatch stopwatch = Stopwatch.createStarted();
-                                LOG.info("Starting checkAllLedgers");
-                                checkAllLedgers();
-                                LOG.info("Completed checkAllLedgers");
-                                checkAllLedgersTime.registerSuccessfulEvent(stopwatch.stop()
-                                                .elapsed(TimeUnit.MILLISECONDS),
-                                        TimeUnit.MILLISECONDS);
-                            } catch (KeeperException ke) {
-                                LOG.error("Exception while running periodic check", ke);
-                            } catch (InterruptedException ie) {
-                                Thread.currentThread().interrupt();
-                                LOG.error("Interrupted while running periodic check", ie);
-                            } catch (BKException bke) {
-                                LOG.error("Exception running periodic check", bke);
-                            } catch (IOException ioe) {
-                                LOG.error("I/O exception running periodic check", ioe);
-                            } catch (ReplicationException.UnavailableException ue) {
-                                LOG.error("Underreplication manager unavailable running periodic check", ue);
+                    public void run() {
+                        try {
+                            if (!ledgerUnderreplicationManager.isLedgerReplicationEnabled()) {
+                                LOG.info("Ledger replication disabled, skipping checkAllLedgers");
+                                return;
                             }
+
+                            Stopwatch stopwatch = Stopwatch.createStarted();
+                            LOG.info("Starting checkAllLedgers");
+                            checkAllLedgers();
+                            long checkAllLedgersDuration = stopwatch.stop().elapsed(TimeUnit.MILLISECONDS);
+                            LOG.info("Completed checkAllLedgers in {} milliSeconds", checkAllLedgersDuration);
+                            checkAllLedgersTime.registerSuccessfulEvent(checkAllLedgersDuration, TimeUnit.MILLISECONDS);
+                        } catch (KeeperException ke) {
+                            LOG.error("Exception while running periodic check", ke);
+                        } catch (InterruptedException ie) {
+                            Thread.currentThread().interrupt();
+                            LOG.error("Interrupted while running periodic check", ie);
+                        } catch (BKException bke) {
+                            LOG.error("Exception running periodic check", bke);
+                        } catch (IOException ioe) {
+                            LOG.error("I/O exception running periodic check", ioe);
+                        } catch (ReplicationException.UnavailableException ue) {
+                            LOG.error("Underreplication manager unavailable running periodic check", ue);
                         }
+                    }
                     }, initialDelay, interval, TimeUnit.SECONDS);
             } else {
                 LOG.info("Periodic checking disabled");

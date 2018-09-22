@@ -46,6 +46,7 @@ import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
 import org.apache.bookkeeper.net.DNS;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
+import org.apache.bookkeeper.proto.DataFormats.CheckAllLedgersFormat;
 import org.apache.bookkeeper.proto.DataFormats.LedgerRereplicationLayoutFormat;
 import org.apache.bookkeeper.proto.DataFormats.LockDataFormat;
 import org.apache.bookkeeper.proto.DataFormats.UnderreplicatedLedgerFormat;
@@ -888,12 +889,16 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
 
     @Override
     public void setCheckAllLedgersCTime(long checkAllLedgersCTime) throws UnavailableException {
-        LOG.debug("setCheckAllLedgersCTime");
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("setCheckAllLedgersCTime");
+        }
         try {
+            CheckAllLedgersFormat.Builder builder = CheckAllLedgersFormat.newBuilder();
+            builder.setCheckAllLedgersCTime(checkAllLedgersCTime);
             if (zkc.exists(checkAllLedgersCtimeZnode, false) != null) {
-                zkc.setData(checkAllLedgersCtimeZnode, Long.toString(checkAllLedgersCTime).getBytes(UTF_8), -1);
+                zkc.setData(checkAllLedgersCtimeZnode, TextFormat.printToString(builder.build()).getBytes(UTF_8), -1);
             } else {
-                zkc.create(checkAllLedgersCtimeZnode, Long.toString(checkAllLedgersCTime).getBytes(UTF_8),
+                zkc.create(checkAllLedgersCtimeZnode, TextFormat.printToString(builder.build()).getBytes(UTF_8),
                         Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
             }
         } catch (KeeperException ke) {
@@ -906,10 +911,16 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
 
     @Override
     public long getCheckAllLedgersCTime() throws UnavailableException {
-        LOG.debug("getCheckAllLedgersCTime");
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("setCheckAllLedgersCTime");
+        }
+        CheckAllLedgersFormat.Builder builder = CheckAllLedgersFormat.newBuilder();
         try {
             byte[] data = zkc.getData(checkAllLedgersCtimeZnode, false, null);
-            return Long.parseLong(new String(data, UTF_8));
+            TextFormat.merge(new String(data, UTF_8), builder);
+            CheckAllLedgersFormat checkAllLedgersFormat = builder.build();
+            return checkAllLedgersFormat.hasCheckAllLedgersCTime() ? checkAllLedgersFormat.getCheckAllLedgersCTime()
+                    : -1;
         } catch (KeeperException.NoNodeException ne) {
             LOG.warn("checkAllLedgersCtimeZnode is not yet available");
             return -1;
@@ -918,6 +929,8 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
         } catch (InterruptedException ie) {
             Thread.currentThread().interrupt();
             throw new ReplicationException.UnavailableException("Interrupted while contacting zookeeper", ie);
+        } catch (ParseException pe) {
+            throw new ReplicationException.UnavailableException("Parse Exception", pe);
         }
     }
 }
