@@ -870,13 +870,13 @@
             <exclude>dev/.vagrant/**</exclude>
 
             <!-- protobuf generated python files-->
-            <exclude>stream/clients/python/bookkeeper/proto/**</exclude>
+            <exclude>**/proto/**.py</exclude>
             <!-- python build/test env -->
-            <exclude>stream/clients/python/.coverage</exclude>
-            <exclude>stream/clients/python/.Python</exclude>
-            <exclude>stream/clients/python/bin/**</exclude>
-            <exclude>stream/clients/python/include/**</exclude>
-            <exclude>stream/clients/python/lib/**</exclude>
+            <exclude>**/python/.coverage</exclude>
+            <exclude>**/python/.Python</exclude>
+            <exclude>**/python/bin/**</exclude>
+            <exclude>**/python/include/**</exclude>
+            <exclude>**/python/lib/**</exclude>
             <exclude>**/.nox/**</exclude>
             <exclude>**/.pytest_cache/**</exclude>
             <exclude>**/__pycache__/**</exclude>
