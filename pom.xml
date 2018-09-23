@@ -66,6 +66,7 @@
     <module>microbenchmarks</module>
     <module>stream/distributedlog</module>
     <module>tools</module>
+    <module>metadata-drivers</module>
   </modules>
   <mailingLists>
     <mailingList>
@@ -120,6 +121,7 @@
     <commons-io.version>2.4</commons-io.version>
     <curator.version>4.0.1</curator.version>
     <dropwizard.version>3.1.0</dropwizard.version>
+    <etcd.version>0.0.2</etcd.version>
     <finagle.version>6.44.0</finagle.version>
     <freebuilder.version>1.14.9</freebuilder.version>
     <google.code.version>3.0.2</google.code.version>
