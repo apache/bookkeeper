@@ -413,7 +413,7 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
 
         // set to 3s instead of default 30s
         baseConf.setOpenLedgerRereplicationGracePeriod("3000");
-        ReplicationWorker rw = new ReplicationWorker( baseConf);
+        ReplicationWorker rw = new ReplicationWorker(baseConf);
 
         @Cleanup MetadataClientDriver clientDriver = MetadataDrivers.getClientDriver(
             URI.create(baseClientConf.getMetadataServiceUri()));
