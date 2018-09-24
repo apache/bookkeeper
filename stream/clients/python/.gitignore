@@ -1,0 +1,22 @@
+# virtualenv
+.Python
+bin/
+include/
+
+# coverage
+.coverage
+
+# nox
+.nox/
+
+# pytest
+.pytest_cache/
+
+# pycache
+__pycache__/
+
+# build files
+bookkeeper.egg-info/
+
+# pip
+pip-selfcheck.json
