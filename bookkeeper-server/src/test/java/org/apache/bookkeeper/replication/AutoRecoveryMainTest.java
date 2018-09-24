@@ -74,37 +74,4 @@ public class AutoRecoveryMainTest extends BookKeeperClusterTestCase {
                 main.replicationWorker.isRunning());
     }
 
-    /**
-     * Test that, if an autorecovery looses its ZK connection/session
-     * it will shutdown.
-     */
-    @Test
-    public void testAutoRecoverySessionLoss() throws Exception {
-        AutoRecoveryMain main1 = new AutoRecoveryMain(bsConfs.get(0));
-        AutoRecoveryMain main2 = new AutoRecoveryMain(bsConfs.get(1));
-        main1.start();
-        main2.start();
-        Thread.sleep(500);
-        assertTrue("AuditorElectors should be running",
-                main1.auditorElector.isRunning() && main2.auditorElector.isRunning());
-        assertTrue("Replication workers should be running",
-                main1.replicationWorker.isRunning() && main2.replicationWorker.isRunning());
-
-        zkUtil.expireSession(main1.zk);
-        zkUtil.expireSession(main2.zk);
-
-        for (int i = 0; i < 10; i++) { // give it 10 seconds to shutdown
-            if (!main1.auditorElector.isRunning()
-                && !main2.auditorElector.isRunning()
-                && !main1.replicationWorker.isRunning()
-                && !main2.replicationWorker.isRunning()) {
-                break;
-            }
-            Thread.sleep(1000);
-        }
-        assertFalse("Elector1 should have shutdown", main1.auditorElector.isRunning());
-        assertFalse("Elector2 should have shutdown", main2.auditorElector.isRunning());
-        assertFalse("RW1 should have shutdown", main1.replicationWorker.isRunning());
-        assertFalse("RW2 should have shutdown", main2.replicationWorker.isRunning());
-    }
 }
