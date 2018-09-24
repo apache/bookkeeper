@@ -824,6 +824,9 @@
         <version>${apache-rat-plugin.version}</version>
         <configuration>
           <excludes>
+            <!-- Intellij -->
+            <exclude>**/.idea/**</exclude>
+
             <!-- Git -->
             <exclude>.git/**/*</exclude>
             <exclude>.github/**/*</exclude>
@@ -867,6 +870,20 @@
 
             <!-- vargrant -->
             <exclude>dev/.vagrant/**</exclude>
+
+            <!-- protobuf generated python files-->
+            <exclude>**/proto/**.py</exclude>
+            <!-- python build/test env -->
+            <exclude>**/python/.coverage</exclude>
+            <exclude>**/python/.Python</exclude>
+            <exclude>**/python/bin/**</exclude>
+            <exclude>**/python/include/**</exclude>
+            <exclude>**/python/lib/**</exclude>
+            <exclude>**/.nox/**</exclude>
+            <exclude>**/.pytest_cache/**</exclude>
+            <exclude>**/__pycache__/**</exclude>
+            <exclude>**/bookkeeper.egg-info/**</exclude>
+            <exclude>**/pip-selfcheck.json</exclude>
           </excludes>
           <consoleOutput>true</consoleOutput>
         </configuration>
