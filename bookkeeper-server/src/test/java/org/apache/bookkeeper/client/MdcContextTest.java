@@ -32,8 +32,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.io.File;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -69,7 +69,7 @@ public class MdcContextTest extends BookKeeperClusterTestCase {
     LedgerHandle lh;
 
     private Appender mockAppender;
-    private List<String> capturedEvents;
+    private Queue<String> capturedEvents;
     private Logger rootLogger = LogManager.getRootLogger();
 
     public MdcContextTest() {
@@ -122,7 +122,7 @@ public class MdcContextTest extends BookKeeperClusterTestCase {
 
         rootLogger.addAppender(mockAppender);
         rootLogger.setLevel(Level.INFO);
-        capturedEvents = new LinkedList<>();
+        capturedEvents = new ConcurrentLinkedQueue<>();
 
         doAnswer(answerVoid((LoggingEvent event) -> capturedEvents.add(
                     mdcFormat(event.getMDC(MDC_REQUEST_ID), event.getRenderedMessage())
