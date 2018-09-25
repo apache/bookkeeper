@@ -106,8 +106,6 @@ public class Auditor implements AutoCloseable {
             throws InterruptedException, IOException {
         ClientConfiguration clientConfiguration = new ClientConfiguration(conf);
         clientConfiguration.setClientRole(ClientConfiguration.CLIENT_ROLE_SYSTEM);
-        LOG.info("AuthProvider used by the Auditor is {}",
-            clientConfiguration.getClientAuthProviderFactoryClass());
         try {
             return BookKeeper.forConfig(clientConfiguration).build();
         } catch (BKException e) {
@@ -190,6 +188,8 @@ public class Auditor implements AutoCloseable {
             this.ledgerUnderreplicationManager = ledgerManagerFactory
                     .newLedgerUnderreplicationManager();
             this.admin = new BookKeeperAdmin(bkc, statsLogger);
+            LOG.info("AuthProvider used by the Auditor is {}",
+                admin.getConf().getClientAuthProviderFactoryClass());
             if (this.ledgerUnderreplicationManager
                     .initializeLostBookieRecoveryDelay(conf.getLostBookieRecoveryDelay())) {
                 LOG.info("Initializing lostBookieRecoveryDelay zNode to the conif value: {}",
