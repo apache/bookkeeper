@@ -20,6 +20,7 @@ import com.beust.jcommander.Parameter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.google.common.util.concurrent.RateLimiter;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.netty.buffer.Unpooled;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
@@ -325,6 +326,7 @@ public class PerfWriter implements Runnable {
         }
     }
 
+    @SuppressFBWarnings("DM_EXIT")
     void markPerfDone() throws Exception {
         log.info("------------------- DONE -----------------------");
         printAggregatedStats(cumulativeRecorder);

@@ -67,4 +67,19 @@ public class PaddingDecimalFormat extends DecimalFormat {
         }
         return toAppendTo;
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (!(obj instanceof PaddingDecimalFormat)) {
+            return false;
+        }
+
+        PaddingDecimalFormat other = (PaddingDecimalFormat) obj;
+        return minimumLength == other.minimumLength && super.equals(obj);
+    }
+
+    @Override
+    public int hashCode() {
+        return 31 * super.hashCode() + minimumLength;
+    }
 }
