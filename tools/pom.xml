@@ -27,6 +27,7 @@
   <packaging>pom</packaging>
   <modules>
     <module>framework</module>
+    <module>perf</module>
     <module>all</module>
   </modules>
   <profiles>
