@@ -91,7 +91,6 @@ public class AutoRecoveryMain {
             getZooKeeperFromMetadataDriver(metadataBookieDriver),
             statsLogger.scope(AUDITOR_SCOPE));
         replicationWorker = new ReplicationWorker(
-            getZooKeeperFromMetadataDriver(metadataBookieDriver),
             conf,
             statsLogger.scope(REPLICATION_WORKER_SCOPE));
         deathWatcher = new AutoRecoveryDeathWatcher(this);

@@ -449,8 +449,7 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
         // now start the replication workers
         List<ReplicationWorker> l = new ArrayList<ReplicationWorker>();
         for (int i = 0; i < numBookies; i++) {
-            ReplicationWorker rw = new ReplicationWorker(
-                    zkc, bsConfs.get(i), NullStatsLogger.INSTANCE);
+            ReplicationWorker rw = new ReplicationWorker(bsConfs.get(i), NullStatsLogger.INSTANCE);
             rw.start();
             l.add(rw);
         }
