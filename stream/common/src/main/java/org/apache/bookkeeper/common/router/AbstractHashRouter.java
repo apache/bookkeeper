@@ -18,7 +18,7 @@
 package org.apache.bookkeeper.common.router;
 
 import io.netty.buffer.ByteBuf;
-import org.apache.bookkeeper.common.hash.MurmurHash;
+import org.apache.bookkeeper.common.hash.Murmur3;
 
 /**
  * The base hash router.
@@ -26,8 +26,7 @@ import org.apache.bookkeeper.common.hash.MurmurHash;
 public abstract class AbstractHashRouter<K> implements HashRouter<K> {
 
     private static final long serialVersionUID = -7979076779920023308L;
-    // the MurmurHash2 value of "ZSTREAM"
-    static final long HASH_SEED = 383242705L;
+    public static final long HASH_SEED = 383242705L;
 
     protected AbstractHashRouter() {
     }
@@ -36,8 +35,8 @@ public abstract class AbstractHashRouter<K> implements HashRouter<K> {
     public Long getRoutingKey(K key) {
         ByteBuf keyData = getRoutingKeyData(key);
         try {
-            return MurmurHash.hash64(
-                keyData, keyData.readerIndex(), keyData.readableBytes(), HASH_SEED);
+            return Murmur3.hash128(
+                keyData, keyData.readerIndex(), keyData.readableBytes(), HASH_SEED)[0];
         } finally {
             keyData.release();
         }
