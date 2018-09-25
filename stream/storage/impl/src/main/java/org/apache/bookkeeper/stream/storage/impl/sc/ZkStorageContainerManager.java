@@ -246,9 +246,15 @@ public class ZkStorageContainerManager
         containersToStop =
             Sets.filter(containersToStop, container -> !pendingStartStopContainers.contains(container));
 
-        log.info("Process container changes:\n\tIdeal = {}\n\tLive = {}\n\t"
-            + "Pending = {}\n\tToStart = {}\n\tToStop = {}",
-            assignedContainerSet, liveContainerSet, pendingStartStopContainers, containersToStart, containersToStop);
+        if (!containersToStart.isEmpty() || !containersToStop.isEmpty()) {
+            log.info("Process container changes:\n\tIdeal = {}\n\tLive = {}\n\t"
+                    + "Pending = {}\n\tToStart = {}\n\tToStop = {}",
+                assignedContainerSet,
+                liveContainerSet,
+                pendingStartStopContainers,
+                containersToStart,
+                containersToStop);
+        }
 
         containersToStart.forEach(this::startStorageContainer);
         containersToStop.forEach(this::stopStorageContainer);
