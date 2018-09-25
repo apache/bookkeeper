@@ -84,10 +84,25 @@ public class PerfReader implements Runnable {
 
         @Parameter(
             names = {
-                "--threads"
+                "-t", "--threads"
             },
             description = "Number of threads reading")
         public int numThreads = 1;
+
+        @Parameter(
+            names = {
+                "-mr", "--max-readahead-records"
+            },
+            description = "Max readhead records")
+        public int maxReadAheadRecords = 1000000;
+
+        @Parameter(
+            names = {
+                "-bs", "--readahead-batch-size"
+            },
+            description = "ReadAhead Batch Size, in entries"
+        )
+        public int readAheadBatchSize = 4;
 
     }
 
@@ -248,8 +263,8 @@ public class PerfReader implements Runnable {
 
     private static DistributedLogConfiguration newDlogConf(Flags flags) {
         return new DistributedLogConfiguration()
-            .setReadAheadBatchSize(4)
-            .setReadAheadMaxRecords(100000)
+            .setReadAheadBatchSize(flags.readAheadBatchSize)
+            .setReadAheadMaxRecords(flags.maxReadAheadRecords)
             .setReadAheadWaitTime(200);
     }
 

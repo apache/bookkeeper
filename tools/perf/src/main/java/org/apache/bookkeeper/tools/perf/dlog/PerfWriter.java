@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -63,7 +64,7 @@ public class PerfWriter implements Runnable {
                 "-r", "--rate"
             },
             description = "Write rate bytes/s across log streams")
-        public int writeRate = 100;
+        public int writeRate = 0;
 
         @Parameter(
             names = {
@@ -88,23 +89,28 @@ public class PerfWriter implements Runnable {
 
         @Parameter(
             names = {
-                "--threads"
+                "-t", "--threads"
             },
             description = "Number of threads writing")
         public int numThreads = 1;
 
         @Parameter(
             names = {
-                "-n",
-                "--num-records"
+                "-mob", "--max-outstanding-megabytes"
+            },
+            description = "Number of threads writing")
+        public long maxOutstandingMB = 200;
+
+        @Parameter(
+            names = {
+                "-n", "--num-records"
             },
             description = "Number of records to write in total. If 0, it will keep writing")
         public long numRecords = 0;
 
         @Parameter(
             names = {
-                "-b",
-                "--num-bytes"
+                "-b", "--num-bytes"
             },
             description = "Number of bytes to write in total. If 0, it will keep writing")
         public long numBytes = 0;
@@ -204,11 +210,13 @@ public class PerfWriter implements Runnable {
                 final long numRecordsForThisThread = flags.numRecords / flags.numThreads;
                 final long numBytesForThisThread = flags.numBytes / flags.numThreads;
                 final double writeRateForThisThread = flags.writeRate / (double) flags.numThreads;
+                final long maxOutstandingBytesForThisThread = flags.maxOutstandingMB * 1024 * 1024 / flags.numThreads;
                 executor.submit(() -> {
                     try {
                         write(
                             logsThisThread,
                             writeRateForThisThread,
+                            (int) maxOutstandingBytesForThisThread,
                             numRecordsForThisThread,
                             numBytesForThisThread);
                     } catch (Exception e) {
@@ -229,13 +237,16 @@ public class PerfWriter implements Runnable {
 
     void write(List<DistributedLogManager> logs,
                double writeRate,
+               int maxOutstandingBytesForThisThread,
                long numRecordsForThisThread,
                long numBytesForThisThread) throws Exception {
-        log.info("Write thread started with : logs = {}, rate = {}, num records = {}, num bytes = {}",
+        log.info("Write thread started with : logs = {}, rate = {},"
+                + " num records = {}, num bytes = {}, max outstanding bytes = {}",
             logs.stream().map(l -> l.getStreamName()).collect(Collectors.toList()),
             writeRate,
             numRecordsForThisThread,
-            numBytesForThisThread);
+            numBytesForThisThread,
+            maxOutstandingBytesForThisThread);
 
         List<CompletableFuture<AsyncLogWriter>> writerFutures = logs.stream()
             .map(manager -> manager.openAsyncLogWriter())
@@ -249,10 +260,23 @@ public class PerfWriter implements Runnable {
             .orElse(0L);
         txid = Math.max(0L, txid);
 
-        RateLimiter limiter = RateLimiter.create(writeRate);
+        RateLimiter limiter;
+        if (writeRate > 0) {
+            limiter = RateLimiter.create(writeRate);
+        } else {
+            limiter = null;
+        }
+        final Semaphore semaphore;
+        if (maxOutstandingBytesForThisThread > 0) {
+            semaphore = new Semaphore(maxOutstandingBytesForThisThread);
+        } else {
+            semaphore = null;
+        }
 
         // Acquire 1 second worth of records to have a slower ramp-up
-        limiter.acquire((int) writeRate);
+        if (limiter != null) {
+            limiter.acquire((int) writeRate);
+        }
 
         long totalWritten = 0L;
         long totalBytesWritten = 0L;
@@ -267,13 +291,23 @@ public class PerfWriter implements Runnable {
                     && totalBytesWritten >= numBytesForThisThread) {
                     markPerfDone();
                 }
+                if (null != semaphore) {
+                    semaphore.acquire(payload.length);
+                }
+
                 totalWritten++;
                 totalBytesWritten += payload.length;
-                limiter.acquire(payload.length);
+                if (null != limiter) {
+                    limiter.acquire(payload.length);
+                }
                 final long sendTime = System.nanoTime();
                 writers.get(i).write(
                     new LogRecord(++txid, Unpooled.wrappedBuffer(payload))
                 ).thenAccept(dlsn -> {
+                    if (null != semaphore) {
+                        semaphore.release(payload.length);
+                    }
+
                     recordsWritten.increment();
                     bytesWritten.add(payload.length);
 
