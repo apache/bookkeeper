@@ -110,4 +110,9 @@ public final class ProtocolConstants {
 
     // storage container request metadata key
     public static final String SC_ID_KEY = "sc-id" + Metadata.BINARY_HEADER_SUFFIX;
+
+    // request metadata key for routing requests
+    public static final String ROUTING_KEY = "rk" + Metadata.BINARY_HEADER_SUFFIX;
+    public static final String STREAM_ID_KEY = "sid-" + Metadata.BINARY_HEADER_SUFFIX;
+    public static final String RANGE_ID_KEY = "rid-" + Metadata.BINARY_HEADER_SUFFIX;
 }
