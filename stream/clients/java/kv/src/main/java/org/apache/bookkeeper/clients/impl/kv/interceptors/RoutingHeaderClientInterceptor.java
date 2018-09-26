@@ -243,6 +243,7 @@ public class RoutingHeaderClientInterceptor implements ClientInterceptor {
         }
     }
 
+    @SuppressWarnings("unchecked")
     private <ReqT, TableReqT extends MessageLite> ReqT interceptTableRequest(
         MethodDescriptor<ReqT, ?> method,
         InterceptorDescriptor<TableReqT> interceptor,
