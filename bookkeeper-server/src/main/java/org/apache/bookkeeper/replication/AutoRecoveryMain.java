@@ -20,7 +20,6 @@
  */
 package org.apache.bookkeeper.replication;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static org.apache.bookkeeper.replication.ReplicationStats.AUDITOR_SCOPE;
 import static org.apache.bookkeeper.replication.ReplicationStats.REPLICATION_WORKER_SCOPE;
 
@@ -29,18 +28,15 @@ import com.google.common.annotations.VisibleForTesting;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
-import java.net.URI;
 
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieCriticalThread;
 import org.apache.bookkeeper.bookie.ExitCode;
+import org.apache.bookkeeper.client.BKException;
+import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.http.HttpServer;
 import org.apache.bookkeeper.http.HttpServerLoader;
-import org.apache.bookkeeper.meta.MetadataBookieDriver;
-import org.apache.bookkeeper.meta.MetadataDrivers;
-import org.apache.bookkeeper.meta.exceptions.MetadataException;
-import org.apache.bookkeeper.meta.zk.ZKMetadataBookieDriver;
 import org.apache.bookkeeper.replication.ReplicationException.CompatibilityException;
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
 import org.apache.bookkeeper.server.http.BKHttpServiceProvider;
@@ -53,7 +49,6 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.ZooKeeper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -67,7 +62,7 @@ public class AutoRecoveryMain {
             .getLogger(AutoRecoveryMain.class);
 
     private final ServerConfiguration conf;
-    final MetadataBookieDriver metadataBookieDriver;
+    final BookKeeper bkc;
     final AuditorElector auditorElector;
     final ReplicationWorker replicationWorker;
     final AutoRecoveryDeathWatcher deathWatcher;
@@ -85,35 +80,20 @@ public class AutoRecoveryMain {
             throws IOException, InterruptedException, KeeperException, UnavailableException,
             CompatibilityException {
         this.conf = conf;
-        this.metadataBookieDriver = initializeMetadataDriver(conf, statsLogger);
+        this.bkc = Auditor.createBookKeeperClient(conf);
 
-        auditorElector = new AuditorElector(Bookie.getBookieAddress(conf).toString(), conf,
-            getZooKeeperFromMetadataDriver(metadataBookieDriver),
-            statsLogger.scope(AUDITOR_SCOPE));
+        auditorElector = new AuditorElector(
+            Bookie.getBookieAddress(conf).toString(),
+            conf,
+            bkc,
+            statsLogger.scope(AUDITOR_SCOPE),
+            false);
         replicationWorker = new ReplicationWorker(
             conf,
+            bkc,
+            false,
             statsLogger.scope(REPLICATION_WORKER_SCOPE));
         deathWatcher = new AutoRecoveryDeathWatcher(this);
-    }
-
-    private MetadataBookieDriver initializeMetadataDriver(ServerConfiguration conf, StatsLogger statsLogger)
-            throws IOException {
-        String metadataServiceUri = conf.getMetadataServiceUriUnchecked();
-        MetadataBookieDriver driver = MetadataDrivers.getBookieDriver(
-            URI.create(metadataServiceUri));
-        try {
-            driver.initialize(conf, () -> {}, statsLogger);
-        } catch (MetadataException e) {
-            throw new IOException("Failed to initialize metadata driver at " + metadataServiceUri, e);
-        }
-        return driver;
-    }
-
-    // it existing because AuditorElector takes zookeeper
-    ZooKeeper getZooKeeperFromMetadataDriver(MetadataBookieDriver driver) {
-        checkArgument(driver instanceof ZKMetadataBookieDriver);
-        ZKMetadataBookieDriver zkDriver = (ZKMetadataBookieDriver) driver;
-        return zkDriver.getZk();
     }
 
     /*
@@ -164,7 +144,14 @@ public class AutoRecoveryMain {
             LOG.warn("Interrupted shutting down auditor elector", e);
         }
         replicationWorker.shutdown();
-        metadataBookieDriver.close();
+        try {
+            bkc.close();
+        } catch (BKException e) {
+            LOG.warn("Failed to close bookkeeper client for auto recovery", e);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            LOG.warn("Interrupted closing bookkeeper client for auto recovery", e);
+        }
     }
 
     private int getExitCode() {

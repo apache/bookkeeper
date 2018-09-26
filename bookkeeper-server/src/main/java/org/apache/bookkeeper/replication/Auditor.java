@@ -52,7 +52,6 @@ import org.apache.bookkeeper.meta.AbstractZkLedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
-import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.Processor;
@@ -62,11 +61,9 @@ import org.apache.bookkeeper.replication.ReplicationException.UnavailableExcepti
 import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
-import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.zookeeper.AsyncCallback;
 import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.ZooKeeper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -82,7 +79,8 @@ import org.slf4j.LoggerFactory;
 public class Auditor implements AutoCloseable {
     private static final Logger LOG = LoggerFactory.getLogger(Auditor.class);
     private final ServerConfiguration conf;
-    private BookKeeper bkc;
+    private final BookKeeper bkc;
+    private final boolean ownBkc;
     private BookKeeperAdmin admin;
     private BookieLedgerIndexer bookieLedgerIndexer;
     private LedgerManager ledgerManager;
@@ -104,8 +102,48 @@ public class Auditor implements AutoCloseable {
     private Set<String> bookiesToBeAudited = Sets.newHashSet();
     private volatile int lostBookieRecoveryDelayBeforeChange;
 
-    public Auditor(final String bookieIdentifier, ServerConfiguration conf,
-                   ZooKeeper zkc, StatsLogger statsLogger) throws UnavailableException {
+    static BookKeeper createBookKeeperClient(ServerConfiguration conf)
+            throws InterruptedException, IOException {
+        ClientConfiguration clientConfiguration = new ClientConfiguration(conf);
+        clientConfiguration.setClientRole(ClientConfiguration.CLIENT_ROLE_SYSTEM);
+        try {
+            return BookKeeper.forConfig(clientConfiguration).build();
+        } catch (BKException e) {
+            throw new IOException("Failed to create bookkeeper client", e);
+        }
+    }
+
+    static BookKeeper createBookKeeperClientThrowUnavailableException(ServerConfiguration conf)
+        throws UnavailableException {
+        try {
+            return createBookKeeperClient(conf);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new UnavailableException("Failed to create bookkeeper client", e);
+        } catch (IOException e) {
+            throw new UnavailableException("Failed to create bookkeeper client", e);
+        }
+    }
+
+
+    public Auditor(final String bookieIdentifier,
+                   ServerConfiguration conf,
+                   StatsLogger statsLogger)
+        throws UnavailableException {
+        this(
+            bookieIdentifier,
+            conf,
+            createBookKeeperClientThrowUnavailableException(conf),
+            true,
+            statsLogger);
+    }
+
+    public Auditor(final String bookieIdentifier,
+                   ServerConfiguration conf,
+                   BookKeeper bkc,
+                   boolean ownBkc,
+                   StatsLogger statsLogger)
+        throws UnavailableException {
         this.conf = conf;
         this.bookieIdentifier = bookieIdentifier;
         this.statsLogger = statsLogger;
@@ -123,7 +161,9 @@ public class Auditor implements AutoCloseable {
         numDelayedBookieAuditsCancelled = this.statsLogger
                 .getCounter(ReplicationStats.NUM_DELAYED_BOOKIE_AUDITS_DELAYES_CANCELLED);
 
-        initialize(conf, zkc);
+        this.bkc = bkc;
+        this.ownBkc = ownBkc;
+        initialize(conf, bkc);
 
         executor = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
                 @Override
@@ -135,15 +175,9 @@ public class Auditor implements AutoCloseable {
             });
     }
 
-    private void initialize(ServerConfiguration conf, ZooKeeper zkc)
+    private void initialize(ServerConfiguration conf, BookKeeper bkc)
             throws UnavailableException {
         try {
-            ClientConfiguration clientConfiguration = new ClientConfiguration(conf);
-            clientConfiguration.setClientRole(ClientConfiguration.CLIENT_ROLE_SYSTEM);
-            LOG.info("AuthProvider used by the Auditor is {}",
-                clientConfiguration.getClientAuthProviderFactoryClass());
-            this.bkc = new BookKeeper(clientConfiguration, zkc);
-
             LedgerManagerFactory ledgerManagerFactory = AbstractZkLedgerManagerFactory
                     .newLedgerManagerFactory(
                         conf,
@@ -154,6 +188,8 @@ public class Auditor implements AutoCloseable {
             this.ledgerUnderreplicationManager = ledgerManagerFactory
                     .newLedgerUnderreplicationManager();
             this.admin = new BookKeeperAdmin(bkc, statsLogger);
+            LOG.info("AuthProvider used by the Auditor is {}",
+                admin.getConf().getClientAuthProviderFactoryClass());
             if (this.ledgerUnderreplicationManager
                     .initializeLostBookieRecoveryDelay(conf.getLostBookieRecoveryDelay())) {
                 LOG.info("Initializing lostBookieRecoveryDelay zNode to the conif value: {}",
@@ -166,7 +202,7 @@ public class Auditor implements AutoCloseable {
         } catch (CompatibilityException ce) {
             throw new UnavailableException(
                     "CompatibilityException while initializing Auditor", ce);
-        } catch (IOException | BKException | KeeperException ioe) {
+        } catch (IOException | KeeperException ioe) {
             throw new UnavailableException(
                     "Exception while initializing Auditor", ioe);
         } catch (InterruptedException ie) {
@@ -601,13 +637,7 @@ public class Auditor implements AutoCloseable {
      * be run very often.
      */
     void checkAllLedgers() throws BKException, IOException, InterruptedException, KeeperException {
-        ZooKeeper newzk = ZooKeeperClient.newBuilder()
-                .connectString(ZKMetadataDriverBase.resolveZkServers(conf))
-                .sessionTimeoutMs(conf.getZkTimeout())
-                .build();
-
-        final BookKeeper client = new BookKeeper(new ClientConfiguration(conf),
-                                                 newzk);
+        final BookKeeper client = createBookKeeperClient(conf);
         final BookKeeperAdmin admin = new BookKeeperAdmin(client, statsLogger);
 
         try {
@@ -664,7 +694,6 @@ public class Auditor implements AutoCloseable {
         } finally {
             admin.close();
             client.close();
-            newzk.close();
         }
     }
 
@@ -680,7 +709,9 @@ public class Auditor implements AutoCloseable {
                 executor.shutdownNow();
             }
             admin.close();
-            bkc.close();
+            if (ownBkc) {
+                bkc.close();
+            }
         } catch (InterruptedException ie) {
             Thread.currentThread().interrupt();
             LOG.warn("Interrupted while shutting down auditor bookie", ie);
