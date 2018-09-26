@@ -97,7 +97,7 @@ message AuditorVoteFormat {
 }
 
 /**
- * Debug information for checkAllLedgers
+ * information of checkAllLedgers execution
  */
 message CheckAllLedgersFormat {
     optional int64 checkAllLedgersCTime = 1;

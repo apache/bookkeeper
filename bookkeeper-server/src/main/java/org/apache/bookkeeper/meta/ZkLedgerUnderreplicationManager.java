@@ -22,6 +22,7 @@ import static com.google.common.base.Charsets.UTF_8;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Joiner;
+import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.TextFormat;
 import com.google.protobuf.TextFormat.ParseException;
 
@@ -895,11 +896,12 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
         try {
             CheckAllLedgersFormat.Builder builder = CheckAllLedgersFormat.newBuilder();
             builder.setCheckAllLedgersCTime(checkAllLedgersCTime);
+            byte[] checkAllLedgersFormatByteArray = builder.build().toByteArray();
             if (zkc.exists(checkAllLedgersCtimeZnode, false) != null) {
-                zkc.setData(checkAllLedgersCtimeZnode, TextFormat.printToString(builder.build()).getBytes(UTF_8), -1);
+                zkc.setData(checkAllLedgersCtimeZnode, checkAllLedgersFormatByteArray, -1);
             } else {
-                zkc.create(checkAllLedgersCtimeZnode, TextFormat.printToString(builder.build()).getBytes(UTF_8),
-                        Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+                zkc.create(checkAllLedgersCtimeZnode, checkAllLedgersFormatByteArray, Ids.OPEN_ACL_UNSAFE,
+                        CreateMode.PERSISTENT);
             }
         } catch (KeeperException ke) {
             throw new ReplicationException.UnavailableException("Error contacting zookeeper", ke);
@@ -914,11 +916,9 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
         if (LOG.isDebugEnabled()) {
             LOG.debug("setCheckAllLedgersCTime");
         }
-        CheckAllLedgersFormat.Builder builder = CheckAllLedgersFormat.newBuilder();
         try {
             byte[] data = zkc.getData(checkAllLedgersCtimeZnode, false, null);
-            TextFormat.merge(new String(data, UTF_8), builder);
-            CheckAllLedgersFormat checkAllLedgersFormat = builder.build();
+            CheckAllLedgersFormat checkAllLedgersFormat = CheckAllLedgersFormat.parseFrom(data);
             return checkAllLedgersFormat.hasCheckAllLedgersCTime() ? checkAllLedgersFormat.getCheckAllLedgersCTime()
                     : -1;
         } catch (KeeperException.NoNodeException ne) {
@@ -929,8 +929,8 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
         } catch (InterruptedException ie) {
             Thread.currentThread().interrupt();
             throw new ReplicationException.UnavailableException("Interrupted while contacting zookeeper", ie);
-        } catch (ParseException pe) {
-            throw new ReplicationException.UnavailableException("Parse Exception", pe);
+        } catch (InvalidProtocolBufferException ipbe) {
+            throw new ReplicationException.UnavailableException("Error while parsing ZK protobuf binary data", ipbe);
         }
     }
 }
