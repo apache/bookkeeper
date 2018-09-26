@@ -62,7 +62,7 @@ Client Guide | API docs
 
 ## News
 
-### [date] Release 4.8.0 available
+### 26 September, 2018 Release 4.8.0 available
 
 [INSERT SUMMARY]
 

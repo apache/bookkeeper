@@ -5,8 +5,8 @@ title: Apache BookKeeper 4.8.0 Release Notes
 This is the 13th release of Apache BookKeeper!
 
 The 4.8.0 release incorporates hundreds of bug fixes, improvements, and features since previous major release, 4.7.0.
-It is a new big milestone in Apache BookKeeper community - after merging Yahoo and Saleforce branches
-back to upstream the community started to contribute great new features, like Relaxed Durability, Stream Storage service and Multiple active Entrylogs.
+It is a new big milestone in Apache BookKeeper community,
+this release include great new features, like Relaxed Durability, Stream Storage service and Multiple active Entrylogs.
 
 It is also the second release of Apache DistributedLog after it is merged as sub modules of Apache BookKeeper.
 
