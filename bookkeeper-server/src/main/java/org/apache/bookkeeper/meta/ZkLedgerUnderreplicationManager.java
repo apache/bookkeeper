@@ -894,14 +894,14 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
             LOG.debug("setCheckAllLedgersCTime");
         }
         try {
+            List<ACL> zkAcls = ZkUtils.getACLs(conf);
             CheckAllLedgersFormat.Builder builder = CheckAllLedgersFormat.newBuilder();
             builder.setCheckAllLedgersCTime(checkAllLedgersCTime);
             byte[] checkAllLedgersFormatByteArray = builder.build().toByteArray();
             if (zkc.exists(checkAllLedgersCtimeZnode, false) != null) {
                 zkc.setData(checkAllLedgersCtimeZnode, checkAllLedgersFormatByteArray, -1);
             } else {
-                zkc.create(checkAllLedgersCtimeZnode, checkAllLedgersFormatByteArray, Ids.OPEN_ACL_UNSAFE,
-                        CreateMode.PERSISTENT);
+                zkc.create(checkAllLedgersCtimeZnode, checkAllLedgersFormatByteArray, zkAcls, CreateMode.PERSISTENT);
             }
         } catch (KeeperException ke) {
             throw new ReplicationException.UnavailableException("Error contacting zookeeper", ke);
