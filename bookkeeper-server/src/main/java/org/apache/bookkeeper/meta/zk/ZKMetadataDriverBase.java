@@ -256,14 +256,18 @@ public class ZKMetadataDriverBase implements AutoCloseable {
         return new ZkAuditorSelector(bookieId, zk, new ServerConfiguration(conf));
     }
 
-    protected void closeLedgerManagerFactory() {
-        if (null != lmFactory) {
+    protected synchronized void closeLedgerManagerFactory() {
+        LedgerManagerFactory lmToClose;
+        synchronized (this) {
+            lmToClose = lmFactory;
+            lmFactory = null;
+        }
+        if (null != lmToClose) {
             try {
-                lmFactory.close();
+                lmToClose.close();
             } catch (IOException e) {
                 log.warn("Failed to close zookeeper based ledger manager", e);
             }
-            lmFactory = null;
         }
     }
 
