@@ -8,8 +8,6 @@ The 4.8.0 release incorporates hundreds of bug fixes, improvements, and features
 It is a new big milestone in Apache BookKeeper community,
 this release include great new features, like Relaxed Durability, Stream Storage service and Multiple active Entrylogs.
 
-It is also the second release of Apache DistributedLog after it is merged as sub modules of Apache BookKeeper.
-
 Apache BookKeeper/DistributedLog users are encouraged to [upgrade to 4.8.0](../../admin/upgrade). The technical details of
 this release are summarized below.
 
