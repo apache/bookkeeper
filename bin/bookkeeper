@@ -23,7 +23,25 @@ BK_HOME=`cd ${BINDIR}/..;pwd`
 
 source ${BK_HOME}/bin/common.sh
 
-if [ "x$1" == "xstandalone" ]; then
+# default variables
+DEFAULT_CONF=${BK_HOME}/conf/bk_server.conf
+DEFAULT_ZK_CONF=${BK_HOME}/conf/zookeeper.conf
+
+if [ -z "$BOOKIE_CONF" ]; then
+  BOOKIE_CONF_TO_CHECK=${DEFAULT_CONF}
+else
+  BOOKIE_CONF_TO_CHECK=${BOOKIE_CONF}
+fi
+
+# check the configuration to see if table service is enabled or not.
+if [ -z "${ENABLE_TABLE_SERVICE}" ]; then
+  TABLE_SERVICE_SETTING=$(grep StreamStorageLifecycleComponent ${BOOKIE_CONF_TO_CHECK})
+  if [ "${TABLE_SERVICE_SETTING}" != \#* ]; then
+    ENABLE_TABLE_SERVICE="true"
+  fi
+fi
+
+if [ \( "x$1" == "xstandalone" \) -o \( "x${ENABLE_TABLE_SERVICE}" != "x" \) ]; then
   BOOKIE_MODULE_PATH=stream/server
   BOOKIE_MODULE_NAME="(org.apache.bookkeeper-)?stream-storage-server"
 else
@@ -36,10 +54,6 @@ BOOKIE_JAR=$(find_module_jar ${BOOKIE_MODULE_PATH} ${BOOKIE_MODULE_NAME})
 
 # set up the classpath
 BOOKIE_CLASSPATH=$(set_module_classpath ${BOOKIE_MODULE_PATH})
-
-# default variables
-DEFAULT_CONF=${BK_HOME}/conf/bk_server.conf
-DEFAULT_ZK_CONF=${BK_HOME}/conf/zookeeper.conf
 
 bookkeeper_help() {
     cat <<EOF
