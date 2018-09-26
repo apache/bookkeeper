@@ -52,6 +52,7 @@ import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.IndexPersistenceMgr;
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.BKException;
+import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.LedgerHandleAdapter;
@@ -382,26 +383,24 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
             lh.close();
         }
 
-        ZooKeeperClient zkc = ZooKeeperClient.newBuilder().connectString(zkUtil.getZooKeeperConnectString())
-                .sessionTimeoutMs(10000).build();
         LedgerManagerFactory mFactory = driver.getLedgerManagerFactory();
         LedgerUnderreplicationManager urm = mFactory.newLedgerUnderreplicationManager();
 
         ServerConfiguration servConf = new ServerConfiguration(bsConfs.get(0));
-        validateInitialDelayOfCheckAllLedgers(urm, -1, 1000, servConf, zkc);
-        validateInitialDelayOfCheckAllLedgers(urm, 999, 1000, servConf, zkc);
-        validateInitialDelayOfCheckAllLedgers(urm, 1001, 1000, servConf, zkc);
+        validateInitialDelayOfCheckAllLedgers(urm, -1, 1000, servConf, bkc);
+        validateInitialDelayOfCheckAllLedgers(urm, 999, 1000, servConf, bkc);
+        validateInitialDelayOfCheckAllLedgers(urm, 1001, 1000, servConf, bkc);
     }
 
     void validateInitialDelayOfCheckAllLedgers(LedgerUnderreplicationManager urm, long timeSinceLastExecutedInSecs,
-            long auditorPeriodicCheckInterval, ServerConfiguration servConf, ZooKeeperClient zkc)
+            long auditorPeriodicCheckInterval, ServerConfiguration servConf, BookKeeper bkc)
             throws UnavailableException, UnknownHostException, InterruptedException {
         TestStatsProvider statsProvider = new TestStatsProvider();
         TestStatsLogger statsLogger = statsProvider.getStatsLogger(AUDITOR_SCOPE);
         TestOpStatsLogger checkAllLedgersStatsLogger = (TestOpStatsLogger) statsLogger
                 .getOpStatsLogger(ReplicationStats.CHECK_ALL_LEDGERS_TIME);
         servConf.setAuditorPeriodicCheckInterval(auditorPeriodicCheckInterval);
-        final TestAuditor auditor = new TestAuditor(Bookie.getBookieAddress(servConf).toString(), servConf, zkc,
+        final TestAuditor auditor = new TestAuditor(Bookie.getBookieAddress(servConf).toString(), servConf, bkc, false,
                 statsLogger);
         CountDownLatch latch = auditor.getLatch();
         assertEquals("CHECK_ALL_LEDGERS_TIME SuccessCount", 0, checkAllLedgersStatsLogger.getSuccessCount());
@@ -462,9 +461,9 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
 
         final AtomicReference<CountDownLatch> latchRef = new AtomicReference<CountDownLatch>(new CountDownLatch(1));
 
-        public TestAuditor(String bookieIdentifier, ServerConfiguration conf, ZooKeeper zkc, StatsLogger statsLogger)
-                throws UnavailableException {
-            super(bookieIdentifier, conf, zkc, statsLogger);
+        public TestAuditor(String bookieIdentifier, ServerConfiguration conf, BookKeeper bkc, boolean ownBkc,
+                StatsLogger statsLogger) throws UnavailableException {
+            super(bookieIdentifier, conf, bkc, ownBkc, statsLogger);
         }
 
         void checkAllLedgers() throws BKException, IOException, InterruptedException, KeeperException {
