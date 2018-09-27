@@ -143,7 +143,7 @@
     <libthrift9.version>0.9.3</libthrift9.version>
     <lombok.version>1.16.22</lombok.version>
     <lz4.version>1.3.0</lz4.version>
-    <mockito.version>2.13.0</mockito.version>
+    <mockito.version>2.22.0</mockito.version>
     <netty.version>4.1.22.Final</netty.version>
     <netty-boringssl.version>2.0.7.Final</netty-boringssl.version>
     <ostrich.version>9.1.3</ostrich.version>
