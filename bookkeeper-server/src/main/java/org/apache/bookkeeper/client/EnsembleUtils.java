@@ -37,10 +37,10 @@ class EnsembleUtils {
     private static final Logger LOG = LoggerFactory.getLogger(EnsembleUtils.class);
 
     static List<BookieSocketAddress> replaceBookiesInEnsemble(BookieWatcher bookieWatcher,
-                                                              long ledgerId,
                                                               LedgerMetadata metadata,
                                                               List<BookieSocketAddress> oldEnsemble,
-                                                              Map<Integer, BookieSocketAddress> failedBookies)
+                                                              Map<Integer, BookieSocketAddress> failedBookies,
+                                                              String logContext)
             throws BKException.BKNotEnoughBookiesException {
         List<BookieSocketAddress> newEnsemble = new ArrayList<>(oldEnsemble);
 
@@ -56,13 +56,13 @@ class EnsembleUtils {
             int idx = entry.getKey();
             BookieSocketAddress addr = entry.getValue();
             if (LOG.isDebugEnabled()) {
-                LOG.debug("[EnsembleChange-L{}] replacing bookie: {} index: {}", ledgerId, addr, idx);
+                LOG.debug("{} replacing bookie: {} index: {}", logContext, addr, idx);
             }
 
             if (!newEnsemble.get(idx).equals(addr)) {
                 if (LOG.isDebugEnabled()) {
-                    LOG.debug("[EnsembleChange-L{}] Not changing failed bookie {} at index {}, already changed to {}",
-                              ledgerId, addr, idx, newEnsemble.get(idx));
+                    LOG.debug("{} Not changing failed bookie {} at index {}, already changed to {}",
+                              logContext, addr, idx, newEnsemble.get(idx));
                 }
                 continue;
             }

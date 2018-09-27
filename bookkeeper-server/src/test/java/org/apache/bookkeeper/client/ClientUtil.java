@@ -17,6 +17,8 @@
  */
 package org.apache.bookkeeper.client;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
@@ -32,7 +34,7 @@ import org.apache.bookkeeper.util.ByteBufList;
  * Client utilities.
  */
 public class ClientUtil {
-    public static final byte[] PASSWD = "foobar".getBytes();
+    public static final byte[] PASSWD = "foobar".getBytes(UTF_8);
 
     public static ByteBuf generatePacket(long ledgerId, long entryId, long lastAddConfirmed,
                                                long length, byte[] data) throws GeneralSecurityException {

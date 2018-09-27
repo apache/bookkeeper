@@ -218,12 +218,14 @@ class ReadOnlyLedgerHandle extends LedgerHandle implements LedgerMetadataListene
         // ledger, so this synchronized should be unnecessary, but putting it here now
         // just in case (can be removed when we validate threads)
         synchronized (metadataLock) {
+            String logContext = String.format("[RecoveryEnsembleChange(ledger:%d)]", ledgerId);
+
             long lac = getLastAddConfirmed();
             LedgerMetadata metadata = getLedgerMetadata();
             List<BookieSocketAddress> currentEnsemble = getCurrentEnsemble();
             try {
                 List<BookieSocketAddress> newEnsemble = EnsembleUtils.replaceBookiesInEnsemble(
-                        clientCtx.getBookieWatcher(), getId(), metadata, currentEnsemble, failedBookies);
+                        clientCtx.getBookieWatcher(), metadata, currentEnsemble, failedBookies, logContext);
                 Set<Integer> replaced = EnsembleUtils.diffEnsemble(currentEnsemble, newEnsemble);
                 if (!replaced.isEmpty()) {
                     newEnsemblesFromRecovery.put(lac + 1, newEnsemble);

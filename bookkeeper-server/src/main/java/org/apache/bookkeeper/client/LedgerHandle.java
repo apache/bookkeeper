@@ -76,7 +76,6 @@ import org.apache.bookkeeper.common.util.MathUtils;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
-import org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.State;
 import org.apache.bookkeeper.proto.checksum.DigestManager;
 import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.Gauge;
@@ -99,7 +98,13 @@ public class LedgerHandle implements WriteHandle {
     private LedgerMetadata metadata;
     final long ledgerId;
     long lastAddPushed;
-    boolean closing;
+
+    private enum HandleState {
+        OPEN,
+        CLOSED
+    };
+
+    private HandleState handleState = HandleState.OPEN;
 
     /**
       * Last entryId which has been confirmed to be written durably to the bookies.
@@ -466,6 +471,10 @@ public class LedgerHandle implements WriteHandle {
         return getLedgerMetadata().isClosed();
     }
 
+    boolean isHandleWrittable() {
+        return !getLedgerMetadata().isClosed() && handleState == HandleState.OPEN;
+    }
+
     void asyncCloseInternal(final CloseCallback cb, final Object ctx, final int rc) {
         try {
             doAsyncCloseInternal(cb, ctx, rc);
@@ -492,35 +501,30 @@ public class LedgerHandle implements WriteHandle {
         clientCtx.getMainWorkerPool().executeOrdered(ledgerId, new SafeRunnable() {
             @Override
             public void safeRun() {
-                final long prevLastEntryId;
-                final long prevLength;
-                final State prevState;
-                List<PendingAddOp> pendingAdds;
+                final HandleState prevHandleState;
+                final List<PendingAddOp> pendingAdds;
+                final long lastEntry;
+                final long finalLength;
 
-                if (isClosed()) {
-                    synchronized (LedgerHandle.this) {
-                        pendingAdds = drainPendingAddsToErrorOut();
-                    }
-                    errorOutPendingAdds(rc, pendingAdds);
+                synchronized (LedgerHandle.this) {
+                    prevHandleState = handleState;
+
+                    // drain pending adds first
+                    pendingAdds = drainPendingAddsAndAdjustLength();
+
+                    // taking the length must occur after draining, as draining changes the length
+                    lastEntry = lastAddPushed = LedgerHandle.this.lastAddConfirmed;
+                    finalLength = LedgerHandle.this.length;
+                    handleState = HandleState.CLOSED;
+                }
+
+                // error out all pending adds during closing, the callbacks shouldn't be
+                // running under any bk locks.
+                errorOutPendingAdds(rc, pendingAdds);
+
+                if (prevHandleState == HandleState.CLOSED) {
                     cb.closeComplete(BKException.Code.OK, LedgerHandle.this, ctx);
-                    return;
                 } else {
-                    long lastEntry;
-                    long finalLength;
-                    synchronized (LedgerHandle.this) {
-                        // drain pending adds first
-                        // this must occur before taking the length as draining changes the length
-                        pendingAdds = drainPendingAddsToErrorOut();
-
-                        lastEntry = lastAddPushed = LedgerHandle.this.lastAddConfirmed;
-                        finalLength = LedgerHandle.this.length;
-                        closing = true;
-                    }
-
-                    // error out all pending adds during closing, the callbacks shouldn't be
-                    // running under any bk locks.
-                    errorOutPendingAdds(rc, pendingAdds);
-
                     if (LOG.isDebugEnabled()) {
                         LOG.debug("Closing ledger: {} at entryId {} with {} bytes", getId(), lastEntry, finalLength);
                     }
@@ -538,6 +542,12 @@ public class LedgerHandle implements WriteHandle {
                                         && finalLength == metadata.getLength()) {
                                         return false;
                                     } else {
+                                        LOG.error("Metadata conflict when closing ledger {}."
+                                                  + " Another client may have recovered the ledger while there"
+                                                  + " were writes outstanding. (local lastEntry:{} length:{}) "
+                                                  + " (metadata lastEntry:{} length:{})",
+                                                  getId(), lastEntry, finalLength,
+                                                  metadata.getLastEntryId(), metadata.getLength());
                                         throw new BKException.BKMetadataVersionException();
                                     }
                                 } else {
@@ -1070,7 +1080,7 @@ public class LedgerHandle implements WriteHandle {
             // synchronized on this to ensure that
             // the ledger isn't closed between checking and
             // updating lastAddPushed
-            if (getLedgerMetadata().isClosed()) {
+            if (isHandleWrittable()) {
                 wasClosed = true;
             }
         }
@@ -1229,14 +1239,14 @@ public class LedgerHandle implements WriteHandle {
             // synchronized on this to ensure that
             // the ledger isn't closed between checking and
             // updating lastAddPushed
-            if (getLedgerMetadata().isClosed() || closing) {
-                wasClosed = true;
-            } else {
+            if (isHandleWrittable()) {
                 long entryId = ++lastAddPushed;
                 long currentLedgerLength = addToLength(op.payload.readableBytes());
                 op.setEntryId(entryId);
                 op.setLedgerLength(currentLedgerLength);
                 pendingAddOps.add(op);
+            } else {
+                wasClosed = true;
             }
         }
 
@@ -1692,10 +1702,10 @@ public class LedgerHandle implements WriteHandle {
     }
 
     void errorOutPendingAdds(int rc) {
-        errorOutPendingAdds(rc, drainPendingAddsToErrorOut());
+        errorOutPendingAdds(rc, drainPendingAddsAndAdjustLength());
     }
 
-    synchronized List<PendingAddOp> drainPendingAddsToErrorOut() {
+    synchronized List<PendingAddOp> drainPendingAddsAndAdjustLength() {
         PendingAddOp pendingAddOp;
         List<PendingAddOp> opsDrained = new ArrayList<PendingAddOp>(pendingAddOps.size());
         while ((pendingAddOp = pendingAddOps.poll()) != null) {
@@ -1745,6 +1755,11 @@ public class LedgerHandle implements WriteHandle {
 
     }
 
+    @VisibleForTesting
+    boolean hasDelayedWriteFailedBookies() {
+        return !delayedWriteFailedBookies.isEmpty();
+    }
+
     void notifyWriteFailed(int index, BookieSocketAddress addr) {
         synchronized (metadataLock) {
             delayedWriteFailedBookies.put(index, addr);
@@ -1756,8 +1771,7 @@ public class LedgerHandle implements WriteHandle {
             if (delayedWriteFailedBookies.isEmpty()) {
                 return;
             }
-            Map<Integer, BookieSocketAddress> toReplace = new HashMap<>();
-            toReplace.putAll(delayedWriteFailedBookies);
+            Map<Integer, BookieSocketAddress> toReplace = new HashMap<>(delayedWriteFailedBookies);
             delayedWriteFailedBookies.clear();
 
             // Original intent of this change is to do a best-effort ensemble change.
@@ -1789,50 +1803,67 @@ public class LedgerHandle implements WriteHandle {
         }
 
 
+        boolean triggerLoop = false;
+        Map<Integer, BookieSocketAddress> toReplace = null;
+        List<BookieSocketAddress> origEnsemble = null;
         synchronized (metadataLock) {
             if (changingEnsemble) {
                 delayedWriteFailedBookies.putAll(failedBookies);
             } else {
                 changingEnsemble = true;
+                triggerLoop = true;
 
-                Map<Integer, BookieSocketAddress> toReplace = new HashMap<>(delayedWriteFailedBookies);
+                toReplace = new HashMap<>(delayedWriteFailedBookies);
                 delayedWriteFailedBookies.clear();
                 toReplace.putAll(failedBookies);
 
-                List<BookieSocketAddress> origEnsemble = getCurrentEnsemble();
-                ensembleChangeLoop(origEnsemble, toReplace);
+                origEnsemble = getCurrentEnsemble();
             }
+        }
+        if (triggerLoop) {
+            ensembleChangeLoop(origEnsemble, toReplace);
         }
     }
 
     void ensembleChangeLoop(List<BookieSocketAddress> origEnsemble, Map<Integer, BookieSocketAddress> failedBookies) {
+        int ensembleChangeId = numEnsembleChanges.incrementAndGet();
+        String logContext = String.format("[EnsembleChange(ledger:%d, change-id:%010d)]", ledgerId, ensembleChangeId);
+
         // when the ensemble changes are too frequent, close handle
-        if (numEnsembleChanges.incrementAndGet() > clientCtx.getConf().maxAllowedEnsembleChanges) {
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Ledger {} reaches max allowed ensemble change number {}",
-                          ledgerId, clientCtx.getConf().maxAllowedEnsembleChanges);
-            }
+        if (ensembleChangeId > clientCtx.getConf().maxAllowedEnsembleChanges) {
+            LOG.info("{} reaches max allowed ensemble change number {}",
+                     logContext, clientCtx.getConf().maxAllowedEnsembleChanges);
             handleUnrecoverableErrorDuringAdd(WriteException);
             return;
         }
 
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("{} Replacing {} in {}", logContext, failedBookies, origEnsemble);
+        }
+
+        AtomicInteger attempts = new AtomicInteger(0);
         new MetadataUpdateLoop(
                 clientCtx.getLedgerManager(), getId(),
                 this::getLedgerMetadata,
+                (metadata) -> !metadata.isClosed() && !metadata.isInRecovery()
+                        && failedBookies.entrySet().stream().anyMatch(
+                                (e) -> metadata.getLastEnsembleValue().get(e.getKey()).equals(e.getValue())),
                 (metadata) -> {
-                    List<BookieSocketAddress> lastEnsemble = metadata.getLastEnsembleValue();
-                    boolean failedBookieInEnsemble = failedBookies.entrySet().stream()
-                        .anyMatch((e) -> lastEnsemble.get(e.getKey()).equals(e.getValue()));
-                    return !metadata.isClosed() && !metadata.isInRecovery() && failedBookieInEnsemble;
-                },
-                (metadata) -> {
+                    attempts.incrementAndGet();
+
+                    List<BookieSocketAddress> currentEnsemble = getCurrentEnsemble();
                     List<BookieSocketAddress> newEnsemble = EnsembleUtils.replaceBookiesInEnsemble(
-                            clientCtx.getBookieWatcher(), getId(), metadata, getCurrentEnsemble(), failedBookies);
+                            clientCtx.getBookieWatcher(), metadata, currentEnsemble, failedBookies, logContext);
                     Long lastEnsembleKey = metadata.getLastEnsembleKey();
                     LedgerMetadataBuilder builder = LedgerMetadataBuilder.from(metadata);
                     long newEnsembleStartEntry = getLastAddConfirmed() + 1;
                     checkState(lastEnsembleKey <= newEnsembleStartEntry,
                                "New ensemble must either replace the last ensemble, or add a new one");
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("{}[attempt:{}] changing ensemble from: {} to: {} starting at entry: {}",
+                                  logContext, attempts.get(), currentEnsemble, newEnsemble, newEnsembleStartEntry);
+                    }
+
                     if (lastEnsembleKey.equals(newEnsembleStartEntry)) {
                         return builder.replaceEnsembleEntry(newEnsembleStartEntry, newEnsemble).build();
                     } else {
@@ -1842,12 +1873,26 @@ public class LedgerHandle implements WriteHandle {
                 this::setLedgerMetadata)
             .run().whenCompleteAsync((metadata, ex) -> {
                     if (ex != null) {
+                        LOG.warn("{}[attempt:{}] Exception changing ensemble", logContext, attempts.get(), ex);
                         handleUnrecoverableErrorDuringAdd(BKException.getExceptionCode(ex, WriteException));
                     } else if (metadata.isClosed()) {
+                        if (LOG.isDebugEnabled()) {
+                            LOG.debug("{}[attempt:{}] Metadata closed during attempt to replace bookie."
+                                      + " Another client must have recovered the ledger.", logContext, attempts.get());
+                        }
                         handleUnrecoverableErrorDuringAdd(BKException.Code.LedgerClosedException);
                     } else if (metadata.isInRecovery()) {
+                        if (LOG.isDebugEnabled()) {
+                            LOG.debug("{}[attempt:{}] Metadata marked as in-recovery during attempt to replace bookie."
+                                      + " Another client must be recovering the ledger.", logContext, attempts.get());
+                        }
+
                         handleUnrecoverableErrorDuringAdd(BKException.Code.LedgerFencedException);
                     } else {
+                        if (LOG.isDebugEnabled()) {
+                            LOG.debug("{}[attempt:{}] Success updating metadata.", logContext, attempts.get());
+                        }
+
                         synchronized (metadataLock) {
                             if (!delayedWriteFailedBookies.isEmpty()) {
                                 Map<Integer, BookieSocketAddress> toReplace = new HashMap<>(delayedWriteFailedBookies);

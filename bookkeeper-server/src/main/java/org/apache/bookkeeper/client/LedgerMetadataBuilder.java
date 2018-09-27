@@ -104,6 +104,7 @@ class LedgerMetadataBuilder {
 
     LedgerMetadataBuilder withWriteQuorumSize(int writeQuorumSize) {
         checkArgument(ensembleSize >= writeQuorumSize, "Write quorum must be less or equal to ensemble size");
+        checkArgument(writeQuorumSize >= ackQuorumSize, "Write quorum must be greater or equal to ack quorum");
         this.writeQuorumSize = writeQuorumSize;
         return this;
     }
