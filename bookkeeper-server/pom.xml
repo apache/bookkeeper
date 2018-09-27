@@ -121,10 +121,52 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>org.apache.hadoop</groupId>
-      <artifactId>hadoop-minikdc</artifactId>
-      <scope>test</scope>
+        <groupId>org.apache.kerby</groupId>
+        <artifactId>kerby-config</artifactId>
+        <version>${kerby.version}</version>
+        <exclusions>
+            <exclusion>
+                <groupId>org.slf4j</groupId>
+                <artifactId>*</artifactId>
+            </exclusion>
+        </exclusions>        
     </dependency>
+    <dependency>
+        <groupId>org.apache.kerby</groupId>
+        <artifactId>kerb-simplekdc</artifactId>
+        <version>${kerby.version}</version>
+        <exclusions>
+            <exclusion>
+                <groupId>org.slf4j</groupId>
+                <artifactId>*</artifactId>
+            </exclusion>
+        </exclusions>        
+    </dependency>
+<!--    
+    <dependency org="org.apache.kerby" name="kerb-core"
+                rev="${kerby.version}" conf="test->default">
+        <exclude org="org.slf4j" module="slf4j-api"/>
+    </dependency>
+    <dependency org="org.apache.kerby" name="kerb-server"
+                rev="${kerby.version}" conf="test->default"/>
+    <dependency org="org.apache.kerby" name="kerb-common"
+                rev="${kerby.version}" conf="test->default"/>
+    <dependency org="org.apache.kerby" name="kerb-admin"
+                rev="${kerby.version}" conf="test->default"/>
+    <dependency org="org.apache.kerby" name="kerb-identity"
+                rev="${kerby.version}" conf="test->default"/>
+    <dependency org="org.apache.kerby" name="kerb-client"
+                rev="${kerby.version}" conf="test->default"/>
+    <dependency org="org.apache.kerby" name="kerb-util"
+                rev="${kerby.version}" conf="test->default"/>
+    <dependency org="org.apache.kerby" name="kerb-crypto"
+                rev="${kerby.version}" conf="test->default"/>
+    <dependency org="org.apache.kerby" name="kerby-util"
+                rev="${kerby.version}" conf="test->default"/>
+    <dependency org="org.apache.kerby" name="kerby-asn1"
+                rev="${kerby.version}" conf="test->default"/> 
+      <scope>test</scope>
+    </dependency>-->
     <dependency>
       <groupId>org.apache.zookeeper</groupId>
       <artifactId>zookeeper</artifactId>
