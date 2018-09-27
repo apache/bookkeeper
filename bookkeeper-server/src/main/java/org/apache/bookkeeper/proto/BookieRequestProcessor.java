@@ -89,6 +89,7 @@ import org.apache.bookkeeper.tls.SecurityHandlerFactory;
 import org.apache.bookkeeper.tls.SecurityHandlerFactory.NodeType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 
 /**
  * An implementation of the RequestProcessor interface.
@@ -104,6 +105,7 @@ public class BookieRequestProcessor implements RequestProcessor {
      */
     private final ServerConfiguration serverCfg;
     private final long waitTimeoutOnBackpressureMillis;
+    private final boolean preserveMdcForTaskExecution;
 
     /**
      * This is the Bookie instance that is used to handle all read and write requests.
@@ -187,6 +189,7 @@ public class BookieRequestProcessor implements RequestProcessor {
             StatsLogger statsLogger, SecurityHandlerFactory shFactory) throws SecurityException {
         this.serverCfg = serverCfg;
         this.waitTimeoutOnBackpressureMillis = serverCfg.getWaitTimeoutOnResponseBackpressureMillis();
+        this.preserveMdcForTaskExecution = serverCfg.getPreserveMdcForTaskExecution();
         this.bookie = bookie;
         this.readThreadPool = createExecutor(
                 this.serverCfg.getNumReadWorkerThreads(),
@@ -412,6 +415,7 @@ public class BookieRequestProcessor implements RequestProcessor {
                     .numThreads(numThreads)
                     .name(nameFormat)
                     .traceTaskExecution(serverCfg.getEnableTaskExecutionStats())
+                    .preserveMdcForTaskExecution(serverCfg.getPreserveMdcForTaskExecution())
                     .statsLogger(statsLogger)
                     .maxTasksInQueue(maxTasksInQueue)
                     .build();
@@ -430,52 +434,57 @@ public class BookieRequestProcessor implements RequestProcessor {
         // it as a version 3 packet. Else, just use the old protocol.
         if (msg instanceof BookkeeperProtocol.Request) {
             BookkeeperProtocol.Request r = (BookkeeperProtocol.Request) msg;
-            BookkeeperProtocol.BKPacketHeader header = r.getHeader();
-            switch (header.getOperation()) {
-                case ADD_ENTRY:
-                    processAddRequestV3(r, c);
-                    break;
-                case READ_ENTRY:
-                    processReadRequestV3(r, c);
-                    break;
-                case FORCE_LEDGER:
-                    processForceLedgerRequestV3(r, c);
-                    break;
-                case AUTH:
-                    LOG.info("Ignoring auth operation from client {}", c.remoteAddress());
-                    BookkeeperProtocol.AuthMessage message = BookkeeperProtocol.AuthMessage
-                        .newBuilder()
-                        .setAuthPluginName(AuthProviderFactoryFactory.AUTHENTICATION_DISABLED_PLUGIN_NAME)
-                        .setPayload(ByteString.copyFrom(AuthToken.NULL.getData()))
-                        .build();
-                    BookkeeperProtocol.Response.Builder authResponse = BookkeeperProtocol.Response
-                        .newBuilder().setHeader(r.getHeader())
-                        .setStatus(BookkeeperProtocol.StatusCode.EOK)
-                        .setAuthResponse(message);
-                    c.writeAndFlush(authResponse.build());
-                    break;
-                case WRITE_LAC:
-                    processWriteLacRequestV3(r, c);
-                    break;
-                case READ_LAC:
-                    processReadLacRequestV3(r, c);
-                    break;
-                case GET_BOOKIE_INFO:
-                    processGetBookieInfoRequestV3(r, c);
-                    break;
-                case START_TLS:
-                    processStartTLSRequestV3(r, c);
-                    break;
-                default:
-                    LOG.info("Unknown operation type {}", header.getOperation());
-                    BookkeeperProtocol.Response.Builder response =
-                            BookkeeperProtocol.Response.newBuilder().setHeader(r.getHeader())
-                            .setStatus(BookkeeperProtocol.StatusCode.EBADREQ);
-                    c.writeAndFlush(response.build());
-                    if (statsEnabled) {
-                        bkStats.getOpStats(BKStats.STATS_UNKNOWN).incrementFailedOps();
-                    }
-                    break;
+            restoreMdcContextFromRequest(r);
+            try {
+                BookkeeperProtocol.BKPacketHeader header = r.getHeader();
+                switch (header.getOperation()) {
+                    case ADD_ENTRY:
+                        processAddRequestV3(r, c);
+                        break;
+                    case READ_ENTRY:
+                        processReadRequestV3(r, c);
+                        break;
+                    case FORCE_LEDGER:
+                        processForceLedgerRequestV3(r, c);
+                        break;
+                    case AUTH:
+                        LOG.info("Ignoring auth operation from client {}", c.remoteAddress());
+                        BookkeeperProtocol.AuthMessage message = BookkeeperProtocol.AuthMessage
+                                .newBuilder()
+                                .setAuthPluginName(AuthProviderFactoryFactory.AUTHENTICATION_DISABLED_PLUGIN_NAME)
+                                .setPayload(ByteString.copyFrom(AuthToken.NULL.getData()))
+                                .build();
+                        BookkeeperProtocol.Response.Builder authResponse = BookkeeperProtocol.Response
+                                .newBuilder().setHeader(r.getHeader())
+                                .setStatus(BookkeeperProtocol.StatusCode.EOK)
+                                .setAuthResponse(message);
+                        c.writeAndFlush(authResponse.build());
+                        break;
+                    case WRITE_LAC:
+                        processWriteLacRequestV3(r, c);
+                        break;
+                    case READ_LAC:
+                        processReadLacRequestV3(r, c);
+                        break;
+                    case GET_BOOKIE_INFO:
+                        processGetBookieInfoRequestV3(r, c);
+                        break;
+                    case START_TLS:
+                        processStartTLSRequestV3(r, c);
+                        break;
+                    default:
+                        LOG.info("Unknown operation type {}", header.getOperation());
+                        BookkeeperProtocol.Response.Builder response =
+                                BookkeeperProtocol.Response.newBuilder().setHeader(r.getHeader())
+                                        .setStatus(BookkeeperProtocol.StatusCode.EBADREQ);
+                        c.writeAndFlush(response.build());
+                        if (statsEnabled) {
+                            bkStats.getOpStats(BKStats.STATS_UNKNOWN).incrementFailedOps();
+                        }
+                        break;
+                }
+            } finally {
+                MDC.clear();
             }
         } else {
             BookieProtocol.Request r = (BookieProtocol.Request) msg;
@@ -500,7 +509,16 @@ public class BookieRequestProcessor implements RequestProcessor {
         }
     }
 
-     private void processWriteLacRequestV3(final BookkeeperProtocol.Request r, final Channel c) {
+    private void restoreMdcContextFromRequest(BookkeeperProtocol.Request req) {
+        if (preserveMdcForTaskExecution) {
+            MDC.clear();
+            for (BookkeeperProtocol.ContextPair pair: req.getRequestContextList()) {
+                MDC.put(pair.getKey(), pair.getValue());
+            }
+        }
+    }
+
+    private void processWriteLacRequestV3(final BookkeeperProtocol.Request r, final Channel c) {
         WriteLacProcessorV3 writeLac = new WriteLacProcessorV3(r, c, this);
         if (null == writeThreadPool) {
             writeLac.run();

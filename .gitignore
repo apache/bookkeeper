@@ -29,3 +29,6 @@ logs/
 
 # Data directory
 data/
+
+# Pid files
+**/*.pid

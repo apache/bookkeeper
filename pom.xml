@@ -66,6 +66,7 @@
     <module>microbenchmarks</module>
     <module>stream/distributedlog</module>
     <module>tools</module>
+    <module>metadata-drivers</module>
   </modules>
   <mailingLists>
     <mailingList>
@@ -120,6 +121,7 @@
     <commons-io.version>2.4</commons-io.version>
     <curator.version>4.0.1</curator.version>
     <dropwizard.version>3.1.0</dropwizard.version>
+    <etcd.version>0.0.2</etcd.version>
     <finagle.version>6.44.0</finagle.version>
     <freebuilder.version>1.14.9</freebuilder.version>
     <google.code.version>3.0.2</google.code.version>
@@ -128,6 +130,7 @@
     <guava.version>21.0</guava.version>
     <hadoop.version>2.7.3</hadoop.version>
     <hamcrest.version>1.3</hamcrest.version>
+    <hdrhistogram.version>2.1.10</hdrhistogram.version>
     <jackson.version>2.8.9</jackson.version>
     <jackson-mapper-asl.version>1.9.11</jackson-mapper-asl.version>
     <jcommander.version>1.48</jcommander.version>
@@ -140,7 +143,7 @@
     <libthrift9.version>0.9.3</libthrift9.version>
     <lombok.version>1.16.22</lombok.version>
     <lz4.version>1.3.0</lz4.version>
-    <mockito.version>2.13.0</mockito.version>
+    <mockito.version>2.22.0</mockito.version>
     <netty.version>4.1.22.Final</netty.version>
     <netty-boringssl.version>2.0.7.Final</netty-boringssl.version>
     <ostrich.version>9.1.3</ostrich.version>
@@ -541,6 +544,13 @@
         <version>${jcommander.version}</version>
       </dependency>
 
+      <!-- pref dependencies -->
+      <dependency>
+        <groupId>org.hdrhistogram</groupId>
+        <artifactId>HdrHistogram</artifactId>
+        <version>${hdrhistogram.version}</version>
+      </dependency>
+
       <!-- test dependencies -->
       <dependency>
         <groupId>junit</groupId>
@@ -764,7 +774,9 @@
         <configuration>
           <!-- Prevent missing javadoc comments from being marked as errors -->
           <additionalparam>-Xdoclint:none -notimestamp</additionalparam>
-          <additionalOptions>-Xdoclint:none -notimestamp</additionalOptions>
+          <additionalOptions>
+            <additionalOption>-Xdoclint:none -notimestamp</additionalOption>
+          </additionalOptions>
           <subpackages>org.apache.bookkeeper.client:org.apache.bookkeeper.client.api:org.apache.bookkeeper.common.annotation:org.apache.bookkeeper.conf:org.apache.bookkeeper.feature:org.apache.bookkeeper.stats</subpackages>
           <groups>
             <group>
@@ -820,6 +832,9 @@
         <version>${apache-rat-plugin.version}</version>
         <configuration>
           <excludes>
+            <!-- Intellij -->
+            <exclude>**/.idea/**</exclude>
+
             <!-- Git -->
             <exclude>.git/**/*</exclude>
             <exclude>.github/**/*</exclude>
@@ -863,6 +878,20 @@
 
             <!-- vargrant -->
             <exclude>dev/.vagrant/**</exclude>
+
+            <!-- protobuf generated python files-->
+            <exclude>**/proto/**.py</exclude>
+            <!-- python build/test env -->
+            <exclude>**/python/.coverage</exclude>
+            <exclude>**/python/.Python</exclude>
+            <exclude>**/python/bin/**</exclude>
+            <exclude>**/python/include/**</exclude>
+            <exclude>**/python/lib/**</exclude>
+            <exclude>**/.nox/**</exclude>
+            <exclude>**/.pytest_cache/**</exclude>
+            <exclude>**/__pycache__/**</exclude>
+            <exclude>**/bookkeeper.egg-info/**</exclude>
+            <exclude>**/pip-selfcheck.json</exclude>
           </excludes>
           <consoleOutput>true</consoleOutput>
         </configuration>

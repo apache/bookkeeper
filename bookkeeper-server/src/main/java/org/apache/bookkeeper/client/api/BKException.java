@@ -60,6 +60,17 @@ public class BKException extends Exception {
     }
 
     /**
+     * Create a new exception with the <tt>cause</tt>.
+     *
+     * @param code exception code
+     * @param cause the exception cause
+     */
+    public BKException(int code, Throwable cause) {
+        super(getMessage(code), cause);
+        this.code = code;
+    }
+
+    /**
      * Get the return code for the exception.
      *
      * @return the error code

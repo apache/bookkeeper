@@ -52,7 +52,7 @@ fi
 docker build -t "${IMAGE_NAME}-${USER_NAME}" - <<UserSpecificDocker
 FROM ${IMAGE_NAME}
 RUN groupadd --non-unique -g ${GROUP_ID} ${USER_NAME} && \
-  useradd -g ${GROUP_ID} -u ${USER_ID} -k /root -m ${USER_NAME}
+  useradd -l -g ${GROUP_ID} -u ${USER_ID} -k /root -m ${USER_NAME}
 ENV  HOME /home/${USER_NAME}
 UserSpecificDocker
 
@@ -107,8 +107,8 @@ docker run -i -t \
   --rm=true \
   -w ${BOOKKEEPER_ROOT} \
   -u "${USER}" \
-  -v "${BOOKKEEPER_ROOT}:${BOOKKEEPER_ROOT}" \
-  -v "${LOCAL_HOME}:/home/${USER_NAME}" \
+  -v "$(realpath $BOOKKEEPER_ROOT):${BOOKKEEPER_ROOT}" \
+  -v "$(realpath ~):${LOCAL_HOME}" \
   -e VERSION=${VERSION} \
   -e MAJOR_VERSION=${MAJOR_VERSION} \
   -e NEXT_VERSION=${NEXT_VERSION} \

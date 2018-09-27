@@ -64,6 +64,10 @@ Client Guide | API docs
 
 ## News
 
+### 26 September, 2018 Release 4.8.0 available
+
+[INSERT SUMMARY]
+
 ### 29 August, 2018: Release 4.7.2 available
 
 This is the 12th release of Apache BookKeeper!

@@ -184,7 +184,9 @@ public class ZkStorageContainerManager
 
     private void processServersJoined(Set<Endpoint> serversJoined,
                                       Map<Endpoint, ServerAssignmentData> newAssignmentMap) {
-        log.info("Servers joined : {}", serversJoined);
+        if (!serversJoined.isEmpty()) {
+            log.info("Servers joined : {}", serversJoined);
+        }
         serversJoined.forEach(ep -> {
             ServerAssignmentData sad = newAssignmentMap.get(ep);
             if (null != sad) {
@@ -195,7 +197,9 @@ public class ZkStorageContainerManager
 
     private void processServersLeft(Set<Endpoint> serversLeft,
                                     Map<Endpoint, ServerAssignmentData> oldAssignmentMap) {
-        log.info("Servers left : {}", serversLeft);
+        if (!serversLeft.isEmpty()) {
+            log.info("Servers left : {}", serversLeft);
+        }
         serversLeft.forEach(ep -> {
             ServerAssignmentData sad = oldAssignmentMap.get(ep);
             if (null != sad) {
@@ -246,9 +250,15 @@ public class ZkStorageContainerManager
         containersToStop =
             Sets.filter(containersToStop, container -> !pendingStartStopContainers.contains(container));
 
-        log.info("Process container changes:\n\tIdeal = {}\n\tLive = {}\n\t"
-            + "Pending = {}\n\tToStart = {}\n\tToStop = {}",
-            assignedContainerSet, liveContainerSet, pendingStartStopContainers, containersToStart, containersToStop);
+        if (!containersToStart.isEmpty() || !containersToStop.isEmpty()) {
+            log.info("Process container changes:\n\tIdeal = {}\n\tLive = {}\n\t"
+                    + "Pending = {}\n\tToStart = {}\n\tToStop = {}",
+                assignedContainerSet,
+                liveContainerSet,
+                pendingStartStopContainers,
+                containersToStart,
+                containersToStop);
+        }
 
         containersToStart.forEach(this::startStorageContainer);
         containersToStop.forEach(this::stopStorageContainer);

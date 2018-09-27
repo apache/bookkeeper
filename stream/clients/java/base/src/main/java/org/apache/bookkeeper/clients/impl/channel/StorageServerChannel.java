@@ -20,6 +20,7 @@ package org.apache.bookkeeper.clients.impl.channel;
 
 import com.google.common.annotations.VisibleForTesting;
 import io.grpc.Channel;
+import io.grpc.ClientInterceptor;
 import io.grpc.ClientInterceptors;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
@@ -143,10 +144,13 @@ public class StorageServerChannel implements AutoCloseable {
      * @return an intercepted server channel.
      */
     public StorageServerChannel intercept(long scId) {
+        return intercept(new StorageContainerClientInterceptor(scId));
+    }
+
+    public StorageServerChannel intercept(ClientInterceptor... interceptors) {
         Channel interceptedChannel = ClientInterceptors.intercept(
             this.channel,
-            new StorageContainerClientInterceptor(scId));
-
+            interceptors);
         return new StorageServerChannel(
             interceptedChannel,
             this.token);

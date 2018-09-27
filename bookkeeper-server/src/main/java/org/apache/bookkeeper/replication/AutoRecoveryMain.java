@@ -28,22 +28,20 @@ import com.google.common.annotations.VisibleForTesting;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
-import java.util.HashSet;
-import java.util.Set;
 
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieCriticalThread;
 import org.apache.bookkeeper.bookie.ExitCode;
+import org.apache.bookkeeper.client.BKException;
+import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.http.HttpServer;
 import org.apache.bookkeeper.http.HttpServerLoader;
-import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
 import org.apache.bookkeeper.replication.ReplicationException.CompatibilityException;
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
 import org.apache.bookkeeper.server.http.BKHttpServiceProvider;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
-import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
 import org.apache.commons.cli.BasicParser;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.HelpFormatter;
@@ -51,9 +49,6 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.WatchedEvent;
-import org.apache.zookeeper.Watcher;
-import org.apache.zookeeper.ZooKeeper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -66,12 +61,12 @@ public class AutoRecoveryMain {
     private static final Logger LOG = LoggerFactory
             .getLogger(AutoRecoveryMain.class);
 
-    private ServerConfiguration conf;
-    ZooKeeper zk;
-    AuditorElector auditorElector;
-    ReplicationWorker replicationWorker;
-    private AutoRecoveryDeathWatcher deathWatcher;
-    private int exitCode;
+    private final ServerConfiguration conf;
+    final BookKeeper bkc;
+    final AuditorElector auditorElector;
+    final ReplicationWorker replicationWorker;
+    final AutoRecoveryDeathWatcher deathWatcher;
+    int exitCode;
     private volatile boolean shuttingDown = false;
     private volatile boolean running = false;
 
@@ -85,39 +80,19 @@ public class AutoRecoveryMain {
             throws IOException, InterruptedException, KeeperException, UnavailableException,
             CompatibilityException {
         this.conf = conf;
-        Set<Watcher> watchers = new HashSet<Watcher>();
-        // TODO: better session handling for auto recovery daemon  https://issues.apache.org/jira/browse/BOOKKEEPER-594
-        //       since {@link org.apache.bookkeeper.meta.ZkLedgerUnderreplicationManager}
-        //       use Watcher, need to ensure the logic works correctly after recreating
-        //       a new zookeeper client when session expired.
-        //       for now just shutdown it.
-        watchers.add(new Watcher() {
-            @Override
-            public void process(WatchedEvent event) {
-                // Check for expired connection.
-                if (event.getState().equals(Watcher.Event.KeeperState.Expired)) {
-                    LOG.error("ZK client connection to the ZK server has expired!");
-                    shutdown(ExitCode.ZK_EXPIRED);
-                }
-            }
-        });
-        zk = ZooKeeperClient.newBuilder()
-                .connectString(ZKMetadataDriverBase.resolveZkServers(conf))
-                .sessionTimeoutMs(conf.getZkTimeout())
-                .watchers(watchers)
-                .build();
-        auditorElector = new AuditorElector(Bookie.getBookieAddress(conf).toString(), conf,
-                zk, statsLogger.scope(AUDITOR_SCOPE));
-        replicationWorker = new ReplicationWorker(zk, conf, statsLogger.scope(REPLICATION_WORKER_SCOPE));
-        deathWatcher = new AutoRecoveryDeathWatcher(this);
-    }
+        this.bkc = Auditor.createBookKeeperClient(conf);
 
-    public AutoRecoveryMain(ServerConfiguration conf, ZooKeeper zk) throws IOException, InterruptedException,
-           KeeperException, UnavailableException, CompatibilityException {
-        this.conf = conf;
-        this.zk = zk;
-        auditorElector = new AuditorElector(Bookie.getBookieAddress(conf).toString(), conf, zk);
-        replicationWorker = new ReplicationWorker(zk, conf);
+        auditorElector = new AuditorElector(
+            Bookie.getBookieAddress(conf).toString(),
+            conf,
+            bkc,
+            statsLogger.scope(AUDITOR_SCOPE),
+            false);
+        replicationWorker = new ReplicationWorker(
+            conf,
+            bkc,
+            false,
+            statsLogger.scope(REPLICATION_WORKER_SCOPE));
         deathWatcher = new AutoRecoveryDeathWatcher(this);
     }
 
@@ -170,10 +145,12 @@ public class AutoRecoveryMain {
         }
         replicationWorker.shutdown();
         try {
-            zk.close();
+            bkc.close();
+        } catch (BKException e) {
+            LOG.warn("Failed to close bookkeeper client for auto recovery", e);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            LOG.warn("Interrupted shutting down auto recovery", e);
+            LOG.warn("Interrupted closing bookkeeper client for auto recovery", e);
         }
     }
 
