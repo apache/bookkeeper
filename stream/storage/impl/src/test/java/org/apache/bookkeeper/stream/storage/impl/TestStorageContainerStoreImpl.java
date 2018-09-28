@@ -48,6 +48,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ThreadLocalRandom;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.clients.impl.container.StorageContainerClientInterceptor;
+import org.apache.bookkeeper.clients.impl.internal.api.StorageServerClientManager;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.common.grpc.proxy.ProxyHandlerRegistry;
 import org.apache.bookkeeper.statelib.api.mvcc.MVCCAsyncStore;
