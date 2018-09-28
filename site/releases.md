@@ -66,7 +66,10 @@ Client Guide | API docs
 
 ### 26 September, 2018 Release 4.8.0 available
 
-[INSERT SUMMARY]
+This is the 13th release of Apache BookKeeper !
+
+The 4.8.0 release incorporates hundreds of bug fixes, improvements, and features since previous major release, 4.7.0.
+It is a new big milestone in Apache BookKeeper community, this release include great new features, like Relaxed Durability, Stream Storage service and Multiple Active Entrylogs.
 
 ### 29 August, 2018: Release 4.7.2 available
 
