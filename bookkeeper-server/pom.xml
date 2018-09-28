@@ -142,31 +142,6 @@
             </exclusion>
         </exclusions>        
     </dependency>
-<!--    
-    <dependency org="org.apache.kerby" name="kerb-core"
-                rev="${kerby.version}" conf="test->default">
-        <exclude org="org.slf4j" module="slf4j-api"/>
-    </dependency>
-    <dependency org="org.apache.kerby" name="kerb-server"
-                rev="${kerby.version}" conf="test->default"/>
-    <dependency org="org.apache.kerby" name="kerb-common"
-                rev="${kerby.version}" conf="test->default"/>
-    <dependency org="org.apache.kerby" name="kerb-admin"
-                rev="${kerby.version}" conf="test->default"/>
-    <dependency org="org.apache.kerby" name="kerb-identity"
-                rev="${kerby.version}" conf="test->default"/>
-    <dependency org="org.apache.kerby" name="kerb-client"
-                rev="${kerby.version}" conf="test->default"/>
-    <dependency org="org.apache.kerby" name="kerb-util"
-                rev="${kerby.version}" conf="test->default"/>
-    <dependency org="org.apache.kerby" name="kerb-crypto"
-                rev="${kerby.version}" conf="test->default"/>
-    <dependency org="org.apache.kerby" name="kerby-util"
-                rev="${kerby.version}" conf="test->default"/>
-    <dependency org="org.apache.kerby" name="kerby-asn1"
-                rev="${kerby.version}" conf="test->default"/> 
-      <scope>test</scope>
-    </dependency>-->
     <dependency>
       <groupId>org.apache.zookeeper</groupId>
       <artifactId>zookeeper</artifactId>
@@ -176,14 +151,6 @@
   </dependencies>
   <build>
     <plugins>
-      <plugin>
-        <!-- for mini-kdc -->
-        <groupId>org.apache.felix</groupId>
-        <artifactId>maven-bundle-plugin</artifactId>
-        <version>${maven-bundle-plugin.version}</version>
-        <inherited>true</inherited>
-        <extensions>true</extensions>
-      </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-jar-plugin</artifactId>
