@@ -55,6 +55,12 @@
       <version>${project.parent.version}</version>
     </dependency>
     <dependency>
+      <groupId>javax.annotation</groupId>
+      <artifactId>javax.annotation-api</artifactId>
+      <!-- this should not be bundled in binary distributions -->
+      <optional>true</optional>
+    </dependency>
+    <dependency>
       <groupId>org.jmock</groupId>
       <artifactId>jmock</artifactId>
       <scope>test</scope>
