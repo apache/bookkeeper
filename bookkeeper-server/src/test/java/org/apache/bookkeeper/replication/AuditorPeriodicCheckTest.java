@@ -70,9 +70,7 @@ import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.test.TestStatsProvider;
 import org.apache.bookkeeper.test.TestStatsProvider.TestOpStatsLogger;
 import org.apache.bookkeeper.test.TestStatsProvider.TestStatsLogger;
-import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
 import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.ZooKeeper;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -408,7 +406,7 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
         long checkAllLedgersCTime = -1;
         long initialDelayInMsecs = -1;
         long nextExpectedCheckAllLedgersExecutionTime = -1;
-        long bufferTimeInMsecs = 12000l;
+        long bufferTimeInMsecs = 12000L;
         if (timeSinceLastExecutedInSecs == -1) {
             /*
              * if we are setting checkAllLedgersCTime to -1, it means that
@@ -418,9 +416,9 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
             checkAllLedgersCTime = -1;
             initialDelayInMsecs = 0;
         } else {
-            checkAllLedgersCTime = curTimeBeforeStart - timeSinceLastExecutedInSecs * 1000l;
+            checkAllLedgersCTime = curTimeBeforeStart - timeSinceLastExecutedInSecs * 1000L;
             initialDelayInMsecs = timeSinceLastExecutedInSecs > auditorPeriodicCheckInterval ? 0
-                    : (auditorPeriodicCheckInterval - timeSinceLastExecutedInSecs) * 1000l;
+                    : (auditorPeriodicCheckInterval - timeSinceLastExecutedInSecs) * 1000L;
         }
         /*
          * next checkAllLedgers should happen atleast after

@@ -412,7 +412,7 @@ public class Auditor implements AutoCloseable {
                          + " 'auditorPeriodicBookieCheckInterval' {} seconds", bookieCheckInterval);
                 executor.scheduleAtFixedRate(bookieCheck, 0, bookieCheckInterval, TimeUnit.SECONDS);
             }
-            
+
             long interval = conf.getAuditorPeriodicCheckInterval();
 
             if (interval > 0) {
