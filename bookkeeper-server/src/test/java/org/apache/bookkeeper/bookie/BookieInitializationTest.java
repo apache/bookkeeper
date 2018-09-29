@@ -66,6 +66,7 @@ import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.replication.ReplicationException.CompatibilityException;
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
 import org.apache.bookkeeper.server.conf.BookieConfiguration;
+import org.apache.bookkeeper.server.service.AutoRecoveryService;
 import org.apache.bookkeeper.server.service.BookieService;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
@@ -492,6 +493,22 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
         service.getServer().getBookie().shutdown();
 
         // the bookie service lifecycle component should be shutdown.
+        startFuture.get();
+    }
+
+    @Test
+    public void testAutoRecoveryServiceExceptionHandler() throws Exception {
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setMetadataServiceUri(metadataServiceUri);
+
+        BookieConfiguration bkConf = new BookieConfiguration(conf);
+        AutoRecoveryService service = new AutoRecoveryService(bkConf, NullStatsLogger.INSTANCE);
+        CompletableFuture<Void> startFuture = ComponentStarter.startComponent(service);
+
+        // shutdown the AutoRecovery service
+        service.getAutoRecoveryServer().shutdown();
+
+        // the AutoRecovery lifecycle component should be shutdown.
         startFuture.get();
     }
 
