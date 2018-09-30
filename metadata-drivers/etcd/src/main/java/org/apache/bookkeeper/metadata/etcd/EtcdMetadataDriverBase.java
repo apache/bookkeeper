@@ -25,6 +25,7 @@ import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.common.net.ServiceURI;
 import org.apache.bookkeeper.conf.AbstractConfiguration;
+import org.apache.bookkeeper.meta.AuditorSelector;
 import org.apache.bookkeeper.meta.LayoutManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.exceptions.Code;
@@ -113,6 +114,10 @@ class EtcdMetadataDriverBase implements AutoCloseable {
             }
         }
         return lmFactory;
+    }
+
+    public AuditorSelector getAuditorSelector(String bookieId) {
+        throw new UnsupportedOperationException("Currently Etcd doesn't implement Auditor related metadata");
     }
 
     @Override
