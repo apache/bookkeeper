@@ -27,6 +27,7 @@ import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.bookkeeper.tests.integration.utils.DockerUtils;
 import org.apache.commons.lang.StringUtils;
 import org.testcontainers.containers.GenericContainer;
 
@@ -41,6 +42,23 @@ public class ChaosContainer<SelfT extends ChaosContainer<SelfT>> extends Generic
     protected ChaosContainer(String clusterName, String image) {
         super(image);
         this.clusterName = clusterName;
+    }
+
+    protected void beforeStop() {
+        if (null == containerId) {
+            return;
+        }
+
+        DockerUtils.dumpContainerLogToTarget(
+            getDockerClient(),
+            getContainerName()
+        );
+    }
+
+    @Override
+    public void stop() {
+        beforeStop();
+        super.stop();
     }
 
     public void tailContainerLog() {
