@@ -208,7 +208,7 @@ public class Murmur3 {
      * @param seed   - seed. (default is 0)
      * @return - hashcode (2 longs)
      */
-    public static long[] hash128(byte[] data, int offset, int length, int seed) {
+    public static long[] hash128(byte[] data, int offset, int length, long seed) {
         long h1 = seed;
         long h2 = seed;
         final int nblocks = length >> 4;
