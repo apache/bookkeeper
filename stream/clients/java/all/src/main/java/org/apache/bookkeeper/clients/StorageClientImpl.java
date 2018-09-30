@@ -128,7 +128,11 @@ class StorageClientImpl extends AbstractAutoAsyncCloseable implements StorageCli
 
     @Override
     public void close() {
-        super.close();
+        try {
+            super.close(1, TimeUnit.SECONDS);
+        } catch (Exception e) {
+            log.warn("Encountered exceptions on closing the storage client", e);
+        }
         scheduler.forceShutdown(100, TimeUnit.MILLISECONDS);
     }
 }

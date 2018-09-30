@@ -18,6 +18,7 @@
 
 package org.apache.bookkeeper.common.util;
 
+import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 
 /**
@@ -38,5 +39,9 @@ public interface AutoAsyncCloseable extends AsyncCloseable, AutoCloseable {
         } catch (Exception e) {
             // ignore the exception
         }
+    }
+
+    default void close(long waitTimeout, TimeUnit waitTimeUnit) throws Exception {
+        FutureUtils.result(closeAsync(), waitTimeout, waitTimeUnit);
     }
 }
