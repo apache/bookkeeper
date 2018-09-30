@@ -58,7 +58,11 @@ public class RangeRouter<K> {
      * @return the range to write.
      * @throws IllegalStateException if ranges is empty.
      */
-    public Long getRange(@Nullable K key) {
+    public long getRange(@Nullable K key) {
+        return getRangeProperties(key).getRangeId();
+    }
+
+    public RangeProperties getRangeProperties(@Nullable K key) {
         long routingKey;
         if (null != key) {
             routingKey = keyRouter.getRoutingKey(key);
@@ -79,7 +83,7 @@ public class RangeRouter<K> {
         checkState(null != rs, "No range is available");
 
         Map.Entry<Long, RangeProperties> ceilingEntry = rs.getRanges().floorEntry(routingKey);
-        return ceilingEntry.getValue().getRangeId();
+        return ceilingEntry.getValue();
     }
 
     public HashStreamRanges getRanges() {
