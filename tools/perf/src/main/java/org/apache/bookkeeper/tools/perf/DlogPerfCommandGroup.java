@@ -18,6 +18,7 @@ import org.apache.bookkeeper.tools.common.BKFlags;
 import org.apache.bookkeeper.tools.framework.CliCommandGroup;
 import org.apache.bookkeeper.tools.framework.CliSpec;
 import org.apache.bookkeeper.tools.perf.dlog.ReadCommand;
+import org.apache.bookkeeper.tools.perf.dlog.SegmentReadCommand;
 import org.apache.bookkeeper.tools.perf.dlog.WriteCommand;
 
 /**
@@ -34,6 +35,7 @@ public class DlogPerfCommandGroup extends CliCommandGroup<BKFlags> implements Pe
         .withParent(BKPerf.NAME)
         .addCommand(new WriteCommand())
         .addCommand(new ReadCommand())
+        .addCommand(new SegmentReadCommand())
         .build();
 
     public DlogPerfCommandGroup() {

@@ -111,6 +111,13 @@ public class PerfWriter implements Runnable {
 
         @Parameter(
             names = {
+                "-mlss", "--max-log-segment-size"
+            },
+            description = "Max log segment size")
+        public int maxLogSegmentSize = 64 * 1024 * 1024;
+
+        @Parameter(
+            names = {
                 "-b", "--num-bytes"
             },
             description = "Number of bytes to write in total. If 0, it will keep writing")
@@ -387,7 +394,8 @@ public class PerfWriter implements Runnable {
             .setOutputBufferSize(512 * 1024)
             .setPeriodicFlushFrequencyMilliSeconds(2)
             .setWriteLockEnabled(false)
-            .setMaxLogSegmentBytes(512 * 1024 * 1024) // 512MB
+            .setMaxLogSegmentBytes(flags.maxLogSegmentSize)
+            .setLogSegmentRollingIntervalMinutes(1)
             .setExplicitTruncationByApplication(true);
     }
 

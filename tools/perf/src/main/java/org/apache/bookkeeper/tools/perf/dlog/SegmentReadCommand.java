@@ -23,15 +23,15 @@ import org.apache.bookkeeper.tools.perf.dlog.PerfReaderBase.Flags;
 import org.apache.commons.configuration.CompositeConfiguration;
 
 /**
- * Command to read log records to distributedlog streams.
+ * Command to read log records to bookkeeper segments.
  */
 @Slf4j
-public class ReadCommand extends BKCommand<Flags> {
+public class SegmentReadCommand extends BKCommand<Flags> {
 
-    private static final String NAME = "read";
-    private static final String DESC = "Read log records from distributedlog streams";
+    private static final String NAME = "segread";
+    private static final String DESC = "Read log records from distributedlog streams by breaking it down to segments";
 
-    public ReadCommand() {
+    public SegmentReadCommand() {
         super(CliSpec.<Flags>newBuilder()
             .withName(NAME)
             .withDescription(DESC)
@@ -43,14 +43,12 @@ public class ReadCommand extends BKCommand<Flags> {
     protected boolean apply(ServiceURI serviceURI,
                             CompositeConfiguration conf,
                             BKFlags globalFlags, Flags cmdFlags) {
-
-
         if (serviceURI == null) {
             log.warn("No service uri is provided. Use default 'distributedlog://localhost/distributedlog'.");
             serviceURI = ServiceURI.create("distributedlog://localhost/distributedlog");
         }
 
-        PerfReader reader = new PerfReader(serviceURI, cmdFlags);
+        PerfSegmentReader reader = new PerfSegmentReader(serviceURI, cmdFlags);
         reader.run();
         return true;
     }
