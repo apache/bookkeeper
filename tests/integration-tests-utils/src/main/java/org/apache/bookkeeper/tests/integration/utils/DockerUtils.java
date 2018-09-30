@@ -21,6 +21,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.async.ResultCallback;
+import com.github.dockerjava.api.command.InspectContainerResponse;
 import com.github.dockerjava.api.command.InspectExecResponse;
 import com.github.dockerjava.api.model.ContainerNetwork;
 import com.github.dockerjava.api.model.Frame;
@@ -30,6 +31,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Set;
@@ -38,6 +40,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import java.util.zip.GZIPOutputStream;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 
@@ -99,6 +102,29 @@ public class DockerUtils {
         } catch (InterruptedException ie) {
             Thread.currentThread().interrupt();
             LOG.info("Interrupted dumping log from container {}", containerId, ie);
+        }
+    }
+
+    public static void dumpContainerDirToTargetCompressed(DockerClient dockerClient, String containerId,
+                                                          String path) {
+        final int readBlockSize = 10000;
+        InspectContainerResponse inspectContainerResponse = dockerClient.inspectContainerCmd(containerId).exec();
+        // docker api returns names prefixed with "/", it's part of it's legacy design,
+        // this removes it to be consistent with what docker ps shows.
+        final String containerName = inspectContainerResponse.getName().replace("/", "");
+        File output = new File(getTargetDirectory(containerName),
+                               (path.replace("/", "-") + ".tar.gz")
+                                   .replaceAll("^-", ""));
+        try (InputStream dockerStream = dockerClient.copyArchiveFromContainerCmd(containerId, path).exec();
+             OutputStream os = new GZIPOutputStream(new FileOutputStream(output))) {
+            byte[] block = new byte[readBlockSize];
+            int read = dockerStream.read(block, 0, readBlockSize);
+            while (read > -1) {
+                os.write(block, 0, read);
+                read = dockerStream.read(block, 0, readBlockSize);
+            }
+        } catch (RuntimeException | IOException e) {
+            LOG.error("Error reading dir from container {}", containerName, e);
         }
     }
 
