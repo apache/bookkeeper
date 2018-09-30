@@ -111,6 +111,18 @@ public class BookieContainer<SelfT extends BookieContainer<SelfT>> extends Chaos
     }
 
     @Override
+    protected void beforeStop() {
+        super.beforeStop();
+        if (null != containerId) {
+            DockerUtils.dumpContainerDirToTargetCompressed(
+                getDockerClient(),
+                getContainerName(),
+                "/opt/bookkeeper/logs"
+            );
+        }
+    }
+
+    @Override
     public void stop() {
         super.stop();
         log.info("Stopped bookie {} at cluster {}", hostname, clusterName);
