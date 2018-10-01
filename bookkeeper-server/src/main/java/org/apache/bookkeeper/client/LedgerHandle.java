@@ -1080,7 +1080,7 @@ public class LedgerHandle implements WriteHandle {
             // synchronized on this to ensure that
             // the ledger isn't closed between checking and
             // updating lastAddPushed
-            if (isHandleWrittable()) {
+            if (!isHandleWrittable()) {
                 wasClosed = true;
             }
         }
