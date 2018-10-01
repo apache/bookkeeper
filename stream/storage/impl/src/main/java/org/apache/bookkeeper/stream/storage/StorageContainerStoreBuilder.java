@@ -17,6 +17,8 @@ package org.apache.bookkeeper.stream.storage;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.net.URI;
+import java.util.function.Supplier;
+import org.apache.bookkeeper.clients.impl.internal.api.StorageServerClientManager;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.stream.protocol.util.StorageContainerPlacementPolicy;
@@ -46,6 +48,7 @@ public final class StorageContainerStoreBuilder {
         StorageContainerPlacementPolicyImpl.of(1024);
     private MVCCStoreFactory mvccStoreFactory = null;
     private URI defaultBackendUri = null;
+    private Supplier<StorageServerClientManager> clientManagerSupplier;
 
     private StorageContainerStoreBuilder() {
     }
@@ -131,12 +134,25 @@ public final class StorageContainerStoreBuilder {
         return this;
     }
 
+    /**
+     * Supplier to provide client manager for proxying requests.
+     *
+     * @param clientManagerSupplier client manager supplier
+     * @return storage container store builder
+     */
+    public StorageContainerStoreBuilder withStorageServerClientManager(
+        Supplier<StorageServerClientManager> clientManagerSupplier) {
+        this.clientManagerSupplier = clientManagerSupplier;
+        return this;
+    }
+
     public StorageContainerStore build() {
         checkNotNull(scmFactory, "StorageContainerManagerFactory is not provided");
         checkNotNull(storeConf, "StorageConfiguration is not provided");
         checkNotNull(mvccStoreFactory, "MVCCStoreFactory is not provided");
         checkNotNull(defaultBackendUri, "Default backend uri is not provided");
         checkNotNull(placementPolicyFactory, "Storage Container Placement Policy Factory is not provided");
+        checkNotNull(clientManagerSupplier, "Storage server client manager is not provided");
 
         RangeStoreServiceFactoryImpl serviceFactory = new RangeStoreServiceFactoryImpl(
             storeConf,
@@ -152,6 +168,7 @@ public final class StorageContainerStoreBuilder {
             storeConf,
             scmFactory,
             containerServiceFactory,
+            clientManagerSupplier.get(),
             statsLogger);
     }
 

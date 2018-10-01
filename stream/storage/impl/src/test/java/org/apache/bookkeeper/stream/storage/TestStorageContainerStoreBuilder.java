@@ -18,6 +18,7 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
 import java.net.URI;
+import org.apache.bookkeeper.clients.impl.internal.api.StorageServerClientManager;
 import org.apache.bookkeeper.stream.storage.api.StorageContainerStore;
 import org.apache.bookkeeper.stream.storage.api.sc.StorageContainerManagerFactory;
 import org.apache.bookkeeper.stream.storage.conf.StorageConfiguration;
@@ -47,6 +48,7 @@ public class TestStorageContainerStoreBuilder {
             .withStorageResources(StorageResources.create())
             .withRangeStoreFactory(storeFactory)
             .withDefaultBackendUri(uri)
+            .withStorageServerClientManager(() -> mock(StorageServerClientManager.class))
             .build();
     }
 
@@ -57,6 +59,7 @@ public class TestStorageContainerStoreBuilder {
             .withStorageContainerManagerFactory(mock(StorageContainerManagerFactory.class))
             .withStorageResources(null)
             .withRangeStoreFactory(storeFactory)
+            .withStorageServerClientManager(() -> mock(StorageServerClientManager.class))
             .withDefaultBackendUri(uri)
             .build();
     }
@@ -68,6 +71,7 @@ public class TestStorageContainerStoreBuilder {
             .withStorageContainerManagerFactory(null)
             .withStorageResources(StorageResources.create())
             .withRangeStoreFactory(storeFactory)
+            .withStorageServerClientManager(() -> mock(StorageServerClientManager.class))
             .withDefaultBackendUri(uri)
             .build();
     }
@@ -79,6 +83,7 @@ public class TestStorageContainerStoreBuilder {
             .withStorageContainerManagerFactory(mock(StorageContainerManagerFactory.class))
             .withStorageResources(StorageResources.create())
             .withRangeStoreFactory(null)
+            .withStorageServerClientManager(() -> mock(StorageServerClientManager.class))
             .withDefaultBackendUri(uri)
             .build();
     }
@@ -90,7 +95,20 @@ public class TestStorageContainerStoreBuilder {
             .withStorageContainerManagerFactory(mock(StorageContainerManagerFactory.class))
             .withStorageResources(StorageResources.create())
             .withRangeStoreFactory(storeFactory)
+            .withStorageServerClientManager(() -> mock(StorageServerClientManager.class))
             .withDefaultBackendUri(null)
+            .build();
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testBuildStorageServerClientManager() {
+        StorageContainerStoreBuilder.newBuilder()
+            .withStorageConfiguration(mock(StorageConfiguration.class))
+            .withStorageContainerManagerFactory(mock(StorageContainerManagerFactory.class))
+            .withStorageResources(StorageResources.create())
+            .withRangeStoreFactory(storeFactory)
+            .withStorageServerClientManager(null)
+            .withDefaultBackendUri(uri)
             .build();
     }
 
@@ -101,6 +119,7 @@ public class TestStorageContainerStoreBuilder {
             .withStorageContainerManagerFactory(mock(StorageContainerManagerFactory.class))
             .withStorageResources(StorageResources.create())
             .withRangeStoreFactory(storeFactory)
+            .withStorageServerClientManager(() -> mock(StorageServerClientManager.class))
             .withDefaultBackendUri(uri)
             .build();
         assertTrue(storageContainerStore instanceof StorageContainerStoreImpl);

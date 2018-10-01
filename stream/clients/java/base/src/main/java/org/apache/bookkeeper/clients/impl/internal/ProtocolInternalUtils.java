@@ -49,7 +49,7 @@ public final class ProtocolInternalUtils {
     private ProtocolInternalUtils() {
     }
 
-    static HashStreamRanges createActiveRanges(GetActiveRangesResponse response) {
+    public static HashStreamRanges createActiveRanges(GetActiveRangesResponse response) {
         TreeMap<Long, RangeProperties> ranges = Maps.newTreeMap();
         long lastEndKey = Long.MIN_VALUE;
         for (RelatedRanges rr : response.getRangesList()) {
