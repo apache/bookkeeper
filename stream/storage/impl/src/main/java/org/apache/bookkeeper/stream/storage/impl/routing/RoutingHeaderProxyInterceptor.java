@@ -17,11 +17,11 @@
  * under the License.
  */
 
-package org.apache.bookkeeper.clients.impl.kv.interceptors;
+package org.apache.bookkeeper.stream.storage.impl.routing;
 
-import static org.apache.bookkeeper.stream.protocol.ProtocolConstants.RANGE_ID_KEY;
-import static org.apache.bookkeeper.stream.protocol.ProtocolConstants.ROUTING_KEY;
-import static org.apache.bookkeeper.stream.protocol.ProtocolConstants.STREAM_ID_KEY;
+import static org.apache.bookkeeper.stream.protocol.ProtocolConstants.RID_METADATA_KEY;
+import static org.apache.bookkeeper.stream.protocol.ProtocolConstants.RK_METADATA_KEY;
+import static org.apache.bookkeeper.stream.protocol.ProtocolConstants.SID_METADATA_KEY;
 
 import com.google.protobuf.CodedOutputStream;
 import com.google.protobuf.MessageLite;
@@ -34,6 +34,9 @@ import io.grpc.ClientInterceptor;
 import io.grpc.ForwardingClientCall.SimpleForwardingClientCall;
 import io.grpc.Metadata;
 import io.grpc.MethodDescriptor;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufInputStream;
+import io.netty.buffer.PooledByteBufAllocator;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -41,8 +44,6 @@ import java.util.HashMap;
 import java.util.Map;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.bookkeeper.common.grpc.netty.IdentityBinaryMarshaller;
-import org.apache.bookkeeper.common.grpc.netty.LongBinaryMarshaller;
 import org.apache.bookkeeper.stream.proto.kv.rpc.DeleteRangeRequest;
 import org.apache.bookkeeper.stream.proto.kv.rpc.IncrementRequest;
 import org.apache.bookkeeper.stream.proto.kv.rpc.PutRequest;
@@ -50,25 +51,13 @@ import org.apache.bookkeeper.stream.proto.kv.rpc.RangeRequest;
 import org.apache.bookkeeper.stream.proto.kv.rpc.RoutingHeader;
 import org.apache.bookkeeper.stream.proto.kv.rpc.TableServiceGrpc;
 import org.apache.bookkeeper.stream.proto.kv.rpc.TxnRequest;
+import org.apache.commons.codec.binary.Hex;
 
 /**
  * A client interceptor that intercepting kv rpcs to attach routing information.
  */
 @Slf4j
-public class RoutingHeaderClientInterceptor implements ClientInterceptor {
-
-    static final Metadata.Key<Long> RID_METADATA_KEY = Metadata.Key.of(
-        RANGE_ID_KEY,
-        LongBinaryMarshaller.of()
-    );
-    static final Metadata.Key<Long> SID_METADATA_KEY = Metadata.Key.of(
-        STREAM_ID_KEY,
-        LongBinaryMarshaller.of()
-    );
-    static final Metadata.Key<byte[]> RK_METADATA_KEY = Metadata.Key.of(
-        ROUTING_KEY,
-        IdentityBinaryMarshaller.of()
-    );
+public class RoutingHeaderProxyInterceptor implements ClientInterceptor {
 
     /**
      * Table request mutator that mutates a table service rpc request to attach
@@ -175,53 +164,75 @@ public class RoutingHeaderClientInterceptor implements ClientInterceptor {
                                                                CallOptions callOptions,
                                                                Channel next) {
         if (log.isTraceEnabled()) {
-            log.trace("Intercepting method {}", method.getFullMethodName());
+            log.trace("Intercepting method {} : req marshaller = {}, resp marshaller = {}",
+                method.getFullMethodName(),
+                method.getRequestMarshaller(),
+                method.getResponseMarshaller());
         }
         InterceptorDescriptor<?> descriptor = kvRpcMethods.get(method.getFullMethodName());
-        if (null != descriptor) {
-            return new SimpleForwardingClientCall<ReqT, RespT>(next.newCall(method, callOptions)) {
+        return new SimpleForwardingClientCall<ReqT, RespT>(next.newCall(method, callOptions)) {
 
-                private Long rid = null;
-                private Long sid = null;
-                private byte[] rk = null;
+            private Long rid = null;
+            private Long sid = null;
+            private byte[] rk = null;
 
-                @Override
-                public void start(Listener<RespT> responseListener, Metadata headers) {
-                    // capture routing information from headers
-                    sid = headers.get(SID_METADATA_KEY);
-                    rid = headers.get(RID_METADATA_KEY);
-                    rk  = headers.get(RK_METADATA_KEY);
-                    if (log.isTraceEnabled()) {
-                        log.trace("Intercepting request with header : sid = {}, rid = {}, rk = {}",
-                            sid, rid, rk);
-                    }
-
-                    delegate().start(responseListener, headers);
+            @Override
+            public void start(Listener<RespT> responseListener, Metadata headers) {
+                // capture routing information from headers
+                sid = headers.get(SID_METADATA_KEY);
+                rid = headers.get(RID_METADATA_KEY);
+                rk  = headers.get(RK_METADATA_KEY);
+                if (log.isTraceEnabled()) {
+                    log.trace("Intercepting request with header : sid = {}, rid = {}, rk = {}",
+                        sid, rid, rk);
                 }
 
-                @Override
-                public void sendMessage(ReqT message) {
-                    ReqT interceptedMessage;
-                    if (null == rid || null == sid || null == rk) {
-                        // we don't have enough information to form the new routing header
-                        // so do nothing
-                        interceptedMessage = message;
-                    } else {
-                        interceptedMessage = interceptMessage(
-                            method,
-                            descriptor,
-                            message,
-                            sid,
-                            rid,
-                            rk
-                        );
-                    }
-                    delegate().sendMessage(interceptedMessage);
+                delegate().start(responseListener, headers);
+            }
+
+            @Override
+            public void sendMessage(ReqT message) {
+                ReqT interceptedMessage;
+                if (null == rid || null == sid || null == rk || null == descriptor) {
+                    // we don't have enough information to form the new routing header
+                    // we simply copy the bytes and generate a new message to forward
+                    // the request payload
+                    interceptedMessage = interceptMessage(method, message);
+                } else {
+                    interceptedMessage = interceptMessage(
+                        method,
+                        descriptor,
+                        message,
+                        sid,
+                        rid,
+                        rk
+                    );
                 }
-            };
-        } else {
-            return next.newCall(method, callOptions);
+                delegate().sendMessage(interceptedMessage);
+            }
+        };
+    }
+
+    private <ReqT, RespT> ReqT interceptMessage(MethodDescriptor<ReqT, RespT> method, ReqT message) {
+        InputStream is = method.getRequestMarshaller().stream(message);
+        int bytes;
+        try {
+            bytes = is.available();
+        } catch (IOException e) {
+            log.warn("Encountered exceptions in getting available bytes of message", e);
+            throw new RuntimeException("Encountered exception in intercepting message", e);
         }
+        ByteBuf buffer = PooledByteBufAllocator.DEFAULT.buffer();
+        try {
+            buffer.writeBytes(is, bytes);
+        } catch (IOException e) {
+            log.warn("Encountered exceptions in transferring bytes to the buffer", e);
+            buffer.release();
+            throw new RuntimeException("Encountered exceptions in transferring bytes to the buffer", e);
+        }
+        return method
+            .getRequestMarshaller()
+            .parse(new ByteBufInputStream(buffer, true));
     }
 
     private <ReqT, TableReqT extends MessageLite> ReqT interceptMessage(
@@ -237,7 +248,9 @@ public class RoutingHeaderClientInterceptor implements ClientInterceptor {
         } else {
             try {
                 return interceptTableRequest(method, descriptor, message, sid, rid, rk);
-            } catch (IOException ioe) {
+            } catch (Throwable t) {
+                log.error("Failed to intercept table request (sid = {}, rid = {}, rk = {}) : ",
+                    sid, rid, Hex.encodeHexString(rk), t);
                 return message;
             }
         }
