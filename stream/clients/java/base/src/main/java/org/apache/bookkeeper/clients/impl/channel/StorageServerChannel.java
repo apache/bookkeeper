@@ -58,6 +58,7 @@ public class StorageServerChannel implements AutoCloseable {
 
     private final Optional<String> token;
     private final Channel channel;
+    private final StorageServerChannel interceptedServerChannel;
 
     @GuardedBy("this")
     private RootRangeServiceFutureStub rootRangeService;
@@ -87,6 +88,11 @@ public class StorageServerChannel implements AutoCloseable {
             resolvedEndpoint.getPort())
             .usePlaintext(usePlainText)
             .build();
+        this.interceptedServerChannel = null;
+    }
+
+    public Channel getGrpcChannel() {
+        return channel;
     }
 
     @VisibleForTesting
@@ -97,8 +103,15 @@ public class StorageServerChannel implements AutoCloseable {
 
     protected StorageServerChannel(Channel channel,
                                    Optional<String> token) {
+        this(channel, token, null);
+    }
+
+    private StorageServerChannel(Channel channel,
+                                 Optional<String> token,
+                                 StorageServerChannel interceptedServerChannel) {
         this.token = token;
         this.channel = channel;
+        this.interceptedServerChannel = interceptedServerChannel;
     }
 
     public synchronized RootRangeServiceFutureStub getRootRangeService() {
@@ -153,13 +166,18 @@ public class StorageServerChannel implements AutoCloseable {
             interceptors);
         return new StorageServerChannel(
             interceptedChannel,
-            this.token);
+            this.token,
+            this);
     }
 
     @Override
     public void close() {
-        if (channel instanceof ManagedChannel) {
-            ((ManagedChannel) channel).shutdown();
+        if (interceptedServerChannel != null) {
+            interceptedServerChannel.close();
+        } else {
+            if (channel instanceof ManagedChannel) {
+                ((ManagedChannel) channel).shutdown();
+            }
         }
     }
 }

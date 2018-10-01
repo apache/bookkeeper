@@ -19,6 +19,9 @@
 package org.apache.bookkeeper.clients.impl.channel;
 
 import static org.junit.Assert.assertNotNull;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 import io.grpc.ManagedChannel;
 import io.grpc.Server;
@@ -66,6 +69,15 @@ public class TestStorageServerChannel {
         assertNotNull(channel.getStorageContainerService());
         assertNotNull(channel.getTableService());
         channel.close();
+    }
+
+    @Test
+    public void testIntercept() {
+        ManagedChannel channel = mock(ManagedChannel.class);
+        StorageServerChannel ssChannel = new StorageServerChannel(channel, Optional.empty());
+        StorageServerChannel interceptedChannel = ssChannel.intercept(1L);
+        interceptedChannel.close();
+        verify(channel, times(1)).shutdown();
     }
 
 }
