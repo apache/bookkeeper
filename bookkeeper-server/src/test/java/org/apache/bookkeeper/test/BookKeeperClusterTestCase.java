@@ -727,8 +727,7 @@ public abstract class BookKeeperClusterTestCase {
             AutoRecoveryMain autoRecoveryProcess = new AutoRecoveryMain(conf);
             autoRecoveryProcess.start();
             autoRecoveryProcesses.put(bserver, autoRecoveryProcess);
-            LOG.debug("Starting Auditor Recovery for the bookie:"
-                    + bserver.getLocalAddress());
+            LOG.info("Starting Auditor Recovery for the bookie: {}", bserver.getLocalAddress());
         }
     }
 
@@ -737,8 +736,7 @@ public abstract class BookKeeperClusterTestCase {
                 .remove(toRemove);
         if (null != autoRecoveryMain && isAutoRecoveryEnabled()) {
             autoRecoveryMain.shutdown();
-            LOG.debug("Shutdown auto recovery for bookieserver:"
-                    + toRemove.getLocalAddress());
+            LOG.info("Shutdown auto recovery for bookieserver: {}", toRemove.getLocalAddress());
         }
     }
 

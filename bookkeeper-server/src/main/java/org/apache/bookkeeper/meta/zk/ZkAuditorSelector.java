@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
@@ -269,36 +270,47 @@ class ZkAuditorSelector implements AuditorSelector {
     /**
      * Run cleanup operations for the auditor elector.
      */
-    private void submitShutdownTask(SelectorListener listener) {
-        executor.submit(() -> {
-            if (!running.compareAndSet(true, false)) {
-                return;
-            }
-            log.info("Shutting down AuditorElector");
-            if (null != listener) {
-                listener.onLeaderExpired();
-            }
-            if (myVote != null) {
-                try {
-                    zkc.delete(myVote, -1);
-                } catch (InterruptedException ie) {
-                    Thread.currentThread().interrupt();
-                    log.warn("InterruptedException while deleting myVote: {}", myVote,
-                             ie);
-                } catch (KeeperException ke) {
-                    log.error("Exception while deleting myVote: {}", myVote, ke);
-                }
-            }
+    private Future<?> submitShutdownTask(SelectorListener listener) {
+        return executor.submit(() -> {
+            doShutdown(listener);
         });
+    }
+
+    private void doShutdown(SelectorListener listener) {
+        if (!running.compareAndSet(true, false)) {
+            return;
+        }
+        log.info("Shutting down AuditorElector");
+        if (null != listener) {
+            listener.onLeaderExpired();
+        }
+        if (myVote != null) {
+            try {
+                zkc.delete(myVote, -1);
+            } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
+                log.warn("InterruptedException while deleting myVote: {}", myVote,
+                    ie);
+            } catch (KeeperException.NoNodeException nee) {
+                // ignore no node exception
+            } catch (KeeperException ke) {
+                log.error("Exception while deleting myVote: {}", myVote, ke);
+            }
+        }
     }
 
     @Override
     public void close() {
-        if (executor.isShutdown()) {
-            return;
+        try {
+            executor.shutdown();
+            // ensure my vote is deleted
+            doShutdown(null);
+            if (!executor.awaitTermination(1, TimeUnit.MINUTES)) {
+                executor.shutdownNow();
+            }
+        } catch (InterruptedException e) {
+            log.warn("Interrupted at closing zookeeper auditor selector", e);
         }
-        submitShutdownTask(null);
-        executor.shutdown();
     }
 
     /**
