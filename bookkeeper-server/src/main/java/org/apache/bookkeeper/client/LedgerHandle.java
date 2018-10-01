@@ -471,7 +471,7 @@ public class LedgerHandle implements WriteHandle {
         return getLedgerMetadata().isClosed();
     }
 
-    boolean isHandleWrittable() {
+    boolean isHandleWritable() {
         return !getLedgerMetadata().isClosed() && handleState == HandleState.OPEN;
     }
 
@@ -1080,7 +1080,7 @@ public class LedgerHandle implements WriteHandle {
             // synchronized on this to ensure that
             // the ledger isn't closed between checking and
             // updating lastAddPushed
-            if (!isHandleWrittable()) {
+            if (!isHandleWritable()) {
                 wasClosed = true;
             }
         }
@@ -1239,7 +1239,7 @@ public class LedgerHandle implements WriteHandle {
             // synchronized on this to ensure that
             // the ledger isn't closed between checking and
             // updating lastAddPushed
-            if (isHandleWrittable()) {
+            if (isHandleWritable()) {
                 long entryId = ++lastAddPushed;
                 long currentLedgerLength = addToLength(op.payload.readableBytes());
                 op.setEntryId(entryId);
