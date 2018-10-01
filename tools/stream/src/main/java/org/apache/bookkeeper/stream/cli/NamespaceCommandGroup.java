@@ -18,6 +18,8 @@
 package org.apache.bookkeeper.stream.cli;
 
 import org.apache.bookkeeper.stream.cli.commands.namespace.CreateNamespaceCommand;
+import org.apache.bookkeeper.stream.cli.commands.namespace.DeleteNamespaceCommand;
+import org.apache.bookkeeper.stream.cli.commands.namespace.GetNamespaceCommand;
 import org.apache.bookkeeper.tools.common.BKFlags;
 import org.apache.bookkeeper.tools.framework.CliCommandGroup;
 import org.apache.bookkeeper.tools.framework.CliSpec;
@@ -35,6 +37,8 @@ public class NamespaceCommandGroup extends CliCommandGroup<BKFlags> {
         .withDescription(DESC)
         .withParent("bkctl")
         .addCommand(new CreateNamespaceCommand())
+        .addCommand(new GetNamespaceCommand())
+        .addCommand(new DeleteNamespaceCommand())
         .build();
 
     public NamespaceCommandGroup() {
