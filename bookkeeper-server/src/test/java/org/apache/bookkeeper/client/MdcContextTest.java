@@ -197,7 +197,7 @@ public class MdcContextTest extends BookKeeperClusterTestCase {
         assertLogWithMdc("ledger_add_entry", "Error writing entry:0 to ledger:0");
         assertLogWithMdc("ledger_add_entry", "Add for failed on bookie");
         assertLogWithMdc("ledger_add_entry", "Failed to find 1 bookies");
-        assertLogWithMdc("ledger_add_entry", "Could not get additional bookie to remake ensemble, closing ledger: 0");
+        assertLogWithMdc("ledger_add_entry", "Closing ledger 0 due to NotEnoughBookiesException");
     }
 
     @Test
