@@ -16,38 +16,64 @@ from __future__ import absolute_import
 
 from bookkeeper.common.constants import __DEFAULT_NS_CONF__
 from bookkeeper.common.constants import __ROOT_RANGE_METADATA__
+from bookkeeper.common.exceptions import from_root_range_rpc_response
+from bookkeeper.common.method import wrap_method
+from bookkeeper.common.retry import Retry
+from bookkeeper.common.timeout import ExponentialTimeout
 from bookkeeper.proto import storage_pb2
 
 
 class Namespaces(object):
 
-    def __init__(self, client):
-        self.client = client
+    def __init__(self, root_range_service):
+        self.__root_range_service__ = root_range_service
+        self.__default_retry__ = Retry(deadline=60)
+        self.__default_timeout__ = ExponentialTimeout()
+        self.__create_with_retries__ =\
+            wrap_method(self.__create_ns__, self.__default_retry__)
+        self.__get_with_retries__ =\
+            wrap_method(self.__get_ns__, self.__default_retry__)
+        self.__delete_with_retries__ =\
+            wrap_method(self.__delete_ns__, self.__default_retry__)
 
     def create(self, namespace, namespace_config=__DEFAULT_NS_CONF__):
+        return self.__create_with_retries__(namespace, namespace_config)
+
+    def __create_ns__(self, namespace, namespace_config):
         create_ns_req = storage_pb2.CreateNamespaceRequest(
             name=namespace,
             ns_conf=namespace_config
         )
-        return self.client.root_range.CreateNamespace(
+        create_ns_resp = self.__root_range_service__.CreateNamespace(
             request=create_ns_req,
             metadata=__ROOT_RANGE_METADATA__
         )
+        create_ns_resp = from_root_range_rpc_response(create_ns_resp)
+        return create_ns_resp.ns_props
 
     def get(self, namespace):
+        return self.__get_with_retries__(namespace)
+
+    def __get_ns__(self, namespace):
         get_ns_req = storage_pb2.GetNamespaceRequest(
             name=namespace
         )
-        return self.client.root_range.GetNamespace(
+        get_ns_resp = self.__root_range_service__.GetNamespace(
             request=get_ns_req,
             metadata=__ROOT_RANGE_METADATA__
         )
+        get_ns_resp = from_root_range_rpc_response(get_ns_resp)
+        return get_ns_resp.ns_props
 
     def delete(self, namespace):
+        return self.__delete_with_retries__(namespace)
+
+    def __delete_ns__(self, namespace):
         del_ns_req = storage_pb2.DeleteNamespaceRequest(
             name=namespace
         )
-        return self.client.root_range.DeleteNamespace(
+        del_ns_resp = self.__root_range_service__.DeleteNamespace(
             request=del_ns_req,
             metadata=__ROOT_RANGE_METADATA__
         )
+        from_root_range_rpc_response(del_ns_resp)
