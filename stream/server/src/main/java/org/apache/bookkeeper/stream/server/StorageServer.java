@@ -25,6 +25,9 @@ import java.net.UnknownHostException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.bookkeeper.clients.config.StorageClientSettings;
+import org.apache.bookkeeper.clients.impl.channel.StorageServerChannel;
+import org.apache.bookkeeper.clients.impl.internal.StorageServerClientManagerImpl;
 import org.apache.bookkeeper.common.component.ComponentStarter;
 import org.apache.bookkeeper.common.component.LifecycleComponent;
 import org.apache.bookkeeper.common.component.LifecycleComponentStack;
@@ -54,6 +57,7 @@ import org.apache.bookkeeper.stream.storage.conf.StorageConfiguration;
 import org.apache.bookkeeper.stream.storage.impl.cluster.ClusterControllerImpl;
 import org.apache.bookkeeper.stream.storage.impl.cluster.ZkClusterControllerLeaderSelector;
 import org.apache.bookkeeper.stream.storage.impl.cluster.ZkClusterMetadataStore;
+import org.apache.bookkeeper.stream.storage.impl.routing.RoutingHeaderProxyInterceptor;
 import org.apache.bookkeeper.stream.storage.impl.sc.DefaultStorageContainerController;
 import org.apache.bookkeeper.stream.storage.impl.sc.StorageContainerPlacementPolicyImpl;
 import org.apache.bookkeeper.stream.storage.impl.sc.ZkStorageContainerManager;
@@ -249,6 +253,10 @@ public class StorageServer {
             dlConf,
             rootStatsLogger.scope("dlog"));
 
+        // client settings for the proxy channels
+        StorageClientSettings proxyClientSettings = StorageClientSettings.newBuilder()
+            .serviceUri("bk://localhost:" + grpcPort)
+            .build();
         // Create range (stream) store
         StorageContainerStoreBuilder storageContainerStoreBuilder = StorageContainerStoreBuilder.newBuilder()
             .withStatsLogger(rootStatsLogger.scope("storage"))
@@ -286,7 +294,15 @@ public class StorageServer {
                     () -> new DLCheckpointStore(dlNamespaceProvider.get()),
                     storageConf.getRangeStoreDirs(),
                     storageResources,
-                    storageConf.getServeReadOnlyTables()));
+                    storageConf.getServeReadOnlyTables()))
+            // with client manager for proxying grpc requests
+            .withStorageServerClientManager(() -> new StorageServerClientManagerImpl(
+                proxyClientSettings,
+                storageResources.scheduler(),
+                StorageServerChannel.factory(proxyClientSettings)
+                    // intercept the channel to attach routing header
+                    .andThen(channel -> channel.intercept(new RoutingHeaderProxyInterceptor()))
+            ));
         StorageService storageService = new StorageService(
             storageConf, storageContainerStoreBuilder, rootStatsLogger.scope("storage"));
 

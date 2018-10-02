@@ -58,7 +58,12 @@ public class StorageContainerRegistryImpl implements StorageContainerRegistry {
 
     @Override
     public StorageContainer getStorageContainer(long storageContainerId) {
-        return containers.getOrDefault(storageContainerId, StorageContainer404.of());
+        return getStorageContainer(storageContainerId, StorageContainer404.of());
+    }
+
+    @Override
+    public StorageContainer getStorageContainer(long storageContainerId, StorageContainer defaultContainer) {
+        return containers.getOrDefault(storageContainerId, defaultContainer);
     }
 
     @Override

@@ -17,9 +17,12 @@
  * under the License.
  */
 
-package org.apache.bookkeeper.clients.impl.kv.interceptors;
+package org.apache.bookkeeper.stream.storage.impl.routing;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.apache.bookkeeper.stream.protocol.ProtocolConstants.RID_METADATA_KEY;
+import static org.apache.bookkeeper.stream.protocol.ProtocolConstants.RK_METADATA_KEY;
+import static org.apache.bookkeeper.stream.protocol.ProtocolConstants.SID_METADATA_KEY;
 import static org.junit.Assert.assertEquals;
 
 import com.google.protobuf.ByteString;
@@ -54,10 +57,10 @@ import org.apache.bookkeeper.stream.proto.storage.StatusCode;
 import org.junit.Test;
 
 /**
- * Unit test {@link RoutingHeaderClientInterceptor}.
+ * Unit test {@link RoutingHeaderProxyInterceptor}.
  */
 @Slf4j
-public class RoutingHeaderClientInterceptorTest extends GrpcClientTestBase {
+public class RoutingHeaderProxyInterceptorTest extends GrpcClientTestBase {
 
     private final long streamId = 1234L;
     private final long rangeId = 2345L;
@@ -136,11 +139,12 @@ public class RoutingHeaderClientInterceptorTest extends GrpcClientTestBase {
         };
         serviceRegistry.addService(tableService.bindService());
 
+
         this.channel = new StorageServerChannel(
             InProcessChannelBuilder.forName(serverName).directExecutor().build(),
             Optional.empty()
         ).intercept(
-            new RoutingHeaderClientInterceptor(),
+            new RoutingHeaderProxyInterceptor(),
             new ClientInterceptor() {
                 @Override
                 public <ReqT, RespT> ClientCall<ReqT, RespT> interceptCall(MethodDescriptor<ReqT, RespT> method,
@@ -152,15 +156,15 @@ public class RoutingHeaderClientInterceptorTest extends GrpcClientTestBase {
                             log.info("Intercept the request with routing information : sid = {}, rid = {}, rk = {}",
                                 streamId, rangeId, new String(routingKey, UTF_8));
                             headers.put(
-                                RoutingHeaderClientInterceptor.RID_METADATA_KEY,
+                                RID_METADATA_KEY,
                                 rangeId
                             );
                             headers.put(
-                                RoutingHeaderClientInterceptor.SID_METADATA_KEY,
+                                SID_METADATA_KEY,
                                 streamId
                             );
                             headers.put(
-                                RoutingHeaderClientInterceptor.RK_METADATA_KEY,
+                                RK_METADATA_KEY,
                                 routingKey
                             );
                             delegate().start(responseListener, headers);
@@ -173,6 +177,7 @@ public class RoutingHeaderClientInterceptorTest extends GrpcClientTestBase {
 
     @Override
     protected void doTeardown() {
+        channel.close();
     }
 
     @Test

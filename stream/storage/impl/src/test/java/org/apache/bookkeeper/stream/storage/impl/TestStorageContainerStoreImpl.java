@@ -85,6 +85,7 @@ import org.apache.bookkeeper.stream.proto.storage.MetaRangeServiceGrpc.MetaRange
 import org.apache.bookkeeper.stream.proto.storage.RootRangeServiceGrpc;
 import org.apache.bookkeeper.stream.proto.storage.RootRangeServiceGrpc.RootRangeServiceFutureStub;
 import org.apache.bookkeeper.stream.proto.storage.StatusCode;
+import org.apache.bookkeeper.stream.storage.StorageResources;
 import org.apache.bookkeeper.stream.storage.api.metadata.RangeStoreService;
 import org.apache.bookkeeper.stream.storage.api.service.RangeStoreServiceFactory;
 import org.apache.bookkeeper.stream.storage.conf.StorageConfiguration;
@@ -133,6 +134,7 @@ public class TestStorageContainerStoreImpl {
         NamespaceConfiguration.newBuilder()
             .setDefaultStreamConf(DEFAULT_STREAM_CONF)
             .build();
+    private final StorageResources resources = StorageResources.create();
     private RangeStoreService mockRangeStoreService;
     private StorageContainerStoreImpl rangeStore;
     private Server server;
@@ -230,6 +232,7 @@ public class TestStorageContainerStoreImpl {
             (storeConf, rgRegistry)
                 -> new LocalStorageContainerManager(endpoint, storeConf, rgRegistry, 2),
             new RangeStoreContainerServiceFactoryImpl(rangeStoreServiceFactory),
+            null,
             NullStatsLogger.INSTANCE);
 
         rangeStore.start();

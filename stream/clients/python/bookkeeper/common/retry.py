@@ -79,7 +79,9 @@ def if_exception_type(*exception_types):
 # Pylint sees this as a constant, but it is also an alias that should be
 # considered a function.
 if_transient_error = if_exception_type((
-    exceptions.InternalServerError))
+    exceptions.InternalServerError,
+    exceptions.StorageContainerNotFoundError
+))
 """A predicate that checks if an exception is a transient API error.
 The following server errors are considered transient:
 - :class:`bookkeeper.common.exceptions.InternalServerError` - gRPC

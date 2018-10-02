@@ -27,11 +27,13 @@ import io.grpc.ClientInterceptor;
 import io.grpc.ClientInterceptors.CheckedForwardingClientCall;
 import io.grpc.Metadata;
 import io.grpc.MethodDescriptor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.common.grpc.netty.LongBinaryMarshaller;
 
 /**
  * A client interceptor that intercepting outgoing calls to storage containers.
  */
+@Slf4j
 public class StorageContainerClientInterceptor implements ClientInterceptor {
 
     private final long scId;
@@ -48,12 +50,29 @@ public class StorageContainerClientInterceptor implements ClientInterceptor {
     public <ReqT, RespT> ClientCall<ReqT, RespT> interceptCall(MethodDescriptor<ReqT, RespT> method,
                                                                CallOptions callOptions,
                                                                Channel next) {
+        if (log.isTraceEnabled()) {
+            log.trace("Intercepting method {} : req marshaller = {}, resp marshaller = {}",
+                method.getFullMethodName(),
+                method.getRequestMarshaller(),
+                method.getResponseMarshaller());
+        }
         return new CheckedForwardingClientCall<ReqT, RespT>(next.newCall(method, callOptions)) {
             @Override
             protected void checkedStart(Listener<RespT> responseListener,
                                         Metadata headers) throws Exception {
+                if (log.isTraceEnabled()) {
+                    log.trace("Attaching storage container {},", scId);
+                }
                 headers.put(scIdKey, scId);
                 delegate().start(responseListener, headers);
+            }
+
+            @Override
+            public void request(int numMessages) {
+                if (log.isTraceEnabled()) {
+                    log.trace("request {} messages", numMessages);
+                }
+                super.request(numMessages);
             }
         };
     }
