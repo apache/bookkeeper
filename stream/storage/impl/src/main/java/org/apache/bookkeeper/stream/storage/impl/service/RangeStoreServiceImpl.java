@@ -25,12 +25,12 @@ import static org.apache.bookkeeper.stream.protocol.ProtocolConstants.ROOT_STORA
 import static org.apache.bookkeeper.stream.protocol.ProtocolConstants.ROOT_STREAM_ID;
 
 import com.google.common.collect.Lists;
-import java.net.URI;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.bookkeeper.clients.impl.internal.api.StorageServerClientManager;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.bookkeeper.stream.proto.kv.rpc.DeleteRangeRequest;
@@ -64,7 +64,6 @@ import org.apache.bookkeeper.stream.storage.api.kv.TableStore;
 import org.apache.bookkeeper.stream.storage.api.metadata.MetaRangeStore;
 import org.apache.bookkeeper.stream.storage.api.metadata.RangeStoreService;
 import org.apache.bookkeeper.stream.storage.api.metadata.RootRangeStore;
-import org.apache.bookkeeper.stream.storage.conf.StorageConfiguration;
 import org.apache.bookkeeper.stream.storage.impl.kv.TableStoreCache;
 import org.apache.bookkeeper.stream.storage.impl.kv.TableStoreFactory;
 import org.apache.bookkeeper.stream.storage.impl.kv.TableStoreImpl;
@@ -100,19 +99,18 @@ class RangeStoreServiceImpl implements RangeStoreService, AutoCloseable {
     @Getter(value = AccessLevel.PACKAGE)
     private final TableStoreFactory tableStoreFactory;
 
-    RangeStoreServiceImpl(StorageConfiguration storageConf,
-                          long scId,
+    RangeStoreServiceImpl(long scId,
                           StorageContainerPlacementPolicy rangePlacementPolicy,
                           OrderedScheduler scheduler,
                           MVCCStoreFactory storeFactory,
-                          URI defaultBackendUri) {
+                          StorageServerClientManager clientManager) {
         this(
             scId,
             scheduler,
             storeFactory,
             store -> new RootRangeStoreImpl(
-                defaultBackendUri, store, rangePlacementPolicy, scheduler.chooseThread(scId)),
-            store -> new MetaRangeStoreImpl(store, rangePlacementPolicy, scheduler.chooseThread(scId)),
+                store, rangePlacementPolicy, scheduler.chooseThread(scId)),
+            store -> new MetaRangeStoreImpl(store, rangePlacementPolicy, scheduler.chooseThread(scId), clientManager),
             store -> new TableStoreImpl(store));
     }
 

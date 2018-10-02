@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledExecutorService;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.bookkeeper.clients.impl.internal.api.StorageServerClientManager;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.statelib.api.mvcc.MVCCAsyncStore;
 import org.apache.bookkeeper.stream.proto.RangeMetadata;
@@ -48,14 +49,17 @@ public class MetaRangeStoreImpl
     private final ScheduledExecutorService executor;
     private final StorageContainerPlacementPolicy rangePlacementPolicy;
     private final Map<Long, MetaRangeImpl> streams;
+    private final StorageServerClientManager clientManager;
 
     public MetaRangeStoreImpl(MVCCAsyncStore<byte[], byte[]> store,
                               StorageContainerPlacementPolicy rangePlacementPolicy,
-                              ScheduledExecutorService executor) {
+                              ScheduledExecutorService executor,
+                              StorageServerClientManager clientManager) {
         this.store = store;
         this.executor = executor;
         this.rangePlacementPolicy = rangePlacementPolicy;
         this.streams = Maps.newHashMap();
+        this.clientManager = clientManager;
     }
 
     //
@@ -100,9 +104,10 @@ public class MetaRangeStoreImpl
             return metaRangeImpl.load(streamId)
                 .thenCompose(mr -> {
                     if (null == mr) {
-                        StreamProperties streamProps = request.hasStreamProps()
-                            ? request.getStreamProps() : null;
-                        return createStreamIfMissing(streamId, metaRangeImpl, streamProps);
+                        // meta range doesn't exist, talk to root range to get the stream props
+                        return clientManager.getStreamProperties(streamId)
+                            .thenCompose(streamProperties ->
+                                createStreamIfMissing(streamId, metaRangeImpl, streamProperties));
                     } else {
                         synchronized (streams) {
                             streams.put(streamId, (MetaRangeImpl) mr);
