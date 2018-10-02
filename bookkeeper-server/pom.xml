@@ -124,23 +124,25 @@
         <groupId>org.apache.kerby</groupId>
         <artifactId>kerby-config</artifactId>
         <version>${kerby.version}</version>
+        <scope>test</scope>
         <exclusions>
             <exclusion>
                 <groupId>org.slf4j</groupId>
                 <artifactId>*</artifactId>
             </exclusion>
-        </exclusions>        
+        </exclusions>
     </dependency>
     <dependency>
         <groupId>org.apache.kerby</groupId>
         <artifactId>kerb-simplekdc</artifactId>
         <version>${kerby.version}</version>
+        <scope>test</scope>
         <exclusions>
             <exclusion>
                 <groupId>org.slf4j</groupId>
                 <artifactId>*</artifactId>
             </exclusion>
-        </exclusions>        
+        </exclusions>
     </dependency>
     <dependency>
       <groupId>org.apache.zookeeper</groupId>
