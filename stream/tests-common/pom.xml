@@ -37,6 +37,12 @@
       <groupId>com.google.protobuf</groupId>
       <artifactId>protobuf-java</artifactId>
     </dependency>
+    <dependency>
+      <groupId>javax.annotation</groupId>
+      <artifactId>javax.annotation-api</artifactId>
+      <!-- this should not be bundled in binary distributions -->
+      <optional>true</optional>
+    </dependency>
   </dependencies>
 
   <build>
