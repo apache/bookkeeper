@@ -35,7 +35,8 @@ public class BKPerf {
             .withDescription(NAME + " evaluates the performance of Apache BookKeeper clusters")
             .withFlags(new BKFlags())
             .withConsole(System.out)
-            .addCommand(new DlogPerfCommandGroup());
+            .addCommand(new DlogPerfCommandGroup())
+            .addCommand(new TablePerfCommandGroup());
 
         CliSpec<BKFlags> spec = specBuilder.build();
 
