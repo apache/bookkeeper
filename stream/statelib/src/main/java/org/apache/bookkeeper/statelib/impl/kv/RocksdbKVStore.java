@@ -275,7 +275,7 @@ public class RocksdbKVStore<K, V> implements KVStore<K, V> {
         // initialize the write options
 
         writeOpts = new WriteOptions();
-        writeOpts.setDisableWAL(false); // disable wal, since the source of truth will be on distributedlog
+        writeOpts.setDisableWAL(true); // disable wal, since the source of truth will be on distributedlog
 
         // initialize the flush options
 

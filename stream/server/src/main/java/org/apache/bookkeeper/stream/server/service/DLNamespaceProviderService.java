@@ -91,7 +91,7 @@ public class DLNamespaceProviderService
         this.dlConf.setWriteLockEnabled(false);
         // setting the flush policy
         this.dlConf.setImmediateFlushEnabled(false);
-        this.dlConf.setOutputBufferSize(0);
+        this.dlConf.setOutputBufferSize(512 * 1024);
         this.dlConf.setPeriodicFlushFrequencyMilliSeconds(2); // flush every 1 ms
         // explicit truncation is required
         this.dlConf.setExplicitTruncationByApplication(true);
