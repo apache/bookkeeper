@@ -53,20 +53,20 @@ class Client(object):
         assert service_uri.service_name.lower() == 'bk'
 
         # create channel
-        self.channel = grpc.insecure_channel(
+        self.__channel__ = grpc.insecure_channel(
             target=service_uri.service_location
         )
         __logger__.info("Successfully created an admin client to cluster '%s'",
                         self.storage_client_settings.service_uri)
 
         # create the rpc stub
-        self.root_range = RootRangeServiceStub(channel=self.channel)
+        self.__root_range__ = RootRangeServiceStub(channel=self.__channel__)
 
         # services
-        self.__namespaces__ = Namespaces(client=self)
+        self.__namespaces__ = Namespaces(self.__root_range__)
 
     def namespaces(self):
         return self.__namespaces__
 
     def namespace(self, namespace):
-        return Namespace(self, namespace)
+        return Namespace(self.__root_range__, namespace)

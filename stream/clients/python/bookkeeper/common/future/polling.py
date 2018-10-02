@@ -99,8 +99,9 @@ class PollingFuture(base.Future):
         Returns:
             google.protobuf.Message: The Operation's result.
         Raises:
-            bookkeeper.common.exceptions.BKGrpcAPICallError: If the operation errors or if
-                the timeout is reached before the operation completes.
+            bookkeeper.common.exceptions.BKGrpcAPICallError: If the operation
+                errors or if the timeout is reached before the operation
+                completes.
         """
         self._blocking_poll(timeout=timeout)
 
@@ -117,8 +118,8 @@ class PollingFuture(base.Future):
             timeout (int): How long to wait for the operation to complete.
                 If None, wait indefinitely.
         Returns:
-            Optional[bookkeeper.common.exceptions.BKGrpcAPICallError]: The operation's
-                error.
+            Optional[bookkeeper.common.exceptions.BKGrpcAPICallError]:
+                The operation's error.
         """
         self._blocking_poll()
         return self._exception

@@ -16,7 +16,7 @@ from bookkeeper.proto import stream_pb2
 
 __ROOT_RANGE_ID__ = 0
 __ROOT_RANGE_METADATA__ = [
-        ('sc-id-bin', __ROOT_RANGE_ID__.to_bytes(8, "little"))
+        ('bk-rt-sc-id-bin', __ROOT_RANGE_ID__.to_bytes(8, "big"))
 ]
 __DEFAULT_STREAM_CONF__ = stream_pb2.StreamConfiguration(
         key_type=stream_pb2.RangeKeyType.values()[0],

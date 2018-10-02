@@ -19,7 +19,9 @@ import logging
 import pkg_resources
 
 from bookkeeper import types
+from bookkeeper.admin.namespace import Namespace
 from bookkeeper.common.service_uri import ServiceURI
+from bookkeeper.kv.table import Table
 from bookkeeper.proto.storage_pb2_grpc import RootRangeServiceStub
 
 __version__ = pkg_resources.get_distribution('bookkeeper').version
@@ -36,25 +38,38 @@ class Client(object):
     Args:
         storage_client_settings (~bookkeeper.types.StorageClientSettings): The
             settings for bookkeeper storage client .
+        namespace (str): namespace name
         kwargs (dict): Any additional arguments provided are sent as keyword
             arguments to the underlying grpc client.
     """
-    def __init__(self, storage_client_settings=(), **kwargs):
+    def __init__(self,
+                 storage_client_settings=(),
+                 namespace="public",
+                 **kwargs):
         # init the storage client settings
         self.storage_client_settings =\
             types.StorageClientSettings(*storage_client_settings)
-        __logger__.info("Creating an admin client to cluster '%s'",
+        __logger__.info("Creating a storage client to cluster '%s'",
                         self.storage_client_settings.service_uri)
 
         service_uri = ServiceURI(self.storage_client_settings.service_uri)
         assert service_uri.service_name.lower() == 'bk'
 
         # create channel
-        self.channel = grpc.insecure_channel(
+        self.__channel__ = grpc.insecure_channel(
             target=service_uri.service_location
         )
-        __logger__.info("Successfully created an admin client to cluster '%s'",
-                        self.storage_client_settings.service_uri)
+        __logger__.info(
+            "Successfully created a storage client to cluster '%s'",
+            self.storage_client_settings.service_uri)
 
         # create the rpc stub
-        self.root_range = RootRangeServiceStub(channel=self.channel)
+        self.__root_range__ = RootRangeServiceStub(channel=self.__channel__)
+
+        # assign the namespace
+        self.__namespace__ = namespace
+
+    def table(self, table_name):
+        ns = Namespace(self.__root_range__, self.__namespace__)
+        stream_props = ns.get(table_name)
+        return Table(self.__channel__, stream_props)
