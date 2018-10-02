@@ -1902,6 +1902,7 @@ public class LedgerHandle implements WriteHandle {
                             } else {
                                 List<BookieSocketAddress> newEnsemble = getCurrentEnsemble();
                                 Set<Integer> replaced = EnsembleUtils.diffEnsemble(origEnsemble, newEnsemble);
+                                LOG.info("New Ensemble: {} for ledger: {}", newEnsemble, ledgerId);
                                 unsetSuccessAndSendWriteRequest(newEnsemble, replaced);
                                 changingEnsemble = false;
                             }
