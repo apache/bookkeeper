@@ -42,6 +42,12 @@
       <artifactId>grpc-all</artifactId>
     </dependency>
     <dependency>
+      <groupId>javax.annotation</groupId>
+      <artifactId>javax.annotation-api</artifactId>
+      <!-- this should not be bundled in binary distributions -->
+      <optional>true</optional>
+    </dependency>
+    <dependency>
       <groupId>org.apache.bookkeeper.tests</groupId>
       <artifactId>stream-storage-tests-common</artifactId>
       <version>${project.version}</version>
