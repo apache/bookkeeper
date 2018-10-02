@@ -19,6 +19,7 @@ package org.apache.bookkeeper.common.util;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
+import com.google.common.util.concurrent.ForwardingExecutorService;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -283,6 +284,61 @@ public class OrderedExecutor implements ExecutorService {
         return new BoundedExecutorService(executor, this.maxTasksInQueue);
     }
 
+    protected ExecutorService addExecutorDecorators(ExecutorService executor) {
+        return new ForwardingExecutorService() {
+            @Override
+            protected ExecutorService delegate() {
+                return executor;
+            }
+
+            @Override
+            public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks)
+                    throws InterruptedException {
+                return super.invokeAll(timedCallables(tasks));
+            }
+
+            @Override
+            public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks,
+                                                 long timeout, TimeUnit unit)
+                    throws InterruptedException {
+                return super.invokeAll(timedCallables(tasks), timeout, unit);
+            }
+
+            @Override
+            public <T> T invokeAny(Collection<? extends Callable<T>> tasks)
+                    throws InterruptedException, ExecutionException {
+                return super.invokeAny(timedCallables(tasks));
+            }
+
+            @Override
+            public <T> T invokeAny(Collection<? extends Callable<T>> tasks,
+                                   long timeout, TimeUnit unit)
+                    throws InterruptedException, ExecutionException, TimeoutException {
+                return super.invokeAny(timedCallables(tasks), timeout, unit);
+            }
+
+            @Override
+            public void execute(Runnable command) {
+                super.execute(timedRunnable(command));
+            }
+
+            @Override
+            public <T> Future<T> submit(Callable<T> task) {
+                return super.submit(timedCallable(task));
+            }
+
+            @Override
+            public Future<?> submit(Runnable task) {
+                return super.submit(timedRunnable(task));
+            }
+
+            @Override
+            public <T> Future<T> submit(Runnable task, T result) {
+                return super.submit(timedRunnable(task), result);
+            }
+        };
+    }
+
     /**
      * Constructs Safe executor.
      *
@@ -318,7 +374,7 @@ public class OrderedExecutor implements ExecutorService {
             ThreadPoolExecutor thread = createSingleThreadExecutor(
                     new ThreadFactoryBuilder().setNameFormat(name + "-" + getClass().getSimpleName() + "-" + i + "-%d")
                     .setThreadFactory(threadFactory).build());
-            threads[i] = getBoundedExecutor(thread);
+            threads[i] = addExecutorDecorators(getBoundedExecutor(thread));
 
             final int idx = i;
             try {
@@ -391,7 +447,7 @@ public class OrderedExecutor implements ExecutorService {
      * @param r
      */
     public void executeOrdered(Object orderingKey, SafeRunnable r) {
-        chooseThread(orderingKey).execute(timedRunnable(r));
+        chooseThread(orderingKey).execute(r);
     }
 
     /**
@@ -400,7 +456,7 @@ public class OrderedExecutor implements ExecutorService {
      * @param r
      */
     public void executeOrdered(long orderingKey, SafeRunnable r) {
-        chooseThread(orderingKey).execute(timedRunnable(r));
+        chooseThread(orderingKey).execute(r);
     }
 
     /**
@@ -409,7 +465,7 @@ public class OrderedExecutor implements ExecutorService {
      * @param r
      */
     public void executeOrdered(int orderingKey, SafeRunnable r) {
-        chooseThread(orderingKey).execute(timedRunnable(r));
+        chooseThread(orderingKey).execute(r);
     }
 
     public <T> ListenableFuture<T> submitOrdered(long orderingKey, Callable<T> task) {
@@ -504,7 +560,7 @@ public class OrderedExecutor implements ExecutorService {
      */
     @Override
     public <T> Future<T> submit(Runnable task, T result) {
-        return chooseThread().submit(timedRunnable(task), result);
+        return chooseThread().submit(task, result);
     }
 
     /**
@@ -512,7 +568,7 @@ public class OrderedExecutor implements ExecutorService {
      */
     @Override
     public Future<?> submit(Runnable task) {
-        return chooseThread().submit(timedRunnable(task));
+        return chooseThread().submit(task);
     }
 
     /**
