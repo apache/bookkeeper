@@ -17,8 +17,7 @@ on :mod:`bookkeeper.common`.
 
 from __future__ import absolute_import
 from __future__ import unicode_literals
-from bookkeeper.proto.storage_pb2 import BAD_REQUEST
-from bookkeeper.proto.storage_pb2 import INTERNAL_SERVER_ERROR
+from bookkeeper.proto import storage_pb2
 
 import six
 
@@ -122,18 +121,132 @@ class ClientError(BKGrpcCallError):
 
 class BadRequest(ClientError):
     """Exception mapping a ``400 Bad Request`` response."""
-    code = BAD_REQUEST
+    code = storage_pb2.BAD_REQUEST
+    grpc_status_code =\
+        grpc.StatusCode.FAILED_PRECONDITION if grpc is not None else None
+
+
+class IllegalOpError(ClientError):
+    """Exception mapping a ``403 Illegal Op`` response."""
+    code = storage_pb2.ILLEGAL_OP
+    grpc_status_code =\
+        grpc.StatusCode.FAILED_PRECONDITION if grpc is not None else None
 
 
 class ServerError(BKGrpcCallError):
     """Base for 5xx responses."""
 
 
+class StorageContainerNotFoundError(BKGrpcCallError):
+    """Exception raised when storage container is not found"""
+    code = None
+    grpc_status_code =\
+        grpc.StatusCode.NOT_FOUND if grpc is not None else None
+
+
 class InternalServerError(ServerError):
     """Exception mapping a ``500 Internal Server Error`` response. or a
     :attr:`grpc.StatusCode.INTERNAL` error."""
-    code = INTERNAL_SERVER_ERROR
-    grpc_status_code = grpc.StatusCode.INTERNAL if grpc is not None else None
+    code = storage_pb2.INTERNAL_SERVER_ERROR
+    grpc_status_code =\
+        grpc.StatusCode.INTERNAL if grpc is not None else None
+
+
+class UnimplementedError(ServerError):
+    code = storage_pb2.NOT_IMPLEMENTED
+    grpc_status_code =\
+        grpc.StatusCode.UNIMPLEMENTED if grpc is not None else None
+
+
+class UnexpectedError(BKGrpcCallError):
+    code = storage_pb2.UNEXPECTED
+    grpc_status_code =\
+        grpc.StatusCode.UNKNOWN if grpc is not None else None
+
+
+class StorageError(BKGrpcCallError):
+    grpc_status_code = None
+
+
+class FailureError(StorageError):
+    code = storage_pb2.FAILURE
+
+
+class BadVersionError(StorageError):
+    code = storage_pb2.BAD_VERSION
+
+
+class BadRevisionError(StorageError):
+    code = storage_pb2.BAD_REVISION
+
+
+class NamespaceError(StorageError):
+    code = storage_pb2.UNEXPECTED
+
+
+class InvalidNamespaceNameError(NamespaceError):
+    code = storage_pb2.INVALID_NAMESPACE_NAME
+
+
+class NamespaceNotFoundError(NamespaceError):
+    code = storage_pb2.NAMESPACE_NOT_FOUND
+
+
+class NamespaceExistsError(NamespaceError):
+    code = storage_pb2.NAMESPACE_EXISTS
+
+
+class StreamError(StorageError):
+    code = storage_pb2.UNEXPECTED
+
+
+class InvalidStreamNameError(StreamError):
+    code = storage_pb2.INVALID_STREAM_NAME
+
+
+class StreamNotFoundError(StreamError):
+    code = storage_pb2.STREAM_NOT_FOUND
+
+
+class StreamExistsError(StreamError):
+    code = storage_pb2.STREAM_EXISTS
+
+
+class TableError(StorageError):
+    code = storage_pb2.UNEXPECTED
+
+
+class InvalidKeyError(TableError):
+    code = storage_pb2.INVALID_KEY
+
+
+class KeyNotFoundError(TableError):
+    code = storage_pb2.KEY_NOT_FOUND
+
+
+class KeyExistsError(TableError):
+    code = storage_pb2.KEY_EXISTS
+
+
+_BK_CODE_TO_EXCEPTION_ = {
+    storage_pb2.FAILURE: FailureError,
+    storage_pb2.BAD_REQUEST: BadRequest,
+    storage_pb2.ILLEGAL_OP: IllegalOpError,
+    storage_pb2.INTERNAL_SERVER_ERROR: InternalServerError,
+    storage_pb2.NOT_IMPLEMENTED: UnimplementedError,
+    storage_pb2.UNEXPECTED: UnexpectedError,
+    storage_pb2.BAD_VERSION: BadVersionError,
+    storage_pb2.BAD_REVISION: BadRevisionError,
+    storage_pb2.INVALID_NAMESPACE_NAME: InvalidNamespaceNameError,
+    storage_pb2.NAMESPACE_EXISTS: NamespaceExistsError,
+    storage_pb2.NAMESPACE_NOT_FOUND: NamespaceNotFoundError,
+    storage_pb2.INVALID_STREAM_NAME: InvalidStreamNameError,
+    storage_pb2.STREAM_EXISTS: StreamExistsError,
+    storage_pb2.STREAM_NOT_FOUND: StreamNotFoundError,
+    storage_pb2.INVALID_KEY: InvalidKeyError,
+    storage_pb2.KEY_EXISTS: KeyExistsError,
+    storage_pb2.KEY_NOT_FOUND: KeyNotFoundError
+}
 
 
 def exception_class_for_grpc_status(status_code):
@@ -180,6 +293,52 @@ def from_grpc_error(rpc_exc):
             rpc_exc.details(),
             errors=(rpc_exc,),
             response=rpc_exc)
+    elif isinstance(rpc_exc, grpc.RpcError):
+        return from_grpc_error(
+            rpc_exc.code(),
+            rpc_exc.details(),
+            errors=(rpc_exc,),
+            response=rpc_exc
+        )
     else:
         return BKGrpcCallError(
             str(rpc_exc), errors=(rpc_exc,), response=rpc_exc)
+
+
+def exception_class_for_bk_status_code(status_code):
+    return _BK_CODE_TO_EXCEPTION_.get(status_code, BKGrpcCallError)
+
+
+def from_bk_status(status_code, message, **kwargs):
+    error_class = exception_class_for_bk_status_code(status_code)
+    error = error_class(message, **kwargs)
+
+    if error.bk_status_code is None:
+        error.bk_status_code = status_code
+
+    return error
+
+
+def from_table_rpc_response(rpc_resp):
+    routing_header = rpc_resp.header
+    status_code = routing_header.code
+    if storage_pb2.SUCCESS == status_code:
+        return rpc_resp
+    else:
+        raise from_bk_status(
+            status_code,
+            "",
+            errors=(rpc_resp,),
+            response=rpc_resp)
+
+
+def from_root_range_rpc_response(rpc_resp):
+    status_code = rpc_resp.code
+    if storage_pb2.SUCCESS == status_code:
+        return rpc_resp
+    else:
+        raise from_bk_status(
+            status_code,
+            "",
+            errors=(rpc_resp,),
+            response=rpc_resp)
