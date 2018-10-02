@@ -137,7 +137,7 @@ public class GSSAPIBookKeeperTest extends BookKeeperClusterTestCase {
                 + "  kdc = " + kdc.getHost() + ":" + kdc.getPort() + "\n"
                 + " }";
             writer.write(conf);
-            LOG.info("krb5.conf:\n"+conf);
+            LOG.info("krb5.conf:\n" + conf);
         }
 
         System.setProperty("java.security.auth.login.config", jaasFile.getAbsolutePath());

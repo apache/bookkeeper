@@ -17,35 +17,31 @@
  */
 
 package org.apache.bookkeeper.sasl;
-import org.apache.commons.io.Charsets;
-import org.apache.kerby.kerberos.kerb.KrbException;
-import org.apache.kerby.kerberos.kerb.server.KdcConfigKey;
-import org.apache.kerby.kerberos.kerb.server.SimpleKdcServer;
-import org.apache.kerby.util.IOUtil;
-import org.apache.kerby.util.NetworkUtil;
-import org.apache.zookeeper.server.ExitCode;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.IOException;
-import java.util.Arrays;
+import java.io.InputStream;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import org.apache.kerby.kerberos.kerb.KrbException;
+import org.apache.kerby.kerberos.kerb.server.KdcConfigKey;
+import org.apache.kerby.kerberos.kerb.server.SimpleKdcServer;
+import org.apache.kerby.util.IOUtil;
+import org.apache.kerby.util.NetworkUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Mini KDC based on Apache Directory Server that can be embedded in testcases
  * or used from command line as a standalone KDC.
- * <p>
- * <b>From within testcases:</b>
- * <p>
- * MiniKdc sets one System property when started and un-set when stopped:
+ *
+ * <p><b>From within testcases:</b>
+ *
+ * <p>MiniKdc sets one System property when started and un-set when stopped:
  * <ul>
  *   <li>sun.security.krb5.debug: set to the debug value provided in the
  *   configuration</li>
@@ -54,8 +50,8 @@ import java.util.Set;
  * For example, running testcases in parallel that start a KDC each. To
  * accomplish this a single MiniKdc should be used for all testcases running
  * in parallel.
- * <p>
- * MiniKdc default configuration values are:
+ *
+ * <p>MiniKdc default configuration values are:
  * <ul>
  *   <li>org.name=EXAMPLE (used to create the REALM)</li>
  *   <li>org.domain=COM (used to create the REALM)</li>
@@ -68,13 +64,9 @@ import java.util.Set;
  *   <li>debug=false</li>
  * </ul>
  * The generated krb5.conf forces TCP connections.
- */
-/*
  * This code is originally from HDFS, see the file name MiniKdc there
  * in case of bug fixing, history, etc.
- *
- * Branch : trunk
- * Github Revision: 916140604ffef59466ba30832478311d3e6249bd
+ * https://github.com/apache/hadoop/blob/trunk/hadoop-common-project/hadoop-minikdc/src/main/java/org/apache/hadoop/minikdc/MiniKdc.java
  */
 public class MiniKdc {
 
@@ -83,7 +75,7 @@ public class MiniKdc {
     public static final String SUN_SECURITY_KRB5_DEBUG =
             "sun.security.krb5.debug";
 
-   
+
     private static final Logger LOG = LoggerFactory.getLogger(MiniKdc.class);
 
     public static final String ORG_NAME = "org.name";
@@ -123,8 +115,8 @@ public class MiniKdc {
 
     /**
      * Convenience method that returns MiniKdc default configuration.
-     * <p>
-     * The returned configuration is a copy, it can be customized before using
+     *
+     * <p>The returned configuration is a copy, it can be customized before using
      * it to create a MiniKdc.
      * @return a MiniKdc default configuration.
      */
@@ -144,6 +136,7 @@ public class MiniKdc {
     public void setTransport(String transport) {
         this.transport = transport;
     }
+
     /**
      * Creates a MiniKdc.
      *
@@ -173,7 +166,7 @@ public class MiniKdc {
         LOG.info("---------------------------------------------------------------");
         this.conf = conf;
         port = Integer.parseInt(conf.getProperty(KDC_PORT));
-        String orgName= conf.getProperty(ORG_NAME);
+        String orgName = conf.getProperty(ORG_NAME);
         String orgDomain = conf.getProperty(ORG_DOMAIN);
         realm = orgName.toUpperCase(Locale.ENGLISH) + "."
                 + orgDomain.toUpperCase(Locale.ENGLISH);
@@ -269,7 +262,7 @@ public class MiniKdc {
     }
 
     /**
-     * Stops the MiniKdc
+     * Stops the MiniKdc.
      */
     public synchronized void stop() {
         if (simpleKdc != null) {
@@ -278,7 +271,7 @@ public class MiniKdc {
             } catch (KrbException e) {
                 e.printStackTrace();
             } finally {
-                if(conf.getProperty(DEBUG) != null) {
+                if (conf.getProperty(DEBUG) != null) {
                     System.setProperty(SUN_SECURITY_KRB5_DEBUG,
                             Boolean.toString(krb5Debug));
                 }
@@ -296,14 +289,14 @@ public class MiniKdc {
 
     private void delete(File f) {
         if (f.isFile()) {
-            if (! f.delete()) {
+            if (!f.delete()) {
                 LOG.warn("WARNING: cannot delete file " + f.getAbsolutePath());
             }
         } else {
             for (File c: f.listFiles()) {
                 delete(c);
             }
-            if (! f.delete()) {
+            if (!f.delete()) {
                 LOG.warn("WARNING: cannot delete directory " + f.getAbsolutePath());
             }
         }
