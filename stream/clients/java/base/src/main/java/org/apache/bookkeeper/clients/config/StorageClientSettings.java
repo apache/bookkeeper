@@ -82,6 +82,19 @@ public interface StorageClientSettings {
     Backoff.Policy backoffPolicy();
 
     /**
+     * Configure whether to enable server side routing or not.
+     *
+     * <p>By default, the client implementation will does client side routing, which will talk to storage containers
+     * directly, however sometimes if you can simply expose storage containers addresses due to network security
+     * constraints, you can enable server side routing. in server side routing mode, the clients simply make
+     * grpc calls to any storage container, those storage containers will route the requests accordingly to the
+     * right storage container. In this mode, the storage containers act as grpc proxies.
+     *
+     * @return flag whether to enable server side routing or not.
+     */
+    boolean enableServerSideRouting();
+
+    /**
      * Builder of {@link StorageClientSettings} instances.
      */
     class Builder extends StorageClientSettings_Builder {
@@ -91,6 +104,7 @@ public interface StorageClientSettings {
             usePlaintext(true);
             backoffPolicy(ClientConstants.DEFAULT_INFINIT_BACKOFF_POLICY);
             endpointResolver(EndpointResolver.identity());
+            enableServerSideRouting(false);
         }
 
         @Override

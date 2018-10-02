@@ -23,6 +23,7 @@ import static org.apache.bookkeeper.stream.protocol.util.ProtoUtils.validateName
 
 import java.util.function.Supplier;
 import org.apache.bookkeeper.api.StorageClient;
+import org.apache.bookkeeper.clients.admin.SimpleStorageAdminClientImpl;
 import org.apache.bookkeeper.clients.admin.StorageAdminClient;
 import org.apache.bookkeeper.clients.admin.StorageAdminClientImpl;
 import org.apache.bookkeeper.clients.config.StorageClientSettings;
@@ -83,10 +84,14 @@ public class StorageClientBuilder implements Supplier<StorageClient> {
         checkNotNull(settings, "Stream settings is null");
         checkArgument(validateNamespaceName(namespaceName), "Namespace name '" + namespaceName + "'is invalid");
 
-        return new StorageClientImpl(
-            namespaceName,
-            settings,
-            ClientResources.create());
+        if (settings.enableServerSideRouting()) {
+            return new SimpleStorageClientImpl(namespaceName, settings);
+        } else {
+            return new StorageClientImpl(
+                namespaceName,
+                settings,
+                ClientResources.create());
+        }
     }
 
     /**
@@ -97,7 +102,11 @@ public class StorageClientBuilder implements Supplier<StorageClient> {
     public StorageAdminClient buildAdmin() {
         checkNotNull(settings, "Storage client settings is null");
 
-        return new StorageAdminClientImpl(settings);
+        if (settings.enableServerSideRouting()) {
+            return new SimpleStorageAdminClientImpl(settings);
+        } else {
+            return new StorageAdminClientImpl(settings);
+        }
     }
 
     @Override
