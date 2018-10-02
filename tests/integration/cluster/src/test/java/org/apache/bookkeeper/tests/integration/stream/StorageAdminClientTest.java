@@ -30,15 +30,13 @@ import org.apache.bookkeeper.clients.exceptions.NamespaceNotFoundException;
 import org.apache.bookkeeper.clients.exceptions.StreamExistsException;
 import org.apache.bookkeeper.clients.exceptions.StreamNotFoundException;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
-import org.apache.bookkeeper.common.testing.annotations.FlakyTest;
 import org.apache.bookkeeper.stream.proto.NamespaceConfiguration;
 import org.apache.bookkeeper.stream.proto.NamespaceProperties;
 import org.apache.bookkeeper.stream.proto.StreamConfiguration;
 import org.apache.bookkeeper.stream.proto.StreamProperties;
 import org.apache.bookkeeper.stream.proto.storage.StatusCode;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Rule;
+import org.junit.Test;
 import org.junit.rules.TestName;
 
 /**
@@ -49,22 +47,24 @@ public class StorageAdminClientTest extends StreamClusterTestBase {
     @Rule
     public final TestName testName = new TestName();
 
-    private StorageAdminClient adminClient;
-
-    @Before
-    public void setup() {
-        adminClient = createStorageAdminClient(newStorageClientSettings());
+    @Test
+    public void testNamespaceAPIClientSideRouting() throws Exception {
+        testNamespaceAPI(false);
     }
 
-    @After
-    public void teardown() {
-        if (null != adminClient) {
-            adminClient.close();
+    @Test
+    public void testNamespaceAPIServerSideRouting() throws Exception {
+        testNamespaceAPI(true);
+    }
+
+    private void testNamespaceAPI(boolean enableServerSideRouting) throws Exception {
+        try (StorageAdminClient adminClient =
+                 createStorageAdminClient(newStorageClientSettings(enableServerSideRouting))) {
+            testNamespaceAPI(adminClient);
         }
     }
 
-    @FlakyTest("https://github.com/apache/bookkeeper/issues/1440")
-    public void testNamespaceAPI() throws Exception {
+    private void testNamespaceAPI(StorageAdminClient adminClient) throws Exception {
         // Create a namespace
         String nsName = testName.getMethodName();
         NamespaceConfiguration colConf = NamespaceConfiguration.newBuilder()
@@ -119,8 +119,24 @@ public class StorageAdminClientTest extends StreamClusterTestBase {
         }
     }
 
-    @FlakyTest("https://github.com/apache/bookkeeper/issues/1440")
-    public void testStreamAPI() throws Exception {
+    @Test
+    public void testStreamAPIClientSideRouting() throws Exception {
+        testStreamAPI(false);
+    }
+
+    @Test
+    public void testStreamAPIServerSideRouting() throws Exception {
+        testStreamAPI(false);
+    }
+
+    private void testStreamAPI(boolean enableServerSideRouting) throws Exception {
+        try (StorageAdminClient adminClient =
+                 createStorageAdminClient(newStorageClientSettings(enableServerSideRouting))) {
+            testStreamAPI(adminClient);
+        }
+    }
+
+    private void testStreamAPI(StorageAdminClient adminClient) throws Exception {
         // Create a namespace
         String nsName = testName.getMethodName() + "_ns";
         NamespaceConfiguration colConf = NamespaceConfiguration.newBuilder()

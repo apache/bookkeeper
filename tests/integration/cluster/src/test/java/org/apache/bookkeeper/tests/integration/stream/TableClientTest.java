@@ -50,15 +50,13 @@ import org.apache.bookkeeper.api.kv.result.TxnResult;
 import org.apache.bookkeeper.clients.admin.StorageAdminClient;
 import org.apache.bookkeeper.clients.config.StorageClientSettings;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
-import org.apache.bookkeeper.common.testing.annotations.FlakyTest;
 import org.apache.bookkeeper.stream.proto.NamespaceConfiguration;
 import org.apache.bookkeeper.stream.proto.NamespaceProperties;
 import org.apache.bookkeeper.stream.proto.StorageType;
 import org.apache.bookkeeper.stream.proto.StreamConfiguration;
 import org.apache.bookkeeper.stream.proto.StreamProperties;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Rule;
+import org.junit.Test;
 import org.junit.rules.TestName;
 
 /**
@@ -70,28 +68,7 @@ public class TableClientTest extends StreamClusterTestBase {
     @Rule
     public final TestName testName = new TestName();
 
-    private final String namespace = "test_namespace";
-    private StorageAdminClient adminClient;
-    private StorageClient storageClient;
     private final OptionFactory<ByteBuf> optionFactory = new OptionFactoryImpl<>();
-
-    @Before
-    public void setup() {
-        StorageClientSettings settings = newStorageClientSettings();
-        String namespace = "test_namespace";
-        adminClient = createStorageAdminClient(settings);
-        storageClient = createStorageClient(settings, namespace);
-    }
-
-    @After
-    public void teardown() {
-        if (null != adminClient) {
-            adminClient.close();
-        }
-        if (null != storageClient) {
-            storageClient.close();
-        }
-    }
 
     private static ByteBuf getLKey(int i) {
         return Unpooled.wrappedBuffer(String.format("test-lkey-%06d", i).getBytes(UTF_8));
@@ -101,8 +78,29 @@ public class TableClientTest extends StreamClusterTestBase {
         return Unpooled.wrappedBuffer(String.format("test-val-%06d", i).getBytes(UTF_8));
     }
 
-    @FlakyTest("https://github.com/apache/bookkeeper/issues/1440")
-    public void testTableAPI() throws Exception {
+    @Test
+    public void testTableAPIClientSideRouting() throws Exception {
+        testTableAPI(false);
+    }
+
+    @Test
+    public void testTableAPIServerSideRouting() throws Exception {
+        testTableAPI(true);
+    }
+
+    private void testTableAPI(boolean enableServerSideRouting) throws Exception {
+        StorageClientSettings setting = newStorageClientSettings(enableServerSideRouting);
+        try (StorageAdminClient adminClient = createStorageAdminClient(setting)) {
+            final String namespace = testName.getMethodName();
+            try (StorageClient storageClient = createStorageClient(setting, namespace)) {
+                testTableAPI(namespace, adminClient, storageClient);
+            }
+        }
+    }
+
+    private void testTableAPI(String namespace,
+                              StorageAdminClient adminClient,
+                              StorageClient storageClient) throws Exception {
         // Create a namespace
         NamespaceConfiguration nsConf = NamespaceConfiguration.newBuilder()
             .setDefaultStreamConf(DEFAULT_STREAM_CONF)
