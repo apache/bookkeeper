@@ -22,6 +22,7 @@ import static org.apache.bookkeeper.common.concurrent.FutureUtils.result;
 import static org.apache.bookkeeper.stream.cli.Commands.OP_CREATE;
 import static org.apache.bookkeeper.stream.protocol.ProtocolConstants.DEFAULT_STREAM_CONF;
 
+import com.beust.jcommander.Parameter;
 import org.apache.bookkeeper.clients.admin.StorageAdminClient;
 import org.apache.bookkeeper.clients.exceptions.NamespaceNotFoundException;
 import org.apache.bookkeeper.clients.exceptions.StreamExistsException;
@@ -46,6 +47,15 @@ public class CreateTableCommand extends AdminCommand<Flags> {
      * Flags for the create table command.
      */
     public static class Flags extends CliFlags {
+
+        @Parameter(
+            names = {
+                "-r", "--num-ranges"
+            },
+            description = "num of ranges for the table"
+        )
+        private int numRanges = 3;
+
     }
 
     public CreateTableCommand() {
@@ -63,15 +73,21 @@ public class CreateTableCommand extends AdminCommand<Flags> {
                        Flags flags) throws Exception {
         checkArgument(!flags.arguments.isEmpty(),
             "Table name is not provided");
+        checkArgument(flags.numRanges >= 1,
+            "Invalid number of ranges specified for creating table : " + flags.numRanges);
 
         String streamName = flags.arguments.get(0);
 
         try {
+            StreamConfiguration conf = StreamConfiguration.newBuilder(DEFAULT_STREAM_CONF)
+                .setMinNumRanges(flags.numRanges)
+                .setInitialNumRanges(flags.numRanges)
+                .build();
             StreamProperties nsProps = result(
                 admin.createStream(
                     globalFlags.namespace,
                     streamName,
-                    StreamConfiguration.newBuilder(DEFAULT_STREAM_CONF)
+                    StreamConfiguration.newBuilder(conf)
                         .setStorageType(StorageType.TABLE)
                         .build()));
             spec.console().println("Successfully created table '" + streamName + "':");
