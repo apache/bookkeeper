@@ -18,19 +18,18 @@
 
 package org.apache.bookkeeper.clients.admin;
 
-import com.google.common.annotations.VisibleForTesting;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Supplier;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.bookkeeper.api.StorageClient;
+import org.apache.bookkeeper.clients.StorageClientImpl;
 import org.apache.bookkeeper.clients.config.StorageClientSettings;
 import org.apache.bookkeeper.clients.impl.internal.StorageServerClientManagerImpl;
 import org.apache.bookkeeper.clients.impl.internal.api.RootRangeClient;
 import org.apache.bookkeeper.clients.impl.internal.api.StorageServerClientManager;
 import org.apache.bookkeeper.clients.utils.ClientResources;
 import org.apache.bookkeeper.common.util.AbstractAutoAsyncCloseable;
-import org.apache.bookkeeper.common.util.OrderedScheduler;
-import org.apache.bookkeeper.common.util.SharedResourceManager.Resource;
 import org.apache.bookkeeper.stream.proto.NamespaceConfiguration;
 import org.apache.bookkeeper.stream.proto.NamespaceProperties;
 import org.apache.bookkeeper.stream.proto.StreamConfiguration;
@@ -43,6 +42,8 @@ import org.apache.bookkeeper.stream.proto.StreamProperties;
 public class StorageAdminClientImpl extends AbstractAutoAsyncCloseable implements StorageAdminClient {
 
     // clients
+    private final StorageClientSettings settings;
+    private final ClientResources resources;
     private final StorageServerClientManager clientManager;
     private final RootRangeClient rootRangeClient;
 
@@ -50,28 +51,29 @@ public class StorageAdminClientImpl extends AbstractAutoAsyncCloseable implement
      * Create a stream admin client with provided {@code withSettings}.
      *
      * @param settings withSettings to create an admin client.
-     */
-    public StorageAdminClientImpl(StorageClientSettings settings) {
-        this(
-            settings,
-            ClientResources.create().scheduler());
-    }
-
-    /**
-     * Create a stream admin client with provided {@code withSettings} and {@code scheduler}.
-     *
-     * @param settings          withSettings to create an admin client.
-     * @param schedulerResource scheduler to execute.
+     * @param resources resources used by this client
      */
     public StorageAdminClientImpl(StorageClientSettings settings,
-                                  Resource<OrderedScheduler> schedulerResource) {
-        this(() -> new StorageServerClientManagerImpl(settings, schedulerResource));
+                                  ClientResources resources) {
+        this(
+            settings,
+            resources,
+            () -> new StorageServerClientManagerImpl(settings, resources.scheduler()));
     }
 
-    @VisibleForTesting
-    StorageAdminClientImpl(Supplier<StorageServerClientManager> factory) {
+    StorageAdminClientImpl(StorageClientSettings settings,
+                           ClientResources resources,
+                           Supplier<StorageServerClientManager> factory) {
+        this.settings = settings;
+        this.resources = resources;
         this.clientManager = factory.get();
         this.rootRangeClient = this.clientManager.getRootRangeClient();
+    }
+
+    @Override
+    public StorageClient asClient(String namespace) {
+        return new StorageClientImpl(
+            namespace, settings, resources, clientManager, false);
     }
 
     @Override
