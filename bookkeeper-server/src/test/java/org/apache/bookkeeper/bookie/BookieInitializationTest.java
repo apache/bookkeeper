@@ -62,6 +62,7 @@ import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.common.component.ComponentStarter;
+import org.apache.bookkeeper.common.component.Lifecycle;
 import org.apache.bookkeeper.common.component.LifecycleComponent;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -1105,7 +1106,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
     public void testIOVertexHTTPServerEndpointForBookieWithPrometheusProvider() throws Exception {
         File tmpDir = createTempDir("bookie", "test");
 
@@ -1127,6 +1128,9 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
         LifecycleComponent server = Main.buildBookieServer(new BookieConfiguration(conf));
         // 2. start the server
         CompletableFuture<Void> stackComponentFuture = ComponentStarter.startComponent(server);
+        while (server.lifecycleState() != Lifecycle.State.STARTED) {
+            Thread.sleep(100);
+        }
 
         // Now, hit the rest endpoint for metrics
         URL url = new URL("http://localhost:" + nextFreePort + HttpRouter.METRICS);
@@ -1152,7 +1156,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
         stackComponentFuture.cancel(true);
     }
 
-    @Test(timeout = 20000)
+    @Test
     public void testIOVertexHTTPServerEndpointForARWithPrometheusProvider() throws Exception {
         final ServerConfiguration conf = TestBKConfiguration.newServerConfiguration()
                 .setMetadataServiceUri(metadataServiceUri).setListeningInterface(null);
@@ -1170,6 +1174,9 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
         LifecycleComponent server = AutoRecoveryMain.buildAutoRecoveryServer(new BookieConfiguration(conf));
         // 2. start the server
         CompletableFuture<Void> stackComponentFuture = ComponentStarter.startComponent(server);
+        while (server.lifecycleState() != Lifecycle.State.STARTED) {
+            Thread.sleep(100);
+        }
 
         // Now, hit the rest endpoint for metrics
         URL url = new URL("http://localhost:" + nextFreePort + HttpRouter.METRICS);
