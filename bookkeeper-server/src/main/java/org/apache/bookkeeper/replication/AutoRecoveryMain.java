@@ -22,7 +22,6 @@ package org.apache.bookkeeper.replication;
 
 import static org.apache.bookkeeper.replication.ReplicationStats.AUDITOR_SCOPE;
 import static org.apache.bookkeeper.replication.ReplicationStats.REPLICATION_WORKER_SCOPE;
-import static org.apache.bookkeeper.server.component.ServerLifecycleComponent.loadServerComponents;
 
 import com.google.common.annotations.VisibleForTesting;
 
@@ -30,7 +29,6 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.net.MalformedURLException;
-import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 import org.apache.bookkeeper.bookie.Bookie;
@@ -44,7 +42,6 @@ import org.apache.bookkeeper.common.component.LifecycleComponentStack;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.replication.ReplicationException.CompatibilityException;
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
-import org.apache.bookkeeper.server.component.ServerLifecycleComponent;
 import org.apache.bookkeeper.server.conf.BookieConfiguration;
 import org.apache.bookkeeper.server.http.BKHttpServiceProvider;
 import org.apache.bookkeeper.server.service.AutoRecoveryService;
@@ -58,7 +55,6 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.zookeeper.KeeperException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -340,7 +336,7 @@ public class AutoRecoveryMain {
         return ExitCode.OK;
     }
 
-    static LifecycleComponentStack buildAutoRecoveryServer(BookieConfiguration conf) throws Exception {
+    public static LifecycleComponentStack buildAutoRecoveryServer(BookieConfiguration conf) throws Exception {
         LifecycleComponentStack.Builder serverBuilder = LifecycleComponentStack.newBuilder()
                 .withName("autorecovery-server");
 
@@ -367,26 +363,6 @@ public class AutoRecoveryMain {
 
             serverBuilder.addComponent(httpService);
             LOG.info("Load lifecycle component : {}", HttpService.class.getName());
-        }
-
-        // 5. build extra services
-        String[] extraComponents = conf.getServerConf().getExtraServerComponents();
-        if (null != extraComponents) {
-            try {
-                List<ServerLifecycleComponent> components = loadServerComponents(extraComponents, conf,
-                        rootStatsLogger);
-                for (ServerLifecycleComponent component : components) {
-                    serverBuilder.addComponent(component);
-                    LOG.info("Load lifecycle component : {}", component.getClass().getName());
-                }
-            } catch (Exception e) {
-                if (conf.getServerConf().getIgnoreExtraServerComponentsStartupFailures()) {
-                    LOG.info("Failed to load extra components '{}' - {}. Continuing without those components.",
-                            StringUtils.join(extraComponents), e.getMessage());
-                } else {
-                    throw e;
-                }
-            }
         }
 
         return serverBuilder.build();
