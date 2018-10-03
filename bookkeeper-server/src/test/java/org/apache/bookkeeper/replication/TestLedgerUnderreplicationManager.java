@@ -43,6 +43,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import lombok.Cleanup;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.meta.AbstractZkLedgerManagerFactory;
@@ -762,6 +763,21 @@ public class TestLedgerUnderreplicationManager {
             LOG.info("s: {}", s);
         }
         assertEquals("All hierarchies should be cleaned up", 0, children.size());
+    }
+
+    @Test
+    public void testCheckAllLedgersCTime() throws Exception {
+        @Cleanup
+        LedgerUnderreplicationManager underReplicaMgr1 = lmf1.newLedgerUnderreplicationManager();
+        @Cleanup
+        LedgerUnderreplicationManager underReplicaMgr2 = lmf2.newLedgerUnderreplicationManager();
+        assertEquals(-1, underReplicaMgr1.getCheckAllLedgersCTime());
+        long curTime = System.currentTimeMillis();
+        underReplicaMgr2.setCheckAllLedgersCTime(curTime);
+        assertEquals(curTime, underReplicaMgr1.getCheckAllLedgersCTime());
+        curTime = System.currentTimeMillis();
+        underReplicaMgr2.setCheckAllLedgersCTime(curTime);
+        assertEquals(curTime, underReplicaMgr1.getCheckAllLedgersCTime());
     }
 
     private void verifyMarkLedgerUnderreplicated(Collection<String> missingReplica)
