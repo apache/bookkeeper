@@ -23,6 +23,7 @@ import org.apache.bookkeeper.clients.resolver.EndpointResolver;
 import org.apache.bookkeeper.clients.utils.ClientConstants;
 import org.apache.bookkeeper.common.net.ServiceURI;
 import org.apache.bookkeeper.common.util.Backoff;
+import org.apache.bookkeeper.stats.StatsLogger;
 import org.inferred.freebuilder.FreeBuilder;
 
 /**
@@ -71,6 +72,13 @@ public interface StorageClientSettings {
      * @return client name.
      */
     Optional<String> clientName();
+
+    /**
+     * Configure a stats logger to collect stats exposed by this client.
+     *
+     * @return stats logger.
+     */
+    Optional<StatsLogger> statsLogger();
 
     /**
      * Configure a backoff policy for the client.
