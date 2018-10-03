@@ -19,6 +19,7 @@
 package org.apache.bookkeeper.stream.cli.commands.cluster;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static org.apache.bookkeeper.stream.cli.Commands.OP_INIT;
 
 import com.beust.jcommander.Parameter;
 import com.google.common.base.Strings;
@@ -52,7 +53,7 @@ import org.apache.zookeeper.KeeperException.Code;
 @Slf4j
 public class InitClusterCommand extends BKCommand<Flags> {
 
-    private static final String NAME = "init";
+    private static final String NAME = OP_INIT;
     private static final String DESC = "Init a cluster";
 
     /**
@@ -95,6 +96,7 @@ public class InitClusterCommand extends BKCommand<Flags> {
             .withName(NAME)
             .withDescription(DESC)
             .withFlags(new Flags())
+            .withUsage("bkctl cluster init [flags] <service-uri>")
             .build());
     }
 
@@ -105,13 +107,15 @@ public class InitClusterCommand extends BKCommand<Flags> {
     }
 
     @Override
-    protected boolean apply(ServiceURI serviceURI,
+    protected boolean apply(ServiceURI ignored,
                             CompositeConfiguration conf,
                             BKFlags globalFlags,
                             Flags cmdFlags) {
         checkArgument(
-            null != serviceURI,
+            !cmdFlags.arguments.isEmpty(),
             "No service URI is provided");
+
+        ServiceURI serviceURI = ServiceURI.create(cmdFlags.arguments.get(0));
 
         if (null != cmdFlags.clusterName) {
             checkArgument(
