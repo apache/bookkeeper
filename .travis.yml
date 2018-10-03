@@ -37,6 +37,8 @@ matrix:
     #  env: CUSTOM_JDK="oraclejdk9"
     - os: linux
       env: CUSTOM_JDK="oraclejdk10"
+    - os: linux
+      env: CUSTOM_JDK="oraclejdk11"
 
 before_install: 
 - |
