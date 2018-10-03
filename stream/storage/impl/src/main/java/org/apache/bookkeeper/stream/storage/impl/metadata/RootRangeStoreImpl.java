@@ -148,7 +148,7 @@ public class RootRangeStoreImpl
     private final StorageContainerPlacementPolicy placementPolicy;
     private final ScheduledExecutorService executor;
 
-    public RootRangeStoreImpl( MVCCAsyncStore<byte[], byte[]> store,
+    public RootRangeStoreImpl(MVCCAsyncStore<byte[], byte[]> store,
                               StorageContainerPlacementPolicy placementPolicy,
                               ScheduledExecutorService executor) {
         this.store = store;
