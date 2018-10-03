@@ -17,14 +17,11 @@
  */
 package org.apache.bookkeeper.stream.cli.commands;
 
-import static com.google.common.base.Preconditions.checkArgument;
-
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.clients.StorageClientBuilder;
 import org.apache.bookkeeper.clients.admin.StorageAdminClient;
 import org.apache.bookkeeper.clients.config.StorageClientSettings;
 import org.apache.bookkeeper.common.net.ServiceURI;
-import org.apache.bookkeeper.tools.common.BKCommand;
 import org.apache.bookkeeper.tools.common.BKFlags;
 import org.apache.bookkeeper.tools.framework.CliFlags;
 import org.apache.bookkeeper.tools.framework.CliSpec;
@@ -34,26 +31,17 @@ import org.apache.commons.configuration.CompositeConfiguration;
  * An admin command interface provides a run method to execute admin commands.
  */
 @Slf4j
-public abstract class AdminCommand<ClientFlagsT extends CliFlags> extends BKCommand<ClientFlagsT> {
+public abstract class AdminCommand<ClientFlagsT extends CliFlags> extends AbstractStreamCommand<ClientFlagsT> {
 
     protected AdminCommand(CliSpec<ClientFlagsT> spec) {
         super(spec);
     }
 
     @Override
-    protected boolean acceptServiceUri(ServiceURI serviceURI) {
-        return ServiceURI.SERVICE_BK.equals(serviceURI.getServiceName());
-    }
-
-    @Override
-    protected boolean apply(ServiceURI serviceURI,
-                            CompositeConfiguration conf,
-                            BKFlags bkFlags,
-                            ClientFlagsT cmdFlags) {
-        checkArgument(
-            null != serviceURI,
-            "No service URI is provided");
-
+    protected boolean doApply(ServiceURI serviceURI,
+                              CompositeConfiguration conf,
+                              BKFlags bkFlags,
+                              ClientFlagsT cmdFlags) {
         StorageClientSettings settings = StorageClientSettings.newBuilder()
             .clientName("bkctl")
             .serviceUri(serviceURI.getUri().toString())
@@ -66,6 +54,8 @@ public abstract class AdminCommand<ClientFlagsT extends CliFlags> extends BKComm
             return true;
         } catch (Exception e) {
             log.error("Failed to process stream admin command", e);
+            spec.console().println("Failed to process stream admin command");
+            e.printStackTrace(spec.console());
             return false;
         }
     }

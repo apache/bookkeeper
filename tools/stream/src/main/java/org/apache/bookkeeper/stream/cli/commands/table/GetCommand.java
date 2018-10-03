@@ -20,6 +20,7 @@ package org.apache.bookkeeper.stream.cli.commands.table;
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.bookkeeper.common.concurrent.FutureUtils.result;
+import static org.apache.bookkeeper.stream.cli.Commands.OP_GET;
 
 import com.beust.jcommander.Parameter;
 import io.netty.buffer.ByteBuf;
@@ -38,7 +39,7 @@ import org.apache.bookkeeper.tools.framework.CliSpec;
  */
 public class GetCommand extends ClientCommand<Flags> {
 
-    private static final String NAME = "get";
+    private static final String NAME = OP_GET;
     private static final String DESC = "Get key/value pair from a table";
 
     /**

@@ -18,6 +18,8 @@
 package org.apache.bookkeeper.stream.cli;
 
 import org.apache.bookkeeper.stream.cli.commands.table.CreateTableCommand;
+import org.apache.bookkeeper.stream.cli.commands.table.DeleteTableCommand;
+import org.apache.bookkeeper.stream.cli.commands.table.GetTableCommand;
 import org.apache.bookkeeper.tools.common.BKFlags;
 import org.apache.bookkeeper.tools.framework.CliCommandGroup;
 import org.apache.bookkeeper.tools.framework.CliSpec;
@@ -35,6 +37,8 @@ public class TableAdminCommandGroup extends CliCommandGroup<BKFlags> {
         .withDescription(DESC)
         .withParent("bkctl")
         .addCommand(new CreateTableCommand())
+        .addCommand(new GetTableCommand())
+        .addCommand(new DeleteTableCommand())
         .build();
 
     public TableAdminCommandGroup() {

@@ -245,10 +245,11 @@ public class StreamCluster
             boolean created = false;
             while (!created) {
                 try {
-                    result(admin.getNamespace(namespaceName));
+                    NamespaceProperties nsProps = result(admin.getNamespace(namespaceName));
+                    log.info("Namespace '{}':\n{}", namespaceName, nsProps);
                     created = true;
                 } catch (NamespaceNotFoundException nnfe) {
-                    log.info("Namespace '{}' is not found.");
+                    log.info("Namespace '{}' is not found.", namespaceName);
                     log.info("Creating namespace '{}' ...", namespaceName);
                     try {
                         NamespaceProperties nsProps = result(

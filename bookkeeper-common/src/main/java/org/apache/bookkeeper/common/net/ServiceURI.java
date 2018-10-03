@@ -123,6 +123,12 @@ public class ServiceURI {
      */
     public static final String SERVICE_BK = "bk";
 
+    /**
+     * The default local bk service uri.
+     */
+    public static final ServiceURI DEFAULT_LOCAL_STREAM_STORAGE_SERVICE_URI =
+        ServiceURI.create("bk://localhost:4181");
+
     private static final String SERVICE_SEP = "+";
     private static final String SERVICE_DLOG_SEP = "-";
 

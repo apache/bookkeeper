@@ -17,6 +17,7 @@
  */
 package org.apache.bookkeeper.stream.cli;
 
+import org.apache.bookkeeper.stream.cli.commands.table.DelCommand;
 import org.apache.bookkeeper.stream.cli.commands.table.GetCommand;
 import org.apache.bookkeeper.stream.cli.commands.table.IncrementCommand;
 import org.apache.bookkeeper.stream.cli.commands.table.PutCommand;
@@ -39,6 +40,7 @@ public class TableCommandGroup extends CliCommandGroup<BKFlags> {
         .addCommand(new PutCommand())
         .addCommand(new GetCommand())
         .addCommand(new IncrementCommand())
+        .addCommand(new DelCommand())
         .build();
 
     public TableCommandGroup() {

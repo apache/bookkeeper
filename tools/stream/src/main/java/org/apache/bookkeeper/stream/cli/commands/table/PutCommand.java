@@ -20,6 +20,7 @@ package org.apache.bookkeeper.stream.cli.commands.table;
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.bookkeeper.common.concurrent.FutureUtils.result;
+import static org.apache.bookkeeper.stream.cli.Commands.OP_PUT;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -35,7 +36,7 @@ import org.apache.bookkeeper.tools.framework.CliSpec;
  */
 public class PutCommand extends ClientCommand<Flags> {
 
-    private static final String NAME = "put";
+    private static final String NAME = OP_PUT;
     private static final String DESC = "Put key/value pair to a table";
 
     /**
