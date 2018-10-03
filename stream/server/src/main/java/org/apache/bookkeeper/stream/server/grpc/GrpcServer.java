@@ -18,12 +18,14 @@ import com.google.common.annotations.VisibleForTesting;
 import io.grpc.HandlerRegistry;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
+import io.grpc.ServerInterceptors;
 import io.grpc.ServerServiceDefinition;
 import io.grpc.inprocess.InProcessServerBuilder;
 import java.io.IOException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.common.component.AbstractLifecycleComponent;
 import org.apache.bookkeeper.common.grpc.proxy.ProxyHandlerRegistry;
+import org.apache.bookkeeper.common.grpc.stats.MonitoringServerInterceptor;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.stream.proto.common.Endpoint;
 import org.apache.bookkeeper.stream.server.conf.StorageServerConfiguration;
@@ -75,13 +77,23 @@ public class GrpcServer extends AbstractLifecycleComponent<StorageServerConfigur
             }
             this.grpcServer = serverBuilder.build();
         } else {
+            MonitoringServerInterceptor monitoringInterceptor =
+                MonitoringServerInterceptor.create(statsLogger.scope("services"), true);
             ProxyHandlerRegistry.Builder proxyRegistryBuilder = ProxyHandlerRegistry.newBuilder()
                 .setChannelFinder(storageContainerStore);
             for (ServerServiceDefinition definition : GrpcServices.create(null)) {
-                proxyRegistryBuilder = proxyRegistryBuilder.addService(definition);
+                ServerServiceDefinition monitoredService = ServerInterceptors.intercept(
+                    definition,
+                    monitoringInterceptor
+                );
+                proxyRegistryBuilder = proxyRegistryBuilder.addService(monitoredService);
             }
+            ServerServiceDefinition locationService = ServerInterceptors.intercept(
+                new GrpcStorageContainerService(storageContainerStore),
+                monitoringInterceptor
+            );
             this.grpcServer = ServerBuilder.forPort(this.myEndpoint.getPort())
-                .addService(new GrpcStorageContainerService(storageContainerStore))
+                .addService(locationService)
                 .fallbackHandlerRegistry(proxyRegistryBuilder.build())
                 .build();
         }

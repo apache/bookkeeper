@@ -31,6 +31,7 @@ import org.apache.bookkeeper.clients.config.StorageClientSettings;
 import org.apache.bookkeeper.clients.impl.container.StorageContainerClientInterceptor;
 import org.apache.bookkeeper.clients.resolver.EndpointResolver;
 import org.apache.bookkeeper.clients.utils.GrpcUtils;
+import org.apache.bookkeeper.common.grpc.stats.MonitoringClientInterceptor;
 import org.apache.bookkeeper.stream.proto.common.Endpoint;
 import org.apache.bookkeeper.stream.proto.kv.rpc.TableServiceGrpc;
 import org.apache.bookkeeper.stream.proto.kv.rpc.TableServiceGrpc.TableServiceFutureStub;
@@ -49,11 +50,24 @@ import org.apache.bookkeeper.stream.proto.storage.StorageContainerServiceGrpc.St
 public class StorageServerChannel implements AutoCloseable {
 
     public static Function<Endpoint, StorageServerChannel> factory(StorageClientSettings settings) {
-        return (endpoint) -> new StorageServerChannel(
-            endpoint,
-            Optional.empty(),
-            settings.usePlaintext(),
-            settings.endpointResolver());
+        return new Function<Endpoint, StorageServerChannel>() {
+
+            private final Optional<MonitoringClientInterceptor> interceptor =
+                settings.statsLogger().map(statsLogger ->
+                    MonitoringClientInterceptor.create(statsLogger, true));
+
+            @Override
+            public StorageServerChannel apply(Endpoint endpoint) {
+                StorageServerChannel channel = new StorageServerChannel(
+                    endpoint,
+                    Optional.empty(),
+                    settings.usePlaintext(),
+                    settings.endpointResolver());
+                return interceptor
+                    .map(interceptor -> channel.intercept(interceptor))
+                    .orElse(channel);
+            }
+        };
     }
 
     private final Optional<String> token;

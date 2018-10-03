@@ -1,5 +1,4 @@
 /*
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -16,7 +15,6 @@
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
  * under the License.
- *
  */
 
 package org.apache.bookkeeper.test;
@@ -103,12 +101,12 @@ public class TestStatsProvider implements StatsProvider {
 
         @Override
         public void registerFailedEvent(long eventLatency, TimeUnit unit) {
-            registerFailedValue(unit.convert(eventLatency, TimeUnit.NANOSECONDS));
+            registerFailedValue(TimeUnit.NANOSECONDS.convert(eventLatency, unit));
         }
 
         @Override
         public void registerSuccessfulEvent(long eventLatency, TimeUnit unit) {
-            registerSuccessfulValue(unit.convert(eventLatency, TimeUnit.NANOSECONDS));
+            registerSuccessfulValue(TimeUnit.NANOSECONDS.convert(eventLatency, unit));
         }
 
         @Override
