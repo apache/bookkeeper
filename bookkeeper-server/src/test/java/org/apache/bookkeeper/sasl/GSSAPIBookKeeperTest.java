@@ -43,14 +43,13 @@ import org.apache.bookkeeper.client.LedgerEntry;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
-import org.apache.hadoop.minikdc.MiniKdc;
 import org.apache.zookeeper.KeeperException;
-import org.junit.After;
 import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.Rule;
+import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.slf4j.Logger;
@@ -66,23 +65,24 @@ public class GSSAPIBookKeeperTest extends BookKeeperClusterTestCase {
     private static final byte[] PASSWD = "testPasswd".getBytes();
     private static final byte[] ENTRY = "TestEntry".getBytes();
 
-    private MiniKdc kdc;
-    private Properties conf;
+    private static MiniKdc kdc;
+    private static Properties conf;
 
-    @Rule
-    public TemporaryFolder kdcDir = new TemporaryFolder();
+    @ClassRule
+    public static TemporaryFolder kdcDir = new TemporaryFolder();
 
-    @Rule
-    public TemporaryFolder kerberosWorkDir = new TemporaryFolder();
+    @ClassRule
+    public static TemporaryFolder kerberosWorkDir = new TemporaryFolder();
 
-    @Before
-    public void startMiniKdc() throws Exception {
+    @BeforeClass
+    public static void startMiniKdc() throws Exception {
 
         conf = MiniKdc.createConf();
         kdc = new MiniKdc(conf, kdcDir.getRoot());
         kdc.start();
 
-        ServerConfiguration bookieConf = newServerConfiguration();
+        // this is just to calculate "localhostName" the same way the bookie does
+        ServerConfiguration bookieConf = TestBKConfiguration.newServerConfiguration();
         bookieConf.setUseHostNameAsBookieID(true);
         String localhostName = Bookie.getBookieAddress(bookieConf).getHostName();
 
@@ -127,16 +127,17 @@ public class GSSAPIBookKeeperTest extends BookKeeperClusterTestCase {
 
         File krb5file = new File(kerberosWorkDir.getRoot(), "krb5.conf");
         try (FileWriter writer = new FileWriter(krb5file)) {
-            writer.write("[libdefaults]\n"
+            String conf = "[libdefaults]\n"
                 + " default_realm = " + kdc.getRealm() + "\n"
+                + " udp_preference_limit = 1\n" // force use TCP
                 + "\n"
                 + "\n"
                 + "[realms]\n"
                 + " " + kdc.getRealm() + "  = {\n"
                 + "  kdc = " + kdc.getHost() + ":" + kdc.getPort() + "\n"
-                + " }"
-            );
-
+                + " }";
+            writer.write(conf);
+            LOG.info("krb5.conf:\n" + conf);
         }
 
         System.setProperty("java.security.auth.login.config", jaasFile.getAbsolutePath());
@@ -145,8 +146,8 @@ public class GSSAPIBookKeeperTest extends BookKeeperClusterTestCase {
 
     }
 
-    @After
-    public void stopMiniKdc() {
+    @AfterClass
+    public static void stopMiniKdc() {
         System.clearProperty("java.security.auth.login.config");
         System.clearProperty("java.security.krb5.conf");
         if (kdc != null) {
