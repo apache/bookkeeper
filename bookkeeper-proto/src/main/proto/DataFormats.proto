@@ -95,3 +95,10 @@ message LockDataFormat {
 message AuditorVoteFormat {
     optional string bookieId = 1;
 }
+
+/**
+ * information of checkAllLedgers execution
+ */
+message CheckAllLedgersFormat {
+    optional int64 checkAllLedgersCTime = 1;
+}

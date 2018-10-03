@@ -20,17 +20,20 @@
  */
 package org.apache.bookkeeper.replication;
 
+import static org.apache.bookkeeper.replication.ReplicationStats.AUDITOR_SCOPE;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
 import io.netty.buffer.ByteBuf;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.net.URI;
+import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -38,14 +41,18 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
+
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieAccessor;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.IndexPersistenceMgr;
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.BKException;
+import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.LedgerHandleAdapter;
@@ -56,8 +63,14 @@ import org.apache.bookkeeper.meta.MetadataBookieDriver;
 import org.apache.bookkeeper.meta.MetadataDrivers;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
+import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
 import org.apache.bookkeeper.stats.NullStatsLogger;
+import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
+import org.apache.bookkeeper.test.TestStatsProvider;
+import org.apache.bookkeeper.test.TestStatsProvider.TestOpStatsLogger;
+import org.apache.bookkeeper.test.TestStatsProvider.TestStatsLogger;
+import org.apache.zookeeper.KeeperException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -207,7 +220,7 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
         out.close();
 
         long underReplicatedLedger = -1;
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < 15; i++) {
             underReplicatedLedger = underReplicationManager.pollLedgerToRereplicate();
             if (underReplicatedLedger != -1) {
                 break;
@@ -348,6 +361,120 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
             }
             t.join();
             assertFalse("Shouldn't have thrown exception", exceptionCaught.get());
+        }
+    }
+
+    @Test
+    public void testInitialDelayOfCheckAllLedgers() throws Exception {
+        for (AuditorElector e : auditorElectors.values()) {
+            e.shutdown();
+        }
+
+        final int numLedgers = 10;
+        List<Long> ids = new LinkedList<Long>();
+        for (int i = 0; i < numLedgers; i++) {
+            LedgerHandle lh = bkc.createLedger(3, 3, DigestType.CRC32, "passwd".getBytes());
+            ids.add(lh.getId());
+            for (int j = 0; j < 2; j++) {
+                lh.addEntry("testdata".getBytes());
+            }
+            lh.close();
+        }
+
+        LedgerManagerFactory mFactory = driver.getLedgerManagerFactory();
+        LedgerUnderreplicationManager urm = mFactory.newLedgerUnderreplicationManager();
+
+        ServerConfiguration servConf = new ServerConfiguration(bsConfs.get(0));
+        validateInitialDelayOfCheckAllLedgers(urm, -1, 1000, servConf, bkc);
+        validateInitialDelayOfCheckAllLedgers(urm, 999, 1000, servConf, bkc);
+        validateInitialDelayOfCheckAllLedgers(urm, 1001, 1000, servConf, bkc);
+    }
+
+    void validateInitialDelayOfCheckAllLedgers(LedgerUnderreplicationManager urm, long timeSinceLastExecutedInSecs,
+            long auditorPeriodicCheckInterval, ServerConfiguration servConf, BookKeeper bkc)
+            throws UnavailableException, UnknownHostException, InterruptedException {
+        TestStatsProvider statsProvider = new TestStatsProvider();
+        TestStatsLogger statsLogger = statsProvider.getStatsLogger(AUDITOR_SCOPE);
+        TestOpStatsLogger checkAllLedgersStatsLogger = (TestOpStatsLogger) statsLogger
+                .getOpStatsLogger(ReplicationStats.CHECK_ALL_LEDGERS_TIME);
+        servConf.setAuditorPeriodicCheckInterval(auditorPeriodicCheckInterval);
+        final TestAuditor auditor = new TestAuditor(Bookie.getBookieAddress(servConf).toString(), servConf, bkc, false,
+                statsLogger);
+        CountDownLatch latch = auditor.getLatch();
+        assertEquals("CHECK_ALL_LEDGERS_TIME SuccessCount", 0, checkAllLedgersStatsLogger.getSuccessCount());
+        long curTimeBeforeStart = System.currentTimeMillis();
+        long checkAllLedgersCTime = -1;
+        long initialDelayInMsecs = -1;
+        long nextExpectedCheckAllLedgersExecutionTime = -1;
+        long bufferTimeInMsecs = 12000L;
+        if (timeSinceLastExecutedInSecs == -1) {
+            /*
+             * if we are setting checkAllLedgersCTime to -1, it means that
+             * checkAllLedgers hasn't run before. So initialDelay for
+             * checkAllLedgers should be 0.
+             */
+            checkAllLedgersCTime = -1;
+            initialDelayInMsecs = 0;
+        } else {
+            checkAllLedgersCTime = curTimeBeforeStart - timeSinceLastExecutedInSecs * 1000L;
+            initialDelayInMsecs = timeSinceLastExecutedInSecs > auditorPeriodicCheckInterval ? 0
+                    : (auditorPeriodicCheckInterval - timeSinceLastExecutedInSecs) * 1000L;
+        }
+        /*
+         * next checkAllLedgers should happen atleast after
+         * nextExpectedCheckAllLedgersExecutionTime.
+         */
+        nextExpectedCheckAllLedgersExecutionTime = curTimeBeforeStart + initialDelayInMsecs;
+
+        urm.setCheckAllLedgersCTime(checkAllLedgersCTime);
+        auditor.start();
+        /*
+         * since auditorPeriodicCheckInterval are higher values (in the order of
+         * 100s of seconds), its ok bufferTimeInMsecs to be ` 10 secs.
+         */
+        assertTrue("checkAllLedgers should have executed with initialDelay " + initialDelayInMsecs,
+                latch.await(initialDelayInMsecs + bufferTimeInMsecs, TimeUnit.MILLISECONDS));
+        for (int i = 0; i < 10; i++) {
+            Thread.sleep(100);
+            if (checkAllLedgersStatsLogger.getSuccessCount() >= 1) {
+                break;
+            }
+        }
+        assertEquals("CHECK_ALL_LEDGERS_TIME SuccessCount", 1, checkAllLedgersStatsLogger.getSuccessCount());
+        long currentCheckAllLedgersCTime = urm.getCheckAllLedgersCTime();
+        assertTrue(
+                "currentCheckAllLedgersCTime: " + currentCheckAllLedgersCTime
+                        + " should be greater than nextExpectedCheckAllLedgersExecutionTime: "
+                        + nextExpectedCheckAllLedgersExecutionTime,
+                currentCheckAllLedgersCTime > nextExpectedCheckAllLedgersExecutionTime);
+        assertTrue(
+                "currentCheckAllLedgersCTime: " + currentCheckAllLedgersCTime
+                        + " should be lesser than nextExpectedCheckAllLedgersExecutionTime+bufferTimeInMsecs: "
+                        + (nextExpectedCheckAllLedgersExecutionTime + bufferTimeInMsecs),
+                currentCheckAllLedgersCTime < (nextExpectedCheckAllLedgersExecutionTime + bufferTimeInMsecs));
+        auditor.close();
+    }
+
+    class TestAuditor extends Auditor {
+
+        final AtomicReference<CountDownLatch> latchRef = new AtomicReference<CountDownLatch>(new CountDownLatch(1));
+
+        public TestAuditor(String bookieIdentifier, ServerConfiguration conf, BookKeeper bkc, boolean ownBkc,
+                StatsLogger statsLogger) throws UnavailableException {
+            super(bookieIdentifier, conf, bkc, ownBkc, statsLogger);
+        }
+
+        void checkAllLedgers() throws BKException, IOException, InterruptedException, KeeperException {
+            super.checkAllLedgers();
+            latchRef.get().countDown();
+        }
+
+        CountDownLatch getLatch() {
+            return latchRef.get();
+        }
+
+        void setLatch(CountDownLatch latch) {
+            latchRef.set(latch);
         }
     }
 

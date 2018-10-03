@@ -129,6 +129,7 @@ public class AuditorLedgerCheckerTest extends BookKeeperClusterTestCase {
             + "/underreplication/auditorelection";
 
         urLedgerMgr = new ZkLedgerUnderreplicationManager(baseClientConf, zkc);
+        urLedgerMgr.setCheckAllLedgersCTime(System.currentTimeMillis());
         startAuditorElectors();
         rng = new Random(System.currentTimeMillis()); // Initialize the Random
         urLedgerList = new HashSet<Long>();

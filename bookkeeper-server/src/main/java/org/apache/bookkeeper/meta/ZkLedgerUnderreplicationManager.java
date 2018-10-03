@@ -22,6 +22,7 @@ import static com.google.common.base.Charsets.UTF_8;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Joiner;
+import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.TextFormat;
 import com.google.protobuf.TextFormat.ParseException;
 
@@ -46,6 +47,7 @@ import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
 import org.apache.bookkeeper.net.DNS;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
+import org.apache.bookkeeper.proto.DataFormats.CheckAllLedgersFormat;
 import org.apache.bookkeeper.proto.DataFormats.LedgerRereplicationLayoutFormat;
 import org.apache.bookkeeper.proto.DataFormats.LockDataFormat;
 import org.apache.bookkeeper.proto.DataFormats.UnderreplicatedLedgerFormat;
@@ -115,6 +117,7 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
     private final String layoutZNode;
     private final AbstractConfiguration conf;
     private final String lostBookieRecoveryDelayZnode;
+    private final String checkAllLedgersCtimeZnode;
     private final ZooKeeper zkc;
     private final SubTreeCache subTreeCache;
 
@@ -127,7 +130,7 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
                 + BookKeeperConstants.DEFAULT_ZK_LEDGERS_ROOT_PATH;
         urLockPath = basePath + '/' + BookKeeperConstants.UNDER_REPLICATION_LOCK;
         lostBookieRecoveryDelayZnode = basePath + '/' + BookKeeperConstants.LOSTBOOKIERECOVERYDELAY_NODE;
-
+        checkAllLedgersCtimeZnode = basePath + '/' + BookKeeperConstants.CHECK_ALL_LEDGERS_CTIME;
         idExtractionPattern = Pattern.compile("urL(\\d+)$");
         this.zkc = zkc;
         this.subTreeCache = new SubTreeCache(new SubTreeCache.TreeProvider() {
@@ -884,5 +887,51 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
             throw new ReplicationException.UnavailableException("Error while parsing ZK data of lock", e);
         }
         return replicationWorkerId;
+    }
+
+    @Override
+    public void setCheckAllLedgersCTime(long checkAllLedgersCTime) throws UnavailableException {
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("setCheckAllLedgersCTime");
+        }
+        try {
+            List<ACL> zkAcls = ZkUtils.getACLs(conf);
+            CheckAllLedgersFormat.Builder builder = CheckAllLedgersFormat.newBuilder();
+            builder.setCheckAllLedgersCTime(checkAllLedgersCTime);
+            byte[] checkAllLedgersFormatByteArray = builder.build().toByteArray();
+            if (zkc.exists(checkAllLedgersCtimeZnode, false) != null) {
+                zkc.setData(checkAllLedgersCtimeZnode, checkAllLedgersFormatByteArray, -1);
+            } else {
+                zkc.create(checkAllLedgersCtimeZnode, checkAllLedgersFormatByteArray, zkAcls, CreateMode.PERSISTENT);
+            }
+        } catch (KeeperException ke) {
+            throw new ReplicationException.UnavailableException("Error contacting zookeeper", ke);
+        } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
+            throw new ReplicationException.UnavailableException("Interrupted while contacting zookeeper", ie);
+        }
+    }
+
+    @Override
+    public long getCheckAllLedgersCTime() throws UnavailableException {
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("setCheckAllLedgersCTime");
+        }
+        try {
+            byte[] data = zkc.getData(checkAllLedgersCtimeZnode, false, null);
+            CheckAllLedgersFormat checkAllLedgersFormat = CheckAllLedgersFormat.parseFrom(data);
+            return checkAllLedgersFormat.hasCheckAllLedgersCTime() ? checkAllLedgersFormat.getCheckAllLedgersCTime()
+                    : -1;
+        } catch (KeeperException.NoNodeException ne) {
+            LOG.warn("checkAllLedgersCtimeZnode is not yet available");
+            return -1;
+        } catch (KeeperException ke) {
+            throw new ReplicationException.UnavailableException("Error contacting zookeeper", ke);
+        } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
+            throw new ReplicationException.UnavailableException("Interrupted while contacting zookeeper", ie);
+        } catch (InvalidProtocolBufferException ipbe) {
+            throw new ReplicationException.UnavailableException("Error while parsing ZK protobuf binary data", ipbe);
+        }
     }
 }
