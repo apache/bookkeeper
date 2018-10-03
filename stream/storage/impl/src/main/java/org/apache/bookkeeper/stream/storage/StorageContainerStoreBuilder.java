@@ -159,7 +159,7 @@ public final class StorageContainerStoreBuilder {
             placementPolicyFactory.newPlacementPolicy(),
             storeResources.scheduler(),
             mvccStoreFactory,
-            defaultBackendUri);
+            clientManagerSupplier.get());
 
         RangeStoreContainerServiceFactoryImpl containerServiceFactory =
             new RangeStoreContainerServiceFactoryImpl(serviceFactory);

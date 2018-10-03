@@ -24,7 +24,6 @@ import static org.apache.bookkeeper.stream.protocol.util.ProtoUtils.validateName
 import static org.apache.bookkeeper.stream.protocol.util.ProtoUtils.validateStreamName;
 
 import com.google.protobuf.InvalidProtocolBufferException;
-import java.net.URI;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledExecutorService;
 import lombok.extern.slf4j.Slf4j;
@@ -145,16 +144,13 @@ public class RootRangeStoreImpl
         return streamIdBytes;
     }
 
-    private final URI defaultServiceUri;
     private final MVCCAsyncStore<byte[], byte[]> store;
     private final StorageContainerPlacementPolicy placementPolicy;
     private final ScheduledExecutorService executor;
 
-    public RootRangeStoreImpl(URI defaultServiceUri,
-                              MVCCAsyncStore<byte[], byte[]> store,
+    public RootRangeStoreImpl(MVCCAsyncStore<byte[], byte[]> store,
                               StorageContainerPlacementPolicy placementPolicy,
                               ScheduledExecutorService executor) {
-        this.defaultServiceUri = defaultServiceUri;
         this.store = store;
         this.placementPolicy = placementPolicy;
         this.executor = executor;

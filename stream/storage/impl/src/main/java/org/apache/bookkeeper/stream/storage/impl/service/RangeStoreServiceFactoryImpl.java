@@ -18,7 +18,7 @@
 
 package org.apache.bookkeeper.stream.storage.impl.service;
 
-import java.net.URI;
+import org.apache.bookkeeper.clients.impl.internal.api.StorageServerClientManager;
 import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.bookkeeper.common.util.SharedResourceManager;
 import org.apache.bookkeeper.common.util.SharedResourceManager.Resource;
@@ -38,30 +38,29 @@ public class RangeStoreServiceFactoryImpl implements RangeStoreServiceFactory {
     private final Resource<OrderedScheduler> schedulerResource;
     private final OrderedScheduler scheduler;
     private final MVCCStoreFactory storeFactory;
-    private final URI defaultBackendUri;
+    private final StorageServerClientManager clientManager;
 
     public RangeStoreServiceFactoryImpl(StorageConfiguration storageConf,
                                         StorageContainerPlacementPolicy rangePlacementPolicy,
                                         Resource<OrderedScheduler> schedulerResource,
                                         MVCCStoreFactory storeFactory,
-                                        URI defaultBackendUri) {
+                                        StorageServerClientManager clientManager) {
         this.storageConf = storageConf;
         this.rangePlacementPolicy = rangePlacementPolicy;
         this.schedulerResource = schedulerResource;
         this.scheduler = SharedResourceManager.shared().get(schedulerResource);
         this.storeFactory = storeFactory;
-        this.defaultBackendUri = defaultBackendUri;
+        this.clientManager = clientManager;
     }
 
     @Override
     public RangeStoreService createService(long scId) {
         return new RangeStoreServiceImpl(
-            storageConf,
             scId,
             rangePlacementPolicy,
             scheduler,
             storeFactory,
-            defaultBackendUri);
+            clientManager);
     }
 
     @Override

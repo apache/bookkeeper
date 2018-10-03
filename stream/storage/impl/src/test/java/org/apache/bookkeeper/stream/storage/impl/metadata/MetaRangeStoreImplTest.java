@@ -20,12 +20,16 @@ package org.apache.bookkeeper.stream.storage.impl.metadata;
 import static org.apache.bookkeeper.stream.protocol.ProtocolConstants.DEFAULT_STREAM_CONF;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.google.common.collect.Lists;
 import java.util.Collections;
 import java.util.List;
 import java.util.NavigableMap;
 import java.util.stream.LongStream;
+import org.apache.bookkeeper.clients.impl.internal.api.StorageServerClientManager;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.stream.proto.RangeMetadata;
 import org.apache.bookkeeper.stream.proto.RangeState;
@@ -48,6 +52,7 @@ public class MetaRangeStoreImplTest extends MVCCAsyncStoreTestBase {
 
     private StreamProperties streamProps;
     private MetaRangeStoreImpl mrStoreImpl;
+    private StorageServerClientManager clientManager;
 
     @Override
     protected void doSetup() throws Exception {
@@ -57,10 +62,12 @@ public class MetaRangeStoreImplTest extends MVCCAsyncStoreTestBase {
             .setStreamName(name.getMethodName() + "_stream")
             .setStreamId(System.currentTimeMillis())
             .build();
+        this.clientManager = mock(StorageServerClientManager.class);
         this.mrStoreImpl = new MetaRangeStoreImpl(
             this.store,
             StorageContainerPlacementPolicyImpl.of(1024),
-            this.scheduler.chooseThread());
+            this.scheduler.chooseThread(),
+            clientManager);
     }
 
     @Override
@@ -68,11 +75,10 @@ public class MetaRangeStoreImplTest extends MVCCAsyncStoreTestBase {
     }
 
     GetActiveRangesRequest createRequest(StreamProperties streamProperties) {
+        when(clientManager.getStreamProperties(eq(this.streamProps.getStreamId())))
+            .thenReturn(FutureUtils.value(streamProperties));
         GetActiveRangesRequest.Builder reqBuilder = GetActiveRangesRequest.newBuilder()
             .setStreamId(this.streamProps.getStreamId());
-        if (null != streamProperties) {
-            reqBuilder = reqBuilder.setStreamProps(streamProperties);
-        }
         return reqBuilder.build();
     }
 
