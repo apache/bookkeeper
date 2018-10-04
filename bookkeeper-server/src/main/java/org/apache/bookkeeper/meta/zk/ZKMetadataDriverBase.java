@@ -256,7 +256,7 @@ public class ZKMetadataDriverBase implements AutoCloseable {
         return new ZkAuditorSelector(bookieId, zk, new ServerConfiguration(conf));
     }
 
-    protected synchronized void closeLedgerManagerFactory() {
+    protected void closeLedgerManagerFactory() {
         LedgerManagerFactory lmToClose;
         synchronized (this) {
             lmToClose = lmFactory;
