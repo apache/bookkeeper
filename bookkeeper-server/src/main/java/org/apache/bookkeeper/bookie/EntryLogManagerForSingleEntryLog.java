@@ -211,9 +211,7 @@ class EntryLogManagerForSingleEntryLog extends EntryLogManagerBase {
 
     @Override
     public void close() throws IOException {
-        if (activeLogChannel != null) {
-            activeLogChannel.close();
-        }
+        IOUtils.close(log, activeLogChannel);
     }
 
     @Override
