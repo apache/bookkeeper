@@ -40,7 +40,7 @@ EOF
 
 fi
 
-docker run -it \
+docker run \
     -v "${SCRIPT_DIR}/..":/opt/bookkeeper \
     -w /opt/bookkeeper \
     -e PY_VERSION=${PY_VERSION} \
