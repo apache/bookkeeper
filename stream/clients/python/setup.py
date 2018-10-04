@@ -17,9 +17,9 @@ import setuptools
 
 # Package metadata.
 
-name = 'bookkeeper'
+name = 'apache-bookkeeper-client'
 description = 'Apache BookKeeper client library'
-version = '4.9.0'
+version = '4.9.0-alpha-0'
 # Should be one of:
 # 'Development Status :: 3 - Alpha'
 # 'Development Status :: 4 - Beta'
@@ -42,7 +42,7 @@ extras = {
 
 package_root = os.path.abspath(os.path.dirname(__file__))
 
-readme_filename = os.path.join(package_root, 'README.md')
+readme_filename = os.path.join(package_root, 'README.rst')
 with io.open(readme_filename, encoding='utf-8') as readme_file:
     readme = readme_file.read()
 
@@ -67,7 +67,7 @@ setuptools.setup(
     classifiers=[
         release_status,
         'Intended Audience :: Developers',
-        'License :: Apache Software License',
+        'License :: OSI Approved :: Apache Software License',
         'Programming Language :: Python',
         'Programming Language :: Python :: 2',
         'Programming Language :: Python :: 2.7',

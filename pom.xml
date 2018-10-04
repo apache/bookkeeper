@@ -854,6 +854,7 @@
 
             <!-- Project files -->
             <exclude>**/README.md</exclude>
+            <exclude>**/README.rst</exclude>
             <exclude>**/apidocs/*</exclude>
             <exclude>**/src/main/resources/deps/**</exclude>
             <exclude>**/META-INF/**</exclude>
