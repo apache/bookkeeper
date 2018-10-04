@@ -366,13 +366,8 @@ public class EntryMemTable implements AutoCloseable{
         int offset = 0;
         int length = entry.remaining();
 
-        if (entry.hasArray()) {
-            buf = entry.array();
-            offset = entry.arrayOffset();
-        } else {
-            buf = new byte[length];
-            entry.get(buf);
-        }
+        buf = new byte[length];
+        entry.get(buf);
         return new EntryKeyValue(ledgerId, entryId, buf, offset, length);
     }
 
