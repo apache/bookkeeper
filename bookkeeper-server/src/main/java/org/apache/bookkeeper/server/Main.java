@@ -284,7 +284,7 @@ public class Main {
      * @param conf bookie server configuration
      * @return lifecycle stack
      */
-    static LifecycleComponentStack buildBookieServer(BookieConfiguration conf) throws Exception {
+    public static LifecycleComponentStack buildBookieServer(BookieConfiguration conf) throws Exception {
         LifecycleComponentStack.Builder serverBuilder = LifecycleComponentStack.newBuilder().withName("bookie-server");
 
         // 1. build stats provider

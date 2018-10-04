@@ -33,16 +33,23 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.BindException;
 import java.net.InetAddress;
+import java.net.URL;
+import java.net.URLConnection;
 import java.security.AccessControlException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
 import java.util.concurrent.CompletableFuture;
@@ -55,20 +62,29 @@ import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.common.component.ComponentStarter;
+import org.apache.bookkeeper.common.component.Lifecycle;
+import org.apache.bookkeeper.common.component.LifecycleComponent;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.discover.RegistrationManager;
+import org.apache.bookkeeper.http.HttpRouter;
+import org.apache.bookkeeper.http.HttpServerLoader;
 import org.apache.bookkeeper.meta.MetadataBookieDriver;
 import org.apache.bookkeeper.meta.zk.ZKMetadataBookieDriver;
 import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
 import org.apache.bookkeeper.proto.BookieServer;
+import org.apache.bookkeeper.replication.AutoRecoveryMain;
 import org.apache.bookkeeper.replication.ReplicationException.CompatibilityException;
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
+import org.apache.bookkeeper.replication.ReplicationStats;
+import org.apache.bookkeeper.server.Main;
 import org.apache.bookkeeper.server.conf.BookieConfiguration;
+import org.apache.bookkeeper.server.service.AutoRecoveryService;
 import org.apache.bookkeeper.server.service.BookieService;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
+import org.apache.bookkeeper.stats.prometheus.PrometheusMetricsProvider;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.test.PortManager;
 import org.apache.bookkeeper.tls.SecurityException;
@@ -90,6 +106,8 @@ import org.slf4j.LoggerFactory;
 public class BookieInitializationTest extends BookKeeperClusterTestCase {
     private static final Logger LOG = LoggerFactory
             .getLogger(BookieInitializationTest.class);
+
+    private static ObjectMapper om = new ObjectMapper();
 
     @Rule
     public final TestName runtime = new TestName();
@@ -492,6 +510,22 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
         service.getServer().getBookie().shutdown();
 
         // the bookie service lifecycle component should be shutdown.
+        startFuture.get();
+    }
+
+    @Test
+    public void testAutoRecoveryServiceExceptionHandler() throws Exception {
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setMetadataServiceUri(metadataServiceUri);
+
+        BookieConfiguration bkConf = new BookieConfiguration(conf);
+        AutoRecoveryService service = new AutoRecoveryService(bkConf, NullStatsLogger.INSTANCE);
+        CompletableFuture<Void> startFuture = ComponentStarter.startComponent(service);
+
+        // shutdown the AutoRecovery service
+        service.getAutoRecoveryServer().shutdown();
+
+        // the AutoRecovery lifecycle component should be shutdown.
         startFuture.get();
     }
 
@@ -1072,4 +1106,100 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
         }
     }
 
+    @Test
+    public void testIOVertexHTTPServerEndpointForBookieWithPrometheusProvider() throws Exception {
+        File tmpDir = createTempDir("bookie", "test");
+
+        final ServerConfiguration conf = TestBKConfiguration.newServerConfiguration()
+                .setJournalDirName(tmpDir.getPath()).setLedgerDirNames(new String[] { tmpDir.getPath() })
+                .setBookiePort(PortManager.nextFreePort()).setMetadataServiceUri(metadataServiceUri)
+                .setListeningInterface(null);
+
+        /*
+         * enable io.vertx http server
+         */
+        int nextFreePort = PortManager.nextFreePort();
+        conf.setStatsProviderClass(PrometheusMetricsProvider.class);
+        conf.setHttpServerEnabled(true);
+        conf.setProperty(HttpServerLoader.HTTP_SERVER_CLASS, "org.apache.bookkeeper.http.vertx.VertxHttpServer");
+        conf.setHttpServerPort(nextFreePort);
+
+        // 1. building the component stack:
+        LifecycleComponent server = Main.buildBookieServer(new BookieConfiguration(conf));
+        // 2. start the server
+        CompletableFuture<Void> stackComponentFuture = ComponentStarter.startComponent(server);
+        while (server.lifecycleState() != Lifecycle.State.STARTED) {
+            Thread.sleep(100);
+        }
+
+        // Now, hit the rest endpoint for metrics
+        URL url = new URL("http://localhost:" + nextFreePort + HttpRouter.METRICS);
+        URLConnection urlc = url.openConnection();
+        BufferedReader in = new BufferedReader(new InputStreamReader(urlc.getInputStream()));
+        String inputLine;
+        StringBuilder metricsStringBuilder = new StringBuilder();
+        while ((inputLine = in.readLine()) != null) {
+            metricsStringBuilder.append(inputLine);
+        }
+        in.close();
+        String metrics = metricsStringBuilder.toString();
+        // do primitive checks if metrics string contains some stats
+        assertTrue("Metrics should contain basic counters", metrics.contains(BookKeeperServerStats.BOOKIE_ADD_ENTRY));
+
+        // Now, hit the rest endpoint for configs
+        url = new URL("http://localhost:" + nextFreePort + HttpRouter.SERVER_CONFIG);
+        @SuppressWarnings("unchecked")
+        Map<String, Object> configMap = om.readValue(url, Map.class);
+        if (configMap.isEmpty() || !configMap.containsKey("bookiePort")) {
+            Assert.fail("Failed to map configurations to valid JSON entries.");
+        }
+        stackComponentFuture.cancel(true);
+    }
+
+    @Test
+    public void testIOVertexHTTPServerEndpointForARWithPrometheusProvider() throws Exception {
+        final ServerConfiguration conf = TestBKConfiguration.newServerConfiguration()
+                .setMetadataServiceUri(metadataServiceUri).setListeningInterface(null);
+
+        /*
+         * enable io.vertx http server
+         */
+        int nextFreePort = PortManager.nextFreePort();
+        conf.setStatsProviderClass(PrometheusMetricsProvider.class);
+        conf.setHttpServerEnabled(true);
+        conf.setProperty(HttpServerLoader.HTTP_SERVER_CLASS, "org.apache.bookkeeper.http.vertx.VertxHttpServer");
+        conf.setHttpServerPort(nextFreePort);
+
+        // 1. building the component stack:
+        LifecycleComponent server = AutoRecoveryMain.buildAutoRecoveryServer(new BookieConfiguration(conf));
+        // 2. start the server
+        CompletableFuture<Void> stackComponentFuture = ComponentStarter.startComponent(server);
+        while (server.lifecycleState() != Lifecycle.State.STARTED) {
+            Thread.sleep(100);
+        }
+
+        // Now, hit the rest endpoint for metrics
+        URL url = new URL("http://localhost:" + nextFreePort + HttpRouter.METRICS);
+        URLConnection urlc = url.openConnection();
+        BufferedReader in = new BufferedReader(new InputStreamReader(urlc.getInputStream()));
+        String inputLine;
+        StringBuilder metricsStringBuilder = new StringBuilder();
+        while ((inputLine = in.readLine()) != null) {
+            metricsStringBuilder.append(inputLine);
+        }
+        in.close();
+        String metrics = metricsStringBuilder.toString();
+        // do primitive checks if metrics string contains some stats
+        assertTrue("Metrics should contain basic counters",
+                metrics.contains(ReplicationStats.NUM_UNDER_REPLICATED_LEDGERS));
+
+        // Now, hit the rest endpoint for configs
+        url = new URL("http://localhost:" + nextFreePort + HttpRouter.SERVER_CONFIG);
+        @SuppressWarnings("unchecked")
+        Map<String, Object> configMap = om.readValue(url, Map.class);
+        if (configMap.isEmpty() || !configMap.containsKey("metadataServiceUri")) {
+            Assert.fail("Failed to map configurations to valid JSON entries.");
+        }
+        stackComponentFuture.cancel(true);
+    }
 }
