@@ -20,3 +20,6 @@ bookkeeper.egg-info/
 
 # pip
 pip-selfcheck.json
+
+# egg-info
+**egg-info/
