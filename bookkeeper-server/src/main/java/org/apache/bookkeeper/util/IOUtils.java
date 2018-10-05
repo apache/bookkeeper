@@ -43,13 +43,26 @@ public class IOUtils {
      */
     public static void close(Logger log, java.io.Closeable... closeables) {
         for (java.io.Closeable c : closeables) {
-            if (c != null) {
-                try {
-                    c.close();
-                } catch (IOException e) {
-                    if (log != null && log.isDebugEnabled()) {
-                        log.debug("Exception in closing " + c, e);
-                    }
+            close(log, c);
+        }
+    }
+
+    /**
+     * Close the Closeable object and <b>ignore</b> any {@link IOException} or
+     * null pointers. Must only be used for cleanup in exception handlers.
+     *
+     * @param log
+     *            the log to record problems to at debug level. Can be null.
+     * @param closeable
+     *            the objects to close
+     */
+    public static void close(Logger log, java.io.Closeable closeable) {
+        if (closeable != null) {
+            try {
+                closeable.close();
+            } catch (IOException e) {
+                if (log != null && log.isDebugEnabled()) {
+                    log.debug("Exception in closing " + closeable, e);
                 }
             }
         }
