@@ -495,7 +495,8 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
         request.read();
 
         if (!parallelRead && lh.getBk().getReadLACSpeculativeRequestPolicy().isPresent()) {
-            speculativeTask = lh.getBk().getReadLACSpeculativeRequestPolicy().get().initiateSpeculativeRequest(scheduler, this);
+            speculativeTask =
+                lh.getBk().getReadLACSpeculativeRequestPolicy().get().initiateSpeculativeRequest(scheduler, this);
         }
     }
 
