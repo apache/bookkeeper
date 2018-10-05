@@ -48,6 +48,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -58,6 +59,7 @@ import org.apache.bookkeeper.client.AsyncCallback.ReadCallback;
 import org.apache.bookkeeper.client.AsyncCallback.ReadLastConfirmedCallback;
 import org.apache.bookkeeper.client.BKException.BKIncorrectParameterException;
 import org.apache.bookkeeper.client.BKException.BKReadException;
+import org.apache.bookkeeper.client.DistributionSchedule.WriteSet;
 import org.apache.bookkeeper.client.SyncCallbackUtils.FutureReadLastConfirmed;
 import org.apache.bookkeeper.client.SyncCallbackUtils.FutureReadLastConfirmedAndEntry;
 import org.apache.bookkeeper.client.SyncCallbackUtils.SyncAddCallback;
@@ -118,6 +120,18 @@ public class LedgerHandle implements WriteHandle {
       * in order to have an ordered sequence of addEntry ackknowledged to the writer
       */
     volatile long pendingAddsSequenceHead;
+
+    /**
+     * If bookie sticky reads are enabled, this will contain the index of the bookie
+     * selected as "sticky" for this ledger. The bookie is chosen at random when the
+     * LedgerHandle is created.
+     *
+     * In case of failures, the bookie index will be updated (to the next bookie in
+     * the ensemble) to avoid continuing to attempt to read from a failed bookie.
+     *
+     * If the index is -1, it means the sticky reads are disabled.
+     */
+    private int stickyBookieIndex;
 
     long length;
     final DigestManager macManager;
@@ -180,6 +194,13 @@ public class LedgerHandle implements WriteHandle {
 
         this.ledgerId = ledgerId;
 
+        if (clientCtx.getConf().enableStickyReads
+                && getLedgerMetadata().getEnsembleSize() == getLedgerMetadata().getWriteQuorumSize()) {
+            stickyBookieIndex = ThreadLocalRandom.current().nextInt() % getLedgerMetadata().getEnsembleSize();
+        } else {
+            stickyBookieIndex = -1;
+        }
+
         if (clientCtx.getConf().throttleValue > 0) {
             this.throttler = RateLimiter.create(clientCtx.getConf().throttleValue);
         } else {
@@ -234,6 +255,20 @@ public class LedgerHandle implements WriteHandle {
             });
 
         initializeWriteHandleState();
+    }
+
+    /**
+     * Notify the LedgerHandle that a read operation was failed on a particular bookie.
+     */
+    void recordReadErrorOnBookie(int bookieIndex) {
+        // If sticky bookie reads are enabled, switch the sticky bookie to the
+        // next bookie in the ensemble so that we avoid to keep reading from the
+        // same failed bookie
+        if (stickyBookieIndex != -1) {
+            // This will be idempotent when we have multiple read errors on the
+            // same bookie. The net result is that we just go to the next bookie
+            stickyBookieIndex = (bookieIndex + 1) % getLedgerMetadata().getEnsembleSize();
+        }
     }
 
     protected void initializeWriteHandleState() {
@@ -1971,5 +2006,34 @@ public class LedgerHandle implements WriteHandle {
         // thing until metadata is immutable. At that point, current ensemble
         // becomes a property of the LedgerHandle itself.
         return LedgerMetadataUtils.getCurrentEnsemble(versionedMetadata.getValue());
+    }
+
+    /**
+     * Return a {@link WriteSet} suitable for reading a particular entry.
+     * This will include all bookies that are cotna
+     */
+    WriteSet getWriteSetForReadOperation(long entryId) {
+        if (stickyBookieIndex != -1) {
+            // When sticky reads are enabled we want to make sure to take
+            // advantage of read-ahead (or, anyway, from efficiencies in
+            // reading sequential data from disk through the page cache).
+            // For this, all the entries that a given bookie prefetches,
+            // should read from that bookie.
+            // For example, with e=2, w=2, a=2 we would have
+            // B-1 B-2
+            // e-0 X X
+            // e-1 X X
+            // e-2 X X
+            //
+            // In this case we want all the requests to be issued to B-1 (by
+            // preference), so that cache hits will be maximized.
+            //
+            // We can only enable sticky reads if the ensemble==writeQuorum
+            // otherwise the same bookie will not have all the entries
+            // stored
+            return distributionSchedule.getWriteSet(stickyBookieIndex);
+        } else {
+            return distributionSchedule.getWriteSet(entryId);
+        }
     }
 }
