@@ -360,9 +360,12 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
         private boolean isMarker;
         private long lastFlushedPosition;
         private long logId;
+        private long enqueueTime;
 
         public int process(boolean shouldForceWrite) throws IOException {
             forceWriteQueueSize.dec();
+            fwEnqueueTimeStats.registerSuccessfulEvent(MathUtils.elapsedNanos(enqueueTime), TimeUnit.NANOSECONDS);
+
             if (isMarker) {
                 return 0;
             }
@@ -434,6 +437,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
         req.lastFlushedPosition = lastFlushedPosition;
         req.shouldClose = shouldClose;
         req.isMarker = isMarker;
+        req.enqueueTime = MathUtils.nowInNano();
         forceWriteQueueSize.inc();
         return req;
     }
@@ -613,6 +617,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
     private final OpStatsLogger journalAddEntryStats;
     private final OpStatsLogger journalForceLedgerStats;
     private final OpStatsLogger journalSyncStats;
+    private final OpStatsLogger fwEnqueueTimeStats;
     private final OpStatsLogger journalCreationStats;
     private final OpStatsLogger journalFlushStats;
     private final OpStatsLogger journalProcessTimeStats;
@@ -677,6 +682,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
         journalAddEntryStats = statsLogger.getOpStatsLogger(BookKeeperServerStats.JOURNAL_ADD_ENTRY);
         journalForceLedgerStats = statsLogger.getOpStatsLogger(BookKeeperServerStats.JOURNAL_FORCE_LEDGER);
         journalSyncStats = statsLogger.getOpStatsLogger(BookKeeperServerStats.JOURNAL_SYNC);
+        fwEnqueueTimeStats = statsLogger.getOpStatsLogger(BookKeeperServerStats.JOURNAL_FORCE_WRITE_ENQUEUE);
         journalCreationStats = statsLogger.getOpStatsLogger(BookKeeperServerStats.JOURNAL_CREATION_LATENCY);
         journalFlushStats = statsLogger.getOpStatsLogger(BookKeeperServerStats.JOURNAL_FLUSH_LATENCY);
         journalQueueStats = statsLogger.getOpStatsLogger(BookKeeperServerStats.JOURNAL_QUEUE_LATENCY);
