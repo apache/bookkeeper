@@ -63,6 +63,8 @@ public class BufferedChannel extends BufferedReadChannel implements Closeable {
      */
     protected final AtomicLong unpersistedBytes;
 
+    private boolean closed = false;
+
     // make constructor to be public for unit test
     public BufferedChannel(FileChannel fc, int capacity) throws IOException {
         // Use the same capacity for read and write buffers.
@@ -88,8 +90,12 @@ public class BufferedChannel extends BufferedReadChannel implements Closeable {
 
     @Override
     public synchronized void close() throws IOException {
+        if (closed) {
+            return;
+        }
         ReferenceCountUtil.safeRelease(writeBuffer);
         fileChannel.close();
+        closed = true;
     }
 
     /**
