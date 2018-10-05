@@ -894,6 +894,7 @@
             <exclude>**/python/bin/**</exclude>
             <exclude>**/python/include/**</exclude>
             <exclude>**/python/lib/**</exclude>
+            <exclude>**/**.pyc</exclude>
             <exclude>**/.nox/**</exclude>
             <exclude>**/.pytest_cache/**</exclude>
             <exclude>**/__pycache__/**</exclude>

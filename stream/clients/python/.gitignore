@@ -15,6 +15,9 @@ include/
 # pycache
 __pycache__/
 
+# .pyc
+*.pyc
+
 # build files
 bookkeeper.egg-info/
 

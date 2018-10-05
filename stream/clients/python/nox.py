@@ -19,7 +19,7 @@ import nox
 LOCAL_DEPS = (
 )
 
-
+@nox.session
 def default(session):
     """Default unit test session.
     This is intended to be run **without** an interpreter set, so
@@ -44,12 +44,6 @@ def default(session):
         os.path.join('tests', 'unit'),
         *session.posargs
     )
-
-
-@nox.session(python=[os.environ['PY_VERSION']])
-def unit(session):
-    """Run the unit test suite."""
-    default(session)
 
 
 @nox.session

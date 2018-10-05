@@ -47,14 +47,7 @@ freeStyleJob('bookkeeper_precommit_integrationtests') {
         '.*\\[x\\] \\[skip integration tests\\].*')
 
     steps {
-        // Temporary information gathering to see if full disks are causing the builds to flake
-        shell('id')
-        shell('ulimit -a')
-        shell('pwd')
-        shell('df -h')
-        shell('ps -eo euser,pid,ppid,pgid,start,pcpu,pmem,cmd')
-        shell('docker network prune -f --filter name=testnetwork_*') // clean up any dangling networks from previous runs
-        shell('docker system events > docker.log & echo $! > docker-log.pid')
+        shell('.test-infra/scripts/pre-docker-tests.sh')
 
         shell('docker pull apachebookkeeper/bookkeeper-all-released-versions:latest')
 
@@ -74,7 +67,7 @@ freeStyleJob('bookkeeper_precommit_integrationtests') {
             goals('-B test -Dstream -DintegrationTests')
         }
 
-        shell('kill $(cat docker-log.pid) || true')
+        shell('.test-infra/scripts/post-docker-tests.sh')
     }
 
     publishers {

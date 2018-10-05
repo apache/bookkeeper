@@ -16,6 +16,7 @@ from __future__ import absolute_import
 
 import logging
 
+from bookkeeper.common import util
 from bookkeeper.common.exceptions import from_table_rpc_response
 from bookkeeper.common.method import wrap_method
 from bookkeeper.common.retry import Retry
@@ -45,7 +46,7 @@ class Table(object):
     def __make_routing_metadata__(self, key):
         return [
             ('bk-rt-sid-bin',
-             self.__stream_props__.stream_id.to_bytes(8, "big")),
+             util.to_bytes(self.__stream_props__.stream_id, 8, "big")),
             ('bk-rt-key-bin',
              key)
         ]
