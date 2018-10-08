@@ -1756,6 +1756,18 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     }
 
     /**
+     * Set the max size we should allocate from the skiplist arena. Allocations
+     * larger than this should be allocated directly by the VM to avoid fragmentation.
+     *
+     * @param size max alloc size.
+     * @return server configuration object.
+     */
+    public ServerConfiguration setSkipListArenaMaxAllocSize(int size) {
+        setProperty(SKIP_LIST_MAX_ALLOC_ENTRY, size);
+        return this;
+    }
+
+    /**
      * Should the data be fsynced on journal before acknowledgment.
      *
      * <p>Default is true
