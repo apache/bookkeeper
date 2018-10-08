@@ -179,6 +179,10 @@ public class AuditorElector {
         }
     }
 
+    String getMyVote() {
+        return myVote;
+    }
+
     private String getVotePath(String vote) {
         return electionPath + vote;
     }
