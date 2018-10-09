@@ -38,9 +38,11 @@ import org.apache.bookkeeper.common.util.SharedResourceManager.Resource;
  */
 public class SimpleClientBase extends AbstractAutoAsyncCloseable {
 
+    protected final StorageClientSettings settings;
     protected final Resource<OrderedScheduler> schedulerResource;
     protected final OrderedScheduler scheduler;
     protected final ManagedChannel managedChannel;
+    protected final boolean ownChannel;
     protected final Channel channel;
     protected final RetryUtils retryUtils;
 
@@ -50,11 +52,23 @@ public class SimpleClientBase extends AbstractAutoAsyncCloseable {
 
     protected SimpleClientBase(StorageClientSettings settings,
                                Resource<OrderedScheduler> schedulerResource) {
-        this.managedChannel = GrpcChannels.createChannelBuilder(settings.serviceUri(), settings).build();
+        this(
+            settings,
+            schedulerResource,
+            GrpcChannels.createChannelBuilder(settings.serviceUri(), settings).build(),
+            true);
+    }
+
+    protected SimpleClientBase(StorageClientSettings settings,
+                               Resource<OrderedScheduler> schedulerResource,
+                               ManagedChannel managedChannel,
+                               boolean ownChannel) {
+        this.settings = settings;
+        this.managedChannel = managedChannel;
+        this.ownChannel = ownChannel;
         this.channel = ClientInterceptors.intercept(
             managedChannel,
             new StorageContainerClientInterceptor(0L));
-
         this.schedulerResource = schedulerResource;
         this.scheduler = SharedResourceManager.shared().get(schedulerResource);
         this.retryUtils = RetryUtils.create(settings.backoffPolicy(), scheduler);
@@ -62,10 +76,10 @@ public class SimpleClientBase extends AbstractAutoAsyncCloseable {
 
     @Override
     protected void closeAsyncOnce(CompletableFuture<Void> closeFuture) {
-        managedChannel.shutdown();
-        scheduler.submit(() -> {
-            SharedResourceManager.shared().release(schedulerResource, scheduler);
-            closeFuture.complete(null);
-        });
+        if (ownChannel) {
+            managedChannel.shutdown();
+        }
+        SharedResourceManager.shared().release(schedulerResource, scheduler);
+        closeFuture.complete(null);
     }
 }
