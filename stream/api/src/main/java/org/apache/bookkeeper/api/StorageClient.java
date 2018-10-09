@@ -33,8 +33,40 @@ import org.apache.bookkeeper.common.util.AutoAsyncCloseable;
 @Evolving
 public interface StorageClient extends AutoAsyncCloseable {
 
+    /**
+     * Open a {@link PTable} <tt>table</tt> under <tt>namespace</tt>.
+     *
+     * @param namespace namespace
+     * @param table table name
+     * @return a future represents the open result
+     */
+    CompletableFuture<PTable<ByteBuf, ByteBuf>> openPTable(String namespace, String table);
+
+    /**
+     * Open a {@link PTable} <tt>table</tt> under the default namespace of this client.
+     * The default namespace is configured when creating {@link StorageClient}.
+     *
+     * @param table table name
+     * @return a future represents the open result
+     */
     CompletableFuture<PTable<ByteBuf, ByteBuf>> openPTable(String table);
 
+    /**
+     * Open a {@link Table} <tt>table</tt> under <tt>namespace</tt>.
+     *
+     * @param namespace namespace
+     * @param table table name
+     * @return a future represents the open result
+     */
+    CompletableFuture<Table<ByteBuf, ByteBuf>> openTable(String namespace, String table);
+
+    /**
+     * Open a {@link Table} <tt>table</tt> under <tt>namespace</tt>.
+     * The default namespace is configured when creating {@link StorageClient}.
+     *
+     * @param table table name
+     * @return a future represents the open result
+     */
     CompletableFuture<Table<ByteBuf, ByteBuf>> openTable(String table);
 
 }

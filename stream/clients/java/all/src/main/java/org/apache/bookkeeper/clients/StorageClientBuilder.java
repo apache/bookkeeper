@@ -105,7 +105,7 @@ public class StorageClientBuilder implements Supplier<StorageClient> {
         if (settings.enableServerSideRouting()) {
             return new SimpleStorageAdminClientImpl(settings);
         } else {
-            return new StorageAdminClientImpl(settings);
+            return new StorageAdminClientImpl(settings, ClientResources.create());
         }
     }
 

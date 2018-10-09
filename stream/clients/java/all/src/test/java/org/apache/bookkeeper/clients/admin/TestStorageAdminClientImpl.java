@@ -25,8 +25,10 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import org.apache.bookkeeper.clients.config.StorageClientSettings;
 import org.apache.bookkeeper.clients.impl.internal.api.RootRangeClient;
 import org.apache.bookkeeper.clients.impl.internal.api.StorageServerClientManager;
+import org.apache.bookkeeper.clients.utils.ClientResources;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.stream.proto.NamespaceConfiguration;
 import org.apache.bookkeeper.stream.proto.NamespaceProperties;
@@ -66,7 +68,12 @@ public class TestStorageAdminClientImpl {
     @Before
     public void setUp() {
         when(mockManager.getRootRangeClient()).thenReturn(mockRootRangeClient);
-        this.adminClient = new StorageAdminClientImpl(() -> mockManager);
+        this.adminClient = new StorageAdminClientImpl(
+            StorageClientSettings.newBuilder()
+                .serviceUri("bk://localhost:4181")
+                .build(),
+            ClientResources.create(),
+            () -> mockManager);
     }
 
     @Test

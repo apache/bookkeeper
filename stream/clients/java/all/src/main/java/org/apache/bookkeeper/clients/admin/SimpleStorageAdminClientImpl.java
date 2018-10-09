@@ -30,7 +30,9 @@ import static org.apache.bookkeeper.stream.protocol.util.ProtoUtils.createGetStr
 
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import org.apache.bookkeeper.api.StorageClient;
 import org.apache.bookkeeper.clients.SimpleClientBase;
+import org.apache.bookkeeper.clients.SimpleStorageClientImpl;
 import org.apache.bookkeeper.clients.config.StorageClientSettings;
 import org.apache.bookkeeper.clients.utils.ClientResources;
 import org.apache.bookkeeper.clients.utils.GrpcUtils;
@@ -66,6 +68,16 @@ public class SimpleStorageAdminClientImpl extends SimpleClientBase implements St
         this.rootRangeService = GrpcUtils.configureGrpcStub(
             RootRangeServiceGrpc.newFutureStub(channel),
             Optional.empty());
+    }
+
+    @Override
+    public StorageClient asClient(String namespace) {
+        return new SimpleStorageClientImpl(
+            namespace,
+            settings,
+            schedulerResource,
+            managedChannel
+        );
     }
 
     @Override

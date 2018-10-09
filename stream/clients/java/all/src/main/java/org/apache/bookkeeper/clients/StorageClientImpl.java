@@ -44,57 +44,85 @@ import org.apache.bookkeeper.stream.proto.StreamProperties;
  * The implementation of {@link StorageClient} client.
  */
 @Slf4j
-class StorageClientImpl extends AbstractAutoAsyncCloseable implements StorageClient {
+public class StorageClientImpl extends AbstractAutoAsyncCloseable implements StorageClient {
 
     private static final String COMPONENT_NAME = StorageClientImpl.class.getSimpleName();
 
-    private final String namespaceName;
+    private final String defaultNamespace;
     private final StorageClientSettings settings;
     private final ClientResources resources;
     private final OrderedScheduler scheduler;
 
     // clients
     private final StorageServerClientManager serverManager;
+    private final boolean ownServerManager;
+
+    StorageClientImpl(String namespaceName,
+                      StorageClientSettings settings,
+                      ClientResources resources) {
+        this(
+            namespaceName,
+            settings,
+            resources,
+            new StorageServerClientManagerImpl(settings, resources.scheduler()),
+            true);
+    }
 
     public StorageClientImpl(String namespaceName,
                              StorageClientSettings settings,
-                             ClientResources resources) {
-        this.namespaceName = namespaceName;
+                             ClientResources resources,
+                             StorageServerClientManager serverManager,
+                             boolean ownServerManager) {
+        this.defaultNamespace = namespaceName;
         this.settings = settings;
         this.resources = resources;
-        this.serverManager = new StorageServerClientManagerImpl(settings, resources.scheduler());
+        this.serverManager = serverManager;
+        this.ownServerManager = ownServerManager;
         this.scheduler = SharedResourceManager.shared().get(resources.scheduler());
-
     }
 
-    CompletableFuture<StreamProperties> getStreamProperties(String streamName) {
+    CompletableFuture<StreamProperties> getStreamProperties(String namespaceName,
+                                                            String streamName) {
         return this.serverManager.getRootRangeClient().getStream(namespaceName, streamName);
     }
 
     //
-    // Materialized Views
+    // Tables
     //
 
     @Override
-    public CompletableFuture<PTable<ByteBuf, ByteBuf>> openPTable(String streamName) {
+    public CompletableFuture<PTable<ByteBuf, ByteBuf>> openPTable(String tableName) {
+        return openPTable(defaultNamespace, tableName);
+    }
+
+    @Override
+    public CompletableFuture<PTable<ByteBuf, ByteBuf>> openPTable(String namespaceName,
+                                                                  String tableName) {
         return ExceptionUtils.callAndHandleClosedAsync(
             COMPONENT_NAME,
             isClosed(),
-            (future) -> openStreamAsTableImpl(streamName, future));
+            (future) -> openTableImpl(namespaceName, tableName, future));
     }
 
     @Override
     public CompletableFuture<Table<ByteBuf, ByteBuf>> openTable(String table) {
-        return openPTable(table)
+        return openTable(defaultNamespace, table);
+    }
+
+    @Override
+    public CompletableFuture<Table<ByteBuf, ByteBuf>> openTable(String namespaceName,
+                                                                String table) {
+        return openPTable(namespaceName, table)
             .thenApply(pTable -> new ByteBufTableImpl(pTable));
     }
 
-    private void openStreamAsTableImpl(String streamName,
-                                       CompletableFuture<PTable<ByteBuf, ByteBuf>> future) {
+    private void openTableImpl(String namespaceName,
+                               String tableName,
+                               CompletableFuture<PTable<ByteBuf, ByteBuf>> future) {
         FutureUtils.proxyTo(
-            getStreamProperties(streamName).thenComposeAsync(props -> {
+            getStreamProperties(namespaceName, tableName).thenComposeAsync(props -> {
                 if (log.isInfoEnabled()) {
-                    log.info("Retrieved table properties for table {} : {}", streamName, props);
+                    log.info("Retrieved table properties for table {}/{} : {}", namespaceName, tableName, props);
                 }
                 if (StorageType.TABLE != props.getStreamConf().getStorageType()) {
                     return FutureUtils.exception(new ApiException(
@@ -102,7 +130,7 @@ class StorageClientImpl extends AbstractAutoAsyncCloseable implements StorageCli
                     );
                 }
                 return new PByteBufTableImpl(
-                    streamName,
+                    tableName,
                     props,
                     serverManager,
                     scheduler.chooseThread(props.getStreamId()),
@@ -120,7 +148,9 @@ class StorageClientImpl extends AbstractAutoAsyncCloseable implements StorageCli
     @Override
     protected void closeAsyncOnce(CompletableFuture<Void> closeFuture) {
         scheduler.submit(() -> {
-            serverManager.close();
+            if (ownServerManager) {
+                serverManager.close();
+            }
             closeFuture.complete(null);
             SharedResourceManager.shared().release(resources.scheduler(), scheduler);
         });
