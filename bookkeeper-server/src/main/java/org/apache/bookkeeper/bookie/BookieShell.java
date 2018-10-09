@@ -849,7 +849,6 @@ public class BookieShell implements Tool {
                                     System.out.println("Data: " + ByteBufUtil.prettyHexDump(buffer));
                                 }
 
-                                buffer.release();
                                 future.complete(null);
                                 }, null, BookieProtocol.FLAG_NONE);
 
