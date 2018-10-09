@@ -33,7 +33,9 @@ import lombok.Setter;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.conf.AbstractConfiguration;
+import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.AbstractZkLedgerManagerFactory;
+import org.apache.bookkeeper.meta.AuditorSelector;
 import org.apache.bookkeeper.meta.HierarchicalLedgerManagerFactory;
 import org.apache.bookkeeper.meta.LayoutManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
@@ -250,16 +252,26 @@ public class ZKMetadataDriverBase implements AutoCloseable {
         return lmFactory;
     }
 
-    @Override
-    public void close() {
-        if (null != lmFactory) {
+    public AuditorSelector getAuditorSelector(String bookieId) {
+        return new ZkAuditorSelector(bookieId, zk, new ServerConfiguration(conf));
+    }
+
+    protected void closeLedgerManagerFactory() {
+        LedgerManagerFactory lmToClose;
+        synchronized (this) {
+            lmToClose = lmFactory;
+            lmFactory = null;
+        }
+        if (null != lmToClose) {
             try {
-                lmFactory.close();
+                lmToClose.close();
             } catch (IOException e) {
                 log.warn("Failed to close zookeeper based ledger manager", e);
             }
-            lmFactory = null;
         }
+    }
+
+    protected void closeZooKeeper() {
         if (ownZKHandle && null != zk) {
             try {
                 zk.close();
@@ -269,5 +281,11 @@ public class ZKMetadataDriverBase implements AutoCloseable {
             }
             zk = null;
         }
+    }
+
+    @Override
+    public void close() {
+        closeLedgerManagerFactory();
+        closeZooKeeper();
     }
 }

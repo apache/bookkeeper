@@ -77,7 +77,7 @@ public class AuditorRollingRestartTest extends BookKeeperClusterTestCase {
                      underReplicationManager.pollLedgerToRereplicate(), -1);
         underReplicationManager.disableLedgerReplication();
 
-        BookieSocketAddress auditor = AuditorElector.getCurrentAuditor(baseConf, zkc);
+        BookieSocketAddress auditor = bkc.getMetadataClientDriver().getAuditorSelector("").getCurrentAuditor();
         ServerConfiguration conf = killBookie(auditor);
         Thread.sleep(2000);
         startBookie(conf);

@@ -96,6 +96,7 @@ public class ZKMetadataBookieDriver
         if (null != rmToClose) {
             rmToClose.close();
         }
+
         super.close();
     }
 }

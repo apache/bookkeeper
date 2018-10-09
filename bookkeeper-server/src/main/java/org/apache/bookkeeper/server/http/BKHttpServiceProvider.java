@@ -215,7 +215,7 @@ public class BKHttpServiceProvider implements HttpServiceProvider {
             case LIST_UNDER_REPLICATED_LEDGER:
                 return new ListUnderReplicatedLedgerService(configuration, bookieServer);
             case WHO_IS_AUDITOR:
-                return new WhoIsAuditorService(configuration, zk);
+                return new WhoIsAuditorService(configuration, bka);
             case TRIGGER_AUDIT:
                 return new TriggerAuditService(configuration, bka);
             case LOST_BOOKIE_RECOVERY_DELAY:

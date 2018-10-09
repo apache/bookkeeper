@@ -44,4 +44,10 @@ public class MetadataException extends Exception {
         super(cause);
         this.code = code;
     }
+
+    public MetadataRuntimeException asRuntimeException() {
+        return new MetadataRuntimeException(
+            code, getMessage(), getCause()
+        );
+    }
 }
