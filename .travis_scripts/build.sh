@@ -24,7 +24,7 @@ BK_HOME=`cd $BINDIR/..;pwd`
 
 if [ "xtrue" == "x${STREAM_DISABLED}" ]; then
     mvn --batch-mode clean install -DskipTests
-    OUTPUT=$($BK_HOME/bin/bookkeeper)
+    OUTPUT=$(./bin/bookkeeper)
     if [[ ${OUTPUT} == *"where command is one of"* ]]; then
         exit 0
     else
