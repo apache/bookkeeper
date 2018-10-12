@@ -24,12 +24,8 @@ BK_HOME=`cd $BINDIR/..;pwd`
 
 if [ "xtrue" == "x${STREAM_DISABLED}" ]; then
     mvn --batch-mode clean install -DskipTests
-    OUTPUT=`${BK_HOME}/bin/bookkeeper`
-    if [[ ${OUTPUT} == *"where command is one of"* ]]; then
-        exit 0
-    else
-        exit 1
-    fi
+    # this command should be executed correctly
+    ${BK_HOME}/bin/bookkeeper help
 else
     mvn --batch-mode clean apache-rat:check compile spotbugs:check install -DskipTests -Dstream
     $BK_HOME/dev/check-binary-license ./bookkeeper-dist/all/target/bookkeeper-all-*-bin.tar.gz;
