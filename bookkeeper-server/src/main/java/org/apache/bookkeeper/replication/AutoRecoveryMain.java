@@ -93,7 +93,7 @@ public class AutoRecoveryMain {
         this.conf = conf;
         this.bkc = Auditor.createBookKeeperClient(conf);
         MetadataClientDriver metadataClientDriver = bkc.getMetadataClientDriver();
-        metadataClientDriver.setConnectionExpiredListener(() -> {
+        metadataClientDriver.setSessionStateListener(() -> {
             LOG.error("Client connection to the Metadata server has expired, so shutting down AutoRecoveryMain!");
             shutdown(ExitCode.ZK_EXPIRED);
         });

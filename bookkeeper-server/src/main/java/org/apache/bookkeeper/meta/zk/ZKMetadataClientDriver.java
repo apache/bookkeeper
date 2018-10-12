@@ -94,11 +94,11 @@ public class ZKMetadataClientDriver
     }
 
     @Override
-    public void setConnectionExpiredListener(ConnectionExpiredListener connectionExpiredListener) {
+    public void setSessionStateListener(SessionStateListener sessionStateListener) {
         zk.register((event) -> {
             // Check for expired connection.
             if (event.getType().equals(EventType.None) && event.getState().equals(KeeperState.Expired)) {
-                connectionExpiredListener.onConnectionExpired();
+                sessionStateListener.onSessionExpired();
             }
         });
     }

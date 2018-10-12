@@ -81,7 +81,7 @@ public class MetadataDriversTest {
         }
 
         @Override
-        public void setConnectionExpiredListener(ConnectionExpiredListener connectionExpiredListener) {
+        public void setSessionStateListener(SessionStateListener sessionStateListener) {
         }
     }
 
