@@ -20,7 +20,9 @@ package org.apache.bookkeeper.meta.zk;
 
 import java.util.Optional;
 import java.util.concurrent.ScheduledExecutorService;
+
 import lombok.extern.slf4j.Slf4j;
+
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.discover.RegistrationClient;
 import org.apache.bookkeeper.discover.ZKRegistrationClient;
@@ -29,6 +31,8 @@ import org.apache.bookkeeper.meta.MetadataDrivers;
 import org.apache.bookkeeper.meta.exceptions.MetadataException;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.zookeeper.BoundExponentialBackoffRetryPolicy;
+import org.apache.zookeeper.Watcher.Event.EventType;
+import org.apache.zookeeper.Watcher.Event.KeeperState;
 
 /**
  * ZooKeeper based metadata client driver.
@@ -87,5 +91,15 @@ public class ZKMetadataClientDriver
             regClient = null;
         }
         super.close();
+    }
+
+    @Override
+    public void setSessionStateListener(SessionStateListener sessionStateListener) {
+        zk.register((event) -> {
+            // Check for expired connection.
+            if (event.getType().equals(EventType.None) && event.getState().equals(KeeperState.Expired)) {
+                sessionStateListener.onSessionExpired();
+            }
+        });
     }
 }
