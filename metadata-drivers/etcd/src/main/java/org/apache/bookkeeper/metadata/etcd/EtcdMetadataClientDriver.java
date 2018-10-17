@@ -72,4 +72,12 @@ public class EtcdMetadataClientDriver extends EtcdMetadataDriverBase implements 
         }
         super.close();
     }
+
+    @Override
+    public void setSessionStateListener(SessionStateListener sessionStateListener) {
+        /*
+         * TODO: EtcdMetadataClientDriver has to implement this method.
+         */
+        throw new UnsupportedOperationException();
+    }
 }
