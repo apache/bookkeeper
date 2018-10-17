@@ -13,7 +13,6 @@
 from __future__ import absolute_import
 
 import os
-
 import nox
 
 
@@ -21,7 +20,6 @@ LOCAL_DEPS = (
 )
 
 
-@nox.session
 def default(session):
     """Default unit test session.
     This is intended to be run **without** an interpreter set, so
@@ -48,9 +46,8 @@ def default(session):
     )
 
 
-@nox.session
-@nox.parametrize('py', ['3.7'])
-def unit(session, py):
+@nox.session(python=[os.environ['PY_VERSION']])
+def unit(session):
     """Run the unit test suite."""
     default(session)
 

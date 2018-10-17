@@ -12,11 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from bookkeeper.common import util
 from bookkeeper.proto import stream_pb2
 
 __ROOT_RANGE_ID__ = 0
 __ROOT_RANGE_METADATA__ = [
-        ('bk-rt-sc-id-bin', __ROOT_RANGE_ID__.to_bytes(8, "big"))
+        ('bk-rt-sc-id-bin', util.to_bytes(__ROOT_RANGE_ID__, 8, "big"))
 ]
 __DEFAULT_STREAM_CONF__ = stream_pb2.StreamConfiguration(
         key_type=stream_pb2.RangeKeyType.values()[0],

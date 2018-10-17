@@ -118,7 +118,7 @@ public class BkCtlTest extends StreamClusterTestBase {
             tableName
         );
         assertTrue(
-            result.getStdout().contains("Successfully created stream '" + tableName + "'"));
+            result.getStdout().contains("Successfully created table '" + tableName + "'"));
     }
 
     //

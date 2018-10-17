@@ -169,6 +169,22 @@ public interface LedgerUnderreplicationManager extends AutoCloseable {
     int getLostBookieRecoveryDelay() throws ReplicationException.UnavailableException;
 
     /**
+     * Setter for the CheckAllLedgers last executed ctime.
+     *
+     * @param checkAllLedgersCTime
+     * @throws ReplicationException.UnavailableException
+     */
+    void setCheckAllLedgersCTime(long checkAllLedgersCTime) throws ReplicationException.UnavailableException;
+
+    /**
+     * Getter for the CheckAllLedgers last executed ctime.
+     *
+     * @return the long value of checkAllLedgersCTime
+     * @throws ReplicationException.UnavailableException
+     */
+    long getCheckAllLedgersCTime() throws ReplicationException.UnavailableException;
+
+    /**
      * Receive notification asynchronously when the lostBookieRecoveryDelay value is Changed.
      *
      * @param cb

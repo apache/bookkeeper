@@ -79,6 +79,10 @@ public class MetadataDriversTest {
         @Override
         public void close() {
         }
+
+        @Override
+        public void setSessionStateListener(SessionStateListener sessionStateListener) {
+        }
     }
 
     static class ClientDriver1 extends TestClientDriver {
@@ -87,6 +91,7 @@ public class MetadataDriversTest {
         public String getScheme() {
             return "driver1";
         }
+
 
     }
 

@@ -84,4 +84,23 @@ public interface MetadataClientDriver extends AutoCloseable {
     @Override
     void close();
 
+    /**
+     * State Listener on listening the metadata client session states.
+     */
+    @FunctionalInterface
+    interface SessionStateListener {
+
+        /**
+         * Signal when client session is expired.
+         */
+        void onSessionExpired();
+    }
+
+    /**
+     * sets session state listener.
+     *
+     * @param sessionStateListener
+     *            listener listening on metadata client session states.
+     */
+    void setSessionStateListener(SessionStateListener sessionStateListener);
 }
