@@ -21,4 +21,4 @@
 set -x
 
 WHEEL_FILE=`ls /opt/bookkeeper/bookkeeper-client/*.whl`
-pip install /opt/bookkeeper/bookkeeper-client/${WHEEL_FILE}
+pip install ${WHEEL_FILE}

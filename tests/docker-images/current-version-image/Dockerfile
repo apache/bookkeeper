@@ -35,7 +35,8 @@ ENV JAVA_HOME=/usr/lib/jvm/jre-1.8.0
 # prepare utils
 RUN set -x \
     && adduser "${BK_USER}" \
-    && yum install -y java-1.8.0-openjdk-headless wget bash python sudo netcat \
+    && yum install -y epel-release \
+    && yum install -y java-1.8.0-openjdk-headless wget bash python-pip python-devel sudo netcat gcc gcc-c++ \
     && mkdir -pv /opt \
     && cd /opt \
     && yum clean all

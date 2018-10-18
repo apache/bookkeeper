@@ -54,7 +54,7 @@
             <executions>
               <execution>
                 <id>build-python-client</id>
-                <phase>compile</phase>
+                <phase>generate-resources</phase>
                 <goals>
                   <goal>exec</goal>
                 </goals>
@@ -65,13 +65,14 @@
               </execution>
             </executions>
           </plugin>
+          <!-- this task is used for copy docker scripts & python wheel file to build docker image -->
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-antrun-plugin</artifactId>
             <version>${maven-antrun-plugin.version}</version>
             <executions>
               <execution>
-                <phase>compile</phase>
+                <phase>generate-resources</phase>
                 <goals>
                   <goal>run</goal>
                 </goals>
@@ -81,6 +82,10 @@
                     <mkdir dir="${project.basedir}/target/bookkeeper-client"/>
                     <copydir src="${project.basedir}/../../../stream/clients/python/dist"
                              dest="${project.basedir}/target/bookkeeper-client"/>
+                    <echo>copying docker scripts</echo>
+                    <mkdir dir="${project.basedir}/target/scripts" />
+                    <copydir src="${project.basedir}/../../../docker/scripts"
+                             dest="${project.basedir}/target/scripts" />
                   </tasks>
                 </configuration>
               </execution>
@@ -133,27 +138,6 @@
                   <outputDirectory>${project.build.directory}/</outputDirectory>
                   <includeArtifactIds>bookkeeper-dist-server</includeArtifactIds>
                   <excludeTransitive>true</excludeTransitive>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-          <!-- this task is used for copy docker scripts to build docker image -->
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-antrun-plugin</artifactId>
-            <version>${maven-antrun-plugin.version}</version>
-            <executions>
-              <execution>
-                <phase>generate-resources</phase>
-                <goals>
-                  <goal>run</goal>
-                </goals>
-                <configuration>
-                  <tasks>
-                    <echo>copying docker scripts</echo>
-                    <mkdir dir="${basedir}/target/scripts" />
-                    <copydir src="${basedir}/../../../docker/scripts" dest="${basedir}/target/scripts" />
-                  </tasks>
                 </configuration>
               </execution>
             </executions>
