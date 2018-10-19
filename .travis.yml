@@ -39,6 +39,14 @@ matrix:
       env: CUSTOM_JDK="oraclejdk10"
     - os: linux
       env: CUSTOM_JDK="oraclejdk11"
+    - os: osx
+      osx_image: xcode8
+      env:
+        - STREAM_DISABLED="true"
+    - os: linux
+      env: 
+        - CUSTOM_JDK="oraclejdk8"
+        - STREAM_DISABLED="true"
 
 before_install: 
 - |

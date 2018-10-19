@@ -27,7 +27,6 @@
   <packaging>pom</packaging>
   <modules>
     <module>framework</module>
-    <module>perf</module>
     <module>all</module>
   </modules>
   <profiles>
@@ -42,6 +41,7 @@
       <modules>
         <!-- enable building stream storage cli -->
         <module>stream</module>
+        <module>perf</module>
       </modules>
     </profile>
   </profiles>

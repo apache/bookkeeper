@@ -18,6 +18,8 @@
 # * limitations under the License.
 # */
 
+set -e
+
 BINDIR=`dirname "$0"`
 BK_HOME=`cd ${BINDIR}/..;pwd`
 
@@ -36,12 +38,12 @@ fi
 # check the configuration to see if table service is enabled or not.
 if [ -z "${ENABLE_TABLE_SERVICE}" ]; then
   TABLE_SERVICE_SETTING=$(grep StreamStorageLifecycleComponent ${BOOKIE_CONF_TO_CHECK})
-  if [ "${TABLE_SERVICE_SETTING}" != \#* ]; then
+  if [[ "${TABLE_SERVICE_SETTING}" =~ ^extraServerComponents.* ]]; then
     ENABLE_TABLE_SERVICE="true"
   fi
 fi
 
-if [ \( "x$1" == "xstandalone" \) -o \( "x${ENABLE_TABLE_SERVICE}" != "x" \) ]; then
+if [ \( "x$1" == "xstandalone" \) -o \( "x${ENABLE_TABLE_SERVICE}" == "xtrue" \) ]; then
   BOOKIE_MODULE_PATH=stream/server
   BOOKIE_MODULE_NAME="(org.apache.bookkeeper-)?stream-storage-server"
 else

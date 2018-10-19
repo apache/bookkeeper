@@ -22,16 +22,22 @@ set -ev
 BINDIR=`dirname "$0"`
 BK_HOME=`cd $BINDIR/..;pwd`
 
-mvn --batch-mode clean apache-rat:check compile spotbugs:check install -DskipTests -Dstream
-$BK_HOME/dev/check-binary-license ./bookkeeper-dist/all/target/bookkeeper-all-*-bin.tar.gz;
-$BK_HOME/dev/check-binary-license ./bookkeeper-dist/server/target/bookkeeper-server-*-bin.tar.gz;
-if [ "$DLOG_MODIFIED" == "true" ]; then
-    cd $BK_HOME/stream/distributedlog
-    mvn --batch-mode clean package -Ddistributedlog
-fi
-if [ "$TRAVIS_OS_NAME" == "linux" ] && [ "$WEBSITE_MODIFIED" == "true" ]; then
-    cd $BK_HOME/site
-    make clean
-    # run the docker image to build the website
-    ./docker/ci.sh
+if [ "xtrue" == "x${STREAM_DISABLED}" ]; then
+    mvn --batch-mode clean install -DskipTests
+    # this command should be executed correctly
+    ${BK_HOME}/bin/bookkeeper help
+else
+    mvn --batch-mode clean apache-rat:check compile spotbugs:check install -DskipTests -Dstream
+    $BK_HOME/dev/check-binary-license ./bookkeeper-dist/all/target/bookkeeper-all-*-bin.tar.gz;
+    $BK_HOME/dev/check-binary-license ./bookkeeper-dist/server/target/bookkeeper-server-*-bin.tar.gz;
+    if [ "$DLOG_MODIFIED" == "true" ]; then
+        cd $BK_HOME/stream/distributedlog
+        mvn --batch-mode clean package -Ddistributedlog
+    fi
+    if [ "$TRAVIS_OS_NAME" == "linux" ] && [ "$WEBSITE_MODIFIED" == "true" ]; then
+        cd $BK_HOME/site
+        make clean
+        # run the docker image to build the website
+        ./docker/ci.sh
+    fi
 fi

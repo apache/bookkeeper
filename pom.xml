@@ -60,13 +60,13 @@
     <module>bookkeeper-benchmark</module>
     <module>bookkeeper-stats-providers</module>
     <module>bookkeeper-http</module>
-    <module>shaded</module>
-    <module>tests</module>
-    <module>bookkeeper-dist</module>
-    <module>microbenchmarks</module>
     <module>stream/distributedlog</module>
     <module>tools</module>
     <module>metadata-drivers</module>
+    <module>bookkeeper-dist</module>
+    <module>shaded</module>
+    <module>microbenchmarks</module>
+    <module>tests</module>
   </modules>
   <mailingLists>
     <mailingList>
