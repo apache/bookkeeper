@@ -22,6 +22,8 @@ package org.apache.bookkeeper.zookeeper;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -32,6 +34,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import junit.framework.TestCase;
 
 import org.apache.bookkeeper.stats.NullStatsLogger;
+import org.apache.bookkeeper.test.ZooKeeperCluster;
+import org.apache.bookkeeper.test.ZooKeeperClusterUtil;
 import org.apache.bookkeeper.test.ZooKeeperUtil;
 import org.apache.zookeeper.AsyncCallback;
 import org.apache.zookeeper.AsyncCallback.ACLCallback;
@@ -54,18 +58,40 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameters;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * Test the wrapper of {@link org.apache.zookeeper.ZooKeeper} client.
  */
+@RunWith(Parameterized.class)
 public class TestZooKeeperClient extends TestCase {
+
+    static {
+        ZooKeeperClusterUtil.enableZookeeperTestEnvVariables();
+    }
 
     private static final Logger logger = LoggerFactory.getLogger(TestZooKeeperClient.class);
 
     // ZooKeeper related variables
-    protected ZooKeeperUtil zkUtil = new ZooKeeperUtil();
+    protected ZooKeeperCluster zkUtil;
+
+    @Parameters
+    public static Collection<Object[]> zooKeeperUtilClass() {
+        return Arrays.asList(new Object[][] { { ZooKeeperUtil.class }, { ZooKeeperClusterUtil.class } });
+    }
+
+    public TestZooKeeperClient(Class<? extends ZooKeeperCluster> zooKeeperUtilClass)
+            throws IOException, KeeperException, InterruptedException {
+        if (zooKeeperUtilClass.equals(ZooKeeperUtil.class)) {
+            zkUtil = new ZooKeeperUtil();
+        } else {
+            zkUtil = new ZooKeeperClusterUtil(3);
+        }
+    }
 
     @Before
     @Override

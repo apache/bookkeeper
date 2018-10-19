@@ -79,7 +79,7 @@ public abstract class BookKeeperClusterTestCase {
     public final Timeout globalTimeout;
 
     // Metadata service related variables
-    protected final ZooKeeperUtil zkUtil = new ZooKeeperUtil();
+    protected final ZooKeeperCluster zkUtil;
     protected ZooKeeper zkc;
     protected String metadataServiceUri;
 
@@ -118,8 +118,21 @@ public abstract class BookKeeperClusterTestCase {
     }
 
     public BookKeeperClusterTestCase(int numBookies, int testTimeoutSecs) {
+        this(numBookies, 1, 120);
+    }
+
+    public BookKeeperClusterTestCase(int numBookies, int numOfZKNodes, int testTimeoutSecs) {
         this.numBookies = numBookies;
         this.globalTimeout = Timeout.seconds(testTimeoutSecs);
+        if (numOfZKNodes == 1) {
+            zkUtil = new ZooKeeperUtil();
+        } else {
+            try {
+                zkUtil = new ZooKeeperClusterUtil(numOfZKNodes);
+            } catch (IOException | KeeperException | InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
 
     @Before

@@ -21,8 +21,6 @@
 
 package org.apache.bookkeeper.test;
 
-import static org.apache.bookkeeper.util.BookKeeperConstants.AVAILABLE_NODE;
-import static org.apache.bookkeeper.util.BookKeeperConstants.READONLY;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
@@ -34,12 +32,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.bookkeeper.util.IOUtils;
 import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
-import org.apache.bookkeeper.zookeeper.ZooKeeperWatcherBase;
 import org.apache.commons.io.FileUtils;
-import org.apache.zookeeper.CreateMode;
-import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.Transaction;
-import org.apache.zookeeper.ZooDefs.Ids;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.server.NIOServerCnxnFactory;
 import org.apache.zookeeper.server.ZooKeeperServer;
@@ -50,7 +43,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Test the zookeeper utilities.
  */
-public class ZooKeeperUtil {
+public class ZooKeeperUtil implements ZooKeeperCluster {
 
     static {
         // org.apache.zookeeper.test.ClientBase uses FourLetterWordMain, from 3.5.3 four letter words
@@ -75,26 +68,32 @@ public class ZooKeeperUtil {
         connectString = loopbackIPAddr + ":" + zooKeeperPort;
     }
 
+    @Override
     public ZooKeeper getZooKeeperClient() {
         return zkc;
     }
 
+    @Override
     public String getZooKeeperConnectString() {
         return connectString;
     }
 
+    @Override
     public String getMetadataServiceUri() {
         return getMetadataServiceUri("/ledgers");
     }
 
+    @Override
     public String getMetadataServiceUri(String zkLedgersRootPath) {
         return "zk://" + connectString + zkLedgersRootPath;
     }
 
+    @Override
     public String getMetadataServiceUri(String zkLedgersRootPath, String type) {
         return "zk+" + type + "://" + connectString + zkLedgersRootPath;
     }
 
+    @Override
     public void startServer() throws Exception {
         // create a ZooKeeper server(dataDir, dataLogDir, port)
         LOG.debug("Running ZK server");
@@ -108,16 +107,7 @@ public class ZooKeeperUtil {
         createBKEnsemble("/ledgers");
     }
 
-    public void createBKEnsemble(String ledgersPath) throws KeeperException, InterruptedException {
-        Transaction txn = zkc.transaction();
-        txn.create(ledgersPath, new byte[0], Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-        txn.create(ledgersPath + "/" + AVAILABLE_NODE,
-            new byte[0], Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-        txn.create(ledgersPath + "/" + AVAILABLE_NODE + "/" + READONLY,
-            new byte[0], Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-        txn.commit();
-    }
-
+    @Override
     public void restartServer() throws Exception {
         zks = new ZooKeeperServer(zkTmpDir, zkTmpDir,
                 ZooKeeperServer.DEFAULT_TICK_TIME);
@@ -143,6 +133,7 @@ public class ZooKeeperUtil {
                 .build();
     }
 
+    @Override
     public void sleepServer(final int time,
                             final TimeUnit timeUnit,
                             final CountDownLatch l)
@@ -171,16 +162,7 @@ public class ZooKeeperUtil {
         throw new IOException("ZooKeeper thread not found");
     }
 
-    public void expireSession(ZooKeeper zk) throws Exception {
-        long id = zk.getSessionId();
-        byte[] password = zk.getSessionPasswd();
-        ZooKeeperWatcherBase w = new ZooKeeperWatcherBase(10000);
-        ZooKeeper zk2 = new ZooKeeper(getZooKeeperConnectString(),
-                zk.getSessionTimeout(), w, id, password);
-        w.waitForConnection();
-        zk2.close();
-    }
-
+    @Override
     public void stopServer() throws Exception {
         if (zkc != null) {
             zkc.close();
@@ -198,6 +180,7 @@ public class ZooKeeperUtil {
         }
     }
 
+    @Override
     public void killServer() throws Exception {
         stopServer();
         FileUtils.deleteDirectory(zkTmpDir);
