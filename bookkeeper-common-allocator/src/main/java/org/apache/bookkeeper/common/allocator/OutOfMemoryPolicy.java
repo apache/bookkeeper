@@ -23,7 +23,7 @@ package org.apache.bookkeeper.common.allocator;
 public enum OutOfMemoryPolicy {
 
     /**
-     * Throw regular OOM exception without taking addition actions
+     * Throw regular OOM exception without taking addition actions.
      */
     ThrowException,
 
@@ -31,7 +31,7 @@ public enum OutOfMemoryPolicy {
      * If it's not possible to allocate a buffer from direct memory, fallback to
      * allocate an unpooled buffer from JVM heap.
      *
-     * This will help absorb memory allocation spikes because the heap
+     * <p>This will help absorb memory allocation spikes because the heap
      * allocations will naturally slow down the process and will result if full
      * GC cleanup if the Heap itself is full.
      */

@@ -25,6 +25,11 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
+import io.netty.buffer.PooledByteBufAllocator;
+import io.netty.buffer.UnpooledByteBufAllocator;
+
 import java.lang.reflect.Constructor;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -33,19 +38,19 @@ import org.apache.bookkeeper.common.allocator.OutOfMemoryPolicy;
 import org.apache.bookkeeper.common.allocator.PoolingPolicy;
 import org.junit.Test;
 
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufAllocator;
-import io.netty.buffer.PooledByteBufAllocator;
-import io.netty.buffer.UnpooledByteBufAllocator;
-import io.netty.util.internal.OutOfDirectMemoryError;
-
+/**
+ * Tests for {@link ByteBufAllocatorBuilderImpl}.
+ */
 public class ByteBufAllocatorBuilderTest {
 
-    private static final OutOfDirectMemoryError outOfDirectMemException;
+    private static final OutOfMemoryError outOfDirectMemException;
 
     static {
         try {
-            Constructor<OutOfDirectMemoryError> constructor = OutOfDirectMemoryError.class
+            Class<?> clazz = (Class<?>) ByteBufAllocatorBuilderTest.class.getClassLoader()
+                    .loadClass("io.netty.util.internal.OutOfDirectMemoryError");
+            @SuppressWarnings("unchecked")
+            Constructor<OutOfMemoryError> constructor = (Constructor<OutOfMemoryError>) clazz
                     .getDeclaredConstructor(String.class);
 
             constructor.setAccessible(true);
@@ -74,7 +79,7 @@ public class ByteBufAllocatorBuilderTest {
         try {
             alloc.buffer();
             fail("Should have thrown exception");
-        } catch (OutOfDirectMemoryError e) {
+        } catch (OutOfMemoryError e) {
             // Expected
             assertEquals(outOfDirectMemException, e);
         }
@@ -138,7 +143,7 @@ public class ByteBufAllocatorBuilderTest {
         // Ensure the notification was triggered even when exception is thrown
         assertEquals(noHeapError, receivedException.get());
     }
-    
+
     @Test
     public void testOomUnpooled() {
         ByteBufAllocator heapAlloc = mock(ByteBufAllocator.class);
@@ -167,7 +172,7 @@ public class ByteBufAllocatorBuilderTest {
         // Ensure the notification was triggered even when exception is thrown
         assertEquals(noHeapError, receivedException.get());
     }
-    
+
     @Test
     public void testOomUnpooledWithHeap() {
         ByteBufAllocator heapAlloc = mock(ByteBufAllocator.class);

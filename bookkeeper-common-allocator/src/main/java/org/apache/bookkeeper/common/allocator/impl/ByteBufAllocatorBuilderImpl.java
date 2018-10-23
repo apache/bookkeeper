@@ -17,6 +17,8 @@
  */
 package org.apache.bookkeeper.common.allocator.impl;
 
+import io.netty.buffer.ByteBufAllocator;
+
 import java.util.function.Consumer;
 
 import org.apache.bookkeeper.common.allocator.ByteBufAllocatorBuilder;
@@ -24,8 +26,9 @@ import org.apache.bookkeeper.common.allocator.LeakDetectionPolicy;
 import org.apache.bookkeeper.common.allocator.OutOfMemoryPolicy;
 import org.apache.bookkeeper.common.allocator.PoolingPolicy;
 
-import io.netty.buffer.ByteBufAllocator;
-
+/**
+ * Implementation of {@link ByteBufAllocatorBuilder}.
+ */
 public class ByteBufAllocatorBuilderImpl implements ByteBufAllocatorBuilder {
 
     ByteBufAllocator pooledAllocator = null;

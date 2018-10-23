@@ -18,26 +18,28 @@
 package org.apache.bookkeeper.common.allocator;
 
 /**
- * Define a policy for allocating buffers
+ * Define a policy for allocating buffers.
  */
 public enum PoolingPolicy {
 
     /**
      * Allocate memory from JVM heap without any pooling.
      *
-     * This option has the least overhead in terms of memory usage since the memory will be automatically reclaimed by
-     * the JVM GC but might impose a performance penalty at high throughput.
+     * <p>This option has the least overhead in terms of memory usage since the
+     * memory will be automatically reclaimed by the JVM GC but might impose a
+     * performance penalty at high throughput.
      */
     UnpooledHeap,
 
     /**
      * Use Direct memory for all buffers and pool the memory.
      *
-     * Direct memory will avoid the overhead of JVM GC and most memory copies when reading and writing to socket
-     * channel.
+     * <p>Direct memory will avoid the overhead of JVM GC and most memory copies
+     * when reading and writing to socket channel.
      *
-     * Pooling will add memory space overhead due to the fact that there will be fragmentation in the allocator and that
-     * threads will keep a portion of memory as thread-local to avoid contention when possible.
+     * <p>Pooling will add memory space overhead due to the fact that there will be
+     * fragmentation in the allocator and that threads will keep a portion of
+     * memory as thread-local to avoid contention when possible.
      */
     PooledDirect
 }

@@ -17,6 +17,13 @@
  */
 package org.apache.bookkeeper.common.allocator.impl;
 
+import io.netty.buffer.AbstractByteBufAllocator;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
+import io.netty.buffer.PooledByteBufAllocator;
+import io.netty.buffer.UnpooledByteBufAllocator;
+import io.netty.util.ResourceLeakDetector;
+import io.netty.util.ResourceLeakDetector.Level;
 import java.util.function.Consumer;
 
 import org.apache.bookkeeper.common.allocator.LeakDetectionPolicy;
@@ -25,15 +32,9 @@ import org.apache.bookkeeper.common.allocator.PoolingPolicy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.netty.buffer.AbstractByteBufAllocator;
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufAllocator;
-import io.netty.buffer.PooledByteBufAllocator;
-import io.netty.buffer.UnpooledByteBufAllocator;
-import io.netty.util.ResourceLeakDetector;
-import io.netty.util.ResourceLeakDetector.Level;
-import io.netty.util.internal.OutOfDirectMemoryError;
-
+/**
+ * Implementation of {@link ByteBufAllocator}.
+ */
 public class ByteBufAllocatorImpl extends AbstractByteBufAllocator implements ByteBufAllocator {
 
     private static final Logger log = LoggerFactory.getLogger(ByteBufAllocatorImpl.class);
@@ -127,7 +128,7 @@ public class ByteBufAllocatorImpl extends AbstractByteBufAllocator implements By
         if (poolingPolicy == PoolingPolicy.PooledDirect) {
             try {
                 return pooledAllocator.directBuffer(initialCapacity, maxCapacity);
-            } catch (OutOfDirectMemoryError e) {
+            } catch (OutOfMemoryError e) {
                 switch (outOfMemoryPolicy) {
                 case ThrowException:
                     outOfMemoryListener.accept(e);

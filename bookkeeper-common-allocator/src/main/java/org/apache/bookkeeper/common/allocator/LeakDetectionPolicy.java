@@ -18,23 +18,23 @@
 package org.apache.bookkeeper.common.allocator;
 
 /**
- * Define the policy for the Netty leak detector
+ * Define the policy for the Netty leak detector.
  */
 public enum LeakDetectionPolicy {
 
     /**
-     * No leak detection and no overhead
+     * No leak detection and no overhead.
      */
     Disabled,
 
     /**
-     * Instruments 1% of the allocated buffer to track for leaks
+     * Instruments 1% of the allocated buffer to track for leaks.
      */
     Simple,
 
     /**
      * Instruments 1% of the allocated buffer to track for leaks, reporting
-     * stack traces of places where the buffer was used
+     * stack traces of places where the buffer was used.
      */
     Advanced,
 

@@ -17,27 +17,27 @@
  */
 package org.apache.bookkeeper.common.allocator;
 
-import java.util.function.Consumer;
-
-import org.apache.bookkeeper.common.allocator.impl.ByteBufAllocatorBuilderImpl;
-
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.buffer.UnpooledByteBufAllocator;
 
+import java.util.function.Consumer;
+
+import org.apache.bookkeeper.common.allocator.impl.ByteBufAllocatorBuilderImpl;
+
 /**
- * Builder object to customize a ByteBuf allocator
+ * Builder object to customize a ByteBuf allocator.
  */
 public interface ByteBufAllocatorBuilder {
     /**
      * Creates a new {@link ByteBufAllocatorBuilder}.
      */
-    public static ByteBufAllocatorBuilder create() {
+    static ByteBufAllocatorBuilder create() {
         return new ByteBufAllocatorBuilderImpl();
     }
 
     /**
-     * Finalize the configured {@link ByteBufAllocator}
+     * Finalize the configured {@link ByteBufAllocator}.
      */
     ByteBufAllocator build();
 
@@ -45,8 +45,7 @@ public interface ByteBufAllocatorBuilder {
      * Specify a custom allocator where the allocation requests should be
      * forwarded to.
      *
-     * <p>
-     * Default is to use a new instance of {@link PooledByteBufAllocator}.
+     * <p>Default is to use a new instance of {@link PooledByteBufAllocator}.
      */
     ByteBufAllocatorBuilder pooledAllocator(ByteBufAllocator ooledAllocator);
 
@@ -54,51 +53,45 @@ public interface ByteBufAllocatorBuilder {
      * Specify a custom allocator where the allocation requests should be
      * forwarded to.
      *
-     * <p>
-     * Default is to use {@link UnpooledByteBufAllocator#DEFAULT}.
+     * <p>Default is to use {@link UnpooledByteBufAllocator#DEFAULT}.
      */
     ByteBufAllocatorBuilder unpooledAllocator(ByteBufAllocator unpooledAllocator);
 
     /**
-     * Define the memory pooling policy
+     * Define the memory pooling policy.
      *
-     * <p>
-     * Default is {@link PoolingPolicy#PooledDirect}
+     * <p>Default is {@link PoolingPolicy#PooledDirect}
      */
     ByteBufAllocatorBuilder poolingPolicy(PoolingPolicy policy);
 
     /**
      * Controls the amount of concurrency for the memory pool.
      *
-     * <p>
-     * Default is to have a number of allocator arenas equals to 2 * CPUS.
-     * <p>
-     * Decreasing this number will reduce the amount of memory overhead, at the
+     * <p>Default is to have a number of allocator arenas equals to 2 * CPUS.
+     *
+     * <p>Decreasing this number will reduce the amount of memory overhead, at the
      * expense of increased allocation contention.
      */
     ByteBufAllocatorBuilder poolingConcurrency(int poolingConcurrency);
 
     /**
-     * Define the OutOfMemory handling policy
+     * Define the OutOfMemory handling policy.
      *
-     * <p>
-     * Default is {@link OutOfMemoryPolicy#FallbackToHeap}
+     * <p>Default is {@link OutOfMemoryPolicy#FallbackToHeap}
      */
     ByteBufAllocatorBuilder outOfMemoryPolicy(OutOfMemoryPolicy policy);
 
     /**
      * Add a listener that is triggered whenever there is an allocation failure.
-     * 
-     * <p>
-     * Application can use this to trigger alerting or process restarting.
+     *
+     * <p>Application can use this to trigger alerting or process restarting.
      */
     ByteBufAllocatorBuilder outOfMemoryListener(Consumer<OutOfMemoryError> listener);
 
     /**
-     * Enable the leak detection for
+     * Enable the leak detection for the allocator.
      *
-     * <p>
-     * Default is {@link LeakDetectionPolicy#Disabled}
+     * <p>Default is {@link LeakDetectionPolicy#Disabled}
      */
     ByteBufAllocatorBuilder leakDetectionPolicy(LeakDetectionPolicy leakDetectionPolicy);
 }
