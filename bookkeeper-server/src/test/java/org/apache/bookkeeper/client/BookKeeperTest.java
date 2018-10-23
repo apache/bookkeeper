@@ -72,7 +72,7 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
             .setZkTimeout(20000);
 
         CountDownLatch l = new CountDownLatch(1);
-        zkUtil.sleepServer(200, TimeUnit.MILLISECONDS, l);
+        zkUtil.sleepCluster(200, TimeUnit.MILLISECONDS, l);
         l.await();
 
         BookKeeper bkc = new BookKeeper(conf);
@@ -87,7 +87,7 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
             .setZkTimeout(20000);
 
         CountDownLatch l = new CountDownLatch(1);
-        zkUtil.sleepServer(200, TimeUnit.MILLISECONDS, l);
+        zkUtil.sleepCluster(200, TimeUnit.MILLISECONDS, l);
         l.await();
 
         ZooKeeper zk = new ZooKeeper(

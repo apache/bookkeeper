@@ -48,15 +48,15 @@ public interface ZooKeeperCluster {
 
     String getMetadataServiceUri(String zkLedgersRootPath, String type);
 
-    void startServer() throws Exception;
+    void startCluster() throws Exception;
 
-    void stopServer() throws Exception;
+    void stopCluster() throws Exception;
 
-    void restartServer() throws Exception;
+    void restartCluster() throws Exception;
 
-    void killServer() throws Exception;
+    void killCluster() throws Exception;
 
-    void sleepServer(final int time, final TimeUnit timeUnit, final CountDownLatch l)
+    void sleepCluster(final int time, final TimeUnit timeUnit, final CountDownLatch l)
             throws InterruptedException, IOException;
 
     default void expireSession(ZooKeeper zk) throws Exception {

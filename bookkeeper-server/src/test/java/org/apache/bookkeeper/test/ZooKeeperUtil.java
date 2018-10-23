@@ -94,21 +94,21 @@ public class ZooKeeperUtil implements ZooKeeperCluster {
     }
 
     @Override
-    public void startServer() throws Exception {
+    public void startCluster() throws Exception {
         // create a ZooKeeper server(dataDir, dataLogDir, port)
         LOG.debug("Running ZK server");
         ClientBase.setupTestEnv();
         zkTmpDir = IOUtils.createTempDir("zookeeper", "test");
 
         // start the server and client.
-        restartServer();
+        restartCluster();
 
         // create default bk ensemble
         createBKEnsemble("/ledgers");
     }
 
     @Override
-    public void restartServer() throws Exception {
+    public void restartCluster() throws Exception {
         zks = new ZooKeeperServer(zkTmpDir, zkTmpDir,
                 ZooKeeperServer.DEFAULT_TICK_TIME);
         serverFactory = new NIOServerCnxnFactory();
@@ -134,7 +134,7 @@ public class ZooKeeperUtil implements ZooKeeperCluster {
     }
 
     @Override
-    public void sleepServer(final int time,
+    public void sleepCluster(final int time,
                             final TimeUnit timeUnit,
                             final CountDownLatch l)
             throws InterruptedException, IOException {
@@ -163,7 +163,7 @@ public class ZooKeeperUtil implements ZooKeeperCluster {
     }
 
     @Override
-    public void stopServer() throws Exception {
+    public void stopCluster() throws Exception {
         if (zkc != null) {
             zkc.close();
         }
@@ -181,8 +181,8 @@ public class ZooKeeperUtil implements ZooKeeperCluster {
     }
 
     @Override
-    public void killServer() throws Exception {
-        stopServer();
+    public void killCluster() throws Exception {
+        stopCluster();
         FileUtils.deleteDirectory(zkTmpDir);
     }
 }

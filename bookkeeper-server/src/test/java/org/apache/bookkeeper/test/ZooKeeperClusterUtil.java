@@ -102,7 +102,7 @@ public class ZooKeeperClusterUtil implements ZooKeeperCluster {
     }
 
     @Override
-    public void startServer() throws Exception {
+    public void startCluster() throws Exception {
         // QuorumUtil will start 2*n+1 nodes.
         quorumUtil = new QuorumUtil(numOfZKNodes / 2);
         quorumUtil.startAll();
@@ -116,7 +116,7 @@ public class ZooKeeperClusterUtil implements ZooKeeperCluster {
     }
 
     @Override
-    public void stopServer() throws Exception {
+    public void stopCluster() throws Exception {
         if (zkc != null) {
             zkc.close();
         }
@@ -124,17 +124,17 @@ public class ZooKeeperClusterUtil implements ZooKeeperCluster {
     }
 
     @Override
-    public void restartServer() throws Exception {
+    public void restartCluster() throws Exception {
         quorumUtil.startAll();
     }
 
     @Override
-    public void killServer() throws Exception {
+    public void killCluster() throws Exception {
         quorumUtil.tearDown();
     }
 
     @Override
-    public void sleepServer(int time, TimeUnit timeUnit, CountDownLatch l) throws InterruptedException, IOException {
+    public void sleepCluster(int time, TimeUnit timeUnit, CountDownLatch l) throws InterruptedException, IOException {
         throw new UnsupportedOperationException("sleepServer operation is not supported for ZooKeeperClusterUtil");
     }
 }

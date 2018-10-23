@@ -49,13 +49,13 @@ public class TestZkUtils extends TestCase {
     @Override
     public void setUp() throws Exception {
         logger.info("Setting up test {}.", getName());
-        zkUtil.startServer();
+        zkUtil.startCluster();
     }
 
     @After
     @Override
     public void tearDown() throws Exception {
-        zkUtil.killServer();
+        zkUtil.killCluster();
         logger.info("Teared down test {}.", getName());
     }
 

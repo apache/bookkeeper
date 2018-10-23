@@ -568,7 +568,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
      */
     @Test
     public void testStartBookieWithoutZKServer() throws Exception {
-        zkUtil.killServer();
+        zkUtil.killCluster();
 
         File tmpDir = createTempDir("bookie", "test");
 

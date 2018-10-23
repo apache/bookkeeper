@@ -97,13 +97,13 @@ public class TestZooKeeperClient extends TestCase {
     @Override
     public void setUp() throws Exception {
         logger.info("Setting up test {}.", getName());
-        zkUtil.startServer();
+        zkUtil.startCluster();
     }
 
     @After
     @Override
     public void tearDown() throws Exception {
-        zkUtil.killServer();
+        zkUtil.killCluster();
         logger.info("Teared down test {}.", getName());
     }
 
@@ -147,7 +147,7 @@ public class TestZooKeeperClient extends TestCase {
         public void process(WatchedEvent event) {
             if (event.getType() == EventType.None && event.getState() == KeeperState.Expired) {
                 try {
-                    zkUtil.stopServer();
+                    zkUtil.stopCluster();
                 } catch (Exception e) {
                     logger.error("Failed to stop zookeeper server : ", e);
                 }
@@ -201,7 +201,7 @@ public class TestZooKeeperClient extends TestCase {
             // expected
         }
 
-        zkUtil.restartServer();
+        zkUtil.restartCluster();
 
         // wait for a reconnect cycle
         Thread.sleep(2 * timeout);
