@@ -47,7 +47,7 @@ public interface ByteBufAllocatorBuilder {
      *
      * <p>Default is to use a new instance of {@link PooledByteBufAllocator}.
      */
-    ByteBufAllocatorBuilder pooledAllocator(ByteBufAllocator ooledAllocator);
+    ByteBufAllocatorBuilder pooledAllocator(ByteBufAllocator pooledAllocator);
 
     /**
      * Specify a custom allocator where the allocation requests should be
