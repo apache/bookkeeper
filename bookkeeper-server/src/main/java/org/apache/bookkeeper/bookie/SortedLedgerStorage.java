@@ -23,6 +23,8 @@ package org.apache.bookkeeper.bookie;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
+
 import java.io.IOException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -69,7 +71,8 @@ public class SortedLedgerStorage
                            StateManager stateManager,
                            CheckpointSource checkpointSource,
                            Checkpointer checkpointer,
-                           StatsLogger statsLogger)
+                           StatsLogger statsLogger,
+                           ByteBufAllocator allocator)
             throws IOException {
 
         interleavedLedgerStorage.initialize(
@@ -80,7 +83,8 @@ public class SortedLedgerStorage
             stateManager,
             checkpointSource,
             checkpointer,
-            statsLogger);
+            statsLogger,
+            allocator);
 
         if (conf.isEntryLogPerLedgerEnabled()) {
             this.memTable = new EntryMemTableWithParallelFlusher(conf, checkpointSource, statsLogger);

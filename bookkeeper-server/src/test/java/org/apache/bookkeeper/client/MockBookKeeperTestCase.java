@@ -31,7 +31,9 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.Unpooled;
+import io.netty.buffer.UnpooledByteBufAllocator;
 
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
@@ -205,6 +207,11 @@ public abstract class MockBookKeeperTestCase {
                 public boolean isClientClosed() {
                     return bk.isClosed();
                 }
+
+                @Override
+                public ByteBufAllocator getByteBufAllocator() {
+                    return UnpooledByteBufAllocator.DEFAULT;
+                }
             };
         when(bk.getClientCtx()).thenReturn(clientCtx);
         when(bk.getLedgerManager()).thenReturn(ledgerManager);
@@ -236,7 +243,8 @@ public abstract class MockBookKeeperTestCase {
                 metadata.getPassword(),
                 org.apache.bookkeeper.client.BookKeeper.DigestType.toProtoDigestType(
                         org.apache.bookkeeper.client.BookKeeper.DigestType.fromApiDigestType(
-                                metadata.getDigestType())));
+                                metadata.getDigestType())),
+                UnpooledByteBufAllocator.DEFAULT, false);
     }
 
     @After

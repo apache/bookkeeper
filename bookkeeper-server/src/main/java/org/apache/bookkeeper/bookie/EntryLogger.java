@@ -284,6 +284,8 @@ public class EntryLogger {
 
     private final int maxSaneEntrySize;
 
+    private final ByteBufAllocator allocator;
+
     final ServerConfiguration conf;
     /**
      * Scan entries in a entry log file.
@@ -328,15 +330,16 @@ public class EntryLogger {
      */
     public EntryLogger(ServerConfiguration conf,
             LedgerDirsManager ledgerDirsManager) throws IOException {
-        this(conf, ledgerDirsManager, null, NullStatsLogger.INSTANCE);
+        this(conf, ledgerDirsManager, null, NullStatsLogger.INSTANCE, PooledByteBufAllocator.DEFAULT);
     }
 
     public EntryLogger(ServerConfiguration conf,
-            LedgerDirsManager ledgerDirsManager, EntryLogListener listener, StatsLogger statsLogger)
-                    throws IOException {
+            LedgerDirsManager ledgerDirsManager, EntryLogListener listener, StatsLogger statsLogger,
+            ByteBufAllocator allocator) throws IOException {
         //We reserve 500 bytes as overhead for the protocol.  This is not 100% accurate
         // but the protocol varies so an exact value is difficult to determine
         this.maxSaneEntrySize = conf.getNettyMaxFrameSizeBytes() - 500;
+        this.allocator = allocator;
         this.ledgerDirsManager = ledgerDirsManager;
         this.conf = conf;
         entryLogPerLedgerEnabled = conf.isEntryLogPerLedgerEnabled();
@@ -727,7 +730,7 @@ public class EntryLogger {
             throw new IOException("Invalid entry length " + entrySize);
         }
 
-        ByteBuf data = PooledByteBufAllocator.DEFAULT.directBuffer(entrySize, entrySize);
+        ByteBuf data = allocator.directBuffer(entrySize, entrySize);
         int rc = readFromLogChannel(entryLogId, fc, data, pos);
         if (rc != entrySize) {
             // Note that throwing NoEntryException here instead of IOException is not
@@ -775,7 +778,7 @@ public class EntryLogger {
         BufferedReadChannel bc = getChannelForLogId(entryLogId);
 
         // Allocate buffer to read (version, ledgersMapOffset, ledgerCount)
-        ByteBuf headers = PooledByteBufAllocator.DEFAULT.directBuffer(LOGFILE_HEADER_SIZE);
+        ByteBuf headers = allocator.directBuffer(LOGFILE_HEADER_SIZE);
         try {
             bc.read(headers, 0);
 
@@ -891,7 +894,7 @@ public class EntryLogger {
         long pos = LOGFILE_HEADER_SIZE;
 
         // Start with a reasonably sized buffer size
-        ByteBuf data = PooledByteBufAllocator.DEFAULT.directBuffer(1024 * 1024);
+        ByteBuf data = allocator.directBuffer(1024 * 1024);
 
         try {
 

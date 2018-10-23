@@ -24,6 +24,9 @@ import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.bookie.InterleavedLedgerStorage;
 import org.apache.bookkeeper.bookie.LedgerStorage;
 import org.apache.bookkeeper.bookie.SortedLedgerStorage;
+import org.apache.bookkeeper.common.allocator.LeakDetectionPolicy;
+import org.apache.bookkeeper.common.allocator.OutOfMemoryPolicy;
+import org.apache.bookkeeper.common.allocator.PoolingPolicy;
 import org.apache.bookkeeper.discover.RegistrationManager;
 import org.apache.bookkeeper.discover.ZKRegistrationManager;
 import org.apache.bookkeeper.stats.NullStatsProvider;
@@ -194,6 +197,12 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
 
     // Stats
     protected static final String ENABLE_TASK_EXECUTION_STATS = "enableTaskExecutionStats";
+
+    // Allocator configuration
+    protected static final String ALLOCATOR_POOLING_POLICY = "allocatorPoolingPolicy";
+    protected static final String ALLOCATOR_POOLING_CONCURRENCY = "allocatorPoolingConcurrency";
+    protected static final String ALLOCATOR_OOM_POLICY = "allocatorOutOfMemoryPolicy";
+    protected static final String ALLOCATOR_LEAK_DETECTION_POLICY = "allocatorLeakDetectionPolicy";
 
     /*
      * config specifying if the entrylog per ledger is enabled or not.
@@ -3091,6 +3100,83 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
             int entryLogPerLedgerCounterLimitsMultFactor) {
         this.setProperty(ENTRY_LOG_PER_LEDGER_COUNTER_LIMITS_MULT_FACTOR,
                 Integer.toString(entryLogPerLedgerCounterLimitsMultFactor));
+        return this;
+    }
+
+    /**
+     * Return the configured pooling policy for the allocator.
+     */
+    public PoolingPolicy getAllocatorPoolingPolicy() {
+        return PoolingPolicy.valueOf(this.getString(ALLOCATOR_POOLING_POLICY, PoolingPolicy.PooledDirect.toString()));
+    }
+
+    /**
+     * Define the memory pooling policy.
+     *
+     * <p>
+     * Default is {@link PoolingPolicy#PooledDirect}
+     */
+    public ServerConfiguration setAllocatorPoolingPolicy(PoolingPolicy poolingPolicy) {
+        this.setProperty(ALLOCATOR_POOLING_POLICY, poolingPolicy.toString());
+        return this;
+    }
+
+    /**
+     * Return the configured pooling concurrency for the allocator
+     */
+    public int getAllocatorPoolingConcurrency() {
+        return this.getInteger(ALLOCATOR_POOLING_CONCURRENCY, 2 * Runtime.getRuntime().availableProcessors());
+    }
+
+    /**
+     * Controls the amount of concurrency for the memory pool.
+     *
+     * <p>
+     * Default is to have a number of allocator arenas equals to 2 * CPUS.
+     * <p>
+     * Decreasing this number will reduce the amount of memory overhead, at the
+     * expense of increased allocation contention.
+     */
+    public ServerConfiguration setAllocatorPoolingConcurrenncy(int concurrency) {
+        this.setProperty(ALLOCATOR_POOLING_POLICY, Integer.toString(concurrency));
+        return this;
+    }
+
+    /**
+     * Return the configured ouf of memory policy for the allocator.
+     */
+    public OutOfMemoryPolicy getAllocatorOutOfMemoryPolicy() {
+        return OutOfMemoryPolicy
+                .valueOf(this.getString(ALLOCATOR_OOM_POLICY, OutOfMemoryPolicy.FallbackToHeap.toString()));
+    }
+
+    /**
+     * Define the memory allocator out of memory policy.
+     *
+     * <p>
+     * Default is {@link OutOfMemoryPolicy#FallbackToHeap}
+     */
+    public ServerConfiguration setAllocatorOutOfMemoryPolicy(OutOfMemoryPolicy oomPolicy) {
+        this.setProperty(ALLOCATOR_OOM_POLICY, oomPolicy.toString());
+        return this;
+    }
+
+    /**
+     * Return the configured leak detection policy for the allocator.
+     */
+    public LeakDetectionPolicy getAllocatorLeakDetectionPolicy() {
+        return LeakDetectionPolicy
+                .valueOf(this.getString(ALLOCATOR_LEAK_DETECTION_POLICY, LeakDetectionPolicy.Disabled.toString()));
+    }
+
+    /**
+     * Enable the leak detection for the allocator.
+     *
+     * <p>
+     * Default is {@link LeakDetectionPolicy#Disabled}
+     */
+    public ServerConfiguration setAllocatorLeakDetectionPolicy(LeakDetectionPolicy leakDetectionPolicy) {
+        this.setProperty(ALLOCATOR_LEAK_DETECTION_POLICY, leakDetectionPolicy.toString());
         return this;
     }
 }

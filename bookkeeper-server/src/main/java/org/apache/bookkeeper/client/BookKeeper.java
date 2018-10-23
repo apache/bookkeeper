@@ -25,11 +25,15 @@ import static org.apache.bookkeeper.bookie.BookKeeperServerStats.WATCHER_SCOPE;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+
+import io.netty.buffer.ByteBufAllocator;
+import io.netty.buffer.UnpooledByteBufAllocator;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.util.HashedWheelTimer;
 import io.netty.util.concurrent.DefaultThreadFactory;
+
 import java.io.IOException;
 import java.net.URI;
 import java.util.List;
@@ -41,6 +45,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+
 import org.apache.bookkeeper.client.AsyncCallback.CreateCallback;
 import org.apache.bookkeeper.client.AsyncCallback.DeleteCallback;
 import org.apache.bookkeeper.client.AsyncCallback.IsClosedCallback;
@@ -55,6 +60,8 @@ import org.apache.bookkeeper.client.api.CreateBuilder;
 import org.apache.bookkeeper.client.api.DeleteBuilder;
 import org.apache.bookkeeper.client.api.OpenBuilder;
 import org.apache.bookkeeper.client.api.WriteFlag;
+import org.apache.bookkeeper.common.allocator.ByteBufAllocatorBuilder;
+import org.apache.bookkeeper.common.allocator.PoolingPolicy;
 import org.apache.bookkeeper.common.util.OrderedExecutor;
 import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.bookkeeper.conf.AbstractConfiguration;
@@ -99,10 +106,11 @@ import org.slf4j.LoggerFactory;
  */
 public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
 
-    static final Logger LOG = LoggerFactory.getLogger(BookKeeper.class);
+    private static final Logger LOG = LoggerFactory.getLogger(BookKeeper.class);
 
 
     final EventLoopGroup eventLoopGroup;
+    private final ByteBufAllocator allocator;
 
     // The stats logger for this client.
     private final StatsLogger statsLogger;
@@ -149,6 +157,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
 
         ZooKeeper zk = null;
         EventLoopGroup eventLoopGroup = null;
+        ByteBufAllocator allocator = null;
         StatsLogger statsLogger = NullStatsLogger.INSTANCE;
         DNSToSwitchMapping dnsResolver = null;
         HashedWheelTimer requestTimer = null;
@@ -210,6 +219,18 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
          */
         public Builder eventLoopGroup(EventLoopGroup f) {
             eventLoopGroup = f;
+            return this;
+        }
+
+        /**
+         * Configure the bookkeeper client with a provided {@link ByteBufAllocator}.
+         *
+         * @param f an external {@link ByteBufAllocator} to use by the bookkeeper client.
+         * @return client builder.
+         * @since 4.9
+         */
+        public Builder eventLoopGroup(ByteBufAllocator allocator) {
+            this.allocator = allocator;
             return this;
         }
 
@@ -276,7 +297,8 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
 
         public BookKeeper build() throws IOException, InterruptedException, BKException {
             checkNotNull(statsLogger, "No stats logger provided");
-            return new BookKeeper(conf, zk, eventLoopGroup, statsLogger, dnsResolver, requestTimer, featureProvider);
+            return new BookKeeper(conf, zk, eventLoopGroup, allocator, statsLogger, dnsResolver, requestTimer,
+                    featureProvider);
         }
     }
 
@@ -313,7 +335,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
      */
     public BookKeeper(final ClientConfiguration conf)
             throws IOException, InterruptedException, BKException {
-        this(conf, null, null, NullStatsLogger.INSTANCE,
+        this(conf, null, null, null, NullStatsLogger.INSTANCE,
                 null, null, null);
     }
 
@@ -347,7 +369,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
      */
     public BookKeeper(ClientConfiguration conf, ZooKeeper zk)
             throws IOException, InterruptedException, BKException {
-        this(conf, validateZooKeeper(zk), null, NullStatsLogger.INSTANCE, null, null, null);
+        this(conf, validateZooKeeper(zk), null, null, NullStatsLogger.INSTANCE, null, null, null);
     }
 
     /**
@@ -369,7 +391,30 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
      */
     public BookKeeper(ClientConfiguration conf, ZooKeeper zk, EventLoopGroup eventLoopGroup)
             throws IOException, InterruptedException, BKException {
-        this(conf, validateZooKeeper(zk), validateEventLoopGroup(eventLoopGroup), NullStatsLogger.INSTANCE,
+        this(conf, validateZooKeeper(zk), validateEventLoopGroup(eventLoopGroup), null);
+    }
+
+    /**
+     * Create a bookkeeper client but use the passed in zookeeper client and
+     * client event loop group instead of instantiating those.
+     *
+     * @param conf
+     *          Client Configuration Object
+     *          {@link ClientConfiguration}
+     * @param zk
+     *          Zookeeper client instance connected to the zookeeper with which
+     *          the bookies have registered. The ZooKeeper client must be connected
+     *          before it is passed to BookKeeper. Otherwise a KeeperException is thrown.
+     * @param eventLoopGroup
+     *          An event loop group that will be used to create connections to the bookies
+     * @throws IOException
+     * @throws InterruptedException
+     * @throws BKException in the event of a bookkeeper connection error
+     */
+    public BookKeeper(ClientConfiguration conf, ZooKeeper zk, EventLoopGroup eventLoopGroup, ByteBufAllocator byteBufAllocator)
+            throws IOException, InterruptedException, BKException {
+        this(conf, validateZooKeeper(zk), validateEventLoopGroup(eventLoopGroup), byteBufAllocator,
+                NullStatsLogger.INSTANCE,
                 null, null, null);
     }
 
@@ -380,6 +425,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
     BookKeeper(ClientConfiguration conf,
                        ZooKeeper zkc,
                        EventLoopGroup eventLoopGroup,
+                       ByteBufAllocator byteBufAllocator,
                        StatsLogger rootStatsLogger,
                        DNSToSwitchMapping dnsResolver,
                        HashedWheelTimer requestTimer,
@@ -441,8 +487,17 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
             this.ownEventLoopGroup = false;
         }
 
+        if (byteBufAllocator != null) {
+            this.allocator = byteBufAllocator;
+        } else {
+            this.allocator = ByteBufAllocatorBuilder.create()
+                    .poolingPolicy(
+                            conf.isNettyUsePooledBuffers() ? PoolingPolicy.PooledDirect : PoolingPolicy.UnpooledHeap)
+                    .build();
+        }
+
         // initialize bookie client
-        this.bookieClient = new BookieClientImpl(conf, this.eventLoopGroup, this.mainWorkerPool,
+        this.bookieClient = new BookieClientImpl(conf, this.eventLoopGroup, byteBufAllocator, this.mainWorkerPool,
                 scheduler, rootStatsLogger);
 
         if (null == requestTimer) {
@@ -515,6 +570,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
         bookieWatcher = null;
         bookieInfoScheduler = null;
         bookieClient = null;
+        allocator = UnpooledByteBufAllocator.DEFAULT;
     }
 
     private EnsemblePlacementPolicy initializeEnsemblePlacementPolicy(ClientConfiguration conf,
@@ -1483,6 +1539,11 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
             @Override
             public boolean isClientClosed() {
                 return BookKeeper.this.isClosed();
+            }
+
+            @Override
+            public ByteBufAllocator getByteBufAllocator() {
+                return allocator;
             }
         };
 

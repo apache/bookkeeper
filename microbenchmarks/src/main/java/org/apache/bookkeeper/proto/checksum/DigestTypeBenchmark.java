@@ -24,6 +24,7 @@ package org.apache.bookkeeper.proto.checksum;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.CompositeByteBuf;
+import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.buffer.Unpooled;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
@@ -106,13 +107,13 @@ public class DigestTypeBenchmark {
         public void doSetup() throws Exception {
             final byte[] password = "password".getBytes("UTF-8");
             crc32 = DigestManager.instantiate(ThreadLocalRandom.current().nextLong(0, Long.MAX_VALUE),
-                    password, DigestType.CRC32);
+                    password, DigestType.CRC32, PooledByteBufAllocator.DEFAULT, true);
 
             crc32c = DigestManager.instantiate(ThreadLocalRandom.current().nextLong(0, Long.MAX_VALUE),
-                    password, DigestType.CRC32C);
+                    password, DigestType.CRC32C, PooledByteBufAllocator.DEFAULT, true);
 
             mac = DigestManager.instantiate(ThreadLocalRandom.current().nextLong(0, Long.MAX_VALUE),
-                    password, DigestType.HMAC);
+                    password, DigestType.HMAC, PooledByteBufAllocator.DEFAULT, true);
 
             digestBuf = Unpooled.buffer(getDigestManager(digest).getMacCodeLength());
 

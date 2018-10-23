@@ -22,6 +22,8 @@
 package org.apache.bookkeeper.bookie;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
+
 import java.io.IOException;
 import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
 import org.apache.bookkeeper.common.util.Watcher;
@@ -48,7 +50,8 @@ public interface LedgerStorage {
                     StateManager stateManager,
                     CheckpointSource checkpointSource,
                     Checkpointer checkpointer,
-                    StatsLogger statsLogger)
+                    StatsLogger statsLogger,
+                    ByteBufAllocator allocator)
             throws IOException;
 
     /**

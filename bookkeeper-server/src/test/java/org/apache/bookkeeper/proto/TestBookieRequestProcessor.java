@@ -29,6 +29,9 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
 import com.google.protobuf.ByteString;
+
+import io.netty.buffer.UnpooledByteBufAllocator;
+
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.AddRequest;
@@ -54,7 +57,7 @@ public class TestBookieRequestProcessor {
         // long poll threads == read threads
         ServerConfiguration conf = new ServerConfiguration();
         try (BookieRequestProcessor processor = new BookieRequestProcessor(
-            conf, mock(Bookie.class), NullStatsLogger.INSTANCE, null)) {
+            conf, mock(Bookie.class), NullStatsLogger.INSTANCE, null, UnpooledByteBufAllocator.DEFAULT)) {
             assertSame(processor.getReadThreadPool(), processor.getLongPollThreadPool());
         }
 
@@ -62,7 +65,7 @@ public class TestBookieRequestProcessor {
         conf = new ServerConfiguration();
         conf.setNumReadWorkerThreads(0);
         try (BookieRequestProcessor processor = new BookieRequestProcessor(
-            conf, mock(Bookie.class), NullStatsLogger.INSTANCE, null)) {
+            conf, mock(Bookie.class), NullStatsLogger.INSTANCE, null, UnpooledByteBufAllocator.DEFAULT)) {
             assertNull(processor.getReadThreadPool());
             assertNotNull(processor.getLongPollThreadPool());
         }
@@ -72,7 +75,7 @@ public class TestBookieRequestProcessor {
         conf.setNumReadWorkerThreads(2);
         conf.setNumLongPollWorkerThreads(2);
         try (BookieRequestProcessor processor = new BookieRequestProcessor(
-            conf, mock(Bookie.class), NullStatsLogger.INSTANCE, null)) {
+            conf, mock(Bookie.class), NullStatsLogger.INSTANCE, null, UnpooledByteBufAllocator.DEFAULT)) {
             assertNotNull(processor.getReadThreadPool());
             assertNotNull(processor.getLongPollThreadPool());
             assertNotSame(processor.getReadThreadPool(), processor.getLongPollThreadPool());

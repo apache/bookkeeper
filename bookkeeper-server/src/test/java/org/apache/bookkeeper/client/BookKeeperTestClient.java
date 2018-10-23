@@ -45,7 +45,7 @@ public class BookKeeperTestClient extends BookKeeper {
 
     public BookKeeperTestClient(ClientConfiguration conf, TestStatsProvider statsProvider)
             throws IOException, InterruptedException, BKException {
-        super(conf, null, null,
+        super(conf, null, null, null,
               statsProvider == null ? NullStatsLogger.INSTANCE : statsProvider.getStatsLogger(""),
               null, null, null);
         this.statsProvider = statsProvider;

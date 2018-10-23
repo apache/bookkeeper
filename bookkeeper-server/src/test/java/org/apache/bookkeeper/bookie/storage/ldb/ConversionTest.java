@@ -25,6 +25,7 @@ import com.google.common.collect.Sets;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import io.netty.buffer.UnpooledByteBufAllocator;
 
 import java.io.File;
 import java.io.IOException;
@@ -91,7 +92,7 @@ public class ConversionTest {
 
         InterleavedLedgerStorage interleavedStorage = new InterleavedLedgerStorage();
         interleavedStorage.initialize(conf, null, ledgerDirsManager, ledgerDirsManager,
-                null, checkpointSource, checkpointer, NullStatsLogger.INSTANCE);
+                null, checkpointSource, checkpointer, NullStatsLogger.INSTANCE, UnpooledByteBufAllocator.DEFAULT);
 
         // Insert some ledger & entries in the interleaved storage
         for (long ledgerId = 0; ledgerId < 5; ledgerId++) {
@@ -121,11 +122,12 @@ public class ConversionTest {
         // Verify that db index has the same entries
         DbLedgerStorage dbStorage = new DbLedgerStorage();
         dbStorage.initialize(conf, null, ledgerDirsManager, ledgerDirsManager,
-                null, checkpointSource, checkpointer, NullStatsLogger.INSTANCE);
+                null, checkpointSource, checkpointer, NullStatsLogger.INSTANCE, UnpooledByteBufAllocator.DEFAULT);
 
         interleavedStorage = new InterleavedLedgerStorage();
         interleavedStorage.initialize(conf, null, ledgerDirsManager,
-                ledgerDirsManager, null, checkpointSource, checkpointer, NullStatsLogger.INSTANCE);
+                ledgerDirsManager, null, checkpointSource, checkpointer, NullStatsLogger.INSTANCE,
+                UnpooledByteBufAllocator.DEFAULT);
 
         Set<Long> ledgers = Sets.newTreeSet(dbStorage.getActiveLedgersInRange(0, Long.MAX_VALUE));
         Assert.assertEquals(Sets.newTreeSet(Lists.newArrayList(0L, 1L, 2L, 3L, 4L)), ledgers);
