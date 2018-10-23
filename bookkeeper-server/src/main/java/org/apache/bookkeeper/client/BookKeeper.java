@@ -225,7 +225,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
         /**
          * Configure the bookkeeper client with a provided {@link ByteBufAllocator}.
          *
-         * @param f an external {@link ByteBufAllocator} to use by the bookkeeper client.
+         * @param allocator an external {@link ByteBufAllocator} to use by the bookkeeper client.
          * @return client builder.
          * @since 4.9
          */
@@ -411,8 +411,8 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
      * @throws InterruptedException
      * @throws BKException in the event of a bookkeeper connection error
      */
-    public BookKeeper(ClientConfiguration conf, ZooKeeper zk, EventLoopGroup eventLoopGroup, ByteBufAllocator byteBufAllocator)
-            throws IOException, InterruptedException, BKException {
+    public BookKeeper(ClientConfiguration conf, ZooKeeper zk, EventLoopGroup eventLoopGroup,
+            ByteBufAllocator byteBufAllocator) throws IOException, InterruptedException, BKException {
         this(conf, validateZooKeeper(zk), validateEventLoopGroup(eventLoopGroup), byteBufAllocator,
                 NullStatsLogger.INSTANCE,
                 null, null, null);

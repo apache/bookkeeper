@@ -72,6 +72,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
+import lombok.AccessLevel;
+import lombok.Getter;
+
 import org.apache.bookkeeper.auth.AuthProviderFactoryFactory;
 import org.apache.bookkeeper.auth.AuthToken;
 import org.apache.bookkeeper.bookie.Bookie;
@@ -89,9 +92,6 @@ import org.apache.bookkeeper.tls.SecurityHandlerFactory.NodeType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
-
-import lombok.AccessLevel;
-import lombok.Getter;
 
 /**
  * An implementation of the RequestProcessor interface.
@@ -189,8 +189,8 @@ public class BookieRequestProcessor implements RequestProcessor {
 
     private final ByteBufAllocator allocator;
 
-    public BookieRequestProcessor(ServerConfiguration serverCfg, Bookie bookie,
-            StatsLogger statsLogger, SecurityHandlerFactory shFactory, ByteBufAllocator allocator) throws SecurityException {
+    public BookieRequestProcessor(ServerConfiguration serverCfg, Bookie bookie, StatsLogger statsLogger,
+            SecurityHandlerFactory shFactory, ByteBufAllocator allocator) throws SecurityException {
         this.serverCfg = serverCfg;
         this.allocator = allocator;
         this.waitTimeoutOnBackpressureMillis = serverCfg.getWaitTimeoutOnResponseBackpressureMillis();

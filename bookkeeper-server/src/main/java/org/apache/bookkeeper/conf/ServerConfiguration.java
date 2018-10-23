@@ -3113,8 +3113,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     /**
      * Define the memory pooling policy.
      *
-     * <p>
-     * Default is {@link PoolingPolicy#PooledDirect}
+     * <p>Default is {@link PoolingPolicy#PooledDirect}
      */
     public ServerConfiguration setAllocatorPoolingPolicy(PoolingPolicy poolingPolicy) {
         this.setProperty(ALLOCATOR_POOLING_POLICY, poolingPolicy.toString());
@@ -3122,7 +3121,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     }
 
     /**
-     * Return the configured pooling concurrency for the allocator
+     * Return the configured pooling concurrency for the allocator.
      */
     public int getAllocatorPoolingConcurrency() {
         return this.getInteger(ALLOCATOR_POOLING_CONCURRENCY, 2 * Runtime.getRuntime().availableProcessors());
@@ -3131,10 +3130,9 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     /**
      * Controls the amount of concurrency for the memory pool.
      *
-     * <p>
-     * Default is to have a number of allocator arenas equals to 2 * CPUS.
-     * <p>
-     * Decreasing this number will reduce the amount of memory overhead, at the
+     * <p>Default is to have a number of allocator arenas equals to 2 * CPUS.
+     *
+     * <p>Decreasing this number will reduce the amount of memory overhead, at the
      * expense of increased allocation contention.
      */
     public ServerConfiguration setAllocatorPoolingConcurrenncy(int concurrency) {
@@ -3153,8 +3151,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     /**
      * Define the memory allocator out of memory policy.
      *
-     * <p>
-     * Default is {@link OutOfMemoryPolicy#FallbackToHeap}
+     * <p>Default is {@link OutOfMemoryPolicy#FallbackToHeap}
      */
     public ServerConfiguration setAllocatorOutOfMemoryPolicy(OutOfMemoryPolicy oomPolicy) {
         this.setProperty(ALLOCATOR_OOM_POLICY, oomPolicy.toString());
@@ -3172,8 +3169,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     /**
      * Enable the leak detection for the allocator.
      *
-     * <p>
-     * Default is {@link LeakDetectionPolicy#Disabled}
+     * <p>Default is {@link LeakDetectionPolicy#Disabled}
      */
     public ServerConfiguration setAllocatorLeakDetectionPolicy(LeakDetectionPolicy leakDetectionPolicy) {
         this.setProperty(ALLOCATOR_LEAK_DETECTION_POLICY, leakDetectionPolicy.toString());
