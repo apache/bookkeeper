@@ -508,6 +508,9 @@ public class IndexPersistenceMgr {
                 if (!ledgerDirsManager.isDirWritableForNewIndexFile(currentDir)) {
                     throw nwe;
                 }
+            } catch (FileInfo.FileInfoDeleted fileInfoDeleted) {
+                // File concurrently deleted
+                throw new Bookie.NoLedgerException(ledger);
             }
         }
         fi.flushHeader();
@@ -523,9 +526,19 @@ public class IndexPersistenceMgr {
         return fi.getLf().getParentFile().getParentFile().getParentFile();
     }
 
-    private void moveLedgerIndexFile(Long l, FileInfo fi) throws NoWritableLedgerDirException, IOException {
-        File newLedgerIndexFile = getNewLedgerIndexFile(l, getLedgerDirForLedger(fi));
-        fi.moveToNewLocation(newLedgerIndexFile, fi.getSizeSinceLastwrite());
+    private void moveLedgerIndexFile(Long l, FileInfo fi)
+            throws NoWritableLedgerDirException, IOException, FileInfo.FileInfoDeleted {
+        File newLedgerIndexFile = null;
+        boolean success = false;
+        try {
+            newLedgerIndexFile = getNewLedgerIndexFile(l, getLedgerDirForLedger(fi));
+            fi.moveToNewLocation(newLedgerIndexFile, fi.getSizeSinceLastwrite());
+            success = true;
+        } finally {
+            if (!success && newLedgerIndexFile != null) {
+                newLedgerIndexFile.delete();
+            }
+        }
     }
 
     void flushLedgerHeader(long ledger) throws IOException {
@@ -599,7 +612,7 @@ public class IndexPersistenceMgr {
 
     private void writeBuffers(Long ledger,
                               List<LedgerEntryPage> entries, FileInfo fi,
-                              int start, int count) throws IOException {
+                              int start, int count) throws IOException, Bookie.NoLedgerException {
         if (LOG.isTraceEnabled()) {
             LOG.trace("Writing {} buffers of {}", count, Long.toHexString(ledger));
         }
@@ -616,7 +629,12 @@ public class IndexPersistenceMgr {
         }
         long totalWritten = 0;
         while (buffs[buffs.length - 1].remaining() > 0) {
-            long rc = fi.write(buffs, entries.get(start + 0).getFirstEntryPosition());
+            long rc = 0;
+            try {
+                rc = fi.write(buffs, entries.get(start + 0).getFirstEntryPosition());
+            } catch (FileInfo.FileInfoDeleted e) {
+                throw new Bookie.NoLedgerException(ledger);
+            }
             if (rc <= 0) {
                 throw new IOException("Short write to ledger " + ledger + " rc = " + rc);
             }
