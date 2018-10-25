@@ -26,15 +26,6 @@
   </formats>
 
   <includeBaseDirectory>false</includeBaseDirectory>
-  <dependencySets>
-    <dependencySet>
-      <excludes>
-        <exclude>org.slf4j:slf4j-api</exclude>
-        <exclude>io.netty</exclude>
-        <exclude>*:nar:*</exclude>
-      </excludes>
-    </dependencySet>
-  </dependencySets>
   <fileSets>
     <fileSet>
       <directory>${project.build.directory}/nar/${project.artifactId}-${project.version}-${os.arch}-MacOSX-gpp-jni/lib/${os.arch}-MacOSX-gpp/jni
