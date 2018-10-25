@@ -93,7 +93,7 @@ public class TestLedgerUnderreplicationManager {
     @Before
     public void setupZooKeeper() throws Exception {
         zkUtil = new ZooKeeperUtil();
-        zkUtil.startServer();
+        zkUtil.startCluster();
 
         conf = TestBKConfiguration.newServerConfiguration();
         conf.setMetadataServiceUri(zkUtil.getMetadataServiceUri());
@@ -134,7 +134,7 @@ public class TestLedgerUnderreplicationManager {
     @After
     public void teardownZooKeeper() throws Exception {
         if (zkUtil != null) {
-            zkUtil.killServer();
+            zkUtil.killCluster();
             zkUtil = null;
         }
         if (executor != null) {

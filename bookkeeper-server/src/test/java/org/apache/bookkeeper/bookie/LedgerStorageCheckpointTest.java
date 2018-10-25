@@ -143,7 +143,7 @@ public class LedgerStorageCheckpointTest {
      * @throws Exception
      */
     protected void startZKCluster() throws Exception {
-        zkUtil.startServer();
+        zkUtil.startCluster();
     }
 
     /**
@@ -152,7 +152,7 @@ public class LedgerStorageCheckpointTest {
      * @throws Exception
      */
     protected void stopZKCluster() throws Exception {
-        zkUtil.killServer();
+        zkUtil.killCluster();
     }
 
     protected void cleanupTempDirs() throws Exception {
