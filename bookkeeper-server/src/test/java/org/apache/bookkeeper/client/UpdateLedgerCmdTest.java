@@ -97,9 +97,6 @@ public class UpdateLedgerCmdTest extends BookKeeperClusterTestCase {
         List<BookieSocketAddress> ensemble;
         int updatedLedgersCount = 0;
         for (LedgerHandle lh : ledgers) {
-            // ledger#close() would hit BadVersion exception as rename
-            // increments cversion. But LedgerMetadata#isConflictWith()
-            // gracefully handles this conflicts.
             lh.close();
             LedgerHandle openLedger = bk.openLedger(lh.getId(), digestType, PASSWORD.getBytes());
             ensemble = openLedger.getLedgerMetadata().getEnsemble(0);
