@@ -139,8 +139,7 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
         for (int i = 0; i < 10; i++) {
             lh.addEntry(data);
         }
-        BookieSocketAddress replicaToKill = LedgerHandleAdapter
-                .getLedgerMetadata(lh).getEnsembles().get(0L).get(0);
+        BookieSocketAddress replicaToKill = lh.getLedgerMetadata().getAllEnsembles().get(0L).get(0);
 
         LOG.info("Killing Bookie", replicaToKill);
         killBookie(replicaToKill);
@@ -188,8 +187,7 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
             lh.addEntry(data);
         }
         lh.close();
-        BookieSocketAddress replicaToKill = LedgerHandleAdapter
-                .getLedgerMetadata(lh).getEnsembles().get(0L).get(0);
+        BookieSocketAddress replicaToKill = lh.getLedgerMetadata().getAllEnsembles().get(0L).get(0);
         LOG.info("Killing Bookie", replicaToKill);
         ServerConfiguration killedBookieConfig = killBookie(replicaToKill);
 
@@ -238,8 +236,7 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
             lh.addEntry(data);
         }
         lh.close();
-        BookieSocketAddress replicaToKill = LedgerHandleAdapter
-                .getLedgerMetadata(lh).getEnsembles().get(0L).get(0);
+        BookieSocketAddress replicaToKill = lh.getLedgerMetadata().getAllEnsembles().get(0L).get(0);
         LOG.info("Killing Bookie", replicaToKill);
         ServerConfiguration killedBookieConfig = killBookie(replicaToKill);
 
@@ -295,8 +292,7 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
             lh.addEntry(data);
         }
         lh.close();
-        BookieSocketAddress replicaToKill = LedgerHandleAdapter
-                .getLedgerMetadata(lh).getEnsembles().get(0L).get(0);
+        BookieSocketAddress replicaToKill = lh.getLedgerMetadata().getAllEnsembles().get(0L).get(0);
         LOG.info("Killing Bookie", replicaToKill);
         killBookie(replicaToKill);
 
@@ -330,8 +326,7 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
         for (int i = 0; i < 10; i++) {
             lh1.addEntry(data);
         }
-        BookieSocketAddress replicaToKillFromFirstLedger = LedgerHandleAdapter
-                .getLedgerMetadata(lh1).getEnsembles().get(0L).get(0);
+        BookieSocketAddress replicaToKillFromFirstLedger = lh1.getLedgerMetadata().getAllEnsembles().get(0L).get(0);
 
         LOG.info("Killing Bookie", replicaToKillFromFirstLedger);
 
@@ -342,8 +337,7 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
         for (int i = 0; i < 10; i++) {
             lh2.addEntry(data);
         }
-        BookieSocketAddress replicaToKillFromSecondLedger = LedgerHandleAdapter
-                .getLedgerMetadata(lh2).getEnsembles().get(0L).get(0);
+        BookieSocketAddress replicaToKillFromSecondLedger = lh2.getLedgerMetadata().getAllEnsembles().get(0L).get(0);
 
         LOG.info("Killing Bookie", replicaToKillFromSecondLedger);
 
@@ -402,8 +396,7 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
         for (int i = 0; i < 10; i++) {
             lh.addEntry(data);
         }
-        BookieSocketAddress replicaToKill = LedgerHandleAdapter
-                .getLedgerMetadata(lh).getEnsembles().get(0L).get(0);
+        BookieSocketAddress replicaToKill = lh.getLedgerMetadata().getAllEnsembles().get(0L).get(0);
 
         LOG.info("Killing Bookie", replicaToKill);
         killBookie(replicaToKill);
@@ -470,7 +463,7 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
 
         // kill all bookies
         for (int i = 0; i < ensembleSize; i++) {
-            bookiesKilled[i] = LedgerHandleAdapter.getLedgerMetadata(lh).getEnsembles().get(0L).get(i);
+            bookiesKilled[i] = lh.getLedgerMetadata().getAllEnsembles().get(0L).get(i);
             killedBookiesConfig[i] = getBkConf(bookiesKilled[i]);
             LOG.info("Killing Bookie", bookiesKilled[i]);
             killBookie(bookiesKilled[i]);
@@ -589,8 +582,7 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
         for (int i = 0; i < 10; i++) {
             lh.addEntry(data);
         }
-        BookieSocketAddress replicaToKill = LedgerHandleAdapter
-                .getLedgerMetadata(lh).getEnsembles().get(0L).get(0);
+        BookieSocketAddress replicaToKill = lh.getLedgerMetadata().getAllEnsembles().get(0L).get(0);
 
         LOG.info("Killing Bookie", replicaToKill);
         killBookie(replicaToKill);
@@ -683,7 +675,7 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
             throws Exception {
         // Killing all bookies except newly replicated bookie
         for (Entry<Long, ? extends List<BookieSocketAddress>> entry :
-                 lh.getLedgerMetadata().getEnsembles().entrySet()) {
+                 lh.getLedgerMetadata().getAllEnsembles().entrySet()) {
             List<BookieSocketAddress> bookies = entry.getValue();
             for (BookieSocketAddress bookie : bookies) {
                 if (bookie.equals(excludeBK)) {

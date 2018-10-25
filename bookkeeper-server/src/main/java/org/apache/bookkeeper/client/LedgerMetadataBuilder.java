@@ -74,7 +74,7 @@ class LedgerMetadataBuilder {
             builder.length = Optional.of(length);
         }
 
-        builder.ensembles.putAll(other.getEnsembles());
+        builder.ensembles.putAll(other.getAllEnsembles());
 
         builder.digestType = other.getDigestType();
         if (other.hasPassword()) {

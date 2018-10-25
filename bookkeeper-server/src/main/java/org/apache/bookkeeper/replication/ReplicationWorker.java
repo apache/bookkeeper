@@ -364,7 +364,7 @@ public class ReplicationWorker implements Runnable {
             return false;
         }
 
-        SortedMap<Long, ? extends List<BookieSocketAddress>> ensembles = admin.getLedgerMetadata(lh).getEnsembles();
+        SortedMap<Long, ? extends List<BookieSocketAddress>> ensembles = admin.getLedgerMetadata(lh).getAllEnsembles();
         List<BookieSocketAddress> finalEnsemble = ensembles.get(ensembles.lastKey());
         Collection<BookieSocketAddress> available = admin.getAvailableBookies();
         for (BookieSocketAddress b : finalEnsemble) {
