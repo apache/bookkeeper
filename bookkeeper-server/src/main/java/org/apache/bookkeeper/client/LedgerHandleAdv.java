@@ -222,12 +222,12 @@ public class LedgerHandleAdv extends LedgerHandle implements WriteAdvHandle {
             // synchronized on this to ensure that
             // the ledger isn't closed between checking and
             // updating lastAddPushed
-            if (getLedgerMetadata().isClosed()) {
-                wasClosed = true;
-            } else {
+            if (isHandleWritable()) {
                 long currentLength = addToLength(op.payload.readableBytes());
                 op.setLedgerLength(currentLength);
                 pendingAddOps.add(op);
+            } else {
+                wasClosed = true;
             }
         }
 

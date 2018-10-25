@@ -251,10 +251,8 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
 
         // We are about to send. Check if we need to make an ensemble change
         // becasue of delayed write errors
-        Map <Integer, BookieSocketAddress> delayedWriteFailedBookies = lh.getDelayedWriteFailedBookies();
-        if (!delayedWriteFailedBookies.isEmpty()) {
-            lh.handleDelayedWriteBookieFailure();
-        }
+        lh.maybeHandleDelayedWriteBookieFailure();
+
         // Iterate over set and trigger the sendWriteRequests
         DistributionSchedule.WriteSet writeSet = lh.distributionSchedule.getWriteSet(entryId);
 
@@ -293,7 +291,7 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
                 clientCtx.getClientStats().getAddOpUrCounter().inc();
                 if (!clientCtx.getConf().disableEnsembleChangeFeature.isAvailable()
                         && !clientCtx.getConf().delayEnsembleChange) {
-                    lh.getDelayedWriteFailedBookies().putIfAbsent(bookieIndex, addr);
+                    lh.notifyWriteFailed(bookieIndex, addr);
                 }
             }
             // even the add operation is completed, but because we don't reset completed flag back to false when

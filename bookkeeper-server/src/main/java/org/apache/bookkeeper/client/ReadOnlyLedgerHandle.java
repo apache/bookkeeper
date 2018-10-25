@@ -20,18 +20,14 @@
  */
 package org.apache.bookkeeper.client;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 
 import com.google.common.annotations.VisibleForTesting;
 
 import java.security.GeneralSecurityException;
-import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
-import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
@@ -209,64 +205,6 @@ class ReadOnlyLedgerHandle extends LedgerHandle implements LedgerMetadataListene
         }, ctx);
     }
 
-    List<BookieSocketAddress> replaceBookiesInEnsemble(LedgerMetadata metadata,
-                                                       List<BookieSocketAddress> oldEnsemble,
-                                                       Map<Integer, BookieSocketAddress> failedBookies)
-            throws BKException.BKNotEnoughBookiesException {
-        List<BookieSocketAddress> newEnsemble = new ArrayList<>(oldEnsemble);
-
-        int ensembleSize = metadata.getEnsembleSize();
-        int writeQ = metadata.getWriteQuorumSize();
-        int ackQ = metadata.getAckQuorumSize();
-        Map<String, byte[]> customMetadata = metadata.getCustomMetadata();
-
-        Set<BookieSocketAddress> exclude = new HashSet<>(failedBookies.values());
-
-        int replaced = 0;
-        for (Map.Entry<Integer, BookieSocketAddress> entry : failedBookies.entrySet()) {
-            int idx = entry.getKey();
-            BookieSocketAddress addr = entry.getValue();
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("[EnsembleChange-L{}] replacing bookie: {} index: {}", getId(), addr, idx);
-            }
-
-            if (!newEnsemble.get(idx).equals(addr)) {
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("[EnsembleChange-L{}] Not changing failed bookie {} at index {}, already changed to {}",
-                              getId(), addr, idx, newEnsemble.get(idx));
-                }
-                continue;
-            }
-            try {
-                BookieSocketAddress newBookie = clientCtx.getBookieWatcher().replaceBookie(
-                        ensembleSize, writeQ, ackQ, customMetadata, newEnsemble, idx, exclude);
-                newEnsemble.set(idx, newBookie);
-
-                replaced++;
-            } catch (BKException.BKNotEnoughBookiesException e) {
-                // if there is no bookie replaced, we throw not enough bookie exception
-                if (replaced <= 0) {
-                    throw e;
-                } else {
-                    break;
-                }
-            }
-        }
-        return newEnsemble;
-    }
-
-    private static Set<Integer> diffEnsemble(List<BookieSocketAddress> e1,
-                                             List<BookieSocketAddress> e2) {
-        checkArgument(e1.size() == e2.size(), "Ensembles must be of same size");
-        Set<Integer> diff = new HashSet<>();
-        for (int i = 0; i < e1.size(); i++) {
-            if (!e1.get(i).equals(e2.get(i))) {
-                diff.add(i);
-            }
-        }
-        return diff;
-    }
-
     /**
      * For a read only ledger handle, this method will only ever be called during recovery,
      * when we are reading forward from LAC and writing back those entries. As such,
@@ -276,21 +214,19 @@ class ReadOnlyLedgerHandle extends LedgerHandle implements LedgerMetadataListene
      */
     @Override
     void handleBookieFailure(final Map<Integer, BookieSocketAddress> failedBookies) {
-        blockAddCompletions.incrementAndGet();
-
         // handleBookieFailure should always run in the ordered executor thread for this
         // ledger, so this synchronized should be unnecessary, but putting it here now
         // just in case (can be removed when we validate threads)
         synchronized (metadataLock) {
+            String logContext = String.format("[RecoveryEnsembleChange(ledger:%d)]", ledgerId);
+
             long lac = getLastAddConfirmed();
             LedgerMetadata metadata = getLedgerMetadata();
             List<BookieSocketAddress> currentEnsemble = getCurrentEnsemble();
             try {
-                List<BookieSocketAddress> newEnsemble = replaceBookiesInEnsemble(metadata, currentEnsemble,
-                                                                                 failedBookies);
-
-                Set<Integer> replaced = diffEnsemble(currentEnsemble, newEnsemble);
-                blockAddCompletions.decrementAndGet();
+                List<BookieSocketAddress> newEnsemble = EnsembleUtils.replaceBookiesInEnsemble(
+                        clientCtx.getBookieWatcher(), metadata, currentEnsemble, failedBookies, logContext);
+                Set<Integer> replaced = EnsembleUtils.diffEnsemble(currentEnsemble, newEnsemble);
                 if (!replaced.isEmpty()) {
                     newEnsemblesFromRecovery.put(lac + 1, newEnsemble);
                     unsetSuccessAndSendWriteRequest(newEnsemble, replaced);
@@ -378,16 +314,14 @@ class ReadOnlyLedgerHandle extends LedgerHandle implements LedgerMetadataListene
                 (metadata) -> metadata.isInRecovery(),
                 (metadata) -> {
                     LedgerMetadataBuilder builder = LedgerMetadataBuilder.from(metadata);
-                    Optional<Long> lastEnsembleKey = metadata.getLastEnsembleKey();
-                    checkState(lastEnsembleKey.isPresent(),
-                               "Metadata shouldn't have been created without at least one ensemble");
+                    Long lastEnsembleKey = metadata.getLastEnsembleKey();
                     synchronized (metadataLock) {
                         newEnsemblesFromRecovery.entrySet().forEach(
                                 (e) -> {
-                                    checkState(e.getKey() >= lastEnsembleKey.get(),
+                                    checkState(e.getKey() >= lastEnsembleKey,
                                                "Once a ledger is in recovery, noone can add ensembles without closing");
                                     // Occurs when a bookie need to be replaced at very start of recovery
-                                    if (lastEnsembleKey.get().equals(e.getKey())) {
+                                    if (lastEnsembleKey.equals(e.getKey())) {
                                         builder.replaceEnsembleEntry(e.getKey(), e.getValue());
                                     } else {
                                         builder.newEnsembleEntry(e.getKey(), e.getValue());
