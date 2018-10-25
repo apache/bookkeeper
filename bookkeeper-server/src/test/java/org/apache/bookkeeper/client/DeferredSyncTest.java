@@ -19,6 +19,7 @@ package org.apache.bookkeeper.client;
 
 import static org.apache.bookkeeper.common.concurrent.FutureUtils.result;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -213,7 +214,7 @@ public class DeferredSyncTest extends MockBookKeeperTestCase {
                 // expected
             }
             LedgerHandle lh = (LedgerHandle) wh;
-            assertTrue(lh.getDelayedWriteFailedBookies().isEmpty());
+            assertFalse(lh.hasDelayedWriteFailedBookies());
         }
     }
 

@@ -38,11 +38,14 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 /**
  * Test read last confirmed long by polling.
  */
 @RunWith(Parameterized.class)
 public class TestReadLastConfirmedLongPoll extends BookKeeperClusterTestCase {
+    private static final Logger log = LoggerFactory.getLogger(TestReadLastConfirmedLongPoll.class);
     final DigestType digestType;
 
     public TestReadLastConfirmedLongPoll(Class<? extends LedgerStorage> storageClass) {
@@ -153,7 +156,7 @@ public class TestReadLastConfirmedLongPoll extends BookKeeperClusterTestCase {
             ServerConfiguration[] confs = new ServerConfiguration[numEntries - 1];
             for (int j = 0; j < numEntries - 1; j++) {
                 int idx = (i + 1 + j) % numEntries;
-                confs[j] = killBookie(lh.getCurrentEnsemble().get(idx));
+                confs[j] = killBookie(lh.getLedgerMetadata().getLastEnsembleValue().get(idx));
             }
 
             final AtomicBoolean entryAsExpected = new AtomicBoolean(false);

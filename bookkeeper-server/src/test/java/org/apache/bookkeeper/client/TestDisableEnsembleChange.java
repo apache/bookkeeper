@@ -22,6 +22,7 @@ package org.apache.bookkeeper.client;
 
 import static com.google.common.base.Charsets.UTF_8;
 import static org.apache.bookkeeper.util.BookKeeperConstants.FEATURE_DISABLE_ENSEMBLE_CHANGE;
+import static org.apache.bookkeeper.util.TestUtils.assertEventuallyTrue;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -164,8 +165,9 @@ public class TestDisableEnsembleChange extends BookKeeperClusterTestCase {
         } else {
             assertTrue("Should fail adding entries when enable ensemble change again.",
                     failTest.get());
-            assertTrue("Ledger should be closed when enable ensemble change again.",
-                    lh.getLedgerMetadata().isClosed());
+            // The ledger close occurs in the background, so assert that it happens eventually
+            assertEventuallyTrue("Ledger should be closed when enable ensemble change again.",
+                                 () -> lh.getLedgerMetadata().isClosed());
         }
     }
 

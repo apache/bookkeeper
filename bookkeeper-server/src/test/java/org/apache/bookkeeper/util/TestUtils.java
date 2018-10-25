@@ -24,12 +24,15 @@ package org.apache.bookkeeper.util;
 import java.io.File;
 import java.util.HashSet;
 import java.util.Set;
-
 import java.util.concurrent.TimeUnit;
+import java.util.function.BooleanSupplier;
+
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.api.ReadHandle;
+
+import org.junit.Assert;
 
 /**
  * Test utilities.
@@ -77,4 +80,16 @@ public final class TestUtils {
         return lac;
     }
 
+    public static void assertEventuallyTrue(String description, BooleanSupplier predicate) throws Exception {
+        assertEventuallyTrue(description, predicate, 10, TimeUnit.SECONDS);
+    }
+
+    public static void assertEventuallyTrue(String description, BooleanSupplier predicate,
+                                            long duration, TimeUnit unit) throws Exception {
+        long iterations = unit.toMillis(duration) / 100;
+        for (int i = 0; i < iterations && !predicate.getAsBoolean(); i++) {
+            Thread.sleep(100);
+        }
+        Assert.assertTrue(description, predicate.getAsBoolean());
+    }
 }

@@ -20,8 +20,6 @@
  */
 package org.apache.bookkeeper.test;
 
-import static org.junit.Assert.fail;
-
 import java.io.IOException;
 
 import org.apache.bookkeeper.client.BKException;
@@ -92,15 +90,9 @@ public class ConditionalSetTest extends BookKeeperClusterTestCase {
         LOG.debug("Opened the ledger already");
 
         /*
-         * Writer tries to close the ledger, and if should fail.
+         * Writer tries to close the ledger, and it should succeed as recovery closed
+         * the ledger already, but with the correct LAC and length
          */
-        try {
-            lhWrite.close();
-            fail("Should have received an exception when trying to close the ledger.");
-        } catch (BKException e) {
-            /*
-             * Correctly failed to close the ledger
-             */
-        }
+        lhWrite.close();
     }
 }

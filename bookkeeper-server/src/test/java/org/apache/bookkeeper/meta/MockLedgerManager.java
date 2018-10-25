@@ -21,18 +21,16 @@ package org.apache.bookkeeper.meta;
 
 import com.google.common.base.Optional;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.function.Consumer;
 
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.LedgerMetadata;
-
+import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.LedgerMetadataListener;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.Processor;
@@ -51,12 +49,17 @@ import org.slf4j.LoggerFactory;
 public class MockLedgerManager implements LedgerManager {
     static final Logger LOG = LoggerFactory.getLogger(MockLedgerManager.class);
 
-    boolean stallingWrites = false;
-    final List<Consumer<Integer>> stalledWrites = new ArrayList<>();
+    /**
+     * Hook for injecting errors or delays.
+     */
+    public interface Hook {
+        CompletableFuture<Void> runHook(long ledgerId, LedgerMetadata metadata);
+    }
 
     final Map<Long, Pair<LongVersion, byte[]>> metadataMap;
     final ExecutorService executor;
     final boolean ownsExecutor;
+    private Hook preWriteHook = (ledgerId, metadata) -> FutureUtils.value(null);
 
     public MockLedgerManager() {
         this(new HashMap<>(),
@@ -83,23 +86,8 @@ public class MockLedgerManager implements LedgerManager {
         }
     }
 
-    public void stallWrites() throws Exception {
-        synchronized (this) {
-            stallingWrites = true;
-        }
-    }
-
-    public void releaseStalledWrites(int rc) {
-        List<Consumer<Integer>> toRelease;
-        synchronized (this) {
-            stallingWrites = false;
-            toRelease = new ArrayList<>(stalledWrites);
-            stalledWrites.clear();
-        }
-
-        executor.execute(() -> {
-                toRelease.forEach(w -> w.accept(rc));
-            });
+    public void setPreWriteHook(Hook hook) {
+        this.preWriteHook = hook;
     }
 
     public void executeCallback(Runnable r) {
@@ -147,42 +135,35 @@ public class MockLedgerManager implements LedgerManager {
 
     @Override
     public void writeLedgerMetadata(long ledgerId, LedgerMetadata metadata, GenericCallback<LedgerMetadata> cb) {
-        Runnable write = () -> {
-            try {
-                LedgerMetadata oldMetadata = readMetadata(ledgerId);
-                if (oldMetadata == null) {
-                    executeCallback(() -> cb.operationComplete(BKException.Code.NoSuchLedgerExistsException, null));
-                } else if (!oldMetadata.getVersion().equals(metadata.getVersion())) {
-                    executeCallback(() -> cb.operationComplete(BKException.Code.MetadataVersionException, null));
-                } else {
-                    LongVersion oldVersion = (LongVersion) oldMetadata.getVersion();
-                    metadataMap.put(ledgerId, Pair.of(new LongVersion(oldVersion.getLongVersion() + 1),
-                                                      metadata.serialize()));
-                    LedgerMetadata readBack = readMetadata(ledgerId);
-                    executeCallback(() -> cb.operationComplete(BKException.Code.OK, readBack));
-                }
-            } catch (Exception e) {
-                LOG.error("Error writing metadata", e);
-                executeCallback(() -> cb.operationComplete(BKException.Code.MetaStoreException, null));
-            }
-        };
-
-        synchronized (this) {
-            if (stallingWrites) {
-                LOG.info("[L{}, stallId={}] Stalling write of metadata", ledgerId, System.identityHashCode(write));
-                stalledWrites.add((rc) -> {
-                        LOG.info("[L{}, stallid={}] Unstalled write", ledgerId, System.identityHashCode(write));
-
-                        if (rc == BKException.Code.OK) {
-                            write.run();
+        preWriteHook.runHook(ledgerId, metadata)
+            .thenComposeAsync((ignore) -> {
+                    try {
+                        LedgerMetadata oldMetadata = readMetadata(ledgerId);
+                        if (oldMetadata == null) {
+                            return FutureUtils.exception(new BKException.BKNoSuchLedgerExistsException());
+                        } else if (!oldMetadata.getVersion().equals(metadata.getVersion())) {
+                            return FutureUtils.exception(new BKException.BKMetadataVersionException());
                         } else {
-                            executeCallback(() -> cb.operationComplete(rc, null));
+                            LongVersion oldVersion = (LongVersion) oldMetadata.getVersion();
+                            metadataMap.put(ledgerId, Pair.of(new LongVersion(oldVersion.getLongVersion() + 1),
+                                                              metadata.serialize()));
+                            LedgerMetadata readBack = readMetadata(ledgerId);
+                            return FutureUtils.value(readBack);
                         }
-                    });
-            } else {
-                executor.execute(write);
-            }
-        }
+                    } catch (Exception e) {
+                        LOG.error("Error writing metadata", e);
+                        return FutureUtils.exception(e);
+                    }
+                }, executor)
+            .whenComplete((res, ex) -> {
+                    if (ex != null) {
+                        executeCallback(() -> cb.operationComplete(
+                                                BKException.getExceptionCode(ex, BKException.Code.MetaStoreException),
+                                                null));
+                    } else {
+                        executeCallback(() -> cb.operationComplete(BKException.Code.OK, res));
+                    }
+                });
     }
 
     @Override

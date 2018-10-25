@@ -102,6 +102,19 @@ class LedgerMetadataBuilder {
         return this;
     }
 
+    LedgerMetadataBuilder withWriteQuorumSize(int writeQuorumSize) {
+        checkArgument(ensembleSize >= writeQuorumSize, "Write quorum must be less or equal to ensemble size");
+        checkArgument(writeQuorumSize >= ackQuorumSize, "Write quorum must be greater or equal to ack quorum");
+        this.writeQuorumSize = writeQuorumSize;
+        return this;
+    }
+
+    LedgerMetadataBuilder withAckQuorumSize(int ackQuorumSize) {
+        checkArgument(writeQuorumSize >= ackQuorumSize, "Ack quorum must be less or equal to write quorum");
+        this.ackQuorumSize = ackQuorumSize;
+        return this;
+    }
+
     LedgerMetadataBuilder newEnsembleEntry(long firstEntry, List<BookieSocketAddress> ensemble) {
         checkArgument(ensemble.size() == ensembleSize,
                       "Size of passed in ensemble must match the ensembleSize of the builder");
