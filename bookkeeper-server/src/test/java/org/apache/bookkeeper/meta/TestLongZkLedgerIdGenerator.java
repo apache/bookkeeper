@@ -58,7 +58,7 @@ public class TestLongZkLedgerIdGenerator extends TestCase {
         super.setUp();
 
         zkutil = new ZooKeeperUtil();
-        zkutil.startServer();
+        zkutil.startCluster();
         zk = zkutil.getZooKeeperClient();
 
         ZkLedgerIdGenerator shortLedgerIdGenerator = new ZkLedgerIdGenerator(zk,
@@ -73,7 +73,7 @@ public class TestLongZkLedgerIdGenerator extends TestCase {
         LOG.info("Tearing down test");
         ledgerIdGenerator.close();
         zk.close();
-        zkutil.killServer();
+        zkutil.killCluster();
 
         super.tearDown();
     }
