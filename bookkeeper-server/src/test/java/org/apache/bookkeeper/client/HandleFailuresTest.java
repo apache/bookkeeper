@@ -236,7 +236,8 @@ public class HandleFailuresTest {
         CompletableFuture<Void> changeInProgress = new CompletableFuture<>();
         CompletableFuture<Void> blockEnsembleChange = new CompletableFuture<>();
         clientCtx.getMockLedgerManager().setPreWriteHook((ledgerId, metadata) -> {
-                if (metadata.getAllEnsembles().get(0L).get(1).equals(b4)) { // block the write trying to replace b2 with b4
+                // block the write trying to replace b2 with b4
+                if (metadata.getAllEnsembles().get(0L).get(1).equals(b4)) {
                     changeInProgress.complete(null);
                     return blockEnsembleChange;
                 } else {
