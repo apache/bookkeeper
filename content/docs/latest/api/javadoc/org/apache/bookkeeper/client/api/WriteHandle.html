@@ -431,7 +431,15 @@ extends <a href="../../../../../org/apache/bookkeeper/client/api/ReadHandle.html
 
  <p>Closing a ledger will ensure that all clients agree on what the last
  entry of the ledger is. Once the ledger has been closed, all reads from the
- ledger will return the same set of entries.</div>
+ ledger will return the same set of entries.
+
+ <p>The close operation can error if it finds conflicting metadata when it
+ tries to write to the metadata store. On close, the metadata state is set to
+ closed and lastEntry and length of the ledger are fixed in the metadata. A
+ conflict occurs if the metadata in the metadata store has a different value for
+ the lastEntry or length. If another process has updated the metadata, setting it
+ to closed, but have fixed the lastEntry and length to the same values as this
+ process is trying to write, the operation completes successfully.</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
 <dd><code><a href="../../../../../org/apache/bookkeeper/client/api/Handle.html#closeAsync--">closeAsync</a></code>&nbsp;in interface&nbsp;<code><a href="../../../../../org/apache/bookkeeper/client/api/Handle.html" title="interface in org.apache.bookkeeper.client.api">Handle</a></code></dd>
@@ -453,7 +461,15 @@ extends <a href="../../../../../org/apache/bookkeeper/client/api/ReadHandle.html
 
  <p>Closing a ledger will ensure that all clients agree on what the last
  entry of the ledger is. Once the ledger has been closed, all reads from the
- ledger will return the same set of entries.</div>
+ ledger will return the same set of entries.
+
+ <p>The close operation can error if it finds conflicting metadata when it
+ tries to write to the metadata store. On close, the metadata state is set to
+ closed and lastEntry and length of the ledger are fixed in the metadata. A
+ conflict occurs if the metadata in the metadata store has a different value for
+ the lastEntry or length. If another process has updated the metadata, setting it
+ to closed, but have fixed the lastEntry and length to the same values as this
+ process is trying to write, the operation completes successfully.</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
 <dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/AutoCloseable.html?is-external=true#close--" title="class or interface in java.lang">close</a></code>&nbsp;in interface&nbsp;<code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/AutoCloseable.html?is-external=true" title="class or interface in java.lang">AutoCloseable</a></code></dd>
