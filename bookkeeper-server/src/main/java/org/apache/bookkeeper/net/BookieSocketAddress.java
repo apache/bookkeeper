@@ -70,6 +70,11 @@ public class BookieSocketAddress {
 
     // Method to return an InetSocketAddress for the regular port.
     public InetSocketAddress getSocketAddress() {
+        // Return each time a new instance of the InetSocketAddress because the hostname
+        // gets resolved in its constructor and then cached forever.
+        // If we keep using the same InetSocketAddress instance, if bookies are advertising
+        // hostnames and the IP change, the BK client will keep forever to try to connect
+        // to the old IP.
         return new InetSocketAddress(hostname, port);
     }
 
