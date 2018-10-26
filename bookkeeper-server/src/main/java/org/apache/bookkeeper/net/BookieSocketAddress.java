@@ -39,13 +39,10 @@ public class BookieSocketAddress {
     private final String hostname;
     private final int port;
 
-    private final InetSocketAddress socketAddress;
-
     // Constructor that takes in both a port.
     public BookieSocketAddress(String hostname, int port) {
         this.hostname = hostname;
         this.port = port;
-        socketAddress = new InetSocketAddress(hostname, port);
     }
 
     // Constructor from a String "serialized" version of this class.
@@ -60,7 +57,6 @@ public class BookieSocketAddress {
         } catch (NumberFormatException nfe) {
             throw new UnknownHostException(addr);
         }
-        socketAddress = new InetSocketAddress(hostname, port);
     }
 
     // Public getters
@@ -74,7 +70,7 @@ public class BookieSocketAddress {
 
     // Method to return an InetSocketAddress for the regular port.
     public InetSocketAddress getSocketAddress() {
-        return socketAddress;
+        return new InetSocketAddress(hostname, port);
     }
 
     /**
