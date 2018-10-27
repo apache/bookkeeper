@@ -81,7 +81,7 @@ public class PrometheusMetricsProvider implements StatsProvider {
     final ConcurrentMap<String, DataSketchesOpStatsLogger> opStats = new ConcurrentSkipListMap<>();
 
     public PrometheusMetricsProvider() {
-        this(new CollectorRegistry());
+        this(CollectorRegistry.defaultRegistry);
     }
 
     public PrometheusMetricsProvider(CollectorRegistry registry) {
@@ -128,10 +128,17 @@ public class PrometheusMetricsProvider implements StatsProvider {
         }
 
         // Include standard JVM stats
-        new StandardExports().register(registry);
-        new MemoryPoolsExports().register(registry);
-        new GarbageCollectorExports().register(registry);
-        new ThreadExports().register(registry);
+        try {
+            new StandardExports().register(registry);
+            new MemoryPoolsExports().register(registry);
+            new GarbageCollectorExports().register(registry);
+            new ThreadExports().register(registry);
+        } catch (Exception e) {
+            // Ignore if these were already registered
+            if (log.isDebugEnabled()) {
+                log.debug("Failed to register Prometheus stardard JVM exports", e);
+            }
+        }
 
         // Add direct memory allocated through unsafe
         Gauge.build("jvm_memory_direct_bytes_used", "-").create().setChild(new Child() {
