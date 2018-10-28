@@ -217,17 +217,6 @@ public class LedgerMetadata implements org.apache.bookkeeper.client.api.LedgerMe
         this.hasPassword = false;
     }
 
-    /**
-     * Get the Map of bookie ensembles for the various ledger fragments
-     * that make up the ledger.
-     *
-     * @return SortedMap of Ledger Fragments and the corresponding
-     * bookie ensembles that store the entries.
-     */
-    public TreeMap<Long, ? extends List<BookieSocketAddress>> getEnsembles() {
-        return ensembles;
-    }
-
     @Override
     public NavigableMap<Long, ? extends List<BookieSocketAddress>> getAllEnsembles() {
         return ensembles;

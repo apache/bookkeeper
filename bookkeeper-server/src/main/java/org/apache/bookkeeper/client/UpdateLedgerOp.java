@@ -102,7 +102,7 @@ public class UpdateLedgerOp {
                             lm, ledgerId,
                             ref::get,
                             (metadata) -> {
-                                return metadata.getEnsembles().values().stream()
+                                return metadata.getAllEnsembles().values().stream()
                                     .flatMap(Collection::stream)
                                     .filter(b -> b.equals(oldBookieId))
                                     .count() > 0;
@@ -161,7 +161,7 @@ public class UpdateLedgerOp {
                                                            BookieSocketAddress oldBookieId,
                                                            BookieSocketAddress newBookieId) {
         LedgerMetadataBuilder builder = LedgerMetadataBuilder.from(metadata);
-        for (Map.Entry<Long, ? extends List<BookieSocketAddress>> e : metadata.getEnsembles().entrySet()) {
+        for (Map.Entry<Long, ? extends List<BookieSocketAddress>> e : metadata.getAllEnsembles().entrySet()) {
             List<BookieSocketAddress> newEnsemble = e.getValue().stream()
                 .map(b -> b.equals(oldBookieId) ? newBookieId : b)
                 .collect(Collectors.toList());
