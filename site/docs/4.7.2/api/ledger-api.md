@@ -8,7 +8,7 @@ The ledger API is a lower-level API for BookKeeper that enables you to interact 
 
 To get started with the Java client for BookKeeper, install the `bookkeeper-server` library as a dependency in your Java application.
 
-> For a more in-depth tutorial that involves a real use case for BookKeeper, see the [Example application](../example-application) guide.
+> For a more in-depth tutorial that involves a real use case for BookKeeper, see the [Example application](#example-application) guide.
 
 ## Installation
 
