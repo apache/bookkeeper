@@ -83,7 +83,7 @@ public class LedgerReader {
     }
 
     public static SortedMap<Long, ? extends List<BookieSocketAddress>> bookiesForLedger(final LedgerHandle lh) {
-        return lh.getLedgerMetadata().getEnsembles();
+        return lh.getLedgerMetadata().getAllEnsembles();
     }
 
     public void readEntriesFromAllBookies(final LedgerHandle lh, long eid,

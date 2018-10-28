@@ -239,7 +239,7 @@ public class UpdateLedgerOpTest extends BookKeeperClusterTestCase {
             lh.close();
             LedgerHandle openLedger = bk.openLedger(lh.getId(), digestType, PASSWORD.getBytes());
             final LedgerMetadata ledgerMetadata = openLedger.getLedgerMetadata();
-            assertEquals("Failed to reform ensemble!", 2, ledgerMetadata.getEnsembles().size());
+            assertEquals("Failed to reform ensemble!", 2, ledgerMetadata.getAllEnsembles().size());
             ensemble = ledgerMetadata.getEnsemble(0);
             assertTrue("Failed to update the ledger metadata to use bookie host name",
                     ensemble.contains(toBookieAddr));

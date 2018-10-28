@@ -666,7 +666,7 @@ public class TestHttpService extends BookKeeperClusterTestCase {
 
         LedgerHandle lh = bkc.createLedger(3, 3, BookKeeper.DigestType.CRC32, "passwd".getBytes());
         LedgerMetadata md = LedgerHandleAdapter.getLedgerMetadata(lh);
-        List<BookieSocketAddress> ensemble = new ArrayList<>(md.getEnsembles().get(0L));
+        List<BookieSocketAddress> ensemble = new ArrayList<>(md.getAllEnsembles().get(0L));
         ensemble.set(0, new BookieSocketAddress("1.1.1.1", 1000));
         md.updateEnsemble(0L, ensemble);
 

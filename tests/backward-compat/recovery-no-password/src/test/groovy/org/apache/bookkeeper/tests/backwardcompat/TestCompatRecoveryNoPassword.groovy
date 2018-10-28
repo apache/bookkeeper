@@ -104,7 +104,7 @@ class TestCompatRecoveryNoPassword {
                                           long untilEntry) throws Exception {
         LedgerMetadata md = getLedgerMetadata(bookkeeper, lh.getId())
 
-        def ensembles = md.getEnsembles()
+        def ensembles = md.getAllEnsembles()
 
         def ranges = new HashMap<Long, Long>()
         def keyList = new ArrayList(ensembles.keySet())

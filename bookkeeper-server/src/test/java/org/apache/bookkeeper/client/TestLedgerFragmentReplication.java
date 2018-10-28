@@ -87,7 +87,7 @@ public class TestLedgerFragmentReplication extends BookKeeperClusterTestCase {
         for (int i = 0; i < 10; i++) {
             lh.addEntry(data);
         }
-        BookieSocketAddress replicaToKill = lh.getLedgerMetadata().getEnsembles()
+        BookieSocketAddress replicaToKill = lh.getLedgerMetadata().getAllEnsembles()
                 .get(0L).get(0);
 
         LOG.info("Killing Bookie", replicaToKill);
@@ -112,7 +112,7 @@ public class TestLedgerFragmentReplication extends BookKeeperClusterTestCase {
 
         // Killing all bookies except newly replicated bookie
         SortedMap<Long, ? extends List<BookieSocketAddress>> allBookiesBeforeReplication = lh
-                .getLedgerMetadata().getEnsembles();
+                .getLedgerMetadata().getAllEnsembles();
         for (Entry<Long, ? extends List<BookieSocketAddress>> entry : allBookiesBeforeReplication.entrySet()) {
             List<BookieSocketAddress> bookies = entry.getValue();
             for (BookieSocketAddress bookie : bookies) {
@@ -141,7 +141,7 @@ public class TestLedgerFragmentReplication extends BookKeeperClusterTestCase {
         for (int i = 0; i < 10; i++) {
             lh.addEntry(data);
         }
-        BookieSocketAddress replicaToKill = lh.getLedgerMetadata().getEnsembles()
+        BookieSocketAddress replicaToKill = lh.getLedgerMetadata().getAllEnsembles()
                 .get(0L).get(0);
 
         startNewBookie();
@@ -154,7 +154,7 @@ public class TestLedgerFragmentReplication extends BookKeeperClusterTestCase {
         }
 
         BookieSocketAddress replicaToKill2 = lh.getLedgerMetadata()
-                .getEnsembles().get(0L).get(1);
+                .getAllEnsembles().get(0L).get(1);
 
         BookieSocketAddress newBkAddr = startNewBookieAndReturnAddress();
         LOG.info("New Bookie addr : {}", newBkAddr);
@@ -200,7 +200,7 @@ public class TestLedgerFragmentReplication extends BookKeeperClusterTestCase {
         }
 
         // Kill the first Bookie
-        BookieSocketAddress replicaToKill = lh.getLedgerMetadata().getEnsembles()
+        BookieSocketAddress replicaToKill = lh.getLedgerMetadata().getAllEnsembles()
                 .get(0L).get(0);
         killBookie(replicaToKill);
         LOG.info("Killed Bookie =" + replicaToKill);
@@ -210,7 +210,7 @@ public class TestLedgerFragmentReplication extends BookKeeperClusterTestCase {
             lh.addEntry(data);
         }
         // Kill the second Bookie
-        replicaToKill = lh.getLedgerMetadata().getEnsembles().get(0L).get(0);
+        replicaToKill = lh.getLedgerMetadata().getAllEnsembles().get(0L).get(0);
         killBookie(replicaToKill);
         LOG.info("Killed Bookie =" + replicaToKill);
 

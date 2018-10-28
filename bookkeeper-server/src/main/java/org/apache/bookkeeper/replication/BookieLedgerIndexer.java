@@ -74,7 +74,7 @@ public class BookieLedgerIndexer {
                             LedgerMetadata ledgerMetadata) {
                         if (rc == BKException.Code.OK) {
                             for (Map.Entry<Long, ? extends List<BookieSocketAddress>> ensemble : ledgerMetadata
-                                    .getEnsembles().entrySet()) {
+                                    .getAllEnsembles().entrySet()) {
                                 for (BookieSocketAddress bookie : ensemble
                                         .getValue()) {
                                     putLedger(bookie2ledgersMap,

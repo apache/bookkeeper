@@ -138,7 +138,7 @@ public class TestSpeculativeRead extends BookKeeperClusterTestCase {
 
         // sleep second bookie
         CountDownLatch sleepLatch = new CountDownLatch(1);
-        BookieSocketAddress second = lnospec.getLedgerMetadata().getEnsembles().get(0L).get(1);
+        BookieSocketAddress second = lnospec.getLedgerMetadata().getAllEnsembles().get(0L).get(1);
         sleepBookie(second, sleepLatch);
 
         try {
@@ -194,9 +194,9 @@ public class TestSpeculativeRead extends BookKeeperClusterTestCase {
 
         // sleep bookie 1, 2 & 4
         CountDownLatch sleepLatch = new CountDownLatch(1);
-        sleepBookie(l.getLedgerMetadata().getEnsembles().get(0L).get(1), sleepLatch);
-        sleepBookie(l.getLedgerMetadata().getEnsembles().get(0L).get(2), sleepLatch);
-        sleepBookie(l.getLedgerMetadata().getEnsembles().get(0L).get(4), sleepLatch);
+        sleepBookie(l.getLedgerMetadata().getAllEnsembles().get(0L).get(1), sleepLatch);
+        sleepBookie(l.getLedgerMetadata().getAllEnsembles().get(0L).get(2), sleepLatch);
+        sleepBookie(l.getLedgerMetadata().getAllEnsembles().get(0L).get(4), sleepLatch);
 
         try {
             // read first entry, should complete faster than timeout
@@ -218,8 +218,8 @@ public class TestSpeculativeRead extends BookKeeperClusterTestCase {
 
             // bookies 1 & 2 should be registered as slow bookies because of speculative reads
             Set<BookieSocketAddress> expectedSlowBookies = new HashSet<>();
-            expectedSlowBookies.add(l.getLedgerMetadata().getEnsembles().get(0L).get(1));
-            expectedSlowBookies.add(l.getLedgerMetadata().getEnsembles().get(0L).get(2));
+            expectedSlowBookies.add(l.getLedgerMetadata().getAllEnsembles().get(0L).get(1));
+            expectedSlowBookies.add(l.getLedgerMetadata().getAllEnsembles().get(0L).get(2));
             assertEquals(((RackawareEnsemblePlacementPolicy) bkspec.getPlacementPolicy()).slowBookies.asMap().keySet(),
                 expectedSlowBookies);
 
@@ -268,8 +268,8 @@ public class TestSpeculativeRead extends BookKeeperClusterTestCase {
         // sleep bookies
         CountDownLatch sleepLatch0 = new CountDownLatch(1);
         CountDownLatch sleepLatch1 = new CountDownLatch(1);
-        sleepBookie(l.getLedgerMetadata().getEnsembles().get(0L).get(0), sleepLatch0);
-        sleepBookie(l.getLedgerMetadata().getEnsembles().get(0L).get(1), sleepLatch1);
+        sleepBookie(l.getLedgerMetadata().getAllEnsembles().get(0L).get(0), sleepLatch0);
+        sleepBookie(l.getLedgerMetadata().getAllEnsembles().get(0L).get(1), sleepLatch1);
 
         try {
             // read goes to first bookie, spec read timeout occurs,
@@ -328,7 +328,7 @@ public class TestSpeculativeRead extends BookKeeperClusterTestCase {
 
         LedgerHandle l = bkspec.openLedger(id, digestType, passwd);
 
-        List<BookieSocketAddress> ensemble = l.getLedgerMetadata().getEnsembles().get(0L);
+        List<BookieSocketAddress> ensemble = l.getLedgerMetadata().getAllEnsembles().get(0L);
         BitSet allHosts = new BitSet(ensemble.size());
         for (int i = 0; i < ensemble.size(); i++) {
             allHosts.set(i, true);

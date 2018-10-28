@@ -75,7 +75,7 @@ public class TestAutoRecoveryAlongWithBookieServers extends
         }
         lh.close();
         BookieSocketAddress replicaToKill = LedgerHandleAdapter
-                .getLedgerMetadata(lh).getEnsembles().get(0L).get(0);
+                .getLedgerMetadata(lh).getAllEnsembles().get(0L).get(0);
 
         killBookie(replicaToKill);
 
@@ -88,7 +88,7 @@ public class TestAutoRecoveryAlongWithBookieServers extends
 
         // Killing all bookies except newly replicated bookie
         for (Entry<Long, ? extends List<BookieSocketAddress>> entry :
-                 lh.getLedgerMetadata().getEnsembles().entrySet()) {
+                 lh.getLedgerMetadata().getAllEnsembles().entrySet()) {
             List<BookieSocketAddress> bookies = entry.getValue();
             for (BookieSocketAddress bookie : bookies) {
                 if (bookie.equals(newBkAddr)) {

@@ -344,7 +344,7 @@ public class LedgerHandle implements WriteHandle {
      * @return the count of fragments
      */
     public synchronized long getNumFragments() {
-        return getLedgerMetadata().getEnsembles().size();
+        return getLedgerMetadata().getAllEnsembles().size();
     }
 
     /**
@@ -354,7 +354,7 @@ public class LedgerHandle implements WriteHandle {
      * @return count of unique bookies
      */
     public synchronized long getNumBookies() {
-        Map<Long, ? extends List<BookieSocketAddress>> m = getLedgerMetadata().getEnsembles();
+        Map<Long, ? extends List<BookieSocketAddress>> m = getLedgerMetadata().getAllEnsembles();
         Set<BookieSocketAddress> s = Sets.newHashSet();
         for (List<BookieSocketAddress> aList : m.values()) {
             s.addAll(aList);

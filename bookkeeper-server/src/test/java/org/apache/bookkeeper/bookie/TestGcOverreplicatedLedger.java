@@ -148,7 +148,7 @@ public class TestGcOverreplicatedLedger extends LedgerManagerTestCase {
             Assert.fail("No ledger metadata found");
         }
         BookieSocketAddress address = null;
-        SortedMap<Long, ? extends List<BookieSocketAddress>> ensembleMap = newLedgerMetadata.get().getEnsembles();
+        SortedMap<Long, ? extends List<BookieSocketAddress>> ensembleMap = newLedgerMetadata.get().getAllEnsembles();
         for (List<BookieSocketAddress> ensemble : ensembleMap.values()) {
             address = ensemble.get(0);
         }
@@ -235,7 +235,7 @@ public class TestGcOverreplicatedLedger extends LedgerManagerTestCase {
         for (BookieServer bk : bs) {
             allAddresses.add(bk.getLocalAddress());
         }
-        SortedMap<Long, ? extends List<BookieSocketAddress>> ensembles = ledgerMetadata.getEnsembles();
+        SortedMap<Long, ? extends List<BookieSocketAddress>> ensembles = ledgerMetadata.getAllEnsembles();
         for (List<BookieSocketAddress> fragmentEnsembles : ensembles.values()) {
             allAddresses.removeAll(fragmentEnsembles);
         }

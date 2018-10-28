@@ -378,12 +378,12 @@ public class LedgerFragmentReplicator {
                 lh::getLedgerMetadata,
                 (metadata) -> {
                     // returns true if any of old bookies exist in ensemble
-                    List<BookieSocketAddress> ensemble = metadata.getEnsembles().get(fragmentStartId);
+                    List<BookieSocketAddress> ensemble = metadata.getAllEnsembles().get(fragmentStartId);
                     return oldBookie2NewBookie.keySet().stream().anyMatch(ensemble::contains);
                 },
                 (currentMetadata) -> {
                     // replace all old bookies with new bookies in ensemble
-                    List<BookieSocketAddress> newEnsemble = currentMetadata.getEnsembles().get(fragmentStartId)
+                    List<BookieSocketAddress> newEnsemble = currentMetadata.getAllEnsembles().get(fragmentStartId)
                         .stream().map((bookie) -> oldBookie2NewBookie.getOrDefault(bookie, bookie))
                         .collect(Collectors.toList());
                     return LedgerMetadataBuilder.from(currentMetadata)

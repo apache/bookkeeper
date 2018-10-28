@@ -106,9 +106,9 @@ public class LedgerClose2Test {
         closeFuture.get();
 
         Assert.assertTrue(lh.getLedgerMetadata().isClosed());
-        Assert.assertEquals(lh.getLedgerMetadata().getEnsembles().size(), 2);
-        Assert.assertEquals(lh.getLedgerMetadata().getEnsembles().get(0L), Lists.newArrayList(b4, b2, b5));
-        Assert.assertEquals(lh.getLedgerMetadata().getEnsembles().get(1L), Lists.newArrayList(b1, b2, b4));
+        Assert.assertEquals(lh.getLedgerMetadata().getAllEnsembles().size(), 2);
+        Assert.assertEquals(lh.getLedgerMetadata().getAllEnsembles().get(0L), Lists.newArrayList(b4, b2, b5));
+        Assert.assertEquals(lh.getLedgerMetadata().getAllEnsembles().get(1L), Lists.newArrayList(b1, b2, b4));
         Assert.assertEquals(lh.getLedgerMetadata().getLastEntryId(), 1L);
     }
 
@@ -147,8 +147,8 @@ public class LedgerClose2Test {
         closeFuture.get();
 
         Assert.assertTrue(lh.getLedgerMetadata().isClosed());
-        Assert.assertEquals(lh.getLedgerMetadata().getEnsembles().size(), 1);
-        Assert.assertEquals(lh.getLedgerMetadata().getEnsembles().get(0L), Lists.newArrayList(b1, b2, b3));
+        Assert.assertEquals(lh.getLedgerMetadata().getAllEnsembles().size(), 1);
+        Assert.assertEquals(lh.getLedgerMetadata().getAllEnsembles().get(0L), Lists.newArrayList(b1, b2, b3));
         Assert.assertEquals(lh.getLedgerMetadata().getLastEntryId(), lac);
         Assert.assertEquals(lh.getLedgerMetadata().getLength(), length);
     }
@@ -228,8 +228,8 @@ public class LedgerClose2Test {
 
         closeFuture.get(); // should override in recovery, since this handle knows what it has written
         Assert.assertTrue(lh.getLedgerMetadata().isClosed());
-        Assert.assertEquals(lh.getLedgerMetadata().getEnsembles().size(), 1);
-        Assert.assertEquals(lh.getLedgerMetadata().getEnsembles().get(0L), Lists.newArrayList(b1, b2, b3));
+        Assert.assertEquals(lh.getLedgerMetadata().getAllEnsembles().size(), 1);
+        Assert.assertEquals(lh.getLedgerMetadata().getAllEnsembles().get(0L), Lists.newArrayList(b1, b2, b3));
         Assert.assertEquals(lh.getLedgerMetadata().getLastEntryId(), lac);
         Assert.assertEquals(lh.getLedgerMetadata().getLength(), length);
     }
@@ -260,8 +260,8 @@ public class LedgerClose2Test {
             Assert.assertEquals(ee.getCause().getClass(), BKException.BKLedgerClosedException.class);
         }
         Assert.assertTrue(lh.getLedgerMetadata().isClosed());
-        Assert.assertEquals(lh.getLedgerMetadata().getEnsembles().size(), 1);
-        Assert.assertEquals(lh.getLedgerMetadata().getEnsembles().get(0L), Lists.newArrayList(b1, b2, b3));
+        Assert.assertEquals(lh.getLedgerMetadata().getAllEnsembles().size(), 1);
+        Assert.assertEquals(lh.getLedgerMetadata().getAllEnsembles().get(0L), Lists.newArrayList(b1, b2, b3));
         Assert.assertEquals(lh.getLedgerMetadata().getLastEntryId(), LedgerHandle.INVALID_ENTRY_ID);
         Assert.assertEquals(lh.getLedgerMetadata().getLength(), 0);
     }
