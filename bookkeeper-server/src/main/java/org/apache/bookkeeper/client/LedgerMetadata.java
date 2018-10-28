@@ -34,7 +34,6 @@ import java.nio.CharBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -670,66 +669,6 @@ public class LedgerMetadata implements org.apache.bookkeeper.client.api.LedgerMe
             }
         }
         return true;
-    }
-
-    /**
-     * Is the metadata conflict with new updated metadata.
-     *
-     * @param newMeta
-     *          Re-read metadata
-     * @return true if the metadata is conflict.
-     */
-    boolean isConflictWith(LedgerMetadata newMeta) {
-        /*
-         *  if length & close have changed, then another client has
-         *  opened the ledger, can't resolve this conflict.
-         */
-
-        if (metadataFormatVersion != newMeta.metadataFormatVersion
-            || ensembleSize != newMeta.ensembleSize
-            || writeQuorumSize != newMeta.writeQuorumSize
-            || ackQuorumSize != newMeta.ackQuorumSize
-            || length != newMeta.length
-            || state != newMeta.state
-            || !digestType.equals(newMeta.digestType)
-            || !Arrays.equals(password, newMeta.password)
-            || !LedgerMetadata.areByteArrayValMapsEqual(customMetadata, newMeta.customMetadata)) {
-            return true;
-        }
-
-        // verify the ctime
-        if (storeSystemtimeAsLedgerCreationTime != newMeta.storeSystemtimeAsLedgerCreationTime) {
-            return true;
-        } else if (storeSystemtimeAsLedgerCreationTime) {
-            return ctime != newMeta.ctime;
-        }
-
-        if (state == LedgerMetadataFormat.State.CLOSED
-            && lastEntryId != newMeta.lastEntryId) {
-            return true;
-        }
-        // if ledger is closed, we can just take the new ensembles
-        if (newMeta.state != LedgerMetadataFormat.State.CLOSED) {
-            // allow new metadata to be one ensemble less than current metadata
-            // since ensemble change might kick in when recovery changed metadata
-            int diff = ensembles.size() - newMeta.ensembles.size();
-            if (0 != diff && 1 != diff) {
-                return true;
-            }
-            // ensemble distribution should be same
-            // we don't check the detail ensemble, since new bookie will be set
-            // using recovery tool.
-            Iterator<Long> keyIter = ensembles.keySet().iterator();
-            Iterator<Long> newMetaKeyIter = newMeta.ensembles.keySet().iterator();
-            for (int i = 0; i < newMeta.ensembles.size(); i++) {
-                Long curKey = keyIter.next();
-                Long newMetaKey = newMetaKeyIter.next();
-                if (!curKey.equals(newMetaKey)) {
-                    return true;
-                }
-            }
-        }
-        return false;
     }
 
     @Override
