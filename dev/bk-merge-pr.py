@@ -152,16 +152,6 @@ def merge_pr(pr_num, target_ref, title, body, default_pr_reviewers, pr_repo_desc
     pr_branch_name = "%s_MERGE_PR_%s" % (TEMP_BRANCH_PREFIX, pr_num)
     run_cmd("git fetch %s pull/%s/head:%s" % (PR_REMOTE_NAME, pr_num, pr_branch_name))
 
-    commit_authors = run_cmd(['git', 'log', 'HEAD..%s' % pr_branch_name,
-                             '--pretty=format:%an <%ae>']).split("\n")
-    distinct_authors = sorted(set(commit_authors),
-                              key=lambda x: commit_authors.count(x), reverse=True)
-    primary_author = raw_input(
-        "Enter primary author in the format of \"name <email>\" [%s]: " %
-        distinct_authors[0])
-    if primary_author == "":
-        primary_author = distinct_authors[0]
-
     reviewers = raw_input("Enter reviewers [%s]: " % default_pr_reviewers).strip()
     if reviewers == '':
         reviewers = default_pr_reviewers
@@ -184,10 +174,6 @@ def merge_pr(pr_num, target_ref, title, body, default_pr_reviewers, pr_repo_desc
         # We remove @ symbols from the body to avoid triggering e-mails
         # to people every time someone creates a public fork of the project.
         merge_message_flags += [body.replace("@", "")]
-
-    authors = "\n".join(["Author: %s" % a for a in distinct_authors])
-
-    merge_message_flags += [authors]
 
     if (reviewers != ""):
         merge_message_flags += ["Reviewers: %s" % reviewers]
