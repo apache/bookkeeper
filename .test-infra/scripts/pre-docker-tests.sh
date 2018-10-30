@@ -29,3 +29,4 @@ docker system prune -f
 # clean up any dangling networks from previous runs
 docker network prune -f --filter name=testnetwork_*
 docker system events > docker.debug-info & echo $! > docker-log.pid
+docker pull quay.io/coreos/etcd:v3.3

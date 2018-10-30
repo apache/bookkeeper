@@ -60,6 +60,15 @@ freeStyleJob('bookkeeper_precommit_integrationtests') {
             properties(skipTests: true, interactiveMode: false)
         }
 
+        // Run metadata driver tests
+        maven {
+            // Set Maven parameters.
+            common_job_properties.setMavenConfig(delegate)
+            rootPOM('metadata-drivers/pom.xml')
+            goals('-B test -DintegrationTests')
+        }
+
+        // Run all integration tests
         maven {
             // Set Maven parameters.
             common_job_properties.setMavenConfig(delegate)
