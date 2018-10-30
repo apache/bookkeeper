@@ -35,7 +35,8 @@ ENV JAVA_HOME=/usr/lib/jvm/jre-1.8.0
 # prepare utils
 RUN set -x \
     && adduser "${BK_USER}" \
-    && yum install -y java-1.8.0-openjdk-headless wget bash python sudo netcat \
+    && yum install -y epel-release \
+    && yum install -y java-1.8.0-openjdk-headless wget bash python-pip python-devel sudo netcat gcc gcc-c++ \
     && mkdir -pv /opt \
     && cd /opt \
     && yum clean all
@@ -47,7 +48,12 @@ RUN mv /opt/${PKG_NAME} /opt/bookkeeper
 WORKDIR /opt/bookkeeper
 
 COPY target/scripts /opt/bookkeeper/scripts
+COPY scripts/install-python-client.sh /opt/bookkeeper/scripts
 RUN chmod +x -R /opt/bookkeeper/scripts/
+
+# copy the python client
+ADD target/bookkeeper-client/ /opt/bookkeeper/bookkeeper-client
+RUN /opt/bookkeeper/scripts/install-python-client.sh
 
 ENTRYPOINT [ "/bin/bash", "/opt/bookkeeper/scripts/entrypoint.sh" ]
 CMD ["bookie"]

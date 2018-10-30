@@ -32,6 +32,7 @@ import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.stream.storage.api.sc.StorageContainer;
 import org.apache.bookkeeper.stream.storage.api.sc.StorageContainerService;
 import org.apache.bookkeeper.stream.storage.api.sc.StorageContainerServiceFactory;
+import org.apache.bookkeeper.stream.storage.impl.routing.RoutingHeaderProxyInterceptor;
 
 /**
  * The default implementation of {@link StorageContainer}.
@@ -82,6 +83,8 @@ class StorageContainerImpl implements StorageContainer {
                 channel = InProcessChannelBuilder.forName(containerName)
                     .usePlaintext()
                     .directExecutor()
+                    // attach routing header interceptor
+                    .intercept(new RoutingHeaderProxyInterceptor())
                     .build();
                 return FutureUtils.value(StorageContainerImpl.this);
             } catch (IOException e) {

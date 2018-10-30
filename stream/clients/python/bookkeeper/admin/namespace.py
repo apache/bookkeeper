@@ -14,9 +14,12 @@
 
 from __future__ import absolute_import
 
-from bookkeeper.common.constants import __DEFAULT_STREAM_CONF__
+from bookkeeper.common.constants import __DEFAULT_TABLE_CONF__
 from bookkeeper.common.constants import __ROOT_RANGE_METADATA__
 from bookkeeper.common.exceptions import from_root_range_rpc_response
+from bookkeeper.common.exceptions import InternalServerError
+from bookkeeper.common.exceptions import StreamExistsError
+from bookkeeper.common.exceptions import StreamNotFoundError
 from bookkeeper.common.method import wrap_method
 from bookkeeper.common.retry import Retry
 from bookkeeper.common.timeout import ExponentialTimeout
@@ -38,7 +41,7 @@ class Namespace(object):
         self.__delete_with_retries__ =\
             wrap_method(self.__delete_stream__, self.__default_retry__)
 
-    def create(self, stream_name, stream_config=__DEFAULT_STREAM_CONF__):
+    def create(self, stream_name, stream_config=__DEFAULT_TABLE_CONF__):
         return self.__create_with_retries__(stream_name, stream_config)
 
     def __create_stream__(self, stream_name, stream_config):
@@ -51,8 +54,18 @@ class Namespace(object):
             request=create_stream_req,
             metadata=__ROOT_RANGE_METADATA__
         )
-        create_stream_resp = from_root_range_rpc_response(create_stream_resp)
-        return create_stream_resp.stream_props
+        try:
+            create_stream_resp = from_root_range_rpc_response(create_stream_resp)
+            return create_stream_resp.stream_props
+        except InternalServerError as ise:
+            # currently if a stream exists, it also throws
+            # internal server error
+            try:
+                self.get(stream_name=stream_name)
+                raise StreamExistsError("stream '%s' already exists at namespace '%s'"
+                                        % (stream_name, self.__namespace__))
+            except StreamNotFoundError:
+                raise ise
 
     def get(self, stream_name):
         return self.__get_with_retries__(stream_name)

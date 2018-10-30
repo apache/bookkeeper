@@ -16,7 +16,6 @@ from __future__ import absolute_import
 
 import grpc
 import logging
-import pkg_resources
 
 from bookkeeper import types
 from bookkeeper.admin.namespace import Namespace
@@ -24,7 +23,6 @@ from bookkeeper.admin.namespaces import Namespaces
 from bookkeeper.common.service_uri import ServiceURI
 from bookkeeper.proto.storage_pb2_grpc import RootRangeServiceStub
 
-__version__ = pkg_resources.get_distribution('bookkeeper').version
 __logger__ = logging.getLogger("bookkeeper.admin.Client")
 
 

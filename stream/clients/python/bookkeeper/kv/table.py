@@ -40,6 +40,8 @@ class Table(object):
             wrap_method(self.__do_get__, self.__default_retry__)
         self.__del_with_retries__ =\
             wrap_method(self.__do_del__, self.__default_retry__)
+        self.__incr_with_retries__ =\
+            wrap_method(self.__do_incr__, self.__default_retry__)
         __logger__.info("initialized table instance with properties : %s",
                         stream_props)
 
@@ -78,6 +80,27 @@ class Table(object):
             metadata=grpc_metadata
         )
         from_table_rpc_response(put_resp)
+
+    def incr_str(self, key_str, amount):
+        key = key_str.encode('utf-8')
+        return self.incr(key, amount)
+
+    def incr(self, key, amount):
+        metadata = self.__make_routing_metadata__(key)
+        header = self.__make_routing_header__(key)
+        return self.__incr_with_retries__(key, amount, header, metadata)
+
+    def __do_incr__(self, key, amount, routing_header, grpc_metadata):
+        incr_req = kv_rpc_pb2.IncrementRequest(
+            key=key,
+            amount=amount,
+            header=routing_header
+        )
+        incr_resp = self.__table_service__.Increment(
+            request=incr_req,
+            metadata=grpc_metadata
+        )
+        from_table_rpc_response(incr_resp)
 
     def get_str(self, key_str):
         key = key_str.encode('utf-8')
