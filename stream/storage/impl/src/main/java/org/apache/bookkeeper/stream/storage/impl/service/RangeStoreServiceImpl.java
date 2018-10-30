@@ -41,6 +41,7 @@ import org.apache.bookkeeper.stream.proto.kv.rpc.PutRequest;
 import org.apache.bookkeeper.stream.proto.kv.rpc.PutResponse;
 import org.apache.bookkeeper.stream.proto.kv.rpc.RangeRequest;
 import org.apache.bookkeeper.stream.proto.kv.rpc.RangeResponse;
+import org.apache.bookkeeper.stream.proto.kv.rpc.ResponseHeader;
 import org.apache.bookkeeper.stream.proto.kv.rpc.RoutingHeader;
 import org.apache.bookkeeper.stream.proto.kv.rpc.TxnRequest;
 import org.apache.bookkeeper.stream.proto.kv.rpc.TxnResponse;
@@ -58,6 +59,7 @@ import org.apache.bookkeeper.stream.proto.storage.GetNamespaceRequest;
 import org.apache.bookkeeper.stream.proto.storage.GetNamespaceResponse;
 import org.apache.bookkeeper.stream.proto.storage.GetStreamRequest;
 import org.apache.bookkeeper.stream.proto.storage.GetStreamResponse;
+import org.apache.bookkeeper.stream.proto.storage.StatusCode;
 import org.apache.bookkeeper.stream.protocol.RangeId;
 import org.apache.bookkeeper.stream.protocol.util.StorageContainerPlacementPolicy;
 import org.apache.bookkeeper.stream.storage.api.kv.TableStore;
@@ -242,6 +244,15 @@ class RangeStoreServiceImpl implements RangeStoreService, AutoCloseable {
     public CompletableFuture<RangeResponse> range(RangeRequest request) {
         RoutingHeader header = request.getHeader();
 
+        if (header.getRangeId() <= 0L) {
+            return CompletableFuture.completedFuture(RangeResponse.newBuilder()
+                .setHeader(ResponseHeader.newBuilder()
+                    .setCode(StatusCode.BAD_REQUEST)
+                    .setRoutingHeader(request.getHeader())
+                    .build())
+                .build());
+        }
+
         RangeId rid = RangeId.of(header.getStreamId(), header.getRangeId());
         TableStore store = tableStoreCache.getTableStore(rid);
         if (null != store) {
@@ -255,6 +266,15 @@ class RangeStoreServiceImpl implements RangeStoreService, AutoCloseable {
     @Override
     public CompletableFuture<PutResponse> put(PutRequest request) {
         RoutingHeader header = request.getHeader();
+
+        if (header.getRangeId() <= 0L) {
+            return CompletableFuture.completedFuture(PutResponse.newBuilder()
+                .setHeader(ResponseHeader.newBuilder()
+                    .setCode(StatusCode.BAD_REQUEST)
+                    .setRoutingHeader(request.getHeader())
+                    .build())
+                .build());
+        }
 
         RangeId rid = RangeId.of(header.getStreamId(), header.getRangeId());
         TableStore store = tableStoreCache.getTableStore(rid);
@@ -270,6 +290,15 @@ class RangeStoreServiceImpl implements RangeStoreService, AutoCloseable {
     public CompletableFuture<DeleteRangeResponse> delete(DeleteRangeRequest request) {
         RoutingHeader header = request.getHeader();
 
+        if (header.getRangeId() <= 0L) {
+            return CompletableFuture.completedFuture(DeleteRangeResponse.newBuilder()
+                .setHeader(ResponseHeader.newBuilder()
+                    .setCode(StatusCode.BAD_REQUEST)
+                    .setRoutingHeader(request.getHeader())
+                    .build())
+                .build());
+        }
+
         RangeId rid = RangeId.of(header.getStreamId(), header.getRangeId());
         TableStore store = tableStoreCache.getTableStore(rid);
         if (null != store) {
@@ -284,6 +313,15 @@ class RangeStoreServiceImpl implements RangeStoreService, AutoCloseable {
     public CompletableFuture<TxnResponse> txn(TxnRequest request) {
         RoutingHeader header = request.getHeader();
 
+        if (header.getRangeId() <= 0L) {
+            return CompletableFuture.completedFuture(TxnResponse.newBuilder()
+                .setHeader(ResponseHeader.newBuilder()
+                    .setCode(StatusCode.BAD_REQUEST)
+                    .setRoutingHeader(request.getHeader())
+                    .build())
+                .build());
+        }
+
         RangeId rid = RangeId.of(header.getStreamId(), header.getRangeId());
         TableStore store = tableStoreCache.getTableStore(rid);
         if (null != store) {
@@ -297,6 +335,15 @@ class RangeStoreServiceImpl implements RangeStoreService, AutoCloseable {
     @Override
     public CompletableFuture<IncrementResponse> incr(IncrementRequest request) {
         RoutingHeader header = request.getHeader();
+
+        if (header.getRangeId() <= 0L) {
+            return CompletableFuture.completedFuture(IncrementResponse.newBuilder()
+                .setHeader(ResponseHeader.newBuilder()
+                    .setCode(StatusCode.BAD_REQUEST)
+                    .setRoutingHeader(request.getHeader())
+                    .build())
+                .build());
+        }
 
         RangeId rid = RangeId.of(header.getStreamId(), header.getRangeId());
         TableStore store = tableStoreCache.getTableStore(rid);

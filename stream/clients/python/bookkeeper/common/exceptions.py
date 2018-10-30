@@ -98,7 +98,8 @@ class BKGrpcCallError(BKError):
         self._response = response
 
     def __str__(self):
-        return '{} {}'.format(self.code, self.message)
+        return 'grpc_status_code = {}, bk_status_code = {} : {}'\
+            .format(self.grpc_status_code, self.bk_status_code, self.message)
 
     @property
     def errors(self):
