@@ -40,7 +40,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -345,12 +344,6 @@ class IndexInMemPageMgr {
     // flush and read pages
     private final IndexPersistenceMgr indexPersistenceManager;
 
-    /**
-     * the list of potentially dirty ledgers.
-     */
-    private final ConcurrentLinkedQueue<Long> ledgersToFlush = new ConcurrentLinkedQueue<Long>();
-    private final ConcurrentSkipListSet<Long> ledgersFlushing = new ConcurrentSkipListSet<Long>();
-
     // Stats
     private final Counter ledgerCacheHitCounter;
     private final Counter ledgerCacheMissCounter;
@@ -504,7 +497,6 @@ class IndexInMemPageMgr {
 
     void removePagesForLedger(long ledgerId) {
         pageMapAndList.removeEntriesForALedger(ledgerId);
-        ledgersToFlush.remove(ledgerId);
     }
 
     long getLastEntryInMem(long ledgerId) {
@@ -542,18 +534,12 @@ class IndexInMemPageMgr {
     }
 
     void flushOneOrMoreLedgers(boolean doAll) throws IOException {
-        if (ledgersToFlush.isEmpty()) {
-            ledgersToFlush.addAll(pageMapAndList.getActiveLedgers());
-        }
-        Long potentiallyDirtyLedger;
-        while (null != (potentiallyDirtyLedger = ledgersToFlush.poll())) {
-            if (!ledgersFlushing.add(potentiallyDirtyLedger)) {
-                continue;
-            }
+        List<Long> ledgersToFlush = new ArrayList<>(pageMapAndList.getActiveLedgers());
+        for (Long potentiallyDirtyLedger : ledgersToFlush) {
             try {
                 flushSpecificLedger(potentiallyDirtyLedger);
-            } finally {
-                ledgersFlushing.remove(potentiallyDirtyLedger);
+            } catch (Bookie.NoLedgerException e) {
+                continue;
             }
             if (!doAll) {
                 break;

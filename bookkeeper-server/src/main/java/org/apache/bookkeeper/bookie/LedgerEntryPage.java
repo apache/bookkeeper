@@ -207,7 +207,8 @@ public class LedgerEntryPage {
     public ByteBuffer getPageToWrite() {
         checkPage();
         page.clear();
-        return page;
+        // Different callers to this method should be able to reasonably expect independent read pointers
+        return page.duplicate();
     }
 
     long getLedger() {
