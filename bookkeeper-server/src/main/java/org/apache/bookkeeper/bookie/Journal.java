@@ -513,7 +513,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                     running = false;
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
-                    LOG.error("ForceWrite thread interrupted", e);
+                    LOG.info("ForceWrite thread interrupted");
                     // close is idempotent
                     if (null != req) {
                         req.shouldClose = true;
@@ -1142,7 +1142,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
             LOG.error("I/O exception in Journal thread!", ioe);
         } catch (InterruptedException ie) {
             Thread.currentThread().interrupt();
-            LOG.warn("Journal exits when shutting down", ie);
+            LOG.info("Journal exits when shutting down");
         } finally {
             // There could be packets queued for forceWrite on this logFile
             // That is fine as this exception is going to anyway take down the
