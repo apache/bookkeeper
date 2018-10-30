@@ -45,6 +45,33 @@ def default(session):
         *session.posargs
     )
 
+@nox.session
+def integration(session):
+    """Default integration test session.
+    This is intended to be run **without** an interpreter set, so
+    that the current ``python`` (on the ``PATH``) or the version of
+    Python corresponding to the ``nox`` binary the ``PATH`` can
+    run the tests.
+    """
+    # Install all test dependencies, then install local packages in-place.
+    session.install('pytest', 'pytest-cov')
+    for local_dep in LOCAL_DEPS:
+        session.install('-e', local_dep)
+    session.install('-e', '.')
+
+    # Run py.test against the unit tests.
+    session.run(
+        'py.test',
+        '--quiet',
+        '--cov-append',
+        '--cov-report=',
+        '--cov=bookkeeper',
+        '--cov-config=.coveragerc',
+        os.path.join('tests', 'integration'),
+        *session.posargs
+    )
+
+
 
 @nox.session
 def lint(session):
