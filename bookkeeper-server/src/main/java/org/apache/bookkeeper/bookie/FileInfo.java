@@ -91,12 +91,15 @@ class FileInfo extends Watchable<LastAddConfirmedUpdateNotification> {
     // file access mode
     protected String mode;
 
+    private boolean deleted;
+
     public FileInfo(File lf, byte[] masterKey) throws IOException {
         super(WATCHER_RECYCLER);
 
         this.lf = lf;
         this.masterKey = masterKey;
         mode = "rw";
+        this.deleted = false;
     }
 
     synchronized Long getLastAddConfirmed() {
@@ -224,6 +227,16 @@ class FileInfo extends Watchable<LastAddConfirmedUpdateNotification> {
         }
     }
 
+    public synchronized boolean isDeleted() {
+        return deleted;
+    }
+
+    public static class FileInfoDeletedException extends IOException {
+        FileInfoDeletedException() {
+            super("FileInfo already deleted");
+        }
+    }
+
     @VisibleForTesting
     void checkOpen(boolean create) throws IOException {
         checkOpen(create, false);
@@ -231,6 +244,9 @@ class FileInfo extends Watchable<LastAddConfirmedUpdateNotification> {
 
     private synchronized void checkOpen(boolean create, boolean openBeforeClose)
             throws IOException {
+        if (deleted) {
+            throw new FileInfoDeletedException();
+        }
         if (fc != null) {
             return;
         }
@@ -497,6 +513,7 @@ class FileInfo extends Watchable<LastAddConfirmedUpdateNotification> {
     }
 
     public synchronized boolean delete() {
+        deleted = true;
         return lf.delete();
     }
 
