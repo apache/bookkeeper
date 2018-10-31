@@ -49,6 +49,7 @@ import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.epoll.EpollSocketChannel;
 import io.netty.channel.local.LocalChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.channel.unix.Errors.NativeIoException;
 import io.netty.handler.codec.CorruptedFrameException;
 import io.netty.handler.codec.DecoderException;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
@@ -62,6 +63,7 @@ import io.netty.util.concurrent.GenericFutureListener;
 
 import java.io.IOException;
 import java.net.SocketAddress;
+import java.net.UnknownHostException;
 import java.security.cert.Certificate;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -1137,7 +1139,13 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         }
 
         if (cause instanceof IOException) {
-            LOG.warn("Exception caught on:{} cause:", ctx.channel(), cause);
+            if (cause instanceof NativeIoException) {
+                // Stack trace is not very interesting for native IO exceptio, the important part is in
+                // the exception message
+                LOG.warn("Exception caught on:{} cause: {}", ctx.channel(), cause.getMessage());
+            } else {
+                LOG.warn("Exception caught on:{} cause:", ctx.channel(), cause);
+            }
             ctx.close();
             return;
         }
@@ -2254,8 +2262,17 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                     closeChannel(future.channel());
                     return; // pendingOps should have been completed when other channel connected
                 } else {
-                    LOG.error("Could not connect to bookie: {}/{}, current state {} : ",
-                            future.channel(), addr, state, future.cause());
+                    Throwable cause = future.cause();
+                    if (cause instanceof UnknownHostException || cause instanceof NativeIoException) {
+                        // Don't log stack trace for common errors
+                        LOG.warn("Could not connect to bookie: {}/{}, current state {} : {}",
+                                future.channel(), addr, state, future.cause().getMessage());
+                    } else {
+                        // Regular exceptions, include stack trace
+                        LOG.error("Could not connect to bookie: {}/{}, current state {} : ",
+                                future.channel(), addr, state, future.cause());
+                    }
+
                     rc = BKException.Code.BookieHandleNotAvailableException;
                     closeChannel(future.channel());
                     channel = null;
