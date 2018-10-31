@@ -47,6 +47,8 @@ class FileInfoBackingCache {
         boolean retained = fi.tryRetain();
         if (!retained) {
             throw new IOException("FileInfo " + fi + " is already marked dead");
+        } else if (fi.isDeleted()) {
+            throw new Bookie.NoLedgerException(fi.ledgerId);
         }
         return fi;
     }
