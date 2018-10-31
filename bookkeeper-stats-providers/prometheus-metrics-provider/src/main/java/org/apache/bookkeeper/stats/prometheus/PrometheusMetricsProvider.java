@@ -22,7 +22,7 @@ import io.netty.util.concurrent.DefaultThreadFactory;
 //CHECKSTYLE.OFF: IllegalImport
 import io.netty.util.internal.PlatformDependent;
 //CHECKSTYLE.ON: IllegalImport
-
+import io.prometheus.client.Collector;
 import io.prometheus.client.CollectorRegistry;
 import io.prometheus.client.Gauge;
 import io.prometheus.client.Gauge.Child;
@@ -128,17 +128,10 @@ public class PrometheusMetricsProvider implements StatsProvider {
         }
 
         // Include standard JVM stats
-        try {
-            new StandardExports().register(registry);
-            new MemoryPoolsExports().register(registry);
-            new GarbageCollectorExports().register(registry);
-            new ThreadExports().register(registry);
-        } catch (Exception e) {
-            // Ignore if these were already registered
-            if (log.isDebugEnabled()) {
-                log.debug("Failed to register Prometheus stardard JVM exports", e);
-            }
-        }
+        registerMetrics(new StandardExports());
+        registerMetrics(new MemoryPoolsExports());
+        registerMetrics(new GarbageCollectorExports());
+        registerMetrics(new ThreadExports());
 
         // Add direct memory allocated through unsafe
         Gauge.build("jvm_memory_direct_bytes_used", "-").create().setChild(new Child() {
@@ -197,6 +190,18 @@ public class PrometheusMetricsProvider implements StatsProvider {
             metric.rotateLatencyCollection();
         });
     }
+
+    private void registerMetrics(Collector collector) {
+        try {
+            collector.register(registry);
+        } catch (Exception e) {
+            // Ignore if these were already registered
+            if (log.isDebugEnabled()) {
+                log.debug("Failed to register Prometheus collector exports", e);
+            }
+        }
+    }
+
 
     private static final Logger log = LoggerFactory.getLogger(PrometheusMetricsProvider.class);
 
