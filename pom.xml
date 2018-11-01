@@ -137,6 +137,7 @@
     <jackson-mapper-asl.version>1.9.11</jackson-mapper-asl.version>
     <jcommander.version>1.48</jcommander.version>
     <jetty.version>9.4.5.v20170502</jetty.version>
+    <jline.version>2.11</jline.version>
     <jmh.version>1.19</jmh.version>
     <jmock.version>2.8.2</jmock.version>
     <jna.version>3.2.7</jna.version>
@@ -225,6 +226,11 @@
         <groupId>org.inferred</groupId>
         <artifactId>freebuilder</artifactId>
         <version>${freebuilder.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>jline</groupId>
+        <artifactId>jline</artifactId>
+        <version>${jline.version}</version>
       </dependency>
 
       <!-- logging dependencies -->
@@ -319,6 +325,16 @@
       <dependency>
         <groupId>com.fasterxml.jackson.core</groupId>
         <artifactId>jackson-annotations</artifactId>
+        <version>${jackson.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.fasterxml.jackson.module</groupId>
+        <artifactId>jackson-module-paranamer</artifactId>
+        <version>${jackson.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.fasterxml.jackson.module</groupId>
+        <artifactId>jackson-module-scala</artifactId>
         <version>${jackson.version}</version>
       </dependency>
       <!-- dependency needed for zookeeper jetty admin server -->
