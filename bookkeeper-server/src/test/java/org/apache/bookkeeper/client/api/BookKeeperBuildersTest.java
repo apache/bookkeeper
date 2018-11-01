@@ -335,7 +335,7 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
             writeQuorumSize, ackQuorumSize, password, customMetadata);
         registerMockLedgerMetadata(ledgerId, ledgerMetadata);
 
-        ledgerMetadata.getEnsembles().values().forEach(bookieAddressList -> {
+        ledgerMetadata.getAllEnsembles().values().forEach(bookieAddressList -> {
             bookieAddressList.forEach(bookieAddress -> {
                     registerMockEntryForRead(ledgerId, BookieProtocol.LAST_ADD_CONFIRMED, bookieAddress, entryData, -1);
                     registerMockEntryForRead(ledgerId, 0, bookieAddress, entryData, -1);
@@ -356,7 +356,7 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
             writeQuorumSize, ackQuorumSize, password, customMetadata);
         registerMockLedgerMetadata(ledgerId, ledgerMetadata);
 
-        ledgerMetadata.getEnsembles().values().forEach(bookieAddressList -> {
+        ledgerMetadata.getAllEnsembles().values().forEach(bookieAddressList -> {
             bookieAddressList.forEach(bookieAddress -> {
                 registerMockEntryForRead(ledgerId, BookieProtocol.LAST_ADD_CONFIRMED, bookieAddress, entryData, -1);
                 registerMockEntryForRead(ledgerId, 0, bookieAddress, entryData, -1);

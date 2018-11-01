@@ -56,7 +56,7 @@ public class TestMaxEnsembleChangeNum extends MockBookKeeperTestCase {
                 writer.append(ByteBuffer.wrap(data));
             }
             assertEquals("There should be zero ensemble change",
-                    1, getLedgerMetadata(lId).getEnsembles().size());
+                    1, getLedgerMetadata(lId).getAllEnsembles().size());
 
             simulateEnsembleChangeWithWriter(changeNum, numEntries, writer);
 

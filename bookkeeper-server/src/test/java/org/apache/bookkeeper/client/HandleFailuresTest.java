@@ -74,8 +74,8 @@ public class HandleFailuresTest {
         lh.appendAsync("entry5".getBytes()).get();
 
         verify(clientCtx.getLedgerManager(), times(1)).writeLedgerMetadata(anyLong(), any(), any());
-        Assert.assertEquals(lh.getLedgerMetadata().getEnsembles().size(), 1);
-        Assert.assertEquals(lh.getLedgerMetadata().getEnsembles().get(0L), Lists.newArrayList(b4, b2, b3));
+        Assert.assertEquals(lh.getLedgerMetadata().getAllEnsembles().size(), 1);
+        Assert.assertEquals(lh.getLedgerMetadata().getAllEnsembles().get(0L), Lists.newArrayList(b4, b2, b3));
     }
 
     @Test
@@ -120,10 +120,10 @@ public class HandleFailuresTest {
 
         future.get();
         verify(clientCtx.getLedgerManager(), times(2)).writeLedgerMetadata(anyLong(), any(), any());
-        Assert.assertEquals(lh.getLedgerMetadata().getEnsembles().size(), 1);
-        Assert.assertTrue(lh.getLedgerMetadata().getEnsembles().get(0L).contains(b3));
-        Assert.assertTrue(lh.getLedgerMetadata().getEnsembles().get(0L).contains(b4));
-        Assert.assertTrue(lh.getLedgerMetadata().getEnsembles().get(0L).contains(b5));
+        Assert.assertEquals(lh.getLedgerMetadata().getAllEnsembles().size(), 1);
+        Assert.assertTrue(lh.getLedgerMetadata().getAllEnsembles().get(0L).contains(b3));
+        Assert.assertTrue(lh.getLedgerMetadata().getAllEnsembles().get(0L).contains(b4));
+        Assert.assertTrue(lh.getLedgerMetadata().getAllEnsembles().get(0L).contains(b5));
     }
 
     @Test
@@ -142,8 +142,8 @@ public class HandleFailuresTest {
         lh.close();
 
         Assert.assertTrue(lh.getLedgerMetadata().isClosed());
-        Assert.assertEquals(lh.getLedgerMetadata().getEnsembles().size(), 1);
-        Assert.assertEquals(lh.getLedgerMetadata().getEnsembles().get(0L), Lists.newArrayList(b4, b2, b3));
+        Assert.assertEquals(lh.getLedgerMetadata().getAllEnsembles().size(), 1);
+        Assert.assertEquals(lh.getLedgerMetadata().getAllEnsembles().get(0L), Lists.newArrayList(b4, b2, b3));
     }
 
     @Test
@@ -163,9 +163,9 @@ public class HandleFailuresTest {
         lh.close();
 
         Assert.assertTrue(lh.getLedgerMetadata().isClosed());
-        Assert.assertEquals(lh.getLedgerMetadata().getEnsembles().size(), 2);
-        Assert.assertEquals(lh.getLedgerMetadata().getEnsembles().get(0L), Lists.newArrayList(b1, b2, b3));
-        Assert.assertEquals(lh.getLedgerMetadata().getEnsembles().get(1L), Lists.newArrayList(b4, b2, b3));
+        Assert.assertEquals(lh.getLedgerMetadata().getAllEnsembles().size(), 2);
+        Assert.assertEquals(lh.getLedgerMetadata().getAllEnsembles().get(0L), Lists.newArrayList(b1, b2, b3));
+        Assert.assertEquals(lh.getLedgerMetadata().getAllEnsembles().get(1L), Lists.newArrayList(b4, b2, b3));
         Assert.assertEquals(lh.getLedgerMetadata().getLastEntryId(), 1L);
     }
 
@@ -189,8 +189,8 @@ public class HandleFailuresTest {
                                  () -> lh.getLedgerMetadata().isClosed());
             Assert.assertEquals("Ledger should be empty",
                                 lh.getLedgerMetadata().getLastEntryId(), LedgerHandle.INVALID_ENTRY_ID);
-            Assert.assertEquals("Should be only one ensemble", lh.getLedgerMetadata().getEnsembles().size(), 1);
-            Assert.assertEquals("Ensemble shouldn't have changed", lh.getLedgerMetadata().getEnsembles().get(0L),
+            Assert.assertEquals("Should be only one ensemble", lh.getLedgerMetadata().getAllEnsembles().size(), 1);
+            Assert.assertEquals("Ensemble shouldn't have changed", lh.getLedgerMetadata().getAllEnsembles().get(0L),
                                 Lists.newArrayList(b1, b2, b3));
         }
     }
@@ -217,8 +217,8 @@ public class HandleFailuresTest {
             assertEventuallyTrue("Failure to add should trigger ledger closure",
                                  () -> lh.getLedgerMetadata().isClosed());
             Assert.assertEquals("Ledger should be empty", lh.getLedgerMetadata().getLastEntryId(), 0L);
-            Assert.assertEquals("Should be only one ensemble", lh.getLedgerMetadata().getEnsembles().size(), 1);
-            Assert.assertEquals("Ensemble shouldn't have changed", lh.getLedgerMetadata().getEnsembles().get(0L),
+            Assert.assertEquals("Should be only one ensemble", lh.getLedgerMetadata().getAllEnsembles().size(), 1);
+            Assert.assertEquals("Ensemble shouldn't have changed", lh.getLedgerMetadata().getAllEnsembles().get(0L),
                                 Lists.newArrayList(b1, b2, b3));
         }
     }
@@ -236,7 +236,8 @@ public class HandleFailuresTest {
         CompletableFuture<Void> changeInProgress = new CompletableFuture<>();
         CompletableFuture<Void> blockEnsembleChange = new CompletableFuture<>();
         clientCtx.getMockLedgerManager().setPreWriteHook((ledgerId, metadata) -> {
-                if (metadata.getEnsembles().get(0L).get(1).equals(b4)) { // block the write trying to replace b2 with b4
+                // block the write trying to replace b2 with b4
+                if (metadata.getAllEnsembles().get(0L).get(1).equals(b4)) {
                     changeInProgress.complete(null);
                     return blockEnsembleChange;
                 } else {
@@ -259,8 +260,8 @@ public class HandleFailuresTest {
             Assert.assertEquals(ee.getCause().getClass(), BKException.BKLedgerClosedException.class);
         }
         Assert.assertTrue(lh.getLedgerMetadata().isClosed());
-        Assert.assertEquals(lh.getLedgerMetadata().getEnsembles().size(), 1);
-        Assert.assertEquals(lh.getLedgerMetadata().getEnsembles().get(0L), Lists.newArrayList(b1, b2, b3));
+        Assert.assertEquals(lh.getLedgerMetadata().getAllEnsembles().size(), 1);
+        Assert.assertEquals(lh.getLedgerMetadata().getAllEnsembles().get(0L), Lists.newArrayList(b1, b2, b3));
         Assert.assertEquals(lh.getLedgerMetadata().getLastEntryId(), LedgerHandle.INVALID_ENTRY_ID);
     }
 
@@ -277,7 +278,8 @@ public class HandleFailuresTest {
         CompletableFuture<Void> changeInProgress = new CompletableFuture<>();
         CompletableFuture<Void> blockEnsembleChange = new CompletableFuture<>();
         clientCtx.getMockLedgerManager().setPreWriteHook((ledgerId, metadata) -> {
-                if (metadata.getEnsembles().get(0L).get(1).equals(b4)) { // block the write trying to replace b2 with b4
+                if (metadata.getAllEnsembles().get(0L).get(1).equals(b4)) {
+                    // block the write trying to replace b2 with b4
                     changeInProgress.complete(null);
                     return blockEnsembleChange;
                 } else {
@@ -301,8 +303,8 @@ public class HandleFailuresTest {
             Assert.assertEquals(ee.getCause().getClass(), BKException.BKLedgerClosedException.class);
         }
         Assert.assertTrue(lh.getLedgerMetadata().isClosed());
-        Assert.assertEquals(lh.getLedgerMetadata().getEnsembles().size(), 1);
-        Assert.assertEquals(lh.getLedgerMetadata().getEnsembles().get(0L), Lists.newArrayList(b1, b2, b3));
+        Assert.assertEquals(lh.getLedgerMetadata().getAllEnsembles().size(), 1);
+        Assert.assertEquals(lh.getLedgerMetadata().getAllEnsembles().get(0L), Lists.newArrayList(b1, b2, b3));
         Assert.assertEquals(lh.getLedgerMetadata().getLastEntryId(), 1234L);
     }
 
@@ -319,7 +321,8 @@ public class HandleFailuresTest {
         CompletableFuture<Void> changeInProgress = new CompletableFuture<>();
         CompletableFuture<Void> blockEnsembleChange = new CompletableFuture<>();
         clientCtx.getMockLedgerManager().setPreWriteHook((ledgerId, metadata) -> {
-                if (metadata.getEnsembles().get(0L).get(1).equals(b4)) { // block the write trying to replace b2 with b4
+                if (metadata.getAllEnsembles().get(0L).get(1).equals(b4)) {
+                    // block the write trying to replace b2 with b4
                     changeInProgress.complete(null);
                     return blockEnsembleChange;
                 } else {
@@ -343,8 +346,8 @@ public class HandleFailuresTest {
             Assert.assertEquals(ee.getCause().getClass(), BKException.BKLedgerFencedException.class);
         }
         Assert.assertFalse(lh.getLedgerMetadata().isClosed());
-        Assert.assertEquals(lh.getLedgerMetadata().getEnsembles().size(), 1);
-        Assert.assertEquals(lh.getLedgerMetadata().getEnsembles().get(0L), Lists.newArrayList(b1, b2, b3));
+        Assert.assertEquals(lh.getLedgerMetadata().getAllEnsembles().size(), 1);
+        Assert.assertEquals(lh.getLedgerMetadata().getAllEnsembles().get(0L), Lists.newArrayList(b1, b2, b3));
     }
 
     @Test
@@ -362,17 +365,17 @@ public class HandleFailuresTest {
         clientCtx.getMockBookieClient().errorBookies(b3);
         lh.append("entry2".getBytes());
 
-        Assert.assertEquals(lh.getLedgerMetadata().getEnsembles().size(), 2);
-        Assert.assertEquals(lh.getLedgerMetadata().getEnsembles().get(0L), Lists.newArrayList(b1, b2, b3));
-        Assert.assertEquals(lh.getLedgerMetadata().getEnsembles().get(1L), Lists.newArrayList(b1, b2, b4));
+        Assert.assertEquals(lh.getLedgerMetadata().getAllEnsembles().size(), 2);
+        Assert.assertEquals(lh.getLedgerMetadata().getAllEnsembles().get(0L), Lists.newArrayList(b1, b2, b3));
+        Assert.assertEquals(lh.getLedgerMetadata().getAllEnsembles().get(1L), Lists.newArrayList(b1, b2, b4));
 
 
         CompletableFuture<Void> changeInProgress = new CompletableFuture<>();
         CompletableFuture<Void> blockEnsembleChange = new CompletableFuture<>();
         clientCtx.getMockLedgerManager().setPreWriteHook((ledgerId, metadata) -> {
                  // block the write trying to replace b1 with b5
-                if (metadata.getEnsembles().size() > 2
-                    && metadata.getEnsembles().get(2L).get(0).equals(b5)) {
+                if (metadata.getAllEnsembles().size() > 2
+                    && metadata.getAllEnsembles().get(2L).get(0).equals(b5)) {
                     changeInProgress.complete(null);
                     return blockEnsembleChange;
                 } else {
@@ -394,10 +397,10 @@ public class HandleFailuresTest {
         future.get();
 
         Assert.assertFalse(lh.getLedgerMetadata().isClosed());
-        Assert.assertEquals(lh.getLedgerMetadata().getEnsembles().size(), 3);
-        Assert.assertEquals(lh.getLedgerMetadata().getEnsembles().get(0L), Lists.newArrayList(b4, b2, b5));
-        Assert.assertEquals(lh.getLedgerMetadata().getEnsembles().get(1L), Lists.newArrayList(b1, b2, b4));
-        Assert.assertEquals(lh.getLedgerMetadata().getEnsembles().get(2L), Lists.newArrayList(b5, b2, b4));
+        Assert.assertEquals(lh.getLedgerMetadata().getAllEnsembles().size(), 3);
+        Assert.assertEquals(lh.getLedgerMetadata().getAllEnsembles().get(0L), Lists.newArrayList(b4, b2, b5));
+        Assert.assertEquals(lh.getLedgerMetadata().getAllEnsembles().get(1L), Lists.newArrayList(b1, b2, b4));
+        Assert.assertEquals(lh.getLedgerMetadata().getAllEnsembles().get(2L), Lists.newArrayList(b5, b2, b4));
     }
 
     @Test
@@ -419,7 +422,7 @@ public class HandleFailuresTest {
         CompletableFuture<Void> blockEnsembleChange = new CompletableFuture<>();
         clientCtx.getMockLedgerManager().setPreWriteHook((ledgerId, metadata) -> {
                  // block the write trying to replace b3 with b4
-                if (metadata.getEnsembles().get(1L).get(2).equals(b4)) {
+                if (metadata.getAllEnsembles().get(1L).get(2).equals(b4)) {
                     changeInProgress.complete(null);
                     return blockEnsembleChange;
                 } else {
@@ -437,8 +440,8 @@ public class HandleFailuresTest {
         blockEnsembleChange.complete(null);
         future.get();
 
-        Assert.assertEquals(lh.getLedgerMetadata().getEnsembles().size(), 2);
-        Assert.assertEquals(lh.getLedgerMetadata().getEnsembles().get(0L), Lists.newArrayList(b1, b2, b3));
-        Assert.assertEquals(lh.getLedgerMetadata().getEnsembles().get(1L), Lists.newArrayList(b1, b2, b4));
+        Assert.assertEquals(lh.getLedgerMetadata().getAllEnsembles().size(), 2);
+        Assert.assertEquals(lh.getLedgerMetadata().getAllEnsembles().get(0L), Lists.newArrayList(b1, b2, b3));
+        Assert.assertEquals(lh.getLedgerMetadata().getAllEnsembles().get(1L), Lists.newArrayList(b1, b2, b4));
     }
 }

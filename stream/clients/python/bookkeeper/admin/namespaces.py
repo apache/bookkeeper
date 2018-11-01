@@ -17,6 +17,9 @@ from __future__ import absolute_import
 from bookkeeper.common.constants import __DEFAULT_NS_CONF__
 from bookkeeper.common.constants import __ROOT_RANGE_METADATA__
 from bookkeeper.common.exceptions import from_root_range_rpc_response
+from bookkeeper.common.exceptions import InternalServerError
+from bookkeeper.common.exceptions import NamespaceExistsError
+from bookkeeper.common.exceptions import NamespaceNotFoundError
 from bookkeeper.common.method import wrap_method
 from bookkeeper.common.retry import Retry
 from bookkeeper.common.timeout import ExponentialTimeout
@@ -48,8 +51,17 @@ class Namespaces(object):
             request=create_ns_req,
             metadata=__ROOT_RANGE_METADATA__
         )
-        create_ns_resp = from_root_range_rpc_response(create_ns_resp)
-        return create_ns_resp.ns_props
+        try:
+            create_ns_resp = from_root_range_rpc_response(create_ns_resp)
+            return create_ns_resp.ns_props
+        except InternalServerError as ise:
+            # currently if a namespace exists, it also throws
+            # internal server error.
+            try:
+                self.get(namespace=namespace)
+                raise NamespaceExistsError("namespace '%s' already exists" % namespace)
+            except NamespaceNotFoundError:
+                raise ise
 
     def get(self, namespace):
         return self.__get_with_retries__(namespace)

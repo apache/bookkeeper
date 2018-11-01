@@ -209,8 +209,8 @@ public class LedgerRecovery2Test {
         lh.recover(recoveryPromise, null, false);
         recoveryPromise.get();
 
-        Assert.assertEquals(lh.getLedgerMetadata().getEnsembles().size(), 1);
-        Assert.assertEquals(lh.getLedgerMetadata().getEnsembles().get(0L),
+        Assert.assertEquals(lh.getLedgerMetadata().getAllEnsembles().size(), 1);
+        Assert.assertEquals(lh.getLedgerMetadata().getAllEnsembles().get(0L),
                             Lists.newArrayList(b1, b4, b3));
     }
 
@@ -238,10 +238,10 @@ public class LedgerRecovery2Test {
         lh.recover(recoveryPromise, null, false);
         recoveryPromise.get();
 
-        Assert.assertEquals(lh.getLedgerMetadata().getEnsembles().size(), 2);
-        Assert.assertEquals(lh.getLedgerMetadata().getEnsembles().get(0L),
+        Assert.assertEquals(lh.getLedgerMetadata().getAllEnsembles().size(), 2);
+        Assert.assertEquals(lh.getLedgerMetadata().getAllEnsembles().get(0L),
                             Lists.newArrayList(b1, b2, b3));
-        Assert.assertEquals(lh.getLedgerMetadata().getEnsembles().get(1L),
+        Assert.assertEquals(lh.getLedgerMetadata().getAllEnsembles().get(1L),
                             Lists.newArrayList(b1, b4, b3));
         Assert.assertEquals(lh.getLastAddConfirmed(), 1L);
     }
@@ -269,10 +269,10 @@ public class LedgerRecovery2Test {
         lh.recover(recoveryPromise, null, false);
         recoveryPromise.get();
 
-        Assert.assertEquals(lh.getLedgerMetadata().getEnsembles().size(), 1);
-        Assert.assertTrue(lh.getLedgerMetadata().getEnsembles().get(0L).contains(b3));
-        Assert.assertTrue(lh.getLedgerMetadata().getEnsembles().get(0L).contains(b4));
-        Assert.assertTrue(lh.getLedgerMetadata().getEnsembles().get(0L).contains(b5));
+        Assert.assertEquals(lh.getLedgerMetadata().getAllEnsembles().size(), 1);
+        Assert.assertTrue(lh.getLedgerMetadata().getAllEnsembles().get(0L).contains(b3));
+        Assert.assertTrue(lh.getLedgerMetadata().getAllEnsembles().get(0L).contains(b4));
+        Assert.assertTrue(lh.getLedgerMetadata().getAllEnsembles().get(0L).contains(b5));
         Assert.assertEquals(lh.getLastAddConfirmed(), 0L);
     }
 }

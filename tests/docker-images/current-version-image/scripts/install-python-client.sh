@@ -18,15 +18,7 @@
 # under the License.
 #
 
-set -ex
+set -x
 
-id
-ulimit -a
-pwd
-df -h
-ps -eo euser,pid,ppid,pgid,start,pcpu,pmem,cmd
-docker system prune -f
-# clean up any dangling networks from previous runs
-docker network prune -f --filter name=testnetwork_*
-docker system events > docker.debug-info & echo $! > docker-log.pid
-docker pull quay.io/coreos/etcd:v3.3
+WHEEL_FILE=`ls /opt/bookkeeper/bookkeeper-client/*.whl`
+pip install ${WHEEL_FILE}

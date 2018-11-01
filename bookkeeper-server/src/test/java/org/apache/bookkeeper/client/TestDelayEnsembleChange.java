@@ -155,7 +155,7 @@ public class TestDelayEnsembleChange extends BookKeeperClusterTestCase {
 
         // ensure there is no ensemble changed
         assertEquals("There should be no ensemble change if delaying ensemble change is enabled.",
-                     1, lh.getLedgerMetadata().getEnsembles().size());
+                     1, lh.getLedgerMetadata().getAllEnsembles().size());
 
         bsConfs.add(conf0);
         bs.add(startBookie(conf0));
@@ -168,7 +168,7 @@ public class TestDelayEnsembleChange extends BookKeeperClusterTestCase {
 
         // ensure there is no ensemble changed
         assertEquals("There should be no ensemble change if delaying ensemble change is enabled.",
-                     1, lh.getLedgerMetadata().getEnsembles().size());
+                     1, lh.getLedgerMetadata().getAllEnsembles().size());
 
         // check entries
         verifyEntries(lh, 0, numEntries, 5, 0);
@@ -192,7 +192,7 @@ public class TestDelayEnsembleChange extends BookKeeperClusterTestCase {
             lh.addEntry(data);
         }
 
-        for (BookieSocketAddress addr : lh.getLedgerMetadata().getEnsembles().get(0L)) {
+        for (BookieSocketAddress addr : lh.getLedgerMetadata().getAllEnsembles().get(0L)) {
             assertTrue(
                     LEDGER_ENSEMBLE_BOOKIE_DISTRIBUTION + " should be > 0 for " + addr,
                     bkc.getTestStatsProvider().getCounter(
@@ -221,7 +221,7 @@ public class TestDelayEnsembleChange extends BookKeeperClusterTestCase {
 
         // ensure there is no ensemble changed
         assertEquals("There should be no ensemble change if delaying ensemble change is enabled.",
-                     1, lh.getLedgerMetadata().getEnsembles().size());
+                     1, lh.getLedgerMetadata().getAllEnsembles().size());
         assertTrue(
                 "Stats should not have captured an ensemble change",
                 bkc.getTestStatsProvider().getOpStatsLogger(
@@ -238,7 +238,7 @@ public class TestDelayEnsembleChange extends BookKeeperClusterTestCase {
 
         // ensure there is no ensemble changed
         assertEquals("There should be no ensemble change if delaying ensemble change is enabled.",
-                     1, lh.getLedgerMetadata().getEnsembles().size());
+                     1, lh.getLedgerMetadata().getAllEnsembles().size());
 
         logger.info("Kill bookie 2 and write another {} entries.", numEntries);
 
@@ -250,7 +250,7 @@ public class TestDelayEnsembleChange extends BookKeeperClusterTestCase {
 
         // ensemble change should kick in
         assertEquals("There should be ensemble change if ack quorum couldn't be formed.",
-                     2, lh.getLedgerMetadata().getEnsembles().size());
+                     2, lh.getLedgerMetadata().getAllEnsembles().size());
         assertTrue(
                 "Stats should have captured an ensemble change",
                 bkc.getTestStatsProvider().getOpStatsLogger(
@@ -278,7 +278,7 @@ public class TestDelayEnsembleChange extends BookKeeperClusterTestCase {
 
         // ensure there is no ensemble changed
         assertEquals("There should be no ensemble change if delaying ensemble change is enabled.",
-                     2, lh.getLedgerMetadata().getEnsembles().size());
+                     2, lh.getLedgerMetadata().getAllEnsembles().size());
 
         // check entries
         verifyEntries(lh, 0, numEntries, 5, 0);
@@ -316,7 +316,7 @@ public class TestDelayEnsembleChange extends BookKeeperClusterTestCase {
 
         // ensure there is ensemble changed
         assertEquals("There should be ensemble change if ack quorum is broken.",
-                     2, lh.getLedgerMetadata().getEnsembles().size());
+                     2, lh.getLedgerMetadata().getAllEnsembles().size());
 
         bsConfs.add(conf0);
         bs.add(startBookie(conf0));
@@ -331,7 +331,7 @@ public class TestDelayEnsembleChange extends BookKeeperClusterTestCase {
 
         // ensure there is no ensemble changed
         assertEquals("There should be no ensemble change after adding failed bookies back.",
-                     2, lh.getLedgerMetadata().getEnsembles().size());
+                     2, lh.getLedgerMetadata().getAllEnsembles().size());
 
         // check entries
         verifyEntries(lh, 0, numEntries, 5, 0);
@@ -372,7 +372,7 @@ public class TestDelayEnsembleChange extends BookKeeperClusterTestCase {
 
         // ensure there is no ensemble changed
         assertEquals("There should be ensemble change if breaking ack quorum.",
-                     2, lh.getLedgerMetadata().getEnsembles().size());
+                     2, lh.getLedgerMetadata().getAllEnsembles().size());
 
         for (ServerConfiguration conf : confs) {
             bsConfs.add(conf);
@@ -386,7 +386,7 @@ public class TestDelayEnsembleChange extends BookKeeperClusterTestCase {
 
         // ensure there is no ensemble changed
         assertEquals("There should not be ensemble changed if delaying ensemble change is enabled.",
-                     2, lh.getLedgerMetadata().getEnsembles().size());
+                     2, lh.getLedgerMetadata().getAllEnsembles().size());
 
         // check entries
         verifyEntries(lh, 0, numEntries, 5, 0);
@@ -414,7 +414,7 @@ public class TestDelayEnsembleChange extends BookKeeperClusterTestCase {
 
         // ensure there is no ensemble changed
         assertEquals("The ensemble should change when a bookie is readonly even if we delay ensemble change.",
-            2, lh.getLedgerMetadata().getEnsembles().size());
+            2, lh.getLedgerMetadata().getAllEnsembles().size());
 
     }
 
@@ -438,7 +438,7 @@ public class TestDelayEnsembleChange extends BookKeeperClusterTestCase {
         }
 
         assertEquals("There should be ensemble change if delaying ensemble change is enabled.",
-            1, lh.getLedgerMetadata().getEnsembles().size());
+            1, lh.getLedgerMetadata().getAllEnsembles().size());
 
         // kill two bookies, but we still have 3 bookies for the ack quorum.
         setBookieToReadOnly(readOnlyBookie);
@@ -449,7 +449,7 @@ public class TestDelayEnsembleChange extends BookKeeperClusterTestCase {
 
         // ensure there is no ensemble changed
         assertEquals("The ensemble should change when a bookie is readonly even if we delay ensemble change.",
-            2, lh.getLedgerMetadata().getEnsembles().size());
+            2, lh.getLedgerMetadata().getAllEnsembles().size());
         assertEquals(3, lh.getCurrentEnsemble().size());
         assertFalse(lh.getCurrentEnsemble().contains(failedBookie));
         assertFalse(lh.getCurrentEnsemble().contains(readOnlyBookie));

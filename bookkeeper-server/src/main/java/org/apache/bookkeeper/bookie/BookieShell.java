@@ -589,7 +589,8 @@ public class BookieShell implements Tool {
 
         private Map<Long, Integer> inspectLedger(LedgerMetadata metadata, Set<BookieSocketAddress> bookiesToInspect) {
             Map<Long, Integer> numBookiesToReplacePerEnsemble = new TreeMap<Long, Integer>();
-            for (Map.Entry<Long, ? extends List<BookieSocketAddress>> ensemble : metadata.getEnsembles().entrySet()) {
+            for (Map.Entry<Long, ? extends List<BookieSocketAddress>> ensemble :
+                     metadata.getAllEnsembles().entrySet()) {
                 List<BookieSocketAddress> bookieList = ensemble.getValue();
                 System.out.print(ensemble.getKey() + ":\t");
                 int numBookiesToReplace = 0;

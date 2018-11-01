@@ -435,8 +435,8 @@ public class TestTLS extends BookKeeperClusterTestCase {
 
         ClientConfiguration clientConf = new ClientConfiguration(baseClientConf);
         LedgerMetadata metadata = testClient(clientConf, 2);
-        assertTrue(metadata.getEnsembles().size() > 0);
-        Collection<? extends List<BookieSocketAddress>> ensembles = metadata.getEnsembles().values();
+        assertTrue(metadata.getAllEnsembles().size() > 0);
+        Collection<? extends List<BookieSocketAddress>> ensembles = metadata.getAllEnsembles().values();
         for (List<BookieSocketAddress> bookies : ensembles) {
             for (BookieSocketAddress bookieAddress : bookies) {
                 int port = bookieAddress.getPort();

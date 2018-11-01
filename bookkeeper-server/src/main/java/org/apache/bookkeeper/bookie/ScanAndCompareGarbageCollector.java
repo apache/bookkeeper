@@ -248,7 +248,7 @@ public class ScanAndCompareGarbageCollector implements GarbageCollector{
                                 return;
                             }
                             SortedMap<Long, ? extends List<BookieSocketAddress>> ensembles =
-                                ledgerMetadata.getEnsembles();
+                                ledgerMetadata.getAllEnsembles();
                             for (List<BookieSocketAddress> ensemble : ensembles.values()) {
                                 // check if this bookie is supposed to have this ledger
                                 if (ensemble.contains(selfBookieAddress)) {

@@ -39,6 +39,28 @@ __DEFAULT_STREAM_CONF__ = stream_pb2.StreamConfiguration(
                         retention_minutes=-1
                 )
         ),
+        storage_type=stream_pb2.StorageType.values()[0]
+)
+__DEFAULT_TABLE_CONF__ = stream_pb2.StreamConfiguration(
+        key_type=stream_pb2.RangeKeyType.values()[0],
+        min_num_ranges=24,
+        initial_num_ranges=4,
+        split_policy=stream_pb2.SplitPolicy(
+                type=stream_pb2.SplitPolicyType.values()[0],
+                fixed_range_policy=stream_pb2.FixedRangeSplitPolicy(
+                        num_ranges=2
+                )
+        ),
+        rolling_policy=stream_pb2.SegmentRollingPolicy(
+                size_policy=stream_pb2.SizeBasedSegmentRollingPolicy(
+                        max_segment_size=128*1024*1024
+                )
+        ),
+        retention_policy=stream_pb2.RetentionPolicy(
+                time_policy=stream_pb2.TimeBasedRetentionPolicy(
+                        retention_minutes=-1
+                )
+        ),
         storage_type=stream_pb2.StorageType.values()[1]
 )
 __DEFAULT_NS_CONF__ = stream_pb2.NamespaceConfiguration(
