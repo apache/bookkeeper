@@ -209,7 +209,7 @@ Apache Software License, Version 2.
 - lib/com.fasterxml.jackson.core-jackson-core-2.9.7.jar [2]
 - lib/com.fasterxml.jackson.core-jackson-databind-2.9.7.jar [3]
 - lib/com.fasterxml.jackson.module-jackson-module-paranamer-2.9.7.jar [4]
-- lib/com.fasterxml.jackson.module-jackson-module-scala_2.12-2.9.7.jar [5]
+- lib/com.fasterxml.jackson.module-jackson-module-scala_2.11-2.9.7.jar [5]
 - lib/com.github.ben-manes.caffeine-caffeine-2.3.4.jar [9]
 - lib/com.google.guava-guava-21.0.jar [6]
 - lib/commons-cli-commons-cli-1.2.jar [7]
