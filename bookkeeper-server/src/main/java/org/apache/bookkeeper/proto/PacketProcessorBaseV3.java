@@ -23,7 +23,6 @@ package org.apache.bookkeeper.proto;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
-import io.opentracing.Scope;
 import io.opentracing.Span;
 import java.util.concurrent.TimeUnit;
 

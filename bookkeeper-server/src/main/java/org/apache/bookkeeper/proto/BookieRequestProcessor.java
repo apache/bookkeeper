@@ -68,7 +68,6 @@ import io.opentracing.Scope;
 import io.opentracing.Span;
 import io.opentracing.SpanContext;
 import io.opentracing.util.GlobalTracer;
-import java.net.InetSocketAddress;
 
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
