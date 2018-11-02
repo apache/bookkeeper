@@ -30,6 +30,8 @@ import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.util.HashedWheelTimer;
 import io.netty.util.concurrent.DefaultThreadFactory;
+import io.opentracing.Scope;
+import io.opentracing.util.GlobalTracer;
 import java.io.IOException;
 import java.net.URI;
 import java.util.List;
@@ -41,6 +43,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+
 import org.apache.bookkeeper.client.AsyncCallback.CreateCallback;
 import org.apache.bookkeeper.client.AsyncCallback.DeleteCallback;
 import org.apache.bookkeeper.client.AsyncCallback.IsClosedCallback;
@@ -782,21 +785,25 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
     public void asyncCreateLedger(final int ensSize, final int writeQuorumSize, final int ackQuorumSize,
                                   final DigestType digestType, final byte[] passwd,
                                   final CreateCallback cb, final Object ctx, final Map<String, byte[]> customMetadata) {
-        if (writeQuorumSize < ackQuorumSize) {
-            throw new IllegalArgumentException("Write quorum must be larger than ack quorum");
-        }
-        closeLock.readLock().lock();
-        try {
-            if (closed) {
-                cb.createComplete(BKException.Code.ClientClosedException, null, ctx);
-                return;
+        try (Scope ignored = GlobalTracer.get()
+                .buildSpan("createLedgerAsync")
+                .startActive(true)) {
+            if (writeQuorumSize < ackQuorumSize) {
+                throw new IllegalArgumentException("Write quorum must be larger than ack quorum");
             }
-            new LedgerCreateOp(BookKeeper.this, ensSize, writeQuorumSize,
-                               ackQuorumSize, digestType, passwd, cb, ctx,
-                               customMetadata, WriteFlag.NONE, clientStats)
-                .initiate();
-        } finally {
-            closeLock.readLock().unlock();
+            closeLock.readLock().lock();
+            try {
+                if (closed) {
+                    cb.createComplete(BKException.Code.ClientClosedException, null, ctx);
+                    return;
+                }
+                new LedgerCreateOp(BookKeeper.this, ensSize, writeQuorumSize,
+                        ackQuorumSize, digestType, passwd, cb, ctx,
+                        customMetadata, WriteFlag.NONE, clientStats)
+                        .initiate();
+            } finally {
+                closeLock.readLock().unlock();
+            }
         }
     }
 
@@ -980,21 +987,25 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
     public void asyncCreateLedgerAdv(final int ensSize, final int writeQuorumSize, final int ackQuorumSize,
             final DigestType digestType, final byte[] passwd, final CreateCallback cb, final Object ctx,
             final Map<String, byte[]> customMetadata) {
-        if (writeQuorumSize < ackQuorumSize) {
-            throw new IllegalArgumentException("Write quorum must be larger than ack quorum");
-        }
-        closeLock.readLock().lock();
-        try {
-            if (closed) {
-                cb.createComplete(BKException.Code.ClientClosedException, null, ctx);
-                return;
+        try (Scope ignored = GlobalTracer.get()
+                .buildSpan("createLedgerAdvAsync")
+                .startActive(true)) {
+            if (writeQuorumSize < ackQuorumSize) {
+                throw new IllegalArgumentException("Write quorum must be larger than ack quorum");
             }
-            new LedgerCreateOp(BookKeeper.this, ensSize, writeQuorumSize,
-                               ackQuorumSize, digestType, passwd, cb, ctx,
-                               customMetadata, WriteFlag.NONE, clientStats)
-                                       .initiateAdv(-1L);
-        } finally {
-            closeLock.readLock().unlock();
+            closeLock.readLock().lock();
+            try {
+                if (closed) {
+                    cb.createComplete(BKException.Code.ClientClosedException, null, ctx);
+                    return;
+                }
+                new LedgerCreateOp(BookKeeper.this, ensSize, writeQuorumSize,
+                        ackQuorumSize, digestType, passwd, cb, ctx,
+                        customMetadata, WriteFlag.NONE, clientStats)
+                        .initiateAdv(-1L);
+            } finally {
+                closeLock.readLock().unlock();
+            }
         }
     }
 
@@ -1088,21 +1099,26 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
                                      final CreateCallback cb,
                                      final Object ctx,
                                      final Map<String, byte[]> customMetadata) {
-        if (writeQuorumSize < ackQuorumSize) {
-            throw new IllegalArgumentException("Write quorum must be larger than ack quorum");
-        }
-        closeLock.readLock().lock();
-        try {
-            if (closed) {
-                cb.createComplete(BKException.Code.ClientClosedException, null, ctx);
-                return;
+        try (Scope ignored = GlobalTracer.get()
+                .buildSpan("createLedgerAdvAsync")
+                .withTag("ledgerId", ledgerId)
+                .startActive(true)) {
+            if (writeQuorumSize < ackQuorumSize) {
+                throw new IllegalArgumentException("Write quorum must be larger than ack quorum");
             }
-            new LedgerCreateOp(BookKeeper.this, ensSize, writeQuorumSize,
-                               ackQuorumSize, digestType, passwd, cb, ctx,
-                               customMetadata, WriteFlag.NONE, clientStats)
-                    .initiateAdv(ledgerId);
-        } finally {
-            closeLock.readLock().unlock();
+            closeLock.readLock().lock();
+            try {
+                if (closed) {
+                    cb.createComplete(BKException.Code.ClientClosedException, null, ctx);
+                    return;
+                }
+                new LedgerCreateOp(BookKeeper.this, ensSize, writeQuorumSize,
+                        ackQuorumSize, digestType, passwd, cb, ctx,
+                        customMetadata, WriteFlag.NONE, clientStats)
+                        .initiateAdv(ledgerId);
+            } finally {
+                closeLock.readLock().unlock();
+            }
         }
     }
 
@@ -1134,16 +1150,21 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
      */
     public void asyncOpenLedger(final long lId, final DigestType digestType, final byte passwd[],
                                 final OpenCallback cb, final Object ctx) {
-        closeLock.readLock().lock();
-        try {
-            if (closed) {
-                cb.openComplete(BKException.Code.ClientClosedException, null, ctx);
-                return;
+        try (Scope ignored = GlobalTracer.get()
+                .buildSpan("openLedgerAsync")
+                .withTag("ledgerId", lId)
+                .startActive(true)) {
+            closeLock.readLock().lock();
+            try {
+                if (closed) {
+                    cb.openComplete(BKException.Code.ClientClosedException, null, ctx);
+                    return;
+                }
+                new LedgerOpenOp(BookKeeper.this, clientStats,
+                        lId, digestType, passwd, cb, ctx).initiate();
+            } finally {
+                closeLock.readLock().unlock();
             }
-            new LedgerOpenOp(BookKeeper.this, clientStats,
-                             lId, digestType, passwd, cb, ctx).initiate();
-        } finally {
-            closeLock.readLock().unlock();
         }
     }
 
@@ -1179,16 +1200,21 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
      */
     public void asyncOpenLedgerNoRecovery(final long lId, final DigestType digestType, final byte passwd[],
                                           final OpenCallback cb, final Object ctx) {
-        closeLock.readLock().lock();
-        try {
-            if (closed) {
-                cb.openComplete(BKException.Code.ClientClosedException, null, ctx);
-                return;
+        try (Scope ignored = GlobalTracer.get()
+                .buildSpan("openLedgerNoRecoveryAsync")
+                .withTag("ledgerId", lId)
+                .startActive(true)) {
+            closeLock.readLock().lock();
+            try {
+                if (closed) {
+                    cb.openComplete(BKException.Code.ClientClosedException, null, ctx);
+                    return;
+                }
+                new LedgerOpenOp(BookKeeper.this, clientStats,
+                        lId, digestType, passwd, cb, ctx).initiateWithoutRecovery();
+            } finally {
+                closeLock.readLock().unlock();
             }
-            new LedgerOpenOp(BookKeeper.this, clientStats,
-                             lId, digestType, passwd, cb, ctx).initiateWithoutRecovery();
-        } finally {
-            closeLock.readLock().unlock();
         }
     }
 
@@ -1259,15 +1285,20 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
      *            optional control object
      */
     public void asyncDeleteLedger(final long lId, final DeleteCallback cb, final Object ctx) {
-        closeLock.readLock().lock();
-        try {
-            if (closed) {
-                cb.deleteComplete(BKException.Code.ClientClosedException, ctx);
-                return;
+        try (Scope ignored = GlobalTracer.get()
+                .buildSpan("deleteLedgerAsync")
+                .withTag("ledgerId", lId)
+                .startActive(true)) {
+            closeLock.readLock().lock();
+            try {
+                if (closed) {
+                    cb.deleteComplete(BKException.Code.ClientClosedException, ctx);
+                    return;
+                }
+                new LedgerDeleteOp(BookKeeper.this, clientStats, lId, cb, ctx).initiate();
+            } finally {
+                closeLock.readLock().unlock();
             }
-            new LedgerDeleteOp(BookKeeper.this, clientStats, lId, cb, ctx).initiate();
-        } finally {
-            closeLock.readLock().unlock();
         }
     }
 
@@ -1298,17 +1329,22 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
      * @param lId   ledger identifier
      * @param cb    callback method
      */
-    public void asyncIsClosed(long lId, final IsClosedCallback cb, final Object ctx){
-        ledgerManager.readLedgerMetadata(lId, new GenericCallback<LedgerMetadata>(){
-            @Override
-            public void operationComplete(int rc, LedgerMetadata lm){
-                if (rc == BKException.Code.OK) {
-                    cb.isClosedComplete(rc, lm.isClosed(), ctx);
-                } else {
-                    cb.isClosedComplete(rc, false, ctx);
+    public void asyncIsClosed(long lId, final IsClosedCallback cb, final Object ctx) {
+        try (Scope ignored = GlobalTracer.get()
+                .buildSpan("isLedgerClosedAsync")
+                .withTag("ledgerId", lId)
+                .startActive(true)) {
+            ledgerManager.readLedgerMetadata(lId, new GenericCallback<LedgerMetadata>() {
+                @Override
+                public void operationComplete(int rc, LedgerMetadata lm) {
+                    if (rc == BKException.Code.OK) {
+                        cb.isClosedComplete(rc, lm.isClosed(), ctx);
+                    } else {
+                        cb.isClosedComplete(rc, false, ctx);
+                    }
                 }
-            }
-        });
+            });
+        }
     }
 
     /**

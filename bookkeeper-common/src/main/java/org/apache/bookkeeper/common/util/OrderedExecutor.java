@@ -26,6 +26,11 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 import io.netty.util.concurrent.DefaultThreadFactory;
 
+import io.opentracing.Scope;
+import io.opentracing.Span;
+import io.opentracing.Tracer;
+import io.opentracing.util.GlobalTracer;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -237,16 +242,35 @@ public class OrderedExecutor implements ExecutorService {
         private final Runnable runnable;
         private final Map<String, String> mdcContextMap;
 
-        ContextPreservingRunnable(Runnable runnable) {
+        private final Span parentSpan;
+        private final Tracer tracer;
+        private final Span enqueuedSpan;
+        private final String context;
+
+        ContextPreservingRunnable(Runnable runnable, String context) {
             this.runnable = runnable;
             this.mdcContextMap = MDC.getCopyOfContextMap();
+            this.tracer = GlobalTracer.get();
+            this.parentSpan = tracer.activeSpan();
+            this.context = context;
+            this.enqueuedSpan = tracer.buildSpan(context + "-enqueued")
+                    .asChildOf(parentSpan)
+                    .withTag("runnable", runnable.toString())
+                    .start();
         }
 
         @Override
         public void run() {
+            enqueuedSpan.finish();
+
             MdcUtils.restoreContext(mdcContextMap);
             try {
-                runnable.run();
+                try (Scope ignore = tracer.buildSpan(context + "-run")
+                        .asChildOf(parentSpan)
+                        .withTag("runnable", runnable.toString())
+                        .startActive(true)) {
+                    runnable.run();
+                }
             } finally {
                 MDC.clear();
             }
@@ -260,16 +284,34 @@ public class OrderedExecutor implements ExecutorService {
         private final Callable<T> callable;
         private final Map<String, String> mdcContextMap;
 
-        ContextPreservingCallable(Callable<T> callable) {
+        private final Span parentSpan;
+        private final Tracer tracer;
+        private final Span enqueuedSpan;
+        private final String context;
+
+        ContextPreservingCallable(Callable<T> callable, String context) {
             this.callable = callable;
             this.mdcContextMap = MDC.getCopyOfContextMap();
+            this.tracer = GlobalTracer.get();
+            this.parentSpan = tracer.activeSpan();
+            this.context = context;
+            this.enqueuedSpan = tracer.buildSpan(context + "-enqueued")
+                    .asChildOf(parentSpan)
+                    .withTag("callable", callable.toString())
+                    .start();
         }
 
         @Override
         public T call() throws Exception {
+            enqueuedSpan.finish();
             MdcUtils.restoreContext(mdcContextMap);
             try {
-                return callable.call();
+                try (Scope ignore = tracer.buildSpan(context + "-run")
+                        .asChildOf(parentSpan)
+                        .withTag("callable", callable.toString())
+                        .startActive(true)) {
+                    return callable.call();
+                }
             } finally {
                 MDC.clear();
             }
@@ -530,12 +572,12 @@ public class OrderedExecutor implements ExecutorService {
 
     protected Runnable timedRunnable(Runnable r) {
         final Runnable runMe = traceTaskExecution ? new TimedRunnable(r) : r;
-        return preserveMdcForTaskExecution ? new ContextPreservingRunnable(runMe) : runMe;
+        return preserveMdcForTaskExecution ? new ContextPreservingRunnable(runMe, name) : runMe;
     }
 
     protected <T> Callable<T> timedCallable(Callable<T> c) {
         final Callable<T> callMe = traceTaskExecution ? new TimedCallable<>(c) : c;
-        return preserveMdcForTaskExecution ? new ContextPreservingCallable<>(callMe) : callMe;
+        return preserveMdcForTaskExecution ? new ContextPreservingCallable<>(callMe, name) : callMe;
     }
 
     protected <T> Collection<? extends Callable<T>> timedCallables(Collection<? extends Callable<T>> tasks) {

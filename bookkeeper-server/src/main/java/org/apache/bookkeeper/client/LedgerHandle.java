@@ -34,6 +34,9 @@ import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.RateLimiter;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import io.opentracing.Scope;
+import io.opentracing.util.GlobalTracer;
+
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -51,6 +54,7 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.AsyncCallback.AddCallbackWithLatency;
 import org.apache.bookkeeper.client.AsyncCallback.CloseCallback;
@@ -498,18 +502,24 @@ public class LedgerHandle implements WriteHandle {
      * @param rc
      */
     void doAsyncCloseInternal(final CloseCallback cb, final Object ctx, final int rc) {
-        clientCtx.getMainWorkerPool().executeOrdered(ledgerId, new SafeRunnable() {
-            @Override
-            public void safeRun() {
+        try (Scope ignored = GlobalTracer.get()
+                .buildSpan("closeLedgerAsync")
+                //.withTag("span.kind", "client")
+                .withTag("ledgerId", this.ledgerId)
+                .startActive(true)) {
+            clientCtx.getMainWorkerPool().executeOrdered(ledgerId, new SafeRunnable() {
+                @Override
+                public void safeRun() {
                 final HandleState prevHandleState;
                 final List<PendingAddOp> pendingAdds;
                 final long lastEntry;
                 final long finalLength;
 
+
                 synchronized (LedgerHandle.this) {
                     prevHandleState = handleState;
 
-                    // drain pending adds first
+                        // drain pending adds first
                     pendingAdds = drainPendingAddsAndAdjustLength();
 
                     // taking the length must occur after draining, as draining changes the length
@@ -518,9 +528,9 @@ public class LedgerHandle implements WriteHandle {
                     handleState = HandleState.CLOSED;
                 }
 
-                // error out all pending adds during closing, the callbacks shouldn't be
-                // running under any bk locks.
-                errorOutPendingAdds(rc, pendingAdds);
+                    // error out all pending adds during closing, the callbacks shouldn't be
+                    // running under any bk locks.
+                    errorOutPendingAdds(rc, pendingAdds);
 
                 if (prevHandleState == HandleState.CLOSED) {
                     cb.closeComplete(BKException.Code.OK, LedgerHandle.this, ctx);
@@ -552,7 +562,7 @@ public class LedgerHandle implements WriteHandle {
                                     }
                                 } else {
                                     return true;
-                                }
+                                    }
                             },
                             (metadata) -> {
                                 return LedgerMetadataBuilder.from(metadata)
@@ -570,8 +580,9 @@ public class LedgerHandle implements WriteHandle {
                                 }
                         });
                 }
-            }
-        });
+                }
+            });
+        }
     }
 
     /**
@@ -816,35 +827,45 @@ public class LedgerHandle implements WriteHandle {
     CompletableFuture<LedgerEntries> readEntriesInternalAsync(long firstEntry,
                                                               long lastEntry,
                                                               boolean isRecoveryRead) {
-        PendingReadOp op = new PendingReadOp(this, clientCtx,
-                                             firstEntry, lastEntry, isRecoveryRead);
-        if (!clientCtx.isClientClosed()) {
-            // Waiting on the first one.
-            // This is not very helpful if there are multiple ensembles or if bookie goes into unresponsive
-            // state later after N requests sent.
-            // Unfortunately it seems that alternatives are:
-            // - send reads one-by-one (up to the app)
-            // - rework LedgerHandle to send requests one-by-one (maybe later, potential perf impact)
-            // - block worker pool (not good)
-            // Even with this implementation one should be more concerned about OOME when all read responses arrive
-            // or about overloading bookies with these requests then about submission of many small requests.
-            // Naturally one of the solutions would be to submit smaller batches and in this case
-            // current implementation will prevent next batch from starting when bookie is
-            // unresponsive thus helpful enough.
-            DistributionSchedule.WriteSet ws = distributionSchedule.getWriteSet(firstEntry);
-            try {
-                if (!waitForWritable(ws, firstEntry, ws.size() - 1, clientCtx.getConf().waitForWriteSetMs)) {
-                    op.allowFailFastOnUnwritableChannel();
+        try (Scope trace = GlobalTracer.get()
+                .buildSpan("readEntriesAsync")
+                //.withTag("span.kind", "client")
+                .withTag("ledgerId", this.ledgerId)
+                .withTag("firstEntryId", firstEntry)
+                .withTag("lastEntryId", lastEntry)
+                .withTag("isRecoveryRead", isRecoveryRead)
+                .startActive(true)) {
+            PendingReadOp op = new PendingReadOp(this, clientCtx,
+                    firstEntry, lastEntry, isRecoveryRead);
+            if (!clientCtx.isClientClosed()) {
+                // Waiting on the first one.
+                // This is not very helpful if there are multiple ensembles or if bookie goes into unresponsive
+                // state later after N requests sent.
+                // Unfortunately it seems that alternatives are:
+                // - send reads one-by-one (up to the app)
+                // - rework LedgerHandle to send requests one-by-one (maybe later, potential perf impact)
+                // - block worker pool (not good)
+                // Even with this implementation one should be more concerned about OOME when all read responses arrive
+                // or about overloading bookies with these requests then about submission of many small requests.
+                // Naturally one of the solutions would be to submit smaller batches and in this case
+                // current implementation will prevent next batch from starting when bookie is
+                // unresponsive thus helpful enough.
+                DistributionSchedule.WriteSet ws = distributionSchedule.getWriteSet(firstEntry);
+                try {
+                    if (!waitForWritable(ws, firstEntry, ws.size() - 1, clientCtx.getConf().waitForWriteSetMs)) {
+                        op.allowFailFastOnUnwritableChannel();
+                        trace.span().setTag("fastFail", true);
+                    }
+                } finally {
+                    ws.recycle();
                 }
-            } finally {
-                ws.recycle();
-            }
 
-            clientCtx.getMainWorkerPool().executeOrdered(ledgerId, op);
-        } else {
-            op.future().completeExceptionally(BKException.create(ClientClosedException));
+                clientCtx.getMainWorkerPool().executeOrdered(ledgerId, op);
+            } else {
+                op.future().completeExceptionally(BKException.create(ClientClosedException));
+            }
+            return op.future();
         }
-        return op.future();
     }
 
     /**
@@ -1230,65 +1251,73 @@ public class LedgerHandle implements WriteHandle {
     }
 
     protected void doAsyncAddEntry(final PendingAddOp op) {
-        if (throttler != null) {
-            throttler.acquire();
-        }
+        try (Scope ignored = GlobalTracer.get()
+                .buildSpan("addEntryAsync")
+                //.withTag("span.kind", "client")
+                .withTag("ledgerId", this.ledgerId)
+                .withTag("entryId", op.getEntryId())
+                .startActive(true)) {
 
-        boolean wasClosed = false;
-        synchronized (this) {
-            // synchronized on this to ensure that
-            // the ledger isn't closed between checking and
-            // updating lastAddPushed
+            if (throttler != null) {
+                throttler.acquire();
+            }
+
+            boolean wasClosed = false;
+            synchronized (this) {
+                // synchronized on this to ensure that
+                // the ledger isn't closed between checking and
+                // updating lastAddPushed
             if (isHandleWritable()) {
-                long entryId = ++lastAddPushed;
-                long currentLedgerLength = addToLength(op.payload.readableBytes());
-                op.setEntryId(entryId);
-                op.setLedgerLength(currentLedgerLength);
-                pendingAddOps.add(op);
+                    long entryId = ++lastAddPushed;
+                    long currentLedgerLength = addToLength(op.payload.readableBytes());
+                    op.setEntryId(entryId);
+                    op.setLedgerLength(currentLedgerLength);
+                    pendingAddOps.add(op);
             } else {
                 wasClosed = true;
+                }
             }
-        }
 
-        if (wasClosed) {
-            // make sure the callback is triggered in main worker pool
+            if (wasClosed) {
+                // make sure the callback is triggered in main worker pool
+                try {
+                    clientCtx.getMainWorkerPool().executeOrdered(ledgerId, new SafeRunnable() {
+                        @Override
+                        public void safeRun() {
+                            LOG.warn("Attempt to add to closed ledger: {}", ledgerId);
+                            op.cb.addCompleteWithLatency(BKException.Code.LedgerClosedException,
+                                    LedgerHandle.this, INVALID_ENTRY_ID, 0, op.ctx);
+                        }
+
+                        @Override
+                        public String toString() {
+                            return String.format("AsyncAddEntryToClosedLedger(lid=%d)", ledgerId);
+                        }
+                    });
+                } catch (RejectedExecutionException e) {
+                    op.cb.addCompleteWithLatency(BookKeeper.getReturnRc(clientCtx.getBookieClient(),
+                            BKException.Code.InterruptedException),
+                            LedgerHandle.this, INVALID_ENTRY_ID, 0, op.ctx);
+                }
+                return;
+            }
+
+            DistributionSchedule.WriteSet ws = distributionSchedule.getWriteSet(op.getEntryId());
             try {
-                clientCtx.getMainWorkerPool().executeOrdered(ledgerId, new SafeRunnable() {
-                    @Override
-                    public void safeRun() {
-                        LOG.warn("Attempt to add to closed ledger: {}", ledgerId);
-                        op.cb.addCompleteWithLatency(BKException.Code.LedgerClosedException,
-                                LedgerHandle.this, INVALID_ENTRY_ID, 0, op.ctx);
-                    }
+                if (!waitForWritable(ws, op.getEntryId(), 0, clientCtx.getConf().waitForWriteSetMs)) {
+                    op.allowFailFastOnUnwritableChannel();
+                }
+            } finally {
+                ws.recycle();
+            }
 
-                    @Override
-                    public String toString() {
-                        return String.format("AsyncAddEntryToClosedLedger(lid=%d)", ledgerId);
-                    }
-                });
+            try {
+                clientCtx.getMainWorkerPool().executeOrdered(ledgerId, op);
             } catch (RejectedExecutionException e) {
-                op.cb.addCompleteWithLatency(BookKeeper.getReturnRc(clientCtx.getBookieClient(),
-                                                                    BKException.Code.InterruptedException),
+                op.cb.addCompleteWithLatency(
+                        BookKeeper.getReturnRc(clientCtx.getBookieClient(), BKException.Code.InterruptedException),
                         LedgerHandle.this, INVALID_ENTRY_ID, 0, op.ctx);
             }
-            return;
-        }
-
-        DistributionSchedule.WriteSet ws = distributionSchedule.getWriteSet(op.getEntryId());
-        try {
-            if (!waitForWritable(ws, op.getEntryId(), 0, clientCtx.getConf().waitForWriteSetMs)) {
-                op.allowFailFastOnUnwritableChannel();
-            }
-        } finally {
-            ws.recycle();
-        }
-
-        try {
-            clientCtx.getMainWorkerPool().executeOrdered(ledgerId, op);
-        } catch (RejectedExecutionException e) {
-            op.cb.addCompleteWithLatency(
-                    BookKeeper.getReturnRc(clientCtx.getBookieClient(), BKException.Code.InterruptedException),
-                    LedgerHandle.this, INVALID_ENTRY_ID, 0, op.ctx);
         }
     }
 

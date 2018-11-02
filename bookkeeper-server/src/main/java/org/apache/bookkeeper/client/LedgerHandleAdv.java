@@ -23,6 +23,9 @@ package org.apache.bookkeeper.client;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import io.opentracing.Scope;
+import io.opentracing.util.GlobalTracer;
+
 import java.io.Serializable;
 import java.security.GeneralSecurityException;
 import java.util.Comparator;
@@ -31,6 +34,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.RejectedExecutionException;
+
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.AsyncCallback.AddCallbackWithLatency;
 import org.apache.bookkeeper.client.SyncCallbackUtils.SyncAddCallback;
@@ -213,58 +217,68 @@ public class LedgerHandleAdv extends LedgerHandle implements WriteAdvHandle {
      */
     @Override
     protected void doAsyncAddEntry(final PendingAddOp op) {
-        if (throttler != null) {
-            throttler.acquire();
-        }
+        try (Scope trace = GlobalTracer.get()
+                .buildSpan("addEntryAsync")
+                //.withTag("span.kind", "client")
+                .withTag("ledgerId", this.ledgerId)
+                .withTag("entryId", op.getEntryId())
+                .startActive(true)) {
 
-        boolean wasClosed = false;
-        synchronized (this) {
-            // synchronized on this to ensure that
-            // the ledger isn't closed between checking and
-            // updating lastAddPushed
+            if (throttler != null) {
+                throttler.acquire();
+            }
+
+            boolean wasClosed = false;
+            synchronized (this) {
+                // synchronized on this to ensure that
+                // the ledger isn't closed between checking and
+                // updating lastAddPushed
             if (isHandleWritable()) {
-                long currentLength = addToLength(op.payload.readableBytes());
-                op.setLedgerLength(currentLength);
-                pendingAddOps.add(op);
+                    long currentLength = addToLength(op.payload.readableBytes());
+                    op.setLedgerLength(currentLength);
+                    pendingAddOps.add(op);
             } else {
                 wasClosed = true;
+                }
             }
-        }
 
-        if (wasClosed) {
-            // make sure the callback is triggered in main worker pool
+            if (wasClosed) {
+                // make sure the callback is triggered in main worker pool
+                try {
+                    clientCtx.getMainWorkerPool().submit(new SafeRunnable() {
+                        @Override
+                        public void safeRun() {
+                            LOG.warn("Attempt to add to closed ledger: {}", ledgerId);
+                            op.cb.addCompleteWithLatency(BKException.Code.LedgerClosedException,
+                                    LedgerHandleAdv.this, op.getEntryId(), 0, op.ctx);
+                        }
+
+                        @Override
+                        public String toString() {
+                            return String.format("AsyncAddEntryToClosedLedger(lid=%d)", ledgerId);
+                        }
+                    });
+                } catch (RejectedExecutionException e) {
+                    op.cb.addCompleteWithLatency(BookKeeper.getReturnRc(clientCtx.getBookieClient(),
+                            BKException.Code.InterruptedException),
+                            LedgerHandleAdv.this, op.getEntryId(), 0, op.ctx);
+                }
+                return;
+            }
+
+            if (!waitForWritable(distributionSchedule.getWriteSet(op.getEntryId()),
+                    op.getEntryId(), 0, clientCtx.getConf().waitForWriteSetMs)) {
+                op.allowFailFastOnUnwritableChannel();
+                trace.span().setTag("fastFail", true);
+            }
+
             try {
-                clientCtx.getMainWorkerPool().submit(new SafeRunnable() {
-                    @Override
-                    public void safeRun() {
-                        LOG.warn("Attempt to add to closed ledger: {}", ledgerId);
-                        op.cb.addCompleteWithLatency(BKException.Code.LedgerClosedException,
-                                LedgerHandleAdv.this, op.getEntryId(), 0, op.ctx);
-                    }
-                    @Override
-                    public String toString() {
-                        return String.format("AsyncAddEntryToClosedLedger(lid=%d)", ledgerId);
-                    }
-                });
+                clientCtx.getMainWorkerPool().executeOrdered(ledgerId, op);
             } catch (RejectedExecutionException e) {
                 op.cb.addCompleteWithLatency(BookKeeper.getReturnRc(clientCtx.getBookieClient(),
-                                                                    BKException.Code.InterruptedException),
+                        BKException.Code.InterruptedException),
                         LedgerHandleAdv.this, op.getEntryId(), 0, op.ctx);
             }
-            return;
-        }
-
-        if (!waitForWritable(distributionSchedule.getWriteSet(op.getEntryId()),
-                    op.getEntryId(), 0, clientCtx.getConf().waitForWriteSetMs)) {
-            op.allowFailFastOnUnwritableChannel();
-        }
-
-        try {
-            clientCtx.getMainWorkerPool().executeOrdered(ledgerId, op);
-        } catch (RejectedExecutionException e) {
-            op.cb.addCompleteWithLatency(BookKeeper.getReturnRc(clientCtx.getBookieClient(),
-                                                                BKException.Code.InterruptedException),
-                              LedgerHandleAdv.this, op.getEntryId(), 0, op.ctx);
         }
     }
 

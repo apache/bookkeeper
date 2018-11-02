@@ -94,6 +94,8 @@ message Request {
     optional ForceLedgerRequest forceLedgerRequest = 107;
     // to pass MDC context
     repeated ContextPair requestContext = 200;
+    // OpenTracing SpanContext
+    optional bytes traceContext = 201;
 }
 
 message ReadRequest {

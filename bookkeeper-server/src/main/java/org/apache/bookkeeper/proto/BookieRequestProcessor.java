@@ -58,10 +58,17 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.protobuf.ByteString;
 
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelFutureListener;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.util.HashedWheelTimer;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
+
+import io.opentracing.Scope;
+import io.opentracing.Span;
+import io.opentracing.SpanContext;
+import io.opentracing.util.GlobalTracer;
+import java.net.InetSocketAddress;
 
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
@@ -78,6 +85,7 @@ import org.apache.bookkeeper.auth.AuthToken;
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.common.util.MathUtils;
 import org.apache.bookkeeper.common.util.OrderedExecutor;
+import org.apache.bookkeeper.common.util.Traces;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.processor.RequestProcessor;
 import org.apache.bookkeeper.stats.Counter;
@@ -87,6 +95,7 @@ import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.tls.SecurityException;
 import org.apache.bookkeeper.tls.SecurityHandlerFactory;
 import org.apache.bookkeeper.tls.SecurityHandlerFactory.NodeType;
+import org.apache.bookkeeper.util.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
@@ -428,6 +437,10 @@ public class BookieRequestProcessor implements RequestProcessor {
         }
     }
 
+    private void tagScope(Scope traceScope, String key, long value) {
+        traceScope.span().setTag(key, value);
+    }
+
     @Override
     public void processRequest(Object msg, Channel c) {
         // If we can decode this packet as a Request protobuf packet, process
@@ -435,17 +448,35 @@ public class BookieRequestProcessor implements RequestProcessor {
         if (msg instanceof BookkeeperProtocol.Request) {
             BookkeeperProtocol.Request r = (BookkeeperProtocol.Request) msg;
             restoreMdcContextFromRequest(r);
+            final SpanContext spanContext = Traces.byteStringToSpanContext(r.getTraceContext());
+            final Span parentTrace = GlobalTracer.get()
+                    .buildSpan("bookierequest")
+                    .withTag("span.kind", "server")
+                    .asChildOf(spanContext)
+                    .withTag("source-host", IOUtils.getHost(c))
+                    .withTag("source-port", IOUtils.getPort(c))
+                    .start();
+
+            BookkeeperProtocol.BKPacketHeader header = r.getHeader();
+            final Scope trace = GlobalTracer.get()
+                    .buildSpan(operationName(r.getHeader().getOperation()))
+                    .asChildOf(parentTrace)
+                    .startActive(true);
             try {
-                BookkeeperProtocol.BKPacketHeader header = r.getHeader();
                 switch (header.getOperation()) {
                     case ADD_ENTRY:
-                        processAddRequestV3(r, c);
+                        tagScope(trace, "ledgerId", r.getAddRequest().getLedgerId());
+                        tagScope(trace, "entryId", r.getAddRequest().getEntryId());
+                        processAddRequestV3(r, c, parentTrace);
                         break;
                     case READ_ENTRY:
-                        processReadRequestV3(r, c);
+                        tagScope(trace, "ledgerId", r.getReadRequest().getLedgerId());
+                        tagScope(trace, "entryId", r.getReadRequest().getEntryId());
+                        processReadRequestV3(r, c, parentTrace);
                         break;
                     case FORCE_LEDGER:
-                        processForceLedgerRequestV3(r, c);
+                        tagScope(trace, "ledgerId", r.getForceLedgerRequest().getLedgerId());
+                        processForceLedgerRequestV3(r, c, parentTrace);
                         break;
                     case AUTH:
                         LOG.info("Ignoring auth operation from client {}", c.remoteAddress());
@@ -458,32 +489,37 @@ public class BookieRequestProcessor implements RequestProcessor {
                                 .newBuilder().setHeader(r.getHeader())
                                 .setStatus(BookkeeperProtocol.StatusCode.EOK)
                                 .setAuthResponse(message);
-                        c.writeAndFlush(authResponse.build());
+                        c.writeAndFlush(authResponse.build())
+                                .addListener((ChannelFutureListener) future -> Traces.safeClose(parentTrace));
                         break;
                     case WRITE_LAC:
-                        processWriteLacRequestV3(r, c);
+                        tagScope(trace, "ledgerId", r.getWriteLacRequest().getLedgerId());
+                        processWriteLacRequestV3(r, c, parentTrace);
                         break;
                     case READ_LAC:
-                        processReadLacRequestV3(r, c);
+                        tagScope(trace, "ledgerId", r.getReadLacRequest().getLedgerId());
+                        processReadLacRequestV3(r, c, parentTrace);
                         break;
                     case GET_BOOKIE_INFO:
-                        processGetBookieInfoRequestV3(r, c);
+                        processGetBookieInfoRequestV3(r, c, parentTrace);
                         break;
                     case START_TLS:
-                        processStartTLSRequestV3(r, c);
+                        processStartTLSRequestV3(r, c, parentTrace);
                         break;
                     default:
                         LOG.info("Unknown operation type {}", header.getOperation());
                         BookkeeperProtocol.Response.Builder response =
                                 BookkeeperProtocol.Response.newBuilder().setHeader(r.getHeader())
                                         .setStatus(BookkeeperProtocol.StatusCode.EBADREQ);
-                        c.writeAndFlush(response.build());
+                        c.writeAndFlush(response.build())
+                                .addListener((ChannelFutureListener) future -> Traces.safeClose(parentTrace));
                         if (statsEnabled) {
                             bkStats.getOpStats(BKStats.STATS_UNKNOWN).incrementFailedOps();
                         }
                         break;
                 }
             } finally {
+                Traces.safeClose(trace);
                 MDC.clear();
             }
         } else {
@@ -509,6 +545,29 @@ public class BookieRequestProcessor implements RequestProcessor {
         }
     }
 
+    private static String operationName(BookkeeperProtocol.OperationType operation) {
+        switch (operation) {
+            case ADD_ENTRY:
+                return "ADD_ENTRY";
+            case READ_ENTRY:
+                return "READ_ENTRY";
+            case FORCE_LEDGER:
+                return "FORCE_LEDGER";
+            case AUTH:
+                return "AUTH";
+            case WRITE_LAC:
+                return "WRITE_LAC";
+            case READ_LAC:
+                return "READ_LAC";
+            case GET_BOOKIE_INFO:
+                return "GET_BOOKIE_INFO";
+            case START_TLS:
+                return "START_TLS";
+            default:
+                return "UNKNOWN-" + operation.getNumber();
+        }
+    }
+
     private void restoreMdcContextFromRequest(BookkeeperProtocol.Request req) {
         if (preserveMdcForTaskExecution) {
             MDC.clear();
@@ -518,8 +577,9 @@ public class BookieRequestProcessor implements RequestProcessor {
         }
     }
 
-    private void processWriteLacRequestV3(final BookkeeperProtocol.Request r, final Channel c) {
+    private void processWriteLacRequestV3(final BookkeeperProtocol.Request r, final Channel c, Span parentTrace) {
         WriteLacProcessorV3 writeLac = new WriteLacProcessorV3(r, c, this);
+        writeLac.setTrace(parentTrace);
         if (null == writeThreadPool) {
             writeLac.run();
         } else {
@@ -527,8 +587,9 @@ public class BookieRequestProcessor implements RequestProcessor {
         }
     }
 
-    private void processReadLacRequestV3(final BookkeeperProtocol.Request r, final Channel c) {
+    private void processReadLacRequestV3(final BookkeeperProtocol.Request r, final Channel c, Span parentTrace) {
         ReadLacProcessorV3 readLac = new ReadLacProcessorV3(r, c, this);
+        readLac.setTrace(parentTrace);
         if (null == readThreadPool) {
             readLac.run();
         } else {
@@ -536,8 +597,9 @@ public class BookieRequestProcessor implements RequestProcessor {
         }
     }
 
-    private void processAddRequestV3(final BookkeeperProtocol.Request r, final Channel c) {
+    private void processAddRequestV3(final BookkeeperProtocol.Request r, final Channel c, Span parentTrace) {
         WriteEntryProcessorV3 write = new WriteEntryProcessorV3(r, c, this);
+        write.setTrace(parentTrace);
 
         final OrderedExecutor threadPool;
         if (RequestUtils.isHighPriority(r)) {
@@ -570,8 +632,9 @@ public class BookieRequestProcessor implements RequestProcessor {
         }
     }
 
-    private void processForceLedgerRequestV3(final BookkeeperProtocol.Request r, final Channel c) {
+    private void processForceLedgerRequestV3(final BookkeeperProtocol.Request r, final Channel c, Span parentTrace) {
         ForceLedgerProcessorV3 forceLedger = new ForceLedgerProcessorV3(r, c, this);
+        forceLedger.setTrace(parentTrace);
 
         final OrderedExecutor threadPool;
         if (RequestUtils.isHighPriority(r)) {
@@ -604,7 +667,7 @@ public class BookieRequestProcessor implements RequestProcessor {
         }
     }
 
-    private void processReadRequestV3(final BookkeeperProtocol.Request r, final Channel c) {
+    private void processReadRequestV3(final BookkeeperProtocol.Request r, final Channel c, Span parentTrace) {
         ExecutorService fenceThread = null == highPriorityThreadPool ? null : highPriorityThreadPool.chooseThread(c);
 
         final ReadEntryProcessorV3 read;
@@ -629,6 +692,7 @@ public class BookieRequestProcessor implements RequestProcessor {
                 threadPool = readThreadPool;
             }
         }
+        read.setTrace(parentTrace);
 
         if (null == threadPool) {
             read.run();
@@ -654,7 +718,7 @@ public class BookieRequestProcessor implements RequestProcessor {
         }
     }
 
-    private void processStartTLSRequestV3(final BookkeeperProtocol.Request r, final Channel c) {
+    private void processStartTLSRequestV3(final BookkeeperProtocol.Request r, final Channel c, Span parentTrace) {
         BookkeeperProtocol.Response.Builder response = BookkeeperProtocol.Response.newBuilder();
         BookkeeperProtocol.BKPacketHeader.Builder header = BookkeeperProtocol.BKPacketHeader.newBuilder();
         header.setVersion(BookkeeperProtocol.ProtocolVersion.VERSION_THREE);
@@ -664,7 +728,8 @@ public class BookieRequestProcessor implements RequestProcessor {
         if (shFactory == null) {
             LOG.error("Got StartTLS request but TLS not configured");
             response.setStatus(BookkeeperProtocol.StatusCode.EBADREQ);
-            c.writeAndFlush(response.build());
+            c.writeAndFlush(response.build())
+                    .addListener((ChannelFutureListener) future -> Traces.safeClose(parentTrace));
         } else {
             // there is no need to execute in a different thread as this operation is light
             SslHandler sslHandler = shFactory.newTLSHandler();
@@ -693,12 +758,14 @@ public class BookieRequestProcessor implements RequestProcessor {
                     }
                 }
             });
-            c.writeAndFlush(response.build());
+            c.writeAndFlush(response.build())
+                    .addListener((ChannelFutureListener) f -> Traces.safeClose(parentTrace));
         }
     }
 
-    private void processGetBookieInfoRequestV3(final BookkeeperProtocol.Request r, final Channel c) {
+    private void processGetBookieInfoRequestV3(final BookkeeperProtocol.Request r, final Channel c, Span parentTrace) {
         GetBookieInfoProcessorV3 getBookieInfo = new GetBookieInfoProcessorV3(r, c, this);
+        getBookieInfo.setTrace(parentTrace);
         if (null == readThreadPool) {
             getBookieInfo.run();
         } else {

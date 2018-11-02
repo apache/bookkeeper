@@ -112,6 +112,27 @@
       <groupId>net.java.dev.jna</groupId>
       <artifactId>jna</artifactId>
     </dependency>
+    <!-- tracing dependencies -->
+    <dependency>
+      <groupId>io.opentracing</groupId>
+      <artifactId>opentracing-api</artifactId>
+      <version>${opentracing.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.opentracing</groupId>
+      <artifactId>opentracing-util</artifactId>
+      <version>${opentracing.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.opentracing.brave</groupId>
+      <artifactId>brave-opentracing</artifactId>
+      <version>${opentracing.brave.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.zipkin.reporter2</groupId>
+      <artifactId>zipkin-sender-urlconnection</artifactId>
+      <version>${zipkin.reporter.version}</version>
+    </dependency>
     <!-- testing dependencies -->
     <dependency>
       <groupId>org.apache.bookkeeper</groupId>
@@ -160,6 +181,12 @@
       <groupId>org.apache.bookkeeper.http</groupId>
       <artifactId>vertx-http-server</artifactId>
       <version>${project.parent.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.opentracing</groupId>
+      <artifactId>opentracing-mock</artifactId>
+      <version>${opentracing.version}</version>
       <scope>test</scope>
     </dependency>
   </dependencies>

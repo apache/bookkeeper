@@ -24,6 +24,8 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 
+import io.opentracing.Span;
+import io.opentracing.util.GlobalTracer;
 import java.io.IOException;
 import java.util.EnumSet;
 import java.util.concurrent.TimeUnit;
@@ -31,6 +33,7 @@ import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.BookieException.OperationRejectedException;
 import org.apache.bookkeeper.client.api.WriteFlag;
+import org.apache.bookkeeper.common.util.Traces;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.AddRequest;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.AddResponse;
@@ -75,10 +78,14 @@ class WriteEntryProcessorV3 extends PacketProcessorBaseV3 {
             return addResponse.build();
         }
 
+        final Span wcbTrace = GlobalTracer.get()
+                .buildSpan("WriteEntry")
+                .start();
         BookkeeperInternalCallbacks.WriteCallback wcb = new BookkeeperInternalCallbacks.WriteCallback() {
             @Override
             public void writeComplete(int rc, long ledgerId, long entryId,
                                       BookieSocketAddress addr, Object ctx) {
+                Traces.safeClose(wcbTrace);
                 if (BookieProtocol.EOK == rc) {
                     requestProcessor.getAddEntryStats().registerSuccessfulEvent(MathUtils.elapsedNanos(startTimeNanos),
                             TimeUnit.NANOSECONDS);
@@ -150,10 +157,10 @@ class WriteEntryProcessorV3 extends PacketProcessorBaseV3 {
             // some bad request which cause unexpected exception
             status = StatusCode.EBADREQ;
         }
-
         // If everything is okay, we return null so that the calling function
         // doesn't return a response back to the caller.
         if (!status.equals(StatusCode.EOK)) {
+            Traces.safeClose(wcbTrace);
             addResponse.setStatus(status);
             return addResponse.build();
         }

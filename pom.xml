@@ -190,6 +190,11 @@
     <protobuf-maven-plugin.version>0.5.0</protobuf-maven-plugin.version>
     <puppycrawl.checkstyle.version>6.19</puppycrawl.checkstyle.version>
     <spotbugs-maven-plugin.version>3.1.0-RC6</spotbugs-maven-plugin.version>
+    <opentracing.version>0.31.0</opentracing.version>
+    <opentracing.brave.version>0.33.6</opentracing.brave.version>
+    <zipkin.brave.version>5.5.0</zipkin.brave.version>
+
+    <zipkin.reporter.version>2.7.10</zipkin.reporter.version>
   </properties>
 
   <!-- dependency definitions -->
@@ -624,6 +629,14 @@
         <groupId>org.testcontainers</groupId>
         <artifactId>testcontainers</artifactId>
         <version>${testcontainers.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>io.zipkin.brave</groupId>
+        <artifactId>brave-bom</artifactId>
+        <version>${zipkin.brave.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
       </dependency>
 
       <!-- benchmark dependencies -->

@@ -40,6 +40,9 @@ import com.google.common.util.concurrent.SettableFuture;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.buffer.Unpooled;
+import io.opentracing.Scope;
+import io.opentracing.Span;
+import io.opentracing.util.GlobalTracer;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FilenameFilter;
@@ -1158,13 +1161,24 @@ public class Bookie extends BookieCriticalThread {
      * Add an entry to a ledger as specified by handle.
      */
     private void addEntryInternal(LedgerDescriptor handle, ByteBuf entry,
-                                  boolean ackBeforeSync, WriteCallback cb, Object ctx, byte[] masterKey)
+                                  boolean ackBeforeSync, WriteCallback originalCb, Object ctx, byte[] masterKey)
             throws IOException, BookieException {
-        long ledgerId = handle.getLedgerId();
-        long entryId = handle.addEntry(entry);
+        final long ledgerId;
+        final long entryId;
 
-        writeBytes.add(entry.readableBytes());
+        try (Scope ignored = GlobalTracer.get().buildSpan("write-storage").startActive(true)) {
+            ledgerId = handle.getLedgerId();
+            entryId = handle.addEntry(entry);
+            writeBytes.add(entry.readableBytes());
+        }
 
+        final Span journalTrace = GlobalTracer.get().buildSpan("write-journal")
+                .withTag("ackBeforeSync", ackBeforeSync)
+                .start();
+        WriteCallback cb = (rc, ledgerId1, entryId1, addr, ctx1) -> {
+            journalTrace.finish();
+            originalCb.writeComplete(rc, ledgerId1, entryId1, addr, ctx1);
+        };
         // journal `addEntry` should happen after the entry is added to ledger storage.
         // otherwise the journal entry can potentially be rolled before the ledger is created in ledger storage.
         if (masterKeyCache.get(ledgerId) == null) {
@@ -1354,10 +1368,12 @@ public class Bookie extends BookieCriticalThread {
             if (LOG.isTraceEnabled()) {
                 LOG.trace("Reading {}@{}", entryId, ledgerId);
             }
-            ByteBuf entry = handle.readEntry(entryId);
-            readBytes.add(entry.readableBytes());
-            success = true;
-            return entry;
+            try (Scope ignored = GlobalTracer.get().buildSpan("readLedger").startActive(true)){
+                ByteBuf entry = handle.readEntry(entryId);
+                readBytes.add(entry.readableBytes());
+                success = true;
+                return entry;
+            }
         } finally {
             long elapsedNanos = MathUtils.elapsedNanos(requestNanos);
             if (success) {

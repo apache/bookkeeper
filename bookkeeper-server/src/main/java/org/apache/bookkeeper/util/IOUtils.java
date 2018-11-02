@@ -20,8 +20,10 @@
  */
 package org.apache.bookkeeper.util;
 
+import io.netty.channel.Channel;
 import java.io.File;
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.WritableByteChannel;
 
@@ -172,5 +174,25 @@ public class IOUtils {
         File tmpDir = File.createTempFile(prefix, suffix);
         tmpDir.deleteOnExit();
         return tmpDir;
+    }
+
+    public static String getHost(Channel channel) {
+        if (channel.remoteAddress() instanceof InetSocketAddress) {
+            return ((InetSocketAddress) channel.remoteAddress()).getAddress().getHostAddress();
+        } else if (channel.remoteAddress() instanceof io.netty.channel.local.LocalAddress) {
+            return ((io.netty.channel.local.LocalAddress) channel.remoteAddress()).id();
+        } else {
+            return "unknown: " + channel.remoteAddress().toString();
+        }
+    }
+
+    public static int getPort(Channel channel) {
+        if (channel.remoteAddress() instanceof InetSocketAddress) {
+            return ((InetSocketAddress) channel.remoteAddress()).getPort();
+        } else if (channel.remoteAddress() instanceof io.netty.channel.local.LocalAddress) {
+            return 0;
+        } else {
+            return -1;
+        }
     }
 }

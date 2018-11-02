@@ -23,8 +23,11 @@ package org.apache.bookkeeper.proto;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
+import io.opentracing.Scope;
+import io.opentracing.Span;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.bookkeeper.common.util.Traces;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.BKPacketHeader;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.ProtocolVersion;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.Request;
@@ -43,6 +46,7 @@ public abstract class PacketProcessorBaseV3 extends SafeRunnable {
     final Channel channel;
     final BookieRequestProcessor requestProcessor;
     final long enqueueNanos;
+    Span parentTrace;
 
     public PacketProcessorBaseV3(Request request, Channel channel,
                                  BookieRequestProcessor requestProcessor) {
@@ -50,6 +54,11 @@ public abstract class PacketProcessorBaseV3 extends SafeRunnable {
         this.channel = channel;
         this.requestProcessor = requestProcessor;
         this.enqueueNanos = MathUtils.nowInNano();
+    }
+
+    public void setTrace(Span trace) {
+        assert parentTrace == null;
+        parentTrace = trace;
     }
 
     protected void sendResponse(StatusCode code, Object response, OpStatsLogger statsLogger) {
@@ -82,6 +91,7 @@ public abstract class PacketProcessorBaseV3 extends SafeRunnable {
                 requestProcessor.getChannelWriteStats()
                         .registerFailedEvent(MathUtils.elapsedNanos(writeNanos), TimeUnit.NANOSECONDS);
                 statsLogger.registerFailedEvent(MathUtils.elapsedNanos(enqueueNanos), TimeUnit.NANOSECONDS);
+                Traces.safeClose(parentTrace);
                 return;
             } else {
                 requestProcessor.invalidateBlacklist(channel);
@@ -91,6 +101,7 @@ public abstract class PacketProcessorBaseV3 extends SafeRunnable {
         channel.writeAndFlush(response).addListener(new ChannelFutureListener() {
             @Override
             public void operationComplete(ChannelFuture future) throws Exception {
+                Traces.safeClose(parentTrace);
                 long writeElapsedNanos = MathUtils.elapsedNanos(writeNanos);
                 if (!future.isSuccess()) {
                     requestProcessor.getChannelWriteStats()

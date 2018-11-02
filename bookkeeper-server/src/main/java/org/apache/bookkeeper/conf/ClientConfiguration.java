@@ -26,6 +26,7 @@ import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.EnsemblePlacementPolicy;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.RackawareEnsemblePlacementPolicy;
+import org.apache.bookkeeper.common.util.Traces;
 import org.apache.bookkeeper.discover.RegistrationClient;
 import org.apache.bookkeeper.discover.ZKRegistrationClient;
 import org.apache.bookkeeper.replication.Auditor;
@@ -1848,6 +1849,16 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
      */
     public boolean getStoreSystemtimeAsLedgerCreationTime() {
         return getBoolean(STORE_SYSTEMTIME_AS_LEDGER_CREATION_TIME, false);
+    }
+
+    /**
+     * Configures service name reported to zipkin.
+     *
+     * @return configured service name
+     */
+    @Override
+    public String getZipkinServiceName() {
+        return getString(Traces.ZIPKIN_SERVICE_NAME, "BK-Client");
     }
 
     @Override
