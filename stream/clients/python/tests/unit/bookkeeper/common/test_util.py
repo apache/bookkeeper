@@ -12,23 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import sys
-
-__PYTHON3__ = sys.version_info >= (3, 0)
+from bookkeeper.common import util
 
 
-def to_bytes(n, length, endianess='big'):
-    if __PYTHON3__:
-        return n.to_bytes(length, endianess)
-    else:
-        h = '%x' % n
-        s = ('0'*(len(h) % 2) + h).zfill(length*2).decode('hex')
-        return s if endianess == 'big' else s[::-1]
-
-
-def new_hostname_with_port(hostname, default_port=4181):
-    host_parts = hostname.split(':')
-    if len(host_parts) > 1:
-        return hostname
-    else:
-        return "%s:%d" % (hostname, default_port)
+def test_new_hostname_with_port():
+    assert "127.0.0.1:3181" == util.new_hostname_with_port("127.0.0.1:3181")
+    assert "127.0.0.1:4181" == util.new_hostname_with_port("127.0.0.1")
+    assert "127.0.0.1:2181" == util.new_hostname_with_port("127.0.0.1", 2181)

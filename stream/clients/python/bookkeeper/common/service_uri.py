@@ -10,14 +10,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import sys
+from bookkeeper.common.util import __PYTHON3__
+from bookkeeper.common.util import new_hostname_with_port
 
-if sys.version_info[0] < 3:
-    USE_PYTHON3 = False
-    from urlparse import urlparse
-else:
-    USE_PYTHON3 = True
+if __PYTHON3__:
     from urllib.parse import urlparse
+else:
+    from urlparse import urlparse
 
 
 class ServiceURI(object):
@@ -27,5 +26,8 @@ class ServiceURI(object):
         self.service_name = self.uri.scheme
         self.service_user = self.uri.username
         self.service_path = self.uri.path
-        self.service_location = self.uri.netloc
-        self.service_hosts = self.uri.netloc.split(',')
+        if __PYTHON3__:
+            self.service_hosts = list(map(lambda x: new_hostname_with_port(x), self.uri.netloc.split(',')))
+        else:
+            self.service_hosts = map(lambda x: new_hostname_with_port(x), self.uri.netloc.split(','))
+        self.service_location = ','.join(self.service_hosts)
