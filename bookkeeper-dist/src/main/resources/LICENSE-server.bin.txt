@@ -205,9 +205,9 @@
 The following bundled 3rd party jars are distributed under the
 Apache Software License, Version 2.
 
-- lib/com.fasterxml.jackson.core-jackson-annotations-2.8.9.jar [1]
-- lib/com.fasterxml.jackson.core-jackson-core-2.8.9.jar [2]
-- lib/com.fasterxml.jackson.core-jackson-databind-2.8.9.jar [3]
+- lib/com.fasterxml.jackson.core-jackson-annotations-2.9.7.jar [1]
+- lib/com.fasterxml.jackson.core-jackson-core-2.9.7.jar [2]
+- lib/com.fasterxml.jackson.core-jackson-databind-2.9.7.jar [3]
 - lib/com.google.guava-guava-21.0.jar [4]
 - lib/commons-cli-commons-cli-1.2.jar [5]
 - lib/commons-codec-commons-codec-1.6.jar [6]
@@ -267,7 +267,7 @@ Apache Software License, Version 2.
 
 [1] Source available at https://github.com/FasterXML/jackson-annotations/tree/jackson-annotations-2.8.9
 [2] Source available at https://github.com/FasterXML/jackson-core/tree/jackson-core-2.8.9
-[3] Source available at https://github.com/FasterXML/jackson-databind/tree/jackson-databind-2.8.9
+[3] Source available at https://github.com/FasterXML/jackson-databind/tree/jackson-databind-2.9.7
 [4] Source available at https://github.com/google/guava/tree/v21.0
 [5] Source available at https://git-wip-us.apache.org/repos/asf?p=commons-cli.git;a=tag;h=bc8f0e
 [6] Source available at http://svn.apache.org/viewvc/commons/proper/codec/tags/1_6/
@@ -438,7 +438,7 @@ Bundled as
 Source available at https://github.com/google/google-auth-library-java/tree/0.9.0
 ------------------------------------------------------------------------------------
 This product bundles the JLine Library, which is available under a "2-clause BSD"
-license. For details, see deps/jline-0.9.94/LICENSE
+license. For details, see deps/jline-2.11/LICENSE
 
 Bundled as
-  - lib/jline-jline-0.9.94.jar
+  - lib/jline-jline-2.11.jar

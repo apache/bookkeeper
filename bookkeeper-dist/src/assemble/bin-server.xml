@@ -53,7 +53,7 @@
         <include>javax.servlet-api-3.1.0/CDDL+GPL-1.1</include>
         <include>netty-4.1.22.Final/*</include>
         <include>protobuf-3.0.0/LICENSE</include>
-        <include>jline-0.9.94/LICENSE</include>
+        <include>jline-2.11/LICENSE</include>
         <include>protobuf-3.5.1/LICENSE</include>
         <include>slf4j-1.7.25/LICENSE.txt</include>
       </includes>
