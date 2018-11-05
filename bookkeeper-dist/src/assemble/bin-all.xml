@@ -61,7 +61,7 @@
         <include>netty-4.1.22.Final/*</include>
         <include>paranamer-2.8/LICENSE.txt</include>
         <include>protobuf-3.0.0/LICENSE</include>
-        <include>jline-0.9.94/LICENSE</include>
+        <include>jline-2.11/LICENSE</include>
         <include>protobuf-3.5.1/LICENSE</include>
         <include>scala-library-2.11.7/LICENSE.md</include>
         <include>scala-parser-combinators_2.11-1.0.4/LICENSE.md</include>
