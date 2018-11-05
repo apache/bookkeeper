@@ -317,9 +317,9 @@ Apache Software License, Version 2.
 [36] Source available at https://github.com/apache/yetus/tree/rel/0.5.0
 
 ------------------------------------------------------------------------------------
-lib/- lib/io.netty-netty-codec-4.1.31.Final.jar bundles some 3rd party dependencies
+lib/io.netty-netty-codec-4.1.31.Final.jar bundles some 3rd party dependencies
 
-lib/- lib/io.netty-netty-codec-4.1.31.Final.jar contains the extensions to Java Collections Framework which has
+lib/io.netty-netty-codec-4.1.31.Final.jar contains the extensions to Java Collections Framework which has
 been derived from the works by JSR-166 EG, Doug Lea, and Jason T. Greene:
 
   * LICENSE:
@@ -328,7 +328,7 @@ been derived from the works by JSR-166 EG, Doug Lea, and Jason T. Greene:
     * http://gee.cs.oswego.edu/cgi-bin/viewcvs.cgi/jsr166/
     * http://viewvc.jboss.org/cgi-bin/viewvc.cgi/jbosscache/experimental/jsr166/
 
-lib/- lib/io.netty-netty-codec-4.1.31.Final.jar contains a modified version of Robert Harder's Public Domain
+lib/io.netty-netty-codec-4.1.31.Final.jar contains a modified version of Robert Harder's Public Domain
 Base64 Encoder and Decoder, which can be obtained at:
 
   * LICENSE:
@@ -336,7 +336,7 @@ Base64 Encoder and Decoder, which can be obtained at:
   * HOMEPAGE:
     * http://iharder.sourceforge.net/current/java/base64/
 
-lib/- lib/io.netty-netty-common-4.1.31.Final.jar contains a modified portion of 'SLF4J', a simple logging
+lib/io.netty-netty-common-4.1.31.Final.jar contains a modified portion of 'SLF4J', a simple logging
 facade for Java, which can be obtained at:
 
   * LICENSE:
@@ -344,7 +344,7 @@ facade for Java, which can be obtained at:
   * HOMEPAGE:
     * http://www.slf4j.org/
 
-lib/- lib/io.netty-netty-codec-4.1.31.Final.jar contains a modified portion of 'jbzip2', a Java bzip2 compression
+lib/io.netty-netty-codec-4.1.31.Final.jar contains a modified portion of 'jbzip2', a Java bzip2 compression
 and decompression library written by Matthew J. Francis. It can be obtained at:
 
   * LICENSE:
@@ -352,7 +352,7 @@ and decompression library written by Matthew J. Francis. It can be obtained at:
   * HOMEPAGE:
     * https://code.google.com/p/jbzip2/
 
-lib/- lib/io.netty-netty-codec-4.1.31.Final.jar contains a modified portion of 'libdivsufsort', a C API library to construct
+lib/io.netty-netty-codec-4.1.31.Final.jar contains a modified portion of 'libdivsufsort', a C API library to construct
 the suffix array and the Burrows-Wheeler transformed string for any input string of
 a constant-size alphabet written by Yuta Mori. It can be obtained at:
 
@@ -361,7 +361,7 @@ a constant-size alphabet written by Yuta Mori. It can be obtained at:
   * HOMEPAGE:
     * https://github.com/y-256/libdivsufsort
 
-lib/- lib/io.netty-netty-codec-4.1.31.Final.jar contains a modified portion of 'jfastlz', a Java port of FastLZ compression
+lib/io.netty-netty-codec-4.1.31.Final.jar contains a modified portion of 'jfastlz', a Java port of FastLZ compression
 and decompression library written by William Kinney. It can be obtained at:
 
   * LICENSE:
@@ -369,7 +369,7 @@ and decompression library written by William Kinney. It can be obtained at:
   * HOMEPAGE:
     * https://code.google.com/p/jfastlz/
 
-lib/- lib/io.netty-netty-codec-4.1.31.Final.jar contains a modified portion of and optionally depends on 'Protocol Buffers', Google's data
+lib/io.netty-netty-codec-4.1.31.Final.jar contains a modified portion of and optionally depends on 'Protocol Buffers', Google's data
 interchange format, which can be obtained at:
 
   * LICENSE:
