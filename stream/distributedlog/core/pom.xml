@@ -29,17 +29,6 @@
       <groupId>org.apache.distributedlog</groupId>
       <artifactId>distributedlog-protocol</artifactId>
       <version>${project.parent.version}</version>
-      <exclusions>
-        <!-- netty-all is introduced by bookkeeper-server -->
-        <exclusion>
-          <groupId>io.netty</groupId>
-          <artifactId>netty-buffer</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>io.netty</groupId>
-          <artifactId>netty-common</artifactId>
-        </exclusion>
-      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.apache.zookeeper</groupId>
