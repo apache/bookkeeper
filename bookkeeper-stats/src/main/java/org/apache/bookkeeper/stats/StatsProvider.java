@@ -19,6 +19,7 @@ package org.apache.bookkeeper.stats;
 import java.io.IOException;
 import java.io.Writer;
 import org.apache.commons.configuration.Configuration;
+import org.apache.commons.lang.StringUtils;
 
 /**
  * Provider to provide stats logger for different scopes.
@@ -53,4 +54,8 @@ public interface StatsProvider {
      * @return stats logger for the given <i>scope</i>
      */
     StatsLogger getStatsLogger(String scope);
+
+    default String getStatsName(String...statsComponents) {
+        return StringUtils.join(statsComponents, '/');
+    }
 }
