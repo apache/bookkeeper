@@ -39,6 +39,7 @@ import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.common.component.ComponentStarter;
 import org.apache.bookkeeper.common.component.LifecycleComponent;
 import org.apache.bookkeeper.common.component.LifecycleComponentStack;
+import org.apache.bookkeeper.common.util.Traces;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.MetadataClientDriver;
 import org.apache.bookkeeper.replication.ReplicationException.CompatibilityException;
@@ -116,6 +117,7 @@ public class AutoRecoveryMain {
      * Start daemons
      */
     public void start() throws UnavailableException {
+        Traces.createAndRegisterTracer(conf);
         auditorElector.start();
         replicationWorker.start();
         if (null != uncaughtExceptionHandler) {
@@ -164,6 +166,7 @@ public class AutoRecoveryMain {
             Thread.currentThread().interrupt();
             LOG.warn("Interrupted closing bookkeeper client for auto recovery", e);
         }
+        Traces.closeTracer();
     }
 
     private int getExitCode() {

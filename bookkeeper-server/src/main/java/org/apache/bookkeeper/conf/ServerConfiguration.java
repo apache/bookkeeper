@@ -24,6 +24,7 @@ import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.bookie.InterleavedLedgerStorage;
 import org.apache.bookkeeper.bookie.LedgerStorage;
 import org.apache.bookkeeper.bookie.SortedLedgerStorage;
+import org.apache.bookkeeper.common.util.Traces;
 import org.apache.bookkeeper.discover.RegistrationManager;
 import org.apache.bookkeeper.discover.ZKRegistrationManager;
 import org.apache.bookkeeper.stats.NullStatsProvider;
@@ -3092,5 +3093,15 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
         this.setProperty(ENTRY_LOG_PER_LEDGER_COUNTER_LIMITS_MULT_FACTOR,
                 Integer.toString(entryLogPerLedgerCounterLimitsMultFactor));
         return this;
+    }
+
+    /**
+     * Configures service name reported to zipkin.
+     *
+     * @return configured service name
+     */
+    @Override
+    public String getZipkinServiceName() {
+        return getString(Traces.ZIPKIN_SERVICE_NAME, "BK");
     }
 }

@@ -84,8 +84,8 @@ public class TestMain {
             .thenReturn(mockServer);
 
         LifecycleComponentStack stack = buildBookieServer(conf);
-        assertEquals(3, stack.getNumComponents());
-        assertTrue(stack.getComponent(2) instanceof TestComponent);
+        assertEquals(4, stack.getNumComponents());
+        assertTrue(stack.getComponent(3) instanceof TestComponent);
 
         stack.start();
         verify(mockServer, times(1)).start();
@@ -111,7 +111,7 @@ public class TestMain {
             .thenReturn(mockServer);
 
         LifecycleComponentStack stack = buildBookieServer(conf);
-        assertEquals(2, stack.getNumComponents());
+        assertEquals(3, stack.getNumComponents());
 
         stack.start();
         verify(mockServer, times(1)).start();

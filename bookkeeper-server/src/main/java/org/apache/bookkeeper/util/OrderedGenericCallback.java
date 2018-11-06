@@ -17,6 +17,10 @@
  */
 package org.apache.bookkeeper.util;
 
+import io.opentracing.Scope;
+import io.opentracing.Span;
+import io.opentracing.util.GlobalTracer;
+
 import java.util.Map;
 import java.util.concurrent.RejectedExecutionException;
 
@@ -38,6 +42,7 @@ public abstract class OrderedGenericCallback<T> implements GenericCallback<T> {
     private final OrderedExecutor executor;
     private final long orderingKey;
     private final Map<String, String> mdcContextMap;
+    protected final Span trace;
 
     /**
      * @param executor The executor on which to run the callback
@@ -48,35 +53,40 @@ public abstract class OrderedGenericCallback<T> implements GenericCallback<T> {
         this.executor = executor;
         this.orderingKey = orderingKey;
         this.mdcContextMap = executor.preserveMdc() ? MDC.getCopyOfContextMap() : null;
+        this.trace = GlobalTracer.get()
+                .buildSpan("OrderedGenericCallback-" + this.getClass().getSimpleName())
+                .start();
     }
 
     @Override
     public final void operationComplete(final int rc, final T result) {
         MdcUtils.restoreContext(mdcContextMap);
         try {
-            // during closing, callbacks that are error out might try to submit to
-            // the scheduler again. if the submission will go to same thread, we
-            // don't need to submit to executor again. this is also an optimization for
-            // callback submission
-            if (Thread.currentThread().getId() == executor.getThreadID(orderingKey)) {
-                safeOperationComplete(rc, result);
-            } else {
-                try {
-                    executor.executeOrdered(orderingKey, new SafeRunnable() {
-                        @Override
-                        public void safeRun() {
-                            safeOperationComplete(rc, result);
-                        }
+            try (Scope ignored = GlobalTracer.get().scopeManager().activate(trace, true)) {
+                // during closing, callbacks that are error out might try to submit to
+                // the scheduler again. if the submission will go to same thread, we
+                // don't need to submit to executor again. this is also an optimization for
+                // callback submission
+                if (Thread.currentThread().getId() == executor.getThreadID(orderingKey)) {
+                    safeOperationComplete(rc, result);
+                } else {
+                    try {
+                        executor.executeOrdered(orderingKey, new SafeRunnable() {
+                            @Override
+                            public void safeRun() {
+                                safeOperationComplete(rc, result);
+                            }
 
-                        @Override
-                        public String toString() {
-                            return String.format("Callback(key=%s, name=%s)",
-                                    orderingKey,
-                                    OrderedGenericCallback.this);
-                        }
-                    });
-                } catch (RejectedExecutionException re) {
-                    LOG.warn("Failed to submit callback for {} : ", orderingKey, re);
+                            @Override
+                            public String toString() {
+                                return String.format("Callback(key=%s, name=%s)",
+                                        orderingKey,
+                                        OrderedGenericCallback.this);
+                            }
+                        });
+                    } catch (RejectedExecutionException re) {
+                        LOG.warn("Failed to submit callback for {} : ", orderingKey, re);
+                    }
                 }
             }
         } finally {

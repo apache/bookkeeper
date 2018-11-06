@@ -30,6 +30,7 @@ import javax.net.ssl.SSLEngine;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.common.util.JsonUtil;
 import org.apache.bookkeeper.common.util.JsonUtil.ParseJsonException;
+import org.apache.bookkeeper.common.util.Traces;
 import org.apache.bookkeeper.feature.Feature;
 import org.apache.bookkeeper.meta.AbstractZkLedgerManagerFactory;
 import org.apache.bookkeeper.meta.HierarchicalLedgerManagerFactory;
@@ -874,6 +875,102 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
         setProperty(PRESERVE_MDC_FOR_TASK_EXECUTION, enabled);
         return getThis();
     }
+
+    public static final String ZIPKIN_URL = "zipkinUrl";
+    public static final String ZIPKIN_URL_DEFAULT = "http://localhost:9411/api/v2/spans";
+
+
+    /**
+     * Configures zipkin reporter for tracing.
+     * NOOP - disabled
+     * CONSOLE - print to console
+     * URL - send traces to configured Zipkin url.
+     *
+     * @return configured zipkin reporter name
+     */
+    public String getZipkinReporter() {
+        return getString(Traces.ZIPKIN_REPORTER, Traces.ZIPKIN_REPORTER_DEFAULT);
+    }
+
+    /**
+     * Configures zipkin reporter for tracing.
+     *
+     * @param name
+     *      NOOP - disabled
+     *      CONSOLE - print to console
+     *      URL - send traces to configured Zipkin url.
+     * @return configuration.
+     */
+    public T setZipkinReporter(String name) {
+        setProperty(Traces.ZIPKIN_REPORTER, name);
+        return getThis();
+    }
+
+    /**
+     * Configures service name reported to zipkin.
+     *
+     * @return configured service name
+     */
+    public String getZipkinServiceName() {
+        return getString(Traces.ZIPKIN_SERVICE_NAME, Traces.ZIPKIN_SERVICE_NAME_DEFAULT);
+    }
+
+    /**
+     * Configures service name reported to zipkin.
+     *
+     * @param name - service name
+     * @return configuration.
+     */
+    public T setZipkinServiceName(String name) {
+        setProperty(Traces.ZIPKIN_SERVICE_NAME, name);
+        return getThis();
+    }
+
+    /**
+     * Configures sampling rate of traces.
+     * Rate 0 means never sample, 1 means always sample.
+     * Otherwise minimum sample rate is 0.01, or 1% of traces
+     *
+     * @return configured rate
+     */
+    public float getZipkinSamplingRate() {
+        return getFloat(Traces.ZIPKIN_SAMPLE_RATE, Traces.ZIPKIN_SAMPLE_RATE_DEFAULT);
+    }
+
+    /**
+     * Configures sampling rate of traces.
+     *
+     * @param value - rate
+     *      Rate 0 means never sample.
+     *      1 means always sample.
+     *      Otherwise minimum sample rate is 0.01, or 1% of traces
+     * @return configuration.
+     */
+    public T setZipkinSamplingRate(float value) {
+        setProperty(Traces.ZIPKIN_SAMPLE_RATE, value);
+        return getThis();
+    }
+
+    /**
+     * Configures zipkin service's url for URL reporter.
+     *
+     * @return url
+     */
+    public String getZipkinUrl() {
+        return getString(Traces.ZIPKIN_URL, Traces.ZIPKIN_URL_DEFAULT);
+    }
+
+    /**
+     * Configures zipkin service's url for URL reporter.
+     *
+     * @param value - url.
+     * @return configuration.
+     */
+    public T setZipkinUrl(String value) {
+        setProperty(Traces.ZIPKIN_URL, value);
+        return getThis();
+    }
+
     /**
      * Trickery to allow inheritance with fluent style.
      */

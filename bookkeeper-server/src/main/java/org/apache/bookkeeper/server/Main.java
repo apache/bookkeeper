@@ -31,6 +31,7 @@ import org.apache.bookkeeper.bookie.ExitCode;
 import org.apache.bookkeeper.common.component.ComponentStarter;
 import org.apache.bookkeeper.common.component.LifecycleComponent;
 import org.apache.bookkeeper.common.component.LifecycleComponentStack;
+import org.apache.bookkeeper.common.util.Traces;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.UncheckedConfigurationException;
 import org.apache.bookkeeper.server.component.ServerLifecycleComponent;
@@ -286,6 +287,9 @@ public class Main {
      */
     public static LifecycleComponentStack buildBookieServer(BookieConfiguration conf) throws Exception {
         LifecycleComponentStack.Builder serverBuilder = LifecycleComponentStack.newBuilder().withName("bookie-server");
+
+        // registering tracer
+        serverBuilder.addComponent(Traces.asLifecycleCompenent(conf));
 
         // 1. build stats provider
         StatsProviderService statsProviderService =
