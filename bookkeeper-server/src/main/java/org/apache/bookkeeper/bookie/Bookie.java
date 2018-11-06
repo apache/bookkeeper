@@ -158,6 +158,8 @@ public class Bookie extends BookieCriticalThread {
 
     private final ByteBufAllocator allocator;
 
+    private volatile UncaughtExceptionHandler exceptionHandler;
+
     /**
      * Exception is thrown when no such a ledger is found in this bookie.
      */
@@ -646,9 +648,10 @@ public class Bookie extends BookieCriticalThread {
                 .outOfMemoryListener((ex) -> {
                     try {
                         LOG.error("Unable to allocate memory, exiting bookie", ex);
-                        shutdown(-1);
                     } finally {
-                        Runtime.getRuntime().halt(-1);
+                        if (exceptionHandler != null) {
+                            exceptionHandler.uncaughtException(Thread.currentThread(), ex);
+                        }
                     }
                 })
                 .leakDetectionPolicy(conf.getAllocatorLeakDetectionPolicy())
@@ -773,6 +776,10 @@ public class Bookie extends BookieCriticalThread {
         readEntryStats = statsLogger.getOpStatsLogger(BOOKIE_READ_ENTRY);
         addBytesStats = statsLogger.getOpStatsLogger(BOOKIE_ADD_ENTRY_BYTES);
         readBytesStats = statsLogger.getOpStatsLogger(BOOKIE_READ_ENTRY_BYTES);
+    }
+
+    public void setExceptionHandler(UncaughtExceptionHandler handler) {
+        this.exceptionHandler = handler;
     }
 
     StateManager initializeStateManager() throws IOException {

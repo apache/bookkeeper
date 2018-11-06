@@ -3104,7 +3104,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     }
 
     /**
-     * Return the configured pooling policy for the allocator.
+     * @return the configured pooling policy for the allocator.
      */
     public PoolingPolicy getAllocatorPoolingPolicy() {
         return PoolingPolicy.valueOf(this.getString(ALLOCATOR_POOLING_POLICY, PoolingPolicy.PooledDirect.toString()));
@@ -3114,6 +3114,10 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * Define the memory pooling policy.
      *
      * <p>Default is {@link PoolingPolicy#PooledDirect}
+     *
+     * @param poolingPolicy
+     *            the memory pooling policy
+     * @return server configuration object.
      */
     public ServerConfiguration setAllocatorPoolingPolicy(PoolingPolicy poolingPolicy) {
         this.setProperty(ALLOCATOR_POOLING_POLICY, poolingPolicy.toString());
@@ -3121,7 +3125,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     }
 
     /**
-     * Return the configured pooling concurrency for the allocator.
+     * @return the configured pooling concurrency for the allocator.
      */
     public int getAllocatorPoolingConcurrency() {
         return this.getInteger(ALLOCATOR_POOLING_CONCURRENCY, 2 * Runtime.getRuntime().availableProcessors());
@@ -3134,14 +3138,18 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      *
      * <p>Decreasing this number will reduce the amount of memory overhead, at the
      * expense of increased allocation contention.
+     *
+     * @param concurrency
+     *            the concurrency level to use for the allocator pool
+     * @return server configuration object.
      */
     public ServerConfiguration setAllocatorPoolingConcurrenncy(int concurrency) {
-        this.setProperty(ALLOCATOR_POOLING_POLICY, Integer.toString(concurrency));
+        this.setProperty(ALLOCATOR_POOLING_POLICY, concurrency);
         return this;
     }
 
     /**
-     * Return the configured ouf of memory policy for the allocator.
+     * @return the configured ouf of memory policy for the allocator.
      */
     public OutOfMemoryPolicy getAllocatorOutOfMemoryPolicy() {
         return OutOfMemoryPolicy
@@ -3152,6 +3160,10 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * Define the memory allocator out of memory policy.
      *
      * <p>Default is {@link OutOfMemoryPolicy#FallbackToHeap}
+     *
+     * @param oomPolicy
+     *            the "out-of-memory" policy for the memory allocator
+     * @return server configuration object.
      */
     public ServerConfiguration setAllocatorOutOfMemoryPolicy(OutOfMemoryPolicy oomPolicy) {
         this.setProperty(ALLOCATOR_OOM_POLICY, oomPolicy.toString());
@@ -3170,6 +3182,10 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * Enable the leak detection for the allocator.
      *
      * <p>Default is {@link LeakDetectionPolicy#Disabled}
+     *
+     * @param leakDetectionPolicy
+     *            the leak detection policy for the memory allocator
+     * @return server configuration object.
      */
     public ServerConfiguration setAllocatorLeakDetectionPolicy(LeakDetectionPolicy leakDetectionPolicy) {
         this.setProperty(ALLOCATOR_LEAK_DETECTION_POLICY, leakDetectionPolicy.toString());

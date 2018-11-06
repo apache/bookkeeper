@@ -20,6 +20,7 @@
  */
 package org.apache.bookkeeper.client.impl;
 
+import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.EventLoopGroup;
 import io.netty.util.HashedWheelTimer;
 import java.io.IOException;
@@ -47,6 +48,12 @@ public class BookKeeperBuilderImpl implements BookKeeperBuilder {
     @Override
     public BookKeeperBuilder eventLoopGroup(EventLoopGroup eventLoopGroup) {
         builder.eventLoopGroup(eventLoopGroup);
+        return this;
+    }
+
+    @Override
+    public BookKeeperBuilder allocator(ByteBufAllocator allocator) {
+        builder.allocator(allocator);
         return this;
     }
 

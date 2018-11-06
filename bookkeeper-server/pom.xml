@@ -41,13 +41,6 @@
       <groupId>org.apache.bookkeeper</groupId>
       <artifactId>bookkeeper-common-allocator</artifactId>
       <version>${project.parent.version}</version>
-      <exclusions>
-        <!-- exclude "netty-buffer" since "netty-all" already introduces it -->
-        <exclusion>
-          <groupId>io.netty</groupId>
-          <artifactId>netty-buffer</artifactId>
-        </exclusion>
-      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.apache.bookkeeper</groupId>

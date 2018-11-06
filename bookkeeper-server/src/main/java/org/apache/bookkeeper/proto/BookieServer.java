@@ -124,6 +124,7 @@ public class BookieServer {
      */
     public void setExceptionHandler(UncaughtExceptionHandler exceptionHandler) {
         this.uncaughtExceptionHandler = exceptionHandler;
+        this.bookie.setExceptionHandler(exceptionHandler);
     }
 
     protected Bookie newBookie(ServerConfiguration conf)

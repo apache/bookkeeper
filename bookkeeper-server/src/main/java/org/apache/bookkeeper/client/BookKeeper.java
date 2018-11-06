@@ -229,7 +229,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
          * @return client builder.
          * @since 4.9
          */
-        public Builder eventLoopGroup(ByteBufAllocator allocator) {
+        public Builder allocator(ByteBufAllocator allocator) {
             this.allocator = allocator;
             return this;
         }
@@ -391,36 +391,14 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
      */
     public BookKeeper(ClientConfiguration conf, ZooKeeper zk, EventLoopGroup eventLoopGroup)
             throws IOException, InterruptedException, BKException {
-        this(conf, validateZooKeeper(zk), validateEventLoopGroup(eventLoopGroup), null);
-    }
-
-    /**
-     * Create a bookkeeper client but use the passed in zookeeper client and
-     * client event loop group instead of instantiating those.
-     *
-     * @param conf
-     *          Client Configuration Object
-     *          {@link ClientConfiguration}
-     * @param zk
-     *          Zookeeper client instance connected to the zookeeper with which
-     *          the bookies have registered. The ZooKeeper client must be connected
-     *          before it is passed to BookKeeper. Otherwise a KeeperException is thrown.
-     * @param eventLoopGroup
-     *          An event loop group that will be used to create connections to the bookies
-     * @throws IOException
-     * @throws InterruptedException
-     * @throws BKException in the event of a bookkeeper connection error
-     */
-    public BookKeeper(ClientConfiguration conf, ZooKeeper zk, EventLoopGroup eventLoopGroup,
-            ByteBufAllocator byteBufAllocator) throws IOException, InterruptedException, BKException {
-        this(conf, validateZooKeeper(zk), validateEventLoopGroup(eventLoopGroup), byteBufAllocator,
-                NullStatsLogger.INSTANCE,
+        this(conf, validateZooKeeper(zk), validateEventLoopGroup(eventLoopGroup), null, NullStatsLogger.INSTANCE,
                 null, null, null);
     }
 
     /**
      * Constructor for use with the builder. Other constructors also use it.
      */
+    @SuppressWarnings("deprecation")
     @VisibleForTesting
     BookKeeper(ClientConfiguration conf,
                        ZooKeeper zkc,
