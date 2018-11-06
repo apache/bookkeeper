@@ -240,9 +240,10 @@ public class StatsDocGenerator {
 
         @Parameter(
             names = {
-                "-o", "--output-file"
+                "-o", "--output-yaml-file"
             },
-            description = "The output file to dump stats docs"
+            description = "The output yaml file to dump stats docs." +
+                " If omitted, the output goes to stdout."
         )
         String yamlFile = null;
 
