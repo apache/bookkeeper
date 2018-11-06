@@ -250,7 +250,22 @@ Apache Software License, Version 2.
 - lib/io.dropwizard.metrics-metrics-graphite-3.1.0.jar [21]
 - lib/io.dropwizard.metrics-metrics-jvm-3.1.0.jar [21]
 - lib/io.netty-netty-3.10.1.Final.jar [22]
-- lib/io.netty-netty-all-4.1.22.Final.jar [23]
+- lib/io.netty-netty-buffer-4.1.31.Final.jar [23]
+- lib/io.netty-netty-codec-4.1.31.Final.jar [23]
+- lib/io.netty-netty-codec-dns-4.1.31.Final.jar [23]
+- lib/io.netty-netty-codec-http-4.1.31.Final.jar [23]
+- lib/io.netty-netty-codec-http2-4.1.31.Final.jar [23]
+- lib/io.netty-netty-codec-socks-4.1.31.Final.jar [23]
+- lib/io.netty-netty-common-4.1.31.Final.jar [23]
+- lib/io.netty-netty-handler-4.1.31.Final.jar [23]
+- lib/io.netty-netty-handler-proxy-4.1.31.Final.jar [23]
+- lib/io.netty-netty-resolver-4.1.31.Final.jar [23]
+- lib/io.netty-netty-resolver-dns-4.1.31.Final.jar [23]
+- lib/io.netty-netty-tcnative-boringssl-static-2.0.19.Final.jar [23]
+- lib/io.netty-netty-transport-4.1.31.Final.jar [23]
+- lib/io.netty-netty-transport-native-epoll-4.1.31.Final.jar [23]
+- lib/io.netty-netty-transport-native-epoll-4.1.31.Final-linux-x86_64.jar [23]
+- lib/io.netty-netty-transport-native-unix-common-4.1.31.Final.jar [23]
 - lib/io.prometheus-simpleclient-0.0.21.jar [24]
 - lib/io.prometheus-simpleclient_common-0.0.21.jar [24]
 - lib/io.prometheus-simpleclient_hotspot-0.0.21.jar [24]
@@ -385,71 +400,63 @@ WebSocket and HTTP server:
     * https://github.com/joewalnes/webbit
 
 ------------------------------------------------------------------------------------
-lib/io.netty-netty-all-4.1.22.Final.jar bundles some 3rd party dependencies
+lib/io.netty-netty-codec-4.1.31.Final.jar bundles some 3rd party dependencies
 
-lib/io.netty-netty-all-4.1.22.Final.jar contains the extensions to Java Collections Framework which has
+lib/io.netty-netty-codec-4.1.31.Final.jar contains the extensions to Java Collections Framework which has
 been derived from the works by JSR-166 EG, Doug Lea, and Jason T. Greene:
 
   * LICENSE:
-    * deps/netty-4.1.22.Final/LICENSE.jsr166y.txt (Public Domain)
+    * deps/netty-4.1.31.Final/LICENSE.jsr166y.txt (Public Domain)
   * HOMEPAGE:
     * http://gee.cs.oswego.edu/cgi-bin/viewcvs.cgi/jsr166/
     * http://viewvc.jboss.org/cgi-bin/viewvc.cgi/jbosscache/experimental/jsr166/
 
-lib/io.netty-netty-all-4.1.22.Final.jar contains a modified version of Robert Harder's Public Domain
+lib/io.netty-netty-codec-4.1.31.Final.jar contains a modified version of Robert Harder's Public Domain
 Base64 Encoder and Decoder, which can be obtained at:
 
   * LICENSE:
-    * deps/netty-4.1.22.Final/LICENSE.base64.txt (Public Domain)
+    * deps/netty-4.1.31.Final/LICENSE.base64.txt (Public Domain)
   * HOMEPAGE:
     * http://iharder.sourceforge.net/current/java/base64/
 
-lib/io.netty-netty-all-4.1.22.Final.jar contains a modified portion of 'Webbit', an event based
-WebSocket and HTTP server, which can be obtained at:
-
-  * LICENSE:
-    * deps/netty-4.1.22.Final/LICENSE.webbit.txt (BSD License)
-  * HOMEPAGE:
-    * https://github.com/joewalnes/webbit
-
-lib/io.netty-netty-all-4.1.22.Final.jar contains a modified portion of 'SLF4J', a simple logging
+lib/io.netty-netty-common-4.1.31.Final.jar contains a modified portion of 'SLF4J', a simple logging
 facade for Java, which can be obtained at:
 
   * LICENSE:
-    * deps/netty-4.1.22.Final/LICENSE.slf4j.txt (MIT License)
+    * deps/netty-4.1.31.Final/LICENSE.slf4j.txt (MIT License)
   * HOMEPAGE:
     * http://www.slf4j.org/
 
-lib/io.netty-netty-all-4.1.22.Final.jar contains a modified portion of 'jbzip2', a Java bzip2 compression
+lib/io.netty-netty-codec-4.1.31.Final.jar contains a modified portion of 'jbzip2', a Java bzip2 compression
 and decompression library written by Matthew J. Francis. It can be obtained at:
 
   * LICENSE:
-    * deps/netty-4.1.22.Final/LICENSE.jbzip2.txt (MIT License)
+    * deps/netty-4.1.31.Final/LICENSE.jbzip2.txt (MIT License)
   * HOMEPAGE:
     * https://code.google.com/p/jbzip2/
 
-lib/io.netty-netty-all-4.1.22.Final.jar contains a modified portion of 'libdivsufsort', a C API library to construct
+lib/io.netty-netty-codec-4.1.31.Final.jar contains a modified portion of 'libdivsufsort', a C API library to construct
 the suffix array and the Burrows-Wheeler transformed string for any input string of
 a constant-size alphabet written by Yuta Mori. It can be obtained at:
 
   * LICENSE:
-    * deps/netty-4.1.22.Final/LICENSE.libdivsufsort.txt (MIT License)
+    * deps/netty-4.1.31.Final/LICENSE.libdivsufsort.txt (MIT License)
   * HOMEPAGE:
     * https://github.com/y-256/libdivsufsort
 
-lib/io.netty-netty-all-4.1.22.Final.jar contains a modified portion of 'jfastlz', a Java port of FastLZ compression
+lib/io.netty-netty-codec-4.1.31.Final.jar contains a modified portion of 'jfastlz', a Java port of FastLZ compression
 and decompression library written by William Kinney. It can be obtained at:
 
   * LICENSE:
-    * deps/netty-4.1.22.Final/LICENSE.jfastlz.txt (MIT License)
+    * deps/netty-4.1.31.Final/LICENSE.jfastlz.txt (MIT License)
   * HOMEPAGE:
     * https://code.google.com/p/jfastlz/
 
-lib/io.netty-netty-all-4.1.22.Final.jar contains a modified portion of and optionally depends on 'Protocol Buffers', Google's data
+lib/io.netty-netty-codec-4.1.31.Final.jar contains a modified portion of and optionally depends on 'Protocol Buffers', Google's data
 interchange format, which can be obtained at:
 
   * LICENSE:
-    * deps/netty-4.1.22.Final/LICENSE.protobuf.txt (New BSD License)
+    * deps/netty-4.1.31.Final/LICENSE.protobuf.txt (New BSD License)
   * HOMEPAGE:
     * https://github.com/google/protobuf
 
@@ -554,4 +561,3 @@ license. For details, see deps/jline-2.11/LICENSE
 
 Bundled as
   - lib/jline-jline-2.11.jar
-

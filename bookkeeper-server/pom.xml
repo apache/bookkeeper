@@ -29,13 +29,6 @@
       <groupId>org.apache.bookkeeper</groupId>
       <artifactId>bookkeeper-common</artifactId>
       <version>${project.parent.version}</version>
-      <exclusions>
-        <!-- exclude "netty-common" since "netty-all" already introduces it -->
-        <exclusion>
-          <groupId>io.netty</groupId>
-          <artifactId>netty-common</artifactId>
-        </exclusion>
-      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.apache.bookkeeper</groupId>
@@ -61,7 +54,11 @@
     </dependency>
     <dependency>
       <groupId>io.netty</groupId>
-      <artifactId>netty-all</artifactId>
+      <artifactId>netty-handler</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.netty</groupId>
+      <artifactId>netty-transport-native-epoll</artifactId>
     </dependency>
     <dependency>
       <groupId>io.netty</groupId>
@@ -76,13 +73,6 @@
       <groupId>org.apache.bookkeeper</groupId>
       <artifactId>circe-checksum</artifactId>
       <version>${project.version}</version>
-      <exclusions>
-        <!-- exclude "netty-buffer" since "netty-all" already introduces it -->
-        <exclusion>
-          <groupId>io.netty</groupId>
-          <artifactId>netty-buffer</artifactId>
-        </exclusion>
-      </exclusions>
     </dependency>
     <dependency>
       <groupId>commons-cli</groupId>

@@ -51,7 +51,7 @@
       <includes>
         <include>google-auth-library-credentials-0.9.0/LICENSE</include>
         <include>javax.servlet-api-3.1.0/CDDL+GPL-1.1</include>
-        <include>netty-4.1.22.Final/*</include>
+        <include>netty-4.1.31.Final/*</include>
         <include>protobuf-3.0.0/LICENSE</include>
         <include>jline-2.11/LICENSE</include>
         <include>protobuf-3.5.1/LICENSE</include>
@@ -89,20 +89,6 @@
       <outputFileNameMapping>${artifact.groupId}-${artifact.artifactId}-${artifact.version}${dashClassifier?}.${artifact.extension}</outputFileNameMapping>
       <excludes>
         <exclude>com.google.code.findbugs:jsr305</exclude>
-        <!-- All these dependencies are already included in netty-all -->
-        <exclude>io.netty:netty-buffer</exclude>
-        <exclude>io.netty:netty-codec</exclude>
-        <exclude>io.netty:netty-codec-dns</exclude>
-        <exclude>io.netty:netty-codec-http</exclude>
-        <exclude>io.netty:netty-codec-http2</exclude>
-        <exclude>io.netty:netty-codec-socks</exclude>
-        <exclude>io.netty:netty-common</exclude>
-        <exclude>io.netty:netty-handler</exclude>
-        <exclude>io.netty:netty-handler-proxy</exclude>
-        <exclude>io.netty:netty-resolver</exclude>
-        <exclude>io.netty:netty-resolver-dns</exclude>
-        <exclude>io.netty:netty-tcnative-boringssl-static</exclude>
-        <exclude>io.netty:netty-transport</exclude>
         <!-- All these dependencies are already included in stream-storage-java-client -->
         <exclude>org.apache.bookkeeper:stream-storage-common</exclude>
         <exclude>org.apache.bookkeeper:stream-storage-proto</exclude>
