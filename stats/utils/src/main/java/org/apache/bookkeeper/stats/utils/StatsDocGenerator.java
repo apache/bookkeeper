@@ -28,7 +28,6 @@ import com.google.common.base.Strings;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
-import java.io.StringWriter;
 import java.io.Writer;
 import java.lang.reflect.Field;
 import java.net.URL;
@@ -192,7 +191,7 @@ public class StatsDocGenerator {
         Yaml yaml = new Yaml(options);
         Writer writer;
         if (Strings.isNullOrEmpty(file)) {
-            writer = new StringWriter();
+            writer = new OutputStreamWriter(System.out, UTF_8);
         } else {
             writer = new OutputStreamWriter(new FileOutputStream(file), UTF_8);
         }
@@ -210,10 +209,6 @@ public class StatsDocGenerator {
                 ));
             yaml.dump(docs, writer);
             writer.flush();
-            if (writer instanceof StringWriter) {
-                StringWriter sw = (StringWriter) writer;
-                System.out.println(sw.toString());
-            }
         } finally {
             writer.close();
         }
