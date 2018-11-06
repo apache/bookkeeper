@@ -22,6 +22,7 @@ package org.apache.bookkeeper.net;
 
 import static org.apache.bookkeeper.util.BookKeeperConstants.COLON;
 
+import com.google.common.net.InetAddresses;
 import io.netty.channel.local.LocalAddress;
 
 import java.net.InetSocketAddress;
@@ -38,11 +39,19 @@ public class BookieSocketAddress {
     // Member fields that make up this class.
     private final String hostname;
     private final int port;
+    private final boolean isHostnameIPAddress;
+    private final InetSocketAddress socketAddress;
 
     // Constructor that takes in both a port.
     public BookieSocketAddress(String hostname, int port) {
         this.hostname = hostname;
         this.port = port;
+        isHostnameIPAddress = InetAddresses.isInetAddress(hostname);
+        if (isHostnameIPAddress) {
+            socketAddress = new InetSocketAddress(hostname, port);
+        } else {
+            socketAddress = null;
+        }
     }
 
     // Constructor from a String "serialized" version of this class.
@@ -57,6 +66,12 @@ public class BookieSocketAddress {
         } catch (NumberFormatException nfe) {
             throw new UnknownHostException(addr);
         }
+        isHostnameIPAddress = InetAddresses.isInetAddress(hostname);
+        if (isHostnameIPAddress) {
+            socketAddress = new InetSocketAddress(hostname, port);
+        } else {
+            socketAddress = null;
+        }
     }
 
     // Public getters
@@ -70,6 +85,9 @@ public class BookieSocketAddress {
 
     // Method to return an InetSocketAddress for the regular port.
     public InetSocketAddress getSocketAddress() {
+        if (isHostnameIPAddress) {
+            return socketAddress;
+        }
         // Return each time a new instance of the InetSocketAddress because the hostname
         // gets resolved in its constructor and then cached forever.
         // If we keep using the same InetSocketAddress instance, if bookies are advertising
