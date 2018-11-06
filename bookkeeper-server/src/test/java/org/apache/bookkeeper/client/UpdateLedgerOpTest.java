@@ -110,9 +110,6 @@ public class UpdateLedgerOpTest extends BookKeeperClusterTestCase {
             updateLedgerOp.updateBookieIdInLedgers(curBookieAddr, toBookieAddr, 5, Integer.MIN_VALUE, progressable);
 
             for (LedgerHandle lh : ledgers) {
-                // ledger#close() would hit BadVersion exception as rename
-                // increments cversion. But LedgerMetadata#isConflictWith()
-                // gracefully handles this conflicts.
                 lh.close();
                 LedgerHandle openLedger = bk.openLedger(lh.getId(), digestType, PASSWORD.getBytes());
                 ensemble = openLedger.getLedgerMetadata().getEnsemble(0);
@@ -218,9 +215,6 @@ public class UpdateLedgerOpTest extends BookKeeperClusterTestCase {
             bsConfs.add(serverConf1);
             bs.add(startBookie(serverConf1));
 
-            // ledger#asyncAddEntry() would hit BadVersion exception as rename incr
-            // cversion. But LedgerMetadata#isConflictWith() gracefully handles
-            // this conflicts.
             final CountDownLatch latch = new CountDownLatch(1);
             final AtomicInteger rc = new AtomicInteger(BKException.Code.OK);
             lh.asyncAddEntry("foobar".getBytes(), new AddCallback() {
@@ -239,7 +233,7 @@ public class UpdateLedgerOpTest extends BookKeeperClusterTestCase {
             lh.close();
             LedgerHandle openLedger = bk.openLedger(lh.getId(), digestType, PASSWORD.getBytes());
             final LedgerMetadata ledgerMetadata = openLedger.getLedgerMetadata();
-            assertEquals("Failed to reform ensemble!", 2, ledgerMetadata.getEnsembles().size());
+            assertEquals("Failed to reform ensemble!", 2, ledgerMetadata.getAllEnsembles().size());
             ensemble = ledgerMetadata.getEnsemble(0);
             assertTrue("Failed to update the ledger metadata to use bookie host name",
                     ensemble.contains(toBookieAddr));
@@ -304,9 +298,6 @@ public class UpdateLedgerOpTest extends BookKeeperClusterTestCase {
         List<BookieSocketAddress> ensemble;
         int updatedLedgersCount = 0;
         for (LedgerHandle lh : ledgers) {
-            // ledger#close() would hit BadVersion exception as rename
-            // increments cversion. But LedgerMetadata#isConflictWith()
-            // gracefully handles this conflicts.
             lh.close();
             LedgerHandle openLedger = bk.openLedger(lh.getId(), digestType, PASSWORD.getBytes());
             ensemble = openLedger.getLedgerMetadata().getEnsemble(0);

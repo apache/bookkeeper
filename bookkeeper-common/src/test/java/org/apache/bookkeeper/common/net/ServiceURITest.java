@@ -154,7 +154,19 @@ public class ServiceURITest {
             "bk",
             new String[0],
             null,
-            new String[] { "host1", "host2", "host3" },
+            new String[] { "host1:4181", "host2:4181", "host3:4181" },
+            "/path/to/namespace");
+    }
+
+    @Test
+    public void testMultipleHostsMixedPorts() {
+        String serviceUri = "bk://host1:3181,host2,host3:2181/path/to/namespace";
+        assertServiceUri(
+            serviceUri,
+            "bk",
+            new String[0],
+            null,
+            new String[] { "host1:3181", "host2:4181", "host3:2181" },
             "/path/to/namespace");
     }
 
@@ -166,7 +178,7 @@ public class ServiceURITest {
             "bk",
             new String[0],
             null,
-            new String[] { "host1:2181", "host2", "host3:2181" },
+            new String[] { "host1:2181", "host2:4181", "host3:2181" },
             "/path/to/namespace");
     }
 

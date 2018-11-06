@@ -24,3 +24,11 @@ def to_bytes(n, length, endianess='big'):
         h = '%x' % n
         s = ('0'*(len(h) % 2) + h).zfill(length*2).decode('hex')
         return s if endianess == 'big' else s[::-1]
+
+
+def new_hostname_with_port(hostname, default_port=4181):
+    host_parts = hostname.split(':')
+    if len(host_parts) > 1:
+        return hostname
+    else:
+        return "%s:%d" % (hostname, default_port)

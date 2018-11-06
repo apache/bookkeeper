@@ -27,6 +27,7 @@ import com.google.common.base.Strings;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.net.URI;
 import java.util.List;
+import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -122,6 +123,7 @@ public class ServiceURI {
      * Service string for bookkeeper service.
      */
     public static final String SERVICE_BK = "bk";
+    public static final int SERVICE_BK_PORT = 4181;
 
     /**
      * The default local bk service uri.
@@ -160,7 +162,7 @@ public class ServiceURI {
     public static ServiceURI create(URI uri) {
         checkNotNull(uri, "service uri instance is null");
 
-        String serviceName = null;
+        String serviceName;
         String[] serviceInfos = new String[0];
         String scheme = uri.getScheme();
         if (null != scheme) {
@@ -175,6 +177,8 @@ public class ServiceURI {
             serviceName = schemeParts[0];
             serviceInfos = new String[schemeParts.length - 1];
             System.arraycopy(schemeParts, 1, serviceInfos, 0, serviceInfos.length);
+        } else {
+            serviceName = null;
         }
 
         String userAndHostInformation = uri.getAuthority();
@@ -192,7 +196,10 @@ public class ServiceURI {
             serviceUser = null;
             serviceHosts = splitter.splitToList(userAndHostInformation);
         }
-        serviceHosts.forEach(host -> validateHostName(host));
+        serviceHosts = serviceHosts
+            .stream()
+            .map(host -> validateHostName(serviceName, host))
+            .collect(Collectors.toList());
 
         String servicePath = uri.getPath();
         checkArgument(null != servicePath,
@@ -207,7 +214,7 @@ public class ServiceURI {
             uri);
     }
 
-    private static void validateHostName(String hostname) {
+    private static String validateHostName(String serviceName, String hostname) {
         String[] parts = hostname.split(":");
         if (parts.length >= 3) {
             throw new IllegalArgumentException("Invalid hostname : " + hostname);
@@ -217,8 +224,12 @@ public class ServiceURI {
             } catch (NumberFormatException nfe) {
                 throw new IllegalArgumentException("Invalid hostname : " + hostname);
             }
+            return hostname;
+        } else if (parts.length == 1 && serviceName.toLowerCase().equals(SERVICE_BK)) {
+            return hostname + ":" + SERVICE_BK_PORT;
+        } else {
+            return hostname;
         }
-
     }
 
     private final String serviceName;
