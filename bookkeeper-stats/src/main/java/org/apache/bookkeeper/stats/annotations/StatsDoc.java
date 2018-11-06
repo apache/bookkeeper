@@ -45,14 +45,14 @@ public @interface StatsDoc {
     String scope() default "";
 
     /**
-     * The name of this stats
+     * The name of this stats.
      *
      * @return name of this stats
      */
     String name();
 
     /**
-     * The help message of this stats
+     * The help message of this stats.
      *
      * @return help message of this stats
      */
