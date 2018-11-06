@@ -55,6 +55,12 @@ public interface StatsProvider {
      */
     StatsLogger getStatsLogger(String scope);
 
+    /**
+     * Return the fully qualified stats name comprised of given <tt>statsComponents</tt>.
+     *
+     * @param statsComponents stats components to comprise the fully qualified stats name
+     * @return the fully qualified stats name
+     */
     default String getStatsName(String...statsComponents) {
         return StringUtils.join(statsComponents, '/');
     }
