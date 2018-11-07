@@ -27,6 +27,7 @@ import io.netty.channel.local.LocalAddress;
 
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
+import java.util.Optional;
 
 /**
  * This is a data wrapper class that is an InetSocketAddress, it would use the hostname
@@ -40,17 +41,24 @@ public class BookieSocketAddress {
     private final String hostname;
     private final int port;
     private final boolean isHostnameIPAddress;
-    private final InetSocketAddress socketAddress;
+    private final Optional<InetSocketAddress> socketAddress;
 
     // Constructor that takes in both a port.
     public BookieSocketAddress(String hostname, int port) {
         this.hostname = hostname;
         this.port = port;
         isHostnameIPAddress = InetAddresses.isInetAddress(hostname);
+        /*
+         * if ipaddress is used for bookieid then lets cache InetSocketAddress
+         * otherwise not cache it. If Hostname is used for bookieid, then it is
+         * ok for node to change its ipaddress. But if ipaddress is used for
+         * bookieid then it is invalid scenario if node's ipaddress changes and
+         * nodes HostName is considered static.
+         */
         if (isHostnameIPAddress) {
-            socketAddress = new InetSocketAddress(hostname, port);
+            socketAddress = Optional.of(new InetSocketAddress(hostname, port));
         } else {
-            socketAddress = null;
+            socketAddress = Optional.empty();
         }
     }
 
@@ -68,11 +76,13 @@ public class BookieSocketAddress {
         }
         isHostnameIPAddress = InetAddresses.isInetAddress(hostname);
         if (isHostnameIPAddress) {
-            socketAddress = new InetSocketAddress(hostname, port);
+            socketAddress = Optional.of(new InetSocketAddress(hostname, port));
         } else {
-            socketAddress = null;
+            socketAddress = Optional.empty();
         }
     }
+
+
 
     // Public getters
     public String getHostName() {
@@ -85,15 +95,15 @@ public class BookieSocketAddress {
 
     // Method to return an InetSocketAddress for the regular port.
     public InetSocketAddress getSocketAddress() {
-        if (isHostnameIPAddress) {
-            return socketAddress;
-        }
-        // Return each time a new instance of the InetSocketAddress because the hostname
-        // gets resolved in its constructor and then cached forever.
-        // If we keep using the same InetSocketAddress instance, if bookies are advertising
-        // hostnames and the IP change, the BK client will keep forever to try to connect
-        // to the old IP.
-        return new InetSocketAddress(hostname, port);
+        /*
+         * Return each time a new instance of the InetSocketAddress if hostname
+         * is used as bookieid. If we keep using the same InetSocketAddress
+         * instance, if bookies are advertising hostnames and the IP change, the
+         * BK client will keep forever to try to connect to the old IP.
+         */
+        return socketAddress.orElseGet(() -> {
+            return new InetSocketAddress(hostname, port);
+        });
     }
 
     /**
