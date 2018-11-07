@@ -38,6 +38,7 @@ import org.apache.bookkeeper.client.LedgerMetadata;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.util.MathUtils;
+import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.zookeeper.AsyncCallback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -68,7 +69,7 @@ public class BookkeeperInternalCallbacks {
          * @param metadata
          *          new ledger metadata.
          */
-        void onChanged(long ledgerId, LedgerMetadata metadata);
+        void onChanged(long ledgerId, Versioned<LedgerMetadata> metadata);
     }
 
     /**

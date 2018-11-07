@@ -49,6 +49,7 @@ import org.apache.bookkeeper.stats.Gauge;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.MathUtils;
 import org.apache.bookkeeper.util.ZkUtils;
+import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooKeeper;
@@ -183,7 +184,7 @@ public class ScanAndCompareGarbageCollector implements GarbageCollector{
                         if (verifyMetadataOnGc) {
                             CountDownLatch latch = new CountDownLatch(1);
                             final AtomicInteger metaRC = new AtomicInteger(0);
-                            ledgerManager.readLedgerMetadata(bkLid, (int rc, LedgerMetadata x) -> {
+                            ledgerManager.readLedgerMetadata(bkLid, (rc, ignore) -> {
                                 metaRC.set(rc);
                                 latch.countDown();
                             });
@@ -236,19 +237,19 @@ public class ScanAndCompareGarbageCollector implements GarbageCollector{
                 ZkLedgerUnderreplicationManager.acquireUnderreplicatedLedgerLock(zk, zkLedgersRootPath, ledgerId,
                         zkAcls);
                 semaphore.acquire();
-                ledgerManager.readLedgerMetadata(ledgerId, new GenericCallback<LedgerMetadata>() {
+                ledgerManager.readLedgerMetadata(ledgerId, new GenericCallback<Versioned<LedgerMetadata>>() {
 
                     @Override
-                    public void operationComplete(int rc, LedgerMetadata ledgerMetadata) {
+                    public void operationComplete(int rc, Versioned<LedgerMetadata> ledgerMetadata) {
                         if (rc == BKException.Code.OK) {
                             // do not delete a ledger that is not closed, since the ensemble might change again and
                             // include the current bookie while we are deleting it
-                            if (!ledgerMetadata.isClosed()) {
+                            if (!ledgerMetadata.getValue().isClosed()) {
                                 release();
                                 return;
                             }
                             SortedMap<Long, ? extends List<BookieSocketAddress>> ensembles =
-                                ledgerMetadata.getAllEnsembles();
+                                ledgerMetadata.getValue().getAllEnsembles();
                             for (List<BookieSocketAddress> ensemble : ensembles.values()) {
                                 // check if this bookie is supposed to have this ledger
                                 if (ensemble.contains(selfBookieAddress)) {

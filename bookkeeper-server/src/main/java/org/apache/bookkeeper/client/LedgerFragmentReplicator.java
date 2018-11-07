@@ -375,7 +375,7 @@ public class LedgerFragmentReplicator {
         MetadataUpdateLoop updateLoop = new MetadataUpdateLoop(
                 ledgerManager,
                 lh.getId(),
-                lh::getLedgerMetadata,
+                lh::getVersionedLedgerMetadata,
                 (metadata) -> {
                     // returns true if any of old bookies exist in ensemble
                     List<BookieSocketAddress> ensemble = metadata.getAllEnsembles().get(fragmentStartId);

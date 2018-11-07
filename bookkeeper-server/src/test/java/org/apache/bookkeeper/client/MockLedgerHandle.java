@@ -41,6 +41,8 @@ import org.apache.bookkeeper.client.api.LedgerEntries;
 import org.apache.bookkeeper.client.api.ReadHandle;
 import org.apache.bookkeeper.client.api.WriteFlag;
 import org.apache.bookkeeper.client.impl.LedgerEntryImpl;
+import org.apache.bookkeeper.versioning.LongVersion;
+import org.apache.bookkeeper.versioning.Versioned;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -60,8 +62,8 @@ public class MockLedgerHandle extends LedgerHandle {
 
     MockLedgerHandle(MockBookKeeper bk, long id, DigestType digest, byte[] passwd) throws GeneralSecurityException {
         super(bk.getClientCtx(), id,
-              new LedgerMetadata(3, 3, 2, DigestType.MAC, "".getBytes()), DigestType.MAC, "".getBytes(),
-              WriteFlag.NONE);
+              new Versioned<>(new LedgerMetadata(3, 3, 2, DigestType.MAC, "".getBytes()), new LongVersion(0L)),
+              DigestType.MAC, "".getBytes(), WriteFlag.NONE);
         this.bk = bk;
         this.id = id;
         this.digest = digest;
