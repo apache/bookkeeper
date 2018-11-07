@@ -40,14 +40,12 @@ public class BookieSocketAddress {
     // Member fields that make up this class.
     private final String hostname;
     private final int port;
-    private final boolean isHostnameIPAddress;
     private final Optional<InetSocketAddress> socketAddress;
 
     // Constructor that takes in both a port.
     public BookieSocketAddress(String hostname, int port) {
         this.hostname = hostname;
         this.port = port;
-        isHostnameIPAddress = InetAddresses.isInetAddress(hostname);
         /*
          * if ipaddress is used for bookieid then lets cache InetSocketAddress
          * otherwise not cache it. If Hostname is used for bookieid, then it is
@@ -55,7 +53,7 @@ public class BookieSocketAddress {
          * bookieid then it is invalid scenario if node's ipaddress changes and
          * nodes HostName is considered static.
          */
-        if (isHostnameIPAddress) {
+        if (InetAddresses.isInetAddress(hostname)) {
             socketAddress = Optional.of(new InetSocketAddress(hostname, port));
         } else {
             socketAddress = Optional.empty();
@@ -74,8 +72,7 @@ public class BookieSocketAddress {
         } catch (NumberFormatException nfe) {
             throw new UnknownHostException(addr);
         }
-        isHostnameIPAddress = InetAddresses.isInetAddress(hostname);
-        if (isHostnameIPAddress) {
+        if (InetAddresses.isInetAddress(hostname)) {
             socketAddress = Optional.of(new InetSocketAddress(hostname, port));
         } else {
             socketAddress = Optional.empty();
