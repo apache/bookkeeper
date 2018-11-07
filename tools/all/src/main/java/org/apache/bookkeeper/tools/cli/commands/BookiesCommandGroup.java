@@ -18,6 +18,8 @@
  */
 package org.apache.bookkeeper.tools.cli.commands;
 
+import static org.apache.bookkeeper.tools.common.BKCommandCategories.CATEGORY_INFRA_SERVICE;
+
 import org.apache.bookkeeper.tools.cli.BKCtl;
 import org.apache.bookkeeper.tools.cli.commands.bookies.ListBookiesCommand;
 import org.apache.bookkeeper.tools.common.BKFlags;
@@ -36,6 +38,7 @@ public class BookiesCommandGroup extends CliCommandGroup<BKFlags> {
         .withName(NAME)
         .withDescription(DESC)
         .withParent(BKCtl.NAME)
+        .withCategory(CATEGORY_INFRA_SERVICE)
         .addCommand(new ListBookiesCommand())
         .build();
 
