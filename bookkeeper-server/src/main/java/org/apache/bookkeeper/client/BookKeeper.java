@@ -475,7 +475,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
         }
 
         // initialize bookie client
-        this.bookieClient = new BookieClientImpl(conf, this.eventLoopGroup, byteBufAllocator, this.mainWorkerPool,
+        this.bookieClient = new BookieClientImpl(conf, this.eventLoopGroup, this.allocator, this.mainWorkerPool,
                 scheduler, rootStatsLogger);
 
         if (null == requestTimer) {
