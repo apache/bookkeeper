@@ -28,6 +28,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Objects;
 
 import lombok.experimental.UtilityClass;
 
@@ -61,24 +62,17 @@ public class NativeUtils {
         byte[] buffer = new byte[1024];
         int read;
 
-        InputStream input = NativeUtils.class.getResourceAsStream(path);
-        try {
+        try (InputStream input = NativeUtils.class.getResourceAsStream(path)) {
             if (input == null) {
                 throw new FileNotFoundException("Couldn't find file into jar " + path);
             }
 
-            OutputStream out = new FileOutputStream(temp);
-            try {
+            try (OutputStream out = new FileOutputStream(temp)) {
                 while ((read = input.read(buffer)) != -1) {
                     out.write(buffer, 0, read);
                 }
-
-            } finally {
-                out.close();
             }
 
-        } finally {
-            input.close();
         }
 
         if (!temp.exists()) {
