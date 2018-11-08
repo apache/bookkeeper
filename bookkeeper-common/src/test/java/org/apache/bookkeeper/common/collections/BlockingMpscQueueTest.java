@@ -37,18 +37,18 @@ public class BlockingMpscQueueTest {
 
     @Test
     public void basicTest() throws Exception {
-        final int N = 15;
-        BlockingQueue<Integer> queue = new BlockingMpscQueue<>(N);
+        final int size = 15;
+        BlockingQueue<Integer> queue = new BlockingMpscQueue<>(size);
 
-        for (int i = 0; i < N; i++) {
+        for (int i = 0; i < size; i++) {
             queue.put(i);
 
-            assertEquals(N - i, queue.remainingCapacity());
+            assertEquals(size - i, queue.remainingCapacity());
         }
 
-        assertEquals(N, queue.size());
+        assertEquals(size, queue.size());
 
-        for (int i = 0; i < N; i++) {
+        for (int i = 0; i < size; i++) {
             Integer n = queue.take();
             assertTrue(n != null);
         }
@@ -61,32 +61,32 @@ public class BlockingMpscQueueTest {
 
     @Test
     public void testOffer() throws Exception {
-        final int N = 16;
-        BlockingQueue<Integer> queue = new BlockingMpscQueue<>(N);
+        final int size = 16;
+        BlockingQueue<Integer> queue = new BlockingMpscQueue<>(size);
 
-        for (int i = 0; i < N; i++) {
+        for (int i = 0; i < size; i++) {
             assertTrue(queue.offer(1, 100, TimeUnit.MILLISECONDS));
         }
 
-        assertEquals(N, queue.size());
+        assertEquals(size, queue.size());
 
         assertFalse(queue.offer(1, 100, TimeUnit.MILLISECONDS));
-        assertEquals(N, queue.size());
+        assertEquals(size, queue.size());
     }
 
     @Test
     public void testDrain() throws Exception {
-        final int N = 10;
-        BlockingQueue<Integer> queue = new BlockingMpscQueue<>(N);
+        final int size = 10;
+        BlockingQueue<Integer> queue = new BlockingMpscQueue<>(size);
 
-        for (int i = 0; i < N; i++) {
+        for (int i = 0; i < size; i++) {
             queue.put(i);
         }
 
-        List<Integer> list = new ArrayList<>(N);
+        List<Integer> list = new ArrayList<>(size);
         queue.drainTo(list);
 
-        assertEquals(N, list.size());
+        assertEquals(size, list.size());
 
         assertEquals(0, queue.size());
 
@@ -96,10 +96,10 @@ public class BlockingMpscQueueTest {
 
     @Test
     public void testDrainWithLimit() throws Exception {
-        final int N = 10;
-        BlockingQueue<Integer> queue = new BlockingMpscQueue<>(N);
+        final int size = 10;
+        BlockingQueue<Integer> queue = new BlockingMpscQueue<>(size);
 
-        for (int i = 0; i < N; i++) {
+        for (int i = 0; i < size; i++) {
             queue.put(i);
         }
 
