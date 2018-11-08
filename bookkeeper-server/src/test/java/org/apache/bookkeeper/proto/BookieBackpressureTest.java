@@ -306,7 +306,7 @@ public class BookieBackpressureTest extends BookKeeperClusterTestCase
         BookieServer bks = bs.get(bkId);
         bks.shutdown();
         bks = new BookieServer(bsConfs.get(bkId));
-        mockJournal(bks.bookie, getDelay, addDelay, flushDelay);
+        mockJournal(bks.getBookie(), getDelay, addDelay, flushDelay);
         bks.start();
         bs.set(bkId, bks);
 
@@ -347,7 +347,7 @@ public class BookieBackpressureTest extends BookKeeperClusterTestCase
         BookieServer bks = bs.get(bkId);
         bks.shutdown();
         bks = new BookieServer(bsConfs.get(bkId));
-        mockJournal(bks.bookie, getDelay, addDelay, flushDelay);
+        mockJournal(bks.getBookie(), getDelay, addDelay, flushDelay);
         bks.start();
         bs.set(bkId, bks);
 
@@ -392,7 +392,7 @@ public class BookieBackpressureTest extends BookKeeperClusterTestCase
         BookieServer bks = bs.get(bkId);
         bks.shutdown();
         bks = new BookieServer(bsConfs.get(bkId));
-        mockJournal(bks.bookie, getDelay, addDelay, flushDelay);
+        mockJournal(bks.getBookie(), getDelay, addDelay, flushDelay);
         bks.start();
         bs.set(bkId, bks);
 

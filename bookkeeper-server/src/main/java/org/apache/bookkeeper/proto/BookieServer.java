@@ -62,7 +62,7 @@ public class BookieServer {
     final ServerConfiguration conf;
     BookieNettyServer nettyServer;
     private volatile boolean running = false;
-    Bookie bookie;
+    private final Bookie bookie;
     DeathWatcher deathWatcher;
     private static final Logger LOG = LoggerFactory.getLogger(BookieServer.class);
 
