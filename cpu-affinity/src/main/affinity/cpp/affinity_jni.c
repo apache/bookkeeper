@@ -22,28 +22,25 @@
 // Use different error code to differentiate non-implemented error
 static const int NOT_IMPLEMENTED = -2;
 
-
 #ifdef __linux__
-#  define _GNU_SOURCE
-#  include <sched.h>
-#  include <unistd.h>
-#  include <sys/syscall.h>
+#define _GNU_SOURCE
+#include <sched.h>
+#include <unistd.h>
+#include <sys/syscall.h>
 
 static int set_affinity(int cpuid) {
-	cpu_set_t cpus;
-	CPU_ZERO(&cpus);
-	CPU_SET((size_t) cpuid, &cpus);
-	int threadId = (int) syscall(SYS_gettid);
-	return sched_setaffinity(threadId, sizeof(cpu_set_t), &cpus);
+    cpu_set_t cpus;
+    CPU_ZERO(&cpus);
+    CPU_SET((size_t)cpuid, &cpus);
+    int threadId = (int)syscall(SYS_gettid);
+    return sched_setaffinity(threadId, sizeof(cpu_set_t), &cpus);
 }
 
 static const int IS_AVAILABLE = 1;
 
 #else
 
-static int set_affinity(int cpuid) {
-	return NOT_IMPLEMENTED;
-}
+static int set_affinity(int cpuid) { return NOT_IMPLEMENTED; }
 
 static const int IS_AVAILABLE = 0;
 
@@ -61,9 +58,9 @@ static const int IS_AVAILABLE = 0;
  * Method:    isRoot
  * Signature: ()Z
  */
-JNIEXPORT jboolean JNICALL Java_org_apache_bookkeeper_common_util_affinity_impl_CpuAffinityJni_isRoot(
-		JNIEnv *env, jclass cls) {
-	return getuid() == 0;
+JNIEXPORT jboolean JNICALL
+Java_org_apache_bookkeeper_common_util_affinity_impl_CpuAffinityJni_isRoot(JNIEnv *env, jclass cls) {
+    return getuid() == 0;
 }
 
 /*
@@ -71,9 +68,9 @@ JNIEXPORT jboolean JNICALL Java_org_apache_bookkeeper_common_util_affinity_impl_
  * Method:    isAvailable
  * Signature: ()Z
  */
-JNIEXPORT jboolean JNICALL Java_org_apache_bookkeeper_common_util_affinity_impl_CpuAffinityJni_isAvailable(
-		JNIEnv * env, jclass cls) {
-	return IS_AVAILABLE == 1;
+JNIEXPORT jboolean JNICALL
+Java_org_apache_bookkeeper_common_util_affinity_impl_CpuAffinityJni_isAvailable(JNIEnv *env, jclass cls) {
+    return IS_AVAILABLE == 1;
 }
 
 /*
@@ -81,18 +78,19 @@ JNIEXPORT jboolean JNICALL Java_org_apache_bookkeeper_common_util_affinity_impl_
  * Method:    setAffinity
  * Signature: (I)V
  */
-JNIEXPORT void JNICALL Java_org_apache_bookkeeper_common_util_affinity_impl_CpuAffinityJni_setAffinity(JNIEnv * env, jclass cls, jint cpuid) {
-	int res = set_affinity(cpuid);
+JNIEXPORT void JNICALL Java_org_apache_bookkeeper_common_util_affinity_impl_CpuAffinityJni_setAffinity(
+    JNIEnv *env, jclass cls, jint cpuid) {
+    int res = set_affinity(cpuid);
 
-	if (res == 0) {
-		// Success
-		return;
-	} else if (res == NOT_IMPLEMENTED) {
-		(*env)->ThrowNew(env, (*env)->FindClass(env, "java/lang/Exception"), "CPU affinity not implemented");
-	} else {
-		// Error in sched_setaffinity, get message from errno
-		char buffer[1024];
-		strerror_r(errno, buffer, sizeof(buffer));
-		(*env)->ThrowNew(env, (*env)->FindClass(env, "java/lang/Exception"), buffer);
-	}
+    if (res == 0) {
+        // Success
+        return;
+    } else if (res == NOT_IMPLEMENTED) {
+        (*env)->ThrowNew(env, (*env)->FindClass(env, "java/lang/Exception"), "CPU affinity not implemented");
+    } else {
+        // Error in sched_setaffinity, get message from errno
+        char buffer[1024];
+        strerror_r(errno, buffer, sizeof(buffer));
+        (*env)->ThrowNew(env, (*env)->FindClass(env, "java/lang/Exception"), buffer);
+    }
 }
