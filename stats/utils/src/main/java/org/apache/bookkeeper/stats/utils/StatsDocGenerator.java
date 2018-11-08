@@ -237,8 +237,8 @@ public class StatsDocGenerator {
             names = {
                 "-o", "--output-yaml-file"
             },
-            description = "The output yaml file to dump stats docs." +
-                " If omitted, the output goes to stdout."
+            description = "The output yaml file to dump stats docs."
+                + " If omitted, the output goes to stdout."
         )
         String yamlFile = null;
 
