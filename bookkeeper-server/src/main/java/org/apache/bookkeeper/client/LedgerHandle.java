@@ -840,7 +840,14 @@ public class LedgerHandle implements WriteHandle {
                 ws.recycle();
             }
 
-            clientCtx.getMainWorkerPool().executeOrdered(ledgerId, op);
+            if (isHandleWritable()) {
+                // Ledger handle in read/write mode: submit to OSE for ordered execution.
+                clientCtx.getMainWorkerPool().executeOrdered(ledgerId, op);
+            } else {
+                // Read-only ledger handle: bypass OSE and execute read directly in client thread.
+                // This avoids a context-switch to OSE thread and thus reduces latency.
+                op.run();
+            }
         } else {
             op.future().completeExceptionally(BKException.create(ClientClosedException));
         }
