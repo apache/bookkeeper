@@ -62,4 +62,5 @@ OPTS="${OPTS} -cp ${CLI_CLASSPATH} ${BOOKIE_OPTS} ${GC_OPTS} ${NETTY_OPTS} ${LOG
 
 #Change to BK_HOME to support relative paths
 cd "$BK_HOME"
+echo "running stats-doc-gen, logging to ${CLI_LOG_DIR}/${CLI_LOG_FILE}"
 exec ${JAVA} ${OPTS} org.apache.bookkeeper.stats.utils.StatsDocGenerator $@
