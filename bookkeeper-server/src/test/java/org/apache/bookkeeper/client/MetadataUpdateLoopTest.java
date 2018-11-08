@@ -420,8 +420,8 @@ public class MetadataUpdateLoopTest {
     static class DeferCallbacksMockLedgerManager extends MockLedgerManager {
         int writeCount = 0;
         final int numToDefer;
-        List<Triple<GenericCallback<Versioned<LedgerMetadata>>, Integer, Versioned<LedgerMetadata>>> deferred
-            = Lists.newArrayList();
+        List<Triple<GenericCallback<Versioned<LedgerMetadata>>, Integer, Versioned<LedgerMetadata>>> deferred =
+            Lists.newArrayList();
 
         DeferCallbacksMockLedgerManager(int numToDefer) {
             this.numToDefer = numToDefer;
@@ -476,7 +476,8 @@ public class MetadataUpdateLoopTest {
 
         synchronized void releaseWrites() {
             blocking = false;
-            reqs.forEach((r) -> super.writeLedgerMetadata(r.getLedgerId(), r.getMetadata(), r.getCurrentVersion(), r.getCb()));
+            reqs.forEach((r) -> super.writeLedgerMetadata(r.getLedgerId(), r.getMetadata(),
+                                                          r.getCurrentVersion(), r.getCb()));
         }
 
         @Override

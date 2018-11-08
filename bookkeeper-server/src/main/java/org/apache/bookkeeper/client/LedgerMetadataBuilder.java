@@ -17,10 +17,10 @@
  */
 package org.apache.bookkeeper.client;
 
-import com.google.common.annotations.VisibleForTesting;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 
 import java.util.Arrays;
@@ -31,10 +31,16 @@ import java.util.Optional;
 import java.util.TreeMap;
 
 import org.apache.bookkeeper.client.api.DigestType;
+import org.apache.bookkeeper.common.annotation.InterfaceAudience.LimitedPrivate;
+import org.apache.bookkeeper.common.annotation.InterfaceStability.Unstable;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat;
-import org.apache.bookkeeper.versioning.Version;
 
+/**
+ * Builder for building LedgerMetadata objects.
+ */
+@LimitedPrivate
+@Unstable
 @VisibleForTesting
 public class LedgerMetadataBuilder {
     private int ensembleSize = 3;

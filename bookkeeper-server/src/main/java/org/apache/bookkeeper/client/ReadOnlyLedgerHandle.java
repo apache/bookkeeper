@@ -76,7 +76,8 @@ class ReadOnlyLedgerHandle extends LedgerHandle implements LedgerMetadataListene
                 Versioned<LedgerMetadata> currentMetadata = getVersionedLedgerMetadata();
                 Version.Occurred occurred = currentMetadata.getVersion().compare(newMetadata.getVersion());
                 if (Version.Occurred.BEFORE == occurred) {
-                    LOG.info("Updated ledger metadata for ledger {} to {}.", ledgerId, newMetadata.getValue().toSafeString());
+                    LOG.info("Updated ledger metadata for ledger {} to {}.",
+                             ledgerId, newMetadata.getValue().toSafeString());
                     synchronized (ReadOnlyLedgerHandle.this) {
                         if (setLedgerMetadata(currentMetadata, newMetadata)) {
                             break;
