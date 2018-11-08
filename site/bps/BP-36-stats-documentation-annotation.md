@@ -72,7 +72,7 @@ public @interface StatsDoc {
      *
      * @return the metric name of an operation that happens after the operation of this metric.
      */
-    default String happenAfter() { return ""; }
+    default String happensAfter() { return ""; }
 
 
 }
