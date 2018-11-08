@@ -95,7 +95,7 @@ public class LedgerHandle implements WriteHandle {
     final ClientContext clientCtx;
 
     final byte[] ledgerKey;
-    private Versioned<LedgerMetadata> metadata;
+    private Versioned<LedgerMetadata> versionedMetadata;
     final long ledgerId;
     long lastAddPushed;
 
@@ -156,18 +156,20 @@ public class LedgerHandle implements WriteHandle {
     private final OpStatsLogger clientChannelWriteWaitStats;
 
     LedgerHandle(ClientContext clientCtx,
-                 long ledgerId, Versioned<LedgerMetadata> metadata,
+                 long ledgerId, Versioned<LedgerMetadata> versionedMetadata,
                  BookKeeper.DigestType digestType, byte[] password,
                  EnumSet<WriteFlag> writeFlags)
             throws GeneralSecurityException, NumberFormatException {
         this.clientCtx = clientCtx;
 
-        this.metadata = metadata;
+        this.versionedMetadata = versionedMetadata;
         this.pendingAddOps = new ConcurrentLinkedQueue<PendingAddOp>();
         this.writeFlags = writeFlags;
-        if (metadata.getValue().isClosed()) {
-            lastAddConfirmed = lastAddPushed = metadata.getValue().getLastEntryId();
-            length = metadata.getValue().getLength();
+
+        LedgerMetadata metadata = versionedMetadata.getValue();
+        if (metadata.isClosed()) {
+            lastAddConfirmed = lastAddPushed = metadata.getLastEntryId();
+            length = metadata.getLength();
         } else {
             lastAddConfirmed = lastAddPushed = INVALID_ENTRY_ID;
             length = 0;
@@ -190,9 +192,9 @@ public class LedgerHandle implements WriteHandle {
         // password, so that the bookie can avoid processing the keys for each entry
         this.ledgerKey = DigestManager.generateMasterKey(password);
         distributionSchedule = new RoundRobinDistributionSchedule(
-                metadata.getValue().getWriteQuorumSize(),
-                metadata.getValue().getAckQuorumSize(),
-                metadata.getValue().getEnsembleSize());
+                metadata.getWriteQuorumSize(),
+                metadata.getAckQuorumSize(),
+                metadata.getEnsembleSize());
         this.bookieFailureHistory = CacheBuilder.newBuilder()
             .expireAfterWrite(clientCtx.getConf().bookieFailureHistoryExpirationMSec, TimeUnit.MILLISECONDS)
             .build(new CacheLoader<BookieSocketAddress, Long>() {
@@ -312,21 +314,22 @@ public class LedgerHandle implements WriteHandle {
      */
     @Override
     public LedgerMetadata getLedgerMetadata() {
-        return metadata.getValue();
+        return versionedMetadata.getValue();
     }
 
     Versioned<LedgerMetadata> getVersionedLedgerMetadata() {
-        return metadata;
+        return versionedMetadata;
     }
 
     boolean setLedgerMetadata(Versioned<LedgerMetadata> expected, Versioned<LedgerMetadata> newMetadata) {
         synchronized (this) {
             // ensure that we only update the metadata if it is the object we expect it to be
-            if (metadata == expected) {
-                metadata = newMetadata;
-                if (metadata.getValue().isClosed()) {
-                    lastAddConfirmed = lastAddPushed = metadata.getValue().getLastEntryId();
-                    length = metadata.getValue().getLength();
+            if (versionedMetadata == expected) {
+                versionedMetadata = newMetadata;
+                LedgerMetadata metadata = versionedMetadata.getValue();
+                if (metadata.isClosed()) {
+                    lastAddConfirmed = lastAddPushed = metadata.getLastEntryId();
+                    length = metadata.getLength();
                 }
                 return true;
             } else {
@@ -1952,6 +1955,6 @@ public class LedgerHandle implements WriteHandle {
         // Getting current ensemble from the metadata is only a temporary
         // thing until metadata is immutable. At that point, current ensemble
         // becomes a property of the LedgerHandle itself.
-        return metadata.getValue().getCurrentEnsemble();
+        return versionedMetadata.getValue().getCurrentEnsemble();
     }
 }
