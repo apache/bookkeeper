@@ -21,6 +21,7 @@ package org.apache.bookkeeper.tools.cli.commands.cookie;
 
 import com.beust.jcommander.Parameter;
 import java.io.File;
+import java.io.PrintStream;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
@@ -78,11 +79,20 @@ public class GenerateCookieCommand extends CookieCommand<Flags> {
         this(new Flags());
     }
 
+    GenerateCookieCommand(PrintStream console) {
+        this(new Flags(), console);
+    }
+
     public GenerateCookieCommand(Flags flags) {
+        this(flags, System.out);
+    }
+
+    private GenerateCookieCommand(Flags flags, PrintStream console) {
         super(CliSpec.<Flags>newBuilder()
             .withName(NAME)
             .withDescription(DESC)
             .withFlags(flags)
+            .withConsole(console)
             .withArgumentsUsage("<bookie-id>")
             .build());
     }

@@ -20,8 +20,7 @@
 package org.apache.bookkeeper.tools.cli.commands.cookie;
 
 import com.beust.jcommander.Parameter;
-import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.io.PrintStream;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
@@ -62,11 +61,20 @@ public class UpdateCookieCommand extends CookieCommand<Flags> {
         this(new Flags());
     }
 
+    UpdateCookieCommand(PrintStream console) {
+        this(new Flags(), console);
+    }
+
     public UpdateCookieCommand(Flags flags) {
+        this(flags, System.out);
+    }
+
+    private UpdateCookieCommand(Flags flags, PrintStream console) {
         super(CliSpec.<Flags>newBuilder()
             .withName(NAME)
             .withDescription(DESC)
             .withFlags(flags)
+            .withConsole(console)
             .withArgumentsUsage("<bookie-id>")
             .build());
     }
@@ -75,7 +83,7 @@ public class UpdateCookieCommand extends CookieCommand<Flags> {
     protected void apply(RegistrationManager rm, Flags cmdFlags) throws Exception {
         String bookieId = getBookieId(cmdFlags);
 
-        byte[] data = Files.readAllBytes(Paths.get(cmdFlags.cookieFile));
+        byte[] data = readCookieDataFromFile(cmdFlags.cookieFile);
         Versioned<byte[]> cookie = new Versioned<>(data, new LongVersion(-1L));
         try {
             rm.writeCookie(bookieId, cookie);

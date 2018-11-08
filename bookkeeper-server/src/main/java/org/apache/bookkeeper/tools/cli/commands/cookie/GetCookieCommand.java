@@ -19,6 +19,7 @@
 
 package org.apache.bookkeeper.tools.cli.commands.cookie;
 
+import java.io.PrintStream;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
@@ -53,11 +54,20 @@ public class GetCookieCommand extends CookieCommand<Flags> {
         this(new Flags());
     }
 
+    GetCookieCommand(PrintStream console) {
+        this(new Flags(), console);
+    }
+
     public GetCookieCommand(Flags flags) {
+        this(flags, System.out);
+    }
+
+    private GetCookieCommand(Flags flags, PrintStream console) {
         super(CliSpec.<Flags>newBuilder()
             .withName(NAME)
             .withDescription(DESC)
             .withFlags(flags)
+            .withConsole(console)
             .withArgumentsUsage("<bookie-id>")
             .build());
     }
@@ -82,7 +92,7 @@ public class GetCookieCommand extends CookieCommand<Flags> {
             throw cee;
         } catch (BookieException be) {
             spec.console()
-                .println("Exception on retrieving cookie for bookie '" + bookieId + "'");
+                .println("Exception on getting cookie for bookie '" + bookieId + "'");
             be.printStackTrace(spec.console());
             throw be;
         }

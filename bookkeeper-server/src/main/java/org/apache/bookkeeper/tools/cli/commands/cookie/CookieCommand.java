@@ -22,7 +22,11 @@ package org.apache.bookkeeper.tools.cli.commands.cookie;
 import static com.google.common.base.Preconditions.checkArgument;
 
 import com.google.common.util.concurrent.UncheckedExecutionException;
+import java.io.IOException;
 import java.net.UnknownHostException;
+import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
+import java.nio.file.Paths;
 import java.util.concurrent.ExecutionException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.common.net.ServiceURI;
@@ -75,7 +79,6 @@ abstract class CookieCommand<CookieFlagsT extends CliFlags>
             if (!(e instanceof MetadataException) && null != e.getCause()) {
                 cause = e.getCause();
             }
-            log.error("Failed to process cookie command '{}'", name(), cause);
             spec.console().println("Failed to process cookie command '" + name() + "'");
             cause.printStackTrace(spec.console());
             return false;
@@ -93,12 +96,23 @@ abstract class CookieCommand<CookieFlagsT extends CliFlags>
         } catch (UnknownHostException nhe) {
             spec.console()
                 .println("Invalid bookie id '"
-                    + bookieId + "'is used to create cookie." +
-                    " Bookie id should be in the format of '<hostname>:<port>'");
+                    + bookieId + "'is used to create cookie."
+                    + " Bookie id should be in the format of '<hostname>:<port>'");
             throw nhe;
         }
         return bookieId;
     }
+
+    protected byte[] readCookieDataFromFile(String cookieFile) throws IOException {
+        try {
+            return Files.readAllBytes(Paths.get(cookieFile));
+        } catch (NoSuchFileException nfe) {
+            spec.console()
+                .println("Cookie file '" + cookieFile + "' doesn't exist.");
+            throw nfe;
+        }
+    }
+
 
     protected abstract void apply(RegistrationManager rm, CookieFlagsT cmdFlags)
         throws Exception;

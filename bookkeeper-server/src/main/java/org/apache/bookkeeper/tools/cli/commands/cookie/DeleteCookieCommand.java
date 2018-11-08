@@ -19,6 +19,7 @@
 
 package org.apache.bookkeeper.tools.cli.commands.cookie;
 
+import java.io.PrintStream;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
@@ -51,11 +52,20 @@ public class DeleteCookieCommand extends CookieCommand<Flags> {
         this(new Flags());
     }
 
+    DeleteCookieCommand(PrintStream console) {
+        this(new Flags(), console);
+    }
+
     public DeleteCookieCommand(Flags flags) {
+        this(flags, System.out);
+    }
+
+    private DeleteCookieCommand(Flags flags, PrintStream console) {
         super(CliSpec.<Flags>newBuilder()
             .withName(NAME)
             .withDescription(DESC)
             .withFlags(flags)
+            .withConsole(console)
             .withArgumentsUsage("<bookie-id>")
             .build());
     }

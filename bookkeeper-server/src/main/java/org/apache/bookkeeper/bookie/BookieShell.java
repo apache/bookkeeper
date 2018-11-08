@@ -228,6 +228,9 @@ public class BookieShell implements Tool {
         this.entryFormatter = entryFormatter;
     }
 
+    /**
+     * BookieShell command.
+     */
     @Private
     public interface Command {
         int runCmd(String[] args) throws Exception;
