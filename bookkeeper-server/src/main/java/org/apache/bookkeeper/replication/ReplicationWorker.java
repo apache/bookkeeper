@@ -19,7 +19,6 @@
  */
 package org.apache.bookkeeper.replication;
 
-import static org.apache.bookkeeper.replication.ReplicationStats.BK_CLIENT_SCOPE;
 import static org.apache.bookkeeper.replication.ReplicationStats.NUM_DEFER_LEDGER_LOCK_RELEASE_OF_FAILED_LEDGER;
 import static org.apache.bookkeeper.replication.ReplicationStats.NUM_FULL_OR_PARTIAL_LEDGERS_REPLICATED;
 import static org.apache.bookkeeper.replication.ReplicationStats.REPLICATE_EXCEPTION;
@@ -53,7 +52,6 @@ import org.apache.bookkeeper.client.LedgerChecker;
 import org.apache.bookkeeper.client.LedgerFragment;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.LedgerMetadata;
-import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.AbstractZkLedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
@@ -67,7 +65,6 @@ import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.ZooKeeper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -83,11 +80,11 @@ public class ReplicationWorker implements Runnable {
 
     private final LedgerUnderreplicationManager underreplicationManager;
     private final ServerConfiguration conf;
-    private final ZooKeeper zkc;
     private volatile boolean workerRunning = false;
     private final BookKeeperAdmin admin;
     private final LedgerChecker ledgerChecker;
     private final BookKeeper bkc;
+    private final boolean ownBkc;
     private final Thread workerThread;
     private final long rwRereplicateBackoffMs;
     private final long openLedgerRereplicationGracePeriod;
@@ -107,16 +104,13 @@ public class ReplicationWorker implements Runnable {
      * UnderReplicationManager to the targetBookie. This target bookie will be a
      * local bookie.
      *
-     * @param zkc
-     *            - ZK instance
      * @param conf
      *            - configurations
      */
-    public ReplicationWorker(final ZooKeeper zkc,
-                             final ServerConfiguration conf)
+    public ReplicationWorker(final ServerConfiguration conf)
             throws CompatibilityException, KeeperException,
             InterruptedException, IOException {
-        this(zkc, conf, NullStatsLogger.INSTANCE);
+        this(conf, NullStatsLogger.INSTANCE);
     }
 
     /**
@@ -124,27 +118,28 @@ public class ReplicationWorker implements Runnable {
      * UnderReplicationManager to the targetBookie. This target bookie will be a
      * local bookie.
      *
-     * @param zkc
-     *            - ZK instance
      * @param conf
      *            - configurations
      * @param statsLogger
      *            - stats logger
      */
-    public ReplicationWorker(final ZooKeeper zkc,
-                             final ServerConfiguration conf,
+    public ReplicationWorker(final ServerConfiguration conf,
                              StatsLogger statsLogger)
             throws CompatibilityException, KeeperException,
+
             InterruptedException, IOException {
-        this.zkc = zkc;
+        this(conf, Auditor.createBookKeeperClient(conf), true, statsLogger);
+    }
+
+    ReplicationWorker(final ServerConfiguration conf,
+                      BookKeeper bkc,
+                      boolean ownBkc,
+                      StatsLogger statsLogger)
+            throws CompatibilityException, KeeperException,
+            InterruptedException, IOException {
         this.conf = conf;
-        try {
-            this.bkc = BookKeeper.forConfig(new ClientConfiguration(conf))
-                .statsLogger(statsLogger.scope(BK_CLIENT_SCOPE))
-                .build();
-        } catch (BKException e) {
-            throw new IOException("Failed to instantiate replication worker", e);
-        }
+        this.bkc = bkc;
+        this.ownBkc = ownBkc;
         LedgerManagerFactory mFactory = AbstractZkLedgerManagerFactory
                 .newLedgerManagerFactory(
                     this.conf,
@@ -369,7 +364,7 @@ public class ReplicationWorker implements Runnable {
             return false;
         }
 
-        SortedMap<Long, ? extends List<BookieSocketAddress>> ensembles = admin.getLedgerMetadata(lh).getEnsembles();
+        SortedMap<Long, ? extends List<BookieSocketAddress>> ensembles = admin.getLedgerMetadata(lh).getAllEnsembles();
         List<BookieSocketAddress> finalEnsemble = ensembles.get(ensembles.lastKey());
         Collection<BookieSocketAddress> available = admin.getAvailableBookies();
         for (BookieSocketAddress b : finalEnsemble) {
@@ -514,13 +509,15 @@ public class ReplicationWorker implements Runnable {
                     e);
             Thread.currentThread().interrupt();
         }
-        try {
-            bkc.close();
-        } catch (InterruptedException e) {
-            LOG.warn("Interrupted while closing the Bookie client", e);
-            Thread.currentThread().interrupt();
-        } catch (BKException e) {
-            LOG.warn("Exception while closing the Bookie client", e);
+        if (ownBkc) {
+            try {
+                bkc.close();
+            } catch (InterruptedException e) {
+                LOG.warn("Interrupted while closing the Bookie client", e);
+                Thread.currentThread().interrupt();
+            } catch (BKException e) {
+                LOG.warn("Exception while closing the Bookie client", e);
+            }
         }
         try {
             underreplicationManager.close();

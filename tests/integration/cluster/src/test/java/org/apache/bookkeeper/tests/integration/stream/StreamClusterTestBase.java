@@ -99,6 +99,10 @@ public abstract class StreamClusterTestBase extends BookKeeperClusterTestBase {
     //
 
     protected static StorageClientSettings newStorageClientSettings() {
+        return newStorageClientSettings(false);
+    }
+
+    protected static StorageClientSettings newStorageClientSettings(boolean enableServerSideRouting) {
         String serviceUri = String.format(
             "bk://%s/",
             getExsternalStreamEndpoints().stream()
@@ -114,6 +118,7 @@ public abstract class StreamClusterTestBase extends BookKeeperClusterTestBase {
                 return NetUtils.parseEndpoint(externalEndpointStr);
             })
             .usePlaintext(true)
+            .enableServerSideRouting(enableServerSideRouting)
             .build();
     }
 

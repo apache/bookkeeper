@@ -20,8 +20,17 @@
  */
 package org.apache.bookkeeper.client;
 
+import static com.google.common.base.Preconditions.checkState;
+
+import com.google.common.annotations.VisibleForTesting;
+
 import java.security.GeneralSecurityException;
+import java.util.List;
 import java.util.Map;
+import java.util.NavigableMap;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.RejectedExecutionException;
 
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
@@ -30,9 +39,15 @@ import org.apache.bookkeeper.client.AsyncCallback.ReadCallback;
 import org.apache.bookkeeper.client.AsyncCallback.ReadLastConfirmedCallback;
 import org.apache.bookkeeper.client.api.WriteFlag;
 import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.LedgerMetadataListener;
+import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryListener;
+import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.TimedGenericCallback;
 import org.apache.bookkeeper.util.SafeRunnable;
 import org.apache.bookkeeper.versioning.Version;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Read only ledger handle. This ledger handle allows you to
@@ -41,6 +56,10 @@ import org.apache.bookkeeper.versioning.Version;
  * It should be returned for BookKeeper#openLedger operations.
  */
 class ReadOnlyLedgerHandle extends LedgerHandle implements LedgerMetadataListener {
+    private static final Logger LOG = LoggerFactory.getLogger(ReadOnlyLedgerHandle.class);
+
+    private Object metadataLock = new Object();
+    private final NavigableMap<Long, List<BookieSocketAddress>> newEnsemblesFromRecovery = new TreeMap<>();
 
     class MetadataUpdater extends SafeRunnable {
 
@@ -128,29 +147,6 @@ class ReadOnlyLedgerHandle extends LedgerHandle implements LedgerMetadataListene
     }
 
     @Override
-    void handleBookieFailure(final Map<Integer, BookieSocketAddress> failedBookies) {
-        blockAddCompletions.incrementAndGet();
-        synchronized (getLedgerMetadata()) {
-            try {
-                EnsembleInfo ensembleInfo = replaceBookieInMetadata(failedBookies,
-                        numEnsembleChanges.incrementAndGet());
-                if (ensembleInfo.replacedBookies.isEmpty()) {
-                    blockAddCompletions.decrementAndGet();
-                    return;
-                }
-                blockAddCompletions.decrementAndGet();
-                // the failed bookie has been replaced
-                unsetSuccessAndSendWriteRequest(ensembleInfo.newEnsemble, ensembleInfo.replacedBookies);
-            } catch (BKException.BKNotEnoughBookiesException e) {
-                LOG.error("Could not get additional bookie to "
-                          + "remake ensemble, closing ledger: " + ledgerId);
-                handleUnrecoverableErrorDuringAdd(e.getCode());
-                return;
-            }
-        }
-    }
-
-    @Override
     public void onChanged(long lid, LedgerMetadata newMetadata) {
         if (LOG.isDebugEnabled()) {
             LOG.debug("Received ledger metadata update on {} : {}", lid, newMetadata);
@@ -208,4 +204,150 @@ class ReadOnlyLedgerHandle extends LedgerHandle implements LedgerMetadataListene
             }
         }, ctx);
     }
+
+    /**
+     * For a read only ledger handle, this method will only ever be called during recovery,
+     * when we are reading forward from LAC and writing back those entries. As such,
+     * unlike with LedgerHandle, we do not want to persist changes to the metadata as they occur,
+     * but rather, we want to defer the persistence until recovery has completed, and do it all
+     * on the close.
+     */
+    @Override
+    void handleBookieFailure(final Map<Integer, BookieSocketAddress> failedBookies) {
+        // handleBookieFailure should always run in the ordered executor thread for this
+        // ledger, so this synchronized should be unnecessary, but putting it here now
+        // just in case (can be removed when we validate threads)
+        synchronized (metadataLock) {
+            String logContext = String.format("[RecoveryEnsembleChange(ledger:%d)]", ledgerId);
+
+            long lac = getLastAddConfirmed();
+            LedgerMetadata metadata = getLedgerMetadata();
+            List<BookieSocketAddress> currentEnsemble = getCurrentEnsemble();
+            try {
+                List<BookieSocketAddress> newEnsemble = EnsembleUtils.replaceBookiesInEnsemble(
+                        clientCtx.getBookieWatcher(), metadata, currentEnsemble, failedBookies, logContext);
+                Set<Integer> replaced = EnsembleUtils.diffEnsemble(currentEnsemble, newEnsemble);
+                if (!replaced.isEmpty()) {
+                    newEnsemblesFromRecovery.put(lac + 1, newEnsemble);
+                    unsetSuccessAndSendWriteRequest(newEnsemble, replaced);
+                }
+            } catch (BKException.BKNotEnoughBookiesException e) {
+                LOG.error("Could not get additional bookie to remake ensemble, closing ledger: {}", ledgerId);
+
+                handleUnrecoverableErrorDuringAdd(e.getCode());
+                return;
+            }
+        }
+    }
+
+    @Override
+    void handleUnrecoverableErrorDuringAdd(int rc) {
+        errorOutPendingAdds(rc);
+    }
+
+    void recover(GenericCallback<Void> finalCb) {
+        recover(finalCb, null, false);
+    }
+
+    /**
+     * Recover the ledger.
+     *
+     * @param finalCb
+     *          callback after recovery is done.
+     * @param listener
+     *          read entry listener on recovery reads.
+     * @param forceRecovery
+     *          force the recovery procedure even the ledger metadata shows the ledger is closed.
+     */
+    void recover(GenericCallback<Void> finalCb,
+                 final @VisibleForTesting ReadEntryListener listener,
+                 final boolean forceRecovery) {
+        final GenericCallback<Void> cb = new TimedGenericCallback<Void>(
+            finalCb,
+            BKException.Code.OK,
+            clientCtx.getClientStats().getRecoverOpLogger());
+
+        MetadataUpdateLoop.NeedsUpdatePredicate needsUpdate =
+            (metadata) -> !(metadata.isClosed() || metadata.isInRecovery());
+        if (forceRecovery) {
+            // in the force recovery case, we want to update the metadata
+            // to IN_RECOVERY, even if the ledger is already closed
+            needsUpdate = (metadata) -> !metadata.isInRecovery();
+        }
+        new MetadataUpdateLoop(
+                clientCtx.getLedgerManager(), getId(),
+                this::getLedgerMetadata,
+                needsUpdate,
+                (metadata) -> LedgerMetadataBuilder.from(metadata).withInRecoveryState().build(),
+                this::setLedgerMetadata)
+            .run()
+            .thenCompose((metadata) -> {
+                    if (metadata.isClosed()) {
+                        return CompletableFuture.completedFuture(ReadOnlyLedgerHandle.this);
+                    } else {
+                        return new LedgerRecoveryOp(ReadOnlyLedgerHandle.this, clientCtx)
+                            .setEntryListener(listener)
+                            .initiate();
+                    }
+            })
+            .thenCompose((ignore) -> closeRecovered())
+            .whenComplete((ignore, ex) -> {
+                    if (ex != null) {
+                        cb.operationComplete(
+                                BKException.getExceptionCode(ex, BKException.Code.UnexpectedConditionException), null);
+                    } else {
+                        cb.operationComplete(BKException.Code.OK, null);
+                    }
+            });
+    }
+
+    CompletableFuture<LedgerMetadata> closeRecovered() {
+        long lac, len;
+        synchronized (this) {
+            lac = lastAddConfirmed;
+            len = length;
+        }
+        LOG.info("Closing recovered ledger {} at entry {}", getId(), lac);
+        CompletableFuture<LedgerMetadata> f = new MetadataUpdateLoop(
+                clientCtx.getLedgerManager(), getId(),
+                this::getLedgerMetadata,
+                (metadata) -> metadata.isInRecovery(),
+                (metadata) -> {
+                    LedgerMetadataBuilder builder = LedgerMetadataBuilder.from(metadata);
+                    Long lastEnsembleKey = metadata.getLastEnsembleKey();
+                    synchronized (metadataLock) {
+                        newEnsemblesFromRecovery.entrySet().forEach(
+                                (e) -> {
+                                    checkState(e.getKey() >= lastEnsembleKey,
+                                               "Once a ledger is in recovery, noone can add ensembles without closing");
+                                    // Occurs when a bookie need to be replaced at very start of recovery
+                                    if (lastEnsembleKey.equals(e.getKey())) {
+                                        builder.replaceEnsembleEntry(e.getKey(), e.getValue());
+                                    } else {
+                                        builder.newEnsembleEntry(e.getKey(), e.getValue());
+                                    }
+                                });
+                    }
+                    return builder.closingAt(lac, len).build();
+                },
+                this::setLedgerMetadata).run();
+        f.thenRun(() -> {
+                synchronized (metadataLock) {
+                    newEnsemblesFromRecovery.clear();
+                }
+            });
+        return f;
+    }
+
+    @Override
+    List<BookieSocketAddress> getCurrentEnsemble() {
+        synchronized (metadataLock) {
+            if (!newEnsemblesFromRecovery.isEmpty()) {
+                return newEnsemblesFromRecovery.lastEntry().getValue();
+            } else {
+                return super.getCurrentEnsemble();
+            }
+        }
+    }
+
 }

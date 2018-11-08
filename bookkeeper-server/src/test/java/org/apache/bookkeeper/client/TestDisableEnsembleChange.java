@@ -22,6 +22,7 @@ package org.apache.bookkeeper.client;
 
 import static com.google.common.base.Charsets.UTF_8;
 import static org.apache.bookkeeper.util.BookKeeperConstants.FEATURE_DISABLE_ENSEMBLE_CHANGE;
+import static org.apache.bookkeeper.util.TestUtils.assertEventuallyTrue;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -87,9 +88,9 @@ public class TestDisableEnsembleChange extends BookKeeperClusterTestCase {
         final AtomicBoolean failTest = new AtomicBoolean(false);
         final byte[] entry = "test-disable-ensemble-change".getBytes(UTF_8);
 
-        assertEquals(1, lh.getLedgerMetadata().getEnsembles().size());
+        assertEquals(1, lh.getLedgerMetadata().getAllEnsembles().size());
         ArrayList<BookieSocketAddress> ensembleBeforeFailure =
-                new ArrayList<>(lh.getLedgerMetadata().getEnsembles().entrySet().iterator().next().getValue());
+                new ArrayList<>(lh.getLedgerMetadata().getAllEnsembles().entrySet().iterator().next().getValue());
 
         final RateLimiter rateLimiter = RateLimiter.create(10);
 
@@ -119,9 +120,9 @@ public class TestDisableEnsembleChange extends BookKeeperClusterTestCase {
 
         // check the ensemble after failure
         assertEquals("No new ensemble should be added when disable ensemble change.",
-                1, lh.getLedgerMetadata().getEnsembles().size());
+                1, lh.getLedgerMetadata().getAllEnsembles().size());
         ArrayList<BookieSocketAddress> ensembleAfterFailure =
-                new ArrayList<>(lh.getLedgerMetadata().getEnsembles().entrySet().iterator().next().getValue());
+                new ArrayList<>(lh.getLedgerMetadata().getAllEnsembles().entrySet().iterator().next().getValue());
         assertArrayEquals(ensembleBeforeFailure.toArray(new BookieSocketAddress[ensembleBeforeFailure.size()]),
                 ensembleAfterFailure.toArray(new BookieSocketAddress[ensembleAfterFailure.size()]));
 
@@ -160,12 +161,13 @@ public class TestDisableEnsembleChange extends BookKeeperClusterTestCase {
             assertFalse("Ledger should be closed when enable ensemble change again.",
                     lh.getLedgerMetadata().isClosed());
             assertEquals("New ensemble should be added when enable ensemble change again.",
-                    2, lh.getLedgerMetadata().getEnsembles().size());
+                    2, lh.getLedgerMetadata().getAllEnsembles().size());
         } else {
             assertTrue("Should fail adding entries when enable ensemble change again.",
                     failTest.get());
-            assertTrue("Ledger should be closed when enable ensemble change again.",
-                    lh.getLedgerMetadata().isClosed());
+            // The ledger close occurs in the background, so assert that it happens eventually
+            assertEventuallyTrue("Ledger should be closed when enable ensemble change again.",
+                                 () -> lh.getLedgerMetadata().isClosed());
         }
     }
 

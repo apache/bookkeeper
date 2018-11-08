@@ -19,6 +19,8 @@
 package org.apache.bookkeeper.stream.protocol;
 
 import io.grpc.Metadata;
+import org.apache.bookkeeper.common.grpc.netty.IdentityBinaryMarshaller;
+import org.apache.bookkeeper.common.grpc.netty.LongBinaryMarshaller;
 import org.apache.bookkeeper.stream.proto.FixedRangeSplitPolicy;
 import org.apache.bookkeeper.stream.proto.RangeKeyType;
 import org.apache.bookkeeper.stream.proto.RetentionPolicy;
@@ -109,5 +111,30 @@ public final class ProtocolConstants {
             .build();
 
     // storage container request metadata key
-    public static final String SC_ID_KEY = "sc-id" + Metadata.BINARY_HEADER_SUFFIX;
+    public static final String SC_ID_KEY = "bk-rt-sc-id" + Metadata.BINARY_HEADER_SUFFIX;
+
+    // request metadata key for routing requests
+    public static final String ROUTING_KEY = "bk-rt-key" + Metadata.BINARY_HEADER_SUFFIX;
+    public static final String STREAM_ID_KEY = "bk-rt-sid" + Metadata.BINARY_HEADER_SUFFIX;
+    public static final String RANGE_ID_KEY = "bk-rt-rid" + Metadata.BINARY_HEADER_SUFFIX;
+
+    // the metadata keys in grpc call metadata
+    public static final Metadata.Key<Long> SCID_METADATA_KEY = Metadata.Key.of(
+        SC_ID_KEY,
+        LongBinaryMarshaller.of()
+    );
+    public static final Metadata.Key<Long> RID_METADATA_KEY = Metadata.Key.of(
+        RANGE_ID_KEY,
+        LongBinaryMarshaller.of()
+    );
+    public static final Metadata.Key<Long> SID_METADATA_KEY = Metadata.Key.of(
+        STREAM_ID_KEY,
+        LongBinaryMarshaller.of()
+    );
+    public static final Metadata.Key<byte[]> RK_METADATA_KEY = Metadata.Key.of(
+        ROUTING_KEY,
+        IdentityBinaryMarshaller.of()
+    );
+
+
 }

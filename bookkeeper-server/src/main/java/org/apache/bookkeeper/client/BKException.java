@@ -47,6 +47,10 @@ public abstract class BKException extends org.apache.bookkeeper.client.api.BKExc
         super(code);
     }
 
+    BKException(int code, Throwable cause) {
+        super(code, cause);
+    }
+
     /**
      * Create an exception from an error code.
      * @param code return error code
@@ -299,6 +303,10 @@ public abstract class BKException extends org.apache.bookkeeper.client.api.BKExc
         public MetaStoreException() {
             super(Code.MetaStoreException);
         }
+
+        public MetaStoreException(Throwable cause) {
+            super(Code.MetaStoreException, cause);
+        }
     }
 
     /**
@@ -424,6 +432,19 @@ public abstract class BKException extends org.apache.bookkeeper.client.api.BKExc
     public static class BKLedgerIdOverflowException extends BKException {
         public BKLedgerIdOverflowException() {
             super(Code.LedgerIdOverflowException);
+        }
+    }
+
+    /**
+     * Extract an exception code from an BKException, or use a default if it's another type.
+     */
+    public static int getExceptionCode(Throwable t, int defaultCode) {
+        if (t instanceof BKException) {
+            return ((BKException) t).getCode();
+        } else if (t.getCause() != null) {
+            return getExceptionCode(t.getCause(), defaultCode);
+        } else {
+            return defaultCode;
         }
     }
 }

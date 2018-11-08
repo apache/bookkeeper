@@ -19,6 +19,8 @@
 package org.apache.bookkeeper.server.service;
 
 import java.io.IOException;
+import java.lang.Thread.UncaughtExceptionHandler;
+
 import org.apache.bookkeeper.replication.AutoRecoveryMain;
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
 import org.apache.bookkeeper.server.component.ServerLifecycleComponent;
@@ -39,6 +41,15 @@ public class AutoRecoveryService extends ServerLifecycleComponent {
         this.main = new AutoRecoveryMain(
             conf.getServerConf(),
             statsLogger);
+    }
+
+    @Override
+    public void setExceptionHandler(UncaughtExceptionHandler handler) {
+        main.setExceptionHandler(handler);
+    }
+
+    public AutoRecoveryMain getAutoRecoveryServer() {
+        return main;
     }
 
     @Override

@@ -351,7 +351,7 @@ public class TestFencing extends BookKeeperClusterTestCase {
         }
 
         CountDownLatch sleepLatch = new CountDownLatch(1);
-        sleepBookie(writelh.getLedgerMetadata().getEnsembles().get(0L).get(1), sleepLatch);
+        sleepBookie(writelh.getLedgerMetadata().getAllEnsembles().get(0L).get(1), sleepLatch);
 
         LedgerHandle readlh = bkc.openLedger(writelh.getId(),
                                              digestType, "testPasswd".getBytes());

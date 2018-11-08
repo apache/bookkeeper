@@ -20,6 +20,7 @@ package org.apache.bookkeeper.clients.impl.channel;
 
 import com.google.common.annotations.VisibleForTesting;
 import io.grpc.Channel;
+import io.grpc.ClientInterceptor;
 import io.grpc.ClientInterceptors;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
@@ -30,6 +31,7 @@ import org.apache.bookkeeper.clients.config.StorageClientSettings;
 import org.apache.bookkeeper.clients.impl.container.StorageContainerClientInterceptor;
 import org.apache.bookkeeper.clients.resolver.EndpointResolver;
 import org.apache.bookkeeper.clients.utils.GrpcUtils;
+import org.apache.bookkeeper.common.grpc.stats.MonitoringClientInterceptor;
 import org.apache.bookkeeper.stream.proto.common.Endpoint;
 import org.apache.bookkeeper.stream.proto.kv.rpc.TableServiceGrpc;
 import org.apache.bookkeeper.stream.proto.kv.rpc.TableServiceGrpc.TableServiceFutureStub;
@@ -48,15 +50,29 @@ import org.apache.bookkeeper.stream.proto.storage.StorageContainerServiceGrpc.St
 public class StorageServerChannel implements AutoCloseable {
 
     public static Function<Endpoint, StorageServerChannel> factory(StorageClientSettings settings) {
-        return (endpoint) -> new StorageServerChannel(
-            endpoint,
-            Optional.empty(),
-            settings.usePlaintext(),
-            settings.endpointResolver());
+        return new Function<Endpoint, StorageServerChannel>() {
+
+            private final Optional<MonitoringClientInterceptor> interceptor =
+                settings.statsLogger().map(statsLogger ->
+                    MonitoringClientInterceptor.create(statsLogger, true));
+
+            @Override
+            public StorageServerChannel apply(Endpoint endpoint) {
+                StorageServerChannel channel = new StorageServerChannel(
+                    endpoint,
+                    Optional.empty(),
+                    settings.usePlaintext(),
+                    settings.endpointResolver());
+                return interceptor
+                    .map(interceptor -> channel.intercept(interceptor))
+                    .orElse(channel);
+            }
+        };
     }
 
     private final Optional<String> token;
     private final Channel channel;
+    private final StorageServerChannel interceptedServerChannel;
 
     @GuardedBy("this")
     private RootRangeServiceFutureStub rootRangeService;
@@ -86,6 +102,11 @@ public class StorageServerChannel implements AutoCloseable {
             resolvedEndpoint.getPort())
             .usePlaintext(usePlainText)
             .build();
+        this.interceptedServerChannel = null;
+    }
+
+    public Channel getGrpcChannel() {
+        return channel;
     }
 
     @VisibleForTesting
@@ -96,8 +117,15 @@ public class StorageServerChannel implements AutoCloseable {
 
     protected StorageServerChannel(Channel channel,
                                    Optional<String> token) {
+        this(channel, token, null);
+    }
+
+    private StorageServerChannel(Channel channel,
+                                 Optional<String> token,
+                                 StorageServerChannel interceptedServerChannel) {
         this.token = token;
         this.channel = channel;
+        this.interceptedServerChannel = interceptedServerChannel;
     }
 
     public synchronized RootRangeServiceFutureStub getRootRangeService() {
@@ -143,19 +171,27 @@ public class StorageServerChannel implements AutoCloseable {
      * @return an intercepted server channel.
      */
     public StorageServerChannel intercept(long scId) {
+        return intercept(new StorageContainerClientInterceptor(scId));
+    }
+
+    public StorageServerChannel intercept(ClientInterceptor... interceptors) {
         Channel interceptedChannel = ClientInterceptors.intercept(
             this.channel,
-            new StorageContainerClientInterceptor(scId));
-
+            interceptors);
         return new StorageServerChannel(
             interceptedChannel,
-            this.token);
+            this.token,
+            this);
     }
 
     @Override
     public void close() {
-        if (channel instanceof ManagedChannel) {
-            ((ManagedChannel) channel).shutdown();
+        if (interceptedServerChannel != null) {
+            interceptedServerChannel.close();
+        } else {
+            if (channel instanceof ManagedChannel) {
+                ((ManagedChannel) channel).shutdown();
+            }
         }
     }
 }

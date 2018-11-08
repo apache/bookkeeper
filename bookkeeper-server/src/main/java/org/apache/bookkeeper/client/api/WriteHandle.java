@@ -141,6 +141,14 @@ public interface WriteHandle extends ReadHandle, ForceableHandle {
      * entry of the ledger is. Once the ledger has been closed, all reads from the
      * ledger will return the same set of entries.
      *
+     * <p>The close operation can error if it finds conflicting metadata when it
+     * tries to write to the metadata store. On close, the metadata state is set to
+     * closed and lastEntry and length of the ledger are fixed in the metadata. A
+     * conflict occurs if the metadata in the metadata store has a different value for
+     * the lastEntry or length. If another process has updated the metadata, setting it
+     * to closed, but have fixed the lastEntry and length to the same values as this
+     * process is trying to write, the operation completes successfully.
+     *
      * @return an handle to access the result of the operation
      */
     @Override
@@ -152,6 +160,14 @@ public interface WriteHandle extends ReadHandle, ForceableHandle {
      * <p>Closing a ledger will ensure that all clients agree on what the last
      * entry of the ledger is. Once the ledger has been closed, all reads from the
      * ledger will return the same set of entries.
+     *
+     * <p>The close operation can error if it finds conflicting metadata when it
+     * tries to write to the metadata store. On close, the metadata state is set to
+     * closed and lastEntry and length of the ledger are fixed in the metadata. A
+     * conflict occurs if the metadata in the metadata store has a different value for
+     * the lastEntry or length. If another process has updated the metadata, setting it
+     * to closed, but have fixed the lastEntry and length to the same values as this
+     * process is trying to write, the operation completes successfully.
      */
     @Override
     default void close() throws BKException, InterruptedException {

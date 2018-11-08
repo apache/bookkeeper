@@ -80,17 +80,20 @@ public class StandaloneTest {
 
     @Test
     public void createTable() throws Exception {
+        createNamespace();
         String tableName = testName.getMethodName();
         ExecResult result = bkContainer.execCmd(
             "/opt/bookkeeper/bin/bkctl",
             "-u bk://localhost:4181",
+            "--namespace",
+            testName.getMethodName(),
             "tables",
             "create",
             tableName
         );
         assertTrue(
             result.getStdout(),
-            result.getStdout().contains("Successfully created stream '" + tableName + "'"));
+            result.getStdout().contains("Successfully created table '" + tableName + "'"));
     }
 
 }

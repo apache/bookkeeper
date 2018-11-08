@@ -641,6 +641,39 @@ public class BookieJournalTest {
     }
 
     /**
+     * Test journal replay with SortedLedgerStorage and a very small max
+     * arena size.
+     */
+    @Test
+    public void testSortedLedgerStorageReplayWithSmallMaxArenaSize() throws Exception {
+        File journalDir = createTempDir("bookie", "journal");
+        Bookie.checkDirectoryStructure(Bookie.getCurrentDirectory(journalDir));
+
+        File ledgerDir = createTempDir("bookie", "ledger");
+        Bookie.checkDirectoryStructure(Bookie.getCurrentDirectory(ledgerDir));
+
+        JournalChannel jc = writeV2Journal(
+                Bookie.getCurrentDirectory(journalDir), 100);
+
+        jc.fc.force(false);
+
+        writeIndexFileForLedger(Bookie.getCurrentDirectory(ledgerDir),
+                1, "testPasswd".getBytes());
+
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setLedgerStorageClass("org.apache.bookkeeper.bookie.SortedLedgerStorage");
+        conf.setSkipListArenaMaxAllocSize(0);
+        conf.setJournalDirName(journalDir.getPath())
+                .setLedgerDirNames(new String[] { ledgerDir.getPath() });
+
+        Bookie b = new Bookie(conf);
+        b.readJournal();
+        b.ledgerStorage.flush();
+        b.readEntry(1, 80);
+        b.readEntry(1, 99);
+    }
+
+    /**
      * Test partial index (truncate master key) with pre-v3 journals.
      */
     @Test

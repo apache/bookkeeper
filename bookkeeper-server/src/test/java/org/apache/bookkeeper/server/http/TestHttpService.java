@@ -31,6 +31,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Future;
 import lombok.Cleanup;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.LedgerHandle;
@@ -50,8 +51,6 @@ import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallbackFuture;
 import org.apache.bookkeeper.replication.AuditorElector;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
-import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
-import org.apache.zookeeper.ZooKeeper;
 import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -584,25 +583,18 @@ public class TestHttpService extends BookKeeperClusterTestCase {
         assertEquals(HttpServer.StatusCode.OK.getValue(), response5.getStatusCode());
     }
 
-    ZooKeeper auditorZookeeper;
     AuditorElector auditorElector;
-    private void startAuditorElector() throws Exception {
-        auditorZookeeper = ZooKeeperClient.newBuilder()
-          .connectString(zkUtil.getZooKeeperConnectString())
-          .sessionTimeoutMs(10000)
-          .build();
+    private Future<?> startAuditorElector() throws Exception {
         String addr = bs.get(0).getLocalAddress().toString();
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
         conf.setAuditorPeriodicBookieCheckInterval(1);
         conf.setMetadataServiceUri("zk://" + zkUtil.getZooKeeperConnectString() + "/ledgers");
-        auditorElector = new AuditorElector(addr, conf,
-          auditorZookeeper);
-        auditorElector.start();
+        auditorElector = new AuditorElector(addr, conf);
+        return auditorElector.start();
     }
 
     private void stopAuditorElector() throws Exception {
         auditorElector.shutdown();
-        auditorZookeeper.close();
     }
 
     @Test
@@ -628,7 +620,8 @@ public class TestHttpService extends BookKeeperClusterTestCase {
 
     @Test
     public void testWhoIsAuditorService() throws Exception {
-        startAuditorElector();
+        // start the auditor elector and wait until auditor finishes election.
+        startAuditorElector().get();
 
         HttpEndpointService whoIsAuditorService = bkHttpServiceProvider
           .provideHttpEndpointService(HttpServer.ApiType.WHO_IS_AUDITOR);
@@ -673,7 +666,7 @@ public class TestHttpService extends BookKeeperClusterTestCase {
 
         LedgerHandle lh = bkc.createLedger(3, 3, BookKeeper.DigestType.CRC32, "passwd".getBytes());
         LedgerMetadata md = LedgerHandleAdapter.getLedgerMetadata(lh);
-        List<BookieSocketAddress> ensemble = new ArrayList<>(md.getEnsembles().get(0L));
+        List<BookieSocketAddress> ensemble = new ArrayList<>(md.getAllEnsembles().get(0L));
         ensemble.set(0, new BookieSocketAddress("1.1.1.1", 1000));
         md.updateEnsemble(0L, ensemble);
 

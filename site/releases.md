@@ -3,7 +3,7 @@ title: Apache BookKeeper&trade; Releases
 layout: community
 ---
 
-{% capture mirror_url %}https://www.apache.org/dyn/mirrors/mirrors.cgi?action=download&filename=bookkeeper{% endcapture %}
+{% capture mirror_url %}https://www.apache.org/dyn/closer.lua/bookkeeper{% endcapture %}
 {% capture latest_source_url %}{{ mirror_url }}/bookkeeper-{{ site.latest_release }}/bookkeeper-{{ site.latest_release }}-src.tar.gz{% endcapture %}
 {% capture latest_bin_url %}{{ mirror_url }}/bookkeeper-{{ site.latest_release }}/bookkeeper-server-{{ site.latest_release }}-bin.tar.gz{% endcapture %}
 {% capture dist_url %}https://www.apache.org/dist/bookkeeper{% endcapture %}
@@ -14,20 +14,22 @@ layout: community
 {% capture stable_source_url %}{{ archive_url }}/bookkeeper-{{ site.stable_release }}/bookkeeper-{{ site.stable_release }}-src.tar.gz{% endcapture %}
 {% capture stable_bin_url %}{{ archive_url }}/bookkeeper-{{ site.stable_release }}/bookkeeper-server-{{ site.stable_release }}-bin.tar.gz{% endcapture %}
 
-Version **{{ site.latest_release }}** is the [latest release](#latest-releases-version-{{ site.latest_release | remove: "." }}) of BookKeeper. The current [stable version](#latest-stable-releases-version-{{ site.stable_release | remove: "." }}) is **{{ site.stable_release }}**.
+Version **{{ site.latest_release }}** is the [latest release](#latest-release) of BookKeeper. The current [stable version](#latest-stable-release) is **{{ site.stable_release }}**.
 
 > You can verify your download by following these [procedures](http://www.apache.org/info/verification.html) and using these [KEYS](https://www.apache.org/dist/bookkeeper/KEYS).
 
 If you want to download older, archived releases, they are available in the [Apache archive](http://archive.apache.org/dist/bookkeeper/).
 
 ## Latest release (version {{ site.latest_release }})
+<a name="latest-release"></a>
 
 Release | Link | Crypto files
 :-------|:-----|:------------
-Source | [bookkeeper-{{ site.latest_release }}-src.tar.gz]({{ latest_source_url }}) | [asc]({{ latest_source_dist_url }}.asc), [sha1]({{ latest_source_dist_url }}.sha1)
-Binary | [bookkeeper-server-{{ site.latest_release }}-bin.tar.gz]({{ latest_bin_url }}) | [asc]({{ latest_bin_dist_url }}.asc), [sha1]({{ latest_bin_dist_url }}.sha1)
+Source | [bookkeeper-{{ site.latest_release }}-src.tar.gz]({{ latest_source_url }}) | [asc]({{ latest_source_dist_url }}.asc), [sha512]({{ latest_source_dist_url }}.sha512)
+Binary | [bookkeeper-server-{{ site.latest_release }}-bin.tar.gz]({{ latest_bin_url }}) | [asc]({{ latest_bin_dist_url }}.asc), [sha512]({{ latest_bin_dist_url }}.sha512)
 
 ## Latest stable release (version {{ site.stable_release }})
+<a name="latest-stable-release"></a>
 
 Release | Link | Crypto files
 :-------|:-----|:------------
@@ -61,6 +63,13 @@ Client Guide | API docs
 [The DistributedLog Library]({{ site.baseurl }}docs/latest/api/distributedlog-api) | [Javadoc](https://distributedlog.io/docs/latest/api/java)
 
 ## News
+
+### 26 September, 2018 Release 4.8.0 available
+
+This is the 13th release of Apache BookKeeper !
+
+The 4.8.0 release incorporates hundreds of bug fixes, improvements, and features since previous major release, 4.7.0.
+It is a new big milestone in Apache BookKeeper community, this release include great new features, like Relaxed Durability, Stream Storage service and Multiple Active Entrylogs.
 
 ### 29 August, 2018: Release 4.7.2 available
 

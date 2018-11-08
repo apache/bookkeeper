@@ -54,19 +54,21 @@
     <module>buildtools</module>
     <module>circe-checksum</module>
     <module>bookkeeper-common</module>
+    <module>bookkeeper-common-allocator</module>
     <module>bookkeeper-stats</module>
     <module>bookkeeper-proto</module>
     <module>bookkeeper-server</module>
     <module>bookkeeper-benchmark</module>
     <module>bookkeeper-stats-providers</module>
     <module>bookkeeper-http</module>
-    <module>shaded</module>
-    <module>tests</module>
-    <module>bookkeeper-dist</module>
-    <module>microbenchmarks</module>
     <module>stream/distributedlog</module>
     <module>tools</module>
     <module>cpu-affinity</module>
+    <module>metadata-drivers</module>
+    <module>bookkeeper-dist</module>
+    <module>shaded</module>
+    <module>microbenchmarks</module>
+    <module>tests</module>
   </modules>
   <mailingLists>
     <mailingList>
@@ -121,18 +123,22 @@
     <commons-io.version>2.4</commons-io.version>
     <curator.version>4.0.1</curator.version>
     <dropwizard.version>3.1.0</dropwizard.version>
+    <etcd.version>0.0.2</etcd.version>
     <finagle.version>6.44.0</finagle.version>
     <freebuilder.version>1.14.9</freebuilder.version>
     <google.code.version>3.0.2</google.code.version>
     <google.errorprone.version>2.1.2</google.errorprone.version>
     <grpc.version>1.12.0</grpc.version>
     <guava.version>21.0</guava.version>
+    <kerby.version>1.1.1</kerby.version>
     <hadoop.version>2.7.3</hadoop.version>
     <hamcrest.version>1.3</hamcrest.version>
-    <jackson.version>2.8.9</jackson.version>
+    <hdrhistogram.version>2.1.10</hdrhistogram.version>
+    <jackson.version>2.9.7</jackson.version>
     <jackson-mapper-asl.version>1.9.11</jackson-mapper-asl.version>
     <jcommander.version>1.48</jcommander.version>
     <jetty.version>9.4.5.v20170502</jetty.version>
+    <jline.version>2.11</jline.version>
     <jmh.version>1.19</jmh.version>
     <jmock.version>2.8.2</jmock.version>
     <jna.version>3.2.7</jna.version>
@@ -141,9 +147,9 @@
     <libthrift9.version>0.9.3</libthrift9.version>
     <lombok.version>1.16.22</lombok.version>
     <lz4.version>1.3.0</lz4.version>
-    <mockito.version>2.13.0</mockito.version>
-    <netty.version>4.1.22.Final</netty.version>
-    <netty-boringssl.version>2.0.7.Final</netty-boringssl.version>
+    <mockito.version>2.22.0</mockito.version>
+    <netty.version>4.1.31.Final</netty.version>
+    <netty-boringssl.version>2.0.19.Final</netty-boringssl.version>
     <ostrich.version>9.1.3</ostrich.version>
     <powermock.version>2.0.0-beta.5</powermock.version>
     <prometheus.version>0.0.21</prometheus.version>
@@ -155,6 +161,7 @@
     <shrinkwrap.version>3.0.1</shrinkwrap.version>
     <slf4j.version>1.7.25</slf4j.version>
     <spotbugs-annotations.version>3.1.1</spotbugs-annotations.version>
+    <javax-annotations-api.version>1.3.2</javax-annotations-api.version>
     <testcontainers.version>1.8.3</testcontainers.version>
     <twitter-server.version>1.29.0</twitter-server.version>
     <vertx.version>3.4.1</vertx.version>
@@ -164,11 +171,11 @@
     <cobertura-maven-plugin.version>2.7</cobertura-maven-plugin.version>
     <coveralls-maven-plugin.version>4.3.0</coveralls-maven-plugin.version>
     <dockerfile-maven-plugin.version>1.3.7</dockerfile-maven-plugin.version>
+    <exec-maven-plugin.version>1.6.0</exec-maven-plugin.version>
     <license-maven-plugin.version>1.6</license-maven-plugin.version>
     <jacoco-maven-plugin.version>0.8.0</jacoco-maven-plugin.version>
     <maven-antrun-plugin.version>1.8</maven-antrun-plugin.version>
     <maven-assembly-plugin.version>3.1.0</maven-assembly-plugin.version>
-    <maven-bundle-plugin.version>3.2.0</maven-bundle-plugin.version>
     <maven-checkstyle-plugin.version>3.0.0</maven-checkstyle-plugin.version>
     <maven-clean-plugin.version>2.5</maven-clean-plugin.version>
     <maven-compiler-plugin.version>3.7.0</maven-compiler-plugin.version>
@@ -197,6 +204,11 @@
         <version>${spotbugs-annotations.version}</version>
       </dependency>
       <dependency>
+        <groupId>javax.annotation</groupId>
+        <artifactId>javax.annotation-api</artifactId>
+        <version>${javax-annotations-api.version}</version>
+      </dependency>
+      <dependency>
         <groupId>com.google.code.findbugs</groupId>
         <artifactId>jsr305</artifactId>
         <version>${google.code.version}</version>
@@ -215,6 +227,11 @@
         <groupId>org.inferred</groupId>
         <artifactId>freebuilder</artifactId>
         <version>${freebuilder.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>jline</groupId>
+        <artifactId>jline</artifactId>
+        <version>${jline.version}</version>
       </dependency>
 
       <!-- logging dependencies -->
@@ -311,6 +328,16 @@
         <artifactId>jackson-annotations</artifactId>
         <version>${jackson.version}</version>
       </dependency>
+      <dependency>
+        <groupId>com.fasterxml.jackson.module</groupId>
+        <artifactId>jackson-module-paranamer</artifactId>
+        <version>${jackson.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.fasterxml.jackson.module</groupId>
+        <artifactId>jackson-module-scala_2.11</artifactId>
+        <version>${jackson.version}</version>
+      </dependency>
       <!-- dependency needed for zookeeper jetty admin server -->
       <dependency>
         <groupId>org.codehaus.jackson</groupId>
@@ -345,7 +372,58 @@
       </dependency>
       <dependency>
         <groupId>io.netty</groupId>
-        <artifactId>netty-all</artifactId>
+        <artifactId>netty-transport</artifactId>
+        <version>${netty.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.netty</groupId>
+        <artifactId>netty-handler</artifactId>
+        <version>${netty.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.netty</groupId>
+        <artifactId>netty-transport-native-epoll</artifactId>
+        <version>${netty.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.netty</groupId>
+        <artifactId>netty-transport-native-epoll</artifactId>
+        <version>${netty.version}</version>
+        <classifier>linux-x86_64</classifier>
+      </dependency>
+      <dependency>
+        <groupId>io.netty</groupId>
+        <artifactId>netty-codec-dns</artifactId>
+        <version>${netty.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.netty</groupId>
+        <artifactId>netty-codec-http</artifactId>
+        <version>${netty.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.netty</groupId>
+        <artifactId>netty-codec-http2</artifactId>
+        <version>${netty.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.netty</groupId>
+        <artifactId>netty-codec-socks</artifactId>
+        <version>${netty.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.netty</groupId>
+        <artifactId>netty-handler-proxy</artifactId>
+        <version>${netty.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.netty</groupId>
+        <artifactId>netty-resolver</artifactId>
+        <version>${netty.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.netty</groupId>
+        <artifactId>netty-resolver-dns</artifactId>
         <version>${netty.version}</version>
       </dependency>
       <dependency>
@@ -542,6 +620,13 @@
         <version>${jcommander.version}</version>
       </dependency>
 
+      <!-- pref dependencies -->
+      <dependency>
+        <groupId>org.hdrhistogram</groupId>
+        <artifactId>HdrHistogram</artifactId>
+        <version>${hdrhistogram.version}</version>
+      </dependency>
+
       <!-- test dependencies -->
       <dependency>
         <groupId>junit</groupId>
@@ -576,7 +661,7 @@
       <dependency>
         <groupId>org.apache.hadoop</groupId>
         <artifactId>hadoop-minikdc</artifactId>
-        <version>${hadoop.version}</version>
+        <version>${hadoop.minikdc.version}</version>
       </dependency>
       <dependency>
         <groupId>org.arquillian.cube</groupId>
@@ -765,7 +850,9 @@
         <configuration>
           <!-- Prevent missing javadoc comments from being marked as errors -->
           <additionalparam>-Xdoclint:none -notimestamp</additionalparam>
-          <additionalOptions>-Xdoclint:none -notimestamp</additionalOptions>
+          <additionalOptions>
+            <additionalOption>-Xdoclint:none -notimestamp</additionalOption>
+          </additionalOptions>
           <subpackages>org.apache.bookkeeper.client:org.apache.bookkeeper.client.api:org.apache.bookkeeper.common.annotation:org.apache.bookkeeper.conf:org.apache.bookkeeper.feature:org.apache.bookkeeper.stats</subpackages>
           <groups>
             <group>
@@ -821,6 +908,9 @@
         <version>${apache-rat-plugin.version}</version>
         <configuration>
           <excludes>
+            <!-- Intellij -->
+            <exclude>**/.idea/**</exclude>
+
             <!-- Git -->
             <exclude>.git/**/*</exclude>
             <exclude>.github/**/*</exclude>
@@ -834,6 +924,7 @@
 
             <!-- Project files -->
             <exclude>**/README.md</exclude>
+            <exclude>**/README.rst</exclude>
             <exclude>**/apidocs/*</exclude>
             <exclude>**/src/main/resources/deps/**</exclude>
             <exclude>**/META-INF/**</exclude>
@@ -864,6 +955,21 @@
 
             <!-- vargrant -->
             <exclude>dev/.vagrant/**</exclude>
+
+            <!-- protobuf generated python files-->
+            <exclude>**/proto/**.py</exclude>
+            <!-- python build/test env -->
+            <exclude>**/python/.coverage</exclude>
+            <exclude>**/python/.Python</exclude>
+            <exclude>**/python/bin/**</exclude>
+            <exclude>**/python/include/**</exclude>
+            <exclude>**/python/lib/**</exclude>
+            <exclude>**/**.pyc</exclude>
+            <exclude>**/.nox/**</exclude>
+            <exclude>**/.pytest_cache/**</exclude>
+            <exclude>**/__pycache__/**</exclude>
+            <exclude>**/bookkeeper.egg-info/**</exclude>
+            <exclude>**/pip-selfcheck.json</exclude>
           </excludes>
           <consoleOutput>true</consoleOutput>
         </configuration>

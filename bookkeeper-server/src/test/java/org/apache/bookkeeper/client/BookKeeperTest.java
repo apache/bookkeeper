@@ -72,7 +72,7 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
             .setZkTimeout(20000);
 
         CountDownLatch l = new CountDownLatch(1);
-        zkUtil.sleepServer(200, TimeUnit.MILLISECONDS, l);
+        zkUtil.sleepCluster(200, TimeUnit.MILLISECONDS, l);
         l.await();
 
         BookKeeper bkc = new BookKeeper(conf);
@@ -87,7 +87,7 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
             .setZkTimeout(20000);
 
         CountDownLatch l = new CountDownLatch(1);
-        zkUtil.sleepServer(200, TimeUnit.MILLISECONDS, l);
+        zkUtil.sleepCluster(200, TimeUnit.MILLISECONDS, l);
         l.await();
 
         ZooKeeper zk = new ZooKeeper(
@@ -536,12 +536,9 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
                 }
             }
 
-            try {
-                writeLh.close();
-                fail("should not be able to close the first LedgerHandler as a recovery has been performed");
-            } catch (BKException.BKMetadataVersionException expected) {
-            }
-
+            // should still be able to close as long as recovery closed the ledger
+            // with the same last entryId and length as in the write handle.
+            writeLh.close();
         }
     }
 

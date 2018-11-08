@@ -64,11 +64,20 @@ public class ZKMetadataDriverBaseStaticTest {
     }
 
     @Test
-    public void testResolveLedgerManagerFactoryDefaultValue() {
+    public void testResolveLedgerManagerFactoryUnspecifiedLayout() {
         assertEquals(
-            HierarchicalLedgerManagerFactory.class,
+            null,
             ZKMetadataDriverBase.resolveLedgerManagerFactory(
-                URI.create("zk://127.0.0.1/ledgers"))
+                        URI.create("zk://127.0.0.1/ledgers"))
+        );
+    }
+
+    @Test
+    public void testResolveLedgerManagerFactoryNullLayout() {
+        assertEquals(
+                null,
+                ZKMetadataDriverBase.resolveLedgerManagerFactory(
+                        URI.create("zk+null://127.0.0.1/ledgers"))
         );
     }
 

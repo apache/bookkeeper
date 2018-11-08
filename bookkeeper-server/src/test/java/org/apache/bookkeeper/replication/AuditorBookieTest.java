@@ -35,7 +35,6 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
-import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
 import org.apache.zookeeper.ZooKeeper;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -209,14 +208,8 @@ public class AuditorBookieTest extends BookKeeperClusterTestCase {
     }
 
     private void startAuditorElector(String addr) throws Exception {
-        ZooKeeper zk = ZooKeeperClient.newBuilder()
-                .connectString(zkUtil.getZooKeeperConnectString())
-                .sessionTimeoutMs(10000)
-                .build();
-        zkClients.add(zk);
-
         AuditorElector auditorElector = new AuditorElector(addr,
-                                                           baseConf, zk);
+                                                           baseConf);
         auditorElectors.put(addr, auditorElector);
         auditorElector.start();
         LOG.debug("Starting Auditor Elector");

@@ -482,6 +482,10 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
         }
     }
 
+    public ScheduledFuture<?> getSpeculativeTask() {
+        return speculativeTask;
+    }
+
     // I don't think this is ever used in production code -Ivan
     PendingReadOp parallelRead(boolean enabled) {
         this.parallelRead = enabled;
@@ -518,7 +522,7 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
         for (LedgerEntryRequest entry : seq) {
             entry.read();
             if (!parallelRead && clientCtx.getConf().readSpeculativeRequestPolicy.isPresent()) {
-                clientCtx.getConf().readSpeculativeRequestPolicy.get()
+                speculativeTask = clientCtx.getConf().readSpeculativeRequestPolicy.get()
                     .initiateSpeculativeRequest(clientCtx.getScheduler(), entry);
             }
         }
@@ -610,17 +614,19 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
         long latencyNanos = MathUtils.elapsedNanos(requestTimeNanos);
         if (code != BKException.Code.OK) {
             long firstUnread = LedgerHandle.INVALID_ENTRY_ID;
+            Integer firstRc = null;
             for (LedgerEntryRequest req : seq) {
                 if (!req.isComplete()) {
                     firstUnread = req.eId;
+                    firstRc = req.rc;
                     break;
                 }
             }
             LOG.error(
                     "Read of ledger entry failed: L{} E{}-E{}, Sent to {}, "
-                            + "Heard from {} : bitset = {}. First unread entry is {}",
+                            + "Heard from {} : bitset = {}, Error = '{}'. First unread entry is ({}, rc = {})",
                     lh.getId(), startEntryId, endEntryId, sentToHosts, heardFromHosts, heardFromHostsBitSet,
-                    firstUnread);
+                    BKException.getMessage(code), firstUnread, firstRc);
             clientCtx.getClientStats().getReadOpLogger().registerFailedEvent(latencyNanos, TimeUnit.NANOSECONDS);
             // release the entries
             seq.forEach(LedgerEntryRequest::close);

@@ -323,7 +323,7 @@ public class LedgerChecker {
         Long curEntryId = null;
         List<BookieSocketAddress> curEnsemble = null;
         for (Map.Entry<Long, ? extends List<BookieSocketAddress>> e : lh
-                .getLedgerMetadata().getEnsembles().entrySet()) {
+                .getLedgerMetadata().getAllEnsembles().entrySet()) {
             if (curEntryId != null) {
                 Set<Integer> bookieIndexes = new HashSet<Integer>();
                 for (int i = 0; i < curEnsemble.size(); i++) {

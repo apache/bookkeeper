@@ -78,7 +78,7 @@ public class TestLedgerChecker extends BookKeeperClusterTestCase {
         for (int i = 0; i < 10; i++) {
             lh.addEntry(TEST_LEDGER_ENTRY_DATA);
         }
-        BookieSocketAddress replicaToKill = lh.getLedgerMetadata().getEnsembles()
+        BookieSocketAddress replicaToKill = lh.getLedgerMetadata().getAllEnsembles()
                 .get(0L).get(0);
         LOG.info("Killing {}", replicaToKill);
         killBookie(replicaToKill);
@@ -98,7 +98,7 @@ public class TestLedgerChecker extends BookKeeperClusterTestCase {
             result.iterator().next().getAddresses().contains(replicaToKill));
 
         BookieSocketAddress replicaToKill2 = lh.getLedgerMetadata()
-                .getEnsembles().get(0L).get(1);
+                .getAllEnsembles().get(0L).get(1);
         LOG.info("Killing {}", replicaToKill2);
         killBookie(replicaToKill2);
 
@@ -138,7 +138,7 @@ public class TestLedgerChecker extends BookKeeperClusterTestCase {
 
         // Kill the 3rd BK from ensemble.
         List<BookieSocketAddress> firstEnsemble = lh.getLedgerMetadata()
-                .getEnsembles().get(0L);
+                .getAllEnsembles().get(0L);
         BookieSocketAddress lastBookieFromEnsemble = firstEnsemble.get(2);
         LOG.info("Killing " + lastBookieFromEnsemble + " from ensemble="
                 + firstEnsemble);
@@ -147,13 +147,13 @@ public class TestLedgerChecker extends BookKeeperClusterTestCase {
         startNewBookie();
 
         LOG.info("Ensembles after first entry :"
-                + lh.getLedgerMetadata().getEnsembles());
+                + lh.getLedgerMetadata().getAllEnsembles());
 
         // Adding one more entry. Here enseble should be reformed.
         lh.addEntry(TEST_LEDGER_ENTRY_DATA);
 
         LOG.info("Ensembles after second entry :"
-                + lh.getLedgerMetadata().getEnsembles());
+                + lh.getLedgerMetadata().getAllEnsembles());
 
         Set<LedgerFragment> result = getUnderReplicatedFragments(lh);
 
@@ -181,7 +181,7 @@ public class TestLedgerChecker extends BookKeeperClusterTestCase {
         lh.addEntry(TEST_LEDGER_ENTRY_DATA);
 
         List<BookieSocketAddress> firstEnsemble = lh.getLedgerMetadata()
-                .getEnsembles().get(0L);
+                .getAllEnsembles().get(0L);
 
         BookieSocketAddress firstBookieFromEnsemble = firstEnsemble.get(0);
         killBookie(firstEnsemble, firstBookieFromEnsemble);
@@ -214,7 +214,7 @@ public class TestLedgerChecker extends BookKeeperClusterTestCase {
                 TEST_LEDGER_PASSWORD);
 
         List<BookieSocketAddress> firstEnsemble = lh.getLedgerMetadata()
-                .getEnsembles().get(0L);
+                .getAllEnsembles().get(0L);
         BookieSocketAddress firstBookieFromEnsemble = firstEnsemble.get(0);
         killBookie(firstBookieFromEnsemble);
         startNewBookie();
@@ -259,7 +259,7 @@ public class TestLedgerChecker extends BookKeeperClusterTestCase {
 
         // Kill all three bookies
         List<BookieSocketAddress> firstEnsemble = lh.getLedgerMetadata()
-                .getEnsembles().get(0L);
+                .getAllEnsembles().get(0L);
         for (BookieSocketAddress bkAddr : firstEnsemble) {
             killBookie(firstEnsemble, bkAddr);
         }
@@ -302,7 +302,7 @@ public class TestLedgerChecker extends BookKeeperClusterTestCase {
     public void testShouldGet2FragmentsWithEmptyLedgerButBookiesDead() throws Exception {
         LedgerHandle lh = bkc.createLedger(3, 2, BookKeeper.DigestType.CRC32,
                 TEST_LEDGER_PASSWORD);
-        for (BookieSocketAddress b : lh.getLedgerMetadata().getEnsembles().get(0L)) {
+        for (BookieSocketAddress b : lh.getLedgerMetadata().getAllEnsembles().get(0L)) {
             killBookie(b);
         }
         Set<LedgerFragment> result = getUnderReplicatedFragments(lh);
@@ -322,7 +322,7 @@ public class TestLedgerChecker extends BookKeeperClusterTestCase {
                 TEST_LEDGER_PASSWORD);
         lh.addEntry(TEST_LEDGER_ENTRY_DATA);
         List<BookieSocketAddress> firstEnsemble = lh.getLedgerMetadata()
-                .getEnsembles().get(0L);
+                .getAllEnsembles().get(0L);
         BookieSocketAddress lastBookieFromEnsemble = firstEnsemble.get(0);
         LOG.info("Killing " + lastBookieFromEnsemble + " from ensemble="
                 + firstEnsemble);
@@ -356,7 +356,7 @@ public class TestLedgerChecker extends BookKeeperClusterTestCase {
             lh.addEntry(TEST_LEDGER_ENTRY_DATA);
         }
         List<BookieSocketAddress> firstEnsemble = lh.getLedgerMetadata()
-                .getEnsembles().get(0L);
+                .getAllEnsembles().get(0L);
         DistributionSchedule.WriteSet writeSet = lh.getDistributionSchedule().getWriteSet(lh.getLastAddPushed());
         BookieSocketAddress lastBookieFromEnsemble = firstEnsemble.get(writeSet.get(0));
         LOG.info("Killing " + lastBookieFromEnsemble + " from ensemble="
@@ -401,7 +401,7 @@ public class TestLedgerChecker extends BookKeeperClusterTestCase {
         LedgerHandle lh = bkc.createLedger(3, 3, BookKeeper.DigestType.CRC32,
                 TEST_LEDGER_PASSWORD);
         List<BookieSocketAddress> firstEnsemble = lh.getLedgerMetadata()
-                .getEnsembles().get(0L);
+                .getAllEnsembles().get(0L);
         lh.close();
 
         BookieSocketAddress lastBookieFromEnsemble = firstEnsemble.get(0);
@@ -428,7 +428,7 @@ public class TestLedgerChecker extends BookKeeperClusterTestCase {
         LedgerHandle lh = bkc.createLedger(3, 2, BookKeeper.DigestType.CRC32,
                 TEST_LEDGER_PASSWORD);
         List<BookieSocketAddress> firstEnsemble = lh.getLedgerMetadata()
-            .getEnsembles().get(0L);
+            .getAllEnsembles().get(0L);
         lh.addEntry(TEST_LEDGER_ENTRY_DATA);
         lh.close();
 

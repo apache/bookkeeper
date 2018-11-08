@@ -129,6 +129,7 @@ public class AuditorLedgerCheckerTest extends BookKeeperClusterTestCase {
             + "/underreplication/auditorelection";
 
         urLedgerMgr = new ZkLedgerUnderreplicationManager(baseClientConf, zkc);
+        urLedgerMgr.setCheckAllLedgersCTime(System.currentTimeMillis());
         startAuditorElectors();
         rng = new Random(System.currentTimeMillis()); // Initialize the Random
         urLedgerList = new HashSet<Long>();
@@ -146,8 +147,7 @@ public class AuditorLedgerCheckerTest extends BookKeeperClusterTestCase {
     private void startAuditorElectors() throws Exception {
         for (BookieServer bserver : bs) {
             String addr = bserver.getLocalAddress().toString();
-            AuditorElector auditorElector = new AuditorElector(addr,
-                    baseConf, zkc);
+            AuditorElector auditorElector = new AuditorElector(addr, baseConf);
             auditorElectors.put(addr, auditorElector);
             auditorElector.start();
             LOG.debug("Starting Auditor Elector");

@@ -554,7 +554,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return fileinfo format version to write.
      */
     public int getFileInfoFormatVersionToWrite() {
-        return this.getInt(FILEINFO_FORMAT_VERSION_TO_WRITE, 0);
+        return this.getInt(FILEINFO_FORMAT_VERSION_TO_WRITE, 1);
     }
 
     /**
@@ -657,7 +657,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return journal format version to write.
      */
     public int getJournalFormatVersionToWrite() {
-        return this.getInt(JOURNAL_FORMAT_VERSION_TO_WRITE, 4);
+        return this.getInt(JOURNAL_FORMAT_VERSION_TO_WRITE, 6);
     }
 
     /**
@@ -1753,6 +1753,18 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      */
     public int getSkipListArenaMaxAllocSize() {
         return getInt(SKIP_LIST_MAX_ALLOC_ENTRY, 128 * 1024);
+    }
+
+    /**
+     * Set the max size we should allocate from the skiplist arena. Allocations
+     * larger than this should be allocated directly by the VM to avoid fragmentation.
+     *
+     * @param size max alloc size.
+     * @return server configuration object.
+     */
+    public ServerConfiguration setSkipListArenaMaxAllocSize(int size) {
+        setProperty(SKIP_LIST_MAX_ALLOC_ENTRY, size);
+        return this;
     }
 
     /**

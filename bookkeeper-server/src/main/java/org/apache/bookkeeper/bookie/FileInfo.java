@@ -101,6 +101,8 @@ class FileInfo extends Watchable<LastAddConfirmedUpdateNotification> {
     // this FileInfo Header Version
     int headerVersion;
 
+    private boolean deleted;
+
     public FileInfo(File lf, byte[] masterKey, int fileInfoVersionToWrite) throws IOException {
         super(WATCHER_RECYCLER);
 
@@ -108,6 +110,7 @@ class FileInfo extends Watchable<LastAddConfirmedUpdateNotification> {
         this.masterKey = masterKey;
         mode = "rw";
         this.headerVersion = fileInfoVersionToWrite;
+        this.deleted = false;
     }
 
     synchronized Long getLastAddConfirmed() {
@@ -257,6 +260,16 @@ class FileInfo extends Watchable<LastAddConfirmedUpdateNotification> {
         }
     }
 
+    public synchronized boolean isDeleted() {
+        return deleted;
+    }
+
+    public static class FileInfoDeletedException extends IOException {
+        FileInfoDeletedException() {
+            super("FileInfo already deleted");
+        }
+    }
+
     @VisibleForTesting
     void checkOpen(boolean create) throws IOException {
         checkOpen(create, false);
@@ -264,6 +277,9 @@ class FileInfo extends Watchable<LastAddConfirmedUpdateNotification> {
 
     private synchronized void checkOpen(boolean create, boolean openBeforeClose)
             throws IOException {
+        if (deleted) {
+            throw new FileInfoDeletedException();
+        }
         if (fc != null) {
             return;
         }
@@ -540,6 +556,7 @@ class FileInfo extends Watchable<LastAddConfirmedUpdateNotification> {
     }
 
     public synchronized boolean delete() {
+        deleted = true;
         return lf.delete();
     }
 

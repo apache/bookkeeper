@@ -41,6 +41,7 @@
       <modules>
         <!-- enable building stream storage cli -->
         <module>stream</module>
+        <module>perf</module>
       </modules>
     </profile>
   </profiles>

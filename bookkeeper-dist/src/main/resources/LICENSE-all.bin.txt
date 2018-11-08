@@ -205,11 +205,11 @@
 The following bundled 3rd party jars are distributed under the
 Apache Software License, Version 2.
 
-- lib/com.fasterxml.jackson.core-jackson-annotations-2.8.9.jar [1]
-- lib/com.fasterxml.jackson.core-jackson-core-2.8.9.jar [2]
-- lib/com.fasterxml.jackson.core-jackson-databind-2.8.9.jar [3]
-- lib/com.fasterxml.jackson.module-jackson-module-paranamer-2.8.4.jar [4]
-- lib/com.fasterxml.jackson.module-jackson-module-scala_2.11-2.8.4.jar [5]
+- lib/com.fasterxml.jackson.core-jackson-annotations-2.9.7.jar [1]
+- lib/com.fasterxml.jackson.core-jackson-core-2.9.7.jar [2]
+- lib/com.fasterxml.jackson.core-jackson-databind-2.9.7.jar [3]
+- lib/com.fasterxml.jackson.module-jackson-module-paranamer-2.9.7.jar [4]
+- lib/com.fasterxml.jackson.module-jackson-module-scala_2.11-2.9.7.jar [5]
 - lib/com.github.ben-manes.caffeine-caffeine-2.3.4.jar [9]
 - lib/com.google.guava-guava-21.0.jar [6]
 - lib/commons-cli-commons-cli-1.2.jar [7]
@@ -250,7 +250,22 @@ Apache Software License, Version 2.
 - lib/io.dropwizard.metrics-metrics-graphite-3.1.0.jar [21]
 - lib/io.dropwizard.metrics-metrics-jvm-3.1.0.jar [21]
 - lib/io.netty-netty-3.10.1.Final.jar [22]
-- lib/io.netty-netty-all-4.1.22.Final.jar [23]
+- lib/io.netty-netty-buffer-4.1.31.Final.jar [23]
+- lib/io.netty-netty-codec-4.1.31.Final.jar [23]
+- lib/io.netty-netty-codec-dns-4.1.31.Final.jar [23]
+- lib/io.netty-netty-codec-http-4.1.31.Final.jar [23]
+- lib/io.netty-netty-codec-http2-4.1.31.Final.jar [23]
+- lib/io.netty-netty-codec-socks-4.1.31.Final.jar [23]
+- lib/io.netty-netty-common-4.1.31.Final.jar [23]
+- lib/io.netty-netty-handler-4.1.31.Final.jar [23]
+- lib/io.netty-netty-handler-proxy-4.1.31.Final.jar [23]
+- lib/io.netty-netty-resolver-4.1.31.Final.jar [23]
+- lib/io.netty-netty-resolver-dns-4.1.31.Final.jar [23]
+- lib/io.netty-netty-tcnative-boringssl-static-2.0.19.Final.jar [23]
+- lib/io.netty-netty-transport-4.1.31.Final.jar [23]
+- lib/io.netty-netty-transport-native-epoll-4.1.31.Final.jar [23]
+- lib/io.netty-netty-transport-native-epoll-4.1.31.Final-linux-x86_64.jar [23]
+- lib/io.netty-netty-transport-native-unix-common-4.1.31.Final.jar [23]
 - lib/io.prometheus-simpleclient-0.0.21.jar [24]
 - lib/io.prometheus-simpleclient_common-0.0.21.jar [24]
 - lib/io.prometheus-simpleclient_hotspot-0.0.21.jar [24]
@@ -275,43 +290,43 @@ Apache Software License, Version 2.
 - lib/com.yahoo.datasketches-sketches-core-0.8.3.jar [37]
 - lib/net.jpountz.lz4-lz4-1.3.0.jar [38]
 - lib/org.codehaus.jackson-jackson-core-asl-1.9.11.jar [39]
-- lib/org.codehaus.jackson-jackson-mapper-asl-1.9.11.jar [40]
-- lib/com.google.api.grpc-proto-google-common-protos-1.0.0.jar [41]
-- lib/com.google.code.gson-gson-2.7.jar [42]
-- lib/io.opencensus-opencensus-api-0.11.0.jar [43]
-- lib/io.opencensus-opencensus-contrib-grpc-metrics-0.11.0.jar [43]
-- lib/com.squareup.okhttp-okhttp-2.5.0.jar [44]
-- lib/com.squareup.okio-okio-1.13.0.jar [45]
-- lib/io.grpc-grpc-all-1.12.0.jar [46]
-- lib/io.grpc-grpc-auth-1.12.0.jar [46]
-- lib/io.grpc-grpc-context-1.12.0.jar [46]
-- lib/io.grpc-grpc-core-1.12.0.jar [46]
-- lib/io.grpc-grpc-netty-1.12.0.jar [46]
-- lib/io.grpc-grpc-okhttp-1.12.0.jar [46]
-- lib/io.grpc-grpc-protobuf-1.12.0.jar [46]
-- lib/io.grpc-grpc-protobuf-lite-1.12.0.jar [46]
-- lib/io.grpc-grpc-protobuf-nano-1.12.0.jar [46]
-- lib/io.grpc-grpc-stub-1.12.0.jar [46]
-- lib/io.grpc-grpc-testing-1.12.0.jar [46]
-- lib/org.apache.curator-curator-client-4.0.1.jar [47]
-- lib/org.apache.curator-curator-framework-4.0.1.jar [47]
-- lib/org.apache.curator-curator-recipes-4.0.1.jar [47]
-- lib/org.inferred-freebuilder-1.14.9.jar [48]
-- lib/com.google.errorprone-error_prone_annotations-2.1.2.jar [49]
-- lib/org.apache.yetus-audience-annotations-0.5.0.jar [50]
+- lib/org.codehaus.jackson-jackson-mapper-asl-1.9.11.jar [39]
+- lib/com.google.api.grpc-proto-google-common-protos-1.0.0.jar [40]
+- lib/com.google.code.gson-gson-2.7.jar [41]
+- lib/io.opencensus-opencensus-api-0.11.0.jar [42]
+- lib/io.opencensus-opencensus-contrib-grpc-metrics-0.11.0.jar [42]
+- lib/com.squareup.okhttp-okhttp-2.5.0.jar [43]
+- lib/com.squareup.okio-okio-1.13.0.jar [44]
+- lib/io.grpc-grpc-all-1.12.0.jar [45]
+- lib/io.grpc-grpc-auth-1.12.0.jar [45]
+- lib/io.grpc-grpc-context-1.12.0.jar [45]
+- lib/io.grpc-grpc-core-1.12.0.jar [45]
+- lib/io.grpc-grpc-netty-1.12.0.jar [45]
+- lib/io.grpc-grpc-okhttp-1.12.0.jar [45]
+- lib/io.grpc-grpc-protobuf-1.12.0.jar [45]
+- lib/io.grpc-grpc-protobuf-lite-1.12.0.jar [45]
+- lib/io.grpc-grpc-protobuf-nano-1.12.0.jar [45]
+- lib/io.grpc-grpc-stub-1.12.0.jar [45]
+- lib/io.grpc-grpc-testing-1.12.0.jar [45]
+- lib/org.apache.curator-curator-client-4.0.1.jar [46]
+- lib/org.apache.curator-curator-framework-4.0.1.jar [46]
+- lib/org.apache.curator-curator-recipes-4.0.1.jar [46]
+- lib/org.inferred-freebuilder-1.14.9.jar [47]
+- lib/com.google.errorprone-error_prone_annotations-2.1.2.jar [48]
+- lib/org.apache.yetus-audience-annotations-0.5.0.jar [49]
 
-[1] Source available at https://github.com/FasterXML/jackson-annotations/tree/jackson-annotations-2.8.9
-[2] Source available at https://github.com/FasterXML/jackson-core/tree/jackson-core-2.8.9
-[3] Source available at https://github.com/FasterXML/jackson-databind/tree/jackson-databind-2.8.9
-[4] Source available at https://github.com/FasterXML/jackson-modules-base/tree/jackson-modules-base-2.8.4
-[5] Source available at https://github.com/FasterXML/jackson-module-scala/tree/f9e099
+[1] Source available at https://github.com/FasterXML/jackson-annotations/tree/jackson-annotations-2.9.7
+[2] Source available at https://github.com/FasterXML/jackson-core/tree/jackson-core-2.9.7
+[3] Source available at https://github.com/FasterXML/jackson-databind/tree/jackson-databind-2.9.7
+[4] Source available at https://github.com/FasterXML/jackson-modules-base/tree/jackson-modules-base-2.9.7
+[5] Source available at https://github.com/FasterXML/jackson-module-scala/tree/jackson-module-scala-2.9.7
 [6] Source available at https://github.com/google/guava/tree/v21.0
 [7] Source available at https://git-wip-us.apache.org/repos/asf?p=commons-cli.git;a=tag;h=bc8f0e
 [8] Source available at http://svn.apache.org/viewvc/commons/proper/codec/tags/1_6/
 [9] Source available at https://github.com/ben-manes/caffeine/tree/v2.3.4
 [10] Source available at http://svn.apache.org/viewvc/commons/proper/configuration/tags/CONFIGURATION_1_10/
 [11] Source available at https://git-wip-us.apache.org/repos/asf?p=commons-io.git;a=tag;h=603579
-[12] Source available at https://git-wip-us.apache.org/repos/asf?p=commons-lang.git;a=tag;h=375459
+[12] Source available at https://git-wip-us.apache.org/repos/asf?p=commons-lang.git;a=shortlog;h=refs/tags/LANG_3_6
 [13] Source available at http://svn.apache.org/viewvc/commons/proper/logging/tags/commons-logging-1.1.1/
 [14] Source available at https://github.com/twitter/finagle/tree/finagle-6.44.0
 [15] Source available at https://github.com/twitter/finagle/tree/finagle-6.43.0
@@ -337,18 +352,17 @@ Apache Software License, Version 2.
 [36] Source available at https://github.com/cbeust/jcommander/tree/jcommander-1.48
 [37] Source available at https://github.com/DataSketches/sketches-core/tree/sketches-0.8.3
 [38] Source available at https://github.com/lz4/lz4-java/tree/1.3.0
-[39] Source available at https://github.com/codehaus/jackson/tree/1.9
-[40] Source available at https://github.com/codehaus/jackson/tree/1.9
-[41] Source available at https://github.com/googleapis/googleapis
-[42] Source available at https://github.com/google/gson/tree/gson-parent-2.7
-[43] Source available at https://github.com/census-instrumentation/opencensus-java/tree/v0.11.0
-[44] Source available at https://github.com/square/okhttp/tree/parent-2.5.0
-[45] Source available at https://github.com/square/okio/tree/okio-parent-1.13.0
-[46] Source available at https://github.com/grpc/grpc-java/tree/v1.12.0
-[47] Source available at https://github.com/apache/curator/tree/apache-curator-4.0.1
-[48] Source available at https://github.com/inferred/FreeBuilder/tree/v1.14.9
-[49] Source available at https://github.com/google/error-prone/tree/v2.1.2
-[50] Source available at https://github.com/apache/yetus/tree/rel/0.5.0
+[39] Source available at https://github.com/codehaus/jackson/tree/d1c26ec538a8701cff7548009254fd6183b71873
+[40] Source available at https://github.com/googleapis/googleapis
+[41] Source available at https://github.com/google/gson/tree/gson-parent-2.7
+[42] Source available at https://github.com/census-instrumentation/opencensus-java/tree/v0.11.0
+[43] Source available at https://github.com/square/okhttp/tree/parent-2.5.0
+[44] Source available at https://github.com/square/okio/tree/okio-parent-1.13.0
+[45] Source available at https://github.com/grpc/grpc-java/tree/v1.12.0
+[46] Source available at https://github.com/apache/curator/tree/apache-curator-4.0.1
+[47] Source available at https://github.com/inferred/FreeBuilder/tree/v1.14.9
+[48] Source available at https://github.com/google/error-prone/tree/v2.1.2
+[49] Source available at https://github.com/apache/yetus/tree/rel/0.5.0
 
 
 ------------------------------------------------------------------------------------
@@ -386,71 +400,63 @@ WebSocket and HTTP server:
     * https://github.com/joewalnes/webbit
 
 ------------------------------------------------------------------------------------
-lib/io.netty-netty-all-4.1.22.Final.jar bundles some 3rd party dependencies
+lib/io.netty-netty-codec-4.1.31.Final.jar bundles some 3rd party dependencies
 
-lib/io.netty-netty-all-4.1.22.Final.jar contains the extensions to Java Collections Framework which has
+lib/io.netty-netty-codec-4.1.31.Final.jar contains the extensions to Java Collections Framework which has
 been derived from the works by JSR-166 EG, Doug Lea, and Jason T. Greene:
 
   * LICENSE:
-    * deps/netty-4.1.22.Final/LICENSE.jsr166y.txt (Public Domain)
+    * deps/netty-4.1.31.Final/LICENSE.jsr166y.txt (Public Domain)
   * HOMEPAGE:
     * http://gee.cs.oswego.edu/cgi-bin/viewcvs.cgi/jsr166/
     * http://viewvc.jboss.org/cgi-bin/viewvc.cgi/jbosscache/experimental/jsr166/
 
-lib/io.netty-netty-all-4.1.22.Final.jar contains a modified version of Robert Harder's Public Domain
+lib/io.netty-netty-codec-4.1.31.Final.jar contains a modified version of Robert Harder's Public Domain
 Base64 Encoder and Decoder, which can be obtained at:
 
   * LICENSE:
-    * deps/netty-4.1.22.Final/LICENSE.base64.txt (Public Domain)
+    * deps/netty-4.1.31.Final/LICENSE.base64.txt (Public Domain)
   * HOMEPAGE:
     * http://iharder.sourceforge.net/current/java/base64/
 
-lib/io.netty-netty-all-4.1.22.Final.jar contains a modified portion of 'Webbit', an event based
-WebSocket and HTTP server, which can be obtained at:
-
-  * LICENSE:
-    * deps/netty-4.1.22.Final/LICENSE.webbit.txt (BSD License)
-  * HOMEPAGE:
-    * https://github.com/joewalnes/webbit
-
-lib/io.netty-netty-all-4.1.22.Final.jar contains a modified portion of 'SLF4J', a simple logging
+lib/io.netty-netty-common-4.1.31.Final.jar contains a modified portion of 'SLF4J', a simple logging
 facade for Java, which can be obtained at:
 
   * LICENSE:
-    * deps/netty-4.1.22.Final/LICENSE.slf4j.txt (MIT License)
+    * deps/netty-4.1.31.Final/LICENSE.slf4j.txt (MIT License)
   * HOMEPAGE:
     * http://www.slf4j.org/
 
-lib/io.netty-netty-all-4.1.22.Final.jar contains a modified portion of 'jbzip2', a Java bzip2 compression
+lib/io.netty-netty-codec-4.1.31.Final.jar contains a modified portion of 'jbzip2', a Java bzip2 compression
 and decompression library written by Matthew J. Francis. It can be obtained at:
 
   * LICENSE:
-    * deps/netty-4.1.22.Final/LICENSE.jbzip2.txt (MIT License)
+    * deps/netty-4.1.31.Final/LICENSE.jbzip2.txt (MIT License)
   * HOMEPAGE:
     * https://code.google.com/p/jbzip2/
 
-lib/io.netty-netty-all-4.1.22.Final.jar contains a modified portion of 'libdivsufsort', a C API library to construct
+lib/io.netty-netty-codec-4.1.31.Final.jar contains a modified portion of 'libdivsufsort', a C API library to construct
 the suffix array and the Burrows-Wheeler transformed string for any input string of
 a constant-size alphabet written by Yuta Mori. It can be obtained at:
 
   * LICENSE:
-    * deps/netty-4.1.22.Final/LICENSE.libdivsufsort.txt (MIT License)
+    * deps/netty-4.1.31.Final/LICENSE.libdivsufsort.txt (MIT License)
   * HOMEPAGE:
     * https://github.com/y-256/libdivsufsort
 
-lib/io.netty-netty-all-4.1.22.Final.jar contains a modified portion of 'jfastlz', a Java port of FastLZ compression
+lib/io.netty-netty-codec-4.1.31.Final.jar contains a modified portion of 'jfastlz', a Java port of FastLZ compression
 and decompression library written by William Kinney. It can be obtained at:
 
   * LICENSE:
-    * deps/netty-4.1.22.Final/LICENSE.jfastlz.txt (MIT License)
+    * deps/netty-4.1.31.Final/LICENSE.jfastlz.txt (MIT License)
   * HOMEPAGE:
     * https://code.google.com/p/jfastlz/
 
-lib/io.netty-netty-all-4.1.22.Final.jar contains a modified portion of and optionally depends on 'Protocol Buffers', Google's data
+lib/io.netty-netty-codec-4.1.31.Final.jar contains a modified portion of and optionally depends on 'Protocol Buffers', Google's data
 interchange format, which can be obtained at:
 
   * LICENSE:
-    * deps/netty-4.1.22.Final/LICENSE.protobuf.txt (New BSD License)
+    * deps/netty-4.1.31.Final/LICENSE.protobuf.txt (New BSD License)
   * HOMEPAGE:
     * https://github.com/google/protobuf
 
@@ -492,7 +498,7 @@ a "3-clause BSD" license.  For details, see deps/jsr-305/LICENSE.
 Bundled as lib/com.google.code.findbugs-jsr305-3.0.2.jar
 Source available at https://storage.googleapis.com/google-code-archive-source/v2/code.google.com/jsr-305/source-archive.zip
 ------------------------------------------------------------------------------------
-This product bundles Google Protocal Buffers, which is available under a "3-clause BSD"
+This product bundles Google Protocol Buffers, which is available under a "3-clause BSD"
 license.
 
 Bundled as
@@ -551,8 +557,7 @@ Bundled as
 Source available at https://github.com/google/google-auth-library-java/tree/0.9.0
 ------------------------------------------------------------------------------------
 This product bundles the JLine Library, which is available under a "2-clause BSD"
-license. For details, see deps/jline-0.9.94/LICENSE
+license. For details, see deps/jline-2.11/LICENSE
 
 Bundled as
-  - lib/jline-jline-0.9.94.jar
-
+  - lib/jline-jline-2.11.jar

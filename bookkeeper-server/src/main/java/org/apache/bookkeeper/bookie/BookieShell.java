@@ -18,16 +18,16 @@
 
 package org.apache.bookkeeper.bookie;
 
-import static com.google.common.base.Charsets.UTF_8;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.bookkeeper.meta.MetadataDrivers.runFunctionWithLedgerManagerFactory;
 import static org.apache.bookkeeper.meta.MetadataDrivers.runFunctionWithMetadataBookieDriver;
 import static org.apache.bookkeeper.meta.MetadataDrivers.runFunctionWithRegistrationManager;
 import static org.apache.bookkeeper.tools.cli.helpers.CommandHelpers.getBookieSocketAddrStringRepresentation;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Optional;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.google.common.util.concurrent.AbstractFuture;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
@@ -51,6 +51,7 @@ import java.nio.file.attribute.FileTime;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -72,6 +73,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 import org.apache.bookkeeper.bookie.BookieException.CookieNotFoundException;
 import org.apache.bookkeeper.bookie.BookieException.InvalidCookieException;
@@ -103,6 +105,7 @@ import org.apache.bookkeeper.proto.BookieClient;
 import org.apache.bookkeeper.proto.BookieClientImpl;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
+import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallbackFuture;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.Processor;
 import org.apache.bookkeeper.replication.AuditorElector;
 import org.apache.bookkeeper.replication.ReplicationException;
@@ -187,6 +190,7 @@ public class BookieShell implements Tool {
     static final String CMD_CONVERT_TO_DB_STORAGE = "convert-to-db-storage";
     static final String CMD_CONVERT_TO_INTERLEAVED_STORAGE = "convert-to-interleaved-storage";
     static final String CMD_REBUILD_DB_LEDGER_LOCATIONS_INDEX = "rebuild-db-ledger-locations-index";
+    static final String CMD_REGENERATE_INTERLEAVED_STORAGE_INDEX_FILE = "regenerate-interleaved-storage-index-file";
     static final String CMD_HELP = "help";
 
     final ServerConfiguration bkConf = new ServerConfiguration();
@@ -585,7 +589,8 @@ public class BookieShell implements Tool {
 
         private Map<Long, Integer> inspectLedger(LedgerMetadata metadata, Set<BookieSocketAddress> bookiesToInspect) {
             Map<Long, Integer> numBookiesToReplacePerEnsemble = new TreeMap<Long, Integer>();
-            for (Map.Entry<Long, ? extends List<BookieSocketAddress>> ensemble : metadata.getEnsembles().entrySet()) {
+            for (Map.Entry<Long, ? extends List<BookieSocketAddress>> ensemble :
+                     metadata.getAllEnsembles().entrySet()) {
                 List<BookieSocketAddress> bookieList = ensemble.getValue();
                 System.out.print(ensemble.getKey() + ":\t");
                 int numBookiesToReplace = 0;
@@ -850,7 +855,6 @@ public class BookieShell implements Tool {
                                     System.out.println("Data: " + ByteBufUtil.prettyHexDump(buffer));
                                 }
 
-                                buffer.release();
                                 future.complete(null);
                                 }, null, BookieProtocol.FLAG_NONE);
 
@@ -1081,28 +1085,6 @@ public class BookieShell implements Tool {
         }
     }
 
-    static class ReadMetadataCallback extends AbstractFuture<LedgerMetadata>
-            implements GenericCallback<LedgerMetadata> {
-        final long ledgerId;
-
-        ReadMetadataCallback(long ledgerId) {
-            this.ledgerId = ledgerId;
-        }
-
-        long getLedgerId() {
-            return ledgerId;
-        }
-
-        @Override
-        public void operationComplete(int rc, LedgerMetadata result) {
-            if (rc != 0) {
-                setException(BKException.create(rc));
-            } else {
-                set(result);
-            }
-        }
-    }
-
     /**
      * Print the metadata for a ledger.
      */
@@ -1112,6 +1094,8 @@ public class BookieShell implements Tool {
         LedgerMetadataCmd() {
             super(CMD_LEDGERMETADATA);
             lOpts.addOption("l", "ledgerid", true, "Ledger ID");
+            lOpts.addOption("dumptofile", true, "Dump metadata for ledger, to a file");
+            lOpts.addOption("restorefromfile", true, "Restore metadata for ledger, from a file");
         }
 
         @Override
@@ -1122,11 +1106,29 @@ public class BookieShell implements Tool {
                 return -1;
             }
 
+            if (cmdLine.hasOption("dumptofile") && cmdLine.hasOption("restorefromfile")) {
+                System.err.println("Only one of --dumptofile and --restorefromfile can be specified");
+                return -2;
+            }
             runFunctionWithLedgerManagerFactory(bkConf, mFactory -> {
                 try (LedgerManager m = mFactory.newLedgerManager()) {
-                    ReadMetadataCallback cb = new ReadMetadataCallback(lid);
-                    m.readLedgerMetadata(lid, cb);
-                    printLedgerMetadata(lid, cb.get(), true);
+                    if (cmdLine.hasOption("dumptofile")) {
+                        GenericCallbackFuture<LedgerMetadata> cb = new GenericCallbackFuture<>();
+                        m.readLedgerMetadata(lid, cb);
+                        Files.write(FileSystems.getDefault().getPath(cmdLine.getOptionValue("dumptofile")),
+                                    cb.join().serialize());
+                    } else if (cmdLine.hasOption("restorefromfile")) {
+                        byte[] serialized = Files.readAllBytes(
+                                FileSystems.getDefault().getPath(cmdLine.getOptionValue("restorefromfile")));
+                        LedgerMetadata md = LedgerMetadata.parseConfig(serialized, Version.NEW, Optional.absent());
+                        GenericCallbackFuture<LedgerMetadata> cb = new GenericCallbackFuture<>();
+                        m.createLedgerMetadata(lid, md, cb);
+                        cb.join();
+                    } else {
+                        GenericCallbackFuture<LedgerMetadata> cb = new GenericCallbackFuture<>();
+                        m.readLedgerMetadata(lid, cb);
+                        printLedgerMetadata(lid, cb.get(), true);
+                    }
                 } catch (Exception e) {
                     throw new UncheckedExecutionException(e);
                 }
@@ -1138,12 +1140,12 @@ public class BookieShell implements Tool {
 
         @Override
         String getDescription() {
-            return "Print the metadata for a ledger.";
+            return "Print the metadata for a ledger, or optionally dump to a file.";
         }
 
         @Override
         String getUsage() {
-            return "ledgermetadata -ledgerid <ledgerid>";
+            return "ledgermetadata -ledgerid <ledgerid> [--dump-to-file FILENAME|--restore-from-file FILENAME]";
         }
 
         @Override
@@ -2816,6 +2818,69 @@ public class BookieShell implements Tool {
         }
     }
 
+    /**
+     * Regenerate an index file for interleaved storage.
+     */
+    class RegenerateInterleavedStorageIndexFile extends MyCommand {
+        Options opts = new Options();
+
+        public RegenerateInterleavedStorageIndexFile() {
+            super(CMD_REGENERATE_INTERLEAVED_STORAGE_INDEX_FILE);
+            Option ledgerOption = new Option("l", "ledgerIds", true,
+                                             "Ledger(s) whose index needs to be regenerated."
+                                             + " Multiple can be specified, comma separated.");
+            ledgerOption.setRequired(true);
+            ledgerOption.setValueSeparator(',');
+            ledgerOption.setArgs(Option.UNLIMITED_VALUES);
+
+            opts.addOption(ledgerOption);
+            opts.addOption("dryRun", false,
+                           "Process the entryLogger, but don't write anything.");
+            opts.addOption("password", true,
+                           "The bookie stores the password in the index file, so we need it to regenerate. "
+                           + "This must match the value in the ledger metadata.");
+            opts.addOption("b64password", true,
+                           "The password in base64 encoding, for cases where the password is not UTF-8.");
+        }
+
+        @Override
+        Options getOptions() {
+            return opts;
+        }
+
+        @Override
+        String getDescription() {
+            return "Regenerate an interleaved storage index file, from available entrylogger files.";
+        }
+
+        @Override
+        String getUsage() {
+            return CMD_REGENERATE_INTERLEAVED_STORAGE_INDEX_FILE;
+        }
+
+        @Override
+        int runCmd(CommandLine cmdLine) throws Exception {
+            byte[] password;
+            if (cmdLine.hasOption("password")) {
+                password = cmdLine.getOptionValue("password").getBytes(UTF_8);
+            } else if (cmdLine.hasOption("b64password")) {
+                password = Base64.getDecoder().decode(cmdLine.getOptionValue("b64password"));
+            } else {
+                LOG.error("The password must be specified to regenerate the index file.");
+                return 1;
+            }
+            Set<Long> ledgerIds = Arrays.stream(cmdLine.getOptionValues("ledgerIds"))
+                .map((id) -> Long.parseLong(id)).collect(Collectors.toSet());
+            boolean dryRun = cmdLine.hasOption("dryRun");
+
+            LOG.info("=== Rebuilding index file for {} ===", ledgerIds);
+            ServerConfiguration conf = new ServerConfiguration(bkConf);
+            new InterleavedStorageRegenerateIndexOp(conf, ledgerIds, password).initiate(dryRun);
+            LOG.info("-- Done rebuilding index file for {} --", ledgerIds);
+            return 0;
+        }
+    }
+
     final Map<String, MyCommand> commands = new HashMap<String, MyCommand>();
 
     {
@@ -2849,6 +2914,7 @@ public class BookieShell implements Tool {
         commands.put(CMD_CONVERT_TO_DB_STORAGE, new ConvertToDbStorageCmd());
         commands.put(CMD_CONVERT_TO_INTERLEAVED_STORAGE, new ConvertToInterleavedStorageCmd());
         commands.put(CMD_REBUILD_DB_LEDGER_LOCATIONS_INDEX, new RebuildDbLedgerLocationsIndexCmd());
+        commands.put(CMD_REGENERATE_INTERLEAVED_STORAGE_INDEX_FILE, new RegenerateInterleavedStorageIndexFile());
         commands.put(CMD_HELP, new HelpCmd());
         commands.put(CMD_LOSTBOOKIERECOVERYDELAY, new LostBookieRecoveryDelayCmd());
         commands.put(CMD_TRIGGERAUDIT, new TriggerAuditCmd());

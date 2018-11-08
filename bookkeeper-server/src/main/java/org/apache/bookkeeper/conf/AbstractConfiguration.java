@@ -102,10 +102,13 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
     // Enable authentication of the other connection end point (mutual authentication)
     protected static final String TLS_CLIENT_AUTHENTICATION = "tlsClientAuthentication";
 
+    // Preserve MDC or not for tasks in executor
+    protected static final String PRESERVE_MDC_FOR_TASK_EXECUTION = "preserveMdcForTaskExecution";
+
     // Default formatter classes
     protected static final Class<? extends EntryFormatter> DEFAULT_ENTRY_FORMATTER = StringEntryFormatter.class;
     protected static final Class<? extends LedgerIdFormatter> DEFAULT_LEDGERID_FORMATTER =
-            LedgerIdFormatter.UUIDLedgerIdFormatter.class;
+            LedgerIdFormatter.LongLedgerIdFormatter.class;
 
     /**
      * This list will be passed to {@link SSLEngine#setEnabledCipherSuites(java.lang.String[]) }.
@@ -225,35 +228,12 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      * @return metadata service uri.
      * @throws ConfigurationException if the metadata service uri is invalid.
      */
-    @SuppressWarnings("deprecation")
     public String getMetadataServiceUri() throws ConfigurationException {
         String serviceUri = getString(METADATA_SERVICE_URI);
         if (null == serviceUri) {
             // no service uri is defined, fallback to old settings
             String ledgerManagerType;
-            Class<? extends LedgerManagerFactory> factoryClass = getLedgerManagerFactoryClass();
-            if (factoryClass == null) {
-                // set the ledger manager type to "null", so the driver implementation knows that the type is not set.
-                ledgerManagerType = "null";
-            } else {
-                if (!AbstractZkLedgerManagerFactory.class.isAssignableFrom(factoryClass)) {
-                    // this is a non-zk implementation
-                    throw new UnsupportedOperationException("metadata service uri is not supported for "
-                        + factoryClass);
-                }
-                if (factoryClass == HierarchicalLedgerManagerFactory.class) {
-                    ledgerManagerType = HierarchicalLedgerManagerFactory.NAME;
-                } else if (factoryClass == org.apache.bookkeeper.meta.FlatLedgerManagerFactory.class) {
-                    ledgerManagerType = org.apache.bookkeeper.meta.FlatLedgerManagerFactory.NAME;
-                } else if (factoryClass == LongHierarchicalLedgerManagerFactory.class) {
-                    ledgerManagerType = LongHierarchicalLedgerManagerFactory.NAME;
-                } else if (factoryClass == org.apache.bookkeeper.meta.MSLedgerManagerFactory.class) {
-                    ledgerManagerType = org.apache.bookkeeper.meta.MSLedgerManagerFactory.NAME;
-                } else {
-                    throw new IllegalArgumentException("Unknown zookeeper based ledger manager factory : "
-                        + factoryClass);
-                }
-            }
+            ledgerManagerType = getLedgerManagerLayoutStringFromFactoryClass();
             String zkServers = getZkServers();
             if (null != zkServers) {
                 // URI doesn't accept ','
@@ -424,6 +404,39 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      */
     public String getLedgerManagerFactoryClassName() {
         return getString(LEDGER_MANAGER_FACTORY_CLASS);
+    }
+
+    /**
+     * Get layout string ("null" if unconfigured).
+     *
+     * @return null, hierarchical, longhierarchical, or flat based on LEDGER_MANAGER_FACTORY_CLASS
+     */
+    @SuppressWarnings("deprecation")
+    public String getLedgerManagerLayoutStringFromFactoryClass() throws ConfigurationException {
+        String ledgerManagerType;
+        Class<? extends LedgerManagerFactory> factoryClass = getLedgerManagerFactoryClass();
+        if (factoryClass == null) {
+            // set the ledger manager type to "null", so the driver implementation knows that the type is not set.
+            ledgerManagerType = "null";
+        } else {
+            if (!AbstractZkLedgerManagerFactory.class.isAssignableFrom(factoryClass)) {
+                // this is a non-zk implementation
+                throw new ConfigurationException("metadata service uri is not supported for " + factoryClass);
+            }
+            if (factoryClass == HierarchicalLedgerManagerFactory.class) {
+                ledgerManagerType = HierarchicalLedgerManagerFactory.NAME;
+            } else if (factoryClass == org.apache.bookkeeper.meta.FlatLedgerManagerFactory.class) {
+                ledgerManagerType = org.apache.bookkeeper.meta.FlatLedgerManagerFactory.NAME;
+            } else if (factoryClass == LongHierarchicalLedgerManagerFactory.class) {
+                ledgerManagerType = LongHierarchicalLedgerManagerFactory.NAME;
+            } else if (factoryClass == org.apache.bookkeeper.meta.MSLedgerManagerFactory.class) {
+                ledgerManagerType = org.apache.bookkeeper.meta.MSLedgerManagerFactory.NAME;
+            } else {
+                throw new IllegalArgumentException("Unknown zookeeper based ledger manager factory : "
+                        + factoryClass);
+            }
+        }
+        return ledgerManagerType;
     }
 
     /**
@@ -838,9 +851,29 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      *         underreplicated ledger mark time.
      */
     public boolean getStoreSystemTimeAsLedgerUnderreplicatedMarkTime() {
-        return getBoolean(STORE_SYSTEMTIME_AS_LEDGER_UNDERREPLICATED_MARK_TIME, false);
+        return getBoolean(STORE_SYSTEMTIME_AS_LEDGER_UNDERREPLICATED_MARK_TIME, true);
     }
 
+    /**
+     * Whether to preserve MDC for tasks in Executor.
+     *
+     * @return flag to enable/disable MDC preservation in Executor.
+     */
+    public boolean getPreserveMdcForTaskExecution() {
+        return getBoolean(PRESERVE_MDC_FOR_TASK_EXECUTION, false);
+    }
+
+    /**
+     * Whether to preserve MDC for tasks in Executor.
+     *
+     * @param enabled
+     *          flag to enable/disable MDC preservation in Executor.
+     * @return configuration.
+     */
+    public T setPreserveMdcForTaskExecution(boolean enabled) {
+        setProperty(PRESERVE_MDC_FOR_TASK_EXECUTION, enabled);
+        return getThis();
+    }
     /**
      * Trickery to allow inheritance with fluent style.
      */

@@ -17,13 +17,16 @@
  */
 package org.apache.bookkeeper.util;
 
+import java.util.Map;
 import java.util.concurrent.RejectedExecutionException;
 
+import org.apache.bookkeeper.common.util.MdcUtils;
 import org.apache.bookkeeper.common.util.OrderedExecutor;
 import org.apache.bookkeeper.common.util.SafeRunnable;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 
 /**
  * Generic callback implementation which will run the
@@ -34,6 +37,7 @@ public abstract class OrderedGenericCallback<T> implements GenericCallback<T> {
 
     private final OrderedExecutor executor;
     private final long orderingKey;
+    private final Map<String, String> mdcContextMap;
 
     /**
      * @param executor The executor on which to run the callback
@@ -43,33 +47,40 @@ public abstract class OrderedGenericCallback<T> implements GenericCallback<T> {
     public OrderedGenericCallback(OrderedExecutor executor, long orderingKey) {
         this.executor = executor;
         this.orderingKey = orderingKey;
+        this.mdcContextMap = executor.preserveMdc() ? MDC.getCopyOfContextMap() : null;
     }
 
     @Override
     public final void operationComplete(final int rc, final T result) {
-        // during closing, callbacks that are error out might try to submit to
-        // the scheduler again. if the submission will go to same thread, we
-        // don't need to submit to executor again. this is also an optimization for
-        // callback submission
-        if (Thread.currentThread().getId() == executor.getThreadID(orderingKey)) {
-            safeOperationComplete(rc, result);
-        } else {
-            try {
-                executor.executeOrdered(orderingKey, new SafeRunnable() {
-                    @Override
-                    public void safeRun() {
-                        safeOperationComplete(rc, result);
-                    }
-                    @Override
-                    public String toString() {
-                        return String.format("Callback(key=%s, name=%s)",
-                                             orderingKey,
-                                             OrderedGenericCallback.this);
-                    }
-                });
-            } catch (RejectedExecutionException re) {
-                LOG.warn("Failed to submit callback for {} : ", orderingKey, re);
+        MdcUtils.restoreContext(mdcContextMap);
+        try {
+            // during closing, callbacks that are error out might try to submit to
+            // the scheduler again. if the submission will go to same thread, we
+            // don't need to submit to executor again. this is also an optimization for
+            // callback submission
+            if (Thread.currentThread().getId() == executor.getThreadID(orderingKey)) {
+                safeOperationComplete(rc, result);
+            } else {
+                try {
+                    executor.executeOrdered(orderingKey, new SafeRunnable() {
+                        @Override
+                        public void safeRun() {
+                            safeOperationComplete(rc, result);
+                        }
+
+                        @Override
+                        public String toString() {
+                            return String.format("Callback(key=%s, name=%s)",
+                                    orderingKey,
+                                    OrderedGenericCallback.this);
+                        }
+                    });
+                } catch (RejectedExecutionException re) {
+                    LOG.warn("Failed to submit callback for {} : ", orderingKey, re);
+                }
             }
+        } finally {
+            MDC.clear();
         }
     }
 

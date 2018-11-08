@@ -49,6 +49,7 @@ import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.epoll.EpollSocketChannel;
 import io.netty.channel.local.LocalChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.channel.unix.Errors.NativeIoException;
 import io.netty.handler.codec.CorruptedFrameException;
 import io.netty.handler.codec.DecoderException;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
@@ -62,6 +63,7 @@ import io.netty.util.concurrent.GenericFutureListener;
 
 import java.io.IOException;
 import java.net.SocketAddress;
+import java.net.UnknownHostException;
 import java.security.cert.Certificate;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -70,6 +72,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.Set;
@@ -87,6 +90,7 @@ import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeperClientStats;
 import org.apache.bookkeeper.client.BookieInfoReader.BookieInfo;
 import org.apache.bookkeeper.client.api.WriteFlag;
+import org.apache.bookkeeper.common.util.MdcUtils;
 import org.apache.bookkeeper.common.util.OrderedExecutor;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.net.BookieSocketAddress;
@@ -132,6 +136,7 @@ import org.apache.bookkeeper.util.collections.ConcurrentOpenHashMap;
 import org.apache.bookkeeper.util.collections.SynchronizedHashMultiMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 
 /**
  * This class manages all details of connection to a particular bookie. It also
@@ -198,6 +203,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
     private final Counter failedTlsHandshakeCounter;
 
     private final boolean useV2WireProtocol;
+    private final boolean preserveMdcForTaskExecution;
 
     /**
      * The following member variables do not need to be concurrent, or volatile
@@ -267,6 +273,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         this.getBookieInfoTimeout = conf.getBookieInfoTimeout();
         this.startTLSTimeout = conf.getStartTLSTimeout();
         this.useV2WireProtocol = conf.getUseV2WireProtocol();
+        this.preserveMdcForTaskExecution = conf.getPreserveMdcForTaskExecution();
 
         this.authProviderFactory = authProviderFactory;
         this.extRegistry = extRegistry;
@@ -466,7 +473,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         }
 
         ChannelFuture future = bootstrap.connect(bookieAddr);
-        future.addListener(new ConnectionFutureListener(startTime));
+        future.addListener(contextPreservingListener(new ConnectionFutureListener(startTime)));
         future.addListener(x -> makeWritable());
         return future;
     }
@@ -565,7 +572,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                 .setMasterKey(UnsafeByteOperations.unsafeWrap(masterKey))
                 .setBody(body);
 
-        final Request writeLacRequest = Request.newBuilder()
+        final Request writeLacRequest = withRequestContext(Request.newBuilder())
                 .setHeader(headerBuilder)
                 .setWriteLacRequest(writeLacBuilder)
                 .build();
@@ -596,7 +603,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         ForceLedgerRequest.Builder writeLacBuilder = ForceLedgerRequest.newBuilder()
                 .setLedgerId(ledgerId);
 
-        final Request forceLedgerRequest = Request.newBuilder()
+        final Request forceLedgerRequest = withRequestContext(Request.newBuilder())
                 .setHeader(headerBuilder)
                 .setForceLedgerRequest(writeLacBuilder)
                 .build();
@@ -676,7 +683,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                 addBuilder.setWriteFlags(WriteFlag.getWriteFlagsValue(writeFlags));
             }
 
-            request = Request.newBuilder()
+            request = withRequestContext(Request.newBuilder())
                     .setHeader(headerBuilder)
                     .setAddRequest(addBuilder)
                     .build();
@@ -716,7 +723,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                     .setTxnId(txnId);
             ReadLacRequest.Builder readLacBuilder = ReadLacRequest.newBuilder()
                     .setLedgerId(ledgerId);
-            request = Request.newBuilder()
+            request = withRequestContext(Request.newBuilder())
                     .setHeader(headerBuilder)
                     .setReadLacRequest(readLacBuilder)
                     .build();
@@ -823,7 +830,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                 readBuilder.setMasterKey(ByteString.copyFrom(masterKey));
             }
 
-            request = Request.newBuilder()
+            request = withRequestContext(Request.newBuilder())
                     .setHeader(headerBuilder)
                     .setReadRequest(readBuilder)
                     .build();
@@ -851,7 +858,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         GetBookieInfoRequest.Builder getBookieInfoBuilder = GetBookieInfoRequest.newBuilder()
                 .setRequested(requested);
 
-        final Request getBookieInfoRequest = Request.newBuilder()
+        final Request getBookieInfoRequest = withRequestContext(Request.newBuilder())
                 .setHeader(headerBuilder)
                 .setGetBookieInfoRequest(getBookieInfoBuilder)
                 .build();
@@ -1132,7 +1139,13 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         }
 
         if (cause instanceof IOException) {
-            LOG.warn("Exception caught on:{} cause:", ctx.channel(), cause);
+            if (cause instanceof NativeIoException) {
+                // Stack trace is not very interesting for native IO exceptio, the important part is in
+                // the exception message
+                LOG.warn("Exception caught on:{} cause: {}", ctx.channel(), cause.getMessage());
+            } else {
+                LOG.warn("Exception caught on:{} cause:", ctx.channel(), cause);
+            }
             ctx.close();
             return;
         }
@@ -1290,8 +1303,8 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
     private void readV3Response(final Response response) {
         final BKPacketHeader header = response.getHeader();
 
-        final CompletionValue completionValue = completionObjects.get(newCompletionKey(header.getTxnId(),
-                header.getOperation()));
+        final CompletionKey key = newCompletionKey(header.getTxnId(), header.getOperation());
+        final CompletionValue completionValue = completionObjects.get(key);
 
         if (null == completionValue) {
             // Unexpected response, so log it. The txnId should have been present.
@@ -1304,6 +1317,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
             executor.executeOrdered(orderingKey, new SafeRunnable() {
                 @Override
                 public void safeRun() {
+                    completionValue.restoreMdcContext();
                     completionValue.handleV3Response(response);
                 }
 
@@ -1316,7 +1330,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
             });
         }
 
-        completionObjects.remove(newCompletionKey(header.getTxnId(), header.getOperation()));
+        completionObjects.remove(key);
     }
 
     void initTLSHandshake() {
@@ -1399,6 +1413,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         private final OpStatsLogger opLogger;
         private final OpStatsLogger timeoutOpLogger;
         private final String operationName;
+        private final Map<String, String> mdcContextMap;
         protected Object ctx;
         protected long ledgerId;
         protected long entryId;
@@ -1416,6 +1431,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
             this.startTime = MathUtils.nowInNano();
             this.opLogger = opLogger;
             this.timeoutOpLogger = timeoutOpLogger;
+            this.mdcContextMap = preserveMdcForTaskExecution ? MDC.getCopyOfContextMap() : null;
         }
 
         private long latency() {
@@ -1469,6 +1485,9 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
             }
         }
 
+        public void restoreMdcContext() {
+            MdcUtils.restoreContext(mdcContextMap);
+        }
 
         public abstract void errorOut();
         public abstract void errorOut(int rc);
@@ -2128,6 +2147,55 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         }
     }
 
+    Request.Builder withRequestContext(Request.Builder builder) {
+        if (preserveMdcForTaskExecution) {
+            return appendRequestContext(builder);
+        }
+        return builder;
+    }
+
+    static Request.Builder appendRequestContext(Request.Builder builder) {
+        final Map<String, String> mdcContextMap = MDC.getCopyOfContextMap();
+        if (mdcContextMap == null || mdcContextMap.isEmpty()) {
+            return builder;
+        }
+        for (Map.Entry<String, String> kv : mdcContextMap.entrySet()) {
+            final BookkeeperProtocol.ContextPair context = BookkeeperProtocol.ContextPair.newBuilder()
+                    .setKey(kv.getKey())
+                    .setValue(kv.getValue())
+                    .build();
+            builder.addRequestContext(context);
+        }
+        return builder;
+    }
+
+    ChannelFutureListener contextPreservingListener(ChannelFutureListener listener) {
+        return preserveMdcForTaskExecution ? new ContextPreservingFutureListener(listener) : listener;
+    }
+
+    /**
+     * Decorator to preserve MDC for connection listener.
+     */
+    static class ContextPreservingFutureListener implements ChannelFutureListener {
+        private final ChannelFutureListener listener;
+        private final Map<String, String> mdcContextMap;
+
+        ContextPreservingFutureListener(ChannelFutureListener listener) {
+            this.listener = listener;
+            this.mdcContextMap = MDC.getCopyOfContextMap();
+        }
+
+        @Override
+        public void operationComplete(ChannelFuture future) throws Exception {
+            MdcUtils.restoreContext(mdcContextMap);
+            try {
+                listener.operationComplete(future);
+            } finally {
+                MDC.clear();
+            }
+        }
+    }
+
     /**
      * Connection listener.
      */
@@ -2194,8 +2262,17 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                     closeChannel(future.channel());
                     return; // pendingOps should have been completed when other channel connected
                 } else {
-                    LOG.error("Could not connect to bookie: {}/{}, current state {} : ",
-                            future.channel(), addr, state, future.cause());
+                    Throwable cause = future.cause();
+                    if (cause instanceof UnknownHostException || cause instanceof NativeIoException) {
+                        // Don't log stack trace for common errors
+                        LOG.warn("Could not connect to bookie: {}/{}, current state {} : {}",
+                                future.channel(), addr, state, future.cause().getMessage());
+                    } else {
+                        // Regular exceptions, include stack trace
+                        LOG.error("Could not connect to bookie: {}/{}, current state {} : ",
+                                future.channel(), addr, state, future.cause());
+                    }
+
                     rc = BKException.Code.BookieHandleNotAvailableException;
                     closeChannel(future.channel());
                     channel = null;
@@ -2228,7 +2305,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         final CompletionKey completionKey = new V3CompletionKey(txnId, OperationType.START_TLS);
         completionObjects.put(completionKey,
                               new StartTLSCompletion(completionKey));
-        BookkeeperProtocol.Request.Builder h = BookkeeperProtocol.Request.newBuilder();
+        BookkeeperProtocol.Request.Builder h = withRequestContext(BookkeeperProtocol.Request.newBuilder());
         BKPacketHeader.Builder headerBuilder = BKPacketHeader.newBuilder()
                 .setVersion(ProtocolVersion.VERSION_THREE)
                 .setOperation(OperationType.START_TLS)

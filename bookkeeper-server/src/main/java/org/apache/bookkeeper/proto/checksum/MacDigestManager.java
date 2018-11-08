@@ -46,6 +46,15 @@ public class MacDigestManager extends DigestManager {
 
     final byte[] passwd;
 
+    static final byte[] EMPTY_LEDGER_KEY;
+    static {
+        try {
+            EMPTY_LEDGER_KEY = MacDigestManager.genDigest("ledger", new byte[0]);
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     private final ThreadLocal<Mac> mac = new ThreadLocal<Mac>() {
         @Override
         protected Mac initialValue() {

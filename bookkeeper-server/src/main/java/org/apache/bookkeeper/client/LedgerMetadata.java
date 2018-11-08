@@ -19,6 +19,7 @@ package org.apache.bookkeeper.client;
 
 import static com.google.common.base.Charsets.UTF_8;
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkState;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Optional;
@@ -33,7 +34,6 @@ import java.nio.CharBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -135,6 +135,7 @@ public class LedgerMetadata implements org.apache.bookkeeper.client.api.LedgerMe
                    int ackQuorumSize,
                    LedgerMetadataFormat.State state,
                    java.util.Optional<Long> lastEntryId,
+                   java.util.Optional<Long> length,
                    Map<Long, List<BookieSocketAddress>> ensembles,
                    DigestType digestType,
                    java.util.Optional<byte[]> password,
@@ -147,9 +148,14 @@ public class LedgerMetadata implements org.apache.bookkeeper.client.api.LedgerMe
         this.writeQuorumSize = writeQuorumSize;
         this.ackQuorumSize = ackQuorumSize;
         this.state = state;
-        lastEntryId.ifPresent((eid) -> this.lastEntryId = eid);
-
+        if (lastEntryId.isPresent()) {
+            this.lastEntryId = lastEntryId.get();
+        } else {
+            this.lastEntryId = LedgerHandle.INVALID_ENTRY_ID;
+        }
+        length.ifPresent((l) -> this.length = l);
         setEnsembles(ensembles);
+
         if (state != LedgerMetadataFormat.State.CLOSED) {
             currentEnsemble = this.ensembles.lastEntry().getValue();
         }
@@ -208,17 +214,6 @@ public class LedgerMetadata implements org.apache.bookkeeper.client.api.LedgerMe
     private LedgerMetadata() {
         this(0, 0, 0, BookKeeper.DigestType.MAC, new byte[] {});
         this.hasPassword = false;
-    }
-
-    /**
-     * Get the Map of bookie ensembles for the various ledger fragments
-     * that make up the ledger.
-     *
-     * @return SortedMap of Ledger Fragments and the corresponding
-     * bookie ensembles that store the entries.
-     */
-    public TreeMap<Long, ? extends List<BookieSocketAddress>> getEnsembles() {
-        return ensembles;
     }
 
     @Override
@@ -676,66 +671,6 @@ public class LedgerMetadata implements org.apache.bookkeeper.client.api.LedgerMe
         return true;
     }
 
-    /**
-     * Is the metadata conflict with new updated metadata.
-     *
-     * @param newMeta
-     *          Re-read metadata
-     * @return true if the metadata is conflict.
-     */
-    boolean isConflictWith(LedgerMetadata newMeta) {
-        /*
-         *  if length & close have changed, then another client has
-         *  opened the ledger, can't resolve this conflict.
-         */
-
-        if (metadataFormatVersion != newMeta.metadataFormatVersion
-            || ensembleSize != newMeta.ensembleSize
-            || writeQuorumSize != newMeta.writeQuorumSize
-            || ackQuorumSize != newMeta.ackQuorumSize
-            || length != newMeta.length
-            || state != newMeta.state
-            || !digestType.equals(newMeta.digestType)
-            || !Arrays.equals(password, newMeta.password)
-            || !LedgerMetadata.areByteArrayValMapsEqual(customMetadata, newMeta.customMetadata)) {
-            return true;
-        }
-
-        // verify the ctime
-        if (storeSystemtimeAsLedgerCreationTime != newMeta.storeSystemtimeAsLedgerCreationTime) {
-            return true;
-        } else if (storeSystemtimeAsLedgerCreationTime) {
-            return ctime != newMeta.ctime;
-        }
-
-        if (state == LedgerMetadataFormat.State.CLOSED
-            && lastEntryId != newMeta.lastEntryId) {
-            return true;
-        }
-        // if ledger is closed, we can just take the new ensembles
-        if (newMeta.state != LedgerMetadataFormat.State.CLOSED) {
-            // allow new metadata to be one ensemble less than current metadata
-            // since ensemble change might kick in when recovery changed metadata
-            int diff = ensembles.size() - newMeta.ensembles.size();
-            if (0 != diff && 1 != diff) {
-                return true;
-            }
-            // ensemble distribution should be same
-            // we don't check the detail ensemble, since new bookie will be set
-            // using recovery tool.
-            Iterator<Long> keyIter = ensembles.keySet().iterator();
-            Iterator<Long> newMetaKeyIter = newMeta.ensembles.keySet().iterator();
-            for (int i = 0; i < newMeta.ensembles.size(); i++) {
-                Long curKey = keyIter.next();
-                Long newMetaKey = newMetaKeyIter.next();
-                if (!curKey.equals(newMetaKey)) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
     @Override
     public String toString() {
         return toStringRepresentation(true);
@@ -787,4 +722,13 @@ public class LedgerMetadata implements org.apache.bookkeeper.client.api.LedgerMe
         return bookies;
     }
 
+    List<BookieSocketAddress> getLastEnsembleValue() {
+        checkState(!ensembles.isEmpty(), "Metadata should never be created with no ensembles");
+        return ensembles.lastEntry().getValue();
+    }
+
+    Long getLastEnsembleKey() {
+        checkState(!ensembles.isEmpty(), "Metadata should never be created with no ensembles");
+        return ensembles.lastKey();
+    }
 }

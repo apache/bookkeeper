@@ -33,10 +33,14 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.apache.bookkeeper.client.BKException;
+import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.meta.ZkLayoutManager;
 import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.DataFormats.AuditorVoteFormat;
@@ -84,7 +88,9 @@ public class AuditorElector {
 
     private final String bookieId;
     private final ServerConfiguration conf;
+    private final BookKeeper bkc;
     private final ZooKeeper zkc;
+    private final boolean ownBkc;
     private final ExecutorService executor;
 
     private String myVote;
@@ -96,21 +102,13 @@ public class AuditorElector {
     private final StatsLogger statsLogger;
 
 
-    /**
-     * AuditorElector for performing the auditor election.
-     *
-     * @param bookieId
-     *            - bookie identifier, comprises HostAddress:Port
-     * @param conf
-     *            - configuration
-     * @param zkc
-     *            - ZK instance
-     * @throws UnavailableException
-     *             throws unavailable exception while initializing the elector
-     */
-    public AuditorElector(final String bookieId, ServerConfiguration conf,
-                          ZooKeeper zkc) throws UnavailableException {
-        this(bookieId, conf, zkc, NullStatsLogger.INSTANCE);
+    @VisibleForTesting
+    public AuditorElector(final String bookieId, ServerConfiguration conf) throws UnavailableException {
+        this(
+            bookieId,
+            conf,
+            Auditor.createBookKeeperClientThrowUnavailableException(conf),
+            true);
     }
 
     /**
@@ -120,18 +118,42 @@ public class AuditorElector {
      *            - bookie identifier, comprises HostAddress:Port
      * @param conf
      *            - configuration
-     * @param zkc
-     *            - ZK instance
+     * @param bkc
+     *            - bookkeeper instance
+     * @throws UnavailableException
+     *             throws unavailable exception while initializing the elector
+     */
+    public AuditorElector(final String bookieId,
+                          ServerConfiguration conf,
+                          BookKeeper bkc,
+                          boolean ownBkc) throws UnavailableException {
+        this(bookieId, conf, bkc, NullStatsLogger.INSTANCE, ownBkc);
+    }
+
+    /**
+     * AuditorElector for performing the auditor election.
+     *
+     * @param bookieId
+     *            - bookie identifier, comprises HostAddress:Port
+     * @param conf
+     *            - configuration
+     * @param bkc
+     *            - bookkeeper instance
      * @param statsLogger
      *            - stats logger
      * @throws UnavailableException
      *             throws unavailable exception while initializing the elector
      */
-    public AuditorElector(final String bookieId, ServerConfiguration conf,
-                          ZooKeeper zkc, StatsLogger statsLogger) throws UnavailableException {
+    public AuditorElector(final String bookieId,
+                          ServerConfiguration conf,
+                          BookKeeper bkc,
+                          StatsLogger statsLogger,
+                          boolean ownBkc) throws UnavailableException {
         this.bookieId = bookieId;
         this.conf = conf;
-        this.zkc = zkc;
+        this.bkc = bkc;
+        this.ownBkc = ownBkc;
+        this.zkc = ((ZkLayoutManager) bkc.getMetadataClientDriver().getLayoutManager()).getZk();
         this.statsLogger = statsLogger;
         this.electionAttempts = statsLogger.getCounter(ELECTION_ATTEMPTS);
         basePath = ZKMetadataDriverBase.resolveZkLedgersRootPath(conf) + '/'
@@ -155,6 +177,10 @@ public class AuditorElector {
                     TextFormat.printToString(builder.build()).getBytes(UTF_8), zkAcls,
                     CreateMode.EPHEMERAL_SEQUENTIAL);
         }
+    }
+
+    String getMyVote() {
+        return myVote;
     }
 
     private String getVotePath(String vote) {
@@ -206,9 +232,9 @@ public class AuditorElector {
         }
     }
 
-    public void start() {
+    public Future<?> start() {
         running.set(true);
-        submitElectionTask();
+        return submitElectionTask();
     }
 
     /**
@@ -242,7 +268,7 @@ public class AuditorElector {
      * Auditor.
      */
     @VisibleForTesting
-    void submitElectionTask() {
+    Future<?> submitElectionTask() {
 
         Runnable r = new Runnable() {
                 public void run() {
@@ -273,7 +299,7 @@ public class AuditorElector {
 
                             zkc.setData(getVotePath(""),
                                         TextFormat.printToString(builder.build()).getBytes(UTF_8), -1);
-                            auditor = new Auditor(bookieId, conf, zkc, statsLogger);
+                            auditor = new Auditor(bookieId, conf, bkc, false, statsLogger);
                             auditor.start();
                         } else {
                             // If not an auditor, will be watching to my predecessor and
@@ -302,7 +328,7 @@ public class AuditorElector {
                     }
                 }
             };
-        executor.submit(r);
+        return executor.submit(r);
     }
 
     @VisibleForTesting
@@ -350,6 +376,13 @@ public class AuditorElector {
         if (auditor != null) {
             auditor.shutdown();
             auditor = null;
+        }
+        if (ownBkc) {
+            try {
+                bkc.close();
+            } catch (BKException e) {
+                LOG.warn("Failed to close bookkeeper client", e);
+            }
         }
     }
 
