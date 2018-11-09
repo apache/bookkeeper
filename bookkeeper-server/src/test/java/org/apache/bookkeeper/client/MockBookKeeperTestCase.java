@@ -371,7 +371,8 @@ public abstract class MockBookKeeperTestCase {
                 if (ledgerMetadata == null) {
                     cb.operationComplete(BKException.Code.NoSuchLedgerExistsException, null);
                 } else {
-                    cb.operationComplete(BKException.Code.OK, new LedgerMetadata(ledgerMetadata));
+                    cb.operationComplete(BKException.Code.OK,
+                                         new Versioned<>(new LedgerMetadata(ledgerMetadata), new LongVersion(1)));
                 }
             });
             return null;
