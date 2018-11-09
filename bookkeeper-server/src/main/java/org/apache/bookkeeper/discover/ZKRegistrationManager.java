@@ -37,6 +37,7 @@ import java.util.function.Function;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.BookieException.BookieIllegalOpException;
+import org.apache.bookkeeper.bookie.BookieException.CookieExistException;
 import org.apache.bookkeeper.bookie.BookieException.CookieNotFoundException;
 import org.apache.bookkeeper.bookie.BookieException.MetadataStoreException;
 import org.apache.bookkeeper.client.BKException;
@@ -327,6 +328,10 @@ public class ZKRegistrationManager implements RegistrationManager {
         } catch (InterruptedException ie) {
             Thread.currentThread().interrupt();
             throw new MetadataStoreException("Interrupted writing cookie for bookie " + bookieId, ie);
+        } catch (NoNodeException nne) {
+            throw new CookieNotFoundException(bookieId);
+        } catch (NodeExistsException nee) {
+            throw new CookieExistException(bookieId);
         } catch (KeeperException e) {
             throw new MetadataStoreException("Failed to write cookie for bookie " + bookieId);
         }

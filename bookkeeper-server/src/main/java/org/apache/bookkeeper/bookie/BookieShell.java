@@ -92,6 +92,7 @@ import org.apache.bookkeeper.client.LedgerEntry;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.LedgerMetadata;
 import org.apache.bookkeeper.client.UpdateLedgerOp;
+import org.apache.bookkeeper.common.annotation.InterfaceAudience.Private;
 import org.apache.bookkeeper.common.util.OrderedExecutor;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -115,6 +116,11 @@ import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.tools.cli.commands.bookie.LastMarkCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookies.ListBookiesCommand;
 import org.apache.bookkeeper.tools.cli.commands.client.SimpleTestCommand;
+import org.apache.bookkeeper.tools.cli.commands.cookie.CreateCookieCommand;
+import org.apache.bookkeeper.tools.cli.commands.cookie.DeleteCookieCommand;
+import org.apache.bookkeeper.tools.cli.commands.cookie.GenerateCookieCommand;
+import org.apache.bookkeeper.tools.cli.commands.cookie.GetCookieCommand;
+import org.apache.bookkeeper.tools.cli.commands.cookie.UpdateCookieCommand;
 import org.apache.bookkeeper.tools.framework.CliFlags;
 import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.util.DiskChecker;
@@ -191,6 +197,14 @@ public class BookieShell implements Tool {
     static final String CMD_CONVERT_TO_INTERLEAVED_STORAGE = "convert-to-interleaved-storage";
     static final String CMD_REBUILD_DB_LEDGER_LOCATIONS_INDEX = "rebuild-db-ledger-locations-index";
     static final String CMD_REGENERATE_INTERLEAVED_STORAGE_INDEX_FILE = "regenerate-interleaved-storage-index-file";
+
+    // cookie commands
+    static final String CMD_CREATE_COOKIE = "cookie_create";
+    static final String CMD_DELETE_COOKIE = "cookie_delete";
+    static final String CMD_UPDATE_COOKIE = "cookie_update";
+    static final String CMD_GET_COOKIE = "cookie_get";
+    static final String CMD_GENERATE_COOKIE = "cookie_generate";
+
     static final String CMD_HELP = "help";
 
     final ServerConfiguration bkConf = new ServerConfiguration();
@@ -214,8 +228,14 @@ public class BookieShell implements Tool {
         this.entryFormatter = entryFormatter;
     }
 
-    interface Command {
+    /**
+     * BookieShell command.
+     */
+    @Private
+    public interface Command {
         int runCmd(String[] args) throws Exception;
+
+        String description();
 
         void printUsage();
     }
@@ -233,6 +253,11 @@ public class BookieShell implements Tool {
 
         MyCommand(String cmdName) {
             this.cmdName = cmdName;
+        }
+
+        public String description() {
+            // we used the string returned by `getUsage` as description in showing the list of commands
+            return getUsage();
         }
 
         @Override
@@ -2881,7 +2906,7 @@ public class BookieShell implements Tool {
         }
     }
 
-    final Map<String, MyCommand> commands = new HashMap<String, MyCommand>();
+    final Map<String, Command> commands = new HashMap<>();
 
     {
         commands.put(CMD_METAFORMAT, new MetaFormatCmd());
@@ -2918,6 +2943,17 @@ public class BookieShell implements Tool {
         commands.put(CMD_HELP, new HelpCmd());
         commands.put(CMD_LOSTBOOKIERECOVERYDELAY, new LostBookieRecoveryDelayCmd());
         commands.put(CMD_TRIGGERAUDIT, new TriggerAuditCmd());
+        // cookie related commands
+        commands.put(CMD_CREATE_COOKIE,
+            new CreateCookieCommand().asShellCommand(CMD_CREATE_COOKIE, bkConf));
+        commands.put(CMD_DELETE_COOKIE,
+            new DeleteCookieCommand().asShellCommand(CMD_DELETE_COOKIE, bkConf));
+        commands.put(CMD_UPDATE_COOKIE,
+            new UpdateCookieCommand().asShellCommand(CMD_UPDATE_COOKIE, bkConf));
+        commands.put(CMD_GET_COOKIE,
+            new GetCookieCommand().asShellCommand(CMD_GET_COOKIE, bkConf));
+        commands.put(CMD_GENERATE_COOKIE,
+            new GenerateCookieCommand().asShellCommand(CMD_GENERATE_COOKIE, bkConf));
     }
 
     @Override
@@ -2939,8 +2975,8 @@ public class BookieShell implements Tool {
                 + "[-entryformat <hex/string>] [-conf configuration] <command>");
         System.err.println("where command is one of:");
         List<String> commandNames = new ArrayList<String>();
-        for (MyCommand c : commands.values()) {
-            commandNames.add("       " + c.getUsage());
+        for (Command c : commands.values()) {
+            commandNames.add("       " + c.description());
         }
         Collections.sort(commandNames);
         for (String s : commandNames) {
