@@ -31,6 +31,8 @@ import java.io.OutputStream;
 
 import lombok.experimental.UtilityClass;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 /**
  * Utility class to load jni library from inside a JAR.
  */
@@ -44,6 +46,9 @@ public class NativeUtils {
      *            if this jar contains: /lib/pulsar-checksum.jnilib then provide the same absolute path as input
      * @throws Exception
      */
+    @SuppressFBWarnings(
+            value = "OBL_UNSATISFIED_OBLIGATION",
+            justification = "work around for java 9: https://github.com/spotbugs/spotbugs/issues/493")
     public static void loadLibraryFromJar(String path) throws Exception {
         checkArgument(path.startsWith("/"), "absolute path must start with /");
 
