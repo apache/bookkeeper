@@ -117,24 +117,29 @@ public class LedgerDescriptorImpl extends LedgerDescriptor {
      * @param journal log the fence entry in the Journal
      * @return A future which will be satisfied when add entry to journal complete
      */
-    private SettableFuture<Boolean> logFenceEntryInJournal(Journal journal) throws InterruptedException {
+    private SettableFuture<Boolean> logFenceEntryInJournal(Journal journal) {
         SettableFuture<Boolean> result;
         synchronized (this) {
             result = logFenceResult = SettableFuture.create();
         }
         ByteBuf entry = createLedgerFenceEntry(ledgerId);
-        journal.logAddEntry(entry, false /* ackBeforeSync */, (rc, ledgerId, entryId, addr, ctx) -> {
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Record fenced state for ledger {} in journal with rc {}",
-                        ledgerId, BKException.codeLogger(rc));
-            }
-            if (rc == 0) {
-                fenceEntryPersisted.compareAndSet(false, true);
-                result.set(true);
-            } else {
-                result.set(false);
-            }
-        }, null);
+        try {
+            journal.logAddEntry(entry, false /* ackBeforeSync */, (rc, ledgerId, entryId, addr, ctx) -> {
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Record fenced state for ledger {} in journal with rc {}",
+                            ledgerId, BKException.codeLogger(rc));
+                }
+                if (rc == 0) {
+                    fenceEntryPersisted.compareAndSet(false, true);
+                    result.set(true);
+                } else {
+                    result.set(false);
+                }
+            }, null);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            result.setException(e);
+        }
         return result;
     }
 

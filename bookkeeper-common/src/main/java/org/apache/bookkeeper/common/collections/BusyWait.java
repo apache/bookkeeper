@@ -23,11 +23,13 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 
 import lombok.experimental.UtilityClass;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Utility class to use "Thread.onSpinWait()" when available.
  */
 @UtilityClass
+@Slf4j
 public class BusyWait {
 
     /**
@@ -53,6 +55,9 @@ public class BusyWait {
             handle = MethodHandles.lookup().findStatic(Thread.class, "onSpinWait", MethodType.methodType(void.class));
         } catch (Throwable t) {
             // Ignore
+            if (log.isDebugEnabled()) {
+                log.debug("Unable to use 'onSpinWait' from JVM", t);
+            }
         }
 
         ON_SPIN_WAIT = handle;
