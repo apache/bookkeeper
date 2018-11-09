@@ -212,8 +212,11 @@ public class Cookie {
 
     public void writeToDirectory(File directory) throws IOException {
         File versionFile = new File(directory,
-                BookKeeperConstants.VERSION_FILENAME);
+            BookKeeperConstants.VERSION_FILENAME);
+        writeToFile(versionFile);
+    }
 
+    public void writeToFile (File versionFile) throws IOException {
         FileOutputStream fos = new FileOutputStream(versionFile);
         BufferedWriter bw = null;
         try {
@@ -386,7 +389,7 @@ public class Cookie {
      * Cookie builder.
      */
     public static class Builder {
-        private int layoutVersion = 0;
+        private int layoutVersion = CURRENT_COOKIE_LAYOUT_VERSION;
         private String bookieHost = null;
         private String journalDirs = null;
         private String ledgerDirs = null;

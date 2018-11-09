@@ -23,6 +23,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Paths;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.bookkeeper.common.annotation.InterfaceAudience.Private;
 import org.apache.bookkeeper.common.net.ServiceURI;
 import org.apache.bookkeeper.tools.framework.Cli;
 import org.apache.bookkeeper.tools.framework.CliCommand;
@@ -48,6 +49,19 @@ public abstract class BKCommand<CommandFlagsT extends CliFlags> extends CliComma
             .withRunFunc(cmdFlags -> apply(globalFlags, cmdFlags))
             .build();
         return 0 == Cli.runCli(newSpec, args);
+    }
+
+    /**
+     * Made this as public for allowing old bookie shell use new cli command.
+     * This should be removed once we get rid of the old bookie shell.
+     */
+    @Private
+    public int apply(String commandName, CompositeConfiguration conf, String[] args) {
+        CliSpec<CommandFlagsT> newSpec = CliSpec.newBuilder(spec)
+            .withName(commandName)
+            .withRunFunc(cmdFlags -> apply(null, conf, new BKFlags(), cmdFlags))
+            .build();
+        return Cli.runCli(newSpec, args);
     }
 
     protected boolean apply(BKFlags bkFlags, CommandFlagsT cmdFlags) {
