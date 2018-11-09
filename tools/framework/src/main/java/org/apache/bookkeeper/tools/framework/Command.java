@@ -37,7 +37,9 @@ public interface Command<GlobalFlagsT extends CliFlags> {
      *
      * @return category name
      */
-    default String category() { return ""; }
+    default String category() {
+        return "";
+    }
 
     /**
      * Return command name.
