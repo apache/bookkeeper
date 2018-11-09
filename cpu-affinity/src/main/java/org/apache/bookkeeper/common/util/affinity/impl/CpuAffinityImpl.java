@@ -43,8 +43,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class CpuAffinityImpl {
 
-    private static boolean INITIALIZED = false;
-    private static boolean SUPPORTED;
+    private static boolean isInitialized = false;
+    private static boolean isSupported;
 
     // Id of CPU cores acquired by this process
     private static final SortedSet<Integer> acquiredProcessors = new TreeSet<>();
@@ -56,11 +56,11 @@ public class CpuAffinityImpl {
     private static ProcessorsInfo processorsInfo = null;
 
     public static synchronized void acquireCore() {
-        if (!INITIALIZED) {
+        if (!isInitialized) {
             init();
         }
 
-        if (!SUPPORTED) {
+        if (!isSupported) {
             throw new RuntimeException("CPU Affinity not supported in current environment");
         }
 
@@ -206,12 +206,12 @@ public class CpuAffinityImpl {
             // Since this feature is only available in Linux, there's no point
             // in checking for MacOS jnilib or Windows dll extensions
             NativeUtils.loadLibraryFromJar("/lib/libcpu-affinity.so");
-            SUPPORTED = CpuAffinityJni.isAvailable();
+            isSupported = CpuAffinityJni.isAvailable();
         } catch (final Exception | UnsatisfiedLinkError e) {
             log.warn("Unable to load CPU affinity library: {}", e.getMessage(), e);
-            SUPPORTED = false;
+            isSupported = false;
         } finally {
-            INITIALIZED = true;
+            isInitialized = true;
         }
     }
 

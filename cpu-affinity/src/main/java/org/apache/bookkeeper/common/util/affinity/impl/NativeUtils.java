@@ -22,6 +22,8 @@ package org.apache.bookkeeper.common.util.affinity.impl;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -30,8 +32,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 
 import lombok.experimental.UtilityClass;
-
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 /**
  * Utility class to load jni library from inside a JAR.
