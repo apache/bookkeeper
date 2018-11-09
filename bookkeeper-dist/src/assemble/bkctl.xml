@@ -108,6 +108,8 @@
         <exclude>org.apache.bookkeeper:stream-storage-proto</exclude>
         <exclude>org.apache.bookkeeper:stream-storage-api</exclude>
         <exclude>org.apache.bookkeeper:stream-storage-java-client-base</exclude>
+        <!-- exclude server-side dependencies -->
+        <exclude>org.rocksdb:rocksdbjni</exclude>
       </excludes>
     </dependencySet>
   </dependencySets>

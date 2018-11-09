@@ -37,6 +37,12 @@
       <groupId>org.apache.bookkeeper</groupId>
       <artifactId>bookkeeper-tools</artifactId>
       <version>${project.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.rocksdb</groupId>
+          <artifactId>rocksdbjni</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
 
     <!-- slf4j binding -->
