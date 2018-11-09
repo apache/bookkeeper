@@ -41,6 +41,7 @@ import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.client.BookKeeperTestClient;
+import org.apache.bookkeeper.common.allocator.PoolingPolicy;
 import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -237,6 +238,7 @@ public abstract class BookKeeperClusterTestCase {
     protected void startBKCluster(String metadataServiceUri) throws Exception {
         baseConf.setMetadataServiceUri(metadataServiceUri);
         baseClientConf.setMetadataServiceUri(metadataServiceUri);
+        baseClientConf.setAllocatorPoolingPolicy(PoolingPolicy.UnpooledHeap);
         if (numBookies > 0) {
             bkc = new BookKeeperTestClient(baseClientConf, new TestStatsProvider());
         }
@@ -303,6 +305,7 @@ public abstract class BookKeeperClusterTestCase {
         }
         conf.setLedgerDirNames(ledgerDirNames);
         conf.setEnableTaskExecutionStats(true);
+        conf.setAllocatorPoolingPolicy(PoolingPolicy.UnpooledHeap);
         return conf;
     }
 
