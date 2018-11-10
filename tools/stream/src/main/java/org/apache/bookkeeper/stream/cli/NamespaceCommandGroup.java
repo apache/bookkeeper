@@ -17,6 +17,8 @@
  */
 package org.apache.bookkeeper.stream.cli;
 
+import static org.apache.bookkeeper.tools.common.BKCommandCategories.CATEGORY_TABLE_SERVICE;
+
 import org.apache.bookkeeper.stream.cli.commands.namespace.CreateNamespaceCommand;
 import org.apache.bookkeeper.tools.common.BKFlags;
 import org.apache.bookkeeper.tools.framework.CliCommandGroup;
@@ -34,6 +36,7 @@ public class NamespaceCommandGroup extends CliCommandGroup<BKFlags> {
         .withName(NAME)
         .withDescription(DESC)
         .withParent("bkctl")
+        .withCategory(CATEGORY_TABLE_SERVICE)
         .addCommand(new CreateNamespaceCommand())
         .build();
 
