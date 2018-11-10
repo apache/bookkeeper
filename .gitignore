@@ -32,3 +32,6 @@ data/
 
 # Pid files
 **/*.pid
+
+# files are generated under following directories
+tools/all/src/main/resources
