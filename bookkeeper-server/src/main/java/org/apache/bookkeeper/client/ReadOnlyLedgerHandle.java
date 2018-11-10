@@ -109,7 +109,7 @@ class ReadOnlyLedgerHandle extends LedgerHandle implements LedgerMetadataListene
     }
 
     @Override
-    boolean isHandleWritable() {
+    protected boolean isHandleWritable() {
         return false;
     }
 
