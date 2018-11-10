@@ -17,6 +17,8 @@
  */
 package org.apache.bookkeeper.stream.cli;
 
+import static org.apache.bookkeeper.tools.common.BKCommandCategories.CATEGORY_TABLE_SERVICE;
+
 import org.apache.bookkeeper.stream.cli.commands.table.DelCommand;
 import org.apache.bookkeeper.stream.cli.commands.table.GetCommand;
 import org.apache.bookkeeper.stream.cli.commands.table.IncrementCommand;
@@ -37,6 +39,7 @@ public class TableCommandGroup extends CliCommandGroup<BKFlags> {
         .withName(NAME)
         .withDescription(DESC)
         .withParent("bkctl")
+        .withCategory(CATEGORY_TABLE_SERVICE)
         .addCommand(new PutCommand())
         .addCommand(new GetCommand())
         .addCommand(new IncrementCommand())

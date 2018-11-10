@@ -33,6 +33,15 @@ public interface Command<GlobalFlagsT extends CliFlags> {
     }
 
     /**
+     * Return category of this command belongs to.
+     *
+     * @return category name
+     */
+    default String category() {
+        return "";
+    }
+
+    /**
      * Return command name.
      *
      * @return command name.
