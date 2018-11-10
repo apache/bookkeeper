@@ -499,7 +499,7 @@ public class LedgerHandle implements WriteHandle {
      *
      * @return true if this handle is writable, otherwise false
      */
-    boolean isHandleWritable() {
+    protected boolean isHandleWritable() {
         return !getLedgerMetadata().isClosed();
     }
 
