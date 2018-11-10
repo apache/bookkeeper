@@ -494,6 +494,11 @@ public class LedgerHandle implements WriteHandle {
         return getLedgerMetadata().isClosed();
     }
 
+    /**
+     * Return if this handle is writable or not.
+     *
+     * @return true if this handle is writable, otherwise false
+     */
     boolean isHandleWritable() {
         return !getLedgerMetadata().isClosed();
     }
