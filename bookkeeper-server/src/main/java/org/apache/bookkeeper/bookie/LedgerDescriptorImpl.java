@@ -86,8 +86,7 @@ public class LedgerDescriptorImpl extends LedgerDescriptor {
         return ledgerStorage.getExplicitLac(ledgerId);
     }
 
-    synchronized SettableFuture<Boolean> fenceAndLogInJournal(Journal journal)
-            throws IOException, InterruptedException {
+    synchronized SettableFuture<Boolean> fenceAndLogInJournal(Journal journal) throws IOException {
         boolean success = this.setFenced();
         if (success) {
             // fenced for first time, we should add the key to journal ensure we can rebuild.

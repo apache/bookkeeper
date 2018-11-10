@@ -71,7 +71,7 @@ public abstract class LedgerDescriptor {
      *
      * <p>We should satisfy the future only after we complete logging fence entry in Journal
      */
-    abstract SettableFuture<Boolean> fenceAndLogInJournal(Journal journal) throws IOException, InterruptedException;
+    abstract SettableFuture<Boolean> fenceAndLogInJournal(Journal journal) throws IOException;
 
     abstract long addEntry(ByteBuf entry) throws IOException, BookieException;
     abstract ByteBuf readEntry(long entryId) throws IOException;

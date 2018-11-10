@@ -1339,7 +1339,7 @@ public class Bookie extends BookieCriticalThread {
      * never be unfenced. Fencing a fenced ledger has no effect.
      */
     public SettableFuture<Boolean> fenceLedger(long ledgerId, byte[] masterKey)
-            throws IOException, BookieException, InterruptedException {
+            throws IOException, BookieException {
         LedgerDescriptor handle = handles.getHandle(ledgerId, masterKey);
         return handle.fenceAndLogInJournal(getJournal(ledgerId));
     }
