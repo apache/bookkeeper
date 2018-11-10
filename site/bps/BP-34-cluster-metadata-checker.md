@@ -14,10 +14,10 @@ Ideally for having complete confidence on the date in the cluster, it is needed 
 ### Proposed Changes
 
 Intention of this new checker is to validate following things
-	- ledger placement policy : Ensemble of each segment in Ledger should adhere to LedgerPlacementPolicy
-	- durability contract : Every entry has WQ number of replicas and entries are replicated according to RoundRobinDistributionSchedule
-	- progress in handling under replication : No ledger is marked underreplicated for more than acceptable time
-	- availability of bookies of the ensemble of ledgers : If Auditor fails to get response from a Bookie, then that Bookie shouldn’t be registered to metadata server and Auditor should be aware of it unavailability or if it is a transient error in getting response from Bookie then subsequent calls to that Bookie should succeed.
+  - ledger placement policy : Ensemble of each segment in Ledger should adhere to LedgerPlacementPolicy
+  - durability contract : Every entry has WQ number of replicas and entries are replicated according to RoundRobinDistributionSchedule
+  - progress in handling under replication : No ledger is marked underreplicated for more than acceptable time
+  - availability of bookies of the ensemble of ledgers : If Auditor fails to get response from a Bookie, then that Bookie shouldn’t be registered to metadata server and Auditor should be aware of it unavailability or if it is a transient error in getting response from Bookie then subsequent calls to that Bookie should succeed.
 
 Roles and Responsibilities of the cluster metadata checker
   - Police the durability contract and report violations. Its job is to make sure that the metadata server(zk) and the storage servers (bookies) are in sync. Simply put, check if bookies agree with the metadata server metadata and if not, raise an alert.
@@ -25,19 +25,19 @@ Roles and Responsibilities of the cluster metadata checker
   - The Metadata Scrutiny needs to be light weighted esp., on Bookie and must run regularly giving the confidence that the cluster is in good state.
 
 High Level Logic
-	- Things would get complicated analyzing ledgers which are not closed because of several reasons, viz., unable to know lastEntryId by reading ZK metadata, possibility of change in ensemble because of write failure to a bookie, and other subtleties in dealing with last unclosed segment of the ledger. So for the sake of simplicity this checker should be limited to ledgers which are write closed/fenced.
-	- This durability check for each ledger will be run as a processor in ledgerManager.asyncProcessLedgers and it would ignore ledgers which are still open for write.
-	- first step is to check if this ledger is marked underreplicated already. If it is marked underreplicated for more than acceptable time then report it as violation otherwise skip this underreplicated ledger for this iteration of durability check. Since there is no point in further analyzing this ledger if it is already marked under replicated.
-	- get the ledger metadata of the ledger from the metadata server
-	- make sure that the ensemble of the ledger segments is in agreement with ledgerplacement policy. Any violation should be reported.
-	- get the info about available entries of the ledger from the bookies of the ensemble. Bookie is expected to return list of entries it contains for a given ledger
-	- Have to make sure that Bookies contain all the entries it is supposed to contain according to the RoundRobinDistributionSchedule and each entry has writequorum number of copies. Any violation should be reported.
-	- If there is any failure in trying to get info. from Bookie of the ensembles of the ledger, then add this ledger to potentially faulty ledgers list (but don't report it yet.)
-	- (in previous steps, in case of any violation or bookie read error, before reporting violation, check if the ledger is marked underreplicated. If it is marked underreplicated then ignore this ledger for this iteration. If it is not marked underreplicated, then get the ledgermetadata of this ledger onemore time. Check if it is any different from the ledgermetadata we got initially then instead of reporting the violation, redo the analysis for this ledger because apparently something had changed in the metadata (esp. with ensemble) and hence it is better to reevaluate instead of false alarm.)
-	- if there are potentially faulty ledgers because of unavailable/unreachable bookies, then schedule a new durability check task with time delay just for the potentially faulty ledgers. Even after subsequent delayed checks, if Auditor failed to get response from bookies then make sure that Bookie isn’t registered to metadata server and Auditor is aware of it unavailability, if not then report the violation.
-	- Auditor is going to use existing mechanisms/frameworks to report the violations - bookkeeper-stats statslogger/counters and complementing information in logs.
-	- It makes sense to group all the durability violations found in a scrutiny run according to the categories and report the aggregated count for each category after the end of the scrutiny run.
-	- before reporting these violations, each violation should be logged with complete information, so that it can be used to understand what went wrong.
+  - Things would get complicated analyzing ledgers which are not closed because of several reasons, viz., unable to know lastEntryId by reading ZK metadata, possibility of change in ensemble because of write failure to a bookie, and other subtleties in dealing with last unclosed segment of the ledger. So for the sake of simplicity this checker should be limited to ledgers which are write closed/fenced.
+  - This durability check for each ledger will be run as a processor in ledgerManager.asyncProcessLedgers and it would ignore ledgers which are still open for write.
+  - first step is to check if this ledger is marked underreplicated already. If it is marked underreplicated for more than acceptable time then report it as violation otherwise skip this underreplicated ledger for this iteration of durability check. Since there is no point in further analyzing this ledger if it is already marked under replicated.
+  - get the ledger metadata of the ledger from the metadata server
+  - make sure that the ensemble of the ledger segments is in agreement with ledgerplacement policy. Any violation should be reported.
+  - get the info about available entries of the ledger from the bookies of the ensemble. Bookie is expected to return list of entries it contains for a given ledger
+  - Have to make sure that Bookies contain all the entries it is supposed to contain according to the RoundRobinDistributionSchedule and each entry has writequorum number of copies. Any violation should be reported.
+  - If there is any failure in trying to get info. from Bookie of the ensembles of the ledger, then add this ledger to potentially faulty ledgers list (but don't report it yet.)
+  - (in previous steps, in case of any violation or bookie read error, before reporting violation, check if the ledger is marked underreplicated. If it is marked underreplicated then ignore this ledger for this iteration. If it is not marked underreplicated, then get the ledgermetadata of this ledger onemore time. Check if it is any different from the ledgermetadata we got initially then instead of reporting the violation, redo the analysis for this ledger because apparently something had changed in the metadata (esp. with ensemble) and hence it is better to reevaluate instead of false alarm.)
+  - if there are potentially faulty ledgers because of unavailable/unreachable bookies, then schedule a new durability check task with time delay just for the potentially faulty ledgers. Even after subsequent delayed checks, if Auditor failed to get response from bookies then make sure that Bookie isn’t registered to metadata server and Auditor is aware of it unavailability, if not then report the violation.
+  - Auditor is going to use existing mechanisms/frameworks to report the violations - bookkeeper-stats statslogger/counters and complementing information in logs.
+  - It makes sense to group all the durability violations found in a scrutiny run according to the categories and report the aggregated count for each category after the end of the scrutiny run.
+  - before reporting these violations, each violation should be logged with complete information, so that it can be used to understand what went wrong.
 
 ### Public Interfaces
 
