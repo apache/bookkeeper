@@ -42,6 +42,11 @@ public class CliCommand<GlobalFlagsT extends CliFlags, CommandFlagsT extends Cli
     }
 
     @Override
+    public String category() {
+        return spec.category();
+    }
+
+    @Override
     public String name() {
         return name;
     }

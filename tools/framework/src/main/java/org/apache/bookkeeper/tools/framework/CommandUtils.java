@@ -27,7 +27,9 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.stream.IntStream;
+import org.apache.commons.lang.StringUtils;
 
 /**
  * Utils to process a commander.
@@ -164,9 +166,6 @@ public class CommandUtils {
             return;
         }
 
-        printer.println("Commands:");
-        printer.println();
-
         int longestCommandName = commands
             .keySet()
             .stream()
@@ -174,17 +173,44 @@ public class CommandUtils {
             .max()
             .orElse(0);
 
+        // group the commands by category
+        Map<String, Map<String, Command>> categorizedCommands = new TreeMap<>();
         for (Map.Entry<String, Command> commandEntry : commands.entrySet()) {
             if ("help".equals(commandEntry.getKey())) {
-                // don't print help message along with available other commands
+                // don't add help message along with other commands
                 continue;
             }
-            printCommand(printer, commandEntry.getKey(), commandEntry.getValue(), longestCommandName);
+            String category = commandEntry.getValue().category();
+            Map<String, Command> subCommands = categorizedCommands.get(category);
+            if (null == subCommands) {
+                subCommands = new TreeMap<>();
+                categorizedCommands.put(category, subCommands);
+            }
+            subCommands.put(commandEntry.getKey(), commandEntry.getValue());
+        }
+
+        // there is only one category, print all of them under `Commands`.
+        if (categorizedCommands.size() <= 1) {
+            printer.println("Commands:");
+            printer.println();
+        }
+
+        for (Map.Entry<String, Map<String, Command>> categoryEntry : categorizedCommands.entrySet()) {
+            String category = categoryEntry.getKey();
+            printCategoryHeader(printer, category);
+            Map<String, Command> subCommands = categoryEntry.getValue();
+            for (Map.Entry<String, Command> commandEntry : subCommands.entrySet()) {
+                printCommand(printer, commandEntry.getKey(), commandEntry.getValue(), longestCommandName);
+            }
+            printer.println();
         }
 
         Command helpCmd = commands.get("help");
         if (null != helpCmd) {
-            printer.println();
+            if (categorizedCommands.size() > 1) {
+                // if commands has been categorized, put help
+                printCategoryHeader(printer, "Other commands");
+            }
             printCommand(printer, "help", helpCmd, longestCommandName);
         }
 
@@ -213,6 +239,21 @@ public class CommandUtils {
             0,
             startOfDescription,
             command.description());
+    }
+
+    private static void printCategoryHeader(PrintStream printer,
+                                            String category) {
+        if (StringUtils.isEmpty(category)) {
+            return;
+        }
+
+        printIndent(printer, 0);
+        printDescription(
+            printer,
+            0,
+            0,
+            category + " :");
+        printer.println();
     }
 
 }

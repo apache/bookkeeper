@@ -67,10 +67,12 @@ public class CliSpec<CliFlagsT extends CliFlags> {
         private PrintStream console = System.out;
         private boolean isCommandGroup = false;
         private String argumentsUsage = "";
+        private String category = "";
 
         private Builder() {}
 
         private Builder(CliSpec<CliFlagsT> spec) {
+            this.category = spec.category;
             this.name = spec.name;
             this.parent = spec.parent;
             this.usage = spec.usage;
@@ -83,6 +85,11 @@ public class CliSpec<CliFlagsT extends CliFlags> {
             this.runFunc = spec.runFunc;
             this.console = spec.console;
             this.isCommandGroup = spec.isCommandGroup;
+        }
+
+        public Builder<CliFlagsT> withCategory(String category) {
+            this.category = category;
+            return this;
         }
 
         public Builder<CliFlagsT> withName(String name) {
@@ -142,6 +149,7 @@ public class CliSpec<CliFlagsT extends CliFlags> {
 
         public CliSpec<CliFlagsT> build() {
             return new CliSpec<>(
+                category,
                 name,
                 parent,
                 usage,
@@ -158,6 +166,7 @@ public class CliSpec<CliFlagsT extends CliFlags> {
 
     }
 
+    private final String category;
     private final String name;
     private final String parent;
     private final String usage;
@@ -171,7 +180,8 @@ public class CliSpec<CliFlagsT extends CliFlags> {
     // whether the cli spec is for a command group.
     private final boolean isCommandGroup;
 
-    private CliSpec(String name,
+    private CliSpec(String category,
+                    String name,
                     String parent,
                     String usage,
                     String argumentsUsage,
@@ -182,6 +192,7 @@ public class CliSpec<CliFlagsT extends CliFlags> {
                     Function<CliFlagsT, Boolean> runFunc,
                     PrintStream console,
                     boolean isCommandGroup) {
+        this.category = category;
         this.name = name;
         this.parent = parent;
         this.usage = usage;
@@ -193,6 +204,10 @@ public class CliSpec<CliFlagsT extends CliFlags> {
         this.runFunc = runFunc;
         this.console = console;
         this.isCommandGroup = isCommandGroup;
+    }
+
+    public String category() {
+        return category;
     }
 
     public String name() {
