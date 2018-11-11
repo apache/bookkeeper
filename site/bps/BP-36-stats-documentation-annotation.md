@@ -1,7 +1,7 @@
 ---
 title: "BP-36: Stats documentation annotation"
 issue: https://github.com/apache/bookkeeper/<issue-number>
-state: "Under Discussion"
+state: "Accepted"
 release: "4.9.0"
 ---
 
