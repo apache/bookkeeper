@@ -498,6 +498,17 @@ public class BookieRequestProcessor implements RequestProcessor {
                     checkArgument(r instanceof BookieProtocol.ReadRequest);
                     processReadRequest((BookieProtocol.ReadRequest) r, c);
                     break;
+                case BookieProtocol.AUTH:
+                    LOG.info("Ignoring auth operation from client {}", c.remoteAddress());
+                    BookkeeperProtocol.AuthMessage message = BookkeeperProtocol.AuthMessage
+                            .newBuilder()
+                            .setAuthPluginName(AuthProviderFactoryFactory.AUTHENTICATION_DISABLED_PLUGIN_NAME)
+                            .setPayload(ByteString.copyFrom(AuthToken.NULL.getData()))
+                            .build();
+
+                    c.writeAndFlush(new BookieProtocol.AuthResponse(
+                            BookieProtocol.CURRENT_PROTOCOL_VERSION, message));
+                    break;
                 default:
                     LOG.error("Unknown op type {}, sending error", r.getOpCode());
                     c.writeAndFlush(ResponseBuilder.buildErrorResponse(BookieProtocol.EBADREQ, r));
