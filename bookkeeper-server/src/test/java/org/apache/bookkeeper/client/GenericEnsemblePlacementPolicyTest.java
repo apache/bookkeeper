@@ -24,6 +24,8 @@ import static org.junit.Assert.fail;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -33,10 +35,14 @@ import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameters;
 
 /**
  * Testing a generic ensemble placement policy.
  */
+@RunWith(Parameterized.class)
 public class GenericEnsemblePlacementPolicyTest extends BookKeeperClusterTestCase {
 
     private BookKeeper.DigestType digestType = BookKeeper.DigestType.CRC32;
@@ -46,9 +52,15 @@ public class GenericEnsemblePlacementPolicyTest extends BookKeeperClusterTestCas
     private static List<Map<String, byte[]>> customMetadataOnNewEnsembleStack = new ArrayList<>();
     private static List<Map<String, byte[]>> customMetadataOnReplaceBookieStack = new ArrayList<>();
 
-    public GenericEnsemblePlacementPolicyTest() {
+    @Parameters
+    public static Collection<Object[]> getDiskWeightBasedPlacementEnabled() {
+        return Arrays.asList(new Object[][] { { false }, { true } });
+    }
+
+    public GenericEnsemblePlacementPolicyTest(boolean diskWeightBasedPlacementEnabled) {
         super(0);
         baseClientConf.setEnsemblePlacementPolicy(CustomEnsemblePlacementPolicy.class);
+        baseClientConf.setDiskWeightBasedPlacementEnabled(diskWeightBasedPlacementEnabled);
     }
 
     /**
