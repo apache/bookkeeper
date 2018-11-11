@@ -28,6 +28,7 @@ import static org.junit.Assert.fail;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Enumeration;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -45,12 +46,16 @@ import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.proto.ClientConnectionPeer;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameters;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * Test authentication.
  */
+@RunWith(Parameterized.class)
 public class TestAuth extends BookKeeperClusterTestCase {
     static final Logger LOG = LoggerFactory.getLogger(TestAuth.class);
     public static final String TEST_AUTH_PROVIDER_PLUGIN_NAME = "TestAuthProviderPlugin";
@@ -61,8 +66,29 @@ public class TestAuth extends BookKeeperClusterTestCase {
     private static final byte[] FAILURE_RESPONSE = {2};
     private static final byte[] PAYLOAD_MESSAGE = {3};
 
-    public TestAuth() {
+    enum ProtocolVersion {
+        ProtocolV2, ProtocolV3
+    }
+
+    @Parameters
+    public static Collection<Object[]> configs() {
+        return Arrays.asList(new Object[][] {
+                { ProtocolVersion.ProtocolV2 },
+                { ProtocolVersion.ProtocolV3 },
+        });
+    }
+
+    private final ProtocolVersion protocolVersion;
+
+    public TestAuth(ProtocolVersion protocolVersion) {
         super(0); // start them later when auth providers are configured
+        this.protocolVersion = protocolVersion;
+    }
+
+    protected ClientConfiguration newClientConfiguration() {
+        ClientConfiguration conf = super.newClientConfiguration();
+        conf.setUseV2WireProtocol(protocolVersion == ProtocolVersion.ProtocolV2);
+        return conf;
     }
 
     // we pass in ledgerId because the method may throw exceptions
@@ -136,6 +162,13 @@ public class TestAuth extends BookKeeperClusterTestCase {
 
     @Test
     public void testCloseMethodCalledOnAuthProvider() throws Exception {
+        LogCloseCallsBookieAuthProviderFactory.closeCountersOnFactory.set(0);
+        LogCloseCallsBookieAuthProviderFactory.closeCountersOnConnections.set(0);
+        LogCloseCallsBookieAuthProviderFactory.initCountersOnFactory.set(0);
+        LogCloseCallsBookieAuthProviderFactory.initCountersOnConnections.set(0);
+        LogCloseCallsClientAuthProviderFactory.initCountersOnFactory.set(0);
+        LogCloseCallsClientAuthProviderFactory.closeCountersOnFactory.set(0);
+
         ServerConfiguration bookieConf = newServerConfiguration();
         bookieConf.setBookieAuthProviderFactoryClass(
                 LogCloseCallsBookieAuthProviderFactory.class.getName());
@@ -272,6 +305,11 @@ public class TestAuth extends BookKeeperClusterTestCase {
         } catch (BKException.BKUnauthorizedAccessException bke) {
             // bookie should have sent a negative response before
             // breaking the conneciton
+            assertEquals(ProtocolVersion.ProtocolV3, protocolVersion);
+        } catch (BKException.BKNotEnoughBookiesException nebe) {
+            // With V2 we don't get the authorization error, but rather just
+            // fail to write to bookies.
+            assertEquals(ProtocolVersion.ProtocolV2, protocolVersion);
         }
         assertFalse(ledgerId.get() == -1);
         assertEquals("Shouldn't have entry", 0, entryCount(ledgerId.get(), bookieConf, clientConf));

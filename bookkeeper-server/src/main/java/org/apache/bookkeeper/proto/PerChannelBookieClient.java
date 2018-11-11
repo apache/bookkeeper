@@ -462,7 +462,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                     "bookieProtoDecoder",
                     new BookieProtoEncoding.ResponseDecoder(extRegistry, useV2WireProtocol));
                 pipeline.addLast("authHandler", new AuthHandler.ClientSideHandler(authProviderFactory, txnIdGenerator,
-                            connectionPeer));
+                            connectionPeer, useV2WireProtocol));
                 pipeline.addLast("mainhandler", PerChannelBookieClient.this);
             }
         });
