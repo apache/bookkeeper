@@ -163,6 +163,13 @@ public class TestAuth extends BookKeeperClusterTestCase {
 
     @Test
     public void testCloseMethodCalledOnAuthProvider() throws Exception {
+        LogCloseCallsBookieAuthProviderFactory.closeCountersOnFactory.set(0);
+        LogCloseCallsBookieAuthProviderFactory.closeCountersOnConnections.set(0);
+        LogCloseCallsBookieAuthProviderFactory.initCountersOnFactory.set(0);
+        LogCloseCallsBookieAuthProviderFactory.initCountersOnConnections.set(0);
+        LogCloseCallsClientAuthProviderFactory.initCountersOnFactory.set(0);
+        LogCloseCallsClientAuthProviderFactory.closeCountersOnFactory.set(0);
+
         ServerConfiguration bookieConf = newServerConfiguration();
         bookieConf.setBookieAuthProviderFactoryClass(
                 LogCloseCallsBookieAuthProviderFactory.class.getName());
