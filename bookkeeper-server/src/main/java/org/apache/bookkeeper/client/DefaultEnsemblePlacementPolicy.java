@@ -22,6 +22,7 @@ import io.netty.util.HashedWheelTimer;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -58,6 +59,7 @@ public class DefaultEnsemblePlacementPolicy implements EnsemblePlacementPolicy {
     private final ReentrantReadWriteLock rwLock;
 
     DefaultEnsemblePlacementPolicy() {
+        bookieInfoMap = new HashMap<BookieSocketAddress, WeightedObject>();
         rwLock = new ReentrantReadWriteLock();
     }
 
@@ -92,6 +94,9 @@ public class DefaultEnsemblePlacementPolicy implements EnsemblePlacementPolicy {
                     }
                     newBookies.add(b);
                     --ensembleSize;
+                    if (ensembleSize == 0) {
+                        return newBookies;
+                    }
                 }
             } finally {
                 rwLock.readLock().unlock();
