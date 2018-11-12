@@ -16,10 +16,6 @@
 # limitations under the License.
 #
 
-org.apache.bookkeeper.tools.cli.commands.BookieCommandGroup
-org.apache.bookkeeper.tools.cli.commands.BookiesCommandGroup
-org.apache.bookkeeper.tools.cli.commands.CookieCommandGroup
-org.apache.bookkeeper.tools.cli.commands.LedgerCommandGroup
 org.apache.bookkeeper.stream.cli.ClusterCommandGroup
 org.apache.bookkeeper.stream.cli.NamespaceCommandGroup
 org.apache.bookkeeper.stream.cli.TableAdminCommandGroup
