@@ -30,6 +30,7 @@ else
     mvn --batch-mode clean apache-rat:check compile spotbugs:check install -DskipTests -Dstream
     $BK_HOME/dev/check-binary-license ./bookkeeper-dist/all/target/bookkeeper-all-*-bin.tar.gz;
     $BK_HOME/dev/check-binary-license ./bookkeeper-dist/server/target/bookkeeper-server-*-bin.tar.gz;
+    $BK_HOME/dev/check-binary-license ./bookkeeper-dist/bkctl/target/bkctl-*-bin.tar.gz;
     if [ "$DLOG_MODIFIED" == "true" ]; then
         cd $BK_HOME/stream/distributedlog
         mvn --batch-mode clean package -Ddistributedlog

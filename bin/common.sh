@@ -117,7 +117,7 @@ CLI_GC_LOGGING_OPTS=${CLI_GC_LOGGING_OPTS:-"${DEFAULT_CLI_GC_LOGGING_OPTS}"}
 find_module_jar_at() {
   DIR=$1
   MODULE=$2
-  REGEX="^${MODULE}-[0-9\\.]*(-SNAPSHOT)?.jar$"
+  REGEX="^${MODULE}-[0-9\\.]*((-[a-zA-Z]*(-[0-9]*)?)|(-SNAPSHOT))?.jar$"
   if [ -d ${DIR} ]; then
     cd ${DIR}
     for f in *.jar; do
