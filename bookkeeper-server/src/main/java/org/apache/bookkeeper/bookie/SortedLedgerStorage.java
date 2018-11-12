@@ -72,7 +72,7 @@ public class SortedLedgerStorage
                            StatsLogger statsLogger)
             throws IOException {
 
-        interleavedLedgerStorage.initialize(
+        interleavedLedgerStorage.initializeWithEntryLogListener(
             conf,
             ledgerManager,
             ledgerDirsManager,
@@ -80,6 +80,9 @@ public class SortedLedgerStorage
             stateManager,
             checkpointSource,
             checkpointer,
+            // uses sorted ledger storage's own entry log listener
+            // since it manages entry log rotations and checkpoints.
+            this,
             statsLogger);
 
         if (conf.isEntryLogPerLedgerEnabled()) {
