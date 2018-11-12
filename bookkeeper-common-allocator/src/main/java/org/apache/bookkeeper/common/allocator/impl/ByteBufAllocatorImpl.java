@@ -63,16 +63,22 @@ public class ByteBufAllocatorImpl extends AbstractByteBufAllocator implements By
 
         if (poolingPolicy == PoolingPolicy.PooledDirect) {
             if (pooledAllocator == null) {
-                this.pooledAllocator = new PooledByteBufAllocator(
-                        true /* preferDirect */,
-                        poolingConcurrency /* nHeapArena */,
-                        poolingConcurrency /* nDirectArena */,
-                        PooledByteBufAllocator.defaultPageSize(),
-                        PooledByteBufAllocator.defaultMaxOrder(),
-                        PooledByteBufAllocator.defaultTinyCacheSize(),
-                        PooledByteBufAllocator.defaultSmallCacheSize(),
-                        PooledByteBufAllocator.defaultNormalCacheSize(),
-                        PooledByteBufAllocator.defaultUseCacheForAllThreads());
+                if (poolingConcurrency == PooledByteBufAllocator.defaultNumDirectArena()) {
+                    // If all the parameters are the same as in the default Netty pool,
+                    // just reuse the static instance as the underlying allocator.
+                    this.pooledAllocator = PooledByteBufAllocator.DEFAULT;
+                } else {
+                    this.pooledAllocator = new PooledByteBufAllocator(
+                            true /* preferDirect */,
+                            poolingConcurrency /* nHeapArena */,
+                            poolingConcurrency /* nDirectArena */,
+                            PooledByteBufAllocator.defaultPageSize(),
+                            PooledByteBufAllocator.defaultMaxOrder(),
+                            PooledByteBufAllocator.defaultTinyCacheSize(),
+                            PooledByteBufAllocator.defaultSmallCacheSize(),
+                            PooledByteBufAllocator.defaultNormalCacheSize(),
+                            PooledByteBufAllocator.defaultUseCacheForAllThreads());
+                }
             } else {
                 this.pooledAllocator = pooledAllocator;
             }
