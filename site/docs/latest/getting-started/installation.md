@@ -44,6 +44,12 @@ Once you have the BookKeeper on your local machine, either by [downloading](#dow
 $ mvn package
 ```
 
+Since 4.8.0, bookkeeper introduces `table service`. If you would like to build and tryout table service, you can build it with `stream` profile.
+
+```shell
+$ mvn package -Dstream
+```
+
 > You can skip tests by adding the `-DskipTests` flag when running `mvn package`.
 
 ### Useful Maven commands
@@ -60,7 +66,9 @@ Command | Action
 `mvn verify` | Performs a wide variety of verification and validation tasks
 `mvn apache-rat:check` | Run Maven using the [Apache Rat](http://creadur.apache.org/rat/apache-rat-plugin/) plugin
 `mvn compile javadoc:aggregate` | Build Javadocs locally
-`mvn package assembly:single` | Build a complete distribution using the Maven [Assembly](http://maven.apache.org/plugins/maven-assembly-plugin/) plugin
+`mvn -am -pl bookkeeper-dist/server package` | Build a server distribution using the Maven [Assembly](http://maven.apache.org/plugins/maven-assembly-plugin/) plugin
+
+> You can enable `table service` by adding the `-Dstream` flag when running above commands.
 
 ## Package directory
 
