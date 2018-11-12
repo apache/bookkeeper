@@ -3767,10 +3767,8 @@
 <dd>
 <div class="block">Get whether the bookie is configured to double check prior to gc.</div>
 </dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerMetadata.html#getVersion--">getVersion()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a></dt>
-<dd>
-<div class="block">Returns the last version.</div>
-</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerHandle.html#getVersionedLedgerMetadata--">getVersionedLedgerMetadata()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ClientConfiguration.html#getWaitTimeoutOnBackpressureMillis--">getWaitTimeoutOnBackpressureMillis()</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a></dt>
 <dd>
 <div class="block">Timeout controlling wait on request send in case of unresponsive bookie(s)
@@ -4218,10 +4216,6 @@
 <dd>
 <div class="block">Option to use Netty Pooled ByteBufs.</div>
 </dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerMetadata.html#isNewerThan-org.apache.bookkeeper.client.LedgerMetadata-">isNewerThan(LedgerMetadata)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a></dt>
-<dd>
-<div class="block">Is the metadata newer than given <i>newMeta</i>.</div>
-</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#isPersistBookieStatusEnabled--">isPersistBookieStatusEnabled()</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
 <dd>
 <div class="block">Get whether to persist the bookie status so that when bookie server restarts,
@@ -4513,7 +4507,7 @@
 <div class="block">Ledger handle contains ledger metadata and is used to access the read and
  write operations to a ledger.</div>
 </dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerHandle.html#LedgerHandle-org.apache.bookkeeper.client.ClientContext-long-org.apache.bookkeeper.client.LedgerMetadata-org.apache.bookkeeper.client.BookKeeper.DigestType-byte:A-java.util.EnumSet-">LedgerHandle(ClientContext, long, LedgerMetadata, BookKeeper.DigestType, byte[], EnumSet&lt;WriteFlag&gt;)</a></span> - Constructor for class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a></dt>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerHandle.html#LedgerHandle-org.apache.bookkeeper.client.ClientContext-long-org.apache.bookkeeper.versioning.Versioned-org.apache.bookkeeper.client.BookKeeper.DigestType-byte:A-java.util.EnumSet-">LedgerHandle(ClientContext, long, Versioned&lt;LedgerMetadata&gt;, BookKeeper.DigestType, byte[], EnumSet&lt;WriteFlag&gt;)</a></span> - Constructor for class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a></dt>
 <dd>&nbsp;</dd>
 <dt><a href="org/apache/bookkeeper/client/LedgerHandle.LastConfirmedCtx.html" title="class in org.apache.bookkeeper.client"><span class="typeNameLink">LedgerHandle.LastConfirmedCtx</span></a> - Class in <a href="org/apache/bookkeeper/client/package-summary.html">org.apache.bookkeeper.client</a></dt>
 <dd>
@@ -4526,7 +4520,7 @@
 <div class="block">Ledger Advanced handle extends <a href="org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client"><code>LedgerHandle</code></a> to provide API to add entries with
  user supplied entryIds.</div>
 </dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerHandleAdv.html#LedgerHandleAdv-org.apache.bookkeeper.client.ClientContext-long-org.apache.bookkeeper.client.LedgerMetadata-org.apache.bookkeeper.client.BookKeeper.DigestType-byte:A-java.util.EnumSet-">LedgerHandleAdv(ClientContext, long, LedgerMetadata, BookKeeper.DigestType, byte[], EnumSet&lt;WriteFlag&gt;)</a></span> - Constructor for class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerHandleAdv.html" title="class in org.apache.bookkeeper.client">LedgerHandleAdv</a></dt>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerHandleAdv.html#LedgerHandleAdv-org.apache.bookkeeper.client.ClientContext-long-org.apache.bookkeeper.versioning.Versioned-org.apache.bookkeeper.client.BookKeeper.DigestType-byte:A-java.util.EnumSet-">LedgerHandleAdv(ClientContext, long, Versioned&lt;LedgerMetadata&gt;, BookKeeper.DigestType, byte[], EnumSet&lt;WriteFlag&gt;)</a></span> - Constructor for class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerHandleAdv.html" title="class in org.apache.bookkeeper.client">LedgerHandleAdv</a></dt>
 <dd>&nbsp;</dd>
 <dt><a href="org/apache/bookkeeper/client/LedgerHandleAdv.PendingOpsComparator.html" title="class in org.apache.bookkeeper.client"><span class="typeNameLink">LedgerHandleAdv.PendingOpsComparator</span></a> - Class in <a href="org/apache/bookkeeper/client/package-summary.html">org.apache.bookkeeper.client</a></dt>
 <dd>&nbsp;</dd>
@@ -4575,7 +4569,7 @@
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerMetadata.html#LedgerMetadata-int-int-int-org.apache.bookkeeper.client.BookKeeper.DigestType-byte:A-java.util.Map-boolean-">LedgerMetadata(int, int, int, BookKeeper.DigestType, byte[], Map&lt;String, byte[]&gt;, boolean)</a></span> - Constructor for class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a></dt>
 <dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerMetadata.html#LedgerMetadata-int-int-int-org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.State-java.util.Optional-java.util.Optional-java.util.Map-org.apache.bookkeeper.client.api.DigestType-java.util.Optional-java.util.Optional-java.util.Map-org.apache.bookkeeper.versioning.Version-">LedgerMetadata(int, int, int, DataFormats.LedgerMetadataFormat.State, Optional&lt;Long&gt;, Optional&lt;Long&gt;, Map&lt;Long, List&lt;BookieSocketAddress&gt;&gt;, DigestType, Optional&lt;byte[]&gt;, Optional&lt;Long&gt;, Map&lt;String, byte[]&gt;, Version)</a></span> - Constructor for class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a></dt>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerMetadata.html#LedgerMetadata-int-int-int-org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.State-java.util.Optional-java.util.Optional-java.util.Map-org.apache.bookkeeper.client.api.DigestType-java.util.Optional-java.util.Optional-java.util.Map-">LedgerMetadata(int, int, int, DataFormats.LedgerMetadataFormat.State, Optional&lt;Long&gt;, Optional&lt;Long&gt;, Map&lt;Long, List&lt;BookieSocketAddress&gt;&gt;, DigestType, Optional&lt;byte[]&gt;, Optional&lt;Long&gt;, Map&lt;String, byte[]&gt;)</a></span> - Constructor for class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerMetadata.html#LedgerMetadata-int-int-int-org.apache.bookkeeper.client.BookKeeper.DigestType-byte:A-">LedgerMetadata(int, int, int, BookKeeper.DigestType, byte[])</a></span> - Constructor for class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a></dt>
 <dd>
@@ -4586,7 +4580,9 @@
 <div class="block">Copy Constructor.</div>
 </dd>
 <dt><a href="org/apache/bookkeeper/client/LedgerMetadataBuilder.html" title="class in org.apache.bookkeeper.client"><span class="typeNameLink">LedgerMetadataBuilder</span></a> - Class in <a href="org/apache/bookkeeper/client/package-summary.html">org.apache.bookkeeper.client</a></dt>
-<dd>&nbsp;</dd>
+<dd>
+<div class="block">Builder for building LedgerMetadata objects.</div>
+</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerMetadataBuilder.html#LedgerMetadataBuilder--">LedgerMetadataBuilder()</a></span> - Constructor for class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerMetadataBuilder.html" title="class in org.apache.bookkeeper.client">LedgerMetadataBuilder</a></dt>
 <dd>&nbsp;</dd>
 <dt><a href="org/apache/bookkeeper/client/LedgerOpenOp.html" title="class in org.apache.bookkeeper.client"><span class="typeNameLink">LedgerOpenOp</span></a> - Class in <a href="org/apache/bookkeeper/client/package-summary.html">org.apache.bookkeeper.client</a></dt>
@@ -4880,7 +4876,7 @@
 <dd>
 <div class="block">Mechanism to safely update the metadata of a ledger.</div>
 </dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/MetadataUpdateLoop.html#MetadataUpdateLoop-org.apache.bookkeeper.meta.LedgerManager-long-java.util.function.Supplier-org.apache.bookkeeper.client.MetadataUpdateLoop.NeedsUpdatePredicate-org.apache.bookkeeper.client.MetadataUpdateLoop.MetadataTransform-org.apache.bookkeeper.client.MetadataUpdateLoop.LocalValueUpdater-">MetadataUpdateLoop(LedgerManager, long, Supplier&lt;LedgerMetadata&gt;, MetadataUpdateLoop.NeedsUpdatePredicate, MetadataUpdateLoop.MetadataTransform, MetadataUpdateLoop.LocalValueUpdater)</a></span> - Constructor for class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/MetadataUpdateLoop.html" title="class in org.apache.bookkeeper.client">MetadataUpdateLoop</a></dt>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/MetadataUpdateLoop.html#MetadataUpdateLoop-org.apache.bookkeeper.meta.LedgerManager-long-java.util.function.Supplier-org.apache.bookkeeper.client.MetadataUpdateLoop.NeedsUpdatePredicate-org.apache.bookkeeper.client.MetadataUpdateLoop.MetadataTransform-org.apache.bookkeeper.client.MetadataUpdateLoop.LocalValueUpdater-">MetadataUpdateLoop(LedgerManager, long, Supplier&lt;Versioned&lt;LedgerMetadata&gt;&gt;, MetadataUpdateLoop.NeedsUpdatePredicate, MetadataUpdateLoop.MetadataTransform, MetadataUpdateLoop.LocalValueUpdater)</a></span> - Constructor for class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/MetadataUpdateLoop.html" title="class in org.apache.bookkeeper.client">MetadataUpdateLoop</a></dt>
 <dd>
 <div class="block">Construct the loop.</div>
 </dd>
@@ -4890,7 +4886,7 @@
 <dd>&nbsp;</dd>
 <dt><a href="org/apache/bookkeeper/client/MetadataUpdateLoop.NeedsUpdatePredicate.html" title="interface in org.apache.bookkeeper.client"><span class="typeNameLink">MetadataUpdateLoop.NeedsUpdatePredicate</span></a> - Interface in <a href="org/apache/bookkeeper/client/package-summary.html">org.apache.bookkeeper.client</a></dt>
 <dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/ReadOnlyLedgerHandle.MetadataUpdater.html#MetadataUpdater-org.apache.bookkeeper.client.LedgerMetadata-">MetadataUpdater(LedgerMetadata)</a></span> - Constructor for class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/ReadOnlyLedgerHandle.MetadataUpdater.html" title="class in org.apache.bookkeeper.client">ReadOnlyLedgerHandle.MetadataUpdater</a></dt>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/ReadOnlyLedgerHandle.MetadataUpdater.html#MetadataUpdater-org.apache.bookkeeper.versioning.Versioned-">MetadataUpdater(Versioned&lt;LedgerMetadata&gt;)</a></span> - Constructor for class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/ReadOnlyLedgerHandle.MetadataUpdater.html" title="class in org.apache.bookkeeper.client">ReadOnlyLedgerHandle.MetadataUpdater</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/api/BKException.Code.html#MetadataVersionException">MetadataVersionException</a></span> - Static variable in interface org.apache.bookkeeper.client.api.<a href="org/apache/bookkeeper/client/api/BKException.Code.html" title="interface in org.apache.bookkeeper.client.api">BKException.Code</a></dt>
 <dd>
@@ -5169,7 +5165,7 @@
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html#onBookieRackChange-java.util.List-">onBookieRackChange(List&lt;BookieSocketAddress&gt;)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html" title="class in org.apache.bookkeeper.client">RackawareEnsemblePlacementPolicyImpl</a></dt>
 <dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/ReadOnlyLedgerHandle.html#onChanged-long-org.apache.bookkeeper.client.LedgerMetadata-">onChanged(long, LedgerMetadata)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/ReadOnlyLedgerHandle.html" title="class in org.apache.bookkeeper.client">ReadOnlyLedgerHandle</a></dt>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/ReadOnlyLedgerHandle.html#onChanged-long-org.apache.bookkeeper.versioning.Versioned-">onChanged(long, Versioned&lt;LedgerMetadata&gt;)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/ReadOnlyLedgerHandle.html" title="class in org.apache.bookkeeper.client">ReadOnlyLedgerHandle</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/DefaultEnsemblePlacementPolicy.html#onClusterChanged-java.util.Set-java.util.Set-">onClusterChanged(Set&lt;BookieSocketAddress&gt;, Set&lt;BookieSocketAddress&gt;)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/DefaultEnsemblePlacementPolicy.html" title="class in org.apache.bookkeeper.client">DefaultEnsemblePlacementPolicy</a></dt>
 <dd>&nbsp;</dd>
@@ -5236,13 +5232,13 @@
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerOpenOp.html#openOpLogger">openOpLogger</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerOpenOp.html" title="class in org.apache.bookkeeper.client">LedgerOpenOp</a></dt>
 <dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeperAdmin.ReadMetadataCallback.html#operationComplete-int-org.apache.bookkeeper.client.LedgerMetadata-">operationComplete(int, LedgerMetadata)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeperAdmin.ReadMetadataCallback.html" title="class in org.apache.bookkeeper.client">BookKeeperAdmin.ReadMetadataCallback</a></dt>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeperAdmin.ReadMetadataCallback.html#operationComplete-int-org.apache.bookkeeper.versioning.Versioned-">operationComplete(int, Versioned&lt;LedgerMetadata&gt;)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeperAdmin.ReadMetadataCallback.html" title="class in org.apache.bookkeeper.client">BookKeeperAdmin.ReadMetadataCallback</a></dt>
 <dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerCreateOp.html#operationComplete-int-org.apache.bookkeeper.client.LedgerMetadata-">operationComplete(int, LedgerMetadata)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerCreateOp.html" title="class in org.apache.bookkeeper.client">LedgerCreateOp</a></dt>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerCreateOp.html#operationComplete-int-org.apache.bookkeeper.versioning.Versioned-">operationComplete(int, Versioned&lt;LedgerMetadata&gt;)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerCreateOp.html" title="class in org.apache.bookkeeper.client">LedgerCreateOp</a></dt>
 <dd>
 <div class="block">Callback when created ledger.</div>
 </dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerOpenOp.html#operationComplete-int-org.apache.bookkeeper.client.LedgerMetadata-">operationComplete(int, LedgerMetadata)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerOpenOp.html" title="class in org.apache.bookkeeper.client">LedgerOpenOp</a></dt>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerOpenOp.html#operationComplete-int-org.apache.bookkeeper.versioning.Versioned-">operationComplete(int, Versioned&lt;LedgerMetadata&gt;)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerOpenOp.html" title="class in org.apache.bookkeeper.client">LedgerOpenOp</a></dt>
 <dd>
 <div class="block">Implements Open Ledger Callback.</div>
 </dd>
@@ -11522,7 +11518,7 @@
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.RRTopologyAwareCoverageEnsemble.html#parentPredicate">parentPredicate</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.RRTopologyAwareCoverageEnsemble.html" title="class in org.apache.bookkeeper.client">TopologyAwareEnsemblePlacementPolicy.RRTopologyAwareCoverageEnsemble</a></dt>
 <dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerMetadata.html#parseConfig-byte:A-org.apache.bookkeeper.versioning.Version-com.google.common.base.Optional-">parseConfig(byte[], Version, Optional&lt;Long&gt;)</a></span> - Static method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a></dt>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerMetadata.html#parseConfig-byte:A-com.google.common.base.Optional-">parseConfig(byte[], Optional&lt;Long&gt;)</a></span> - Static method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a></dt>
 <dd>
 <div class="block">Parses a given byte array and transforms into a LedgerConfig object.</div>
 </dd>
@@ -11917,7 +11913,7 @@
 <dd>
 <div class="block">Read only ledger handle.</div>
 </dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/ReadOnlyLedgerHandle.html#ReadOnlyLedgerHandle-org.apache.bookkeeper.client.ClientContext-long-org.apache.bookkeeper.client.LedgerMetadata-org.apache.bookkeeper.client.BookKeeper.DigestType-byte:A-boolean-">ReadOnlyLedgerHandle(ClientContext, long, LedgerMetadata, BookKeeper.DigestType, byte[], boolean)</a></span> - Constructor for class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/ReadOnlyLedgerHandle.html" title="class in org.apache.bookkeeper.client">ReadOnlyLedgerHandle</a></dt>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/ReadOnlyLedgerHandle.html#ReadOnlyLedgerHandle-org.apache.bookkeeper.client.ClientContext-long-org.apache.bookkeeper.versioning.Versioned-org.apache.bookkeeper.client.BookKeeper.DigestType-byte:A-boolean-">ReadOnlyLedgerHandle(ClientContext, long, Versioned&lt;LedgerMetadata&gt;, BookKeeper.DigestType, byte[], boolean)</a></span> - Constructor for class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/ReadOnlyLedgerHandle.html" title="class in org.apache.bookkeeper.client">ReadOnlyLedgerHandle</a></dt>
 <dd>&nbsp;</dd>
 <dt><a href="org/apache/bookkeeper/client/ReadOnlyLedgerHandle.MetadataUpdater.html" title="class in org.apache.bookkeeper.client"><span class="typeNameLink">ReadOnlyLedgerHandle.MetadataUpdater</span></a> - Class in <a href="org/apache/bookkeeper/client/package-summary.html">org.apache.bookkeeper.client</a></dt>
 <dd>&nbsp;</dd>
@@ -12310,8 +12306,6 @@
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/impl/BookKeeperBuilderImpl.html#requestTimer-io.netty.util.HashedWheelTimer-">requestTimer(HashedWheelTimer)</a></span> - Method in class org.apache.bookkeeper.client.impl.<a href="org/apache/bookkeeper/client/impl/BookKeeperBuilderImpl.html" title="class in org.apache.bookkeeper.client.impl">BookKeeperBuilderImpl</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/PendingReadOp.html#requiredBookiesMissingEntryForRecovery">requiredBookiesMissingEntryForRecovery</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/PendingReadOp.html" title="class in org.apache.bookkeeper.client">PendingReadOp</a></dt>
-<dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerHandle.html#rereadMetadata-org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback-">rereadMetadata(BookkeeperInternalCallbacks.GenericCallback&lt;LedgerMetadata&gt;)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/AbstractConfiguration.html#REREPLICATION_ENTRY_BATCH_SIZE">REREPLICATION_ENTRY_BATCH_SIZE</a></span> - Static variable in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a></dt>
 <dd>&nbsp;</dd>
@@ -12951,7 +12945,7 @@
 <div class="block"><span class="deprecationComment">replaced by <a href="org/apache/bookkeeper/conf/AbstractConfiguration.html#setLedgerManagerFactoryClass-java.lang.Class-"><code>AbstractConfiguration.setLedgerManagerFactoryClass(java.lang.Class&lt;? extends org.apache.bookkeeper.meta.LedgerManagerFactory&gt;)</code></a></span></div>
 </div>
 </dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerHandle.html#setLedgerMetadata-org.apache.bookkeeper.client.LedgerMetadata-org.apache.bookkeeper.client.LedgerMetadata-">setLedgerMetadata(LedgerMetadata, LedgerMetadata)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a></dt>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerHandle.html#setLedgerMetadata-org.apache.bookkeeper.versioning.Versioned-org.apache.bookkeeper.versioning.Versioned-">setLedgerMetadata(Versioned&lt;LedgerMetadata&gt;, Versioned&lt;LedgerMetadata&gt;)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#setLedgerStorageClass-java.lang.String-">setLedgerStorageClass(String)</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
 <dd>
@@ -13519,10 +13513,6 @@
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#setVerifyMetadataOnGc-boolean-">setVerifyMetadataOnGc(boolean)</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
 <dd>
 <div class="block">Set whether the bookie is configured to double check prior to gc.</div>
-</dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerMetadata.html#setVersion-org.apache.bookkeeper.versioning.Version-">setVersion(Version)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a></dt>
-<dd>
-<div class="block">Updates the version of this metadata.</div>
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ClientConfiguration.html#setWaitTimeoutOnBackpressureMillis-long-">setWaitTimeoutOnBackpressureMillis(long)</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a></dt>
 <dd>
@@ -14361,7 +14351,7 @@
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/ExplicitLacFlushPolicy.html#updatePiggyBackedLac-long-">updatePiggyBackedLac(long)</a></span> - Method in interface org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/ExplicitLacFlushPolicy.html" title="interface in org.apache.bookkeeper.client">ExplicitLacFlushPolicy</a></dt>
 <dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/MetadataUpdateLoop.LocalValueUpdater.html#updateValue-org.apache.bookkeeper.client.LedgerMetadata-org.apache.bookkeeper.client.LedgerMetadata-">updateValue(LedgerMetadata, LedgerMetadata)</a></span> - Method in interface org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/MetadataUpdateLoop.LocalValueUpdater.html" title="interface in org.apache.bookkeeper.client">MetadataUpdateLoop.LocalValueUpdater</a></dt>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/MetadataUpdateLoop.LocalValueUpdater.html#updateValue-org.apache.bookkeeper.versioning.Versioned-org.apache.bookkeeper.versioning.Versioned-">updateValue(Versioned&lt;LedgerMetadata&gt;, Versioned&lt;LedgerMetadata&gt;)</a></span> - Method in interface org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/MetadataUpdateLoop.LocalValueUpdater.html" title="interface in org.apache.bookkeeper.client">MetadataUpdateLoop.LocalValueUpdater</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#USE_HOST_NAME_AS_BOOKIE_ID">USE_HOST_NAME_AS_BOOKIE_ID</a></span> - Static variable in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
 <dd>&nbsp;</dd>
@@ -14459,8 +14449,6 @@ the order they are declared.</div>
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#VERIFY_METADATA_ON_GC">VERIFY_METADATA_ON_GC</a></span> - Static variable in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
 <dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerMetadata.html#version">version</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a></dt>
-<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerMetadata.html#VERSION_KEY">VERSION_KEY</a></span> - Static variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/ExplicitLacFlushPolicy.html#VOID_EXPLICITLAC_FLUSH_POLICY">VOID_EXPLICITLAC_FLUSH_POLICY</a></span> - Static variable in interface org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/ExplicitLacFlushPolicy.html" title="interface in org.apache.bookkeeper.client">ExplicitLacFlushPolicy</a></dt>
@@ -14526,6 +14514,8 @@ the order they are declared.</div>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/impl/OpenBuilderBase.html#withDigestType-org.apache.bookkeeper.client.api.DigestType-">withDigestType(DigestType)</a></span> - Method in class org.apache.bookkeeper.client.impl.<a href="org/apache/bookkeeper/client/impl/OpenBuilderBase.html" title="class in org.apache.bookkeeper.client.impl">OpenBuilderBase</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerCreateOp.CreateBuilderImpl.html#withDigestType-org.apache.bookkeeper.client.api.DigestType-">withDigestType(DigestType)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerCreateOp.CreateBuilderImpl.html" title="class in org.apache.bookkeeper.client">LedgerCreateOp.CreateBuilderImpl</a></dt>
+<dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerMetadataBuilder.html#withDigestType-org.apache.bookkeeper.client.api.DigestType-">withDigestType(DigestType)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerMetadataBuilder.html" title="class in org.apache.bookkeeper.client">LedgerMetadataBuilder</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/api/CreateBuilder.html#withEnsembleSize-int-">withEnsembleSize(int)</a></span> - Method in interface org.apache.bookkeeper.client.api.<a href="org/apache/bookkeeper/client/api/CreateBuilder.html" title="interface in org.apache.bookkeeper.client.api">CreateBuilder</a></dt>
 <dd>
@@ -14664,8 +14654,6 @@ the order they are declared.</div>
 <div class="block">Provide write access to a ledger.</div>
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/PendingWriteLacOp.html#writeLacComplete-int-long-org.apache.bookkeeper.net.BookieSocketAddress-java.lang.Object-">writeLacComplete(int, long, BookieSocketAddress, Object)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/PendingWriteLacOp.html" title="class in org.apache.bookkeeper.client">PendingWriteLacOp</a></dt>
-<dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerHandle.html#writeLedgerConfig-org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback-">writeLedgerConfig(BookkeeperInternalCallbacks.GenericCallback&lt;LedgerMetadata&gt;)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/prometheus/PrometheusTextFormatUtil.html#writeMetricsCollectedByPrometheusClient-java.io.Writer-io.prometheus.client.CollectorRegistry-">writeMetricsCollectedByPrometheusClient(Writer, CollectorRegistry)</a></span> - Static method in class org.apache.bookkeeper.stats.prometheus.<a href="org/apache/bookkeeper/stats/prometheus/PrometheusTextFormatUtil.html" title="class in org.apache.bookkeeper.stats.prometheus">PrometheusTextFormatUtil</a></dt>
 <dd>&nbsp;</dd>

@@ -191,7 +191,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <tr class="altColor">
 <td class="colOne"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/MetadataUpdateLoop.html#MetadataUpdateLoop-org.apache.bookkeeper.meta.LedgerManager-long-java.util.function.Supplier-org.apache.bookkeeper.client.MetadataUpdateLoop.NeedsUpdatePredicate-org.apache.bookkeeper.client.MetadataUpdateLoop.MetadataTransform-org.apache.bookkeeper.client.MetadataUpdateLoop.LocalValueUpdater-">MetadataUpdateLoop</a></span>(org.apache.bookkeeper.meta.LedgerManager&nbsp;lm,
                   long&nbsp;ledgerId,
-                  <a href="https://docs.oracle.com/javase/8/docs/api/java/util/function/Supplier.html?is-external=true" title="class or interface in java.util.function">Supplier</a>&lt;<a href="../../../../org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a>&gt;&nbsp;currentLocalValue,
+                  <a href="https://docs.oracle.com/javase/8/docs/api/java/util/function/Supplier.html?is-external=true" title="class or interface in java.util.function">Supplier</a>&lt;org.apache.bookkeeper.versioning.Versioned&lt;<a href="../../../../org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a>&gt;&gt;&nbsp;currentLocalValue,
                   <a href="../../../../org/apache/bookkeeper/client/MetadataUpdateLoop.NeedsUpdatePredicate.html" title="interface in org.apache.bookkeeper.client">MetadataUpdateLoop.NeedsUpdatePredicate</a>&nbsp;needsTransformation,
                   <a href="../../../../org/apache/bookkeeper/client/MetadataUpdateLoop.MetadataTransform.html" title="interface in org.apache.bookkeeper.client">MetadataUpdateLoop.MetadataTransform</a>&nbsp;transform,
                   <a href="../../../../org/apache/bookkeeper/client/MetadataUpdateLoop.LocalValueUpdater.html" title="interface in org.apache.bookkeeper.client">MetadataUpdateLoop.LocalValueUpdater</a>&nbsp;updateLocalValue)</code>
@@ -214,7 +214,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <th class="colLast" scope="col">Method and Description</th>
 </tr>
 <tr id="i0" class="altColor">
-<td class="colFirst"><code>(package private) <a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="../../../../org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a>&gt;</code></td>
+<td class="colFirst"><code>(package private) <a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;org.apache.bookkeeper.versioning.Versioned&lt;<a href="../../../../org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a>&gt;&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/MetadataUpdateLoop.html#run--">run</a></span>()</code>&nbsp;</td>
 </tr>
 </table>
@@ -264,7 +264,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <h4>MetadataUpdateLoop</h4>
 <pre>MetadataUpdateLoop(org.apache.bookkeeper.meta.LedgerManager&nbsp;lm,
                    long&nbsp;ledgerId,
-                   <a href="https://docs.oracle.com/javase/8/docs/api/java/util/function/Supplier.html?is-external=true" title="class or interface in java.util.function">Supplier</a>&lt;<a href="../../../../org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a>&gt;&nbsp;currentLocalValue,
+                   <a href="https://docs.oracle.com/javase/8/docs/api/java/util/function/Supplier.html?is-external=true" title="class or interface in java.util.function">Supplier</a>&lt;org.apache.bookkeeper.versioning.Versioned&lt;<a href="../../../../org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a>&gt;&gt;&nbsp;currentLocalValue,
                    <a href="../../../../org/apache/bookkeeper/client/MetadataUpdateLoop.NeedsUpdatePredicate.html" title="interface in org.apache.bookkeeper.client">MetadataUpdateLoop.NeedsUpdatePredicate</a>&nbsp;needsTransformation,
                    <a href="../../../../org/apache/bookkeeper/client/MetadataUpdateLoop.MetadataTransform.html" title="interface in org.apache.bookkeeper.client">MetadataUpdateLoop.MetadataTransform</a>&nbsp;transform,
                    <a href="../../../../org/apache/bookkeeper/client/MetadataUpdateLoop.LocalValueUpdater.html" title="interface in org.apache.bookkeeper.client">MetadataUpdateLoop.LocalValueUpdater</a>&nbsp;updateLocalValue)</pre>
@@ -298,7 +298,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <ul class="blockListLast">
 <li class="blockList">
 <h4>run</h4>
-<pre><a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="../../../../org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a>&gt;&nbsp;run()</pre>
+<pre><a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;org.apache.bookkeeper.versioning.Versioned&lt;<a href="../../../../org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a>&gt;&gt;&nbsp;run()</pre>
 </li>
 </ul>
 </li>

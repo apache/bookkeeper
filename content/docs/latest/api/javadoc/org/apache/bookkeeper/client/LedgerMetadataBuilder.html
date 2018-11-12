@@ -18,7 +18,7 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":10,"i1":10,"i2":9,"i3":9,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10};
+var methods = {"i0":10,"i1":10,"i2":9,"i3":9,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10};
 var tabs = {65535:["t0","All Methods"],1:["t1","Static Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -109,8 +109,11 @@ var activeTableTab = "activeTableTab";
 <li class="blockList">
 <hr>
 <br>
-<pre>class <span class="typeNameLabel">LedgerMetadataBuilder</span>
+<pre><a href="../../../../org/apache/bookkeeper/common/annotation/InterfaceAudience.LimitedPrivate.html" title="annotation in org.apache.bookkeeper.common.annotation">@InterfaceAudience.LimitedPrivate</a>
+ <a href="../../../../org/apache/bookkeeper/common/annotation/InterfaceStability.Unstable.html" title="annotation in org.apache.bookkeeper.common.annotation">@InterfaceStability.Unstable</a>
+public class <span class="typeNameLabel">LedgerMetadataBuilder</span>
 extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a></pre>
+<div class="block">Builder for building LedgerMetadata objects.</div>
 </li>
 </ul>
 </div>
@@ -147,50 +150,54 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <th class="colLast" scope="col">Method and Description</th>
 </tr>
 <tr id="i0" class="altColor">
-<td class="colFirst"><code>(package private) <a href="../../../../org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a></code></td>
+<td class="colFirst"><code><a href="../../../../org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerMetadataBuilder.html#build--">build</a></span>()</code>&nbsp;</td>
 </tr>
 <tr id="i1" class="rowColor">
-<td class="colFirst"><code>(package private) <a href="../../../../org/apache/bookkeeper/client/LedgerMetadataBuilder.html" title="class in org.apache.bookkeeper.client">LedgerMetadataBuilder</a></code></td>
+<td class="colFirst"><code><a href="../../../../org/apache/bookkeeper/client/LedgerMetadataBuilder.html" title="class in org.apache.bookkeeper.client">LedgerMetadataBuilder</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerMetadataBuilder.html#closingAt-long-long-">closingAt</a></span>(long&nbsp;lastEntryId,
          long&nbsp;length)</code>&nbsp;</td>
 </tr>
 <tr id="i2" class="altColor">
-<td class="colFirst"><code>(package private) static <a href="../../../../org/apache/bookkeeper/client/LedgerMetadataBuilder.html" title="class in org.apache.bookkeeper.client">LedgerMetadataBuilder</a></code></td>
+<td class="colFirst"><code>static <a href="../../../../org/apache/bookkeeper/client/LedgerMetadataBuilder.html" title="class in org.apache.bookkeeper.client">LedgerMetadataBuilder</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerMetadataBuilder.html#create--">create</a></span>()</code>&nbsp;</td>
 </tr>
 <tr id="i3" class="rowColor">
-<td class="colFirst"><code>(package private) static <a href="../../../../org/apache/bookkeeper/client/LedgerMetadataBuilder.html" title="class in org.apache.bookkeeper.client">LedgerMetadataBuilder</a></code></td>
+<td class="colFirst"><code>static <a href="../../../../org/apache/bookkeeper/client/LedgerMetadataBuilder.html" title="class in org.apache.bookkeeper.client">LedgerMetadataBuilder</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerMetadataBuilder.html#from-org.apache.bookkeeper.client.LedgerMetadata-">from</a></span>(<a href="../../../../org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a>&nbsp;other)</code>&nbsp;</td>
 </tr>
 <tr id="i4" class="altColor">
-<td class="colFirst"><code>(package private) <a href="../../../../org/apache/bookkeeper/client/LedgerMetadataBuilder.html" title="class in org.apache.bookkeeper.client">LedgerMetadataBuilder</a></code></td>
+<td class="colFirst"><code><a href="../../../../org/apache/bookkeeper/client/LedgerMetadataBuilder.html" title="class in org.apache.bookkeeper.client">LedgerMetadataBuilder</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerMetadataBuilder.html#newEnsembleEntry-long-java.util.List-">newEnsembleEntry</a></span>(long&nbsp;firstEntry,
                 <a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;ensemble)</code>&nbsp;</td>
 </tr>
 <tr id="i5" class="rowColor">
-<td class="colFirst"><code>(package private) <a href="../../../../org/apache/bookkeeper/client/LedgerMetadataBuilder.html" title="class in org.apache.bookkeeper.client">LedgerMetadataBuilder</a></code></td>
+<td class="colFirst"><code><a href="../../../../org/apache/bookkeeper/client/LedgerMetadataBuilder.html" title="class in org.apache.bookkeeper.client">LedgerMetadataBuilder</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerMetadataBuilder.html#replaceEnsembleEntry-long-java.util.List-">replaceEnsembleEntry</a></span>(long&nbsp;firstEntry,
                     <a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;ensemble)</code>&nbsp;</td>
 </tr>
 <tr id="i6" class="altColor">
-<td class="colFirst"><code>(package private) <a href="../../../../org/apache/bookkeeper/client/LedgerMetadataBuilder.html" title="class in org.apache.bookkeeper.client">LedgerMetadataBuilder</a></code></td>
+<td class="colFirst"><code><a href="../../../../org/apache/bookkeeper/client/LedgerMetadataBuilder.html" title="class in org.apache.bookkeeper.client">LedgerMetadataBuilder</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerMetadataBuilder.html#withAckQuorumSize-int-">withAckQuorumSize</a></span>(int&nbsp;ackQuorumSize)</code>&nbsp;</td>
 </tr>
 <tr id="i7" class="rowColor">
-<td class="colFirst"><code>(package private) <a href="../../../../org/apache/bookkeeper/client/LedgerMetadataBuilder.html" title="class in org.apache.bookkeeper.client">LedgerMetadataBuilder</a></code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerMetadataBuilder.html#withEnsembleSize-int-">withEnsembleSize</a></span>(int&nbsp;ensembleSize)</code>&nbsp;</td>
+<td class="colFirst"><code><a href="../../../../org/apache/bookkeeper/client/LedgerMetadataBuilder.html" title="class in org.apache.bookkeeper.client">LedgerMetadataBuilder</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerMetadataBuilder.html#withDigestType-org.apache.bookkeeper.client.api.DigestType-">withDigestType</a></span>(<a href="../../../../org/apache/bookkeeper/client/api/DigestType.html" title="enum in org.apache.bookkeeper.client.api">DigestType</a>&nbsp;digestType)</code>&nbsp;</td>
 </tr>
 <tr id="i8" class="altColor">
-<td class="colFirst"><code>(package private) <a href="../../../../org/apache/bookkeeper/client/LedgerMetadataBuilder.html" title="class in org.apache.bookkeeper.client">LedgerMetadataBuilder</a></code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerMetadataBuilder.html#withInRecoveryState--">withInRecoveryState</a></span>()</code>&nbsp;</td>
+<td class="colFirst"><code><a href="../../../../org/apache/bookkeeper/client/LedgerMetadataBuilder.html" title="class in org.apache.bookkeeper.client">LedgerMetadataBuilder</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerMetadataBuilder.html#withEnsembleSize-int-">withEnsembleSize</a></span>(int&nbsp;ensembleSize)</code>&nbsp;</td>
 </tr>
 <tr id="i9" class="rowColor">
-<td class="colFirst"><code>(package private) <a href="../../../../org/apache/bookkeeper/client/LedgerMetadataBuilder.html" title="class in org.apache.bookkeeper.client">LedgerMetadataBuilder</a></code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerMetadataBuilder.html#withPassword-byte:A-">withPassword</a></span>(byte[]&nbsp;password)</code>&nbsp;</td>
+<td class="colFirst"><code><a href="../../../../org/apache/bookkeeper/client/LedgerMetadataBuilder.html" title="class in org.apache.bookkeeper.client">LedgerMetadataBuilder</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerMetadataBuilder.html#withInRecoveryState--">withInRecoveryState</a></span>()</code>&nbsp;</td>
 </tr>
 <tr id="i10" class="altColor">
-<td class="colFirst"><code>(package private) <a href="../../../../org/apache/bookkeeper/client/LedgerMetadataBuilder.html" title="class in org.apache.bookkeeper.client">LedgerMetadataBuilder</a></code></td>
+<td class="colFirst"><code><a href="../../../../org/apache/bookkeeper/client/LedgerMetadataBuilder.html" title="class in org.apache.bookkeeper.client">LedgerMetadataBuilder</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerMetadataBuilder.html#withPassword-byte:A-">withPassword</a></span>(byte[]&nbsp;password)</code>&nbsp;</td>
+</tr>
+<tr id="i11" class="rowColor">
+<td class="colFirst"><code><a href="../../../../org/apache/bookkeeper/client/LedgerMetadataBuilder.html" title="class in org.apache.bookkeeper.client">LedgerMetadataBuilder</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerMetadataBuilder.html#withWriteQuorumSize-int-">withWriteQuorumSize</a></span>(int&nbsp;writeQuorumSize)</code>&nbsp;</td>
 </tr>
 </table>
@@ -221,7 +228,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <ul class="blockListLast">
 <li class="blockList">
 <h4>LedgerMetadataBuilder</h4>
-<pre>LedgerMetadataBuilder()</pre>
+<pre>public&nbsp;LedgerMetadataBuilder()</pre>
 </li>
 </ul>
 </li>
@@ -238,7 +245,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <ul class="blockList">
 <li class="blockList">
 <h4>create</h4>
-<pre>static&nbsp;<a href="../../../../org/apache/bookkeeper/client/LedgerMetadataBuilder.html" title="class in org.apache.bookkeeper.client">LedgerMetadataBuilder</a>&nbsp;create()</pre>
+<pre>public static&nbsp;<a href="../../../../org/apache/bookkeeper/client/LedgerMetadataBuilder.html" title="class in org.apache.bookkeeper.client">LedgerMetadataBuilder</a>&nbsp;create()</pre>
 </li>
 </ul>
 <a name="from-org.apache.bookkeeper.client.LedgerMetadata-">
@@ -247,7 +254,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <ul class="blockList">
 <li class="blockList">
 <h4>from</h4>
-<pre>static&nbsp;<a href="../../../../org/apache/bookkeeper/client/LedgerMetadataBuilder.html" title="class in org.apache.bookkeeper.client">LedgerMetadataBuilder</a>&nbsp;from(<a href="../../../../org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a>&nbsp;other)</pre>
+<pre>public static&nbsp;<a href="../../../../org/apache/bookkeeper/client/LedgerMetadataBuilder.html" title="class in org.apache.bookkeeper.client">LedgerMetadataBuilder</a>&nbsp;from(<a href="../../../../org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a>&nbsp;other)</pre>
 </li>
 </ul>
 <a name="withPassword-byte:A-">
@@ -256,7 +263,16 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <ul class="blockList">
 <li class="blockList">
 <h4>withPassword</h4>
-<pre><a href="../../../../org/apache/bookkeeper/client/LedgerMetadataBuilder.html" title="class in org.apache.bookkeeper.client">LedgerMetadataBuilder</a>&nbsp;withPassword(byte[]&nbsp;password)</pre>
+<pre>public&nbsp;<a href="../../../../org/apache/bookkeeper/client/LedgerMetadataBuilder.html" title="class in org.apache.bookkeeper.client">LedgerMetadataBuilder</a>&nbsp;withPassword(byte[]&nbsp;password)</pre>
+</li>
+</ul>
+<a name="withDigestType-org.apache.bookkeeper.client.api.DigestType-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>withDigestType</h4>
+<pre>public&nbsp;<a href="../../../../org/apache/bookkeeper/client/LedgerMetadataBuilder.html" title="class in org.apache.bookkeeper.client">LedgerMetadataBuilder</a>&nbsp;withDigestType(<a href="../../../../org/apache/bookkeeper/client/api/DigestType.html" title="enum in org.apache.bookkeeper.client.api">DigestType</a>&nbsp;digestType)</pre>
 </li>
 </ul>
 <a name="withEnsembleSize-int-">
@@ -265,7 +281,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <ul class="blockList">
 <li class="blockList">
 <h4>withEnsembleSize</h4>
-<pre><a href="../../../../org/apache/bookkeeper/client/LedgerMetadataBuilder.html" title="class in org.apache.bookkeeper.client">LedgerMetadataBuilder</a>&nbsp;withEnsembleSize(int&nbsp;ensembleSize)</pre>
+<pre>public&nbsp;<a href="../../../../org/apache/bookkeeper/client/LedgerMetadataBuilder.html" title="class in org.apache.bookkeeper.client">LedgerMetadataBuilder</a>&nbsp;withEnsembleSize(int&nbsp;ensembleSize)</pre>
 </li>
 </ul>
 <a name="withWriteQuorumSize-int-">
@@ -274,7 +290,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <ul class="blockList">
 <li class="blockList">
 <h4>withWriteQuorumSize</h4>
-<pre><a href="../../../../org/apache/bookkeeper/client/LedgerMetadataBuilder.html" title="class in org.apache.bookkeeper.client">LedgerMetadataBuilder</a>&nbsp;withWriteQuorumSize(int&nbsp;writeQuorumSize)</pre>
+<pre>public&nbsp;<a href="../../../../org/apache/bookkeeper/client/LedgerMetadataBuilder.html" title="class in org.apache.bookkeeper.client">LedgerMetadataBuilder</a>&nbsp;withWriteQuorumSize(int&nbsp;writeQuorumSize)</pre>
 </li>
 </ul>
 <a name="withAckQuorumSize-int-">
@@ -283,7 +299,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <ul class="blockList">
 <li class="blockList">
 <h4>withAckQuorumSize</h4>
-<pre><a href="../../../../org/apache/bookkeeper/client/LedgerMetadataBuilder.html" title="class in org.apache.bookkeeper.client">LedgerMetadataBuilder</a>&nbsp;withAckQuorumSize(int&nbsp;ackQuorumSize)</pre>
+<pre>public&nbsp;<a href="../../../../org/apache/bookkeeper/client/LedgerMetadataBuilder.html" title="class in org.apache.bookkeeper.client">LedgerMetadataBuilder</a>&nbsp;withAckQuorumSize(int&nbsp;ackQuorumSize)</pre>
 </li>
 </ul>
 <a name="newEnsembleEntry-long-java.util.List-">
@@ -292,8 +308,8 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <ul class="blockList">
 <li class="blockList">
 <h4>newEnsembleEntry</h4>
-<pre><a href="../../../../org/apache/bookkeeper/client/LedgerMetadataBuilder.html" title="class in org.apache.bookkeeper.client">LedgerMetadataBuilder</a>&nbsp;newEnsembleEntry(long&nbsp;firstEntry,
-                                       <a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;ensemble)</pre>
+<pre>public&nbsp;<a href="../../../../org/apache/bookkeeper/client/LedgerMetadataBuilder.html" title="class in org.apache.bookkeeper.client">LedgerMetadataBuilder</a>&nbsp;newEnsembleEntry(long&nbsp;firstEntry,
+                                              <a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;ensemble)</pre>
 </li>
 </ul>
 <a name="replaceEnsembleEntry-long-java.util.List-">
@@ -302,8 +318,8 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <ul class="blockList">
 <li class="blockList">
 <h4>replaceEnsembleEntry</h4>
-<pre><a href="../../../../org/apache/bookkeeper/client/LedgerMetadataBuilder.html" title="class in org.apache.bookkeeper.client">LedgerMetadataBuilder</a>&nbsp;replaceEnsembleEntry(long&nbsp;firstEntry,
-                                           <a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;ensemble)</pre>
+<pre>public&nbsp;<a href="../../../../org/apache/bookkeeper/client/LedgerMetadataBuilder.html" title="class in org.apache.bookkeeper.client">LedgerMetadataBuilder</a>&nbsp;replaceEnsembleEntry(long&nbsp;firstEntry,
+                                                  <a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;ensemble)</pre>
 </li>
 </ul>
 <a name="withInRecoveryState--">
@@ -312,7 +328,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <ul class="blockList">
 <li class="blockList">
 <h4>withInRecoveryState</h4>
-<pre><a href="../../../../org/apache/bookkeeper/client/LedgerMetadataBuilder.html" title="class in org.apache.bookkeeper.client">LedgerMetadataBuilder</a>&nbsp;withInRecoveryState()</pre>
+<pre>public&nbsp;<a href="../../../../org/apache/bookkeeper/client/LedgerMetadataBuilder.html" title="class in org.apache.bookkeeper.client">LedgerMetadataBuilder</a>&nbsp;withInRecoveryState()</pre>
 </li>
 </ul>
 <a name="closingAt-long-long-">
@@ -321,8 +337,8 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <ul class="blockList">
 <li class="blockList">
 <h4>closingAt</h4>
-<pre><a href="../../../../org/apache/bookkeeper/client/LedgerMetadataBuilder.html" title="class in org.apache.bookkeeper.client">LedgerMetadataBuilder</a>&nbsp;closingAt(long&nbsp;lastEntryId,
-                                long&nbsp;length)</pre>
+<pre>public&nbsp;<a href="../../../../org/apache/bookkeeper/client/LedgerMetadataBuilder.html" title="class in org.apache.bookkeeper.client">LedgerMetadataBuilder</a>&nbsp;closingAt(long&nbsp;lastEntryId,
+                                       long&nbsp;length)</pre>
 </li>
 </ul>
 <a name="build--">
@@ -331,7 +347,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <ul class="blockListLast">
 <li class="blockList">
 <h4>build</h4>
-<pre><a href="../../../../org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a>&nbsp;build()</pre>
+<pre>public&nbsp;<a href="../../../../org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a>&nbsp;build()</pre>
 </li>
 </ul>
 </li>

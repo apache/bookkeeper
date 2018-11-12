@@ -109,13 +109,13 @@ var activeTableTab = "activeTableTab";
 <li class="blockList">
 <dl>
 <dt>All Implemented Interfaces:</dt>
-<dd>org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback&lt;<a href="../../../../org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a>&gt;</dd>
+<dd>org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback&lt;org.apache.bookkeeper.versioning.Versioned&lt;<a href="../../../../org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a>&gt;&gt;</dd>
 </dl>
 <hr>
 <br>
 <pre>class <span class="typeNameLabel">LedgerCreateOp</span>
 extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>
-implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback&lt;<a href="../../../../org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a>&gt;</pre>
+implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback&lt;org.apache.bookkeeper.versioning.Versioned&lt;<a href="../../../../org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a>&gt;&gt;</pre>
 <div class="block">Encapsulates asynchronous ledger create operation.</div>
 </li>
 </ul>
@@ -276,8 +276,8 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallba
 </tr>
 <tr id="i3" class="rowColor">
 <td class="colFirst"><code>void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerCreateOp.html#operationComplete-int-org.apache.bookkeeper.client.LedgerMetadata-">operationComplete</a></span>(int&nbsp;rc,
-                 <a href="../../../../org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a>&nbsp;writtenMetadata)</code>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerCreateOp.html#operationComplete-int-org.apache.bookkeeper.versioning.Versioned-">operationComplete</a></span>(int&nbsp;rc,
+                 org.apache.bookkeeper.versioning.Versioned&lt;<a href="../../../../org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a>&gt;&nbsp;writtenMetadata)</code>
 <div class="block">Callback when created ledger.</div>
 </td>
 </tr>
@@ -516,18 +516,18 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallba
 <div class="block">Initiates the operation to return LedgerHandleAdv.</div>
 </li>
 </ul>
-<a name="operationComplete-int-org.apache.bookkeeper.client.LedgerMetadata-">
+<a name="operationComplete-int-org.apache.bookkeeper.versioning.Versioned-">
 <!--   -->
 </a>
 <ul class="blockListLast">
 <li class="blockList">
 <h4>operationComplete</h4>
 <pre>public&nbsp;void&nbsp;operationComplete(int&nbsp;rc,
-                              <a href="../../../../org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a>&nbsp;writtenMetadata)</pre>
+                              org.apache.bookkeeper.versioning.Versioned&lt;<a href="../../../../org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a>&gt;&nbsp;writtenMetadata)</pre>
 <div class="block">Callback when created ledger.</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code>operationComplete</code>&nbsp;in interface&nbsp;<code>org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback&lt;<a href="../../../../org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a>&gt;</code></dd>
+<dd><code>operationComplete</code>&nbsp;in interface&nbsp;<code>org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback&lt;org.apache.bookkeeper.versioning.Versioned&lt;<a href="../../../../org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a>&gt;&gt;</code></dd>
 </dl>
 </li>
 </ul>
