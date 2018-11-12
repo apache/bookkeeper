@@ -54,6 +54,7 @@ import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.Processor;
 import org.apache.bookkeeper.util.collections.ConcurrentLongHashMap;
 import org.apache.bookkeeper.versioning.LongVersion;
 import org.apache.bookkeeper.versioning.Version;
+import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.zookeeper.AsyncCallback.VoidCallback;
 
 /**
@@ -66,7 +67,6 @@ class EtcdLedgerManager implements LedgerManager {
         try {
             return LedgerMetadata.parseConfig(
                 bs.getBytes(),
-                Version.ANY,
                 Optional.absent()
             );
         } catch (IOException ioe) {
@@ -105,7 +105,7 @@ class EtcdLedgerManager implements LedgerManager {
     @Override
     public void createLedgerMetadata(long ledgerId,
                                      LedgerMetadata metadata,
-                                     GenericCallback<LedgerMetadata> cb) {
+                                     GenericCallback<Versioned<LedgerMetadata>> cb) {
         String ledgerKey = EtcdUtils.getLedgerKey(scope, ledgerId);
         ByteSequence ledgerKeyBs = ByteSequence.fromString(ledgerKey);
         log.info("Create ledger metadata under key {}", ledgerKey);
@@ -135,8 +135,8 @@ class EtcdLedgerManager implements LedgerManager {
                         cb.operationComplete(Code.LedgerExistException, null);
                     }
                 } else {
-                    metadata.setVersion(new LongVersion(resp.getHeader().getRevision()));
-                    cb.operationComplete(Code.OK, metadata);
+                    cb.operationComplete(Code.OK, new Versioned<>(metadata,
+                                                                  new LongVersion(resp.getHeader().getRevision())));
                 }
             })
             .exceptionally(cause -> {
@@ -211,7 +211,7 @@ class EtcdLedgerManager implements LedgerManager {
     }
 
     @Override
-    public void readLedgerMetadata(long ledgerId, GenericCallback<LedgerMetadata> readCb) {
+    public void readLedgerMetadata(long ledgerId, GenericCallback<Versioned<LedgerMetadata>> readCb) {
         String ledgerKey = EtcdUtils.getLedgerKey(scope, ledgerId);
         ByteSequence ledgerKeyBs = ByteSequence.fromString(ledgerKey);
         log.info("read ledger metadata under key {}", ledgerKey);
@@ -220,14 +220,10 @@ class EtcdLedgerManager implements LedgerManager {
                 if (getResp.getCount() > 0) {
                     KeyValue kv = getResp.getKvs().get(0);
                     byte[] data = kv.getValue().getBytes();
-                    LedgerMetadata metadata;
                     try {
-                        metadata = LedgerMetadata.parseConfig(
-                            data,
-                            new LongVersion(kv.getModRevision()),
-                            Optional.absent()
-                        );
-                        readCb.operationComplete(Code.OK, metadata);
+                        LedgerMetadata metadata = LedgerMetadata.parseConfig(data, Optional.absent());
+                        readCb.operationComplete(
+                                Code.OK, new Versioned<>(metadata, new LongVersion(kv.getModRevision())));
                     } catch (IOException ioe) {
                         log.error("Could not parse ledger metadata for ledger : {}", ledgerId, ioe);
                         readCb.operationComplete(Code.MetaStoreException, null);
@@ -244,13 +240,13 @@ class EtcdLedgerManager implements LedgerManager {
     }
 
     @Override
-    public void writeLedgerMetadata(long ledgerId, LedgerMetadata metadata, GenericCallback<LedgerMetadata> cb) {
-        Version v = metadata.getVersion();
-        if (Version.NEW == v || !(v instanceof LongVersion)) {
+    public void writeLedgerMetadata(long ledgerId, LedgerMetadata metadata,
+                                    Version currentVersion, GenericCallback<Versioned<LedgerMetadata>> cb) {
+        if (Version.NEW == currentVersion || !(currentVersion instanceof LongVersion)) {
             cb.operationComplete(Code.MetadataVersionException, null);
             return;
         }
-        final LongVersion lv = (LongVersion) v;
+        final LongVersion lv = (LongVersion) currentVersion;
         String ledgerKey = EtcdUtils.getLedgerKey(scope, ledgerId);
         ByteSequence ledgerKeyBs = ByteSequence.fromString(ledgerKey);
         kvClient.txn()
@@ -268,8 +264,8 @@ class EtcdLedgerManager implements LedgerManager {
             .commit()
             .thenAccept(resp -> {
                 if (resp.isSucceeded()) {
-                    metadata.setVersion(new LongVersion(resp.getHeader().getRevision()));
-                    cb.operationComplete(Code.OK, metadata);
+                    cb.operationComplete(
+                            Code.OK, new Versioned<>(metadata, new LongVersion(resp.getHeader().getRevision())));
                 } else {
                     GetResponse getResp = resp.getGetResponses().get(0);
                     if (getResp.getCount() > 0) {

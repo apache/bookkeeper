@@ -20,6 +20,7 @@ package org.apache.bookkeeper.client;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 
 import java.util.Arrays;
@@ -30,11 +31,18 @@ import java.util.Optional;
 import java.util.TreeMap;
 
 import org.apache.bookkeeper.client.api.DigestType;
+import org.apache.bookkeeper.common.annotation.InterfaceAudience.LimitedPrivate;
+import org.apache.bookkeeper.common.annotation.InterfaceStability.Unstable;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat;
-import org.apache.bookkeeper.versioning.Version;
 
-class LedgerMetadataBuilder {
+/**
+ * Builder for building LedgerMetadata objects.
+ */
+@LimitedPrivate
+@Unstable
+@VisibleForTesting
+public class LedgerMetadataBuilder {
     private int ensembleSize = 3;
     private int writeQuorumSize = 3;
     private int ackQuorumSize = 2;
@@ -51,13 +59,11 @@ class LedgerMetadataBuilder {
     private Optional<Long> ctime = Optional.empty();
     private Map<String, byte[]> customMetadata = Collections.emptyMap();
 
-    private Version version = Version.NEW;
-
-    static LedgerMetadataBuilder create() {
+    public static LedgerMetadataBuilder create() {
         return new LedgerMetadataBuilder();
     }
 
-    static LedgerMetadataBuilder from(LedgerMetadata other) {
+    public static LedgerMetadataBuilder from(LedgerMetadata other) {
         LedgerMetadataBuilder builder = new LedgerMetadataBuilder();
         builder.ensembleSize = other.getEnsembleSize();
         builder.writeQuorumSize = other.getWriteQuorumSize();
@@ -86,36 +92,39 @@ class LedgerMetadataBuilder {
         }
         builder.customMetadata = ImmutableMap.copyOf(other.getCustomMetadata());
 
-        builder.version = other.getVersion();
-
         return builder;
     }
 
-    LedgerMetadataBuilder withPassword(byte[] password) {
+    public LedgerMetadataBuilder withPassword(byte[] password) {
         this.password = Optional.of(Arrays.copyOf(password, password.length));
         return this;
     }
 
-    LedgerMetadataBuilder withEnsembleSize(int ensembleSize) {
+    public LedgerMetadataBuilder withDigestType(DigestType digestType) {
+        this.digestType = digestType;
+        return this;
+    }
+
+    public LedgerMetadataBuilder withEnsembleSize(int ensembleSize) {
         checkState(ensembles.size() == 0, "Can only set ensemble size before adding ensembles to the builder");
         this.ensembleSize = ensembleSize;
         return this;
     }
 
-    LedgerMetadataBuilder withWriteQuorumSize(int writeQuorumSize) {
+    public LedgerMetadataBuilder withWriteQuorumSize(int writeQuorumSize) {
         checkArgument(ensembleSize >= writeQuorumSize, "Write quorum must be less or equal to ensemble size");
         checkArgument(writeQuorumSize >= ackQuorumSize, "Write quorum must be greater or equal to ack quorum");
         this.writeQuorumSize = writeQuorumSize;
         return this;
     }
 
-    LedgerMetadataBuilder withAckQuorumSize(int ackQuorumSize) {
+    public LedgerMetadataBuilder withAckQuorumSize(int ackQuorumSize) {
         checkArgument(writeQuorumSize >= ackQuorumSize, "Ack quorum must be less or equal to write quorum");
         this.ackQuorumSize = ackQuorumSize;
         return this;
     }
 
-    LedgerMetadataBuilder newEnsembleEntry(long firstEntry, List<BookieSocketAddress> ensemble) {
+    public LedgerMetadataBuilder newEnsembleEntry(long firstEntry, List<BookieSocketAddress> ensemble) {
         checkArgument(ensemble.size() == ensembleSize,
                       "Size of passed in ensemble must match the ensembleSize of the builder");
         checkArgument(ensembles.isEmpty() || firstEntry > ensembles.lastKey(),
@@ -124,7 +133,7 @@ class LedgerMetadataBuilder {
         return this;
     }
 
-    LedgerMetadataBuilder replaceEnsembleEntry(long firstEntry, List<BookieSocketAddress> ensemble) {
+    public LedgerMetadataBuilder replaceEnsembleEntry(long firstEntry, List<BookieSocketAddress> ensemble) {
         checkArgument(ensemble.size() == ensembleSize,
                       "Size of passed in ensemble must match the ensembleSize of the builder");
         checkArgument(ensembles.containsKey(firstEntry),
@@ -133,23 +142,22 @@ class LedgerMetadataBuilder {
         return this;
     }
 
-    LedgerMetadataBuilder withInRecoveryState() {
+    public LedgerMetadataBuilder withInRecoveryState() {
         this.state = LedgerMetadataFormat.State.IN_RECOVERY;
         return this;
     }
 
-    LedgerMetadataBuilder closingAt(long lastEntryId, long length) {
+    public LedgerMetadataBuilder closingAt(long lastEntryId, long length) {
         this.lastEntryId = Optional.of(lastEntryId);
         this.length = Optional.of(length);
         this.state = LedgerMetadataFormat.State.CLOSED;
         return this;
     }
 
-    LedgerMetadata build() {
+    public LedgerMetadata build() {
         return new LedgerMetadata(ensembleSize, writeQuorumSize, ackQuorumSize,
                                   state, lastEntryId, length, ensembles,
-                                  digestType, password, ctime, customMetadata,
-                                  version);
+                                  digestType, password, ctime, customMetadata);
     }
 
 }

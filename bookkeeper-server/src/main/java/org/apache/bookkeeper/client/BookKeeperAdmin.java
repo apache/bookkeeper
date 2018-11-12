@@ -82,6 +82,7 @@ import org.apache.bookkeeper.replication.ReplicationException.UnavailableExcepti
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.IOUtils;
+import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.zookeeper.AsyncCallback;
 import org.apache.zookeeper.KeeperException;
 import org.slf4j.Logger;
@@ -490,9 +491,9 @@ public class BookKeeperAdmin implements AutoCloseable {
         bkc.getLedgerManager().asyncProcessLedgers(new Processor<Long>() {
             @Override
             public void process(final Long lid, final AsyncCallback.VoidCallback cb) {
-                bkc.getLedgerManager().readLedgerMetadata(lid, new GenericCallback<LedgerMetadata>() {
+                bkc.getLedgerManager().readLedgerMetadata(lid, new GenericCallback<Versioned<LedgerMetadata>>() {
                     @Override
-                    public void operationComplete(int rc, LedgerMetadata metadata) {
+                    public void operationComplete(int rc, Versioned<LedgerMetadata> metadata) {
                         if (BKException.Code.NoSuchLedgerExistsException == rc) {
                             // the ledger was deleted during this iteration.
                             cb.processResult(BKException.Code.OK, null, null);
@@ -501,11 +502,11 @@ public class BookKeeperAdmin implements AutoCloseable {
                             cb.processResult(rc, null, null);
                             return;
                         }
-                        Set<BookieSocketAddress> bookiesInLedger = metadata.getBookiesInThisLedger();
+                        Set<BookieSocketAddress> bookiesInLedger = metadata.getValue().getBookiesInThisLedger();
                         Sets.SetView<BookieSocketAddress> intersection =
                                 Sets.intersection(bookiesInLedger, bookies);
                         if (!intersection.isEmpty()) {
-                            ledgers.put(lid, metadata);
+                            ledgers.put(lid, metadata.getValue());
                         }
                         cb.processResult(BKException.Code.OK, null, null);
                     }
@@ -1637,7 +1638,7 @@ public class BookKeeperAdmin implements AutoCloseable {
     }
 
     static class ReadMetadataCallback extends AbstractFuture<LedgerMetadata>
-            implements GenericCallback<LedgerMetadata> {
+            implements GenericCallback<Versioned<LedgerMetadata>> {
         final long ledgerId;
 
         ReadMetadataCallback(long ledgerId) {
@@ -1648,11 +1649,11 @@ public class BookKeeperAdmin implements AutoCloseable {
             return ledgerId;
         }
 
-        public void operationComplete(int rc, LedgerMetadata result) {
+        public void operationComplete(int rc, Versioned<LedgerMetadata> result) {
             if (rc != 0) {
                 setException(BKException.create(rc));
             } else {
-                set(result);
+                set(result.getValue());
             }
         }
     }

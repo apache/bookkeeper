@@ -46,6 +46,7 @@ import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.util.MathUtils;
+import org.apache.bookkeeper.versioning.Versioned;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,7 +54,7 @@ import org.slf4j.LoggerFactory;
  * Encapsulates asynchronous ledger create operation.
  *
  */
-class LedgerCreateOp implements GenericCallback<LedgerMetadata> {
+class LedgerCreateOp implements GenericCallback<Versioned<LedgerMetadata>> {
 
     static final Logger LOG = LoggerFactory.getLogger(LedgerCreateOp.class);
 
@@ -187,7 +188,7 @@ class LedgerCreateOp implements GenericCallback<LedgerMetadata> {
      * Callback when created ledger.
      */
     @Override
-    public void operationComplete(int rc, LedgerMetadata writtenMetadata) {
+    public void operationComplete(int rc, Versioned<LedgerMetadata> writtenMetadata) {
         if (this.generateLedgerId && (BKException.Code.LedgerExistException == rc)) {
             // retry to generate a new ledger id
             generateLedgerIdAndCreateLedger();
@@ -199,9 +200,9 @@ class LedgerCreateOp implements GenericCallback<LedgerMetadata> {
 
         try {
             if (adv) {
-                lh = new LedgerHandleAdv(bk.getClientCtx(), ledgerId, metadata, digestType, passwd, writeFlags);
+                lh = new LedgerHandleAdv(bk.getClientCtx(), ledgerId, writtenMetadata, digestType, passwd, writeFlags);
             } else {
-                lh = new LedgerHandle(bk.getClientCtx(), ledgerId, metadata, digestType, passwd, writeFlags);
+                lh = new LedgerHandle(bk.getClientCtx(), ledgerId, writtenMetadata, digestType, passwd, writeFlags);
             }
         } catch (GeneralSecurityException e) {
             LOG.error("Security exception while creating ledger: " + ledgerId, e);

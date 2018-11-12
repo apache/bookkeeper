@@ -39,6 +39,7 @@ import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks;
+import org.apache.bookkeeper.versioning.Versioned;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -68,7 +69,7 @@ public class ListLedgerService implements HttpEndpointService {
      * Callback for reading ledger metadata.
      */
     public static class ReadLedgerMetadataCallback extends AbstractFuture<LedgerMetadata>
-      implements BookkeeperInternalCallbacks.GenericCallback<LedgerMetadata> {
+      implements BookkeeperInternalCallbacks.GenericCallback<Versioned<LedgerMetadata>> {
         final long ledgerId;
 
         ReadLedgerMetadataCallback(long ledgerId) {
@@ -79,11 +80,11 @@ public class ListLedgerService implements HttpEndpointService {
             return ledgerId;
         }
 
-        public void operationComplete(int rc, LedgerMetadata result) {
+        public void operationComplete(int rc, Versioned<LedgerMetadata> result) {
             if (rc != 0) {
                 setException(BKException.create(rc));
             } else {
-                set(result);
+                set(result.getValue());
             }
         }
     }

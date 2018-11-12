@@ -79,6 +79,7 @@ import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.ReflectionUtils;
 import org.apache.bookkeeper.util.SafeRunnable;
+import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.lang.SystemUtils;
 import org.apache.zookeeper.KeeperException;
@@ -1299,11 +1300,11 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
      * @param cb    callback method
      */
     public void asyncIsClosed(long lId, final IsClosedCallback cb, final Object ctx){
-        ledgerManager.readLedgerMetadata(lId, new GenericCallback<LedgerMetadata>(){
+        ledgerManager.readLedgerMetadata(lId, new GenericCallback<Versioned<LedgerMetadata>>(){
             @Override
-            public void operationComplete(int rc, LedgerMetadata lm){
+            public void operationComplete(int rc, Versioned<LedgerMetadata> lm){
                 if (rc == BKException.Code.OK) {
-                    cb.isClosedComplete(rc, lm.isClosed(), ctx);
+                    cb.isClosedComplete(rc, lm.getValue().isClosed(), ctx);
                 } else {
                     cb.isClosedComplete(rc, false, ctx);
                 }

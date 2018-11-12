@@ -23,20 +23,19 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import java.io.File;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Future;
 import lombok.Cleanup;
 import org.apache.bookkeeper.client.BookKeeper;
+import org.apache.bookkeeper.client.ClientUtil;
 import org.apache.bookkeeper.client.LedgerHandle;
-import org.apache.bookkeeper.client.LedgerHandleAdapter;
-import org.apache.bookkeeper.client.LedgerMetadata;
+import org.apache.bookkeeper.client.LedgerMetadataBuilder;
 import org.apache.bookkeeper.common.util.JsonUtil;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
@@ -48,9 +47,9 @@ import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
 import org.apache.bookkeeper.net.BookieSocketAddress;
-import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallbackFuture;
 import org.apache.bookkeeper.replication.AuditorElector;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -664,25 +663,27 @@ public class TestHttpService extends BookKeeperClusterTestCase {
         @Cleanup final LedgerUnderreplicationManager underReplicationManager =
             mFactory.newLedgerUnderreplicationManager();
 
-        LedgerHandle lh = bkc.createLedger(3, 3, BookKeeper.DigestType.CRC32, "passwd".getBytes());
-        LedgerMetadata md = LedgerHandleAdapter.getLedgerMetadata(lh);
-        List<BookieSocketAddress> ensemble = new ArrayList<>(md.getAllEnsembles().get(0L));
-        ensemble.set(0, new BookieSocketAddress("1.1.1.1", 1000));
-        md.updateEnsemble(0L, ensemble);
+        // 192.0.2.0/24 is reserved TEST-NET range
+        LedgerMetadataBuilder metadata = LedgerMetadataBuilder.create()
+            .withEnsembleSize(3).withWriteQuorumSize(3).withAckQuorumSize(3)
+            .newEnsembleEntry(0L, Lists.newArrayList(
+                                      new BookieSocketAddress("192.0.2.1", 1000),
+                                      getBookie(0),
+                                      getBookie(1)));
+        ClientUtil.setupLedger(ledgerManager, 1L, metadata);
 
-        GenericCallbackFuture<LedgerMetadata> cb =
-            new GenericCallbackFuture<LedgerMetadata>();
-        ledgerManager.writeLedgerMetadata(lh.getId(), md, cb);
-        cb.get();
-
+        // wait for up to two minutes to complete.
+        // if the metadata was created just before checkAllLedgers ran, then we need to wait for the timeout
         long underReplicatedLedger = -1;
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < 120; i++) {
             underReplicatedLedger = underReplicationManager.pollLedgerToRereplicate();
             if (underReplicatedLedger != -1) {
+                LOG.info("Underreplicated ledgers found, breaking out of loop");
                 break;
             }
             Thread.sleep(1000);
         }
+        assertTrue(underReplicatedLedger != -1);
 
         HttpServiceRequest request2 = new HttpServiceRequest(null, HttpServer.Method.GET, null);
         HttpServiceResponse response2 = listUnderReplicatedLedgerService.handle(request2);

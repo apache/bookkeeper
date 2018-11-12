@@ -48,6 +48,7 @@ import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.util.SnapshotMap;
+import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.zookeeper.ZooDefs;
 import org.junit.Assert;
 import org.junit.Before;
@@ -86,12 +87,12 @@ public class TestGcOverreplicatedLedger extends LedgerManagerTestCase {
 
         final AtomicReference<LedgerMetadata> newLedgerMetadata = new AtomicReference<>(null);
         final CountDownLatch latch = new CountDownLatch(1);
-        ledgerManager.readLedgerMetadata(lh.getId(), new GenericCallback<LedgerMetadata>() {
+        ledgerManager.readLedgerMetadata(lh.getId(), new GenericCallback<Versioned<LedgerMetadata>>() {
 
             @Override
-            public void operationComplete(int rc, LedgerMetadata result) {
+            public void operationComplete(int rc, Versioned<LedgerMetadata> result) {
                 if (rc == BKException.Code.OK) {
-                    newLedgerMetadata.set(result);
+                    newLedgerMetadata.set(result.getValue());
                 }
                 latch.countDown();
             }
@@ -133,12 +134,12 @@ public class TestGcOverreplicatedLedger extends LedgerManagerTestCase {
 
         final AtomicReference<LedgerMetadata> newLedgerMetadata = new AtomicReference<>(null);
         final CountDownLatch latch = new CountDownLatch(1);
-        ledgerManager.readLedgerMetadata(lh.getId(), new GenericCallback<LedgerMetadata>() {
+        ledgerManager.readLedgerMetadata(lh.getId(), new GenericCallback<Versioned<LedgerMetadata>>() {
 
             @Override
-            public void operationComplete(int rc, LedgerMetadata result) {
+            public void operationComplete(int rc, Versioned<LedgerMetadata> result) {
                 if (rc == BKException.Code.OK) {
-                    newLedgerMetadata.set(result);
+                    newLedgerMetadata.set(result.getValue());
                 }
                 latch.countDown();
             }
@@ -184,12 +185,12 @@ public class TestGcOverreplicatedLedger extends LedgerManagerTestCase {
 
         final AtomicReference<LedgerMetadata> newLedgerMetadata = new AtomicReference<>(null);
         final CountDownLatch latch = new CountDownLatch(1);
-        ledgerManager.readLedgerMetadata(lh.getId(), new GenericCallback<LedgerMetadata>() {
+        ledgerManager.readLedgerMetadata(lh.getId(), new GenericCallback<Versioned<LedgerMetadata>>() {
 
             @Override
-            public void operationComplete(int rc, LedgerMetadata result) {
+            public void operationComplete(int rc, Versioned<LedgerMetadata> result) {
                 if (rc == BKException.Code.OK) {
-                    newLedgerMetadata.set(result);
+                    newLedgerMetadata.set(result.getValue());
                 }
                 latch.countDown();
             }

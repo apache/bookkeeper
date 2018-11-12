@@ -37,6 +37,7 @@ import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.Processor;
 
 import org.apache.bookkeeper.versioning.LongVersion;
 import org.apache.bookkeeper.versioning.Version;
+import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.zookeeper.AsyncCallback;
 
@@ -77,12 +78,12 @@ public class MockLedgerManager implements LedgerManager {
         return new MockLedgerManager(metadataMap, executor, false);
     }
 
-    private LedgerMetadata readMetadata(long ledgerId) throws Exception {
+    private Versioned<LedgerMetadata> readMetadata(long ledgerId) throws Exception {
         Pair<LongVersion, byte[]> pair = metadataMap.get(ledgerId);
         if (pair == null) {
             return null;
         } else {
-            return LedgerMetadata.parseConfig(pair.getRight(), pair.getLeft(), Optional.absent());
+            return new Versioned<>(LedgerMetadata.parseConfig(pair.getRight(), Optional.absent()), pair.getLeft());
         }
     }
 
@@ -95,14 +96,15 @@ public class MockLedgerManager implements LedgerManager {
     }
 
     @Override
-    public void createLedgerMetadata(long ledgerId, LedgerMetadata metadata, GenericCallback<LedgerMetadata> cb) {
+    public void createLedgerMetadata(long ledgerId, LedgerMetadata metadata,
+                                     GenericCallback<Versioned<LedgerMetadata>> cb) {
         executor.submit(() -> {
                 if (metadataMap.containsKey(ledgerId)) {
                     executeCallback(() -> cb.operationComplete(BKException.Code.LedgerExistException, null));
                 } else {
                     metadataMap.put(ledgerId, Pair.of(new LongVersion(0L), metadata.serialize()));
                     try {
-                        LedgerMetadata readBack = readMetadata(ledgerId);
+                        Versioned<LedgerMetadata> readBack = readMetadata(ledgerId);
                         executeCallback(() -> cb.operationComplete(BKException.Code.OK, readBack));
                     } catch (Exception e) {
                         LOG.error("Error reading back written metadata", e);
@@ -116,10 +118,10 @@ public class MockLedgerManager implements LedgerManager {
     public void removeLedgerMetadata(long ledgerId, Version version, GenericCallback<Void> cb) {}
 
     @Override
-    public void readLedgerMetadata(long ledgerId, GenericCallback<LedgerMetadata> cb) {
+    public void readLedgerMetadata(long ledgerId, GenericCallback<Versioned<LedgerMetadata>> cb) {
         executor.submit(() -> {
                 try {
-                    LedgerMetadata metadata = readMetadata(ledgerId);
+                    Versioned<LedgerMetadata> metadata = readMetadata(ledgerId);
                     if (metadata == null) {
                         executeCallback(
                                         () -> cb.operationComplete(BKException.Code.NoSuchLedgerExistsException, null));
@@ -134,20 +136,21 @@ public class MockLedgerManager implements LedgerManager {
     }
 
     @Override
-    public void writeLedgerMetadata(long ledgerId, LedgerMetadata metadata, GenericCallback<LedgerMetadata> cb) {
+    public void writeLedgerMetadata(long ledgerId, LedgerMetadata metadata,
+                                    Version currentVersion, GenericCallback<Versioned<LedgerMetadata>> cb) {
         preWriteHook.runHook(ledgerId, metadata)
             .thenComposeAsync((ignore) -> {
                     try {
-                        LedgerMetadata oldMetadata = readMetadata(ledgerId);
+                        Versioned<LedgerMetadata> oldMetadata = readMetadata(ledgerId);
                         if (oldMetadata == null) {
                             return FutureUtils.exception(new BKException.BKNoSuchLedgerExistsException());
-                        } else if (!oldMetadata.getVersion().equals(metadata.getVersion())) {
+                        } else if (!oldMetadata.getVersion().equals(currentVersion)) {
                             return FutureUtils.exception(new BKException.BKMetadataVersionException());
                         } else {
                             LongVersion oldVersion = (LongVersion) oldMetadata.getVersion();
                             metadataMap.put(ledgerId, Pair.of(new LongVersion(oldVersion.getLongVersion() + 1),
                                                               metadata.serialize()));
-                            LedgerMetadata readBack = readMetadata(ledgerId);
+                            Versioned<LedgerMetadata> readBack = readMetadata(ledgerId);
                             return FutureUtils.value(readBack);
                         }
                     } catch (Exception e) {

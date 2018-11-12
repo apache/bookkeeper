@@ -49,6 +49,7 @@ import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
+import org.apache.bookkeeper.versioning.Versioned;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -559,13 +560,13 @@ public class BookieRecoveryTest extends BookKeeperClusterTestCase {
 
     private LedgerMetadata getLedgerMetadata(LedgerHandle lh) throws Exception {
         final SyncLedgerMetaObject syncObj = new SyncLedgerMetaObject();
-        bkc.getLedgerManager().readLedgerMetadata(lh.getId(), new GenericCallback<LedgerMetadata>() {
+        bkc.getLedgerManager().readLedgerMetadata(lh.getId(), new GenericCallback<Versioned<LedgerMetadata>>() {
 
             @Override
-            public void operationComplete(int rc, LedgerMetadata result) {
+            public void operationComplete(int rc, Versioned<LedgerMetadata> result) {
                 synchronized (syncObj) {
                     syncObj.rc = rc;
-                    syncObj.meta = result;
+                    syncObj.meta = result.getValue();
                     syncObj.value = true;
                     syncObj.notify();
                 }

@@ -38,6 +38,7 @@ import org.apache.bookkeeper.bookie.BookieShell.UpdateLedgerNotifier;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallbackFuture;
+import org.apache.bookkeeper.versioning.Versioned;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -94,10 +95,10 @@ public class UpdateLedgerOp {
             final long ledgerId = ledgerItr.next();
             issuedLedgerCnt.incrementAndGet();
 
-            GenericCallbackFuture<LedgerMetadata> readPromise = new GenericCallbackFuture<>();
+            GenericCallbackFuture<Versioned<LedgerMetadata>> readPromise = new GenericCallbackFuture<>();
             lm.readLedgerMetadata(ledgerId, readPromise);
-            CompletableFuture<LedgerMetadata> writePromise = readPromise.thenCompose((readMetadata) -> {
-                    AtomicReference<LedgerMetadata> ref = new AtomicReference<>(readMetadata);
+            CompletableFuture<Versioned<LedgerMetadata>> writePromise = readPromise.thenCompose((readMetadata) -> {
+                    AtomicReference<Versioned<LedgerMetadata>> ref = new AtomicReference<>(readMetadata);
                     return new MetadataUpdateLoop(
                             lm, ledgerId,
                             ref::get,

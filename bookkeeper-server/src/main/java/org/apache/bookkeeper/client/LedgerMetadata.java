@@ -45,7 +45,6 @@ import lombok.EqualsAndHashCode;
 import org.apache.bookkeeper.client.api.DigestType;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat;
-import org.apache.bookkeeper.versioning.Version;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -85,7 +84,6 @@ public class LedgerMetadata implements org.apache.bookkeeper.client.api.LedgerMe
     private LedgerMetadataFormat.State state;
     private TreeMap<Long, ImmutableList<BookieSocketAddress>> ensembles =  new TreeMap<>();
     private List<BookieSocketAddress> currentEnsemble;
-    volatile Version version = Version.NEW;
 
     private boolean hasPassword = false;
     private LedgerMetadataFormat.DigestType digestType;
@@ -140,8 +138,7 @@ public class LedgerMetadata implements org.apache.bookkeeper.client.api.LedgerMe
                    DigestType digestType,
                    java.util.Optional<byte[]> password,
                    java.util.Optional<Long> ctime,
-                   Map<String, byte[]> customMetadata,
-                   Version version) {
+                   Map<String, byte[]> customMetadata) {
         checkArgument(ensembles.size() > 0, "There must be at least one ensemble in the ledger");
 
         this.ensembleSize = ensembleSize;
@@ -174,7 +171,6 @@ public class LedgerMetadata implements org.apache.bookkeeper.client.api.LedgerMe
             });
 
         this.customMetadata.putAll(customMetadata);
-        this.version = version;
     }
 
     /**
@@ -197,7 +193,6 @@ public class LedgerMetadata implements org.apache.bookkeeper.client.api.LedgerMe
         this.lastEntryId = other.lastEntryId;
         this.metadataFormatVersion = other.metadataFormatVersion;
         this.state = other.state;
-        this.version = other.version;
         this.hasPassword = other.hasPassword;
         this.digestType = other.digestType;
         this.ctime = other.ctime;
@@ -472,17 +467,14 @@ public class LedgerMetadata implements org.apache.bookkeeper.client.api.LedgerMe
      *
      * @param bytes
      *            byte array to parse
-     * @param version
-     *            version of the ledger metadata
      * @param msCtime
      *            metadata store creation time, used for legacy ledgers
      * @return LedgerConfig
      * @throws IOException
      *             if the given byte[] cannot be parsed
      */
-    public static LedgerMetadata parseConfig(byte[] bytes, Version version, Optional<Long> msCtime) throws IOException {
+    public static LedgerMetadata parseConfig(byte[] bytes, Optional<Long> msCtime) throws IOException {
         LedgerMetadata lc = new LedgerMetadata();
-        lc.version = version;
 
         String config = new String(bytes, UTF_8);
 
@@ -609,37 +601,6 @@ public class LedgerMetadata implements org.apache.bookkeeper.client.api.LedgerMe
     }
 
     /**
-     * Updates the version of this metadata.
-     *
-     * @param v Version
-     */
-    public void setVersion(Version v) {
-        this.version = v;
-    }
-
-    /**
-     * Returns the last version.
-     *
-     * @return version
-     */
-    public Version getVersion() {
-        return this.version;
-    }
-
-    /**
-     * Is the metadata newer than given <i>newMeta</i>.
-     *
-     * @param newMeta the metadata to compare
-     * @return true if <i>this</i> is newer than <i>newMeta</i>, false otherwise
-     */
-    boolean isNewerThan(LedgerMetadata newMeta) {
-        if (null == version) {
-            return false;
-        }
-        return Version.Occurred.AFTER == version.compare(newMeta.version);
-    }
-
-    /**
      * Routine to compare two {@code Map<String, byte[]>}; Since the values in the map are {@code byte[]}, we can't use
      * {@code Map.equals}.
      * @param first
@@ -689,8 +650,7 @@ public class LedgerMetadata implements org.apache.bookkeeper.client.api.LedgerMe
 
     private String toStringRepresentation(boolean withPassword) {
         StringBuilder sb = new StringBuilder();
-        sb.append("(meta:").append(new String(serialize(withPassword), UTF_8)).append(", version:").append(version)
-                .append(")");
+        sb.append("(meta:").append(new String(serialize(withPassword), UTF_8)).append(")");
         return sb.toString();
     }
 

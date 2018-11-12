@@ -61,12 +61,10 @@ class LedgerMetadataConsumer implements Consumer<Versioned<LedgerMetadata>> {
 
     @Override
     public void accept(Versioned<LedgerMetadata> ledgerMetadataVersioned) {
-        LedgerMetadata lm = ledgerMetadataVersioned.getValue();
-        if (null == lm) {
+        if (null == ledgerMetadataVersioned.getValue()) {
             onDeletedConsumer.accept(ledgerId);
         } else {
-            lm.setVersion(ledgerMetadataVersioned.getVersion());
-            listener.onChanged(ledgerId, lm);
+            listener.onChanged(ledgerId, ledgerMetadataVersioned);
         }
     }
 }
