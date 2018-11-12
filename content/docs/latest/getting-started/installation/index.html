@@ -518,6 +518,11 @@
 <div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>mvn package
 </code></pre></div></div>
 
+<p>Since 4.8.0, bookkeeper introduces <code class="highlighter-rouge">table service</code>. If you would like to build and tryout table service, you can build it with <code class="highlighter-rouge">stream</code> profile.</p>
+
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>mvn package <span class="nt">-Dstream</span>
+</code></pre></div></div>
+
 <blockquote>
   <p>You can skip tests by adding the <code class="highlighter-rouge">-DskipTests</code> flag when running <code class="highlighter-rouge">mvn package</code>.</p>
 </blockquote>
@@ -567,11 +572,15 @@
       <td style="text-align: left">Build Javadocs locally</td>
     </tr>
     <tr>
-      <td style="text-align: left"><code class="highlighter-rouge">mvn package assembly:single</code></td>
-      <td style="text-align: left">Build a complete distribution using the Maven <a href="http://maven.apache.org/plugins/maven-assembly-plugin/">Assembly</a> plugin</td>
+      <td style="text-align: left"><code class="highlighter-rouge">mvn -am -pl bookkeeper-dist/server package</code></td>
+      <td style="text-align: left">Build a server distribution using the Maven <a href="http://maven.apache.org/plugins/maven-assembly-plugin/">Assembly</a> plugin</td>
     </tr>
   </tbody>
 </table>
+
+<blockquote>
+  <p>You can enable <code class="highlighter-rouge">table service</code> by adding the <code class="highlighter-rouge">-Dstream</code> flag when running above commands.</p>
+</blockquote>
 
 <h2 id="package-directory">Package directory</h2>
 
