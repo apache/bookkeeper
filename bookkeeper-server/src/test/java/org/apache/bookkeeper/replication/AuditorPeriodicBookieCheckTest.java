@@ -23,20 +23,17 @@ package org.apache.bookkeeper.replication;
 import static org.apache.bookkeeper.meta.MetadataDrivers.runFunctionWithLedgerManagerFactory;
 import static org.junit.Assert.assertEquals;
 
+import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.UncheckedExecutionException;
-import java.util.ArrayList;
-import java.util.List;
+
 import lombok.Cleanup;
-import org.apache.bookkeeper.client.BookKeeper.DigestType;
-import org.apache.bookkeeper.client.LedgerHandle;
-import org.apache.bookkeeper.client.LedgerHandleAdapter;
-import org.apache.bookkeeper.client.LedgerMetadata;
+import org.apache.bookkeeper.client.ClientUtil;
+import org.apache.bookkeeper.client.LedgerMetadataBuilder;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
 import org.apache.bookkeeper.net.BookieSocketAddress;
-import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallbackFuture;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.junit.After;
 import org.junit.Before;
@@ -93,18 +90,13 @@ public class AuditorPeriodicBookieCheckTest extends BookKeeperClusterTestCase {
             try (LedgerManager ledgerManager = mFactory.newLedgerManager()) {
                 @Cleanup final LedgerUnderreplicationManager underReplicationManager =
                     mFactory.newLedgerUnderreplicationManager();
-
-                LedgerHandle lh = bkc.createLedger(3, 3, DigestType.CRC32, "passwd".getBytes());
-                LedgerMetadata md = LedgerHandleAdapter.getLedgerMetadata(lh);
-                List<BookieSocketAddress> ensemble = new ArrayList<>(md.getAllEnsembles().get(0L));
-                ensemble.set(0, new BookieSocketAddress("1.1.1.1", 1000));
-                md.updateEnsemble(0L, ensemble);
-
-                GenericCallbackFuture<LedgerMetadata> cb =
-                    new GenericCallbackFuture<LedgerMetadata>();
-                ledgerManager.writeLedgerMetadata(lh.getId(), md, cb);
-                cb.get();
-
+                long ledgerId = 12345L;
+                ClientUtil.setupLedger(bkc.getLedgerManager(), ledgerId,
+                                       LedgerMetadataBuilder.create().withEnsembleSize(3)
+                                       .withWriteQuorumSize(3).withAckQuorumSize(3)
+                                       .newEnsembleEntry(0L, Lists.newArrayList(
+                                                                 new BookieSocketAddress("1.1.1.1", 1000),
+                                                                 getBookie(0), getBookie(1))));
                 long underReplicatedLedger = -1;
                 for (int i = 0; i < 10; i++) {
                     underReplicatedLedger = underReplicationManager.pollLedgerToRereplicate();
@@ -113,7 +105,7 @@ public class AuditorPeriodicBookieCheckTest extends BookKeeperClusterTestCase {
                     }
                     Thread.sleep(CHECK_INTERVAL * 1000);
                 }
-                assertEquals("Ledger should be under replicated", lh.getId(), underReplicatedLedger);
+                assertEquals("Ledger should be under replicated", ledgerId, underReplicatedLedger);
             } catch (Exception e) {
                 throw new UncheckedExecutionException(e.getMessage(), e);
             }

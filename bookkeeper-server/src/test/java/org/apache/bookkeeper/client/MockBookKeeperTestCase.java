@@ -65,6 +65,9 @@ import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks;
 import org.apache.bookkeeper.proto.checksum.DigestManager;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.util.ByteBufList;
+import org.apache.bookkeeper.versioning.LongVersion;
+import org.apache.bookkeeper.versioning.Version;
+import org.apache.bookkeeper.versioning.Versioned;
 import org.junit.After;
 import org.junit.Before;
 import org.mockito.invocation.InvocationOnMock;
@@ -368,7 +371,8 @@ public abstract class MockBookKeeperTestCase {
                 if (ledgerMetadata == null) {
                     cb.operationComplete(BKException.Code.NoSuchLedgerExistsException, null);
                 } else {
-                    cb.operationComplete(BKException.Code.OK, new LedgerMetadata(ledgerMetadata));
+                    cb.operationComplete(BKException.Code.OK,
+                                         new Versioned<>(new LedgerMetadata(ledgerMetadata), new LongVersion(1)));
                 }
             });
             return null;
@@ -421,7 +425,7 @@ public abstract class MockBookKeeperTestCase {
             executor.executeOrdered(ledgerId, () -> {
                 LedgerMetadata ledgerMetadata = (LedgerMetadata) args[1];
                 mockLedgerMetadataRegistry.put(ledgerId, new LedgerMetadata(ledgerMetadata));
-                cb.operationComplete(BKException.Code.OK, null);
+                cb.operationComplete(BKException.Code.OK, new Versioned<>(ledgerMetadata, new LongVersion(1)));
             });
             return null;
         }).when(ledgerManager).createLedgerMetadata(anyLong(), any(), any());
@@ -433,14 +437,15 @@ public abstract class MockBookKeeperTestCase {
                 Object[] args = invocation.getArguments();
                 Long ledgerId = (Long) args[0];
                 LedgerMetadata metadata = (LedgerMetadata) args[1];
-                BookkeeperInternalCallbacks.GenericCallback cb = (BookkeeperInternalCallbacks.GenericCallback) args[2];
+                Version currentVersion = (Version) args[2];
+                BookkeeperInternalCallbacks.GenericCallback cb = (BookkeeperInternalCallbacks.GenericCallback) args[3];
                 executor.executeOrdered(ledgerId, () -> {
                         LedgerMetadata newMetadata = LedgerMetadataBuilder.from(metadata).build();
                         mockLedgerMetadataRegistry.put(ledgerId, newMetadata);
-                        cb.operationComplete(BKException.Code.OK, newMetadata);
+                        cb.operationComplete(BKException.Code.OK, new Versioned<>(newMetadata, new LongVersion(1234)));
                     });
                 return null;
-            }).when(ledgerManager).writeLedgerMetadata(anyLong(), any(), any());
+            }).when(ledgerManager).writeLedgerMetadata(anyLong(), any(), any(), any());
     }
 
     @SuppressWarnings("unchecked")

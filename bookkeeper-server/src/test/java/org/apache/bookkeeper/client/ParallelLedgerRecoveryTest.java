@@ -63,6 +63,7 @@ import org.apache.bookkeeper.proto.checksum.DigestManager;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.util.ByteBufList;
 import org.apache.bookkeeper.versioning.Version;
+import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.zookeeper.AsyncCallback.VoidCallback;
 import org.apache.zookeeper.KeeperException;
 import org.junit.After;
@@ -93,7 +94,8 @@ public class ParallelLedgerRecoveryTest extends BookKeeperClusterTestCase {
         }
 
         @Override
-        public void createLedgerMetadata(long ledgerId, LedgerMetadata metadata, GenericCallback<LedgerMetadata> cb) {
+        public void createLedgerMetadata(long ledgerId, LedgerMetadata metadata,
+                                         GenericCallback<Versioned<LedgerMetadata>> cb) {
             lm.createLedgerMetadata(ledgerId, metadata, cb);
         }
 
@@ -103,7 +105,7 @@ public class ParallelLedgerRecoveryTest extends BookKeeperClusterTestCase {
         }
 
         @Override
-        public void readLedgerMetadata(long ledgerId, GenericCallback<LedgerMetadata> readCb) {
+        public void readLedgerMetadata(long ledgerId, GenericCallback<Versioned<LedgerMetadata>> readCb) {
             lm.readLedgerMetadata(ledgerId, readCb);
         }
 
@@ -113,8 +115,9 @@ public class ParallelLedgerRecoveryTest extends BookKeeperClusterTestCase {
         }
 
         @Override
-        public void writeLedgerMetadata(final long ledgerId, final LedgerMetadata metadata,
-                                        final GenericCallback<LedgerMetadata> cb) {
+        public void writeLedgerMetadata(long ledgerId, LedgerMetadata metadata,
+                                        Version currentVersion,
+                                        GenericCallback<Versioned<LedgerMetadata>> cb) {
             final CountDownLatch cdl = waitLatch;
             if (null != cdl) {
                 executorService.submit(new Runnable() {
@@ -126,11 +129,11 @@ public class ParallelLedgerRecoveryTest extends BookKeeperClusterTestCase {
                             Thread.currentThread().interrupt();
                             LOG.error("Interrupted on waiting latch : ", e);
                         }
-                        lm.writeLedgerMetadata(ledgerId, metadata, cb);
+                        lm.writeLedgerMetadata(ledgerId, metadata, currentVersion, cb);
                     }
                 });
             } else {
-                lm.writeLedgerMetadata(ledgerId, metadata, cb);
+                lm.writeLedgerMetadata(ledgerId, metadata, currentVersion, cb);
             }
         }
 
@@ -364,19 +367,11 @@ public class ParallelLedgerRecoveryTest extends BookKeeperClusterTestCase {
                 LedgerHandle newRecoverLh = newBk.openLedgerNoRecovery(lh.getId(), digestType, "".getBytes());
                 assertEquals(BookieProtocol.INVALID_ENTRY_ID, newRecoverLh.getLastAddPushed());
                 assertEquals(BookieProtocol.INVALID_ENTRY_ID, newRecoverLh.getLastAddConfirmed());
+
                 // mark the ledger as in recovery to update version.
-                newRecoverLh.getLedgerMetadata().markLedgerInRecovery();
-                final CountDownLatch updateLatch = new CountDownLatch(1);
-                final AtomicInteger updateResult = new AtomicInteger(0x12345);
-                newRecoverLh.writeLedgerConfig(new GenericCallback<LedgerMetadata>() {
-                    @Override
-                    public void operationComplete(int rc, LedgerMetadata result) {
-                        updateResult.set(rc);
-                        updateLatch.countDown();
-                    }
-                });
-                updateLatch.await();
-                assertEquals(BKException.Code.OK, updateResult.get());
+                ClientUtil.transformMetadata(newBk.getClientCtx(), newRecoverLh.getId(),
+                        (metadata) -> LedgerMetadataBuilder.from(metadata).withInRecoveryState().build());
+
                 newRecoverLh.close();
                 LOG.info("Updated ledger manager {}.", newRecoverLh.getLedgerMetadata());
             }

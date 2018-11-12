@@ -45,6 +45,7 @@ import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryListener
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.TimedGenericCallback;
 import org.apache.bookkeeper.util.SafeRunnable;
 import org.apache.bookkeeper.versioning.Version;
+import org.apache.bookkeeper.versioning.Versioned;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -63,25 +64,22 @@ class ReadOnlyLedgerHandle extends LedgerHandle implements LedgerMetadataListene
 
     class MetadataUpdater extends SafeRunnable {
 
-        final LedgerMetadata newMetadata;
+        final Versioned<LedgerMetadata> newMetadata;
 
-        MetadataUpdater(LedgerMetadata metadata) {
+        MetadataUpdater(Versioned<LedgerMetadata> metadata) {
             this.newMetadata = metadata;
         }
 
         @Override
         public void safeRun() {
             while (true) {
-                LedgerMetadata currentMetadata = getLedgerMetadata();
+                Versioned<LedgerMetadata> currentMetadata = getVersionedLedgerMetadata();
                 Version.Occurred occurred = currentMetadata.getVersion().compare(newMetadata.getVersion());
                 if (Version.Occurred.BEFORE == occurred) {
-                    LOG.info("Updated ledger metadata for ledger {} to {}.", ledgerId, newMetadata.toSafeString());
                     synchronized (ReadOnlyLedgerHandle.this) {
-                        if (newMetadata.isClosed()) {
-                            ReadOnlyLedgerHandle.this.lastAddConfirmed = newMetadata.getLastEntryId();
-                            ReadOnlyLedgerHandle.this.length = newMetadata.getLength();
-                        }
                         if (setLedgerMetadata(currentMetadata, newMetadata)) {
+                            LOG.info("Updated ledger metadata for ledger {} to {}, version {}.",
+                                     ledgerId, newMetadata.getValue().toSafeString(), newMetadata.getVersion());
                             break;
                         }
                     }
@@ -98,7 +96,7 @@ class ReadOnlyLedgerHandle extends LedgerHandle implements LedgerMetadataListene
     }
 
     ReadOnlyLedgerHandle(ClientContext clientCtx,
-                         long ledgerId, LedgerMetadata metadata,
+                         long ledgerId, Versioned<LedgerMetadata> metadata,
                          BookKeeper.DigestType digestType, byte[] password,
                          boolean watch)
             throws GeneralSecurityException, NumberFormatException {
@@ -147,7 +145,7 @@ class ReadOnlyLedgerHandle extends LedgerHandle implements LedgerMetadataListene
     }
 
     @Override
-    public void onChanged(long lid, LedgerMetadata newMetadata) {
+    public void onChanged(long lid, Versioned<LedgerMetadata> newMetadata) {
         if (LOG.isDebugEnabled()) {
             LOG.debug("Received ledger metadata update on {} : {}", lid, newMetadata);
         }
@@ -157,7 +155,7 @@ class ReadOnlyLedgerHandle extends LedgerHandle implements LedgerMetadataListene
         if (null == newMetadata) {
             return;
         }
-        LedgerMetadata currentMetadata = getLedgerMetadata();
+        Versioned<LedgerMetadata> currentMetadata = getVersionedLedgerMetadata();
         Version.Occurred occurred = currentMetadata.getVersion().compare(newMetadata.getVersion());
         if (LOG.isDebugEnabled()) {
             LOG.debug("Try to update metadata from {} to {} : {}",
@@ -276,13 +274,13 @@ class ReadOnlyLedgerHandle extends LedgerHandle implements LedgerMetadataListene
         }
         new MetadataUpdateLoop(
                 clientCtx.getLedgerManager(), getId(),
-                this::getLedgerMetadata,
+                this::getVersionedLedgerMetadata,
                 needsUpdate,
                 (metadata) -> LedgerMetadataBuilder.from(metadata).withInRecoveryState().build(),
                 this::setLedgerMetadata)
             .run()
             .thenCompose((metadata) -> {
-                    if (metadata.isClosed()) {
+                    if (metadata.getValue().isClosed()) {
                         return CompletableFuture.completedFuture(ReadOnlyLedgerHandle.this);
                     } else {
                         return new LedgerRecoveryOp(ReadOnlyLedgerHandle.this, clientCtx)
@@ -301,16 +299,16 @@ class ReadOnlyLedgerHandle extends LedgerHandle implements LedgerMetadataListene
             });
     }
 
-    CompletableFuture<LedgerMetadata> closeRecovered() {
+    CompletableFuture<Versioned<LedgerMetadata>> closeRecovered() {
         long lac, len;
         synchronized (this) {
             lac = lastAddConfirmed;
             len = length;
         }
         LOG.info("Closing recovered ledger {} at entry {}", getId(), lac);
-        CompletableFuture<LedgerMetadata> f = new MetadataUpdateLoop(
+        CompletableFuture<Versioned<LedgerMetadata>> f = new MetadataUpdateLoop(
                 clientCtx.getLedgerManager(), getId(),
-                this::getLedgerMetadata,
+                this::getVersionedLedgerMetadata,
                 (metadata) -> metadata.isInRecovery(),
                 (metadata) -> {
                     LedgerMetadataBuilder builder = LedgerMetadataBuilder.from(metadata);

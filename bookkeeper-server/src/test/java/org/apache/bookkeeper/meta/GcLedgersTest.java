@@ -72,6 +72,7 @@ import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.test.TestStatsProvider;
 import org.apache.bookkeeper.versioning.Version;
+import org.apache.bookkeeper.versioning.Versioned;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -107,9 +108,9 @@ public class GcLedgersTest extends LedgerManagerTestCase {
 
                     getLedgerManager().createLedgerMetadata(ledgerId,
                             new LedgerMetadata(1, 1, 1, DigestType.MAC, "".getBytes()),
-                            new GenericCallback<LedgerMetadata>() {
+                            new GenericCallback<Versioned<LedgerMetadata>>() {
                                 @Override
-                                public void operationComplete(int rc, LedgerMetadata writtenMetadata) {
+                                public void operationComplete(int rc, Versioned<LedgerMetadata> writtenMetadata) {
                                     if (rc == BKException.Code.OK) {
                                         activeLedgers.put(ledgerId, true);
                                         createdLedgers.add(ledgerId);
@@ -505,7 +506,7 @@ public class GcLedgersTest extends LedgerManagerTestCase {
 
         LedgerManager mockLedgerManager = new CleanupLedgerManager(getLedgerManager()) {
             @Override
-            public void readLedgerMetadata(long ledgerId, GenericCallback<LedgerMetadata> readCb) {
+            public void readLedgerMetadata(long ledgerId, GenericCallback<Versioned<LedgerMetadata>> readCb) {
                 readCb.operationComplete(BKException.Code.NoSuchLedgerExistsException, null);
             }
         };
@@ -547,7 +548,7 @@ public class GcLedgersTest extends LedgerManagerTestCase {
 
         LedgerManager mockLedgerManager = new CleanupLedgerManager(getLedgerManager()) {
             @Override
-            public void readLedgerMetadata(long ledgerId, GenericCallback<LedgerMetadata> readCb) {
+            public void readLedgerMetadata(long ledgerId, GenericCallback<Versioned<LedgerMetadata>> readCb) {
                 readCb.operationComplete(BKException.Code.ZKException, null);
             }
         };

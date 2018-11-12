@@ -25,15 +25,19 @@ import io.netty.buffer.Unpooled;
 import java.security.GeneralSecurityException;
 import java.util.function.Function;
 
+import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallbackFuture;
 import org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.DigestType;
 import org.apache.bookkeeper.proto.checksum.DigestManager;
 import org.apache.bookkeeper.util.ByteBufList;
+import org.apache.bookkeeper.versioning.Versioned;
 
 /**
  * Client utilities.
  */
 public class ClientUtil {
+    public static final org.apache.bookkeeper.client.api.DigestType DIGEST_TYPE =
+        org.apache.bookkeeper.client.api.DigestType.CRC32C;
     public static final byte[] PASSWD = "foobar".getBytes(UTF_8);
 
     public static ByteBuf generatePacket(long ledgerId, long entryId, long lastAddConfirmed,
@@ -55,21 +59,34 @@ public class ClientUtil {
         return !handle.getLedgerMetadata().isClosed();
     }
 
-    public static LedgerMetadata setupLedger(ClientContext clientCtx, long ledgerId,
-                                             LedgerMetadataBuilder builder) throws Exception {
-        LedgerMetadata md = builder.withPassword(PASSWD).build();
-        GenericCallbackFuture<LedgerMetadata> mdPromise = new GenericCallbackFuture<>();
-        clientCtx.getLedgerManager().createLedgerMetadata(ledgerId, md, mdPromise);
+    public static Versioned<LedgerMetadata> setupLedger(ClientContext clientCtx, long ledgerId,
+                                                        LedgerMetadataBuilder builder) throws Exception {
+        return setupLedger(clientCtx.getLedgerManager(), ledgerId, builder);
+    }
+
+    public static Versioned<LedgerMetadata> setupLedger(LedgerManager ledgerManager, long ledgerId,
+                                                        LedgerMetadataBuilder builder) throws Exception {
+        LedgerMetadata md = builder.withPassword(PASSWD).withDigestType(DIGEST_TYPE).build();
+        GenericCallbackFuture<Versioned<LedgerMetadata>> mdPromise = new GenericCallbackFuture<>();
+        ledgerManager.createLedgerMetadata(ledgerId, md, mdPromise);
         return mdPromise.get();
     }
 
-    public static LedgerMetadata transformMetadata(ClientContext clientCtx, long ledgerId,
-                                                   Function<LedgerMetadata, LedgerMetadata> transform)
+    public static Versioned<LedgerMetadata> transformMetadata(ClientContext clientCtx, long ledgerId,
+                                                              Function<LedgerMetadata, LedgerMetadata> transform)
             throws Exception {
-        GenericCallbackFuture<LedgerMetadata> readPromise = new GenericCallbackFuture<>();
-        GenericCallbackFuture<LedgerMetadata> writePromise = new GenericCallbackFuture<>();
-        clientCtx.getLedgerManager().readLedgerMetadata(ledgerId, readPromise);
-        clientCtx.getLedgerManager().writeLedgerMetadata(ledgerId, transform.apply(readPromise.get()), writePromise);
+        return transformMetadata(clientCtx.getLedgerManager(), ledgerId, transform);
+    }
+
+    public static Versioned<LedgerMetadata> transformMetadata(LedgerManager ledgerManager, long ledgerId,
+                                                              Function<LedgerMetadata, LedgerMetadata> transform)
+            throws Exception {
+        GenericCallbackFuture<Versioned<LedgerMetadata>> readPromise = new GenericCallbackFuture<>();
+        GenericCallbackFuture<Versioned<LedgerMetadata>> writePromise = new GenericCallbackFuture<>();
+        ledgerManager.readLedgerMetadata(ledgerId, readPromise);
+        ledgerManager.writeLedgerMetadata(ledgerId, transform.apply(readPromise.get().getValue()),
+                                                         readPromise.get().getVersion(), writePromise);
         return writePromise.get();
     }
+
 }

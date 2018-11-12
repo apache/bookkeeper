@@ -23,6 +23,7 @@ import java.util.concurrent.ExecutionException;
 import org.apache.bookkeeper.client.api.WriteFlag;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.versioning.Versioned;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -47,9 +48,8 @@ public class LedgerClose2Test {
         MockClientContext clientCtx = MockClientContext.create();
 
         for (int i = 0; i < 1000; i++) {
-            LedgerMetadata md = ClientUtil.setupLedger(clientCtx, i,
-                                                       LedgerMetadataBuilder.create().newEnsembleEntry(
-                                                               0L, Lists.newArrayList(b1, b2, b3)));
+            Versioned<LedgerMetadata> md = ClientUtil.setupLedger(clientCtx, i,
+                    LedgerMetadataBuilder.create().newEnsembleEntry(0L, Lists.newArrayList(b1, b2, b3)));
             LedgerHandle lh = new LedgerHandle(clientCtx, i, md, BookKeeper.DigestType.CRC32C,
                                                ClientUtil.PASSWD, WriteFlag.NONE);
             CompletableFuture<?> closeFuture = lh.closeAsync();
@@ -71,7 +71,7 @@ public class LedgerClose2Test {
     @Test
     public void testMetadataChangedDuringClose() throws Exception {
         MockClientContext clientCtx = MockClientContext.create();
-        LedgerMetadata md = ClientUtil.setupLedger(clientCtx, 10L,
+        Versioned<LedgerMetadata> md = ClientUtil.setupLedger(clientCtx, 10L,
                                                    LedgerMetadataBuilder.create()
                                                    .withEnsembleSize(3).withWriteQuorumSize(3).withAckQuorumSize(2)
                                                    .newEnsembleEntry(0L, Lists.newArrayList(b1, b2, b3)));
@@ -115,7 +115,7 @@ public class LedgerClose2Test {
     @Test
     public void testMetadataCloseWithCorrectLengthDuringClose() throws Exception {
         MockClientContext clientCtx = MockClientContext.create();
-        LedgerMetadata md = ClientUtil.setupLedger(clientCtx, 10L,
+        Versioned<LedgerMetadata> md = ClientUtil.setupLedger(clientCtx, 10L,
                                                    LedgerMetadataBuilder.create()
                                                    .withEnsembleSize(3).withWriteQuorumSize(3).withAckQuorumSize(2)
                                                    .newEnsembleEntry(0L, Lists.newArrayList(b1, b2, b3)));
@@ -156,7 +156,7 @@ public class LedgerClose2Test {
     @Test
     public void testMetadataCloseWithDifferentLengthDuringClose() throws Exception {
         MockClientContext clientCtx = MockClientContext.create();
-        LedgerMetadata md = ClientUtil.setupLedger(clientCtx, 10L,
+        Versioned<LedgerMetadata> md = ClientUtil.setupLedger(clientCtx, 10L,
                                                    LedgerMetadataBuilder.create()
                                                    .withEnsembleSize(3).withWriteQuorumSize(3).withAckQuorumSize(2)
                                                    .newEnsembleEntry(0L, Lists.newArrayList(b1, b2, b3)));
@@ -197,7 +197,7 @@ public class LedgerClose2Test {
     @Test
     public void testMetadataCloseMarkedInRecoveryWhileClosing() throws Exception {
         MockClientContext clientCtx = MockClientContext.create();
-        LedgerMetadata md = ClientUtil.setupLedger(clientCtx, 10L,
+        Versioned<LedgerMetadata> md = ClientUtil.setupLedger(clientCtx, 10L,
                                                    LedgerMetadataBuilder.create()
                                                    .withEnsembleSize(3).withWriteQuorumSize(3).withAckQuorumSize(2)
                                                    .newEnsembleEntry(0L, Lists.newArrayList(b1, b2, b3)));
@@ -237,7 +237,7 @@ public class LedgerClose2Test {
     @Test
     public void testCloseWhileAddInProgress() throws Exception {
         MockClientContext clientCtx = MockClientContext.create();
-        LedgerMetadata md = ClientUtil.setupLedger(clientCtx, 10L,
+        Versioned<LedgerMetadata> md = ClientUtil.setupLedger(clientCtx, 10L,
                                                    LedgerMetadataBuilder.create()
                                                    .withEnsembleSize(3).withWriteQuorumSize(3).withAckQuorumSize(2)
                                                    .newEnsembleEntry(0L, Lists.newArrayList(b1, b2, b3)));
