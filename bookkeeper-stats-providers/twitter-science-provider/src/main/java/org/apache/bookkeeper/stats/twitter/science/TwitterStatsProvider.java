@@ -20,6 +20,7 @@ import org.apache.bookkeeper.stats.CachingStatsProvider;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.stats.StatsProvider;
 import org.apache.commons.configuration.Configuration;
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,6 +54,11 @@ public class TwitterStatsProvider implements StatsProvider {
             public StatsLogger getStatsLogger(String scope) {
                 return new TwitterStatsLoggerImpl(scope);
             }
+
+            @Override
+            public String getStatsName(String... statsComponents) {
+                return StringUtils.join(statsComponents, '_').toLowerCase();
+            }
         });
     }
 
@@ -84,5 +90,10 @@ public class TwitterStatsProvider implements StatsProvider {
     @Override
     public StatsLogger getStatsLogger(String name) {
         return this.cachingStatsProvider.getStatsLogger(name);
+    }
+
+    @Override
+    public String getStatsName(String... statsComponents) {
+        return this.cachingStatsProvider.getStatsName(statsComponents);
     }
 }

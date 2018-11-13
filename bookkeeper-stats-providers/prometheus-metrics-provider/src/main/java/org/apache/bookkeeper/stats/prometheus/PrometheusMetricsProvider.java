@@ -46,6 +46,7 @@ import org.apache.bookkeeper.stats.CachingStatsProvider;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.stats.StatsProvider;
 import org.apache.commons.configuration.Configuration;
+import org.apache.commons.lang.StringUtils;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
@@ -100,6 +101,19 @@ public class PrometheusMetricsProvider implements StatsProvider {
             @Override
             public StatsLogger getStatsLogger(String scope) {
                 return new PrometheusStatsLogger(PrometheusMetricsProvider.this, scope);
+            }
+
+            @Override
+            public String getStatsName(String... statsComponents) {
+                String completeName;
+                if (statsComponents.length == 0) {
+                    return "";
+                } else if (statsComponents[0].isEmpty()) {
+                    completeName = StringUtils.join(statsComponents, '_', 1, statsComponents.length);
+                } else {
+                    completeName = StringUtils.join(statsComponents, '_');
+                }
+                return Collector.sanitizeMetricName(completeName);
             }
         });
     }
@@ -182,6 +196,11 @@ public class PrometheusMetricsProvider implements StatsProvider {
         gauges.forEach((name, gauge) -> PrometheusTextFormatUtil.writeGauge(writer, name, gauge));
         counters.forEach((name, counter) -> PrometheusTextFormatUtil.writeCounter(writer, name, counter));
         opStats.forEach((name, opStatLogger) -> PrometheusTextFormatUtil.writeOpStat(writer, name, opStatLogger));
+    }
+
+    @Override
+    public String getStatsName(String... statsComponents) {
+        return cachingStatsProvider.getStatsName(statsComponents);
     }
 
     @VisibleForTesting

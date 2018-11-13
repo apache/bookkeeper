@@ -64,4 +64,9 @@ public class FinagleStatsProvider implements StatsProvider {
     public StatsLogger getStatsLogger(final String scope) {
         return this.cachingStatsProvider.getStatsLogger(scope);
     }
+
+    @Override
+    public String getStatsName(String... statsComponents) {
+        return cachingStatsProvider.getStatsName(statsComponents);
+    }
 }
