@@ -57,4 +57,9 @@ public class CachingStatsProvider implements StatsProvider {
         }
         return statsLogger;
     }
+
+    @Override
+    public String getStatsName(String... statsComponents) {
+        return underlying.getStatsName(statsComponents);
+    }
 }
