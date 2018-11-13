@@ -92,6 +92,7 @@ import org.apache.bookkeeper.client.LedgerEntry;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.LedgerMetadata;
 import org.apache.bookkeeper.client.UpdateLedgerOp;
+import org.apache.bookkeeper.common.annotation.InterfaceAudience.Private;
 import org.apache.bookkeeper.common.util.OrderedExecutor;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -115,6 +116,11 @@ import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.tools.cli.commands.bookie.LastMarkCommand;
 import org.apache.bookkeeper.tools.cli.commands.bookies.ListBookiesCommand;
 import org.apache.bookkeeper.tools.cli.commands.client.SimpleTestCommand;
+import org.apache.bookkeeper.tools.cli.commands.cookie.CreateCookieCommand;
+import org.apache.bookkeeper.tools.cli.commands.cookie.DeleteCookieCommand;
+import org.apache.bookkeeper.tools.cli.commands.cookie.GenerateCookieCommand;
+import org.apache.bookkeeper.tools.cli.commands.cookie.GetCookieCommand;
+import org.apache.bookkeeper.tools.cli.commands.cookie.UpdateCookieCommand;
 import org.apache.bookkeeper.tools.framework.CliFlags;
 import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.util.DiskChecker;
@@ -191,6 +197,14 @@ public class BookieShell implements Tool {
     static final String CMD_CONVERT_TO_INTERLEAVED_STORAGE = "convert-to-interleaved-storage";
     static final String CMD_REBUILD_DB_LEDGER_LOCATIONS_INDEX = "rebuild-db-ledger-locations-index";
     static final String CMD_REGENERATE_INTERLEAVED_STORAGE_INDEX_FILE = "regenerate-interleaved-storage-index-file";
+
+    // cookie commands
+    static final String CMD_CREATE_COOKIE = "cookie_create";
+    static final String CMD_DELETE_COOKIE = "cookie_delete";
+    static final String CMD_UPDATE_COOKIE = "cookie_update";
+    static final String CMD_GET_COOKIE = "cookie_get";
+    static final String CMD_GENERATE_COOKIE = "cookie_generate";
+
     static final String CMD_HELP = "help";
 
     final ServerConfiguration bkConf = new ServerConfiguration();
@@ -214,8 +228,14 @@ public class BookieShell implements Tool {
         this.entryFormatter = entryFormatter;
     }
 
-    interface Command {
+    /**
+     * BookieShell command.
+     */
+    @Private
+    public interface Command {
         int runCmd(String[] args) throws Exception;
+
+        String description();
 
         void printUsage();
     }
@@ -233,6 +253,11 @@ public class BookieShell implements Tool {
 
         MyCommand(String cmdName) {
             this.cmdName = cmdName;
+        }
+
+        public String description() {
+            // we used the string returned by `getUsage` as description in showing the list of commands
+            return getUsage();
         }
 
         @Override
@@ -1005,33 +1030,30 @@ public class BookieShell implements Tool {
                                 printLedgerMetadata(ledgerId, null, false);
                                 cb.processResult(BKException.Code.OK, null, null);
                             } else {
-                                GenericCallback<LedgerMetadata> gencb = new GenericCallback<LedgerMetadata>() {
-                                    @Override
-                                    public void operationComplete(int rc, LedgerMetadata ledgerMetadata) {
-                                        if (rc == BKException.Code.OK) {
-                                            if ((bookieAddress == null)
-                                                    || BookKeeperAdmin.areEntriesOfLedgerStoredInTheBookie(ledgerId,
-                                                            bookieAddress, ledgerMetadata)) {
-                                                /*
-                                                 * the print method has to be in
-                                                 * synchronized scope, otherwise
-                                                 * output of printLedgerMetadata
-                                                 * could interleave since this
-                                                 * callback for different
-                                                 * ledgers can happen in
-                                                 * different threads.
-                                                 */
-                                                synchronized (BookieShell.this) {
-                                                    printLedgerMetadata(ledgerId, ledgerMetadata, printMeta);
-                                                }
+                                GenericCallback<Versioned<LedgerMetadata>> gencb = (rc, ledgerMetadata) -> {
+                                    if (rc == BKException.Code.OK) {
+                                        if ((bookieAddress == null)
+                                            || BookKeeperAdmin.areEntriesOfLedgerStoredInTheBookie(
+                                                    ledgerId, bookieAddress, ledgerMetadata.getValue())) {
+                                            /*
+                                             * the print method has to be in
+                                             * synchronized scope, otherwise
+                                             * output of printLedgerMetadata
+                                             * could interleave since this
+                                             * callback for different
+                                             * ledgers can happen in
+                                             * different threads.
+                                             */
+                                            synchronized (BookieShell.this) {
+                                                printLedgerMetadata(ledgerId, ledgerMetadata.getValue(), printMeta);
                                             }
-                                        } else if (rc == BKException.Code.NoSuchLedgerExistsException) {
-                                            rc = BKException.Code.OK;
-                                        } else {
-                                            LOG.error("Unable to read the ledger: " + ledgerId + " information");
                                         }
-                                        cb.processResult(rc, null, null);
+                                    } else if (rc == BKException.Code.NoSuchLedgerExistsException) {
+                                        rc = BKException.Code.OK;
+                                    } else {
+                                        LOG.error("Unable to read the ledger: " + ledgerId + " information");
                                     }
+                                    cb.processResult(rc, null, null);
                                 };
                                 ledgerManager.readLedgerMetadata(ledgerId, gencb);
                             }
@@ -1113,21 +1135,21 @@ public class BookieShell implements Tool {
             runFunctionWithLedgerManagerFactory(bkConf, mFactory -> {
                 try (LedgerManager m = mFactory.newLedgerManager()) {
                     if (cmdLine.hasOption("dumptofile")) {
-                        GenericCallbackFuture<LedgerMetadata> cb = new GenericCallbackFuture<>();
+                        GenericCallbackFuture<Versioned<LedgerMetadata>> cb = new GenericCallbackFuture<>();
                         m.readLedgerMetadata(lid, cb);
                         Files.write(FileSystems.getDefault().getPath(cmdLine.getOptionValue("dumptofile")),
-                                    cb.join().serialize());
+                                    cb.join().getValue().serialize());
                     } else if (cmdLine.hasOption("restorefromfile")) {
                         byte[] serialized = Files.readAllBytes(
                                 FileSystems.getDefault().getPath(cmdLine.getOptionValue("restorefromfile")));
-                        LedgerMetadata md = LedgerMetadata.parseConfig(serialized, Version.NEW, Optional.absent());
-                        GenericCallbackFuture<LedgerMetadata> cb = new GenericCallbackFuture<>();
+                        LedgerMetadata md = LedgerMetadata.parseConfig(serialized, Optional.absent());
+                        GenericCallbackFuture<Versioned<LedgerMetadata>> cb = new GenericCallbackFuture<>();
                         m.createLedgerMetadata(lid, md, cb);
                         cb.join();
                     } else {
-                        GenericCallbackFuture<LedgerMetadata> cb = new GenericCallbackFuture<>();
+                        GenericCallbackFuture<Versioned<LedgerMetadata>> cb = new GenericCallbackFuture<>();
                         m.readLedgerMetadata(lid, cb);
-                        printLedgerMetadata(lid, cb.get(), true);
+                        printLedgerMetadata(lid, cb.get().getValue(), true);
                     }
                 } catch (Exception e) {
                     throw new UncheckedExecutionException(e);
@@ -2881,7 +2903,7 @@ public class BookieShell implements Tool {
         }
     }
 
-    final Map<String, MyCommand> commands = new HashMap<String, MyCommand>();
+    final Map<String, Command> commands = new HashMap<>();
 
     {
         commands.put(CMD_METAFORMAT, new MetaFormatCmd());
@@ -2918,6 +2940,17 @@ public class BookieShell implements Tool {
         commands.put(CMD_HELP, new HelpCmd());
         commands.put(CMD_LOSTBOOKIERECOVERYDELAY, new LostBookieRecoveryDelayCmd());
         commands.put(CMD_TRIGGERAUDIT, new TriggerAuditCmd());
+        // cookie related commands
+        commands.put(CMD_CREATE_COOKIE,
+            new CreateCookieCommand().asShellCommand(CMD_CREATE_COOKIE, bkConf));
+        commands.put(CMD_DELETE_COOKIE,
+            new DeleteCookieCommand().asShellCommand(CMD_DELETE_COOKIE, bkConf));
+        commands.put(CMD_UPDATE_COOKIE,
+            new UpdateCookieCommand().asShellCommand(CMD_UPDATE_COOKIE, bkConf));
+        commands.put(CMD_GET_COOKIE,
+            new GetCookieCommand().asShellCommand(CMD_GET_COOKIE, bkConf));
+        commands.put(CMD_GENERATE_COOKIE,
+            new GenerateCookieCommand().asShellCommand(CMD_GENERATE_COOKIE, bkConf));
     }
 
     @Override
@@ -2939,8 +2972,8 @@ public class BookieShell implements Tool {
                 + "[-entryformat <hex/string>] [-conf configuration] <command>");
         System.err.println("where command is one of:");
         List<String> commandNames = new ArrayList<String>();
-        for (MyCommand c : commands.values()) {
-            commandNames.add("       " + c.getUsage());
+        for (Command c : commands.values()) {
+            commandNames.add("       " + c.description());
         }
         Collections.sort(commandNames);
         for (String s : commandNames) {

@@ -118,4 +118,9 @@ public class OstrichProvider implements StatsProvider {
     public StatsLogger getStatsLogger(String scope) {
         return cachingStatsProvider.getStatsLogger(scope);
     }
+
+    @Override
+    public String getStatsName(String... statsComponents) {
+        return cachingStatsProvider.getStatsName(statsComponents);
+    }
 }

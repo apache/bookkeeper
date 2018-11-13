@@ -53,6 +53,7 @@ import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.util.MathUtils;
 import org.apache.bookkeeper.util.ZkUtils;
 import org.apache.bookkeeper.versioning.Version;
+import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.ZooDefs;
 import org.junit.After;
@@ -87,7 +88,7 @@ public class LedgerManagerIteratorTest extends LedgerManagerTestCase {
         }
     }
 
-    class RCCheckCB implements GenericCallback<LedgerMetadata> {
+    class RCCheckCB implements GenericCallback<Versioned<LedgerMetadata>> {
         private final String opType;
         private final CountDownLatch latch;
         private final Optional<Integer> rcExpected;
@@ -101,7 +102,7 @@ public class LedgerManagerIteratorTest extends LedgerManagerTestCase {
         }
 
         @Override
-        public void operationComplete(int rc, LedgerMetadata writtenMetadata) {
+        public void operationComplete(int rc, Versioned<LedgerMetadata> writtenMetadata) {
             safeWrapper(() -> {
                 try {
                     rcExpected.map((Integer expected) -> {

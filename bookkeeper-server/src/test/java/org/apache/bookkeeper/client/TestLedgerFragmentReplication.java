@@ -37,6 +37,8 @@ import org.apache.bookkeeper.client.api.WriteFlag;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
+import org.apache.bookkeeper.versioning.LongVersion;
+import org.apache.bookkeeper.versioning.Versioned;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -244,7 +246,9 @@ public class TestLedgerFragmentReplication extends BookKeeperClusterTestCase {
                 return true;
             }
         };
-        LedgerHandle lh = new LedgerHandle(bkc.getClientCtx(), 0, metadata, TEST_DIGEST_TYPE,
+        LedgerHandle lh = new LedgerHandle(bkc.getClientCtx(), 0,
+                                           new Versioned<>(metadata, new LongVersion(0L)),
+                                           TEST_DIGEST_TYPE,
                                            TEST_PSSWD, WriteFlag.NONE);
         testSplitIntoSubFragments(10, 21, -1, 1, lh);
         testSplitIntoSubFragments(10, 21, 20, 1, lh);

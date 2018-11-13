@@ -73,6 +73,7 @@ import org.apache.bookkeeper.util.HardLink;
 import org.apache.bookkeeper.util.MathUtils;
 import org.apache.bookkeeper.util.TestUtils;
 import org.apache.bookkeeper.versioning.Version;
+import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.zookeeper.AsyncCallback;
 import org.junit.Before;
 import org.junit.Test;
@@ -918,7 +919,7 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
         LedgerManager manager = new LedgerManager() {
                 @Override
                 public void createLedgerMetadata(long lid, LedgerMetadata metadata,
-                                                 GenericCallback<LedgerMetadata> cb) {
+                                                 GenericCallback<Versioned<LedgerMetadata>> cb) {
                     unsupported();
                 }
                 @Override
@@ -927,12 +928,13 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
                     unsupported();
                 }
                 @Override
-                public void readLedgerMetadata(long ledgerId, GenericCallback<LedgerMetadata> readCb) {
+                public void readLedgerMetadata(long ledgerId, GenericCallback<Versioned<LedgerMetadata>> readCb) {
                     unsupported();
                 }
                 @Override
                 public void writeLedgerMetadata(long ledgerId, LedgerMetadata metadata,
-                        GenericCallback<LedgerMetadata> cb) {
+                                                Version currentVersion,
+                                                GenericCallback<Versioned<LedgerMetadata>> cb) {
                     unsupported();
                 }
                 @Override

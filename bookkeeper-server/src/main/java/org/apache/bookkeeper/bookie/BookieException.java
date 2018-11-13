@@ -63,6 +63,8 @@ public abstract class BookieException extends Exception {
             return new DiskPartitionDuplicationException();
         case Code.CookieNotFoundException:
             return new CookieNotFoundException();
+        case Code.CookieExistsException:
+            return new CookieExistException();
         case Code.MetadataStoreException:
             return new MetadataStoreException();
         case Code.UnknownBookieIdException:
@@ -88,6 +90,7 @@ public abstract class BookieException extends Exception {
         int MetadataStoreException = -106;
         int UnknownBookieIdException = -107;
         int OperationRejectedException = -108;
+        int CookieExistsException = -109;
     }
 
     public int getCode() {
@@ -117,6 +120,9 @@ public abstract class BookieException extends Exception {
             break;
         case Code.CookieNotFoundException:
             err = "Cookie not found";
+            break;
+        case Code.CookieExistsException:
+            err = "Cookie already exists";
             break;
         case Code.MetadataStoreException:
             err = "Error performing metadata operations";
@@ -228,6 +234,23 @@ public abstract class BookieException extends Exception {
 
         public CookieNotFoundException(Throwable cause) {
             super(Code.CookieNotFoundException, cause);
+        }
+    }
+
+    /**
+     * Signal that cookie already exists when creating a new cookie.
+     */
+    public static class CookieExistException extends BookieException {
+        public CookieExistException() {
+            this("");
+        }
+
+        public CookieExistException(String reason) {
+            super(Code.CookieExistsException, reason);
+        }
+
+        public CookieExistException(Throwable cause) {
+            super(Code.CookieExistsException, cause);
         }
     }
 

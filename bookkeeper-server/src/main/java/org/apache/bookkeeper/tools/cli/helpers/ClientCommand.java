@@ -66,7 +66,7 @@ public abstract class ClientCommand<ClientFlagsT extends CliFlags> extends BKCom
             run(bk, cmdFlags);
             return true;
         } catch (Exception e) {
-            log.error("Faild to process command '{}'", name(), e);
+            log.error("Failed to process command '{}'", name(), e);
             return false;
         }
     }

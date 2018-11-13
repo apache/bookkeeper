@@ -25,6 +25,8 @@ package org.apache.bookkeeper.bookie;
  */
 public interface BookKeeperServerStats {
 
+    String CATEGORY_SERVER = "server";
+
     String SERVER_SCOPE = "bookkeeper_server";
     String BOOKIE_SCOPE = "bookie";
 

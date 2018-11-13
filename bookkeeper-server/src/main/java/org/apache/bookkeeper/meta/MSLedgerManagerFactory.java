@@ -224,7 +224,7 @@ public class MSLedgerManagerFactory extends AbstractZkLedgerManagerFactory {
         // callbacks
         ScheduledExecutorService scheduler;
 
-        protected class ReadLedgerMetadataTask implements Runnable, GenericCallback<LedgerMetadata> {
+        protected class ReadLedgerMetadataTask implements Runnable, GenericCallback<Versioned<LedgerMetadata>> {
 
             final long ledgerId;
 
@@ -247,12 +247,12 @@ public class MSLedgerManagerFactory extends AbstractZkLedgerManagerFactory {
             }
 
             @Override
-            public void operationComplete(int rc, final LedgerMetadata result) {
+            public void operationComplete(int rc, final Versioned<LedgerMetadata> result) {
                 if (BKException.Code.OK == rc) {
                     final Set<LedgerMetadataListener> listenerSet = listeners.get(ledgerId);
                     if (null != listenerSet) {
                         if (LOG.isDebugEnabled()) {
-                            LOG.debug("Ledger metadata is changed for {} : {}.", ledgerId, result);
+                            LOG.debug("Ledger metadata is changed for {} : {}.", ledgerId, result.getValue());
                         }
                         scheduler.submit(new Runnable() {
                             @Override
@@ -376,7 +376,7 @@ public class MSLedgerManagerFactory extends AbstractZkLedgerManagerFactory {
 
         @Override
         public void createLedgerMetadata(final long lid, final LedgerMetadata metadata,
-                                         final GenericCallback<LedgerMetadata> ledgerCb) {
+                                         final GenericCallback<Versioned<LedgerMetadata>> ledgerCb) {
             MetastoreCallback<Version> msCallback = new MetastoreCallback<Version>() {
                 @Override
                 public void complete(int rc, Version version, Object ctx) {
@@ -391,9 +391,7 @@ public class MSLedgerManagerFactory extends AbstractZkLedgerManagerFactory {
                     if (LOG.isDebugEnabled()) {
                         LOG.debug("Create ledger {} with version {} successfully.", lid, version);
                     }
-                    // update version
-                    metadata.setVersion(version);
-                    ledgerCb.operationComplete(BKException.Code.OK, metadata);
+                    ledgerCb.operationComplete(BKException.Code.OK, new Versioned<>(metadata, version));
                 }
             };
 
@@ -423,7 +421,7 @@ public class MSLedgerManagerFactory extends AbstractZkLedgerManagerFactory {
         }
 
         @Override
-        public void readLedgerMetadata(final long ledgerId, final GenericCallback<LedgerMetadata> readCb) {
+        public void readLedgerMetadata(long ledgerId, GenericCallback<Versioned<LedgerMetadata>> readCb) {
             final String key = ledgerId2Key(ledgerId);
             MetastoreCallback<Versioned<Value>> msCallback = new MetastoreCallback<Versioned<Value>>() {
                 @Override
@@ -440,54 +438,49 @@ public class MSLedgerManagerFactory extends AbstractZkLedgerManagerFactory {
                         readCb.operationComplete(BKException.Code.MetaStoreException, null);
                         return;
                     }
-                    LedgerMetadata metadata;
                     try {
-                        metadata = LedgerMetadata.parseConfig(value.getValue().getField(META_FIELD),
-                                value.getVersion(), Optional.<Long>absent());
+                        LedgerMetadata metadata = LedgerMetadata.parseConfig(
+                                value.getValue().getField(META_FIELD), Optional.<Long>absent());
+                        readCb.operationComplete(BKException.Code.OK, new Versioned<>(metadata, value.getVersion()));
                     } catch (IOException e) {
                         LOG.error("Could not parse ledger metadata for ledger " + ledgerId + " : ", e);
                         readCb.operationComplete(BKException.Code.MetaStoreException, null);
-                        return;
                     }
-                    readCb.operationComplete(BKException.Code.OK, metadata);
                 }
             };
             ledgerTable.get(key, this, msCallback, ALL_FIELDS);
         }
 
         @Override
-        public void writeLedgerMetadata(final long ledgerId, final LedgerMetadata metadata,
-                final GenericCallback<LedgerMetadata> cb) {
+        public void writeLedgerMetadata(long ledgerId, LedgerMetadata metadata,
+                                        Version currentVersion,
+                                        final GenericCallback<Versioned<LedgerMetadata>> cb) {
             Value data = new Value().setField(META_FIELD, metadata.serialize());
 
             if (LOG.isDebugEnabled()) {
-                LOG.debug("Writing ledger {} metadata, version {}", new Object[] { ledgerId, metadata.getVersion() });
+                LOG.debug("Writing ledger {} metadata, version {}", new Object[] { ledgerId, currentVersion });
             }
 
             final String key = ledgerId2Key(ledgerId);
             MetastoreCallback<Version> msCallback = new MetastoreCallback<Version>() {
                 @Override
                 public void complete(int rc, Version version, Object ctx) {
-                    int bkRc;
                     if (MSException.Code.BadVersion.getCode() == rc) {
                         LOG.info("Bad version provided to updat metadata for ledger {}", ledgerId);
-                        bkRc = BKException.Code.MetadataVersionException;
+                        cb.operationComplete(BKException.Code.MetadataVersionException, null);
                     } else if (MSException.Code.NoKey.getCode() == rc) {
                         LOG.warn("Ledger {} doesn't exist when writing its ledger metadata.", ledgerId);
-                        bkRc = BKException.Code.NoSuchLedgerExistsException;
+                        cb.operationComplete(BKException.Code.NoSuchLedgerExistsException, null);
                     } else if (MSException.Code.OK.getCode() == rc) {
-                        metadata.setVersion(version);
-                        bkRc = BKException.Code.OK;
+                        cb.operationComplete(BKException.Code.OK, new Versioned<>(metadata, version));
                     } else {
                         LOG.warn("Conditional update ledger metadata failed: ",
                                 MSException.create(MSException.Code.get(rc), "Failed to put key " + key));
-                        bkRc = BKException.Code.MetaStoreException;
+                        cb.operationComplete(BKException.Code.MetaStoreException, null);
                     }
-
-                    cb.operationComplete(bkRc, metadata);
                 }
             };
-            ledgerTable.put(key, data, metadata.getVersion(), msCallback, null);
+            ledgerTable.put(key, data, currentVersion, msCallback, null);
         }
 
         @Override

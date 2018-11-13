@@ -37,6 +37,7 @@ import org.apache.bookkeeper.client.SyncCallbackUtils.SyncAddCallback;
 import org.apache.bookkeeper.client.api.WriteAdvHandle;
 import org.apache.bookkeeper.client.api.WriteFlag;
 import org.apache.bookkeeper.util.SafeRunnable;
+import org.apache.bookkeeper.versioning.Versioned;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -56,7 +57,7 @@ public class LedgerHandleAdv extends LedgerHandle implements WriteAdvHandle {
     }
 
     LedgerHandleAdv(ClientContext clientCtx,
-                    long ledgerId, LedgerMetadata metadata,
+                    long ledgerId, Versioned<LedgerMetadata> metadata,
                     BookKeeper.DigestType digestType, byte[] password, EnumSet<WriteFlag> writeFlags)
             throws GeneralSecurityException, NumberFormatException {
         super(clientCtx, ledgerId, metadata, digestType, password, writeFlags);

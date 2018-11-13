@@ -1,0 +1,66 @@
+#!/usr/bin/env bash
+#
+#/**
+# * Licensed to the Apache Software Foundation (ASF) under one
+# * or more contributor license agreements.  See the NOTICE file
+# * distributed with this work for additional information
+# * regarding copyright ownership.  The ASF licenses this file
+# * to you under the Apache License, Version 2.0 (the
+# * "License"); you may not use this file except in compliance
+# * with the License.  You may obtain a copy of the License at
+# *
+# *     http://www.apache.org/licenses/LICENSE-2.0
+# *
+# * Unless required by applicable law or agreed to in writing, software
+# * distributed under the License is distributed on an "AS IS" BASIS,
+# * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# * See the License for the specific language governing permissions and
+# * limitations under the License.
+# */
+
+# Stats Documentation Generator
+
+BINDIR=`dirname "$0"`
+BK_HOME=`cd ${BINDIR}/..;pwd`
+
+source ${BK_HOME}/bin/common.sh
+source ${BK_HOME}/conf/bk_cli_env.sh
+
+CLI_MODULE_PATH=stats/utils
+CLI_MODULE_NAME="(org.apache.bookkeeper.stats-)?bookkeeper-stats-utils"
+CLI_MODULE_HOME=${BK_HOME}/${CLI_MODULE_PATH}
+
+# find the module jar
+CLI_JAR=$(find_module_jar ${CLI_MODULE_PATH} ${CLI_MODULE_NAME})
+
+# set up the classpath
+CLI_CLASSPATH=$(set_module_classpath ${CLI_MODULE_PATH})
+
+DEFAULT_LOG_CONF=${BK_HOME}/conf/log4j.cli.properties
+if [ -z "${CLI_LOG_CONF}" ]; then
+  CLI_LOG_CONF=${DEFAULT_LOG_CONF}
+fi
+CLI_LOG_DIR=${CLI_LOG_DIR:-"$BK_HOME/logs"}
+CLI_LOG_FILE=${CLI_LOG_FILE:-"stats-doc-gen.log"}
+CLI_ROOT_LOGGER=${CLI_ROOT_LOGGER:-"INFO,ROLLINGFILE"}
+
+# add all dependencies in the classpath
+ALL_MODULE_PATH=bookkeeper-dist/all
+ALL_MODULE_CLASSPATH=$(set_module_classpath ${ALL_MODULE_PATH})
+
+# Configure the classpath
+CLI_CLASSPATH="$CLI_JAR:$CLI_CLASSPATH:$CLI_EXTRA_CLASSPATH:$ALL_MODULE_CLASSPATH"
+CLI_CLASSPATH="`dirname $CLI_LOG_CONF`:$CLI_CLASSPATH"
+
+# Build the OPTs
+BOOKIE_OPTS=$(build_bookie_opts)
+GC_OPTS=$(build_cli_jvm_opts ${CLI_LOG_DIR} "stats-doc-gen-gc.log")
+NETTY_OPTS=$(build_netty_opts)
+LOGGING_OPTS=$(build_cli_logging_opts ${CLI_LOG_CONF} ${CLI_LOG_DIR} ${CLI_LOG_FILE} ${CLI_ROOT_LOGGER})
+
+OPTS="${OPTS} -cp ${CLI_CLASSPATH} ${BOOKIE_OPTS} ${GC_OPTS} ${NETTY_OPTS} ${LOGGING_OPTS} ${CLI_EXTRA_OPTS}"
+
+#Change to BK_HOME to support relative paths
+cd "$BK_HOME"
+echo "running stats-doc-gen, logging to ${CLI_LOG_DIR}/${CLI_LOG_FILE}"
+exec ${JAVA} ${OPTS} org.apache.bookkeeper.stats.utils.StatsDocGenerator $@
