@@ -89,11 +89,6 @@ class ReadOnlyLedgerHandle extends LedgerHandle implements LedgerMetadataListene
     }
 
     @Override
-    protected boolean isHandleWritable() {
-        return false;
-    }
-
-    @Override
     public void close()
             throws InterruptedException, BKException {
         bk.getLedgerManager().unregisterLedgerMetadataListener(ledgerId, this);
