@@ -494,6 +494,15 @@ public class LedgerHandle implements WriteHandle {
         return getLedgerMetadata().isClosed();
     }
 
+    /**
+     * Return if this handle is writable or not.
+     *
+     * @return true if this handle is writable, otherwise false
+     */
+    protected boolean isHandleWritable() {
+        return !getLedgerMetadata().isClosed();
+    }
+
     void asyncCloseInternal(final CloseCallback cb, final Object ctx, final int rc) {
         try {
             doAsyncCloseInternal(cb, ctx, rc);
