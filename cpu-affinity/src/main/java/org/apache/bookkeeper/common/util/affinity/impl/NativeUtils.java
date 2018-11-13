@@ -1,4 +1,5 @@
 /**
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -15,10 +16,13 @@
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
  * under the License.
+ *
  */
-package com.scurrilous.circe.utils;
+package org.apache.bookkeeper.common.util.affinity.impl;
 
 import static com.google.common.base.Preconditions.checkArgument;
+
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -26,15 +30,14 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.Locale;
+
+import lombok.experimental.UtilityClass;
 
 /**
- * Utils for loading native checksum library.
+ * Utility class to load jni library from inside a JAR.
  */
+@UtilityClass
 public class NativeUtils {
-
-    public static final String OS_NAME = System.getProperty("os.name").toLowerCase(Locale.US);
-
     /**
      * loads given library from the this jar. ie: this jar contains: /lib/pulsar-checksum.jnilib
      *
@@ -43,15 +46,16 @@ public class NativeUtils {
      *            if this jar contains: /lib/pulsar-checksum.jnilib then provide the same absolute path as input
      * @throws Exception
      */
+    @SuppressFBWarnings(
+            value = "OBL_UNSATISFIED_OBLIGATION",
+            justification = "work around for java 9: https://github.com/spotbugs/spotbugs/issues/493")
     public static void loadLibraryFromJar(String path) throws Exception {
-
-        checkArgument(path.startsWith("/"), "absolute path must start with  /");
+        checkArgument(path.startsWith("/"), "absolute path must start with /");
 
         String[] parts = path.split("/");
         String filename = (parts.length > 0) ? parts[parts.length - 1] : null;
 
         File dir = File.createTempFile("native", "");
-        dir.delete();
         if (!(dir.mkdir())) {
             throw new IOException("Failed to create temp directory " + dir.getAbsolutePath());
         }
@@ -62,22 +66,15 @@ public class NativeUtils {
         byte[] buffer = new byte[1024];
         int read;
 
-        InputStream input = NativeUtils.class.getResourceAsStream(path);
-        if (input == null) {
-            throw new FileNotFoundException("Couldn't find file into jar " + path);
-        }
-
-        try {
-            OutputStream out = new FileOutputStream(temp);
-            try {
-                while ((read = input.read(buffer)) != -1) {
-                    out.write(buffer, 0, read);
-                }
-            } finally {
-                out.close();
+        try (InputStream input = NativeUtils.class.getResourceAsStream(path);
+                OutputStream out = new FileOutputStream(temp)) {
+            if (input == null) {
+                throw new FileNotFoundException("Couldn't find file into jar " + path);
             }
-        } finally {
-            input.close();
+
+            while ((read = input.read(buffer)) != -1) {
+                out.write(buffer, 0, read);
+            }
         }
 
         if (!temp.exists()) {
@@ -85,23 +82,5 @@ public class NativeUtils {
         }
 
         System.load(temp.getAbsolutePath());
-    }
-
-    /**
-     * Returns jni library extension based on OS specification. Maven-nar generates jni library based on different OS :
-     * http://mark.donszelmann.org/maven-nar-plugin/aol.html (jni.extension)
-     *
-     * @return
-     */
-    public static String libType() {
-
-        if (OS_NAME.indexOf("mac") >= 0) {
-            return "jnilib";
-        } else if (OS_NAME.indexOf("nix") >= 0 || OS_NAME.indexOf("nux") >= 0 || OS_NAME.indexOf("aix") > 0) {
-            return "so";
-        } else if (OS_NAME.indexOf("win") >= 0) {
-            return "dll";
-        }
-        throw new TypeNotPresentException(OS_NAME + " not supported", null);
     }
 }
