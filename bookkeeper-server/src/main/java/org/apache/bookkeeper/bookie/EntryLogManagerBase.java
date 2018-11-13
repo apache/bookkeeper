@@ -21,6 +21,9 @@
 
 package org.apache.bookkeeper.bookie;
 
+import static org.apache.bookkeeper.bookie.EntryLogger.UNASSIGNED_LEDGERID;
+
+import com.google.common.annotations.VisibleForTesting;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.util.concurrent.FastThreadLocal;
@@ -131,7 +134,18 @@ abstract class EntryLogManagerBase implements EntryLogManager {
      * Creates a new log file. This method should be guarded by a lock,
      * so callers of this method should be in right scope of the lock.
      */
+    @VisibleForTesting
     void createNewLog(long ledgerId) throws IOException {
+        createNewLog(ledgerId, "");
+    }
+
+    void createNewLog(long ledgerId, String reason) throws IOException {
+        if (ledgerId != UNASSIGNED_LEDGERID) {
+            log.info("Creating a new entry log file for ledger '{}' {}", ledgerId, reason);
+        } else {
+            log.info("Creating a new entry log file {}", reason);
+        }
+
         BufferedLogChannel logChannel = getCurrentLogForLedger(ledgerId);
         // first tried to create a new log channel. add current log channel to ToFlush list only when
         // there is a new log channel. it would prevent that a log channel is referenced by both
