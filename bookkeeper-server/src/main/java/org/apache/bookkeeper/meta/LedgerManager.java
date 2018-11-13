@@ -28,6 +28,7 @@ import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.LedgerMetadataListener;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.Processor;
 import org.apache.bookkeeper.versioning.Version;
+import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.zookeeper.AsyncCallback;
 
 /**
@@ -55,7 +56,7 @@ public interface LedgerManager extends Closeable {
      *                 for other issue</li>
      *            </ul>
      */
-    void createLedgerMetadata(long ledgerId, LedgerMetadata metadata, GenericCallback<LedgerMetadata> cb);
+    void createLedgerMetadata(long ledgerId, LedgerMetadata metadata, GenericCallback<Versioned<LedgerMetadata>> cb);
 
     /**
      * Remove a specified ledger metadata by ledgerId and version.
@@ -86,7 +87,7 @@ public interface LedgerManager extends Closeable {
      *          <li>{@link BKException.Code.ZKException} for other issue</li>
      *          </ul>
      */
-    void readLedgerMetadata(long ledgerId, GenericCallback<LedgerMetadata> readCb);
+    void readLedgerMetadata(long ledgerId, GenericCallback<Versioned<LedgerMetadata>> readCb);
 
     /**
      * Write ledger metadata.
@@ -95,6 +96,8 @@ public interface LedgerManager extends Closeable {
      *          Ledger Id
      * @param metadata
      *          Ledger Metadata to write
+     * @param currentVersion
+     *          The version of the metadata we expect to be overwriting.
      * @param cb
      *          Callback when finished writing ledger metadata, returning the written metadata.
      *          Return code:<ul>
@@ -103,7 +106,9 @@ public interface LedgerManager extends Closeable {
      *          <li>{@link BKException.Code.ZKException} for other issue</li>
      *          </ul>
      */
-    void writeLedgerMetadata(long ledgerId, LedgerMetadata metadata, GenericCallback<LedgerMetadata> cb);
+    void writeLedgerMetadata(long ledgerId, LedgerMetadata metadata,
+                             Version currentVersion,
+                             GenericCallback<Versioned<LedgerMetadata>> cb);
 
     /**
      * Register the ledger metadata <i>listener</i> on <i>ledgerId</i>.

@@ -32,6 +32,7 @@ import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.LedgerMetadataListener;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.Processor;
 import org.apache.bookkeeper.versioning.Version;
+import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.zookeeper.AsyncCallback;
 
 /**
@@ -109,14 +110,14 @@ public class CleanupLedgerManager implements LedgerManager {
 
     @Override
     public void createLedgerMetadata(long lid, LedgerMetadata metadata,
-                                     GenericCallback<LedgerMetadata> cb) {
+                                     GenericCallback<Versioned<LedgerMetadata>> cb) {
         closeLock.readLock().lock();
         try {
             if (closed) {
                 cb.operationComplete(BKException.Code.ClientClosedException, null);
                 return;
             }
-            underlying.createLedgerMetadata(lid, metadata, new CleanupGenericCallback<LedgerMetadata>(cb));
+            underlying.createLedgerMetadata(lid, metadata, new CleanupGenericCallback<>(cb));
         } finally {
             closeLock.readLock().unlock();
         }
@@ -140,14 +141,14 @@ public class CleanupLedgerManager implements LedgerManager {
 
     @Override
     public void readLedgerMetadata(long ledgerId,
-                                   GenericCallback<LedgerMetadata> readCb) {
+                                   GenericCallback<Versioned<LedgerMetadata>> readCb) {
         closeLock.readLock().lock();
         try {
             if (closed) {
                 readCb.operationComplete(BKException.Code.ClientClosedException, null);
                 return;
             }
-            underlying.readLedgerMetadata(ledgerId, new CleanupGenericCallback<LedgerMetadata>(readCb));
+            underlying.readLedgerMetadata(ledgerId, new CleanupGenericCallback<>(readCb));
         } finally {
             closeLock.readLock().unlock();
         }
@@ -155,15 +156,16 @@ public class CleanupLedgerManager implements LedgerManager {
 
     @Override
     public void writeLedgerMetadata(long ledgerId, LedgerMetadata metadata,
-                                    GenericCallback<LedgerMetadata> cb) {
+                                    Version currentVersion,
+                                    GenericCallback<Versioned<LedgerMetadata>> cb) {
         closeLock.readLock().lock();
         try {
             if (closed) {
                 cb.operationComplete(BKException.Code.ClientClosedException, null);
                 return;
             }
-            underlying.writeLedgerMetadata(ledgerId, metadata,
-                    new CleanupGenericCallback<LedgerMetadata>(cb));
+            underlying.writeLedgerMetadata(ledgerId, metadata, currentVersion,
+                                           new CleanupGenericCallback<>(cb));
         } finally {
             closeLock.readLock().unlock();
         }

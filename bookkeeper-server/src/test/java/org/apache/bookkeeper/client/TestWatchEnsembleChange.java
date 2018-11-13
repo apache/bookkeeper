@@ -44,6 +44,7 @@ import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.LedgerMetadataListener;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.versioning.Version;
+import org.apache.bookkeeper.versioning.Versioned;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -134,10 +135,10 @@ public class TestWatchEnsembleChange extends BookKeeperClusterTestCase {
             @Override
             public void operationComplete(int rc, final Long lid) {
                 manager.createLedgerMetadata(lid, new LedgerMetadata(4, 2, 2, digestType, "fpj was here".getBytes()),
-                         new BookkeeperInternalCallbacks.GenericCallback<LedgerMetadata>(){
+                         new BookkeeperInternalCallbacks.GenericCallback<Versioned<LedgerMetadata>>(){
 
                     @Override
-                    public void operationComplete(int rc, LedgerMetadata result) {
+                    public void operationComplete(int rc, Versioned<LedgerMetadata> result) {
                         bbLedgerId.putLong(lid);
                         bbLedgerId.flip();
                         createLatch.countDown();
@@ -154,7 +155,7 @@ public class TestWatchEnsembleChange extends BookKeeperClusterTestCase {
                 new LedgerMetadataListener() {
 
             @Override
-            public void onChanged(long ledgerId, LedgerMetadata metadata) {
+            public void onChanged(long ledgerId, Versioned<LedgerMetadata> metadata) {
                 assertEquals(ledgerId, createdLid);
                 assertEquals(metadata, null);
                 removeLatch.countDown();

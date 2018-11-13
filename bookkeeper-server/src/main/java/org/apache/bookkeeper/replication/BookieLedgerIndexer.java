@@ -33,6 +33,7 @@ import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.Processor;
 import org.apache.bookkeeper.replication.ReplicationException.BKAuditException;
+import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.zookeeper.AsyncCallback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -66,32 +67,24 @@ public class BookieLedgerIndexer {
 
         Processor<Long> ledgerProcessor = new Processor<Long>() {
             @Override
-            public void process(final Long ledgerId,
-                    final AsyncCallback.VoidCallback iterCallback) {
-                GenericCallback<LedgerMetadata> genericCallback = new GenericCallback<LedgerMetadata>() {
-                    @Override
-                    public void operationComplete(int rc,
-                            LedgerMetadata ledgerMetadata) {
-                        if (rc == BKException.Code.OK) {
-                            for (Map.Entry<Long, ? extends List<BookieSocketAddress>> ensemble : ledgerMetadata
-                                    .getAllEnsembles().entrySet()) {
-                                for (BookieSocketAddress bookie : ensemble
-                                        .getValue()) {
-                                    putLedger(bookie2ledgersMap,
-                                              bookie.toString(),
-                                              ledgerId);
-                                }
+            public void process(Long ledgerId, AsyncCallback.VoidCallback iterCallback) {
+                GenericCallback<Versioned<LedgerMetadata>> genericCallback = (rc, ledgerMetadata) -> {
+                    if (rc == BKException.Code.OK) {
+                        for (Map.Entry<Long, ? extends List<BookieSocketAddress>> ensemble
+                                 : ledgerMetadata.getValue().getAllEnsembles().entrySet()) {
+                            for (BookieSocketAddress bookie : ensemble.getValue()) {
+                                    putLedger(bookie2ledgersMap, bookie.toString(), ledgerId);
                             }
-                        } else if (rc == BKException.Code.NoSuchLedgerExistsException) {
-                            LOG.info("Ignoring replication of already deleted ledger {}",
-                                    ledgerId);
-                            rc = BKException.Code.OK;
-                        } else {
-                            LOG.warn("Unable to read the ledger:" + ledgerId
-                                    + " information");
                         }
-                        iterCallback.processResult(rc, null, null);
+                    } else if (rc == BKException.Code.NoSuchLedgerExistsException) {
+                        LOG.info("Ignoring replication of already deleted ledger {}",
+                                 ledgerId);
+                        rc = BKException.Code.OK;
+                    } else {
+                        LOG.warn("Unable to read the ledger:" + ledgerId
+                                 + " information");
                     }
+                    iterCallback.processResult(rc, null, null);
                 };
                 ledgerManager.readLedgerMetadata(ledgerId, genericCallback);
             }

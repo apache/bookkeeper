@@ -28,6 +28,7 @@ import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallbackFuture;
+import org.apache.bookkeeper.versioning.Versioned;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -47,12 +48,12 @@ public class LedgerRecovery2Test {
     private static final BookieSocketAddress b4 = new BookieSocketAddress("b4", 3181);
     private static final BookieSocketAddress b5 = new BookieSocketAddress("b5", 3181);
 
-    private static LedgerMetadata setupLedger(ClientContext clientCtx, long ledgerId,
+    private static Versioned<LedgerMetadata> setupLedger(ClientContext clientCtx, long ledgerId,
                                               List<BookieSocketAddress> bookies) throws Exception {
         LedgerMetadata md = LedgerMetadataBuilder.create()
             .withPassword(PASSWD)
             .newEnsembleEntry(0, bookies).build();
-        GenericCallbackFuture<LedgerMetadata> mdPromise = new GenericCallbackFuture<>();
+        GenericCallbackFuture<Versioned<LedgerMetadata>> mdPromise = new GenericCallbackFuture<>();
         clientCtx.getLedgerManager().createLedgerMetadata(1L, md, mdPromise);
         return mdPromise.get();
     }
@@ -61,7 +62,7 @@ public class LedgerRecovery2Test {
     public void testCantRecoverAllDown() throws Exception {
         MockClientContext clientCtx = MockClientContext.create();
 
-        LedgerMetadata md = setupLedger(clientCtx, 1L, Lists.newArrayList(b1, b2, b3));
+        Versioned<LedgerMetadata> md = setupLedger(clientCtx, 1L, Lists.newArrayList(b1, b2, b3));
 
         clientCtx.getMockBookieClient().errorBookies(b1, b2, b3);
 
@@ -81,7 +82,7 @@ public class LedgerRecovery2Test {
     public void testCanReadLacButCantWrite() throws Exception {
         MockClientContext clientCtx = MockClientContext.create();
 
-        LedgerMetadata md = setupLedger(clientCtx, 1, Lists.newArrayList(b1, b2, b3));
+        Versioned<LedgerMetadata> md = setupLedger(clientCtx, 1, Lists.newArrayList(b1, b2, b3));
 
         clientCtx.getMockBookieClient().seedEntries(b1, 1L, 0L, -1L);
         clientCtx.getMockBookieClient().setPreWriteHook(
@@ -103,7 +104,7 @@ public class LedgerRecovery2Test {
     public void testMetadataClosedDuringRecovery() throws Exception {
         MockClientContext clientCtx = MockClientContext.create();
 
-        LedgerMetadata md = setupLedger(clientCtx, 1, Lists.newArrayList(b1, b2, b3));
+        Versioned<LedgerMetadata> md = setupLedger(clientCtx, 1, Lists.newArrayList(b1, b2, b3));
 
         CompletableFuture<Void> writingBack = new CompletableFuture<>();
         CompletableFuture<Void> blocker = new CompletableFuture<>();
@@ -123,12 +124,8 @@ public class LedgerRecovery2Test {
 
         writingBack.get(10, TimeUnit.SECONDS);
 
-        GenericCallbackFuture<LedgerMetadata> readPromise = new GenericCallbackFuture<>();
-        clientCtx.getLedgerManager().readLedgerMetadata(1L, readPromise);
-        LedgerMetadataBuilder builder = LedgerMetadataBuilder.from(readPromise.get());
-        GenericCallbackFuture<LedgerMetadata> writePromise = new GenericCallbackFuture<>();
-        clientCtx.getLedgerManager().writeLedgerMetadata(1L, builder.closingAt(-1, 0).build(), writePromise);
-        writePromise.get();
+        ClientUtil.transformMetadata(clientCtx, 1L,
+                                     (metadata) -> LedgerMetadataBuilder.from(metadata).closingAt(-1, 0).build());
 
         // allow recovery to continue
         blocker.complete(null);
@@ -144,7 +141,7 @@ public class LedgerRecovery2Test {
         MockClientContext clientCtx = MockClientContext.create();
         clientCtx.getMockRegistrationClient().addBookies(b4).get();
 
-        LedgerMetadata md = setupLedger(clientCtx, 1, Lists.newArrayList(b1, b2, b3));
+        Versioned<LedgerMetadata> md = setupLedger(clientCtx, 1, Lists.newArrayList(b1, b2, b3));
 
         CompletableFuture<Void> writingBack = new CompletableFuture<>();
         CompletableFuture<Void> blocker = new CompletableFuture<>();
@@ -169,13 +166,9 @@ public class LedgerRecovery2Test {
 
         writingBack.get(10, TimeUnit.SECONDS);
 
-        GenericCallbackFuture<LedgerMetadata> readPromise = new GenericCallbackFuture<>();
-        clientCtx.getLedgerManager().readLedgerMetadata(1L, readPromise);
-        LedgerMetadata newMeta = LedgerMetadataBuilder.from(readPromise.get())
-            .newEnsembleEntry(1L, Lists.newArrayList(b1, b2, b4)).build();
-        GenericCallbackFuture<LedgerMetadata> writePromise = new GenericCallbackFuture<>();
-        clientCtx.getLedgerManager().writeLedgerMetadata(1L, newMeta, writePromise);
-        writePromise.get();
+        ClientUtil.transformMetadata(clientCtx, 1L,
+                (metadata) -> LedgerMetadataBuilder.from(metadata).newEnsembleEntry(1L, Lists.newArrayList(b1, b2, b4))
+                                     .build());
 
         // allow recovery to continue
         failing.completeExceptionally(new BKException.BKWriteException());
@@ -194,7 +187,7 @@ public class LedgerRecovery2Test {
         MockClientContext clientCtx = MockClientContext.create();
         clientCtx.getMockRegistrationClient().addBookies(b4).get();
 
-        LedgerMetadata md = setupLedger(clientCtx, 1, Lists.newArrayList(b1, b2, b3));
+        Versioned<LedgerMetadata> md = setupLedger(clientCtx, 1, Lists.newArrayList(b1, b2, b3));
 
         CompletableFuture<Void> writingBack = new CompletableFuture<>();
         CompletableFuture<Void> blocker = new CompletableFuture<>();
@@ -219,7 +212,7 @@ public class LedgerRecovery2Test {
         MockClientContext clientCtx = MockClientContext.create();
         clientCtx.getMockRegistrationClient().addBookies(b4).get();
 
-        LedgerMetadata md = setupLedger(clientCtx, 1, Lists.newArrayList(b1, b2, b3));
+        Versioned<LedgerMetadata> md = setupLedger(clientCtx, 1, Lists.newArrayList(b1, b2, b3));
         clientCtx.getMockBookieClient().seedEntries(b1, 1L, 0L, -1L);
         clientCtx.getMockBookieClient().seedEntries(b3, 1L, 1L, -1L);
         clientCtx.getMockBookieClient().setPreWriteHook(
@@ -251,7 +244,7 @@ public class LedgerRecovery2Test {
         MockClientContext clientCtx = MockClientContext.create();
         clientCtx.getMockRegistrationClient().addBookies(b4, b5).get();
 
-        LedgerMetadata md = setupLedger(clientCtx, 1, Lists.newArrayList(b1, b2, b3));
+        Versioned<LedgerMetadata> md = setupLedger(clientCtx, 1, Lists.newArrayList(b1, b2, b3));
         clientCtx.getMockBookieClient().seedEntries(b1, 1L, 0L, -1L);
         clientCtx.getMockBookieClient().setPreWriteHook(
                 (bookie, ledgerId, entryId) -> {

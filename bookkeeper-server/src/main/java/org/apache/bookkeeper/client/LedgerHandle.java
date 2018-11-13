@@ -75,12 +75,12 @@ import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.common.util.MathUtils;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieProtocol;
-import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.checksum.DigestManager;
 import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.Gauge;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.util.SafeRunnable;
+import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.commons.collections4.IteratorUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -95,7 +95,7 @@ public class LedgerHandle implements WriteHandle {
     final ClientContext clientCtx;
 
     final byte[] ledgerKey;
-    private LedgerMetadata metadata;
+    private Versioned<LedgerMetadata> versionedMetadata;
     final long ledgerId;
     long lastAddPushed;
 
@@ -156,15 +156,17 @@ public class LedgerHandle implements WriteHandle {
     private final OpStatsLogger clientChannelWriteWaitStats;
 
     LedgerHandle(ClientContext clientCtx,
-                 long ledgerId, LedgerMetadata metadata,
+                 long ledgerId, Versioned<LedgerMetadata> versionedMetadata,
                  BookKeeper.DigestType digestType, byte[] password,
                  EnumSet<WriteFlag> writeFlags)
             throws GeneralSecurityException, NumberFormatException {
         this.clientCtx = clientCtx;
 
-        this.metadata = metadata;
+        this.versionedMetadata = versionedMetadata;
         this.pendingAddOps = new ConcurrentLinkedQueue<PendingAddOp>();
         this.writeFlags = writeFlags;
+
+        LedgerMetadata metadata = versionedMetadata.getValue();
         if (metadata.isClosed()) {
             lastAddConfirmed = lastAddPushed = metadata.getLastEntryId();
             length = metadata.getLength();
@@ -190,7 +192,9 @@ public class LedgerHandle implements WriteHandle {
         // password, so that the bookie can avoid processing the keys for each entry
         this.ledgerKey = DigestManager.generateMasterKey(password);
         distributionSchedule = new RoundRobinDistributionSchedule(
-                metadata.getWriteQuorumSize(), metadata.getAckQuorumSize(), metadata.getEnsembleSize());
+                metadata.getWriteQuorumSize(),
+                metadata.getAckQuorumSize(),
+                metadata.getEnsembleSize());
         this.bookieFailureHistory = CacheBuilder.newBuilder()
             .expireAfterWrite(clientCtx.getConf().bookieFailureHistoryExpirationMSec, TimeUnit.MILLISECONDS)
             .build(new CacheLoader<BookieSocketAddress, Long>() {
@@ -310,14 +314,19 @@ public class LedgerHandle implements WriteHandle {
      */
     @Override
     public LedgerMetadata getLedgerMetadata() {
-        return metadata;
+        return versionedMetadata.getValue();
     }
 
-    boolean setLedgerMetadata(LedgerMetadata expected, LedgerMetadata newMetadata) {
+    Versioned<LedgerMetadata> getVersionedLedgerMetadata() {
+        return versionedMetadata;
+    }
+
+    boolean setLedgerMetadata(Versioned<LedgerMetadata> expected, Versioned<LedgerMetadata> newMetadata) {
         synchronized (this) {
             // ensure that we only update the metadata if it is the object we expect it to be
-            if (metadata == expected) {
-                metadata = newMetadata;
+            if (versionedMetadata == expected) {
+                versionedMetadata = newMetadata;
+                LedgerMetadata metadata = versionedMetadata.getValue();
                 if (metadata.isClosed()) {
                     lastAddConfirmed = lastAddPushed = metadata.getLastEntryId();
                     length = metadata.getLength();
@@ -417,14 +426,6 @@ public class LedgerHandle implements WriteHandle {
      */
     BookiesHealthInfo getBookiesHealthInfo() {
         return bookiesHealthInfo;
-    }
-
-    void writeLedgerConfig(GenericCallback<LedgerMetadata> writeCb) {
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Writing metadata to ledger manager: {}, {}", this.ledgerId, getLedgerMetadata().getVersion());
-        }
-
-        clientCtx.getLedgerManager().writeLedgerMetadata(ledgerId, getLedgerMetadata(), writeCb);
     }
 
     /**
@@ -532,7 +533,7 @@ public class LedgerHandle implements WriteHandle {
                     tearDownWriteHandleState();
                     new MetadataUpdateLoop(
                             clientCtx.getLedgerManager(), getId(),
-                            LedgerHandle.this::getLedgerMetadata,
+                            LedgerHandle.this::getVersionedLedgerMetadata,
                             (metadata) -> {
                                 if (metadata.isClosed()) {
                                     /* If the ledger has been closed with the same lastEntry
@@ -1851,7 +1852,7 @@ public class LedgerHandle implements WriteHandle {
         AtomicInteger attempts = new AtomicInteger(0);
         new MetadataUpdateLoop(
                 clientCtx.getLedgerManager(), getId(),
-                this::getLedgerMetadata,
+                this::getVersionedLedgerMetadata,
                 (metadata) -> !metadata.isClosed() && !metadata.isInRecovery()
                         && failedBookies.entrySet().stream().anyMatch(
                                 (e) -> metadata.getLastEnsembleValue().get(e.getKey()).equals(e.getValue())),
@@ -1882,13 +1883,13 @@ public class LedgerHandle implements WriteHandle {
                     if (ex != null) {
                         LOG.warn("{}[attempt:{}] Exception changing ensemble", logContext, attempts.get(), ex);
                         handleUnrecoverableErrorDuringAdd(BKException.getExceptionCode(ex, WriteException));
-                    } else if (metadata.isClosed()) {
+                    } else if (metadata.getValue().isClosed()) {
                         if (LOG.isDebugEnabled()) {
                             LOG.debug("{}[attempt:{}] Metadata closed during attempt to replace bookie."
                                       + " Another client must have recovered the ledger.", logContext, attempts.get());
                         }
                         handleUnrecoverableErrorDuringAdd(BKException.Code.LedgerClosedException);
-                    } else if (metadata.isInRecovery()) {
+                    } else if (metadata.getValue().isInRecovery()) {
                         if (LOG.isDebugEnabled()) {
                             LOG.debug("{}[attempt:{}] Metadata marked as in-recovery during attempt to replace bookie."
                                       + " Another client must be recovering the ledger.", logContext, attempts.get());
@@ -1926,10 +1927,6 @@ public class LedgerHandle implements WriteHandle {
         }
     }
 
-    void rereadMetadata(final GenericCallback<LedgerMetadata> cb) {
-        clientCtx.getLedgerManager().readLedgerMetadata(ledgerId, cb);
-    }
-
     void registerOperationFailureOnBookie(BookieSocketAddress bookie, long entryId) {
         if (clientCtx.getConf().enableBookieFailureTracking) {
             bookieFailureHistory.put(bookie, entryId);
@@ -1965,6 +1962,6 @@ public class LedgerHandle implements WriteHandle {
         // Getting current ensemble from the metadata is only a temporary
         // thing until metadata is immutable. At that point, current ensemble
         // becomes a property of the LedgerHandle itself.
-        return metadata.getCurrentEnsemble();
+        return versionedMetadata.getValue().getCurrentEnsemble();
     }
 }
