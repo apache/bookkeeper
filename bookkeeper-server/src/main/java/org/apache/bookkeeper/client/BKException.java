@@ -439,12 +439,22 @@ public abstract class BKException extends org.apache.bookkeeper.client.api.BKExc
      * Extract an exception code from an BKException, or use a default if it's another type.
      */
     public static int getExceptionCode(Throwable t, int defaultCode) {
-        if (t instanceof BKException) {
+        if (t == null) {
+            return BKException.Code.OK;
+        } else if (t instanceof BKException) {
             return ((BKException) t).getCode();
         } else if (t.getCause() != null) {
             return getExceptionCode(t.getCause(), defaultCode);
         } else {
             return defaultCode;
         }
+    }
+
+    /**
+     * Extract an exception code from an BKException, or default to unexpected exception if throwable
+     * is not a BKException.
+     */
+    public static int getExceptionCode(Throwable t) {
+        return getExceptionCode(t, Code.UnexpectedConditionException);
     }
 }

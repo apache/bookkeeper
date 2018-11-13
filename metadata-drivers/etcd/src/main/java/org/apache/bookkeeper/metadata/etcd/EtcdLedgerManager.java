@@ -37,18 +37,18 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.bookkeeper.client.BKException.Code;
+import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.LedgerMetadata;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.metadata.etcd.helpers.KeyIterator;
 import org.apache.bookkeeper.metadata.etcd.helpers.KeyStream;
 import org.apache.bookkeeper.metadata.etcd.helpers.ValueStream;
-import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.LedgerMetadataListener;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.Processor;
 import org.apache.bookkeeper.util.collections.ConcurrentLongHashMap;
@@ -103,9 +103,9 @@ class EtcdLedgerManager implements LedgerManager {
     }
 
     @Override
-    public void createLedgerMetadata(long ledgerId,
-                                     LedgerMetadata metadata,
-                                     GenericCallback<Versioned<LedgerMetadata>> cb) {
+    public CompletableFuture<Versioned<LedgerMetadata>> createLedgerMetadata(long ledgerId,
+                                                                             LedgerMetadata metadata) {
+        CompletableFuture<Versioned<LedgerMetadata>> promise = new CompletableFuture<>();
         String ledgerKey = EtcdUtils.getLedgerKey(scope, ledgerId);
         ByteSequence ledgerKeyBs = ByteSequence.fromString(ledgerKey);
         log.info("Create ledger metadata under key {}", ledgerKey);
@@ -129,36 +129,36 @@ class EtcdLedgerManager implements LedgerManager {
                     GetResponse getResp = resp.getGetResponses().get(0);
                     if (getResp.getCount() <= 0) {
                         // key doesn't exist but we fail to put the key
-                        cb.operationComplete(Code.UnexpectedConditionException, null);
+                        promise.completeExceptionally(new BKException.BKUnexpectedConditionException());
                     } else {
                         // key exists
-                        cb.operationComplete(Code.LedgerExistException, null);
+                        promise.completeExceptionally(new BKException.BKLedgerExistException());
                     }
                 } else {
-                    cb.operationComplete(Code.OK, new Versioned<>(metadata,
-                                                                  new LongVersion(resp.getHeader().getRevision())));
+                    promise.complete(new Versioned<>(metadata,
+                                                     new LongVersion(resp.getHeader().getRevision())));
                 }
             })
             .exceptionally(cause -> {
-                cb.operationComplete(Code.MetaStoreException, null);
-                return null;
-            });
+                    promise.completeExceptionally(new BKException.MetaStoreException());
+                    return null;
+                });
+        return promise;
     }
 
     @Override
-    public void removeLedgerMetadata(long ledgerId,
-                                     Version version,
-                                     GenericCallback<Void> cb) {
+    public CompletableFuture<Void> removeLedgerMetadata(long ledgerId, Version version) {
+        CompletableFuture<Void> promise = new CompletableFuture<>();
         long revision = -0xabcd;
         if (Version.NEW == version) {
             log.error("Request to delete ledger {} metadata with version set to the initial one", ledgerId);
-            cb.operationComplete(Code.MetadataVersionException, null);
-            return;
+            promise.completeExceptionally(new BKException.BKMetadataVersionException());
+            return promise;
         } else if (Version.ANY != version) {
             if (!(version instanceof LongVersion)) {
                 log.info("Not an instance of LongVersion : {}", ledgerId);
-                cb.operationComplete(Code.MetadataVersionException, null);
-                return;
+                promise.completeExceptionally(new BKException.BKMetadataVersionException());
+                return promise;
             } else {
                 revision = ((LongVersion) version).getLongVersion();
             }
@@ -192,26 +192,28 @@ class EtcdLedgerManager implements LedgerManager {
             .commit()
             .thenAccept(txnResp -> {
                 if (txnResp.isSucceeded()) {
-                    cb.operationComplete(Code.OK, null);
+                    promise.complete(null);
                 } else {
                     GetResponse getResp = txnResp.getGetResponses().get(0);
                     if (getResp.getCount() > 0) {
                         // fail to delete the ledger
-                        cb.operationComplete(Code.MetadataVersionException, null);
+                        promise.completeExceptionally(new BKException.BKMetadataVersionException());
                     } else {
                         log.warn("Deleting ledger {} failed due to : ledger key {} doesn't exist", ledgerId, ledgerKey);
-                        cb.operationComplete(Code.NoSuchLedgerExistsException, null);
+                        promise.completeExceptionally(new BKException.BKNoSuchLedgerExistsException());
                     }
                 }
             })
             .exceptionally(cause -> {
-                cb.operationComplete(Code.MetaStoreException, null);
-                return null;
-            });
+                    promise.completeExceptionally(new BKException.MetaStoreException());
+                    return null;
+                });
+        return promise;
     }
 
     @Override
-    public void readLedgerMetadata(long ledgerId, GenericCallback<Versioned<LedgerMetadata>> readCb) {
+    public CompletableFuture<Versioned<LedgerMetadata>> readLedgerMetadata(long ledgerId) {
+        CompletableFuture<Versioned<LedgerMetadata>> promise = new CompletableFuture<>();
         String ledgerKey = EtcdUtils.getLedgerKey(scope, ledgerId);
         ByteSequence ledgerKeyBs = ByteSequence.fromString(ledgerKey);
         log.info("read ledger metadata under key {}", ledgerKey);
@@ -222,29 +224,30 @@ class EtcdLedgerManager implements LedgerManager {
                     byte[] data = kv.getValue().getBytes();
                     try {
                         LedgerMetadata metadata = LedgerMetadata.parseConfig(data, Optional.absent());
-                        readCb.operationComplete(
-                                Code.OK, new Versioned<>(metadata, new LongVersion(kv.getModRevision())));
+                        promise.complete(new Versioned<>(metadata, new LongVersion(kv.getModRevision())));
                     } catch (IOException ioe) {
                         log.error("Could not parse ledger metadata for ledger : {}", ledgerId, ioe);
-                        readCb.operationComplete(Code.MetaStoreException, null);
+                        promise.completeExceptionally(new BKException.MetaStoreException());
                         return;
                     }
                 } else {
-                    readCb.operationComplete(Code.NoSuchLedgerExistsException, null);
+                    promise.completeExceptionally(new BKException.BKNoSuchLedgerExistsException());
                 }
             })
             .exceptionally(cause -> {
-                readCb.operationComplete(Code.MetaStoreException, null);
-                return null;
-            });
+                    promise.completeExceptionally(new BKException.MetaStoreException());
+                    return null;
+                });
+        return promise;
     }
 
     @Override
-    public void writeLedgerMetadata(long ledgerId, LedgerMetadata metadata,
-                                    Version currentVersion, GenericCallback<Versioned<LedgerMetadata>> cb) {
+    public CompletableFuture<Versioned<LedgerMetadata>> writeLedgerMetadata(long ledgerId, LedgerMetadata metadata,
+                                                                            Version currentVersion) {
+        CompletableFuture<Versioned<LedgerMetadata>> promise = new CompletableFuture<>();
         if (Version.NEW == currentVersion || !(currentVersion instanceof LongVersion)) {
-            cb.operationComplete(Code.MetadataVersionException, null);
-            return;
+            promise.completeExceptionally(new BKException.BKMetadataVersionException());
+            return promise;
         }
         final LongVersion lv = (LongVersion) currentVersion;
         String ledgerKey = EtcdUtils.getLedgerKey(scope, ledgerId);
@@ -264,24 +267,24 @@ class EtcdLedgerManager implements LedgerManager {
             .commit()
             .thenAccept(resp -> {
                 if (resp.isSucceeded()) {
-                    cb.operationComplete(
-                            Code.OK, new Versioned<>(metadata, new LongVersion(resp.getHeader().getRevision())));
+                    promise.complete(new Versioned<>(metadata, new LongVersion(resp.getHeader().getRevision())));
                 } else {
                     GetResponse getResp = resp.getGetResponses().get(0);
                     if (getResp.getCount() > 0) {
                         log.warn("Conditional update ledger metadata failed :"
                             + " expected version = {}, actual version = {}",
                             getResp.getKvs().get(0).getModRevision(), lv);
-                        cb.operationComplete(Code.MetadataVersionException, null);
+                        promise.completeExceptionally(new BKException.BKMetadataVersionException());
                     } else {
-                        cb.operationComplete(Code.NoSuchLedgerExistsException, null);
+                        promise.completeExceptionally(new BKException.BKNoSuchLedgerExistsException());
                     }
                 }
             })
             .exceptionally(cause -> {
-                cb.operationComplete(Code.MetaStoreException, null);
-                return null;
-            });
+                    promise.completeExceptionally(new BKException.MetaStoreException());
+                    return null;
+                });
+        return promise;
     }
 
     private LedgerMetadataConsumer listenerToConsumer(long ledgerId,

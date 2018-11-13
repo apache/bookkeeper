@@ -74,7 +74,7 @@ public class HandleFailuresTest {
         lh.appendAsync("entry4".getBytes());
         lh.appendAsync("entry5".getBytes()).get();
 
-        verify(clientCtx.getLedgerManager(), times(1)).writeLedgerMetadata(anyLong(), any(), any(), any());
+        verify(clientCtx.getLedgerManager(), times(1)).writeLedgerMetadata(anyLong(), any(), any());
         Assert.assertEquals(lh.getLedgerMetadata().getAllEnsembles().size(), 1);
         Assert.assertEquals(lh.getLedgerMetadata().getAllEnsembles().get(0L), Lists.newArrayList(b4, b2, b3));
     }
@@ -120,7 +120,7 @@ public class HandleFailuresTest {
         metadataBlocker.complete(null);
 
         future.get();
-        verify(clientCtx.getLedgerManager(), times(2)).writeLedgerMetadata(anyLong(), any(), any(), any());
+        verify(clientCtx.getLedgerManager(), times(2)).writeLedgerMetadata(anyLong(), any(), any());
         Assert.assertEquals(lh.getLedgerMetadata().getAllEnsembles().size(), 1);
         Assert.assertTrue(lh.getLedgerMetadata().getAllEnsembles().get(0L).contains(b3));
         Assert.assertTrue(lh.getLedgerMetadata().getAllEnsembles().get(0L).contains(b4));

@@ -29,6 +29,7 @@ import io.netty.buffer.Unpooled;
 
 import java.io.IOException;
 import java.util.Enumeration;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -94,19 +95,19 @@ public class ParallelLedgerRecoveryTest extends BookKeeperClusterTestCase {
         }
 
         @Override
-        public void createLedgerMetadata(long ledgerId, LedgerMetadata metadata,
-                                         GenericCallback<Versioned<LedgerMetadata>> cb) {
-            lm.createLedgerMetadata(ledgerId, metadata, cb);
+        public CompletableFuture<Versioned<LedgerMetadata>> createLedgerMetadata(
+                long ledgerId, LedgerMetadata metadata) {
+            return lm.createLedgerMetadata(ledgerId, metadata);
         }
 
         @Override
-        public void removeLedgerMetadata(long ledgerId, Version version, GenericCallback<Void> cb) {
-            lm.removeLedgerMetadata(ledgerId, version, cb);
+        public CompletableFuture<Void> removeLedgerMetadata(long ledgerId, Version version) {
+            return lm.removeLedgerMetadata(ledgerId, version);
         }
 
         @Override
-        public void readLedgerMetadata(long ledgerId, GenericCallback<Versioned<LedgerMetadata>> readCb) {
-            lm.readLedgerMetadata(ledgerId, readCb);
+        public CompletableFuture<Versioned<LedgerMetadata>> readLedgerMetadata(long ledgerId) {
+            return lm.readLedgerMetadata(ledgerId);
         }
 
         @Override
@@ -115,11 +116,11 @@ public class ParallelLedgerRecoveryTest extends BookKeeperClusterTestCase {
         }
 
         @Override
-        public void writeLedgerMetadata(long ledgerId, LedgerMetadata metadata,
-                                        Version currentVersion,
-                                        GenericCallback<Versioned<LedgerMetadata>> cb) {
+        public CompletableFuture<Versioned<LedgerMetadata>> writeLedgerMetadata(long ledgerId, LedgerMetadata metadata,
+                                                                                Version currentVersion) {
             final CountDownLatch cdl = waitLatch;
             if (null != cdl) {
+                CompletableFuture<Versioned<LedgerMetadata>> promise = new CompletableFuture<>();
                 executorService.submit(new Runnable() {
                     @Override
                     public void run() {
@@ -129,11 +130,19 @@ public class ParallelLedgerRecoveryTest extends BookKeeperClusterTestCase {
                             Thread.currentThread().interrupt();
                             LOG.error("Interrupted on waiting latch : ", e);
                         }
-                        lm.writeLedgerMetadata(ledgerId, metadata, currentVersion, cb);
+                        lm.writeLedgerMetadata(ledgerId, metadata, currentVersion)
+                            .whenComplete((metadata, exception) -> {
+                                    if (exception != null) {
+                                        promise.completeExceptionally(exception);
+                                    } else {
+                                        promise.complete(metadata);
+                                    }
+                                });
                     }
                 });
+                return promise;
             } else {
-                lm.writeLedgerMetadata(ledgerId, metadata, currentVersion, cb);
+                return lm.writeLedgerMetadata(ledgerId, metadata, currentVersion);
             }
         }
 
