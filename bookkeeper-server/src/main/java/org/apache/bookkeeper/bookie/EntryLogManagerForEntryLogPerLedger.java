@@ -642,7 +642,7 @@ class EntryLogManagerForEntryLogPerLedger extends EntryLogManagerBase {
                 }
                 createNewLog(ledgerId,
                     ": diskFull = " + diskFull + ", allDisksFull = " + allDisksFull
-                        + ", reachEntryLogLimit = " + reachEntryLogLimit);
+                        + ", reachEntryLogLimit = " + reachEntryLogLimit + ", logChannel = " + logChannel);
             }
 
             return getCurrentLogForLedger(ledgerId);
