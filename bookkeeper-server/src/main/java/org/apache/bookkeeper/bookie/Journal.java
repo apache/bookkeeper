@@ -870,27 +870,29 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
         }
     }
 
-    public void logAddEntry(ByteBuffer entry, boolean ackBeforeSync, WriteCallback cb, Object ctx) {
+    public void logAddEntry(ByteBuffer entry, boolean ackBeforeSync, WriteCallback cb, Object ctx)
+            throws InterruptedException {
         logAddEntry(Unpooled.wrappedBuffer(entry), ackBeforeSync, cb, ctx);
     }
 
     /**
      * record an add entry operation in journal.
      */
-    public void logAddEntry(ByteBuf entry, boolean ackBeforeSync, WriteCallback cb, Object ctx) {
+    public void logAddEntry(ByteBuf entry, boolean ackBeforeSync, WriteCallback cb, Object ctx)
+            throws InterruptedException {
         long ledgerId = entry.getLong(entry.readerIndex() + 0);
         long entryId = entry.getLong(entry.readerIndex() + 8);
         logAddEntry(ledgerId, entryId, entry, ackBeforeSync, cb, ctx);
     }
 
     @VisibleForTesting
-    void logAddEntry(long ledgerId, long entryId, ByteBuf entry,
-                     boolean ackBeforeSync, WriteCallback cb, Object ctx) {
+    void logAddEntry(long ledgerId, long entryId, ByteBuf entry, boolean ackBeforeSync, WriteCallback cb, Object ctx)
+            throws InterruptedException {
         //Retain entry until it gets written to journal
         entry.retain();
 
         journalQueueSize.inc();
-        queue.add(QueueEntry.create(
+        queue.put(QueueEntry.create(
                 entry, ackBeforeSync,  ledgerId, entryId, cb, ctx, MathUtils.nowInNano(),
                 journalAddEntryStats, journalQueueSize));
     }

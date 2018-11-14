@@ -1133,7 +1133,7 @@ public class Bookie extends BookieCriticalThread {
      */
     private void addEntryInternal(LedgerDescriptor handle, ByteBuf entry,
                                   boolean ackBeforeSync, WriteCallback cb, Object ctx, byte[] masterKey)
-            throws IOException, BookieException {
+            throws IOException, BookieException, InterruptedException {
         long ledgerId = handle.getLedgerId();
         long entryId = handle.addEntry(entry);
 
@@ -1170,7 +1170,7 @@ public class Bookie extends BookieCriticalThread {
      * is not exposed to users.
      */
     public void recoveryAddEntry(ByteBuf entry, WriteCallback cb, Object ctx, byte[] masterKey)
-            throws IOException, BookieException {
+            throws IOException, BookieException, InterruptedException {
         long requestNanos = MathUtils.nowInNano();
         boolean success = false;
         int entrySize = 0;
@@ -1208,7 +1208,7 @@ public class Bookie extends BookieCriticalThread {
     }
 
     public void setExplicitLac(ByteBuf entry, WriteCallback writeCallback, Object ctx, byte[] masterKey)
-            throws IOException, BookieException {
+            throws IOException, InterruptedException, BookieException {
         try {
             long ledgerId = entry.getLong(entry.readerIndex());
             LedgerDescriptor handle = handles.getHandle(ledgerId, masterKey);
@@ -1254,7 +1254,7 @@ public class Bookie extends BookieCriticalThread {
      * @throws BookieException.LedgerFencedException if the ledger is fenced
      */
     public void addEntry(ByteBuf entry, boolean ackBeforeSync, WriteCallback cb, Object ctx, byte[] masterKey)
-            throws IOException, BookieException.LedgerFencedException, BookieException {
+            throws IOException, BookieException.LedgerFencedException, BookieException, InterruptedException {
         long requestNanos = MathUtils.nowInNano();
         boolean success = false;
         int entrySize = 0;
@@ -1313,7 +1313,8 @@ public class Bookie extends BookieCriticalThread {
      * This method is idempotent. Once a ledger is fenced, it can
      * never be unfenced. Fencing a fenced ledger has no effect.
      */
-    public SettableFuture<Boolean> fenceLedger(long ledgerId, byte[] masterKey) throws IOException, BookieException {
+    public SettableFuture<Boolean> fenceLedger(long ledgerId, byte[] masterKey)
+            throws IOException, BookieException {
         LedgerDescriptor handle = handles.getHandle(ledgerId, masterKey);
         return handle.fenceAndLogInJournal(getJournal(ledgerId));
     }
