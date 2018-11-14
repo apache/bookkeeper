@@ -111,6 +111,11 @@ class WriteLacProcessorV3 extends PacketProcessorBaseV3 implements Runnable {
             logger.error("Error saving lac {} for ledger:{}",
                     lac, ledgerId, e);
             status = StatusCode.EIO;
+        } catch (InterruptedException  e) {
+            Thread.currentThread().interrupt();
+            logger.error("Interrupted while saving lac {} for ledger:{}",
+                    lac, ledgerId, e);
+            status = StatusCode.EIO;
         } catch (BookieException e) {
             logger.error("Unauthorized access to ledger:{} while adding lac:{}",
                     ledgerId, lac, e);
