@@ -18,7 +18,7 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":10,"i1":10,"i2":10};
+var methods = {"i0":10,"i1":10,"i2":10,"i3":10};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -185,12 +185,18 @@ implements <a href="../../../../org/apache/bookkeeper/stats/StatsProvider.html" 
 </td>
 </tr>
 <tr id="i1" class="rowColor">
+<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/stats/CachingStatsProvider.html#getStatsName-java.lang.String...-">getStatsName</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>...&nbsp;statsComponents)</code>
+<div class="block">Return the fully qualified stats name comprised of given <tt>statsComponents</tt>.</div>
+</td>
+</tr>
+<tr id="i2" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/stats/CachingStatsProvider.html#start-org.apache.commons.configuration.Configuration-">start</a></span>(org.apache.commons.configuration.Configuration&nbsp;conf)</code>
 <div class="block">Intialize the stats provider by loading the given configuration <i>conf</i>.</div>
 </td>
 </tr>
-<tr id="i2" class="altColor">
+<tr id="i3" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/stats/CachingStatsProvider.html#stop--">stop</a></span>()</code>
 <div class="block">Close the stats provider.</div>
@@ -303,7 +309,7 @@ implements <a href="../../../../org/apache/bookkeeper/stats/StatsProvider.html" 
 <a name="getStatsLogger-java.lang.String-">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>getStatsLogger</h4>
 <pre>public&nbsp;<a href="../../../../org/apache/bookkeeper/stats/StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;getStatsLogger(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;scope)</pre>
@@ -316,6 +322,25 @@ implements <a href="../../../../org/apache/bookkeeper/stats/StatsProvider.html" 
 <dd><code>scope</code> - Scope for the given stats</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>stats logger for the given <i>scope</i></dd>
+</dl>
+</li>
+</ul>
+<a name="getStatsName-java.lang.String...-">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>getStatsName</h4>
+<pre>public&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;getStatsName(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>...&nbsp;statsComponents)</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from interface:&nbsp;<code><a href="../../../../org/apache/bookkeeper/stats/StatsProvider.html#getStatsName-java.lang.String...-">StatsProvider</a></code></span></div>
+<div class="block">Return the fully qualified stats name comprised of given <tt>statsComponents</tt>.</div>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="../../../../org/apache/bookkeeper/stats/StatsProvider.html#getStatsName-java.lang.String...-">getStatsName</a></code>&nbsp;in interface&nbsp;<code><a href="../../../../org/apache/bookkeeper/stats/StatsProvider.html" title="interface in org.apache.bookkeeper.stats">StatsProvider</a></code></dd>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>statsComponents</code> - stats components to comprise the fully qualified stats name</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>the fully qualified stats name</dd>
 </dl>
 </li>
 </ul>
