@@ -77,7 +77,8 @@ public class DbLedgerStorage implements LedgerStorage {
 
     private static final int MB = 1024 * 1024;
 
-    private static final long DEFAULT_WRITE_CACHE_MAX_SIZE_MB = (long) (0.25 * PlatformDependent.maxDirectMemory()) / MB;
+    private static final long DEFAULT_WRITE_CACHE_MAX_SIZE_MB = (long) (0.25 * PlatformDependent.maxDirectMemory())
+            / MB;
     private static final long DEFAULT_READ_CACHE_MAX_SIZE_MB = (long) (0.25 * PlatformDependent.maxDirectMemory()) / MB;
     private int numberOfDirs;
     private List<SingleDirectoryDbLedgerStorage> ledgerStorageList;
