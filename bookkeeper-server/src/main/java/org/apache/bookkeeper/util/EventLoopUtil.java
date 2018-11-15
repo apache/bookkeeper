@@ -27,9 +27,9 @@ import java.util.concurrent.ThreadFactory;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 
+import org.apache.bookkeeper.common.util.affinity.CpuAffinity;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.common.util.affinity.CpuAffinity;
 import org.apache.commons.lang.SystemUtils;
 
 
