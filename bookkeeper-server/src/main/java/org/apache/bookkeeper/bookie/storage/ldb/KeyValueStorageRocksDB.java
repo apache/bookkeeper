@@ -24,6 +24,10 @@ import static com.google.common.base.Preconditions.checkState;
 
 import com.google.common.primitives.UnsignedBytes;
 
+//CHECKSTYLE.OFF: IllegalImport
+import io.netty.util.internal.PlatformDependent;
+//CHECKSTYLE.ON: IllegalImport
+
 import java.io.IOException;
 import java.util.Comparator;
 import java.util.Map.Entry;
@@ -97,13 +101,16 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
             options.setCreateIfMissing(true);
 
             if (dbConfigType == DbConfigType.Huge) {
+                // Set default RocksDB block-cache size to 10% of direct mem, unless override
+                long defaultRocksDBBlockCacheSizeBytes = PlatformDependent.maxDirectMemory() / 10;
+
                 long writeBufferSizeMB = conf.getInt(ROCKSDB_WRITE_BUFFER_SIZE_MB, 64);
                 long sstSizeMB = conf.getInt(ROCKSDB_SST_SIZE_MB, 64);
                 int numLevels = conf.getInt(ROCKSDB_NUM_LEVELS, -1);
                 int numFilesInLevel0 = conf.getInt(ROCKSDB_NUM_FILES_IN_LEVEL0, 4);
                 long maxSizeInLevel1MB = conf.getLong(ROCKSDB_MAX_SIZE_IN_LEVEL1_MB, 256);
                 int blockSize = conf.getInt(ROCKSDB_BLOCK_SIZE, 64 * 1024);
-                long blockCacheSize = conf.getLong(ROCKSDB_BLOCK_CACHE_SIZE, 256 * 1024 * 1024);
+                long blockCacheSize = conf.getLong(ROCKSDB_BLOCK_CACHE_SIZE, defaultRocksDBBlockCacheSizeBytes);
                 int bloomFilterBitsPerKey = conf.getInt(ROCKSDB_BLOOM_FILTERS_BITS_PER_KEY, 10);
                 boolean lz4CompressionEnabled = conf.getBoolean(ROCKSDB_LZ4_COMPRESSION_ENABLED, true);
 

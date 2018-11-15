@@ -28,6 +28,9 @@ import com.google.common.collect.Lists;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.util.concurrent.DefaultThreadFactory;
+//CHECKSTYLE.OFF: IllegalImport
+import io.netty.util.internal.PlatformDependent;
+//CHECKSTYLE.ON: IllegalImport
 
 import java.io.File;
 import java.io.IOException;
@@ -72,11 +75,10 @@ public class DbLedgerStorage implements LedgerStorage {
 
     static final String MAX_THROTTLE_TIME_MILLIS = "dbStorage_maxThrottleTimeMs";
 
-    private static final long DEFAULT_WRITE_CACHE_MAX_SIZE_MB = 16;
-    private static final long DEFAULT_READ_CACHE_MAX_SIZE_MB = 16;
-
     private static final int MB = 1024 * 1024;
 
+    private static final long DEFAULT_WRITE_CACHE_MAX_SIZE_MB = (long) (0.25 * PlatformDependent.maxDirectMemory()) / MB;
+    private static final long DEFAULT_READ_CACHE_MAX_SIZE_MB = (long) (0.25 * PlatformDependent.maxDirectMemory()) / MB;
     private int numberOfDirs;
     private List<SingleDirectoryDbLedgerStorage> ledgerStorageList;
 
