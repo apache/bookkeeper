@@ -1049,8 +1049,8 @@ public class BookieShell implements Tool {
                                                         }
                                                     }
                                                     cb.processResult(BKException.Code.OK, null, null);
-                                                } else if (exception
-                                                           instanceof BKException.BKNoSuchLedgerExistsException) {
+                                                } else if (BKException.getExceptionCode(exception)
+                                                           == BKException.Code.NoSuchLedgerExistsException) {
                                                     cb.processResult(BKException.Code.OK, null, null);
                                                 } else {
                                                     LOG.error("Unable to read the ledger: {} information", ledgerId);

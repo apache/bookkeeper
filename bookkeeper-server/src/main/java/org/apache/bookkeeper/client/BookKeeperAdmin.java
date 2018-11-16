@@ -491,7 +491,8 @@ public class BookKeeperAdmin implements AutoCloseable {
             public void process(final Long lid, final AsyncCallback.VoidCallback cb) {
                 bkc.getLedgerManager().readLedgerMetadata(lid)
                     .whenComplete((metadata, exception) -> {
-                            if (exception instanceof BKException.BKNoSuchLedgerExistsException) {
+                            if (BKException.getExceptionCode(exception)
+                                == BKException.Code.NoSuchLedgerExistsException) {
                                 // the ledger was deleted during this iteration.
                                 cb.processResult(BKException.Code.OK, null, null);
                                 return;

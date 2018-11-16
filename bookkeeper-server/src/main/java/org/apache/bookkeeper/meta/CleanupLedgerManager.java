@@ -29,6 +29,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.LedgerMetadata;
+import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.LedgerMetadataListener;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.Processor;
@@ -76,11 +77,6 @@ public class CleanupLedgerManager implements LedgerManager {
         }
     }
 
-    private static final CompletableFuture<Versioned<LedgerMetadata>> closedPromise = new CompletableFuture<>();
-    static {
-        closedPromise.completeExceptionally(new BKException.BKClientClosedException());
-    }
-
     private final LedgerManager underlying;
     private final ConcurrentMap<GenericCallback, GenericCallback> callbacks =
         new ConcurrentHashMap<GenericCallback, GenericCallback>();
@@ -125,7 +121,7 @@ public class CleanupLedgerManager implements LedgerManager {
         closeLock.readLock().lock();
         try {
             if (closed) {
-                return closedPromise;
+                return closedPromise();
             } else {
                 CompletableFuture<Versioned<LedgerMetadata>> promise = underlying.createLedgerMetadata(lid, metadata);
                 recordPromise(promise);
@@ -141,7 +137,7 @@ public class CleanupLedgerManager implements LedgerManager {
         closeLock.readLock().lock();
         try {
             if (closed) {
-                return closedPromise.thenApply((res) -> (Void) null);
+                return closedPromise();
             }
             CompletableFuture<Void> promise = underlying.removeLedgerMetadata(ledgerId, version);
             recordPromise(promise);
@@ -156,7 +152,7 @@ public class CleanupLedgerManager implements LedgerManager {
         closeLock.readLock().lock();
         try {
             if (closed) {
-                return closedPromise;
+                return closedPromise();
             }
             CompletableFuture<Versioned<LedgerMetadata>> promise = underlying.readLedgerMetadata(ledgerId);
             recordPromise(promise);
@@ -172,7 +168,7 @@ public class CleanupLedgerManager implements LedgerManager {
         closeLock.readLock().lock();
         try {
             if (closed) {
-                return closedPromise;
+                return closedPromise();
             }
             CompletableFuture<Versioned<LedgerMetadata>> promise =
                 underlying.writeLedgerMetadata(ledgerId, metadata, currentVersion);
@@ -250,5 +246,9 @@ public class CleanupLedgerManager implements LedgerManager {
         futures.forEach((f) -> f.completeExceptionally(exception));
         futures.clear();
         underlying.close();
+    }
+
+    private static <T> CompletableFuture<T> closedPromise() {
+        return FutureUtils.exception(new BKException.BKClientClosedException());
     }
 }

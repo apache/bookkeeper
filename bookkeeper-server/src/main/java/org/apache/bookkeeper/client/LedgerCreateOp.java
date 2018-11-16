@@ -191,7 +191,8 @@ class LedgerCreateOp {
      */
     private void metadataCallback(Versioned<LedgerMetadata> writtenMetadata, Throwable exception) {
         if (exception != null) {
-            if (this.generateLedgerId && (exception instanceof BKException.BKLedgerExistException)) {
+            if (this.generateLedgerId
+                && (BKException.getExceptionCode(exception) == BKException.Code.LedgerExistException)) {
                 // retry to generate a new ledger id
                 generateLedgerIdAndCreateLedger();
             } else {

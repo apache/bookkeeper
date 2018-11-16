@@ -75,7 +75,8 @@ public class BookieLedgerIndexer {
                                         }
                                     }
                                     iterCallback.processResult(BKException.Code.OK, null, null);
-                                } else if (exception instanceof BKException.BKNoSuchLedgerExistsException) {
+                                } else if (BKException.getExceptionCode(exception)
+                                           == BKException.Code.NoSuchLedgerExistsException) {
                                     LOG.info("Ignoring replication of already deleted ledger {}", ledgerId);
                                     iterCallback.processResult(BKException.Code.OK, null, null);
                                 } else {

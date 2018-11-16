@@ -263,7 +263,7 @@ public class MSLedgerManagerFactory extends AbstractZkLedgerManagerFactory {
                                 }
                             });
                     }
-                } else if (exception instanceof BKException.BKNoSuchLedgerExistsException) {
+                } else if (BKException.getExceptionCode(exception) == BKException.Code.NoSuchLedgerExistsException) {
                     // the ledger is removed, do nothing
                     Set<LedgerMetadataListener> listenerSet = listeners.remove(ledgerId);
                     if (null != listenerSet) {
@@ -273,7 +273,8 @@ public class MSLedgerManagerFactory extends AbstractZkLedgerManagerFactory {
                         }
                     }
                 } else {
-                    LOG.warn("Failed on read ledger metadata of ledger {}", ledgerId, exception);
+                    LOG.warn("Failed on read ledger metadata of ledger {}: {}",
+                             ledgerId, BKException.getExceptionCode(exception));
                     scheduler.schedule(this, MS_CONNECT_BACKOFF_MS, TimeUnit.MILLISECONDS);
                 }
             }
