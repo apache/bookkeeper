@@ -98,11 +98,32 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
                            Checkpointer checkpointer,
                            StatsLogger statsLogger)
             throws IOException {
+        initializeWithEntryLogListener(
+            conf,
+            ledgerManager,
+            ledgerDirsManager,
+            indexDirsManager,
+            stateManager,
+            checkpointSource,
+            checkpointer,
+            this,
+            statsLogger);
+    }
+
+    void initializeWithEntryLogListener(ServerConfiguration conf,
+                                        LedgerManager ledgerManager,
+                                        LedgerDirsManager ledgerDirsManager,
+                                        LedgerDirsManager indexDirsManager,
+                                        StateManager stateManager,
+                                        CheckpointSource checkpointSource,
+                                        Checkpointer checkpointer,
+                                        EntryLogListener entryLogListener,
+                                        StatsLogger statsLogger) throws IOException {
         checkNotNull(checkpointSource, "invalid null checkpoint source");
         checkNotNull(checkpointer, "invalid null checkpointer");
         this.checkpointSource = checkpointSource;
         this.checkpointer = checkpointer;
-        entryLogger = new EntryLogger(conf, ledgerDirsManager, this, statsLogger.scope(ENTRYLOGGER_SCOPE));
+        entryLogger = new EntryLogger(conf, ledgerDirsManager, entryLogListener, statsLogger.scope(ENTRYLOGGER_SCOPE));
         ledgerCache = new LedgerCacheImpl(conf, activeLedgers,
                 null == indexDirsManager ? ledgerDirsManager : indexDirsManager, statsLogger);
         gcThread = new GarbageCollectorThread(conf, ledgerManager, this, statsLogger.scope("gc"));
