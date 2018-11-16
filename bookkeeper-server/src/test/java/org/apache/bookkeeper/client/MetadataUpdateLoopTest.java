@@ -416,9 +416,9 @@ public class MetadataUpdateLoopTest {
             deferred.forEach((d) -> {
                     Throwable t = d.getRight();
                     if (t != null) {
-                        d.getLeft().complete(d.getMiddle());
-                    } else {
                         d.getLeft().completeExceptionally(t);
+                    } else {
+                        d.getLeft().complete(d.getMiddle());
                     }
                 });
         }
