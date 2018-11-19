@@ -29,11 +29,8 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.SortedMap;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
 import org.apache.bookkeeper.bookie.GarbageCollector.GarbageCleaner;
-import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.LedgerMetadata;
@@ -45,10 +42,8 @@ import org.apache.bookkeeper.meta.ZkLedgerUnderreplicationManager;
 import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieServer;
-import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.util.SnapshotMap;
-import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.zookeeper.ZooDefs;
 import org.junit.Assert;
 import org.junit.Before;
@@ -85,23 +80,9 @@ public class TestGcOverreplicatedLedger extends LedgerManagerTestCase {
         LedgerHandle lh = bkc.createLedger(2, 2, DigestType.MAC, "".getBytes());
         activeLedgers.put(lh.getId(), true);
 
-        final AtomicReference<LedgerMetadata> newLedgerMetadata = new AtomicReference<>(null);
-        final CountDownLatch latch = new CountDownLatch(1);
-        ledgerManager.readLedgerMetadata(lh.getId(), new GenericCallback<Versioned<LedgerMetadata>>() {
+        LedgerMetadata newLedgerMetadata = ledgerManager.readLedgerMetadata(lh.getId()).get().getValue();
 
-            @Override
-            public void operationComplete(int rc, Versioned<LedgerMetadata> result) {
-                if (rc == BKException.Code.OK) {
-                    newLedgerMetadata.set(result.getValue());
-                }
-                latch.countDown();
-            }
-        });
-        latch.await();
-        if (newLedgerMetadata.get() == null) {
-            Assert.fail("No ledger metadata found");
-        }
-        BookieSocketAddress bookieNotInEnsemble = getBookieNotInEnsemble(newLedgerMetadata.get());
+        BookieSocketAddress bookieNotInEnsemble = getBookieNotInEnsemble(newLedgerMetadata);
         ServerConfiguration bkConf = getBkConf(bookieNotInEnsemble);
         bkConf.setGcOverreplicatedLedgerWaitTime(10, TimeUnit.MILLISECONDS);
 
@@ -132,24 +113,9 @@ public class TestGcOverreplicatedLedger extends LedgerManagerTestCase {
         LedgerHandle lh = bkc.createLedger(2, 2, DigestType.MAC, "".getBytes());
         activeLedgers.put(lh.getId(), true);
 
-        final AtomicReference<LedgerMetadata> newLedgerMetadata = new AtomicReference<>(null);
-        final CountDownLatch latch = new CountDownLatch(1);
-        ledgerManager.readLedgerMetadata(lh.getId(), new GenericCallback<Versioned<LedgerMetadata>>() {
-
-            @Override
-            public void operationComplete(int rc, Versioned<LedgerMetadata> result) {
-                if (rc == BKException.Code.OK) {
-                    newLedgerMetadata.set(result.getValue());
-                }
-                latch.countDown();
-            }
-        });
-        latch.await();
-        if (newLedgerMetadata.get() == null) {
-            Assert.fail("No ledger metadata found");
-        }
+        LedgerMetadata newLedgerMetadata = ledgerManager.readLedgerMetadata(lh.getId()).get().getValue();
         BookieSocketAddress address = null;
-        SortedMap<Long, ? extends List<BookieSocketAddress>> ensembleMap = newLedgerMetadata.get().getAllEnsembles();
+        SortedMap<Long, ? extends List<BookieSocketAddress>> ensembleMap = newLedgerMetadata.getAllEnsembles();
         for (List<BookieSocketAddress> ensemble : ensembleMap.values()) {
             address = ensemble.get(0);
         }
@@ -183,23 +149,8 @@ public class TestGcOverreplicatedLedger extends LedgerManagerTestCase {
         LedgerHandle lh = bkc.createLedger(2, 2, DigestType.MAC, "".getBytes());
         activeLedgers.put(lh.getId(), true);
 
-        final AtomicReference<LedgerMetadata> newLedgerMetadata = new AtomicReference<>(null);
-        final CountDownLatch latch = new CountDownLatch(1);
-        ledgerManager.readLedgerMetadata(lh.getId(), new GenericCallback<Versioned<LedgerMetadata>>() {
-
-            @Override
-            public void operationComplete(int rc, Versioned<LedgerMetadata> result) {
-                if (rc == BKException.Code.OK) {
-                    newLedgerMetadata.set(result.getValue());
-                }
-                latch.countDown();
-            }
-        });
-        latch.await();
-        if (newLedgerMetadata.get() == null) {
-            Assert.fail("No ledger metadata found");
-        }
-        BookieSocketAddress bookieNotInEnsemble = getBookieNotInEnsemble(newLedgerMetadata.get());
+        LedgerMetadata newLedgerMetadata = ledgerManager.readLedgerMetadata(lh.getId()).get().getValue();
+        BookieSocketAddress bookieNotInEnsemble = getBookieNotInEnsemble(newLedgerMetadata);
         ServerConfiguration bkConf = getBkConf(bookieNotInEnsemble);
         bkConf.setGcOverreplicatedLedgerWaitTime(10, TimeUnit.MILLISECONDS);
 

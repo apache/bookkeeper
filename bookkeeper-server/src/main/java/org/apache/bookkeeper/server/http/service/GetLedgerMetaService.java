@@ -65,10 +65,7 @@ public class GetLedgerMetaService implements HttpEndpointService {
 
             // output <ledgerId: ledgerMetadata>
             Map<String, String> output = Maps.newHashMap();
-            ListLedgerService.ReadLedgerMetadataCallback cb =
-              new ListLedgerService.ReadLedgerMetadataCallback(ledgerId);
-            manager.readLedgerMetadata(ledgerId, cb);
-            LedgerMetadata md = cb.get();
+            LedgerMetadata md = manager.readLedgerMetadata(ledgerId).get().getValue();
             output.put(ledgerId.toString(), new String(md.serialize(), UTF_8));
 
             manager.close();
