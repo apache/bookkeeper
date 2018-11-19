@@ -25,22 +25,21 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import java.util.Optional;
-import java.util.Queue;
 import java.util.Random;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -49,14 +48,11 @@ import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.LedgerMetadata;
 import org.apache.bookkeeper.meta.LedgerManager.LedgerRangeIterator;
 import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
-import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.util.MathUtils;
 import org.apache.bookkeeper.util.ZkUtils;
 import org.apache.bookkeeper.versioning.Version;
-import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.ZooDefs;
-import org.junit.After;
 import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Test;
@@ -69,100 +65,15 @@ public class LedgerManagerIteratorTest extends LedgerManagerTestCase {
         super(lmFactoryCls);
     }
 
-    final Queue<Throwable> exceptions = new ConcurrentLinkedQueue<>();
-
-    Runnable safeWrapper(Runnable r) {
-        return () -> {
-            try {
-                r.run();
-            } catch (Throwable e) {
-                exceptions.add(e);
-            }
-        };
-    }
-
-    @After
-    public void throwAsyncErrors() throws Throwable {
-        while (exceptions.peek() != null) {
-            throw exceptions.remove();
-        }
-    }
-
-    class RCCheckCB implements GenericCallback<Versioned<LedgerMetadata>> {
-        private final String opType;
-        private final CountDownLatch latch;
-        private final Optional<Integer> rcExpected;
-        private final long ledgerId;
-
-        public RCCheckCB(String opType, CountDownLatch latch, Optional<Integer> rcExpected, long ledgerId) {
-            this.opType = opType;
-            this.latch = latch;
-            this.rcExpected = rcExpected;
-            this.ledgerId = ledgerId;
-        }
-
-        @Override
-        public void operationComplete(int rc, Versioned<LedgerMetadata> writtenMetadata) {
-            safeWrapper(() -> {
-                try {
-                    rcExpected.map((Integer expected) -> {
-                        assertEquals(
-                                "Incorrect rc on ledger: " + ledgerId + ", op type: " + opType,
-                                expected.longValue(), rc);
-                        return null;
-                    });
-                } finally {
-                    latch.countDown();
-                }
-            }).run();
-        }
-    }
-
-    class VoidRCCheckCB implements GenericCallback<Void> {
-        private final String opType;
-        private final CountDownLatch latch;
-        private final Optional<Integer> rcExpected;
-        private final long ledgerId;
-
-        public VoidRCCheckCB(String opType, CountDownLatch latch, Optional<Integer> rcExpected, long ledgerId) {
-            this.opType = opType;
-            this.latch = latch;
-            this.rcExpected = rcExpected;
-            this.ledgerId = ledgerId;
-        }
-
-        @Override
-        public void operationComplete(int rc, Void result) {
-            safeWrapper(() -> {
-                try {
-                    rcExpected.map((Integer expected) -> {
-                        assertEquals(
-                                "Incorrect rc on ledger: " + ledgerId + ", op type: " + opType,
-                                expected.longValue(), rc);
-                        return null;
-                    });
-                } finally {
-                    latch.countDown();
-                }
-            }).run();
-        }
-    }
-
     /**
      * Remove ledger using lm syncronously.
      *
      * @param lm
      * @param ledgerId
-     * @param rcExpected return value expected, -1 to ignore
      * @throws InterruptedException
      */
-    void removeLedger(LedgerManager lm, Long ledgerId, Optional<Integer> rcExpected) throws Throwable {
-        CountDownLatch latch = new CountDownLatch(1);
-        lm.removeLedgerMetadata(
-                ledgerId, Version.ANY, new VoidRCCheckCB("removeLedger", latch, rcExpected, ledgerId));
-        latch.await();
-        throwAsyncErrors();
-
+    void removeLedger(LedgerManager lm, Long ledgerId) throws Exception {
+        lm.removeLedgerMetadata(ledgerId, Version.ANY).get();
     }
 
     /**
@@ -170,18 +81,13 @@ public class LedgerManagerIteratorTest extends LedgerManagerTestCase {
      *
      * @param lm
      * @param ledgerId
-     * @param rcExpected return value expected, -1 to ignore
      * @throws InterruptedException
      */
-    void createLedger(LedgerManager lm, Long ledgerId, Optional<Integer> rcExpected) throws Throwable {
+    void createLedger(LedgerManager lm, Long ledgerId) throws Exception {
         LedgerMetadata meta = new LedgerMetadata(
                 3, 3, 2,
                 BookKeeper.DigestType.CRC32, "passwd".getBytes());
-        CountDownLatch latch = new CountDownLatch(1);
-        lm.createLedgerMetadata(
-                ledgerId, meta, new RCCheckCB("createLedger", latch, rcExpected, ledgerId));
-        latch.await();
-        throwAsyncErrors();
+        lm.createLedgerMetadata(ledgerId, meta).get();
     }
 
     static Set<Long> ledgerRangeToSet(LedgerRangeIterator lri) throws IOException {
@@ -232,7 +138,7 @@ public class LedgerManagerIteratorTest extends LedgerManagerTestCase {
         LedgerManager lm = getLedgerManager();
 
         long id = 2020202;
-        createLedger(lm, id, Optional.of(BKException.Code.OK));
+        createLedger(lm, id);
 
         LedgerRangeIterator lri = lm.getLedgerRanges();
         assertNotNull(lri);
@@ -250,7 +156,7 @@ public class LedgerManagerIteratorTest extends LedgerManagerTestCase {
 
         Set<Long> ids = new TreeSet<>(Arrays.asList(101010101L, 2020340302L));
         for (Long id: ids) {
-            createLedger(lm, id, Optional.of(BKException.Code.OK));
+            createLedger(lm, id);
         }
 
         LedgerRangeIterator lri = lm.getLedgerRanges();
@@ -268,7 +174,7 @@ public class LedgerManagerIteratorTest extends LedgerManagerTestCase {
 
         Set<Long> ids = new TreeSet<>();
         for (long i = 0; i < 2000; ++i) {
-            createLedger(lm, i, Optional.of(BKException.Code.OK));
+            createLedger(lm, i);
             ids.add(i);
         }
 
@@ -312,7 +218,7 @@ public class LedgerManagerIteratorTest extends LedgerManagerTestCase {
         ids.addAll(toRemove);
         ids.addAll(mustHave);
         for (Long id: ids) {
-            createLedger(lm, id, Optional.of(BKException.Code.OK));
+            createLedger(lm, id);
         }
 
         Set<Long> found = new TreeSet<>();
@@ -323,7 +229,7 @@ public class LedgerManagerIteratorTest extends LedgerManagerTestCase {
 
             if (lr.getLedgers().contains(first)) {
                 for (long id: toRemove) {
-                    removeLedger(lm, id, Optional.of(BKException.Code.OK));
+                    removeLedger(lm, id);
                 }
                 toRemove.clear();
             }
@@ -349,7 +255,7 @@ public class LedgerManagerIteratorTest extends LedgerManagerTestCase {
                         6334994393848474732L,
                         7349370101927398483L));
         for (Long id: ids) {
-            createLedger(lm, id, Optional.of(BKException.Code.OK));
+            createLedger(lm, id);
         }
 
         String paths[] = {
@@ -396,7 +302,7 @@ public class LedgerManagerIteratorTest extends LedgerManagerTestCase {
                         6334994393848474732L,
                         7349370101927398483L));
         for (Long id: ids) {
-            createLedger(lm, id, Optional.of(BKException.Code.OK));
+            createLedger(lm, id);
         }
 
         String paths[] = {
@@ -439,56 +345,45 @@ public class LedgerManagerIteratorTest extends LedgerManagerTestCase {
             if (!longRange) {
                 lid %= 1000000;
             }
-            createLedger(lm, lid, Optional.of(BKException.Code.OK));
+            createLedger(lm, lid);
             mustExist.add(lid);
         }
 
         final long start = MathUtils.nowInNano();
         final CountDownLatch latch = new CountDownLatch(1);
-        ArrayList<Thread> threads = new ArrayList<>();
+        ArrayList<Future<?>> futures = new ArrayList<>();
+        ExecutorService executor = Executors.newCachedThreadPool();
         final ConcurrentSkipListSet<Long> createdLedgers = new ConcurrentSkipListSet<>();
         for (int i = 0; i < numWriters; ++i) {
-            Thread thread = new Thread(safeWrapper(() -> {
-                LedgerManager writerLM = getIndependentLedgerManager();
-                Random writerRNG = new Random(rng.nextLong());
-                try {
+            Future<?> f = executor.submit(() -> {
+                    LedgerManager writerLM = getIndependentLedgerManager();
+                    Random writerRNG = new Random(rng.nextLong());
+
                     latch.await();
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    fail("Checker interrupted");
-                }
-                while (MathUtils.elapsedNanos(start) < runtime) {
-                    long candidate = 0;
-                    do {
-                        candidate = Math.abs(writerRNG.nextLong());
-                        if (!longRange) {
-                            candidate %= 1000000;
-                        }
-                    } while (mustExist.contains(candidate) || !createdLedgers.add(candidate));
-                    try {
-                        createLedger(writerLM, candidate, Optional.empty());
-                        removeLedger(writerLM, candidate, Optional.empty());
-                    } catch (Throwable e) {
-                        fail("Got exception thrashing store: " + e.toString());
+
+                    while (MathUtils.elapsedNanos(start) < runtime) {
+                        long candidate = 0;
+                        do {
+                            candidate = Math.abs(writerRNG.nextLong());
+                            if (!longRange) {
+                                candidate %= 1000000;
+                            }
+                        } while (mustExist.contains(candidate) || !createdLedgers.add(candidate));
+
+                        createLedger(writerLM, candidate);
+                        removeLedger(writerLM, candidate);
                     }
-                }
-            }));
-            thread.start();
-            threads.add(thread);
+                    return null;
+                });
+            futures.add(f);
         }
 
         for (int i = 0; i < numCheckers; ++i) {
-            Thread thread = new Thread(safeWrapper(() -> {
-                LedgerManager checkerLM = getIndependentLedgerManager();
-                try {
+            Future<?> f = executor.submit(() -> {
+                    LedgerManager checkerLM = getIndependentLedgerManager();
                     latch.await();
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    fail("Checker interrupted");
-                    e.printStackTrace();
-                }
-                while (MathUtils.elapsedNanos(start) < runtime) {
-                    try {
+
+                    while (MathUtils.elapsedNanos(start) < runtime) {
                         LedgerRangeIterator lri = checkerLM.getLedgerRanges();
                         Set<Long> returnedIds = ledgerRangeToSet(lri);
                         for (long id: mustExist) {
@@ -499,20 +394,17 @@ public class LedgerManagerIteratorTest extends LedgerManagerTestCase {
                         for (long id: mustExist) {
                             assertTrue(ledgersReadAsync.contains(id));
                         }
-                    } catch (IOException | InterruptedException e) {
-                        e.printStackTrace();
-                        fail("Got exception scanning ledgers: " + e.toString());
                     }
-                }
-            }));
-            thread.start();
-            threads.add(thread);
+                    return null;
+                });
+            futures.add(f);
         }
 
         latch.countDown();
-        for (Thread thread: threads) {
-            thread.join();
+        for (Future<?> f : futures) {
+            f.get();
         }
+        executor.shutdownNow();
     }
 
     @SuppressWarnings("deprecation")
@@ -560,7 +452,7 @@ public class LedgerManagerIteratorTest extends LedgerManagerTestCase {
             ids.add(1234567891234L);
         }
         for (Long id : ids) {
-            createLedger(lm, id, Optional.of(BKException.Code.OK));
+            createLedger(lm, id);
         }
 
         // create some invalid nodes under zkLedgersRootPath
@@ -607,7 +499,7 @@ public class LedgerManagerIteratorTest extends LedgerManagerTestCase {
 
         Set<Long> ledgerIds = new TreeSet<>(Arrays.asList(1234L, 123456789123456789L));
         for (Long ledgerId : ledgerIds) {
-            createLedger(lm, ledgerId, Optional.of(BKException.Code.OK));
+            createLedger(lm, ledgerId);
         }
         Set<Long> ledgersReadThroughIterator = ledgerRangeToSet(lri);
         assertEquals("Comparing LedgersIds read through Iterator", ledgerIds, ledgersReadThroughIterator);

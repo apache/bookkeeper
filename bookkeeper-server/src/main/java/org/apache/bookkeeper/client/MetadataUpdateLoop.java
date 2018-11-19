@@ -120,7 +120,7 @@ class MetadataUpdateLoop {
             if (needsTransformation.needsUpdate(currentLocal.getValue())) {
                 LedgerMetadata transformed = transform.transform(currentLocal.getValue());
 
-                writeToStore(ledgerId, transformed, currentLocal.getVersion())
+                lm.writeLedgerMetadata(ledgerId, transformed, currentLocal.getVersion())
                     .whenComplete((writtenMetadata, ex) -> {
                             if (ex == null) {
                                 if (updateLocalValue.updateValue(currentLocal, writtenMetadata)) {
@@ -166,39 +166,23 @@ class MetadataUpdateLoop {
     private void readLoop(long ledgerId, CompletableFuture<Versioned<LedgerMetadata>> promise) {
         Versioned<LedgerMetadata> current = currentLocalValue.get();
 
-        lm.readLedgerMetadata(ledgerId,
-                              (rc, read) -> {
-                                  if (rc != BKException.Code.OK) {
-                                      LOG.error("{} Failed to read metadata from store, rc = {}",
-                                                logContext, rc);
-                                      promise.completeExceptionally(BKException.create(rc));
-                                  } else if (current.getVersion().compare(read.getVersion())
-                                             == Version.Occurred.CONCURRENTLY) {
-                                      // no update needed, these are the same in the immutable world
-                                      promise.complete(current);
-                                  } else if (updateLocalValue.updateValue(current, read)) {
-                                      // updated local value successfully
-                                      promise.complete(read);
-                                  } else {
-                                      // local value changed while we were reading,
-                                      // look at new value, and try to read again
-                                      readLoop(ledgerId, promise);
-                                  }
-                              });
-    }
-
-    private CompletableFuture<Versioned<LedgerMetadata>> writeToStore(long ledgerId, LedgerMetadata toWrite,
-                                                                      Version currentVersion) {
-        CompletableFuture<Versioned<LedgerMetadata>> promise = new CompletableFuture<>();
-
-        lm.writeLedgerMetadata(ledgerId, toWrite, currentVersion,
-                               (rc, written) -> {
-                                   if (rc != BKException.Code.OK) {
-                                       promise.completeExceptionally(BKException.create(rc));
-                                   } else {
-                                       promise.complete(written);
-                                   }
-                               });
-        return promise;
+        lm.readLedgerMetadata(ledgerId).whenComplete(
+                (read, exception) -> {
+                    if (exception != null) {
+                        LOG.error("{} Failed to read metadata from store",
+                                  logContext, exception);
+                        promise.completeExceptionally(exception);
+                    } else if (current.getVersion().compare(read.getVersion()) == Version.Occurred.CONCURRENTLY) {
+                        // no update needed, these are the same in the immutable world
+                        promise.complete(current);
+                    } else if (updateLocalValue.updateValue(current, read)) {
+                        // updated local value successfully
+                        promise.complete(read);
+                    } else {
+                        // local value changed while we were reading,
+                        // look at new value, and try to read again
+                        readLoop(ledgerId, promise);
+                    }
+                });
     }
 }

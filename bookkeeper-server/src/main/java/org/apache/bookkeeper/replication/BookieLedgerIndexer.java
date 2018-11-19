@@ -27,13 +27,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 
 import org.apache.bookkeeper.client.BKException;
-import org.apache.bookkeeper.client.LedgerMetadata;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.net.BookieSocketAddress;
-import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.Processor;
 import org.apache.bookkeeper.replication.ReplicationException.BKAuditException;
-import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.zookeeper.AsyncCallback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -66,29 +63,29 @@ public class BookieLedgerIndexer {
         final CountDownLatch ledgerCollectorLatch = new CountDownLatch(1);
 
         Processor<Long> ledgerProcessor = new Processor<Long>() {
-            @Override
-            public void process(Long ledgerId, AsyncCallback.VoidCallback iterCallback) {
-                GenericCallback<Versioned<LedgerMetadata>> genericCallback = (rc, ledgerMetadata) -> {
-                    if (rc == BKException.Code.OK) {
-                        for (Map.Entry<Long, ? extends List<BookieSocketAddress>> ensemble
-                                 : ledgerMetadata.getValue().getAllEnsembles().entrySet()) {
-                            for (BookieSocketAddress bookie : ensemble.getValue()) {
-                                    putLedger(bookie2ledgersMap, bookie.toString(), ledgerId);
-                            }
-                        }
-                    } else if (rc == BKException.Code.NoSuchLedgerExistsException) {
-                        LOG.info("Ignoring replication of already deleted ledger {}",
-                                 ledgerId);
-                        rc = BKException.Code.OK;
-                    } else {
-                        LOG.warn("Unable to read the ledger:" + ledgerId
-                                 + " information");
-                    }
-                    iterCallback.processResult(rc, null, null);
-                };
-                ledgerManager.readLedgerMetadata(ledgerId, genericCallback);
-            }
-        };
+                @Override
+                public void process(Long ledgerId, AsyncCallback.VoidCallback iterCallback) {
+                    ledgerManager.readLedgerMetadata(ledgerId).whenComplete(
+                            (metadata, exception) -> {
+                                if (exception == null) {
+                                    for (Map.Entry<Long, ? extends List<BookieSocketAddress>> ensemble
+                                             : metadata.getValue().getAllEnsembles().entrySet()) {
+                                        for (BookieSocketAddress bookie : ensemble.getValue()) {
+                                            putLedger(bookie2ledgersMap, bookie.toString(), ledgerId);
+                                        }
+                                    }
+                                    iterCallback.processResult(BKException.Code.OK, null, null);
+                                } else if (BKException.getExceptionCode(exception)
+                                           == BKException.Code.NoSuchLedgerExistsException) {
+                                    LOG.info("Ignoring replication of already deleted ledger {}", ledgerId);
+                                    iterCallback.processResult(BKException.Code.OK, null, null);
+                                } else {
+                                    LOG.warn("Unable to read the ledger: {} information", ledgerId);
+                                    iterCallback.processResult(BKException.getExceptionCode(exception), null, null);
+                                }
+                            });
+                }
+            };
         // Reading the result after processing all the ledgers
         final List<Integer> resultCode = new ArrayList<Integer>(1);
         ledgerManager.asyncProcessLedgers(ledgerProcessor,

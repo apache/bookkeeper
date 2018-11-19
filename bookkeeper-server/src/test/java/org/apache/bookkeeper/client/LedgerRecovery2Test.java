@@ -53,9 +53,7 @@ public class LedgerRecovery2Test {
         LedgerMetadata md = LedgerMetadataBuilder.create()
             .withPassword(PASSWD)
             .newEnsembleEntry(0, bookies).build();
-        GenericCallbackFuture<Versioned<LedgerMetadata>> mdPromise = new GenericCallbackFuture<>();
-        clientCtx.getLedgerManager().createLedgerMetadata(1L, md, mdPromise);
-        return mdPromise.get();
+        return clientCtx.getLedgerManager().createLedgerMetadata(1L, md).get();
     }
 
     @Test

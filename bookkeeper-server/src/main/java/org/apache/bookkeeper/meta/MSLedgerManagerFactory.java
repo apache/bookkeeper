@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
@@ -39,6 +40,7 @@ import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.LedgerMetadata;
+import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
 import org.apache.bookkeeper.metastore.MSException;
@@ -55,7 +57,6 @@ import org.apache.bookkeeper.metastore.MetastoreTableItem;
 import org.apache.bookkeeper.metastore.MetastoreUtils;
 import org.apache.bookkeeper.metastore.MetastoreWatcher;
 import org.apache.bookkeeper.metastore.Value;
-import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.LedgerMetadataListener;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.Processor;
 import org.apache.bookkeeper.replication.ReplicationException;
@@ -224,7 +225,7 @@ public class MSLedgerManagerFactory extends AbstractZkLedgerManagerFactory {
         // callbacks
         ScheduledExecutorService scheduler;
 
-        protected class ReadLedgerMetadataTask implements Runnable, GenericCallback<Versioned<LedgerMetadata>> {
+        protected class ReadLedgerMetadataTask implements Runnable {
 
             final long ledgerId;
 
@@ -238,7 +239,8 @@ public class MSLedgerManagerFactory extends AbstractZkLedgerManagerFactory {
                     if (LOG.isDebugEnabled()) {
                         LOG.debug("Re-read ledger metadata for {}.", ledgerId);
                     }
-                    readLedgerMetadata(ledgerId, ReadLedgerMetadataTask.this);
+                    readLedgerMetadata(ledgerId).whenComplete(
+                            (metadata, exception) -> handleMetadata(metadata, exception));
                 } else {
                     if (LOG.isDebugEnabled()) {
                         LOG.debug("Ledger metadata listener for ledger {} is already removed.", ledgerId);
@@ -246,26 +248,22 @@ public class MSLedgerManagerFactory extends AbstractZkLedgerManagerFactory {
                 }
             }
 
-            @Override
-            public void operationComplete(int rc, final Versioned<LedgerMetadata> result) {
-                if (BKException.Code.OK == rc) {
+            private void handleMetadata(Versioned<LedgerMetadata> metadata, Throwable exception) {
+                if (exception == null) {
                     final Set<LedgerMetadataListener> listenerSet = listeners.get(ledgerId);
                     if (null != listenerSet) {
                         if (LOG.isDebugEnabled()) {
-                            LOG.debug("Ledger metadata is changed for {} : {}.", ledgerId, result.getValue());
+                            LOG.debug("Ledger metadata is changed for {} : {}.", ledgerId, metadata.getValue());
                         }
-                        scheduler.submit(new Runnable() {
-                            @Override
-                            public void run() {
+                        scheduler.submit(() -> {
                                 synchronized (listenerSet) {
                                     for (LedgerMetadataListener listener : listenerSet) {
-                                        listener.onChanged(ledgerId, result);
+                                        listener.onChanged(ledgerId, metadata);
                                     }
                                 }
-                            }
-                        });
+                            });
                     }
-                } else if (BKException.Code.NoSuchLedgerExistsException == rc) {
+                } else if (BKException.getExceptionCode(exception) == BKException.Code.NoSuchLedgerExistsException) {
                     // the ledger is removed, do nothing
                     Set<LedgerMetadataListener> listenerSet = listeners.remove(ledgerId);
                     if (null != listenerSet) {
@@ -275,7 +273,8 @@ public class MSLedgerManagerFactory extends AbstractZkLedgerManagerFactory {
                         }
                     }
                 } else {
-                    LOG.warn("Failed on read ledger metadata of ledger {} : {}", ledgerId, rc);
+                    LOG.warn("Failed on read ledger metadata of ledger {}: {}",
+                             ledgerId, BKException.getExceptionCode(exception));
                     scheduler.schedule(this, MS_CONNECT_BACKOFF_MS, TimeUnit.MILLISECONDS);
                 }
             }
@@ -375,112 +374,116 @@ public class MSLedgerManagerFactory extends AbstractZkLedgerManagerFactory {
         }
 
         @Override
-        public void createLedgerMetadata(final long lid, final LedgerMetadata metadata,
-                                         final GenericCallback<Versioned<LedgerMetadata>> ledgerCb) {
+        public CompletableFuture<Versioned<LedgerMetadata>> createLedgerMetadata(long lid, LedgerMetadata metadata) {
+            CompletableFuture<Versioned<LedgerMetadata>> promise = new CompletableFuture<>();
             MetastoreCallback<Version> msCallback = new MetastoreCallback<Version>() {
                 @Override
                 public void complete(int rc, Version version, Object ctx) {
                     if (MSException.Code.BadVersion.getCode() == rc) {
-                        ledgerCb.operationComplete(BKException.Code.MetadataVersionException, null);
+                        promise.completeExceptionally(new BKException.BKMetadataVersionException());
                         return;
                     }
                     if (MSException.Code.OK.getCode() != rc) {
-                        ledgerCb.operationComplete(BKException.Code.MetaStoreException, null);
+                        promise.completeExceptionally(new BKException.MetaStoreException());
                         return;
                     }
                     if (LOG.isDebugEnabled()) {
                         LOG.debug("Create ledger {} with version {} successfully.", lid, version);
                     }
-                    ledgerCb.operationComplete(BKException.Code.OK, new Versioned<>(metadata, version));
+                    promise.complete(new Versioned<>(metadata, version));
                 }
             };
 
             ledgerTable.put(ledgerId2Key(lid), new Value().setField(META_FIELD, metadata.serialize()),
                     Version.NEW, msCallback, null);
+            return promise;
         }
 
         @Override
-        public void removeLedgerMetadata(final long ledgerId, final Version version,
-                                         final GenericCallback<Void> cb) {
+        public CompletableFuture<Void> removeLedgerMetadata(final long ledgerId, final Version version) {
+            CompletableFuture<Void> promise = new CompletableFuture<>();
             MetastoreCallback<Void> msCallback = new MetastoreCallback<Void>() {
                 @Override
                 public void complete(int rc, Void value, Object ctx) {
                     int bkRc;
                     if (MSException.Code.NoKey.getCode() == rc) {
                         LOG.warn("Ledger entry does not exist in meta table: ledgerId={}", ledgerId);
-                        bkRc = BKException.Code.NoSuchLedgerExistsException;
+                        promise.completeExceptionally(new BKException.BKNoSuchLedgerExistsException());
                     } else if (MSException.Code.OK.getCode() == rc) {
-                        bkRc = BKException.Code.OK;
+                        FutureUtils.complete(promise, null);
                     } else {
-                        bkRc = BKException.Code.MetaStoreException;
+                        promise.completeExceptionally(new BKException.MetaStoreException());
                     }
-                    cb.operationComplete(bkRc, (Void) null);
                 }
             };
             ledgerTable.remove(ledgerId2Key(ledgerId), version, msCallback, null);
+            return promise;
         }
 
         @Override
-        public void readLedgerMetadata(long ledgerId, GenericCallback<Versioned<LedgerMetadata>> readCb) {
+        public CompletableFuture<Versioned<LedgerMetadata>> readLedgerMetadata(long ledgerId) {
             final String key = ledgerId2Key(ledgerId);
+            CompletableFuture<Versioned<LedgerMetadata>> promise = new CompletableFuture<>();
             MetastoreCallback<Versioned<Value>> msCallback = new MetastoreCallback<Versioned<Value>>() {
                 @Override
                 public void complete(int rc, Versioned<Value> value, Object ctx) {
                     if (MSException.Code.NoKey.getCode() == rc) {
                         LOG.error("No ledger metadata found for ledger " + ledgerId + " : ",
                                 MSException.create(MSException.Code.get(rc), "No key " + key + " found."));
-                        readCb.operationComplete(BKException.Code.NoSuchLedgerExistsException, null);
+                        promise.completeExceptionally(new BKException.BKNoSuchLedgerExistsException());
                         return;
                     }
                     if (MSException.Code.OK.getCode() != rc) {
                         LOG.error("Could not read metadata for ledger " + ledgerId + " : ",
                                 MSException.create(MSException.Code.get(rc), "Failed to get key " + key));
-                        readCb.operationComplete(BKException.Code.MetaStoreException, null);
+                        promise.completeExceptionally(new BKException.MetaStoreException());
                         return;
                     }
                     try {
                         LedgerMetadata metadata = LedgerMetadata.parseConfig(
                                 value.getValue().getField(META_FIELD), Optional.<Long>absent());
-                        readCb.operationComplete(BKException.Code.OK, new Versioned<>(metadata, value.getVersion()));
+                        promise.complete(new Versioned<>(metadata, value.getVersion()));
                     } catch (IOException e) {
                         LOG.error("Could not parse ledger metadata for ledger " + ledgerId + " : ", e);
-                        readCb.operationComplete(BKException.Code.MetaStoreException, null);
+                        promise.completeExceptionally(new BKException.MetaStoreException());
                     }
                 }
             };
             ledgerTable.get(key, this, msCallback, ALL_FIELDS);
+            return promise;
         }
 
         @Override
-        public void writeLedgerMetadata(long ledgerId, LedgerMetadata metadata,
-                                        Version currentVersion,
-                                        final GenericCallback<Versioned<LedgerMetadata>> cb) {
+        public CompletableFuture<Versioned<LedgerMetadata>> writeLedgerMetadata(long ledgerId, LedgerMetadata metadata,
+                                                                                Version currentVersion) {
             Value data = new Value().setField(META_FIELD, metadata.serialize());
 
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Writing ledger {} metadata, version {}", new Object[] { ledgerId, currentVersion });
             }
 
+            CompletableFuture<Versioned<LedgerMetadata>> promise = new CompletableFuture<>();
             final String key = ledgerId2Key(ledgerId);
             MetastoreCallback<Version> msCallback = new MetastoreCallback<Version>() {
                 @Override
                 public void complete(int rc, Version version, Object ctx) {
                     if (MSException.Code.BadVersion.getCode() == rc) {
                         LOG.info("Bad version provided to updat metadata for ledger {}", ledgerId);
-                        cb.operationComplete(BKException.Code.MetadataVersionException, null);
+                        promise.completeExceptionally(new BKException.BKMetadataVersionException());
                     } else if (MSException.Code.NoKey.getCode() == rc) {
                         LOG.warn("Ledger {} doesn't exist when writing its ledger metadata.", ledgerId);
-                        cb.operationComplete(BKException.Code.NoSuchLedgerExistsException, null);
+                        promise.completeExceptionally(new BKException.BKNoSuchLedgerExistsException());
                     } else if (MSException.Code.OK.getCode() == rc) {
-                        cb.operationComplete(BKException.Code.OK, new Versioned<>(metadata, version));
+                        promise.complete(new Versioned<>(metadata, version));
                     } else {
                         LOG.warn("Conditional update ledger metadata failed: ",
                                 MSException.create(MSException.Code.get(rc), "Failed to put key " + key));
-                        cb.operationComplete(BKException.Code.MetaStoreException, null);
+                        promise.completeExceptionally(new BKException.MetaStoreException());
                     }
                 }
             };
             ledgerTable.put(key, data, currentVersion, msCallback, null);
+            return promise;
         }
 
         @Override

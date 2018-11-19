@@ -22,9 +22,9 @@ import java.io.IOException;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.concurrent.CompletableFuture;
 
 import org.apache.bookkeeper.client.LedgerMetadata;
-import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.LedgerMetadataListener;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.Processor;
 import org.apache.bookkeeper.versioning.Version;
@@ -47,16 +47,13 @@ public interface LedgerManager extends Closeable {
      *            Ledger id provided to be created
      * @param metadata
      *            Metadata provided when creating the new ledger
-     * @param cb
-     *            Callback when creating a new ledger, returning the written metadata.
-     *            Return code:<ul>
-     *            <li>{@link BKException.Code.OK} if success</li>
-     *            <li>{@link BKException.Code.LedgerExistException} if given ledger id exist</li>
-     *            <li>{@link BKException.Code.ZKException}/{@link BKException.Code.MetaStoreException}
-     *                 for other issue</li>
+     * @return Future which, when completed returns the metadata of the newly created ledger.
+     *         Completed with an exception:<ul>
+     *            <li>{@link BKException.BKLedgerExistException} if given ledger id exist</li>
+     *            <li>{@link BKException.BKZKException}/{@link BKException.BKMetaStoreException} for other issues</li>
      *            </ul>
      */
-    void createLedgerMetadata(long ledgerId, LedgerMetadata metadata, GenericCallback<Versioned<LedgerMetadata>> cb);
+    CompletableFuture<Versioned<LedgerMetadata>> createLedgerMetadata(long ledgerId, LedgerMetadata metadata);
 
     /**
      * Remove a specified ledger metadata by ledgerId and version.
@@ -65,29 +62,27 @@ public interface LedgerManager extends Closeable {
      *          Ledger Id
      * @param version
      *          Ledger metadata version
-     * @param cb
-     *          Callback when remove ledger metadata. Return code:<ul>
-     *          <li>{@link BKException.Code.OK} if success</li>
-     *          <li>{@link BKException.Code.MetadataVersionException} if version doesn't match</li>
-     *          <li>{@link BKException.Code.NoSuchLedgerExistsException} if ledger not exist</li>
-     *          <li>{@link BKException.Code.ZKException} for other issue</li>
+     * @return Future which, when completed, denotes that the ledger metadata has been removed.
+     *         Completed with an exception:<ul>
+     *          <li>{@link BKException.BKMetadataVersionException} if version doesn't match</li>
+     *          <li>{@link BKException.BKNoSuchLedgerExistsException} if ledger not exist</li>
+     *          <li>{@link BKException.ZKException} for other issues</li>
      *          </ul>
      */
-    void removeLedgerMetadata(long ledgerId, Version version, GenericCallback<Void> cb);
+    CompletableFuture<Void> removeLedgerMetadata(long ledgerId, Version version);
 
     /**
      * Read ledger metadata of a specified ledger.
      *
      * @param ledgerId
      *          Ledger Id
-     * @param readCb
-     *          Callback when read ledger metadata. Return code:<ul>
-     *          <li>{@link BKException.Code.OK} if success</li>
-     *          <li>{@link BKException.Code.NoSuchLedgerExistsException} if ledger not exist</li>
-     *          <li>{@link BKException.Code.ZKException} for other issue</li>
+     * @return Future which, when completed, contains the requested versioned metadata.
+     *         Completed with an exception::<ul>
+     *          <li>{@link BKException.BKNoSuchLedgerExistsException} if ledger not exist</li>
+     *          <li>{@link BKException.ZKException} for other issues</li>
      *          </ul>
      */
-    void readLedgerMetadata(long ledgerId, GenericCallback<Versioned<LedgerMetadata>> readCb);
+    CompletableFuture<Versioned<LedgerMetadata>> readLedgerMetadata(long ledgerId);
 
     /**
      * Write ledger metadata.
@@ -98,17 +93,14 @@ public interface LedgerManager extends Closeable {
      *          Ledger Metadata to write
      * @param currentVersion
      *          The version of the metadata we expect to be overwriting.
-     * @param cb
-     *          Callback when finished writing ledger metadata, returning the written metadata.
-     *          Return code:<ul>
-     *          <li>{@link BKException.Code.OK} if success</li>
-     *          <li>{@link BKException.Code.MetadataVersionException} if version in metadata doesn't match</li>
-     *          <li>{@link BKException.Code.ZKException} for other issue</li>
+     * @return Future which, when completed, contains the newly written metadata.
+     *         Comleted with an exceptione:<ul>
+     *          <li>{@link BKException.BKMetadataVersionException} if version in metadata doesn't match</li>
+     *          <li>{@link BKException.ZKException} for other issue</li>
      *          </ul>
      */
-    void writeLedgerMetadata(long ledgerId, LedgerMetadata metadata,
-                             Version currentVersion,
-                             GenericCallback<Versioned<LedgerMetadata>> cb);
+    CompletableFuture<Versioned<LedgerMetadata>> writeLedgerMetadata(long ledgerId, LedgerMetadata metadata,
+                                                                     Version currentVersion);
 
     /**
      * Register the ledger metadata <i>listener</i> on <i>ledgerId</i>.

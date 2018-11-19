@@ -22,12 +22,14 @@ import com.google.common.annotations.VisibleForTesting;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.LedgerMetadata;
+import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.LedgerMetadataListener;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.Processor;
@@ -80,6 +82,7 @@ public class CleanupLedgerManager implements LedgerManager {
         new ConcurrentHashMap<GenericCallback, GenericCallback>();
     private boolean closed = false;
     private final ReentrantReadWriteLock closeLock = new ReentrantReadWriteLock();
+    private final Set<CompletableFuture<?>> futures = ConcurrentHashMap.newKeySet();
 
     public CleanupLedgerManager(LedgerManager lm) {
         this.underlying = lm;
@@ -108,64 +111,69 @@ public class CleanupLedgerManager implements LedgerManager {
         return callbacks.remove(callback);
     }
 
+    private void recordPromise(CompletableFuture<?> promise) {
+        futures.add(promise);
+        promise.thenRun(() -> futures.remove(promise));
+    }
+
     @Override
-    public void createLedgerMetadata(long lid, LedgerMetadata metadata,
-                                     GenericCallback<Versioned<LedgerMetadata>> cb) {
+    public CompletableFuture<Versioned<LedgerMetadata>> createLedgerMetadata(long lid, LedgerMetadata metadata) {
         closeLock.readLock().lock();
         try {
             if (closed) {
-                cb.operationComplete(BKException.Code.ClientClosedException, null);
-                return;
+                return closedPromise();
+            } else {
+                CompletableFuture<Versioned<LedgerMetadata>> promise = underlying.createLedgerMetadata(lid, metadata);
+                recordPromise(promise);
+                return promise;
             }
-            underlying.createLedgerMetadata(lid, metadata, new CleanupGenericCallback<>(cb));
         } finally {
             closeLock.readLock().unlock();
         }
     }
 
     @Override
-    public void removeLedgerMetadata(long ledgerId, Version version,
-                                     GenericCallback<Void> vb) {
+    public CompletableFuture<Void> removeLedgerMetadata(long ledgerId, Version version) {
         closeLock.readLock().lock();
         try {
             if (closed) {
-                vb.operationComplete(BKException.Code.ClientClosedException, null);
-                return;
+                return closedPromise();
             }
-            underlying.removeLedgerMetadata(ledgerId, version,
-                    new CleanupGenericCallback<Void>(vb));
+            CompletableFuture<Void> promise = underlying.removeLedgerMetadata(ledgerId, version);
+            recordPromise(promise);
+            return promise;
         } finally {
             closeLock.readLock().unlock();
         }
     }
 
     @Override
-    public void readLedgerMetadata(long ledgerId,
-                                   GenericCallback<Versioned<LedgerMetadata>> readCb) {
+    public CompletableFuture<Versioned<LedgerMetadata>> readLedgerMetadata(long ledgerId) {
         closeLock.readLock().lock();
         try {
             if (closed) {
-                readCb.operationComplete(BKException.Code.ClientClosedException, null);
-                return;
+                return closedPromise();
             }
-            underlying.readLedgerMetadata(ledgerId, new CleanupGenericCallback<>(readCb));
+            CompletableFuture<Versioned<LedgerMetadata>> promise = underlying.readLedgerMetadata(ledgerId);
+            recordPromise(promise);
+            return promise;
         } finally {
             closeLock.readLock().unlock();
         }
     }
 
     @Override
-    public void writeLedgerMetadata(long ledgerId, LedgerMetadata metadata,
-                                    Version currentVersion,
-                                    GenericCallback<Versioned<LedgerMetadata>> cb) {
+    public CompletableFuture<Versioned<LedgerMetadata>> writeLedgerMetadata(long ledgerId, LedgerMetadata metadata,
+                                                                            Version currentVersion) {
         closeLock.readLock().lock();
         try {
             if (closed) {
-                cb.operationComplete(BKException.Code.ClientClosedException, null);
-                return;
+                return closedPromise();
             }
-            underlying.writeLedgerMetadata(ledgerId, metadata, currentVersion,
-                                           new CleanupGenericCallback<>(cb));
+            CompletableFuture<Versioned<LedgerMetadata>> promise =
+                underlying.writeLedgerMetadata(ledgerId, metadata, currentVersion);
+            recordPromise(promise);
+            return promise;
         } finally {
             closeLock.readLock().unlock();
         }
@@ -234,6 +242,13 @@ public class CleanupLedgerManager implements LedgerManager {
                 callback.operationComplete(BKException.Code.ClientClosedException, null);
             }
         }
+        BKException exception = new BKException.BKClientClosedException();
+        futures.forEach((f) -> f.completeExceptionally(exception));
+        futures.clear();
         underlying.close();
+    }
+
+    private static <T> CompletableFuture<T> closedPromise() {
+        return FutureUtils.exception(new BKException.BKClientClosedException());
     }
 }

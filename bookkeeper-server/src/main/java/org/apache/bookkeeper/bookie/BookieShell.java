@@ -105,8 +105,6 @@ import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieClient;
 import org.apache.bookkeeper.proto.BookieClientImpl;
 import org.apache.bookkeeper.proto.BookieProtocol;
-import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
-import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallbackFuture;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.Processor;
 import org.apache.bookkeeper.replication.AuditorElector;
 import org.apache.bookkeeper.replication.ReplicationException;
@@ -1024,41 +1022,45 @@ public class BookieShell implements Tool {
                     final CountDownLatch processDone = new CountDownLatch(1);
 
                     Processor<Long> ledgerProcessor = new Processor<Long>() {
-                        @Override
-                        public void process(Long ledgerId, VoidCallback cb) {
-                            if (!printMeta && (bookieAddress == null)) {
-                                printLedgerMetadata(ledgerId, null, false);
-                                cb.processResult(BKException.Code.OK, null, null);
-                            } else {
-                                GenericCallback<Versioned<LedgerMetadata>> gencb = (rc, ledgerMetadata) -> {
-                                    if (rc == BKException.Code.OK) {
-                                        if ((bookieAddress == null)
-                                            || BookKeeperAdmin.areEntriesOfLedgerStoredInTheBookie(
-                                                    ledgerId, bookieAddress, ledgerMetadata.getValue())) {
-                                            /*
-                                             * the print method has to be in
-                                             * synchronized scope, otherwise
-                                             * output of printLedgerMetadata
-                                             * could interleave since this
-                                             * callback for different
-                                             * ledgers can happen in
-                                             * different threads.
-                                             */
-                                            synchronized (BookieShell.this) {
-                                                printLedgerMetadata(ledgerId, ledgerMetadata.getValue(), printMeta);
-                                            }
-                                        }
-                                    } else if (rc == BKException.Code.NoSuchLedgerExistsException) {
-                                        rc = BKException.Code.OK;
-                                    } else {
-                                        LOG.error("Unable to read the ledger: " + ledgerId + " information");
-                                    }
-                                    cb.processResult(rc, null, null);
-                                };
-                                ledgerManager.readLedgerMetadata(ledgerId, gencb);
+                            @Override
+                            public void process(Long ledgerId, VoidCallback cb) {
+                                if (!printMeta && (bookieAddress == null)) {
+                                    printLedgerMetadata(ledgerId, null, false);
+                                    cb.processResult(BKException.Code.OK, null, null);
+                                } else {
+                                    ledgerManager.readLedgerMetadata(ledgerId).whenComplete(
+                                            (metadata, exception) -> {
+                                                if (exception == null) {
+                                                    if ((bookieAddress == null)
+                                                        || BookKeeperAdmin.areEntriesOfLedgerStoredInTheBookie(
+                                                                ledgerId, bookieAddress, metadata.getValue())) {
+                                                        /*
+                                                         * the print method has to be in
+                                                         * synchronized scope, otherwise
+                                                         * output of printLedgerMetadata
+                                                         * could interleave since this
+                                                         * callback for different
+                                                         * ledgers can happen in
+                                                         * different threads.
+                                                         */
+                                                        synchronized (BookieShell.this) {
+                                                            printLedgerMetadata(ledgerId, metadata.getValue(),
+                                                                                printMeta);
+                                                        }
+                                                    }
+                                                    cb.processResult(BKException.Code.OK, null, null);
+                                                } else if (BKException.getExceptionCode(exception)
+                                                           == BKException.Code.NoSuchLedgerExistsException) {
+                                                    cb.processResult(BKException.Code.OK, null, null);
+                                                } else {
+                                                    LOG.error("Unable to read the ledger: {} information", ledgerId);
+                                                    cb.processResult(BKException.getExceptionCode(exception),
+                                                                     null, null);
+                                                }
+                                            });
+                                }
                             }
-                        }
-                    };
+                        };
 
                     ledgerManager.asyncProcessLedgers(ledgerProcessor, new AsyncCallback.VoidCallback() {
                         @Override
@@ -1135,21 +1137,16 @@ public class BookieShell implements Tool {
             runFunctionWithLedgerManagerFactory(bkConf, mFactory -> {
                 try (LedgerManager m = mFactory.newLedgerManager()) {
                     if (cmdLine.hasOption("dumptofile")) {
-                        GenericCallbackFuture<Versioned<LedgerMetadata>> cb = new GenericCallbackFuture<>();
-                        m.readLedgerMetadata(lid, cb);
+                        Versioned<LedgerMetadata> md = m.readLedgerMetadata(lid).join();
                         Files.write(FileSystems.getDefault().getPath(cmdLine.getOptionValue("dumptofile")),
-                                    cb.join().getValue().serialize());
+                                    md.getValue().serialize());
                     } else if (cmdLine.hasOption("restorefromfile")) {
                         byte[] serialized = Files.readAllBytes(
                                 FileSystems.getDefault().getPath(cmdLine.getOptionValue("restorefromfile")));
                         LedgerMetadata md = LedgerMetadata.parseConfig(serialized, Optional.absent());
-                        GenericCallbackFuture<Versioned<LedgerMetadata>> cb = new GenericCallbackFuture<>();
-                        m.createLedgerMetadata(lid, md, cb);
-                        cb.join();
+                        m.createLedgerMetadata(lid, md).join();
                     } else {
-                        GenericCallbackFuture<Versioned<LedgerMetadata>> cb = new GenericCallbackFuture<>();
-                        m.readLedgerMetadata(lid, cb);
-                        printLedgerMetadata(lid, cb.get().getValue(), true);
+                        printLedgerMetadata(lid, m.readLedgerMetadata(lid).get().getValue(), true);
                     }
                 } catch (Exception e) {
                     throw new UncheckedExecutionException(e);

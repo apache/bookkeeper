@@ -36,7 +36,6 @@ import org.apache.bookkeeper.client.SyncCallbackUtils.SyncOpenCallback;
 import org.apache.bookkeeper.client.api.BKException.Code;
 import org.apache.bookkeeper.client.api.ReadHandle;
 import org.apache.bookkeeper.client.impl.OpenBuilderBase;
-import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.util.MathUtils;
 import org.apache.bookkeeper.util.OrderedGenericCallback;
@@ -48,7 +47,7 @@ import org.slf4j.LoggerFactory;
  * Encapsulates the ledger open operation.
  *
  */
-class LedgerOpenOp implements GenericCallback<Versioned<LedgerMetadata>> {
+class LedgerOpenOp {
     static final Logger LOG = LoggerFactory.getLogger(LedgerOpenOp.class);
 
     final BookKeeper bk;
@@ -111,7 +110,14 @@ class LedgerOpenOp implements GenericCallback<Versioned<LedgerMetadata>> {
         /**
          * Asynchronously read the ledger metadata node.
          */
-        bk.getLedgerManager().readLedgerMetadata(ledgerId, this);
+        bk.getLedgerManager().readLedgerMetadata(ledgerId)
+            .whenComplete((metadata, exception) -> {
+                    if (exception != null) {
+                        openComplete(BKException.getExceptionCode(exception), null);
+                    } else {
+                        openWithMetadata(metadata);
+                    }
+                });
     }
 
     /**
@@ -122,16 +128,7 @@ class LedgerOpenOp implements GenericCallback<Versioned<LedgerMetadata>> {
         initiate();
     }
 
-    /**
-     * Implements Open Ledger Callback.
-     */
-    @Override
-    public void operationComplete(int rc, Versioned<LedgerMetadata> versionedMetadata) {
-        if (BKException.Code.OK != rc) {
-            // open ledger failed.
-            openComplete(rc, null);
-            return;
-        }
+    private void openWithMetadata(Versioned<LedgerMetadata> versionedMetadata) {
         LedgerMetadata metadata = versionedMetadata.getValue();
 
         final byte[] passwd;

@@ -27,7 +27,6 @@ import static org.apache.bookkeeper.meta.MetadataDrivers.runFunctionWithRegistra
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import com.google.common.util.concurrent.AbstractFuture;
 
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import java.io.File;
@@ -82,7 +81,6 @@ import org.apache.bookkeeper.replication.ReplicationException.UnavailableExcepti
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.IOUtils;
-import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.zookeeper.AsyncCallback;
 import org.apache.zookeeper.KeeperException;
 import org.slf4j.Logger;
@@ -491,26 +489,25 @@ public class BookKeeperAdmin implements AutoCloseable {
         bkc.getLedgerManager().asyncProcessLedgers(new Processor<Long>() {
             @Override
             public void process(final Long lid, final AsyncCallback.VoidCallback cb) {
-                bkc.getLedgerManager().readLedgerMetadata(lid, new GenericCallback<Versioned<LedgerMetadata>>() {
-                    @Override
-                    public void operationComplete(int rc, Versioned<LedgerMetadata> metadata) {
-                        if (BKException.Code.NoSuchLedgerExistsException == rc) {
-                            // the ledger was deleted during this iteration.
-                            cb.processResult(BKException.Code.OK, null, null);
-                            return;
-                        } else if (BKException.Code.OK != rc) {
-                            cb.processResult(rc, null, null);
-                            return;
-                        }
-                        Set<BookieSocketAddress> bookiesInLedger = metadata.getValue().getBookiesInThisLedger();
-                        Sets.SetView<BookieSocketAddress> intersection =
+                bkc.getLedgerManager().readLedgerMetadata(lid)
+                    .whenComplete((metadata, exception) -> {
+                            if (BKException.getExceptionCode(exception)
+                                == BKException.Code.NoSuchLedgerExistsException) {
+                                // the ledger was deleted during this iteration.
+                                cb.processResult(BKException.Code.OK, null, null);
+                                return;
+                            } else if (exception != null) {
+                                cb.processResult(BKException.getExceptionCode(exception), null, null);
+                                return;
+                            }
+                            Set<BookieSocketAddress> bookiesInLedger = metadata.getValue().getBookiesInThisLedger();
+                            Sets.SetView<BookieSocketAddress> intersection =
                                 Sets.intersection(bookiesInLedger, bookies);
-                        if (!intersection.isEmpty()) {
-                            ledgers.put(lid, metadata.getValue());
-                        }
-                        cb.processResult(BKException.Code.OK, null, null);
-                    }
-                });
+                            if (!intersection.isEmpty()) {
+                                ledgers.put(lid, metadata.getValue());
+                            }
+                            cb.processResult(BKException.Code.OK, null, null);
+                        });
             }
         }, new AsyncCallback.VoidCallback() {
             @Override
@@ -1525,10 +1522,8 @@ public class BookKeeperAdmin implements AutoCloseable {
 
     public static boolean areEntriesOfLedgerStoredInTheBookie(long ledgerId, BookieSocketAddress bookieAddress,
             LedgerManager ledgerManager) {
-        ReadMetadataCallback cb = new ReadMetadataCallback(ledgerId);
-        ledgerManager.readLedgerMetadata(ledgerId, cb);
         try {
-            LedgerMetadata ledgerMetadata = cb.get();
+            LedgerMetadata ledgerMetadata = ledgerManager.readLedgerMetadata(ledgerId).get().getValue();
             return areEntriesOfLedgerStoredInTheBookie(ledgerId, bookieAddress, ledgerMetadata);
         } catch (InterruptedException ie) {
             Thread.currentThread().interrupt();
@@ -1635,26 +1630,5 @@ public class BookKeeperAdmin implements AutoCloseable {
             }
         }
         return firstStoredEntryId != LedgerHandle.INVALID_ENTRY_ID;
-    }
-
-    static class ReadMetadataCallback extends AbstractFuture<LedgerMetadata>
-            implements GenericCallback<Versioned<LedgerMetadata>> {
-        final long ledgerId;
-
-        ReadMetadataCallback(long ledgerId) {
-            this.ledgerId = ledgerId;
-        }
-
-        long getLedgerId() {
-            return ledgerId;
-        }
-
-        public void operationComplete(int rc, Versioned<LedgerMetadata> result) {
-            if (rc != 0) {
-                setException(BKException.create(rc));
-            } else {
-                set(result.getValue());
-            }
-        }
     }
 }

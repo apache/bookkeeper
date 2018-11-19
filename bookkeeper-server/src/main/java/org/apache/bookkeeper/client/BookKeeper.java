@@ -73,13 +73,11 @@ import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.net.DNSToSwitchMapping;
 import org.apache.bookkeeper.proto.BookieClient;
 import org.apache.bookkeeper.proto.BookieClientImpl;
-import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.DataFormats;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.ReflectionUtils;
 import org.apache.bookkeeper.util.SafeRunnable;
-import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.lang.SystemUtils;
 import org.apache.zookeeper.KeeperException;
@@ -1300,16 +1298,13 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
      * @param cb    callback method
      */
     public void asyncIsClosed(long lId, final IsClosedCallback cb, final Object ctx){
-        ledgerManager.readLedgerMetadata(lId, new GenericCallback<Versioned<LedgerMetadata>>(){
-            @Override
-            public void operationComplete(int rc, Versioned<LedgerMetadata> lm){
-                if (rc == BKException.Code.OK) {
-                    cb.isClosedComplete(rc, lm.getValue().isClosed(), ctx);
+        ledgerManager.readLedgerMetadata(lId).whenComplete((metadata, exception) -> {
+                if (exception == null) {
+                    cb.isClosedComplete(BKException.Code.OK, metadata.getValue().isClosed(), ctx);
                 } else {
-                    cb.isClosedComplete(rc, false, ctx);
+                    cb.isClosedComplete(BKException.getExceptionCode(exception), false, ctx);
                 }
-            }
-        });
+            });
     }
 
     /**
