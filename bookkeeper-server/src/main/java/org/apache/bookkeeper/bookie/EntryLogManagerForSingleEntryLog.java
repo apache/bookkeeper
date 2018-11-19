@@ -92,7 +92,7 @@ class EntryLogManagerForSingleEntryLog extends EntryLogManagerBase {
             boolean rollLog) throws IOException {
         if (null == activeLogChannel) {
             // log channel can be null because the file is deferred to be created
-            createNewLog(UNASSIGNED_LEDGERID);
+            createNewLog(UNASSIGNED_LEDGERID, "because current active log channel has not initialized yet");
         }
 
         boolean reachEntryLogLimit = rollLog ? reachEntryLogLimit(activeLogChannel, entrySize)
@@ -103,7 +103,8 @@ class EntryLogManagerForSingleEntryLog extends EntryLogManagerBase {
             if (activeLogChannel != null) {
                 activeLogChannel.flushAndForceWriteIfRegularFlush(false);
             }
-            createNewLog(UNASSIGNED_LEDGERID);
+            createNewLog(UNASSIGNED_LEDGERID,
+                ": createNewLog = " + createNewLog + ", reachEntryLogLimit = " + reachEntryLogLimit);
             // Reset the flag
             if (createNewLog) {
                 shouldCreateNewEntryLog.set(false);
@@ -238,7 +239,9 @@ class EntryLogManagerForSingleEntryLog extends EntryLogManagerBase {
          */
         if (reachEntryLogLimit(activeLogChannel, 0L) || logIdAfterFlush != logIdBeforeFlush) {
             log.info("Rolling entry logger since it reached size limitation");
-            createNewLog(UNASSIGNED_LEDGERID);
+            createNewLog(UNASSIGNED_LEDGERID,
+                "due to reaching log limit after flushing memtable : logIdBeforeFlush = "
+                    + logIdBeforeFlush + ", logIdAfterFlush = " + logIdAfterFlush);
             return true;
         }
         return false;
@@ -251,7 +254,8 @@ class EntryLogManagerForSingleEntryLog extends EntryLogManagerBase {
             // it means bytes might live at current active entry log, we need
             // roll current entry log and then issue checkpoint to underlying
             // interleaved ledger storage.
-            createNewLog(UNASSIGNED_LEDGERID);
+            createNewLog(UNASSIGNED_LEDGERID,
+                "due to preparing checkpoint : numBytesFlushed = " + numBytesFlushed);
         }
     }
 

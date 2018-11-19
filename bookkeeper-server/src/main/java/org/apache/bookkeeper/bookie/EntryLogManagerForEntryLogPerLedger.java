@@ -484,7 +484,7 @@ class EntryLogManagerForEntryLogPerLedger extends EntryLogManagerBase {
                 try {
                     if (reachEntryLogLimit(currentLog, 0L)) {
                         log.info("Rolling entry logger since it reached size limitation for ledger: {}", ledgerId);
-                        createNewLog(ledgerId);
+                        createNewLog(ledgerId, "after entry log file is rotated");
                     }
                 } finally {
                     lock.unlock();
@@ -640,7 +640,9 @@ class EntryLogManagerForEntryLogPerLedger extends EntryLogManagerBase {
                 if (logChannel != null) {
                     logChannel.flushAndForceWriteIfRegularFlush(false);
                 }
-                createNewLog(ledgerId);
+                createNewLog(ledgerId,
+                    ": diskFull = " + diskFull + ", allDisksFull = " + allDisksFull
+                        + ", reachEntryLogLimit = " + reachEntryLogLimit + ", logChannel = " + logChannel);
             }
 
             return getCurrentLogForLedger(ledgerId);
