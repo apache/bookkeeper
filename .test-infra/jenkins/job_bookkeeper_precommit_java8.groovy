@@ -44,7 +44,7 @@ mavenJob('bookkeeper_precommit_pullrequest_java8') {
     'JDK 1.8 (latest)',
     200,
     'ubuntu',
-    '${ghprbActualCommit}')
+    '${sha1}')
 
   // Sets that this is a PreCommit job.
   common_job_properties.setPreCommit(
