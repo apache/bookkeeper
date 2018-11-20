@@ -78,9 +78,9 @@ public class LedgerMetadata implements org.apache.bookkeeper.client.api.LedgerMe
     private final int writeQuorumSize;
     private final int ackQuorumSize;
 
-    private LedgerMetadataFormat.State state;
-    private long length;
-    private long lastEntryId;
+    private final LedgerMetadataFormat.State state;
+    private final long length;
+    private final long lastEntryId;
     private final long ctime;
     final boolean storeCtime; // non-private so builder can access for copy
 
@@ -145,6 +145,7 @@ public class LedgerMetadata implements org.apache.bookkeeper.client.api.LedgerMe
         this.ctime = ctime;
         this.storeCtime = storeCtime;
 
+        this.length = 0;
         this.customMetadata.putAll(customMetadata);
     }
 
@@ -248,10 +249,6 @@ public class LedgerMetadata implements org.apache.bookkeeper.client.api.LedgerMe
         return length;
     }
 
-    void setLength(long length) {
-        this.length = length;
-    }
-
     @Override
     public boolean isClosed() {
         return state == LedgerMetadataFormat.State.CLOSED;
@@ -263,19 +260,6 @@ public class LedgerMetadata implements org.apache.bookkeeper.client.api.LedgerMe
 
     public LedgerMetadataFormat.State getState() {
         return state;
-    }
-
-    void setState(LedgerMetadataFormat.State state) {
-        this.state = state;
-    }
-
-    void markLedgerInRecovery() {
-        state = LedgerMetadataFormat.State.IN_RECOVERY;
-    }
-
-    void close(long entryId) {
-        lastEntryId = entryId;
-        state = LedgerMetadataFormat.State.CLOSED;
     }
 
     List<BookieSocketAddress> getCurrentEnsemble() {
