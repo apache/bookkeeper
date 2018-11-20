@@ -91,7 +91,7 @@ public class LedgerMetadata implements org.apache.bookkeeper.client.api.LedgerMe
     private final LedgerMetadataFormat.DigestType digestType;
     private final byte[] password;
 
-    private Map<String, byte[]> customMetadata = Maps.newHashMap();
+    private final Map<String, byte[]> customMetadata = Maps.newHashMap();
 
     LedgerMetadata(int metadataFormatVersion,
                    int ensembleSize,
@@ -300,10 +300,6 @@ public class LedgerMetadata implements org.apache.bookkeeper.client.api.LedgerMe
     @Override
     public Map<String, byte[]> getCustomMetadata() {
         return this.customMetadata;
-    }
-
-    void setCustomMetadata(Map<String, byte[]> customMetadata) {
-        this.customMetadata = customMetadata;
     }
 
     LedgerMetadataFormat buildProtoFormat() {
