@@ -99,8 +99,10 @@ public class ReadLastConfirmedAndEntryOpTest {
         internalConf = ClientInternalConf.fromConfig(conf);
 
         // metadata
-        this.ledgerMetadata =
-            new LedgerMetadata(3, 3, 2, DigestType.CRC32, new byte[0]);
+        this.ledgerMetadata = LedgerMetadataBuilder.create()
+            .withEnsembleSize(3).withWriteQuorumSize(2).withAckQuorumSize(2)
+            .withDigestType(DigestType.CRC32.toApiDigestType())
+            .withPassword(new byte[0]).build();
         ArrayList<BookieSocketAddress> ensemble = new ArrayList<>(3);
         for (int i = 0; i < 3; i++) {
             ensemble.add(new BookieSocketAddress("127.0.0.1", 3181 + i));

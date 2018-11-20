@@ -133,7 +133,9 @@ public class TestWatchEnsembleChange extends BookKeeperClusterTestCase {
         idGenerator.generateLedgerId(new GenericCallback<Long>() {
                 @Override
                 public void operationComplete(int rc, final Long lid) {
-                    LedgerMetadata metadata = new LedgerMetadata(4, 2, 2, digestType, "fpj was here".getBytes());
+                    LedgerMetadata metadata = LedgerMetadataBuilder.create()
+                        .withEnsembleSize(4).withWriteQuorumSize(2)
+                        .withAckQuorumSize(2).build();
                     manager.createLedgerMetadata(lid, metadata)
                         .whenComplete((result, exception) -> {
                                 bbLedgerId.putLong(lid);

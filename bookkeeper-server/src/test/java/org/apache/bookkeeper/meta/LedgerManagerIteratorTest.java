@@ -46,6 +46,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.LedgerMetadata;
+import org.apache.bookkeeper.client.LedgerMetadataBuilder;
 import org.apache.bookkeeper.meta.LedgerManager.LedgerRangeIterator;
 import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
 import org.apache.bookkeeper.util.MathUtils;
@@ -84,9 +85,10 @@ public class LedgerManagerIteratorTest extends LedgerManagerTestCase {
      * @throws InterruptedException
      */
     void createLedger(LedgerManager lm, Long ledgerId) throws Exception {
-        LedgerMetadata meta = new LedgerMetadata(
-                3, 3, 2,
-                BookKeeper.DigestType.CRC32, "passwd".getBytes());
+        LedgerMetadata meta = LedgerMetadataBuilder.create()
+            .withEnsembleSize(3).withWriteQuorumSize(3).withAckQuorumSize(2)
+            .withDigestType(BookKeeper.DigestType.CRC32.toApiDigestType())
+            .withPassword("passwd".getBytes()).build();
         lm.createLedgerMetadata(ledgerId, meta).get();
     }
 

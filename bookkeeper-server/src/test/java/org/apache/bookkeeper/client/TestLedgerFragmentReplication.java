@@ -234,18 +234,11 @@ public class TestLedgerFragmentReplication extends BookKeeperClusterTestCase {
     @Test
     public void testSplitIntoSubFragmentsWithDifferentFragmentBoundaries()
             throws Exception {
-        LedgerMetadata metadata = new LedgerMetadata(3, 3, 3, TEST_DIGEST_TYPE,
-                TEST_PSSWD) {
-            @Override
-            List<BookieSocketAddress> getEnsemble(long entryId) {
-                return null;
-            }
+        LedgerMetadata metadata = LedgerMetadataBuilder.create()
+            .withEnsembleSize(3).withWriteQuorumSize(3).withAckQuorumSize(3)
+            .withPassword(TEST_PSSWD).withDigestType(TEST_DIGEST_TYPE.toApiDigestType())
+            .closingAt(-1, 0).build();
 
-            @Override
-            public boolean isClosed() {
-                return true;
-            }
-        };
         LedgerHandle lh = new LedgerHandle(bkc.getClientCtx(), 0,
                                            new Versioned<>(metadata, new LongVersion(0L)),
                                            TEST_DIGEST_TYPE,

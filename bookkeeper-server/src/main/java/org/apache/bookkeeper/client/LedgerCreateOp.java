@@ -102,14 +102,13 @@ class LedgerCreateOp {
             EnumSet<WriteFlag> writeFlags,
             BookKeeperClientStats clientStats) {
         this.bk = bk;
-        this.metadata = new LedgerMetadata(
-            ensembleSize,
-            writeQuorumSize,
-            ackQuorumSize,
-            digestType,
-            passwd,
-            customMetadata,
-            bk.getConf().getStoreSystemtimeAsLedgerCreationTime());
+        LedgerMetadataBuilder metadataBuilder = LedgerMetadataBuilder.create()
+            .withEnsembleSize(ensembleSize).withWriteQuorumSize(writeQuorumSize).withAckQuorumSize(ackQuorumSize)
+            .withDigestType(digestType.toApiDigestType()).withPassword(passwd).withCustomMetadata(customMetadata);
+        if (bk.getConf().getStoreSystemtimeAsLedgerCreationTime()) {
+            metadataBuilder.withCreationTime(System.currentTimeMillis());
+        }
+        this.metadata = metadataBuilder.build();
         this.digestType = digestType;
         this.writeFlags = writeFlags;
         this.passwd = passwd;

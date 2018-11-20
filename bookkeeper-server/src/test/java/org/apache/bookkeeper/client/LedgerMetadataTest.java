@@ -41,14 +41,10 @@ public class LedgerMetadataTest {
 
     @Test
     public void testGetters() {
-        org.apache.bookkeeper.client.api.LedgerMetadata metadata = new LedgerMetadata(
-            3,
-            2,
-            1,
-            DigestType.CRC32,
-            passwd,
-            Collections.emptyMap(),
-            false);
+        org.apache.bookkeeper.client.api.LedgerMetadata metadata = LedgerMetadataBuilder.create()
+            .withEnsembleSize(3).withWriteQuorumSize(2).withAckQuorumSize(1)
+            .withDigestType(DigestType.CRC32.toApiDigestType()).withPassword(passwd)
+            .build();
 
         assertEquals(3, metadata.getEnsembleSize());
         assertEquals(2, metadata.getWriteQuorumSize());
@@ -72,14 +68,8 @@ public class LedgerMetadataTest {
     @Test
     public void testStoreSystemtimeAsLedgerCtimeEnabled()
             throws Exception {
-        LedgerMetadata lm = new LedgerMetadata(
-            3,
-            3,
-            2,
-            DigestType.CRC32,
-            passwd,
-            Collections.emptyMap(),
-            true);
+        LedgerMetadata lm = LedgerMetadataBuilder.create()
+            .withCreationTime(System.currentTimeMillis()).build();
         LedgerMetadataFormat format = lm.buildProtoFormat();
         assertTrue(format.hasCtime());
     }
@@ -87,28 +77,17 @@ public class LedgerMetadataTest {
     @Test
     public void testStoreSystemtimeAsLedgerCtimeDisabled()
             throws Exception {
-        LedgerMetadata lm = new LedgerMetadata(
-            3,
-            3,
-            2,
-            DigestType.CRC32,
-            passwd,
-            Collections.emptyMap(),
-            false);
+        LedgerMetadata lm = LedgerMetadataBuilder.create().build();
+
         LedgerMetadataFormat format = lm.buildProtoFormat();
         assertFalse(format.hasCtime());
     }
 
     @Test
     public void testToString() {
-        LedgerMetadata lm1 = new LedgerMetadata(
-            3,
-            3,
-            2,
-            DigestType.CRC32,
-            passwd,
-            Collections.emptyMap(),
-            true);
+        LedgerMetadata lm1 = LedgerMetadataBuilder.create()
+            .withDigestType(DigestType.CRC32.toApiDigestType())
+            .withPassword(passwd).build();
 
         assertTrue("toString should contain 'password' field", lm1.toString().contains("password"));
         assertTrue("toString should contain password value", lm1.toString().contains(passwdStr));
