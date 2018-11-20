@@ -45,8 +45,6 @@ import lombok.Data;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.MockLedgerManager;
 import org.apache.bookkeeper.net.BookieSocketAddress;
-import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
-import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallbackFuture;
 import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.commons.lang3.tuple.Triple;
@@ -76,10 +74,8 @@ public class MetadataUpdateLoopTest {
                                           new BookieSocketAddress("0.0.0.2:3181"),
                                           new BookieSocketAddress("0.0.0.3:3181"),
                                           new BookieSocketAddress("0.0.0.4:3181"))).build();
-            GenericCallbackFuture<Versioned<LedgerMetadata>> promise = new GenericCallbackFuture<>();
             long ledgerId = 1234L;
-            lm.createLedgerMetadata(ledgerId, initMeta, promise);
-            Versioned<LedgerMetadata> writtenMetadata = promise.get();
+            Versioned<LedgerMetadata> writtenMetadata = lm.createLedgerMetadata(ledgerId, initMeta).get();
 
             AtomicReference<Versioned<LedgerMetadata>> reference = new AtomicReference<>(writtenMetadata);
 
@@ -119,9 +115,8 @@ public class MetadataUpdateLoopTest {
 
             LedgerMetadata initMeta = LedgerMetadataBuilder.create().withEnsembleSize(2)
                 .newEnsembleEntry(0L, Lists.newArrayList(b0, b1)).build();
-            GenericCallbackFuture<Versioned<LedgerMetadata>> promise = new GenericCallbackFuture<>();
-            lm.createLedgerMetadata(ledgerId, initMeta, promise);
-            Versioned<LedgerMetadata> writtenMetadata = promise.get();
+            Versioned<LedgerMetadata> writtenMetadata =
+                lm.createLedgerMetadata(ledgerId, initMeta).get();
 
             AtomicReference<Versioned<LedgerMetadata>> reference1 = new AtomicReference<>(writtenMetadata);
             CompletableFuture<Versioned<LedgerMetadata>> loop1 = new MetadataUpdateLoop(
@@ -165,7 +160,7 @@ public class MetadataUpdateLoopTest {
             Assert.assertEquals(l2meta.getValue().getEnsemble(0L).get(0), b2);
             Assert.assertEquals(l2meta.getValue().getEnsemble(0L).get(1), b3);
 
-            verify(lm, times(3)).writeLedgerMetadata(anyLong(), any(), any(), any());
+            verify(lm, times(3)).writeLedgerMetadata(anyLong(), any(), any());
         }
     }
 
@@ -186,10 +181,7 @@ public class MetadataUpdateLoopTest {
 
             LedgerMetadata initMeta = LedgerMetadataBuilder.create().withEnsembleSize(2)
                 .newEnsembleEntry(0L, Lists.newArrayList(b0, b1)).build();
-            GenericCallbackFuture<Versioned<LedgerMetadata>> promise = new GenericCallbackFuture<>();
-            lm.createLedgerMetadata(ledgerId, initMeta, promise);
-            Versioned<LedgerMetadata> writtenMetadata = promise.get();
-
+              Versioned<LedgerMetadata> writtenMetadata = lm.createLedgerMetadata(ledgerId, initMeta).get();
             AtomicReference<Versioned<LedgerMetadata>> reference = new AtomicReference<>(writtenMetadata);
 
             CompletableFuture<Versioned<LedgerMetadata>> loop1 = new MetadataUpdateLoop(
@@ -223,7 +215,7 @@ public class MetadataUpdateLoopTest {
             Assert.assertEquals(reference.get().getValue().getEnsemble(0L).get(0), b2);
             Assert.assertEquals(reference.get().getValue().getEnsemble(0L).get(1), b1);
 
-            verify(lm, times(2)).writeLedgerMetadata(anyLong(), any(), any(), any());
+            verify(lm, times(2)).writeLedgerMetadata(anyLong(), any(), any());
         }
     }
 
@@ -242,10 +234,7 @@ public class MetadataUpdateLoopTest {
 
             LedgerMetadata initMeta = LedgerMetadataBuilder.create().withEnsembleSize(2)
                 .newEnsembleEntry(0L, Lists.newArrayList(b0, b1)).build();
-            GenericCallbackFuture<Versioned<LedgerMetadata>> promise = new GenericCallbackFuture<>();
-            lm.createLedgerMetadata(ledgerId, initMeta, promise);
-            Versioned<LedgerMetadata> writtenMetadata = promise.get();
-
+            Versioned<LedgerMetadata> writtenMetadata = lm.createLedgerMetadata(ledgerId, initMeta).get();
             AtomicReference<Versioned<LedgerMetadata>> reference = new AtomicReference<>(writtenMetadata);
 
             CompletableFuture<Versioned<LedgerMetadata>> loop1 = new MetadataUpdateLoop(
@@ -281,7 +270,7 @@ public class MetadataUpdateLoopTest {
             Assert.assertEquals(reference.get().getValue().getEnsemble(0L).get(0), b2);
             Assert.assertEquals(reference.get().getValue().getEnsemble(0L).get(1), b3);
 
-            verify(lm, times(3)).writeLedgerMetadata(anyLong(), any(), any(), any());
+            verify(lm, times(3)).writeLedgerMetadata(anyLong(), any(), any());
         }
     }
 
@@ -310,9 +299,7 @@ public class MetadataUpdateLoopTest {
 
             LedgerMetadata initMeta = LedgerMetadataBuilder.create().withEnsembleSize(ensembleSize)
                 .newEnsembleEntry(0L, initialEnsemble).build();
-            GenericCallbackFuture<Versioned<LedgerMetadata>> promise = new GenericCallbackFuture<>();
-            lm.createLedgerMetadata(ledgerId, initMeta, promise);
-            Versioned<LedgerMetadata> writtenMetadata = promise.get();
+            Versioned<LedgerMetadata> writtenMetadata = lm.createLedgerMetadata(ledgerId, initMeta).get();
 
             AtomicReference<Versioned<LedgerMetadata>> reference = new AtomicReference<>(writtenMetadata);
 
@@ -355,9 +342,7 @@ public class MetadataUpdateLoopTest {
 
             LedgerMetadata initMeta = LedgerMetadataBuilder.create().withEnsembleSize(1)
                 .newEnsembleEntry(0L, Lists.newArrayList(b0)).build();
-            GenericCallbackFuture<Versioned<LedgerMetadata>> promise = new GenericCallbackFuture<>();
-            lm.createLedgerMetadata(ledgerId, initMeta, promise);
-            Versioned<LedgerMetadata> writtenMetadata = promise.get();
+            Versioned<LedgerMetadata> writtenMetadata = lm.createLedgerMetadata(ledgerId, initMeta).get();
 
             AtomicReference<Versioned<LedgerMetadata>> reference = new AtomicReference<>(writtenMetadata);
             CompletableFuture<Versioned<LedgerMetadata>> loop1 = new MetadataUpdateLoop(
@@ -397,7 +382,7 @@ public class MetadataUpdateLoopTest {
             Assert.assertEquals(l1meta.getValue().getEnsemble(0L).get(0), b0);
             Assert.assertTrue(l1meta.getValue().isClosed());
 
-            verify(lm, times(2)).writeLedgerMetadata(anyLong(), any(), any(), any());
+            verify(lm, times(2)).writeLedgerMetadata(anyLong(), any(), any());
         }
     }
 
@@ -420,7 +405,7 @@ public class MetadataUpdateLoopTest {
     static class DeferCallbacksMockLedgerManager extends MockLedgerManager {
         int writeCount = 0;
         final int numToDefer;
-        List<Triple<GenericCallback<Versioned<LedgerMetadata>>, Integer, Versioned<LedgerMetadata>>> deferred =
+        List<Triple<CompletableFuture<Versioned<LedgerMetadata>>, Versioned<LedgerMetadata>, Throwable>> deferred =
             Lists.newArrayList();
 
         DeferCallbacksMockLedgerManager(int numToDefer) {
@@ -428,7 +413,14 @@ public class MetadataUpdateLoopTest {
         }
 
         synchronized void runDeferred() {
-            deferred.forEach((d) -> d.getLeft().operationComplete(d.getMiddle(), d.getRight()));
+            deferred.forEach((d) -> {
+                    Throwable t = d.getRight();
+                    if (t != null) {
+                        d.getLeft().completeExceptionally(t);
+                    } else {
+                        d.getLeft().complete(d.getMiddle());
+                    }
+                });
         }
 
         synchronized void waitForWriteCount(int count) throws Exception {
@@ -438,32 +430,38 @@ public class MetadataUpdateLoopTest {
         }
 
         @Override
-        public synchronized void writeLedgerMetadata(long ledgerId, LedgerMetadata metadata,
-                                                     Version currentVersion,
-                                                     GenericCallback<Versioned<LedgerMetadata>> cb) {
-            super.writeLedgerMetadata(ledgerId, metadata, currentVersion,
-                                      (rc, written) -> {
-                                          synchronized (DeferCallbacksMockLedgerManager.this) {
-                                              if (writeCount++ < numToDefer) {
-                                                  LOG.info("Added aaaaato deferals");
-                                                  deferred.add(Triple.of(cb, rc, written));
-                                              } else {
-                                                  LOG.info("Completing {}", numToDefer);
-                                                  cb.operationComplete(rc, written);
-                                              }
-                                              DeferCallbacksMockLedgerManager.this.notifyAll();
-                                          }
-                                      });
+        public synchronized CompletableFuture<Versioned<LedgerMetadata>> writeLedgerMetadata(
+                long ledgerId, LedgerMetadata metadata,
+                Version currentVersion) {
+            CompletableFuture<Versioned<LedgerMetadata>> promise = new CompletableFuture<>();
+            super.writeLedgerMetadata(ledgerId, metadata, currentVersion)
+                .whenComplete((written, exception) -> {
+                        synchronized (DeferCallbacksMockLedgerManager.this) {
+                            if (writeCount++ < numToDefer) {
+                                LOG.info("Added to deferals");
+                                deferred.add(Triple.of(promise, written, exception));
+                            } else {
+                                LOG.info("Completing {}", numToDefer);
+                                if (exception != null) {
+                                    promise.completeExceptionally(exception);
+                                } else {
+                                    promise.complete(written);
+                                }
+                            }
+                            DeferCallbacksMockLedgerManager.this.notifyAll();
+                        }
+                    });
+            return promise;
         };
     }
 
     @Data
     @AllArgsConstructor
     static class DeferredUpdate {
+        final CompletableFuture<Versioned<LedgerMetadata>> promise;
         final long ledgerId;
         final LedgerMetadata metadata;
         final Version currentVersion;
-        final GenericCallback<Versioned<LedgerMetadata>> cb;
     }
 
     static class BlockableMockLedgerManager extends MockLedgerManager {
@@ -476,18 +474,28 @@ public class MetadataUpdateLoopTest {
 
         synchronized void releaseWrites() {
             blocking = false;
-            reqs.forEach((r) -> super.writeLedgerMetadata(r.getLedgerId(), r.getMetadata(),
-                                                          r.getCurrentVersion(), r.getCb()));
+            reqs.forEach((r) -> {
+                    super.writeLedgerMetadata(r.getLedgerId(), r.getMetadata(),
+                                              r.getCurrentVersion())
+                        .whenComplete((written, exception) -> {
+                                if (exception != null) {
+                                    r.getPromise().completeExceptionally(exception);
+                                } else {
+                                    r.getPromise().complete(written);
+                                }
+                            });
+                });
         }
 
         @Override
-        public synchronized void writeLedgerMetadata(long ledgerId, LedgerMetadata metadata,
-                                                     Version currentVersion,
-                                                     GenericCallback<Versioned<LedgerMetadata>> cb) {
+        public synchronized CompletableFuture<Versioned<LedgerMetadata>> writeLedgerMetadata(
+                long ledgerId, LedgerMetadata metadata, Version currentVersion) {
             if (blocking) {
-                reqs.add(new DeferredUpdate(ledgerId, metadata, currentVersion, cb));
+                CompletableFuture<Versioned<LedgerMetadata>> promise = new CompletableFuture<>();
+                reqs.add(new DeferredUpdate(promise, ledgerId, metadata, currentVersion));
+                return promise;
             } else {
-                super.writeLedgerMetadata(ledgerId, metadata, currentVersion, cb);
+                return super.writeLedgerMetadata(ledgerId, metadata, currentVersion);
             }
         };
     }
