@@ -48,6 +48,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -61,7 +62,6 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.proto.BookieServer;
-import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.LedgerMetadataListener;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.Processor;
 import org.apache.bookkeeper.proto.checksum.DigestManager;
@@ -918,24 +918,27 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
     private LedgerManager getLedgerManager(final Set<Long> ledgers) {
         LedgerManager manager = new LedgerManager() {
                 @Override
-                public void createLedgerMetadata(long lid, LedgerMetadata metadata,
-                                                 GenericCallback<Versioned<LedgerMetadata>> cb) {
+                public CompletableFuture<Versioned<LedgerMetadata>> createLedgerMetadata(long lid,
+                                                                                         LedgerMetadata metadata) {
                     unsupported();
+                    return null;
                 }
                 @Override
-                public void removeLedgerMetadata(long ledgerId, Version version,
-                                                 GenericCallback<Void> vb) {
+                public CompletableFuture<Void> removeLedgerMetadata(long ledgerId, Version version) {
                     unsupported();
+                    return null;
                 }
                 @Override
-                public void readLedgerMetadata(long ledgerId, GenericCallback<Versioned<LedgerMetadata>> readCb) {
+                public CompletableFuture<Versioned<LedgerMetadata>> readLedgerMetadata(long ledgerId) {
                     unsupported();
+                    return null;
                 }
                 @Override
-                public void writeLedgerMetadata(long ledgerId, LedgerMetadata metadata,
-                                                Version currentVersion,
-                                                GenericCallback<Versioned<LedgerMetadata>> cb) {
+                public CompletableFuture<Versioned<LedgerMetadata>> writeLedgerMetadata(long ledgerId,
+                                                                                        LedgerMetadata metadata,
+                                                                                        Version currentVersion) {
                     unsupported();
+                    return null;
                 }
                 @Override
                 public void asyncProcessLedgers(Processor<Long> processor,
@@ -960,6 +963,7 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
                     LOG.error("Unsupported operation called", new Exception());
                     throw new RuntimeException("Unsupported op");
                 }
+
                 @Override
                 public LedgerRangeIterator getLedgerRanges() {
                     final AtomicBoolean hasnext = new AtomicBoolean(true);

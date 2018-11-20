@@ -57,7 +57,6 @@ import org.apache.bookkeeper.meta.LedgerManager.LedgerRangeIterator;
 import org.apache.bookkeeper.metadata.etcd.helpers.ValueStream;
 import org.apache.bookkeeper.metadata.etcd.testing.EtcdTestBase;
 import org.apache.bookkeeper.net.BookieSocketAddress;
-import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallbackFuture;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.LedgerMetadataListener;
 import org.apache.bookkeeper.versioning.LongVersion;
 import org.apache.bookkeeper.versioning.Version;
@@ -103,43 +102,31 @@ public class EtcdLedgerManagerTest extends EtcdTestBase {
         );
 
         // ledger doesn't exist: read
-
-        GenericCallbackFuture<Versioned<LedgerMetadata>> readFuture = new GenericCallbackFuture<>();
-        lm.readLedgerMetadata(ledgerId, readFuture);
         try {
-            result(readFuture);
+            result(lm.readLedgerMetadata(ledgerId));
             fail("Should fail on reading ledger metadata if the ledger doesn't exist");
         } catch (BKException bke) {
             assertEquals(Code.NoSuchLedgerExistsException, bke.getCode());
         }
 
         // ledger doesn't exist : delete
-
-        GenericCallbackFuture<Void> deleteFuture = new GenericCallbackFuture<>();
-        lm.removeLedgerMetadata(ledgerId, new LongVersion(999L), deleteFuture);
         try {
-            result(deleteFuture);
+            result(lm.removeLedgerMetadata(ledgerId, new LongVersion(999L)));
             fail("Should fail on deleting ledger metadata if the ledger doesn't exist");
         } catch (BKException bke) {
             assertEquals(Code.NoSuchLedgerExistsException, bke.getCode());
         }
 
         // ledger doesn't exist : write
-
-        GenericCallbackFuture<Versioned<LedgerMetadata>> writeFuture = new GenericCallbackFuture<>();
-        lm.writeLedgerMetadata(ledgerId, metadata, new LongVersion(999L), writeFuture);
         try {
-            result(deleteFuture);
+            result(lm.writeLedgerMetadata(ledgerId, metadata, new LongVersion(999L)));
             fail("Should fail on updating ledger metadata if the ledger doesn't exist");
         } catch (BKException bke) {
             assertEquals(Code.NoSuchLedgerExistsException, bke.getCode());
         }
 
         // ledger doesn't exist : create
-
-        GenericCallbackFuture<Versioned<LedgerMetadata>> createFuture = new GenericCallbackFuture<>();
-        lm.createLedgerMetadata(ledgerId, metadata, createFuture);
-        Versioned<LedgerMetadata> writtenMetadata = result(createFuture);
+        Versioned<LedgerMetadata> writtenMetadata = result(lm.createLedgerMetadata(ledgerId, metadata));
         assertSame(metadata, writtenMetadata.getValue());
         Version version = writtenMetadata.getVersion();
         assertNotNull(version);
@@ -149,73 +136,52 @@ public class EtcdLedgerManagerTest extends EtcdTestBase {
         // ledger exists : create
 
         // attempt to create the ledger again will result in exception `LedgerExistsException`
-        createFuture = new GenericCallbackFuture<>();
         try {
-            lm.createLedgerMetadata(ledgerId, metadata, createFuture);
-            result(createFuture);
+            result(lm.createLedgerMetadata(ledgerId, metadata));
             fail("Should fail on creating ledger metadata if the ledger already exists");
         } catch (BKException bke) {
             assertEquals(Code.LedgerExistException, bke.getCode());
         }
 
         // ledger exists: get
-
-        readFuture = new GenericCallbackFuture<>();
-        lm.readLedgerMetadata(ledgerId, readFuture);
-        Versioned<LedgerMetadata> readMetadata = result(readFuture);
+        Versioned<LedgerMetadata> readMetadata = result(lm.readLedgerMetadata(ledgerId));
         assertEquals(metadata, readMetadata.getValue());
 
         // ledger exists: update metadata with wrong version
-        writeFuture = new GenericCallbackFuture<>();
-        lm.writeLedgerMetadata(ledgerId, readMetadata.getValue(), new LongVersion(Long.MAX_VALUE), writeFuture);
         try {
-            result(writeFuture);
+            result(lm.writeLedgerMetadata(ledgerId, readMetadata.getValue(), new LongVersion(Long.MAX_VALUE)));
             fail("Should fail to write metadata using a wrong version");
         } catch (BKException bke) {
             assertEquals(Code.MetadataVersionException, bke.getCode());
         }
-        readFuture = new GenericCallbackFuture<>();
-        lm.readLedgerMetadata(ledgerId, readFuture);
-        readMetadata = result(readFuture);
+        readMetadata = result(lm.readLedgerMetadata(ledgerId));
         assertEquals(metadata, readMetadata.getValue());
 
         // ledger exists: delete metadata with wrong version
-
-        deleteFuture = new GenericCallbackFuture<>();
-        lm.removeLedgerMetadata(ledgerId, new LongVersion(Long.MAX_VALUE), deleteFuture);
         try {
-            result(deleteFuture);
+            result(lm.removeLedgerMetadata(ledgerId, new LongVersion(Long.MAX_VALUE)));
             fail("Should fail to delete metadata using a wrong version");
         } catch (BKException bke) {
             assertEquals(Code.MetadataVersionException, bke.getCode());
         }
-        readFuture = new GenericCallbackFuture<>();
-        lm.readLedgerMetadata(ledgerId, readFuture);
-        readMetadata = result(readFuture);
+
+        readMetadata = result(lm.readLedgerMetadata(ledgerId));
         assertEquals(metadata, readMetadata.getValue());
 
         // ledger exists: update metadata with the right version
 
         LongVersion curVersion = (LongVersion) readMetadata.getVersion();
-        writeFuture = new GenericCallbackFuture<>();
-        lm.writeLedgerMetadata(ledgerId, readMetadata.getValue(), curVersion, writeFuture);
-        writtenMetadata = result(writeFuture);
+        writtenMetadata = result(lm.writeLedgerMetadata(ledgerId, readMetadata.getValue(), curVersion));
         LongVersion newVersion = (LongVersion) writtenMetadata.getVersion();
         assertTrue(curVersion.getLongVersion() < newVersion.getLongVersion());
-        readFuture = new GenericCallbackFuture<>();
-        lm.readLedgerMetadata(ledgerId, readFuture);
-        readMetadata = result(readFuture);
+
+        readMetadata = result(lm.readLedgerMetadata(ledgerId));
         assertEquals(writtenMetadata, readMetadata);
 
         // ledger exists: delete metadata with the right version
-
-        deleteFuture = new GenericCallbackFuture<>();
-        lm.removeLedgerMetadata(ledgerId, newVersion, deleteFuture);
-        result(deleteFuture);
-        readFuture = new GenericCallbackFuture<>();
+        result(lm.removeLedgerMetadata(ledgerId, newVersion));
         try {
-            lm.readLedgerMetadata(ledgerId, readFuture);
-            result(readFuture);
+            result(lm.readLedgerMetadata(ledgerId));
             fail("Should fail to read ledger if it is deleted");
         } catch (BKException bke) {
             assertEquals(Code.NoSuchLedgerExistsException, bke.getCode());
@@ -267,14 +233,12 @@ public class EtcdLedgerManagerTest extends EtcdTestBase {
     private void createNumLedgers(int numLedgers) throws Exception {
         List<CompletableFuture<Versioned<LedgerMetadata>>> createFutures = new ArrayList<>(numLedgers);
         for (int i = 0; i < numLedgers; i++) {
-            GenericCallbackFuture<Versioned<LedgerMetadata>> createFuture = new GenericCallbackFuture<>();
-            createFutures.add(createFuture);
             LedgerMetadata metadata = new LedgerMetadata(
                 3, 3, 2,
                 DigestType.CRC32C,
                 "test-password".getBytes(UTF_8)
             );
-            lm.createLedgerMetadata(i, metadata, createFuture);
+            createFutures.add(lm.createLedgerMetadata(i, metadata));
         }
         FutureUtils.result(FutureUtils.collect(createFutures));
     }
@@ -290,10 +254,8 @@ public class EtcdLedgerManagerTest extends EtcdTestBase {
             "test-password".getBytes(UTF_8)
         );
         metadata.addEnsemble(0L, createNumBookies(3));
-        GenericCallbackFuture<Versioned<LedgerMetadata>> createFuture = new GenericCallbackFuture<>();
-        lm.createLedgerMetadata(ledgerId, metadata, createFuture);
-        result(createFuture);
-        Versioned<LedgerMetadata> readMetadata = readLedgerMetadata(ledgerId);
+        result(lm.createLedgerMetadata(ledgerId, metadata));
+        Versioned<LedgerMetadata> readMetadata = lm.readLedgerMetadata(ledgerId).get();
         log.info("Create ledger metadata : {}", readMetadata.getValue());
 
         // register first listener
@@ -326,10 +288,10 @@ public class EtcdLedgerManagerTest extends EtcdTestBase {
         assertNotNull(lm.getLedgerMetadataStream(ledgerId));
 
         // update the metadata
-        writeLedgerMetadata(ledgerId,
-                            LedgerMetadataBuilder.from(metadata).newEnsembleEntry(10L, createNumBookies(3)).build(),
-                            notifiedMetadata.getVersion());
-        readMetadata = readLedgerMetadata(ledgerId);
+        lm.writeLedgerMetadata(ledgerId,
+                               LedgerMetadataBuilder.from(metadata).newEnsembleEntry(10L, createNumBookies(3)).build(),
+                               notifiedMetadata.getVersion()).get();
+        readMetadata = lm.readLedgerMetadata(ledgerId).get();
         assertEquals(readMetadata, metadataQueue1.take());
         assertEquals(readMetadata, metadataQueue2.take());
         lms = lm.getLedgerMetadataStream(ledgerId);
@@ -343,10 +305,10 @@ public class EtcdLedgerManagerTest extends EtcdTestBase {
         assertEquals(1, lms.getNumConsumers());
 
         // update the metadata again
-        writeLedgerMetadata(ledgerId,
-                            LedgerMetadataBuilder.from(metadata).newEnsembleEntry(20L, createNumBookies(3)).build(),
-                            readMetadata.getVersion());
-        readMetadata = readLedgerMetadata(ledgerId);
+        lm.writeLedgerMetadata(ledgerId,
+                               LedgerMetadataBuilder.from(metadata).newEnsembleEntry(20L, createNumBookies(3)).build(),
+                               readMetadata.getVersion()).get();
+        readMetadata = lm.readLedgerMetadata(ledgerId).get();
         assertEquals(readMetadata, metadataQueue1.take());
         assertNull(metadataQueue2.poll());
 
@@ -359,10 +321,10 @@ public class EtcdLedgerManagerTest extends EtcdTestBase {
         assertEquals(0, lms.getNumConsumers());
 
         // update the metadata again
-        writeLedgerMetadata(ledgerId,
-                            LedgerMetadataBuilder.from(metadata).newEnsembleEntry(30L, createNumBookies(3)).build(),
-                            readMetadata.getVersion());
-        readMetadata = readLedgerMetadata(ledgerId);
+        lm.writeLedgerMetadata(ledgerId,
+                               LedgerMetadataBuilder.from(metadata).newEnsembleEntry(30L, createNumBookies(3)).build(),
+                               readMetadata.getVersion()).get();
+        readMetadata = lm.readLedgerMetadata(ledgerId).get();
         assertNull(metadataQueue1.poll());
         assertNull(metadataQueue2.poll());
 
@@ -375,7 +337,7 @@ public class EtcdLedgerManagerTest extends EtcdTestBase {
         assertEquals(1, lms.getNumConsumers());
 
         // delete the ledger
-        removeLedgerMetadata(ledgerId, readMetadata.getVersion());
+        lm.removeLedgerMetadata(ledgerId, readMetadata.getVersion()).get();
         // the listener will eventually be removed
         while (lm.getLedgerMetadataStream(ledgerId) != null) {
             TimeUnit.MILLISECONDS.sleep(100);
@@ -383,24 +345,6 @@ public class EtcdLedgerManagerTest extends EtcdTestBase {
         assertEquals(1, lms.getNumConsumers());
         assertNull(metadataQueue1.poll());
         assertNull(metadataQueue2.poll());
-    }
-
-    Versioned<LedgerMetadata> readLedgerMetadata(long lid) throws Exception {
-        GenericCallbackFuture<Versioned<LedgerMetadata>> readFuture = new GenericCallbackFuture<>();
-        lm.readLedgerMetadata(lid, readFuture);
-        return result(readFuture);
-    }
-
-    void writeLedgerMetadata(long lid, LedgerMetadata metadata, Version version) throws Exception {
-        GenericCallbackFuture<Versioned<LedgerMetadata>> writeFuture = new GenericCallbackFuture<>();
-        lm.writeLedgerMetadata(lid, metadata, version, writeFuture);
-        result(writeFuture);
-    }
-
-    void removeLedgerMetadata(long lid, Version version) throws Exception {
-        GenericCallbackFuture<Void> deleteFuture = new GenericCallbackFuture<>();
-        lm.removeLedgerMetadata(lid, version, deleteFuture);
-        result(deleteFuture);
     }
 
     static List<BookieSocketAddress> createNumBookies(int numBookies) {

@@ -54,7 +54,7 @@ import org.slf4j.LoggerFactory;
  * Encapsulates asynchronous ledger create operation.
  *
  */
-class LedgerCreateOp implements GenericCallback<Versioned<LedgerMetadata>> {
+class LedgerCreateOp {
 
     static final Logger LOG = LoggerFactory.getLogger(LedgerCreateOp.class);
 
@@ -151,7 +151,8 @@ class LedgerCreateOp implements GenericCallback<Versioned<LedgerMetadata>> {
             generateLedgerIdAndCreateLedger();
         } else {
             // Create ledger with supplied ledgerId
-            bk.getLedgerManager().createLedgerMetadata(ledgerId, metadata, LedgerCreateOp.this);
+            bk.getLedgerManager().createLedgerMetadata(ledgerId, metadata)
+                .whenComplete((written, exception) -> metadataCallback(written, exception));
         }
     }
 
@@ -167,7 +168,8 @@ class LedgerCreateOp implements GenericCallback<Versioned<LedgerMetadata>> {
                 }
                 LedgerCreateOp.this.ledgerId = ledgerId;
                 // create a ledger with metadata
-                bk.getLedgerManager().createLedgerMetadata(ledgerId, metadata, LedgerCreateOp.this);
+                bk.getLedgerManager().createLedgerMetadata(ledgerId, metadata)
+                    .whenComplete((written, exception) -> metadataCallback(written, exception));
             }
         });
     }
@@ -185,44 +187,45 @@ class LedgerCreateOp implements GenericCallback<Versioned<LedgerMetadata>> {
     }
 
     /**
-     * Callback when created ledger.
+     * Callback when metadata store has responded.
      */
-    @Override
-    public void operationComplete(int rc, Versioned<LedgerMetadata> writtenMetadata) {
-        if (this.generateLedgerId && (BKException.Code.LedgerExistException == rc)) {
-            // retry to generate a new ledger id
-            generateLedgerIdAndCreateLedger();
-            return;
-        } else if (BKException.Code.OK != rc) {
-            createComplete(rc, null);
-            return;
-        }
-
-        try {
-            if (adv) {
-                lh = new LedgerHandleAdv(bk.getClientCtx(), ledgerId, writtenMetadata, digestType, passwd, writeFlags);
+    private void metadataCallback(Versioned<LedgerMetadata> writtenMetadata, Throwable exception) {
+        if (exception != null) {
+            if (this.generateLedgerId
+                && (BKException.getExceptionCode(exception) == BKException.Code.LedgerExistException)) {
+                // retry to generate a new ledger id
+                generateLedgerIdAndCreateLedger();
             } else {
-                lh = new LedgerHandle(bk.getClientCtx(), ledgerId, writtenMetadata, digestType, passwd, writeFlags);
+                createComplete(BKException.getExceptionCode(exception), null);
             }
-        } catch (GeneralSecurityException e) {
-            LOG.error("Security exception while creating ledger: " + ledgerId, e);
-            createComplete(BKException.Code.DigestNotInitializedException, null);
-            return;
-        } catch (NumberFormatException e) {
-            LOG.error("Incorrectly entered parameter throttle: " + bk.getConf().getThrottleValue(), e);
-            createComplete(BKException.Code.IncorrectParameterException, null);
-            return;
+        } else {
+            try {
+                if (adv) {
+                    lh = new LedgerHandleAdv(bk.getClientCtx(), ledgerId, writtenMetadata,
+                                             digestType, passwd, writeFlags);
+                } else {
+                    lh = new LedgerHandle(bk.getClientCtx(), ledgerId, writtenMetadata, digestType, passwd, writeFlags);
+                }
+            } catch (GeneralSecurityException e) {
+                LOG.error("Security exception while creating ledger: " + ledgerId, e);
+                createComplete(BKException.Code.DigestNotInitializedException, null);
+                return;
+            } catch (NumberFormatException e) {
+                LOG.error("Incorrectly entered parameter throttle: " + bk.getConf().getThrottleValue(), e);
+                createComplete(BKException.Code.IncorrectParameterException, null);
+                return;
+            }
+
+            List<BookieSocketAddress> curEns = lh.getLedgerMetadata().getEnsemble(0L);
+            LOG.info("Ensemble: {} for ledger: {}", curEns, lh.getId());
+
+            for (BookieSocketAddress bsa : curEns) {
+                clientStats.getEnsembleBookieDistributionCounter(bsa.toString()).inc();
+            }
+
+            // return the ledger handle back
+            createComplete(BKException.Code.OK, lh);
         }
-
-        List<BookieSocketAddress> curEns = lh.getLedgerMetadata().getEnsemble(0L);
-        LOG.info("Ensemble: {} for ledger: {}", curEns, lh.getId());
-
-        for (BookieSocketAddress bsa : curEns) {
-            clientStats.getEnsembleBookieDistributionCounter(bsa.toString()).inc();
-        }
-
-        // return the ledger handle back
-        createComplete(BKException.Code.OK, lh);
     }
 
     private void createComplete(int rc, LedgerHandle lh) {

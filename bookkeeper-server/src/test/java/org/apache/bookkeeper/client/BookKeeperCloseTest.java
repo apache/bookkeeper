@@ -77,7 +77,7 @@ public class BookKeeperCloseTest extends BookKeeperClusterTestCase {
                 @Override
                 public void recoveryAddEntry(ByteBuf entry, WriteCallback cb,
                                              Object ctx, byte[] masterKey)
-                        throws IOException, BookieException {
+                        throws IOException, BookieException, InterruptedException {
                     try {
                         Thread.sleep(5000);
                     } catch (InterruptedException ie) {
@@ -91,7 +91,7 @@ public class BookKeeperCloseTest extends BookKeeperClusterTestCase {
                 @Override
                 public void addEntry(ByteBuf entry, boolean ackBeforeSync, WriteCallback cb,
                                      Object ctx, byte[] masterKey)
-                        throws IOException, BookieException {
+                        throws IOException, BookieException, InterruptedException {
                     try {
                         Thread.sleep(5000);
                     } catch (InterruptedException ie) {
