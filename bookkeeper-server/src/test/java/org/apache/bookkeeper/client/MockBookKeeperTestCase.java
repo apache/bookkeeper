@@ -372,7 +372,7 @@ public abstract class MockBookKeeperTestCase {
                 if (ledgerMetadata == null) {
                     promise.completeExceptionally(new BKException.BKNoSuchLedgerExistsException());
                 } else {
-                    promise.complete(new Versioned<>(new LedgerMetadata(ledgerMetadata), new LongVersion(1)));
+                    promise.complete(new Versioned<>(ledgerMetadata, new LongVersion(1)));
                 }
             });
             return promise;
@@ -426,7 +426,7 @@ public abstract class MockBookKeeperTestCase {
             executor.executeOrdered(ledgerId, () -> {
 
                     LedgerMetadata ledgerMetadata = (LedgerMetadata) args[1];
-                    mockLedgerMetadataRegistry.put(ledgerId, new LedgerMetadata(ledgerMetadata));
+                    mockLedgerMetadataRegistry.put(ledgerId, ledgerMetadata);
                     promise.complete(new Versioned<>(ledgerMetadata, new LongVersion(1)));
             });
             return promise;
