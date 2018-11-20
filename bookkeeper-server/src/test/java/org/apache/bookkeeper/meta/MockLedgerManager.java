@@ -19,10 +19,9 @@
  */
 package org.apache.bookkeeper.meta;
 
-import com.google.common.base.Optional;
-
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
@@ -83,7 +82,7 @@ public class MockLedgerManager implements LedgerManager {
         if (pair == null) {
             return null;
         } else {
-            return new Versioned<>(LedgerMetadata.parseConfig(pair.getRight(), Optional.absent()), pair.getLeft());
+            return new Versioned<>(LedgerMetadata.parseConfig(pair.getRight(), Optional.empty()), pair.getLeft());
         }
     }
 
