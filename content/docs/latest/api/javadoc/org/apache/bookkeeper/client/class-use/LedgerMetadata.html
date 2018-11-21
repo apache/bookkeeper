@@ -265,23 +265,9 @@
          org.apache.bookkeeper.versioning.Versioned&lt;<a href="../../../../../org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a>&gt;&nbsp;newMetadata)</code>&nbsp;</td>
 </tr>
 <tr class="altColor">
-<td class="colFirst"><code>void</code></td>
-<td class="colLast"><span class="typeNameLabel">LedgerCreateOp.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/LedgerCreateOp.html#operationComplete-int-org.apache.bookkeeper.versioning.Versioned-">operationComplete</a></span>(int&nbsp;rc,
-                 org.apache.bookkeeper.versioning.Versioned&lt;<a href="../../../../../org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a>&gt;&nbsp;writtenMetadata)</code>
-<div class="block">Callback when created ledger.</div>
-</td>
-</tr>
-<tr class="rowColor">
-<td class="colFirst"><code>void</code></td>
-<td class="colLast"><span class="typeNameLabel">BookKeeperAdmin.ReadMetadataCallback.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/BookKeeperAdmin.ReadMetadataCallback.html#operationComplete-int-org.apache.bookkeeper.versioning.Versioned-">operationComplete</a></span>(int&nbsp;rc,
-                 org.apache.bookkeeper.versioning.Versioned&lt;<a href="../../../../../org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a>&gt;&nbsp;result)</code>&nbsp;</td>
-</tr>
-<tr class="altColor">
-<td class="colFirst"><code>void</code></td>
-<td class="colLast"><span class="typeNameLabel">LedgerOpenOp.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/LedgerOpenOp.html#operationComplete-int-org.apache.bookkeeper.versioning.Versioned-">operationComplete</a></span>(int&nbsp;rc,
-                 org.apache.bookkeeper.versioning.Versioned&lt;<a href="../../../../../org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a>&gt;&nbsp;versionedMetadata)</code>
-<div class="block">Implements Open Ledger Callback.</div>
-</td>
+<td class="colFirst"><code>(package private) boolean</code></td>
+<td class="colLast"><span class="typeNameLabel">LedgerHandle.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/LedgerHandle.html#setLedgerMetadata-org.apache.bookkeeper.versioning.Versioned-org.apache.bookkeeper.versioning.Versioned-">setLedgerMetadata</a></span>(org.apache.bookkeeper.versioning.Versioned&lt;<a href="../../../../../org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a>&gt;&nbsp;expected,
+                 org.apache.bookkeeper.versioning.Versioned&lt;<a href="../../../../../org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a>&gt;&nbsp;newMetadata)</code>&nbsp;</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>(package private) boolean</code></td>
@@ -289,16 +275,11 @@
                  org.apache.bookkeeper.versioning.Versioned&lt;<a href="../../../../../org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a>&gt;&nbsp;newMetadata)</code>&nbsp;</td>
 </tr>
 <tr class="altColor">
-<td class="colFirst"><code>(package private) boolean</code></td>
-<td class="colLast"><span class="typeNameLabel">LedgerHandle.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/LedgerHandle.html#setLedgerMetadata-org.apache.bookkeeper.versioning.Versioned-org.apache.bookkeeper.versioning.Versioned-">setLedgerMetadata</a></span>(org.apache.bookkeeper.versioning.Versioned&lt;<a href="../../../../../org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a>&gt;&nbsp;expected,
-                 org.apache.bookkeeper.versioning.Versioned&lt;<a href="../../../../../org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a>&gt;&nbsp;newMetadata)</code>&nbsp;</td>
-</tr>
-<tr class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
 <td class="colLast"><span class="typeNameLabel">MetadataUpdateLoop.LocalValueUpdater.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/MetadataUpdateLoop.LocalValueUpdater.html#updateValue-org.apache.bookkeeper.versioning.Versioned-org.apache.bookkeeper.versioning.Versioned-">updateValue</a></span>(org.apache.bookkeeper.versioning.Versioned&lt;<a href="../../../../../org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a>&gt;&nbsp;oldValue,
            org.apache.bookkeeper.versioning.Versioned&lt;<a href="../../../../../org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a>&gt;&nbsp;newValue)</code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
 <td class="colLast"><span class="typeNameLabel">MetadataUpdateLoop.LocalValueUpdater.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/MetadataUpdateLoop.LocalValueUpdater.html#updateValue-org.apache.bookkeeper.versioning.Versioned-org.apache.bookkeeper.versioning.Versioned-">updateValue</a></span>(org.apache.bookkeeper.versioning.Versioned&lt;<a href="../../../../../org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a>&gt;&nbsp;oldValue,
            org.apache.bookkeeper.versioning.Versioned&lt;<a href="../../../../../org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a>&gt;&nbsp;newValue)</code>&nbsp;</td>
