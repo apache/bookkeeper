@@ -402,8 +402,8 @@ public abstract class AbstractZkLedgerManager implements LedgerManager, Watcher 
                     LongVersion version = new LongVersion(stat.getVersion());
                     LedgerMetadata metadata = LedgerMetadata.parseConfig(data, Optional.of(stat.getCtime()));
                     promise.complete(new Versioned<>(metadata, version));
-                } catch (IOException e) {
-                    LOG.error("Could not parse ledger metadata for ledger: " + ledgerId, e);
+                } catch (Throwable t) {
+                    LOG.error("Could not parse ledger metadata for ledger: {}", ledgerId, t);
                     promise.completeExceptionally(new BKException.ZKException());
                 }
             }
