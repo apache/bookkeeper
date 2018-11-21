@@ -175,7 +175,7 @@ find_module_jar() {
     BUILT_JAR=$(find_module_jar_at ${BK_HOME}/${MODULE_PATH}/target ${MODULE_NAME})
     if [ -z "${BUILT_JAR}" ]; then
       echo "Couldn't find module '${MODULE_NAME}' jar." >&2
-      read -p "Do you want me to run \`mvn package -DskiptTests\` for you ? (y|n) " answer
+      read -p "Do you want me to run \`mvn package -DskipTests -Dstream\` for you ? (y|n) " answer
       case "${answer:0:1}" in
         y|Y )
           mvn package -DskipTests -Dstream
@@ -211,9 +211,11 @@ add_maven_deps_to_classpath() {
   # and cache it. Save the file into our target dir so a mvn clean will get
   # clean it up and force us create a new one.
   f="${BK_HOME}/${MODULE_PATH}/target/cached_classpath.txt"
+  output="${BK_HOME}/${MODULE_PATH}/target/build_classpath.out"
   if [ ! -f ${f} ]; then
     echo "the classpath of module '${MODULE_PATH}' is not found, generating it ..." >&2
-    ${MVN} -f "${BK_HOME}/${MODULE_PATH}/pom.xml" -Dstream dependency:build-classpath -Dmdep.outputFile="target/cached_classpath.txt" &> /dev/null
+    echo "see output at ${output} for the progress ..." >&2
+    ${MVN} -f "${BK_HOME}/${MODULE_PATH}/pom.xml" -Dstream dependency:build-classpath -Dmdep.outputFile="target/cached_classpath.txt" &> ${output}
     echo "the classpath of module '${MODULE_PATH}' is generated at '${f}'." >&2
   fi
 }

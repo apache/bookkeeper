@@ -65,7 +65,7 @@ where command is one of:
     autorecovery        Run AutoRecovery service daemon
     zookeeper           Run zookeeper server
 
-[local development commands]
+[development commands]
 
     localbookie <n>     Run a test ensemble of <n> bookies locally
     standalone          Run a standalone cluster (with all service components) locally
