@@ -57,8 +57,8 @@ public class LedgerMetadataBuilder {
     private DigestType digestType = DigestType.CRC32C;
     private Optional<byte[]> password = Optional.empty();
 
-    private Optional<Long> ctime = Optional.empty();
-    private Optional<Long> metadataStoreCtime = Optional.empty();
+    private long ctime = -1;
+    private boolean storeCtime = false;
     private Map<String, byte[]> customMetadata = Collections.emptyMap();
 
     public static LedgerMetadataBuilder create() {
@@ -90,8 +90,8 @@ public class LedgerMetadataBuilder {
             builder.password = Optional.of(other.getPassword());
         }
 
-        builder.ctime = other.ctime;
-        builder.metadataStoreCtime = other.metadataStoreCtime;
+        builder.ctime = other.getCtime();
+        builder.storeCtime = other.storeCtime;
 
         builder.customMetadata = ImmutableMap.copyOf(other.getCustomMetadata());
 
@@ -165,12 +165,12 @@ public class LedgerMetadataBuilder {
     }
 
     public LedgerMetadataBuilder withCreationTime(long ctime) {
-        this.ctime = Optional.of(ctime);
+        this.ctime = ctime;
         return this;
     }
 
-    public LedgerMetadataBuilder withMetadataStoreCreationTime(long metadataStoreCtime) {
-        this.metadataStoreCtime = Optional.of(metadataStoreCtime);
+    public LedgerMetadataBuilder storingCreationTime(boolean storing) {
+        this.storeCtime = storing;
         return this;
     }
 
@@ -181,7 +181,7 @@ public class LedgerMetadataBuilder {
         return new LedgerMetadata(metadataFormatVersion,
                                   ensembleSize, writeQuorumSize, ackQuorumSize,
                                   state, lastEntryId, length, ensembles,
-                                  digestType, password, ctime, metadataStoreCtime,
+                                  digestType, password, ctime, storeCtime,
                                   customMetadata);
     }
 

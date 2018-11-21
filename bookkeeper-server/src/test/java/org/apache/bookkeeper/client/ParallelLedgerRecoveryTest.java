@@ -673,7 +673,8 @@ public class ParallelLedgerRecoveryTest extends BookKeeperClusterTestCase {
         final AtomicInteger rcHolder = new AtomicInteger(-1234);
         final CountDownLatch doneLatch = new CountDownLatch(1);
 
-        new ReadLastConfirmedOp(readLh, bkc.getBookieClient(), readLh.getCurrentEnsemble(),
+        new ReadLastConfirmedOp(readLh, bkc.getBookieClient(),
+                                readLh.getLedgerMetadata().getAllEnsembles().lastEntry().getValue(),
                 new ReadLastConfirmedOp.LastConfirmedDataCallback() {
                     @Override
                     public void readLastConfirmedDataComplete(int rc, DigestManager.RecoveryData data) {

@@ -78,8 +78,8 @@ public class LedgerMetadata implements org.apache.bookkeeper.client.api.LedgerMe
     private int ackQuorumSize;
     private long length;
     private long lastEntryId;
-    final Optional<Long> ctime;
-    final Optional<Long> metadataStoreCtime;
+    private long ctime;
+    boolean storeCtime; // non-private so builder can access for copy
 
     private LedgerMetadataFormat.State state;
     private TreeMap<Long, ImmutableList<BookieSocketAddress>> ensembles =  new TreeMap<>();
@@ -102,13 +102,13 @@ public class LedgerMetadata implements org.apache.bookkeeper.client.api.LedgerMe
         this.writeQuorumSize = writeQuorumSize;
         this.ackQuorumSize = ackQuorumSize;
         if (storeSystemtimeAsLedgerCreationTime) {
-            this.ctime = Optional.of(System.currentTimeMillis());
-            this.metadataStoreCtime = Optional.empty();
+            this.ctime = System.currentTimeMillis();
+            this.storeCtime = storeSystemtimeAsLedgerCreationTime;
         } else {
             // if client disables storing its system time as ledger creation time, there should be no ctime at this
             // moment.
-            this.ctime = Optional.empty();
-            this.metadataStoreCtime = Optional.empty();
+            this.ctime = -1L;
+            this.storeCtime = false;
         }
 
         /*
@@ -139,8 +139,8 @@ public class LedgerMetadata implements org.apache.bookkeeper.client.api.LedgerMe
                    Map<Long, List<BookieSocketAddress>> ensembles,
                    DigestType digestType,
                    Optional<byte[]> password,
-                   Optional<Long> ctime,
-                   Optional<Long> metadataStoreCtime,
+                   long ctime,
+                   boolean storeCtime,
                    Map<String, byte[]> customMetadata) {
         checkArgument(ensembles.size() > 0, "There must be at least one ensemble in the ledger");
 
@@ -157,7 +157,9 @@ public class LedgerMetadata implements org.apache.bookkeeper.client.api.LedgerMe
         length.ifPresent((l) -> this.length = l);
         setEnsembles(ensembles);
 
-        currentEnsemble = this.ensembles.lastEntry().getValue();
+        if (state != LedgerMetadataFormat.State.CLOSED) {
+            currentEnsemble = this.ensembles.lastEntry().getValue();
+        }
 
         this.digestType = digestType.equals(DigestType.MAC)
             ? LedgerMetadataFormat.DigestType.HMAC : LedgerMetadataFormat.DigestType.valueOf(digestType.toString());
@@ -168,7 +170,7 @@ public class LedgerMetadata implements org.apache.bookkeeper.client.api.LedgerMe
             });
 
         this.ctime = ctime;
-        this.metadataStoreCtime = metadataStoreCtime;
+        this.storeCtime = storeCtime;
 
         this.customMetadata.putAll(customMetadata);
     }
@@ -196,7 +198,7 @@ public class LedgerMetadata implements org.apache.bookkeeper.client.api.LedgerMe
         this.hasPassword = other.hasPassword;
         this.digestType = other.digestType;
         this.ctime = other.ctime;
-        this.metadataStoreCtime = other.metadataStoreCtime;
+        this.storeCtime = other.storeCtime;
         this.password = new byte[other.password.length];
         System.arraycopy(other.password, 0, this.password, 0, other.password.length);
         // copy the ensembles
@@ -240,7 +242,7 @@ public class LedgerMetadata implements org.apache.bookkeeper.client.api.LedgerMe
 
     @Override
     public long getCtime() {
-        return ctime.orElse(metadataStoreCtime.orElse(-1L));
+        return ctime;
     }
 
     /**
@@ -381,7 +383,9 @@ public class LedgerMetadata implements org.apache.bookkeeper.client.api.LedgerMe
             .setEnsembleSize(ensembleSize).setLength(length)
             .setState(state).setLastEntryId(lastEntryId);
 
-        ctime.ifPresent(t -> builder.setCtime(t));
+        if (storeCtime) {
+            builder.setCtime(ctime);
+        }
 
         if (hasPassword) {
             builder.setDigestType(digestType);
@@ -530,9 +534,9 @@ public class LedgerMetadata implements org.apache.bookkeeper.client.api.LedgerMe
         }
 
         if (data.hasCtime()) {
-            builder.withCreationTime(data.getCtime());
-        } else {
-            metadataStoreCtime.ifPresent(t -> builder.withMetadataStoreCreationTime(t));
+            builder.withCreationTime(data.getCtime()).storingCreationTime(true);
+        } else if (metadataStoreCtime.isPresent()) {
+            builder.withCreationTime(metadataStoreCtime.get()).storingCreationTime(false);
         }
 
         if (data.getState() == LedgerMetadataFormat.State.IN_RECOVERY) {
@@ -548,8 +552,8 @@ public class LedgerMetadata implements org.apache.bookkeeper.client.api.LedgerMe
 
         for (LedgerMetadataFormat.Segment s : data.getSegmentList()) {
             List<BookieSocketAddress> addrs = new ArrayList<>();
-            for (String a : s.getEnsembleMemberList()) {
-                addrs.add(new BookieSocketAddress(a));
+            for (String addr : s.getEnsembleMemberList()) {
+                addrs.add(new BookieSocketAddress(addr));
             }
             builder.newEnsembleEntry(s.getFirstEntryId(), addrs);
         }
