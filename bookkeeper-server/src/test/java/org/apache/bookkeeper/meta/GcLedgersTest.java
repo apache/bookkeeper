@@ -95,7 +95,7 @@ public class GcLedgersTest extends LedgerManagerTestCase {
      */
     private void createLedgers(int numLedgers, final Set<Long> createdLedgers) throws IOException {
         final AtomicInteger expected = new AtomicInteger(numLedgers);
-        List<BookieSocketAddress> ensemble = Lists.newArrayList(new BookieSocketAddress("1.1.1.1", 1234));
+        List<BookieSocketAddress> ensemble = Lists.newArrayList(new BookieSocketAddress("192.0.2.1", 1234));
 
         for (int i = 0; i < numLedgers; i++) {
             getLedgerIdGenerator().generateLedgerId(new GenericCallback<Long>() {
