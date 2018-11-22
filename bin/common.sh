@@ -178,7 +178,10 @@ find_module_jar() {
       read -p "Do you want me to run \`mvn package -DskipTests -Dstream\` for you ? (y|n) " answer
       case "${answer:0:1}" in
         y|Y )
-          mvn package -DskipTests -Dstream
+          mkdir -p ${BK_HOME}/logs
+          output="${BK_HOME}/logs/build.out"
+          echo "see output at ${output} for the progress ..." >&2
+          mvn package -DskipTests -Dstream &> ${output} 
           ;;
         * )
           exit 1
