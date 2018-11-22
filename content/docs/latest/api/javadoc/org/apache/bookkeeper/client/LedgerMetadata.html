@@ -18,7 +18,7 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":10,"i1":9,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10,"i15":10,"i16":10,"i17":10,"i18":10,"i19":10,"i20":10,"i21":10,"i22":10,"i23":10,"i24":10,"i25":10,"i26":10,"i27":10,"i28":9,"i29":9,"i30":10,"i31":10,"i32":10,"i33":10,"i34":10,"i35":10,"i36":10,"i37":10,"i38":10,"i39":10};
+var methods = {"i0":10,"i1":9,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10,"i15":10,"i16":10,"i17":10,"i18":10,"i19":10,"i20":10,"i21":10,"i22":10,"i23":10,"i24":10,"i25":10,"i26":10,"i27":10,"i28":10,"i29":9,"i30":9,"i31":10,"i32":10,"i33":10,"i34":10,"i35":10,"i36":10,"i37":10,"i38":10,"i39":10};
 var tabs = {65535:["t0","All Methods"],1:["t1","Static Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -152,7 +152,7 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/LedgerMetadata.
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>(package private) boolean</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerMetadata.html#storeSystemtimeAsLedgerCreationTime">storeSystemtimeAsLedgerCreationTime</a></span></code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerMetadata.html#storeCtime">storeCtime</a></span></code>&nbsp;</td>
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
@@ -191,7 +191,8 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/LedgerMetadata.
               boolean&nbsp;storeSystemtimeAsLedgerCreationTime)</code>&nbsp;</td>
 </tr>
 <tr class="altColor">
-<td class="colOne"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerMetadata.html#LedgerMetadata-int-int-int-org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.State-java.util.Optional-java.util.Optional-java.util.Map-org.apache.bookkeeper.client.api.DigestType-java.util.Optional-java.util.Optional-java.util.Map-">LedgerMetadata</a></span>(int&nbsp;ensembleSize,
+<td class="colOne"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerMetadata.html#LedgerMetadata-int-int-int-int-org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.State-java.util.Optional-java.util.Optional-java.util.Map-org.apache.bookkeeper.client.api.DigestType-java.util.Optional-long-boolean-java.util.Map-">LedgerMetadata</a></span>(int&nbsp;metadataFormatVersion,
+              int&nbsp;ensembleSize,
               int&nbsp;writeQuorumSize,
               int&nbsp;ackQuorumSize,
               org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.State&nbsp;state,
@@ -200,7 +201,8 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/LedgerMetadata.
               <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util">Map</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>,<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&gt;&nbsp;ensembles,
               <a href="../../../../org/apache/bookkeeper/client/api/DigestType.html" title="enum in org.apache.bookkeeper.client.api">DigestType</a>&nbsp;digestType,
               <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Optional.html?is-external=true" title="class or interface in java.util">Optional</a>&lt;byte[]&gt;&nbsp;password,
-              <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Optional.html?is-external=true" title="class or interface in java.util">Optional</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>&gt;&nbsp;ctime,
+              long&nbsp;ctime,
+              boolean&nbsp;storeCtime,
               <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util">Map</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>,byte[]&gt;&nbsp;customMetadata)</code>&nbsp;</td>
 </tr>
 <tr class="rowColor">
@@ -323,76 +325,75 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/LedgerMetadata.
 </td>
 </tr>
 <tr id="i19" class="rowColor">
+<td class="colFirst"><code>(package private) int</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerMetadata.html#getMetadataFormatVersion--">getMetadataFormatVersion</a></span>()</code>&nbsp;</td>
+</tr>
+<tr id="i20" class="altColor">
 <td class="colFirst"><code>(package private) long</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerMetadata.html#getNextEnsembleChange-long-">getNextEnsembleChange</a></span>(long&nbsp;entryId)</code>
 <div class="block">the entry id greater than the given entry-id at which the next ensemble change takes
  place.</div>
 </td>
 </tr>
-<tr id="i20" class="altColor">
+<tr id="i21" class="rowColor">
 <td class="colFirst"><code>byte[]</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerMetadata.html#getPassword--">getPassword</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i21" class="rowColor">
+<tr id="i22" class="altColor">
 <td class="colFirst"><code>org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.State</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerMetadata.html#getState--">getState</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i22" class="altColor">
+<tr id="i23" class="rowColor">
 <td class="colFirst"><code>int</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerMetadata.html#getWriteQuorumSize--">getWriteQuorumSize</a></span>()</code>
 <div class="block">Returns the write quorum size of this ledger.</div>
 </td>
 </tr>
-<tr id="i23" class="rowColor">
+<tr id="i24" class="altColor">
 <td class="colFirst"><code>(package private) boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerMetadata.html#hasPassword--">hasPassword</a></span>()</code>
 <div class="block">In versions 4.1.0 and below, the digest type and password were not
  stored in the metadata.</div>
 </td>
 </tr>
-<tr id="i24" class="altColor">
+<tr id="i25" class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerMetadata.html#isClosed--">isClosed</a></span>()</code>
 <div class="block">Returns whether the ledger is sealed or not.</div>
 </td>
 </tr>
-<tr id="i25" class="rowColor">
+<tr id="i26" class="altColor">
 <td class="colFirst"><code>boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerMetadata.html#isInRecovery--">isInRecovery</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i26" class="altColor">
+<tr id="i27" class="rowColor">
 <td class="colFirst"><code>(package private) void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerMetadata.html#markLedgerInRecovery--">markLedgerInRecovery</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i27" class="rowColor">
+<tr id="i28" class="altColor">
 <td class="colFirst"><code>(package private) void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerMetadata.html#mergeEnsembles-java.util.SortedMap-">mergeEnsembles</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/SortedMap.html?is-external=true" title="class or interface in java.util">SortedMap</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>,? extends <a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&gt;&nbsp;newEnsembles)</code>&nbsp;</td>
 </tr>
-<tr id="i28" class="altColor">
+<tr id="i29" class="rowColor">
 <td class="colFirst"><code>static <a href="../../../../org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a></code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerMetadata.html#parseConfig-byte:A-com.google.common.base.Optional-">parseConfig</a></span>(byte[]&nbsp;bytes,
-           com.google.common.base.Optional&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>&gt;&nbsp;msCtime)</code>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerMetadata.html#parseConfig-byte:A-java.util.Optional-">parseConfig</a></span>(byte[]&nbsp;bytes,
+           <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Optional.html?is-external=true" title="class or interface in java.util">Optional</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>&gt;&nbsp;metadataStoreCtime)</code>
 <div class="block">Parses a given byte array and transforms into a LedgerConfig object.</div>
 </td>
 </tr>
-<tr id="i29" class="rowColor">
-<td class="colFirst"><code>(package private) static <a href="../../../../org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a></code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerMetadata.html#parseVersion1Config-org.apache.bookkeeper.client.LedgerMetadata-java.io.BufferedReader-">parseVersion1Config</a></span>(<a href="../../../../org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a>&nbsp;lc,
-                   <a href="https://docs.oracle.com/javase/8/docs/api/java/io/BufferedReader.html?is-external=true" title="class or interface in java.io">BufferedReader</a>&nbsp;reader)</code>&nbsp;</td>
-</tr>
 <tr id="i30" class="altColor">
+<td class="colFirst"><code>(package private) static <a href="../../../../org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerMetadata.html#parseVersion1Config-java.io.BufferedReader-">parseVersion1Config</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/BufferedReader.html?is-external=true" title="class or interface in java.io">BufferedReader</a>&nbsp;reader)</code>&nbsp;</td>
+</tr>
+<tr id="i31" class="rowColor">
 <td class="colFirst"><code>byte[]</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerMetadata.html#serialize--">serialize</a></span>()</code>
 <div class="block">Generates a byte array of this object.</div>
 </td>
 </tr>
-<tr id="i31" class="rowColor">
+<tr id="i32" class="altColor">
 <td class="colFirst"><code>byte[]</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerMetadata.html#serialize-boolean-">serialize</a></span>(boolean&nbsp;withPassword)</code>&nbsp;</td>
-</tr>
-<tr id="i32" class="altColor">
-<td class="colFirst"><code>(package private) void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerMetadata.html#setCtime-long-">setCtime</a></span>(long&nbsp;ctime)</code>&nbsp;</td>
 </tr>
 <tr id="i33" class="rowColor">
 <td class="colFirst"><code>(package private) void</code></td>
@@ -496,13 +497,13 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/LedgerMetadata.
 </dl>
 </li>
 </ul>
-<a name="storeSystemtimeAsLedgerCreationTime">
+<a name="storeCtime">
 <!--   -->
 </a>
 <ul class="blockListLast">
 <li class="blockList">
-<h4>storeSystemtimeAsLedgerCreationTime</h4>
-<pre>boolean storeSystemtimeAsLedgerCreationTime</pre>
+<h4>storeCtime</h4>
+<pre>boolean storeCtime</pre>
 </li>
 </ul>
 </li>
@@ -528,13 +529,14 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/LedgerMetadata.
                       boolean&nbsp;storeSystemtimeAsLedgerCreationTime)</pre>
 </li>
 </ul>
-<a name="LedgerMetadata-int-int-int-org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.State-java.util.Optional-java.util.Optional-java.util.Map-org.apache.bookkeeper.client.api.DigestType-java.util.Optional-java.util.Optional-java.util.Map-">
+<a name="LedgerMetadata-int-int-int-int-org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.State-java.util.Optional-java.util.Optional-java.util.Map-org.apache.bookkeeper.client.api.DigestType-java.util.Optional-long-boolean-java.util.Map-">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>LedgerMetadata</h4>
-<pre>LedgerMetadata(int&nbsp;ensembleSize,
+<pre>LedgerMetadata(int&nbsp;metadataFormatVersion,
+               int&nbsp;ensembleSize,
                int&nbsp;writeQuorumSize,
                int&nbsp;ackQuorumSize,
                org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.State&nbsp;state,
@@ -543,7 +545,8 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/LedgerMetadata.
                <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util">Map</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>,<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&gt;&nbsp;ensembles,
                <a href="../../../../org/apache/bookkeeper/client/api/DigestType.html" title="enum in org.apache.bookkeeper.client.api">DigestType</a>&nbsp;digestType,
                <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Optional.html?is-external=true" title="class or interface in java.util">Optional</a>&lt;byte[]&gt;&nbsp;password,
-               <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Optional.html?is-external=true" title="class or interface in java.util">Optional</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>&gt;&nbsp;ctime,
+               long&nbsp;ctime,
+               boolean&nbsp;storeCtime,
                <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util">Map</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>,byte[]&gt;&nbsp;customMetadata)</pre>
 </li>
 </ul>
@@ -671,15 +674,6 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/LedgerMetadata.
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>the creation timestamp of this ledger.</dd>
 </dl>
-</li>
-</ul>
-<a name="setCtime-long-">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>setCtime</h4>
-<pre>void&nbsp;setCtime(long&nbsp;ctime)</pre>
 </li>
 </ul>
 <a name="hasPassword--">
@@ -973,20 +967,20 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/LedgerMetadata.
 <pre>public&nbsp;byte[]&nbsp;serialize(boolean&nbsp;withPassword)</pre>
 </li>
 </ul>
-<a name="parseConfig-byte:A-com.google.common.base.Optional-">
+<a name="parseConfig-byte:A-java.util.Optional-">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>parseConfig</h4>
 <pre>public static&nbsp;<a href="../../../../org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a>&nbsp;parseConfig(byte[]&nbsp;bytes,
-                                         com.google.common.base.Optional&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>&gt;&nbsp;msCtime)
+                                         <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Optional.html?is-external=true" title="class or interface in java.util">Optional</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>&gt;&nbsp;metadataStoreCtime)
                                   throws <a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></pre>
 <div class="block">Parses a given byte array and transforms into a LedgerConfig object.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>bytes</code> - byte array to parse</dd>
-<dd><code>msCtime</code> - metadata store creation time, used for legacy ledgers</dd>
+<dd><code>metadataStoreCtime</code> - metadata store creation time, used for legacy ledgers</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>LedgerConfig</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
@@ -994,14 +988,13 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/LedgerMetadata.
 </dl>
 </li>
 </ul>
-<a name="parseVersion1Config-org.apache.bookkeeper.client.LedgerMetadata-java.io.BufferedReader-">
+<a name="parseVersion1Config-java.io.BufferedReader-">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>parseVersion1Config</h4>
-<pre>static&nbsp;<a href="../../../../org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a>&nbsp;parseVersion1Config(<a href="../../../../org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a>&nbsp;lc,
-                                          <a href="https://docs.oracle.com/javase/8/docs/api/java/io/BufferedReader.html?is-external=true" title="class or interface in java.io">BufferedReader</a>&nbsp;reader)
+<pre>static&nbsp;<a href="../../../../org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a>&nbsp;parseVersion1Config(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/BufferedReader.html?is-external=true" title="class or interface in java.io">BufferedReader</a>&nbsp;reader)
                                    throws <a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></pre>
 <dl>
 <dt><span class="throwsLabel">Throws:</span></dt>
@@ -1087,10 +1080,19 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/LedgerMetadata.
 <a name="getLastEnsembleKey--">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>getLastEnsembleKey</h4>
 <pre><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>&nbsp;getLastEnsembleKey()</pre>
+</li>
+</ul>
+<a name="getMetadataFormatVersion--">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>getMetadataFormatVersion</h4>
+<pre>int&nbsp;getMetadataFormatVersion()</pre>
 </li>
 </ul>
 </li>
