@@ -23,6 +23,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
 import java.util.Enumeration;
@@ -234,10 +235,16 @@ public class TestLedgerFragmentReplication extends BookKeeperClusterTestCase {
     @Test
     public void testSplitIntoSubFragmentsWithDifferentFragmentBoundaries()
             throws Exception {
+        List<BookieSocketAddress> ensemble = Lists.newArrayList(
+                new BookieSocketAddress("192.0.2.1", 1234),
+                new BookieSocketAddress("192.0.2.2", 1234),
+                new BookieSocketAddress("192.0.2.3", 1234));
         LedgerMetadata metadata = LedgerMetadataBuilder.create()
             .withEnsembleSize(3).withWriteQuorumSize(3).withAckQuorumSize(3)
             .withPassword(TEST_PSSWD).withDigestType(TEST_DIGEST_TYPE.toApiDigestType())
-            .closingAt(-1, 0).build();
+            .closingAt(-1, 0)
+            .newEnsembleEntry(0L, ensemble)
+            .build();
 
         LedgerHandle lh = new LedgerHandle(bkc.getClientCtx(), 0,
                                            new Versioned<>(metadata, new LongVersion(0L)),

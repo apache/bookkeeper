@@ -23,11 +23,12 @@ import static com.google.common.base.Charsets.UTF_8;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
+import com.google.common.collect.Lists;
 import java.util.Collections;
-import java.util.NoSuchElementException;
+import java.util.List;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
+import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat;
 import org.junit.Test;
 
@@ -41,9 +42,14 @@ public class LedgerMetadataTest {
 
     @Test
     public void testGetters() {
+        List<BookieSocketAddress> ensemble = Lists.newArrayList(
+                new BookieSocketAddress("192.0.2.1", 1234),
+                new BookieSocketAddress("192.0.2.2", 1234),
+                new BookieSocketAddress("192.0.2.3", 1234));
         org.apache.bookkeeper.client.api.LedgerMetadata metadata = LedgerMetadataBuilder.create()
             .withEnsembleSize(3).withWriteQuorumSize(2).withAckQuorumSize(1)
             .withDigestType(DigestType.CRC32.toApiDigestType()).withPassword(passwd)
+            .newEnsembleEntry(0L, ensemble)
             .build();
 
         assertEquals(3, metadata.getEnsembleSize());
@@ -55,21 +61,23 @@ public class LedgerMetadataTest {
         assertEquals(-1L, metadata.getLastEntryId());
         assertEquals(0, metadata.getLength());
         assertFalse(metadata.isClosed());
-        assertTrue(metadata.getAllEnsembles().isEmpty());
-
-        try {
-            metadata.getEnsembleAt(99L);
-            fail("Should fail to retrieve ensemble if ensembles is empty");
-        } catch (NoSuchElementException e) {
-            // expected
-        }
+        assertEquals(1, metadata.getAllEnsembles().size());
+        assertEquals(ensemble, metadata.getAllEnsembles().get(0L));
+        assertEquals(ensemble, metadata.getEnsembleAt(99L));
     }
 
     @Test
     public void testStoreSystemtimeAsLedgerCtimeEnabled()
             throws Exception {
+        List<BookieSocketAddress> ensemble = Lists.newArrayList(
+                new BookieSocketAddress("192.0.2.1", 1234),
+                new BookieSocketAddress("192.0.2.2", 1234),
+                new BookieSocketAddress("192.0.2.3", 1234));
         LedgerMetadata lm = LedgerMetadataBuilder.create()
-            .withCreationTime(System.currentTimeMillis()).build();
+            .newEnsembleEntry(0L, ensemble)
+            .withCreationTime(System.currentTimeMillis())
+            .storingCreationTime(true)
+            .build();
         LedgerMetadataFormat format = lm.buildProtoFormat();
         assertTrue(format.hasCtime());
     }
@@ -77,7 +85,12 @@ public class LedgerMetadataTest {
     @Test
     public void testStoreSystemtimeAsLedgerCtimeDisabled()
             throws Exception {
-        LedgerMetadata lm = LedgerMetadataBuilder.create().build();
+        List<BookieSocketAddress> ensemble = Lists.newArrayList(
+                new BookieSocketAddress("192.0.2.1", 1234),
+                new BookieSocketAddress("192.0.2.2", 1234),
+                new BookieSocketAddress("192.0.2.3", 1234));
+        LedgerMetadata lm = LedgerMetadataBuilder.create()
+            .newEnsembleEntry(0L, ensemble).build();
 
         LedgerMetadataFormat format = lm.buildProtoFormat();
         assertFalse(format.hasCtime());
@@ -85,9 +98,15 @@ public class LedgerMetadataTest {
 
     @Test
     public void testToString() {
+        List<BookieSocketAddress> ensemble = Lists.newArrayList(
+                new BookieSocketAddress("192.0.2.1", 1234),
+                new BookieSocketAddress("192.0.2.2", 1234),
+                new BookieSocketAddress("192.0.2.3", 1234));
+
         LedgerMetadata lm1 = LedgerMetadataBuilder.create()
             .withDigestType(DigestType.CRC32.toApiDigestType())
-            .withPassword(passwd).build();
+            .withPassword(passwd)
+            .newEnsembleEntry(0L, ensemble).build();
 
         assertTrue("toString should contain 'password' field", lm1.toString().contains("password"));
         assertTrue("toString should contain password value", lm1.toString().contains(passwdStr));

@@ -99,15 +99,15 @@ public class ReadLastConfirmedAndEntryOpTest {
         internalConf = ClientInternalConf.fromConfig(conf);
 
         // metadata
-        this.ledgerMetadata = LedgerMetadataBuilder.create()
-            .withEnsembleSize(3).withWriteQuorumSize(2).withAckQuorumSize(2)
-            .withDigestType(DigestType.CRC32.toApiDigestType())
-            .withPassword(new byte[0]).build();
         ArrayList<BookieSocketAddress> ensemble = new ArrayList<>(3);
         for (int i = 0; i < 3; i++) {
             ensemble.add(new BookieSocketAddress("127.0.0.1", 3181 + i));
         }
-        this.ledgerMetadata.addEnsemble(0L, ensemble);
+        this.ledgerMetadata = LedgerMetadataBuilder.create()
+            .withEnsembleSize(3).withWriteQuorumSize(2).withAckQuorumSize(2)
+            .withDigestType(DigestType.CRC32.toApiDigestType())
+            .withPassword(new byte[0])
+            .newEnsembleEntry(0L, ensemble).build();
         this.distributionSchedule = new RoundRobinDistributionSchedule(3, 2, 3);
         // schedulers
         this.scheduler = Executors.newSingleThreadScheduledExecutor();

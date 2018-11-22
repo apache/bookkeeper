@@ -546,15 +546,16 @@ public class AuditorLedgerCheckerTest extends BookKeeperClusterTestCase {
         int numofledgers = 5;
         Random rand = new Random();
         for (int i = 0; i < numofledgers; i++) {
-            LedgerMetadata metadata = LedgerMetadataBuilder.create()
-                .withEnsembleSize(3).withWriteQuorumSize(2).withAckQuorumSize(2)
-                .withDigestType(DigestType.CRC32.toApiDigestType())
-                .withPassword("passwd".getBytes()).build();
             ArrayList<BookieSocketAddress> ensemble = new ArrayList<BookieSocketAddress>();
             ensemble.add(new BookieSocketAddress("99.99.99.99:9999"));
             ensemble.add(new BookieSocketAddress("11.11.11.11:1111"));
             ensemble.add(new BookieSocketAddress("88.88.88.88:8888"));
-            metadata.addEnsemble(0, ensemble);
+
+            LedgerMetadata metadata = LedgerMetadataBuilder.create()
+                .withEnsembleSize(3).withWriteQuorumSize(2).withAckQuorumSize(2)
+                .withDigestType(DigestType.CRC32.toApiDigestType())
+                .withPassword("passwd".getBytes())
+                .newEnsembleEntry(0L, ensemble).build();
 
             long ledgerId = (Math.abs(rand.nextLong())) % 100000000;
 
