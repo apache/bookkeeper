@@ -72,22 +72,22 @@ public class LedgerMetadata implements org.apache.bookkeeper.client.api.LedgerMe
     public static final int CURRENT_METADATA_FORMAT_VERSION = 2;
     public static final String VERSION_KEY = "BookieMetadataFormatVersion";
 
-    private int metadataFormatVersion = 0;
-    private int ensembleSize;
-    private int writeQuorumSize;
-    private int ackQuorumSize;
+    private final int metadataFormatVersion;
+    private final int ensembleSize;
+    private final int writeQuorumSize;
+    private final int ackQuorumSize;
     private long length;
     private long lastEntryId;
-    private long ctime;
-    boolean storeCtime; // non-private so builder can access for copy
+    private final long ctime;
+    final boolean storeCtime; // non-private so builder can access for copy
 
     private LedgerMetadataFormat.State state;
     private TreeMap<Long, ImmutableList<BookieSocketAddress>> ensembles =  new TreeMap<>();
     private List<BookieSocketAddress> currentEnsemble;
 
-    private boolean hasPassword = false;
-    private LedgerMetadataFormat.DigestType digestType;
-    private byte[] password;
+    private final boolean hasPassword; // IKTODO other things should be optionals instead
+    private final LedgerMetadataFormat.DigestType digestType;
+    private final byte[] password;
 
     private Map<String, byte[]> customMetadata = Maps.newHashMap();
 
@@ -126,11 +126,13 @@ public class LedgerMetadata implements org.apache.bookkeeper.client.api.LedgerMe
         this.digestType = digestType.equals(DigestType.MAC)
             ? LedgerMetadataFormat.DigestType.HMAC : LedgerMetadataFormat.DigestType.valueOf(digestType.toString());
 
-        password.ifPresent((pw) -> {
-                this.password = pw;
-                this.hasPassword = true;
-            });
-
+        if (password.isPresent()) {
+            this.password = password.get();
+            this.hasPassword = true;
+        } else {
+            this.password = null;
+            this.hasPassword = false;
+        }
         this.ctime = ctime;
         this.storeCtime = storeCtime;
 
