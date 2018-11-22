@@ -553,38 +553,6 @@ public class LedgerMetadata implements org.apache.bookkeeper.client.api.LedgerMe
         }
     }
 
-    /**
-     * Routine to compare two {@code Map<String, byte[]>}; Since the values in the map are {@code byte[]}, we can't use
-     * {@code Map.equals}.
-     * @param first
-     *          The first map
-     * @param second
-     *          The second map to compare with
-     * @return true if the 2 maps contain the exact set of {@code <K,V>} pairs.
-     */
-    public static boolean areByteArrayValMapsEqual(Map<String, byte[]> first, Map<String, byte[]> second) {
-        if (first == null && second == null) {
-            return true;
-        }
-
-        // above check confirms that both are not null;
-        // if one is null the other isn't; so they must
-        // be different
-        if (first == null || second == null) {
-            return false;
-        }
-
-        if (first.size() != second.size()) {
-            return false;
-        }
-        for (Map.Entry<String, byte[]> entry : first.entrySet()) {
-            if (!Arrays.equals(entry.getValue(), second.get(entry.getKey()))) {
-                return false;
-            }
-        }
-        return true;
-    }
-
     @Override
     public String toString() {
         return toStringRepresentation(true);

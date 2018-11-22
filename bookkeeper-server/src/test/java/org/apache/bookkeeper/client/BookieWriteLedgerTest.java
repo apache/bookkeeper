@@ -39,6 +39,7 @@ import io.netty.buffer.UnpooledByteBufAllocator;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
@@ -588,10 +589,42 @@ public class BookieWriteLedgerTest extends
             lh = bkc.openLedger(ledgerId, digestType, ledgerPassword);
             Map<String, byte[]> outputCustomMetadataMap = lh.getCustomMetadata();
             assertTrue("Can't retrieve proper Custom Data",
-                       LedgerMetadata.areByteArrayValMapsEqual(inputCustomMetadataMap, outputCustomMetadataMap));
+                       areByteArrayValMapsEqual(inputCustomMetadataMap, outputCustomMetadataMap));
             lh.close();
             bkc.deleteLedger(ledgerId);
         }
+    }
+
+    /**
+     * Routine to compare two {@code Map<String, byte[]>}; Since the values in the map are {@code byte[]}, we can't use
+     * {@code Map.equals}.
+     * @param first
+     *          The first map
+     * @param second
+     *          The second map to compare with
+     * @return true if the 2 maps contain the exact set of {@code <K,V>} pairs.
+     */
+    public static boolean areByteArrayValMapsEqual(Map<String, byte[]> first, Map<String, byte[]> second) {
+        if (first == null && second == null) {
+            return true;
+        }
+
+        // above check confirms that both are not null;
+        // if one is null the other isn't; so they must
+        // be different
+        if (first == null || second == null) {
+            return false;
+        }
+
+        if (first.size() != second.size()) {
+            return false;
+        }
+        for (Map.Entry<String, byte[]> entry : first.entrySet()) {
+            if (!Arrays.equals(entry.getValue(), second.get(entry.getKey()))) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /*
