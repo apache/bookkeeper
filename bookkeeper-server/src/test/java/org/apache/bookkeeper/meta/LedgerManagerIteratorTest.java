@@ -26,6 +26,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import com.google.common.collect.Lists;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -49,6 +50,7 @@ import org.apache.bookkeeper.client.LedgerMetadata;
 import org.apache.bookkeeper.client.LedgerMetadataBuilder;
 import org.apache.bookkeeper.meta.LedgerManager.LedgerRangeIterator;
 import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
+import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.util.MathUtils;
 import org.apache.bookkeeper.util.ZkUtils;
 import org.apache.bookkeeper.versioning.Version;
@@ -85,10 +87,16 @@ public class LedgerManagerIteratorTest extends LedgerManagerTestCase {
      * @throws InterruptedException
      */
     void createLedger(LedgerManager lm, Long ledgerId) throws Exception {
+        List<BookieSocketAddress> ensemble = Lists.newArrayList(
+                new BookieSocketAddress("192.0.2.1", 1234),
+                new BookieSocketAddress("192.0.2.2", 1234),
+                new BookieSocketAddress("192.0.2.3", 1234));
         LedgerMetadata meta = LedgerMetadataBuilder.create()
             .withEnsembleSize(3).withWriteQuorumSize(3).withAckQuorumSize(2)
             .withDigestType(BookKeeper.DigestType.CRC32.toApiDigestType())
-            .withPassword("passwd".getBytes()).build();
+            .withPassword("passwd".getBytes())
+            .newEnsembleEntry(0L, ensemble)
+            .build();
         lm.createLedgerMetadata(ledgerId, meta).get();
     }
 
