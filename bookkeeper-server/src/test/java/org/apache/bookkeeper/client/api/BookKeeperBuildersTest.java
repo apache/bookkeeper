@@ -34,6 +34,7 @@ import org.apache.bookkeeper.client.BKException.BKNoSuchLedgerExistsException;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.LedgerMetadata;
+import org.apache.bookkeeper.client.LedgerMetadataBuilder;
 import org.apache.bookkeeper.client.MockBookKeeperTestCase;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.proto.BookieProtocol;
@@ -405,16 +406,15 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
     protected LedgerMetadata generateLedgerMetadata(int ensembleSize,
         int writeQuorumSize, int ackQuorumSize, byte[] password,
         Map<String, byte[]> customMetadata) {
-        LedgerMetadata ledgerMetadata = new LedgerMetadata(
-            ensembleSize,
-            writeQuorumSize,
-            ackQuorumSize,
-            BookKeeper.DigestType.CRC32,
-            password,
-            customMetadata,
-            true);
-        ledgerMetadata.addEnsemble(0, generateNewEnsemble(ensembleSize));
-        return ledgerMetadata;
+        return LedgerMetadataBuilder.create()
+            .withEnsembleSize(ensembleSize)
+            .withWriteQuorumSize(writeQuorumSize)
+            .withAckQuorumSize(ackQuorumSize)
+            .withDigestType(BookKeeper.DigestType.CRC32.toApiDigestType())
+            .withPassword(password)
+            .withCustomMetadata(customMetadata)
+            .withCreationTime(System.currentTimeMillis())
+            .newEnsembleEntry(0, generateNewEnsemble(ensembleSize)).build();
     }
 
 }

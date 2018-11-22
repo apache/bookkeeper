@@ -91,44 +91,6 @@ public class LedgerMetadata implements org.apache.bookkeeper.client.api.LedgerMe
 
     private Map<String, byte[]> customMetadata = Maps.newHashMap();
 
-    public LedgerMetadata(int ensembleSize,
-                          int writeQuorumSize,
-                          int ackQuorumSize,
-                          BookKeeper.DigestType digestType,
-                          byte[] password,
-                          Map<String, byte[]> customMetadata,
-                          boolean storeSystemtimeAsLedgerCreationTime) {
-        this.ensembleSize = ensembleSize;
-        this.writeQuorumSize = writeQuorumSize;
-        this.ackQuorumSize = ackQuorumSize;
-        if (storeSystemtimeAsLedgerCreationTime) {
-            this.ctime = System.currentTimeMillis();
-            this.storeCtime = storeSystemtimeAsLedgerCreationTime;
-        } else {
-            // if client disables storing its system time as ledger creation time, there should be no ctime at this
-            // moment.
-            this.ctime = -1L;
-            this.storeCtime = false;
-        }
-
-        /*
-         * It is set in PendingReadOp.readEntryComplete, and
-         * we read it in LedgerRecoveryOp.readComplete.
-         */
-        this.length = 0;
-        this.state = LedgerMetadataFormat.State.OPEN;
-        this.lastEntryId = LedgerHandle.INVALID_ENTRY_ID;
-        this.metadataFormatVersion = CURRENT_METADATA_FORMAT_VERSION;
-
-        this.digestType = digestType.equals(BookKeeper.DigestType.MAC)
-            ? LedgerMetadataFormat.DigestType.HMAC : LedgerMetadataFormat.DigestType.valueOf(digestType.toString());
-        this.password = Arrays.copyOf(password, password.length);
-        this.hasPassword = true;
-        if (customMetadata != null) {
-            this.customMetadata = customMetadata;
-        }
-    }
-
     LedgerMetadata(int metadataFormatVersion,
                    int ensembleSize,
                    int writeQuorumSize,
@@ -176,15 +138,6 @@ public class LedgerMetadata implements org.apache.bookkeeper.client.api.LedgerMe
     }
 
     /**
-     * Used for testing purpose only.
-     */
-    @VisibleForTesting
-    public LedgerMetadata(int ensembleSize, int writeQuorumSize, int ackQuorumSize,
-            BookKeeper.DigestType digestType, byte[] password) {
-        this(ensembleSize, writeQuorumSize, ackQuorumSize, digestType, password, null, false);
-    }
-
-    /**
      * Copy Constructor.
      */
     LedgerMetadata(LedgerMetadata other) {
@@ -206,11 +159,6 @@ public class LedgerMetadata implements org.apache.bookkeeper.client.api.LedgerMe
             this.addEnsemble(entry.getKey(), entry.getValue());
         }
         this.customMetadata = other.customMetadata;
-    }
-
-    private LedgerMetadata() {
-        this(0, 0, 0, BookKeeper.DigestType.MAC, new byte[] {});
-        this.hasPassword = false;
     }
 
     @Override

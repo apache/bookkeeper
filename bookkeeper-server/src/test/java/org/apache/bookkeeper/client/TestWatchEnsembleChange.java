@@ -24,6 +24,7 @@ import static org.apache.bookkeeper.meta.MetadataDrivers.runFunctionWithLedgerMa
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
@@ -130,10 +131,18 @@ public class TestWatchEnsembleChange extends BookKeeperClusterTestCase {
         final CountDownLatch createLatch = new CountDownLatch(1);
         final CountDownLatch removeLatch = new CountDownLatch(1);
 
+        List<BookieSocketAddress> ensemble = Lists.newArrayList(
+                new BookieSocketAddress("192.0.2.1", 1234),
+                new BookieSocketAddress("192.0.2.2", 1234),
+                new BookieSocketAddress("192.0.2.3", 1234),
+                new BookieSocketAddress("192.0.2.4", 1234));
         idGenerator.generateLedgerId(new GenericCallback<Long>() {
                 @Override
                 public void operationComplete(int rc, final Long lid) {
-                    LedgerMetadata metadata = new LedgerMetadata(4, 2, 2, digestType, "fpj was here".getBytes());
+                    LedgerMetadata metadata = LedgerMetadataBuilder.create()
+                        .withEnsembleSize(4).withWriteQuorumSize(2)
+                        .withAckQuorumSize(2)
+                        .newEnsembleEntry(0L, ensemble).build();
                     manager.createLedgerMetadata(lid, metadata)
                         .whenComplete((result, exception) -> {
                                 bbLedgerId.putLong(lid);
