@@ -31,10 +31,10 @@ import com.coreos.jetcd.op.CmpTarget;
 import com.coreos.jetcd.options.DeleteOption;
 import com.coreos.jetcd.options.GetOption;
 import com.coreos.jetcd.options.PutOption;
-import com.google.common.base.Optional;
 import com.google.common.collect.Sets;
 import java.io.IOException;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -67,7 +67,7 @@ class EtcdLedgerManager implements LedgerManager {
         try {
             return LedgerMetadata.parseConfig(
                 bs.getBytes(),
-                Optional.absent()
+                Optional.empty()
             );
         } catch (IOException ioe) {
             log.error("Could not parse ledger metadata : {}", bs.toStringUtf8(), ioe);
@@ -223,7 +223,7 @@ class EtcdLedgerManager implements LedgerManager {
                     KeyValue kv = getResp.getKvs().get(0);
                     byte[] data = kv.getValue().getBytes();
                     try {
-                        LedgerMetadata metadata = LedgerMetadata.parseConfig(data, Optional.absent());
+                        LedgerMetadata metadata = LedgerMetadata.parseConfig(data, Optional.empty());
                         promise.complete(new Versioned<>(metadata, new LongVersion(kv.getModRevision())));
                     } catch (IOException ioe) {
                         log.error("Could not parse ledger metadata for ledger : {}", ledgerId, ioe);

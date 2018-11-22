@@ -37,6 +37,7 @@ import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import com.google.common.collect.Lists;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -95,11 +96,16 @@ public class EtcdLedgerManagerTest extends EtcdTestBase {
     @Test
     public void testLedgerCRUD() throws Exception {
         long ledgerId = System.currentTimeMillis();
-        LedgerMetadata metadata = new LedgerMetadata(
-            3, 3, 2,
-            DigestType.CRC32C,
-            "test-password".getBytes(UTF_8)
-        );
+        List<BookieSocketAddress> ensemble = Lists.newArrayList(
+                new BookieSocketAddress("192.0.2.1", 1234),
+                new BookieSocketAddress("192.0.2.2", 1234),
+                new BookieSocketAddress("192.0.2.3", 1234));
+        LedgerMetadata metadata = LedgerMetadataBuilder.create()
+            .withEnsembleSize(3).withWriteQuorumSize(3).withAckQuorumSize(2)
+            .withPassword("test-password".getBytes(UTF_8))
+            .withDigestType(DigestType.CRC32C.toApiDigestType())
+            .newEnsembleEntry(0L, ensemble)
+            .build();
 
         // ledger doesn't exist: read
         try {

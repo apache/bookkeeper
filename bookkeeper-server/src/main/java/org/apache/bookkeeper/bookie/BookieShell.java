@@ -25,7 +25,6 @@ import static org.apache.bookkeeper.meta.MetadataDrivers.runFunctionWithRegistra
 import static org.apache.bookkeeper.tools.cli.helpers.CommandHelpers.getBookieSocketAddrStringRepresentation;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Optional;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.UncheckedExecutionException;
@@ -63,6 +62,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -1143,7 +1143,7 @@ public class BookieShell implements Tool {
                     } else if (cmdLine.hasOption("restorefromfile")) {
                         byte[] serialized = Files.readAllBytes(
                                 FileSystems.getDefault().getPath(cmdLine.getOptionValue("restorefromfile")));
-                        LedgerMetadata md = LedgerMetadata.parseConfig(serialized, Optional.absent());
+                        LedgerMetadata md = LedgerMetadata.parseConfig(serialized, Optional.empty());
                         m.createLedgerMetadata(lid, md).join();
                     } else {
                         printLedgerMetadata(lid, m.readLedgerMetadata(lid).get().getValue(), true);
