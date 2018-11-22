@@ -21,13 +21,10 @@ package org.apache.bookkeeper.server.http.service;
 import static com.google.common.base.Charsets.UTF_8;
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.google.common.util.concurrent.AbstractFuture;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
-import org.apache.bookkeeper.client.BKException;
+import java.util.concurrent.CompletableFuture;
 import org.apache.bookkeeper.client.LedgerMetadata;
 import org.apache.bookkeeper.common.util.JsonUtil;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -38,7 +35,6 @@ import org.apache.bookkeeper.http.service.HttpServiceResponse;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.proto.BookieServer;
-import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks;
 import org.apache.bookkeeper.versioning.Versioned;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -65,33 +61,11 @@ public class ListLedgerService implements HttpEndpointService {
     // Number of LedgerMetadata contains in each page
     static final int LIST_LEDGER_BATCH_SIZE = 100;
 
-    /**
-     * Callback for reading ledger metadata.
-     */
-    public static class ReadLedgerMetadataCallback extends AbstractFuture<LedgerMetadata>
-      implements BookkeeperInternalCallbacks.GenericCallback<Versioned<LedgerMetadata>> {
-        final long ledgerId;
-
-        ReadLedgerMetadataCallback(long ledgerId) {
-            this.ledgerId = ledgerId;
-        }
-
-        long getLedgerId() {
-            return ledgerId;
-        }
-
-        public void operationComplete(int rc, Versioned<LedgerMetadata> result) {
-            if (rc != 0) {
-                setException(BKException.create(rc));
-            } else {
-                set(result.getValue());
-            }
-        }
-    }
-    static void keepLedgerMetadata(ReadLedgerMetadataCallback cb, LinkedHashMap<String, String> output)
+    static void keepLedgerMetadata(long ledgerId, CompletableFuture<Versioned<LedgerMetadata>> future,
+                                   LinkedHashMap<String, String> output)
             throws Exception {
-        LedgerMetadata md = cb.get();
-        output.put(Long.valueOf(cb.getLedgerId()).toString(), new String(md.serialize(), UTF_8));
+        LedgerMetadata md = future.get().getValue();
+        output.put(Long.valueOf(ledgerId).toString(), new String(md.serialize(), UTF_8));
     }
 
     @Override
@@ -117,7 +91,8 @@ public class ListLedgerService implements HttpEndpointService {
             // output <ledgerId: ledgerMetadata>
             LinkedHashMap<String, String> output = Maps.newLinkedHashMap();
             // futures for readLedgerMetadata for each page.
-            List<ReadLedgerMetadataCallback> futures = Lists.newArrayListWithExpectedSize(LIST_LEDGER_BATCH_SIZE);
+            Map<Long, CompletableFuture<Versioned<LedgerMetadata>>> futures =
+                new LinkedHashMap<>(LIST_LEDGER_BATCH_SIZE);
 
             if (printMeta) {
                 int ledgerIndex = 0;
@@ -137,22 +112,20 @@ public class ListLedgerService implements HttpEndpointService {
                         ledgerIndex++;
                         if (endLedgerIndex == 0       // no actual page parameter provided
                                 || (ledgerIndex >= startLedgerIndex && ledgerIndex <= endLedgerIndex)) {
-                            ReadLedgerMetadataCallback cb = new ReadLedgerMetadataCallback(lid);
-                            manager.readLedgerMetadata(lid, cb);
-                            futures.add(cb);
+                            futures.put(lid, manager.readLedgerMetadata(lid));
                         }
                     }
                     if (futures.size() >= LIST_LEDGER_BATCH_SIZE) {
-                        while (!futures.isEmpty()) {
-                            ReadLedgerMetadataCallback cb = futures.remove(0);
-                            keepLedgerMetadata(cb, output);
+                        for (Map.Entry<Long, CompletableFuture<Versioned<LedgerMetadata>> > e : futures.entrySet()) {
+                            keepLedgerMetadata(e.getKey(), e.getValue(), output);
                         }
+                        futures.clear();
                     }
                 }
-                while (!futures.isEmpty()) {
-                    ReadLedgerMetadataCallback cb = futures.remove(0);
-                    keepLedgerMetadata(cb, output);
+                for (Map.Entry<Long, CompletableFuture<Versioned<LedgerMetadata>> > e : futures.entrySet()) {
+                    keepLedgerMetadata(e.getKey(), e.getValue(), output);
                 }
+                futures.clear();
             } else {
                 while (iter.hasNext()) {
                     LedgerManager.LedgerRange r = iter.next();

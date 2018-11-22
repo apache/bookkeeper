@@ -22,7 +22,6 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
 import com.google.protobuf.ByteString;
@@ -38,9 +37,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.NavigableMap;
+import java.util.Optional;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
 import lombok.EqualsAndHashCode;
 import org.apache.bookkeeper.client.api.DigestType;
 import org.apache.bookkeeper.net.BookieSocketAddress;
@@ -71,76 +72,41 @@ public class LedgerMetadata implements org.apache.bookkeeper.client.api.LedgerMe
     public static final int CURRENT_METADATA_FORMAT_VERSION = 2;
     public static final String VERSION_KEY = "BookieMetadataFormatVersion";
 
-    private int metadataFormatVersion = 0;
-
-    private int ensembleSize;
-    private int writeQuorumSize;
-    private int ackQuorumSize;
+    private final int metadataFormatVersion;
+    private final int ensembleSize;
+    private final int writeQuorumSize;
+    private final int ackQuorumSize;
     private long length;
     private long lastEntryId;
-    private long ctime;
-    boolean storeSystemtimeAsLedgerCreationTime = false;
+    private final long ctime;
+    final boolean storeCtime; // non-private so builder can access for copy
 
     private LedgerMetadataFormat.State state;
     private TreeMap<Long, ImmutableList<BookieSocketAddress>> ensembles =  new TreeMap<>();
     private List<BookieSocketAddress> currentEnsemble;
 
-    private boolean hasPassword = false;
-    private LedgerMetadataFormat.DigestType digestType;
-    private byte[] password;
+    private final boolean hasPassword; // IKTODO other things should be optionals instead
+    private final LedgerMetadataFormat.DigestType digestType;
+    private final byte[] password;
 
     private Map<String, byte[]> customMetadata = Maps.newHashMap();
 
-    public LedgerMetadata(int ensembleSize,
-                          int writeQuorumSize,
-                          int ackQuorumSize,
-                          BookKeeper.DigestType digestType,
-                          byte[] password,
-                          Map<String, byte[]> customMetadata,
-                          boolean storeSystemtimeAsLedgerCreationTime) {
-        this.ensembleSize = ensembleSize;
-        this.writeQuorumSize = writeQuorumSize;
-        this.ackQuorumSize = ackQuorumSize;
-        if (storeSystemtimeAsLedgerCreationTime) {
-            this.ctime = System.currentTimeMillis();
-        } else {
-            // if client disables storing its system time as ledger creation time, there should be no ctime at this
-            // moment.
-            this.ctime = -1L;
-        }
-        this.storeSystemtimeAsLedgerCreationTime = storeSystemtimeAsLedgerCreationTime;
-
-        /*
-         * It is set in PendingReadOp.readEntryComplete, and
-         * we read it in LedgerRecoveryOp.readComplete.
-         */
-        this.length = 0;
-        this.state = LedgerMetadataFormat.State.OPEN;
-        this.lastEntryId = LedgerHandle.INVALID_ENTRY_ID;
-        this.metadataFormatVersion = CURRENT_METADATA_FORMAT_VERSION;
-
-        this.digestType = digestType.equals(BookKeeper.DigestType.MAC)
-            ? LedgerMetadataFormat.DigestType.HMAC : LedgerMetadataFormat.DigestType.valueOf(digestType.toString());
-        this.password = Arrays.copyOf(password, password.length);
-        this.hasPassword = true;
-        if (customMetadata != null) {
-            this.customMetadata = customMetadata;
-        }
-    }
-
-    LedgerMetadata(int ensembleSize,
+    LedgerMetadata(int metadataFormatVersion,
+                   int ensembleSize,
                    int writeQuorumSize,
                    int ackQuorumSize,
                    LedgerMetadataFormat.State state,
-                   java.util.Optional<Long> lastEntryId,
-                   java.util.Optional<Long> length,
+                   Optional<Long> lastEntryId,
+                   Optional<Long> length,
                    Map<Long, List<BookieSocketAddress>> ensembles,
                    DigestType digestType,
-                   java.util.Optional<byte[]> password,
-                   java.util.Optional<Long> ctime,
+                   Optional<byte[]> password,
+                   long ctime,
+                   boolean storeCtime,
                    Map<String, byte[]> customMetadata) {
         checkArgument(ensembles.size() > 0, "There must be at least one ensemble in the ledger");
 
+        this.metadataFormatVersion = metadataFormatVersion;
         this.ensembleSize = ensembleSize;
         this.writeQuorumSize = writeQuorumSize;
         this.ackQuorumSize = ackQuorumSize;
@@ -160,26 +126,17 @@ public class LedgerMetadata implements org.apache.bookkeeper.client.api.LedgerMe
         this.digestType = digestType.equals(DigestType.MAC)
             ? LedgerMetadataFormat.DigestType.HMAC : LedgerMetadataFormat.DigestType.valueOf(digestType.toString());
 
-        password.ifPresent((pw) -> {
-                this.password = pw;
-                this.hasPassword = true;
-            });
-
-        ctime.ifPresent((c) -> {
-                this.ctime = c;
-                this.storeSystemtimeAsLedgerCreationTime = true;
-            });
+        if (password.isPresent()) {
+            this.password = password.get();
+            this.hasPassword = true;
+        } else {
+            this.password = null;
+            this.hasPassword = false;
+        }
+        this.ctime = ctime;
+        this.storeCtime = storeCtime;
 
         this.customMetadata.putAll(customMetadata);
-    }
-
-    /**
-     * Used for testing purpose only.
-     */
-    @VisibleForTesting
-    public LedgerMetadata(int ensembleSize, int writeQuorumSize, int ackQuorumSize,
-            BookKeeper.DigestType digestType, byte[] password) {
-        this(ensembleSize, writeQuorumSize, ackQuorumSize, digestType, password, null, false);
     }
 
     /**
@@ -196,7 +153,7 @@ public class LedgerMetadata implements org.apache.bookkeeper.client.api.LedgerMe
         this.hasPassword = other.hasPassword;
         this.digestType = other.digestType;
         this.ctime = other.ctime;
-        this.storeSystemtimeAsLedgerCreationTime = other.storeSystemtimeAsLedgerCreationTime;
+        this.storeCtime = other.storeCtime;
         this.password = new byte[other.password.length];
         System.arraycopy(other.password, 0, this.password, 0, other.password.length);
         // copy the ensembles
@@ -204,11 +161,6 @@ public class LedgerMetadata implements org.apache.bookkeeper.client.api.LedgerMe
             this.addEnsemble(entry.getKey(), entry.getValue());
         }
         this.customMetadata = other.customMetadata;
-    }
-
-    private LedgerMetadata() {
-        this(0, 0, 0, BookKeeper.DigestType.MAC, new byte[] {});
-        this.hasPassword = false;
     }
 
     @Override
@@ -243,11 +195,6 @@ public class LedgerMetadata implements org.apache.bookkeeper.client.api.LedgerMe
         return ctime;
     }
 
-    @VisibleForTesting
-    void setCtime(long ctime) {
-        this.ctime = ctime;
-    }
-
     /**
      * In versions 4.1.0 and below, the digest type and password were not
      * stored in the metadata.
@@ -260,7 +207,11 @@ public class LedgerMetadata implements org.apache.bookkeeper.client.api.LedgerMe
 
     @VisibleForTesting
     public byte[] getPassword() {
-        return Arrays.copyOf(password, password.length);
+        if (!hasPassword()) {
+            return new byte[0];
+        } else {
+            return Arrays.copyOf(password, password.length);
+        }
     }
 
     @Override
@@ -382,7 +333,7 @@ public class LedgerMetadata implements org.apache.bookkeeper.client.api.LedgerMe
             .setEnsembleSize(ensembleSize).setLength(length)
             .setState(state).setLastEntryId(lastEntryId);
 
-        if (storeSystemtimeAsLedgerCreationTime) {
+        if (storeCtime) {
             builder.setCtime(ctime);
         }
 
@@ -467,15 +418,14 @@ public class LedgerMetadata implements org.apache.bookkeeper.client.api.LedgerMe
      *
      * @param bytes
      *            byte array to parse
-     * @param msCtime
+     * @param metadataStoreCtime
      *            metadata store creation time, used for legacy ledgers
      * @return LedgerConfig
      * @throws IOException
      *             if the given byte[] cannot be parsed
      */
-    public static LedgerMetadata parseConfig(byte[] bytes, Optional<Long> msCtime) throws IOException {
-        LedgerMetadata lc = new LedgerMetadata();
-
+    public static LedgerMetadata parseConfig(byte[] bytes,
+                                             Optional<Long> metadataStoreCtime) throws IOException {
         String config = new String(bytes, UTF_8);
 
         if (LOG.isDebugEnabled()) {
@@ -486,29 +436,34 @@ public class LedgerMetadata implements org.apache.bookkeeper.client.api.LedgerMe
         if (versionLine == null) {
             throw new IOException("Invalid metadata. Content missing");
         }
+        final int metadataFormatVersion;
         if (versionLine.startsWith(VERSION_KEY)) {
             String parts[] = versionLine.split(tSplitter);
-            lc.metadataFormatVersion = Integer.parseInt(parts[1]);
+            metadataFormatVersion = Integer.parseInt(parts[1]);
         } else {
             // if no version is set, take it to be version 1
             // as the parsing is the same as what we had before
             // we introduce versions
-            lc.metadataFormatVersion = 1;
+            metadataFormatVersion = 1;
             // reset the reader
             reader.close();
             reader = new BufferedReader(new StringReader(config));
         }
 
-        if (lc.metadataFormatVersion < LOWEST_COMPAT_METADATA_FORMAT_VERSION
-            || lc.metadataFormatVersion > CURRENT_METADATA_FORMAT_VERSION) {
-            throw new IOException("Metadata version not compatible. Expected between "
-                    + LOWEST_COMPAT_METADATA_FORMAT_VERSION + " and " + CURRENT_METADATA_FORMAT_VERSION
-                                  + ", but got " + lc.metadataFormatVersion);
+        if (metadataFormatVersion < LOWEST_COMPAT_METADATA_FORMAT_VERSION
+            || metadataFormatVersion > CURRENT_METADATA_FORMAT_VERSION) {
+            throw new IOException(
+                    String.format("Metadata version not compatible. Expected between %d and %d, but got %d",
+                                  LOWEST_COMPAT_METADATA_FORMAT_VERSION, CURRENT_METADATA_FORMAT_VERSION,
+                                  metadataFormatVersion));
         }
 
-        if (lc.metadataFormatVersion == 1) {
-            return parseVersion1Config(lc, reader);
+        if (metadataFormatVersion == 1) {
+            return parseVersion1Config(reader);
         }
+
+        LedgerMetadataBuilder builder = LedgerMetadataBuilder.create()
+            .withMetadataFormatVersion(metadataFormatVersion);
 
         // remaining size is total minus the length of the version line and '\n'
         char[] configBuffer = new char[config.length() - (versionLine.length() + 1)];
@@ -516,59 +471,59 @@ public class LedgerMetadata implements org.apache.bookkeeper.client.api.LedgerMe
             throw new IOException("Invalid metadata buffer");
         }
 
-        LedgerMetadataFormat.Builder builder = LedgerMetadataFormat.newBuilder();
+        LedgerMetadataFormat.Builder formatBuilder = LedgerMetadataFormat.newBuilder();
+        TextFormat.merge((CharSequence) CharBuffer.wrap(configBuffer), formatBuilder);
+        LedgerMetadataFormat data = formatBuilder.build();
 
-        TextFormat.merge((CharSequence) CharBuffer.wrap(configBuffer), builder);
-        LedgerMetadataFormat data = builder.build();
-        lc.writeQuorumSize = data.getQuorumSize();
-        if (data.hasCtime()) {
-            lc.ctime = data.getCtime();
-            lc.storeSystemtimeAsLedgerCreationTime = true;
-        } else if (msCtime.isPresent()) {
-            lc.ctime = msCtime.get();
-            lc.storeSystemtimeAsLedgerCreationTime = false;
-        }
+        builder.withEnsembleSize(data.getEnsembleSize());
+        builder.withWriteQuorumSize(data.getQuorumSize());
         if (data.hasAckQuorumSize()) {
-            lc.ackQuorumSize = data.getAckQuorumSize();
+            builder.withAckQuorumSize(data.getAckQuorumSize());
         } else {
-            lc.ackQuorumSize = lc.writeQuorumSize;
+            builder.withAckQuorumSize(data.getQuorumSize());
         }
 
-        lc.ensembleSize = data.getEnsembleSize();
-        lc.length = data.getLength();
-        lc.state = data.getState();
-        lc.lastEntryId = data.getLastEntryId();
+        if (data.hasCtime()) {
+            builder.withCreationTime(data.getCtime()).storingCreationTime(true);
+        } else if (metadataStoreCtime.isPresent()) {
+            builder.withCreationTime(metadataStoreCtime.get()).storingCreationTime(false);
+        }
+
+        if (data.getState() == LedgerMetadataFormat.State.IN_RECOVERY) {
+            builder.withInRecoveryState();
+        } else if (data.getState() == LedgerMetadataFormat.State.CLOSED) {
+            builder.closingAt(data.getLastEntryId(), data.getLength());
+        }
 
         if (data.hasPassword()) {
-            lc.digestType = data.getDigestType();
-            lc.password = data.getPassword().toByteArray();
-            lc.hasPassword = true;
+            builder.withPassword(data.getPassword().toByteArray())
+                .withDigestType(protoToApiDigestType(data.getDigestType()));
         }
 
         for (LedgerMetadataFormat.Segment s : data.getSegmentList()) {
-            ArrayList<BookieSocketAddress> addrs = new ArrayList<BookieSocketAddress>();
-            for (String member : s.getEnsembleMemberList()) {
-                addrs.add(new BookieSocketAddress(member));
+            List<BookieSocketAddress> addrs = new ArrayList<>();
+            for (String addr : s.getEnsembleMemberList()) {
+                addrs.add(new BookieSocketAddress(addr));
             }
-            lc.addEnsemble(s.getFirstEntryId(), addrs);
+            builder.newEnsembleEntry(s.getFirstEntryId(), addrs);
         }
 
         if (data.getCustomMetadataCount() > 0) {
-            List<LedgerMetadataFormat.cMetadataMapEntry> cMetadataList = data.getCustomMetadataList();
-            lc.customMetadata = Maps.newHashMap();
-            for (LedgerMetadataFormat.cMetadataMapEntry ent : cMetadataList) {
-                lc.customMetadata.put(ent.getKey(), ent.getValue().toByteArray());
-            }
+            builder.withCustomMetadata(data.getCustomMetadataList().stream().collect(
+                                               Collectors.toMap(e -> e.getKey(),
+                                                                e -> e.getValue().toByteArray())));
         }
-        return lc;
+        return builder.build();
     }
 
-    static LedgerMetadata parseVersion1Config(LedgerMetadata lc,
-                                              BufferedReader reader) throws IOException {
+    static LedgerMetadata parseVersion1Config(BufferedReader reader) throws IOException {
+        LedgerMetadataBuilder builder = LedgerMetadataBuilder.create().withMetadataFormatVersion(1);
         try {
-            lc.writeQuorumSize = lc.ackQuorumSize = Integer.parseInt(reader.readLine());
-            lc.ensembleSize = Integer.parseInt(reader.readLine());
-            lc.length = Long.parseLong(reader.readLine());
+            int quorumSize = Integer.parseInt(reader.readLine());
+            int ensembleSize = Integer.parseInt(reader.readLine());
+            long length = Long.parseLong(reader.readLine());
+
+            builder.withEnsembleSize(ensembleSize).withWriteQuorumSize(quorumSize).withAckQuorumSize(quorumSize);
 
             String line = reader.readLine();
             while (line != null) {
@@ -577,59 +532,25 @@ public class LedgerMetadata implements org.apache.bookkeeper.client.api.LedgerMe
                 if (parts[1].equals(closed)) {
                     Long l = Long.parseLong(parts[0]);
                     if (l == IN_RECOVERY) {
-                        lc.state = LedgerMetadataFormat.State.IN_RECOVERY;
+                        builder.withInRecoveryState();
                     } else {
-                        lc.state = LedgerMetadataFormat.State.CLOSED;
-                        lc.lastEntryId = l;
+                        builder.closingAt(l, length);
                     }
                     break;
-                } else {
-                    lc.state = LedgerMetadataFormat.State.OPEN;
                 }
 
                 ArrayList<BookieSocketAddress> addrs = new ArrayList<BookieSocketAddress>();
                 for (int j = 1; j < parts.length; j++) {
                     addrs.add(new BookieSocketAddress(parts[j]));
                 }
-                lc.addEnsemble(Long.parseLong(parts[0]), addrs);
+                builder.newEnsembleEntry(Long.parseLong(parts[0]), addrs);
+
                 line = reader.readLine();
             }
+            return builder.build();
         } catch (NumberFormatException e) {
             throw new IOException(e);
         }
-        return lc;
-    }
-
-    /**
-     * Routine to compare two {@code Map<String, byte[]>}; Since the values in the map are {@code byte[]}, we can't use
-     * {@code Map.equals}.
-     * @param first
-     *          The first map
-     * @param second
-     *          The second map to compare with
-     * @return true if the 2 maps contain the exact set of {@code <K,V>} pairs.
-     */
-    public static boolean areByteArrayValMapsEqual(Map<String, byte[]> first, Map<String, byte[]> second) {
-        if (first == null && second == null) {
-            return true;
-        }
-
-        // above check confirms that both are not null;
-        // if one is null the other isn't; so they must
-        // be different
-        if (first == null || second == null) {
-            return false;
-        }
-
-        if (first.size() != second.size()) {
-            return false;
-        }
-        for (Map.Entry<String, byte[]> entry : first.entrySet()) {
-            if (!Arrays.equals(entry.getValue(), second.get(entry.getKey()))) {
-                return false;
-            }
-        }
-        return true;
     }
 
     @Override
@@ -690,5 +611,24 @@ public class LedgerMetadata implements org.apache.bookkeeper.client.api.LedgerMe
     Long getLastEnsembleKey() {
         checkState(!ensembles.isEmpty(), "Metadata should never be created with no ensembles");
         return ensembles.lastKey();
+    }
+
+    int getMetadataFormatVersion() {
+        return metadataFormatVersion;
+    }
+
+    private static DigestType protoToApiDigestType(LedgerMetadataFormat.DigestType digestType) {
+        switch (digestType) {
+        case HMAC:
+            return DigestType.MAC;
+        case CRC32:
+            return DigestType.CRC32;
+        case CRC32C:
+            return DigestType.CRC32C;
+        case DUMMY:
+            return DigestType.DUMMY;
+        default:
+            throw new IllegalArgumentException("Unable to convert digest type " + digestType);
+        }
     }
 }

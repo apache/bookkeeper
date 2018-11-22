@@ -51,13 +51,68 @@ message GetListOfEntriesOfALedgerRequest {
 message GetListOfEntriesOfALedgerResponse {
 	required StatusCode status = 1;
 	required int64 ledgerId = 2;
-	optional bytes availabilityOfEntriesOfLedger = 3; // treated as array of bits indicating availability of entry at that particular index location		
+	optional bytes availabilityOfEntriesOfLedger = 3; // explained below
 }
 ```
 
-For the sake of future extensibility it would be helpful to add version info (and possibly some metadata in the future) at the beginning of the 'availabilityOfEntriesOfLedger'. So the first 64 bytes will be considered reserved space, with the first byte specifying the version for now and the rest of the bytes in the reserved space will be 0's.
+For ‘availabilityOfEntriesOfLedger’ we can use following condensed encoding format, which helps in reducing the number of bytes needed to represent the list of entries.
 
-Here Bookie is expected to attain this information just from just LedgerCache (Index Files) - IndexPersistenceMgr and IndexInMemPageMgr but it doesn’t actually check the availability of this entry in Entrylogger. Since the intention of this checker is limited to do just metadata validation at cluster level.
+(note: following representation is used just for understanding purpose, but this is not protobuf (or any other) representation)
+
+```
+AvailabilityOfEntriesOfLedger {
+	OrderedCollection sequenceGroup;
+}
+
+SequenceGroup {
+	long firstSequenceStart;
+	long lastSequenceStart;
+	int sequenceSize;
+	int sequencePeriod;
+}
+```
+
+Nomenclature:
+
+  - Continuous entries are grouped as a ’Sequence’.
+  - Number of continuous entries in a ‘Sequence’ is called ‘sequenceSize’.
+  - Gap between Consecutive sequences is called ‘sequencePeriod’.
+  - Consecutive sequences with same sequenceSize and same sequencePeriod in between consecutive sequences are grouped as a SequenceGroup.
+  - ‘firstSequenceStart’ is the first entry in the first sequence of the SequenceGroup.
+  - ‘lastSequenceStart’ is the first entry in the last sequence of the SequenceGroup.
+  - Ordered collection of such SequenceGroups will represent entries of a ledger residing in a bookie.
+
+(in the best case scenario there will be only one SequenceGroup, ‘sequencePeriod’ will be ensembleSize and ‘sequenceSize’ will be writeQuorumSize of the ledger).
+
+for example,
+
+example 1 (best case scenario):
+
+1, 2, 4, 5, 7, 8, 10, 11
+
+in this case (1, 2), (4, 5), (7, 8), (10, 11) are sequences and in this scenario there happens to be just one SequenceGroup, which can be represented like
+
+{ firstSequenceStart - 1, lastSequenceStart - 10, sequenceSize - 2, sequencePeriod - 3 }
+
+example 2 (an entry is missing):
+
+1, 2, 3, 6, 7, 8, 11, 13, 16, 17, 18, 21, 22
+
+(entry 12 is missing and in the last sequence there are only 2 entries 21, 22)
+in this case (1, 2, 3), (6, 7, 8), (11), (13), (16, 17, 18), (21, 22) are the sequences
+so the sequence groups are
+
+{ firstSequenceStart - 1, lastSequenceStart - 6, sequenceSize - 3, sequencePeriod - 5 }, { firstSequenceStart - 11, lastSequenceStart - 13, sequenceSize - 1, sequencePeriod - 2 }, { firstSequenceStart - 16, lastSequenceStart - 16, sequenceSize - 3, sequencePeriod - 0 }, { firstSequenceStart - 21, lastSequenceStart - 21, sequenceSize - 2, sequencePeriod - 0 }
+
+As you can notice to represent a SequenceGroup, two long values and two int values are needed, so each SequenceGroup can be represented with (2 * 8 + 2 * 4 = 24 bytes).
+
+In the ‘availabilityOfEntriesOfLedger’ byte array, for the sake of future extensibility it would be helpful to have reserved space for metadata at the beginning. So the first 64 bytes will be used for metadata, with the first four bytes specifying the int version number, next four bytes specifying the number of entries for now and the rest of the bytes in the reserved space will be 0's. The encoded format will be represented after the first 64 bytes. The ordered collection of SequenceGroups will be appended sequentially to this byte array, with each SequenceGroup taking 24 bytes.
+
+So for a ledger having thousands of entries, this condensed encoded format would need one or two SequenceGroups (in the best case, with no holes and no overreplication) 24/48 bytes, which would be much less than what is needed to represent using bit vector (array of bits indicating availability of entry at that particular index location)
+
+Any encoded format needs encoder and decoder at the sending/receiving ends of the channel, so the encoding/decoding logic should be handled optimally from computation and memory perspective.
+
+Here Bookie is expected to just attain index information (say from LedgerCache (Index Files) - IndexPersistenceMgr and IndexInMemPageMgr, unflushed entries in EntryMemTable in SortedLedgerStorage case and from rocksdb database in DBLedgerStorage case) but it doesn’t actually check the availability of this entry in Entrylogger. Since the intention of this checker is limited to do just metadata validation at cluster level.
 
 ### Compatibility, Deprecation, and Migration Plan
 

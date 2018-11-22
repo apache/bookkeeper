@@ -30,6 +30,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import com.google.common.collect.Lists;
 import io.netty.buffer.ByteBuf;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -44,6 +45,7 @@ import java.util.Random;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -61,12 +63,13 @@ import org.apache.bookkeeper.bookie.LedgerDirsManager;
 import org.apache.bookkeeper.bookie.ScanAndCompareGarbageCollector;
 import org.apache.bookkeeper.bookie.StateManager;
 import org.apache.bookkeeper.client.BKException;
-import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.LedgerMetadata;
+import org.apache.bookkeeper.client.LedgerMetadataBuilder;
 import org.apache.bookkeeper.common.util.Watcher;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager.LedgerRange;
 import org.apache.bookkeeper.meta.LedgerManager.LedgerRangeIterator;
+import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
@@ -92,6 +95,8 @@ public class GcLedgersTest extends LedgerManagerTestCase {
      */
     private void createLedgers(int numLedgers, final Set<Long> createdLedgers) throws IOException {
         final AtomicInteger expected = new AtomicInteger(numLedgers);
+        List<BookieSocketAddress> ensemble = Lists.newArrayList(new BookieSocketAddress("192.0.2.1", 1234));
+
         for (int i = 0; i < numLedgers; i++) {
             getLedgerIdGenerator().generateLedgerId(new GenericCallback<Long>() {
                 @Override
@@ -106,20 +111,20 @@ public class GcLedgersTest extends LedgerManagerTestCase {
                         return;
                     }
 
-                    getLedgerManager().createLedgerMetadata(ledgerId,
-                            new LedgerMetadata(1, 1, 1, DigestType.MAC, "".getBytes()),
-                            new GenericCallback<Versioned<LedgerMetadata>>() {
-                                @Override
-                                public void operationComplete(int rc, Versioned<LedgerMetadata> writtenMetadata) {
-                                    if (rc == BKException.Code.OK) {
-                                        activeLedgers.put(ledgerId, true);
-                                        createdLedgers.add(ledgerId);
-                                    }
-                                    synchronized (expected) {
-                                        int num = expected.decrementAndGet();
-                                        if (num == 0) {
-                                            expected.notify();
-                                        }
+                    LedgerMetadata md = LedgerMetadataBuilder.create()
+                        .withEnsembleSize(1).withWriteQuorumSize(1).withAckQuorumSize(1)
+                        .newEnsembleEntry(0L, ensemble).build();
+
+                    getLedgerManager().createLedgerMetadata(ledgerId, md)
+                        .whenComplete((result, exception) -> {
+                                if (exception == null) {
+                                    activeLedgers.put(ledgerId, true);
+                                    createdLedgers.add(ledgerId);
+                                }
+                                synchronized (expected) {
+                                    int num = expected.decrementAndGet();
+                                    if (num == 0) {
+                                        expected.notify();
                                     }
                                 }
                             });
@@ -138,18 +143,7 @@ public class GcLedgersTest extends LedgerManagerTestCase {
     }
 
     private void removeLedger(long ledgerId) throws Exception {
-        final AtomicInteger rc = new AtomicInteger(0);
-        final CountDownLatch latch = new CountDownLatch(1);
-        getLedgerManager().removeLedgerMetadata(ledgerId, Version.ANY,
-                new GenericCallback<Void>() {
-                    @Override
-                    public void operationComplete(int rc2, Void result) {
-                        rc.set(rc2);
-                        latch.countDown();
-                    }
-                   });
-        assertTrue(latch.await(10, TimeUnit.SECONDS));
-        assertEquals("Remove should have succeeded for ledgerId: " + ledgerId, 0, rc.get());
+        getLedgerManager().removeLedgerMetadata(ledgerId, Version.ANY).get(10, TimeUnit.SECONDS);
     }
 
     @Test
@@ -170,18 +164,7 @@ public class GcLedgersTest extends LedgerManagerTestCase {
         // random remove several ledgers
         for (int i = 0; i < numRemovedLedgers; i++) {
             long ledgerId = tmpList.get(i);
-            synchronized (removedLedgers) {
-                getLedgerManager().removeLedgerMetadata(ledgerId, Version.ANY,
-                    new GenericCallback<Void>() {
-                        @Override
-                        public void operationComplete(int rc, Void result) {
-                            synchronized (removedLedgers) {
-                                removedLedgers.notify();
-                            }
-                        }
-                   });
-                removedLedgers.wait();
-            }
+            getLedgerManager().removeLedgerMetadata(ledgerId, Version.ANY).get();
             removedLedgers.add(ledgerId);
             createdLedgers.remove(ledgerId);
         }
@@ -504,10 +487,12 @@ public class GcLedgersTest extends LedgerManagerTestCase {
 
         createLedgers(numLedgers, createdLedgers);
 
+        CompletableFuture<Versioned<LedgerMetadata>> errorFuture = new CompletableFuture<>();
+        errorFuture.completeExceptionally(new BKException.BKNoSuchLedgerExistsException());
         LedgerManager mockLedgerManager = new CleanupLedgerManager(getLedgerManager()) {
             @Override
-            public void readLedgerMetadata(long ledgerId, GenericCallback<Versioned<LedgerMetadata>> readCb) {
-                readCb.operationComplete(BKException.Code.NoSuchLedgerExistsException, null);
+            public CompletableFuture<Versioned<LedgerMetadata>> readLedgerMetadata(long ledgerId) {
+                return errorFuture;
             }
         };
 
@@ -546,10 +531,12 @@ public class GcLedgersTest extends LedgerManagerTestCase {
 
         createLedgers(numLedgers, createdLedgers);
 
+        CompletableFuture<Versioned<LedgerMetadata>> errorFuture = new CompletableFuture<>();
+        errorFuture.completeExceptionally(new BKException.ZKException());
         LedgerManager mockLedgerManager = new CleanupLedgerManager(getLedgerManager()) {
             @Override
-            public void readLedgerMetadata(long ledgerId, GenericCallback<Versioned<LedgerMetadata>> readCb) {
-                readCb.operationComplete(BKException.Code.ZKException, null);
+            public CompletableFuture<Versioned<LedgerMetadata>> readLedgerMetadata(long ledgerId) {
+                return errorFuture;
             }
         };
 
