@@ -173,24 +173,6 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/LedgerMetadata.
 <th class="colOne" scope="col">Constructor and Description</th>
 </tr>
 <tr class="altColor">
-<td class="colOne"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerMetadata.html#LedgerMetadata-int-int-int-org.apache.bookkeeper.client.BookKeeper.DigestType-byte:A-">LedgerMetadata</a></span>(int&nbsp;ensembleSize,
-              int&nbsp;writeQuorumSize,
-              int&nbsp;ackQuorumSize,
-              <a href="../../../../org/apache/bookkeeper/client/BookKeeper.DigestType.html" title="enum in org.apache.bookkeeper.client">BookKeeper.DigestType</a>&nbsp;digestType,
-              byte[]&nbsp;password)</code>
-<div class="block">Used for testing purpose only.</div>
-</td>
-</tr>
-<tr class="rowColor">
-<td class="colOne"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerMetadata.html#LedgerMetadata-int-int-int-org.apache.bookkeeper.client.BookKeeper.DigestType-byte:A-java.util.Map-boolean-">LedgerMetadata</a></span>(int&nbsp;ensembleSize,
-              int&nbsp;writeQuorumSize,
-              int&nbsp;ackQuorumSize,
-              <a href="../../../../org/apache/bookkeeper/client/BookKeeper.DigestType.html" title="enum in org.apache.bookkeeper.client">BookKeeper.DigestType</a>&nbsp;digestType,
-              byte[]&nbsp;password,
-              <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util">Map</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>,byte[]&gt;&nbsp;customMetadata,
-              boolean&nbsp;storeSystemtimeAsLedgerCreationTime)</code>&nbsp;</td>
-</tr>
-<tr class="altColor">
 <td class="colOne"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerMetadata.html#LedgerMetadata-int-int-int-int-org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.State-java.util.Optional-java.util.Optional-java.util.Map-org.apache.bookkeeper.client.api.DigestType-java.util.Optional-long-boolean-java.util.Map-">LedgerMetadata</a></span>(int&nbsp;metadataFormatVersion,
               int&nbsp;ensembleSize,
               int&nbsp;writeQuorumSize,
@@ -514,21 +496,6 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/LedgerMetadata.
 <!--   -->
 </a>
 <h3>Constructor Detail</h3>
-<a name="LedgerMetadata-int-int-int-org.apache.bookkeeper.client.BookKeeper.DigestType-byte:A-java.util.Map-boolean-">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>LedgerMetadata</h4>
-<pre>public&nbsp;LedgerMetadata(int&nbsp;ensembleSize,
-                      int&nbsp;writeQuorumSize,
-                      int&nbsp;ackQuorumSize,
-                      <a href="../../../../org/apache/bookkeeper/client/BookKeeper.DigestType.html" title="enum in org.apache.bookkeeper.client">BookKeeper.DigestType</a>&nbsp;digestType,
-                      byte[]&nbsp;password,
-                      <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util">Map</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>,byte[]&gt;&nbsp;customMetadata,
-                      boolean&nbsp;storeSystemtimeAsLedgerCreationTime)</pre>
-</li>
-</ul>
 <a name="LedgerMetadata-int-int-int-int-org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.State-java.util.Optional-java.util.Optional-java.util.Map-org.apache.bookkeeper.client.api.DigestType-java.util.Optional-long-boolean-java.util.Map-">
 <!--   -->
 </a>
@@ -548,20 +515,6 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/LedgerMetadata.
                long&nbsp;ctime,
                boolean&nbsp;storeCtime,
                <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util">Map</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>,byte[]&gt;&nbsp;customMetadata)</pre>
-</li>
-</ul>
-<a name="LedgerMetadata-int-int-int-org.apache.bookkeeper.client.BookKeeper.DigestType-byte:A-">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>LedgerMetadata</h4>
-<pre>public&nbsp;LedgerMetadata(int&nbsp;ensembleSize,
-                      int&nbsp;writeQuorumSize,
-                      int&nbsp;ackQuorumSize,
-                      <a href="../../../../org/apache/bookkeeper/client/BookKeeper.DigestType.html" title="enum in org.apache.bookkeeper.client">BookKeeper.DigestType</a>&nbsp;digestType,
-                      byte[]&nbsp;password)</pre>
-<div class="block">Used for testing purpose only.</div>
 </li>
 </ul>
 <a name="LedgerMetadata-org.apache.bookkeeper.client.LedgerMetadata-">
