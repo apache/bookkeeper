@@ -130,7 +130,7 @@ public class LedgerMetadata implements org.apache.bookkeeper.client.api.LedgerMe
             this.password = password.get();
             this.hasPassword = true;
         } else {
-            this.password = new byte[0];
+            this.password = null;
             this.hasPassword = false;
         }
         this.ctime = ctime;
