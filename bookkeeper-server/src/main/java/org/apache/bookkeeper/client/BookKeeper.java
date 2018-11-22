@@ -32,6 +32,7 @@ import io.netty.util.HashedWheelTimer;
 import io.netty.util.concurrent.DefaultThreadFactory;
 import java.io.IOException;
 import java.net.URI;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -743,7 +744,8 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
                                   final int writeQuorumSize,
                                   final DigestType digestType,
                                   final byte[] passwd, final CreateCallback cb, final Object ctx) {
-        asyncCreateLedger(ensSize, writeQuorumSize, writeQuorumSize, digestType, passwd, cb, ctx, null);
+        asyncCreateLedger(ensSize, writeQuorumSize, writeQuorumSize,
+                          digestType, passwd, cb, ctx, Collections.emptyMap());
     }
 
     /**
@@ -832,7 +834,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
     public LedgerHandle createLedger(int ensSize, int qSize,
                                      DigestType digestType, byte passwd[])
             throws InterruptedException, BKException {
-        return createLedger(ensSize, qSize, qSize, digestType, passwd, null);
+        return createLedger(ensSize, qSize, qSize, digestType, passwd, Collections.emptyMap());
     }
 
     /**
@@ -852,7 +854,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
     public LedgerHandle createLedger(int ensSize, int writeQuorumSize, int ackQuorumSize,
             DigestType digestType, byte passwd[])
             throws InterruptedException, BKException {
-        return createLedger(ensSize, writeQuorumSize, ackQuorumSize, digestType, passwd, null);
+        return createLedger(ensSize, writeQuorumSize, ackQuorumSize, digestType, passwd, Collections.emptyMap());
     }
 
     /**
@@ -906,7 +908,8 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
     public LedgerHandle createLedgerAdv(int ensSize, int writeQuorumSize, int ackQuorumSize,
                                         DigestType digestType, byte passwd[])
             throws InterruptedException, BKException {
-        return createLedgerAdv(ensSize, writeQuorumSize, ackQuorumSize, digestType, passwd, null);
+        return createLedgerAdv(ensSize, writeQuorumSize, ackQuorumSize,
+                               digestType, passwd, Collections.emptyMap());
     }
 
     /**
