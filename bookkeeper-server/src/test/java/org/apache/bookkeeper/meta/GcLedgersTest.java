@@ -30,6 +30,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import com.google.common.collect.Lists;
 import io.netty.buffer.ByteBuf;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -62,12 +63,13 @@ import org.apache.bookkeeper.bookie.LedgerDirsManager;
 import org.apache.bookkeeper.bookie.ScanAndCompareGarbageCollector;
 import org.apache.bookkeeper.bookie.StateManager;
 import org.apache.bookkeeper.client.BKException;
-import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.LedgerMetadata;
+import org.apache.bookkeeper.client.LedgerMetadataBuilder;
 import org.apache.bookkeeper.common.util.Watcher;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager.LedgerRange;
 import org.apache.bookkeeper.meta.LedgerManager.LedgerRangeIterator;
+import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
@@ -93,6 +95,8 @@ public class GcLedgersTest extends LedgerManagerTestCase {
      */
     private void createLedgers(int numLedgers, final Set<Long> createdLedgers) throws IOException {
         final AtomicInteger expected = new AtomicInteger(numLedgers);
+        List<BookieSocketAddress> ensemble = Lists.newArrayList(new BookieSocketAddress("192.0.2.1", 1234));
+
         for (int i = 0; i < numLedgers; i++) {
             getLedgerIdGenerator().generateLedgerId(new GenericCallback<Long>() {
                 @Override
@@ -107,8 +111,11 @@ public class GcLedgersTest extends LedgerManagerTestCase {
                         return;
                     }
 
-                    getLedgerManager().createLedgerMetadata(ledgerId,
-                                                            new LedgerMetadata(1, 1, 1, DigestType.MAC, "".getBytes()))
+                    LedgerMetadata md = LedgerMetadataBuilder.create()
+                        .withEnsembleSize(1).withWriteQuorumSize(1).withAckQuorumSize(1)
+                        .newEnsembleEntry(0L, ensemble).build();
+
+                    getLedgerManager().createLedgerMetadata(ledgerId, md)
                         .whenComplete((result, exception) -> {
                                 if (exception == null) {
                                     activeLedgers.put(ledgerId, true);
