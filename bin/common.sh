@@ -114,6 +114,20 @@ CLI_MEM_OPTS=${CLI_MEM_OPTS:-"-Xms${CLI_MIN_HEAP_MEMORY} -Xmx${CLI_MAX_HEAP_MEMO
 CLI_GC_OPTS=${CLI_GC_OPTS:-"${DEFAULT_CLI_GC_OPTS}"}
 CLI_GC_LOGGING_OPTS=${CLI_GC_LOGGING_OPTS:-"${DEFAULT_CLI_GC_LOGGING_OPTS}"}
 
+# module names
+BOOKIE_SERVER_MODULE_NAME="(org.apache.bookkeeper-)?bookkeeper-server"
+TABLE_SERVICE_MODULE_NAME="(org.apache.bookkeeper-)?stream-storage-server"
+
+is_released_binary() {
+  if [ -d ${BK_HOME}/lib ]; then
+    echo "true"
+    return
+  else
+    echo "false"
+    return
+  fi
+}
+
 find_module_jar_at() {
   DIR=$1
   MODULE=$2
@@ -127,6 +141,21 @@ find_module_jar_at() {
       fi
     done
   fi
+}
+
+find_module_release_jar() {
+  MODULE_NAME=$1
+  RELEASE_JAR=$(find_module_jar_at ${BK_HOME} ${MODULE_NAME})
+  if [ -n "${RELEASE_JAR}" ]; then
+    MODULE_JAR=${RELEASE_JAR}
+  else
+    RELEASE_JAR=$(find_module_jar_at ${BK_HOME}/lib ${MODULE_NAME})
+    if [ -n "${RELEASE_JAR}" ]; then
+      MODULE_JAR=${RELEASE_JAR}
+    fi
+  fi
+  echo ${RELEASE_JAR}
+  return
 }
 
 find_module_jar() {
@@ -146,10 +175,13 @@ find_module_jar() {
     BUILT_JAR=$(find_module_jar_at ${BK_HOME}/${MODULE_PATH}/target ${MODULE_NAME})
     if [ -z "${BUILT_JAR}" ]; then
       echo "Couldn't find module '${MODULE_NAME}' jar." >&2
-      read -p "Do you want me to run \`mvn package -DskiptTests\` for you ? " answer
+      read -p "Do you want me to run \`mvn package -DskipTests -Dstream\` for you ? (y|n) " answer
       case "${answer:0:1}" in
         y|Y )
-          mvn package -DskipTests -Dstream
+          mkdir -p ${BK_HOME}/logs
+          output="${BK_HOME}/logs/build.out"
+          echo "see output at ${output} for the progress ..." >&2
+          mvn package -DskipTests -Dstream &> ${output} 
           ;;
         * )
           exit 1
@@ -182,8 +214,12 @@ add_maven_deps_to_classpath() {
   # and cache it. Save the file into our target dir so a mvn clean will get
   # clean it up and force us create a new one.
   f="${BK_HOME}/${MODULE_PATH}/target/cached_classpath.txt"
+  output="${BK_HOME}/${MODULE_PATH}/target/build_classpath.out"
   if [ ! -f ${f} ]; then
-    ${MVN} -f "${BK_HOME}/${MODULE_PATH}/pom.xml" -Dstream dependency:build-classpath -Dmdep.outputFile="target/cached_classpath.txt" &> /dev/null
+    echo "the classpath of module '${MODULE_PATH}' is not found, generating it ..." >&2
+    echo "see output at ${output} for the progress ..." >&2
+    ${MVN} -f "${BK_HOME}/${MODULE_PATH}/pom.xml" -Dstream dependency:build-classpath -Dmdep.outputFile="target/cached_classpath.txt" &> ${output}
+    echo "the classpath of module '${MODULE_PATH}' is generated at '${f}'." >&2
   fi
 }
 
@@ -248,4 +284,48 @@ build_cli_logging_opts() {
 
 build_bookie_opts() {
   echo "-Djava.net.preferIPv4Stack=true"
+}
+
+find_table_service() {
+  BOOKIE_CONF_TO_CHECK=$1
+  SERVICE_COMMAND=$2
+
+  # check if it is a released binary
+  IS_RELEASED_BINARY=$(is_released_binary)
+
+  # check if table service is released
+  TABLE_SERVICE_RELEASED="true"
+  if [ "x${IS_RELEASED_BINARY}" == "xtrue" ]; then
+    TABLE_SERVICE_RELEASE_JAR=$(find_module_release_jar ${TABLE_SERVICE_MODULE_NAME})
+    if [ "x${TABLE_SERVICE_RELEASE_JAR}" == "x" ]; then
+      TABLE_SERVICE_RELEASED="false"
+    fi
+  fi
+  
+  # check the configuration to see if table service is enabled or not.
+  if [ -z "${ENABLE_TABLE_SERVICE}" ]; then
+    # mask exit code if the configuration file doesn't contain `StreamStorageLifecycleComponent`
+    TABLE_SERVICE_SETTING=$(grep StreamStorageLifecycleComponent ${BOOKIE_CONF_TO_CHECK} | cat)
+    if [[ "${TABLE_SERVICE_SETTING}" =~ ^extraServerComponents.* ]]; then
+      if [ "x${TABLE_SERVICE_RELEASED}" == "xfalse" ]; then
+        echo "The release binary is built without table service. Please disable \`StreamStorageLifecycleComponent\` in your bookie configuration at '${BOOKIE_CONF_TO_CHECK}'."
+        return
+      fi
+      ENABLE_TABLE_SERVICE="true"
+    fi
+  fi
+  
+  # standalone only run
+  if [ \( "x${SERVICE_COMMAND}" == "xstandalone" \) -a \( "x${TABLE_SERVICE_RELEASED}" == "xfalse" \) ]; then
+    echo "The release binary is built without table service. Use \`localbookie <n>\` instead of \`standalone\` for local development."
+    return
+  fi
+
+  if [ \( "x${SERVICE_COMMAND}" == "xstandalone" \) -o \( "x${ENABLE_TABLE_SERVICE}" == "xtrue" \) ]; then
+    echo "true"
+    return
+  else
+    echo "false"
+    return
+  fi
 }
