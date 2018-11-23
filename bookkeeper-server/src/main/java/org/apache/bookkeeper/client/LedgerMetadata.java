@@ -23,6 +23,7 @@ import static com.google.common.base.Preconditions.checkState;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.TextFormat;
@@ -87,11 +88,11 @@ public class LedgerMetadata implements org.apache.bookkeeper.client.api.LedgerMe
     private final NavigableMap<Long, ImmutableList<BookieSocketAddress>> ensembles;
     private final ImmutableList<BookieSocketAddress> currentEnsemble;
 
-    private final boolean hasPassword; // IKTODO other things should be optionals instead
+    private final boolean hasPassword;
     private final LedgerMetadataFormat.DigestType digestType;
     private final byte[] password;
 
-    private final Map<String, byte[]> customMetadata = Maps.newHashMap();
+    private final Map<String, byte[]> customMetadata;
 
     LedgerMetadata(int metadataFormatVersion,
                    int ensembleSize,
@@ -149,7 +150,7 @@ public class LedgerMetadata implements org.apache.bookkeeper.client.api.LedgerMe
         this.ctime = ctime;
         this.storeCtime = storeCtime;
 
-        this.customMetadata.putAll(customMetadata);
+        this.customMetadata = ImmutableMap.copyOf(customMetadata);
     }
 
     /**
