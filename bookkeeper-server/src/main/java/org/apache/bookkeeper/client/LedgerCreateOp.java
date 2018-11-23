@@ -126,7 +126,7 @@ class LedgerCreateOp {
     public void initiate() {
         LedgerMetadataBuilder metadataBuilder = LedgerMetadataBuilder.create()
             .withEnsembleSize(ensembleSize).withWriteQuorumSize(writeQuorumSize).withAckQuorumSize(ackQuorumSize)
-            .withDigestType(digestType.toApiDigestType()).withPassword(passwd);
+            .withPassword(passwd, digestType.toApiDigestType());
         if (customMetadata != null) {
             metadataBuilder.withCustomMetadata(customMetadata);
         }

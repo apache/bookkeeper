@@ -48,7 +48,7 @@ public class LedgerMetadataTest {
                 new BookieSocketAddress("192.0.2.3", 1234));
         org.apache.bookkeeper.client.api.LedgerMetadata metadata = LedgerMetadataBuilder.create()
             .withEnsembleSize(3).withWriteQuorumSize(2).withAckQuorumSize(1)
-            .withDigestType(DigestType.CRC32.toApiDigestType()).withPassword(passwd)
+            .withPassword(passwd, DigestType.CRC32.toApiDigestType())
             .newEnsembleEntry(0L, ensemble)
             .build();
 
@@ -104,8 +104,7 @@ public class LedgerMetadataTest {
                 new BookieSocketAddress("192.0.2.3", 1234));
 
         LedgerMetadata lm1 = LedgerMetadataBuilder.create()
-            .withDigestType(DigestType.CRC32.toApiDigestType())
-            .withPassword(passwd)
+            .withPassword(passwd, DigestType.CRC32.toApiDigestType())
             .newEnsembleEntry(0L, ensemble).build();
 
         assertTrue("toString should contain 'password' field", lm1.toString().contains("password"));

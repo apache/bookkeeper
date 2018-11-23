@@ -101,7 +101,7 @@ public class LedgerMetadata implements org.apache.bookkeeper.client.api.LedgerMe
                    Optional<Long> lastEntryId,
                    Optional<Long> length,
                    Map<Long, List<BookieSocketAddress>> ensembles,
-                   DigestType digestType,
+                   Optional<DigestType> digestType,
                    Optional<byte[]> password,
                    long ctime,
                    boolean storeCtime,
@@ -114,6 +114,9 @@ public class LedgerMetadata implements org.apache.bookkeeper.client.api.LedgerMe
             checkArgument(!length.isPresent(), "Non-closed ledger must not have a length");
             checkArgument(!lastEntryId.isPresent(), "Non-closed ledger must not have a last entry");
         }
+        checkArgument((digestType.isPresent() && password.isPresent())
+                      || (!digestType.isPresent() && !password.isPresent()),
+                      "Either both password and digest type must be set, or neither");
 
         this.metadataFormatVersion = metadataFormatVersion;
         this.ensembleSize = ensembleSize;
@@ -136,15 +139,15 @@ public class LedgerMetadata implements org.apache.bookkeeper.client.api.LedgerMe
             currentEnsemble = null;
         }
 
-        this.digestType = digestType.equals(DigestType.MAC)
-            ? LedgerMetadataFormat.DigestType.HMAC : LedgerMetadataFormat.DigestType.valueOf(digestType.toString());
 
         if (password.isPresent()) {
             this.password = password.get();
+            this.digestType = apiToProtoDigestType(digestType.get());
             this.hasPassword = true;
         } else {
             this.password = null;
             this.hasPassword = false;
+            this.digestType = null;
         }
         this.ctime = ctime;
         this.storeCtime = storeCtime;
@@ -198,6 +201,9 @@ public class LedgerMetadata implements org.apache.bookkeeper.client.api.LedgerMe
 
     @Override
     public DigestType getDigestType() {
+        if (!hasPassword()) {
+            return null;
+        }
         switch (digestType) {
             case HMAC:
                 return DigestType.MAC;
@@ -449,8 +455,8 @@ public class LedgerMetadata implements org.apache.bookkeeper.client.api.LedgerMe
         }
 
         if (data.hasPassword()) {
-            builder.withPassword(data.getPassword().toByteArray())
-                .withDigestType(protoToApiDigestType(data.getDigestType()));
+            builder.withPassword(data.getPassword().toByteArray(),
+                                 protoToApiDigestType(data.getDigestType()));
         }
 
         for (LedgerMetadataFormat.Segment s : data.getSegmentList()) {
@@ -548,6 +554,22 @@ public class LedgerMetadata implements org.apache.bookkeeper.client.api.LedgerMe
 
     int getMetadataFormatVersion() {
         return metadataFormatVersion;
+    }
+
+    // These will be moved out of here when I move the serialization stuff from LedgerMetadata
+    private static LedgerMetadataFormat.DigestType apiToProtoDigestType(DigestType digestType) {
+        switch (digestType) {
+        case MAC:
+            return LedgerMetadataFormat.DigestType.HMAC;
+        case CRC32:
+            return LedgerMetadataFormat.DigestType.CRC32;
+        case CRC32C:
+            return LedgerMetadataFormat.DigestType.CRC32C;
+        case DUMMY:
+            return LedgerMetadataFormat.DigestType.DUMMY;
+        default:
+            throw new IllegalArgumentException("Unable to convert digest type " + digestType);
+        }
     }
 
     private static DigestType protoToApiDigestType(LedgerMetadataFormat.DigestType digestType) {
