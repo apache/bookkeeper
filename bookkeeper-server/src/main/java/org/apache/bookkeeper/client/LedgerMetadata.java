@@ -152,36 +152,6 @@ public class LedgerMetadata implements org.apache.bookkeeper.client.api.LedgerMe
         this.customMetadata.putAll(customMetadata);
     }
 
-    /**
-     * Copy Constructor.
-     */
-    LedgerMetadata(LedgerMetadata other) {
-        this.ensembleSize = other.ensembleSize;
-        this.writeQuorumSize = other.writeQuorumSize;
-        this.ackQuorumSize = other.ackQuorumSize;
-        this.length = other.length;
-        this.lastEntryId = other.lastEntryId;
-        this.metadataFormatVersion = other.metadataFormatVersion;
-        this.state = other.state;
-        this.hasPassword = other.hasPassword;
-        this.digestType = other.digestType;
-        this.ctime = other.ctime;
-        this.storeCtime = other.storeCtime;
-        this.password = new byte[other.password.length];
-        System.arraycopy(other.password, 0, this.password, 0, other.password.length);
-        this.ensembles = Collections.unmodifiableNavigableMap(
-                other.ensembles.entrySet().stream().collect(TreeMap::new,
-                                                            (m, e) -> m.put(e.getKey(),
-                                                                            ImmutableList.copyOf(e.getValue())),
-                                                            TreeMap::putAll));
-        if (state != LedgerMetadataFormat.State.CLOSED) {
-            currentEnsemble = this.ensembles.lastEntry().getValue();
-        } else {
-            currentEnsemble = null;
-        }
-        this.customMetadata = other.customMetadata;
-    }
-
     @Override
     public NavigableMap<Long, ? extends List<BookieSocketAddress>> getAllEnsembles() {
         return ensembles;
