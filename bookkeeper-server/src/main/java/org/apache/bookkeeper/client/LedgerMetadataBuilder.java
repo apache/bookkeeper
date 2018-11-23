@@ -73,14 +73,9 @@ public class LedgerMetadataBuilder {
         builder.ackQuorumSize = other.getAckQuorumSize();
 
         builder.state = other.getState();
-
-        long lastEntryId = other.getLastEntryId();
-        if (lastEntryId != LedgerHandle.INVALID_ENTRY_ID) {
-            builder.lastEntryId = Optional.of(lastEntryId);
-        }
-        long length = other.getLength();
-        if (length > 0) {
-            builder.length = Optional.of(length);
+        if (builder.state == LedgerMetadataFormat.State.CLOSED) {
+            builder.lastEntryId = Optional.of(other.getLastEntryId());
+            builder.length = Optional.of(other.getLength());
         }
 
         builder.ensembles.putAll(other.getAllEnsembles());
