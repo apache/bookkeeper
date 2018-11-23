@@ -11,7 +11,7 @@ below.
 
 ## Highlights
 
-- Use default metric registry in Prometheus exporter, see [apache/bookkeeper#1765](https://github.com/apache/bookkeeper/pull/1765)
+- Use default metrics registry in Prometheus exporter, see [apache/bookkeeper#1765](https://github.com/apache/bookkeeper/pull/1765)
 
 - Don't cache Bookie hostname DNS resolution forever, see [apache/bookkeeper#1762](https://github.com/apache/bookkeeper/pull/1762)
 
