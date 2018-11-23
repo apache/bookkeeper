@@ -147,7 +147,7 @@ public class LedgerMetadataBuilder {
         return this;
     }
 
-    public LedgerMetadataBuilder closingAt(long lastEntryId, long length) {
+    public LedgerMetadataBuilder closedAtEntryAndLength(long lastEntryId, long length) {
         this.lastEntryId = Optional.of(lastEntryId);
         this.length = Optional.of(length);
         this.state = LedgerMetadataFormat.State.CLOSED;

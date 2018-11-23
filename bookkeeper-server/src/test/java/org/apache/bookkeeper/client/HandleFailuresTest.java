@@ -294,7 +294,7 @@ public class HandleFailuresTest {
         changeInProgress.get();
 
         ClientUtil.transformMetadata(clientCtx, 10L,
-                                     (metadata) -> LedgerMetadataBuilder.from(metadata).closingAt(1234L, 10L).build());
+                (metadata) -> LedgerMetadataBuilder.from(metadata).closedAtEntryAndLength(1234L, 10L).build());
 
         blockEnsembleChange.complete(null); // allow ensemble change to continue
         try {

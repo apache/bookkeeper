@@ -123,7 +123,7 @@ public class LedgerRecovery2Test {
         writingBack.get(10, TimeUnit.SECONDS);
 
         ClientUtil.transformMetadata(clientCtx, 1L,
-                                     (metadata) -> LedgerMetadataBuilder.from(metadata).closingAt(-1, 0).build());
+                (metadata) -> LedgerMetadataBuilder.from(metadata).closedAtEntryAndLength(-1, 0).build());
 
         // allow recovery to continue
         blocker.complete(null);
