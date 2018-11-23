@@ -107,18 +107,22 @@ public class LedgerMetadata implements org.apache.bookkeeper.client.api.LedgerMe
                    boolean storeCtime,
                    Map<String, byte[]> customMetadata) {
         checkArgument(ensembles.size() > 0, "There must be at least one ensemble in the ledger");
+        if (state == LedgerMetadataFormat.State.CLOSED) {
+            checkArgument(length.isPresent(), "Closed ledger must have a length");
+            checkArgument(lastEntryId.isPresent(), "Closed ledger must have a last entry");
+        } else {
+            checkArgument(!length.isPresent(), "Non-closed ledger must not have a length");
+            checkArgument(!lastEntryId.isPresent(), "Non-closed ledger must not have a last entry");
+        }
 
         this.metadataFormatVersion = metadataFormatVersion;
         this.ensembleSize = ensembleSize;
         this.writeQuorumSize = writeQuorumSize;
         this.ackQuorumSize = ackQuorumSize;
         this.state = state;
-        if (lastEntryId.isPresent()) {
-            this.lastEntryId = lastEntryId.get();
-        } else {
-            this.lastEntryId = LedgerHandle.INVALID_ENTRY_ID;
-        }
-        length.ifPresent((l) -> this.length = l);
+
+        this.lastEntryId = lastEntryId.orElse(LedgerHandle.INVALID_ENTRY_ID);
+        this.length = length.orElse(0L);
 
         this.ensembles = Collections.unmodifiableNavigableMap(
                 ensembles.entrySet().stream().collect(TreeMap::new,
@@ -145,7 +149,6 @@ public class LedgerMetadata implements org.apache.bookkeeper.client.api.LedgerMe
         this.ctime = ctime;
         this.storeCtime = storeCtime;
 
-        this.length = 0;
         this.customMetadata.putAll(customMetadata);
     }
 
