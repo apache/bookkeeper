@@ -78,9 +78,9 @@ public class LedgerMetadata implements org.apache.bookkeeper.client.api.LedgerMe
     private final int writeQuorumSize;
     private final int ackQuorumSize;
 
-    private LedgerMetadataFormat.State state;
-    private long length;
-    private long lastEntryId;
+    private final LedgerMetadataFormat.State state;
+    private final long length;
+    private final long lastEntryId;
     private final long ctime;
     final boolean storeCtime; // non-private so builder can access for copy
 
@@ -107,18 +107,22 @@ public class LedgerMetadata implements org.apache.bookkeeper.client.api.LedgerMe
                    boolean storeCtime,
                    Map<String, byte[]> customMetadata) {
         checkArgument(ensembles.size() > 0, "There must be at least one ensemble in the ledger");
+        if (state == LedgerMetadataFormat.State.CLOSED) {
+            checkArgument(length.isPresent(), "Closed ledger must have a length");
+            checkArgument(lastEntryId.isPresent(), "Closed ledger must have a last entry");
+        } else {
+            checkArgument(!length.isPresent(), "Non-closed ledger must not have a length");
+            checkArgument(!lastEntryId.isPresent(), "Non-closed ledger must not have a last entry");
+        }
 
         this.metadataFormatVersion = metadataFormatVersion;
         this.ensembleSize = ensembleSize;
         this.writeQuorumSize = writeQuorumSize;
         this.ackQuorumSize = ackQuorumSize;
         this.state = state;
-        if (lastEntryId.isPresent()) {
-            this.lastEntryId = lastEntryId.get();
-        } else {
-            this.lastEntryId = LedgerHandle.INVALID_ENTRY_ID;
-        }
-        length.ifPresent((l) -> this.length = l);
+
+        this.lastEntryId = lastEntryId.orElse(LedgerHandle.INVALID_ENTRY_ID);
+        this.length = length.orElse(0L);
 
         this.ensembles = Collections.unmodifiableNavigableMap(
                 ensembles.entrySet().stream().collect(TreeMap::new,
@@ -248,10 +252,6 @@ public class LedgerMetadata implements org.apache.bookkeeper.client.api.LedgerMe
         return length;
     }
 
-    void setLength(long length) {
-        this.length = length;
-    }
-
     @Override
     public boolean isClosed() {
         return state == LedgerMetadataFormat.State.CLOSED;
@@ -263,19 +263,6 @@ public class LedgerMetadata implements org.apache.bookkeeper.client.api.LedgerMe
 
     public LedgerMetadataFormat.State getState() {
         return state;
-    }
-
-    void setState(LedgerMetadataFormat.State state) {
-        this.state = state;
-    }
-
-    void markLedgerInRecovery() {
-        state = LedgerMetadataFormat.State.IN_RECOVERY;
-    }
-
-    void close(long entryId) {
-        lastEntryId = entryId;
-        state = LedgerMetadataFormat.State.CLOSED;
     }
 
     List<BookieSocketAddress> getCurrentEnsemble() {
