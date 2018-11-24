@@ -205,11 +205,11 @@ class SyncThread implements Checkpointer {
         requestFlush();
 
         executor.shutdown();
-        long start = MathUtils.now();
+        long start = System.currentTimeMillis();
         while (!executor.awaitTermination(5, TimeUnit.MINUTES)) {
-            long now = MathUtils.now();
+            long now = System.currentTimeMillis();
             log.info("SyncThread taking a long time to shutdown. Has taken {}"
-                    + " seconds so far", now - start);
+                    + " milliseconds so far", now - start);
         }
     }
 }

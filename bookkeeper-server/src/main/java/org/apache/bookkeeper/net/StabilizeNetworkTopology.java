@@ -42,7 +42,7 @@ public class StabilizeNetworkTopology implements NetworkTopology {
         boolean tentativeToRemove;
 
         NodeStatus() {
-            this.lastPresentTime = MathUtils.now();
+            this.lastPresentTime = System.currentTimeMillis();
         }
 
         synchronized boolean isTentativeToRemove() {
@@ -52,7 +52,7 @@ public class StabilizeNetworkTopology implements NetworkTopology {
         synchronized NodeStatus updateStatus(boolean tentativeToRemove) {
             this.tentativeToRemove = tentativeToRemove;
             if (!this.tentativeToRemove) {
-                this.lastPresentTime = MathUtils.now();
+                this.lastPresentTime = System.currentTimeMillis();
             }
             return this;
         }
@@ -88,7 +88,7 @@ public class StabilizeNetworkTopology implements NetworkTopology {
                 // no status of this node, remove this node from topology
                 impl.remove(node);
             } else if (status.isTentativeToRemove()) {
-                long millisSinceLastSeen = MathUtils.now() - status.getLastPresentTime();
+                long millisSinceLastSeen = System.currentTimeMillis() - status.getLastPresentTime();
                 if (millisSinceLastSeen >= stabilizePeriodMillis) {
                     logger.info("Node {} (seen @ {}) becomes stale for {} ms, remove it from the topology.",
                             node, status.getLastPresentTime(), millisSinceLastSeen);
