@@ -36,7 +36,6 @@ import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.LedgerDirsListener;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.util.MathUtils;
 
 /**
  * SyncThread is a background thread which help checkpointing ledger storage
