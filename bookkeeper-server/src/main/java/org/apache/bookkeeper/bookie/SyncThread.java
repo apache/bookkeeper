@@ -36,7 +36,6 @@ import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.LedgerDirsListener;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.util.MathUtils;
 
 /**
  * SyncThread is a background thread which help checkpointing ledger storage
@@ -205,11 +204,11 @@ class SyncThread implements Checkpointer {
         requestFlush();
 
         executor.shutdown();
-        long start = MathUtils.now();
+        long start = System.currentTimeMillis();
         while (!executor.awaitTermination(5, TimeUnit.MINUTES)) {
-            long now = MathUtils.now();
+            long now = System.currentTimeMillis();
             log.info("SyncThread taking a long time to shutdown. Has taken {}"
-                    + " seconds so far", now - start);
+                    + " milliseconds so far", now - start);
         }
     }
 }
