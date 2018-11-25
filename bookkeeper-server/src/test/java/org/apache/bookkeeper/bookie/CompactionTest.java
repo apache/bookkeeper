@@ -67,7 +67,6 @@ import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.test.TestStatsProvider;
 import org.apache.bookkeeper.util.DiskChecker;
 import org.apache.bookkeeper.util.HardLink;
-import org.apache.bookkeeper.util.MathUtils;
 import org.apache.bookkeeper.util.TestUtils;
 import org.apache.bookkeeper.versioning.Version;
 import org.apache.zookeeper.AsyncCallback;
@@ -263,7 +262,7 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
                     Checkpointer.NULL,
                     NullStatsLogger.INSTANCE);
                 storage.start();
-                long startTime = MathUtils.now();
+                long startTime = System.currentTimeMillis();
                 storage.gcThread.enableForceGC();
                 storage.gcThread.triggerGC().get(); //major
                 storage.gcThread.triggerGC().get(); //minor
@@ -986,7 +985,7 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
         storage.gcThread.suspendMajorGC();
 
         Thread.sleep(1000);
-        long startTime = MathUtils.now();
+        long startTime = System.currentTimeMillis();
         majorCompactions = stats.getCounter("storage.gc." + MAJOR_COMPACTION_COUNT).get().intValue();
         Thread.sleep(conf.getMajorCompactionInterval() * 1000
                    + conf.getGcWaitTime());
@@ -1006,7 +1005,7 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
         storage.gcThread.suspendMinorGC();
 
         Thread.sleep(1000);
-        startTime = MathUtils.now();
+        startTime = System.currentTimeMillis();
         minorCompactions = stats.getCounter("storage.gc." + MINOR_COMPACTION_COUNT).get().intValue();
         Thread.sleep(conf.getMajorCompactionInterval() * 1000
                    + conf.getGcWaitTime());
