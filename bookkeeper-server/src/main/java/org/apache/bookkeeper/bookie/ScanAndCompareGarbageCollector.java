@@ -45,7 +45,6 @@ import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.Gauge;
 import org.apache.bookkeeper.stats.StatsLogger;
-import org.apache.bookkeeper.util.MathUtils;
 import org.apache.bookkeeper.util.ZkUtils;
 import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
 import org.apache.zookeeper.KeeperException;
@@ -96,7 +95,7 @@ public class ScanAndCompareGarbageCollector implements GarbageCollector{
         this.conf = conf;
         this.selfBookieAddress = Bookie.getBookieAddress(conf);
         this.gcOverReplicatedLedgerIntervalMillis = conf.getGcOverreplicatedLedgerWaitTimeMillis();
-        this.lastOverReplicatedLedgerGcTimeMillis = MathUtils.now();
+        this.lastOverReplicatedLedgerGcTimeMillis = System.currentTimeMillis();
         if (gcOverReplicatedLedgerIntervalMillis > 0) {
             this.enableGcOverReplicatedLedger = true;
         }
@@ -137,7 +136,7 @@ public class ScanAndCompareGarbageCollector implements GarbageCollector{
                     Long.MAX_VALUE));
             this.activeLedgerCounter = bkActiveLedgers.size();
 
-            long curTime = MathUtils.now();
+            long curTime = System.currentTimeMillis();
             boolean checkOverreplicatedLedgers = (enableGcOverReplicatedLedger && curTime
                     - lastOverReplicatedLedgerGcTimeMillis > gcOverReplicatedLedgerIntervalMillis);
             if (checkOverreplicatedLedgers) {
@@ -150,7 +149,7 @@ public class ScanAndCompareGarbageCollector implements GarbageCollector{
                 } else {
                     LOG.info("Removed over-replicated ledgers: {}", overReplicatedLedgers);
                 }
-                lastOverReplicatedLedgerGcTimeMillis = MathUtils.now();
+                lastOverReplicatedLedgerGcTimeMillis = System.currentTimeMillis();
             }
 
             // Iterate over all the ledger on the metadata store
