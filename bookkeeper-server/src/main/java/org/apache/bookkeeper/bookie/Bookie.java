@@ -733,7 +733,7 @@ public class Bookie extends BookieCriticalThread {
     }
 
     void readJournal() throws IOException, BookieException {
-        long startTs = MathUtils.now();
+        long startTs = System.currentTimeMillis();
         JournalScanner scanner = new JournalScanner() {
             @Override
             public void process(int journalVersion, long offset, ByteBuffer recBuff) throws IOException {
@@ -823,7 +823,7 @@ public class Bookie extends BookieCriticalThread {
         for (Journal journal : journals) {
             journal.replay(scanner);
         }
-        long elapsedTs = MathUtils.now() - startTs;
+        long elapsedTs = System.currentTimeMillis() - startTs;
         LOG.info("Finished replaying journal in {} ms.", elapsedTs);
     }
 
@@ -1492,7 +1492,7 @@ public class Bookie extends BookieCriticalThread {
         Bookie b = new Bookie(new ServerConfiguration());
         b.start();
         CounterCallback cb = new CounterCallback();
-        long start = MathUtils.now();
+        long start = System.currentTimeMillis();
         for (int i = 0; i < 100000; i++) {
             ByteBuf buff = Unpooled.buffer(1024);
             buff.writeLong(1);
@@ -1501,7 +1501,7 @@ public class Bookie extends BookieCriticalThread {
             b.addEntry(buff, false /* ackBeforeSync */, cb, null, new byte[0]);
         }
         cb.waitZero();
-        long end = MathUtils.now();
+        long end = System.currentTimeMillis();
         System.out.println("Took " + (end - start) + "ms");
     }
 

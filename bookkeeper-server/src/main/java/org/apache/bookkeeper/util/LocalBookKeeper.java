@@ -492,7 +492,7 @@ public class LocalBookKeeper {
     }
 
     public static boolean waitForServerUp(String hp, long timeout) {
-        long start = MathUtils.now();
+        long start = System.currentTimeMillis();
         String split[] = hp.split(":");
         String host = split[0];
         int port = Integer.parseInt(split[1]);
@@ -524,7 +524,7 @@ public class LocalBookKeeper {
                 LOG.info("server " + hp + " not up " + e);
             }
 
-            if (MathUtils.now() > start + timeout) {
+            if (System.currentTimeMillis() > start + timeout) {
                 break;
             }
             try {
