@@ -77,6 +77,7 @@ public interface HttpServer {
         LAST_LOG_MARK,
         LIST_DISK_FILE,
         EXPAND_STORAGE,
+        TRIGGER_GC,
         // autorecovery
         RECOVERY_BOOKIE,
         LIST_UNDER_REPLICATED_LEDGER,
