@@ -1,5 +1,4 @@
 /*
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -16,17 +15,23 @@
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
  * under the License.
- *
  */
-package org.apache.bookkeeper.util;
+
+package org.apache.bookkeeper.common.resolver;
+
+import io.grpc.NameResolver;
+import io.grpc.NameResolverProvider;
 
 /**
- * General Class Reflection Utils.
- *
- * <p>NOTE: this class is kept for avoiding touch all the files using this class.
- * A future change will remove this class.
- *
- * @deprecated in favor of using {@link org.apache.bookkeeper.common.util.ReflectionUtils}
+ * A {@link NameResolverProvider} that provides method to convert back to {@link NameResolver.Factory}.
  */
-public class ReflectionUtils extends org.apache.bookkeeper.common.util.ReflectionUtils {
+public abstract class NameResolverFactoryProvider extends NameResolverProvider {
+
+    /**
+     * Convert the provider to a {@link NameResolver.Factory}.
+     *
+     * @return the name resolver factory.
+     */
+    public abstract NameResolver.Factory toFactory();
+
 }
