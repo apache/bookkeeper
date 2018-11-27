@@ -771,10 +771,11 @@ public class TestHttpService extends BookKeeperClusterTestCase {
         HttpEndpointService triggerGCService = bkHttpServiceProvider
             .provideHttpEndpointService(HttpServer.ApiType.GC);
 
-        //1,  GET, should return NOT_FOUND
+        //1,  GET, should return OK
         HttpServiceRequest request1 = new HttpServiceRequest(null, HttpServer.Method.GET, null);
         HttpServiceResponse response1 = triggerGCService.handle(request1);
-        assertEquals(HttpServer.StatusCode.NOT_FOUND.getValue(), response1.getStatusCode());
+        assertEquals(HttpServer.StatusCode.OK.getValue(), response1.getStatusCode());
+        assertTrue(response1.getBody().contains("false"));
 
         //2, PUT, should return OK
         HttpServiceRequest request2 = new HttpServiceRequest(null, HttpServer.Method.PUT, null);

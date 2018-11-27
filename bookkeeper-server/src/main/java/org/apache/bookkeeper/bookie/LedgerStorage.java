@@ -224,4 +224,15 @@ public interface LedgerStorage {
     default List<DetectedInconsistency> localConsistencyCheck(Optional<RateLimiter> rateLimiter) throws IOException {
         return new ArrayList<>();
     }
+
+    /**
+     * Whether force triggered Garbage Collection is running or not.
+     *
+     * @return
+     *      true  -- force triggered Garbage Collection is running,
+     *      false -- force triggered Garbage Collection is not running
+     */
+    default boolean isInForceGC() {
+        return false;
+    }
 }

@@ -270,6 +270,11 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
     }
 
     @Override
+    public boolean isInForceGC() {
+        return gcThread.isInForceGC();
+    }
+
+    @Override
     public void shutdown() throws InterruptedException {
         try {
             flush();

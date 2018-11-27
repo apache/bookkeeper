@@ -282,6 +282,16 @@ Currently all the HTTP endpoints could be divided into these 4 components:
         |403 | Permission denied |
         |404 | Not found |
 
+1. Method: GET
+    * Description:  whether force triggered Garbage Collection is running or not for this bookie. true for is running.
+    * Response:
+
+        | Code   | Description |
+        |:-------|:------------|
+        |200 | Successful operation |
+        |403 | Permission denied |
+        |404 | Not found |
+
 ## Auto recovery
 
 ### Endpoint: /api/v1/autorecovery/bookie/

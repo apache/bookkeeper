@@ -340,4 +340,9 @@ public class SortedLedgerStorage
     public List<DetectedInconsistency> localConsistencyCheck(Optional<RateLimiter> rateLimiter) throws IOException {
         return interleavedLedgerStorage.localConsistencyCheck(rateLimiter);
     }
+
+    @Override
+    public boolean isInForceGC() {
+        return interleavedLedgerStorage.isInForceGC();
+    }
 }

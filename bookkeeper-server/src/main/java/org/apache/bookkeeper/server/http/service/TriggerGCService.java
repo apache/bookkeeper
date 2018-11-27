@@ -52,11 +52,21 @@ public class TriggerGCService implements HttpEndpointService {
     @Override
     public HttpServiceResponse handle(HttpServiceRequest request) throws Exception {
         HttpServiceResponse response = new HttpServiceResponse();
-        // PUT
+
         if (HttpServer.Method.PUT == request.getMethod()) {
             bookieServer.getBookie().getLedgerStorage().forceGC();
 
             String output = "Triggered GC on BookieServer: " + bookieServer.toString();
+            String jsonResponse = JsonUtil.toJson(output);
+            LOG.debug("output body:" + jsonResponse);
+            response.setBody(jsonResponse);
+            response.setCode(HttpServer.StatusCode.OK);
+            return response;
+        } else if (HttpServer.Method.GET == request.getMethod()) {
+            boolean isInForceGC = bookieServer.getBookie().getLedgerStorage().isInForceGC();
+
+            String output = "Is Force Triggered GC on BookieServer: " + bookieServer.toString() + " running? "
+                + (isInForceGC ? "true" : "false");
             String jsonResponse = JsonUtil.toJson(output);
             LOG.debug("output body:" + jsonResponse);
             response.setBody(jsonResponse);

@@ -298,6 +298,10 @@ public class GarbageCollectorThread extends SafeRunnable {
             });
     }
 
+    public boolean isInForceGC() {
+        return forceGarbageCollection.get();
+    }
+
     public void suspendMajorGC() {
         if (suspendMajorCompaction.compareAndSet(false, true)) {
             LOG.info("Suspend Major Compaction triggered by thread: {}", Thread.currentThread().getName());
