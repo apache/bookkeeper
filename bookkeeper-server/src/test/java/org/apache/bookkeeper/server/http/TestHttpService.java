@@ -741,4 +741,42 @@ public class TestHttpService extends BookKeeperClusterTestCase {
         stopAuditorElector();
     }
 
+    /**
+     * Create ledgers, then test Delete Ledger service.
+     */
+    @Test
+    public void testTriggerGCService() throws Exception {
+        baseConf.setMetadataServiceUri(zkUtil.getMetadataServiceUri());
+        BookKeeper.DigestType digestType = BookKeeper.DigestType.CRC32;
+        int numLedgers = 4;
+        int numMsgs = 100;
+        LedgerHandle[] lh = new LedgerHandle[numLedgers];
+        // create ledgers
+        for (int i = 0; i < numLedgers; i++) {
+            lh[i] = bkc.createLedger(digestType, "".getBytes());
+        }
+        String content = "Apache BookKeeper is cool!";
+        // add entries
+        for (int i = 0; i < numMsgs; i++) {
+            for (int j = 0; j < numLedgers; j++) {
+                lh[j].addEntry(content.getBytes());
+            }
+        }
+        // close ledgers
+        for (int i = 0; i < numLedgers; i++) {
+            lh[i].close();
+        }
+        HttpEndpointService triggerGCService = bkHttpServiceProvider
+            .provideHttpEndpointService(HttpServer.ApiType.GC);
+
+        //1,  GET, should return NOT_FOUND
+        HttpServiceRequest request1 = new HttpServiceRequest(null, HttpServer.Method.GET, null);
+        HttpServiceResponse response1 = triggerGCService.handle(request1);
+        assertEquals(HttpServer.StatusCode.NOT_FOUND.getValue(), response1.getStatusCode());
+
+        //2, PUT, should return OK
+        HttpServiceRequest request2 = new HttpServiceRequest(null, HttpServer.Method.PUT, null);
+        HttpServiceResponse response2 = triggerGCService.handle(request2);
+        assertEquals(HttpServer.StatusCode.OK.getValue(), response2.getStatusCode());
+    }
 }

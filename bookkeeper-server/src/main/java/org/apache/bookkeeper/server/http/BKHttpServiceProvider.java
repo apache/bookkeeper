@@ -53,6 +53,7 @@ import org.apache.bookkeeper.server.http.service.MetricsService;
 import org.apache.bookkeeper.server.http.service.ReadLedgerEntryService;
 import org.apache.bookkeeper.server.http.service.RecoveryBookieService;
 import org.apache.bookkeeper.server.http.service.TriggerAuditService;
+import org.apache.bookkeeper.server.http.service.TriggerGCService;
 import org.apache.bookkeeper.server.http.service.WhoIsAuditorService;
 import org.apache.bookkeeper.stats.StatsProvider;
 import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
@@ -208,6 +209,8 @@ public class BKHttpServiceProvider implements HttpServiceProvider {
                 return new ListDiskFilesService(configuration);
             case EXPAND_STORAGE:
                 return new ExpandStorageService(configuration);
+            case GC:
+                return new TriggerGCService(configuration, bookieServer);
 
             // autorecovery
             case RECOVERY_BOOKIE:

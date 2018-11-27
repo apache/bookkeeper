@@ -327,4 +327,9 @@ public class SortedLedgerStorage
     public LedgerStorage getUnderlyingLedgerStorage() {
         return interleavedLedgerStorage;
     }
+
+    @Override
+    public void forceGC() {
+        interleavedLedgerStorage.forceGC();
+    }
 }

@@ -348,4 +348,8 @@ public class DbLedgerStorage implements LedgerStorage {
         }
     }
 
+    @Override
+    public void forceGC() {
+        ledgerStorageList.stream().forEach(SingleDirectoryDbLedgerStorage::forceGC);
+    }
 }
