@@ -80,11 +80,11 @@ public class WriteEntryProcessorV3Test {
         requestProcessor = mock(BookieRequestProcessor.class);
         when(requestProcessor.getBookie()).thenReturn(bookie);
         when(requestProcessor.getWaitTimeoutOnBackpressureMillis()).thenReturn(-1L);
-        when(requestProcessor.getAddEntryStats())
+        when(requestProcessor.getRequestStats().getAddEntryStats())
             .thenReturn(NullStatsLogger.INSTANCE.getOpStatsLogger("add_entry"));
-        when(requestProcessor.getAddRequestStats())
+        when(requestProcessor.getRequestStats().getAddRequestStats())
             .thenReturn(NullStatsLogger.INSTANCE.getOpStatsLogger("add_requests"));
-        when(requestProcessor.getChannelWriteStats())
+        when(requestProcessor.getRequestStats().getChannelWriteStats())
                 .thenReturn(NullStatsLogger.INSTANCE.getOpStatsLogger("CHANNEL_WRITE"));
         processor = new WriteEntryProcessorV3(
             request,

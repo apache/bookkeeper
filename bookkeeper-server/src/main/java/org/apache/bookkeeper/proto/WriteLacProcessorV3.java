@@ -71,11 +71,11 @@ class WriteLacProcessorV3 extends PacketProcessorBaseV3 implements Runnable {
             @Override
             public void writeComplete(int rc, long ledgerId, long entryId, BookieSocketAddress addr, Object ctx) {
                 if (BookieProtocol.EOK == rc) {
-                    requestProcessor.writeLacStats.registerSuccessfulEvent(MathUtils.elapsedNanos(startTimeNanos),
-                            TimeUnit.NANOSECONDS);
+                    requestProcessor.getRequestStats().getWriteLacStats()
+                        .registerSuccessfulEvent(MathUtils.elapsedNanos(startTimeNanos), TimeUnit.NANOSECONDS);
                 } else {
-                    requestProcessor.writeLacStats.registerFailedEvent(MathUtils.elapsedNanos(startTimeNanos),
-                            TimeUnit.NANOSECONDS);
+                    requestProcessor.getRequestStats().getWriteLacStats()
+                        .registerFailedEvent(MathUtils.elapsedNanos(startTimeNanos), TimeUnit.NANOSECONDS);
                 }
 
                 StatusCode status;
@@ -96,7 +96,7 @@ class WriteLacProcessorV3 extends PacketProcessorBaseV3 implements Runnable {
                         .setStatus(writeLacResponse.getStatus())
                         .setWriteLacResponse(writeLacResponse);
                 Response resp = response.build();
-                sendResponse(status, resp, requestProcessor.writeLacRequestStats);
+                sendResponse(status, resp, requestProcessor.getRequestStats().getWriteLacRequestStats());
             }
         };
 
@@ -130,8 +130,8 @@ class WriteLacProcessorV3 extends PacketProcessorBaseV3 implements Runnable {
         // If everything is okay, we return null so that the calling function
         // dosn't return a response back to the caller.
         if (!status.equals(StatusCode.EOK)) {
-            requestProcessor.writeLacStats.registerFailedEvent(MathUtils.elapsedNanos(startTimeNanos),
-                    TimeUnit.NANOSECONDS);
+            requestProcessor.getRequestStats().getWriteLacStats()
+                .registerFailedEvent(MathUtils.elapsedNanos(startTimeNanos), TimeUnit.NANOSECONDS);
             writeLacResponse.setStatus(status);
             return writeLacResponse.build();
         }
@@ -147,7 +147,10 @@ class WriteLacProcessorV3 extends PacketProcessorBaseV3 implements Runnable {
                     .setStatus(writeLacResponse.getStatus())
                     .setWriteLacResponse(writeLacResponse);
             Response resp = response.build();
-            sendResponse(writeLacResponse.getStatus(), resp, requestProcessor.writeLacRequestStats);
+            sendResponse(
+                writeLacResponse.getStatus(),
+                resp,
+                requestProcessor.getRequestStats().getWriteLacRequestStats());
         }
     }
 

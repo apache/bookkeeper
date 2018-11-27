@@ -67,9 +67,9 @@ public class WriteEntryProcessorTest {
         bookie = mock(Bookie.class);
         requestProcessor = mock(BookieRequestProcessor.class);
         when(requestProcessor.getBookie()).thenReturn(bookie);
-        when(requestProcessor.getAddEntryStats())
+        when(requestProcessor.getRequestStats().getAddEntryStats())
             .thenReturn(NullStatsLogger.INSTANCE.getOpStatsLogger("add_entry"));
-        when(requestProcessor.getAddRequestStats())
+        when(requestProcessor.getRequestStats().getAddRequestStats())
             .thenReturn(NullStatsLogger.INSTANCE.getOpStatsLogger("add_requests"));
         processor = WriteEntryProcessor.create(
             request,

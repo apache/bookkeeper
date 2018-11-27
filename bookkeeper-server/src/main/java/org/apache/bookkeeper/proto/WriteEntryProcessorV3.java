@@ -80,11 +80,11 @@ class WriteEntryProcessorV3 extends PacketProcessorBaseV3 {
             public void writeComplete(int rc, long ledgerId, long entryId,
                                       BookieSocketAddress addr, Object ctx) {
                 if (BookieProtocol.EOK == rc) {
-                    requestProcessor.getAddEntryStats().registerSuccessfulEvent(MathUtils.elapsedNanos(startTimeNanos),
-                            TimeUnit.NANOSECONDS);
+                    requestProcessor.getRequestStats().getAddEntryStats()
+                        .registerSuccessfulEvent(MathUtils.elapsedNanos(startTimeNanos), TimeUnit.NANOSECONDS);
                 } else {
-                    requestProcessor.getAddEntryStats().registerFailedEvent(MathUtils.elapsedNanos(startTimeNanos),
-                            TimeUnit.NANOSECONDS);
+                    requestProcessor.getRequestStats().getAddEntryStats()
+                        .registerFailedEvent(MathUtils.elapsedNanos(startTimeNanos), TimeUnit.NANOSECONDS);
                 }
 
                 StatusCode status;
@@ -105,7 +105,7 @@ class WriteEntryProcessorV3 extends PacketProcessorBaseV3 {
                         .setStatus(addResponse.getStatus())
                         .setAddResponse(addResponse);
                 Response resp = response.build();
-                sendResponse(status, resp, requestProcessor.getAddRequestStats());
+                sendResponse(status, resp, requestProcessor.getRequestStats().getAddRequestStats());
             }
         };
         final EnumSet<WriteFlag> writeFlags;
@@ -171,7 +171,7 @@ class WriteEntryProcessorV3 extends PacketProcessorBaseV3 {
                     .setAddResponse(addResponse);
             Response resp = response.build();
             sendResponse(addResponse.getStatus(), resp,
-                         requestProcessor.getAddRequestStats());
+                         requestProcessor.getRequestStats().getAddRequestStats());
         }
     }
 

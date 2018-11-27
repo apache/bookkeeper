@@ -54,8 +54,8 @@ public class GetBookieInfoProcessorV3 extends PacketProcessorBaseV3 implements R
 
         if (!isVersionCompatible()) {
             getBookieInfoResponse.setStatus(StatusCode.EBADVERSION);
-            requestProcessor.getGetBookieInfoStats().registerFailedEvent(MathUtils.elapsedNanos(startTimeNanos),
-                    TimeUnit.NANOSECONDS);
+            requestProcessor.getRequestStats().getGetBookieInfoStats()
+                .registerFailedEvent(MathUtils.elapsedNanos(startTimeNanos), TimeUnit.NANOSECONDS);
             return getBookieInfoResponse.build();
         }
 
@@ -80,8 +80,8 @@ public class GetBookieInfoProcessorV3 extends PacketProcessorBaseV3 implements R
         }
 
         getBookieInfoResponse.setStatus(status);
-        requestProcessor.getGetBookieInfoStats().registerSuccessfulEvent(MathUtils.elapsedNanos(startTimeNanos),
-                TimeUnit.NANOSECONDS);
+        requestProcessor.getRequestStats().getGetBookieInfoStats()
+            .registerSuccessfulEvent(MathUtils.elapsedNanos(startTimeNanos), TimeUnit.NANOSECONDS);
         return getBookieInfoResponse.build();
     }
 
@@ -98,6 +98,6 @@ public class GetBookieInfoProcessorV3 extends PacketProcessorBaseV3 implements R
                 .setGetBookieInfoResponse(getBookieInfoResponse);
         sendResponse(response.getStatus(),
                      response.build(),
-                     requestProcessor.getGetBookieInfoRequestStats());
+                     requestProcessor.getRequestStats().getGetBookieInfoRequestStats());
     }
 }
