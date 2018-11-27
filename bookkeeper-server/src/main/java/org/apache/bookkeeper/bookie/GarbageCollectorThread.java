@@ -385,7 +385,7 @@ public class GarbageCollectorThread extends SafeRunnable {
 
         if (force) {
             if (forceGarbageCollection.compareAndSet(true, false)) {
-                LOG.info("{} Set forceGarbageCollection to true after force GC to make it forceGC-able again.", Thread
+                LOG.info("{} Set forceGarbageCollection to false after force GC to make it forceGC-able again.", Thread
                     .currentThread().getName());
             }
         }

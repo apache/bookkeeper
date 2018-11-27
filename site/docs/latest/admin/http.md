@@ -271,7 +271,7 @@ Currently all the HTTP endpoints could be divided into these 4 components:
         |403 | Permission denied |
         |404 | Not found |
 
-### Endpoint: /api/v1/bookie/trigger_gc
+### Endpoint: /api/v1/bookie/gc
 1. Method: PUT
     * Description:  trigger gc for this bookie.
     * Response:  

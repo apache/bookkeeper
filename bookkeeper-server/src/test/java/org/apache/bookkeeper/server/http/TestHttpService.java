@@ -767,7 +767,7 @@ public class TestHttpService extends BookKeeperClusterTestCase {
             lh[i].close();
         }
         HttpEndpointService triggerGCService = bkHttpServiceProvider
-            .provideHttpEndpointService(HttpServer.ApiType.TRIGGER_GC);
+            .provideHttpEndpointService(HttpServer.ApiType.GC);
 
         //1,  GET, should return NOT_FOUND
         HttpServiceRequest request1 = new HttpServiceRequest(null, HttpServer.Method.GET, null);

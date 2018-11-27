@@ -209,7 +209,7 @@ public class BKHttpServiceProvider implements HttpServiceProvider {
                 return new ListDiskFilesService(configuration);
             case EXPAND_STORAGE:
                 return new ExpandStorageService(configuration);
-            case TRIGGER_GC:
+            case GC:
                 return new TriggerGCService(configuration, bookieServer);
 
             // autorecovery
