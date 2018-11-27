@@ -382,6 +382,13 @@ public class GarbageCollectorThread extends SafeRunnable {
             lastMinorCompactionTime = System.currentTimeMillis();
             minorCompactionCounter.inc();
         }
+
+        if (force) {
+            if (forceGarbageCollection.compareAndSet(true, false)) {
+                LOG.info("{} Set forceGarbageCollection to false after force GC to make it forceGC-able again.", Thread
+                    .currentThread().getName());
+            }
+        }
         this.gcThreadRuntime.registerSuccessfulEvent(
                 MathUtils.nowInNano() - threadStart, TimeUnit.NANOSECONDS);
     }

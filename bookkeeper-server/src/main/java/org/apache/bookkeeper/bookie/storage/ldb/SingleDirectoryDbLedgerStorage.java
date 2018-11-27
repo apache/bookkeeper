@@ -264,6 +264,11 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
     }
 
     @Override
+    public void forceGC() {
+        gcThread.enableForceGC();
+    }
+
+    @Override
     public void shutdown() throws InterruptedException {
         try {
             flush();

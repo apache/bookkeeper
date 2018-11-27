@@ -170,6 +170,11 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
     }
 
     @Override
+    public void forceGC() {
+        gcThread.enableForceGC();
+    }
+
+    @Override
     public void start() {
         gcThread.start();
     }

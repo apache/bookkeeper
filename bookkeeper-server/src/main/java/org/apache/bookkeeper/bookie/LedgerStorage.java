@@ -169,4 +169,11 @@ public interface LedgerStorage {
     void setExplicitlac(long ledgerId, ByteBuf lac) throws IOException;
 
     ByteBuf getExplicitLac(long ledgerId);
+
+    /**
+     * Force trigger Garbage Collection.
+     */
+    default void forceGC() {
+        return;
+    }
 }
