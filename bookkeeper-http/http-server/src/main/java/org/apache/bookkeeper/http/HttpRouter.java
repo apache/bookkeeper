@@ -45,6 +45,7 @@ public abstract class HttpRouter<Handler> {
     public static final String LAST_LOG_MARK                = "/api/v1/bookie/last_log_mark";
     public static final String LIST_DISK_FILE               = "/api/v1/bookie/list_disk_file";
     public static final String EXPAND_STORAGE               = "/api/v1/bookie/expand_storage";
+    public static final String GC                           = "/api/v1/bookie/gc";
     // autorecovery
     public static final String RECOVERY_BOOKIE              = "/api/v1/autorecovery/bookie";
     public static final String LIST_UNDER_REPLICATED_LEDGER = "/api/v1/autorecovery/list_under_replicated_ledger";
@@ -73,6 +74,7 @@ public abstract class HttpRouter<Handler> {
         this.endpointHandlers.put(LAST_LOG_MARK, handlerFactory.newHandler(HttpServer.ApiType.LAST_LOG_MARK));
         this.endpointHandlers.put(LIST_DISK_FILE, handlerFactory.newHandler(HttpServer.ApiType.LIST_DISK_FILE));
         this.endpointHandlers.put(EXPAND_STORAGE, handlerFactory.newHandler(HttpServer.ApiType.EXPAND_STORAGE));
+        this.endpointHandlers.put(GC, handlerFactory.newHandler(HttpServer.ApiType.GC));
 
         // autorecovery
         this.endpointHandlers.put(RECOVERY_BOOKIE, handlerFactory.newHandler(HttpServer.ApiType.RECOVERY_BOOKIE));
