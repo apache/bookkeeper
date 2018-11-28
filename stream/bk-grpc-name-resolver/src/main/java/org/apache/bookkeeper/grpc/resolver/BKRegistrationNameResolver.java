@@ -21,6 +21,7 @@ package org.apache.bookkeeper.grpc.resolver;
 
 import static com.google.common.base.Preconditions.checkState;
 
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import io.grpc.Attributes;
 import io.grpc.EquivalentAddressGroup;
 import io.grpc.NameResolver;
@@ -28,10 +29,16 @@ import java.net.URI;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.stream.Collectors;
+import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.meta.MetadataClientDriver;
+import org.apache.bookkeeper.meta.exceptions.MetadataException;
 import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.stats.NullStatsLogger;
 
 /**
  * A {@link NameResolver} implementation based on bookkeeper {@link org.apache.bookkeeper.discover.RegistrationClient}.
@@ -40,6 +47,7 @@ class BKRegistrationNameResolver extends NameResolver {
 
     private final MetadataClientDriver clientDriver;
     private final URI serviceURI;
+    private final ScheduledExecutorService executor;
 
     private Listener listener;
     private boolean shutdown;
@@ -49,6 +57,8 @@ class BKRegistrationNameResolver extends NameResolver {
                                URI serviceURI) {
         this.clientDriver = clientDriver;
         this.serviceURI = serviceURI;
+        this.executor = Executors.newSingleThreadScheduledExecutor(
+            new ThreadFactoryBuilder().setNameFormat("registration-name-resolver").build());
     }
 
     @Override
@@ -60,6 +70,16 @@ class BKRegistrationNameResolver extends NameResolver {
     public synchronized void start(Listener listener) {
         checkState(null == this.listener, "Resolver already started");
         this.listener = Objects.requireNonNull(listener, "Listener is null");
+
+        ClientConfiguration conf = new ClientConfiguration();
+        conf.setMetadataServiceUri(serviceURI.toString());
+
+        try {
+            clientDriver.initialize(conf, executor, NullStatsLogger.INSTANCE, Optional.empty());
+        } catch (MetadataException e) {
+            throw new RuntimeException("Failed to initialize registration client driver at " + serviceURI, e);
+        }
+
         resolve();
     }
 
@@ -107,6 +127,7 @@ class BKRegistrationNameResolver extends NameResolver {
             }
             shutdown = true;
         }
+        executor.shutdown();
         clientDriver.close();
     }
 }
