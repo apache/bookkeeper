@@ -142,7 +142,7 @@ public class LedgerClose2Test {
 
         ClientUtil.transformMetadata(clientCtx, 10L,
                 (metadata) -> LedgerMetadataBuilder.from(metadata)
-                                     .closedAtEntryAndLength(lac, length).build());
+                                     .withClosedState().withLastEntryId(lac).withLength(length).build());
 
         blockClose.complete(null);
         closeFuture.get();
@@ -185,7 +185,7 @@ public class LedgerClose2Test {
         /* close with different length. can happen in cases where there's a write outstanding */
         ClientUtil.transformMetadata(clientCtx, 10L,
                 (metadata) -> LedgerMetadataBuilder.from(metadata)
-                                     .closedAtEntryAndLength(lac + 1, length + 100).build());
+                                     .withClosedState().withLastEntryId(lac + 1).withLength(length + 100).build());
 
         blockClose.complete(null);
         try {

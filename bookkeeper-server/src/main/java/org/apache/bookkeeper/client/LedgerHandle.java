@@ -557,7 +557,8 @@ public class LedgerHandle implements WriteHandle {
                             },
                             (metadata) -> {
                                 return LedgerMetadataBuilder.from(metadata)
-                                    .closedAtEntryAndLength(lastEntry, finalLength).build();
+                                    .withClosedState().withLastEntryId(lastEntry)
+                                    .withLength(finalLength).build();
                             },
                             LedgerHandle.this::setLedgerMetadata)
                         .run().whenComplete((metadata, ex) -> {

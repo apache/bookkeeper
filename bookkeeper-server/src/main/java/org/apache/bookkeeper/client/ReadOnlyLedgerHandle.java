@@ -326,7 +326,7 @@ class ReadOnlyLedgerHandle extends LedgerHandle implements LedgerMetadataListene
                                     }
                                 });
                     }
-                    return builder.closedAtEntryAndLength(lac, len).build();
+                    return builder.withClosedState().withLastEntryId(lac).withLength(len).build();
                 },
                 this::setLedgerMetadata).run();
         f.thenRun(() -> {

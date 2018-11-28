@@ -352,7 +352,8 @@ public class MetadataUpdateLoopTest {
                     reference::get,
                     (currentMetadata) -> !currentMetadata.isClosed(),
                     (currentMetadata) -> {
-                        return LedgerMetadataBuilder.from(currentMetadata).closedAtEntryAndLength(10L, 100L).build();
+                        return LedgerMetadataBuilder.from(currentMetadata)
+                            .withClosedState().withLastEntryId(10L).withLength(100L).build();
                     },
                     reference::compareAndSet).run();
             CompletableFuture<Versioned<LedgerMetadata>> loop2 = new MetadataUpdateLoop(
