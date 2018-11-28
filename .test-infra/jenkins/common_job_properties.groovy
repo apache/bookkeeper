@@ -35,7 +35,7 @@ class common_job_properties {
             'https://gitbox.apache.org/repos/asf/bookkeeper.git',
             branch,
             'git-websites',
-            30)
+            120)
   }
 
   // Sets common top-level job properties for main repository jobs.
