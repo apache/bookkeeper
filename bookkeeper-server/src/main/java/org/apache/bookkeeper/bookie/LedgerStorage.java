@@ -175,4 +175,10 @@ public interface LedgerStorage {
         return this;
     }
 
+    /**
+     * Force trigger Garbage Collection.
+     */
+    default void forceGC() {
+        return;
+    }
 }
