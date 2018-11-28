@@ -104,8 +104,8 @@ class WriteEntryProcessor extends PacketProcessorBase<ParsedAddRequest> implemen
         }
 
         if (rc != BookieProtocol.EOK) {
-            requestProcessor.getRequestStats().getAddEntryStats().registerFailedEvent(MathUtils.elapsedNanos(startTimeNanos),
-                    TimeUnit.NANOSECONDS);
+            requestProcessor.getRequestStats().getAddEntryStats()
+                .registerFailedEvent(MathUtils.elapsedNanos(startTimeNanos), TimeUnit.NANOSECONDS);
             sendResponse(rc,
                          ResponseBuilder.buildErrorResponse(rc, request),
                          requestProcessor.getRequestStats().getAddRequestStats());
