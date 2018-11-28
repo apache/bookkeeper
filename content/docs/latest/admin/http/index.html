@@ -55,6 +55,11 @@
           </a>
           <hr class="dropdown-divider">
           
+          <a class="navbar-item" href="/docs/4.8.1/overview/overview">
+            Release 4.8.1
+            
+          </a>
+          
           <a class="navbar-item" href="/docs/4.8.0/overview/overview">
             Release 4.8.0
             
@@ -1196,6 +1201,41 @@ To use this feature, set <code class="highlighter-rouge">httpServerEnabled</code
   </li>
 </ol>
 
+<h3 id="endpoint-apiv1bookiegc">Endpoint: /api/v1/bookie/gc</h3>
+<ol>
+  <li>Method: PUT
+    <ul>
+      <li>Description:  trigger gc for this bookie.</li>
+      <li>
+        <p>Response:</p>
+
+        <table>
+          <thead>
+            <tr>
+              <th style="text-align: left">Code</th>
+              <th style="text-align: left">Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="text-align: left">200</td>
+              <td style="text-align: left">Successful operation</td>
+            </tr>
+            <tr>
+              <td style="text-align: left">403</td>
+              <td style="text-align: left">Permission denied</td>
+            </tr>
+            <tr>
+              <td style="text-align: left">404</td>
+              <td style="text-align: left">Not found</td>
+            </tr>
+          </tbody>
+        </table>
+      </li>
+    </ul>
+  </li>
+</ol>
+
 <h2 id="auto-recovery">Auto recovery</h2>
 
 <h3 id="endpoint-apiv1autorecoverybookie">Endpoint: /api/v1/autorecovery/bookie/</h3>
@@ -1611,6 +1651,7 @@ To use this feature, set <code class="highlighter-rouge">httpServerEnabled</code
 <li class="toc-entry toc-h3"><a href="#endpoint-apiv1bookielast_log_mark">Endpoint: /api/v1/bookie/last_log_mark</a></li>
 <li class="toc-entry toc-h3"><a href="#endpoint-apiv1bookielist_disk_filefile_typetype">Endpoint: /api/v1/bookie/list_disk_file/?file_type=<type></a></li>
 <li class="toc-entry toc-h3"><a href="#endpoint-apiv1bookieexpand_storage">Endpoint: /api/v1/bookie/expand_storage</a></li>
+<li class="toc-entry toc-h3"><a href="#endpoint-apiv1bookiegc">Endpoint: /api/v1/bookie/gc</a></li>
 <li class="toc-entry toc-h2"><a href="#auto-recovery">Auto recovery</a></li>
 <li class="toc-entry toc-h3"><a href="#endpoint-apiv1autorecoverybookie">Endpoint: /api/v1/autorecovery/bookie/</a></li>
 <li class="toc-entry toc-h3"><a href="#endpoint-apiv1autorecoverylist_under_replicated_ledgermissingreplicabookie_addressexcludingmissingreplicabookie_address">Endpoint: /api/v1/autorecovery/list_under_replicated_ledger/?missingreplica=<bookie_address>&excludingmissingreplica=<bookie_address></a></li>
