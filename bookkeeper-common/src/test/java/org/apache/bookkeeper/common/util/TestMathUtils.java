@@ -19,13 +19,11 @@
 package org.apache.bookkeeper.common.util;
 
 import static org.apache.bookkeeper.common.util.MathUtils.findNextPositivePowerOfTwo;
-import static org.apache.bookkeeper.common.util.MathUtils.now;
 import static org.apache.bookkeeper.common.util.MathUtils.nowInNano;
 import static org.apache.bookkeeper.common.util.MathUtils.signSafeMod;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-import java.util.concurrent.TimeUnit;
 import org.junit.Test;
 
 /**
@@ -44,12 +42,6 @@ public class TestMathUtils {
     @Test
     public void testFindNextPositivePowerOfTwo() {
         assertEquals(16384, findNextPositivePowerOfTwo(12345));
-    }
-
-    @Test
-    public void testNow() {
-        long nowInMillis = now();
-        assertTrue(TimeUnit.NANOSECONDS.toMillis(System.nanoTime()) >= nowInMillis);
     }
 
     @Test
