@@ -17,9 +17,9 @@
  * under the License.
  */
 
-package org.apache.bookkeeper.util;
+package org.apache.bookkeeper.common.util;
 
-import static org.apache.bookkeeper.util.ReflectionUtils.forName;
+import static org.apache.bookkeeper.common.util.ReflectionUtils.forName;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;

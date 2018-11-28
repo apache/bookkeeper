@@ -17,7 +17,7 @@
  */
 package org.apache.bookkeeper.tls;
 
-import org.apache.bookkeeper.util.ReflectionUtils;
+import org.apache.bookkeeper.common.util.ReflectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

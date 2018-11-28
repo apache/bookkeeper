@@ -21,6 +21,7 @@
 
 package org.apache.bookkeeper.util;
 
+import org.apache.bookkeeper.common.util.ReflectionUtils;
 import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

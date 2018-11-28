@@ -19,7 +19,7 @@ package org.apache.distributedlog.tools;
 
 import java.util.Map;
 import java.util.TreeMap;
-import org.apache.bookkeeper.util.ReflectionUtils;
+import org.apache.bookkeeper.common.util.ReflectionUtils;
 import org.apache.commons.cli.BasicParser;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.HelpFormatter;

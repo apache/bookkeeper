@@ -26,7 +26,7 @@ import java.net.URI;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import org.apache.bookkeeper.util.ReflectionUtils;
+import org.apache.bookkeeper.common.util.ReflectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.distributedlog.DistributedLogConstants;
 import org.apache.distributedlog.impl.BKNamespaceDriver;
