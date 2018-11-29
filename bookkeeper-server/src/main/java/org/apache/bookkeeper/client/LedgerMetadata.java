@@ -441,7 +441,7 @@ public class LedgerMetadata implements org.apache.bookkeeper.client.api.LedgerMe
         if (data.getState() == LedgerMetadataFormat.State.IN_RECOVERY) {
             builder.withInRecoveryState();
         } else if (data.getState() == LedgerMetadataFormat.State.CLOSED) {
-            builder.closingAt(data.getLastEntryId(), data.getLength());
+            builder.withClosedState().withLastEntryId(data.getLastEntryId()).withLength(data.getLength());
         }
 
         if (data.hasPassword()) {
@@ -483,7 +483,7 @@ public class LedgerMetadata implements org.apache.bookkeeper.client.api.LedgerMe
                     if (l == IN_RECOVERY) {
                         builder.withInRecoveryState();
                     } else {
-                        builder.closingAt(l, length);
+                        builder.withClosedState().withLastEntryId(l).withLength(length);
                     }
                     break;
                 }

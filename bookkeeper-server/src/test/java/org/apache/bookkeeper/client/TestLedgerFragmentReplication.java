@@ -242,7 +242,7 @@ public class TestLedgerFragmentReplication extends BookKeeperClusterTestCase {
         LedgerMetadata metadata = LedgerMetadataBuilder.create()
             .withEnsembleSize(3).withWriteQuorumSize(3).withAckQuorumSize(3)
             .withPassword(TEST_PSSWD).withDigestType(TEST_DIGEST_TYPE.toApiDigestType())
-            .closingAt(-1, 0)
+            .withClosedState().withLastEntryId(-1).withLength(0)
             .newEnsembleEntry(0L, ensemble)
             .build();
 
