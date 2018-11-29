@@ -150,6 +150,19 @@ public @interface <span class="memberNameLabel">StatsDoc</span></pre>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/stats/annotations/StatsDoc.html#happensAfter--">happensAfter</a></span></code>
+<div class="block">The metric name of an operation that happens
+ after the operation of this metric.</div>
+</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/stats/annotations/StatsDoc.html#parent--">parent</a></span></code>
+<div class="block">The parent metric name.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/stats/annotations/StatsDoc.html#scope--">scope</a></span></code>
 <div class="block">The scope of this stats.</div>
 </td>
@@ -228,7 +241,7 @@ public @interface <span class="memberNameLabel">StatsDoc</span></pre>
 <li class="blockList"><a name="scope--">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>scope</h4>
 <pre>public abstract&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;scope</pre>
@@ -236,6 +249,55 @@ public @interface <span class="memberNameLabel">StatsDoc</span></pre>
 <dl>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>scope of this stats</dd>
+</dl>
+<dl>
+<dt>Default:</dt>
+<dd>""</dd>
+</dl>
+</li>
+</ul>
+</li>
+</ul>
+<ul class="blockList">
+<li class="blockList"><a name="parent--">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>parent</h4>
+<pre>public abstract&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;parent</pre>
+<div class="block">The parent metric name.
+
+ <p>It can used for analyzing the relationships
+ between the metrics, especially for the latency metrics.</div>
+<dl>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>the parent metric name</dd>
+</dl>
+<dl>
+<dt>Default:</dt>
+<dd>""</dd>
+</dl>
+</li>
+</ul>
+</li>
+</ul>
+<ul class="blockList">
+<li class="blockList"><a name="happensAfter--">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>happensAfter</h4>
+<pre>public abstract&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;happensAfter</pre>
+<div class="block">The metric name of an operation that happens
+ after the operation of this metric.
+
+ <p>similar as <a href="../../../../../org/apache/bookkeeper/stats/annotations/StatsDoc.html#parent--"><code>parent()</code></a>, it can be used for analyzing
+ the dependencies between metrics.</div>
+<dl>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>the metric name of an operation that happens after the operation of this metric.</dd>
 </dl>
 <dl>
 <dt>Default:</dt>
