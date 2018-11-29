@@ -71,6 +71,7 @@ import org.slf4j.MDC;
 @Slf4j
 public class OrderedExecutor implements ExecutorService {
     public static final int NO_TASK_LIMIT = -1;
+    private static final int DEFAULT_MAX_ARRAY_QUEUE_SIZE = 10_000;
     protected static final long WARN_TIME_MICRO_SEC_DEFAULT = TimeUnit.SECONDS.toMicros(1);
 
     final String name;
@@ -290,7 +291,7 @@ public class OrderedExecutor implements ExecutorService {
         BlockingQueue<Runnable> queue;
         if (enableBusyWait) {
             // Use queue with busy-wait polling strategy
-            queue = new BlockingMpscQueue<>(10000);
+            queue = new BlockingMpscQueue<>(maxTasksInQueue > 0 ? maxTasksInQueue : DEFAULT_MAX_ARRAY_QUEUE_SIZE);
         } else {
             // By default, use regular JDK LinkedBlockingQueue
             queue = new LinkedBlockingQueue<>();
@@ -394,6 +395,7 @@ public class OrderedExecutor implements ExecutorService {
             ThreadPoolExecutor thread = createSingleThreadExecutor(
                     new ThreadFactoryBuilder().setNameFormat(name + "-" + getClass().getSimpleName() + "-" + i + "-%d")
                     .setThreadFactory(threadFactory).build());
+
             threads[i] = addExecutorDecorators(getBoundedExecutor(thread));
 
             final int idx = i;

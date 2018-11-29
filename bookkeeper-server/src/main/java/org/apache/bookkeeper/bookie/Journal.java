@@ -40,6 +40,7 @@ import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -57,7 +58,6 @@ import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.IOUtils;
 import org.apache.bookkeeper.util.MathUtils;
-import org.apache.bookkeeper.util.collections.GrowableArrayBlockingQueue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -655,11 +655,11 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
 
         if (conf.isBusyWaitEnabled()) {
             // To achieve lower latency, use busy-wait blocking queue implementation
-            queue = new BlockingMpscQueue<>(16 * 1024);
-            forceWriteRequests = new BlockingMpscQueue<>(16 * 1024);
+            queue = new BlockingMpscQueue<>(conf.getJournalQueueSize());
+            forceWriteRequests = new BlockingMpscQueue<>(conf.getJournalQueueSize());
         } else {
-            queue = new GrowableArrayBlockingQueue<>();
-            forceWriteRequests = new GrowableArrayBlockingQueue<>();
+            queue = new ArrayBlockingQueue<>(conf.getJournalQueueSize());
+            forceWriteRequests = new ArrayBlockingQueue<>(conf.getJournalQueueSize());
         }
 
         this.ledgerDirsManager = ledgerDirsManager;
