@@ -73,6 +73,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-assembly-plugin</artifactId>
+        <version>${maven-assembly-plugin.version}</version>
         <configuration>
           <descriptors>
             <descriptor>src/main/assembly/assembly.xml</descriptor>
@@ -104,6 +105,53 @@
   </build>
 
   <profiles>
+    <profile>
+      <!-- from JDK10 javah command is not available
+           see http://openjdk.java.net/jeps/313
+      -->
+      <id>jdk-without-javah</id>
+      <activation>
+         <jdk>[10,)</jdk>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>com.github.maven-nar</groupId>
+            <artifactId>nar-maven-plugin</artifactId>
+            <version>${nar-maven-plugin.version}</version>
+            <extensions>true</extensions>
+            <executions>
+               <execution>
+               <!-- javah is not present in JDK10 onwards,
+                    you have to to use javac -h -->
+                  <id>default-nar-javah</id>
+                  <phase>none</phase>
+               </execution>
+             </executions>
+          </plugin>
+          <plugin>
+             <groupId>org.apache.maven.plugins</groupId>
+             <artifactId>maven-compiler-plugin</artifactId>
+             <version>${maven-compiler-plugin.version}</version>
+             <configuration>
+                <source>1.8</source>
+                <target>1.8</target>
+                <compilerArgs>
+                  <!-- Object.finalize() is deprecated at java 9 -->
+                  <!-- <compilerArg>-Werror</compilerArg> -->
+                  <compilerArg>-Xlint:deprecation</compilerArg>
+                  <compilerArg>-Xlint:unchecked</compilerArg>
+                   <!-- https://issues.apache.org/jira/browse/MCOMPILER-205 -->
+                  <compilerArg>-Xpkginfo:always</compilerArg>
+                  <!-- add -h flag to javac -->
+                  <compilerArg>-h</compilerArg>
+                  <compilerArg>${project.build.directory}/nar/javah-include</compilerArg>
+                </compilerArgs>
+             </configuration>
+          </plugin>
+            </plugins>
+        </build>
+    </profile>
     <profile>
       <id>mac</id>
       <activation>

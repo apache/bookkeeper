@@ -26,7 +26,6 @@ import java.security.GeneralSecurityException;
 import java.util.function.Function;
 
 import org.apache.bookkeeper.meta.LedgerManager;
-import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallbackFuture;
 import org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.DigestType;
 import org.apache.bookkeeper.proto.checksum.DigestManager;
 import org.apache.bookkeeper.util.ByteBufList;
@@ -67,9 +66,7 @@ public class ClientUtil {
     public static Versioned<LedgerMetadata> setupLedger(LedgerManager ledgerManager, long ledgerId,
                                                         LedgerMetadataBuilder builder) throws Exception {
         LedgerMetadata md = builder.withPassword(PASSWD).withDigestType(DIGEST_TYPE).build();
-        GenericCallbackFuture<Versioned<LedgerMetadata>> mdPromise = new GenericCallbackFuture<>();
-        ledgerManager.createLedgerMetadata(ledgerId, md, mdPromise);
-        return mdPromise.get();
+        return ledgerManager.createLedgerMetadata(ledgerId, md).get();
     }
 
     public static Versioned<LedgerMetadata> transformMetadata(ClientContext clientCtx, long ledgerId,
@@ -81,12 +78,9 @@ public class ClientUtil {
     public static Versioned<LedgerMetadata> transformMetadata(LedgerManager ledgerManager, long ledgerId,
                                                               Function<LedgerMetadata, LedgerMetadata> transform)
             throws Exception {
-        GenericCallbackFuture<Versioned<LedgerMetadata>> readPromise = new GenericCallbackFuture<>();
-        GenericCallbackFuture<Versioned<LedgerMetadata>> writePromise = new GenericCallbackFuture<>();
-        ledgerManager.readLedgerMetadata(ledgerId, readPromise);
-        ledgerManager.writeLedgerMetadata(ledgerId, transform.apply(readPromise.get().getValue()),
-                                                         readPromise.get().getVersion(), writePromise);
-        return writePromise.get();
+        Versioned<LedgerMetadata> current = ledgerManager.readLedgerMetadata(ledgerId).get();
+        return ledgerManager.writeLedgerMetadata(ledgerId, transform.apply(current.getValue()),
+                                                 current.getVersion()).get();
     }
 
 }

@@ -66,7 +66,6 @@ import org.apache.bookkeeper.replication.ReplicationException.CompatibilityExcep
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
-import org.apache.commons.lang.mutable.MutableInt;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
@@ -553,22 +552,11 @@ public class AuditorLedgerCheckerTest extends BookKeeperClusterTestCase {
             ensemble.add(new BookieSocketAddress("88.88.88.88:8888"));
             metadata.addEnsemble(0, ensemble);
 
-            MutableInt ledgerCreateRC = new MutableInt(-1);
-            CountDownLatch latch = new CountDownLatch(1);
             long ledgerId = (Math.abs(rand.nextLong())) % 100000000;
 
             try (LedgerManager lm = driver.getLedgerManagerFactory().newLedgerManager()) {
-                lm.createLedgerMetadata(ledgerId, metadata,
-                    (rc, result) -> {
-                        ledgerCreateRC.setValue(rc);
-                        latch.countDown();
-                    });
+                lm.createLedgerMetadata(ledgerId, metadata).get(2000, TimeUnit.MILLISECONDS);
             }
-
-            Assert.assertTrue("Ledger creation should complete within 2 secs",
-                    latch.await(2000, TimeUnit.MILLISECONDS));
-            Assert.assertEquals("LedgerCreate should succeed and return OK rc value", BKException.Code.OK,
-                    ledgerCreateRC.getValue());
             ledgerList.add(ledgerId);
         }
 
