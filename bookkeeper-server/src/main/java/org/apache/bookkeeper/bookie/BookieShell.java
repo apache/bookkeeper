@@ -28,6 +28,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.UncheckedExecutionException;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
@@ -154,6 +155,8 @@ import org.slf4j.LoggerFactory;
 /**
  * Bookie Shell is to provide utilities for users to administer a bookkeeper cluster.
  */
+@SuppressFBWarnings(value = "RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE",
+        justification = "https://github.com/spotbugs/spotbugs/issues/756")
 public class BookieShell implements Tool {
 
     static final Logger LOG = LoggerFactory.getLogger(BookieShell.class);

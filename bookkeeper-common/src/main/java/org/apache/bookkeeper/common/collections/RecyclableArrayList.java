@@ -19,6 +19,7 @@ package org.apache.bookkeeper.common.collections;
 
 import io.netty.util.Recycler.Handle;
 import java.util.ArrayList;
+import java.util.Objects;
 
 /**
  * A simple list which is recyclable.
@@ -64,4 +65,15 @@ public final class RecyclableArrayList<T> extends ArrayList<T> {
             handle.recycle(this);
         }
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        return super.equals(obj);
+    }
+
+    @Override
+    public int hashCode() {
+        return super.hashCode();
+    }
+
 }

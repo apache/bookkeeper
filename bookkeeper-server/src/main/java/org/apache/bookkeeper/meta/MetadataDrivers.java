@@ -24,6 +24,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.UncheckedExecutionException;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.net.URI;
 import java.util.Optional;
 import java.util.Set;
@@ -53,6 +54,8 @@ import org.apache.commons.lang3.StringUtils;
  */
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 @Slf4j
+@SuppressFBWarnings(value = "RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE",
+        justification = "https://github.com/spotbugs/spotbugs/issues/756")
 public final class MetadataDrivers {
 
     static final String ZK_CLIENT_DRIVER_CLASS = "org.apache.bookkeeper.meta.zk.ZKMetadataClientDriver";
