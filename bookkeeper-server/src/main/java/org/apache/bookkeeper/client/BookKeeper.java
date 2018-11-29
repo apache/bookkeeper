@@ -79,7 +79,6 @@ import org.apache.bookkeeper.proto.DataFormats;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.EventLoopUtil;
-import org.apache.bookkeeper.util.ReflectionUtils;
 import org.apache.bookkeeper.util.SafeRunnable;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.zookeeper.KeeperException;
