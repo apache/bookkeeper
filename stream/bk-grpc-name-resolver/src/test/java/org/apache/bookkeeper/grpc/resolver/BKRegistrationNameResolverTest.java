@@ -48,7 +48,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 /**
- * Unit test {@link BKRegistrationNameResolver}
+ * Unit test {@link BKRegistrationNameResolver}.
  */
 public class BKRegistrationNameResolverTest extends BookKeeperClusterTestCase {
 
