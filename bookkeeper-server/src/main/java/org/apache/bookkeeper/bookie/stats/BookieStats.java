@@ -19,6 +19,7 @@
 
 package org.apache.bookkeeper.bookie.stats;
 
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.ADD_ENTRY;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.BOOKIE_ADD_ENTRY;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.BOOKIE_ADD_ENTRY_BYTES;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.BOOKIE_FORCE_LEDGER;
@@ -28,6 +29,7 @@ import static org.apache.bookkeeper.bookie.BookKeeperServerStats.BOOKIE_RECOVERY
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.BOOKIE_SCOPE;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.CATEGORY_SERVER;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.READ_BYTES;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.READ_ENTRY;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.WRITE_BYTES;
 
 import lombok.Getter;
@@ -56,11 +58,19 @@ public class BookieStats {
     @StatsDoc(name = BOOKIE_FORCE_LEDGER, help = "total force operations occurred on a bookie")
     private final Counter forceLedgerOps;
     // Bookie Operation Latency Stats
-    @StatsDoc(name = BOOKIE_ADD_ENTRY, help = "operations stats of AddEntry on a bookie")
+    @StatsDoc(
+        name = BOOKIE_ADD_ENTRY,
+        help = "operations stats of AddEntry on a bookie",
+        parent = ADD_ENTRY
+    )
     private final OpStatsLogger addEntryStats;
     @StatsDoc(name = BOOKIE_RECOVERY_ADD_ENTRY, help = "operation stats of RecoveryAddEntry on a bookie")
     private final OpStatsLogger recoveryAddEntryStats;
-    @StatsDoc(name = BOOKIE_READ_ENTRY, help = "operation stats of ReadEntry on a bookie")
+    @StatsDoc(
+        name = BOOKIE_READ_ENTRY,
+        help = "operation stats of ReadEntry on a bookie",
+        parent = READ_ENTRY
+    )
     private final OpStatsLogger readEntryStats;
     // Bookie Operation Bytes Stats
     @StatsDoc(name = BOOKIE_ADD_ENTRY_BYTES, help = "bytes stats of AddEntry on a bookie")
