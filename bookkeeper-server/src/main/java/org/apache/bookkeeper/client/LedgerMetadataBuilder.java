@@ -19,6 +19,7 @@ package org.apache.bookkeeper.client;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
+import static org.apache.bookkeeper.meta.LedgerMetadataSerDe.CURRENT_METADATA_FORMAT_VERSION;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
@@ -31,10 +32,10 @@ import java.util.Optional;
 import java.util.TreeMap;
 
 import org.apache.bookkeeper.client.api.DigestType;
+import org.apache.bookkeeper.client.api.LedgerMetadata.State;
 import org.apache.bookkeeper.common.annotation.InterfaceAudience.LimitedPrivate;
 import org.apache.bookkeeper.common.annotation.InterfaceStability.Unstable;
 import org.apache.bookkeeper.net.BookieSocketAddress;
-import org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat;
 
 /**
  * Builder for building LedgerMetadata objects.
@@ -43,12 +44,12 @@ import org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat;
 @Unstable
 @VisibleForTesting
 public class LedgerMetadataBuilder {
-    private int metadataFormatVersion = LedgerMetadata.CURRENT_METADATA_FORMAT_VERSION;
+    private int metadataFormatVersion = CURRENT_METADATA_FORMAT_VERSION;
     private int ensembleSize = 3;
     private int writeQuorumSize = 3;
     private int ackQuorumSize = 2;
 
-    private LedgerMetadataFormat.State state = LedgerMetadataFormat.State.OPEN;
+    private State state = State.OPEN;
     private Optional<Long> lastEntryId = Optional.empty();
     private Optional<Long> length = Optional.empty();
 
@@ -73,7 +74,7 @@ public class LedgerMetadataBuilder {
         builder.ackQuorumSize = other.getAckQuorumSize();
 
         builder.state = other.getState();
-        if (builder.state == LedgerMetadataFormat.State.CLOSED) {
+        if (builder.state == State.CLOSED) {
             builder.lastEntryId = Optional.of(other.getLastEntryId());
             builder.length = Optional.of(other.getLength());
         }
@@ -143,12 +144,12 @@ public class LedgerMetadataBuilder {
     }
 
     public LedgerMetadataBuilder withInRecoveryState() {
-        this.state = LedgerMetadataFormat.State.IN_RECOVERY;
+        this.state = State.IN_RECOVERY;
         return this;
     }
 
     public LedgerMetadataBuilder withClosedState() {
-        this.state = LedgerMetadataFormat.State.CLOSED;
+        this.state = State.CLOSED;
         return this;
     }
 

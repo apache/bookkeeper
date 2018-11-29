@@ -34,6 +34,7 @@ import org.apache.bookkeeper.http.service.HttpServiceRequest;
 import org.apache.bookkeeper.http.service.HttpServiceResponse;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
+import org.apache.bookkeeper.meta.LedgerMetadataSerDe;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.versioning.Versioned;
 import org.slf4j.Logger;
@@ -51,21 +52,24 @@ public class ListLedgerService implements HttpEndpointService {
 
     protected ServerConfiguration conf;
     protected BookieServer bookieServer;
+    private final LedgerMetadataSerDe serDe;
 
     public ListLedgerService(ServerConfiguration conf, BookieServer bookieServer) {
         checkNotNull(conf);
         this.conf = conf;
         this.bookieServer = bookieServer;
+        this.serDe = new LedgerMetadataSerDe();
+
     }
 
     // Number of LedgerMetadata contains in each page
     static final int LIST_LEDGER_BATCH_SIZE = 100;
 
-    static void keepLedgerMetadata(long ledgerId, CompletableFuture<Versioned<LedgerMetadata>> future,
-                                   LinkedHashMap<String, String> output)
+    private void keepLedgerMetadata(long ledgerId, CompletableFuture<Versioned<LedgerMetadata>> future,
+                                    LinkedHashMap<String, String> output)
             throws Exception {
         LedgerMetadata md = future.get().getValue();
-        output.put(Long.valueOf(ledgerId).toString(), new String(md.serialize(), UTF_8));
+        output.put(Long.valueOf(ledgerId).toString(), new String(serDe.serialize(md), UTF_8));
     }
 
     @Override
