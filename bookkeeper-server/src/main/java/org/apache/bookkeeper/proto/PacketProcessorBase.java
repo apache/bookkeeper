@@ -79,7 +79,7 @@ abstract class PacketProcessorBase<T extends Request> extends SafeRunnable {
         if (!isVersionCompatible()) {
             sendResponse(BookieProtocol.EBADVERSION,
                          ResponseBuilder.buildErrorResponse(BookieProtocol.EBADVERSION, request),
-                         requestProcessor.readRequestStats);
+                         requestProcessor.getRequestStats().getReadRequestStats());
             return;
         }
         processPacket();

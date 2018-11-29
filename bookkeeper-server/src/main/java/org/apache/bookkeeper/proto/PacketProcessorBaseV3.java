@@ -79,7 +79,7 @@ public abstract class PacketProcessorBaseV3 extends SafeRunnable {
             if (!channel.isWritable()) {
                 LOGGER.warn("cannot write response to non-writable channel {} for request {}", channel,
                         StringUtils.requestToString(request));
-                requestProcessor.getChannelWriteStats()
+                requestProcessor.getRequestStats().getChannelWriteStats()
                         .registerFailedEvent(MathUtils.elapsedNanos(writeNanos), TimeUnit.NANOSECONDS);
                 statsLogger.registerFailedEvent(MathUtils.elapsedNanos(enqueueNanos), TimeUnit.NANOSECONDS);
                 return;
@@ -93,10 +93,10 @@ public abstract class PacketProcessorBaseV3 extends SafeRunnable {
             public void operationComplete(ChannelFuture future) throws Exception {
                 long writeElapsedNanos = MathUtils.elapsedNanos(writeNanos);
                 if (!future.isSuccess()) {
-                    requestProcessor.getChannelWriteStats()
+                    requestProcessor.getRequestStats().getChannelWriteStats()
                         .registerFailedEvent(writeElapsedNanos, TimeUnit.NANOSECONDS);
                 } else {
-                    requestProcessor.getChannelWriteStats()
+                    requestProcessor.getRequestStats().getChannelWriteStats()
                         .registerSuccessfulEvent(writeElapsedNanos, TimeUnit.NANOSECONDS);
                 }
                 if (StatusCode.EOK == code) {

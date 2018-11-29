@@ -20,7 +20,6 @@ package org.apache.bookkeeper.proto;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.util.Recycler;
-import io.netty.util.Recycler.Handle;
 import io.netty.util.ReferenceCountUtil;
 
 import java.io.IOException;
@@ -129,17 +128,17 @@ class ReadEntryProcessor extends PacketProcessorBase<ReadRequest> {
             LOG.trace("Read entry rc = {} for {}", errorCode, request);
         }
         if (errorCode == BookieProtocol.EOK) {
-            requestProcessor.readEntryStats.registerSuccessfulEvent(MathUtils.elapsedNanos(startTimeNanos),
-                    TimeUnit.NANOSECONDS);
+            requestProcessor.getRequestStats().getReadEntryStats()
+                .registerSuccessfulEvent(MathUtils.elapsedNanos(startTimeNanos), TimeUnit.NANOSECONDS);
             sendResponse(errorCode, ResponseBuilder.buildReadResponse(data, request),
-                         requestProcessor.readRequestStats);
+                         requestProcessor.getRequestStats().getReadRequestStats());
         } else {
             ReferenceCountUtil.release(data);
 
-            requestProcessor.readEntryStats.registerFailedEvent(MathUtils.elapsedNanos(startTimeNanos),
-                    TimeUnit.NANOSECONDS);
+            requestProcessor.getRequestStats().getReadEntryStats()
+                .registerFailedEvent(MathUtils.elapsedNanos(startTimeNanos), TimeUnit.NANOSECONDS);
             sendResponse(errorCode, ResponseBuilder.buildErrorResponse(errorCode, request),
-                         requestProcessor.readRequestStats);
+                         requestProcessor.getRequestStats().getReadRequestStats());
         }
         recycle();
     }

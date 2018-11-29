@@ -67,11 +67,11 @@ class ForceLedgerProcessorV3 extends PacketProcessorBaseV3 implements Runnable {
                     "ledgerId must be {} but was {}", ledgerId, ledgerId1);
 
             if (BookieProtocol.EOK == rc) {
-                requestProcessor.getForceLedgerStats()
+                requestProcessor.getRequestStats().getForceLedgerStats()
                         .registerSuccessfulEvent(MathUtils.elapsedNanos(startTimeNanos),
                                 TimeUnit.NANOSECONDS);
             } else {
-                requestProcessor.getForceLedgerStats()
+                requestProcessor.getRequestStats().getForceLedgerStats()
                         .registerFailedEvent(MathUtils.elapsedNanos(startTimeNanos),
                                 TimeUnit.NANOSECONDS);
             }
@@ -94,7 +94,7 @@ class ForceLedgerProcessorV3 extends PacketProcessorBaseV3 implements Runnable {
                     .setStatus(forceLedgerResponse.getStatus())
                     .setForceLedgerResponse(forceLedgerResponse);
             Response resp = response.build();
-            sendResponse(status, resp, requestProcessor.getForceLedgerRequestStats());
+            sendResponse(status, resp, requestProcessor.getRequestStats().getForceLedgerRequestStats());
         };
         StatusCode status = null;
         try {
@@ -124,7 +124,10 @@ class ForceLedgerProcessorV3 extends PacketProcessorBaseV3 implements Runnable {
                     .setStatus(forceLedgerResponse.getStatus())
                     .setForceLedgerResponse(forceLedgerResponse);
             Response resp = response.build();
-            sendResponse(forceLedgerResponse.getStatus(), resp, requestProcessor.getForceLedgerRequestStats());
+            sendResponse(
+                forceLedgerResponse.getStatus(),
+                resp,
+                requestProcessor.getRequestStats().getForceLedgerRequestStats());
         }
     }
 

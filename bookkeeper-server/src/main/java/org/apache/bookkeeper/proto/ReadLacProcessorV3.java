@@ -102,11 +102,11 @@ class ReadLacProcessorV3 extends PacketProcessorBaseV3 implements Runnable {
         }
 
         if (status == StatusCode.EOK) {
-            requestProcessor.readLacStats.registerSuccessfulEvent(MathUtils.elapsedNanos(startTimeNanos),
-                    TimeUnit.NANOSECONDS);
+            requestProcessor.getRequestStats().getReadLacStats()
+                .registerSuccessfulEvent(MathUtils.elapsedNanos(startTimeNanos), TimeUnit.NANOSECONDS);
         } else {
-            requestProcessor.readLacStats.registerFailedEvent(MathUtils.elapsedNanos(startTimeNanos),
-                    TimeUnit.NANOSECONDS);
+            requestProcessor.getRequestStats().getReadLacStats()
+                .registerFailedEvent(MathUtils.elapsedNanos(startTimeNanos), TimeUnit.NANOSECONDS);
         }
         // Finally set the status and return
         readLacResponse.setStatus(status);
@@ -126,6 +126,6 @@ class ReadLacProcessorV3 extends PacketProcessorBaseV3 implements Runnable {
             .setReadLacResponse(readLacResponse);
         sendResponse(response.getStatus(),
                 response.build(),
-                requestProcessor.readLacRequestStats);
+                requestProcessor.getRequestStats().getReadLacRequestStats());
     }
 }
