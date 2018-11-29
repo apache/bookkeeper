@@ -47,8 +47,9 @@ public class NativeUtils {
      * @throws Exception
      */
     @SuppressFBWarnings(
-            value = "OBL_UNSATISFIED_OBLIGATION",
-            justification = "work around for java 9: https://github.com/spotbugs/spotbugs/issues/493")
+            value = {"OBL_UNSATISFIED_OBLIGATION" ,"RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE"},
+            justification = "work around for java 9: https://github.com/spotbugs/spotbugs/issues/493"
+                + "and java 11: https://github.com/spotbugs/spotbugs/issues/756")
     public static void loadLibraryFromJar(String path) throws Exception {
         checkArgument(path.startsWith("/"), "absolute path must start with /");
 
