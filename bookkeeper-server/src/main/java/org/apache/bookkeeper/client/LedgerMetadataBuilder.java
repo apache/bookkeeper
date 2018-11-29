@@ -98,8 +98,12 @@ public class LedgerMetadataBuilder {
         return this;
     }
 
-    public LedgerMetadataBuilder withPassword(byte[] password, DigestType digestType) {
+    public LedgerMetadataBuilder withPassword(byte[] password) {
         this.password = Optional.of(Arrays.copyOf(password, password.length));
+        return this;
+    }
+
+    public LedgerMetadataBuilder withDigestType(DigestType digestType) {
         this.digestType = Optional.of(digestType);
         return this;
     }

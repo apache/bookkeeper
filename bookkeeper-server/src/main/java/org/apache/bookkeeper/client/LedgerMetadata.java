@@ -451,8 +451,8 @@ public class LedgerMetadata implements org.apache.bookkeeper.client.api.LedgerMe
         }
 
         if (data.hasPassword()) {
-            builder.withPassword(data.getPassword().toByteArray(),
-                                 protoToApiDigestType(data.getDigestType()));
+            builder.withPassword(data.getPassword().toByteArray())
+                .withDigestType(protoToApiDigestType(data.getDigestType()));
         }
 
         for (LedgerMetadataFormat.Segment s : data.getSegmentList()) {

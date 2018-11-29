@@ -65,7 +65,7 @@ public class ClientUtil {
 
     public static Versioned<LedgerMetadata> setupLedger(LedgerManager ledgerManager, long ledgerId,
                                                         LedgerMetadataBuilder builder) throws Exception {
-        LedgerMetadata md = builder.withPassword(PASSWD, DIGEST_TYPE).build();
+        LedgerMetadata md = builder.withPassword(PASSWD).withDigestType(DIGEST_TYPE).build();
         return ledgerManager.createLedgerMetadata(ledgerId, md).get();
     }
 

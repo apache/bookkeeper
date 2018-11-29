@@ -105,7 +105,8 @@ public class ReadLastConfirmedAndEntryOpTest {
         }
         this.ledgerMetadata = LedgerMetadataBuilder.create()
             .withEnsembleSize(3).withWriteQuorumSize(2).withAckQuorumSize(2)
-            .withPassword(new byte[0], DigestType.CRC32.toApiDigestType())
+            .withPassword(new byte[0])
+            .withDigestType(DigestType.CRC32.toApiDigestType())
             .newEnsembleEntry(0L, ensemble).build();
         this.distributionSchedule = new RoundRobinDistributionSchedule(3, 2, 3);
         // schedulers

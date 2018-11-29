@@ -241,7 +241,8 @@ public class TestLedgerFragmentReplication extends BookKeeperClusterTestCase {
                 new BookieSocketAddress("192.0.2.3", 1234));
         LedgerMetadata metadata = LedgerMetadataBuilder.create()
             .withEnsembleSize(3).withWriteQuorumSize(3).withAckQuorumSize(3)
-            .withPassword(TEST_PSSWD, TEST_DIGEST_TYPE.toApiDigestType())
+            .withPassword(TEST_PSSWD)
+            .withDigestType(TEST_DIGEST_TYPE.toApiDigestType())
             .closingAt(-1, 0)
             .newEnsembleEntry(0L, ensemble)
             .build();

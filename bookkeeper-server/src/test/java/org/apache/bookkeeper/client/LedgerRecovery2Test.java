@@ -52,7 +52,7 @@ public class LedgerRecovery2Test {
     private static Versioned<LedgerMetadata> setupLedger(ClientContext clientCtx, long ledgerId,
                                               List<BookieSocketAddress> bookies) throws Exception {
         LedgerMetadata md = LedgerMetadataBuilder.create()
-            .withPassword(PASSWD, DigestType.CRC32C)
+            .withPassword(PASSWD).withDigestType(DigestType.CRC32C)
             .newEnsembleEntry(0, bookies).build();
         return clientCtx.getLedgerManager().createLedgerMetadata(1L, md).get();
     }
