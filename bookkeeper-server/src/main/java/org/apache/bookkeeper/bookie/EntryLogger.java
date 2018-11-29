@@ -89,9 +89,9 @@ public class EntryLogger {
         private final File logFile;
         private long ledgerIdAssigned = UNASSIGNED_LEDGERID;
 
-        public BufferedLogChannel(FileChannel fc, int writeCapacity, int readCapacity, long logId, File logFile,
-                long unpersistedBytesBound) throws IOException {
-            super(fc, writeCapacity, readCapacity, unpersistedBytesBound);
+        public BufferedLogChannel(ByteBufAllocator allocator, FileChannel fc, int writeCapacity, int readCapacity,
+                long logId, File logFile, long unpersistedBytesBound) throws IOException {
+            super(allocator, fc, writeCapacity, readCapacity, unpersistedBytesBound);
             this.logId = logId;
             this.entryLogMetadata = new EntryLogMetadata(logId);
             this.logFile = logFile;
@@ -370,7 +370,7 @@ public class EntryLogger {
         }
         this.recentlyCreatedEntryLogsStatus = new RecentEntryLogsStatus(logId + 1);
         this.entryLoggerAllocator = new EntryLoggerAllocator(conf, ledgerDirsManager, recentlyCreatedEntryLogsStatus,
-                logId);
+                logId, allocator);
         this.statsLogger = statsLogger;
         if (entryLogPerLedgerEnabled) {
             this.entryLogManager = new EntryLogManagerForEntryLogPerLedger(conf, ledgerDirsManager,
@@ -976,7 +976,7 @@ public class EntryLogger {
         EntryLogMetadata meta = new EntryLogMetadata(entryLogId);
 
         final int maxMapSize = LEDGERS_MAP_HEADER_SIZE + LEDGERS_MAP_ENTRY_SIZE * LEDGERS_MAP_MAX_BATCH_SIZE;
-        ByteBuf ledgersMap = ByteBufAllocator.DEFAULT.directBuffer(maxMapSize);
+        ByteBuf ledgersMap = allocator.directBuffer(maxMapSize);
 
         try {
             while (offset < bc.size()) {

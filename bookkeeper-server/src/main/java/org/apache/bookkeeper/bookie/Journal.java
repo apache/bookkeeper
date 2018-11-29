@@ -26,7 +26,9 @@ import com.google.common.base.Stopwatch;
 import com.google.common.util.concurrent.MoreExecutors;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.Unpooled;
+import io.netty.buffer.UnpooledByteBufAllocator;
 import io.netty.util.Recycler;
 import io.netty.util.Recycler.Handle;
 import io.netty.util.concurrent.DefaultThreadFactory;
@@ -82,8 +84,8 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
      */
     @FunctionalInterface
     public interface BufferedChannelBuilder {
-        BufferedChannelBuilder DEFAULT_BCBUILDER =
-                (FileChannel fc, int capacity) -> new BufferedChannel(fc, capacity);
+        BufferedChannelBuilder DEFAULT_BCBUILDER = (FileChannel fc,
+                int capacity) -> new BufferedChannel(UnpooledByteBufAllocator.DEFAULT, fc, capacity);
 
         BufferedChannel create(FileChannel fc, int capacity) throws IOException;
     }
@@ -612,6 +614,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
 
     volatile boolean running = true;
     private final LedgerDirsManager ledgerDirsManager;
+    private final ByteBufAllocator allocator;
 
     // Expose Stats
     private final OpStatsLogger journalAddEntryStats;
@@ -635,12 +638,14 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
 
     public Journal(int journalIndex, File journalDirectory, ServerConfiguration conf,
             LedgerDirsManager ledgerDirsManager) {
-        this(journalIndex, journalDirectory, conf, ledgerDirsManager, NullStatsLogger.INSTANCE);
+        this(journalIndex, journalDirectory, conf, ledgerDirsManager, NullStatsLogger.INSTANCE,
+                UnpooledByteBufAllocator.DEFAULT);
     }
 
     public Journal(int journalIndex, File journalDirectory, ServerConfiguration conf,
-            LedgerDirsManager ledgerDirsManager, StatsLogger statsLogger) {
+            LedgerDirsManager ledgerDirsManager, StatsLogger statsLogger, ByteBufAllocator allocator) {
         super("BookieJournal-" + conf.getBookiePort());
+        this.allocator = allocator;
         this.ledgerDirsManager = ledgerDirsManager;
         this.conf = conf;
         this.journalDirectory = journalDirectory;
@@ -1157,7 +1162,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
     }
 
     public BufferedChannelBuilder getBufferedChannelBuilder() {
-        return BufferedChannelBuilder.DEFAULT_BCBUILDER;
+        return (FileChannel fc, int capacity) -> new BufferedChannel(allocator, fc, capacity);
     }
 
     /**

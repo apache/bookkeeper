@@ -31,6 +31,7 @@ import com.google.common.util.concurrent.SettableFuture;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
+import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.buffer.Unpooled;
 
 import java.io.File;
@@ -65,7 +66,6 @@ import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
 import org.apache.bookkeeper.bookie.Journal.JournalScanner;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.LedgerDirsListener;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirException;
-import org.apache.bookkeeper.common.allocator.ByteBufAllocatorBuilder;
 import org.apache.bookkeeper.bookie.stats.BookieStats;
 import org.apache.bookkeeper.bookie.storage.ldb.DbLedgerStorage;
 import org.apache.bookkeeper.common.util.Watcher;
@@ -140,8 +140,6 @@ public class Bookie extends BookieCriticalThread {
     private final BookieStats bookieStats;
 
     private final ByteBufAllocator allocator;
-
-    private volatile UncaughtExceptionHandler exceptionHandler;
 
     /**
      * Exception is thrown when no such a ledger is found in this bookie.
@@ -607,10 +605,10 @@ public class Bookie extends BookieCriticalThread {
 
     public Bookie(ServerConfiguration conf)
             throws IOException, InterruptedException, BookieException {
-        this(conf, NullStatsLogger.INSTANCE);
+        this(conf, NullStatsLogger.INSTANCE, PooledByteBufAllocator.DEFAULT);
     }
 
-    public Bookie(ServerConfiguration conf, StatsLogger statsLogger)
+    public Bookie(ServerConfiguration conf, StatsLogger statsLogger, ByteBufAllocator allocator)
             throws IOException, InterruptedException, BookieException {
         super("Bookie-" + conf.getBookiePort());
         this.statsLogger = statsLogger;
@@ -623,22 +621,7 @@ public class Bookie extends BookieCriticalThread {
         this.ledgerDirsManager = createLedgerDirsManager(conf, diskChecker, statsLogger.scope(LD_LEDGER_SCOPE));
         this.indexDirsManager = createIndexDirsManager(conf, diskChecker, statsLogger.scope(LD_INDEX_SCOPE),
                                                        this.ledgerDirsManager);
-
-        this.allocator = ByteBufAllocatorBuilder.create()
-                .poolingPolicy(conf.getAllocatorPoolingPolicy())
-                .poolingConcurrency(conf.getAllocatorPoolingConcurrency())
-                .outOfMemoryPolicy(conf.getAllocatorOutOfMemoryPolicy())
-                .outOfMemoryListener((ex) -> {
-                    try {
-                        LOG.error("Unable to allocate memory, exiting bookie", ex);
-                    } finally {
-                        if (exceptionHandler != null) {
-                            exceptionHandler.uncaughtException(Thread.currentThread(), ex);
-                        }
-                    }
-                })
-                .leakDetectionPolicy(conf.getAllocatorLeakDetectionPolicy())
-                .build();
+        this.allocator = allocator;
 
         // instantiate zookeeper client to initialize ledger manager
         this.metadataDriver = instantiateMetadataDriver(conf);
@@ -695,7 +678,7 @@ public class Bookie extends BookieCriticalThread {
         journals = Lists.newArrayList();
         for (int i = 0; i < journalDirectories.size(); i++) {
             journals.add(new Journal(i, journalDirectories.get(i),
-                         conf, ledgerDirsManager, statsLogger.scope(JOURNAL_SCOPE)));
+                    conf, ledgerDirsManager, statsLogger.scope(JOURNAL_SCOPE), allocator));
         }
 
         this.entryLogPerLedgerEnabled = conf.isEntryLogPerLedgerEnabled();
@@ -760,10 +743,6 @@ public class Bookie extends BookieCriticalThread {
 
         // Expose Stats
         this.bookieStats = new BookieStats(statsLogger);
-    }
-
-    public void setExceptionHandler(UncaughtExceptionHandler handler) {
-        this.exceptionHandler = handler;
     }
 
     StateManager initializeStateManager() throws IOException {

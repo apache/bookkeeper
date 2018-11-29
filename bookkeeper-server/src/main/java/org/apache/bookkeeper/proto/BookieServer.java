@@ -24,6 +24,8 @@ import static org.apache.bookkeeper.bookie.BookKeeperServerStats.BOOKIE_SCOPE;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.SERVER_SCOPE;
 import static org.apache.bookkeeper.conf.AbstractConfiguration.PERMITTED_STARTUP_USERS;
 
+import io.netty.buffer.ByteBufAllocator;
+
 import com.google.common.annotations.VisibleForTesting;
 import java.io.IOException;
 import java.lang.Thread.UncaughtExceptionHandler;
@@ -38,6 +40,7 @@ import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.ExitCode;
 import org.apache.bookkeeper.bookie.ReadOnlyBookie;
 import org.apache.bookkeeper.client.BKException;
+import org.apache.bookkeeper.common.allocator.ByteBufAllocatorBuilder;
 import org.apache.bookkeeper.common.util.JsonUtil.ParseJsonException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.net.BookieSocketAddress;
@@ -96,10 +99,11 @@ public class BookieServer {
             LOG.error("Got ParseJsonException while converting Config to JSONString", pe);
         }
 
+        ByteBufAllocator allocator = getAllocator(conf);
         this.statsLogger = statsLogger;
-        this.nettyServer = new BookieNettyServer(this.conf, null);
+        this.nettyServer = new BookieNettyServer(this.conf, null, allocator);
         try {
-            this.bookie = newBookie(conf);
+            this.bookie = newBookie(conf, allocator);
         } catch (IOException | KeeperException | InterruptedException | BookieException e) {
             // interrupted on constructing a bookie
             this.nettyServer.shutdown();
@@ -124,14 +128,13 @@ public class BookieServer {
      */
     public void setExceptionHandler(UncaughtExceptionHandler exceptionHandler) {
         this.uncaughtExceptionHandler = exceptionHandler;
-        this.bookie.setExceptionHandler(exceptionHandler);
     }
 
-    protected Bookie newBookie(ServerConfiguration conf)
+    protected Bookie newBookie(ServerConfiguration conf, ByteBufAllocator allocator)
         throws IOException, KeeperException, InterruptedException, BookieException {
         return conf.isForceReadOnlyBookie()
-            ? new ReadOnlyBookie(conf, statsLogger.scope(BOOKIE_SCOPE))
-            : new Bookie(conf, statsLogger.scope(BOOKIE_SCOPE));
+            ? new ReadOnlyBookie(conf, statsLogger.scope(BOOKIE_SCOPE), allocator)
+            : new Bookie(conf, statsLogger.scope(BOOKIE_SCOPE), allocator);
     }
 
     public void start() throws IOException, UnavailableException, InterruptedException, BKException {
@@ -284,6 +287,24 @@ public class BookieServer {
                 }
             }
         }
+    }
+
+    private ByteBufAllocator getAllocator(ServerConfiguration conf) {
+        return ByteBufAllocatorBuilder.create()
+                .poolingPolicy(conf.getAllocatorPoolingPolicy())
+                .poolingConcurrency(conf.getAllocatorPoolingConcurrency())
+                .outOfMemoryPolicy(conf.getAllocatorOutOfMemoryPolicy())
+                .outOfMemoryListener((ex) -> {
+                    try {
+                        LOG.error("Unable to allocate memory, exiting bookie", ex);
+                    } finally {
+                        if (uncaughtExceptionHandler != null) {
+                            uncaughtExceptionHandler.uncaughtException(Thread.currentThread(), ex);
+                        }
+                    }
+                })
+                .leakDetectionPolicy(conf.getAllocatorLeakDetectionPolicy())
+                .build();
     }
 
     /**

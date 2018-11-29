@@ -24,6 +24,8 @@ package org.apache.bookkeeper.test;
 import static org.apache.bookkeeper.util.BookKeeperConstants.AVAILABLE_NODE;
 import static org.junit.Assert.assertTrue;
 
+import io.netty.buffer.ByteBufAllocator;
+
 import com.google.common.base.Stopwatch;
 import java.io.File;
 import java.io.IOException;
@@ -680,7 +682,7 @@ public abstract class BookKeeperClusterTestCase {
         TestStatsProvider provider = new TestStatsProvider();
         BookieServer server = new BookieServer(conf, provider.getStatsLogger("")) {
             @Override
-            protected Bookie newBookie(ServerConfiguration conf) {
+            protected Bookie newBookie(ServerConfiguration conf, ByteBufAllocator allocator) {
                 return b;
             }
         };

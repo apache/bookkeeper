@@ -33,6 +33,9 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 
+import io.netty.buffer.ByteBufAllocator;
+import io.netty.buffer.UnpooledByteBufAllocator;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.BufferedReader;
@@ -708,7 +711,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
         }
 
         @Override
-        protected Bookie newBookie(ServerConfiguration conf)
+        protected Bookie newBookie(ServerConfiguration conf, ByteBufAllocator allocator)
                 throws IOException, KeeperException, InterruptedException, BookieException {
             return new MockBookieWithNoopShutdown(conf, NullStatsLogger.INSTANCE);
         }
@@ -717,7 +720,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
     class MockBookieWithNoopShutdown extends Bookie {
         public MockBookieWithNoopShutdown(ServerConfiguration conf, StatsLogger statsLogger)
                 throws IOException, KeeperException, InterruptedException, BookieException {
-            super(conf, statsLogger);
+            super(conf, statsLogger, UnpooledByteBufAllocator.DEFAULT);
         }
 
         // making Bookie Shutdown no-op. Ideally for this testcase we need to
