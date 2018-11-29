@@ -100,6 +100,10 @@ public class DbLedgerStorage implements LedgerStorage {
         log.info(" - Write cache size: {} MB", writeCacheMaxSize / MB);
         log.info(" - Read Cache: {} MB", readCacheMaxSize / MB);
 
+        if (readCacheMaxSize + writeCacheMaxSize > PlatformDependent.maxDirectMemory()) {
+            throw new IOException("Read and write cache sizes exceed the configured max direct memory size");
+        }
+
         long perDirectoryWriteCacheSize = writeCacheMaxSize / numberOfDirs;
         long perDirectoryReadCacheSize = readCacheMaxSize / numberOfDirs;
 
