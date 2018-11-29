@@ -23,6 +23,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
 import java.util.Enumeration;
@@ -37,6 +38,8 @@ import org.apache.bookkeeper.client.api.WriteFlag;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
+import org.apache.bookkeeper.versioning.LongVersion;
+import org.apache.bookkeeper.versioning.Versioned;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -232,19 +235,20 @@ public class TestLedgerFragmentReplication extends BookKeeperClusterTestCase {
     @Test
     public void testSplitIntoSubFragmentsWithDifferentFragmentBoundaries()
             throws Exception {
-        LedgerMetadata metadata = new LedgerMetadata(3, 3, 3, TEST_DIGEST_TYPE,
-                TEST_PSSWD) {
-            @Override
-            List<BookieSocketAddress> getEnsemble(long entryId) {
-                return null;
-            }
+        List<BookieSocketAddress> ensemble = Lists.newArrayList(
+                new BookieSocketAddress("192.0.2.1", 1234),
+                new BookieSocketAddress("192.0.2.2", 1234),
+                new BookieSocketAddress("192.0.2.3", 1234));
+        LedgerMetadata metadata = LedgerMetadataBuilder.create()
+            .withEnsembleSize(3).withWriteQuorumSize(3).withAckQuorumSize(3)
+            .withPassword(TEST_PSSWD).withDigestType(TEST_DIGEST_TYPE.toApiDigestType())
+            .withClosedState().withLastEntryId(-1).withLength(0)
+            .newEnsembleEntry(0L, ensemble)
+            .build();
 
-            @Override
-            public boolean isClosed() {
-                return true;
-            }
-        };
-        LedgerHandle lh = new LedgerHandle(bkc.getClientCtx(), 0, metadata, TEST_DIGEST_TYPE,
+        LedgerHandle lh = new LedgerHandle(bkc.getClientCtx(), 0,
+                                           new Versioned<>(metadata, new LongVersion(0L)),
+                                           TEST_DIGEST_TYPE,
                                            TEST_PSSWD, WriteFlag.NONE);
         testSplitIntoSubFragments(10, 21, -1, 1, lh);
         testSplitIntoSubFragments(10, 21, 20, 1, lh);

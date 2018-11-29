@@ -52,6 +52,7 @@ import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.LedgerMetadata;
+import org.apache.bookkeeper.client.LedgerMetadataBuilder;
 import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager;
@@ -66,7 +67,6 @@ import org.apache.bookkeeper.replication.ReplicationException.CompatibilityExcep
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
-import org.apache.commons.lang.mutable.MutableInt;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
@@ -546,29 +546,22 @@ public class AuditorLedgerCheckerTest extends BookKeeperClusterTestCase {
         int numofledgers = 5;
         Random rand = new Random();
         for (int i = 0; i < numofledgers; i++) {
-            LedgerMetadata metadata = new LedgerMetadata(3, 2, 2, DigestType.CRC32, "passwd".getBytes());
             ArrayList<BookieSocketAddress> ensemble = new ArrayList<BookieSocketAddress>();
             ensemble.add(new BookieSocketAddress("99.99.99.99:9999"));
             ensemble.add(new BookieSocketAddress("11.11.11.11:1111"));
             ensemble.add(new BookieSocketAddress("88.88.88.88:8888"));
-            metadata.addEnsemble(0, ensemble);
 
-            MutableInt ledgerCreateRC = new MutableInt(-1);
-            CountDownLatch latch = new CountDownLatch(1);
+            LedgerMetadata metadata = LedgerMetadataBuilder.create()
+                .withEnsembleSize(3).withWriteQuorumSize(2).withAckQuorumSize(2)
+                .withDigestType(DigestType.CRC32.toApiDigestType())
+                .withPassword("passwd".getBytes())
+                .newEnsembleEntry(0L, ensemble).build();
+
             long ledgerId = (Math.abs(rand.nextLong())) % 100000000;
 
             try (LedgerManager lm = driver.getLedgerManagerFactory().newLedgerManager()) {
-                lm.createLedgerMetadata(ledgerId, metadata,
-                    (rc, result) -> {
-                        ledgerCreateRC.setValue(rc);
-                        latch.countDown();
-                    });
+                lm.createLedgerMetadata(ledgerId, metadata).get(2000, TimeUnit.MILLISECONDS);
             }
-
-            Assert.assertTrue("Ledger creation should complete within 2 secs",
-                    latch.await(2000, TimeUnit.MILLISECONDS));
-            Assert.assertEquals("LedgerCreate should succeed and return OK rc value", BKException.Code.OK,
-                    ledgerCreateRC.getValue());
             ledgerList.add(ledgerId);
         }
 

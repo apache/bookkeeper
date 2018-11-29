@@ -75,7 +75,7 @@ public class SortedLedgerStorage
                            ByteBufAllocator allocator)
             throws IOException {
 
-        interleavedLedgerStorage.initialize(
+        interleavedLedgerStorage.initializeWithEntryLogListener(
             conf,
             ledgerManager,
             ledgerDirsManager,
@@ -83,6 +83,9 @@ public class SortedLedgerStorage
             stateManager,
             checkpointSource,
             checkpointer,
+            // uses sorted ledger storage's own entry log listener
+            // since it manages entry log rotations and checkpoints.
+            this,
             statsLogger,
             allocator);
 
@@ -327,5 +330,10 @@ public class SortedLedgerStorage
     @Override
     public LedgerStorage getUnderlyingLedgerStorage() {
         return interleavedLedgerStorage;
+    }
+
+    @Override
+    public void forceGC() {
+        interleavedLedgerStorage.forceGC();
     }
 }

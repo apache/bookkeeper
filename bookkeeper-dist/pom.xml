@@ -28,6 +28,7 @@
   <modules>
     <module>all</module>
     <module>server</module>
+    <module>bkctl</module>
   </modules>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

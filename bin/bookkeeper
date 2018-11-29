@@ -35,21 +35,17 @@ else
   BOOKIE_CONF_TO_CHECK=${BOOKIE_CONF}
 fi
 
-# check the configuration to see if table service is enabled or not.
-if [ -z "${ENABLE_TABLE_SERVICE}" ]; then
-  # mask exit code if the configuration file doesn't contain `StreamStorageLifecycleComponent`
-  TABLE_SERVICE_SETTING=$(grep StreamStorageLifecycleComponent ${BOOKIE_CONF_TO_CHECK} | cat)
-  if [[ "${TABLE_SERVICE_SETTING}" =~ ^extraServerComponents.* ]]; then
-    ENABLE_TABLE_SERVICE="true"
-  fi
-fi
+FIND_TABLE_SERVICE_RESULT=$(find_table_service ${BOOKIE_CONF_TO_CHECK} $1)
 
-if [ \( "x$1" == "xstandalone" \) -o \( "x${ENABLE_TABLE_SERVICE}" == "xtrue" \) ]; then
+if [ "x${FIND_TABLE_SERVICE_RESULT}" == "xtrue" ]; then
   BOOKIE_MODULE_PATH=stream/server
-  BOOKIE_MODULE_NAME="(org.apache.bookkeeper-)?stream-storage-server"
-else
+  BOOKIE_MODULE_NAME=${TABLE_SERVICE_MODULE_NAME}
+elif [ "x${FIND_TABLE_SERVICE_RESULT}" == "xfalse" ]; then
   BOOKIE_MODULE_PATH=bookkeeper-server
-  BOOKIE_MODULE_NAME="(org.apache.bookkeeper-)?bookkeeper-server"
+  BOOKIE_MODULE_NAME=${BOOKIE_SERVER_MODULE_NAME}
+else
+  echo ${FIND_TABLE_SERVICE_RESULT}
+  exit 1
 fi
 
 # find the module jar
@@ -62,13 +58,25 @@ bookkeeper_help() {
     cat <<EOF
 Usage: bookkeeper <command>
 where command is one of:
+
+[service commands]
+
     bookie              Run a bookie server
     autorecovery        Run AutoRecovery service daemon
+    zookeeper           Run zookeeper server
+
+[development commands]
+
     localbookie <n>     Run a test ensemble of <n> bookies locally
     standalone          Run a standalone cluster (with all service components) locally
+
+[tooling commands]
+
     upgrade             Upgrade bookie filesystem
     shell               Run shell for admin commands
-    zookeeper           Run zookeeper server
+
+[other commands]
+
     help                This help message
 
 or command is the full name of a class with a defined main() method.

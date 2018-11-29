@@ -29,6 +29,7 @@ import io.netty.buffer.Unpooled;
 
 import java.io.IOException;
 import java.util.Enumeration;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -63,6 +64,7 @@ import org.apache.bookkeeper.proto.checksum.DigestManager;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.util.ByteBufList;
 import org.apache.bookkeeper.versioning.Version;
+import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.zookeeper.AsyncCallback.VoidCallback;
 import org.apache.zookeeper.KeeperException;
 import org.junit.After;
@@ -93,18 +95,19 @@ public class ParallelLedgerRecoveryTest extends BookKeeperClusterTestCase {
         }
 
         @Override
-        public void createLedgerMetadata(long ledgerId, LedgerMetadata metadata, GenericCallback<LedgerMetadata> cb) {
-            lm.createLedgerMetadata(ledgerId, metadata, cb);
+        public CompletableFuture<Versioned<LedgerMetadata>> createLedgerMetadata(
+                long ledgerId, LedgerMetadata metadata) {
+            return lm.createLedgerMetadata(ledgerId, metadata);
         }
 
         @Override
-        public void removeLedgerMetadata(long ledgerId, Version version, GenericCallback<Void> cb) {
-            lm.removeLedgerMetadata(ledgerId, version, cb);
+        public CompletableFuture<Void> removeLedgerMetadata(long ledgerId, Version version) {
+            return lm.removeLedgerMetadata(ledgerId, version);
         }
 
         @Override
-        public void readLedgerMetadata(long ledgerId, GenericCallback<LedgerMetadata> readCb) {
-            lm.readLedgerMetadata(ledgerId, readCb);
+        public CompletableFuture<Versioned<LedgerMetadata>> readLedgerMetadata(long ledgerId) {
+            return lm.readLedgerMetadata(ledgerId);
         }
 
         @Override
@@ -113,10 +116,11 @@ public class ParallelLedgerRecoveryTest extends BookKeeperClusterTestCase {
         }
 
         @Override
-        public void writeLedgerMetadata(final long ledgerId, final LedgerMetadata metadata,
-                                        final GenericCallback<LedgerMetadata> cb) {
+        public CompletableFuture<Versioned<LedgerMetadata>> writeLedgerMetadata(long ledgerId, LedgerMetadata metadata,
+                                                                                Version currentVersion) {
             final CountDownLatch cdl = waitLatch;
             if (null != cdl) {
+                CompletableFuture<Versioned<LedgerMetadata>> promise = new CompletableFuture<>();
                 executorService.submit(new Runnable() {
                     @Override
                     public void run() {
@@ -126,11 +130,19 @@ public class ParallelLedgerRecoveryTest extends BookKeeperClusterTestCase {
                             Thread.currentThread().interrupt();
                             LOG.error("Interrupted on waiting latch : ", e);
                         }
-                        lm.writeLedgerMetadata(ledgerId, metadata, cb);
+                        lm.writeLedgerMetadata(ledgerId, metadata, currentVersion)
+                            .whenComplete((metadata, exception) -> {
+                                    if (exception != null) {
+                                        promise.completeExceptionally(exception);
+                                    } else {
+                                        promise.complete(metadata);
+                                    }
+                                });
                     }
                 });
+                return promise;
             } else {
-                lm.writeLedgerMetadata(ledgerId, metadata, cb);
+                return lm.writeLedgerMetadata(ledgerId, metadata, currentVersion);
             }
         }
 
@@ -364,19 +376,11 @@ public class ParallelLedgerRecoveryTest extends BookKeeperClusterTestCase {
                 LedgerHandle newRecoverLh = newBk.openLedgerNoRecovery(lh.getId(), digestType, "".getBytes());
                 assertEquals(BookieProtocol.INVALID_ENTRY_ID, newRecoverLh.getLastAddPushed());
                 assertEquals(BookieProtocol.INVALID_ENTRY_ID, newRecoverLh.getLastAddConfirmed());
+
                 // mark the ledger as in recovery to update version.
-                newRecoverLh.getLedgerMetadata().markLedgerInRecovery();
-                final CountDownLatch updateLatch = new CountDownLatch(1);
-                final AtomicInteger updateResult = new AtomicInteger(0x12345);
-                newRecoverLh.writeLedgerConfig(new GenericCallback<LedgerMetadata>() {
-                    @Override
-                    public void operationComplete(int rc, LedgerMetadata result) {
-                        updateResult.set(rc);
-                        updateLatch.countDown();
-                    }
-                });
-                updateLatch.await();
-                assertEquals(BKException.Code.OK, updateResult.get());
+                ClientUtil.transformMetadata(newBk.getClientCtx(), newRecoverLh.getId(),
+                        (metadata) -> LedgerMetadataBuilder.from(metadata).withInRecoveryState().build());
+
                 newRecoverLh.close();
                 LOG.info("Updated ledger manager {}.", newRecoverLh.getLedgerMetadata());
             }
@@ -520,8 +524,8 @@ public class ParallelLedgerRecoveryTest extends BookKeeperClusterTestCase {
         }
 
         @Override
-        public void addEntry(ByteBuf entry, boolean ackBeforeSync, final WriteCallback cb,
-                             Object ctx, byte[] masterKey) throws IOException, BookieException {
+        public void addEntry(ByteBuf entry, boolean ackBeforeSync, final WriteCallback cb, Object ctx, byte[] masterKey)
+                throws IOException, BookieException, InterruptedException {
             super.addEntry(entry, ackBeforeSync, new WriteCallback() {
                 @Override
                 public void writeComplete(int rc, long ledgerId, long entryId,
@@ -669,7 +673,8 @@ public class ParallelLedgerRecoveryTest extends BookKeeperClusterTestCase {
         final AtomicInteger rcHolder = new AtomicInteger(-1234);
         final CountDownLatch doneLatch = new CountDownLatch(1);
 
-        new ReadLastConfirmedOp(readLh, bkc.getBookieClient(), readLh.getCurrentEnsemble(),
+        new ReadLastConfirmedOp(readLh, bkc.getBookieClient(),
+                                readLh.getLedgerMetadata().getAllEnsembles().lastEntry().getValue(),
                 new ReadLastConfirmedOp.LastConfirmedDataCallback() {
                     @Override
                     public void readLastConfirmedDataComplete(int rc, DigestManager.RecoveryData data) {

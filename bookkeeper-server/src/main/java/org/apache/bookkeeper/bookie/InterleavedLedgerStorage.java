@@ -101,11 +101,34 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
                            StatsLogger statsLogger,
                            ByteBufAllocator allocator)
             throws IOException {
+        initializeWithEntryLogListener(
+            conf,
+            ledgerManager,
+            ledgerDirsManager,
+            indexDirsManager,
+            stateManager,
+            checkpointSource,
+            checkpointer,
+            this,
+            statsLogger,
+            allocator);
+    }
+
+    void initializeWithEntryLogListener(ServerConfiguration conf,
+                                        LedgerManager ledgerManager,
+                                        LedgerDirsManager ledgerDirsManager,
+                                        LedgerDirsManager indexDirsManager,
+                                        StateManager stateManager,
+                                        CheckpointSource checkpointSource,
+                                        Checkpointer checkpointer,
+                                        EntryLogListener entryLogListener,
+                                        StatsLogger statsLogger,
+                                        ByteBufAllocator allocator) throws IOException {
         checkNotNull(checkpointSource, "invalid null checkpoint source");
         checkNotNull(checkpointer, "invalid null checkpointer");
         this.checkpointSource = checkpointSource;
         this.checkpointer = checkpointer;
-        entryLogger = new EntryLogger(conf, ledgerDirsManager, this, statsLogger.scope(ENTRYLOGGER_SCOPE), allocator);
+        entryLogger = new EntryLogger(conf, ledgerDirsManager, entryLogListener, statsLogger.scope(ENTRYLOGGER_SCOPE), allocator);
         ledgerCache = new LedgerCacheImpl(conf, activeLedgers,
                 null == indexDirsManager ? ledgerDirsManager : indexDirsManager, statsLogger);
         gcThread = new GarbageCollectorThread(conf, ledgerManager, this, statsLogger.scope("gc"));
@@ -171,6 +194,11 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
                 }
             }
         };
+    }
+
+    @Override
+    public void forceGC() {
+        gcThread.enableForceGC();
     }
 
     @Override

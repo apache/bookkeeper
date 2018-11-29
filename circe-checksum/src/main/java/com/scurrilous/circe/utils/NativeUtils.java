@@ -37,7 +37,7 @@ public class NativeUtils {
 
     /**
      * loads given library from the this jar. ie: this jar contains: /lib/pulsar-checksum.jnilib
-     * 
+     *
      * @param path
      *            : absolute path of the library in the jar <br/>
      *            if this jar contains: /lib/pulsar-checksum.jnilib then provide the same absolute path as input
@@ -67,13 +67,16 @@ public class NativeUtils {
             throw new FileNotFoundException("Couldn't find file into jar " + path);
         }
 
-        OutputStream out = new FileOutputStream(temp);
         try {
-            while ((read = input.read(buffer)) != -1) {
-                out.write(buffer, 0, read);
+            OutputStream out = new FileOutputStream(temp);
+            try {
+                while ((read = input.read(buffer)) != -1) {
+                    out.write(buffer, 0, read);
+                }
+            } finally {
+                out.close();
             }
         } finally {
-            out.close();
             input.close();
         }
 
@@ -87,7 +90,7 @@ public class NativeUtils {
     /**
      * Returns jni library extension based on OS specification. Maven-nar generates jni library based on different OS :
      * http://mark.donszelmann.org/maven-nar-plugin/aol.html (jni.extension)
-     * 
+     *
      * @return
      */
     public static String libType() {

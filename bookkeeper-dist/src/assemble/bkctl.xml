@@ -1,0 +1,116 @@
+<!--
+   Licensed to the Apache Software Foundation (ASF) under one or more
+   contributor license agreements.  See the NOTICE file distributed with
+   this work for additional information regarding copyright ownership.
+   The ASF licenses this file to You under the Apache License, Version 2.0
+   (the "License"); you may not use this file except in compliance with
+   the License.  You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+-->
+<assembly xmlns="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.2"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.2 http://maven.apache.org/xsd/assembly-1.1.2.xsd">
+  <id>bin</id>
+  <formats>
+    <format>tar.gz</format>
+  </formats>
+  <includeBaseDirectory>true</includeBaseDirectory>
+  <fileSets>
+    <fileSet>
+      <directory>target</directory>
+      <outputDirectory></outputDirectory>
+      <includes>
+        <include>${project.artifactId}-${project.version}.jar</include>
+      </includes>
+    </fileSet>
+    <fileSet>
+      <directory>../../conf</directory>
+      <outputDirectory>conf</outputDirectory>
+      <includes>
+        <include>bk_cli_env.sh</include>
+        <include>bk_server.conf</include>
+        <include>bkenv.sh</include>
+        <include>jaas_example.conf</include>
+        <include>log4j.cli.properties</include>
+        <include>log4j.shell.properties</include>
+        <include>nettyenv.sh</include>
+      </includes>
+    </fileSet>
+    <fileSet>
+      <directory>../../bin</directory>
+      <fileMode>755</fileMode>
+      <outputDirectory>bin</outputDirectory>
+      <includes>
+        <include>bkctl</include>
+        <include>bkperf</include>
+        <include>bookkeeper</include>
+        <include>common.sh</include>
+      </includes>
+    </fileSet>
+    <fileSet>
+      <fileMode>644</fileMode>
+      <includes>
+        <include>${basedir}/*.txt</include>
+      </includes>
+    </fileSet>
+    <fileSet>
+      <directory>../src/main/resources/deps</directory>
+      <outputDirectory>deps</outputDirectory>
+      <includes>
+        <include>google-auth-library-credentials-0.9.0/LICENSE</include>
+        <include>netty-4.1.31.Final/*</include>
+        <include>protobuf-3.0.0/LICENSE</include>
+        <include>jline-2.11/LICENSE</include>
+        <include>protobuf-3.5.1/LICENSE</include>
+        <include>slf4j-1.7.25/LICENSE.txt</include>
+      </includes>
+      <fileMode>644</fileMode>
+    </fileSet>
+  </fileSets>
+  <files>
+    <file>
+      <source>../../README.md</source>
+      <outputDirectory></outputDirectory>
+      <fileMode>644</fileMode>
+    </file>
+    <file>
+      <source>../src/main/resources/LICENSE-bkctl.bin.txt</source>
+      <outputDirectory></outputDirectory>
+      <destName>LICENSE</destName>
+      <fileMode>644</fileMode>
+    </file>
+    <file>
+      <source>../src/main/resources/NOTICE-bkctl.bin.txt</source>
+      <outputDirectory></outputDirectory>
+      <destName>NOTICE</destName>
+      <fileMode>644</fileMode>
+    </file>
+  </files>
+  <dependencySets>
+    <dependencySet>
+      <outputDirectory>lib</outputDirectory>
+      <unpack>false</unpack>
+      <scope>runtime</scope>
+      <useProjectArtifact>false</useProjectArtifact>
+      <!-- Include 'groupId' in the dependencies Jar names to better identify the provenance of the jar -->
+      <outputFileNameMapping>${artifact.groupId}-${artifact.artifactId}-${artifact.version}${dashClassifier?}.${artifact.extension}</outputFileNameMapping>
+      <excludes>
+        <exclude>com.google.code.findbugs:jsr305</exclude>
+        <!-- All these dependencies are already included in stream-storage-java-client -->
+        <exclude>org.apache.bookkeeper:stream-storage-common</exclude>
+        <exclude>org.apache.bookkeeper:stream-storage-proto</exclude>
+        <exclude>org.apache.bookkeeper:stream-storage-api</exclude>
+        <exclude>org.apache.bookkeeper:stream-storage-java-client-base</exclude>
+        <!-- exclude server-side dependencies -->
+        <exclude>org.rocksdb:rocksdbjni</exclude>
+      </excludes>
+    </dependencySet>
+  </dependencySets>
+</assembly>

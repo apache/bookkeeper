@@ -141,4 +141,15 @@ public class CodahaleMetricsProvider implements StatsProvider {
         initIfNecessary();
         return new CodahaleStatsLogger(getMetrics(), name);
     }
+
+    @Override
+    public String getStatsName(String... statsComponents) {
+        if (statsComponents.length == 0) {
+            return "";
+        }
+        String baseName = statsComponents[0];
+        String[] names = new String[statsComponents.length - 1];
+        System.arraycopy(statsComponents, 1, names, 0, names.length);
+        return MetricRegistry.name(baseName, names);
+    }
 }

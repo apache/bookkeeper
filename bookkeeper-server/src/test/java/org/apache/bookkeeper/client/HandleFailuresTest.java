@@ -36,6 +36,7 @@ import java.util.concurrent.TimeoutException;
 import org.apache.bookkeeper.client.api.WriteFlag;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.versioning.Versioned;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -58,7 +59,7 @@ public class HandleFailuresTest {
     @Test
     public void testChangeTriggeredOneTimeForOneFailure() throws Exception {
         MockClientContext clientCtx = MockClientContext.create();
-        LedgerMetadata md = ClientUtil.setupLedger(clientCtx, 10L,
+        Versioned<LedgerMetadata> md = ClientUtil.setupLedger(clientCtx, 10L,
                                                    LedgerMetadataBuilder.create().newEnsembleEntry(
                                                            0L, Lists.newArrayList(b1, b2, b3)));
 
@@ -81,7 +82,7 @@ public class HandleFailuresTest {
     @Test
     public void testSecondFailureOccursWhileFirstBeingHandled() throws Exception {
         MockClientContext clientCtx = MockClientContext.create();
-        LedgerMetadata md = ClientUtil.setupLedger(clientCtx, 10L,
+        Versioned<LedgerMetadata> md = ClientUtil.setupLedger(clientCtx, 10L,
                                                    LedgerMetadataBuilder.create()
                                                    .withEnsembleSize(3).withWriteQuorumSize(3).withAckQuorumSize(3)
                                                    .newEnsembleEntry(0L, Lists.newArrayList(b1, b2, b3)));
@@ -129,7 +130,7 @@ public class HandleFailuresTest {
     @Test
     public void testHandlingFailuresOneBookieFailsImmediately() throws Exception {
         MockClientContext clientCtx = MockClientContext.create();
-        LedgerMetadata md = ClientUtil.setupLedger(clientCtx, 10L,
+        Versioned<LedgerMetadata> md = ClientUtil.setupLedger(clientCtx, 10L,
                                                    LedgerMetadataBuilder.create()
                                                    .withEnsembleSize(3).withWriteQuorumSize(3).withAckQuorumSize(3)
                                                    .newEnsembleEntry(0L, Lists.newArrayList(b1, b2, b3)));
@@ -149,7 +150,7 @@ public class HandleFailuresTest {
     @Test
     public void testHandlingFailuresOneBookieFailsAfterOneEntry() throws Exception {
         MockClientContext clientCtx = MockClientContext.create();
-        LedgerMetadata md = ClientUtil.setupLedger(clientCtx, 10L,
+        Versioned<LedgerMetadata> md = ClientUtil.setupLedger(clientCtx, 10L,
                                                    LedgerMetadataBuilder.create()
                                                    .withEnsembleSize(3).withWriteQuorumSize(3).withAckQuorumSize(3)
                                                    .newEnsembleEntry(0L, Lists.newArrayList(b1, b2, b3)));
@@ -172,7 +173,7 @@ public class HandleFailuresTest {
     @Test
     public void testHandlingFailuresMultipleBookieFailImmediatelyNotEnoughToReplace() throws Exception {
         MockClientContext clientCtx = MockClientContext.create();
-        LedgerMetadata md = ClientUtil.setupLedger(clientCtx, 10L,
+        Versioned<LedgerMetadata> md = ClientUtil.setupLedger(clientCtx, 10L,
                                                    LedgerMetadataBuilder.create()
                                                    .withEnsembleSize(3).withWriteQuorumSize(3).withAckQuorumSize(3)
                                                    .newEnsembleEntry(0L, Lists.newArrayList(b1, b2, b3)));
@@ -198,7 +199,7 @@ public class HandleFailuresTest {
     @Test
     public void testHandlingFailuresMultipleBookieFailAfterOneEntryNotEnoughToReplace() throws Exception {
         MockClientContext clientCtx = MockClientContext.create();
-        LedgerMetadata md = ClientUtil.setupLedger(clientCtx, 10L,
+        Versioned<LedgerMetadata> md = ClientUtil.setupLedger(clientCtx, 10L,
                                                    LedgerMetadataBuilder.create()
                                                    .withEnsembleSize(3).withWriteQuorumSize(3).withAckQuorumSize(3)
                                                    .newEnsembleEntry(0L, Lists.newArrayList(b1, b2, b3)));
@@ -226,7 +227,7 @@ public class HandleFailuresTest {
     @Test
     public void testClientClosesWhileFailureHandlerInProgress() throws Exception {
         MockClientContext clientCtx = MockClientContext.create();
-        LedgerMetadata md = ClientUtil.setupLedger(clientCtx, 10L,
+        Versioned<LedgerMetadata> md = ClientUtil.setupLedger(clientCtx, 10L,
                                                    LedgerMetadataBuilder.create()
                                                    .withEnsembleSize(3).withWriteQuorumSize(3).withAckQuorumSize(3)
                                                    .newEnsembleEntry(0L, Lists.newArrayList(b1, b2, b3)));
@@ -267,8 +268,8 @@ public class HandleFailuresTest {
 
     @Test
     public void testMetadataSetToClosedDuringFailureHandler() throws Exception {
-                MockClientContext clientCtx = MockClientContext.create();
-        LedgerMetadata md = ClientUtil.setupLedger(clientCtx, 10L,
+        MockClientContext clientCtx = MockClientContext.create();
+        Versioned<LedgerMetadata> md = ClientUtil.setupLedger(clientCtx, 10L,
                                                    LedgerMetadataBuilder.create()
                                                    .withEnsembleSize(3).withWriteQuorumSize(3).withAckQuorumSize(3)
                                                    .newEnsembleEntry(0L, Lists.newArrayList(b1, b2, b3)));
@@ -293,7 +294,8 @@ public class HandleFailuresTest {
         changeInProgress.get();
 
         ClientUtil.transformMetadata(clientCtx, 10L,
-                                     (metadata) -> LedgerMetadataBuilder.from(metadata).closingAt(1234L, 10L).build());
+                (metadata) -> LedgerMetadataBuilder.from(metadata)
+                                     .withClosedState().withLastEntryId(1234L).withLength(10L).build());
 
         blockEnsembleChange.complete(null); // allow ensemble change to continue
         try {
@@ -310,8 +312,8 @@ public class HandleFailuresTest {
 
     @Test
     public void testMetadataSetToInRecoveryDuringFailureHandler() throws Exception {
-                MockClientContext clientCtx = MockClientContext.create();
-        LedgerMetadata md = ClientUtil.setupLedger(clientCtx, 10L,
+        MockClientContext clientCtx = MockClientContext.create();
+        Versioned<LedgerMetadata> md = ClientUtil.setupLedger(clientCtx, 10L,
                                                    LedgerMetadataBuilder.create()
                                                    .withEnsembleSize(3).withWriteQuorumSize(3).withAckQuorumSize(3)
                                                    .newEnsembleEntry(0L, Lists.newArrayList(b1, b2, b3)));
@@ -353,7 +355,7 @@ public class HandleFailuresTest {
     @Test
     public void testOldEnsembleChangedDuringFailureHandler() throws Exception {
         MockClientContext clientCtx = MockClientContext.create();
-        LedgerMetadata md = ClientUtil.setupLedger(clientCtx, 10L,
+        Versioned<LedgerMetadata> md = ClientUtil.setupLedger(clientCtx, 10L,
                                                    LedgerMetadataBuilder.create()
                                                    .withEnsembleSize(3).withWriteQuorumSize(3).withAckQuorumSize(3)
                                                    .newEnsembleEntry(0L, Lists.newArrayList(b1, b2, b3)));
@@ -406,7 +408,7 @@ public class HandleFailuresTest {
     @Test
     public void testNoAddsAreCompletedWhileFailureHandlingInProgress() throws Exception {
         MockClientContext clientCtx = MockClientContext.create();
-        LedgerMetadata md = ClientUtil.setupLedger(clientCtx, 10L,
+        Versioned<LedgerMetadata> md = ClientUtil.setupLedger(clientCtx, 10L,
                                                    LedgerMetadataBuilder.create()
                                                    .withEnsembleSize(3).withWriteQuorumSize(3).withAckQuorumSize(2)
                                                    .newEnsembleEntry(0L, Lists.newArrayList(b1, b2, b3)));

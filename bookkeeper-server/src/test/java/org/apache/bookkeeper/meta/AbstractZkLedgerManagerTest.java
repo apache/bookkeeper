@@ -39,8 +39,9 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.withSettings;
 
+import com.google.common.collect.Lists;
 import java.time.Duration;
-import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Executors;
@@ -49,16 +50,17 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BKException.Code;
-import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.LedgerMetadata;
+import org.apache.bookkeeper.client.LedgerMetadataBuilder;
 import org.apache.bookkeeper.common.testing.executors.MockExecutorController;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
-import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallbackFuture;
+import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.LedgerMetadataListener;
 import org.apache.bookkeeper.util.ZkUtils;
 import org.apache.bookkeeper.versioning.LongVersion;
 import org.apache.bookkeeper.versioning.Version;
+import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.bookkeeper.zookeeper.MockZooKeeperTestCase;
 import org.apache.zookeeper.AsyncCallback.DataCallback;
 import org.apache.zookeeper.AsyncCallback.StatCallback;
@@ -111,12 +113,18 @@ public class AbstractZkLedgerManagerTest extends MockZooKeeperTestCase {
             withSettings()
                 .useConstructor(conf, mockZk)
                 .defaultAnswer(CALLS_REAL_METHODS));
-        this.metadata = new LedgerMetadata(
-            5, 3, 3,
-            DigestType.CRC32,
-            new byte[0],
-            Collections.emptyMap(),
-            false);
+        List<BookieSocketAddress> ensemble = Lists.newArrayList(
+                new BookieSocketAddress("192.0.2.1", 3181),
+                new BookieSocketAddress("192.0.2.2", 3181),
+                new BookieSocketAddress("192.0.2.3", 3181),
+                new BookieSocketAddress("192.0.2.4", 3181),
+                new BookieSocketAddress("192.0.2.5", 3181));
+        this.metadata = LedgerMetadataBuilder.create()
+            .withEnsembleSize(5)
+            .withWriteQuorumSize(3)
+            .withAckQuorumSize(3)
+            .newEnsembleEntry(0L, ensemble)
+            .withCreationTime(12345L).build();
 
         doAnswer(invocationOnMock -> {
             long ledgerId = invocationOnMock.getArgument(0);
@@ -154,13 +162,9 @@ public class AbstractZkLedgerManagerTest extends MockZooKeeperTestCase {
             KeeperException.Code.OK.intValue(), ledgerStr
         );
 
-        assertEquals(Version.NEW, metadata.getVersion());
+        Versioned<LedgerMetadata> result = ledgerManager.createLedgerMetadata(ledgerId, metadata).get();
 
-        GenericCallbackFuture<LedgerMetadata> callbackFuture = new GenericCallbackFuture<>();
-        ledgerManager.createLedgerMetadata(ledgerId, metadata, callbackFuture);
-        callbackFuture.get();
-
-        assertEquals(new LongVersion(0), metadata.getVersion());
+        assertEquals(new LongVersion(0), result.getVersion());
     }
 
     @Test
@@ -171,21 +175,14 @@ public class AbstractZkLedgerManagerTest extends MockZooKeeperTestCase {
             ledgerStr, CreateMode.PERSISTENT,
             KeeperException.Code.NODEEXISTS.intValue(), null);
 
-        assertEquals(Version.NEW, metadata.getVersion());
-
-        GenericCallbackFuture<LedgerMetadata> callbackFuture = new GenericCallbackFuture<>();
-        ledgerManager.createLedgerMetadata(ledgerId, metadata, callbackFuture);
         try {
-            result(callbackFuture);
+            result(ledgerManager.createLedgerMetadata(ledgerId, metadata));
             fail("Should fail to create ledger metadata if the ledger already exists");
         } catch (Exception e) {
             assertTrue(e instanceof BKException);
             BKException bke = (BKException) e;
             assertEquals(Code.LedgerExistException, bke.getCode());
         }
-
-        // creation failed, so metadata should not be modified
-        assertEquals(Version.NEW, metadata.getVersion());
     }
 
     @Test
@@ -196,21 +193,14 @@ public class AbstractZkLedgerManagerTest extends MockZooKeeperTestCase {
             ledgerStr, CreateMode.PERSISTENT,
             KeeperException.Code.CONNECTIONLOSS.intValue(), null);
 
-        assertEquals(Version.NEW, metadata.getVersion());
-
-        GenericCallbackFuture<LedgerMetadata> callbackFuture = new GenericCallbackFuture<>();
-        ledgerManager.createLedgerMetadata(ledgerId, metadata, callbackFuture);
         try {
-            result(callbackFuture);
+            result(ledgerManager.createLedgerMetadata(ledgerId, metadata));
             fail("Should fail to create ledger metadata when encountering zookeeper exception");
         } catch (Exception e) {
             assertTrue(e instanceof BKException);
             BKException bke = (BKException) e;
             assertEquals(Code.ZKException, bke.getCode());
         }
-
-        // creation failed, so metadata should not be modified
-        assertEquals(Version.NEW, metadata.getVersion());
     }
 
     @Test
@@ -223,9 +213,7 @@ public class AbstractZkLedgerManagerTest extends MockZooKeeperTestCase {
             ledgerStr, (int) version.getLongVersion(),
             KeeperException.Code.OK.intValue());
 
-        GenericCallbackFuture<Void> callbackFuture = new GenericCallbackFuture<>();
-        ledgerManager.removeLedgerMetadata(ledgerId, version, callbackFuture);
-        result(callbackFuture);
+        ledgerManager.removeLedgerMetadata(ledgerId, version).get();
 
         verify(mockZk, times(1))
             .delete(eq(ledgerStr), eq(1234), any(VoidCallback.class), eq(null));
@@ -240,9 +228,7 @@ public class AbstractZkLedgerManagerTest extends MockZooKeeperTestCase {
             ledgerStr, -1,
             KeeperException.Code.OK.intValue());
 
-        GenericCallbackFuture<Void> callbackFuture = new GenericCallbackFuture<>();
-        ledgerManager.removeLedgerMetadata(ledgerId, Version.ANY, callbackFuture);
-        result(callbackFuture);
+        ledgerManager.removeLedgerMetadata(ledgerId, Version.ANY).get();
 
         verify(mockZk, times(1))
             .delete(eq(ledgerStr), eq(-1), any(VoidCallback.class), eq(null));
@@ -262,10 +248,8 @@ public class AbstractZkLedgerManagerTest extends MockZooKeeperTestCase {
     private void testRemoveLedgerMetadataInvalidVersion(Version version) throws Exception {
         long ledgerId = System.currentTimeMillis();
 
-        GenericCallbackFuture<Void> callbackFuture = new GenericCallbackFuture<>();
-        ledgerManager.removeLedgerMetadata(ledgerId, version, callbackFuture);
         try {
-            result(callbackFuture);
+            result(ledgerManager.removeLedgerMetadata(ledgerId, version));
             fail("Should fail to remove metadata if version is " + Version.NEW);
         } catch (BKException bke) {
             assertEquals(Code.MetadataVersionException, bke.getCode());
@@ -282,10 +266,8 @@ public class AbstractZkLedgerManagerTest extends MockZooKeeperTestCase {
             ledgerStr, (int) version.getLongVersion(),
             KeeperException.Code.NONODE.intValue());
 
-        GenericCallbackFuture<Void> callbackFuture = new GenericCallbackFuture<>();
-        ledgerManager.removeLedgerMetadata(ledgerId, version, callbackFuture);
         try {
-            result(callbackFuture);
+            result(ledgerManager.removeLedgerMetadata(ledgerId, version));
             fail("Should fail to remove metadata if no such ledger exists");
         } catch (BKException bke) {
             assertEquals(Code.NoSuchLedgerExistsException, bke.getCode());
@@ -305,10 +287,8 @@ public class AbstractZkLedgerManagerTest extends MockZooKeeperTestCase {
             ledgerStr, (int) version.getLongVersion(),
             KeeperException.Code.CONNECTIONLOSS.intValue());
 
-        GenericCallbackFuture<Void> callbackFuture = new GenericCallbackFuture<>();
-        ledgerManager.removeLedgerMetadata(ledgerId, version, callbackFuture);
         try {
-            result(callbackFuture);
+            result(ledgerManager.removeLedgerMetadata(ledgerId, version));
             fail("Should fail to remove metadata if no such ledger exists");
         } catch (BKException bke) {
             assertEquals(Code.ZKException, bke.getCode());
@@ -339,9 +319,7 @@ public class AbstractZkLedgerManagerTest extends MockZooKeeperTestCase {
             ledgerStr, (int) version.getLongVersion(),
             KeeperException.Code.OK.intValue());
 
-        GenericCallbackFuture<Void> callbackFuture = new GenericCallbackFuture<>();
-        lm.removeLedgerMetadata(ledgerId, version, callbackFuture);
-        result(callbackFuture);
+        lm.removeLedgerMetadata(ledgerId, version).get();
 
         PowerMockito.verifyStatic(
             ZkUtils.class, times(1));
@@ -355,7 +333,6 @@ public class AbstractZkLedgerManagerTest extends MockZooKeeperTestCase {
         long ledgerId = System.currentTimeMillis();
         String ledgerStr = String.valueOf(ledgerId);
 
-        metadata.setVersion(new LongVersion(1234L));
         Stat stat = mock(Stat.class);
         when(stat.getVersion()).thenReturn(1234);
         when(stat.getCtime()).thenReturn(metadata.getCtime());
@@ -363,10 +340,9 @@ public class AbstractZkLedgerManagerTest extends MockZooKeeperTestCase {
             ledgerStr, false,
             KeeperException.Code.OK.intValue(), metadata.serialize(), stat);
 
-        GenericCallbackFuture<LedgerMetadata> callbackFuture = new GenericCallbackFuture<>();
-        ledgerManager.readLedgerMetadata(ledgerId, callbackFuture);
-        LedgerMetadata readMetadata = result(callbackFuture);
-        assertEquals(metadata, readMetadata);
+        Versioned<LedgerMetadata> readMetadata = result(ledgerManager.readLedgerMetadata(ledgerId));
+        assertEquals(metadata, readMetadata.getValue());
+        assertEquals(new LongVersion(1234), readMetadata.getVersion());
 
         verify(mockZk, times(1))
             .getData(eq(ledgerStr), eq(null), any(DataCallback.class), any());
@@ -381,10 +357,8 @@ public class AbstractZkLedgerManagerTest extends MockZooKeeperTestCase {
             ledgerStr, false,
             KeeperException.Code.NONODE.intValue(), null, null);
 
-        GenericCallbackFuture<LedgerMetadata> callbackFuture = new GenericCallbackFuture<>();
-        ledgerManager.readLedgerMetadata(ledgerId, callbackFuture);
         try {
-            result(callbackFuture);
+            result(ledgerManager.readLedgerMetadata(ledgerId));
             fail("Should fail on reading ledger metadata if a ledger doesn't exist");
         } catch (BKException bke) {
             assertEquals(Code.NoSuchLedgerExistsException, bke.getCode());
@@ -403,10 +377,8 @@ public class AbstractZkLedgerManagerTest extends MockZooKeeperTestCase {
             ledgerStr, false,
             KeeperException.Code.CONNECTIONLOSS.intValue(), null, null);
 
-        GenericCallbackFuture<LedgerMetadata> callbackFuture = new GenericCallbackFuture<>();
-        ledgerManager.readLedgerMetadata(ledgerId, callbackFuture);
         try {
-            result(callbackFuture);
+            result(ledgerManager.readLedgerMetadata(ledgerId));
             fail("Should fail on reading ledger metadata if a ledger doesn't exist");
         } catch (BKException bke) {
             assertEquals(Code.ZKException, bke.getCode());
@@ -425,10 +397,8 @@ public class AbstractZkLedgerManagerTest extends MockZooKeeperTestCase {
             ledgerStr, false,
             KeeperException.Code.OK.intValue(), metadata.serialize(), null);
 
-        GenericCallbackFuture<LedgerMetadata> callbackFuture = new GenericCallbackFuture<>();
-        ledgerManager.readLedgerMetadata(ledgerId, callbackFuture);
         try {
-            result(callbackFuture);
+            result(ledgerManager.readLedgerMetadata(ledgerId));
             fail("Should fail on reading ledger metadata if a ledger doesn't exist");
         } catch (BKException bke) {
             assertEquals(Code.ZKException, bke.getCode());
@@ -443,7 +413,6 @@ public class AbstractZkLedgerManagerTest extends MockZooKeeperTestCase {
         long ledgerId = System.currentTimeMillis();
         String ledgerStr = String.valueOf(ledgerId);
 
-        metadata.setVersion(new LongVersion(1234L));
         Stat stat = mock(Stat.class);
         when(stat.getVersion()).thenReturn(1234);
         when(stat.getCtime()).thenReturn(metadata.getCtime());
@@ -451,10 +420,8 @@ public class AbstractZkLedgerManagerTest extends MockZooKeeperTestCase {
             ledgerStr, false,
             KeeperException.Code.OK.intValue(), new byte[0], stat);
 
-        GenericCallbackFuture<LedgerMetadata> callbackFuture = new GenericCallbackFuture<>();
-        ledgerManager.readLedgerMetadata(ledgerId, callbackFuture);
         try {
-            result(callbackFuture);
+            result(ledgerManager.readLedgerMetadata(ledgerId));
             fail("Should fail on reading ledger metadata if a ledger doesn't exist");
         } catch (BKException bke) {
             assertEquals(Code.ZKException, bke.getCode());
@@ -469,7 +436,6 @@ public class AbstractZkLedgerManagerTest extends MockZooKeeperTestCase {
         long ledgerId = System.currentTimeMillis();
         String ledgerStr = String.valueOf(ledgerId);
 
-        metadata.setVersion(new LongVersion(1234L));
         Stat stat = mock(Stat.class);
         when(stat.getVersion()).thenReturn(1235);
         when(stat.getCtime()).thenReturn(metadata.getCtime());
@@ -477,13 +443,9 @@ public class AbstractZkLedgerManagerTest extends MockZooKeeperTestCase {
             ledgerStr, metadata.serialize(), 1234,
             KeeperException.Code.OK.intValue(), stat);
 
-        assertEquals(new LongVersion(1234L), metadata.getVersion());
+        Version v = ledgerManager.writeLedgerMetadata(ledgerId, metadata, new LongVersion(1234L)).get().getVersion();
 
-        GenericCallbackFuture<LedgerMetadata> callbackFuture = new GenericCallbackFuture<>();
-        ledgerManager.writeLedgerMetadata(ledgerId, metadata, callbackFuture);
-        result(callbackFuture);
-
-        assertEquals(new LongVersion(1235L), metadata.getVersion());
+        assertEquals(new LongVersion(1235L), v);
 
         verify(mockZk, times(1))
             .setData(eq(ledgerStr), any(byte[].class), eq(1234), any(StatCallback.class), any());
@@ -494,24 +456,16 @@ public class AbstractZkLedgerManagerTest extends MockZooKeeperTestCase {
         long ledgerId = System.currentTimeMillis();
         String ledgerStr = String.valueOf(ledgerId);
 
-        metadata.setVersion(new LongVersion(1234L));
         mockZkSetData(
             ledgerStr, metadata.serialize(), 1234,
             KeeperException.Code.BADVERSION.intValue(), null);
 
-        assertEquals(new LongVersion(1234L), metadata.getVersion());
-
-        GenericCallbackFuture<LedgerMetadata> callbackFuture = new GenericCallbackFuture<>();
-        ledgerManager.writeLedgerMetadata(ledgerId, metadata, callbackFuture);
         try {
-            result(callbackFuture);
+            result(ledgerManager.writeLedgerMetadata(ledgerId, metadata, new LongVersion(1234L)));
             fail("Should fail on writing ledger metadata if encountering bad version");
         } catch (BKException bke) {
             assertEquals(Code.MetadataVersionException, bke.getCode());
         }
-
-        // version remain unchanged
-        assertEquals(new LongVersion(1234L), metadata.getVersion());
 
         verify(mockZk, times(1))
             .setData(eq(ledgerStr), any(byte[].class), eq(1234), any(StatCallback.class), any());
@@ -522,24 +476,17 @@ public class AbstractZkLedgerManagerTest extends MockZooKeeperTestCase {
         long ledgerId = System.currentTimeMillis();
         String ledgerStr = String.valueOf(ledgerId);
 
-        metadata.setVersion(new LongVersion(1234L));
         mockZkSetData(
             ledgerStr, metadata.serialize(), 1234,
             KeeperException.Code.CONNECTIONLOSS.intValue(), null);
 
-        assertEquals(new LongVersion(1234L), metadata.getVersion());
-
-        GenericCallbackFuture<LedgerMetadata> callbackFuture = new GenericCallbackFuture<>();
-        ledgerManager.writeLedgerMetadata(ledgerId, metadata, callbackFuture);
         try {
-            result(callbackFuture);
+            result(ledgerManager.writeLedgerMetadata(ledgerId, metadata, new LongVersion(1234L)));
             fail("Should fail on writing ledger metadata if encountering zookeeper exceptions");
         } catch (BKException bke) {
             assertEquals(Code.ZKException, bke.getCode());
         }
 
-        // version remain unchanged
-        assertEquals(new LongVersion(1234L), metadata.getVersion());
 
         verify(mockZk, times(1))
             .setData(eq(ledgerStr), any(byte[].class), eq(1234), any(StatCallback.class), any());
@@ -560,12 +507,8 @@ public class AbstractZkLedgerManagerTest extends MockZooKeeperTestCase {
     private void testWriteLedgerMetadataInvalidVersion(Version invalidVersion) throws Exception {
         long ledgerId = System.currentTimeMillis();
 
-        metadata.setVersion(invalidVersion);
-
-        GenericCallbackFuture<LedgerMetadata> callbackFuture = new GenericCallbackFuture<>();
-        ledgerManager.writeLedgerMetadata(ledgerId, metadata, callbackFuture);
         try {
-            result(callbackFuture);
+            result(ledgerManager.writeLedgerMetadata(ledgerId, metadata, invalidVersion));
             fail("Should fail on writing ledger metadata if an invalid version is provided.");
         } catch (BKException bke) {
             assertEquals(Code.MetadataVersionException, bke.getCode());
@@ -581,9 +524,8 @@ public class AbstractZkLedgerManagerTest extends MockZooKeeperTestCase {
         String ledgerStr = String.valueOf(ledgerId);
 
         LinkedBlockingQueue<LedgerMetadata> changes = new LinkedBlockingQueue<>();
-        LedgerMetadataListener listener = (ledgerId1, metadata) -> changes.add(metadata);
+        LedgerMetadataListener listener = (ledgerId1, metadata) -> changes.add(metadata.getValue());
 
-        metadata.setVersion(new LongVersion(1234L));
         Stat stat = mock(Stat.class);
         when(stat.getVersion()).thenReturn(1234);
         when(stat.getCtime()).thenReturn(metadata.getCtime());
@@ -606,7 +548,6 @@ public class AbstractZkLedgerManagerTest extends MockZooKeeperTestCase {
         Watcher registeredWatcher1 = watcherSet1.stream().findFirst().get();
 
         // mock get data to return an updated metadata
-        metadata.setVersion(new LongVersion(1235L));
         when(stat.getVersion()).thenReturn(1235);
         mockZkGetData(
             ledgerStr, true,
@@ -644,9 +585,9 @@ public class AbstractZkLedgerManagerTest extends MockZooKeeperTestCase {
         String ledgerStr = String.valueOf(ledgerId);
 
         LinkedBlockingQueue<Optional<LedgerMetadata>> changes = new LinkedBlockingQueue<>();
-        LedgerMetadataListener listener = (ledgerId1, metadata) -> changes.add(Optional.ofNullable(metadata));
+        LedgerMetadataListener listener =
+            (ledgerId1, metadata) -> changes.add(Optional.ofNullable(metadata != null ? metadata.getValue() : null));
 
-        metadata.setVersion(new LongVersion(1234L));
         Stat stat = mock(Stat.class);
         when(stat.getVersion()).thenReturn(1234);
         when(stat.getCtime()).thenReturn(metadata.getCtime());
@@ -695,9 +636,10 @@ public class AbstractZkLedgerManagerTest extends MockZooKeeperTestCase {
         String ledgerStr = String.valueOf(ledgerId);
 
         LinkedBlockingQueue<Optional<LedgerMetadata>> changes = new LinkedBlockingQueue<>();
-        LedgerMetadataListener listener = (ledgerId1, metadata) -> changes.add(Optional.ofNullable(metadata));
+        LedgerMetadataListener listener =
+            (ledgerId1, metadata) -> changes.add(
+                    Optional.ofNullable(metadata != null ? metadata.getValue() : null));
 
-        metadata.setVersion(new LongVersion(1234L));
         Stat stat = mock(Stat.class);
         when(stat.getVersion()).thenReturn(1234);
         when(stat.getCtime()).thenReturn(metadata.getCtime());
@@ -737,9 +679,8 @@ public class AbstractZkLedgerManagerTest extends MockZooKeeperTestCase {
         String ledgerStr = String.valueOf(ledgerId);
 
         LinkedBlockingQueue<LedgerMetadata> changes = new LinkedBlockingQueue<>();
-        LedgerMetadataListener listener = (ledgerId1, metadata) -> changes.add(metadata);
+        LedgerMetadataListener listener = (ledgerId1, metadata) -> changes.add(metadata.getValue());
 
-        metadata.setVersion(new LongVersion(1234L));
         Stat stat = mock(Stat.class);
         when(stat.getVersion()).thenReturn(1234);
         when(stat.getCtime()).thenReturn(metadata.getCtime());
@@ -786,9 +727,8 @@ public class AbstractZkLedgerManagerTest extends MockZooKeeperTestCase {
         String ledgerStr = String.valueOf(ledgerId);
 
         LinkedBlockingQueue<LedgerMetadata> changes = new LinkedBlockingQueue<>();
-        LedgerMetadataListener listener = (ledgerId1, metadata) -> changes.add(metadata);
+        LedgerMetadataListener listener = (ledgerId1, metadata) -> changes.add(metadata.getValue());
 
-        metadata.setVersion(new LongVersion(1234L));
         Stat stat = mock(Stat.class);
         when(stat.getVersion()).thenReturn(1234);
         when(stat.getCtime()).thenReturn(metadata.getCtime());
@@ -835,9 +775,8 @@ public class AbstractZkLedgerManagerTest extends MockZooKeeperTestCase {
         String ledgerStr = String.valueOf(ledgerId);
 
         LinkedBlockingQueue<LedgerMetadata> changes = new LinkedBlockingQueue<>();
-        LedgerMetadataListener listener = (ledgerId1, metadata) -> changes.add(metadata);
+        LedgerMetadataListener listener = (ledgerId1, metadata) -> changes.add(metadata.getValue());
 
-        metadata.setVersion(new LongVersion(1234L));
         Stat stat = mock(Stat.class);
         when(stat.getVersion()).thenReturn(1234);
         when(stat.getCtime()).thenReturn(metadata.getCtime());
@@ -861,7 +800,6 @@ public class AbstractZkLedgerManagerTest extends MockZooKeeperTestCase {
         Watcher registeredWatcher1 = watcherSet1.stream().findFirst().get();
 
         // mock get data to return an updated metadata
-        metadata.setVersion(new LongVersion(1235L));
         when(stat.getVersion()).thenReturn(1235);
         mockZkGetData(
             ledgerStr, true,

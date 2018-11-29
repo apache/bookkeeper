@@ -20,7 +20,6 @@
  */
 package org.apache.bookkeeper.client;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -46,7 +45,6 @@ import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieProtocol;
-import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.junit.After;
@@ -558,28 +556,7 @@ public class BookieRecoveryTest extends BookKeeperClusterTestCase {
     }
 
     private LedgerMetadata getLedgerMetadata(LedgerHandle lh) throws Exception {
-        final SyncLedgerMetaObject syncObj = new SyncLedgerMetaObject();
-        bkc.getLedgerManager().readLedgerMetadata(lh.getId(), new GenericCallback<LedgerMetadata>() {
-
-            @Override
-            public void operationComplete(int rc, LedgerMetadata result) {
-                synchronized (syncObj) {
-                    syncObj.rc = rc;
-                    syncObj.meta = result;
-                    syncObj.value = true;
-                    syncObj.notify();
-                }
-            }
-
-        });
-
-        synchronized (syncObj) {
-            while (!syncObj.value) {
-                syncObj.wait();
-            }
-        }
-        assertEquals(BKException.Code.OK, syncObj.rc);
-        return syncObj.meta;
+        return bkc.getLedgerManager().readLedgerMetadata(lh.getId()).get().getValue();
     }
 
     private boolean findDupesInEnsembles(List<LedgerHandle> lhs) throws Exception {

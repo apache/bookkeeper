@@ -36,10 +36,10 @@ import org.apache.bookkeeper.client.SyncCallbackUtils.SyncOpenCallback;
 import org.apache.bookkeeper.client.api.BKException.Code;
 import org.apache.bookkeeper.client.api.ReadHandle;
 import org.apache.bookkeeper.client.impl.OpenBuilderBase;
-import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.util.MathUtils;
 import org.apache.bookkeeper.util.OrderedGenericCallback;
+import org.apache.bookkeeper.versioning.Versioned;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,7 +47,7 @@ import org.slf4j.LoggerFactory;
  * Encapsulates the ledger open operation.
  *
  */
-class LedgerOpenOp implements GenericCallback<LedgerMetadata> {
+class LedgerOpenOp {
     static final Logger LOG = LoggerFactory.getLogger(LedgerOpenOp.class);
 
     final BookKeeper bk;
@@ -110,7 +110,14 @@ class LedgerOpenOp implements GenericCallback<LedgerMetadata> {
         /**
          * Asynchronously read the ledger metadata node.
          */
-        bk.getLedgerManager().readLedgerMetadata(ledgerId, this);
+        bk.getLedgerManager().readLedgerMetadata(ledgerId)
+            .whenComplete((metadata, exception) -> {
+                    if (exception != null) {
+                        openComplete(BKException.getExceptionCode(exception), null);
+                    } else {
+                        openWithMetadata(metadata);
+                    }
+                });
     }
 
     /**
@@ -121,25 +128,20 @@ class LedgerOpenOp implements GenericCallback<LedgerMetadata> {
         initiate();
     }
 
-    /**
-     * Implements Open Ledger Callback.
-     */
-    @Override
-    public void operationComplete(int rc, LedgerMetadata metadata) {
-        if (BKException.Code.OK != rc) {
-            // open ledger failed.
-            openComplete(rc, null);
-            return;
-        }
+    private void openWithMetadata(Versioned<LedgerMetadata> versionedMetadata) {
+        LedgerMetadata metadata = versionedMetadata.getValue();
 
         final byte[] passwd;
 
         // we should use digest type from metadata *ONLY* when:
         // 1) digest type is stored in metadata
         // 2) `autodetection` is enabled
-        DigestType digestType = enableDigestAutodetection && metadata.hasPassword()
-                                    ? fromApiDigestType(metadata.getDigestType())
-                                    : suggestedDigestType;
+        DigestType digestType;
+        if (enableDigestAutodetection && metadata.hasPassword()) {
+            digestType = fromApiDigestType(metadata.getDigestType());
+        } else {
+            digestType = suggestedDigestType;
+        }
 
         /* For an administrative open, the default passwords
          * are read from the configuration, but if the metadata
@@ -168,7 +170,7 @@ class LedgerOpenOp implements GenericCallback<LedgerMetadata> {
 
         // get the ledger metadata back
         try {
-            lh = new ReadOnlyLedgerHandle(bk.getClientCtx(), ledgerId, metadata, digestType,
+            lh = new ReadOnlyLedgerHandle(bk.getClientCtx(), ledgerId, versionedMetadata, digestType,
                                           passwd, !doRecovery);
         } catch (GeneralSecurityException e) {
             LOG.error("Security exception while opening ledger: " + ledgerId, e);

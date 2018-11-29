@@ -17,6 +17,8 @@
  */
 package org.apache.bookkeeper.stream.cli;
 
+import static org.apache.bookkeeper.tools.common.BKCommandCategories.CATEGORY_INFRA_SERVICE;
+
 import org.apache.bookkeeper.stream.cli.commands.cluster.InitClusterCommand;
 import org.apache.bookkeeper.tools.common.BKFlags;
 import org.apache.bookkeeper.tools.framework.CliCommandGroup;
@@ -34,6 +36,7 @@ public class ClusterCommandGroup extends CliCommandGroup<BKFlags> {
         .withName(NAME)
         .withDescription(DESC)
         .withParent("bkctl")
+        .withCategory(CATEGORY_INFRA_SERVICE)
         .addCommand(new InitClusterCommand())
         .build();
 

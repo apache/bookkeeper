@@ -38,6 +38,7 @@ import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback
 import org.apache.bookkeeper.tests.integration.utils.BookKeeperClusterUtils
 import org.apache.bookkeeper.tests.integration.utils.DockerUtils
 import org.apache.bookkeeper.tests.integration.utils.MavenClassLoader
+import org.apache.bookkeeper.versioning.Versioned
 
 import org.jboss.arquillian.junit.Arquillian
 import org.jboss.arquillian.test.api.ArquillianResource
@@ -58,16 +59,7 @@ class TestCompatRecoveryNoPassword {
     DockerClient docker
 
     private LedgerMetadata getLedgerMetadata(BookKeeper bookkeeper, long ledgerId) throws Exception {
-        CompletableFuture<LedgerMetadata> future = new CompletableFuture<LedgerMetadata>()
-        bookkeeper.getLedgerManager().readLedgerMetadata(
-            ledgerId, { rc, result ->
-                if (rc != BKException.Code.OK) {
-                    future.completeExceptionally(BKException.create(rc))
-                } else {
-                    future.complete(result)
-                }
-            })
-        return future.get()
+        return bookkeeper.getLedgerManager().readLedgerMetadata(ledgerId).get().getValue()
     }
 
     private static class ReplicationVerificationCallback implements ReadEntryCallback {

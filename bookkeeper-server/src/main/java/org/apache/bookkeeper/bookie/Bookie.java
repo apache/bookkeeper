@@ -21,17 +21,9 @@
 
 package org.apache.bookkeeper.bookie;
 
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.BOOKIE_ADD_ENTRY;
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.BOOKIE_ADD_ENTRY_BYTES;
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.BOOKIE_FORCE_LEDGER;
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.BOOKIE_READ_ENTRY;
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.BOOKIE_READ_ENTRY_BYTES;
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.BOOKIE_RECOVERY_ADD_ENTRY;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.JOURNAL_SCOPE;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.LD_INDEX_SCOPE;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.LD_LEDGER_SCOPE;
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.READ_BYTES;
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.WRITE_BYTES;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
@@ -74,6 +66,8 @@ import org.apache.bookkeeper.bookie.Journal.JournalScanner;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.LedgerDirsListener;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirException;
 import org.apache.bookkeeper.common.allocator.ByteBufAllocatorBuilder;
+import org.apache.bookkeeper.bookie.stats.BookieStats;
+import org.apache.bookkeeper.bookie.storage.ldb.DbLedgerStorage;
 import org.apache.bookkeeper.common.util.Watcher;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.discover.RegistrationManager;
@@ -85,9 +79,7 @@ import org.apache.bookkeeper.meta.exceptions.MetadataException;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.net.DNS;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
-import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.NullStatsLogger;
-import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.util.DiskChecker;
@@ -145,16 +137,7 @@ public class Bookie extends BookieCriticalThread {
 
     // Expose Stats
     final StatsLogger statsLogger;
-    private final Counter writeBytes;
-    private final Counter readBytes;
-    private final Counter forceLedgerOps;
-    // Bookie Operation Latency Stats
-    private final OpStatsLogger addEntryStats;
-    private final OpStatsLogger recoveryAddEntryStats;
-    private final OpStatsLogger readEntryStats;
-    // Bookie Operation Bytes Stats
-    private final OpStatsLogger addBytesStats;
-    private final OpStatsLogger readBytesStats;
+    private final BookieStats bookieStats;
 
     private final ByteBufAllocator allocator;
 
@@ -723,14 +706,22 @@ public class Bookie extends BookieCriticalThread {
         LOG.info("Using ledger storage: {}", ledgerStorageClass);
         ledgerStorage = LedgerStorageFactory.createLedgerStorage(ledgerStorageClass);
 
+        boolean isDbLedgerStorage = ledgerStorage instanceof DbLedgerStorage;
+
         /*
          * with this change https://github.com/apache/bookkeeper/pull/677,
-         * LedgerStorage drives the checkpoint logic. But with multiple entry
-         * logs, checkpoint logic based on a entry log is not possible, hence it
-         * needs to be timebased recurring thing and it is driven by SyncThread.
-         * SyncThread.start does that and it is started in Bookie.start method.
+         * LedgerStorage drives the checkpoint logic.
+         *
+         * <p>There are two exceptions:
+         *
+         * 1) with multiple entry logs, checkpoint logic based on a entry log is
+         *    not possible, hence it needs to be timebased recurring thing and
+         *    it is driven by SyncThread. SyncThread.start does that and it is
+         *    started in Bookie.start method.
+         *
+         * 2) DbLedgerStorage
          */
-        if (entryLogPerLedgerEnabled) {
+        if (entryLogPerLedgerEnabled || isDbLedgerStorage) {
             syncThread = new SyncThread(conf, getLedgerDirsListener(), ledgerStorage, checkpointSource) {
                 @Override
                 public void startCheckpoint(Checkpoint checkpoint) {
@@ -768,14 +759,7 @@ public class Bookie extends BookieCriticalThread {
         handles = new HandleFactoryImpl(ledgerStorage);
 
         // Expose Stats
-        writeBytes = statsLogger.getCounter(WRITE_BYTES);
-        readBytes = statsLogger.getCounter(READ_BYTES);
-        forceLedgerOps = statsLogger.getCounter(BOOKIE_FORCE_LEDGER);
-        addEntryStats = statsLogger.getOpStatsLogger(BOOKIE_ADD_ENTRY);
-        recoveryAddEntryStats = statsLogger.getOpStatsLogger(BOOKIE_RECOVERY_ADD_ENTRY);
-        readEntryStats = statsLogger.getOpStatsLogger(BOOKIE_READ_ENTRY);
-        addBytesStats = statsLogger.getOpStatsLogger(BOOKIE_ADD_ENTRY_BYTES);
-        readBytesStats = statsLogger.getOpStatsLogger(BOOKIE_READ_ENTRY_BYTES);
+        this.bookieStats = new BookieStats(statsLogger);
     }
 
     public void setExceptionHandler(UncaughtExceptionHandler handler) {
@@ -787,7 +771,7 @@ public class Bookie extends BookieCriticalThread {
     }
 
     void readJournal() throws IOException, BookieException {
-        long startTs = MathUtils.now();
+        long startTs = System.currentTimeMillis();
         JournalScanner scanner = new JournalScanner() {
             @Override
             public void process(int journalVersion, long offset, ByteBuffer recBuff) throws IOException {
@@ -877,7 +861,7 @@ public class Bookie extends BookieCriticalThread {
         for (Journal journal : journals) {
             journal.replay(scanner);
         }
-        long elapsedTs = MathUtils.now() - startTs;
+        long elapsedTs = System.currentTimeMillis() - startTs;
         LOG.info("Finished replaying journal in {} ms.", elapsedTs);
     }
 
@@ -1187,11 +1171,11 @@ public class Bookie extends BookieCriticalThread {
      */
     private void addEntryInternal(LedgerDescriptor handle, ByteBuf entry,
                                   boolean ackBeforeSync, WriteCallback cb, Object ctx, byte[] masterKey)
-            throws IOException, BookieException {
+            throws IOException, BookieException, InterruptedException {
         long ledgerId = handle.getLedgerId();
         long entryId = handle.addEntry(entry);
 
-        writeBytes.add(entry.readableBytes());
+        bookieStats.getWriteBytes().add(entry.readableBytes());
 
         // journal `addEntry` should happen after the entry is added to ledger storage.
         // otherwise the journal entry can potentially be rolled before the ledger is created in ledger storage.
@@ -1224,7 +1208,7 @@ public class Bookie extends BookieCriticalThread {
      * is not exposed to users.
      */
     public void recoveryAddEntry(ByteBuf entry, WriteCallback cb, Object ctx, byte[] masterKey)
-            throws IOException, BookieException {
+            throws IOException, BookieException, InterruptedException {
         long requestNanos = MathUtils.nowInNano();
         boolean success = false;
         int entrySize = 0;
@@ -1241,11 +1225,11 @@ public class Bookie extends BookieCriticalThread {
         } finally {
             long elapsedNanos = MathUtils.elapsedNanos(requestNanos);
             if (success) {
-                recoveryAddEntryStats.registerSuccessfulEvent(elapsedNanos, TimeUnit.NANOSECONDS);
-                addBytesStats.registerSuccessfulValue(entrySize);
+                bookieStats.getRecoveryAddEntryStats().registerSuccessfulEvent(elapsedNanos, TimeUnit.NANOSECONDS);
+                bookieStats.getAddBytesStats().registerSuccessfulValue(entrySize);
             } else {
-                recoveryAddEntryStats.registerFailedEvent(elapsedNanos, TimeUnit.NANOSECONDS);
-                addBytesStats.registerFailedValue(entrySize);
+                bookieStats.getRecoveryAddEntryStats().registerFailedEvent(elapsedNanos, TimeUnit.NANOSECONDS);
+                bookieStats.getAddBytesStats().registerFailedValue(entrySize);
             }
 
             entry.release();
@@ -1262,7 +1246,7 @@ public class Bookie extends BookieCriticalThread {
     }
 
     public void setExplicitLac(ByteBuf entry, WriteCallback writeCallback, Object ctx, byte[] masterKey)
-            throws IOException, BookieException {
+            throws IOException, InterruptedException, BookieException {
         try {
             long ledgerId = entry.getLong(entry.readerIndex());
             LedgerDescriptor handle = handles.getHandle(ledgerId, masterKey);
@@ -1300,7 +1284,7 @@ public class Bookie extends BookieCriticalThread {
         }
         Journal journal = getJournal(ledgerId);
         journal.forceLedger(ledgerId, cb, ctx);
-        forceLedgerOps.inc();
+        bookieStats.getForceLedgerOps().inc();
     }
 
     /**
@@ -1308,7 +1292,7 @@ public class Bookie extends BookieCriticalThread {
      * @throws BookieException.LedgerFencedException if the ledger is fenced
      */
     public void addEntry(ByteBuf entry, boolean ackBeforeSync, WriteCallback cb, Object ctx, byte[] masterKey)
-            throws IOException, BookieException.LedgerFencedException, BookieException {
+            throws IOException, BookieException.LedgerFencedException, BookieException, InterruptedException {
         long requestNanos = MathUtils.nowInNano();
         boolean success = false;
         int entrySize = 0;
@@ -1329,11 +1313,11 @@ public class Bookie extends BookieCriticalThread {
         } finally {
             long elapsedNanos = MathUtils.elapsedNanos(requestNanos);
             if (success) {
-                addEntryStats.registerSuccessfulEvent(elapsedNanos, TimeUnit.NANOSECONDS);
-                addBytesStats.registerSuccessfulValue(entrySize);
+                bookieStats.getAddEntryStats().registerSuccessfulEvent(elapsedNanos, TimeUnit.NANOSECONDS);
+                bookieStats.getAddBytesStats().registerSuccessfulValue(entrySize);
             } else {
-                addEntryStats.registerFailedEvent(elapsedNanos, TimeUnit.NANOSECONDS);
-                addBytesStats.registerFailedValue(entrySize);
+                bookieStats.getAddEntryStats().registerFailedEvent(elapsedNanos, TimeUnit.NANOSECONDS);
+                bookieStats.getAddBytesStats().registerFailedValue(entrySize);
             }
 
             entry.release();
@@ -1367,7 +1351,8 @@ public class Bookie extends BookieCriticalThread {
      * This method is idempotent. Once a ledger is fenced, it can
      * never be unfenced. Fencing a fenced ledger has no effect.
      */
-    public SettableFuture<Boolean> fenceLedger(long ledgerId, byte[] masterKey) throws IOException, BookieException {
+    public SettableFuture<Boolean> fenceLedger(long ledgerId, byte[] masterKey)
+            throws IOException, BookieException {
         LedgerDescriptor handle = handles.getHandle(ledgerId, masterKey);
         return handle.fenceAndLogInJournal(getJournal(ledgerId));
     }
@@ -1383,17 +1368,17 @@ public class Bookie extends BookieCriticalThread {
                 LOG.trace("Reading {}@{}", entryId, ledgerId);
             }
             ByteBuf entry = handle.readEntry(entryId);
-            readBytes.add(entry.readableBytes());
+            bookieStats.getReadBytes().add(entry.readableBytes());
             success = true;
             return entry;
         } finally {
             long elapsedNanos = MathUtils.elapsedNanos(requestNanos);
             if (success) {
-                readEntryStats.registerSuccessfulEvent(elapsedNanos, TimeUnit.NANOSECONDS);
-                readBytesStats.registerSuccessfulValue(entrySize);
+                bookieStats.getReadEntryStats().registerSuccessfulEvent(elapsedNanos, TimeUnit.NANOSECONDS);
+                bookieStats.getReadBytesStats().registerSuccessfulValue(entrySize);
             } else {
-                readEntryStats.registerFailedEvent(elapsedNanos, TimeUnit.NANOSECONDS);
-                readBytesStats.registerFailedValue(entrySize);
+                bookieStats.getReadEntryStats().registerFailedEvent(elapsedNanos, TimeUnit.NANOSECONDS);
+                bookieStats.getReadEntryStats().registerFailedValue(entrySize);
             }
         }
     }
@@ -1549,7 +1534,7 @@ public class Bookie extends BookieCriticalThread {
         Bookie b = new Bookie(new ServerConfiguration());
         b.start();
         CounterCallback cb = new CounterCallback();
-        long start = MathUtils.now();
+        long start = System.currentTimeMillis();
         for (int i = 0; i < 100000; i++) {
             ByteBuf buff = Unpooled.buffer(1024);
             buff.writeLong(1);
@@ -1558,7 +1543,7 @@ public class Bookie extends BookieCriticalThread {
             b.addEntry(buff, false /* ackBeforeSync */, cb, null, new byte[0]);
         }
         cb.waitZero();
-        long end = MathUtils.now();
+        long end = System.currentTimeMillis();
         System.out.println("Took " + (end - start) + "ms");
     }
 

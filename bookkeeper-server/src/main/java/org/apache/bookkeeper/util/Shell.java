@@ -93,7 +93,7 @@ public abstract class Shell {
      * Check to see if a command needs to be executed and execute if needed.
      */
     protected void run() throws IOException {
-        if (lastTime + interval > MathUtils.now()) {
+        if (lastTime + interval > System.currentTimeMillis()) {
             return;
         }
         exitCode = 0; // reset for next run
@@ -199,7 +199,7 @@ public abstract class Shell {
                 LOG.warn("Error while closing the error stream", ioe);
             }
             process.destroy();
-            lastTime = MathUtils.now();
+            lastTime = System.currentTimeMillis();
         }
     }
 

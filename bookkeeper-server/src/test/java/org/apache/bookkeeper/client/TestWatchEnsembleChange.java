@@ -24,6 +24,7 @@ import static org.apache.bookkeeper.meta.MetadataDrivers.runFunctionWithLedgerMa
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
@@ -39,11 +40,11 @@ import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LongHierarchicalLedgerManagerFactory;
 import org.apache.bookkeeper.net.BookieSocketAddress;
-import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.LedgerMetadataListener;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.versioning.Version;
+import org.apache.bookkeeper.versioning.Versioned;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -130,22 +131,26 @@ public class TestWatchEnsembleChange extends BookKeeperClusterTestCase {
         final CountDownLatch createLatch = new CountDownLatch(1);
         final CountDownLatch removeLatch = new CountDownLatch(1);
 
+        List<BookieSocketAddress> ensemble = Lists.newArrayList(
+                new BookieSocketAddress("192.0.2.1", 1234),
+                new BookieSocketAddress("192.0.2.2", 1234),
+                new BookieSocketAddress("192.0.2.3", 1234),
+                new BookieSocketAddress("192.0.2.4", 1234));
         idGenerator.generateLedgerId(new GenericCallback<Long>() {
-            @Override
-            public void operationComplete(int rc, final Long lid) {
-                manager.createLedgerMetadata(lid, new LedgerMetadata(4, 2, 2, digestType, "fpj was here".getBytes()),
-                         new BookkeeperInternalCallbacks.GenericCallback<LedgerMetadata>(){
-
-                    @Override
-                    public void operationComplete(int rc, LedgerMetadata result) {
-                        bbLedgerId.putLong(lid);
-                        bbLedgerId.flip();
-                        createLatch.countDown();
-                    }
-                });
-
-            }
-        });
+                @Override
+                public void operationComplete(int rc, final Long lid) {
+                    LedgerMetadata metadata = LedgerMetadataBuilder.create()
+                        .withEnsembleSize(4).withWriteQuorumSize(2)
+                        .withAckQuorumSize(2)
+                        .newEnsembleEntry(0L, ensemble).build();
+                    manager.createLedgerMetadata(lid, metadata)
+                        .whenComplete((result, exception) -> {
+                                bbLedgerId.putLong(lid);
+                                bbLedgerId.flip();
+                                createLatch.countDown();
+                            });
+                }
+            });
 
         assertTrue(createLatch.await(2000, TimeUnit.MILLISECONDS));
         final long createdLid = bbLedgerId.getLong();
@@ -154,21 +159,14 @@ public class TestWatchEnsembleChange extends BookKeeperClusterTestCase {
                 new LedgerMetadataListener() {
 
             @Override
-            public void onChanged(long ledgerId, LedgerMetadata metadata) {
+            public void onChanged(long ledgerId, Versioned<LedgerMetadata> metadata) {
                 assertEquals(ledgerId, createdLid);
                 assertEquals(metadata, null);
                 removeLatch.countDown();
             }
         });
 
-        manager.removeLedgerMetadata(createdLid, Version.ANY,
-                new BookkeeperInternalCallbacks.GenericCallback<Void>() {
-
-            @Override
-            public void operationComplete(int rc, Void result) {
-                assertEquals(rc, BKException.Code.OK);
-            }
-        });
-        assertTrue(removeLatch.await(2000, TimeUnit.MILLISECONDS));
+        manager.removeLedgerMetadata(createdLid, Version.ANY).get(2, TimeUnit.SECONDS);
+        assertTrue(removeLatch.await(2, TimeUnit.SECONDS));
     }
 }

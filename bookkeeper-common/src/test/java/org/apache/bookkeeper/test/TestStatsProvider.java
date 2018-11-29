@@ -31,6 +31,7 @@ import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.stats.StatsProvider;
 import org.apache.commons.configuration.Configuration;
+import org.apache.commons.lang.StringUtils;
 
 /**
  * Simple in-memory stat provider for use in unit tests.
@@ -260,5 +261,16 @@ public class TestStatsProvider implements StatsProvider {
 
     private <T extends Number> void unregisterGauge(String name, Gauge<T> gauge) {
         gaugeMap.remove(name, gauge);
+    }
+
+    @Override
+    public String getStatsName(String... statsComponents) {
+        if (statsComponents.length == 0) {
+            return "";
+        } else if (statsComponents[0].isEmpty()) {
+            return StringUtils.join(statsComponents, '.', 1, statsComponents.length);
+        } else {
+            return StringUtils.join(statsComponents, '.');
+        }
     }
 }
