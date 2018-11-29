@@ -71,14 +71,14 @@ class ReadEntryProcessorV3 extends PacketProcessorBaseV3 {
         this.ledgerId = readRequest.getLedgerId();
         this.entryId = readRequest.getEntryId();
         if (RequestUtils.isFenceRequest(this.readRequest)) {
-            this.readStats = requestProcessor.fenceReadEntryStats;
-            this.reqStats = requestProcessor.fenceReadRequestStats;
+            this.readStats = requestProcessor.getRequestStats().getFenceReadEntryStats();
+            this.reqStats = requestProcessor.getRequestStats().getFenceReadRequestStats();
         } else if (readRequest.hasPreviousLAC()) {
-            this.readStats = requestProcessor.longPollReadStats;
-            this.reqStats = requestProcessor.longPollReadRequestStats;
+            this.readStats = requestProcessor.getRequestStats().getLongPollReadStats();
+            this.reqStats = requestProcessor.getRequestStats().getLongPollReadRequestStats();
         } else {
-            this.readStats = requestProcessor.readEntryStats;
-            this.reqStats = requestProcessor.readRequestStats;
+            this.readStats = requestProcessor.getRequestStats().getReadEntryStats();
+            this.reqStats = requestProcessor.getRequestStats().getReadRequestStats();
         }
 
         this.fenceThreadPool = fenceThreadPool;
@@ -246,7 +246,7 @@ class ReadEntryProcessorV3 extends PacketProcessorBaseV3 {
 
     @Override
     public void safeRun() {
-        requestProcessor.readEntrySchedulingDelayStats.registerSuccessfulEvent(
+        requestProcessor.getRequestStats().getReadEntrySchedulingDelayStats().registerSuccessfulEvent(
             MathUtils.elapsedNanos(enqueueNanos), TimeUnit.NANOSECONDS);
 
         if (!isVersionCompatible()) {
@@ -275,11 +275,11 @@ class ReadEntryProcessorV3 extends PacketProcessorBaseV3 {
         StatusCode status;
         if (!fenceResult) {
             status = StatusCode.EIO;
-            registerFailedEvent(requestProcessor.fenceReadWaitStats, lastPhaseStartTime);
+            registerFailedEvent(requestProcessor.getRequestStats().getFenceReadWaitStats(), lastPhaseStartTime);
         } else {
             status = StatusCode.EOK;
             readResponse.setBody(ByteString.copyFrom(entryBody.nioBuffer()));
-            registerSuccessfulEvent(requestProcessor.fenceReadWaitStats, lastPhaseStartTime);
+            registerSuccessfulEvent(requestProcessor.getRequestStats().getFenceReadWaitStats(), lastPhaseStartTime);
         }
 
         if (null != entryBody) {
@@ -296,7 +296,7 @@ class ReadEntryProcessorV3 extends PacketProcessorBaseV3 {
         // build the fence read response
         getFenceResponse(readResponse, entryBody, fenceResult);
         // register fence read stat
-        registerEvent(!fenceResult, requestProcessor.fenceReadEntryStats, startTimeSw);
+        registerEvent(!fenceResult, requestProcessor.getRequestStats().getFenceReadEntryStats(), startTimeSw);
         // send the fence read response
         sendResponse(readResponse.build());
     }

@@ -101,7 +101,7 @@ class LongPollReadEntryProcessorV3 extends ReadEntryProcessorV3 implements Watch
                     try {
                         return super.readEntry(readResponseBuilder, entryId, true, startTimeSw);
                     } catch (Bookie.NoEntryException e) {
-                        requestProcessor.readLastEntryNoEntryErrorCounter.inc();
+                        requestProcessor.getRequestStats().getReadLastEntryNoEntryErrorCounter().inc();
                         logger.info(
                                 "No entry found while piggyback reading entry {} from ledger {} : previous lac = {}",
                                 entryId, ledgerId, previousLAC);
@@ -153,7 +153,7 @@ class LongPollReadEntryProcessorV3 extends ReadEntryProcessorV3 implements Watch
                 return buildErrorResponse(StatusCode.EIO, startTimeSw);
             }
 
-            registerSuccessfulEvent(requestProcessor.longPollPreWaitStats, startTimeSw);
+            registerSuccessfulEvent(requestProcessor.getRequestStats().getLongPollPreWaitStats(), startTimeSw);
             lastPhaseStartTime.reset().start();
 
             if (watched) {
@@ -213,7 +213,7 @@ class LongPollReadEntryProcessorV3 extends ReadEntryProcessorV3 implements Watch
                 expirationTimerTask.cancel();
             }
 
-            registerEvent(timeout, requestProcessor.longPollWaitStats, lastPhaseStartTime);
+            registerEvent(timeout, requestProcessor.getRequestStats().getLongPollWaitStats(), lastPhaseStartTime);
             lastPhaseStartTime.reset().start();
         }
     }

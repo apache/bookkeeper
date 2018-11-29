@@ -63,7 +63,7 @@ class WriteEntryProcessor extends PacketProcessorBase<ParsedAddRequest> implemen
                     + " so rejecting the request from the client!");
             sendResponse(BookieProtocol.EREADONLY,
                          ResponseBuilder.buildErrorResponse(BookieProtocol.EREADONLY, request),
-                         requestProcessor.getAddRequestStats());
+                         requestProcessor.getRequestStats().getAddRequestStats());
             request.release();
             request.recycle();
             return;
@@ -104,11 +104,11 @@ class WriteEntryProcessor extends PacketProcessorBase<ParsedAddRequest> implemen
         }
 
         if (rc != BookieProtocol.EOK) {
-            requestProcessor.getAddEntryStats().registerFailedEvent(MathUtils.elapsedNanos(startTimeNanos),
-                    TimeUnit.NANOSECONDS);
+            requestProcessor.getRequestStats().getAddEntryStats()
+                .registerFailedEvent(MathUtils.elapsedNanos(startTimeNanos), TimeUnit.NANOSECONDS);
             sendResponse(rc,
                          ResponseBuilder.buildErrorResponse(rc, request),
-                         requestProcessor.getAddRequestStats());
+                         requestProcessor.getRequestStats().getAddRequestStats());
             request.recycle();
         }
     }
@@ -117,15 +117,15 @@ class WriteEntryProcessor extends PacketProcessorBase<ParsedAddRequest> implemen
     public void writeComplete(int rc, long ledgerId, long entryId,
                               BookieSocketAddress addr, Object ctx) {
         if (BookieProtocol.EOK == rc) {
-            requestProcessor.getAddEntryStats().registerSuccessfulEvent(MathUtils.elapsedNanos(startTimeNanos),
-                    TimeUnit.NANOSECONDS);
+            requestProcessor.getRequestStats().getAddEntryStats()
+                .registerSuccessfulEvent(MathUtils.elapsedNanos(startTimeNanos), TimeUnit.NANOSECONDS);
         } else {
-            requestProcessor.getAddEntryStats().registerFailedEvent(MathUtils.elapsedNanos(startTimeNanos),
-                    TimeUnit.NANOSECONDS);
+            requestProcessor.getRequestStats().getAddEntryStats()
+                .registerFailedEvent(MathUtils.elapsedNanos(startTimeNanos), TimeUnit.NANOSECONDS);
         }
         sendResponse(rc,
                      ResponseBuilder.buildAddResponse(request),
-                     requestProcessor.getAddRequestStats());
+                     requestProcessor.getRequestStats().getAddRequestStats());
         request.recycle();
         recycle();
     }

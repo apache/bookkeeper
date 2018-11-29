@@ -58,5 +58,25 @@ public @interface StatsDoc {
      */
     String help();
 
+    /**
+     * The parent metric name.
+     *
+     * <p>It can used for analyzing the relationships
+     * between the metrics, especially for the latency metrics.
+     *
+     * @return the parent metric name
+     */
+    String parent() default "";
+
+    /**
+     * The metric name of an operation that happens
+     * after the operation of this metric.
+     *
+     * <p>similar as {@link #parent()}, it can be used for analyzing
+     * the dependencies between metrics.
+     *
+     * @return the metric name of an operation that happens after the operation of this metric.
+     */
+    String happensAfter() default "";
 
 }

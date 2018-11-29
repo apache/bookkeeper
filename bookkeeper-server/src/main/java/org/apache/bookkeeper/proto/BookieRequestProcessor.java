@@ -21,34 +21,6 @@
 package org.apache.bookkeeper.proto;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.ADD_ENTRY;
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.ADD_ENTRY_BLOCKED;
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.ADD_ENTRY_BLOCKED_WAIT;
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.ADD_ENTRY_IN_PROGRESS;
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.ADD_ENTRY_REQUEST;
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.CHANNEL_WRITE;
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.FORCE_LEDGER;
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.FORCE_LEDGER_REQUEST;
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.GET_BOOKIE_INFO;
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.GET_BOOKIE_INFO_REQUEST;
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.READ_ENTRY;
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.READ_ENTRY_BLOCKED;
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.READ_ENTRY_BLOCKED_WAIT;
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.READ_ENTRY_FENCE_READ;
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.READ_ENTRY_FENCE_REQUEST;
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.READ_ENTRY_FENCE_WAIT;
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.READ_ENTRY_IN_PROGRESS;
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.READ_ENTRY_LONG_POLL_PRE_WAIT;
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.READ_ENTRY_LONG_POLL_READ;
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.READ_ENTRY_LONG_POLL_REQUEST;
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.READ_ENTRY_LONG_POLL_WAIT;
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.READ_ENTRY_REQUEST;
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.READ_ENTRY_SCHEDULING_DELAY;
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.READ_LAC;
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.READ_LAC_REQUEST;
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.READ_LAST_ENTRY_NOENTRY_ERROR;
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.WRITE_LAC;
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.WRITE_LAC_REQUEST;
 import static org.apache.bookkeeper.proto.RequestUtils.hasFlag;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -68,7 +40,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
 import lombok.AccessLevel;
@@ -80,9 +51,6 @@ import org.apache.bookkeeper.common.util.MathUtils;
 import org.apache.bookkeeper.common.util.OrderedExecutor;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.processor.RequestProcessor;
-import org.apache.bookkeeper.stats.Counter;
-import org.apache.bookkeeper.stats.Gauge;
-import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.tls.SecurityException;
 import org.apache.bookkeeper.tls.SecurityHandlerFactory;
@@ -146,37 +114,8 @@ public class BookieRequestProcessor implements RequestProcessor {
     // Expose Stats
     private final BKStats bkStats = BKStats.getInstance();
     private final boolean statsEnabled;
-    private final OpStatsLogger addRequestStats;
-    private final OpStatsLogger addEntryStats;
-    final OpStatsLogger readRequestStats;
-    final OpStatsLogger readEntryStats;
-    final OpStatsLogger forceLedgerStats;
-    final OpStatsLogger forceLedgerRequestStats;
-    final OpStatsLogger fenceReadRequestStats;
-    final OpStatsLogger fenceReadEntryStats;
-    final OpStatsLogger fenceReadWaitStats;
-    final OpStatsLogger readEntrySchedulingDelayStats;
-    final OpStatsLogger longPollPreWaitStats;
-    final OpStatsLogger longPollWaitStats;
-    final OpStatsLogger longPollReadStats;
-    final OpStatsLogger longPollReadRequestStats;
-    final Counter readLastEntryNoEntryErrorCounter;
-    final OpStatsLogger writeLacRequestStats;
-    final OpStatsLogger writeLacStats;
-    final OpStatsLogger readLacRequestStats;
-    final OpStatsLogger readLacStats;
-    final OpStatsLogger getBookieInfoRequestStats;
-    final OpStatsLogger getBookieInfoStats;
-    final OpStatsLogger channelWriteStats;
-    final OpStatsLogger addEntryBlockedStats;
-    final OpStatsLogger readEntryBlockedStats;
 
-    final AtomicInteger addsInProgress = new AtomicInteger(0);
-    final AtomicInteger maxAddsInProgress = new AtomicInteger(0);
-    final AtomicInteger addsBlocked = new AtomicInteger(0);
-    final AtomicInteger readsInProgress = new AtomicInteger(0);
-    final AtomicInteger readsBlocked = new AtomicInteger(0);
-    final AtomicInteger maxReadsInProgress = new AtomicInteger(0);
+    private final RequestStats requestStats;
 
     final Semaphore addsSemaphore;
     final Semaphore readsSemaphore;
@@ -248,86 +187,13 @@ public class BookieRequestProcessor implements RequestProcessor {
 
         // Expose Stats
         this.statsEnabled = serverCfg.isStatisticsEnabled();
-        this.addEntryStats = statsLogger.getOpStatsLogger(ADD_ENTRY);
-        this.addRequestStats = statsLogger.getOpStatsLogger(ADD_ENTRY_REQUEST);
-        this.readEntryStats = statsLogger.getOpStatsLogger(READ_ENTRY);
-        this.forceLedgerStats = statsLogger.getOpStatsLogger(FORCE_LEDGER);
-        this.forceLedgerRequestStats = statsLogger.getOpStatsLogger(FORCE_LEDGER_REQUEST);
-        this.readRequestStats = statsLogger.getOpStatsLogger(READ_ENTRY_REQUEST);
-        this.fenceReadEntryStats = statsLogger.getOpStatsLogger(READ_ENTRY_FENCE_READ);
-        this.fenceReadRequestStats = statsLogger.getOpStatsLogger(READ_ENTRY_FENCE_REQUEST);
-        this.fenceReadWaitStats = statsLogger.getOpStatsLogger(READ_ENTRY_FENCE_WAIT);
-        this.readEntrySchedulingDelayStats = statsLogger.getOpStatsLogger(READ_ENTRY_SCHEDULING_DELAY);
-        this.longPollPreWaitStats = statsLogger.getOpStatsLogger(READ_ENTRY_LONG_POLL_PRE_WAIT);
-        this.longPollWaitStats = statsLogger.getOpStatsLogger(READ_ENTRY_LONG_POLL_WAIT);
-        this.longPollReadStats = statsLogger.getOpStatsLogger(READ_ENTRY_LONG_POLL_READ);
-        this.longPollReadRequestStats = statsLogger.getOpStatsLogger(READ_ENTRY_LONG_POLL_REQUEST);
-        this.readLastEntryNoEntryErrorCounter = statsLogger.getCounter(READ_LAST_ENTRY_NOENTRY_ERROR);
-        this.writeLacStats = statsLogger.getOpStatsLogger(WRITE_LAC);
-        this.writeLacRequestStats = statsLogger.getOpStatsLogger(WRITE_LAC_REQUEST);
-        this.readLacStats = statsLogger.getOpStatsLogger(READ_LAC);
-        this.readLacRequestStats = statsLogger.getOpStatsLogger(READ_LAC_REQUEST);
-        this.getBookieInfoStats = statsLogger.getOpStatsLogger(GET_BOOKIE_INFO);
-        this.getBookieInfoRequestStats = statsLogger.getOpStatsLogger(GET_BOOKIE_INFO_REQUEST);
-        this.channelWriteStats = statsLogger.getOpStatsLogger(CHANNEL_WRITE);
-
-        this.addEntryBlockedStats = statsLogger.getOpStatsLogger(ADD_ENTRY_BLOCKED_WAIT);
-        this.readEntryBlockedStats = statsLogger.getOpStatsLogger(READ_ENTRY_BLOCKED_WAIT);
+        this.requestStats = new RequestStats(statsLogger);
 
         int maxAdds = serverCfg.getMaxAddsInProgressLimit();
         addsSemaphore = maxAdds > 0 ? new Semaphore(maxAdds, true) : null;
 
         int maxReads = serverCfg.getMaxReadsInProgressLimit();
         readsSemaphore = maxReads > 0 ? new Semaphore(maxReads, true) : null;
-
-        statsLogger.registerGauge(ADD_ENTRY_IN_PROGRESS, new Gauge<Number>() {
-            @Override
-            public Number getDefaultValue() {
-                return 0;
-            }
-
-            @Override
-            public Number getSample() {
-                return addsInProgress;
-            }
-        });
-
-        statsLogger.registerGauge(ADD_ENTRY_BLOCKED, new Gauge<Number>() {
-            @Override
-            public Number getDefaultValue() {
-                return 0;
-            }
-
-            @Override
-            public Number getSample() {
-                return addsBlocked;
-            }
-        });
-
-        statsLogger.registerGauge(READ_ENTRY_IN_PROGRESS, new Gauge<Number>() {
-            @Override
-            public Number getDefaultValue() {
-                return 0;
-            }
-
-            @Override
-            public Number getSample() {
-                return readsInProgress;
-            }
-        });
-
-        statsLogger.registerGauge(READ_ENTRY_BLOCKED, new Gauge<Number>() {
-            @Override
-            public Number getDefaultValue() {
-                return 0;
-            }
-
-            @Override
-            public Number getSample() {
-                return readsBlocked;
-            }
-        });
-
     }
 
     protected void onAddRequestStart(Channel channel) {
@@ -336,21 +202,19 @@ public class BookieRequestProcessor implements RequestProcessor {
                 final long throttlingStartTimeNanos = MathUtils.nowInNano();
                 channel.config().setAutoRead(false);
                 LOG.info("Too many add requests in progress, disabling autoread on channel {}", channel);
-                addsBlocked.incrementAndGet();
+                requestStats.blockAddRequest();
                 addsSemaphore.acquireUninterruptibly();
                 channel.config().setAutoRead(true);
                 final long delayNanos = MathUtils.elapsedNanos(throttlingStartTimeNanos);
                 LOG.info("Re-enabled autoread on channel {} after AddRequest delay of {} nanos", channel, delayNanos);
-                addEntryBlockedStats.registerSuccessfulEvent(delayNanos, TimeUnit.NANOSECONDS);
-                addsBlocked.decrementAndGet();
+                requestStats.unblockAddRequest(delayNanos);
             }
         }
-        final int curr = addsInProgress.incrementAndGet();
-        maxAddsInProgress.accumulateAndGet(curr, Integer::max);
+        requestStats.trackAddRequest();
     }
 
     protected void onAddRequestFinish() {
-        addsInProgress.decrementAndGet();
+        requestStats.untrackAddRequest();
         if (addsSemaphore != null) {
             addsSemaphore.release();
         }
@@ -362,21 +226,19 @@ public class BookieRequestProcessor implements RequestProcessor {
                 final long throttlingStartTimeNanos = MathUtils.nowInNano();
                 channel.config().setAutoRead(false);
                 LOG.info("Too many read requests in progress, disabling autoread on channel {}", channel);
-                readsBlocked.incrementAndGet();
+                requestStats.blockReadRequest();
                 readsSemaphore.acquireUninterruptibly();
                 channel.config().setAutoRead(true);
                 final long delayNanos = MathUtils.elapsedNanos(throttlingStartTimeNanos);
                 LOG.info("Re-enabled autoread on channel {} after ReadRequest delay of {} nanos", channel, delayNanos);
-                readEntryBlockedStats.registerSuccessfulEvent(delayNanos, TimeUnit.NANOSECONDS);
-                readsBlocked.decrementAndGet();
+                requestStats.unblockReadRequest(delayNanos);
             }
         }
-        final int curr = readsInProgress.incrementAndGet();
-        maxReadsInProgress.accumulateAndGet(curr, Integer::max);
+        requestStats.trackReadRequest();
     }
 
     protected void onReadRequestFinish() {
-        readsInProgress.decrementAndGet();
+        requestStats.untrackReadRequest();
         if (readsSemaphore != null) {
             readsSemaphore.release();
         }
@@ -384,12 +246,12 @@ public class BookieRequestProcessor implements RequestProcessor {
 
     @VisibleForTesting
     int maxAddsInProgressCount() {
-        return maxAddsInProgress.get();
+        return requestStats.maxAddsInProgressCount();
     }
 
     @VisibleForTesting
     int maxReadsInProgressCount() {
-        return maxReadsInProgress.get();
+        return requestStats.maxReadsInProgressCount();
     }
 
     @Override
@@ -576,7 +438,7 @@ public class BookieRequestProcessor implements RequestProcessor {
                         .setStatus(addResponse.getStatus())
                         .setAddResponse(addResponse);
                 BookkeeperProtocol.Response resp = response.build();
-                write.sendResponse(addResponse.getStatus(), resp, addRequestStats);
+                write.sendResponse(addResponse.getStatus(), resp, requestStats.getAddRequestStats());
             }
         }
     }
@@ -610,7 +472,10 @@ public class BookieRequestProcessor implements RequestProcessor {
                         .setStatus(forceLedgerResponse.getStatus())
                         .setForceLedgerResponse(forceLedgerResponse);
                 BookkeeperProtocol.Response resp = response.build();
-                forceLedger.sendResponse(forceLedgerResponse.getStatus(), resp, forceLedgerRequestStats);
+                forceLedger.sendResponse(
+                    forceLedgerResponse.getStatus(),
+                    resp,
+                    requestStats.getForceLedgerRequestStats());
             }
         }
     }
@@ -660,7 +525,7 @@ public class BookieRequestProcessor implements RequestProcessor {
                     .setStatus(readResponse.getStatus())
                     .setReadResponse(readResponse);
                 BookkeeperProtocol.Response resp = response.build();
-                read.sendResponse(readResponse.getStatus(), resp, readRequestStats);
+                read.sendResponse(readResponse.getStatus(), resp, requestStats.getReadRequestStats());
             }
         }
     }
@@ -740,8 +605,10 @@ public class BookieRequestProcessor implements RequestProcessor {
                             r.entryId);
                 }
 
-                write.sendResponse(BookieProtocol.ETOOMANYREQUESTS,
-                        ResponseBuilder.buildErrorResponse(BookieProtocol.ETOOMANYREQUESTS, r), addRequestStats);
+                write.sendResponse(
+                    BookieProtocol.ETOOMANYREQUESTS,
+                    ResponseBuilder.buildErrorResponse(BookieProtocol.ETOOMANYREQUESTS, r),
+                    requestStats.getAddRequestStats());
             }
         }
     }
@@ -770,8 +637,10 @@ public class BookieRequestProcessor implements RequestProcessor {
                             r.entryId);
                 }
 
-                read.sendResponse(BookieProtocol.ETOOMANYREQUESTS,
-                        ResponseBuilder.buildErrorResponse(BookieProtocol.ETOOMANYREQUESTS, r), readRequestStats);
+                read.sendResponse(
+                    BookieProtocol.ETOOMANYREQUESTS,
+                    ResponseBuilder.buildErrorResponse(BookieProtocol.ETOOMANYREQUESTS, r),
+                    requestStats.getReadRequestStats());
             }
         }
     }
