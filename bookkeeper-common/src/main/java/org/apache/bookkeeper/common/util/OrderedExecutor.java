@@ -404,6 +404,9 @@ public class OrderedExecutor implements ExecutorService {
                     threadIds[idx] = Thread.currentThread().getId();
 
                     if (enableBusyWait) {
+                        // Try to acquire 1 CPU core to the executor thread. If it fails we
+                        // are just logging the error and continuing, falling back to
+                        // non-isolated CPUs.
                         try {
                             CpuAffinity.acquireCore();
                         } catch (Throwable t) {
