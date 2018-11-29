@@ -114,7 +114,7 @@ public class MetadataUpdateLoopTest {
             BookieSocketAddress b3 = new BookieSocketAddress("0.0.0.3:3181");
 
             LedgerMetadata initMeta = LedgerMetadataBuilder.create().withEnsembleSize(2)
-                .newEnsembleEntry(0L, Lists.newArrayList(b0, b1)).build();
+                .withWriteQuorumSize(2).newEnsembleEntry(0L, Lists.newArrayList(b0, b1)).build();
             Versioned<LedgerMetadata> writtenMetadata =
                 lm.createLedgerMetadata(ledgerId, initMeta).get();
 
@@ -180,8 +180,8 @@ public class MetadataUpdateLoopTest {
             BookieSocketAddress b2 = new BookieSocketAddress("0.0.0.2:3181");
 
             LedgerMetadata initMeta = LedgerMetadataBuilder.create().withEnsembleSize(2)
-                .newEnsembleEntry(0L, Lists.newArrayList(b0, b1)).build();
-              Versioned<LedgerMetadata> writtenMetadata = lm.createLedgerMetadata(ledgerId, initMeta).get();
+                .withWriteQuorumSize(2).newEnsembleEntry(0L, Lists.newArrayList(b0, b1)).build();
+            Versioned<LedgerMetadata> writtenMetadata = lm.createLedgerMetadata(ledgerId, initMeta).get();
             AtomicReference<Versioned<LedgerMetadata>> reference = new AtomicReference<>(writtenMetadata);
 
             CompletableFuture<Versioned<LedgerMetadata>> loop1 = new MetadataUpdateLoop(
@@ -233,7 +233,7 @@ public class MetadataUpdateLoopTest {
             BookieSocketAddress b3 = new BookieSocketAddress("0.0.0.3:3181");
 
             LedgerMetadata initMeta = LedgerMetadataBuilder.create().withEnsembleSize(2)
-                .newEnsembleEntry(0L, Lists.newArrayList(b0, b1)).build();
+                .withWriteQuorumSize(2).newEnsembleEntry(0L, Lists.newArrayList(b0, b1)).build();
             Versioned<LedgerMetadata> writtenMetadata = lm.createLedgerMetadata(ledgerId, initMeta).get();
             AtomicReference<Versioned<LedgerMetadata>> reference = new AtomicReference<>(writtenMetadata);
 
@@ -341,6 +341,7 @@ public class MetadataUpdateLoopTest {
             BookieSocketAddress b1 = new BookieSocketAddress("0.0.0.1:3181");
 
             LedgerMetadata initMeta = LedgerMetadataBuilder.create().withEnsembleSize(1)
+                .withWriteQuorumSize(1).withAckQuorumSize(1)
                 .newEnsembleEntry(0L, Lists.newArrayList(b0)).build();
             Versioned<LedgerMetadata> writtenMetadata = lm.createLedgerMetadata(ledgerId, initMeta).get();
 
@@ -350,7 +351,10 @@ public class MetadataUpdateLoopTest {
                     ledgerId,
                     reference::get,
                     (currentMetadata) -> !currentMetadata.isClosed(),
-                    (currentMetadata) -> LedgerMetadataBuilder.from(currentMetadata).closingAt(10L, 100L).build(),
+                    (currentMetadata) -> {
+                        return LedgerMetadataBuilder.from(currentMetadata)
+                            .withClosedState().withLastEntryId(10L).withLength(100L).build();
+                    },
                     reference::compareAndSet).run();
             CompletableFuture<Versioned<LedgerMetadata>> loop2 = new MetadataUpdateLoop(
                     lm,

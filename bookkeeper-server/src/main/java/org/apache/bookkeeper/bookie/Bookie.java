@@ -63,6 +63,7 @@ import org.apache.bookkeeper.bookie.Journal.JournalScanner;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.LedgerDirsListener;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirException;
 import org.apache.bookkeeper.bookie.stats.BookieStats;
+import org.apache.bookkeeper.bookie.storage.ldb.DbLedgerStorage;
 import org.apache.bookkeeper.common.util.Watcher;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.discover.RegistrationManager;
@@ -681,14 +682,22 @@ public class Bookie extends BookieCriticalThread {
         LOG.info("Using ledger storage: {}", ledgerStorageClass);
         ledgerStorage = LedgerStorageFactory.createLedgerStorage(ledgerStorageClass);
 
+        boolean isDbLedgerStorage = ledgerStorage instanceof DbLedgerStorage;
+
         /*
          * with this change https://github.com/apache/bookkeeper/pull/677,
-         * LedgerStorage drives the checkpoint logic. But with multiple entry
-         * logs, checkpoint logic based on a entry log is not possible, hence it
-         * needs to be timebased recurring thing and it is driven by SyncThread.
-         * SyncThread.start does that and it is started in Bookie.start method.
+         * LedgerStorage drives the checkpoint logic.
+         *
+         * <p>There are two exceptions:
+         *
+         * 1) with multiple entry logs, checkpoint logic based on a entry log is
+         *    not possible, hence it needs to be timebased recurring thing and
+         *    it is driven by SyncThread. SyncThread.start does that and it is
+         *    started in Bookie.start method.
+         *
+         * 2) DbLedgerStorage
          */
-        if (entryLogPerLedgerEnabled) {
+        if (entryLogPerLedgerEnabled || isDbLedgerStorage) {
             syncThread = new SyncThread(conf, getLedgerDirsListener(), ledgerStorage, checkpointSource) {
                 @Override
                 public void startCheckpoint(Checkpoint checkpoint) {
@@ -733,7 +742,7 @@ public class Bookie extends BookieCriticalThread {
     }
 
     void readJournal() throws IOException, BookieException {
-        long startTs = MathUtils.now();
+        long startTs = System.currentTimeMillis();
         JournalScanner scanner = new JournalScanner() {
             @Override
             public void process(int journalVersion, long offset, ByteBuffer recBuff) throws IOException {
@@ -823,7 +832,7 @@ public class Bookie extends BookieCriticalThread {
         for (Journal journal : journals) {
             journal.replay(scanner);
         }
-        long elapsedTs = MathUtils.now() - startTs;
+        long elapsedTs = System.currentTimeMillis() - startTs;
         LOG.info("Finished replaying journal in {} ms.", elapsedTs);
     }
 
@@ -1492,7 +1501,7 @@ public class Bookie extends BookieCriticalThread {
         Bookie b = new Bookie(new ServerConfiguration());
         b.start();
         CounterCallback cb = new CounterCallback();
-        long start = MathUtils.now();
+        long start = System.currentTimeMillis();
         for (int i = 0; i < 100000; i++) {
             ByteBuf buff = Unpooled.buffer(1024);
             buff.writeLong(1);
@@ -1501,7 +1510,7 @@ public class Bookie extends BookieCriticalThread {
             b.addEntry(buff, false /* ackBeforeSync */, cb, null, new byte[0]);
         }
         cb.waitZero();
-        long end = MathUtils.now();
+        long end = System.currentTimeMillis();
         System.out.println("Took " + (end - start) + "ms");
     }
 

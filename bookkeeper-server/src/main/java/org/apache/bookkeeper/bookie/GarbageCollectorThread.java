@@ -255,7 +255,7 @@ public class GarbageCollectorThread extends SafeRunnable {
         LOG.info("Major Compaction : enabled=" + enableMajorCompaction + ", threshold="
                + majorCompactionThreshold + ", interval=" + majorCompactionInterval);
 
-        lastMinorCompactionTime = lastMajorCompactionTime = MathUtils.now();
+        lastMinorCompactionTime = lastMajorCompactionTime = System.currentTimeMillis();
     }
 
     public void enableForceGC() {
@@ -364,13 +364,13 @@ public class GarbageCollectorThread extends SafeRunnable {
             LOG.info("Disk full, suspend minor compaction to slow down filling disk.");
         }
 
-        long curTime = MathUtils.now();
+        long curTime = System.currentTimeMillis();
         if (enableMajorCompaction && (!suspendMajor)
             && (force || curTime - lastMajorCompactionTime > majorCompactionInterval)) {
             // enter major compaction
             LOG.info("Enter major compaction, suspendMajor {}", suspendMajor);
             doCompactEntryLogs(majorCompactionThreshold);
-            lastMajorCompactionTime = MathUtils.now();
+            lastMajorCompactionTime = System.currentTimeMillis();
             // and also move minor compaction time
             lastMinorCompactionTime = lastMajorCompactionTime;
             majorCompactionCounter.inc();
@@ -379,8 +379,15 @@ public class GarbageCollectorThread extends SafeRunnable {
             // enter minor compaction
             LOG.info("Enter minor compaction, suspendMinor {}", suspendMinor);
             doCompactEntryLogs(minorCompactionThreshold);
-            lastMinorCompactionTime = MathUtils.now();
+            lastMinorCompactionTime = System.currentTimeMillis();
             minorCompactionCounter.inc();
+        }
+
+        if (force) {
+            if (forceGarbageCollection.compareAndSet(true, false)) {
+                LOG.info("{} Set forceGarbageCollection to false after force GC to make it forceGC-able again.", Thread
+                    .currentThread().getName());
+            }
         }
         this.gcThreadRuntime.registerSuccessfulEvent(
                 MathUtils.nowInNano() - threadStart, TimeUnit.NANOSECONDS);

@@ -26,9 +26,9 @@ import lombok.experimental.PackagePrivate;
 import org.apache.bookkeeper.common.annotation.InterfaceStability.Evolving;
 import org.apache.bookkeeper.common.component.AbstractLifecycleComponent;
 import org.apache.bookkeeper.common.component.LifecycleComponent;
+import org.apache.bookkeeper.common.util.ReflectionUtils;
 import org.apache.bookkeeper.server.conf.BookieConfiguration;
 import org.apache.bookkeeper.stats.StatsLogger;
-import org.apache.bookkeeper.util.ReflectionUtils;
 
 /**
  * A {@link LifecycleComponent} that runs on a bookie server. It can be loaded via reflections.

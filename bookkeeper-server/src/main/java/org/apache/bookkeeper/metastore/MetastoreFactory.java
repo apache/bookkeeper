@@ -17,7 +17,7 @@
  */
 package org.apache.bookkeeper.metastore;
 
-import org.apache.bookkeeper.util.ReflectionUtils;
+import org.apache.bookkeeper.common.util.ReflectionUtils;
 
 /**
  *  Metastore Factory.

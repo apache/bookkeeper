@@ -18,7 +18,6 @@
 package org.apache.bookkeeper.meta;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Optional;
 
 import io.netty.util.concurrent.DefaultThreadFactory;
 
@@ -26,6 +25,7 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.NavigableSet;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.CompletableFuture;
@@ -402,8 +402,8 @@ public abstract class AbstractZkLedgerManager implements LedgerManager, Watcher 
                     LongVersion version = new LongVersion(stat.getVersion());
                     LedgerMetadata metadata = LedgerMetadata.parseConfig(data, Optional.of(stat.getCtime()));
                     promise.complete(new Versioned<>(metadata, version));
-                } catch (IOException e) {
-                    LOG.error("Could not parse ledger metadata for ledger: " + ledgerId, e);
+                } catch (Throwable t) {
+                    LOG.error("Could not parse ledger metadata for ledger: {}", ledgerId, t);
                     promise.completeExceptionally(new BKException.ZKException());
                 }
             }

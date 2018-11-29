@@ -21,12 +21,12 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static org.apache.bookkeeper.metastore.MetastoreTable.ALL_FIELDS;
 import static org.apache.bookkeeper.metastore.MetastoreTable.NON_FIELDS;
 
-import com.google.common.base.Optional;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -441,7 +441,7 @@ public class MSLedgerManagerFactory extends AbstractZkLedgerManagerFactory {
                     }
                     try {
                         LedgerMetadata metadata = LedgerMetadata.parseConfig(
-                                value.getValue().getField(META_FIELD), Optional.<Long>absent());
+                                value.getValue().getField(META_FIELD), Optional.empty());
                         promise.complete(new Versioned<>(metadata, value.getVersion()));
                     } catch (IOException e) {
                         LOG.error("Could not parse ledger metadata for ledger " + ledgerId + " : ", e);

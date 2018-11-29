@@ -52,6 +52,7 @@ import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.LedgerMetadata;
+import org.apache.bookkeeper.client.LedgerMetadataBuilder;
 import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager;
@@ -545,12 +546,16 @@ public class AuditorLedgerCheckerTest extends BookKeeperClusterTestCase {
         int numofledgers = 5;
         Random rand = new Random();
         for (int i = 0; i < numofledgers; i++) {
-            LedgerMetadata metadata = new LedgerMetadata(3, 2, 2, DigestType.CRC32, "passwd".getBytes());
             ArrayList<BookieSocketAddress> ensemble = new ArrayList<BookieSocketAddress>();
             ensemble.add(new BookieSocketAddress("99.99.99.99:9999"));
             ensemble.add(new BookieSocketAddress("11.11.11.11:1111"));
             ensemble.add(new BookieSocketAddress("88.88.88.88:8888"));
-            metadata.addEnsemble(0, ensemble);
+
+            LedgerMetadata metadata = LedgerMetadataBuilder.create()
+                .withEnsembleSize(3).withWriteQuorumSize(2).withAckQuorumSize(2)
+                .withDigestType(DigestType.CRC32.toApiDigestType())
+                .withPassword("passwd".getBytes())
+                .newEnsembleEntry(0L, ensemble).build();
 
             long ledgerId = (Math.abs(rand.nextLong())) % 100000000;
 

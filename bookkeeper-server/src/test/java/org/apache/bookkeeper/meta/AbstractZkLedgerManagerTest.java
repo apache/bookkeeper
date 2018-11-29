@@ -39,8 +39,9 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.withSettings;
 
+import com.google.common.collect.Lists;
 import java.time.Duration;
-import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Executors;
@@ -49,11 +50,12 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BKException.Code;
-import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.LedgerMetadata;
+import org.apache.bookkeeper.client.LedgerMetadataBuilder;
 import org.apache.bookkeeper.common.testing.executors.MockExecutorController;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
+import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.LedgerMetadataListener;
 import org.apache.bookkeeper.util.ZkUtils;
 import org.apache.bookkeeper.versioning.LongVersion;
@@ -111,12 +113,18 @@ public class AbstractZkLedgerManagerTest extends MockZooKeeperTestCase {
             withSettings()
                 .useConstructor(conf, mockZk)
                 .defaultAnswer(CALLS_REAL_METHODS));
-        this.metadata = new LedgerMetadata(
-            5, 3, 3,
-            DigestType.CRC32,
-            new byte[0],
-            Collections.emptyMap(),
-            false);
+        List<BookieSocketAddress> ensemble = Lists.newArrayList(
+                new BookieSocketAddress("192.0.2.1", 3181),
+                new BookieSocketAddress("192.0.2.2", 3181),
+                new BookieSocketAddress("192.0.2.3", 3181),
+                new BookieSocketAddress("192.0.2.4", 3181),
+                new BookieSocketAddress("192.0.2.5", 3181));
+        this.metadata = LedgerMetadataBuilder.create()
+            .withEnsembleSize(5)
+            .withWriteQuorumSize(3)
+            .withAckQuorumSize(3)
+            .newEnsembleEntry(0L, ensemble)
+            .withCreationTime(12345L).build();
 
         doAnswer(invocationOnMock -> {
             long ledgerId = invocationOnMock.getArgument(0);

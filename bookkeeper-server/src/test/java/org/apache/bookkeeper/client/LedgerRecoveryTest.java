@@ -84,10 +84,8 @@ public class LedgerRecoveryTest extends BookKeeperClusterTestCase {
         /*
          * Check if has recovered properly.
          */
-        assertTrue("Has not recovered correctly: " + afterlh.getLastAddConfirmed(),
-                   afterlh.getLastAddConfirmed() == numEntries - 1);
-        assertTrue("Has not set the length correctly: " + afterlh.getLength() + ", " + length,
-                   afterlh.getLength() == length);
+        assertEquals("Has not recovered correctly", numEntries - 1, afterlh.getLastAddConfirmed());
+        assertEquals("Has not set the length correctly", length, afterlh.getLength());
     }
 
     @Test
