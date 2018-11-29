@@ -69,9 +69,9 @@ import org.apache.bookkeeper.util.DiskChecker;
 @Slf4j
 public class DbLedgerStorage implements LedgerStorage {
 
-    static final String WRITE_CACHE_MAX_SIZE_MB = "dbStorage_writeCacheMaxSizeMb";
+    public static final String WRITE_CACHE_MAX_SIZE_MB = "dbStorage_writeCacheMaxSizeMb";
 
-    static final String READ_AHEAD_CACHE_MAX_SIZE_MB = "dbStorage_readAheadCacheMaxSizeMb";
+    public static final String READ_AHEAD_CACHE_MAX_SIZE_MB = "dbStorage_readAheadCacheMaxSizeMb";
 
     static final String MAX_THROTTLE_TIME_MILLIS = "dbStorage_maxThrottleTimeMs";
 
