@@ -18,6 +18,7 @@
 package org.apache.bookkeeper.stream.cli.commands.table;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.bookkeeper.common.concurrent.FutureUtils.result;
 import static org.apache.bookkeeper.stream.cli.Commands.OP_INC;
@@ -34,6 +35,8 @@ import org.apache.bookkeeper.tools.framework.CliSpec;
 /**
  * Commands to increment amount of keys.
  */
+@SuppressFBWarnings(value = "RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE",
+        justification = "https://github.com/spotbugs/spotbugs/issues/756")
 public class IncrementCommand extends ClientCommand<Flags> {
 
     private static final String NAME = OP_INC;
