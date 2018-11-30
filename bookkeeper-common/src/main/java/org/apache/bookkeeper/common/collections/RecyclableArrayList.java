@@ -19,7 +19,6 @@ package org.apache.bookkeeper.common.collections;
 
 import io.netty.util.Recycler.Handle;
 import java.util.ArrayList;
-import java.util.Objects;
 
 /**
  * A simple list which is recyclable.
