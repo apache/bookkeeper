@@ -71,13 +71,14 @@ public class BufferedChannel extends BufferedReadChannel implements Closeable {
         this(allocator, fc, capacity, 0L);
     }
 
-    public BufferedChannel(ByteBufAllocator allocator, FileChannel fc, int capacity, long unpersistedBytesBound) throws IOException {
+    public BufferedChannel(ByteBufAllocator allocator, FileChannel fc, int capacity, long unpersistedBytesBound)
+            throws IOException {
         // Use the same capacity for read and write buffers.
         this(allocator, fc, capacity, capacity, unpersistedBytesBound);
     }
 
-    public BufferedChannel(ByteBufAllocator allocator, FileChannel fc, int writeCapacity, int readCapacity, long unpersistedBytesBound)
-            throws IOException {
+    public BufferedChannel(ByteBufAllocator allocator, FileChannel fc, int writeCapacity, int readCapacity,
+            long unpersistedBytesBound) throws IOException {
         super(fc, readCapacity);
         this.writeCapacity = writeCapacity;
         this.position = new AtomicLong(fc.position());
