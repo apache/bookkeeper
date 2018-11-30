@@ -99,7 +99,7 @@ public class UpdateLedgerCmdTest extends BookKeeperClusterTestCase {
         for (LedgerHandle lh : ledgers) {
             lh.close();
             LedgerHandle openLedger = bk.openLedger(lh.getId(), digestType, PASSWORD.getBytes());
-            ensemble = openLedger.getLedgerMetadata().getEnsemble(0);
+            ensemble = openLedger.getLedgerMetadata().getEnsembleAt(0);
             if (ensemble.contains(toBookieAddr)) {
                 updatedLedgersCount++;
             }

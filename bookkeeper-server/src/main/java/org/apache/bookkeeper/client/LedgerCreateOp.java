@@ -38,6 +38,7 @@ import org.apache.bookkeeper.client.SyncCallbackUtils.SyncCreateAdvCallback;
 import org.apache.bookkeeper.client.SyncCallbackUtils.SyncCreateCallback;
 import org.apache.bookkeeper.client.api.CreateAdvBuilder;
 import org.apache.bookkeeper.client.api.CreateBuilder;
+import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.client.api.WriteAdvHandle;
 import org.apache.bookkeeper.client.api.WriteFlag;
 import org.apache.bookkeeper.client.api.WriteHandle;
@@ -216,7 +217,7 @@ class LedgerCreateOp {
                 return;
             }
 
-            List<BookieSocketAddress> curEns = lh.getLedgerMetadata().getEnsemble(0L);
+            List<BookieSocketAddress> curEns = lh.getLedgerMetadata().getEnsembleAt(0L);
             LOG.info("Ensemble: {} for ledger: {}", curEns, lh.getId());
 
             for (BookieSocketAddress bsa : curEns) {

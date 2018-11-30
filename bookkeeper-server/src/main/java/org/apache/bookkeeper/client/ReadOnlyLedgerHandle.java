@@ -37,6 +37,7 @@ import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.AsyncCallback.CloseCallback;
 import org.apache.bookkeeper.client.AsyncCallback.ReadCallback;
 import org.apache.bookkeeper.client.AsyncCallback.ReadLastConfirmedCallback;
+import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.client.api.WriteFlag;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
@@ -266,11 +267,11 @@ class ReadOnlyLedgerHandle extends LedgerHandle implements LedgerMetadataListene
             clientCtx.getClientStats().getRecoverOpLogger());
 
         MetadataUpdateLoop.NeedsUpdatePredicate needsUpdate =
-            (metadata) -> !(metadata.isClosed() || metadata.isInRecovery());
+            (metadata) -> metadata.getState() == LedgerMetadata.State.OPEN;
         if (forceRecovery) {
             // in the force recovery case, we want to update the metadata
             // to IN_RECOVERY, even if the ledger is already closed
-            needsUpdate = (metadata) -> !metadata.isInRecovery();
+            needsUpdate = (metadata) -> metadata.getState() != LedgerMetadata.State.IN_RECOVERY;
         }
         new MetadataUpdateLoop(
                 clientCtx.getLedgerManager(), getId(),
@@ -309,10 +310,10 @@ class ReadOnlyLedgerHandle extends LedgerHandle implements LedgerMetadataListene
         CompletableFuture<Versioned<LedgerMetadata>> f = new MetadataUpdateLoop(
                 clientCtx.getLedgerManager(), getId(),
                 this::getVersionedLedgerMetadata,
-                (metadata) -> metadata.isInRecovery(),
+                (metadata) -> metadata.getState() == LedgerMetadata.State.IN_RECOVERY,
                 (metadata) -> {
                     LedgerMetadataBuilder builder = LedgerMetadataBuilder.from(metadata);
-                    Long lastEnsembleKey = metadata.getLastEnsembleKey();
+                    Long lastEnsembleKey = LedgerMetadataUtils.getLastEnsembleKey(metadata);
                     synchronized (metadataLock) {
                         newEnsemblesFromRecovery.entrySet().forEach(
                                 (e) -> {
