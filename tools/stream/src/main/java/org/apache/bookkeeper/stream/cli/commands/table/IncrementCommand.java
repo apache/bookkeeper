@@ -18,11 +18,11 @@
 package org.apache.bookkeeper.stream.cli.commands.table;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.bookkeeper.common.concurrent.FutureUtils.result;
 import static org.apache.bookkeeper.stream.cli.Commands.OP_INC;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import org.apache.bookkeeper.api.StorageClient;
