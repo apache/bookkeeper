@@ -45,6 +45,7 @@ import org.apache.bookkeeper.http.service.HttpServiceRequest;
 import org.apache.bookkeeper.http.service.HttpServiceResponse;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
+import org.apache.bookkeeper.meta.LedgerMetadataSerDe;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.replication.AuditorElector;
@@ -386,7 +387,7 @@ public class TestHttpService extends BookKeeperClusterTestCase {
         assertEquals(1, respBody.size());
         // verify LedgerMetadata content is equal
         assertTrue(respBody.get(ledgerId.toString()).toString()
-          .equals(new String(lh[0].getLedgerMetadata().serialize())));
+                .equals(new String(new LedgerMetadataSerDe().serialize(lh[0].getLedgerMetadata()))));
     }
 
     @Test
