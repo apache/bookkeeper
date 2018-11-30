@@ -117,5 +117,30 @@ public interface LedgerMetadata {
      */
     NavigableMap<Long, ? extends List<BookieSocketAddress>> getAllEnsembles();
 
+    /**
+     * Returns the state of the metadata.
+     *
+     * @return the state of the metadata.
+     */
+    State getState();
 
+    /**
+     * Possible metadata states.
+     */
+    enum State {
+        /** The ledger is open. New entry may be added to it. */
+        OPEN,
+
+        /** A reader has tried to, or may be trying to recover the ledger.
+            The writer may be able to add new entries if fencing hasn't already occurred,
+            but any attempt to change ensemble will fail and the write will be forced to
+            close the ledger.
+        */
+        IN_RECOVERY,
+
+        /** The ledger is closed. No new entries may be added to it.
+            The length and lastEntryId are fixed. Ensembles may change, but only for rereplication.
+        */
+        CLOSED;
+    }
 }
