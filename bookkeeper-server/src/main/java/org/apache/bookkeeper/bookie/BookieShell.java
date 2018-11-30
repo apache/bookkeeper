@@ -98,6 +98,7 @@ import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.discover.RegistrationManager;
 import org.apache.bookkeeper.meta.LedgerManager;
+import org.apache.bookkeeper.meta.LedgerMetadataSerDe;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
 import org.apache.bookkeeper.meta.UnderreplicatedLedger;
 import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
@@ -1105,7 +1106,7 @@ public class BookieShell implements Tool {
     void printLedgerMetadata(long ledgerId, LedgerMetadata md, boolean printMeta) {
         System.out.println("ledgerID: " + ledgerIdFormatter.formatLedgerId(ledgerId));
         if (printMeta) {
-            System.out.println(new String(md.serialize(), UTF_8));
+            System.out.println(new String(new LedgerMetadataSerDe().serialize(md), UTF_8));
         }
     }
 
@@ -1114,6 +1115,7 @@ public class BookieShell implements Tool {
      */
     class LedgerMetadataCmd extends MyCommand {
         Options lOpts = new Options();
+        LedgerMetadataSerDe serDe = new LedgerMetadataSerDe();
 
         LedgerMetadataCmd() {
             super(CMD_LEDGERMETADATA);
@@ -1139,11 +1141,11 @@ public class BookieShell implements Tool {
                     if (cmdLine.hasOption("dumptofile")) {
                         Versioned<LedgerMetadata> md = m.readLedgerMetadata(lid).join();
                         Files.write(FileSystems.getDefault().getPath(cmdLine.getOptionValue("dumptofile")),
-                                    md.getValue().serialize());
+                                    serDe.serialize(md.getValue()));
                     } else if (cmdLine.hasOption("restorefromfile")) {
                         byte[] serialized = Files.readAllBytes(
                                 FileSystems.getDefault().getPath(cmdLine.getOptionValue("restorefromfile")));
-                        LedgerMetadata md = LedgerMetadata.parseConfig(serialized, Optional.empty());
+                        LedgerMetadata md = serDe.parseConfig(serialized, Optional.empty());
                         m.createLedgerMetadata(lid, md).join();
                     } else {
                         printLedgerMetadata(lid, m.readLedgerMetadata(lid).get().getValue(), true);

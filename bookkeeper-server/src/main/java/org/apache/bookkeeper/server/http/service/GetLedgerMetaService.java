@@ -32,6 +32,7 @@ import org.apache.bookkeeper.http.service.HttpServiceRequest;
 import org.apache.bookkeeper.http.service.HttpServiceResponse;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
+import org.apache.bookkeeper.meta.LedgerMetadataSerDe;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,10 +47,13 @@ public class GetLedgerMetaService implements HttpEndpointService {
 
     protected ServerConfiguration conf;
     protected BookieServer bookieServer;
+    private final LedgerMetadataSerDe serDe;
+
     public GetLedgerMetaService(ServerConfiguration conf, BookieServer bookieServer) {
         checkNotNull(conf);
         this.conf = conf;
         this.bookieServer = bookieServer;
+        this.serDe = new LedgerMetadataSerDe();
     }
 
     @Override
@@ -66,7 +70,7 @@ public class GetLedgerMetaService implements HttpEndpointService {
             // output <ledgerId: ledgerMetadata>
             Map<String, String> output = Maps.newHashMap();
             LedgerMetadata md = manager.readLedgerMetadata(ledgerId).get().getValue();
-            output.put(ledgerId.toString(), new String(md.serialize(), UTF_8));
+            output.put(ledgerId.toString(), new String(serDe.serialize(md), UTF_8));
 
             manager.close();
 

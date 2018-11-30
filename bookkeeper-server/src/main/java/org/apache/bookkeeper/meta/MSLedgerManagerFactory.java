@@ -210,7 +210,7 @@ public class MSLedgerManagerFactory extends AbstractZkLedgerManagerFactory {
     static class MsLedgerManager implements LedgerManager, MetastoreWatcher {
         final ZooKeeper zk;
         final AbstractConfiguration conf;
-
+        private final LedgerMetadataSerDe serDe;
         final MetaStore metastore;
         final MetastoreScannableTable ledgerTable;
         final int maxEntriesPerScan;
@@ -284,6 +284,7 @@ public class MSLedgerManagerFactory extends AbstractZkLedgerManagerFactory {
             this.conf = conf;
             this.zk = zk;
             this.metastore = metastore;
+            this.serDe = new LedgerMetadataSerDe();
 
             try {
                 ledgerTable = metastore.createScannableTable(TABLE_NAME);
@@ -394,7 +395,7 @@ public class MSLedgerManagerFactory extends AbstractZkLedgerManagerFactory {
                 }
             };
 
-            ledgerTable.put(ledgerId2Key(lid), new Value().setField(META_FIELD, metadata.serialize()),
+            ledgerTable.put(ledgerId2Key(lid), new Value().setField(META_FIELD, serDe.serialize(metadata)),
                     Version.NEW, msCallback, null);
             return promise;
         }
@@ -440,7 +441,7 @@ public class MSLedgerManagerFactory extends AbstractZkLedgerManagerFactory {
                         return;
                     }
                     try {
-                        LedgerMetadata metadata = LedgerMetadata.parseConfig(
+                        LedgerMetadata metadata = serDe.parseConfig(
                                 value.getValue().getField(META_FIELD), Optional.empty());
                         promise.complete(new Versioned<>(metadata, value.getVersion()));
                     } catch (IOException e) {
@@ -456,7 +457,7 @@ public class MSLedgerManagerFactory extends AbstractZkLedgerManagerFactory {
         @Override
         public CompletableFuture<Versioned<LedgerMetadata>> writeLedgerMetadata(long ledgerId, LedgerMetadata metadata,
                                                                                 Version currentVersion) {
-            Value data = new Value().setField(META_FIELD, metadata.serialize());
+            Value data = new Value().setField(META_FIELD, serDe.serialize(metadata));
 
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Writing ledger {} metadata, version {}", new Object[] { ledgerId, currentVersion });

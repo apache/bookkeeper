@@ -25,9 +25,11 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import com.google.common.collect.Lists;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
+import org.apache.bookkeeper.meta.LedgerMetadataSerDe;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat;
 import org.junit.Test;
@@ -37,8 +39,7 @@ import org.junit.Test;
  */
 public class LedgerMetadataTest {
 
-    private static final String passwdStr = "testPasswd";
-    private static final byte[] passwd = passwdStr.getBytes(UTF_8);
+    private static final byte[] passwd = "testPasswd".getBytes(UTF_8);
 
     @Test
     public void testGetters() {
@@ -78,7 +79,7 @@ public class LedgerMetadataTest {
             .withCreationTime(System.currentTimeMillis())
             .storingCreationTime(true)
             .build();
-        LedgerMetadataFormat format = lm.buildProtoFormat();
+        LedgerMetadataFormat format = new LedgerMetadataSerDe().buildProtoFormat(lm);
         assertTrue(format.hasCtime());
     }
 
@@ -92,7 +93,7 @@ public class LedgerMetadataTest {
         LedgerMetadata lm = LedgerMetadataBuilder.create()
             .newEnsembleEntry(0L, ensemble).build();
 
-        LedgerMetadataFormat format = lm.buildProtoFormat();
+        LedgerMetadataFormat format = new LedgerMetadataSerDe().buildProtoFormat(lm);
         assertFalse(format.hasCtime());
     }
 
@@ -106,11 +107,11 @@ public class LedgerMetadataTest {
         LedgerMetadata lm1 = LedgerMetadataBuilder.create()
             .withDigestType(DigestType.CRC32.toApiDigestType())
             .withPassword(passwd)
-            .newEnsembleEntry(0L, ensemble).build();
+            .newEnsembleEntry(0L, ensemble)
+            .build();
 
-        assertTrue("toString should contain 'password' field", lm1.toString().contains("password"));
-        assertTrue("toString should contain password value", lm1.toString().contains(passwdStr));
-        assertFalse("toSafeString should not contain 'password' field", lm1.toSafeString().contains("password"));
-        assertFalse("toSafeString should not contain password value", lm1.toSafeString().contains(passwdStr));
+        assertTrue("toString should contain password value",
+                   lm1.toString().contains(Base64.getEncoder().encodeToString(passwd)));
+        assertTrue("toSafeString should not contain password value", lm1.toSafeString().contains("OMITTED"));
     }
 }
