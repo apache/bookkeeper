@@ -59,6 +59,7 @@ public class MockLedgerManager implements LedgerManager {
     final Map<Long, Pair<LongVersion, byte[]>> metadataMap;
     final ExecutorService executor;
     final boolean ownsExecutor;
+    final LedgerMetadataSerDe serDe;
     private Hook preWriteHook = (ledgerId, metadata) -> FutureUtils.value(null);
 
     public MockLedgerManager() {
@@ -71,6 +72,7 @@ public class MockLedgerManager implements LedgerManager {
         this.metadataMap = metadataMap;
         this.executor = executor;
         this.ownsExecutor = ownsExecutor;
+        this.serDe = new LedgerMetadataSerDe();
     }
 
     public MockLedgerManager newClient() {
@@ -82,7 +84,7 @@ public class MockLedgerManager implements LedgerManager {
         if (pair == null) {
             return null;
         } else {
-            return new Versioned<>(LedgerMetadata.parseConfig(pair.getRight(), Optional.empty()), pair.getLeft());
+            return new Versioned<>(serDe.parseConfig(pair.getRight(), Optional.empty()), pair.getLeft());
         }
     }
 
@@ -101,7 +103,7 @@ public class MockLedgerManager implements LedgerManager {
                 if (metadataMap.containsKey(ledgerId)) {
                     executeCallback(() -> promise.completeExceptionally(new BKException.BKLedgerExistException()));
                 } else {
-                    metadataMap.put(ledgerId, Pair.of(new LongVersion(0L), metadata.serialize()));
+                    metadataMap.put(ledgerId, Pair.of(new LongVersion(0L), serDe.serialize(metadata)));
                     try {
                         Versioned<LedgerMetadata> readBack = readMetadata(ledgerId);
                         executeCallback(() -> promise.complete(readBack));
@@ -154,7 +156,7 @@ public class MockLedgerManager implements LedgerManager {
                         } else {
                             LongVersion oldVersion = (LongVersion) oldMetadata.getVersion();
                             metadataMap.put(ledgerId, Pair.of(new LongVersion(oldVersion.getLongVersion() + 1),
-                                                              metadata.serialize()));
+                                                              serDe.serialize(metadata)));
                             Versioned<LedgerMetadata> readBack = readMetadata(ledgerId);
                             return FutureUtils.value(readBack);
                         }
