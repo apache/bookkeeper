@@ -38,6 +38,7 @@
     <module>clients</module>
     <module>storage</module>
     <module>server</module>
+    <module>bk-grpc-name-resolver</module>
   </modules>
 
   <build>
