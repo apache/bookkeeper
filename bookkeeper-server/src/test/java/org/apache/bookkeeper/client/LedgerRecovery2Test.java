@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import org.apache.bookkeeper.client.api.DigestType;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallbackFuture;
@@ -51,7 +52,7 @@ public class LedgerRecovery2Test {
     private static Versioned<LedgerMetadata> setupLedger(ClientContext clientCtx, long ledgerId,
                                               List<BookieSocketAddress> bookies) throws Exception {
         LedgerMetadata md = LedgerMetadataBuilder.create()
-            .withPassword(PASSWD)
+            .withPassword(PASSWD).withDigestType(DigestType.CRC32C)
             .newEnsembleEntry(0, bookies).build();
         return clientCtx.getLedgerManager().createLedgerMetadata(1L, md).get();
     }
