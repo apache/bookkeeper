@@ -20,7 +20,7 @@
 FROM centos:7
 MAINTAINER Apache BookKeeper <dev@bookkeeper.apache.org>
 
-ARG BK_VERSION=4.8.0
+ARG BK_VERSION=4.8.1
 ARG DISTRO_NAME=bookkeeper-server-${BK_VERSION}-bin
 ARG GPG_KEY=A615D22C
 
