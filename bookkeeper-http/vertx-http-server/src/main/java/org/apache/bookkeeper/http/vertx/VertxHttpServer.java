@@ -46,9 +46,14 @@ public class VertxHttpServer implements HttpServer {
     private Vertx vertx;
     private boolean isRunning;
     private HttpServiceProvider httpServiceProvider;
+    private int listeningPort = -1;
 
     public VertxHttpServer() {
         this.vertx = Vertx.vertx();
+    }
+
+    int getListeningPort() {
+        return listeningPort;
     }
 
     @Override
@@ -58,7 +63,7 @@ public class VertxHttpServer implements HttpServer {
 
     @Override
     public boolean startServer(int port) {
-        CompletableFuture<AsyncResult> future = new CompletableFuture<>();
+        CompletableFuture<AsyncResult<io.vertx.core.http.HttpServer>> future = new CompletableFuture<>();
         VertxHttpHandlerFactory handlerFactory = new VertxHttpHandlerFactory(httpServiceProvider);
         Router router = Router.router(vertx);
         HttpRouter<VertxAbstractHandler> requestRouter = new HttpRouter<VertxAbstractHandler>(handlerFactory) {
@@ -76,9 +81,10 @@ public class VertxHttpServer implements HttpServer {
             }
         });
         try {
-            AsyncResult asyncResult = future.get();
+            AsyncResult<io.vertx.core.http.HttpServer> asyncResult = future.get();
             if (asyncResult.succeeded()) {
                 LOG.info("Vertx Http server started successfully");
+                listeningPort = asyncResult.result().actualPort();
                 isRunning = true;
                 return true;
             } else {

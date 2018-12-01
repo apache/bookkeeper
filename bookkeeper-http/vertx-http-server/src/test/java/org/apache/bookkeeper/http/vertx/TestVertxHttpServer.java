@@ -21,6 +21,7 @@
 package org.apache.bookkeeper.http.vertx;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -39,19 +40,13 @@ import org.junit.Test;
  * Unit test {@link VertxHttpServer}.
  */
 public class TestVertxHttpServer {
-
-    private int port = 8080;
-
     @Test
     public void testStartBasicHttpServer() throws Exception {
         VertxHttpServer httpServer = new VertxHttpServer();
         HttpServiceProvider httpServiceProvider = NullHttpServiceProvider.getInstance();
         httpServer.initialize(httpServiceProvider);
-        int port = getNextPort();
-        while (!httpServer.startServer(port)) {
-            httpServer.stopServer();
-            port = getNextPort();
-        }
+        assertTrue(httpServer.startServer(0));
+        int port = httpServer.getListeningPort();
         HttpResponse httpResponse = sendGet(getUrl(port, HttpRouter.HEARTBEAT));
         assertEquals(HttpServer.StatusCode.OK.getValue(), httpResponse.responseCode);
         assertEquals(HeartbeatService.HEARTBEAT.trim(), httpResponse.responseBody.trim());
@@ -63,11 +58,8 @@ public class TestVertxHttpServer {
         VertxHttpServer httpServer = new VertxHttpServer();
         HttpServiceProvider httpServiceProvider = NullHttpServiceProvider.getInstance();
         httpServer.initialize(httpServiceProvider);
-        int port = getNextPort();
-        while (!httpServer.startServer(port)) {
-            httpServer.stopServer();
-            port = getNextPort();
-        }
+        assertTrue(httpServer.startServer(0));
+        int port = httpServer.getListeningPort();
         HttpResponse httpResponse = sendGet(getUrl(port, HttpRouter.METRICS));
         assertEquals(HttpServer.StatusCode.OK.getValue(), httpResponse.responseCode);
         httpServer.stopServer();
@@ -108,12 +100,5 @@ public class TestVertxHttpServer {
             this.responseCode = responseCode;
             this.responseBody = responseBody;
         }
-    }
-
-    private int getNextPort() throws Exception {
-        if (port > 65535) {
-            throw new Exception("No port available");
-        }
-        return port++;
     }
 }
