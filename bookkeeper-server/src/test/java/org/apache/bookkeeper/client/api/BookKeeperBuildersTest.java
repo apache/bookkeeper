@@ -410,8 +410,8 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
             .withEnsembleSize(ensembleSize)
             .withWriteQuorumSize(writeQuorumSize)
             .withAckQuorumSize(ackQuorumSize)
-            .withDigestType(BookKeeper.DigestType.CRC32.toApiDigestType())
             .withPassword(password)
+            .withDigestType(BookKeeper.DigestType.CRC32.toApiDigestType())
             .withCustomMetadata(customMetadata)
             .withCreationTime(System.currentTimeMillis())
             .newEnsembleEntry(0, generateNewEnsemble(ensembleSize)).build();

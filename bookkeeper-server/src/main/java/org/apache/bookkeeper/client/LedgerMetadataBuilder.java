@@ -55,7 +55,7 @@ public class LedgerMetadataBuilder {
 
     private TreeMap<Long, List<BookieSocketAddress>> ensembles = new TreeMap<>();
 
-    private DigestType digestType = DigestType.CRC32C;
+    private Optional<DigestType> digestType = Optional.empty();
     private Optional<byte[]> password = Optional.empty();
 
     private long ctime = -1;
@@ -81,9 +81,9 @@ public class LedgerMetadataBuilder {
 
         builder.ensembles.putAll(other.getAllEnsembles());
 
-        builder.digestType = other.getDigestType();
         if (other.hasPassword()) {
             builder.password = Optional.of(other.getPassword());
+            builder.digestType = Optional.of(other.getDigestType());
         }
 
         builder.ctime = other.getCtime();
@@ -105,7 +105,7 @@ public class LedgerMetadataBuilder {
     }
 
     public LedgerMetadataBuilder withDigestType(DigestType digestType) {
-        this.digestType = digestType;
+        this.digestType = Optional.of(digestType);
         return this;
     }
 
