@@ -23,7 +23,9 @@ import io.grpc.inprocess.InProcessChannelBuilder;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.clients.config.StorageClientSettings;
 import org.apache.bookkeeper.common.net.ServiceURI;
+import org.apache.bookkeeper.common.resolver.NameResolverFactoryProvider;
 import org.apache.bookkeeper.common.resolver.ServiceNameResolverProvider;
+import org.apache.bookkeeper.common.util.ReflectionUtils;
 
 /**
  * Utils to create grpc channels.
@@ -32,6 +34,8 @@ import org.apache.bookkeeper.common.resolver.ServiceNameResolverProvider;
 public final class GrpcChannels {
 
     private static final String BACKEND_INPROCESS = "inprocess";
+    private static final String BK_REG_NAME_RESOLVER_PROVIDER =
+        "org.apache.bookkeeper.grpc.resolver.BKRegistrationNameResolverProvider";
 
     private GrpcChannels() {}
 
@@ -51,9 +55,22 @@ public final class GrpcChannels {
             // this is an inprocess service, so build an inprocess channel.
             String serviceName = uri.getServiceHosts()[0];
             builder = InProcessChannelBuilder.forName(serviceName).directExecutor();
-        } else {
+        } else if (null == uri.getServiceName() || ServiceURI.SERVICE_BK.equals(uri.getServiceName())) {
             builder = ManagedChannelBuilder.forTarget(serviceUri)
                 .nameResolverFactory(new ServiceNameResolverProvider().toFactory());
+        } else {
+            NameResolverFactoryProvider provider;
+            try {
+                provider = ReflectionUtils.newInstance(
+                    BK_REG_NAME_RESOLVER_PROVIDER,
+                    NameResolverFactoryProvider.class);
+            } catch (RuntimeException re) {
+                log.error("It seems that you don't have `bk-grpc-name-resolver` in your class path."
+                    + " Please make sure you include it as your application's dependency.");
+                throw re;
+            }
+            builder = ManagedChannelBuilder.forTarget(serviceUri)
+                .nameResolverFactory(provider.toFactory());
         }
         if (settings.usePlaintext()) {
             builder = builder.usePlaintext();
