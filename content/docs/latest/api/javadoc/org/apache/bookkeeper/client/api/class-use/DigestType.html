@@ -118,7 +118,7 @@
 <tbody>
 <tr class="altColor">
 <td class="colFirst"><code><a href="../../../../../../org/apache/bookkeeper/client/api/DigestType.html" title="enum in org.apache.bookkeeper.client.api">DigestType</a></code></td>
-<td class="colLast"><span class="typeNameLabel">LedgerMetadata.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/bookkeeper/client/LedgerMetadata.html#getDigestType--">getDigestType</a></span>()</code>&nbsp;</td>
+<td class="colLast"><span class="typeNameLabel">LedgerMetadataImpl.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/bookkeeper/client/LedgerMetadataImpl.html#getDigestType--">getDigestType</a></span>()</code>&nbsp;</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code><a href="../../../../../../org/apache/bookkeeper/client/api/DigestType.html" title="enum in org.apache.bookkeeper.client.api">DigestType</a></code></td>
@@ -148,25 +148,25 @@
 </tbody>
 </table>
 <table class="useSummary" border="0" cellpadding="3" cellspacing="0" summary="Use table, listing constructors, and an explanation">
-<caption><span>Constructors in <a href="../../../../../../org/apache/bookkeeper/client/package-summary.html">org.apache.bookkeeper.client</a> with parameters of type <a href="../../../../../../org/apache/bookkeeper/client/api/DigestType.html" title="enum in org.apache.bookkeeper.client.api">DigestType</a></span><span class="tabEnd">&nbsp;</span></caption>
+<caption><span>Constructor parameters in <a href="../../../../../../org/apache/bookkeeper/client/package-summary.html">org.apache.bookkeeper.client</a> with type arguments of type <a href="../../../../../../org/apache/bookkeeper/client/api/DigestType.html" title="enum in org.apache.bookkeeper.client.api">DigestType</a></span><span class="tabEnd">&nbsp;</span></caption>
 <tr>
 <th class="colOne" scope="col">Constructor and Description</th>
 </tr>
 <tbody>
 <tr class="altColor">
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/bookkeeper/client/LedgerMetadata.html#LedgerMetadata-int-int-int-int-org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.State-java.util.Optional-java.util.Optional-java.util.Map-org.apache.bookkeeper.client.api.DigestType-java.util.Optional-long-boolean-java.util.Map-">LedgerMetadata</a></span>(int&nbsp;metadataFormatVersion,
-              int&nbsp;ensembleSize,
-              int&nbsp;writeQuorumSize,
-              int&nbsp;ackQuorumSize,
-              org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.State&nbsp;state,
-              <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Optional.html?is-external=true" title="class or interface in java.util">Optional</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>&gt;&nbsp;lastEntryId,
-              <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Optional.html?is-external=true" title="class or interface in java.util">Optional</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>&gt;&nbsp;length,
-              <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util">Map</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>,<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&gt;&nbsp;ensembles,
-              <a href="../../../../../../org/apache/bookkeeper/client/api/DigestType.html" title="enum in org.apache.bookkeeper.client.api">DigestType</a>&nbsp;digestType,
-              <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Optional.html?is-external=true" title="class or interface in java.util">Optional</a>&lt;byte[]&gt;&nbsp;password,
-              long&nbsp;ctime,
-              boolean&nbsp;storeCtime,
-              <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util">Map</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>,byte[]&gt;&nbsp;customMetadata)</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/bookkeeper/client/LedgerMetadataImpl.html#LedgerMetadataImpl-int-int-int-int-org.apache.bookkeeper.client.api.LedgerMetadata.State-java.util.Optional-java.util.Optional-java.util.Map-java.util.Optional-java.util.Optional-long-boolean-java.util.Map-">LedgerMetadataImpl</a></span>(int&nbsp;metadataFormatVersion,
+                  int&nbsp;ensembleSize,
+                  int&nbsp;writeQuorumSize,
+                  int&nbsp;ackQuorumSize,
+                  <a href="../../../../../../org/apache/bookkeeper/client/api/LedgerMetadata.State.html" title="enum in org.apache.bookkeeper.client.api">LedgerMetadata.State</a>&nbsp;state,
+                  <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Optional.html?is-external=true" title="class or interface in java.util">Optional</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>&gt;&nbsp;lastEntryId,
+                  <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Optional.html?is-external=true" title="class or interface in java.util">Optional</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>&gt;&nbsp;length,
+                  <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util">Map</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>,<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&gt;&nbsp;ensembles,
+                  <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Optional.html?is-external=true" title="class or interface in java.util">Optional</a>&lt;<a href="../../../../../../org/apache/bookkeeper/client/api/DigestType.html" title="enum in org.apache.bookkeeper.client.api">DigestType</a>&gt;&nbsp;digestType,
+                  <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Optional.html?is-external=true" title="class or interface in java.util">Optional</a>&lt;byte[]&gt;&nbsp;password,
+                  long&nbsp;ctime,
+                  boolean&nbsp;storeCtime,
+                  <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util">Map</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>,byte[]&gt;&nbsp;customMetadata)</code>&nbsp;</td>
 </tr>
 </tbody>
 </table>

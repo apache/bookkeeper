@@ -186,7 +186,7 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.LedgerMetadat
 <tr class="altColor">
 <td class="colOne"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/ReadOnlyLedgerHandle.html#ReadOnlyLedgerHandle-org.apache.bookkeeper.client.ClientContext-long-org.apache.bookkeeper.versioning.Versioned-org.apache.bookkeeper.client.BookKeeper.DigestType-byte:A-boolean-">ReadOnlyLedgerHandle</a></span>(<a href="../../../../org/apache/bookkeeper/client/ClientContext.html" title="interface in org.apache.bookkeeper.client">ClientContext</a>&nbsp;clientCtx,
                     long&nbsp;ledgerId,
-                    org.apache.bookkeeper.versioning.Versioned&lt;<a href="../../../../org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a>&gt;&nbsp;metadata,
+                    org.apache.bookkeeper.versioning.Versioned&lt;<a href="../../../../org/apache/bookkeeper/client/api/LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&nbsp;metadata,
                     <a href="../../../../org/apache/bookkeeper/client/BookKeeper.DigestType.html" title="enum in org.apache.bookkeeper.client">BookKeeper.DigestType</a>&nbsp;digestType,
                     byte[]&nbsp;password,
                     boolean&nbsp;watch)</code>&nbsp;</td>
@@ -257,7 +257,7 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.LedgerMetadat
 </td>
 </tr>
 <tr id="i7" class="rowColor">
-<td class="colFirst"><code>(package private) <a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;org.apache.bookkeeper.versioning.Versioned&lt;<a href="../../../../org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a>&gt;&gt;</code></td>
+<td class="colFirst"><code>(package private) <a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;org.apache.bookkeeper.versioning.Versioned&lt;<a href="../../../../org/apache/bookkeeper/client/api/LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/ReadOnlyLedgerHandle.html#closeRecovered--">closeRecovered</a></span>()</code>&nbsp;</td>
 </tr>
 <tr id="i8" class="altColor">
@@ -284,7 +284,7 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.LedgerMetadat
 <tr id="i12" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/ReadOnlyLedgerHandle.html#onChanged-long-org.apache.bookkeeper.versioning.Versioned-">onChanged</a></span>(long&nbsp;lid,
-         org.apache.bookkeeper.versioning.Versioned&lt;<a href="../../../../org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a>&gt;&nbsp;newMetadata)</code>
+         org.apache.bookkeeper.versioning.Versioned&lt;<a href="../../../../org/apache/bookkeeper/client/api/LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&nbsp;newMetadata)</code>
 <div class="block">Triggered each time ledger metadata changed.</div>
 </td>
 </tr>
@@ -355,7 +355,7 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.LedgerMetadat
 <h4>ReadOnlyLedgerHandle</h4>
 <pre>ReadOnlyLedgerHandle(<a href="../../../../org/apache/bookkeeper/client/ClientContext.html" title="interface in org.apache.bookkeeper.client">ClientContext</a>&nbsp;clientCtx,
                      long&nbsp;ledgerId,
-                     org.apache.bookkeeper.versioning.Versioned&lt;<a href="../../../../org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a>&gt;&nbsp;metadata,
+                     org.apache.bookkeeper.versioning.Versioned&lt;<a href="../../../../org/apache/bookkeeper/client/api/LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&nbsp;metadata,
                      <a href="../../../../org/apache/bookkeeper/client/BookKeeper.DigestType.html" title="enum in org.apache.bookkeeper.client">BookKeeper.DigestType</a>&nbsp;digestType,
                      byte[]&nbsp;password,
                      boolean&nbsp;watch)
@@ -544,7 +544,7 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.LedgerMetadat
 <li class="blockList">
 <h4>onChanged</h4>
 <pre>public&nbsp;void&nbsp;onChanged(long&nbsp;lid,
-                      org.apache.bookkeeper.versioning.Versioned&lt;<a href="../../../../org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a>&gt;&nbsp;newMetadata)</pre>
+                      org.apache.bookkeeper.versioning.Versioned&lt;<a href="../../../../org/apache/bookkeeper/client/api/LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&nbsp;newMetadata)</pre>
 <div class="block"><span class="descfrmTypeLabel">Description copied from interface:&nbsp;<code>org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.LedgerMetadataListener</code></span></div>
 <div class="block">Triggered each time ledger metadata changed.</div>
 <dl>
@@ -660,7 +660,7 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.LedgerMetadat
 <ul class="blockList">
 <li class="blockList">
 <h4>closeRecovered</h4>
-<pre><a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;org.apache.bookkeeper.versioning.Versioned&lt;<a href="../../../../org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a>&gt;&gt;&nbsp;closeRecovered()</pre>
+<pre><a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;org.apache.bookkeeper.versioning.Versioned&lt;<a href="../../../../org/apache/bookkeeper/client/api/LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&gt;&nbsp;closeRecovered()</pre>
 </li>
 </ul>
 <a name="getCurrentEnsemble--">

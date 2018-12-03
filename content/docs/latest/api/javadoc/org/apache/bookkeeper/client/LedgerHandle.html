@@ -294,7 +294,7 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.htm
 <tr class="altColor">
 <td class="colOne"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html#LedgerHandle-org.apache.bookkeeper.client.ClientContext-long-org.apache.bookkeeper.versioning.Versioned-org.apache.bookkeeper.client.BookKeeper.DigestType-byte:A-java.util.EnumSet-">LedgerHandle</a></span>(<a href="../../../../org/apache/bookkeeper/client/ClientContext.html" title="interface in org.apache.bookkeeper.client">ClientContext</a>&nbsp;clientCtx,
             long&nbsp;ledgerId,
-            org.apache.bookkeeper.versioning.Versioned&lt;<a href="../../../../org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a>&gt;&nbsp;versionedMetadata,
+            org.apache.bookkeeper.versioning.Versioned&lt;<a href="../../../../org/apache/bookkeeper/client/api/LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&nbsp;versionedMetadata,
             <a href="../../../../org/apache/bookkeeper/client/BookKeeper.DigestType.html" title="enum in org.apache.bookkeeper.client">BookKeeper.DigestType</a>&nbsp;digestType,
             byte[]&nbsp;password,
             <a href="https://docs.oracle.com/javase/8/docs/api/java/util/EnumSet.html?is-external=true" title="class or interface in java.util">EnumSet</a>&lt;<a href="../../../../org/apache/bookkeeper/client/api/WriteFlag.html" title="enum in org.apache.bookkeeper.client.api">WriteFlag</a>&gt;&nbsp;writeFlags)</code>&nbsp;</td>
@@ -618,7 +618,7 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.htm
 </td>
 </tr>
 <tr id="i43" class="rowColor">
-<td class="colFirst"><code><a href="../../../../org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a></code></td>
+<td class="colFirst"><code><a href="../../../../org/apache/bookkeeper/client/api/LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html#getLedgerMetadata--">getLedgerMetadata</a></span>()</code>
 <div class="block">Returns the metadata of this ledger.</div>
 </td>
@@ -643,7 +643,7 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.htm
 </td>
 </tr>
 <tr id="i47" class="rowColor">
-<td class="colFirst"><code>(package private) org.apache.bookkeeper.versioning.Versioned&lt;<a href="../../../../org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a>&gt;</code></td>
+<td class="colFirst"><code>(package private) org.apache.bookkeeper.versioning.Versioned&lt;<a href="../../../../org/apache/bookkeeper/client/api/LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html#getVersionedLedgerMetadata--">getVersionedLedgerMetadata</a></span>()</code>&nbsp;</td>
 </tr>
 <tr id="i48" class="altColor">
@@ -764,8 +764,8 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.htm
 </tr>
 <tr id="i70" class="altColor">
 <td class="colFirst"><code>(package private) boolean</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html#setLedgerMetadata-org.apache.bookkeeper.versioning.Versioned-org.apache.bookkeeper.versioning.Versioned-">setLedgerMetadata</a></span>(org.apache.bookkeeper.versioning.Versioned&lt;<a href="../../../../org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a>&gt;&nbsp;expected,
-                 org.apache.bookkeeper.versioning.Versioned&lt;<a href="../../../../org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a>&gt;&nbsp;newMetadata)</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html#setLedgerMetadata-org.apache.bookkeeper.versioning.Versioned-org.apache.bookkeeper.versioning.Versioned-">setLedgerMetadata</a></span>(org.apache.bookkeeper.versioning.Versioned&lt;<a href="../../../../org/apache/bookkeeper/client/api/LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&nbsp;expected,
+                 org.apache.bookkeeper.versioning.Versioned&lt;<a href="../../../../org/apache/bookkeeper/client/api/LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&nbsp;newMetadata)</code>&nbsp;</td>
 </tr>
 <tr id="i71" class="rowColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>&gt;</code></td>
@@ -1099,7 +1099,7 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.htm
 <h4>LedgerHandle</h4>
 <pre>LedgerHandle(<a href="../../../../org/apache/bookkeeper/client/ClientContext.html" title="interface in org.apache.bookkeeper.client">ClientContext</a>&nbsp;clientCtx,
              long&nbsp;ledgerId,
-             org.apache.bookkeeper.versioning.Versioned&lt;<a href="../../../../org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a>&gt;&nbsp;versionedMetadata,
+             org.apache.bookkeeper.versioning.Versioned&lt;<a href="../../../../org/apache/bookkeeper/client/api/LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&nbsp;versionedMetadata,
              <a href="../../../../org/apache/bookkeeper/client/BookKeeper.DigestType.html" title="enum in org.apache.bookkeeper.client">BookKeeper.DigestType</a>&nbsp;digestType,
              byte[]&nbsp;password,
              <a href="https://docs.oracle.com/javase/8/docs/api/java/util/EnumSet.html?is-external=true" title="class or interface in java.util">EnumSet</a>&lt;<a href="../../../../org/apache/bookkeeper/client/api/WriteFlag.html" title="enum in org.apache.bookkeeper.client.api">WriteFlag</a>&gt;&nbsp;writeFlags)
@@ -1222,7 +1222,7 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.htm
 <ul class="blockList">
 <li class="blockList">
 <h4>getLedgerMetadata</h4>
-<pre>public&nbsp;<a href="../../../../org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a>&nbsp;getLedgerMetadata()</pre>
+<pre>public&nbsp;<a href="../../../../org/apache/bookkeeper/client/api/LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&nbsp;getLedgerMetadata()</pre>
 <div class="block">Returns the metadata of this ledger.
 
  <p>This call only retrieves the metadata cached locally. If there is any metadata updated, the read
@@ -1242,7 +1242,7 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.htm
 <ul class="blockList">
 <li class="blockList">
 <h4>getVersionedLedgerMetadata</h4>
-<pre>org.apache.bookkeeper.versioning.Versioned&lt;<a href="../../../../org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a>&gt;&nbsp;getVersionedLedgerMetadata()</pre>
+<pre>org.apache.bookkeeper.versioning.Versioned&lt;<a href="../../../../org/apache/bookkeeper/client/api/LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&nbsp;getVersionedLedgerMetadata()</pre>
 </li>
 </ul>
 <a name="setLedgerMetadata-org.apache.bookkeeper.versioning.Versioned-org.apache.bookkeeper.versioning.Versioned-">
@@ -1251,8 +1251,8 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.htm
 <ul class="blockList">
 <li class="blockList">
 <h4>setLedgerMetadata</h4>
-<pre>boolean&nbsp;setLedgerMetadata(org.apache.bookkeeper.versioning.Versioned&lt;<a href="../../../../org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a>&gt;&nbsp;expected,
-                          org.apache.bookkeeper.versioning.Versioned&lt;<a href="../../../../org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a>&gt;&nbsp;newMetadata)</pre>
+<pre>boolean&nbsp;setLedgerMetadata(org.apache.bookkeeper.versioning.Versioned&lt;<a href="../../../../org/apache/bookkeeper/client/api/LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&nbsp;expected,
+                          org.apache.bookkeeper.versioning.Versioned&lt;<a href="../../../../org/apache/bookkeeper/client/api/LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&gt;&nbsp;newMetadata)</pre>
 </li>
 </ul>
 <a name="getCustomMetadata--">
