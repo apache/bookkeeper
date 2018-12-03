@@ -117,7 +117,6 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
                 if (lz4CompressionEnabled) {
                     options.setCompressionType(CompressionType.LZ4_COMPRESSION);
                 }
-                options.setCompressionType(CompressionType.LZ4_COMPRESSION);
                 options.setWriteBufferSize(writeBufferSizeMB * 1024 * 1024);
                 options.setMaxWriteBufferNumber(4);
                 if (numLevels > 0) {
