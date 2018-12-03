@@ -178,6 +178,7 @@ public abstract class AbstractZkLedgerManagerFactory implements LedgerManagerFac
         if (log.isDebugEnabled()) {
             log.debug("read ledger layout {}", layout);
         }
+        conf.setMaxLedgerMetadataFormatVersion(layout.getMaxLedgerMetadataFormatVersion());
 
         // there is existing layout, we need to look into the layout.
         // handle pre V2 layout
