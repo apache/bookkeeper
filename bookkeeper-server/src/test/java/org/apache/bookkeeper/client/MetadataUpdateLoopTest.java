@@ -42,6 +42,7 @@ import java.util.stream.IntStream;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
+import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.MockLedgerManager;
 import org.apache.bookkeeper.net.BookieSocketAddress;
@@ -86,7 +87,7 @@ public class MetadataUpdateLoopTest {
                     reference::get,
                     (currentMetadata) -> true,
                     (currentMetadata) -> {
-                        List<BookieSocketAddress> ensemble = Lists.newArrayList(currentMetadata.getEnsemble(0L));
+                        List<BookieSocketAddress> ensemble = Lists.newArrayList(currentMetadata.getEnsembleAt(0L));
                         ensemble.set(0, newAddress);
                         return LedgerMetadataBuilder.from(currentMetadata).replaceEnsembleEntry(0L, ensemble).build();
                     },
@@ -94,7 +95,7 @@ public class MetadataUpdateLoopTest {
             loop.run().get();
 
             Assert.assertNotEquals(reference.get(), writtenMetadata);
-            Assert.assertEquals(reference.get().getValue().getEnsemble(0L).get(0), newAddress);
+            Assert.assertEquals(reference.get().getValue().getEnsembleAt(0L).get(0), newAddress);
         }
     }
 
@@ -123,9 +124,9 @@ public class MetadataUpdateLoopTest {
                     lm,
                     ledgerId,
                     reference1::get,
-                    (currentMetadata) -> currentMetadata.getEnsemble(0L).contains(b0),
+                    (currentMetadata) -> currentMetadata.getEnsembleAt(0L).contains(b0),
                     (currentMetadata) -> {
-                        List<BookieSocketAddress> ensemble = Lists.newArrayList(currentMetadata.getEnsemble(0L));
+                        List<BookieSocketAddress> ensemble = Lists.newArrayList(currentMetadata.getEnsembleAt(0L));
                         ensemble.set(0, b2);
                         return LedgerMetadataBuilder.from(currentMetadata).replaceEnsembleEntry(0L, ensemble).build();
                     },
@@ -136,9 +137,9 @@ public class MetadataUpdateLoopTest {
                     lm,
                     ledgerId,
                     reference2::get,
-                    (currentMetadata) -> currentMetadata.getEnsemble(0L).contains(b1),
+                    (currentMetadata) -> currentMetadata.getEnsembleAt(0L).contains(b1),
                     (currentMetadata) -> {
-                        List<BookieSocketAddress> ensemble = Lists.newArrayList(currentMetadata.getEnsemble(0L));
+                        List<BookieSocketAddress> ensemble = Lists.newArrayList(currentMetadata.getEnsembleAt(0L));
                         ensemble.set(1, b3);
                         return LedgerMetadataBuilder.from(currentMetadata).replaceEnsembleEntry(0L, ensemble).build();
                     },
@@ -154,11 +155,11 @@ public class MetadataUpdateLoopTest {
 
             Assert.assertEquals(l1meta.getVersion().compare(l2meta.getVersion()), Version.Occurred.BEFORE);
 
-            Assert.assertEquals(l1meta.getValue().getEnsemble(0L).get(0), b2);
-            Assert.assertEquals(l1meta.getValue().getEnsemble(0L).get(1), b1);
+            Assert.assertEquals(l1meta.getValue().getEnsembleAt(0L).get(0), b2);
+            Assert.assertEquals(l1meta.getValue().getEnsembleAt(0L).get(1), b1);
 
-            Assert.assertEquals(l2meta.getValue().getEnsemble(0L).get(0), b2);
-            Assert.assertEquals(l2meta.getValue().getEnsemble(0L).get(1), b3);
+            Assert.assertEquals(l2meta.getValue().getEnsembleAt(0L).get(0), b2);
+            Assert.assertEquals(l2meta.getValue().getEnsembleAt(0L).get(1), b3);
 
             verify(lm, times(3)).writeLedgerMetadata(anyLong(), any(), any());
         }
@@ -188,9 +189,9 @@ public class MetadataUpdateLoopTest {
                     lm,
                     ledgerId,
                     reference::get,
-                    (currentMetadata) -> currentMetadata.getEnsemble(0L).contains(b0),
+                    (currentMetadata) -> currentMetadata.getEnsembleAt(0L).contains(b0),
                     (currentMetadata) -> {
-                        List<BookieSocketAddress> ensemble = Lists.newArrayList(currentMetadata.getEnsemble(0L));
+                        List<BookieSocketAddress> ensemble = Lists.newArrayList(currentMetadata.getEnsembleAt(0L));
                         ensemble.set(0, b2);
                         return LedgerMetadataBuilder.from(currentMetadata).replaceEnsembleEntry(0L, ensemble).build();
                     },
@@ -199,9 +200,9 @@ public class MetadataUpdateLoopTest {
                     lm,
                     ledgerId,
                     reference::get,
-                    (currentMetadata) -> currentMetadata.getEnsemble(0L).contains(b0),
+                    (currentMetadata) -> currentMetadata.getEnsembleAt(0L).contains(b0),
                     (currentMetadata) -> {
-                        List<BookieSocketAddress> ensemble = Lists.newArrayList(currentMetadata.getEnsemble(0L));
+                        List<BookieSocketAddress> ensemble = Lists.newArrayList(currentMetadata.getEnsembleAt(0L));
                         ensemble.set(0, b2);
                         return LedgerMetadataBuilder.from(currentMetadata).replaceEnsembleEntry(0L, ensemble).build();
                     },
@@ -212,8 +213,8 @@ public class MetadataUpdateLoopTest {
             Assert.assertEquals(loop1.get(), loop2.get());
             Assert.assertEquals(loop1.get(), reference.get());
 
-            Assert.assertEquals(reference.get().getValue().getEnsemble(0L).get(0), b2);
-            Assert.assertEquals(reference.get().getValue().getEnsemble(0L).get(1), b1);
+            Assert.assertEquals(reference.get().getValue().getEnsembleAt(0L).get(0), b2);
+            Assert.assertEquals(reference.get().getValue().getEnsembleAt(0L).get(1), b1);
 
             verify(lm, times(2)).writeLedgerMetadata(anyLong(), any(), any());
         }
@@ -241,9 +242,9 @@ public class MetadataUpdateLoopTest {
                     lm,
                     ledgerId,
                     reference::get,
-                    (currentMetadata) -> currentMetadata.getEnsemble(0L).contains(b0),
+                    (currentMetadata) -> currentMetadata.getEnsembleAt(0L).contains(b0),
                     (currentMetadata) -> {
-                        List<BookieSocketAddress> ensemble = Lists.newArrayList(currentMetadata.getEnsemble(0L));
+                        List<BookieSocketAddress> ensemble = Lists.newArrayList(currentMetadata.getEnsembleAt(0L));
                         ensemble.set(0, b2);
                         return LedgerMetadataBuilder.from(currentMetadata).replaceEnsembleEntry(0L, ensemble).build();
                     },
@@ -254,9 +255,9 @@ public class MetadataUpdateLoopTest {
                     lm,
                     ledgerId,
                     reference::get,
-                    (currentMetadata) -> currentMetadata.getEnsemble(0L).contains(b1),
+                    (currentMetadata) -> currentMetadata.getEnsembleAt(0L).contains(b1),
                     (currentMetadata) -> {
-                        List<BookieSocketAddress> ensemble = Lists.newArrayList(currentMetadata.getEnsemble(0L));
+                        List<BookieSocketAddress> ensemble = Lists.newArrayList(currentMetadata.getEnsembleAt(0L));
                         ensemble.set(1, b3);
                         return LedgerMetadataBuilder.from(currentMetadata).replaceEnsembleEntry(0L, ensemble).build();
                     },
@@ -267,8 +268,8 @@ public class MetadataUpdateLoopTest {
 
             Assert.assertEquals(loop1.get(), reference.get());
 
-            Assert.assertEquals(reference.get().getValue().getEnsemble(0L).get(0), b2);
-            Assert.assertEquals(reference.get().getValue().getEnsemble(0L).get(1), b3);
+            Assert.assertEquals(reference.get().getValue().getEnsembleAt(0L).get(0), b2);
+            Assert.assertEquals(reference.get().getValue().getEnsembleAt(0L).get(1), b3);
 
             verify(lm, times(3)).writeLedgerMetadata(anyLong(), any(), any());
         }
@@ -312,9 +313,9 @@ public class MetadataUpdateLoopTest {
                     lm,
                     ledgerId,
                     reference::get,
-                    (currentMetadata) -> currentMetadata.getEnsemble(0L).contains(initialEnsemble.get(i)),
+                    (currentMetadata) -> currentMetadata.getEnsembleAt(0L).contains(initialEnsemble.get(i)),
                     (currentMetadata) -> {
-                        List<BookieSocketAddress> ensemble = Lists.newArrayList(currentMetadata.getEnsemble(0L));
+                        List<BookieSocketAddress> ensemble = Lists.newArrayList(currentMetadata.getEnsembleAt(0L));
                         ensemble.set(i, replacementBookies.get(i));
                         return LedgerMetadataBuilder.from(currentMetadata).replaceEnsembleEntry(0L, ensemble).build();
                     },
@@ -323,7 +324,7 @@ public class MetadataUpdateLoopTest {
 
             loops.forEach((l) -> l.join());
 
-            Assert.assertEquals(reference.get().getValue().getEnsemble(0L), replacementBookies);
+            Assert.assertEquals(reference.get().getValue().getEnsembleAt(0L), replacementBookies);
         }
     }
 
@@ -364,11 +365,11 @@ public class MetadataUpdateLoopTest {
                         if (currentMetadata.isClosed()) {
                             throw new BKException.BKLedgerClosedException();
                         } else {
-                            return currentMetadata.getEnsemble(0L).contains(b0);
+                            return currentMetadata.getEnsembleAt(0L).contains(b0);
                         }
                     },
                     (currentMetadata) -> {
-                        List<BookieSocketAddress> ensemble = Lists.newArrayList(currentMetadata.getEnsemble(0L));
+                        List<BookieSocketAddress> ensemble = Lists.newArrayList(currentMetadata.getEnsembleAt(0L));
                         ensemble.set(0, b1);
                         return LedgerMetadataBuilder.from(currentMetadata).replaceEnsembleEntry(0L, ensemble).build();
                     },
@@ -383,7 +384,7 @@ public class MetadataUpdateLoopTest {
                 Assert.assertEquals(ee.getCause().getClass(), BKException.BKLedgerClosedException.class);
             }
             Assert.assertEquals(l1meta, reference.get());
-            Assert.assertEquals(l1meta.getValue().getEnsemble(0L).get(0), b0);
+            Assert.assertEquals(l1meta.getValue().getEnsembleAt(0L).get(0), b0);
             Assert.assertTrue(l1meta.getValue().isClosed());
 
             verify(lm, times(2)).writeLedgerMetadata(anyLong(), any(), any());

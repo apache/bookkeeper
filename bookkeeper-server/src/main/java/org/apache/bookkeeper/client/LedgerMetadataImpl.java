@@ -18,26 +18,22 @@
 package org.apache.bookkeeper.client;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkState;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Optional;
-import java.util.Set;
-import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 import lombok.EqualsAndHashCode;
 import org.apache.bookkeeper.client.api.DigestType;
+import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.client.api.LedgerMetadata.State;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.slf4j.Logger;
@@ -50,8 +46,8 @@ import org.slf4j.LoggerFactory;
  * <p>It provides parsing and serialization methods of such metadata.
  */
 @EqualsAndHashCode
-public class LedgerMetadata implements org.apache.bookkeeper.client.api.LedgerMetadata {
-    static final Logger LOG = LoggerFactory.getLogger(LedgerMetadata.class);
+class LedgerMetadataImpl implements LedgerMetadata {
+    static final Logger LOG = LoggerFactory.getLogger(LedgerMetadataImpl.class);
 
     private final int metadataFormatVersion;
     private final int ensembleSize;
@@ -73,19 +69,19 @@ public class LedgerMetadata implements org.apache.bookkeeper.client.api.LedgerMe
 
     private final Map<String, byte[]> customMetadata;
 
-    LedgerMetadata(int metadataFormatVersion,
-                   int ensembleSize,
-                   int writeQuorumSize,
-                   int ackQuorumSize,
-                   State state,
-                   Optional<Long> lastEntryId,
-                   Optional<Long> length,
-                   Map<Long, List<BookieSocketAddress>> ensembles,
-                   Optional<DigestType> digestType,
-                   Optional<byte[]> password,
-                   long ctime,
-                   boolean storeCtime,
-                   Map<String, byte[]> customMetadata) {
+    LedgerMetadataImpl(int metadataFormatVersion,
+                       int ensembleSize,
+                       int writeQuorumSize,
+                       int ackQuorumSize,
+                       State state,
+                       Optional<Long> lastEntryId,
+                       Optional<Long> length,
+                       Map<Long, List<BookieSocketAddress>> ensembles,
+                       Optional<DigestType> digestType,
+                       Optional<byte[]> password,
+                       long ctime,
+                       boolean storeCtime,
+                       Map<String, byte[]> customMetadata) {
         checkArgument(ensembles.size() > 0, "There must be at least one ensemble in the ledger");
         if (state == State.CLOSED) {
             checkArgument(length.isPresent(), "Closed ledger must have a length");
@@ -165,11 +161,12 @@ public class LedgerMetadata implements org.apache.bookkeeper.client.api.LedgerMe
      *
      * @return whether the password has been stored in the metadata
      */
+    @Override
     public boolean hasPassword() {
         return hasPassword;
     }
 
-    @VisibleForTesting
+    @Override
     public byte[] getPassword() {
         if (!hasPassword()) {
             return new byte[0];
@@ -202,45 +199,16 @@ public class LedgerMetadata implements org.apache.bookkeeper.client.api.LedgerMe
         return state == State.CLOSED;
     }
 
-    public boolean isInRecovery() {
-        return state == State.IN_RECOVERY;
-    }
-
     @Override
     public State getState() {
         return state;
     }
 
-    List<BookieSocketAddress> getCurrentEnsemble() {
-        return currentEnsemble;
-    }
-
-    List<BookieSocketAddress> getEnsemble(long entryId) {
+    @Override
+    public List<BookieSocketAddress> getEnsembleAt(long entryId) {
         // the head map cannot be empty, since we insert an ensemble for
         // entry-id 0, right when we start
         return ensembles.get(ensembles.headMap(entryId + 1).lastKey());
-    }
-
-    @Override
-    public List<BookieSocketAddress> getEnsembleAt(long entryId) {
-        return getEnsemble(entryId);
-    }
-
-    /**
-     * the entry id greater than the given entry-id at which the next ensemble change takes
-     * place.
-     *
-     * @param entryId
-     * @return the entry id of the next ensemble change (-1 if no further ensemble changes)
-     */
-    long getNextEnsembleChange(long entryId) {
-        SortedMap<Long, ? extends List<BookieSocketAddress>> tailMap = ensembles.tailMap(entryId + 1);
-
-        if (tailMap.isEmpty()) {
-            return -1;
-        } else {
-            return tailMap.firstKey();
-        }
     }
 
     @Override
@@ -260,6 +228,7 @@ public class LedgerMetadata implements org.apache.bookkeeper.client.api.LedgerMe
      * @return a string representation of the object without password field in
      *         it.
      */
+    @Override
     public String toSafeString() {
         return toStringRepresentation(false);
     }
@@ -291,30 +260,12 @@ public class LedgerMetadata implements org.apache.bookkeeper.client.api.LedgerMe
         return helper.toString();
     }
 
-    Set<BookieSocketAddress> getBookiesInThisLedger() {
-        Set<BookieSocketAddress> bookies = new HashSet<BookieSocketAddress>();
-        for (List<BookieSocketAddress> ensemble : ensembles.values()) {
-            bookies.addAll(ensemble);
-        }
-        return bookies;
-    }
-
-    List<BookieSocketAddress> getLastEnsembleValue() {
-        checkState(!ensembles.isEmpty(), "Metadata should never be created with no ensembles");
-        return ensembles.lastEntry().getValue();
-    }
-
-    Long getLastEnsembleKey() {
-        checkState(!ensembles.isEmpty(), "Metadata should never be created with no ensembles");
-        return ensembles.lastKey();
-    }
-
+    @Override
     public int getMetadataFormatVersion() {
         return metadataFormatVersion;
     }
 
-    // temporarily method, until storeCtime is removed from the metadata object itself
-    public boolean shouldStoreCtime() {
+    boolean shouldStoreCtime() {
         return storeCtime;
     }
 }

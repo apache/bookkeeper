@@ -29,7 +29,6 @@ import java.util.Map.Entry;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.LedgerEntry;
 import org.apache.bookkeeper.client.LedgerHandle;
-import org.apache.bookkeeper.client.LedgerHandleAdapter;
 import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
@@ -74,8 +73,7 @@ public class TestAutoRecoveryAlongWithBookieServers extends
             lh.addEntry(testData);
         }
         lh.close();
-        BookieSocketAddress replicaToKill = LedgerHandleAdapter
-                .getLedgerMetadata(lh).getAllEnsembles().get(0L).get(0);
+        BookieSocketAddress replicaToKill = lh.getLedgerMetadata().getAllEnsembles().get(0L).get(0);
 
         killBookie(replicaToKill);
 
