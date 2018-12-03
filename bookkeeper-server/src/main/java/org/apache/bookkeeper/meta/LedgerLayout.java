@@ -90,7 +90,7 @@ public class LedgerLayout {
     public byte[] serialize() throws IOException {
         String s =
           new StringBuilder().append(layoutFormatVersion).append(LINE_SPLITTER)
-            .append(managerFactoryClass).append(FIELD_SPLITTER).append(managerVersion)
+            .append(managerFactoryClass).append(FIELD_SPLITTER).append(managerVersion).append(LINE_SPLITTER)
             .append(MAX_LEDGER_METADATA_FORMAT_VERSION_FIELD).append(FIELD_SPLITTER)
             .append(maxLedgerMetadataFormatVersion)
             .toString();
