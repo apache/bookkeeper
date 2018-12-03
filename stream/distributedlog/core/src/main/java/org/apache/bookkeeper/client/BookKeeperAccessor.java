@@ -37,8 +37,4 @@ public class BookKeeperAccessor {
                       "Recovery can only run on ReadOnlyLedgerHandle");
         ((ReadOnlyLedgerHandle) lh).recover(cb, null, true);
     }
-
-    public static LedgerMetadata getLedgerMetadata(LedgerHandle lh) {
-        return lh.getLedgerMetadata();
-    }
 }

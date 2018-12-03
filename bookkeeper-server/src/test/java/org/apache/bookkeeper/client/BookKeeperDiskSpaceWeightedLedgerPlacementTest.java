@@ -162,7 +162,7 @@ public class BookKeeperDiskSpaceWeightedLedgerPlacementTest extends BookKeeperCl
 
         for (int i = 0; i < 2000; i++) {
             LedgerHandle lh = client.createLedger(3, 3, DigestType.CRC32, "testPasswd".getBytes());
-            for (BookieSocketAddress b : lh.getLedgerMetadata().getEnsemble(0)) {
+            for (BookieSocketAddress b : lh.getLedgerMetadata().getEnsembleAt(0)) {
                 m.put(b, m.get(b) + 1);
             }
         }
@@ -212,7 +212,7 @@ public class BookKeeperDiskSpaceWeightedLedgerPlacementTest extends BookKeeperCl
 
         for (int i = 0; i < 2000; i++) {
             LedgerHandle lh = client.createLedger(3, 3, DigestType.CRC32, "testPasswd".getBytes());
-            for (BookieSocketAddress b : lh.getLedgerMetadata().getEnsemble(0)) {
+            for (BookieSocketAddress b : lh.getLedgerMetadata().getEnsembleAt(0)) {
                 m.put(b, m.get(b) + 1);
             }
         }
@@ -247,7 +247,7 @@ public class BookKeeperDiskSpaceWeightedLedgerPlacementTest extends BookKeeperCl
         }
         for (int i = 0; i < 2000; i++) {
             LedgerHandle lh = client.createLedger(3, 3, DigestType.CRC32, "testPasswd".getBytes());
-            for (BookieSocketAddress b : lh.getLedgerMetadata().getEnsemble(0)) {
+            for (BookieSocketAddress b : lh.getLedgerMetadata().getEnsembleAt(0)) {
                 m.put(b, m.get(b) + 1);
             }
         }
@@ -302,7 +302,7 @@ public class BookKeeperDiskSpaceWeightedLedgerPlacementTest extends BookKeeperCl
 
         for (int i = 0; i < 2000; i++) {
             LedgerHandle lh = client.createLedger(3, 3, DigestType.CRC32, "testPasswd".getBytes());
-            for (BookieSocketAddress b : lh.getLedgerMetadata().getEnsemble(0)) {
+            for (BookieSocketAddress b : lh.getLedgerMetadata().getEnsembleAt(0)) {
                 m.put(b, m.get(b) + 1);
             }
         }
@@ -330,7 +330,7 @@ public class BookKeeperDiskSpaceWeightedLedgerPlacementTest extends BookKeeperCl
 
         for (int i = 0; i < 2000; i++) {
             LedgerHandle lh = client.createLedger(3, 3, DigestType.CRC32, "testPasswd".getBytes());
-            for (BookieSocketAddress b : lh.getLedgerMetadata().getEnsemble(0)) {
+            for (BookieSocketAddress b : lh.getLedgerMetadata().getEnsembleAt(0)) {
                 m.put(b, m.get(b) + 1);
             }
         }
@@ -382,7 +382,7 @@ public class BookKeeperDiskSpaceWeightedLedgerPlacementTest extends BookKeeperCl
 
         for (int i = 0; i < 2000; i++) {
             LedgerHandle lh = client.createLedger(3, 3, DigestType.CRC32, "testPasswd".getBytes());
-            for (BookieSocketAddress b : lh.getLedgerMetadata().getEnsemble(0)) {
+            for (BookieSocketAddress b : lh.getLedgerMetadata().getEnsembleAt(0)) {
                 m.put(b, m.get(b) + 1);
             }
         }
@@ -406,7 +406,7 @@ public class BookKeeperDiskSpaceWeightedLedgerPlacementTest extends BookKeeperCl
         }
         for (int i = 0; i < 2000; i++) {
             LedgerHandle lh = client.createLedger(3, 3, DigestType.CRC32, "testPasswd".getBytes());
-            for (BookieSocketAddress b : lh.getLedgerMetadata().getEnsemble(0)) {
+            for (BookieSocketAddress b : lh.getLedgerMetadata().getEnsembleAt(0)) {
                 m.put(b, m.get(b) + 1);
             }
         }
@@ -462,7 +462,7 @@ public class BookKeeperDiskSpaceWeightedLedgerPlacementTest extends BookKeeperCl
 
         for (int i = 0; i < 2000; i++) {
             LedgerHandle lh = client.createLedger(3, 3, DigestType.CRC32, "testPasswd".getBytes());
-            for (BookieSocketAddress b : lh.getLedgerMetadata().getEnsemble(0)) {
+            for (BookieSocketAddress b : lh.getLedgerMetadata().getEnsembleAt(0)) {
                 m.put(b, m.get(b) + 1);
             }
         }
@@ -491,7 +491,7 @@ public class BookKeeperDiskSpaceWeightedLedgerPlacementTest extends BookKeeperCl
         }
         for (int i = 0; i < 2000; i++) {
             LedgerHandle lh = client.createLedger(3, 3, DigestType.CRC32, "testPasswd".getBytes());
-            for (BookieSocketAddress b : lh.getLedgerMetadata().getEnsemble(0)) {
+            for (BookieSocketAddress b : lh.getLedgerMetadata().getEnsembleAt(0)) {
                 m.put(b, m.get(b) + 1);
             }
         }

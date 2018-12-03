@@ -32,6 +32,7 @@ import java.util.Optional;
 import java.util.TreeMap;
 
 import org.apache.bookkeeper.client.api.DigestType;
+import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.client.api.LedgerMetadata.State;
 import org.apache.bookkeeper.common.annotation.InterfaceAudience.LimitedPrivate;
 import org.apache.bookkeeper.common.annotation.InterfaceStability.Unstable;
@@ -87,7 +88,9 @@ public class LedgerMetadataBuilder {
         }
 
         builder.ctime = other.getCtime();
-        builder.storeCtime = other.storeCtime;
+
+        /** Hack to get around fact that ctime was never versioned correctly */
+        builder.storeCtime = LedgerMetadataUtils.shouldStoreCtime(other);
 
         builder.customMetadata = ImmutableMap.copyOf(other.getCustomMetadata());
 
@@ -182,11 +185,11 @@ public class LedgerMetadataBuilder {
         checkArgument(ensembleSize >= writeQuorumSize, "Write quorum must be less or equal to ensemble size");
         checkArgument(writeQuorumSize >= ackQuorumSize, "Write quorum must be greater or equal to ack quorum");
 
-        return new LedgerMetadata(metadataFormatVersion,
-                                  ensembleSize, writeQuorumSize, ackQuorumSize,
-                                  state, lastEntryId, length, ensembles,
-                                  digestType, password, ctime, storeCtime,
-                                  customMetadata);
+        return new LedgerMetadataImpl(metadataFormatVersion,
+                                      ensembleSize, writeQuorumSize, ackQuorumSize,
+                                      state, lastEntryId, length, ensembles,
+                                      digestType, password, ctime, storeCtime,
+                                      customMetadata);
     }
 
 }

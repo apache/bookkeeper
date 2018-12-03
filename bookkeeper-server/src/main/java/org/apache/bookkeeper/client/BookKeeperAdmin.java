@@ -60,6 +60,7 @@ import org.apache.bookkeeper.client.AsyncCallback.RecoverCallback;
 import org.apache.bookkeeper.client.LedgerFragmentReplicator.SingleFragmentCallback;
 import org.apache.bookkeeper.client.SyncCallbackUtils.SyncOpenCallback;
 import org.apache.bookkeeper.client.SyncCallbackUtils.SyncReadCallback;
+import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.discover.RegistrationClient.RegistrationListener;
@@ -500,7 +501,8 @@ public class BookKeeperAdmin implements AutoCloseable {
                                 cb.processResult(BKException.getExceptionCode(exception), null, null);
                                 return;
                             }
-                            Set<BookieSocketAddress> bookiesInLedger = metadata.getValue().getBookiesInThisLedger();
+                            Set<BookieSocketAddress> bookiesInLedger =
+                                LedgerMetadataUtils.getBookiesInThisLedger(metadata.getValue());
                             Sets.SetView<BookieSocketAddress> intersection =
                                 Sets.intersection(bookiesInLedger, bookies);
                             if (!intersection.isEmpty()) {
@@ -739,7 +741,7 @@ public class BookKeeperAdmin implements AutoCloseable {
                 }
 
                 LedgerMetadata lm = lh.getLedgerMetadata();
-                if (skipOpenLedgers && !lm.isClosed() && !lm.isInRecovery()) {
+                if (skipOpenLedgers && lm.getState() == LedgerMetadata.State.OPEN) {
                     LOG.info("Skip recovering open ledger {}.", lId);
                     try {
                         lh.close();

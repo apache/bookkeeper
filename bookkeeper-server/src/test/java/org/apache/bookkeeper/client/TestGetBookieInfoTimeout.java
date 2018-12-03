@@ -100,7 +100,7 @@ public class TestGetBookieInfoTimeout extends BookKeeperClusterTestCase {
         ClientConfiguration cConf = new ClientConfiguration();
         cConf.setGetBookieInfoTimeout(2);
 
-        final BookieSocketAddress bookieToSleep = writelh.getLedgerMetadata().getEnsemble(0).get(0);
+        final BookieSocketAddress bookieToSleep = writelh.getLedgerMetadata().getEnsembleAt(0).get(0);
         int sleeptime = cConf.getBookieInfoTimeout() * 3;
         CountDownLatch latch = sleepBookie(bookieToSleep, sleeptime);
         latch.await();

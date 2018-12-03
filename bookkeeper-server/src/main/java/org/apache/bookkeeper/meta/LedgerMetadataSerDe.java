@@ -34,9 +34,10 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import org.apache.bookkeeper.client.LedgerMetadata;
 import org.apache.bookkeeper.client.LedgerMetadataBuilder;
+import org.apache.bookkeeper.client.LedgerMetadataUtils;
 import org.apache.bookkeeper.client.api.DigestType;
+import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.client.api.LedgerMetadata.State;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat;
@@ -135,7 +136,8 @@ public class LedgerMetadataSerDe {
             break;
         }
 
-        if (metadata.shouldStoreCtime()) {
+        /** Hack to get around fact that ctime was never versioned correctly */
+        if (LedgerMetadataUtils.shouldStoreCtime(metadata)) {
             builder.setCtime(metadata.getCtime());
         }
 

@@ -156,7 +156,7 @@ public class TestParallelRead extends BookKeeperClusterTestCase {
 
         LedgerHandle lh = bkc.openLedger(id, digestType, passwd);
 
-        List<BookieSocketAddress> ensemble = lh.getLedgerMetadata().getEnsemble(10);
+        List<BookieSocketAddress> ensemble = lh.getLedgerMetadata().getEnsembleAt(10);
         CountDownLatch latch1 = new CountDownLatch(1);
         CountDownLatch latch2 = new CountDownLatch(1);
         // sleep two bookie
@@ -187,7 +187,7 @@ public class TestParallelRead extends BookKeeperClusterTestCase {
 
         LedgerHandle lh = bkc.openLedger(id, digestType, passwd);
 
-        List<BookieSocketAddress> ensemble = lh.getLedgerMetadata().getEnsemble(5);
+        List<BookieSocketAddress> ensemble = lh.getLedgerMetadata().getEnsembleAt(5);
         // kill two bookies
         killBookie(ensemble.get(0));
         killBookie(ensemble.get(1));
@@ -223,7 +223,7 @@ public class TestParallelRead extends BookKeeperClusterTestCase {
 
         LedgerHandle lh = bkc.openLedger(id, digestType, passwd);
 
-        List<BookieSocketAddress> ensemble = lh.getLedgerMetadata().getEnsemble(5);
+        List<BookieSocketAddress> ensemble = lh.getLedgerMetadata().getEnsembleAt(5);
         // kill two bookies
         killBookie(ensemble.get(0));
         killBookie(ensemble.get(1));

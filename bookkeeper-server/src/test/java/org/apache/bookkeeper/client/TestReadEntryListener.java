@@ -231,7 +231,7 @@ public class TestReadEntryListener extends BookKeeperClusterTestCase {
         LedgerHandle lh = bkc.openLedger(id, digestType, passwd);
 
         List<BookieSocketAddress> ensemble =
-                lh.getLedgerMetadata().getEnsemble(5);
+                lh.getLedgerMetadata().getEnsembleAt(5);
         // kill two bookies
         killBookie(ensemble.get(0));
         killBookie(ensemble.get(1));
@@ -270,7 +270,7 @@ public class TestReadEntryListener extends BookKeeperClusterTestCase {
         LedgerHandle lh = bkc.openLedger(id, digestType, passwd);
 
         List<BookieSocketAddress> ensemble =
-            lh.getLedgerMetadata().getEnsemble(5);
+            lh.getLedgerMetadata().getEnsembleAt(5);
         // kill bookies
         killBookie(ensemble.get(0));
         killBookie(ensemble.get(1));

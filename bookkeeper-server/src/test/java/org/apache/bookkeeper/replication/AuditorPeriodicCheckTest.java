@@ -55,7 +55,6 @@ import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.LedgerHandle;
-import org.apache.bookkeeper.client.LedgerHandleAdapter;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
@@ -480,9 +479,8 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
 
     private BookieSocketAddress replaceBookieWithWriteFailingBookie(LedgerHandle lh) throws Exception {
         int bookieIdx = -1;
-        Long entryId = LedgerHandleAdapter.getLedgerMetadata(lh).getAllEnsembles().firstKey();
-        List<BookieSocketAddress> curEnsemble = LedgerHandleAdapter
-                .getLedgerMetadata(lh).getAllEnsembles().get(entryId);
+        Long entryId = lh.getLedgerMetadata().getAllEnsembles().firstKey();
+        List<BookieSocketAddress> curEnsemble = lh.getLedgerMetadata().getAllEnsembles().get(entryId);
 
         // Identify a bookie in the current ledger ensemble to be replaced
         BookieSocketAddress replacedBookie = null;

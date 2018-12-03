@@ -55,7 +55,7 @@ public class TestBookieHealthCheck extends BookKeeperClusterTestCase {
             lh.addEntry(msg);
         }
 
-        BookieSocketAddress bookieToQuarantine = lh.getLedgerMetadata().getEnsemble(numEntries).get(0);
+        BookieSocketAddress bookieToQuarantine = lh.getLedgerMetadata().getEnsembleAt(numEntries).get(0);
         sleepBookie(bookieToQuarantine, baseClientConf.getAddEntryTimeout() * 2).await();
 
         byte[] tempMsg = "temp-msg".getBytes();
@@ -79,12 +79,12 @@ public class TestBookieHealthCheck extends BookKeeperClusterTestCase {
         // the bookie to be left out of the ensemble should always be the quarantined bookie
         LedgerHandle lh1 = bkc.createLedger(2, 2, 2, BookKeeper.DigestType.CRC32, new byte[] {});
         LedgerHandle lh2 = bkc.createLedger(3, 3, 3, BookKeeper.DigestType.CRC32, new byte[] {});
-        Assert.assertFalse(lh1.getLedgerMetadata().getEnsemble(0).contains(bookieToQuarantine));
-        Assert.assertFalse(lh2.getLedgerMetadata().getEnsemble(0).contains(bookieToQuarantine));
+        Assert.assertFalse(lh1.getLedgerMetadata().getEnsembleAt(0).contains(bookieToQuarantine));
+        Assert.assertFalse(lh2.getLedgerMetadata().getEnsembleAt(0).contains(bookieToQuarantine));
 
         // the quarantined bookie can still be in the ensemble if we do not have enough healthy bookies
         LedgerHandle lh3 = bkc.createLedger(4, 4, 4, BookKeeper.DigestType.CRC32, new byte[] {});
-        Assert.assertTrue(lh3.getLedgerMetadata().getEnsemble(0).contains(bookieToQuarantine));
+        Assert.assertTrue(lh3.getLedgerMetadata().getEnsembleAt(0).contains(bookieToQuarantine));
 
         // make sure faulty bookie is out of quarantine
         Thread.sleep(baseClientConf.getBookieQuarantineTimeSeconds() * 1000);
@@ -97,7 +97,7 @@ public class TestBookieHealthCheck extends BookKeeperClusterTestCase {
     public void testNoQuarantineOnBkRestart() throws Exception {
         final LedgerHandle lh = bkc.createLedger(2, 2, 2, BookKeeper.DigestType.CRC32, new byte[] {});
         final int numEntries = 20;
-        BookieSocketAddress bookieToRestart = lh.getLedgerMetadata().getEnsemble(0).get(0);
+        BookieSocketAddress bookieToRestart = lh.getLedgerMetadata().getEnsembleAt(0).get(0);
 
         // we add entries on a separate thread so that we can restart a bookie on the current thread
         Thread addEntryThread = new Thread() {
@@ -132,8 +132,8 @@ public class TestBookieHealthCheck extends BookKeeperClusterTestCase {
             byte[] msg = ("msg-" + i).getBytes();
             lh.addEntry(msg);
         }
-        BookieSocketAddress bookie1 = lh.getLedgerMetadata().getEnsemble(0).get(0);
-        BookieSocketAddress bookie2 = lh.getLedgerMetadata().getEnsemble(0).get(1);
+        BookieSocketAddress bookie1 = lh.getLedgerMetadata().getEnsembleAt(0).get(0);
+        BookieSocketAddress bookie2 = lh.getLedgerMetadata().getEnsembleAt(0).get(1);
         try {
             // we read an entry that is not added
             lh.readEntries(10, 10);

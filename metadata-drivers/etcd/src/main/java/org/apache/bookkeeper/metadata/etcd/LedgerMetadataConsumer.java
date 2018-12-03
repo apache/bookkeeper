@@ -16,7 +16,7 @@ package org.apache.bookkeeper.metadata.etcd;
 
 import java.util.Objects;
 import java.util.function.Consumer;
-import org.apache.bookkeeper.client.LedgerMetadata;
+import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.LedgerMetadataListener;
 import org.apache.bookkeeper.versioning.Versioned;
 

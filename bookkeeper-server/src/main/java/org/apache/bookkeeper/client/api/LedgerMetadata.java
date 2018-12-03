@@ -75,7 +75,24 @@ public interface LedgerMetadata {
     long getLength();
 
     /**
+     * Whether the metadata contains the password and digest type for the ledger.
+     * Ledgers created with version 4.1.0 clients or older do not have this information.
+     *
+     * @return true if the metadata contains the password and digest type, false otherwise.
+     */
+    boolean hasPassword();
+
+    /**
+     * Get the password for the ledger.
+     * For ledgers created with version 4.1.0 or older, an empty byte array is returned.
+     *
+     * @return the password for the ledger.
+     */
+    byte[] getPassword();
+
+    /**
      * Returns the digest type used by this ledger.
+     * May return null if the ledger was created with version 4.1.0 or below.
      *
      * @return the digest type used by this ledger.
      */
@@ -143,4 +160,18 @@ public interface LedgerMetadata {
         */
         CLOSED;
     }
+
+    /**
+     * Similar to #toString(), but omits the password of the ledger, so that it is safe to log the output.
+     *
+     * @return a string representation of the metadata, omitting the password.
+     */
+    String toSafeString();
+
+    /**
+     * Get the format version which should be used to serialize the metadata.
+     *
+     * @return the format version.
+     */
+    int getMetadataFormatVersion();
 }

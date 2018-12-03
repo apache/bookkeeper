@@ -67,6 +67,7 @@ import org.apache.bookkeeper.client.SyncCallbackUtils.SyncReadLastConfirmedCallb
 import org.apache.bookkeeper.client.api.BKException.Code;
 import org.apache.bookkeeper.client.api.LastConfirmedAndEntry;
 import org.apache.bookkeeper.client.api.LedgerEntries;
+import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.client.api.WriteFlag;
 import org.apache.bookkeeper.client.api.WriteHandle;
 import org.apache.bookkeeper.client.impl.LedgerEntryImpl;
@@ -1688,7 +1689,7 @@ public class LedgerHandle implements WriteHandle {
 
     // close the ledger and send fails to all the adds in the pipeline
     void handleUnrecoverableErrorDuringAdd(int rc) {
-        if (getLedgerMetadata().isInRecovery()) {
+        if (getLedgerMetadata().getState() == LedgerMetadata.State.IN_RECOVERY) {
             // we should not close ledger if ledger is recovery mode
             // otherwise we may lose entry.
             errorOutPendingAdds(rc);
@@ -1854,16 +1855,17 @@ public class LedgerHandle implements WriteHandle {
         new MetadataUpdateLoop(
                 clientCtx.getLedgerManager(), getId(),
                 this::getVersionedLedgerMetadata,
-                (metadata) -> !metadata.isClosed() && !metadata.isInRecovery()
+                (metadata) -> metadata.getState() == LedgerMetadata.State.OPEN
                         && failedBookies.entrySet().stream().anyMatch(
-                                (e) -> metadata.getLastEnsembleValue().get(e.getKey()).equals(e.getValue())),
+                                e -> LedgerMetadataUtils.getLastEnsembleValue(metadata)
+                                             .get(e.getKey()).equals(e.getValue())),
                 (metadata) -> {
                     attempts.incrementAndGet();
 
                     List<BookieSocketAddress> currentEnsemble = getCurrentEnsemble();
                     List<BookieSocketAddress> newEnsemble = EnsembleUtils.replaceBookiesInEnsemble(
                             clientCtx.getBookieWatcher(), metadata, currentEnsemble, failedBookies, logContext);
-                    Long lastEnsembleKey = metadata.getLastEnsembleKey();
+                    Long lastEnsembleKey = LedgerMetadataUtils.getLastEnsembleKey(metadata);
                     LedgerMetadataBuilder builder = LedgerMetadataBuilder.from(metadata);
                     long newEnsembleStartEntry = getLastAddConfirmed() + 1;
                     checkState(lastEnsembleKey <= newEnsembleStartEntry,
@@ -1890,7 +1892,7 @@ public class LedgerHandle implements WriteHandle {
                                       + " Another client must have recovered the ledger.", logContext, attempts.get());
                         }
                         handleUnrecoverableErrorDuringAdd(BKException.Code.LedgerClosedException);
-                    } else if (metadata.getValue().isInRecovery()) {
+                    } else if (metadata.getValue().getState() == LedgerMetadata.State.IN_RECOVERY) {
                         if (LOG.isDebugEnabled()) {
                             LOG.debug("{}[attempt:{}] Metadata marked as in-recovery during attempt to replace bookie."
                                       + " Another client must be recovering the ledger.", logContext, attempts.get());
@@ -1963,6 +1965,6 @@ public class LedgerHandle implements WriteHandle {
         // Getting current ensemble from the metadata is only a temporary
         // thing until metadata is immutable. At that point, current ensemble
         // becomes a property of the LedgerHandle itself.
-        return versionedMetadata.getValue().getCurrentEnsemble();
+        return LedgerMetadataUtils.getCurrentEnsemble(versionedMetadata.getValue());
     }
 }
