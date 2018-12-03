@@ -77,7 +77,7 @@ class LedgerMetadataImpl implements LedgerMetadata {
                        Optional<Long> lastEntryId,
                        Optional<Long> length,
                        Map<Long, List<BookieSocketAddress>> ensembles,
-                       DigestType digestType,
+                       Optional<DigestType> digestType,
                        Optional<byte[]> password,
                        long ctime,
                        boolean storeCtime,
@@ -90,6 +90,9 @@ class LedgerMetadataImpl implements LedgerMetadata {
             checkArgument(!length.isPresent(), "Non-closed ledger must not have a length");
             checkArgument(!lastEntryId.isPresent(), "Non-closed ledger must not have a last entry");
         }
+        checkArgument((digestType.isPresent() && password.isPresent())
+                      || (!digestType.isPresent() && !password.isPresent()),
+                      "Either both password and digest type must be set, or neither");
 
         this.metadataFormatVersion = metadataFormatVersion;
         this.ensembleSize = ensembleSize;
@@ -112,14 +115,14 @@ class LedgerMetadataImpl implements LedgerMetadata {
             currentEnsemble = null;
         }
 
-        this.digestType = digestType;
-
         if (password.isPresent()) {
             this.password = password.get();
+            this.digestType = digestType.get();
             this.hasPassword = true;
         } else {
             this.password = null;
             this.hasPassword = false;
+            this.digestType = null;
         }
         this.ctime = ctime;
         this.storeCtime = storeCtime;
@@ -174,7 +177,11 @@ class LedgerMetadataImpl implements LedgerMetadata {
 
     @Override
     public DigestType getDigestType() {
-        return digestType;
+        if (!hasPassword()) {
+            return null;
+        } else {
+            return digestType;
+        }
     }
 
     @Override

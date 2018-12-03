@@ -553,8 +553,8 @@ public class AuditorLedgerCheckerTest extends BookKeeperClusterTestCase {
 
             LedgerMetadata metadata = LedgerMetadataBuilder.create()
                 .withEnsembleSize(3).withWriteQuorumSize(2).withAckQuorumSize(2)
-                .withDigestType(DigestType.CRC32.toApiDigestType())
                 .withPassword("passwd".getBytes())
+                .withDigestType(DigestType.CRC32.toApiDigestType())
                 .newEnsembleEntry(0L, ensemble).build();
 
             long ledgerId = (Math.abs(rand.nextLong())) % 100000000;
