@@ -24,6 +24,10 @@ import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.bookie.InterleavedLedgerStorage;
 import org.apache.bookkeeper.bookie.LedgerStorage;
 import org.apache.bookkeeper.bookie.SortedLedgerStorage;
+import org.apache.bookkeeper.common.annotation.InterfaceAudience.Public;
+import org.apache.bookkeeper.common.conf.ConfigKey;
+import org.apache.bookkeeper.common.conf.Type;
+import org.apache.bookkeeper.common.conf.validators.Range;
 import org.apache.bookkeeper.common.util.ReflectionUtils;
 import org.apache.bookkeeper.discover.RegistrationManager;
 import org.apache.bookkeeper.discover.ZKRegistrationManager;
@@ -39,6 +43,16 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     // Entry Log Parameters
     protected static final String ENTRY_LOG_SIZE_LIMIT = "logSizeLimit";
     protected static final String ENTRY_LOG_FILE_PREALLOCATION_ENABLED = "entryLogFilePreallocationEnabled";
+    @Public
+    protected static final ConfigKey ENTRY_LOG_SIZE_LIMIT_KEY = ConfigKey.builder()
+        .name(ENTRY_LOG_SIZE_LIMIT)
+        .type(Type.LONG)
+        .documentation("")
+        .defaultValue()
+        .validator(Range.between())
+        .category()
+        .build();
+
     protected static final String MINOR_COMPACTION_INTERVAL = "minorCompactionInterval";
     protected static final String MINOR_COMPACTION_THRESHOLD = "minorCompactionThreshold";
     protected static final String MAJOR_COMPACTION_INTERVAL = "majorCompactionInterval";
