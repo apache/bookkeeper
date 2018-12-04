@@ -39,8 +39,14 @@ public class LedgerLayout {
     // version of ledger layout metadata
     public static final int LAYOUT_FORMAT_VERSION = 2;
 
-    private static final String splitter = ":";
-    private static final String lSplitter = "\n";
+    private static final String FIELD_SPLITTER = ":";
+    private static final String LINE_SPLITTER = "\n";
+
+    // For version 2 and below, max ledger metadata format wasn't stored in the layout
+    // so assume 2 if it is missing.
+    private static final int DEFAULT_MAX_LEDGER_METADATA_FORMAT_VERSION = 2;
+    private static final String MAX_LEDGER_METADATA_FORMAT_VERSION_FIELD =
+        "MAX_LEDGER_METADATA_FORMAT_VERSION";
 
     // ledger manager factory class
     private final String managerFactoryClass;
@@ -49,6 +55,9 @@ public class LedgerLayout {
 
     // layout version of how to store layout information
     private final int layoutFormatVersion;
+
+    // maximum format version that can be used for storing ledger metadata
+    private final int maxLedgerMetadataFormatVersion;
 
     /**
      * Ledger Layout Constructor.
@@ -59,13 +68,17 @@ public class LedgerLayout {
      *          Ledger Manager Version
      */
     public LedgerLayout(String managerFactoryCls, int managerVersion) {
-        this(managerFactoryCls, managerVersion, LAYOUT_FORMAT_VERSION);
+        this(managerFactoryCls, managerVersion,
+             LedgerMetadataSerDe.CURRENT_METADATA_FORMAT_VERSION,
+             LAYOUT_FORMAT_VERSION);
     }
 
     LedgerLayout(String managerFactoryCls, int managerVersion,
+                 int maxLedgerMetadataFormatVersion,
                  int layoutVersion) {
         this.managerFactoryClass = managerFactoryCls;
         this.managerVersion = managerVersion;
+        this.maxLedgerMetadataFormatVersion = maxLedgerMetadataFormatVersion;
         this.layoutFormatVersion = layoutVersion;
     }
 
@@ -76,8 +89,11 @@ public class LedgerLayout {
      */
     public byte[] serialize() throws IOException {
         String s =
-          new StringBuilder().append(layoutFormatVersion).append(lSplitter)
-              .append(managerFactoryClass).append(splitter).append(managerVersion).toString();
+          new StringBuilder().append(layoutFormatVersion).append(LINE_SPLITTER)
+            .append(managerFactoryClass).append(FIELD_SPLITTER).append(managerVersion).append(LINE_SPLITTER)
+            .append(MAX_LEDGER_METADATA_FORMAT_VERSION_FIELD).append(FIELD_SPLITTER)
+            .append(maxLedgerMetadataFormatVersion)
+            .toString();
 
         if (log.isDebugEnabled()) {
             log.debug("Serialized layout info: {}", s);
@@ -100,7 +116,7 @@ public class LedgerLayout {
             log.debug("Parsing Layout: {}", layout);
         }
 
-        String lines[] = layout.split(lSplitter);
+        String lines[] = layout.split(LINE_SPLITTER);
 
         try {
             int layoutFormatVersion = Integer.parseInt(lines[0]);
@@ -113,7 +129,7 @@ public class LedgerLayout {
                 throw new IOException("Ledger manager and its version absent from layout: " + layout);
             }
 
-            String[] parts = lines[1].split(splitter);
+            String[] parts = lines[1].split(FIELD_SPLITTER);
             if (parts.length != 2) {
                 throw new IOException("Invalid Ledger Manager defined in layout : " + layout);
             }
@@ -121,7 +137,18 @@ public class LedgerLayout {
             String managerFactoryCls = parts[0];
             // ledger manager version
             int managerVersion = Integer.parseInt(parts[1]);
-            return new LedgerLayout(managerFactoryCls, managerVersion, layoutFormatVersion);
+
+            int maxLedgerMetadataFormatVersion = DEFAULT_MAX_LEDGER_METADATA_FORMAT_VERSION;
+            if (lines.length >= 3) {
+                String[] metadataFormatParts = lines[2].split(FIELD_SPLITTER);
+                if (metadataFormatParts.length != 2
+                    || !metadataFormatParts[0].equals(MAX_LEDGER_METADATA_FORMAT_VERSION_FIELD)) {
+                    throw new IOException("Invalid field for max ledger metadata format:" + lines[2]);
+                }
+                maxLedgerMetadataFormatVersion = Integer.parseInt(metadataFormatParts[1]);
+            }
+            return new LedgerLayout(managerFactoryCls, managerVersion,
+                                    maxLedgerMetadataFormatVersion, layoutFormatVersion);
         } catch (NumberFormatException e) {
             throw new IOException("Could not parse layout '" + layout + "'", e);
         }

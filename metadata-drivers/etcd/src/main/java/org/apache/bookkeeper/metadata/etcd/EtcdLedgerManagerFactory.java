@@ -42,6 +42,7 @@ class EtcdLedgerManagerFactory implements LedgerManagerFactory {
 
     private String scope;
     private Client client;
+    private AbstractConfiguration conf;
 
     @Override
     public int getCurrentVersion() {
@@ -66,6 +67,7 @@ class EtcdLedgerManagerFactory implements LedgerManagerFactory {
             throw new IOException("Invalid metadata service uri", e);
         }
         this.client = etcdLayoutManager.getClient();
+        this.conf = conf;
         return this;
     }
 
@@ -82,7 +84,7 @@ class EtcdLedgerManagerFactory implements LedgerManagerFactory {
 
     @Override
     public LedgerManager newLedgerManager() {
-        return new EtcdLedgerManager(client, scope);
+        return new EtcdLedgerManager(conf, client, scope);
     }
 
     @Override
