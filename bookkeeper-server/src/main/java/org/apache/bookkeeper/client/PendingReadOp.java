@@ -487,7 +487,6 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
         return speculativeTask;
     }
 
-    // I don't think this is ever used in production code -Ivan
     PendingReadOp parallelRead(boolean enabled) {
         this.parallelRead = enabled;
         return this;
