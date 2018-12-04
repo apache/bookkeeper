@@ -1106,7 +1106,7 @@ public class BookieShell implements Tool {
     void printLedgerMetadata(long ledgerId, LedgerMetadata md, boolean printMeta) {
         System.out.println("ledgerID: " + ledgerIdFormatter.formatLedgerId(ledgerId));
         if (printMeta) {
-            System.out.println(new String(new LedgerMetadataSerDe().serialize(md), UTF_8));
+            System.out.println(md.toString());
         }
     }
 
@@ -1115,7 +1115,10 @@ public class BookieShell implements Tool {
      */
     class LedgerMetadataCmd extends MyCommand {
         Options lOpts = new Options();
-        LedgerMetadataSerDe serDe = new LedgerMetadataSerDe();
+        // the max version won't actually take effect as this tool
+        // never creates new metadata (there'll already be a format version in the existing metadata)
+        LedgerMetadataSerDe serDe = new LedgerMetadataSerDe(
+                LedgerMetadataSerDe.CURRENT_METADATA_FORMAT_VERSION);
 
         LedgerMetadataCmd() {
             super(CMD_LEDGERMETADATA);

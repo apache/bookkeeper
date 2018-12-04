@@ -53,7 +53,7 @@ public class GetLedgerMetaService implements HttpEndpointService {
         checkNotNull(conf);
         this.conf = conf;
         this.bookieServer = bookieServer;
-        this.serDe = new LedgerMetadataSerDe();
+        this.serDe = new LedgerMetadataSerDe(LedgerMetadataSerDe.CURRENT_METADATA_FORMAT_VERSION);
     }
 
     @Override

@@ -284,7 +284,7 @@ public class MSLedgerManagerFactory extends AbstractZkLedgerManagerFactory {
             this.conf = conf;
             this.zk = zk;
             this.metastore = metastore;
-            this.serDe = new LedgerMetadataSerDe();
+            this.serDe = new LedgerMetadataSerDe(conf.getMaxLedgerMetadataFormatVersion());
 
             try {
                 ledgerTable = metastore.createScannableTable(TABLE_NAME);
