@@ -1,35 +1,34 @@
 ---
-title: Apache BookKeeper 4.7.2 Release Notes
+title: Apache BookKeeper 4.7.3 Release Notes
 ---
 
-This is the 12th release of Apache BookKeeper!
+This is the 16th release of Apache BookKeeper!
 
-The 4.7.2 release is a bugfix release which fixes a bunch of issues reported from users of 4.7.1.
+The 4.7.3 release is a bugfix release which fixes a bunch of issues reported from users of 4.7.2.
 
-Apache BookKeeper users who are using 4.7.1 are encouraged to upgrade to 4.7.2. The technical details of this release are summarized
+Apache BookKeeper users who are using 4.7.2 are encouraged to upgrade to 4.7.3. The technical details of this release are summarized
 below.
 
 ## Highlights
 
-- Fix high cpu usage issue in DbLedgerStorage by avoiding using RocksDD#deleteRange, see [apache/bookkeeper#1620](https://github.com/apache/bookkeeper/pull/1620)
+- Cancel Scheduled SpeculativeReads, see [apache/bookkeeper#1665](https://github.com/apache/bookkeeper/pull/1665)
 
-- Fix deadlock in Auditor blocking zookeeper thread, see [apache/bookkeeper#1619](https://github.com/apache/bookkeeper/pull/1619)
+- IllegalReferenceCountException at closing EntryLogManagerForSingleEntryLog, see [apache/bookkeeper#1703](https://github.com/apache/bookkeeper/issues/1703)
 
-- Fix ArrayIndexOutOfBoundsException on ConcurrentLongHashMap, see [apache/bookkeeper#1606](https://github.com/apache/bookkeeper/pull/1606)
+- EntryMemTable.newEntry retains reference to passed ByteBuffer array can cause corruption on journal replay, see [apache/bookkeeper#1737](https://github.com/apache/bookkeeper/issues/1737)
 
-- Fix deferred failure handling causes data loss, see [apache/bookkeeper#1591](https://github.com/apache/bookkeeper/pull/1591)
+- Ledger deletion racing with flush can cause a ledger index to be resurrected, see [apache/bookkeeper#1757](https://github.com/apache/bookkeeper/issues/1757)
 
-- Fix ConcurrentModificationException using nonblocking logReader#readNext, see [apache/bookkeeper#1544](https://github.com/apache/bookkeeper/pull/1544)
+- Don't cache Bookie hostname DNS resolution forever, see [apache/bookkeeper#1762](https://github.com/apache/bookkeeper/pull/1762)
 
-- Fix Bookie shutdown fails to exit, see [apache/bookkeeper#1543](https://github.com/apache/bookkeeper/issues/1543)
+- Use default metric registry in Prometheus export, see [apache/bookkeeper#1765](https://github.com/apache/bookkeeper/pull/1765)
 
-- Fix race conditions on accessing guava multimap in PCBC when using v2 protocol, see [apache/bookkeeper#1618](https://github.com/apache/bookkeeper/pull/1618)
+- Fix Auth with v2 protocol, see [apache/bookkeeper#1805](https://github.com/apache/bookkeeper/pull/1805)
 
-### Dependency Changes
+- Remove MathUtils.now to address compaction scheduling deplay issues, see [apache/bookkeeper#1837](https://github.com/apache/bookkeeper/pull/1837)
 
-In 4.7.2, [Zookeeper](https://zookeeper.apache.org/) version is downgraded from `3.5.3-beta` to `3.4.13` to avoid having a `beta` dependency and address maturity concerns.
-The downgrade is safe and smooth. No extra actions are required from switching bookkeeper 4.7.1 to 4.7.2.
+- DbLedgerStorage should do periodical flush, see [apache/bookkeeper#1843](https://github.com/apache/bookkeeper/pull/1843)
 
 ## Full list of changes
 
-- [https://github.com/apache/bookkeeper/issues?q=label%3Arelease%2F4.7.2+is%3Aclosed](https://github.com/apache/bookkeeper/issues?q=label%3Arelease%2F4.7.2+is%3Aclosed)
+- [https://github.com/apache/bookkeeper/issues?q=label%3Arelease%2F4.7.3+is%3Aclosed](https://github.com/apache/bookkeeper/issues?q=label%3Arelease%2F4.7.3+is%3Aclosed)
