@@ -110,9 +110,9 @@ public class AbstractZkLedgerManagerTest extends MockZooKeeperTestCase {
 
         this.conf = new ClientConfiguration();
         this.ledgerManager = mock(
-            AbstractZkLedgerManager.class,
-            withSettings()
-                .useConstructor(conf, mockZk)
+                AbstractZkLedgerManager.class,
+                withSettings()
+                .useConstructor(conf, mockZk, LedgerMetadataSerDe.CURRENT_METADATA_FORMAT_VERSION)
                 .defaultAnswer(CALLS_REAL_METHODS));
         List<BookieSocketAddress> ensemble = Lists.newArrayList(
                 new BookieSocketAddress("192.0.2.1", 3181),
