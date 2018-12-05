@@ -69,8 +69,9 @@ class LegacyHierarchicalLedgerManager extends AbstractHierarchicalLedgerManager 
      * @param zk
      *          ZooKeeper Client Handle
      */
-    public LegacyHierarchicalLedgerManager(AbstractConfiguration conf, ZooKeeper zk) {
-        super(conf, zk);
+    public LegacyHierarchicalLedgerManager(AbstractConfiguration conf, ZooKeeper zk,
+                                           int maxLedgerMetadataFormatVersion) {
+        super(conf, zk, maxLedgerMetadataFormatVersion);
     }
 
     @Override

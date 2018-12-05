@@ -79,14 +79,14 @@ class EtcdLedgerManager implements LedgerManager {
 
     private volatile boolean closed = false;
 
-    EtcdLedgerManager(AbstractConfiguration conf,
-                      Client client,
-                      String scope) {
+    EtcdLedgerManager(Client client,
+                      String scope,
+                      int maxLedgerMetadataFormatVersion) {
         this.client = client;
         this.kvClient = client.getKVClient();
         this.scope = scope;
         this.watchClient = new EtcdWatchClient(client);
-        this.serDe = new LedgerMetadataSerDe(conf.getMaxLedgerMetadataFormatVersion());
+        this.serDe = new LedgerMetadataSerDe(maxLedgerMetadataFormatVersion);
 
         this.ledgerMetadataFunction = bs -> {
             try {

@@ -303,13 +303,15 @@ public class AbstractZkLedgerManagerTest extends MockZooKeeperTestCase {
 
     @Test
     public void testRemoveLedgerMetadataHierarchical() throws Exception {
-        HierarchicalLedgerManager hlm = new HierarchicalLedgerManager(conf, mockZk);
+        HierarchicalLedgerManager hlm = new HierarchicalLedgerManager(conf, mockZk,
+                LedgerMetadataSerDe.CURRENT_METADATA_FORMAT_VERSION);
         testRemoveLedgerMetadataHierarchicalLedgerManager(hlm);
     }
 
     @Test
     public void testRemoveLedgerMetadataLongHierarchical() throws Exception {
-        LongHierarchicalLedgerManager hlm = new LongHierarchicalLedgerManager(conf, mockZk);
+        LongHierarchicalLedgerManager hlm = new LongHierarchicalLedgerManager(conf, mockZk,
+                LedgerMetadataSerDe.CURRENT_METADATA_FORMAT_VERSION);
         testRemoveLedgerMetadataHierarchicalLedgerManager(hlm);
     }
 
