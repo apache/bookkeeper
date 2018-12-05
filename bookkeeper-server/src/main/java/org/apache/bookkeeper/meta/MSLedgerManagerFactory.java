@@ -399,8 +399,15 @@ public class MSLedgerManagerFactory extends AbstractZkLedgerManagerFactory {
                 }
             };
 
-            ledgerTable.put(ledgerId2Key(lid), new Value().setField(META_FIELD, serDe.serialize(metadata)),
-                    Version.NEW, msCallback, null);
+            final byte[] bytes;
+            try {
+                bytes = serDe.serialize(metadata);
+            } catch (IOException ioe) {
+                promise.completeExceptionally(new BKException.MetaStoreException(ioe));
+                return promise;
+            }
+            ledgerTable.put(ledgerId2Key(lid), new Value().setField(META_FIELD, bytes),
+                            Version.NEW, msCallback, null);
             return promise;
         }
 
@@ -461,13 +468,22 @@ public class MSLedgerManagerFactory extends AbstractZkLedgerManagerFactory {
         @Override
         public CompletableFuture<Versioned<LedgerMetadata>> writeLedgerMetadata(long ledgerId, LedgerMetadata metadata,
                                                                                 Version currentVersion) {
-            Value data = new Value().setField(META_FIELD, serDe.serialize(metadata));
+
+            CompletableFuture<Versioned<LedgerMetadata>> promise = new CompletableFuture<>();
+            final byte[] bytes;
+            try {
+                bytes = serDe.serialize(metadata);
+            } catch (IOException ioe) {
+                promise.completeExceptionally(new BKException.MetaStoreException(ioe));
+                return promise;
+            }
+
+            Value data = new Value().setField(META_FIELD, bytes);
 
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Writing ledger {} metadata, version {}", new Object[] { ledgerId, currentVersion });
             }
 
-            CompletableFuture<Versioned<LedgerMetadata>> promise = new CompletableFuture<>();
             final String key = ledgerId2Key(ledgerId);
             MetastoreCallback<Version> msCallback = new MetastoreCallback<Version>() {
                 @Override

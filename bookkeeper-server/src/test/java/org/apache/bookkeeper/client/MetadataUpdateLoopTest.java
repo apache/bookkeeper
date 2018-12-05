@@ -42,6 +42,7 @@ import java.util.stream.IntStream;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
+import org.apache.bookkeeper.client.api.DigestType;
 import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.MockLedgerManager;
@@ -69,6 +70,7 @@ public class MetadataUpdateLoopTest {
     public void testBasicUpdate() throws Exception {
         try (LedgerManager lm = new MockLedgerManager()) {
             LedgerMetadata initMeta = LedgerMetadataBuilder.create().withEnsembleSize(5)
+                .withDigestType(DigestType.CRC32C).withPassword(new byte[0])
                 .newEnsembleEntry(0L, Lists.newArrayList(
                                           new BookieSocketAddress("0.0.0.0:3181"),
                                           new BookieSocketAddress("0.0.0.1:3181"),
@@ -115,6 +117,7 @@ public class MetadataUpdateLoopTest {
             BookieSocketAddress b3 = new BookieSocketAddress("0.0.0.3:3181");
 
             LedgerMetadata initMeta = LedgerMetadataBuilder.create().withEnsembleSize(2)
+                .withDigestType(DigestType.CRC32C).withPassword(new byte[0])
                 .withWriteQuorumSize(2).newEnsembleEntry(0L, Lists.newArrayList(b0, b1)).build();
             Versioned<LedgerMetadata> writtenMetadata =
                 lm.createLedgerMetadata(ledgerId, initMeta).get();
@@ -181,6 +184,7 @@ public class MetadataUpdateLoopTest {
             BookieSocketAddress b2 = new BookieSocketAddress("0.0.0.2:3181");
 
             LedgerMetadata initMeta = LedgerMetadataBuilder.create().withEnsembleSize(2)
+                .withDigestType(DigestType.CRC32C).withPassword(new byte[0])
                 .withWriteQuorumSize(2).newEnsembleEntry(0L, Lists.newArrayList(b0, b1)).build();
             Versioned<LedgerMetadata> writtenMetadata = lm.createLedgerMetadata(ledgerId, initMeta).get();
             AtomicReference<Versioned<LedgerMetadata>> reference = new AtomicReference<>(writtenMetadata);
@@ -234,6 +238,7 @@ public class MetadataUpdateLoopTest {
             BookieSocketAddress b3 = new BookieSocketAddress("0.0.0.3:3181");
 
             LedgerMetadata initMeta = LedgerMetadataBuilder.create().withEnsembleSize(2)
+                .withDigestType(DigestType.CRC32C).withPassword(new byte[0])
                 .withWriteQuorumSize(2).newEnsembleEntry(0L, Lists.newArrayList(b0, b1)).build();
             Versioned<LedgerMetadata> writtenMetadata = lm.createLedgerMetadata(ledgerId, initMeta).get();
             AtomicReference<Versioned<LedgerMetadata>> reference = new AtomicReference<>(writtenMetadata);
@@ -299,6 +304,7 @@ public class MetadataUpdateLoopTest {
                 .collect(Collectors.toList());
 
             LedgerMetadata initMeta = LedgerMetadataBuilder.create().withEnsembleSize(ensembleSize)
+                .withDigestType(DigestType.CRC32C).withPassword(new byte[0])
                 .newEnsembleEntry(0L, initialEnsemble).build();
             Versioned<LedgerMetadata> writtenMetadata = lm.createLedgerMetadata(ledgerId, initMeta).get();
 
@@ -342,6 +348,7 @@ public class MetadataUpdateLoopTest {
             BookieSocketAddress b1 = new BookieSocketAddress("0.0.0.1:3181");
 
             LedgerMetadata initMeta = LedgerMetadataBuilder.create().withEnsembleSize(1)
+                .withDigestType(DigestType.CRC32C).withPassword(new byte[0])
                 .withWriteQuorumSize(1).withAckQuorumSize(1)
                 .newEnsembleEntry(0L, Lists.newArrayList(b0)).build();
             Versioned<LedgerMetadata> writtenMetadata = lm.createLedgerMetadata(ledgerId, initMeta).get();

@@ -103,8 +103,8 @@ public class MockLedgerManager implements LedgerManager {
                 if (metadataMap.containsKey(ledgerId)) {
                     executeCallback(() -> promise.completeExceptionally(new BKException.BKLedgerExistException()));
                 } else {
-                    metadataMap.put(ledgerId, Pair.of(new LongVersion(0L), serDe.serialize(metadata)));
                     try {
+                        metadataMap.put(ledgerId, Pair.of(new LongVersion(0L), serDe.serialize(metadata)));
                         Versioned<LedgerMetadata> readBack = readMetadata(ledgerId);
                         executeCallback(() -> promise.complete(readBack));
                     } catch (Exception e) {

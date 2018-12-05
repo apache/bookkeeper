@@ -266,9 +266,17 @@ public abstract class AbstractZkLedgerManager implements LedgerManager, Watcher 
                 }
             }
         };
+        final byte[] data;
+        try {
+            data = serDe.serialize(metadata);
+        } catch (IOException ioe) {
+            promise.completeExceptionally(new BKException.ZKException(ioe));
+            return promise;
+        }
+
         List<ACL> zkAcls = ZkUtils.getACLs(conf);
-        ZkUtils.asyncCreateFullPathOptimistic(zk, ledgerPath, serDe.serialize(metadata), zkAcls,
-                CreateMode.PERSISTENT, scb, null);
+        ZkUtils.asyncCreateFullPathOptimistic(zk, ledgerPath, data, zkAcls,
+                                              CreateMode.PERSISTENT, scb, null);
         return promise;
     }
 
@@ -423,8 +431,16 @@ public abstract class AbstractZkLedgerManager implements LedgerManager, Watcher 
             return promise;
         }
         final LongVersion zv = (LongVersion) currentVersion;
+
+        final byte[] data;
+        try {
+            data = serDe.serialize(metadata);
+        } catch (IOException ioe) {
+            promise.completeExceptionally(new BKException.ZKException(ioe));
+            return promise;
+        }
         zk.setData(getLedgerPath(ledgerId),
-                   serDe.serialize(metadata), (int) zv.getLongVersion(),
+                   data, (int) zv.getLongVersion(),
                    new StatCallback() {
             @Override
             public void processResult(int rc, String path, Object ctx, Stat stat) {

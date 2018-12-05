@@ -141,6 +141,7 @@ public class TestWatchEnsembleChange extends BookKeeperClusterTestCase {
                 @Override
                 public void operationComplete(int rc, final Long lid) {
                     LedgerMetadata metadata = LedgerMetadataBuilder.create()
+                        .withDigestType(digestType.toApiDigestType()).withPassword(new byte[0])
                         .withEnsembleSize(4).withWriteQuorumSize(2)
                         .withAckQuorumSize(2)
                         .newEnsembleEntry(0L, ensemble).build();
