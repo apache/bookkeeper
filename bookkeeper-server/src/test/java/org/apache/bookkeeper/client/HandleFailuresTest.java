@@ -447,4 +447,50 @@ public class HandleFailuresTest {
         Assert.assertEquals(lh.getLedgerMetadata().getAllEnsembles().get(0L), Lists.newArrayList(b1, b2, b3));
         Assert.assertEquals(lh.getLedgerMetadata().getAllEnsembles().get(1L), Lists.newArrayList(b1, b2, b4));
     }
+
+    @Test
+    public void testHandleFailureBookieNotInWriteSet() throws Exception {
+        MockClientContext clientCtx = MockClientContext.create();
+        Versioned<LedgerMetadata> md = ClientUtil.setupLedger(clientCtx, 10L,
+                LedgerMetadataBuilder.create()
+                .withEnsembleSize(3).withWriteQuorumSize(2).withAckQuorumSize(1)
+                .newEnsembleEntry(0L, Lists.newArrayList(b1, b2, b3)));
+        clientCtx.getMockRegistrationClient().addBookies(b4).get();
+
+        CompletableFuture<Void> b1Delay = new CompletableFuture<>();
+        // Delay the first write to b1, then error it
+        clientCtx.getMockBookieClient().setPreWriteHook((bookie, ledgerId, entryId) -> {
+                if (bookie.equals(b1)) {
+                    return b1Delay;
+                } else {
+                    return FutureUtils.value(null);
+                }
+            });
+
+        CompletableFuture<Void> changeInProgress = new CompletableFuture<>();
+        CompletableFuture<Void> blockEnsembleChange = new CompletableFuture<>();
+        clientCtx.getMockLedgerManager().setPreWriteHook((ledgerId, metadata) -> {
+                changeInProgress.complete(null);
+                return blockEnsembleChange;
+            });
+
+        LedgerHandle lh = new LedgerHandle(clientCtx, 10L, md, BookKeeper.DigestType.CRC32C,
+                                           ClientUtil.PASSWD, WriteFlag.NONE);
+        log.info("b2 should be enough to complete first add");
+        lh.append("entry1".getBytes());
+
+        log.info("when b1 completes with failure, handleFailures should kick off");
+        b1Delay.completeExceptionally(new BKException.BKWriteException());
+
+        log.info("write second entry, should have enough bookies, but blocks completion on failure handling");
+        CompletableFuture<?> e2 = lh.appendAsync("entry2".getBytes());
+        changeInProgress.get();
+        assertEventuallyTrue("e2 should eventually complete", () -> lh.pendingAddOps.peek().completed);
+        Assert.assertFalse("e2 shouldn't be completed to client", e2.isDone());
+        blockEnsembleChange.complete(null); // allow ensemble change to continue
+
+        log.info("e2 should complete");
+        e2.get(10, TimeUnit.SECONDS);
+    }
+
 }

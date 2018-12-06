@@ -1904,6 +1904,8 @@ public class LedgerHandle implements WriteHandle {
                             LOG.debug("{}[attempt:{}] Success updating metadata.", logContext, attempts.get());
                         }
 
+                        List<BookieSocketAddress> newEnsemble = null;
+                        Set<Integer> replaced = null;
                         synchronized (metadataLock) {
                             if (!delayedWriteFailedBookies.isEmpty()) {
                                 Map<Integer, BookieSocketAddress> toReplace = new HashMap<>(delayedWriteFailedBookies);
@@ -1911,12 +1913,15 @@ public class LedgerHandle implements WriteHandle {
 
                                 ensembleChangeLoop(origEnsemble, toReplace);
                             } else {
-                                List<BookieSocketAddress> newEnsemble = getCurrentEnsemble();
-                                Set<Integer> replaced = EnsembleUtils.diffEnsemble(origEnsemble, newEnsemble);
+                                newEnsemble = getCurrentEnsemble();
+                                replaced = EnsembleUtils.diffEnsemble(origEnsemble, newEnsemble);
                                 LOG.info("New Ensemble: {} for ledger: {}", newEnsemble, ledgerId);
-                                unsetSuccessAndSendWriteRequest(newEnsemble, replaced);
+
                                 changingEnsemble = false;
                             }
+                        }
+                        if (newEnsemble != null) { // unsetSuccess outside of lock
+                            unsetSuccessAndSendWriteRequest(newEnsemble, replaced);
                         }
                     }
             }, clientCtx.getMainWorkerPool().chooseThread(ledgerId));
