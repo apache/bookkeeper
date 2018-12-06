@@ -45,7 +45,6 @@ import java.util.function.Function;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.api.LedgerMetadata;
-import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerMetadataSerDe;
 import org.apache.bookkeeper.metadata.etcd.helpers.KeyIterator;
@@ -79,14 +78,14 @@ class EtcdLedgerManager implements LedgerManager {
 
     private volatile boolean closed = false;
 
-    EtcdLedgerManager(AbstractConfiguration conf,
-                      Client client,
-                      String scope) {
+    EtcdLedgerManager(Client client,
+                      String scope,
+                      int maxLedgerMetadataFormatVersion) {
         this.client = client;
         this.kvClient = client.getKVClient();
         this.scope = scope;
         this.watchClient = new EtcdWatchClient(client);
-        this.serDe = new LedgerMetadataSerDe(conf.getMaxLedgerMetadataFormatVersion());
+        this.serDe = new LedgerMetadataSerDe(maxLedgerMetadataFormatVersion);
 
         this.ledgerMetadataFunction = bs -> {
             try {

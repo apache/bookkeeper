@@ -27,6 +27,7 @@ import org.apache.bookkeeper.common.net.ServiceURI;
 import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.apache.bookkeeper.meta.LayoutManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
+import org.apache.bookkeeper.meta.LedgerMetadataSerDe;
 import org.apache.bookkeeper.meta.exceptions.Code;
 import org.apache.bookkeeper.meta.exceptions.MetadataException;
 import org.apache.bookkeeper.stats.StatsLogger;
@@ -106,7 +107,8 @@ class EtcdMetadataDriverBase implements AutoCloseable {
         if (null == lmFactory) {
             try {
                 lmFactory = new EtcdLedgerManagerFactory();
-                lmFactory.initialize(conf, layoutManager, EtcdLedgerManagerFactory.VERSION);
+                lmFactory.initialize(conf, layoutManager, EtcdLedgerManagerFactory.VERSION,
+                                     LedgerMetadataSerDe.CURRENT_METADATA_FORMAT_VERSION);
             } catch (IOException ioe) {
                 throw new MetadataException(
                     Code.METADATA_SERVICE_ERROR, "Failed to initialize ledger manager factory", ioe);
