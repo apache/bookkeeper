@@ -722,8 +722,7 @@ public class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsembleP
         }
 
         try {
-            return selectRandomInternal(knownNodes, 1, fullExclusionBookiesList, TruePredicate.INSTANCE,
-                    EnsembleForReplacementWithNoConstraints.INSTANCE).get(0);
+            return selectRandomInternal(knownNodes, 1, fullExclusionBookiesList, predicate, ensemble).get(0);
         } catch (BKNotEnoughBookiesException e) {
             if (!fallbackToRandom) {
                 LOG.error(

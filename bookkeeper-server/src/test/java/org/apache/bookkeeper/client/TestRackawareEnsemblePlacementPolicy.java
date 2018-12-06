@@ -41,6 +41,7 @@ import junit.framework.TestCase;
 
 import org.apache.bookkeeper.client.BKException.BKNotEnoughBookiesException;
 import org.apache.bookkeeper.client.BookieInfoReader.BookieInfo;
+import org.apache.bookkeeper.client.ITopologyAwareEnsemblePlacementPolicy.Ensemble;
 import org.apache.bookkeeper.client.TopologyAwareEnsemblePlacementPolicy.BookieNode;
 import org.apache.bookkeeper.client.TopologyAwareEnsemblePlacementPolicy.EnsembleForReplacementWithNoConstraints;
 import org.apache.bookkeeper.client.TopologyAwareEnsemblePlacementPolicy.TruePredicate;
@@ -1174,6 +1175,105 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         assertTrue("BookieNode should not be from Rack /r0" + bookieNode.getNetworkLocation(),
                 rackLocationNames[1].equals(bookieNode.getNetworkLocation())
                         || rackLocationNames[2].equals(bookieNode.getNetworkLocation()));
+    }
+
+    @Test
+    public void testSelectBookieByExcludingRacksAndBookies() throws Exception {
+        repp.uninitalize();
+
+        int minNumRacksPerWriteQuorum = 4;
+        ClientConfiguration clientConf = new ClientConfiguration(conf);
+        clientConf.setMinNumRacksPerWriteQuorum(minNumRacksPerWriteQuorum);
+        // set enforceMinNumRacksPerWriteQuorum
+        clientConf.setEnforceMinNumRacksPerWriteQuorum(true);
+        /*
+         * Durability is enforced
+         *
+         * When durability is being enforced; we must not violate the predicate
+         * even when selecting a random bookie; as durability guarantee is not
+         * best effort; correctness is implied by it
+         */
+        repp = new RackawareEnsemblePlacementPolicy(true);
+        repp.initialize(clientConf, Optional.<DNSToSwitchMapping> empty(), timer, DISABLE_ALL,
+                NullStatsLogger.INSTANCE);
+        repp.withDefaultRack(NetworkTopology.DEFAULT_REGION_AND_RACK);
+
+        int numOfRacks = 3;
+        int numOfBookiesPerRack = 5;
+        String[] rackLocationNames = new String[numOfRacks];
+        List<BookieSocketAddress> bookieSocketAddresses = new ArrayList<BookieSocketAddress>();
+        Map<BookieSocketAddress, String> bookieRackMap = new HashMap<BookieSocketAddress, String>();
+        BookieSocketAddress bookieAddress;
+
+        for (int i = 0; i < numOfRacks; i++) {
+            rackLocationNames[i] = "/default-region/r" + i;
+            for (int j = 0; j < numOfBookiesPerRack; j++) {
+                int index = i * numOfBookiesPerRack + j;
+                bookieAddress = new BookieSocketAddress("128.0.0." + index, 3181);
+                StaticDNSResolver.addNodeToRack(bookieAddress.getHostName(), rackLocationNames[i]);
+                bookieSocketAddresses.add(bookieAddress);
+                bookieRackMap.put(bookieAddress, rackLocationNames[i]);
+            }
+        }
+
+        repp.onClusterChanged(new HashSet<BookieSocketAddress>(bookieSocketAddresses),
+                new HashSet<BookieSocketAddress>());
+
+        Set<BookieSocketAddress> excludeBookiesOfRackR0 = new HashSet<BookieSocketAddress>();
+        for (int i = 0; i < numOfBookiesPerRack; i++) {
+            excludeBookiesOfRackR0.add(bookieSocketAddresses.get(i));
+        }
+
+        Set<Node> excludeBookieNodesOfRackR0 = repp.convertBookiesToNodes(excludeBookiesOfRackR0);
+
+        Set<String> excludeRackR1 = new HashSet<String>();
+        excludeRackR1.add(rackLocationNames[1]);
+
+        BookieNode nodeSelected;
+        nodeSelected = repp.selectFromNetworkLocation(excludeRackR1, excludeBookieNodesOfRackR0, TruePredicate.INSTANCE,
+                EnsembleForReplacementWithNoConstraints.INSTANCE, false);
+        assertEquals("BookieNode should be from Rack2", rackLocationNames[2], nodeSelected.getNetworkLocation());
+
+        try {
+            /*
+             * durability is enforced, so false predicate will reject all
+             * bookies.
+             */
+            repp.selectFromNetworkLocation(excludeRackR1, excludeBookieNodesOfRackR0, (candidate, chosenBookies) -> {
+                return false;
+            }, EnsembleForReplacementWithNoConstraints.INSTANCE, false);
+            fail("Should get not enough bookies exception since we are using false predicate");
+        } catch (BKNotEnoughBookiesException bnebe) {
+            // this is expected
+        }
+
+        try {
+            /*
+             * Using ensemble which rejects all the nodes.
+             */
+            repp.selectFromNetworkLocation(excludeRackR1, excludeBookieNodesOfRackR0, TruePredicate.INSTANCE,
+                    new Ensemble<BookieNode>() {
+
+                        @Override
+                        public boolean addNode(BookieNode node) {
+                            return false;
+                        }
+
+                        @Override
+                        public List<BookieSocketAddress> toList() {
+                            return null;
+                        }
+
+                        @Override
+                        public boolean validate() {
+                            return false;
+                        }
+
+                    }, false);
+            fail("Should get not enough bookies exception since ensemble rejects all the nodes");
+        } catch (BKNotEnoughBookiesException bnebe) {
+            // this is expected
+        }
     }
 
     @Test
