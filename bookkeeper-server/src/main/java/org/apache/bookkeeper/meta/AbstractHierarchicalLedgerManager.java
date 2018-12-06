@@ -49,8 +49,9 @@ public abstract class AbstractHierarchicalLedgerManager extends AbstractZkLedger
      * @param zk
      *          ZooKeeper Client Handle
      */
-    public AbstractHierarchicalLedgerManager(AbstractConfiguration conf, ZooKeeper zk) {
-        super(conf, zk);
+    public AbstractHierarchicalLedgerManager(AbstractConfiguration conf, ZooKeeper zk,
+                                             int maxLedgerMetadataFormatVersion) {
+        super(conf, zk, maxLedgerMetadataFormatVersion);
     }
 
     /**

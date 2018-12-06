@@ -85,7 +85,6 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
     protected static final String STORE_SYSTEMTIME_AS_LEDGER_UNDERREPLICATED_MARK_TIME =
             "storeSystemTimeAsLedgerUnderreplicatedMarkTime";
     protected static final String STORE_SYSTEMTIME_AS_LEDGER_CREATION_TIME = "storeSystemTimeAsLedgerCreationTime";
-    protected static final String MAX_LEDGER_METADATA_FORMAT_VERSION = "maxLedgerMetadataFormatVersion";
 
     // Metastore settings, only being used when LEDGER_MANAGER_FACTORY_CLASS is MSLedgerManagerFactory
     protected static final String METASTORE_IMPL_CLASS = "metastoreImplClass";
@@ -854,29 +853,6 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      */
     public boolean getStoreSystemTimeAsLedgerUnderreplicatedMarkTime() {
         return getBoolean(STORE_SYSTEMTIME_AS_LEDGER_UNDERREPLICATED_MARK_TIME, true);
-    }
-
-    /**
-     * Set the maximum format version which should be used when serializing ledger metadata.
-     * Setting the maximum format allows us to ensure that all clients running against a cluster
-     * will be able to read back all written metadata.
-     * Normally this is set when loading the layout from the metadata store. Users should not
-     * set this directly.
-     */
-    public T setMaxLedgerMetadataFormatVersion(int maxVersion) {
-        setProperty(MAX_LEDGER_METADATA_FORMAT_VERSION, maxVersion);
-        return getThis();
-    }
-
-    /**
-     * Get the maximum format version which should be used when serializing ledger metadata.
-     * The default is 2, as that was the current version when this functionallity was introduced.
-     *
-     * @see #setMaxLedgerMetadataFormatVersion(int)
-     * @return the maximum format version with which to serialize metadata.
-     */
-    public int getMaxLedgerMetadataFormatVersion() {
-        return getInteger(MAX_LEDGER_METADATA_FORMAT_VERSION, 2);
     }
 
     /**
