@@ -26,7 +26,7 @@ import org.apache.bookkeeper.common.conf.Validator;
  * Validator that validates a configuration value is in a numeric range.
  */
 @Data
-public class Range implements Validator {
+public class RangeValidator implements Validator {
 
     /**
      * A numeric range that checks the lower bound.
@@ -34,8 +34,8 @@ public class Range implements Validator {
      * @param min the minimum acceptable value
      * @return a numeric range that checks the lower bound
      */
-    public static Range atLeast(Number min) {
-        return new Range(min, null);
+    public static RangeValidator atLeast(Number min) {
+        return new RangeValidator(min, null);
     }
 
     /**
@@ -44,8 +44,8 @@ public class Range implements Validator {
      * @param max the maximum acceptable value
      * @return a numeric range that checks the upper bound
      */
-    public static Range atMost(Number max) {
-        return new Range(null, max);
+    public static RangeValidator atMost(Number max) {
+        return new RangeValidator(null, max);
     }
 
     /**
@@ -55,8 +55,8 @@ public class Range implements Validator {
      * @param max the maximum acceptable value
      * @return a numeric range that checks both lower and upper bounds
      */
-    public static Range between(Number min, Number max) {
-        return new Range(min, max);
+    public static RangeValidator between(Number min, Number max) {
+        return new RangeValidator(min, max);
     }
 
     private final Number min;
@@ -81,11 +81,16 @@ public class Range implements Validator {
     @Override
     public String toString() {
         if (null == min) {
-            return "[ , " + max + " ]";
+            return "[... , " + max + "]";
         } else if (null == max) {
-            return "[ " + min + ", ]";
+            return "[" + min + ", ...]";
         } else {
-            return "[ " + min + ", " + max + " ]";
+            return "[" + min + ", " + max + "]";
         }
+    }
+
+    @Override
+    public String documentation() {
+        return toString();
     }
 }

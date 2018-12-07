@@ -19,30 +19,29 @@
 
 package org.apache.bookkeeper.common.conf;
 
-import org.apache.bookkeeper.common.annotation.InterfaceAudience.Public;
-
 /**
- * Validator that validates configuration settings.
+ * Exception thrown for configuration errors.
  */
-@Public
-public interface Validator {
+public class ConfigException extends Exception {
+
+    private static final long serialVersionUID = -7842276571881795108L;
 
     /**
-     * Validates the configuration value.
+     * Construct a config exception with provided error.
      *
-     * @param name name of the configuration setting
-     * @param value value of the configuration setting
-     * @return true if it is a valid value, otherwise false.
+     * @param error error message
      */
-    boolean validate(String name, Object value);
-
-    /**
-     * Return the documentation for a given validator.
-     *
-     * @return the documentation for a given validator
-     */
-    default String documentation() {
-        return "";
+    public ConfigException(String error) {
+        super(error);
     }
 
+    /**
+     * Construct a config exception with provided error and reason.
+     *
+     * @param error error message
+     * @param cause error cause
+     */
+    public ConfigException(String error, Throwable cause) {
+        super(error, cause);
+    }
 }

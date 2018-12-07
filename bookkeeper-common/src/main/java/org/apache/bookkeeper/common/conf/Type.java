@@ -19,18 +19,32 @@
 
 package org.apache.bookkeeper.common.conf;
 
+import java.util.List;
+import org.apache.bookkeeper.common.annotation.InterfaceAudience.Public;
+
 /**
- * Config types
+ * Config key types.
  */
+@Public
 public enum Type {
 
-    BOOLEAN,
-    STRING,
-    INT,
-    SHORT,
-    LONG,
-    DOUBLE,
-    LIST,
-    CLASS
+    BOOLEAN((name, value) -> value instanceof Boolean),
+    STRING((name, value) -> value instanceof String),
+    INT((name, value) -> value instanceof Integer),
+    SHORT((name, value) -> value instanceof Short),
+    LONG((name, value) -> value instanceof Long),
+    DOUBLE((name, value) -> value instanceof Double),
+    LIST((name, value) -> value instanceof List),
+    CLASS((name, value) -> value instanceof Class || value instanceof String);
+
+    private Validator validator;
+
+    Type(Validator validator) {
+        this.validator = validator;
+    }
+
+    public Validator validator() {
+        return validator;
+    }
 
 }

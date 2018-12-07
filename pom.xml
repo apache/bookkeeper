@@ -996,6 +996,9 @@
             <exclude>**/__pycache__/**</exclude>
             <exclude>**/bookkeeper.egg-info/**</exclude>
             <exclude>**/pip-selfcheck.json</exclude>
+
+            <!-- test resources -->
+            <exclude>**/test_conf_2.conf</exclude>
           </excludes>
           <consoleOutput>true</consoleOutput>
         </configuration>

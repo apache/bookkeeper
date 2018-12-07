@@ -17,32 +17,30 @@
  * under the License.
  */
 
-package org.apache.bookkeeper.common.conf;
+package org.apache.bookkeeper.common.conf.validators;
 
-import org.apache.bookkeeper.common.annotation.InterfaceAudience.Public;
+import org.apache.bookkeeper.common.conf.Validator;
 
 /**
- * Validator that validates configuration settings.
+ * A validator that does nothing.
  */
-@Public
-public interface Validator {
+public class NullValidator implements Validator {
 
     /**
-     * Validates the configuration value.
+     * Return the instance of NullValidator.
      *
-     * @param name name of the configuration setting
-     * @param value value of the configuration setting
-     * @return true if it is a valid value, otherwise false.
+     * @return the instance of NullValidator.
      */
-    boolean validate(String name, Object value);
-
-    /**
-     * Return the documentation for a given validator.
-     *
-     * @return the documentation for a given validator
-     */
-    default String documentation() {
-        return "";
+    public static NullValidator of() {
+        return INSTANCE;
     }
 
+    private static final NullValidator INSTANCE = new NullValidator();
+
+    private NullValidator() {}
+
+    @Override
+    public boolean validate(String name, Object value) {
+        return true;
+    }
 }
