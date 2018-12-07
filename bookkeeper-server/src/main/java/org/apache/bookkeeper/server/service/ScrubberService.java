@@ -47,7 +47,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * A {@link org.apache.bookkeeper.common.component.LifecycleComponent} that runs stats provider.
+ * A {@link org.apache.bookkeeper.common.component.LifecycleComponent} that runs the scrubber background service.
  */
 public class ScrubberService extends ServerLifecycleComponent {
     private static final Logger LOG = LoggerFactory.getLogger(ScrubberService.class);
@@ -71,7 +71,9 @@ public class ScrubberService extends ServerLifecycleComponent {
         super(NAME, conf, logger);
         this.executor = Executors.newSingleThreadScheduledExecutor(
                 new DefaultThreadFactory("ScrubThread"));
+
         this.scrubPeriod = conf.getServerConf().getLocalScrubPeriod();
+        assert(scrubPeriod > 0); // Otherwise, scrub service is disabled.
 
         double rateLimit = conf.getServerConf().getLocalScrubRateLimit();
         this.scrubRateLimiter = rateLimit == 0 ? Optional.empty() : Optional.of(RateLimiter.create(rateLimit));

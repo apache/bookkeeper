@@ -614,6 +614,8 @@ public class Bookie extends BookieCriticalThread {
      * Initialize LedgerStorage instance without checkpointing for use within the shell
      * and other RO users.  ledgerStorage must not have already been initialized.
      *
+     * The caller is responsible for disposing of the ledgerStorage object.
+     *
      * @param conf Bookie config.
      * @param ledgerStorage Instance to initialize.
      * @return Passed ledgerStorage instance
@@ -927,6 +929,7 @@ public class Bookie extends BookieCriticalThread {
         } catch (ExecutionException e) {
             LOG.error("Error on executing a fully flush after replaying journals.");
             shutdown(ExitCode.BOOKIE_EXCEPTION);
+            return;
         }
 
         if (conf.isLocalConsistencyCheckOnStartup()) {
@@ -937,6 +940,7 @@ public class Bookie extends BookieCriticalThread {
             } catch (IOException e) {
                 LOG.error("Got a fatal exception while checking store", e);
                 shutdown(ExitCode.BOOKIE_EXCEPTION);
+                return;
             }
             if (errors != null && errors.size() > 0) {
                 LOG.error("Bookie failed local consistency check:");
@@ -944,6 +948,7 @@ public class Bookie extends BookieCriticalThread {
                     LOG.error("Ledger {}, entry {}: ", error.getLedgerId(), error.getEntryId(), error.getException());
                 }
                 shutdown(ExitCode.BOOKIE_EXCEPTION);
+                return;
             }
         }
 

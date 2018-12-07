@@ -386,20 +386,20 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return Whether local scrub is enabled.
      */
     public boolean isLocalScrubEnabled() {
-        return this.getLocalScrubPeriod() != 0;
+        return this.getLocalScrubPeriod() > 0;
     }
 
     /**
      * Get local scrub interval.
      *
-     * @return Number of seconds between scrubs, 0 for disabled.
+     * @return Number of seconds between scrubs, <= 0 for disabled.
      */
     public long getLocalScrubPeriod() {
         return this.getLong(LOCAL_SCRUB_PERIOD, 0);
     }
 
     /**
-     * Set local scrub period in seconds (0 for disable). Scrub will be scheduled at delays
+     * Set local scrub period in seconds (<= 0 for disabled). Scrub will be scheduled at delays
      * chosen from the interval (.5 * interval, 1.5 * interval)
      */
     public void setLocalScrubPeriod(long period) {

@@ -794,7 +794,7 @@ public class EntryLogger {
             if (readFromLogChannel(entryLogId, fc, sizeBuff, pos) != sizeBuff.capacity()) {
                 throw new EntryLookupException.MissingEntryException(ledgerId, entryId, entryLogId, pos);
             }
-        } catch (BufferedChannelBase.ChannelClosed | AsynchronousCloseException e) {
+        } catch (BufferedChannelBase.BufferedChannelClosedException | AsynchronousCloseException e) {
             throw new EntryLookupException.MissingLogFileException(ledgerId, entryId, entryLogId, pos);
         }
         pos += 4;

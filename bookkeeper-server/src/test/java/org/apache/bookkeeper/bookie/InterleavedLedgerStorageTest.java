@@ -87,8 +87,6 @@ public class InterleavedLedgerStorageTest {
         File curDir = Bookie.getCurrentDirectory(tmpDir);
         Bookie.checkDirectoryStructure(curDir);
 
-        System.out.println(tmpDir);
-
         conf = TestBKConfiguration.newServerConfiguration();
         conf.setLedgerDirNames(new String[] { tmpDir.toString() });
         conf.setEntryLogSizeLimit(2048);
