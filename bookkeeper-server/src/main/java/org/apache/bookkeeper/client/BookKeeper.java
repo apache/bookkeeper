@@ -469,8 +469,10 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
             this.allocator = byteBufAllocator;
         } else {
             this.allocator = ByteBufAllocatorBuilder.create()
-                    .poolingPolicy(
-                            conf.isNettyUsePooledBuffers() ? PoolingPolicy.PooledDirect : PoolingPolicy.UnpooledHeap)
+                    .poolingPolicy(conf.getAllocatorPoolingPolicy())
+                    .poolingConcurrency(conf.getAllocatorPoolingConcurrency())
+                    .outOfMemoryPolicy(conf.getAllocatorOutOfMemoryPolicy())
+                    .leakDetectionPolicy(conf.getAllocatorLeakDetectionPolicy())
                     .build();
         }
 
