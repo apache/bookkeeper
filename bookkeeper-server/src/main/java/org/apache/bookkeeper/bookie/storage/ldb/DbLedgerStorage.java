@@ -56,7 +56,6 @@ import org.apache.bookkeeper.common.util.MathUtils;
 import org.apache.bookkeeper.common.util.Watcher;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager;
-import org.apache.bookkeeper.stats.Gauge;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.DiskChecker;
@@ -85,6 +84,7 @@ public class DbLedgerStorage implements LedgerStorage {
 
     // Keep 1 single Bookie GC thread so the the compactions from multiple individual directories are serialized
     private ScheduledExecutorService gcExecutor;
+    private DbLedgerStorageStats stats;
 
     @Override
     public void initialize(ServerConfiguration conf, LedgerManager ledgerManager, LedgerDirsManager ledgerDirsManager,
@@ -121,7 +121,13 @@ public class DbLedgerStorage implements LedgerStorage {
                     perDirectoryReadCacheSize));
         }
 
-        registerStats(statsLogger);
+        this.stats = new DbLedgerStorageStats(
+            statsLogger,
+            () -> ledgerStorageList.stream().mapToLong(SingleDirectoryDbLedgerStorage::getWriteCacheSize).sum(),
+            () -> ledgerStorageList.stream().mapToLong(SingleDirectoryDbLedgerStorage::getWriteCacheCount).sum(),
+            () -> ledgerStorageList.stream().mapToLong(SingleDirectoryDbLedgerStorage::getReadCacheSize).sum(),
+            () -> ledgerStorageList.stream().mapToLong(SingleDirectoryDbLedgerStorage::getReadCacheCount).sum()
+        );
     }
 
     @VisibleForTesting
@@ -132,53 +138,6 @@ public class DbLedgerStorage implements LedgerStorage {
             throws IOException {
         return new SingleDirectoryDbLedgerStorage(conf, ledgerManager, ledgerDirsManager, indexDirsManager,
                 stateManager, checkpointSource, checkpointer, statsLogger, gcExecutor, writeCacheSize, readCacheSize);
-    }
-
-    public void registerStats(StatsLogger stats) {
-        stats.registerGauge("write-cache-size", new Gauge<Long>() {
-            @Override
-            public Long getDefaultValue() {
-                return 0L;
-            }
-
-            @Override
-            public Long getSample() {
-                return ledgerStorageList.stream().mapToLong(SingleDirectoryDbLedgerStorage::getWriteCacheSize).sum();
-            }
-        });
-        stats.registerGauge("write-cache-count", new Gauge<Long>() {
-            @Override
-            public Long getDefaultValue() {
-                return 0L;
-            }
-
-            @Override
-            public Long getSample() {
-                return ledgerStorageList.stream().mapToLong(SingleDirectoryDbLedgerStorage::getWriteCacheCount).sum();
-            }
-        });
-        stats.registerGauge("read-cache-size", new Gauge<Long>() {
-            @Override
-            public Long getDefaultValue() {
-                return 0L;
-            }
-
-            @Override
-            public Long getSample() {
-                return ledgerStorageList.stream().mapToLong(SingleDirectoryDbLedgerStorage::getReadCacheSize).sum();
-            }
-        });
-        stats.registerGauge("read-cache-count", new Gauge<Long>() {
-            @Override
-            public Long getDefaultValue() {
-                return 0L;
-            }
-
-            @Override
-            public Long getSample() {
-                return ledgerStorageList.stream().mapToLong(SingleDirectoryDbLedgerStorage::getReadCacheCount).sum();
-            }
-        });
     }
 
     @Override
