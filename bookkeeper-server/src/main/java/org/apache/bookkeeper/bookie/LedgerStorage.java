@@ -235,4 +235,9 @@ public interface LedgerStorage {
     default boolean isInForceGC() {
         return false;
     }
+
+
+    default GarbageCollectionStatus getGarbageCollectionStatus() {
+        return null;
+    }
 }

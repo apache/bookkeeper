@@ -108,6 +108,10 @@ public class GarbageCollectorThread extends SafeRunnable {
     // to reduce the risk getting entry log corrupted
     final AtomicBoolean compacting = new AtomicBoolean(false);
 
+    // use to get the compacting status
+    final AtomicBoolean minorCompacting = new AtomicBoolean(false);
+    final AtomicBoolean majorCompacting = new AtomicBoolean(false);
+
     volatile boolean running = true;
 
     // track the last scanned successfully log id
@@ -380,18 +384,22 @@ public class GarbageCollectorThread extends SafeRunnable {
             && (force || curTime - lastMajorCompactionTime > majorCompactionInterval)) {
             // enter major compaction
             LOG.info("Enter major compaction, suspendMajor {}", suspendMajor);
+            majorCompacting.set(true);
             doCompactEntryLogs(majorCompactionThreshold);
             lastMajorCompactionTime = System.currentTimeMillis();
             // and also move minor compaction time
             lastMinorCompactionTime = lastMajorCompactionTime;
             majorCompactionCounter.inc();
+            majorCompacting.set(false);
         } else if (enableMinorCompaction && (!suspendMinor)
             && (force || curTime - lastMinorCompactionTime > minorCompactionInterval)) {
             // enter minor compaction
             LOG.info("Enter minor compaction, suspendMinor {}", suspendMinor);
+            minorCompacting.set(true);
             doCompactEntryLogs(minorCompactionThreshold);
             lastMinorCompactionTime = System.currentTimeMillis();
             minorCompactionCounter.inc();
+            minorCompacting.set(false);
         }
 
         if (force) {
@@ -604,5 +612,17 @@ public class GarbageCollectorThread extends SafeRunnable {
 
     CompactableLedgerStorage getLedgerStorage() {
         return ledgerStorage;
+    }
+
+    public GarbageCollectionStatus getGarbageCollectionStatus() {
+        return GarbageCollectionStatus.builder()
+            .forceCompacting(forceGarbageCollection.get())
+            .majorCompacting(majorCompacting.get())
+            .minorCompacting(minorCompacting.get())
+            .lastMajorCompactionTime(lastMajorCompactionTime)
+            .lastMinorCompactionTime(lastMinorCompactionTime)
+            .majorCompactionCounter(majorCompactionCounter.get())
+            .minorCompactionCounter(minorCompactionCounter.get())
+            .build();
     }
 }

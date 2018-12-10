@@ -49,6 +49,7 @@ import org.apache.bookkeeper.bookie.Checkpointer;
 import org.apache.bookkeeper.bookie.CompactableLedgerStorage;
 import org.apache.bookkeeper.bookie.EntryLocation;
 import org.apache.bookkeeper.bookie.EntryLogger;
+import org.apache.bookkeeper.bookie.GarbageCollectionStatus;
 import org.apache.bookkeeper.bookie.GarbageCollectorThread;
 import org.apache.bookkeeper.bookie.LastAddConfirmedUpdateNotification;
 import org.apache.bookkeeper.bookie.LedgerCache;
@@ -925,6 +926,11 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
 
     long getReadCacheCount() {
         return readCache.count();
+    }
+
+    @Override
+    public GarbageCollectionStatus getGarbageCollectionStatus() {
+        return gcThread.getGarbageCollectionStatus();
     }
 
     /**

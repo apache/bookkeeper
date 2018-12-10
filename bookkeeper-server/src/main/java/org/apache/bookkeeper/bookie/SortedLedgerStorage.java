@@ -345,4 +345,9 @@ public class SortedLedgerStorage
     public boolean isInForceGC() {
         return interleavedLedgerStorage.isInForceGC();
     }
+
+    @Override
+    public GarbageCollectionStatus getGarbageCollectionStatus() {
+        return interleavedLedgerStorage.getGarbageCollectionStatus();
+    }
 }

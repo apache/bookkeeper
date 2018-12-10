@@ -292,6 +292,17 @@ Currently all the HTTP endpoints could be divided into these 4 components:
         |403 | Permission denied |
         |404 | Not found |
 
+### Endpoint: /api/v1/bookie/gc_details
+1. Method: GET
+    * Description:  get details of Garbage Collection Thread, like whether it is in compacting, last compaction time, compaction counter, etc.
+    * Response:
+
+        | Code   | Description |
+        |:-------|:------------|
+        |200 | Successful operation |
+        |403 | Permission denied |
+        |404 | Not found |
+
 ## Auto recovery
 
 ### Endpoint: /api/v1/autorecovery/bookie/

@@ -45,6 +45,7 @@ import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.CheckpointSource;
 import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
 import org.apache.bookkeeper.bookie.Checkpointer;
+import org.apache.bookkeeper.bookie.GarbageCollectionStatus;
 import org.apache.bookkeeper.bookie.LastAddConfirmedUpdateNotification;
 import org.apache.bookkeeper.bookie.LedgerCache;
 import org.apache.bookkeeper.bookie.LedgerDirsManager;
@@ -363,5 +364,35 @@ public class DbLedgerStorage implements LedgerStorage {
     @Override
     public boolean isInForceGC() {
         return ledgerStorageList.stream().anyMatch(SingleDirectoryDbLedgerStorage::isInForceGC);
+    }
+
+    @Override
+    public GarbageCollectionStatus getGarbageCollectionStatus() {
+        boolean forceCompacting = ledgerStorageList.stream()
+            .anyMatch(single -> single.getGarbageCollectionStatus().isForceCompacting());
+        boolean majorCompacting = ledgerStorageList.stream()
+            .anyMatch(single -> single.getGarbageCollectionStatus().isMajorCompacting());
+        boolean minorCompacting = ledgerStorageList.stream()
+            .anyMatch(single -> single.getGarbageCollectionStatus().isMinorCompacting());
+
+        long lastMajorCompactionTime = ledgerStorageList.stream()
+            .mapToLong(single -> single.getGarbageCollectionStatus().getLastMajorCompactionTime()).max().getAsLong();
+        long lastMinorCompactionTime = ledgerStorageList.stream()
+            .mapToLong(single -> single.getGarbageCollectionStatus().getLastMinorCompactionTime()).max().getAsLong();
+
+        long majorCompactionCounter = ledgerStorageList.stream()
+            .mapToLong(single -> single.getGarbageCollectionStatus().getMajorCompactionCounter()).sum();
+        long minorCompactionCounter = ledgerStorageList.stream()
+            .mapToLong(single -> single.getGarbageCollectionStatus().getMinorCompactionCounter()).sum();
+
+        return GarbageCollectionStatus.builder()
+            .forceCompacting(forceCompacting)
+            .majorCompacting(majorCompacting)
+            .minorCompacting(minorCompacting)
+            .lastMajorCompactionTime(lastMajorCompactionTime)
+            .lastMinorCompactionTime(lastMinorCompactionTime)
+            .majorCompactionCounter(majorCompactionCounter)
+            .minorCompactionCounter(minorCompactionCounter)
+            .build();
     }
 }

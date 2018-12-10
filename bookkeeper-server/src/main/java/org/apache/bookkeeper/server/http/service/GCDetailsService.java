@@ -20,6 +20,9 @@ package org.apache.bookkeeper.server.http.service;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import com.google.common.collect.Maps;
+import java.util.Map;
+import org.apache.bookkeeper.bookie.GarbageCollectionStatus;
 import org.apache.bookkeeper.common.util.JsonUtil;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.http.HttpServer;
@@ -31,20 +34,18 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * HttpEndpointService that handle force trigger GC requests.
+ * HttpEndpointService that handle get garbage collection details service.
  *
  * <p>The PUT method will force trigger GC on current bookie, and make GC run at backend.
- *
- * <p>The GET method will get the force triggered GC running or not.
  */
-public class TriggerGCService implements HttpEndpointService {
+public class GCDetailsService implements HttpEndpointService {
 
-    static final Logger LOG = LoggerFactory.getLogger(TriggerGCService.class);
+    static final Logger LOG = LoggerFactory.getLogger(GCDetailsService.class);
 
     protected ServerConfiguration conf;
     protected BookieServer bookieServer;
 
-    public TriggerGCService(ServerConfiguration conf, BookieServer bookieServer) {
+    public GCDetailsService(ServerConfiguration conf, BookieServer bookieServer) {
         checkNotNull(conf);
         checkNotNull(bookieServer);
         this.conf = conf;
@@ -55,28 +56,17 @@ public class TriggerGCService implements HttpEndpointService {
     public HttpServiceResponse handle(HttpServiceRequest request) throws Exception {
         HttpServiceResponse response = new HttpServiceResponse();
 
-        if (HttpServer.Method.PUT == request.getMethod()) {
-            bookieServer.getBookie().getLedgerStorage().forceGC();
+        if (HttpServer.Method.GET == request.getMethod()) {
+            GarbageCollectionStatus details = bookieServer.getBookie().getLedgerStorage().getGarbageCollectionStatus();
 
-            String output = "Triggered GC on BookieServer: " + bookieServer.toString();
-            String jsonResponse = JsonUtil.toJson(output);
-            LOG.debug("output body:" + jsonResponse);
-            response.setBody(jsonResponse);
-            response.setCode(HttpServer.StatusCode.OK);
-            return response;
-        } else if (HttpServer.Method.GET == request.getMethod()) {
-            boolean isInForceGC = bookieServer.getBookie().getLedgerStorage().isInForceGC();
-
-            String output = "Is Force Triggered GC on BookieServer: " + bookieServer.toString() + " running? "
-                + (isInForceGC ? "true" : "false");
-            String jsonResponse = JsonUtil.toJson(output);
+            String jsonResponse = JsonUtil.toJson(details);
             LOG.debug("output body:" + jsonResponse);
             response.setBody(jsonResponse);
             response.setCode(HttpServer.StatusCode.OK);
             return response;
         } else {
             response.setCode(HttpServer.StatusCode.NOT_FOUND);
-            response.setBody("Not found method. Should be PUT to trigger GC, Or GET to get Force GC state.");
+            response.setBody("Not found method. Only support Get method to get GC details.");
             return response;
         }
     }
