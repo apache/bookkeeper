@@ -25,6 +25,7 @@ import static org.apache.bookkeeper.bookie.ScrubberStats.DETECTED_FATAL_SCRUB_ER
 import static org.apache.bookkeeper.bookie.ScrubberStats.DETECTED_SCRUB_ERRORS;
 import static org.apache.bookkeeper.bookie.ScrubberStats.RUN_DURATION;
 
+import com.google.common.base.Preconditions;
 import com.google.common.util.concurrent.RateLimiter;
 import io.netty.util.concurrent.DefaultThreadFactory;
 import java.io.IOException;
@@ -73,7 +74,9 @@ public class ScrubberService extends ServerLifecycleComponent {
                 new DefaultThreadFactory("ScrubThread"));
 
         this.scrubPeriod = conf.getServerConf().getLocalScrubPeriod();
-        assert(scrubPeriod > 0); // Otherwise, scrub service is disabled.
+        Preconditions.checkArgument(
+                scrubPeriod > 0,
+                "localScrubInterval must be > 0 for ScrubberService to be used");
 
         double rateLimit = conf.getServerConf().getLocalScrubRateLimit();
         this.scrubRateLimiter = rateLimit == 0 ? Optional.empty() : Optional.of(RateLimiter.create(rateLimit));
