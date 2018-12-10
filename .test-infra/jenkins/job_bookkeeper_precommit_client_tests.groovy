@@ -40,7 +40,7 @@ freeStyleJob('bookkeeper_precommit_client_tests') {
   // Sets that this is a PreCommit job.
   common_job_properties.setPreCommit(
     delegate,
-    'Client Tests',
+    'Client Tests (trigger via `run bookkeeper-server client tests`)',
     '.*(re)?run bookkeeper-server (client )?tests.*',
     '.*\\[x\\] \\[skip bookkeeper-server (client )?tests\\].*',
     true)
