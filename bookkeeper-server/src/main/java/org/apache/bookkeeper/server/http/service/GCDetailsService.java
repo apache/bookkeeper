@@ -20,9 +20,7 @@ package org.apache.bookkeeper.server.http.service;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import com.google.common.collect.Maps;
 import java.util.List;
-import java.util.Map;
 import org.apache.bookkeeper.bookie.GarbageCollectionStatus;
 import org.apache.bookkeeper.common.util.JsonUtil;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -70,8 +68,8 @@ public class GCDetailsService implements HttpEndpointService {
             return response;
         } else {
             response.setCode(HttpServer.StatusCode.NOT_FOUND);
-            response.setBody("Only support GET method to retrieve GC details." +
-                " If you want to trigger gc, send a POST to gc endpoint.");
+            response.setBody("Only support GET method to retrieve GC details."
+                + " If you want to trigger gc, send a POST to gc endpoint.");
             return response;
         }
     }
