@@ -30,6 +30,8 @@ import io.netty.buffer.ByteBuf;
 import io.netty.util.concurrent.DefaultThreadFactory;
 
 import java.io.IOException;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -929,8 +931,8 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
     }
 
     @Override
-    public GarbageCollectionStatus getGarbageCollectionStatus() {
-        return gcThread.getGarbageCollectionStatus();
+    public List<GarbageCollectionStatus> getGarbageCollectionStatus() {
+        return Collections.singletonList(gcThread.getGarbageCollectionStatus());
     }
 
     /**

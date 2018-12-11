@@ -347,7 +347,7 @@ public class SortedLedgerStorage
     }
 
     @Override
-    public GarbageCollectionStatus getGarbageCollectionStatus() {
+    public List<GarbageCollectionStatus> getGarbageCollectionStatus() {
         return interleavedLedgerStorage.getGarbageCollectionStatus();
     }
 }

@@ -21,6 +21,7 @@ package org.apache.bookkeeper.server.http.service;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.common.collect.Maps;
+import java.util.List;
 import java.util.Map;
 import org.apache.bookkeeper.bookie.GarbageCollectionStatus;
 import org.apache.bookkeeper.common.util.JsonUtil;
@@ -57,16 +58,20 @@ public class GCDetailsService implements HttpEndpointService {
         HttpServiceResponse response = new HttpServiceResponse();
 
         if (HttpServer.Method.GET == request.getMethod()) {
-            GarbageCollectionStatus details = bookieServer.getBookie().getLedgerStorage().getGarbageCollectionStatus();
+            List<GarbageCollectionStatus> details = bookieServer.getBookie()
+                .getLedgerStorage().getGarbageCollectionStatus();
 
             String jsonResponse = JsonUtil.toJson(details);
-            LOG.debug("output body:" + jsonResponse);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("output body:" + jsonResponse);
+            }
             response.setBody(jsonResponse);
             response.setCode(HttpServer.StatusCode.OK);
             return response;
         } else {
             response.setCode(HttpServer.StatusCode.NOT_FOUND);
-            response.setBody("Not found method. Only support Get method to get GC details.");
+            response.setBody("Only support GET method to retrieve GC details." +
+                " If you want to trigger gc, send a POST to gc endpoint.");
             return response;
         }
     }

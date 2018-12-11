@@ -27,6 +27,7 @@ import org.apache.bookkeeper.http.service.HttpEndpointService;
 import org.apache.bookkeeper.http.service.HttpServiceRequest;
 import org.apache.bookkeeper.http.service.HttpServiceResponse;
 import org.apache.bookkeeper.proto.BookieServer;
+import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -60,17 +61,19 @@ public class TriggerGCService implements HttpEndpointService {
 
             String output = "Triggered GC on BookieServer: " + bookieServer.toString();
             String jsonResponse = JsonUtil.toJson(output);
-            LOG.debug("output body:" + jsonResponse);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("output body:" + jsonResponse);
+            }
             response.setBody(jsonResponse);
             response.setCode(HttpServer.StatusCode.OK);
             return response;
         } else if (HttpServer.Method.GET == request.getMethod()) {
-            boolean isInForceGC = bookieServer.getBookie().getLedgerStorage().isInForceGC();
-
-            String output = "Is Force Triggered GC on BookieServer: " + bookieServer.toString() + " running? "
-                + (isInForceGC ? "true" : "false");
+            Boolean isInForceGC = bookieServer.getBookie().getLedgerStorage().isInForceGC();
+            Pair<String, String> output = Pair.of("is_in_force_gc", isInForceGC.toString());
             String jsonResponse = JsonUtil.toJson(output);
-            LOG.debug("output body:" + jsonResponse);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("output body:" + jsonResponse);
+            }
             response.setBody(jsonResponse);
             response.setCode(HttpServer.StatusCode.OK);
             return response;

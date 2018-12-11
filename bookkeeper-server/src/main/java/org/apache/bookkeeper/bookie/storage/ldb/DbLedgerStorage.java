@@ -39,6 +39,7 @@ import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
 import org.apache.bookkeeper.bookie.BookieException;
@@ -367,32 +368,8 @@ public class DbLedgerStorage implements LedgerStorage {
     }
 
     @Override
-    public GarbageCollectionStatus getGarbageCollectionStatus() {
-        boolean forceCompacting = ledgerStorageList.stream()
-            .anyMatch(single -> single.getGarbageCollectionStatus().isForceCompacting());
-        boolean majorCompacting = ledgerStorageList.stream()
-            .anyMatch(single -> single.getGarbageCollectionStatus().isMajorCompacting());
-        boolean minorCompacting = ledgerStorageList.stream()
-            .anyMatch(single -> single.getGarbageCollectionStatus().isMinorCompacting());
-
-        long lastMajorCompactionTime = ledgerStorageList.stream()
-            .mapToLong(single -> single.getGarbageCollectionStatus().getLastMajorCompactionTime()).max().getAsLong();
-        long lastMinorCompactionTime = ledgerStorageList.stream()
-            .mapToLong(single -> single.getGarbageCollectionStatus().getLastMinorCompactionTime()).max().getAsLong();
-
-        long majorCompactionCounter = ledgerStorageList.stream()
-            .mapToLong(single -> single.getGarbageCollectionStatus().getMajorCompactionCounter()).sum();
-        long minorCompactionCounter = ledgerStorageList.stream()
-            .mapToLong(single -> single.getGarbageCollectionStatus().getMinorCompactionCounter()).sum();
-
-        return GarbageCollectionStatus.builder()
-            .forceCompacting(forceCompacting)
-            .majorCompacting(majorCompacting)
-            .minorCompacting(minorCompacting)
-            .lastMajorCompactionTime(lastMajorCompactionTime)
-            .lastMinorCompactionTime(lastMinorCompactionTime)
-            .majorCompactionCounter(majorCompactionCounter)
-            .minorCompactionCounter(minorCompactionCounter)
-            .build();
+    public List<GarbageCollectionStatus> getGarbageCollectionStatus() {
+        return ledgerStorageList.stream()
+            .map(single -> single.getGarbageCollectionStatus().get(0)).collect(Collectors.toList());
     }
 }

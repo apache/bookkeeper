@@ -772,7 +772,7 @@ public class TestHttpService extends BookKeeperClusterTestCase {
         HttpServiceRequest request1 = new HttpServiceRequest(null, HttpServer.Method.GET, null);
         HttpServiceResponse response1 = triggerGCService.handle(request1);
         assertEquals(HttpServer.StatusCode.OK.getValue(), response1.getStatusCode());
-        assertTrue(response1.getBody().contains("false"));
+        assertTrue(response1.getBody().contains("\"is_in_force_gc\" : \"false\""));
 
         //2, PUT, should return OK
         HttpServiceRequest request2 = new HttpServiceRequest(null, HttpServer.Method.PUT, null);

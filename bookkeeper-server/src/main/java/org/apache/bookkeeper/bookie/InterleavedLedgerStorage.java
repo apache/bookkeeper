@@ -37,6 +37,7 @@ import io.netty.buffer.ByteBuf;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
@@ -602,7 +603,7 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
     }
 
     @Override
-    public GarbageCollectionStatus getGarbageCollectionStatus() {
-        return gcThread.getGarbageCollectionStatus();
+    public List<GarbageCollectionStatus> getGarbageCollectionStatus() {
+        return Collections.singletonList(gcThread.getGarbageCollectionStatus());
     }
 }
