@@ -30,14 +30,12 @@ import io.netty.buffer.ByteBuf;
 import io.netty.util.concurrent.DefaultThreadFactory;
 
 import java.io.IOException;
-import java.util.SortedMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.StampedLock;
 
@@ -53,7 +51,9 @@ import org.apache.bookkeeper.bookie.EntryLocation;
 import org.apache.bookkeeper.bookie.EntryLogger;
 import org.apache.bookkeeper.bookie.GarbageCollectorThread;
 import org.apache.bookkeeper.bookie.LastAddConfirmedUpdateNotification;
+import org.apache.bookkeeper.bookie.LedgerCache;
 import org.apache.bookkeeper.bookie.LedgerDirsManager;
+import org.apache.bookkeeper.bookie.LedgerEntryPage;
 import org.apache.bookkeeper.bookie.StateManager;
 import org.apache.bookkeeper.bookie.storage.ldb.DbLedgerStorageDataFormats.LedgerData;
 import org.apache.bookkeeper.bookie.storage.ldb.KeyValueStorage.Batch;
@@ -67,6 +67,7 @@ import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.MathUtils;
 import org.apache.bookkeeper.util.collections.ConcurrentLongHashMap;
+import org.apache.commons.lang.mutable.MutableLong;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -859,35 +860,33 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
      *
      * @param ledgerId
      *            the ledger id
-     * @param entries
-     *            a map of entryId -> location
+     * @param pages
+     *            Iterator over index pages from Indexed
      * @return the number of
      */
     public long addLedgerToIndex(long ledgerId, boolean isFenced, byte[] masterKey,
-            Iterable<SortedMap<Long, Long>> entries) throws Exception {
+            LedgerCache.PageEntriesIterable pages) throws Exception {
         LedgerData ledgerData = LedgerData.newBuilder().setExists(true).setFenced(isFenced)
                 .setMasterKey(ByteString.copyFrom(masterKey)).build();
         ledgerIndex.set(ledgerId, ledgerData);
-        AtomicLong numberOfEntries = new AtomicLong();
+        MutableLong numberOfEntries = new MutableLong();
 
         // Iterate over all the entries pages
         Batch batch = entryLocationIndex.newBatch();
-        entries.forEach(map -> {
-            map.forEach((entryId, location) -> {
-                try {
+        for (LedgerCache.PageEntries page: pages) {
+            try (LedgerEntryPage lep = page.getLEP()) {
+                lep.getEntries((entryId, location) -> {
                     entryLocationIndex.addLocation(batch, ledgerId, entryId, location);
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-
-                numberOfEntries.incrementAndGet();
-            });
-        });
+                    numberOfEntries.increment();
+                    return true;
+                });
+            }
+        }
 
         batch.flush();
         batch.close();
 
-        return numberOfEntries.get();
+        return numberOfEntries.longValue();
     }
 
     @Override

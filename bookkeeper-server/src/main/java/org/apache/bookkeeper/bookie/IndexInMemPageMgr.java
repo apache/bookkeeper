@@ -20,6 +20,7 @@
  */
 package org.apache.bookkeeper.bookie;
 
+import static java.lang.Long.max;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.INDEX_INMEM_ILLEGAL_STATE_DELETE;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.INDEX_INMEM_ILLEGAL_STATE_RESET;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.LEDGER_CACHE_HIT;
@@ -153,22 +154,11 @@ class IndexInMemPageMgr {
             ConcurrentMap<Long, LedgerEntryPage> lPages = pages.remove(ledgerId);
             if (null != lPages) {
                 for (Map.Entry<Long, LedgerEntryPage> pageEntry: lPages.entrySet()) {
-                    long entryId = pageEntry.getKey();
-                    synchronized (lruCleanPageMap) {
-                        lruCleanPageMap.remove(new EntryKey(ledgerId, entryId));
-                    }
-
                     LedgerEntryPage lep = pageEntry.getValue();
-                    // Cannot imagine under what circumstances we would have a null entry here
-                    // Just being safe
-                    if (null != lep) {
-                        if (lep.inUse()) {
-                            illegalStateDeleteCounter.inc();
-                        }
-                        listOfFreePages.add(lep);
-                    }
+                    lep.usePage();
+                    lep.markDeleted();
+                    lep.releasePage();
                 }
-
             }
         }
 
@@ -318,7 +308,11 @@ class IndexInMemPageMgr {
 
         @Override
         public void onResetInUse(LedgerEntryPage lep) {
-            addToCleanPagesList(lep);
+            if (!lep.isDeleted()) {
+                addToCleanPagesList(lep);
+            } else {
+                addToListOfFreePages(lep);
+            }
         }
 
         @Override
@@ -397,23 +391,9 @@ class IndexInMemPageMgr {
     }
 
     /**
-     * @return entries per page used in ledger cache
-     */
-    public int getEntriesPerPage() {
-        return entriesPerPage;
-    }
-
-    /**
-     * @return page limitation in ledger cache
-     */
-    public int getPageLimit() {
-        return pageLimit;
-    }
-
-    /**
      * @return number of page used in ledger cache
      */
-    public int getNumUsedPages() {
+    private int getNumUsedPages() {
         return pageCount.get();
     }
 
@@ -427,7 +407,7 @@ class IndexInMemPageMgr {
      * @return ledger entry page
      * @throws IOException
      */
-    public LedgerEntryPage getLedgerEntryPage(long ledger,
+    LedgerEntryPage getLedgerEntryPage(long ledger,
                                               long pageEntry) throws IOException {
         LedgerEntryPage lep = getLedgerEntryPageFromCache(ledger, pageEntry, false);
         if (lep == null) {
@@ -615,5 +595,80 @@ class IndexInMemPageMgr {
                 lep.releasePage();
             }
         }
+    }
+
+    /**
+     * Represents a page of the index.
+     */
+    private class PageEntriesImpl implements LedgerCache.PageEntries {
+        final long ledgerId;
+        final long initEntry;
+
+        PageEntriesImpl(long ledgerId, long initEntry) {
+            this.ledgerId = ledgerId;
+            this.initEntry = initEntry;
+        }
+
+        public LedgerEntryPage getLEP() throws IOException {
+            return getLedgerEntryPage(ledgerId, initEntry);
+        }
+
+        public long getFirstEntry() {
+            return initEntry;
+        }
+
+        public long getLastEntry() {
+            return initEntry + entriesPerPage;
+        }
+    }
+
+    /**
+     * Iterable over index pages -- returns PageEntries rather than individual
+     * entries because getEntries() above needs to be able to throw an IOException.
+     */
+    private class PageEntriesIterableImpl implements LedgerCache.PageEntriesIterable {
+        final long ledgerId;
+        final FileInfoBackingCache.CachedFileInfo fi;
+        final long totalEntries;
+
+        long curEntry = 0;
+
+        PageEntriesIterableImpl(long ledgerId) throws IOException {
+            this.ledgerId = ledgerId;
+            this.fi = indexPersistenceManager.getFileInfo(ledgerId, null);
+            this.totalEntries = max(entriesPerPage * (fi.size() / pageSize), getLastEntryInMem(ledgerId));
+        }
+
+        @Override
+        public Iterator<LedgerCache.PageEntries> iterator() {
+            return new Iterator<LedgerCache.PageEntries>() {
+                @Override
+                public boolean hasNext() {
+                    return curEntry < totalEntries;
+                }
+
+                @Override
+                public LedgerCache.PageEntries next() {
+                    LedgerCache.PageEntries next = new PageEntriesImpl(ledgerId, curEntry);
+                    curEntry += entriesPerPage;
+                    return next;
+                }
+            };
+        }
+
+        @Override
+        public void close() {
+            fi.release();
+        }
+    }
+
+    /**
+     * Return iterator over pages for mapping entries to entry loggers.
+     * @param ledgerId
+     * @return Iterator over pages
+     * @throws IOException
+     */
+    public LedgerCache.PageEntriesIterable listEntries(long ledgerId) throws IOException {
+        return new PageEntriesIterableImpl(ledgerId);
     }
 }

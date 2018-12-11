@@ -149,7 +149,7 @@ public class GarbageCollectorThread extends SafeRunnable {
                                   LedgerManager ledgerManager,
                                   final CompactableLedgerStorage ledgerStorage,
                                   StatsLogger statsLogger,
-                                    ScheduledExecutorService gcExecutor)
+                                  ScheduledExecutorService gcExecutor)
         throws IOException {
         this.gcExecutor = gcExecutor;
         this.conf = conf;
@@ -210,10 +210,17 @@ public class GarbageCollectorThread extends SafeRunnable {
         majorCompactionThreshold = conf.getMajorCompactionThreshold();
         majorCompactionInterval = conf.getMajorCompactionInterval() * SECOND;
         isForceGCAllowWhenNoSpace = conf.getIsForceGCAllowWhenNoSpace();
+
+        AbstractLogCompactor.LogRemovalListener remover = new AbstractLogCompactor.LogRemovalListener() {
+            @Override
+            public void removeEntryLog(long logToRemove) {
+                GarbageCollectorThread.this.removeEntryLog(logToRemove);
+            }
+        };
         if (conf.getUseTransactionalCompaction()) {
-            this.compactor = new TransactionalEntryLogCompactor(this);
+            this.compactor = new TransactionalEntryLogCompactor(conf, entryLogger, ledgerStorage, remover);
         } else {
-            this.compactor = new EntryLogCompactor(this);
+            this.compactor = new EntryLogCompactor(conf, entryLogger, ledgerStorage, remover);
         }
 
         if (minorCompactionInterval > 0 && minorCompactionThreshold > 0) {
@@ -589,10 +596,6 @@ public class GarbageCollectorThread extends SafeRunnable {
             }
         }
         return entryLogMetaMap;
-    }
-
-    EntryLogger getEntryLogger() {
-        return entryLogger;
     }
 
     CompactableLedgerStorage getLedgerStorage() {

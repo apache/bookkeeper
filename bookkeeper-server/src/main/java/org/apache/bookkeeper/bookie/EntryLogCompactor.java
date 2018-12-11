@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,11 +44,15 @@ public class EntryLogCompactor extends AbstractLogCompactor {
     final CompactableLedgerStorage ledgerStorage;
     private final int maxOutstandingRequests;
 
-    public EntryLogCompactor(GarbageCollectorThread gcThread) {
-        super(gcThread);
+    public EntryLogCompactor(
+            ServerConfiguration conf,
+            EntryLogger entryLogger,
+            CompactableLedgerStorage ledgerStorage,
+            LogRemovalListener logRemover) {
+        super(conf, logRemover);
         this.maxOutstandingRequests = conf.getCompactionMaxOutstandingRequests();
-        this.entryLogger = gcThread.getEntryLogger();
-        this.ledgerStorage = gcThread.getLedgerStorage();
+        this.entryLogger = entryLogger;
+        this.ledgerStorage = ledgerStorage;
     }
 
     @Override
@@ -57,7 +62,7 @@ public class EntryLogCompactor extends AbstractLogCompactor {
                 scannerFactory.newScanner(entryLogMeta));
             scannerFactory.flush();
             LOG.info("Removing entry log {} after compaction", entryLogMeta.getEntryLogId());
-            gcThread.removeEntryLog(entryLogMeta.getEntryLogId());
+            logRemovalListener.removeEntryLog(entryLogMeta.getEntryLogId());
         } catch (LedgerDirsManager.NoWritableLedgerDirException nwlde) {
             LOG.warn("No writable ledger directory available, aborting compaction", nwlde);
             return false;
