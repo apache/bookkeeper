@@ -614,7 +614,7 @@ public class Bookie extends BookieCriticalThread {
      * Initialize LedgerStorage instance without checkpointing for use within the shell
      * and other RO users.  ledgerStorage must not have already been initialized.
      *
-     * The caller is responsible for disposing of the ledgerStorage object.
+     * <p>The caller is responsible for disposing of the ledgerStorage object.
      *
      * @param conf Bookie config.
      * @param ledgerStorage Instance to initialize.
