@@ -58,7 +58,7 @@ import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.LedgerEntry;
 import org.apache.bookkeeper.client.LedgerHandle;
-import org.apache.bookkeeper.client.LedgerMetadata;
+import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager;
@@ -1391,7 +1391,12 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
     private static class MockTransactionalEntryLogCompactor extends TransactionalEntryLogCompactor {
 
         public MockTransactionalEntryLogCompactor(GarbageCollectorThread gcThread) {
-            super(gcThread);
+            super(gcThread.conf,
+                  gcThread.entryLogger,
+                  gcThread.ledgerStorage,
+                  (long entry) -> {
+                gcThread.removeEntryLog(entry);
+            });
         }
 
         synchronized void compactWithIndexFlushFailure(EntryLogMetadata metadata) {
@@ -1413,7 +1418,7 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
                 LOG.info("Compaction for {} end in PartialFlushIndexPhase.", metadata.getEntryLogId());
                 return;
             }
-            gcThread.removeEntryLog(metadata.getEntryLogId());
+            logRemovalListener.removeEntryLog(metadata.getEntryLogId());
             LOG.info("Compacted entry log : {}.", metadata.getEntryLogId());
         }
 
@@ -1436,7 +1441,7 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
                 LOG.info("Compaction for entry log {} end in UpdateIndexPhase.", metadata.getEntryLogId());
                 return;
             }
-            gcThread.removeEntryLog(metadata.getEntryLogId());
+            logRemovalListener.removeEntryLog(metadata.getEntryLogId());
             LOG.info("Compacted entry log : {}.", metadata.getEntryLogId());
         }
 

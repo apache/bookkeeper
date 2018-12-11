@@ -50,8 +50,8 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BKException.Code;
-import org.apache.bookkeeper.client.LedgerMetadata;
 import org.apache.bookkeeper.client.LedgerMetadataBuilder;
+import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.common.testing.executors.MockExecutorController;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
@@ -110,9 +110,9 @@ public class AbstractZkLedgerManagerTest extends MockZooKeeperTestCase {
 
         this.conf = new ClientConfiguration();
         this.ledgerManager = mock(
-            AbstractZkLedgerManager.class,
-            withSettings()
-                .useConstructor(conf, mockZk)
+                AbstractZkLedgerManager.class,
+                withSettings()
+                .useConstructor(conf, mockZk, LedgerMetadataSerDe.CURRENT_METADATA_FORMAT_VERSION)
                 .defaultAnswer(CALLS_REAL_METHODS));
         List<BookieSocketAddress> ensemble = Lists.newArrayList(
                 new BookieSocketAddress("192.0.2.1", 3181),
@@ -142,7 +142,7 @@ public class AbstractZkLedgerManagerTest extends MockZooKeeperTestCase {
         assertSame(conf, ledgerManager.conf);
         assertSame(scheduler, ledgerManager.scheduler);
 
-        this.serDe = new LedgerMetadataSerDe();
+        this.serDe = new LedgerMetadataSerDe(LedgerMetadataSerDe.CURRENT_METADATA_FORMAT_VERSION);
     }
 
     @After
@@ -303,13 +303,15 @@ public class AbstractZkLedgerManagerTest extends MockZooKeeperTestCase {
 
     @Test
     public void testRemoveLedgerMetadataHierarchical() throws Exception {
-        HierarchicalLedgerManager hlm = new HierarchicalLedgerManager(conf, mockZk);
+        HierarchicalLedgerManager hlm = new HierarchicalLedgerManager(conf, mockZk,
+                LedgerMetadataSerDe.CURRENT_METADATA_FORMAT_VERSION);
         testRemoveLedgerMetadataHierarchicalLedgerManager(hlm);
     }
 
     @Test
     public void testRemoveLedgerMetadataLongHierarchical() throws Exception {
-        LongHierarchicalLedgerManager hlm = new LongHierarchicalLedgerManager(conf, mockZk);
+        LongHierarchicalLedgerManager hlm = new LongHierarchicalLedgerManager(conf, mockZk,
+                LedgerMetadataSerDe.CURRENT_METADATA_FORMAT_VERSION);
         testRemoveLedgerMetadataHierarchicalLedgerManager(hlm);
     }
 

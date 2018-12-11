@@ -48,7 +48,7 @@ public class LedgerFragment {
         this.firstEntryId = firstEntryId;
         this.lastKnownEntryId = lastKnownEntryId;
         this.bookieIndexes = bookieIndexes;
-        this.ensemble = lh.getLedgerMetadata().getEnsemble(firstEntryId);
+        this.ensemble = lh.getLedgerMetadata().getEnsembleAt(firstEntryId);
         this.schedule = lh.getDistributionSchedule();
         SortedMap<Long, ? extends List<BookieSocketAddress>> ensembles = lh
                 .getLedgerMetadata().getAllEnsembles();

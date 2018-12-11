@@ -43,12 +43,14 @@ import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.InterleavedLedgerStorage;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
+import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.client.api.WriteFlag;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.HierarchicalLedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
+import org.apache.bookkeeper.meta.LedgerMetadataSerDe;
 import org.apache.bookkeeper.meta.MetadataDrivers;
 import org.apache.bookkeeper.meta.exceptions.Code;
 import org.apache.bookkeeper.meta.exceptions.MetadataException;
@@ -183,7 +185,8 @@ public class ParallelLedgerRecoveryTest extends BookKeeperClusterTestCase {
             if (null == lmFactory) {
                 try {
                     lmFactory = new TestLedgerManagerFactory()
-                        .initialize(conf, layoutManager, TestLedgerManagerFactory.CUR_VERSION);
+                        .initialize(conf, layoutManager, TestLedgerManagerFactory.CUR_VERSION,
+                                    LedgerMetadataSerDe.CURRENT_METADATA_FORMAT_VERSION);
                 } catch (IOException e) {
                     throw new MetadataException(Code.METADATA_SERVICE_ERROR, e);
                 }
@@ -199,7 +202,8 @@ public class ParallelLedgerRecoveryTest extends BookKeeperClusterTestCase {
             if (null == lmFactory) {
                 try {
                     lmFactory = new TestLedgerManagerFactory()
-                        .initialize(conf, layoutManager, TestLedgerManagerFactory.CUR_VERSION);
+                        .initialize(conf, layoutManager, TestLedgerManagerFactory.CUR_VERSION,
+                                    LedgerMetadataSerDe.CURRENT_METADATA_FORMAT_VERSION);
                 } catch (IOException e) {
                     throw new MetadataException(Code.METADATA_SERVICE_ERROR, e);
                 }

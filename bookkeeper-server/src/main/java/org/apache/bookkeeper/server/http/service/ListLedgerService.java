@@ -25,7 +25,7 @@ import com.google.common.collect.Maps;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import org.apache.bookkeeper.client.LedgerMetadata;
+import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.common.util.JsonUtil;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.http.HttpServer;
@@ -58,7 +58,7 @@ public class ListLedgerService implements HttpEndpointService {
         checkNotNull(conf);
         this.conf = conf;
         this.bookieServer = bookieServer;
-        this.serDe = new LedgerMetadataSerDe();
+        this.serDe = new LedgerMetadataSerDe(LedgerMetadataSerDe.CURRENT_METADATA_FORMAT_VERSION);
 
     }
 

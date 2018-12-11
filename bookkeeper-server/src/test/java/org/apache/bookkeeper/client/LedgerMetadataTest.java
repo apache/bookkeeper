@@ -29,6 +29,7 @@ import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
+import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.meta.LedgerMetadataSerDe;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat;
@@ -79,7 +80,8 @@ public class LedgerMetadataTest {
             .withCreationTime(System.currentTimeMillis())
             .storingCreationTime(true)
             .build();
-        LedgerMetadataFormat format = new LedgerMetadataSerDe().buildProtoFormat(lm);
+        LedgerMetadataFormat format = new LedgerMetadataSerDe(LedgerMetadataSerDe.CURRENT_METADATA_FORMAT_VERSION)
+            .buildProtoFormat(lm);
         assertTrue(format.hasCtime());
     }
 
@@ -93,7 +95,8 @@ public class LedgerMetadataTest {
         LedgerMetadata lm = LedgerMetadataBuilder.create()
             .newEnsembleEntry(0L, ensemble).build();
 
-        LedgerMetadataFormat format = new LedgerMetadataSerDe().buildProtoFormat(lm);
+        LedgerMetadataFormat format = new LedgerMetadataSerDe(LedgerMetadataSerDe.CURRENT_METADATA_FORMAT_VERSION)
+            .buildProtoFormat(lm);
         assertFalse(format.hasCtime());
     }
 

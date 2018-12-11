@@ -26,6 +26,7 @@ import io.netty.buffer.UnpooledByteBufAllocator;
 import java.security.GeneralSecurityException;
 import java.util.function.Function;
 
+import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.DigestType;
 import org.apache.bookkeeper.proto.checksum.DigestManager;

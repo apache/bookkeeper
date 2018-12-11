@@ -29,13 +29,6 @@ import org.apache.bookkeeper.util.ByteBufList;
  */
 public class LedgerHandleAdapter {
 
-    /**
-     * Get the ledger handle.
-     */
-    public static LedgerMetadata getLedgerMetadata(LedgerHandle lh) {
-        return lh.getLedgerMetadata();
-    }
-
     public static ByteBufList toSend(LedgerHandle lh, long entryId, ByteBuf data) {
         return lh.getDigestManager().computeDigestAndPackageForSending(entryId, lh.getLastAddConfirmed(),
                 lh.addToLength(data.readableBytes()), data);

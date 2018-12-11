@@ -1077,8 +1077,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
             throw BKException.create(BKException.Code.UnexpectedConditionException);
         }
 
-        LOG.info("Ensemble: {} for ledger: {}", lh.getLedgerMetadata().getEnsemble(0L),
-                lh.getId());
+        LOG.info("Ensemble: {} for ledger: {}", lh.getLedgerMetadata().getEnsembleAt(0L), lh.getId());
 
         return lh;
     }

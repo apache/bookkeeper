@@ -266,7 +266,7 @@ public class TestFencing extends BookKeeperClusterTestCase {
             writelh.addEntry(tmp.getBytes());
         }
 
-        BookieSocketAddress bookieToKill = writelh.getLedgerMetadata().getEnsemble(numEntries).get(0);
+        BookieSocketAddress bookieToKill = writelh.getLedgerMetadata().getEnsembleAt(numEntries).get(0);
         killBookie(bookieToKill);
 
         // write entries to change ensemble
@@ -318,7 +318,7 @@ public class TestFencing extends BookKeeperClusterTestCase {
         LedgerHandle readlh = bkc.openLedger(writelh.getId(),
                                              digestType, "testPasswd".getBytes());
         // should be fenced by now
-        BookieSocketAddress bookieToKill = writelh.getLedgerMetadata().getEnsemble(numEntries).get(0);
+        BookieSocketAddress bookieToKill = writelh.getLedgerMetadata().getEnsembleAt(numEntries).get(0);
         killBookie(bookieToKill);
         admin.recoverBookieData(bookieToKill);
 
