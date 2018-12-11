@@ -122,6 +122,8 @@ public abstract class BKException extends org.apache.bookkeeper.client.api.BKExc
             return new BKLedgerIdOverflowException();
         case Code.SecurityException:
             return new BKSecurityException();
+        case Code.SerializationException:
+            return new BKSerializationException();
         default:
             return new BKUnexpectedConditionException();
         }
@@ -294,10 +296,6 @@ public abstract class BKException extends org.apache.bookkeeper.client.api.BKExc
         public ZKException() {
             super(Code.ZKException);
         }
-
-        public ZKException(Throwable cause) {
-            super(Code.ZKException, cause);
-        }
     }
 
     /**
@@ -436,6 +434,19 @@ public abstract class BKException extends org.apache.bookkeeper.client.api.BKExc
     public static class BKLedgerIdOverflowException extends BKException {
         public BKLedgerIdOverflowException() {
             super(Code.LedgerIdOverflowException);
+        }
+    }
+
+    /**
+     * Bookkeeper serialization exception.
+     */
+    public static class BKSerializationException extends BKException {
+        public BKSerializationException() {
+            super(Code.SerializationException);
+        }
+
+        public BKSerializationException(Throwable cause) {
+            super(Code.SerializationException, cause);
         }
     }
 

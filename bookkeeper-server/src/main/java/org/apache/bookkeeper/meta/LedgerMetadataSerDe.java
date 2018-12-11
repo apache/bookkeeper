@@ -58,9 +58,28 @@ import org.slf4j.LoggerFactory;
 public class LedgerMetadataSerDe {
     private static final Logger log = LoggerFactory.getLogger(LedgerMetadataSerDe.class);
 
-    public static final int MAXIMUM_METADATA_FORMAT_VERSION = 3;
-    public static final int CURRENT_METADATA_FORMAT_VERSION = 2;
-    private static final int LOWEST_COMPAT_METADATA_FORMAT_VERSION = 1;
+    /**
+     * Text based manual serialization.
+     * Available from v4.0.x onwards.
+     */
+    private static final int METADATA_FORMAT_VERSION_1 = 1;
+
+    /**
+     * Protobuf based, serialized using TextFormat.
+     * Available from v4.2.x onwards.
+     * Can contain ctime or not, but if it contains ctime it can only be parse by v4.4.x onwards.
+     */
+    private static final int METADATA_FORMAT_VERSION_2 = 2;
+
+    /**
+     * Protobuf based, serialized in binary format.
+     * Available from v4.9.x onwards.
+     */
+    private static final int METADATA_FORMAT_VERSION_3 = 3;
+
+    public static final int MAXIMUM_METADATA_FORMAT_VERSION = METADATA_FORMAT_VERSION_3;
+    public static final int CURRENT_METADATA_FORMAT_VERSION = METADATA_FORMAT_VERSION_2;
+    private static final int LOWEST_COMPAT_METADATA_FORMAT_VERSION = METADATA_FORMAT_VERSION_1;
 
     // for pulling the version
     private static final int MAX_VERSION_DIGITS = 10;
@@ -119,13 +138,13 @@ public class LedgerMetadataSerDe {
         int formatVersion = Math.min(maxLedgerMetadataFormatVersion, metadata.getMetadataFormatVersion());
         final byte[] serialized;
         switch (formatVersion) {
-        case 3:
+        case METADATA_FORMAT_VERSION_3:
             serialized = serializeVersion3(metadata);
             break;
-        case 2:
+        case METADATA_FORMAT_VERSION_2:
             serialized = serializeVersion2(metadata);
             break;
-        case 1:
+        case METADATA_FORMAT_VERSION_1:
             serialized = serializeVersion1(metadata);
             break;
         default:
@@ -139,7 +158,7 @@ public class LedgerMetadataSerDe {
 
     private static byte[] serializeVersion3(LedgerMetadata metadata) throws IOException {
         ByteArrayOutputStream os = new ByteArrayOutputStream();
-        writeHeader(os, 3);
+        writeHeader(os, METADATA_FORMAT_VERSION_3);
         LedgerMetadataFormat.Builder builder = LedgerMetadataFormat.newBuilder();
         builder.setQuorumSize(metadata.getWriteQuorumSize())
             .setAckQuorumSize(metadata.getAckQuorumSize())
@@ -164,8 +183,12 @@ public class LedgerMetadataSerDe {
         }
 
         builder.setCtime(metadata.getCtime());
-        builder.setDigestType(apiToProtoDigestType(metadata.getDigestType()))
-            .setPassword(ByteString.copyFrom(metadata.getPassword()));
+        builder.setDigestType(apiToProtoDigestType(metadata.getDigestType()));
+        if (metadata.getPassword() == null || metadata.getPassword().length == 0) {
+            builder.setPassword(ByteString.EMPTY);
+        } else {
+            builder.setPassword(ByteString.copyFrom(metadata.getPassword()));
+        }
 
         Map<String, byte[]> customMetadata = metadata.getCustomMetadata();
         if (customMetadata.size() > 0) {
@@ -192,7 +215,7 @@ public class LedgerMetadataSerDe {
 
     private static byte[] serializeVersion2(LedgerMetadata metadata) throws IOException {
         ByteArrayOutputStream os = new ByteArrayOutputStream();
-        writeHeader(os, 2);
+        writeHeader(os, METADATA_FORMAT_VERSION_2);
         try (PrintWriter writer = new PrintWriter(new OutputStreamWriter(os, UTF_8.name()))) {
             /***********************************************************************
              * WARNING: Do not modify to add fields.
@@ -228,8 +251,12 @@ public class LedgerMetadataSerDe {
                 builder.clearCtime();
             }
 
-            builder.setDigestType(apiToProtoDigestType(metadata.getDigestType()))
-                .setPassword(ByteString.copyFrom(metadata.getPassword()));
+            builder.setDigestType(apiToProtoDigestType(metadata.getDigestType()));
+            if (metadata.getPassword() == null || metadata.getPassword().length == 0) {
+                builder.setPassword(ByteString.EMPTY);
+            } else {
+                builder.setPassword(ByteString.copyFrom(metadata.getPassword()));
+            }
 
             Map<String, byte[]> customMetadata = metadata.getCustomMetadata();
             if (customMetadata.size() > 0) {
@@ -258,7 +285,7 @@ public class LedgerMetadataSerDe {
 
     private static byte[] serializeVersion1(LedgerMetadata metadata) throws IOException {
         ByteArrayOutputStream os = new ByteArrayOutputStream();
-        writeHeader(os, 1);
+        writeHeader(os, METADATA_FORMAT_VERSION_1);
 
         try (PrintWriter writer = new PrintWriter(new OutputStreamWriter(os, UTF_8.name()))) {
             writer.append(String.valueOf(metadata.getWriteQuorumSize())).append(LINE_SPLITTER);
@@ -311,11 +338,11 @@ public class LedgerMetadataSerDe {
             }
 
             switch (metadataFormatVersion) {
-            case 3:
+            case METADATA_FORMAT_VERSION_3:
                 return parseVersion3Config(is);
-            case 2:
+            case METADATA_FORMAT_VERSION_2:
                 return parseVersion2Config(is, metadataStoreCtime);
-            case 1:
+            case METADATA_FORMAT_VERSION_1:
                 return parseVersion1Config(is);
             default:
                 throw new IOException(
@@ -328,7 +355,7 @@ public class LedgerMetadataSerDe {
 
     private static LedgerMetadata parseVersion3Config(InputStream is) throws IOException {
         LedgerMetadataBuilder builder = LedgerMetadataBuilder.create()
-            .withMetadataFormatVersion(3);
+            .withMetadataFormatVersion(METADATA_FORMAT_VERSION_3);
         LedgerMetadataFormat.Builder formatBuilder = LedgerMetadataFormat.newBuilder();
         formatBuilder.mergeDelimitedFrom(is);
         decodeFormat(formatBuilder.build(), builder);
@@ -338,7 +365,7 @@ public class LedgerMetadataSerDe {
     private static LedgerMetadata parseVersion2Config(InputStream is, Optional<Long> metadataStoreCtime)
             throws IOException {
         LedgerMetadataBuilder builder = LedgerMetadataBuilder.create()
-            .withMetadataFormatVersion(2);
+            .withMetadataFormatVersion(METADATA_FORMAT_VERSION_2);
 
         LedgerMetadataFormat.Builder formatBuilder = LedgerMetadataFormat.newBuilder();
         try (InputStreamReader reader = new InputStreamReader(is, UTF_8.name())) {

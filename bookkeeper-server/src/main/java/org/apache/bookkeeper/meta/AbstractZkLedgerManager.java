@@ -270,7 +270,7 @@ public abstract class AbstractZkLedgerManager implements LedgerManager, Watcher 
         try {
             data = serDe.serialize(metadata);
         } catch (IOException ioe) {
-            promise.completeExceptionally(new BKException.ZKException(ioe));
+            promise.completeExceptionally(new BKException.BKSerializationException(ioe));
             return promise;
         }
 
@@ -436,7 +436,7 @@ public abstract class AbstractZkLedgerManager implements LedgerManager, Watcher 
         try {
             data = serDe.serialize(metadata);
         } catch (IOException ioe) {
-            promise.completeExceptionally(new BKException.ZKException(ioe));
+            promise.completeExceptionally(new BKException.BKSerializationException(ioe));
             return promise;
         }
         zk.setData(getLedgerPath(ledgerId),
