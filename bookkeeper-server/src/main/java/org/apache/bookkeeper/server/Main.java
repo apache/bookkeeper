@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.concurrent.ExecutionException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.bookie.ExitCode;
+import org.apache.bookkeeper.bookie.ScrubberStats;
 import org.apache.bookkeeper.common.component.ComponentStarter;
 import org.apache.bookkeeper.common.component.LifecycleComponent;
 import org.apache.bookkeeper.common.component.LifecycleComponentStack;
@@ -39,6 +40,7 @@ import org.apache.bookkeeper.server.http.BKHttpServiceProvider;
 import org.apache.bookkeeper.server.service.AutoRecoveryService;
 import org.apache.bookkeeper.server.service.BookieService;
 import org.apache.bookkeeper.server.service.HttpService;
+import org.apache.bookkeeper.server.service.ScrubberService;
 import org.apache.bookkeeper.server.service.StatsProviderService;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.commons.cli.BasicParser;
@@ -301,6 +303,13 @@ public class Main {
 
         serverBuilder.addComponent(bookieService);
         log.info("Load lifecycle component : {}", BookieService.class.getName());
+
+        if (conf.getServerConf().isLocalScrubEnabled()) {
+            serverBuilder.addComponent(
+                    new ScrubberService(
+                            rootStatsLogger.scope(ScrubberStats.SCOPE),
+                    conf, bookieService.getServer().getBookie().getLedgerStorage()));
+        }
 
         // 3. build auto recovery
         if (conf.getServerConf().isAutoRecoveryDaemonEnabled()) {

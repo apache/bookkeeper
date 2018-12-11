@@ -36,7 +36,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.SortedMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
@@ -47,6 +46,7 @@ import org.apache.bookkeeper.bookie.CheckpointSource;
 import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
 import org.apache.bookkeeper.bookie.Checkpointer;
 import org.apache.bookkeeper.bookie.LastAddConfirmedUpdateNotification;
+import org.apache.bookkeeper.bookie.LedgerCache;
 import org.apache.bookkeeper.bookie.LedgerDirsManager;
 import org.apache.bookkeeper.bookie.LedgerStorage;
 import org.apache.bookkeeper.bookie.StateManager;
@@ -275,8 +275,8 @@ public class DbLedgerStorage implements LedgerStorage {
     }
 
     public long addLedgerToIndex(long ledgerId, boolean isFenced, byte[] masterKey,
-            Iterable<SortedMap<Long, Long>> entries) throws Exception {
-        return getLedgerSorage(ledgerId).addLedgerToIndex(ledgerId, isFenced, masterKey, entries);
+                                 LedgerCache.PageEntriesIterable pages) throws Exception {
+        return getLedgerSorage(ledgerId).addLedgerToIndex(ledgerId, isFenced, masterKey, pages);
     }
 
     public long getLastEntryInLedger(long ledgerId) throws IOException {

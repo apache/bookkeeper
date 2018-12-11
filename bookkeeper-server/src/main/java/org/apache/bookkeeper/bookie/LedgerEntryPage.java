@@ -33,7 +33,7 @@ import org.slf4j.LoggerFactory;
  * This is a page in the LedgerCache. It holds the locations
  * (entrylogfile, offset) for entry ids.
  */
-public class LedgerEntryPage {
+public class LedgerEntryPage implements AutoCloseable {
 
     private static final Logger LOG = LoggerFactory.getLogger(LedgerEntryPage.class);
 
@@ -47,6 +47,7 @@ public class LedgerEntryPage {
     private final AtomicInteger version = new AtomicInteger(0);
     private volatile int last = -1; // Last update position
     private final LEPStateChangeCallback callback;
+    private boolean deleted;
 
     public static int getIndexEntrySize() {
         return indexEntrySize;
@@ -75,11 +76,20 @@ public class LedgerEntryPage {
         entryKey = new EntryKey(-1, BookieProtocol.INVALID_ENTRY_ID);
         clean = true;
         useCount.set(0);
+        deleted = false;
         if (null != this.callback) {
             callback.onResetInUse(this);
         }
     }
 
+    public void markDeleted() {
+        deleted = true;
+        version.incrementAndGet();
+    }
+
+    public boolean isDeleted() {
+        return deleted;
+    }
 
     @Override
     public String toString() {
@@ -215,7 +225,7 @@ public class LedgerEntryPage {
         return entryKey.getLedgerId();
     }
 
-    int getVersion() {
+    public int getVersion() {
         return version.get();
     }
 
@@ -261,5 +271,35 @@ public class LedgerEntryPage {
             int index = getLastEntryIndex();
             return index >= 0 ? (index + entryKey.getEntryId()) : 0;
         }
+    }
+
+    /**
+     * Interface for getEntries to propagate entry, pos pairs.
+     */
+    public interface EntryVisitor {
+        boolean visit(long entry, long pos) throws Exception;
+    }
+
+    /**
+     * Iterates over non-empty entry mappings.
+     *
+     * @param vis Consumer for entry position pairs.
+     * @throws Exception
+     */
+    public void getEntries(EntryVisitor vis) throws Exception {
+        // process a page
+        for (int i = 0; i < entriesPerPage; i++) {
+            long offset = getOffset(i * 8);
+            if (offset != 0) {
+                if (!vis.visit(getFirstEntry() + i, offset)) {
+                    return;
+                }
+            }
+        }
+    }
+
+    @Override
+    public void close() throws Exception {
+        releasePage();
     }
 }

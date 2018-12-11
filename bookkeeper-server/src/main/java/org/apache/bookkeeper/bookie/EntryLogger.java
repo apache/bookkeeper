@@ -43,6 +43,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
+import java.nio.channels.AsynchronousCloseException;
 import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -58,6 +59,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
+import org.apache.bookkeeper.util.DiskChecker;
 import org.apache.bookkeeper.util.IOUtils;
 import org.apache.bookkeeper.util.collections.ConcurrentLongLongHashMap;
 import org.apache.bookkeeper.util.collections.ConcurrentLongLongHashMap.BiConsumerLong;
@@ -321,6 +323,11 @@ public class EntryLogger {
          * Rotate a new entry log to write.
          */
         void onRotateEntryLog();
+    }
+
+    public EntryLogger(ServerConfiguration conf) throws IOException {
+        this(conf, new LedgerDirsManager(conf, conf.getLedgerDirs(),
+                new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold())));
     }
 
     /**
@@ -616,7 +623,8 @@ public class EntryLogger {
     private final FastThreadLocal<ByteBuf> sizeBuffer = new FastThreadLocal<ByteBuf>() {
         @Override
         protected ByteBuf initialValue() throws Exception {
-            return Unpooled.buffer(4);
+            // Max usage is size (4 bytes) + ledgerId (8 bytes) + entryid (8 bytes)
+            return Unpooled.buffer(4 + 8 + 8);
         }
     };
 
@@ -693,10 +701,85 @@ public class EntryLogger {
 
 
 
-    public ByteBuf internalReadEntry(long ledgerId, long entryId, long location)
-            throws IOException, Bookie.NoEntryException {
-        long entryLogId = logIdForOffset(location);
-        long pos = location & 0xffffffffL;
+    /**
+     * Exception type for representing lookup errors.  Useful for disambiguating different error
+     * conditions for reporting purposes.
+     */
+    static class EntryLookupException extends Exception {
+        EntryLookupException(String message) {
+            super(message);
+        }
+
+        /**
+         * Represents case where log file is missing.
+         */
+        static class MissingLogFileException extends EntryLookupException {
+            MissingLogFileException(long ledgerId, long entryId, long entryLogId, long pos) {
+                super(String.format("Missing entryLog %d for ledgerId %d, entry %d at offset %d",
+                        entryLogId,
+                        ledgerId,
+                        entryId,
+                        pos));
+            }
+        }
+
+        /**
+         * Represents case where entry log is present, but does not contain the specified entry.
+         */
+        static class MissingEntryException extends EntryLookupException {
+            MissingEntryException(long ledgerId, long entryId, long entryLogId, long pos) {
+                super(String.format("pos %d (entry %d for ledgerId %d) past end of entryLog %d",
+                        pos,
+                        entryId,
+                        ledgerId,
+                        entryLogId));
+            }
+        }
+
+        /**
+         * Represents case where log is present, but encoded entry length header is invalid.
+         */
+        static class InvalidEntryLengthException extends EntryLookupException {
+            InvalidEntryLengthException(long ledgerId, long entryId, long entryLogId, long pos) {
+                super(String.format("Invalid entry length at pos %d (entry %d for ledgerId %d) for entryLog %d",
+                        pos,
+                        entryId,
+                        ledgerId,
+                        entryLogId));
+            }
+        }
+
+        /**
+         * Represents case where the entry at pos is wrong.
+         */
+        static class WrongEntryException extends EntryLookupException {
+            WrongEntryException(long foundEntryId, long foundLedgerId, long ledgerId,
+                                long entryId, long entryLogId, long pos) {
+                super(String.format(
+                        "Found entry %d, ledger %d at pos %d entryLog %d, should have found entry %d for ledgerId %d",
+                        foundEntryId,
+                        foundLedgerId,
+                        pos,
+                        entryLogId,
+                        entryId,
+                        ledgerId));
+            }
+        }
+    }
+
+    private static class EntryLogEntry {
+        final int entrySize;
+        final BufferedReadChannel fc;
+
+        EntryLogEntry(int entrySize, BufferedReadChannel fc) {
+            this.entrySize = entrySize;
+            this.fc = fc;
+        }
+    }
+
+    private EntryLogEntry getFCForEntryInternal(
+            long ledgerId, long entryId, long entryLogId, long pos)
+            throws EntryLookupException, IOException {
         ByteBuf sizeBuff = sizeBuffer.get();
         sizeBuff.clear();
         pos -= 4; // we want to get the ledgerId and length to check
@@ -704,15 +787,15 @@ public class EntryLogger {
         try {
             fc = getChannelForLogId(entryLogId);
         } catch (FileNotFoundException e) {
-            FileNotFoundException newe = new FileNotFoundException(e.getMessage() + " for " + ledgerId
-                    + " with location " + location);
-            newe.setStackTrace(e.getStackTrace());
-            throw newe;
+            throw new EntryLookupException.MissingLogFileException(ledgerId, entryId, entryLogId, pos);
         }
 
-        if (readFromLogChannel(entryLogId, fc, sizeBuff, pos) != sizeBuff.capacity()) {
-            throw new Bookie.NoEntryException("Short read from entrylog " + entryLogId,
-                                              ledgerId, entryId);
+        try {
+            if (readFromLogChannel(entryLogId, fc, sizeBuff, pos) != sizeBuff.capacity()) {
+                throw new EntryLookupException.MissingEntryException(ledgerId, entryId, entryLogId, pos);
+            }
+        } catch (BufferedChannelBase.BufferedChannelClosedException | AsynchronousCloseException e) {
+            throw new EntryLookupException.MissingLogFileException(ledgerId, entryId, entryLogId, pos);
         }
         pos += 4;
         int entrySize = sizeBuff.readInt();
@@ -724,12 +807,42 @@ public class EntryLogger {
         }
         if (entrySize < MIN_SANE_ENTRY_SIZE) {
             LOG.error("Read invalid entry length {}", entrySize);
-            throw new IOException("Invalid entry length " + entrySize);
+            throw new EntryLookupException.InvalidEntryLengthException(ledgerId, entryId, entryLogId, pos);
         }
 
-        ByteBuf data = PooledByteBufAllocator.DEFAULT.directBuffer(entrySize, entrySize);
-        int rc = readFromLogChannel(entryLogId, fc, data, pos);
-        if (rc != entrySize) {
+        long thisLedgerId = sizeBuff.getLong(4);
+        long thisEntryId = sizeBuff.getLong(12);
+        if (thisLedgerId != ledgerId || thisEntryId != entryId) {
+            throw new EntryLookupException.WrongEntryException(
+                    thisEntryId, thisLedgerId, ledgerId, entryId, entryLogId, pos);
+        }
+        return new EntryLogEntry(entrySize, fc);
+    }
+
+    void checkEntry(long ledgerId, long entryId, long location) throws EntryLookupException, IOException {
+        long entryLogId = logIdForOffset(location);
+        long pos = location & 0xffffffffL;
+        getFCForEntryInternal(ledgerId, entryId, entryLogId, pos);
+    }
+
+    public ByteBuf internalReadEntry(long ledgerId, long entryId, long location)
+            throws IOException, Bookie.NoEntryException {
+        long entryLogId = logIdForOffset(location);
+        long pos = location & 0xffffffffL;
+
+        final EntryLogEntry entry;
+        try {
+            entry = getFCForEntryInternal(ledgerId, entryId, entryLogId, pos);
+        } catch (EntryLookupException.MissingEntryException entryLookupError) {
+            throw new Bookie.NoEntryException("Short read from entrylog " + entryLogId,
+                    ledgerId, entryId);
+        } catch (EntryLookupException e) {
+            throw new IOException(e.toString());
+        }
+
+        ByteBuf data = PooledByteBufAllocator.DEFAULT.directBuffer(entry.entrySize, entry.entrySize);
+        int rc = readFromLogChannel(entryLogId, entry.fc, data, pos);
+        if (rc != entry.entrySize) {
             // Note that throwing NoEntryException here instead of IOException is not
             // without risk. If all bookies in a quorum throw this same exception
             // the client will assume that it has reached the end of the ledger.
@@ -740,31 +853,15 @@ public class EntryLogger {
             data.release();
             throw new Bookie.NoEntryException("Short read for " + ledgerId + "@"
                                               + entryId + " in " + entryLogId + "@"
-                                              + pos + "(" + rc + "!=" + entrySize + ")", ledgerId, entryId);
+                                              + pos + "(" + rc + "!=" + entry.entrySize + ")", ledgerId, entryId);
         }
-        data.writerIndex(entrySize);
+        data.writerIndex(entry.entrySize);
 
         return data;
     }
 
     public ByteBuf readEntry(long ledgerId, long entryId, long location) throws IOException, Bookie.NoEntryException {
-        long entryLogId = logIdForOffset(location);
-        long pos = location & 0xffffffffL;
-
         ByteBuf data = internalReadEntry(ledgerId, entryId, location);
-        long thisLedgerId = data.getLong(0);
-        if (thisLedgerId != ledgerId) {
-            data.release();
-            throw new IOException("problem found in " + entryLogId + "@" + entryId + " at position + " + pos
-                    + " entry belongs to " + thisLedgerId + " not " + ledgerId);
-        }
-        long thisEntryId = data.getLong(8);
-        if (thisEntryId != entryId) {
-            data.release();
-            throw new IOException("problem found in " + entryLogId + "@" + entryId + " at position + " + pos
-                    + " entry is " + thisEntryId + " not " + entryId);
-        }
-
         return data;
     }
 

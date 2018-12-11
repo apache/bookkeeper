@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.bookkeeper.bookie.EntryLogger.EntryLogScanner;
+import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.util.HardLink;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,10 +54,14 @@ public class TransactionalEntryLogCompactor extends AbstractLogCompactor {
     // flushed compaction log file suffix
     static final String COMPACTED_SUFFIX = ".compacted";
 
-    public TransactionalEntryLogCompactor(GarbageCollectorThread gcThread) {
-        super(gcThread);
-        this.entryLogger = gcThread.getEntryLogger();
-        this.ledgerStorage = gcThread.getLedgerStorage();
+    public TransactionalEntryLogCompactor(
+            ServerConfiguration conf,
+            EntryLogger entryLogger,
+            CompactableLedgerStorage ledgerStorage,
+            LogRemovalListener logRemover) {
+        super(conf, logRemover);
+        this.entryLogger = entryLogger;
+        this.ledgerStorage = ledgerStorage;
     }
 
     /**
@@ -201,7 +206,7 @@ public class TransactionalEntryLogCompactor extends AbstractLogCompactor {
             if (offsets.isEmpty()) {
                 // no valid entries is compacted, delete entry log file
                 LOG.info("No valid entry is found in entry log after scan, removing entry log now.");
-                gcThread.removeEntryLog(metadata.getEntryLogId());
+                logRemovalListener.removeEntryLog(metadata.getEntryLogId());
                 entryLogger.removeCurCompactionLog();
                 return false;
             }
@@ -335,7 +340,7 @@ public class TransactionalEntryLogCompactor extends AbstractLogCompactor {
                 String compactedFilename = compactedLogFile.getName();
                 String oldEntryLogFilename = compactedFilename.substring(compactedFilename.indexOf(".log") + 5);
                 long entryLogId = EntryLogger.fileName2LogId(oldEntryLogFilename);
-                gcThread.removeEntryLog(entryLogId);
+                logRemovalListener.removeEntryLog(entryLogId);
             }
             return true;
         }

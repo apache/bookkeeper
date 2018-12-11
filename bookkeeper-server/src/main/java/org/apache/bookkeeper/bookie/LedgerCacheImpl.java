@@ -169,4 +169,14 @@ public class LedgerCacheImpl implements LedgerCache {
     public void close() throws IOException {
         indexPersistenceManager.close();
     }
+
+    @Override
+    public PageEntriesIterable listEntries(long ledgerId) throws IOException {
+        return indexPageManager.listEntries(ledgerId);
+    }
+
+    @Override
+    public LedgerIndexMetadata readLedgerIndexMetadata(long ledgerId) throws IOException {
+        return indexPersistenceManager.readLedgerIndexMetadata(ledgerId);
+    }
 }

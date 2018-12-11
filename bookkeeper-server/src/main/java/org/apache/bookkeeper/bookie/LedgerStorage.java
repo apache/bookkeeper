@@ -21,8 +21,12 @@
 
 package org.apache.bookkeeper.bookie;
 
+import com.google.common.util.concurrent.RateLimiter;
 import io.netty.buffer.ByteBuf;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
 import org.apache.bookkeeper.common.util.Watcher;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -180,5 +184,44 @@ public interface LedgerStorage {
      */
     default void forceGC() {
         return;
+    }
+
+    /**
+     * Class for describing location of a generic inconsistency.  Implementations should
+     * ensure that detail is populated with an exception which adequately describes the
+     * nature of the problem.
+     */
+    class DetectedInconsistency {
+        private long ledgerId;
+        private long entryId;
+        private Exception detail;
+
+        DetectedInconsistency(long ledgerId, long entryId, Exception detail) {
+            this.ledgerId = ledgerId;
+            this.entryId = entryId;
+            this.detail = detail;
+        }
+
+        public long getLedgerId() {
+            return ledgerId;
+        }
+
+        public long getEntryId() {
+            return entryId;
+        }
+
+        public Exception getException() {
+            return detail;
+        }
+    }
+
+    /**
+     * Performs internal check of local storage logging any inconsistencies.
+     * @param rateLimiter Provide to rate of entry checking.  null for unlimited.
+     * @return List of inconsistencies detected
+     * @throws IOException
+     */
+    default List<DetectedInconsistency> localConsistencyCheck(Optional<RateLimiter> rateLimiter) throws IOException {
+        return new ArrayList<>();
     }
 }

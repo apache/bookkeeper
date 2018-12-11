@@ -55,6 +55,9 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     protected static final String GC_OVERREPLICATED_LEDGER_WAIT_TIME = "gcOverreplicatedLedgerWaitTime";
     protected static final String USE_TRANSACTIONAL_COMPACTION = "useTransactionalCompaction";
     protected static final String VERIFY_METADATA_ON_GC = "verifyMetadataOnGC";
+    // Scrub Parameters
+    protected static final String LOCAL_SCRUB_PERIOD = "localScrubInterval";
+    protected static final String LOCAL_SCRUB_RATE_LIMIT = "localScrubRateLimit";
     // Sync Parameters
     protected static final String FLUSH_INTERVAL = "flushInterval";
     protected static final String FLUSH_ENTRYLOG_INTERVAL_BYTES = "flushEntrylogBytes";
@@ -226,6 +229,9 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     protected static final String ENTRY_LOG_PER_LEDGER_COUNTER_LIMITS_MULT_FACTOR =
             "entryLogPerLedgerCounterLimitsMultFactor";
 
+    // Perform local consistency check on bookie startup
+    protected static final String LOCAL_CONSISTENCY_CHECK_ON_STARTUP = "localConsistencyCheckOnStartup";
+
     /**
      * Construct a default configuration object.
      */
@@ -372,6 +378,50 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     public ServerConfiguration setVerifyMetadataOnGc(boolean verifyMetadataOnGC) {
         this.setProperty(VERIFY_METADATA_ON_GC, verifyMetadataOnGC);
         return this;
+    }
+
+    /**
+     * Get whether local scrub is enabled.
+     *
+     * @return Whether local scrub is enabled.
+     */
+    public boolean isLocalScrubEnabled() {
+        return this.getLocalScrubPeriod() > 0;
+    }
+
+    /**
+     * Get local scrub interval.
+     *
+     * @return Number of seconds between scrubs, <= 0 for disabled.
+     */
+    public long getLocalScrubPeriod() {
+        return this.getLong(LOCAL_SCRUB_PERIOD, 0);
+    }
+
+    /**
+     * Set local scrub period in seconds (<= 0 for disabled). Scrub will be scheduled at delays
+     * chosen from the interval (.5 * interval, 1.5 * interval)
+     */
+    public void setLocalScrubPeriod(long period) {
+        this.setProperty(LOCAL_SCRUB_PERIOD, period);
+    }
+
+    /**
+     * Get local scrub rate limit (entries/second).
+     *
+     * @return Max number of entries to scrub per second, 0 for disabled.
+     */
+    public double getLocalScrubRateLimit() {
+        return this.getDouble(LOCAL_SCRUB_RATE_LIMIT, 60);
+    }
+
+    /**
+     * Get local scrub rate limit (entries/second).
+     *
+     * @param scrubRateLimit Max number of entries per second to scan.
+     */
+    public void setLocalScrubRateLimit(double scrubRateLimit) {
+        this.setProperty(LOCAL_SCRUB_RATE_LIMIT, scrubRateLimit);
     }
 
     /**
@@ -3092,5 +3142,12 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
         this.setProperty(ENTRY_LOG_PER_LEDGER_COUNTER_LIMITS_MULT_FACTOR,
                 Integer.toString(entryLogPerLedgerCounterLimitsMultFactor));
         return this;
+    }
+
+    /**
+     * True if a local consistency check should be performed on startup.
+     */
+    public boolean isLocalConsistencyCheckOnStartup() {
+        return this.getBoolean(LOCAL_CONSISTENCY_CHECK_ON_STARTUP, false);
     }
 }

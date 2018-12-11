@@ -1,0 +1,303 @@
+/**
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ *
+ */
+package org.apache.bookkeeper.bookie;
+
+import static org.junit.Assert.assertEquals;
+
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
+import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.conf.TestBKConfiguration;
+import org.apache.bookkeeper.stats.NullStatsLogger;
+import org.apache.bookkeeper.util.DiskChecker;
+import org.apache.bookkeeper.util.EntryFormatter;
+import org.apache.bookkeeper.util.LedgerIdFormatter;
+import org.apache.commons.lang.mutable.MutableLong;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+
+/**
+ * Test for InterleavedLedgerStorage.
+ */
+public class InterleavedLedgerStorageTest {
+
+    CheckpointSource checkpointSource = new CheckpointSource() {
+        @Override
+        public Checkpoint newCheckpoint() {
+            return Checkpoint.MAX;
+        }
+
+        @Override
+        public void checkpointComplete(Checkpoint checkpoint, boolean compact) throws IOException {
+        }
+    };
+
+    Checkpointer checkpointer = new Checkpointer() {
+        @Override
+        public void startCheckpoint(Checkpoint checkpoint) {
+            // No-op
+        }
+
+        @Override
+        public void start() {
+            // no-op
+        }
+    };
+
+    ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+    LedgerDirsManager ledgerDirsManager;
+    InterleavedLedgerStorage interleavedStorage = new InterleavedLedgerStorage();
+    final long numWrites = 2000;
+    final long entriesPerWrite = 2;
+
+    @Before
+    public void setUp() throws Exception {
+        File tmpDir = File.createTempFile("bkTest", ".dir");
+        tmpDir.delete();
+        tmpDir.mkdir();
+        File curDir = Bookie.getCurrentDirectory(tmpDir);
+        Bookie.checkDirectoryStructure(curDir);
+
+        conf = TestBKConfiguration.newServerConfiguration();
+        conf.setLedgerDirNames(new String[] { tmpDir.toString() });
+        conf.setEntryLogSizeLimit(2048);
+        ledgerDirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs(),
+                new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()));
+
+        interleavedStorage.initialize(conf, null, ledgerDirsManager, ledgerDirsManager,
+                null, checkpointSource, checkpointer, NullStatsLogger.INSTANCE);
+
+        // Insert some ledger & entries in the interleaved storage
+        for (long entryId = 0; entryId < numWrites; entryId++) {
+            for (long ledgerId = 0; ledgerId < 5; ledgerId++) {
+                if (entryId == 0) {
+                    interleavedStorage.setMasterKey(ledgerId, ("ledger-" + ledgerId).getBytes());
+                    interleavedStorage.setFenced(ledgerId);
+                }
+                ByteBuf entry = Unpooled.buffer(128);
+                entry.writeLong(ledgerId);
+                entry.writeLong(entryId * entriesPerWrite);
+                entry.writeBytes(("entry-" + entryId).getBytes());
+
+                interleavedStorage.addEntry(entry);
+            }
+        }
+    }
+
+    @Test
+    public void testIndexEntryIterator() throws Exception {
+        try (LedgerCache.PageEntriesIterable pages = interleavedStorage.getIndexEntries(0)) {
+            MutableLong curEntry = new MutableLong(0);
+            for (LedgerCache.PageEntries page : pages) {
+                try (LedgerEntryPage lep = page.getLEP()) {
+                    lep.getEntries((entry, offset) -> {
+                        Assert.assertEquals(curEntry.longValue(), entry);
+                        Assert.assertNotEquals(0, offset);
+                        curEntry.setValue(entriesPerWrite + entry);
+                        return true;
+                    });
+                }
+            }
+            Assert.assertEquals(entriesPerWrite * numWrites, curEntry.longValue());
+        }
+    }
+
+    @Test
+    public void testConsistencyCheckConcurrentModification() throws Exception {
+        AtomicBoolean done = new AtomicBoolean(false);
+        EntryLogger entryLogger = interleavedStorage.getEntryLogger();
+        List<Exception> asyncErrors = new ArrayList<>();
+        Thread mutator = new Thread(() -> {
+            EntryLogCompactor compactor = new EntryLogCompactor(
+                    conf,
+                    entryLogger,
+                    interleavedStorage,
+                    entryLogger::removeEntryLog);
+            long next = 0;
+            while (!done.get()) {
+                try {
+                    compactor.compact(entryLogger.getEntryLogMetadata(next));
+                    next++;
+                } catch (IOException e) {
+                    asyncErrors.add(e);
+                    break;
+                }
+            }
+        });
+        mutator.start();
+
+        for (int i = 0; i < 100; ++i) {
+            assert interleavedStorage.localConsistencyCheck(Optional.empty()).size() == 0;
+            Thread.sleep(10);
+        }
+
+        done.set(true);
+        mutator.join();
+        for (Exception e: asyncErrors) {
+            throw e;
+        }
+    }
+
+
+    @Test
+    public void testConsistencyMissingEntry() throws Exception {
+        // set 1, 1 to nonsense
+        interleavedStorage.ledgerCache.putEntryOffset(1, 1, 0xFFFFFFFFFFFFFFFFL);
+
+        List<LedgerStorage.DetectedInconsistency> errors = interleavedStorage.localConsistencyCheck(Optional.empty());
+        Assert.assertEquals(1, errors.size());
+        LedgerStorage.DetectedInconsistency inconsistency = errors.remove(0);
+        Assert.assertEquals(1, inconsistency.getEntryId());
+        Assert.assertEquals(1, inconsistency.getLedgerId());
+    }
+
+    @Test
+    public void testWrongEntry() throws Exception {
+        // set 1, 1 to nonsense
+        interleavedStorage.ledgerCache.putEntryOffset(
+                1,
+                1,
+                interleavedStorage.ledgerCache.getEntryOffset(0, 0));
+
+        List<LedgerStorage.DetectedInconsistency> errors = interleavedStorage.localConsistencyCheck(Optional.empty());
+        Assert.assertEquals(1, errors.size());
+        LedgerStorage.DetectedInconsistency inconsistency = errors.remove(0);
+        Assert.assertEquals(1, inconsistency.getEntryId());
+        Assert.assertEquals(1, inconsistency.getLedgerId());
+    }
+
+    @Test
+    public void testShellCommands() throws Exception {
+        interleavedStorage.flush();
+        interleavedStorage.shutdown();
+        final Pattern entryPattern = Pattern.compile(
+                "entry (?<entry>\\d+)\t:\t((?<na>N/A)|\\(log:(?<logid>\\d+), pos: (?<pos>\\d+)\\))");
+
+        class Metadata {
+            final Pattern keyPattern = Pattern.compile("master key +: ([0-9a-f])");
+            final Pattern sizePattern = Pattern.compile("size +: (\\d+)");
+            final Pattern entriesPattern = Pattern.compile("entries +: (\\d+)");
+            final Pattern isFencedPattern = Pattern.compile("isFenced +: (\\w+)");
+
+            public String masterKey;
+            public long size = -1;
+            public long entries = -1;
+            public boolean foundFenced = false;
+
+            void check(String s) {
+                Matcher keyMatcher = keyPattern.matcher(s);
+                if (keyMatcher.matches()) {
+                    masterKey = keyMatcher.group(1);
+                    return;
+                }
+
+                Matcher sizeMatcher = sizePattern.matcher(s);
+                if (sizeMatcher.matches()) {
+                    size = Long.valueOf(sizeMatcher.group(1));
+                    return;
+                }
+
+                Matcher entriesMatcher = entriesPattern.matcher(s);
+                if (entriesMatcher.matches()) {
+                    entries = Long.valueOf(entriesMatcher.group(1));
+                    return;
+                }
+
+                Matcher isFencedMatcher = isFencedPattern.matcher(s);
+                if (isFencedMatcher.matches()) {
+                    Assert.assertEquals("true", isFencedMatcher.group(1));
+                    foundFenced = true;
+                    return;
+                }
+            }
+
+            void validate(long foundEntries) {
+                Assert.assertTrue(entries >= numWrites * entriesPerWrite);
+                Assert.assertEquals(entries, foundEntries);
+                Assert.assertTrue(foundFenced);
+                Assert.assertNotEquals(-1, size);
+            }
+        }
+        final Metadata foundMetadata = new Metadata();
+
+        AtomicLong curEntry = new AtomicLong(0);
+        AtomicLong someEntryLogger = new AtomicLong(-1);
+        BookieShell shell = new BookieShell(
+                LedgerIdFormatter.LONG_LEDGERID_FORMATTER, EntryFormatter.STRING_FORMATTER) {
+            @Override
+            void printInfoLine(String s) {
+                Matcher matcher = entryPattern.matcher(s);
+                System.out.println(s);
+                if (matcher.matches()) {
+                    assertEquals(Long.toString(curEntry.get()), matcher.group("entry"));
+
+                    if (matcher.group("na") == null) {
+                        String logId = matcher.group("logid");
+                        Assert.assertNotEquals(matcher.group("logid"), null);
+                        Assert.assertNotEquals(matcher.group("pos"), null);
+                        Assert.assertTrue((curEntry.get() % entriesPerWrite) == 0);
+                        Assert.assertTrue(curEntry.get() <= numWrites * entriesPerWrite);
+                        if (someEntryLogger.get() == -1) {
+                            someEntryLogger.set(Long.valueOf(logId));
+                        }
+                    } else {
+                        Assert.assertEquals(matcher.group("logid"), null);
+                        Assert.assertEquals(matcher.group("pos"), null);
+                        Assert.assertTrue(((curEntry.get() % entriesPerWrite) != 0)
+                                || ((curEntry.get() >= (entriesPerWrite * numWrites))));
+                    }
+                    curEntry.incrementAndGet();
+                } else {
+                    foundMetadata.check(s);
+                }
+            }
+        };
+        shell.setConf(conf);
+        int res = shell.run(new String[] { "ledger", "-m", "0" });
+        Assert.assertEquals(0, res);
+        Assert.assertTrue(curEntry.get() >= numWrites * entriesPerWrite);
+        foundMetadata.validate(curEntry.get());
+
+        // Should pass consistency checker
+        res = shell.run(new String[] { "localconsistencycheck" });
+        Assert.assertEquals(0, res);
+
+
+        // Remove a logger
+        EntryLogger entryLogger = new EntryLogger(conf);
+        entryLogger.removeEntryLog(someEntryLogger.get());
+
+        // Should fail consistency checker
+        res = shell.run(new String[] { "localconsistencycheck" });
+        Assert.assertEquals(1, res);
+    }
+}

@@ -108,6 +108,10 @@ public interface BookKeeperServerStats {
     // Ledger Storage Stats
     String STORAGE_GET_OFFSET = "STORAGE_GET_OFFSET";
     String STORAGE_GET_ENTRY = "STORAGE_GET_ENTRY";
+
+    // Ledger Storage Scrub Stats
+    String STORAGE_SCRUB_PAGES_SCANNED = "STORAGE_SCRUB_PAGES_SCANNED";
+
     // Ledger Cache Stats
     String LEDGER_CACHE_READ_PAGE = "LEDGER_CACHE_READ_PAGE";
     // SkipList Stats
