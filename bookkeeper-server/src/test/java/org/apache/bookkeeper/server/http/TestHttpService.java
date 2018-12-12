@@ -812,12 +812,11 @@ public class TestHttpService extends BookKeeperClusterTestCase {
         HttpServiceResponse response0 = triggerGCService.handle(request0);
         assertEquals(HttpServer.StatusCode.OK.getValue(), response0.getStatusCode());
 
-        //1,  GET, should return OK, and majorCompactionCounter should be triggered once
+        //1,  GET, should return OK
         HttpServiceRequest request1 = new HttpServiceRequest(null, HttpServer.Method.GET, null);
         HttpServiceResponse response1 = gcDetailsService.handle(request1);
         assertEquals(HttpServer.StatusCode.OK.getValue(), response1.getStatusCode());
         LOG.info("Get response: {}", response1.getBody());
-        assertTrue(response1.getBody().contains("\"majorCompactionCounter\" : 1"));
 
         //2, PUT, should return NOT_FOUND
         HttpServiceRequest request3 = new HttpServiceRequest(null, HttpServer.Method.PUT, null);
