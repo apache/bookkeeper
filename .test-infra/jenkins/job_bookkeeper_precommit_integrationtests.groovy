@@ -42,7 +42,7 @@ freeStyleJob('bookkeeper_precommit_integrationtests') {
     // Sets that this is a PreCommit job.
     common_job_properties.setPreCommit(
         delegate,
-        'Integration Tests',
+        'Integration Tests (trigger via `run integration tests`)',
         '.*(re)?run integration tests.*',
         '.*\\[x\\] \\[skip integration tests\\].*')
 

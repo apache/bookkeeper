@@ -213,7 +213,7 @@ public class IndexPersistenceMgr {
             if (ee.getCause() instanceof IOException) {
                 throw (IOException) ee.getCause();
             } else {
-                throw new IOException("Failed to load file info for ledger " + ledger, ee);
+                throw new LedgerCache.NoIndexForLedger("Failed to load file info for ledger " + ledger, ee);
             }
         } finally {
             persistenceMgrStats.getPendingGetFileInfoCounter().dec();
@@ -688,4 +688,22 @@ public class IndexPersistenceMgr {
         return lastEntry;
     }
 
+    /**
+     * Read ledger meta.
+     * @param ledgerId Ledger Id
+     */
+    public LedgerCache.LedgerIndexMetadata readLedgerIndexMetadata(long ledgerId) throws IOException {
+        CachedFileInfo fi = null;
+        try {
+            fi = getFileInfo(ledgerId, null);
+            return new LedgerCache.LedgerIndexMetadata(
+                    fi.getMasterKey(),
+                    fi.size(),
+                    fi.isFenced());
+        } finally {
+            if (fi != null) {
+                fi.release();
+            }
+        }
+    }
 }
