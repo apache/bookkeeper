@@ -21,6 +21,8 @@
 
 package org.apache.bookkeeper.bookie;
 
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.CATEGORY_SERVER;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.ENTRYLOGGER_SCOPE;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.ENTRYLOGS_PER_LEDGER;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.NUM_LEDGERS_HAVING_MULTIPLE_ENTRYLOGS;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.NUM_OF_WRITE_ACTIVE_LEDGERS;
@@ -61,6 +63,7 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
+import org.apache.bookkeeper.stats.annotations.StatsDoc;
 import org.apache.bookkeeper.util.IOUtils;
 import org.apache.bookkeeper.util.MathUtils;
 import org.apache.bookkeeper.util.collections.ConcurrentLongHashMap;
@@ -115,11 +118,37 @@ class EntryLogManagerForEntryLogPerLedger extends EntryLogManagerBase {
         }
     }
 
+    @StatsDoc(
+        name = ENTRYLOGGER_SCOPE,
+        category = CATEGORY_SERVER,
+        help = "EntryLogger related stats"
+    )
     class EntryLogsPerLedgerCounter {
+
+        @StatsDoc(
+            name = NUM_OF_WRITE_ACTIVE_LEDGERS,
+            help = "Number of write active ledgers"
+        )
         private final Counter numOfWriteActiveLedgers;
+        @StatsDoc(
+            name = NUM_OF_WRITE_LEDGERS_REMOVED_CACHE_EXPIRY,
+            help = "Number of write ledgers removed after cache expiry"
+        )
         private final Counter numOfWriteLedgersRemovedCacheExpiry;
+        @StatsDoc(
+            name = NUM_OF_WRITE_LEDGERS_REMOVED_CACHE_MAXSIZE,
+            help = "Number of write ledgers removed due to reach max cache size"
+        )
         private final Counter numOfWriteLedgersRemovedCacheMaxSize;
+        @StatsDoc(
+            name = NUM_LEDGERS_HAVING_MULTIPLE_ENTRYLOGS,
+            help = "Number of ledgers having multiple entry logs"
+        )
         private final Counter numLedgersHavingMultipleEntrylogs;
+        @StatsDoc(
+            name = ENTRYLOGS_PER_LEDGER,
+            help = "The distribution of number of entry logs per ledger"
+        )
         private final OpStatsLogger entryLogsPerLedger;
         /*
          * ledgerIdEntryLogCounterCacheMap cache will be used to store count of

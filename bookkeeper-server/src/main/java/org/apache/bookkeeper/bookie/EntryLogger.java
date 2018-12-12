@@ -82,9 +82,6 @@ public class EntryLogger {
     @VisibleForTesting
     static final int UNINITIALIZED_LOG_ID = -0xDEAD;
 
-    // Expose Stats
-    private final StatsLogger statsLogger;
-
     static class BufferedLogChannel extends BufferedChannel {
         private final long logId;
         private final EntryLogMetadata entryLogMetadata;
@@ -375,7 +372,6 @@ public class EntryLogger {
         this.recentlyCreatedEntryLogsStatus = new RecentEntryLogsStatus(logId + 1);
         this.entryLoggerAllocator = new EntryLoggerAllocator(conf, ledgerDirsManager, recentlyCreatedEntryLogsStatus,
                 logId);
-        this.statsLogger = statsLogger;
         if (entryLogPerLedgerEnabled) {
             this.entryLogManager = new EntryLogManagerForEntryLogPerLedger(conf, ledgerDirsManager,
                     entryLoggerAllocator, listeners, recentlyCreatedEntryLogsStatus, statsLogger);
