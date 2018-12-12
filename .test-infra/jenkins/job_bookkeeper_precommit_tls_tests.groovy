@@ -40,7 +40,7 @@ freeStyleJob('bookkeeper_precommit_tls_tests') {
   // Sets that this is a PreCommit job.
   common_job_properties.setPreCommit(
     delegate,
-    'TLS Tests',
+    'TLS Tests (trigger via `run bookkeeper-server tls tests`)',
     '.*(re)?run bookkeeper-server (tls )?tests.*',
     '.*\\[x\\] \\[skip bookkeeper-server (tls )?tests\\].*',
     true)

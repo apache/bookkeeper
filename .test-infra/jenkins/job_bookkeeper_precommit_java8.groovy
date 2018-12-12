@@ -49,7 +49,7 @@ mavenJob('bookkeeper_precommit_pullrequest_java8') {
   // Sets that this is a PreCommit job.
   common_job_properties.setPreCommit(
     delegate,
-    'Build (Java 8)',
+    'Build (Java 8) (trigger via `rebuild java8`)',
     '.*(re)?build java8.*',
     '.*\\[x\\] \\[skip build java8\\].*')
 
