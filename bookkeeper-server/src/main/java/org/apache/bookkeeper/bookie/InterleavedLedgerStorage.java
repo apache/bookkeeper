@@ -22,6 +22,9 @@
 package org.apache.bookkeeper.bookie;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.BOOKIE_READ_ENTRY;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.BOOKIE_SCOPE;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.CATEGORY_SERVER;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.ENTRYLOGGER_SCOPE;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.STORAGE_GET_ENTRY;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.STORAGE_GET_OFFSET;
@@ -53,6 +56,7 @@ import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
+import org.apache.bookkeeper.stats.annotations.StatsDoc;
 import org.apache.bookkeeper.util.MathUtils;
 import org.apache.bookkeeper.util.SnapshotMap;
 import org.apache.commons.lang.mutable.MutableBoolean;
@@ -66,6 +70,11 @@ import org.slf4j.LoggerFactory;
  * <p>This ledger storage implementation stores all entries in a single
  * file and maintains an index file for each ledger.
  */
+@StatsDoc(
+    name = BOOKIE_SCOPE,
+    category = CATEGORY_SERVER,
+    help = "Bookie related stats"
+)
 public class InterleavedLedgerStorage implements CompactableLedgerStorage, EntryLogListener {
     private static final Logger LOG = LoggerFactory.getLogger(InterleavedLedgerStorage.class);
 
@@ -88,7 +97,18 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
     private final AtomicBoolean somethingWritten = new AtomicBoolean(false);
 
     // Expose Stats
+    @StatsDoc(
+        name = STORAGE_GET_OFFSET,
+        help = "Operation stats of getting offset from ledger cache",
+        parent = BOOKIE_READ_ENTRY
+    )
     private OpStatsLogger getOffsetStats;
+    @StatsDoc(
+        name = STORAGE_GET_ENTRY,
+        help = "Operation stats of getting entry from entry logger",
+        parent = BOOKIE_READ_ENTRY,
+        happensAfter = STORAGE_GET_OFFSET
+    )
     private OpStatsLogger getEntryStats;
     private OpStatsLogger pageScanStats;
 
