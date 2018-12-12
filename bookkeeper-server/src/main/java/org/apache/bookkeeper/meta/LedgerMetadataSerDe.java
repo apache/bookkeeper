@@ -62,20 +62,20 @@ public class LedgerMetadataSerDe {
      * Text based manual serialization.
      * Available from v4.0.x onwards.
      */
-    private static final int METADATA_FORMAT_VERSION_1 = 1;
+    public static final int METADATA_FORMAT_VERSION_1 = 1;
 
     /**
      * Protobuf based, serialized using TextFormat.
      * Available from v4.2.x onwards.
      * Can contain ctime or not, but if it contains ctime it can only be parse by v4.4.x onwards.
      */
-    private static final int METADATA_FORMAT_VERSION_2 = 2;
+    public static final int METADATA_FORMAT_VERSION_2 = 2;
 
     /**
      * Protobuf based, serialized in binary format.
      * Available from v4.9.x onwards.
      */
-    private static final int METADATA_FORMAT_VERSION_3 = 3;
+    public static final int METADATA_FORMAT_VERSION_3 = 3;
 
     public static final int MAXIMUM_METADATA_FORMAT_VERSION = METADATA_FORMAT_VERSION_3;
     public static final int CURRENT_METADATA_FORMAT_VERSION = METADATA_FORMAT_VERSION_2;
@@ -95,7 +95,7 @@ public class LedgerMetadataSerDe {
     private final int maxLedgerMetadataFormatVersion;
 
     public LedgerMetadataSerDe(int maxLedgerMetadataFormatVersion) {
-        log.info("SerDe initialized with max version {}", maxLedgerMetadataFormatVersion, new Exception());
+        log.info("SerDe initialized with max version {}", maxLedgerMetadataFormatVersion);
         this.maxLedgerMetadataFormatVersion = maxLedgerMetadataFormatVersion;
     }
 
@@ -247,8 +247,8 @@ public class LedgerMetadataSerDe {
             }
 
             /** Hack to get around fact that ctime was never versioned correctly */
-            if (!LedgerMetadataUtils.shouldStoreCtime(metadata)) {
-                builder.clearCtime();
+            if (LedgerMetadataUtils.shouldStoreCtime(metadata)) {
+                builder.setCtime(metadata.getCtime());
             }
 
             builder.setDigestType(apiToProtoDigestType(metadata.getDigestType()));
