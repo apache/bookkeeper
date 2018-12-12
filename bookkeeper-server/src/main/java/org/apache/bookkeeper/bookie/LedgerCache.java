@@ -21,6 +21,8 @@
 
 package org.apache.bookkeeper.bookie;
 
+import static org.apache.bookkeeper.bookie.BookieShell.bytes2Hex;
+
 import io.netty.buffer.ByteBuf;
 import java.io.Closeable;
 import java.io.IOException;
@@ -31,7 +33,7 @@ import org.apache.bookkeeper.common.util.Watcher;
  * an entry log file. It does user level caching to more efficiently manage disk
  * head scheduling.
  */
-interface LedgerCache extends Closeable {
+public interface LedgerCache extends Closeable {
 
     boolean setFenced(long ledgerId) throws IOException;
     boolean isFenced(long ledgerId) throws IOException;
@@ -56,4 +58,54 @@ interface LedgerCache extends Closeable {
 
     void setExplicitLac(long ledgerId, ByteBuf lac) throws IOException;
     ByteBuf getExplicitLac(long ledgerId);
+
+    /**
+     * Specific exception to encode the case where the index is not present.
+     */
+    class NoIndexForLedger extends IOException {
+        NoIndexForLedger(String reason, Exception cause) {
+            super(reason, cause);
+        }
+    }
+
+    /**
+     * Represents a page of the index.
+     */
+    interface PageEntries {
+        LedgerEntryPage getLEP() throws IOException;
+        long getFirstEntry();
+        long getLastEntry();
+    }
+
+    /**
+     * Iterable over index pages -- returns PageEntries rather than individual
+     * entries because getEntries() above needs to be able to throw an IOException.
+     */
+    interface PageEntriesIterable extends AutoCloseable, Iterable<PageEntries> {}
+
+    PageEntriesIterable listEntries(long ledgerId) throws IOException;
+
+    /**
+     * Represents summary of ledger metadata.
+     */
+    class LedgerIndexMetadata {
+        public final byte[] masterKey;
+        public final long size;
+        public final boolean fenced;
+        LedgerIndexMetadata(byte[] masterKey, long size, boolean fenced) {
+            this.masterKey = masterKey;
+            this.size = size;
+            this.fenced = fenced;
+        }
+
+        public String getMasterKeyHex() {
+            if (null == masterKey) {
+                return "NULL";
+            } else {
+                return bytes2Hex(masterKey);
+            }
+        }
+    }
+
+    LedgerIndexMetadata readLedgerIndexMetadata(long ledgerId) throws IOException;
 }

@@ -44,7 +44,7 @@ freeStyleJob('bookkeeper_precommit_remaining_tests') {
   // Sets that this is a PreCommit job.
   common_job_properties.setPreCommit(
     delegate,
-    'All Other Tests',
+    'All Other Tests (trigger via `run bookkeeper-server remaining tests`)',
     '.*(re)?run bookkeeper-server (remaining )?tests.*',
     '.*\\[x\\] \\[skip bookkeeper-server (remaining )?tests\\].*',
     true)

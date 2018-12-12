@@ -41,6 +41,7 @@ public class FlatLedgerManagerFactory extends AbstractZkLedgerManagerFactory {
     public static final int CUR_VERSION = 1;
 
     AbstractConfiguration conf;
+    private int maxLedgerMetadataFormatVersion;
 
     @Override
     public int getCurrentVersion() {
@@ -50,7 +51,8 @@ public class FlatLedgerManagerFactory extends AbstractZkLedgerManagerFactory {
     @Override
     public LedgerManagerFactory initialize(final AbstractConfiguration conf,
                                            final LayoutManager layoutManager,
-                                           final int factoryVersion)
+                                           final int factoryVersion,
+                                           int maxLedgerMetadataFormatVersion)
     throws IOException {
         checkArgument(layoutManager == null || layoutManager instanceof ZkLayoutManager);
 
@@ -61,6 +63,7 @@ public class FlatLedgerManagerFactory extends AbstractZkLedgerManagerFactory {
         this.conf = conf;
 
         this.zk = layoutManager == null ? null : ((ZkLayoutManager) layoutManager).getZk();
+        this.maxLedgerMetadataFormatVersion = maxLedgerMetadataFormatVersion;
         return this;
     }
 
@@ -79,7 +82,7 @@ public class FlatLedgerManagerFactory extends AbstractZkLedgerManagerFactory {
 
     @Override
     public LedgerManager newLedgerManager() {
-        return new FlatLedgerManager(conf, zk);
+        return new FlatLedgerManager(conf, zk, maxLedgerMetadataFormatVersion);
     }
 
     @Override
