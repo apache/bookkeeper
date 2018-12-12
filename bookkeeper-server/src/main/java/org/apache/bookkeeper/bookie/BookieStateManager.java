@@ -21,6 +21,8 @@
 
 package org.apache.bookkeeper.bookie;
 
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.BOOKIE_SCOPE;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.CATEGORY_SERVER;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.SERVER_STATUS;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -42,6 +44,7 @@ import org.apache.bookkeeper.meta.MetadataBookieDriver;
 import org.apache.bookkeeper.stats.Gauge;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
+import org.apache.bookkeeper.stats.annotations.StatsDoc;
 import org.apache.bookkeeper.util.DiskChecker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,6 +53,11 @@ import org.slf4j.LoggerFactory;
  * An implementation of StateManager.
  */
 @Slf4j
+@StatsDoc(
+    name = BOOKIE_SCOPE,
+    category = CATEGORY_SERVER,
+    help = "Bookie state manager related stats"
+)
 public class BookieStateManager implements StateManager {
     private static final Logger LOG = LoggerFactory.getLogger(BookieStateManager.class);
     private final ServerConfiguration conf;
@@ -73,7 +81,11 @@ public class BookieStateManager implements StateManager {
     private ShutdownHandler shutdownHandler;
     private final Supplier<RegistrationManager> rm;
     // Expose Stats
-    private final StatsLogger statsLogger;
+    @StatsDoc(
+        name = SERVER_STATUS,
+        help = "Bookie status (1: up, 0: readonly, -1: unregistered)"
+    )
+    private final Gauge<Number> serverStatusGauge;
 
     public BookieStateManager(ServerConfiguration conf,
                               StatsLogger statsLogger,
@@ -98,13 +110,12 @@ public class BookieStateManager implements StateManager {
                               List<File> statusDirs,
                               Supplier<String> bookieIdSupplier) throws IOException {
         this.conf = conf;
-        this.statsLogger = statsLogger;
         this.rm = rm;
         this.statusDirs = statusDirs;
         // ZK ephemeral node for this Bookie.
         this.bookieId = bookieIdSupplier.get();
         // 1 : up, 0 : readonly, -1 : unregistered
-        statsLogger.registerGauge(SERVER_STATUS, new Gauge<Number>() {
+        this.serverStatusGauge = new Gauge<Number>() {
             @Override
             public Number getDefaultValue() {
                 return 0;
@@ -120,7 +131,8 @@ public class BookieStateManager implements StateManager {
                     return 1;
                 }
             }
-        });
+        };
+        statsLogger.registerGauge(SERVER_STATUS, serverStatusGauge);
     }
 
     private boolean isRegistrationManagerDisabled() {
