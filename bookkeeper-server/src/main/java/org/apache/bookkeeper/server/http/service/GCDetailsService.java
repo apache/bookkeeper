@@ -35,7 +35,16 @@ import org.slf4j.LoggerFactory;
 /**
  * HttpEndpointService that handle get garbage collection details service.
  *
- * <p>The PUT method will force trigger GC on current bookie, and make GC run at backend.
+ * <p>Get Garbage Collection status, the output would be like:
+ *        [ {
+ *           "forceCompacting" : false,
+ *           "majorCompacting" : false,
+ *           "minorCompacting" : false,
+ *           "lastMajorCompactionTime" : 1544578144944,
+ *           "lastMinorCompactionTime" : 1544578144944,
+ *           "majorCompactionCounter" : 1,
+ *           "minorCompactionCounter" : 0
+ *         } ]
  */
 public class GCDetailsService implements HttpEndpointService {
 

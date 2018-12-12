@@ -37,6 +37,10 @@ import org.slf4j.LoggerFactory;
  * <p>The PUT method will force trigger GC on current bookie, and make GC run at backend.
  *
  * <p>The GET method will get the force triggered GC running or not.
+ * Output would be like:
+ *        {
+ *           "is_in_force_gc" : "false"
+ *        }
  */
 public class TriggerGCService implements HttpEndpointService {
 

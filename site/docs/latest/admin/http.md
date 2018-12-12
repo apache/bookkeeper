@@ -291,6 +291,12 @@ Currently all the HTTP endpoints could be divided into these 4 components:
         |200 | Successful operation |
         |403 | Permission denied |
         |404 | Not found |
+    * Body:
+       ```json
+       {
+          "is_in_force_gc" : "false"
+       }
+       ```
 
 ### Endpoint: /api/v1/bookie/gc_details
 1. Method: GET
@@ -302,6 +308,18 @@ Currently all the HTTP endpoints could be divided into these 4 components:
         |200 | Successful operation |
         |403 | Permission denied |
         |404 | Not found |
+    * Body:
+       ```json
+       [ {
+          "forceCompacting" : false,
+          "majorCompacting" : false,
+          "minorCompacting" : false,
+          "lastMajorCompactionTime" : 1544578144944,
+          "lastMinorCompactionTime" : 1544578144944,
+          "majorCompactionCounter" : 1,
+          "minorCompactionCounter" : 0
+        } ]
+       ```
 
 ## Auto recovery
 
