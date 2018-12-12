@@ -19,6 +19,8 @@ package org.apache.bookkeeper.client;
 
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.NEW_ENSEMBLE_TIME;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.REPLACE_BOOKIE_TIME;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.WATCHER_SCOPE;
+import static org.apache.bookkeeper.client.BookKeeperClientStats.CREATE_OP;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
@@ -43,6 +45,7 @@ import org.apache.bookkeeper.discover.RegistrationClient;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
+import org.apache.bookkeeper.stats.annotations.StatsDoc;
 
 /**
  * This class is responsible for maintaining a consistent view of what bookies
@@ -51,6 +54,10 @@ import org.apache.bookkeeper.stats.StatsLogger;
  * replacement
  *
  */
+@StatsDoc(
+    name = WATCHER_SCOPE,
+    help = "Bookie watcher related stats"
+)
 @Slf4j
 class BookieWatcherImpl implements BookieWatcher {
 
@@ -70,7 +77,16 @@ class BookieWatcherImpl implements BookieWatcher {
     private final ClientConfiguration conf;
     private final RegistrationClient registrationClient;
     private final EnsemblePlacementPolicy placementPolicy;
+    @StatsDoc(
+        name = NEW_ENSEMBLE_TIME,
+        help = "operation stats of new ensembles",
+        parent = CREATE_OP
+    )
     private final OpStatsLogger newEnsembleTimer;
+    @StatsDoc(
+        name = REPLACE_BOOKIE_TIME,
+        help = "operation stats of replacing bookie in an ensemble"
+    )
     private final OpStatsLogger replaceBookieTimer;
 
     // Bookies that will not be preferred to be chosen in a new ensemble
