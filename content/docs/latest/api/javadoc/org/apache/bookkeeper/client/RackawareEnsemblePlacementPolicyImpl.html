@@ -122,7 +122,9 @@ var activeTableTab = "activeTableTab";
 </dl>
 <hr>
 <br>
-<pre>public class <span class="typeNameLabel">RackawareEnsemblePlacementPolicyImpl</span>
+<pre><a href="../../../../org/apache/bookkeeper/stats/annotations/StatsDoc.html" title="annotation in org.apache.bookkeeper.stats.annotations">@StatsDoc</a>(<a href="../../../../org/apache/bookkeeper/stats/annotations/StatsDoc.html#name--">name</a>="bookkeeper_client",
+          <a href="../../../../org/apache/bookkeeper/stats/annotations/StatsDoc.html#help--">help</a>="BookKeeper client stats")
+public class <span class="typeNameLabel">RackawareEnsemblePlacementPolicyImpl</span>
 extends <a href="../../../../org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.html" title="class in org.apache.bookkeeper.client">TopologyAwareEnsemblePlacementPolicy</a></pre>
 <div class="block">Simple rackware ensemble placement policy.
 
@@ -911,7 +913,9 @@ extends <a href="../../../../org/apache/bookkeeper/client/TopologyAwareEnsembleP
 <ul class="blockList">
 <li class="blockList">
 <h4>bookiesJoinedCounter</h4>
-<pre>protected&nbsp;<a href="../../../../org/apache/bookkeeper/stats/OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a> bookiesJoinedCounter</pre>
+<pre><a href="../../../../org/apache/bookkeeper/stats/annotations/StatsDoc.html" title="annotation in org.apache.bookkeeper.stats.annotations">@StatsDoc</a>(<a href="../../../../org/apache/bookkeeper/stats/annotations/StatsDoc.html#name--">name</a>="BOOKIES_JOINED",
+          <a href="../../../../org/apache/bookkeeper/stats/annotations/StatsDoc.html#help--">help</a>="The distribution of number of bookies joined the cluster on each network topology change")
+protected&nbsp;<a href="../../../../org/apache/bookkeeper/stats/OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a> bookiesJoinedCounter</pre>
 </li>
 </ul>
 <a name="bookiesLeftCounter">
@@ -920,7 +924,9 @@ extends <a href="../../../../org/apache/bookkeeper/client/TopologyAwareEnsembleP
 <ul class="blockList">
 <li class="blockList">
 <h4>bookiesLeftCounter</h4>
-<pre>protected&nbsp;<a href="../../../../org/apache/bookkeeper/stats/OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a> bookiesLeftCounter</pre>
+<pre><a href="../../../../org/apache/bookkeeper/stats/annotations/StatsDoc.html" title="annotation in org.apache.bookkeeper.stats.annotations">@StatsDoc</a>(<a href="../../../../org/apache/bookkeeper/stats/annotations/StatsDoc.html#name--">name</a>="BOOKIES_LEFT",
+          <a href="../../../../org/apache/bookkeeper/stats/annotations/StatsDoc.html#help--">help</a>="The distribution of number of bookies left the cluster on each network topology change")
+protected&nbsp;<a href="../../../../org/apache/bookkeeper/stats/OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a> bookiesLeftCounter</pre>
 </li>
 </ul>
 <a name="readReorderedCounter">
@@ -929,7 +935,9 @@ extends <a href="../../../../org/apache/bookkeeper/client/TopologyAwareEnsembleP
 <ul class="blockListLast">
 <li class="blockList">
 <h4>readReorderedCounter</h4>
-<pre>protected&nbsp;<a href="../../../../org/apache/bookkeeper/stats/OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a> readReorderedCounter</pre>
+<pre><a href="../../../../org/apache/bookkeeper/stats/annotations/StatsDoc.html" title="annotation in org.apache.bookkeeper.stats.annotations">@StatsDoc</a>(<a href="../../../../org/apache/bookkeeper/stats/annotations/StatsDoc.html#name--">name</a>="READ_REQUESTS_REORDERED",
+          <a href="../../../../org/apache/bookkeeper/stats/annotations/StatsDoc.html#help--">help</a>="The distribution of number of bookies reordered on each read request")
+protected&nbsp;<a href="../../../../org/apache/bookkeeper/stats/OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a> readReorderedCounter</pre>
 </li>
 </ul>
 </li>

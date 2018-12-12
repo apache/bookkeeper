@@ -72,7 +72,112 @@
 <div class="header">
 <h2 title="Uses of Class org.apache.bookkeeper.stats.annotations.StatsDoc" class="title">Uses of Class<br>org.apache.bookkeeper.stats.annotations.StatsDoc</h2>
 </div>
-<div class="classUseContainer">No usage of org.apache.bookkeeper.stats.annotations.StatsDoc</div>
+<div class="classUseContainer">
+<ul class="blockList">
+<li class="blockList">
+<table class="useSummary" border="0" cellpadding="3" cellspacing="0" summary="Use table, listing packages, and an explanation">
+<caption><span>Packages that use <a href="../../../../../../org/apache/bookkeeper/stats/annotations/StatsDoc.html" title="annotation in org.apache.bookkeeper.stats.annotations">StatsDoc</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Package</th>
+<th class="colLast" scope="col">Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><a href="#org.apache.bookkeeper.client">org.apache.bookkeeper.client</a></td>
+<td class="colLast">
+<div class="block">BookKeeper Client.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><a href="#org.apache.bookkeeper.client.impl">org.apache.bookkeeper.client.impl</a></td>
+<td class="colLast">
+<div class="block">BookKeeper Client implementation package.</div>
+</td>
+</tr>
+</tbody>
+</table>
+</li>
+<li class="blockList">
+<ul class="blockList">
+<li class="blockList"><a name="org.apache.bookkeeper.client">
+<!--   -->
+</a>
+<h3>Uses of <a href="../../../../../../org/apache/bookkeeper/stats/annotations/StatsDoc.html" title="annotation in org.apache.bookkeeper.stats.annotations">StatsDoc</a> in <a href="../../../../../../org/apache/bookkeeper/client/package-summary.html">org.apache.bookkeeper.client</a></h3>
+<table class="useSummary" border="0" cellpadding="3" cellspacing="0" summary="Use table, listing classes, and an explanation">
+<caption><span>Classes in <a href="../../../../../../org/apache/bookkeeper/client/package-summary.html">org.apache.bookkeeper.client</a> with annotations of type <a href="../../../../../../org/apache/bookkeeper/stats/annotations/StatsDoc.html" title="annotation in org.apache.bookkeeper.stats.annotations">StatsDoc</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colLast" scope="col">Class and Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>(package private) class&nbsp;</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/bookkeeper/client/BookieWatcherImpl.html" title="class in org.apache.bookkeeper.client">BookieWatcherImpl</a></span></code>
+<div class="block">This class is responsible for maintaining a consistent view of what bookies
+ are available by reading Zookeeper (and setting watches on the bookie nodes).</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>class&nbsp;</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/bookkeeper/client/LedgerFragmentReplicator.html" title="class in org.apache.bookkeeper.client">LedgerFragmentReplicator</a></span></code>
+<div class="block">This is the helper class for replicating the fragments from one bookie to
+ another.</div>
+</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>class&nbsp;</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html" title="class in org.apache.bookkeeper.client">RackawareEnsemblePlacementPolicyImpl</a></span></code>
+<div class="block">Simple rackware ensemble placement policy.</div>
+</td>
+</tr>
+</tbody>
+</table>
+<table class="useSummary" border="0" cellpadding="3" cellspacing="0" summary="Use table, listing fields, and an explanation">
+<caption><span>Fields in <a href="../../../../../../org/apache/bookkeeper/client/package-summary.html">org.apache.bookkeeper.client</a> with annotations of type <a href="../../../../../../org/apache/bookkeeper/stats/annotations/StatsDoc.html" title="annotation in org.apache.bookkeeper.stats.annotations">StatsDoc</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colLast" scope="col">Field and Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>protected <a href="../../../../../../org/apache/bookkeeper/stats/OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></code></td>
+<td class="colLast"><span class="typeNameLabel">RackawareEnsemblePlacementPolicyImpl.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html#bookiesJoinedCounter">bookiesJoinedCounter</a></span></code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>protected <a href="../../../../../../org/apache/bookkeeper/stats/OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></code></td>
+<td class="colLast"><span class="typeNameLabel">RackawareEnsemblePlacementPolicyImpl.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html#bookiesLeftCounter">bookiesLeftCounter</a></span></code>&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>protected <a href="../../../../../../org/apache/bookkeeper/stats/OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></code></td>
+<td class="colLast"><span class="typeNameLabel">RackawareEnsemblePlacementPolicyImpl.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html#readReorderedCounter">readReorderedCounter</a></span></code>&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</li>
+<li class="blockList"><a name="org.apache.bookkeeper.client.impl">
+<!--   -->
+</a>
+<h3>Uses of <a href="../../../../../../org/apache/bookkeeper/stats/annotations/StatsDoc.html" title="annotation in org.apache.bookkeeper.stats.annotations">StatsDoc</a> in <a href="../../../../../../org/apache/bookkeeper/client/impl/package-summary.html">org.apache.bookkeeper.client.impl</a></h3>
+<table class="useSummary" border="0" cellpadding="3" cellspacing="0" summary="Use table, listing classes, and an explanation">
+<caption><span>Classes in <a href="../../../../../../org/apache/bookkeeper/client/impl/package-summary.html">org.apache.bookkeeper.client.impl</a> with annotations of type <a href="../../../../../../org/apache/bookkeeper/stats/annotations/StatsDoc.html" title="annotation in org.apache.bookkeeper.stats.annotations">StatsDoc</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colLast" scope="col">Class and Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>class&nbsp;</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/bookkeeper/client/impl/BookKeeperClientStatsImpl.html" title="class in org.apache.bookkeeper.client.impl">BookKeeperClientStatsImpl</a></span></code>
+<div class="block">The default implementation of <a href="../../../../../../org/apache/bookkeeper/client/BookKeeperClientStats.html" title="interface in org.apache.bookkeeper.client"><code>BookKeeperClientStats</code></a>.</div>
+</td>
+</tr>
+</tbody>
+</table>
+</li>
+</ul>
+</li>
+</ul>
+</div>
 <!-- ======= START OF BOTTOM NAVBAR ====== -->
 <div class="bottomNav"><a name="navbar.bottom">
 <!--   -->

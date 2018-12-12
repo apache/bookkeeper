@@ -981,6 +981,12 @@
 <dd>
 <div class="block">List of constants for defining client stats names.</div>
 </dd>
+<dt><a href="org/apache/bookkeeper/client/impl/BookKeeperClientStatsImpl.html" title="class in org.apache.bookkeeper.client.impl"><span class="typeNameLink">BookKeeperClientStatsImpl</span></a> - Class in <a href="org/apache/bookkeeper/client/impl/package-summary.html">org.apache.bookkeeper.client.impl</a></dt>
+<dd>
+<div class="block">The default implementation of <a href="org/apache/bookkeeper/client/BookKeeperClientStats.html" title="interface in org.apache.bookkeeper.client"><code>BookKeeperClientStats</code></a>.</div>
+</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/impl/BookKeeperClientStatsImpl.html#BookKeeperClientStatsImpl-org.apache.bookkeeper.stats.StatsLogger-">BookKeeperClientStatsImpl(StatsLogger)</a></span> - Constructor for class org.apache.bookkeeper.client.impl.<a href="org/apache/bookkeeper/client/impl/BookKeeperClientStatsImpl.html" title="class in org.apache.bookkeeper.client.impl">BookKeeperClientStatsImpl</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/api/BookKeeperBuilder.html#build--">build()</a></span> - Method in interface org.apache.bookkeeper.client.api.<a href="org/apache/bookkeeper/client/api/BookKeeperBuilder.html" title="interface in org.apache.bookkeeper.client.api">BookKeeperBuilder</a></dt>
 <dd>
 <div class="block">Start and initialize a new BookKeeper client.</div>
@@ -1028,6 +1034,8 @@
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/PendingReadOp.html#cancelSpeculativeTask-boolean-">cancelSpeculativeTask(boolean)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/PendingReadOp.html" title="class in org.apache.bookkeeper.client">PendingReadOp</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/ReadLastConfirmedAndEntryOp.html#cancelSpeculativeTask-boolean-">cancelSpeculativeTask(boolean)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/ReadLastConfirmedAndEntryOp.html" title="class in org.apache.bookkeeper.client">ReadLastConfirmedAndEntryOp</a></dt>
+<dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeperClientStats.html#CATEGORY_CLIENT">CATEGORY_CLIENT</a></span> - Static variable in interface org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeperClientStats.html" title="interface in org.apache.bookkeeper.client">BookKeeperClientStats</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/ForceLedgerOp.html#cb">cb</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/ForceLedgerOp.html" title="class in org.apache.bookkeeper.client">ForceLedgerOp</a></dt>
 <dd>&nbsp;</dd>
@@ -2245,7 +2253,11 @@
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeperClientStats.html#getAddOpLogger--">getAddOpLogger()</a></span> - Method in interface org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeperClientStats.html" title="interface in org.apache.bookkeeper.client">BookKeeperClientStats</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/impl/BookKeeperClientStatsImpl.html#getAddOpLogger--">getAddOpLogger()</a></span> - Method in class org.apache.bookkeeper.client.impl.<a href="org/apache/bookkeeper/client/impl/BookKeeperClientStatsImpl.html" title="class in org.apache.bookkeeper.client.impl">BookKeeperClientStatsImpl</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeperClientStats.html#getAddOpUrCounter--">getAddOpUrCounter()</a></span> - Method in interface org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeperClientStats.html" title="interface in org.apache.bookkeeper.client">BookKeeperClientStats</a></dt>
+<dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/impl/BookKeeperClientStatsImpl.html#getAddOpUrCounter--">getAddOpUrCounter()</a></span> - Method in class org.apache.bookkeeper.client.impl.<a href="org/apache/bookkeeper/client/impl/BookKeeperClientStatsImpl.html" title="class in org.apache.bookkeeper.client.impl">BookKeeperClientStatsImpl</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.BookieNode.html#getAddr--">getAddr()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.BookieNode.html" title="class in org.apache.bookkeeper.client">TopologyAwareEnsemblePlacementPolicy.BookieNode</a></dt>
 <dd>&nbsp;</dd>
@@ -2398,6 +2410,8 @@
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeperClientStats.html#getClientChannelWriteWaitLogger--">getClientChannelWriteWaitLogger()</a></span> - Method in interface org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeperClientStats.html" title="interface in org.apache.bookkeeper.client">BookKeeperClientStats</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/impl/BookKeeperClientStatsImpl.html#getClientChannelWriteWaitLogger--">getClientChannelWriteWaitLogger()</a></span> - Method in class org.apache.bookkeeper.client.impl.<a href="org/apache/bookkeeper/client/impl/BookKeeperClientStatsImpl.html" title="class in org.apache.bookkeeper.client.impl">BookKeeperClientStatsImpl</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ClientConfiguration.html#getClientConnectTimeoutMillis--">getClientConnectTimeoutMillis()</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a></dt>
 <dd>
 <div class="block">Get client netty connect timeout in millis.</div>
@@ -2504,6 +2518,8 @@
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeperClientStats.html#getCreateOpLogger--">getCreateOpLogger()</a></span> - Method in interface org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeperClientStats.html" title="interface in org.apache.bookkeeper.client">BookKeeperClientStats</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/impl/BookKeeperClientStatsImpl.html#getCreateOpLogger--">getCreateOpLogger()</a></span> - Method in class org.apache.bookkeeper.client.impl.<a href="org/apache/bookkeeper/client/impl/BookKeeperClientStatsImpl.html" title="class in org.apache.bookkeeper.client.impl">BookKeeperClientStatsImpl</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/api/LedgerMetadata.html#getCtime--">getCtime()</a></span> - Method in interface org.apache.bookkeeper.client.api.<a href="org/apache/bookkeeper/client/api/LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a></dt>
 <dd>
 <div class="block">Returns the creation timestamp of this ledger.</div>
@@ -2547,6 +2563,8 @@
 <div class="block">Whether to delay ensemble change or not?</div>
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeperClientStats.html#getDeleteOpLogger--">getDeleteOpLogger()</a></span> - Method in interface org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeperClientStats.html" title="interface in org.apache.bookkeeper.client">BookKeeperClientStats</a></dt>
+<dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/impl/BookKeeperClientStatsImpl.html#getDeleteOpLogger--">getDeleteOpLogger()</a></span> - Method in class org.apache.bookkeeper.client.impl.<a href="org/apache/bookkeeper/client/impl/BookKeeperClientStatsImpl.html" title="class in org.apache.bookkeeper.client.impl">BookKeeperClientStatsImpl</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerHandle.html#getDigestManager--">getDigestManager()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a></dt>
 <dd>
@@ -2629,7 +2647,11 @@
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeperClientStats.html#getEnsembleBookieDistributionCounter-java.lang.String-">getEnsembleBookieDistributionCounter(String)</a></span> - Method in interface org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeperClientStats.html" title="interface in org.apache.bookkeeper.client">BookKeeperClientStats</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/impl/BookKeeperClientStatsImpl.html#getEnsembleBookieDistributionCounter-java.lang.String-">getEnsembleBookieDistributionCounter(String)</a></span> - Method in class org.apache.bookkeeper.client.impl.<a href="org/apache/bookkeeper/client/impl/BookKeeperClientStatsImpl.html" title="class in org.apache.bookkeeper.client.impl">BookKeeperClientStatsImpl</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeperClientStats.html#getEnsembleChangeCounter--">getEnsembleChangeCounter()</a></span> - Method in interface org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeperClientStats.html" title="interface in org.apache.bookkeeper.client">BookKeeperClientStats</a></dt>
+<dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/impl/BookKeeperClientStatsImpl.html#getEnsembleChangeCounter--">getEnsembleChangeCounter()</a></span> - Method in class org.apache.bookkeeper.client.impl.<a href="org/apache/bookkeeper/client/impl/BookKeeperClientStatsImpl.html" title="class in org.apache.bookkeeper.client.impl">BookKeeperClientStatsImpl</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ClientConfiguration.html#getEnsemblePlacementPolicy--">getEnsemblePlacementPolicy()</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a></dt>
 <dd>
@@ -2805,6 +2827,8 @@
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeperClientStats.html#getForceOpLogger--">getForceOpLogger()</a></span> - Method in interface org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeperClientStats.html" title="interface in org.apache.bookkeeper.client">BookKeeperClientStats</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/impl/BookKeeperClientStatsImpl.html#getForceOpLogger--">getForceOpLogger()</a></span> - Method in class org.apache.bookkeeper.client.impl.<a href="org/apache/bookkeeper/client/impl/BookKeeperClientStatsImpl.html" title="class in org.apache.bookkeeper.client.impl">BookKeeperClientStatsImpl</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookieInfoReader.BookieInfo.html#getFreeDiskSpace--">getFreeDiskSpace()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookieInfoReader.BookieInfo.html" title="class in org.apache.bookkeeper.client">BookieInfoReader.BookieInfo</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookieInfoReader.html#getFreeDiskSpace-org.apache.bookkeeper.net.BookieSocketAddress-">getFreeDiskSpace(BookieSocketAddress)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookieInfoReader.html" title="class in org.apache.bookkeeper.client">BookieInfoReader</a></dt>
@@ -2924,7 +2948,11 @@
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeperClientStats.html#getLacUpdateHitsCounter--">getLacUpdateHitsCounter()</a></span> - Method in interface org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeperClientStats.html" title="interface in org.apache.bookkeeper.client">BookKeeperClientStats</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/impl/BookKeeperClientStatsImpl.html#getLacUpdateHitsCounter--">getLacUpdateHitsCounter()</a></span> - Method in class org.apache.bookkeeper.client.impl.<a href="org/apache/bookkeeper/client/impl/BookKeeperClientStatsImpl.html" title="class in org.apache.bookkeeper.client.impl">BookKeeperClientStatsImpl</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeperClientStats.html#getLacUpdateMissesCounter--">getLacUpdateMissesCounter()</a></span> - Method in interface org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeperClientStats.html" title="interface in org.apache.bookkeeper.client">BookKeeperClientStats</a></dt>
+<dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/impl/BookKeeperClientStatsImpl.html#getLacUpdateMissesCounter--">getLacUpdateMissesCounter()</a></span> - Method in class org.apache.bookkeeper.client.impl.<a href="org/apache/bookkeeper/client/impl/BookKeeperClientStatsImpl.html" title="class in org.apache.bookkeeper.client.impl">BookKeeperClientStatsImpl</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/api/LastConfirmedAndEntry.html#getLastAddConfirmed--">getLastAddConfirmed()</a></span> - Method in interface org.apache.bookkeeper.client.api.<a href="org/apache/bookkeeper/client/api/LastConfirmedAndEntry.html" title="interface in org.apache.bookkeeper.client.api">LastConfirmedAndEntry</a></dt>
 <dd>
@@ -3312,6 +3340,8 @@
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeperClientStats.html#getOpenOpLogger--">getOpenOpLogger()</a></span> - Method in interface org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeperClientStats.html" title="interface in org.apache.bookkeeper.client">BookKeeperClientStats</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/impl/BookKeeperClientStatsImpl.html#getOpenOpLogger--">getOpenOpLogger()</a></span> - Method in class org.apache.bookkeeper.client.impl.<a href="org/apache/bookkeeper/client/impl/BookKeeperClientStatsImpl.html" title="class in org.apache.bookkeeper.client.impl">BookKeeperClientStatsImpl</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/CachingStatsLogger.html#getOpStatsLogger-java.lang.String-">getOpStatsLogger(String)</a></span> - Method in class org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/CachingStatsLogger.html" title="class in org.apache.bookkeeper.stats">CachingStatsLogger</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/codahale/CodahaleStatsLogger.html#getOpStatsLogger-java.lang.String-">getOpStatsLogger(String)</a></span> - Method in class org.apache.bookkeeper.stats.codahale.<a href="org/apache/bookkeeper/stats/codahale/CodahaleStatsLogger.html" title="class in org.apache.bookkeeper.stats.codahale">CodahaleStatsLogger</a></dt>
@@ -3409,9 +3439,15 @@
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeperClientStats.html#getReadLacAndEntryOpLogger--">getReadLacAndEntryOpLogger()</a></span> - Method in interface org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeperClientStats.html" title="interface in org.apache.bookkeeper.client">BookKeeperClientStats</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/impl/BookKeeperClientStatsImpl.html#getReadLacAndEntryOpLogger--">getReadLacAndEntryOpLogger()</a></span> - Method in class org.apache.bookkeeper.client.impl.<a href="org/apache/bookkeeper/client/impl/BookKeeperClientStatsImpl.html" title="class in org.apache.bookkeeper.client.impl">BookKeeperClientStatsImpl</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeperClientStats.html#getReadLacAndEntryRespLogger--">getReadLacAndEntryRespLogger()</a></span> - Method in interface org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeperClientStats.html" title="interface in org.apache.bookkeeper.client">BookKeeperClientStats</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/impl/BookKeeperClientStatsImpl.html#getReadLacAndEntryRespLogger--">getReadLacAndEntryRespLogger()</a></span> - Method in class org.apache.bookkeeper.client.impl.<a href="org/apache/bookkeeper/client/impl/BookKeeperClientStatsImpl.html" title="class in org.apache.bookkeeper.client.impl">BookKeeperClientStatsImpl</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeperClientStats.html#getReadLacOpLogger--">getReadLacOpLogger()</a></span> - Method in interface org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeperClientStats.html" title="interface in org.apache.bookkeeper.client">BookKeeperClientStats</a></dt>
+<dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/impl/BookKeeperClientStatsImpl.html#getReadLacOpLogger--">getReadLacOpLogger()</a></span> - Method in class org.apache.bookkeeper.client.impl.<a href="org/apache/bookkeeper/client/impl/BookKeeperClientStatsImpl.html" title="class in org.apache.bookkeeper.client.impl">BookKeeperClientStatsImpl</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookieWatcher.html#getReadOnlyBookies--">getReadOnlyBookies()</a></span> - Method in interface org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookieWatcher.html" title="interface in org.apache.bookkeeper.client">BookieWatcher</a></dt>
 <dd>&nbsp;</dd>
@@ -3423,7 +3459,11 @@
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeperClientStats.html#getReadOpDmCounter--">getReadOpDmCounter()</a></span> - Method in interface org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeperClientStats.html" title="interface in org.apache.bookkeeper.client">BookKeeperClientStats</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/impl/BookKeeperClientStatsImpl.html#getReadOpDmCounter--">getReadOpDmCounter()</a></span> - Method in class org.apache.bookkeeper.client.impl.<a href="org/apache/bookkeeper/client/impl/BookKeeperClientStatsImpl.html" title="class in org.apache.bookkeeper.client.impl">BookKeeperClientStatsImpl</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeperClientStats.html#getReadOpLogger--">getReadOpLogger()</a></span> - Method in interface org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeperClientStats.html" title="interface in org.apache.bookkeeper.client">BookKeeperClientStats</a></dt>
+<dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/impl/BookKeeperClientStatsImpl.html#getReadOpLogger--">getReadOpLogger()</a></span> - Method in class org.apache.bookkeeper.client.impl.<a href="org/apache/bookkeeper/client/impl/BookKeeperClientStatsImpl.html" title="class in org.apache.bookkeeper.client.impl">BookKeeperClientStatsImpl</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ClientConfiguration.html#getReadTimeout--">getReadTimeout()</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a></dt>
 <dd>
@@ -3438,9 +3478,15 @@
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeperClientStats.html#getRecoverAddCountLogger--">getRecoverAddCountLogger()</a></span> - Method in interface org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeperClientStats.html" title="interface in org.apache.bookkeeper.client">BookKeeperClientStats</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/impl/BookKeeperClientStatsImpl.html#getRecoverAddCountLogger--">getRecoverAddCountLogger()</a></span> - Method in class org.apache.bookkeeper.client.impl.<a href="org/apache/bookkeeper/client/impl/BookKeeperClientStatsImpl.html" title="class in org.apache.bookkeeper.client.impl">BookKeeperClientStatsImpl</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeperClientStats.html#getRecoverOpLogger--">getRecoverOpLogger()</a></span> - Method in interface org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeperClientStats.html" title="interface in org.apache.bookkeeper.client">BookKeeperClientStats</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/impl/BookKeeperClientStatsImpl.html#getRecoverOpLogger--">getRecoverOpLogger()</a></span> - Method in class org.apache.bookkeeper.client.impl.<a href="org/apache/bookkeeper/client/impl/BookKeeperClientStatsImpl.html" title="class in org.apache.bookkeeper.client.impl">BookKeeperClientStatsImpl</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeperClientStats.html#getRecoverReadCountLogger--">getRecoverReadCountLogger()</a></span> - Method in interface org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeperClientStats.html" title="interface in org.apache.bookkeeper.client">BookKeeperClientStats</a></dt>
+<dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/impl/BookKeeperClientStatsImpl.html#getRecoverReadCountLogger--">getRecoverReadCountLogger()</a></span> - Method in class org.apache.bookkeeper.client.impl.<a href="org/apache/bookkeeper/client/impl/BookKeeperClientStatsImpl.html" title="class in org.apache.bookkeeper.client.impl">BookKeeperClientStatsImpl</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ClientConfiguration.html#getRecoveryReadBatchSize--">getRecoveryReadBatchSize()</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a></dt>
 <dd>
@@ -3560,6 +3606,8 @@
 <div class="block">Check if sorted-ledger storage enabled (default true).</div>
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeperClientStats.html#getSpeculativeReadCounter--">getSpeculativeReadCounter()</a></span> - Method in interface org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeperClientStats.html" title="interface in org.apache.bookkeeper.client">BookKeeperClientStats</a></dt>
+<dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/impl/BookKeeperClientStatsImpl.html#getSpeculativeReadCounter--">getSpeculativeReadCounter()</a></span> - Method in class org.apache.bookkeeper.client.impl.<a href="org/apache/bookkeeper/client/impl/BookKeeperClientStatsImpl.html" title="class in org.apache.bookkeeper.client.impl">BookKeeperClientStatsImpl</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ClientConfiguration.html#getSpeculativeReadLACTimeoutBackoffMultiplier--">getSpeculativeReadLACTimeoutBackoffMultiplier()</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a></dt>
 <dd>
@@ -3828,6 +3876,8 @@
 <div class="block">Converts a set of flags from a binary representation.</div>
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeperClientStats.html#getWriteLacOpLogger--">getWriteLacOpLogger()</a></span> - Method in interface org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeperClientStats.html" title="interface in org.apache.bookkeeper.client">BookKeeperClientStats</a></dt>
+<dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/impl/BookKeeperClientStatsImpl.html#getWriteLacOpLogger--">getWriteLacOpLogger()</a></span> - Method in class org.apache.bookkeeper.client.impl.<a href="org/apache/bookkeeper/client/impl/BookKeeperClientStatsImpl.html" title="class in org.apache.bookkeeper.client.impl">BookKeeperClientStatsImpl</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/api/LedgerMetadata.html#getWriteQuorumSize--">getWriteQuorumSize()</a></span> - Method in interface org.apache.bookkeeper.client.api.<a href="org/apache/bookkeeper/client/api/LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a></dt>
 <dd>
@@ -12119,6 +12169,8 @@
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerHandle.html#registerOperationFailureOnBookie-org.apache.bookkeeper.net.BookieSocketAddress-long-">registerOperationFailureOnBookie(BookieSocketAddress, long)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeperClientStats.html#registerPendingAddsGauge-org.apache.bookkeeper.stats.Gauge-">registerPendingAddsGauge(Gauge&lt;Integer&gt;)</a></span> - Method in interface org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeperClientStats.html" title="interface in org.apache.bookkeeper.client">BookKeeperClientStats</a></dt>
+<dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/impl/BookKeeperClientStatsImpl.html#registerPendingAddsGauge-org.apache.bookkeeper.stats.Gauge-">registerPendingAddsGauge(Gauge&lt;Integer&gt;)</a></span> - Method in class org.apache.bookkeeper.client.impl.<a href="org/apache/bookkeeper/client/impl/BookKeeperClientStatsImpl.html" title="class in org.apache.bookkeeper.client.impl">BookKeeperClientStatsImpl</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/RackChangeNotifier.html#registerRackChangeListener-org.apache.bookkeeper.client.RackawareEnsemblePlacementPolicyImpl-">registerRackChangeListener(RackawareEnsemblePlacementPolicyImpl)</a></span> - Method in interface org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/RackChangeNotifier.html" title="interface in org.apache.bookkeeper.client">RackChangeNotifier</a></dt>
 <dd>

@@ -89,36 +89,42 @@
 </td>
 </tr>
 <tr class="rowColor">
+<td class="colFirst"><a href="#org.apache.bookkeeper.client.impl">org.apache.bookkeeper.client.impl</a></td>
+<td class="colLast">
+<div class="block">BookKeeper Client implementation package.</div>
+</td>
+</tr>
+<tr class="altColor">
 <td class="colFirst"><a href="#org.apache.bookkeeper.stats">org.apache.bookkeeper.stats</a></td>
 <td class="colLast">
 <div class="block">A lightweight stats library used for exporting bookkeeper stats.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><a href="#org.apache.bookkeeper.stats.codahale">org.apache.bookkeeper.stats.codahale</a></td>
 <td class="colLast">
 <div class="block">A lightweight stats library implemention based on <i>Codahale</i> metrics library.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><a href="#org.apache.bookkeeper.stats.prometheus">org.apache.bookkeeper.stats.prometheus</a></td>
 <td class="colLast">
 <div class="block">A stats provider implementation based on <code>https://prometheus.io/</code>.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><a href="#org.apache.bookkeeper.stats.twitter.finagle">org.apache.bookkeeper.stats.twitter.finagle</a></td>
 <td class="colLast">
 <div class="block">A stats provider implemented based on <i>finagle stats</i> library.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><a href="#org.apache.bookkeeper.stats.twitter.ostrich">org.apache.bookkeeper.stats.twitter.ostrich</a></td>
 <td class="colLast">
 <div class="block">A stats provider implemented based on <i>Twitter Ostrich</i> library.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><a href="#org.apache.bookkeeper.stats.twitter.science">org.apache.bookkeeper.stats.twitter.science</a></td>
 <td class="colLast">
 <div class="block">A stats provider implementation based on <i>Twitter Science Stats</i> library.</div>
@@ -228,6 +234,76 @@
 <tr class="rowColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/stats/OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></code></td>
 <td class="colLast"><span class="typeNameLabel">BookKeeperClientStats.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/BookKeeperClientStats.html#getWriteLacOpLogger--">getWriteLacOpLogger</a></span>()</code>&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</li>
+<li class="blockList"><a name="org.apache.bookkeeper.client.impl">
+<!--   -->
+</a>
+<h3>Uses of <a href="../../../../../org/apache/bookkeeper/stats/OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a> in <a href="../../../../../org/apache/bookkeeper/client/impl/package-summary.html">org.apache.bookkeeper.client.impl</a></h3>
+<table class="useSummary" border="0" cellpadding="3" cellspacing="0" summary="Use table, listing methods, and an explanation">
+<caption><span>Methods in <a href="../../../../../org/apache/bookkeeper/client/impl/package-summary.html">org.apache.bookkeeper.client.impl</a> that return <a href="../../../../../org/apache/bookkeeper/stats/OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colLast" scope="col">Method and Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/stats/OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></code></td>
+<td class="colLast"><span class="typeNameLabel">BookKeeperClientStatsImpl.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/impl/BookKeeperClientStatsImpl.html#getAddOpLogger--">getAddOpLogger</a></span>()</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/stats/OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></code></td>
+<td class="colLast"><span class="typeNameLabel">BookKeeperClientStatsImpl.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/impl/BookKeeperClientStatsImpl.html#getClientChannelWriteWaitLogger--">getClientChannelWriteWaitLogger</a></span>()</code>&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/stats/OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></code></td>
+<td class="colLast"><span class="typeNameLabel">BookKeeperClientStatsImpl.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/impl/BookKeeperClientStatsImpl.html#getCreateOpLogger--">getCreateOpLogger</a></span>()</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/stats/OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></code></td>
+<td class="colLast"><span class="typeNameLabel">BookKeeperClientStatsImpl.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/impl/BookKeeperClientStatsImpl.html#getDeleteOpLogger--">getDeleteOpLogger</a></span>()</code>&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/stats/OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></code></td>
+<td class="colLast"><span class="typeNameLabel">BookKeeperClientStatsImpl.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/impl/BookKeeperClientStatsImpl.html#getForceOpLogger--">getForceOpLogger</a></span>()</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/stats/OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></code></td>
+<td class="colLast"><span class="typeNameLabel">BookKeeperClientStatsImpl.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/impl/BookKeeperClientStatsImpl.html#getOpenOpLogger--">getOpenOpLogger</a></span>()</code>&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/stats/OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></code></td>
+<td class="colLast"><span class="typeNameLabel">BookKeeperClientStatsImpl.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/impl/BookKeeperClientStatsImpl.html#getReadLacAndEntryOpLogger--">getReadLacAndEntryOpLogger</a></span>()</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/stats/OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></code></td>
+<td class="colLast"><span class="typeNameLabel">BookKeeperClientStatsImpl.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/impl/BookKeeperClientStatsImpl.html#getReadLacAndEntryRespLogger--">getReadLacAndEntryRespLogger</a></span>()</code>&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/stats/OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></code></td>
+<td class="colLast"><span class="typeNameLabel">BookKeeperClientStatsImpl.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/impl/BookKeeperClientStatsImpl.html#getReadLacOpLogger--">getReadLacOpLogger</a></span>()</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/stats/OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></code></td>
+<td class="colLast"><span class="typeNameLabel">BookKeeperClientStatsImpl.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/impl/BookKeeperClientStatsImpl.html#getReadOpLogger--">getReadOpLogger</a></span>()</code>&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/stats/OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></code></td>
+<td class="colLast"><span class="typeNameLabel">BookKeeperClientStatsImpl.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/impl/BookKeeperClientStatsImpl.html#getRecoverAddCountLogger--">getRecoverAddCountLogger</a></span>()</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/stats/OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></code></td>
+<td class="colLast"><span class="typeNameLabel">BookKeeperClientStatsImpl.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/impl/BookKeeperClientStatsImpl.html#getRecoverOpLogger--">getRecoverOpLogger</a></span>()</code>&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/stats/OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></code></td>
+<td class="colLast"><span class="typeNameLabel">BookKeeperClientStatsImpl.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/impl/BookKeeperClientStatsImpl.html#getRecoverReadCountLogger--">getRecoverReadCountLogger</a></span>()</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/stats/OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a></code></td>
+<td class="colLast"><span class="typeNameLabel">BookKeeperClientStatsImpl.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/impl/BookKeeperClientStatsImpl.html#getWriteLacOpLogger--">getWriteLacOpLogger</a></span>()</code>&nbsp;</td>
 </tr>
 </tbody>
 </table>
