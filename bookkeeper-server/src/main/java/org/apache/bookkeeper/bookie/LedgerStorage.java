@@ -25,6 +25,7 @@ import com.google.common.util.concurrent.RateLimiter;
 import io.netty.buffer.ByteBuf;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
@@ -223,5 +224,25 @@ public interface LedgerStorage {
      */
     default List<DetectedInconsistency> localConsistencyCheck(Optional<RateLimiter> rateLimiter) throws IOException {
         return new ArrayList<>();
+    }
+
+    /**
+     * Whether force triggered Garbage Collection is running or not.
+     *
+     * @return
+     *      true  -- force triggered Garbage Collection is running,
+     *      false -- force triggered Garbage Collection is not running
+     */
+    default boolean isInForceGC() {
+        return false;
+    }
+
+
+    /**
+     * Get Garbage Collection status.
+     * Since DbLedgerStorage is a list of storage instances, we should return a list.
+     */
+    default List<GarbageCollectionStatus> getGarbageCollectionStatus() {
+        return Collections.emptyList();
     }
 }
