@@ -22,6 +22,7 @@ package org.apache.bookkeeper.replication;
 import static org.apache.bookkeeper.replication.ReplicationStats.NUM_DEFER_LEDGER_LOCK_RELEASE_OF_FAILED_LEDGER;
 import static org.apache.bookkeeper.replication.ReplicationStats.NUM_FULL_OR_PARTIAL_LEDGERS_REPLICATED;
 import static org.apache.bookkeeper.replication.ReplicationStats.REPLICATE_EXCEPTION;
+import static org.apache.bookkeeper.replication.ReplicationStats.REPLICATION_WORKER_SCOPE;
 import static org.apache.bookkeeper.replication.ReplicationStats.REREPLICATE_OP;
 
 import com.google.common.base.Stopwatch;
@@ -64,6 +65,7 @@ import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
+import org.apache.bookkeeper.stats.annotations.StatsDoc;
 import org.apache.zookeeper.KeeperException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -72,6 +74,10 @@ import org.slf4j.LoggerFactory;
  * ReplicationWorker will take the fragments one by one from
  * ZKLedgerUnderreplicationManager and replicates to it.
  */
+@StatsDoc(
+    name = REPLICATION_WORKER_SCOPE,
+    help = "replication worker related stats"
+)
 public class ReplicationWorker implements Runnable {
     private static final Logger LOG = LoggerFactory
             .getLogger(ReplicationWorker.class);
@@ -93,8 +99,25 @@ public class ReplicationWorker implements Runnable {
 
     // Expose Stats
     private final StatsLogger statsLogger;
+    @StatsDoc(
+        name = REPLICATE_EXCEPTION,
+        help = "replication related exceptions"
+    )
+    private final StatsLogger exceptionLogger;
+    @StatsDoc(
+        name = REREPLICATE_OP,
+        help = "operation stats of re-replicating ledgers"
+    )
     private final OpStatsLogger rereplicateOpStats;
+    @StatsDoc(
+        name = NUM_FULL_OR_PARTIAL_LEDGERS_REPLICATED,
+        help = "the number of ledgers re-replicated"
+    )
     private final Counter numLedgersReplicated;
+    @StatsDoc(
+        name = NUM_DEFER_LEDGER_LOCK_RELEASE_OF_FAILED_LEDGER,
+        help = "the number of defer-ledger-lock-releases of failed ledgers"
+    )
     private final Counter numDeferLedgerLockReleaseOfFailedLedger;
     private final Map<String, Counter> exceptionCounters;
     final LoadingCache<Long, AtomicInteger> replicationFailedLedgers;
@@ -164,6 +187,7 @@ public class ReplicationWorker implements Runnable {
 
         // Expose Stats
         this.statsLogger = statsLogger;
+        this.exceptionLogger = statsLogger.scope(REPLICATE_EXCEPTION);
         this.rereplicateOpStats = this.statsLogger.getOpStatsLogger(REREPLICATE_OP);
         this.numLedgersReplicated = this.statsLogger.getCounter(NUM_FULL_OR_PARTIAL_LEDGERS_REPLICATED);
         this.numDeferLedgerLockReleaseOfFailedLedger = this.statsLogger
@@ -561,7 +585,7 @@ public class ReplicationWorker implements Runnable {
     private Counter getExceptionCounter(String name) {
         Counter counter = this.exceptionCounters.get(name);
         if (counter == null) {
-            counter = this.statsLogger.scope(REPLICATE_EXCEPTION).getCounter(name);
+            counter = this.exceptionLogger.getCounter(name);
             this.exceptionCounters.put(name, counter);
         }
         return counter;
