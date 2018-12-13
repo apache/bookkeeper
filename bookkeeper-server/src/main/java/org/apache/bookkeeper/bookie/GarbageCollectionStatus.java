@@ -1,4 +1,4 @@
-/*
+/**
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -21,28 +21,27 @@
 
 package org.apache.bookkeeper.bookie;
 
-import java.io.IOException;
-import java.nio.ByteBuffer;
-
-import org.apache.bookkeeper.conf.ServerConfiguration;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.Setter;
 
 /**
- * Read Only Entry Logger.
+ * This is the garbage collection thread status.
+ * It includes what phase GarbageCollection (major/minor), gc counters, last gc time, etc.
  */
-public class ReadOnlyEntryLogger extends EntryLogger {
+@Setter
+@Getter
+@Builder
+public class GarbageCollectionStatus {
+    // whether the GC thread is in force GC.
+    private boolean forceCompacting;
+    // whether the GC thread is in major compacting.
+    private boolean majorCompacting;
+    // whether the GC thread is in minor compacting.
+    private boolean minorCompacting;
 
-    public ReadOnlyEntryLogger(ServerConfiguration conf) throws IOException {
-        super(conf);
-    }
-
-    @Override
-    protected boolean removeEntryLog(long entryLogId) {
-        // can't remove entry log in readonly mode
-        return false;
-    }
-
-    @Override
-    public synchronized long addEntry(long ledgerId, ByteBuffer entry) throws IOException {
-        throw new IOException("Can't add entry to a readonly entry logger.");
-    }
+    private long lastMajorCompactionTime;
+    private long lastMinorCompactionTime;
+    private long majorCompactionCounter;
+    private long minorCompactionCounter;
 }

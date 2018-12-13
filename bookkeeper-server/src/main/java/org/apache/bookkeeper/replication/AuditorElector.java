@@ -21,6 +21,7 @@
 package org.apache.bookkeeper.replication;
 
 import static com.google.common.base.Charsets.UTF_8;
+import static org.apache.bookkeeper.replication.ReplicationStats.AUDITOR_SCOPE;
 import static org.apache.bookkeeper.replication.ReplicationStats.ELECTION_ATTEMPTS;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -48,6 +49,7 @@ import org.apache.bookkeeper.replication.ReplicationException.UnavailableExcepti
 import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
+import org.apache.bookkeeper.stats.annotations.StatsDoc;
 import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.util.ZkUtils;
 import org.apache.commons.lang.StringUtils;
@@ -71,6 +73,10 @@ import org.slf4j.LoggerFactory;
  * will be elected as Auditor. All the other bookies will be watching on their
  * predecessor znode according to the ephemeral sequence numbers.
  */
+@StatsDoc(
+    name = AUDITOR_SCOPE,
+    help = "Auditor related stats"
+)
 public class AuditorElector {
     private static final Logger LOG = LoggerFactory
             .getLogger(AuditorElector.class);
@@ -98,6 +104,10 @@ public class AuditorElector {
     private AtomicBoolean running = new AtomicBoolean(false);
 
     // Expose Stats
+    @StatsDoc(
+        name = ELECTION_ATTEMPTS,
+        help = "The number of auditor election attempts"
+    )
     private final Counter electionAttempts;
     private final StatsLogger statsLogger;
 
