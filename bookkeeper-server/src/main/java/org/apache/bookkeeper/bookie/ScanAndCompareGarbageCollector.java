@@ -32,7 +32,6 @@ import java.util.SortedMap;
 import java.util.TreeSet;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Semaphore;
-import java.util.function.Supplier;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager;
@@ -66,7 +65,7 @@ import org.slf4j.LoggerFactory;
  *
  * <p>TODO: eliminate the direct usage of zookeeper here {@link https://github.com/apache/bookkeeper/issues/1331}
  */
-public class ScanAndCompareGarbageCollector implements GarbageCollector, Supplier<Integer> {
+public class ScanAndCompareGarbageCollector implements GarbageCollector {
 
     static final Logger LOG = LoggerFactory.getLogger(ScanAndCompareGarbageCollector.class);
     static final int MAX_CONCURRENT_ZK_REQUESTS = 1000;
@@ -105,8 +104,7 @@ public class ScanAndCompareGarbageCollector implements GarbageCollector, Supplie
         this.activeLedgerCounter = 0;
     }
 
-    @Override
-    public Integer get() {
+    public int getNumActiveLedgers() {
         return activeLedgerCounter;
     }
 

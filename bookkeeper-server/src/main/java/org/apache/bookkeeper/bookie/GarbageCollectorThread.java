@@ -154,7 +154,7 @@ public class GarbageCollectorThread extends SafeRunnable {
             statsLogger,
             () -> numActiveEntryLogs,
             () -> totalEntryLogSize,
-            garbageCollector
+            () -> garbageCollector.getNumActiveLedgers()
         );
 
         this.garbageCleaner = ledgerId -> {
