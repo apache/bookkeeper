@@ -669,6 +669,10 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
         this.journalStats = new JournalStats(statsLogger);
     }
 
+    JournalStats getJournalStats() {
+        return this.journalStats;
+    }
+
     public File getJournalDirectory() {
         return journalDirectory;
     }
