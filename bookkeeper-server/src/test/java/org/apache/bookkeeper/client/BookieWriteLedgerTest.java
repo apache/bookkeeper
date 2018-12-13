@@ -24,10 +24,13 @@ import static org.apache.bookkeeper.client.BookKeeperClientStats.ADD_OP;
 import static org.apache.bookkeeper.client.BookKeeperClientStats.ADD_OP_UR;
 import static org.apache.bookkeeper.client.BookKeeperClientStats.CLIENT_SCOPE;
 import static org.apache.bookkeeper.client.BookKeeperClientStats.READ_OP_DM;
+import static org.apache.bookkeeper.common.concurrent.FutureUtils.result;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
 
 import com.google.common.collect.Lists;
 import io.netty.buffer.AbstractByteBufAllocator;
@@ -63,6 +66,8 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LongHierarchicalLedgerManagerFactory;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
+import org.apache.bookkeeper.test.TestCallbacks.GenericCallbackFuture;
+import org.apache.bookkeeper.versioning.LongVersion;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.zookeeper.KeeperException;
 import org.junit.Assert;
@@ -170,6 +175,62 @@ public class BookieWriteLedgerTest extends
         lh.close();
     }
 
+    /*
+     * Verify that a double ensemble change with version conflict.
+     * Steps:
+     * 1. ZK metadata version is different from Client write ledger handle - Replication worker
+     * 2. Client made an ensemble change and replaced a bookie, sent change proposal to zk
+     * 3. While this is pending, Client made another ensemble change replaced the same index
+     *    with the bookie that was prior to step#2
+     * 4. Ensemble change made in step#2 came back to client with version conflict error.
+     * 5. Client need to resolve this conflict.
+     */
+    @Test
+    public void testSameIndexFailure() throws Exception {
+        lh = bkc.createLedger(5, 5, digestType, ledgerPassword);
+        LedgerHandle mlh = spy(lh);
+        LOG.info("Ledger ID: " + mlh.getId());
+        for (int i = 0; i < numEntriesToWrite; i++) {
+           ByteBuffer entry = ByteBuffer.allocate(4);
+           entry.putInt(rng.nextInt(maxInt));
+           entry.position(0);
+           entries1.add(entry.array());
+           mlh.addEntry(entry.array());
+        }
+        // Change the metadata version on ZK.
+        LedgerMetadata myMetadata = new LedgerMetadata(mlh.getLedgerMetadata());
+        // Set it in Metadata server
+        long savedVersion = ((LongVersion) mlh.getLedgerMetadata().getVersion()).getLongVersion();
+        GenericCallbackFuture<Void> callbackFuture = new GenericCallbackFuture<>();
+        bkc.getLedgerManager().writeLedgerMetadata(mlh.getId(), myMetadata, callbackFuture);
+        result(callbackFuture);
+        // Set the saved version back
+        lh.getLedgerMetadata().setVersion(new LongVersion(savedVersion));
+        // Add a bookie
+        BookieSocketAddress newBkAddr = startNewBookieAndReturnAddress();
+        // Put a old bookie to sleep
+        CountDownLatch sleepLatch1 = new CountDownLatch(1);
+        ArrayList<BookieSocketAddress> ensemble = mlh.getLedgerMetadata()
+                .getEnsembles().entrySet().iterator().next().getValue();
+        sleepBookie(ensemble.get(0), sleepLatch1);
+        Map<Integer, BookieSocketAddress> injectFailedBookies =
+                new HashMap<Integer, BookieSocketAddress>();
+        injectFailedBookies.put(0, newBkAddr);
+        when(mlh.testStubResolveConflict()).thenAnswer(
+                invoke -> {
+                    LOG.info("JV inside testInsertEnsembleChange");
+                    mlh.replaceBookieInMetadata(injectFailedBookies, 0);
+                    return true;
+                });
+
+        // Make a new write
+        ByteBuffer entry = ByteBuffer.allocate(4);
+        entry.putInt(rng.nextInt(maxInt));
+        entry.position(0);
+        entries1.add(entry.array());
+        mlh.addEntry(entry.array());
+        sleepLatch1.countDown();
+    }
     /**
      * Verify write and Read durability stats.
      */
