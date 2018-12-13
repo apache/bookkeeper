@@ -582,8 +582,8 @@ public class GarbageCollectorThread extends SafeRunnable {
             .minorCompacting(minorCompacting.get())
             .lastMajorCompactionTime(lastMajorCompactionTime)
             .lastMinorCompactionTime(lastMinorCompactionTime)
-            .majorCompactionCounter(majorCompactionCounter.get())
-            .minorCompactionCounter(minorCompactionCounter.get())
+            .majorCompactionCounter(gcStats.getMajorCompactionCounter().get())
+            .minorCompactionCounter(gcStats.getMinorCompactionCounter().get())
             .build();
     }
 }
