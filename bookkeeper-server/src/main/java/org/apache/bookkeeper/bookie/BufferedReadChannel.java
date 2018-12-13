@@ -45,7 +45,7 @@ public class BufferedReadChannel extends BufferedChannelBase  {
     long invocationCount = 0;
     long cacheHitCount = 0;
 
-    public BufferedReadChannel(FileChannel fileChannel, int readCapacity) throws IOException {
+    public BufferedReadChannel(FileChannel fileChannel, int readCapacity) {
         super(fileChannel);
         this.readCapacity = readCapacity;
         this.readBuffer = Unpooled.buffer(readCapacity);

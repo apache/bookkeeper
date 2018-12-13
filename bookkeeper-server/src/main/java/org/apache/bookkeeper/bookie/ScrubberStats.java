@@ -1,4 +1,4 @@
-/*
+/**
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -21,28 +21,13 @@
 
 package org.apache.bookkeeper.bookie;
 
-import java.io.IOException;
-import java.nio.ByteBuffer;
-
-import org.apache.bookkeeper.conf.ServerConfiguration;
-
 /**
- * Read Only Entry Logger.
+ * Stats associated with the consistency checker.
  */
-public class ReadOnlyEntryLogger extends EntryLogger {
+public class ScrubberStats {
+    public static final String SCOPE = "scrubber";
 
-    public ReadOnlyEntryLogger(ServerConfiguration conf) throws IOException {
-        super(conf);
-    }
-
-    @Override
-    protected boolean removeEntryLog(long entryLogId) {
-        // can't remove entry log in readonly mode
-        return false;
-    }
-
-    @Override
-    public synchronized long addEntry(long ledgerId, ByteBuffer entry) throws IOException {
-        throw new IOException("Can't add entry to a readonly entry logger.");
-    }
+    public static final String RUN_DURATION = "runTime";
+    public static final String DETECTED_SCRUB_ERRORS = "detectedScrubErrors";
+    public static final String DETECTED_FATAL_SCRUB_ERRORS = "detectedFatalScrubErrors";
 }
