@@ -20,6 +20,18 @@
  */
 package org.apache.bookkeeper.replication;
 
+import static org.apache.bookkeeper.replication.ReplicationStats.AUDITOR_SCOPE;
+import static org.apache.bookkeeper.replication.ReplicationStats.AUDIT_BOOKIES_TIME;
+import static org.apache.bookkeeper.replication.ReplicationStats.BOOKIE_TO_LEDGERS_MAP_CREATION_TIME;
+import static org.apache.bookkeeper.replication.ReplicationStats.CHECK_ALL_LEDGERS_TIME;
+import static org.apache.bookkeeper.replication.ReplicationStats.NUM_BOOKIES_PER_LEDGER;
+import static org.apache.bookkeeper.replication.ReplicationStats.NUM_BOOKIE_AUDITS_DELAYED;
+import static org.apache.bookkeeper.replication.ReplicationStats.NUM_DELAYED_BOOKIE_AUDITS_DELAYES_CANCELLED;
+import static org.apache.bookkeeper.replication.ReplicationStats.NUM_FRAGMENTS_PER_LEDGER;
+import static org.apache.bookkeeper.replication.ReplicationStats.NUM_LEDGERS_CHECKED;
+import static org.apache.bookkeeper.replication.ReplicationStats.NUM_UNDER_REPLICATED_LEDGERS;
+import static org.apache.bookkeeper.replication.ReplicationStats.URL_PUBLISH_TIME_FOR_LOST_BOOKIE;
+
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.Lists;
@@ -61,6 +73,7 @@ import org.apache.bookkeeper.replication.ReplicationException.UnavailableExcepti
 import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
+import org.apache.bookkeeper.stats.annotations.StatsDoc;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.zookeeper.AsyncCallback;
 import org.apache.zookeeper.KeeperException;
@@ -76,6 +89,10 @@ import org.slf4j.LoggerFactory;
  *
  * <p>TODO: eliminate the direct usage of zookeeper here {@link https://github.com/apache/bookkeeper/issues/1332}
  */
+@StatsDoc(
+    name = AUDITOR_SCOPE,
+    help = "Auditor related stats"
+)
 public class Auditor implements AutoCloseable {
     private static final Logger LOG = LoggerFactory.getLogger(Auditor.class);
     private final ServerConfiguration conf;
@@ -88,20 +105,61 @@ public class Auditor implements AutoCloseable {
     private final ScheduledExecutorService executor;
     private List<String> knownBookies = new ArrayList<String>();
     private final String bookieIdentifier;
-    private final StatsLogger statsLogger;
-    private final OpStatsLogger numUnderReplicatedLedger;
-    private final OpStatsLogger uRLPublishTimeForLostBookies;
-    private final OpStatsLogger bookieToLedgersMapCreationTime;
-    private final OpStatsLogger checkAllLedgersTime;
-    private final OpStatsLogger auditBookiesTime;
-    private final Counter numLedgersChecked;
-    private final OpStatsLogger numFragmentsPerLedger;
-    private final OpStatsLogger numBookiesPerLedger;
-    private final Counter numBookieAuditsDelayed;
-    private final Counter numDelayedBookieAuditsCancelled;
     private volatile Future<?> auditTask;
     private Set<String> bookiesToBeAudited = Sets.newHashSet();
     private volatile int lostBookieRecoveryDelayBeforeChange;
+
+    private final StatsLogger statsLogger;
+    @StatsDoc(
+        name = NUM_UNDER_REPLICATED_LEDGERS,
+        help = "the distribution of num under_replicated ledgers on each auditor run"
+    )
+    private final OpStatsLogger numUnderReplicatedLedger;
+    @StatsDoc(
+        name = URL_PUBLISH_TIME_FOR_LOST_BOOKIE,
+        help = "the latency distribution of publishing under replicated ledgers for lost bookies"
+    )
+    private final OpStatsLogger uRLPublishTimeForLostBookies;
+    @StatsDoc(
+        name = BOOKIE_TO_LEDGERS_MAP_CREATION_TIME,
+        help = "the latency distribution of creating bookies-to-ledgers map"
+    )
+    private final OpStatsLogger bookieToLedgersMapCreationTime;
+    @StatsDoc(
+        name = CHECK_ALL_LEDGERS_TIME,
+        help = "the latency distribution of checking all ledgers"
+    )
+    private final OpStatsLogger checkAllLedgersTime;
+    @StatsDoc(
+        name = AUDIT_BOOKIES_TIME,
+        help = "the latency distribution of auditing all the bookies"
+    )
+    private final OpStatsLogger auditBookiesTime;
+    @StatsDoc(
+        name = NUM_LEDGERS_CHECKED,
+        help = "the number of ledgers checked by the auditor"
+    )
+    private final Counter numLedgersChecked;
+    @StatsDoc(
+        name = NUM_FRAGMENTS_PER_LEDGER,
+        help = "the distribution of number of fragments per ledger"
+    )
+    private final OpStatsLogger numFragmentsPerLedger;
+    @StatsDoc(
+        name = NUM_BOOKIES_PER_LEDGER,
+        help = "the distribution of number of bookies per ledger"
+    )
+    private final OpStatsLogger numBookiesPerLedger;
+    @StatsDoc(
+        name = NUM_BOOKIE_AUDITS_DELAYED,
+        help = "the number of bookie-audits delayed"
+    )
+    private final Counter numBookieAuditsDelayed;
+    @StatsDoc(
+        name = NUM_DELAYED_BOOKIE_AUDITS_DELAYES_CANCELLED,
+        help = "the number of delayed-bookie-audits cancelled"
+    )
+    private final Counter numDelayedBookieAuditsCancelled;
 
     static BookKeeper createBookKeeperClient(ServerConfiguration conf)
             throws InterruptedException, IOException {
