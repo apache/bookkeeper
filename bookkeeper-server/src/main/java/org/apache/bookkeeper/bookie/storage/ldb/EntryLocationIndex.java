@@ -34,7 +34,6 @@ import org.apache.bookkeeper.bookie.EntryLocation;
 import org.apache.bookkeeper.bookie.storage.ldb.KeyValueStorage.Batch;
 import org.apache.bookkeeper.bookie.storage.ldb.KeyValueStorageFactory.DbConfigType;
 import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.stats.Gauge;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.collections.ConcurrentLongHashSet;
 import org.slf4j.Logger;
@@ -51,33 +50,22 @@ public class EntryLocationIndex implements Closeable {
     private final KeyValueStorage locationsDb;
     private final ConcurrentLongHashSet deletedLedgers = new ConcurrentLongHashSet();
 
-    private StatsLogger stats;
+    private final EntryLocationIndexStats stats;
 
     public EntryLocationIndex(ServerConfiguration conf, KeyValueStorageFactory storageFactory, String basePath,
             StatsLogger stats) throws IOException {
         String locationsDbPath = FileSystems.getDefault().getPath(basePath, "locations").toFile().toString();
         locationsDb = storageFactory.newKeyValueStorage(locationsDbPath, DbConfigType.Huge, conf);
 
-        this.stats = stats;
-        registerStats();
-    }
-
-    public void registerStats() {
-        stats.registerGauge("entries-count", new Gauge<Long>() {
-            @Override
-            public Long getDefaultValue() {
-                return 0L;
-            }
-
-            @Override
-            public Long getSample() {
+        this.stats = new EntryLocationIndexStats(
+            stats,
+            () -> {
                 try {
                     return locationsDb.count();
                 } catch (IOException e) {
                     return -1L;
                 }
-            }
-        });
+            });
     }
 
     @Override
