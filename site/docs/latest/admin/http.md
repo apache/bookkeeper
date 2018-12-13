@@ -282,6 +282,45 @@ Currently all the HTTP endpoints could be divided into these 4 components:
         |403 | Permission denied |
         |404 | Not found |
 
+1. Method: GET
+    * Description:  whether force triggered Garbage Collection is running or not for this bookie. true for is running.
+    * Response:
+
+        | Code   | Description |
+        |:-------|:------------|
+        |200 | Successful operation |
+        |403 | Permission denied |
+        |404 | Not found |
+    * Body:
+       ```json
+       {
+          "is_in_force_gc" : "false"
+       }
+       ```
+
+### Endpoint: /api/v1/bookie/gc_details
+1. Method: GET
+    * Description:  get details of Garbage Collection Thread, like whether it is in compacting, last compaction time, compaction counter, etc.
+    * Response:
+
+        | Code   | Description |
+        |:-------|:------------|
+        |200 | Successful operation |
+        |403 | Permission denied |
+        |404 | Not found |
+    * Body:
+       ```json
+       [ {
+          "forceCompacting" : false,
+          "majorCompacting" : false,
+          "minorCompacting" : false,
+          "lastMajorCompactionTime" : 1544578144944,
+          "lastMinorCompactionTime" : 1544578144944,
+          "majorCompactionCounter" : 1,
+          "minorCompactionCounter" : 0
+        } ]
+       ```
+
 ## Auto recovery
 
 ### Endpoint: /api/v1/autorecovery/bookie/

@@ -30,6 +30,8 @@ import io.netty.buffer.ByteBuf;
 import io.netty.util.concurrent.DefaultThreadFactory;
 
 import java.io.IOException;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -49,6 +51,7 @@ import org.apache.bookkeeper.bookie.Checkpointer;
 import org.apache.bookkeeper.bookie.CompactableLedgerStorage;
 import org.apache.bookkeeper.bookie.EntryLocation;
 import org.apache.bookkeeper.bookie.EntryLogger;
+import org.apache.bookkeeper.bookie.GarbageCollectionStatus;
 import org.apache.bookkeeper.bookie.GarbageCollectorThread;
 import org.apache.bookkeeper.bookie.LastAddConfirmedUpdateNotification;
 import org.apache.bookkeeper.bookie.LedgerCache;
@@ -267,6 +270,11 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
     @Override
     public void forceGC() {
         gcThread.enableForceGC();
+    }
+
+    @Override
+    public boolean isInForceGC() {
+        return gcThread.isInForceGC();
     }
 
     @Override
@@ -920,6 +928,11 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
 
     long getReadCacheCount() {
         return readCache.count();
+    }
+
+    @Override
+    public List<GarbageCollectionStatus> getGarbageCollectionStatus() {
+        return Collections.singletonList(gcThread.getGarbageCollectionStatus());
     }
 
     /**

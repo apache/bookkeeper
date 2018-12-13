@@ -41,6 +41,7 @@ import org.apache.bookkeeper.server.http.service.ConfigurationService;
 import org.apache.bookkeeper.server.http.service.DecommissionService;
 import org.apache.bookkeeper.server.http.service.DeleteLedgerService;
 import org.apache.bookkeeper.server.http.service.ExpandStorageService;
+import org.apache.bookkeeper.server.http.service.GCDetailsService;
 import org.apache.bookkeeper.server.http.service.GetLastLogMarkService;
 import org.apache.bookkeeper.server.http.service.GetLedgerMetaService;
 import org.apache.bookkeeper.server.http.service.ListBookieInfoService;
@@ -211,6 +212,8 @@ public class BKHttpServiceProvider implements HttpServiceProvider {
                 return new ExpandStorageService(configuration);
             case GC:
                 return new TriggerGCService(configuration, bookieServer);
+            case GC_DETAILS:
+                return new GCDetailsService(configuration, bookieServer);
 
             // autorecovery
             case RECOVERY_BOOKIE:

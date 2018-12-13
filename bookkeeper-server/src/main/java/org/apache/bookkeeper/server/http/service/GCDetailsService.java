@@ -20,6 +20,8 @@ package org.apache.bookkeeper.server.http.service;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import java.util.List;
+import org.apache.bookkeeper.bookie.GarbageCollectionStatus;
 import org.apache.bookkeeper.common.util.JsonUtil;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.http.HttpServer;
@@ -27,29 +29,31 @@ import org.apache.bookkeeper.http.service.HttpEndpointService;
 import org.apache.bookkeeper.http.service.HttpServiceRequest;
 import org.apache.bookkeeper.http.service.HttpServiceResponse;
 import org.apache.bookkeeper.proto.BookieServer;
-import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * HttpEndpointService that handle force trigger GC requests.
+ * HttpEndpointService that handle get garbage collection details service.
  *
- * <p>The PUT method will force trigger GC on current bookie, and make GC run at backend.
- *
- * <p>The GET method will get the force triggered GC running or not.
- * Output would be like:
- *        {
- *           "is_in_force_gc" : "false"
- *        }
+ * <p>Get Garbage Collection status, the output would be like:
+ *        [ {
+ *           "forceCompacting" : false,
+ *           "majorCompacting" : false,
+ *           "minorCompacting" : false,
+ *           "lastMajorCompactionTime" : 1544578144944,
+ *           "lastMinorCompactionTime" : 1544578144944,
+ *           "majorCompactionCounter" : 1,
+ *           "minorCompactionCounter" : 0
+ *         } ]
  */
-public class TriggerGCService implements HttpEndpointService {
+public class GCDetailsService implements HttpEndpointService {
 
-    static final Logger LOG = LoggerFactory.getLogger(TriggerGCService.class);
+    static final Logger LOG = LoggerFactory.getLogger(GCDetailsService.class);
 
     protected ServerConfiguration conf;
     protected BookieServer bookieServer;
 
-    public TriggerGCService(ServerConfiguration conf, BookieServer bookieServer) {
+    public GCDetailsService(ServerConfiguration conf, BookieServer bookieServer) {
         checkNotNull(conf);
         checkNotNull(bookieServer);
         this.conf = conf;
@@ -60,21 +64,11 @@ public class TriggerGCService implements HttpEndpointService {
     public HttpServiceResponse handle(HttpServiceRequest request) throws Exception {
         HttpServiceResponse response = new HttpServiceResponse();
 
-        if (HttpServer.Method.PUT == request.getMethod()) {
-            bookieServer.getBookie().getLedgerStorage().forceGC();
+        if (HttpServer.Method.GET == request.getMethod()) {
+            List<GarbageCollectionStatus> details = bookieServer.getBookie()
+                .getLedgerStorage().getGarbageCollectionStatus();
 
-            String output = "Triggered GC on BookieServer: " + bookieServer.toString();
-            String jsonResponse = JsonUtil.toJson(output);
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("output body:" + jsonResponse);
-            }
-            response.setBody(jsonResponse);
-            response.setCode(HttpServer.StatusCode.OK);
-            return response;
-        } else if (HttpServer.Method.GET == request.getMethod()) {
-            Boolean isInForceGC = bookieServer.getBookie().getLedgerStorage().isInForceGC();
-            Pair<String, String> output = Pair.of("is_in_force_gc", isInForceGC.toString());
-            String jsonResponse = JsonUtil.toJson(output);
+            String jsonResponse = JsonUtil.toJson(details);
             if (LOG.isDebugEnabled()) {
                 LOG.debug("output body:" + jsonResponse);
             }
@@ -83,7 +77,8 @@ public class TriggerGCService implements HttpEndpointService {
             return response;
         } else {
             response.setCode(HttpServer.StatusCode.NOT_FOUND);
-            response.setBody("Not found method. Should be PUT to trigger GC, Or GET to get Force GC state.");
+            response.setBody("Only support GET method to retrieve GC details."
+                + " If you want to trigger gc, send a POST to gc endpoint.");
             return response;
         }
     }

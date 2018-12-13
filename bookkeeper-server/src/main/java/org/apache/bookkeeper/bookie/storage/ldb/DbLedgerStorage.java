@@ -39,12 +39,14 @@ import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.CheckpointSource;
 import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
 import org.apache.bookkeeper.bookie.Checkpointer;
+import org.apache.bookkeeper.bookie.GarbageCollectionStatus;
 import org.apache.bookkeeper.bookie.LastAddConfirmedUpdateNotification;
 import org.apache.bookkeeper.bookie.LedgerCache;
 import org.apache.bookkeeper.bookie.LedgerDirsManager;
@@ -358,5 +360,16 @@ public class DbLedgerStorage implements LedgerStorage {
     @Override
     public void forceGC() {
         ledgerStorageList.stream().forEach(SingleDirectoryDbLedgerStorage::forceGC);
+    }
+
+    @Override
+    public boolean isInForceGC() {
+        return ledgerStorageList.stream().anyMatch(SingleDirectoryDbLedgerStorage::isInForceGC);
+    }
+
+    @Override
+    public List<GarbageCollectionStatus> getGarbageCollectionStatus() {
+        return ledgerStorageList.stream()
+            .map(single -> single.getGarbageCollectionStatus().get(0)).collect(Collectors.toList());
     }
 }

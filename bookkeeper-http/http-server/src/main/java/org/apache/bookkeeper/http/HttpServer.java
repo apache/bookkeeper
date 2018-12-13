@@ -78,6 +78,8 @@ public interface HttpServer {
         LIST_DISK_FILE,
         EXPAND_STORAGE,
         GC,
+        GC_DETAILS,
+
         // autorecovery
         RECOVERY_BOOKIE,
         LIST_UNDER_REPLICATED_LEDGER,
