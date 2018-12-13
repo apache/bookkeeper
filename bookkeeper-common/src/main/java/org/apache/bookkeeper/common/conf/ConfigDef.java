@@ -20,6 +20,7 @@
 package org.apache.bookkeeper.common.conf;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.collect.Sets;
 import java.io.IOException;
@@ -181,9 +182,10 @@ public class ConfigDef {
         }
     }
 
-    public void save(OutputStream os) {
-        try (PrintStream ps = new PrintStream(os)) {
+    public void save(OutputStream os) throws IOException {
+        try (PrintStream ps = new PrintStream(os, false, UTF_8.name())) {
             save(ps);
+            ps.flush();
         }
     }
 
