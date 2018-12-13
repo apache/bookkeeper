@@ -35,6 +35,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import lombok.extern.slf4j.Slf4j;
+
+import org.apache.bookkeeper.bookie.BookKeeperServerStats;
 import org.apache.bookkeeper.client.BKException.BKInterruptedException;
 import org.apache.bookkeeper.client.BKException.BKNotEnoughBookiesException;
 import org.apache.bookkeeper.client.BKException.MetaStoreException;
@@ -43,9 +45,11 @@ import org.apache.bookkeeper.common.util.MathUtils;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.discover.RegistrationClient;
 import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.stats.annotations.StatsDoc;
+import org.apache.commons.lang3.tuple.Pair;
 
 /**
  * This class is responsible for maintaining a consistent view of what bookies
@@ -88,6 +92,8 @@ class BookieWatcherImpl implements BookieWatcher {
         help = "operation stats of replacing bookie in an ensemble"
     )
     private final OpStatsLogger replaceBookieTimer;
+    private final Counter newEnsembleNotAdheringToPlacementPolicy;
+    private final Counter replaceBookieNotAdheringToPlacementPolicy;
 
     // Bookies that will not be preferred to be chosen in a new ensemble
     final Cache<BookieSocketAddress, Boolean> quarantinedBookies;
@@ -117,6 +123,10 @@ class BookieWatcherImpl implements BookieWatcher {
                 }).build();
         this.newEnsembleTimer = statsLogger.getOpStatsLogger(NEW_ENSEMBLE_TIME);
         this.replaceBookieTimer = statsLogger.getOpStatsLogger(REPLACE_BOOKIE_TIME);
+        this.newEnsembleNotAdheringToPlacementPolicy = statsLogger
+                .getCounter(BookKeeperServerStats.NEW_ENSEMBLE_NOT_ADHERING_TO_PLACEMENT_POLICY_COUNTER);
+        this.replaceBookieNotAdheringToPlacementPolicy = statsLogger
+                .getCounter(BookKeeperServerStats.REPLACE_BOOKIE_NOT_ADHERING_TO_PLACEMENT_POLICY_COUNTER);
     }
 
     @Override
@@ -213,19 +223,33 @@ class BookieWatcherImpl implements BookieWatcher {
         int ackQuorumSize, Map<String, byte[]> customMetadata)
             throws BKNotEnoughBookiesException {
         long startTime = MathUtils.nowInNano();
+        Pair<List<BookieSocketAddress>, Boolean> newEnsembleResponse;
         List<BookieSocketAddress> socketAddresses;
+        boolean isEnsembleAdheringToPlacementPolicy = false;
         try {
-            socketAddresses = placementPolicy.newEnsemble(ensembleSize,
+            newEnsembleResponse = placementPolicy.newEnsemble(ensembleSize,
                     writeQuorumSize, ackQuorumSize, customMetadata, new HashSet<BookieSocketAddress>(
                             quarantinedBookies.asMap().keySet()));
+            socketAddresses = newEnsembleResponse.getLeft();
+            isEnsembleAdheringToPlacementPolicy = newEnsembleResponse.getRight();
+            if (!isEnsembleAdheringToPlacementPolicy) {
+                newEnsembleNotAdheringToPlacementPolicy.inc();
+                log.warn("New ensemble: {} is not adhering to Placement Policy", socketAddresses);
+            }
             // we try to only get from the healthy bookies first
             newEnsembleTimer.registerSuccessfulEvent(MathUtils.nowInNano() - startTime, TimeUnit.NANOSECONDS);
         } catch (BKNotEnoughBookiesException e) {
             if (log.isDebugEnabled()) {
                 log.debug("Not enough healthy bookies available, using quarantined bookies");
             }
-            socketAddresses = placementPolicy.newEnsemble(
+            newEnsembleResponse = placementPolicy.newEnsemble(
                     ensembleSize, writeQuorumSize, ackQuorumSize, customMetadata, new HashSet<>());
+            socketAddresses = newEnsembleResponse.getLeft();
+            isEnsembleAdheringToPlacementPolicy = newEnsembleResponse.getRight();
+            if (!isEnsembleAdheringToPlacementPolicy) {
+                newEnsembleNotAdheringToPlacementPolicy.inc();
+                log.warn("New ensemble: {} is not adhering to Placement Policy", socketAddresses);
+            }
             newEnsembleTimer.registerFailedEvent(MathUtils.nowInNano() - startTime, TimeUnit.NANOSECONDS);
         }
         return socketAddresses;
@@ -239,22 +263,40 @@ class BookieWatcherImpl implements BookieWatcher {
             throws BKNotEnoughBookiesException {
         long startTime = MathUtils.nowInNano();
         BookieSocketAddress addr = existingBookies.get(bookieIdx);
+        Pair<BookieSocketAddress, Boolean> replaceBookieResponse;
         BookieSocketAddress socketAddress;
+        boolean isEnsembleAdheringToPlacementPolicy = false;
         try {
             // we exclude the quarantined bookies also first
-            Set<BookieSocketAddress> existingAndQuarantinedBookies = new HashSet<BookieSocketAddress>(existingBookies);
-            existingAndQuarantinedBookies.addAll(quarantinedBookies.asMap().keySet());
-            socketAddress = placementPolicy.replaceBookie(
+            Set<BookieSocketAddress> excludeBookiesAndQuarantinedBookies = new HashSet<BookieSocketAddress>(
+                    excludeBookies);
+            excludeBookiesAndQuarantinedBookies.addAll(quarantinedBookies.asMap().keySet());
+            replaceBookieResponse = placementPolicy.replaceBookie(
                     ensembleSize, writeQuorumSize, ackQuorumSize, customMetadata,
-                    existingAndQuarantinedBookies, addr, excludeBookies);
+                    existingBookies, addr, excludeBookiesAndQuarantinedBookies);
+            socketAddress = replaceBookieResponse.getLeft();
+            isEnsembleAdheringToPlacementPolicy = replaceBookieResponse.getRight();
+            if (!isEnsembleAdheringToPlacementPolicy) {
+                replaceBookieNotAdheringToPlacementPolicy.inc();
+                log.debug(
+                        "replaceBookie for bookie: {} in ensemble: {} is not adhering to placement policy and chose {}",
+                        addr, existingBookies, socketAddress);
+            }
             replaceBookieTimer.registerSuccessfulEvent(MathUtils.nowInNano() - startTime, TimeUnit.NANOSECONDS);
         } catch (BKNotEnoughBookiesException e) {
             if (log.isDebugEnabled()) {
                 log.debug("Not enough healthy bookies available, using quarantined bookies");
             }
-            socketAddress = placementPolicy.replaceBookie(
-                    ensembleSize, writeQuorumSize, ackQuorumSize, customMetadata,
-                    new HashSet<BookieSocketAddress>(existingBookies), addr, excludeBookies);
+            replaceBookieResponse = placementPolicy.replaceBookie(ensembleSize, writeQuorumSize, ackQuorumSize,
+                    customMetadata, existingBookies, addr, excludeBookies);
+            socketAddress = replaceBookieResponse.getLeft();
+            isEnsembleAdheringToPlacementPolicy = replaceBookieResponse.getRight();
+            if (!isEnsembleAdheringToPlacementPolicy) {
+                replaceBookieNotAdheringToPlacementPolicy.inc();
+                log.debug(
+                        "replaceBookie for bookie: {} in ensemble: {} is not adhering to placement policy and chose {}",
+                        addr, existingBookies, socketAddress);
+            }
             replaceBookieTimer.registerFailedEvent(MathUtils.nowInNano() - startTime, TimeUnit.NANOSECONDS);
         }
         return socketAddress;
