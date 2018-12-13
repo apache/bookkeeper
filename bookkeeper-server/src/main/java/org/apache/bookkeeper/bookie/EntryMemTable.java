@@ -19,13 +19,6 @@
 
 package org.apache.bookkeeper.bookie;
 
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.SKIP_LIST_FLUSH_BYTES;
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.SKIP_LIST_GET_ENTRY;
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.SKIP_LIST_PUT_ENTRY;
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.SKIP_LIST_SNAPSHOT;
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.SKIP_LIST_THROTTLING;
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.SKIP_LIST_THROTTLING_LATENCY;
-
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.concurrent.ConcurrentSkipListMap;
@@ -36,9 +29,8 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import org.apache.bookkeeper.bookie.Bookie.NoLedgerException;
 import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
+import org.apache.bookkeeper.bookie.stats.EntryMemTableStats;
 import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.stats.Counter;
-import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.MathUtils;
 import org.slf4j.Logger;
@@ -117,12 +109,7 @@ public class EntryMemTable implements AutoCloseable{
     }
 
     // Stats
-    private final OpStatsLogger snapshotStats;
-    private final OpStatsLogger putEntryStats;
-    private final OpStatsLogger getEntryStats;
-    final Counter flushBytesCounter;
-    private final Counter throttlingCounter;
-    private final OpStatsLogger throttlingStats;
+    protected final EntryMemTableStats memTableStats;
 
     /**
     * Constructor.
@@ -150,12 +137,7 @@ public class EntryMemTable implements AutoCloseable{
         this.skipListSemaphore = new Semaphore((int) skipListSizeLimit * 2);
 
         // Stats
-        this.snapshotStats = statsLogger.getOpStatsLogger(SKIP_LIST_SNAPSHOT);
-        this.putEntryStats = statsLogger.getOpStatsLogger(SKIP_LIST_PUT_ENTRY);
-        this.getEntryStats = statsLogger.getOpStatsLogger(SKIP_LIST_GET_ENTRY);
-        this.flushBytesCounter = statsLogger.getCounter(SKIP_LIST_FLUSH_BYTES);
-        this.throttlingCounter = statsLogger.getCounter(SKIP_LIST_THROTTLING);
-        this.throttlingStats = statsLogger.getOpStatsLogger(SKIP_LIST_THROTTLING_LATENCY);
+        this.memTableStats = new EntryMemTableStats(statsLogger);
     }
 
     void dump() {
@@ -203,9 +185,11 @@ public class EntryMemTable implements AutoCloseable{
             }
 
             if (null != cp) {
-                snapshotStats.registerSuccessfulEvent(MathUtils.elapsedNanos(startTimeNanos), TimeUnit.NANOSECONDS);
+                memTableStats.getSnapshotStats()
+                    .registerSuccessfulEvent(MathUtils.elapsedNanos(startTimeNanos), TimeUnit.NANOSECONDS);
             } else {
-                snapshotStats.registerFailedEvent(MathUtils.elapsedNanos(startTimeNanos), TimeUnit.NANOSECONDS);
+                memTableStats.getSnapshotStats()
+                    .registerFailedEvent(MathUtils.elapsedNanos(startTimeNanos), TimeUnit.NANOSECONDS);
             }
         }
         return cp;
@@ -272,7 +256,7 @@ public class EntryMemTable implements AutoCloseable{
                             }
                         }
                     }
-                    flushBytesCounter.add(size);
+                    memTableStats.getFlushBytesCounter().add(size);
                     clearSnapshot(keyValues);
                 }
             }
@@ -322,11 +306,11 @@ public class EntryMemTable implements AutoCloseable{
 
             final int len = entry.remaining();
             if (!skipListSemaphore.tryAcquire(len)) {
-                throttlingCounter.inc();
+                memTableStats.getThrottlingCounter().inc();
                 final long throttlingStartTimeNanos = MathUtils.nowInNano();
                 skipListSemaphore.acquireUninterruptibly(len);
-                throttlingStats.registerSuccessfulEvent(MathUtils.elapsedNanos(throttlingStartTimeNanos),
-                        TimeUnit.NANOSECONDS);
+                memTableStats.getThrottlingStats()
+                    .registerSuccessfulEvent(MathUtils.elapsedNanos(throttlingStartTimeNanos), TimeUnit.NANOSECONDS);
             }
 
             this.lock.readLock().lock();
@@ -340,9 +324,11 @@ public class EntryMemTable implements AutoCloseable{
             return size;
         } finally {
             if (success) {
-                putEntryStats.registerSuccessfulEvent(MathUtils.elapsedNanos(startTimeNanos), TimeUnit.NANOSECONDS);
+                memTableStats.getPutEntryStats()
+                    .registerSuccessfulEvent(MathUtils.elapsedNanos(startTimeNanos), TimeUnit.NANOSECONDS);
             } else {
-                putEntryStats.registerFailedEvent(MathUtils.elapsedNanos(startTimeNanos), TimeUnit.NANOSECONDS);
+                memTableStats.getPutEntryStats()
+                    .registerFailedEvent(MathUtils.elapsedNanos(startTimeNanos), TimeUnit.NANOSECONDS);
             }
         }
     }
@@ -406,9 +392,11 @@ public class EntryMemTable implements AutoCloseable{
         } finally {
             this.lock.readLock().unlock();
             if (success) {
-                getEntryStats.registerSuccessfulEvent(MathUtils.elapsedNanos(startTimeNanos), TimeUnit.NANOSECONDS);
+                memTableStats.getGetEntryStats()
+                    .registerSuccessfulEvent(MathUtils.elapsedNanos(startTimeNanos), TimeUnit.NANOSECONDS);
             } else {
-                getEntryStats.registerFailedEvent(MathUtils.elapsedNanos(startTimeNanos), TimeUnit.NANOSECONDS);
+                memTableStats.getGetEntryStats()
+                    .registerFailedEvent(MathUtils.elapsedNanos(startTimeNanos), TimeUnit.NANOSECONDS);
             }
         }
 
@@ -435,9 +423,11 @@ public class EntryMemTable implements AutoCloseable{
         } finally {
             this.lock.readLock().unlock();
             if (success) {
-                getEntryStats.registerSuccessfulEvent(MathUtils.elapsedNanos(startTimeNanos), TimeUnit.NANOSECONDS);
+                memTableStats.getGetEntryStats()
+                    .registerSuccessfulEvent(MathUtils.elapsedNanos(startTimeNanos), TimeUnit.NANOSECONDS);
             } else {
-                getEntryStats.registerFailedEvent(MathUtils.elapsedNanos(startTimeNanos), TimeUnit.NANOSECONDS);
+                memTableStats.getGetEntryStats()
+                    .registerFailedEvent(MathUtils.elapsedNanos(startTimeNanos), TimeUnit.NANOSECONDS);
             }
         }
 
