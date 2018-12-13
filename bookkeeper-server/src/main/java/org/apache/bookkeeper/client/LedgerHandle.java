@@ -126,10 +126,10 @@ public class LedgerHandle implements WriteHandle {
      * selected as "sticky" for this ledger. The bookie is chosen at random when the
      * LedgerHandle is created.
      *
-     * In case of failures, the bookie index will be updated (to the next bookie in
+     * <p>In case of failures, the bookie index will be updated (to the next bookie in
      * the ensemble) to avoid continuing to attempt to read from a failed bookie.
      *
-     * If the index is -1, it means the sticky reads are disabled.
+     * <p>If the index is -1, it means the sticky reads are disabled.
      */
     private int stickyBookieIndex;
 
