@@ -1,7 +1,7 @@
 ---
 title: "BP-37: Improve configuration management for better documentation"
 issue: https://github.com/apache/bookkeeper/1867
-state: "Under Discussion"
+state: "Accepted"
 release: "4.9.0"
 ---
 
