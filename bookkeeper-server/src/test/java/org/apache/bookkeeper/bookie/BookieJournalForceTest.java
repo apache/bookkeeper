@@ -42,6 +42,7 @@ import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.bookie.Journal.ForceWriteRequest;
 import org.apache.bookkeeper.bookie.Journal.LastLogMark;
+import org.apache.bookkeeper.bookie.stats.JournalStats;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.net.BookieSocketAddress;
@@ -210,10 +211,11 @@ public class BookieJournalForceTest {
         CountDownLatch forceWriteThreadSuspendedLatch = new CountDownLatch(1);
         enableForceWriteThreadSuspension(forceWriteThreadSuspendedLatch, journal);
 
+        JournalStats journalStats = journal.getJournalStats();
         TestStatsProvider testStatsProvider = new TestStatsProvider();
         Counter flushMaxOutstandingBytesCounter = testStatsProvider.getStatsLogger("test")
                                                         .getCounter("flushMaxOutstandingBytesCounter");
-        Whitebox.setInternalState(journal, "flushMaxOutstandingBytesCounter", flushMaxOutstandingBytesCounter);
+        Whitebox.setInternalState(journalStats, "flushMaxOutstandingBytesCounter", flushMaxOutstandingBytesCounter);
 
         journal.start();
 
