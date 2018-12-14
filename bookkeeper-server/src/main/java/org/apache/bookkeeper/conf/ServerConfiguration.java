@@ -81,7 +81,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
         .description("Max file size of entry logger, in bytes")
         .documentation("A new entry log file will be created when the old one reaches this file size limitation")
         .defaultValue(MAX_LOG_SIZE_LIMIT)
-        .validator(RangeValidator.between(1024 * 1024, MAX_LOG_SIZE_LIMIT))
+        .validator(RangeValidator.between(1024, MAX_LOG_SIZE_LIMIT))
         .group(GROUP_LEDGER_STORAGE_ENTRY_LOGGER)
         .build();
 
