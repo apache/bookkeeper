@@ -39,7 +39,6 @@ import org.apache.bookkeeper.bookie.storage.ldb.DbLedgerStorageDataFormats.Ledge
 import org.apache.bookkeeper.bookie.storage.ldb.KeyValueStorage.CloseableIterator;
 import org.apache.bookkeeper.bookie.storage.ldb.KeyValueStorageFactory.DbConfigType;
 import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.stats.Gauge;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.collections.ConcurrentLongHashMap;
 import org.slf4j.Logger;
@@ -56,7 +55,7 @@ public class LedgerMetadataIndex implements Closeable {
     private final AtomicInteger ledgersCount;
 
     private final KeyValueStorage ledgersDb;
-    private StatsLogger stats;
+    private final LedgerMetadataIndexStats stats;
 
     // Holds ledger modifications applied in memory map, and pending to be flushed on db
     private final ConcurrentLinkedQueue<Entry<Long, LedgerData>> pendingLedgersUpdates;
@@ -89,22 +88,9 @@ public class LedgerMetadataIndex implements Closeable {
         this.pendingLedgersUpdates = new ConcurrentLinkedQueue<Entry<Long, LedgerData>>();
         this.pendingDeletedLedgers = new ConcurrentLinkedQueue<Long>();
 
-        this.stats = stats;
-        registerStats();
-    }
-
-    public void registerStats() {
-        stats.registerGauge("ledgers-count", new Gauge<Long>() {
-            @Override
-            public Long getDefaultValue() {
-                return 0L;
-            }
-
-            @Override
-            public Long getSample() {
-                return (long) ledgersCount.get();
-            }
-        });
+        this.stats = new LedgerMetadataIndexStats(
+            stats,
+            () -> (long) ledgersCount.get());
     }
 
     @Override
