@@ -36,7 +36,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.bookkeeper.client.BKException;
-import org.apache.bookkeeper.client.LedgerMetadata;
+import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
@@ -75,6 +75,7 @@ public abstract class AbstractZkLedgerManager implements LedgerManager, Watcher 
     @VisibleForTesting
     static final int ZK_CONNECT_BACKOFF_MS = 200;
 
+    private final LedgerMetadataSerDe serDe;
     protected final AbstractConfiguration conf;
     protected final ZooKeeper zk;
     protected final String ledgerRootPath;
@@ -158,7 +159,9 @@ public abstract class AbstractZkLedgerManager implements LedgerManager, Watcher 
      * @param zk
      *          ZooKeeper Client Handle
      */
-    protected AbstractZkLedgerManager(AbstractConfiguration conf, ZooKeeper zk) {
+    protected AbstractZkLedgerManager(AbstractConfiguration conf, ZooKeeper zk,
+                                      int maxLedgerMetadataFormatVersion) {
+        this.serDe = new LedgerMetadataSerDe(maxLedgerMetadataFormatVersion);
         this.conf = conf;
         this.zk = zk;
         this.ledgerRootPath = ZKMetadataDriverBase.resolveZkLedgersRootPath(conf);
@@ -264,7 +267,7 @@ public abstract class AbstractZkLedgerManager implements LedgerManager, Watcher 
             }
         };
         List<ACL> zkAcls = ZkUtils.getACLs(conf);
-        ZkUtils.asyncCreateFullPathOptimistic(zk, ledgerPath, metadata.serialize(), zkAcls,
+        ZkUtils.asyncCreateFullPathOptimistic(zk, ledgerPath, serDe.serialize(metadata), zkAcls,
                 CreateMode.PERSISTENT, scb, null);
         return promise;
     }
@@ -400,7 +403,7 @@ public abstract class AbstractZkLedgerManager implements LedgerManager, Watcher 
 
                 try {
                     LongVersion version = new LongVersion(stat.getVersion());
-                    LedgerMetadata metadata = LedgerMetadata.parseConfig(data, Optional.of(stat.getCtime()));
+                    LedgerMetadata metadata = serDe.parseConfig(data, Optional.of(stat.getCtime()));
                     promise.complete(new Versioned<>(metadata, version));
                 } catch (Throwable t) {
                     LOG.error("Could not parse ledger metadata for ledger: {}", ledgerId, t);
@@ -421,7 +424,7 @@ public abstract class AbstractZkLedgerManager implements LedgerManager, Watcher 
         }
         final LongVersion zv = (LongVersion) currentVersion;
         zk.setData(getLedgerPath(ledgerId),
-                   metadata.serialize(), (int) zv.getLongVersion(),
+                   serDe.serialize(metadata), (int) zv.getLongVersion(),
                    new StatCallback() {
             @Override
             public void processResult(int rc, String path, Object ctx, Stat stat) {

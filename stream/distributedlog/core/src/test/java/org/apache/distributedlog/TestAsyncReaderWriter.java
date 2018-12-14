@@ -42,9 +42,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import org.apache.bookkeeper.client.BookKeeper;
-import org.apache.bookkeeper.client.BookKeeperAccessor;
 import org.apache.bookkeeper.client.LedgerHandle;
-import org.apache.bookkeeper.client.LedgerMetadata;
+import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.common.concurrent.FutureEventListener;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.feature.FixedValueFeature;
@@ -1992,7 +1991,7 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
         long ledgerId = segments.get(0).getLogSegmentId();
         LedgerHandle lh = ((BKNamespaceDriver) namespace.getNamespaceDriver()).getReaderBKC().get()
                 .openLedgerNoRecovery(ledgerId, BookKeeper.DigestType.CRC32, confLocal.getBKDigestPW().getBytes(UTF_8));
-        LedgerMetadata metadata = BookKeeperAccessor.getLedgerMetadata(lh);
+        LedgerMetadata metadata = lh.getLedgerMetadata();
         assertEquals(DistributedLogConfiguration.BKDL_BOOKKEEPER_ENSEMBLE_SIZE_DEFAULT, metadata.getEnsembleSize());
         lh.close();
         Utils.close(writer);
@@ -2011,7 +2010,7 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
         ledgerId = segments.get(0).getLogSegmentId();
         lh = ((BKNamespaceDriver) namespace.getNamespaceDriver()).getReaderBKC().get()
                 .openLedgerNoRecovery(ledgerId, BookKeeper.DigestType.CRC32, confLocal.getBKDigestPW().getBytes(UTF_8));
-        metadata = BookKeeperAccessor.getLedgerMetadata(lh);
+        metadata = lh.getLedgerMetadata();
         assertEquals(DistributedLogConfiguration.BKDL_BOOKKEEPER_ENSEMBLE_SIZE_DEFAULT - 1, metadata.getEnsembleSize());
         lh.close();
         Utils.close(writer);

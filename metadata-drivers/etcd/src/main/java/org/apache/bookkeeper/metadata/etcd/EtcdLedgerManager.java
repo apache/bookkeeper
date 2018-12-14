@@ -44,8 +44,9 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.client.BKException;
-import org.apache.bookkeeper.client.LedgerMetadata;
+import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.meta.LedgerManager;
+import org.apache.bookkeeper.meta.LedgerMetadataSerDe;
 import org.apache.bookkeeper.metadata.etcd.helpers.KeyIterator;
 import org.apache.bookkeeper.metadata.etcd.helpers.KeyStream;
 import org.apache.bookkeeper.metadata.etcd.helpers.ValueStream;
@@ -63,18 +64,8 @@ import org.apache.zookeeper.AsyncCallback.VoidCallback;
 @Slf4j
 class EtcdLedgerManager implements LedgerManager {
 
-    private static final Function<ByteSequence, LedgerMetadata> LEDGER_METADATA_FUNCTION = bs -> {
-        try {
-            return LedgerMetadata.parseConfig(
-                bs.getBytes(),
-                Optional.empty()
-            );
-        } catch (IOException ioe) {
-            log.error("Could not parse ledger metadata : {}", bs.toStringUtf8(), ioe);
-            throw new RuntimeException(
-                "Could not parse ledger metadata : " + bs.toStringUtf8(), ioe);
-        }
-    };
+    private final LedgerMetadataSerDe serDe;
+    private final Function<ByteSequence, LedgerMetadata> ledgerMetadataFunction;
 
     private final String scope;
     private final Client client;
@@ -84,14 +75,27 @@ class EtcdLedgerManager implements LedgerManager {
         new ConcurrentLongHashMap<>();
     private final ConcurrentMap<LedgerMetadataListener, LedgerMetadataConsumer> listeners =
         new ConcurrentHashMap<>();
+
     private volatile boolean closed = false;
 
     EtcdLedgerManager(Client client,
-                      String scope) {
+                      String scope,
+                      int maxLedgerMetadataFormatVersion) {
         this.client = client;
         this.kvClient = client.getKVClient();
         this.scope = scope;
         this.watchClient = new EtcdWatchClient(client);
+        this.serDe = new LedgerMetadataSerDe(maxLedgerMetadataFormatVersion);
+
+        this.ledgerMetadataFunction = bs -> {
+            try {
+                return serDe.parseConfig(bs.getBytes(), Optional.empty());
+            } catch (IOException ioe) {
+                log.error("Could not parse ledger metadata : {}", bs.toStringUtf8(), ioe);
+                throw new RuntimeException(
+                        "Could not parse ledger metadata : " + bs.toStringUtf8(), ioe);
+            }
+        };
     }
 
     private boolean isClosed() {
@@ -121,7 +125,7 @@ class EtcdLedgerManager implements LedgerManager {
                     .build()))
             .Else(com.coreos.jetcd.op.Op.put(
                 ledgerKeyBs,
-                ByteSequence.fromBytes(metadata.serialize()),
+                ByteSequence.fromBytes(serDe.serialize(metadata)),
                 PutOption.DEFAULT))
             .commit()
             .thenAccept(resp -> {
@@ -223,7 +227,7 @@ class EtcdLedgerManager implements LedgerManager {
                     KeyValue kv = getResp.getKvs().get(0);
                     byte[] data = kv.getValue().getBytes();
                     try {
-                        LedgerMetadata metadata = LedgerMetadata.parseConfig(data, Optional.empty());
+                        LedgerMetadata metadata = serDe.parseConfig(data, Optional.empty());
                         promise.complete(new Versioned<>(metadata, new LongVersion(kv.getModRevision())));
                     } catch (IOException ioe) {
                         log.error("Could not parse ledger metadata for ledger : {}", ledgerId, ioe);
@@ -259,7 +263,7 @@ class EtcdLedgerManager implements LedgerManager {
                 CmpTarget.modRevision(lv.getLongVersion())))
             .Then(com.coreos.jetcd.op.Op.put(
                 ledgerKeyBs,
-                ByteSequence.fromBytes(metadata.serialize()),
+                ByteSequence.fromBytes(serDe.serialize(metadata)),
                 PutOption.DEFAULT))
             .Else(com.coreos.jetcd.op.Op.get(
                 ledgerKeyBs,
@@ -307,7 +311,7 @@ class EtcdLedgerManager implements LedgerManager {
             ledgerId, (lid) -> new ValueStream<>(
                 client,
                 watchClient,
-                LEDGER_METADATA_FUNCTION,
+                ledgerMetadataFunction,
                 ByteSequence.fromString(EtcdUtils.getLedgerKey(scope, ledgerId)))
         );
         LedgerMetadataConsumer lmConsumer = listenerToConsumer(ledgerId, listener,

@@ -119,7 +119,7 @@ public class LedgerReader {
             }
         };
 
-        List<BookieSocketAddress> ensemble = lh.getLedgerMetadata().getEnsemble(eid);
+        List<BookieSocketAddress> ensemble = lh.getLedgerMetadata().getEnsembleAt(eid);
         for (int i = 0; i < writeSet.size(); i++) {
             int idx = writeSet.get(i);
             clientCtx.getBookieClient().readEntry(ensemble.get(idx), lh.getId(), eid, readEntryCallback,
@@ -224,7 +224,7 @@ public class LedgerReader {
             }
         };
 
-        List<BookieSocketAddress> ensemble = lh.getLedgerMetadata().getEnsemble(eid);
+        List<BookieSocketAddress> ensemble = lh.getLedgerMetadata().getEnsembleAt(eid);
         for (int i = 0; i < writeSet.size(); i++) {
             int idx = writeSet.get(i);
             clientCtx.getBookieClient().readEntry(ensemble.get(idx), lh.getId(), eid, readEntryCallback,

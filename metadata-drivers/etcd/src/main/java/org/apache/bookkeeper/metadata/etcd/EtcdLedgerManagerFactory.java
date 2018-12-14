@@ -42,6 +42,7 @@ class EtcdLedgerManagerFactory implements LedgerManagerFactory {
 
     private String scope;
     private Client client;
+    private int maxLedgerMetadataFormatVersion;
 
     @Override
     public int getCurrentVersion() {
@@ -51,7 +52,8 @@ class EtcdLedgerManagerFactory implements LedgerManagerFactory {
     @Override
     public LedgerManagerFactory initialize(AbstractConfiguration conf,
                                            LayoutManager layoutManager,
-                                           int factoryVersion) throws IOException {
+                                           int factoryVersion,
+                                           int maxLedgerMetadataFormatVersion) throws IOException {
         checkArgument(layoutManager instanceof EtcdLayoutManager);
 
         EtcdLayoutManager etcdLayoutManager = (EtcdLayoutManager) layoutManager;
@@ -66,6 +68,7 @@ class EtcdLedgerManagerFactory implements LedgerManagerFactory {
             throw new IOException("Invalid metadata service uri", e);
         }
         this.client = etcdLayoutManager.getClient();
+        this.maxLedgerMetadataFormatVersion = maxLedgerMetadataFormatVersion;
         return this;
     }
 
@@ -82,7 +85,7 @@ class EtcdLedgerManagerFactory implements LedgerManagerFactory {
 
     @Override
     public LedgerManager newLedgerManager() {
-        return new EtcdLedgerManager(client, scope);
+        return new EtcdLedgerManager(client, scope, maxLedgerMetadataFormatVersion);
     }
 
     @Override

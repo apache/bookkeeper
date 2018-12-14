@@ -26,7 +26,7 @@ public class LongHierarchicalLedgerManagerFactory extends HierarchicalLedgerMana
 
     @Override
     public LedgerManager newLedgerManager() {
-        return new LongHierarchicalLedgerManager(conf, zk);
+        return new LongHierarchicalLedgerManager(conf, zk, maxLedgerMetadataFormatVersion);
     }
 
 }

@@ -39,7 +39,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.client.BKException;
-import org.apache.bookkeeper.client.LedgerMetadata;
+import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
@@ -96,6 +96,7 @@ public class MSLedgerManagerFactory extends AbstractZkLedgerManagerFactory {
     public static final String META_FIELD = ".META";
 
     AbstractConfiguration conf;
+    private int maxLedgerMetadataFormatVersion;
     MetaStore metastore;
 
     @Override
@@ -106,7 +107,8 @@ public class MSLedgerManagerFactory extends AbstractZkLedgerManagerFactory {
     @Override
     public LedgerManagerFactory initialize(final AbstractConfiguration conf,
                                            final LayoutManager layoutManager,
-                                           final int factoryVersion) throws IOException {
+                                           final int factoryVersion,
+                                           int maxLedgerMetadataFormatVersion) throws IOException {
         checkArgument(layoutManager instanceof ZkLayoutManager);
         ZkLayoutManager zkLayoutManager = (ZkLayoutManager) layoutManager;
 
@@ -115,6 +117,7 @@ public class MSLedgerManagerFactory extends AbstractZkLedgerManagerFactory {
         }
         this.conf = conf;
         this.zk = zkLayoutManager.getZk();
+        this.maxLedgerMetadataFormatVersion = maxLedgerMetadataFormatVersion;
 
         // load metadata store
         String msName = conf.getMetastoreImplClass();
@@ -210,7 +213,7 @@ public class MSLedgerManagerFactory extends AbstractZkLedgerManagerFactory {
     static class MsLedgerManager implements LedgerManager, MetastoreWatcher {
         final ZooKeeper zk;
         final AbstractConfiguration conf;
-
+        private final LedgerMetadataSerDe serDe;
         final MetaStore metastore;
         final MetastoreScannableTable ledgerTable;
         final int maxEntriesPerScan;
@@ -280,10 +283,12 @@ public class MSLedgerManagerFactory extends AbstractZkLedgerManagerFactory {
             }
         }
 
-        MsLedgerManager(final AbstractConfiguration conf, final ZooKeeper zk, final MetaStore metastore) {
+        MsLedgerManager(final AbstractConfiguration conf, final ZooKeeper zk, final MetaStore metastore,
+                        int maxLedgerMetadataFormatVersion) {
             this.conf = conf;
             this.zk = zk;
             this.metastore = metastore;
+            this.serDe = new LedgerMetadataSerDe(maxLedgerMetadataFormatVersion);
 
             try {
                 ledgerTable = metastore.createScannableTable(TABLE_NAME);
@@ -394,7 +399,7 @@ public class MSLedgerManagerFactory extends AbstractZkLedgerManagerFactory {
                 }
             };
 
-            ledgerTable.put(ledgerId2Key(lid), new Value().setField(META_FIELD, metadata.serialize()),
+            ledgerTable.put(ledgerId2Key(lid), new Value().setField(META_FIELD, serDe.serialize(metadata)),
                     Version.NEW, msCallback, null);
             return promise;
         }
@@ -440,7 +445,7 @@ public class MSLedgerManagerFactory extends AbstractZkLedgerManagerFactory {
                         return;
                     }
                     try {
-                        LedgerMetadata metadata = LedgerMetadata.parseConfig(
+                        LedgerMetadata metadata = serDe.parseConfig(
                                 value.getValue().getField(META_FIELD), Optional.empty());
                         promise.complete(new Versioned<>(metadata, value.getVersion()));
                     } catch (IOException e) {
@@ -456,7 +461,7 @@ public class MSLedgerManagerFactory extends AbstractZkLedgerManagerFactory {
         @Override
         public CompletableFuture<Versioned<LedgerMetadata>> writeLedgerMetadata(long ledgerId, LedgerMetadata metadata,
                                                                                 Version currentVersion) {
-            Value data = new Value().setField(META_FIELD, metadata.serialize());
+            Value data = new Value().setField(META_FIELD, serDe.serialize(metadata));
 
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Writing ledger {} metadata, version {}", new Object[] { ledgerId, currentVersion });
@@ -650,7 +655,7 @@ public class MSLedgerManagerFactory extends AbstractZkLedgerManagerFactory {
 
     @Override
     public LedgerManager newLedgerManager() {
-        return new MsLedgerManager(conf, zk, metastore);
+        return new MsLedgerManager(conf, zk, metastore, maxLedgerMetadataFormatVersion);
     }
 
     @Override

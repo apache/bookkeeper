@@ -85,7 +85,7 @@ using Google Doc.
 
 This section lists all the _bookkeeper proposals_ made to BookKeeper.
 
-*Next Proposal Number: 37*
+*Next Proposal Number: 38*
 
 ### Inprogress
 
@@ -108,6 +108,7 @@ Proposal | State
 [BP-34: Cluster Metadata Checker](../../bps/BP-34-cluster-metadata-checker) | Accepted
 [BP-35: 128 bits support](../../bps/BP-35-128-bits-support) | Accepted
 [BP-36: Stats documentation annotation](../../bps/BP-36-stats-documentation-annotation) | Accepted
+[BP-37: Improve configuration management for better documentation](../../bps/BP-37-conf-documentation) | Accepted
 
 ### Adopted
 

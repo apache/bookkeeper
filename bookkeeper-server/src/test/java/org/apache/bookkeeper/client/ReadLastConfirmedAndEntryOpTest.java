@@ -47,6 +47,7 @@ import org.apache.bookkeeper.client.BKException.Code;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.ReadLastConfirmedAndEntryOp.LastConfirmedAndEntryCallback;
 import org.apache.bookkeeper.client.api.LastConfirmedAndEntry;
+import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.client.impl.LastConfirmedAndEntryImpl;
 import org.apache.bookkeeper.client.impl.LedgerEntryImpl;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
@@ -105,8 +106,8 @@ public class ReadLastConfirmedAndEntryOpTest {
         }
         this.ledgerMetadata = LedgerMetadataBuilder.create()
             .withEnsembleSize(3).withWriteQuorumSize(2).withAckQuorumSize(2)
-            .withDigestType(DigestType.CRC32.toApiDigestType())
             .withPassword(new byte[0])
+            .withDigestType(DigestType.CRC32.toApiDigestType())
             .newEnsembleEntry(0L, ensemble).build();
         this.distributionSchedule = new RoundRobinDistributionSchedule(3, 2, 3);
         // schedulers

@@ -50,11 +50,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BKException.Code;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
-import org.apache.bookkeeper.client.LedgerMetadata;
 import org.apache.bookkeeper.client.LedgerMetadataBuilder;
+import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.meta.LedgerManager.LedgerRange;
 import org.apache.bookkeeper.meta.LedgerManager.LedgerRangeIterator;
+import org.apache.bookkeeper.meta.LedgerMetadataSerDe;
 import org.apache.bookkeeper.metadata.etcd.helpers.ValueStream;
 import org.apache.bookkeeper.metadata.etcd.testing.EtcdTestBase;
 import org.apache.bookkeeper.net.BookieSocketAddress;
@@ -81,7 +82,8 @@ public class EtcdLedgerManagerTest extends EtcdTestBase {
     public void setUp() throws Exception {
         super.setUp();
         this.scope = RandomStringUtils.randomAlphabetic(8);
-        this.lm = new EtcdLedgerManager(etcdClient, scope);
+        this.lm = new EtcdLedgerManager(etcdClient, scope,
+                                        LedgerMetadataSerDe.CURRENT_METADATA_FORMAT_VERSION);
     }
 
     @Override
@@ -241,8 +243,8 @@ public class EtcdLedgerManagerTest extends EtcdTestBase {
         for (int i = 0; i < numLedgers; i++) {
             LedgerMetadata metadata = LedgerMetadataBuilder.create()
                 .withEnsembleSize(3).withWriteQuorumSize(3).withAckQuorumSize(2)
-                .withDigestType(DigestType.CRC32C.toApiDigestType())
                 .withPassword("test-password".getBytes(UTF_8))
+                .withDigestType(DigestType.CRC32C.toApiDigestType())
                 .newEnsembleEntry(0L, createNumBookies(3)).build();
             createFutures.add(lm.createLedgerMetadata(i, metadata));
         }
@@ -255,10 +257,10 @@ public class EtcdLedgerManagerTest extends EtcdTestBase {
 
         // create a ledger metadata
         LedgerMetadata metadata = LedgerMetadataBuilder.create()
-                .withEnsembleSize(3).withWriteQuorumSize(3).withAckQuorumSize(2)
-                .withDigestType(DigestType.CRC32C.toApiDigestType())
-                .withPassword("test-password".getBytes(UTF_8))
-                .newEnsembleEntry(0L, createNumBookies(3)).build();
+            .withEnsembleSize(3).withWriteQuorumSize(3).withAckQuorumSize(2)
+            .withPassword("test-password".getBytes(UTF_8))
+            .withDigestType(DigestType.CRC32C.toApiDigestType())
+            .newEnsembleEntry(0L, createNumBookies(3)).build();
         result(lm.createLedgerMetadata(ledgerId, metadata));
         Versioned<LedgerMetadata> readMetadata = lm.readLedgerMetadata(ledgerId).get();
         log.info("Create ledger metadata : {}", readMetadata.getValue());

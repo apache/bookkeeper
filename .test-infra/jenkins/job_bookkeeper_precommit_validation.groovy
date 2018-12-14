@@ -40,7 +40,7 @@ mavenJob('bookkeeper_precommit_pullrequest_validation') {
   // Sets that this is a PreCommit job.
   common_job_properties.setPreCommit(
     delegate,
-    'PR Validation',
+    'PR Validation (trigger via `run pr validation`)',
     '.*(re)?run pr validation.*',
     '',
     true)

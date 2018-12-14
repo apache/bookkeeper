@@ -19,6 +19,7 @@ package org.apache.bookkeeper.client;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
+import static org.apache.bookkeeper.meta.LedgerMetadataSerDe.CURRENT_METADATA_FORMAT_VERSION;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
@@ -31,10 +32,11 @@ import java.util.Optional;
 import java.util.TreeMap;
 
 import org.apache.bookkeeper.client.api.DigestType;
+import org.apache.bookkeeper.client.api.LedgerMetadata;
+import org.apache.bookkeeper.client.api.LedgerMetadata.State;
 import org.apache.bookkeeper.common.annotation.InterfaceAudience.LimitedPrivate;
 import org.apache.bookkeeper.common.annotation.InterfaceStability.Unstable;
 import org.apache.bookkeeper.net.BookieSocketAddress;
-import org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat;
 
 /**
  * Builder for building LedgerMetadata objects.
@@ -43,18 +45,18 @@ import org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat;
 @Unstable
 @VisibleForTesting
 public class LedgerMetadataBuilder {
-    private int metadataFormatVersion = LedgerMetadata.CURRENT_METADATA_FORMAT_VERSION;
+    private int metadataFormatVersion = CURRENT_METADATA_FORMAT_VERSION;
     private int ensembleSize = 3;
     private int writeQuorumSize = 3;
     private int ackQuorumSize = 2;
 
-    private LedgerMetadataFormat.State state = LedgerMetadataFormat.State.OPEN;
+    private State state = State.OPEN;
     private Optional<Long> lastEntryId = Optional.empty();
     private Optional<Long> length = Optional.empty();
 
     private TreeMap<Long, List<BookieSocketAddress>> ensembles = new TreeMap<>();
 
-    private DigestType digestType = DigestType.CRC32C;
+    private Optional<DigestType> digestType = Optional.empty();
     private Optional<byte[]> password = Optional.empty();
 
     private long ctime = -1;
@@ -73,20 +75,22 @@ public class LedgerMetadataBuilder {
         builder.ackQuorumSize = other.getAckQuorumSize();
 
         builder.state = other.getState();
-        if (builder.state == LedgerMetadataFormat.State.CLOSED) {
+        if (builder.state == State.CLOSED) {
             builder.lastEntryId = Optional.of(other.getLastEntryId());
             builder.length = Optional.of(other.getLength());
         }
 
         builder.ensembles.putAll(other.getAllEnsembles());
 
-        builder.digestType = other.getDigestType();
         if (other.hasPassword()) {
             builder.password = Optional.of(other.getPassword());
+            builder.digestType = Optional.of(other.getDigestType());
         }
 
         builder.ctime = other.getCtime();
-        builder.storeCtime = other.storeCtime;
+
+        /** Hack to get around fact that ctime was never versioned correctly */
+        builder.storeCtime = LedgerMetadataUtils.shouldStoreCtime(other);
 
         builder.customMetadata = ImmutableMap.copyOf(other.getCustomMetadata());
 
@@ -104,7 +108,7 @@ public class LedgerMetadataBuilder {
     }
 
     public LedgerMetadataBuilder withDigestType(DigestType digestType) {
-        this.digestType = digestType;
+        this.digestType = Optional.of(digestType);
         return this;
     }
 
@@ -143,12 +147,12 @@ public class LedgerMetadataBuilder {
     }
 
     public LedgerMetadataBuilder withInRecoveryState() {
-        this.state = LedgerMetadataFormat.State.IN_RECOVERY;
+        this.state = State.IN_RECOVERY;
         return this;
     }
 
     public LedgerMetadataBuilder withClosedState() {
-        this.state = LedgerMetadataFormat.State.CLOSED;
+        this.state = State.CLOSED;
         return this;
     }
 
@@ -181,11 +185,11 @@ public class LedgerMetadataBuilder {
         checkArgument(ensembleSize >= writeQuorumSize, "Write quorum must be less or equal to ensemble size");
         checkArgument(writeQuorumSize >= ackQuorumSize, "Write quorum must be greater or equal to ack quorum");
 
-        return new LedgerMetadata(metadataFormatVersion,
-                                  ensembleSize, writeQuorumSize, ackQuorumSize,
-                                  state, lastEntryId, length, ensembles,
-                                  digestType, password, ctime, storeCtime,
-                                  customMetadata);
+        return new LedgerMetadataImpl(metadataFormatVersion,
+                                      ensembleSize, writeQuorumSize, ackQuorumSize,
+                                      state, lastEntryId, length, ensembles,
+                                      digestType, password, ctime, storeCtime,
+                                      customMetadata);
     }
 
 }

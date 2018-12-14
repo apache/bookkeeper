@@ -20,6 +20,11 @@
 package org.apache.bookkeeper.client;
 
 import static org.apache.bookkeeper.client.LedgerHandle.INVALID_ENTRY_ID;
+import static org.apache.bookkeeper.replication.ReplicationStats.NUM_BYTES_READ;
+import static org.apache.bookkeeper.replication.ReplicationStats.NUM_BYTES_WRITTEN;
+import static org.apache.bookkeeper.replication.ReplicationStats.NUM_ENTRIES_READ;
+import static org.apache.bookkeeper.replication.ReplicationStats.NUM_ENTRIES_WRITTEN;
+import static org.apache.bookkeeper.replication.ReplicationStats.REPLICATION_WORKER_SCOPE;
 
 import io.netty.buffer.Unpooled;
 
@@ -41,11 +46,11 @@ import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.MultiCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
-import org.apache.bookkeeper.replication.ReplicationStats;
 import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
+import org.apache.bookkeeper.stats.annotations.StatsDoc;
 import org.apache.bookkeeper.util.ByteBufList;
 import org.apache.zookeeper.AsyncCallback;
 import org.slf4j.Logger;
@@ -55,23 +60,43 @@ import org.slf4j.LoggerFactory;
  * This is the helper class for replicating the fragments from one bookie to
  * another.
  */
+@StatsDoc(
+    name = REPLICATION_WORKER_SCOPE,
+    help = "Ledger fragment replicator related stats"
+)
 public class LedgerFragmentReplicator {
 
     // BookKeeper instance
     private BookKeeper bkc;
     private StatsLogger statsLogger;
+    @StatsDoc(
+        name = NUM_ENTRIES_READ,
+        help = "Number of entries read by the replicator"
+    )
     private final Counter numEntriesRead;
+    @StatsDoc(
+        name = NUM_BYTES_READ,
+        help = "The distribution of size of entries read by the replicator"
+    )
     private final OpStatsLogger numBytesRead;
+    @StatsDoc(
+        name = NUM_ENTRIES_WRITTEN,
+        help = "Number of entries written by the replicator"
+    )
     private final Counter numEntriesWritten;
+    @StatsDoc(
+        name = NUM_BYTES_WRITTEN,
+        help = "The distribution of size of entries written by the replicator"
+    )
     private final OpStatsLogger numBytesWritten;
 
     public LedgerFragmentReplicator(BookKeeper bkc, StatsLogger statsLogger) {
         this.bkc = bkc;
         this.statsLogger = statsLogger;
-        numEntriesRead = this.statsLogger.getCounter(ReplicationStats.NUM_ENTRIES_READ);
-        numBytesRead = this.statsLogger.getOpStatsLogger(ReplicationStats.NUM_BYTES_READ);
-        numEntriesWritten = this.statsLogger.getCounter(ReplicationStats.NUM_ENTRIES_WRITTEN);
-        numBytesWritten = this.statsLogger.getOpStatsLogger(ReplicationStats.NUM_BYTES_WRITTEN);
+        numEntriesRead = this.statsLogger.getCounter(NUM_ENTRIES_READ);
+        numBytesRead = this.statsLogger.getOpStatsLogger(NUM_BYTES_READ);
+        numEntriesWritten = this.statsLogger.getCounter(NUM_ENTRIES_WRITTEN);
+        numBytesWritten = this.statsLogger.getOpStatsLogger(NUM_BYTES_WRITTEN);
     }
 
     public LedgerFragmentReplicator(BookKeeper bkc) {

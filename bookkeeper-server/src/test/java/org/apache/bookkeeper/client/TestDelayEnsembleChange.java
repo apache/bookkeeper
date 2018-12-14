@@ -37,6 +37,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
+import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
@@ -103,7 +104,7 @@ public class TestDelayEnsembleChange extends BookKeeperClusterTestCase {
         LedgerMetadata md = lh.getLedgerMetadata();
 
         for (long eid = startEntry; eid < untilEntry; eid++) {
-            List<BookieSocketAddress> addresses = md.getEnsemble(eid);
+            List<BookieSocketAddress> addresses = md.getEnsembleAt(eid);
             VerificationCallback callback = new VerificationCallback(addresses.size());
             for (BookieSocketAddress addr : addresses) {
                 bkc.getBookieClient().readEntry(addr, lh.getId(), eid,
@@ -121,7 +122,7 @@ public class TestDelayEnsembleChange extends BookKeeperClusterTestCase {
         LedgerMetadata md = lh.getLedgerMetadata();
 
         for (long eid = startEntry; eid < untilEntry; eid++) {
-            List<BookieSocketAddress> addresses = md.getEnsemble(eid);
+            List<BookieSocketAddress> addresses = md.getEnsembleAt(eid);
             VerificationCallback callback = new VerificationCallback(addresses.size());
             for (BookieSocketAddress addr : addresses) {
                 bkc.getBookieClient().readEntry(addr, lh.getId(), eid,
@@ -257,8 +258,8 @@ public class TestDelayEnsembleChange extends BookKeeperClusterTestCase {
                         CLIENT_SCOPE + "." + WATCHER_SCOPE + "." + REPLACE_BOOKIE_TIME)
                         .getSuccessCount() > 0);
 
-        List<BookieSocketAddress> firstFragment = lh.getLedgerMetadata().getEnsemble(0);
-        List<BookieSocketAddress> secondFragment = lh.getLedgerMetadata().getEnsemble(3 * numEntries);
+        List<BookieSocketAddress> firstFragment = lh.getLedgerMetadata().getEnsembleAt(0);
+        List<BookieSocketAddress> secondFragment = lh.getLedgerMetadata().getEnsembleAt(3 * numEntries);
         assertFalse(firstFragment.get(0).equals(secondFragment.get(0)));
         assertFalse(firstFragment.get(1).equals(secondFragment.get(1)));
         assertFalse(firstFragment.get(2).equals(secondFragment.get(2)));
