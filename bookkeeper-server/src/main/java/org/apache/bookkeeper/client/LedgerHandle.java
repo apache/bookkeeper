@@ -2233,7 +2233,6 @@ public class LedgerHandle implements WriteHandle {
                     ensembleInfo = replaceBookieInMetadata(ensembleInfo.failedBookies, numEnsembleChanges.get());
                 } catch (BKException.BKNotEnoughBookiesException e) {
                     LOG.error("Could not get additional bookie to remake ensemble, closing ledger: {}", ledgerId);
-                    handleUnrecoverableErrorDuringAdd(e.getCode());
                     return false;
                 }
             }
