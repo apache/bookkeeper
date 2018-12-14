@@ -21,8 +21,6 @@
 package org.apache.bookkeeper.bookie;
 
 import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.greaterThan;
-import static org.hamcrest.Matchers.lessThan;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
@@ -243,7 +241,6 @@ public class TestLedgerDirsManager {
 
     @Test
     public void testLedgerDirsMonitorHandlingLowWaterMark() throws Exception {
-
         ledgerMonitor.shutdown();
 
         final float warn = 0.90f;
@@ -370,18 +367,64 @@ public class TestLedgerDirsManager {
         // should goto readwrite
         setUsageAndThenVerify(curDir1, lwm - 0.17f, curDir2, nospace + 0.03f, mockDiskChecker, mockLedgerDirsListener,
                 false);
-        assertTrue("Only one LedgerDir should be writable", dirsManager.getWritableLedgerDirs().size() == 1);
+        assertEquals("Only one LedgerDir should be writable", 1, dirsManager.getWritableLedgerDirs().size());
 
         // bring both the dirs below lwm
         // should still be readwrite
         setUsageAndThenVerify(curDir1, lwm - 0.03f, curDir2, lwm - 0.02f, mockDiskChecker, mockLedgerDirsListener,
                 false);
-        assertTrue("Both the LedgerDirs should be writable", dirsManager.getWritableLedgerDirs().size() == 2);
+        assertEquals("Both the LedgerDirs should be writable", 2, dirsManager.getWritableLedgerDirs().size());
 
         // bring both the dirs above lwm but < threshold
         // should still be readwrite
         setUsageAndThenVerify(curDir1, lwm + 0.02f, curDir2, lwm + 0.08f, mockDiskChecker, mockLedgerDirsListener,
                 false);
+    }
+
+    @Test
+    public void testLedgerDirsMonitorStartReadOnly() throws Exception {
+        ledgerMonitor.shutdown();
+
+        final float nospace = 0.90f;
+        final float lwm = 0.80f;
+
+        File tmpDir1 = createTempDir("bkTest", ".dir");
+        File curDir1 = Bookie.getCurrentDirectory(tmpDir1);
+        Bookie.checkDirectoryStructure(curDir1);
+
+        File tmpDir2 = createTempDir("bkTest", ".dir");
+        File curDir2 = Bookie.getCurrentDirectory(tmpDir2);
+        Bookie.checkDirectoryStructure(curDir2);
+
+        conf.setDiskUsageThreshold(nospace);
+        conf.setDiskLowWaterMarkUsageThreshold(lwm);
+        conf.setDiskUsageWarnThreshold(nospace);
+        conf.setLedgerDirNames(new String[] { tmpDir1.toString(), tmpDir2.toString() });
+
+        // Both disks are out of space at the start.
+        HashMap<File, Float> usageMap = new HashMap<>();
+        usageMap.put(curDir1, nospace + 0.05f);
+        usageMap.put(curDir2, nospace + 0.05f);
+
+        mockDiskChecker = new MockDiskChecker(nospace, warnThreshold);
+        mockDiskChecker.setUsageMap(usageMap);
+        dirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs(),
+                new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()),
+                statsLogger);
+
+        ledgerMonitor = new LedgerDirsMonitor(conf, mockDiskChecker, dirsManager);
+        try {
+            ledgerMonitor.init();
+            fail("NoWritableLedgerDirException expected");
+        } catch (NoWritableLedgerDirException exception) {
+            // ok
+        }
+        final MockLedgerDirsListener mockLedgerDirsListener = new MockLedgerDirsListener();
+        dirsManager.addLedgerDirsListener(mockLedgerDirsListener);
+        ledgerMonitor.start();
+
+        Thread.sleep((diskCheckInterval * 2) + 100);
+        verifyUsage(curDir1, nospace + 0.05f, curDir2, nospace + 0.05f, mockLedgerDirsListener, true);
     }
 
     private void setUsageAndThenVerify(File dir1, float dir1Usage, File dir2, float dir2Usage,
@@ -391,26 +434,19 @@ public class TestLedgerDirsManager {
         usageMap.put(dir1, dir1Usage);
         usageMap.put(dir2, dir2Usage);
         mockDiskChecker.setUsageMap(usageMap);
+        verifyUsage(dir1, dir1Usage, dir2, dir2Usage, mockLedgerDirsListener, verifyReadOnly);
+    }
+
+    private void verifyUsage(File dir1, float dir1Usage, File dir2, float dir2Usage,
+                             MockLedgerDirsListener mockLedgerDirsListener, boolean verifyReadOnly) {
         executorController.advance(Duration.ofMillis(diskCheckInterval));
 
         float sample1 = getGauge(dir1.getParent()).getSample().floatValue();
         float sample2 = getGauge(dir2.getParent()).getSample().floatValue();
 
-        if (verifyReadOnly) {
-            assertTrue(mockLedgerDirsListener.readOnly);
-
-            // LedgerDirsMonitor stops updating diskUsages when the bookie is in the readonly mode,
-            // so the stats will reflect an older value at the time when the bookie became readonly
-            assertThat(sample1, greaterThan(90f));
-            assertThat(sample1, lessThan(100f));
-            assertThat(sample2, greaterThan(90f));
-            assertThat(sample2, lessThan(100f));
-        } else {
-            assertFalse(mockLedgerDirsListener.readOnly);
-
-            assertThat(sample1, equalTo(dir1Usage * 100f));
-            assertThat(sample2, equalTo(dir2Usage * 100f));
-        }
+        assertEquals(mockLedgerDirsListener.readOnly, verifyReadOnly);
+        assertThat(sample1, equalTo(dir1Usage * 100f));
+        assertThat(sample2, equalTo(dir2Usage * 100f));
     }
 
     private Gauge<? extends Number> getGauge(String path) {
