@@ -218,7 +218,6 @@ public class BookieWriteLedgerTest extends
         injectFailedBookies.put(0, newBkAddr);
         when(mlh.testStubResolveConflict()).thenAnswer(
                 invoke -> {
-                    LOG.info("JV inside testInsertEnsembleChange");
                     mlh.replaceBookieInMetadata(injectFailedBookies, 0);
                     return true;
                 });
