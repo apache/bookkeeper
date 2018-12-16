@@ -22,6 +22,9 @@
 package org.apache.bookkeeper.bookie;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.BOOKIE_READ_ENTRY;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.BOOKIE_SCOPE;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.CATEGORY_SERVER;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.ENTRYLOGGER_SCOPE;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.STORAGE_GET_ENTRY;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.STORAGE_GET_OFFSET;
@@ -34,6 +37,7 @@ import io.netty.buffer.ByteBuf;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
@@ -53,6 +57,7 @@ import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
+import org.apache.bookkeeper.stats.annotations.StatsDoc;
 import org.apache.bookkeeper.util.MathUtils;
 import org.apache.bookkeeper.util.SnapshotMap;
 import org.apache.commons.lang.mutable.MutableBoolean;
@@ -66,6 +71,11 @@ import org.slf4j.LoggerFactory;
  * <p>This ledger storage implementation stores all entries in a single
  * file and maintains an index file for each ledger.
  */
+@StatsDoc(
+    name = BOOKIE_SCOPE,
+    category = CATEGORY_SERVER,
+    help = "Bookie related stats"
+)
 public class InterleavedLedgerStorage implements CompactableLedgerStorage, EntryLogListener {
     private static final Logger LOG = LoggerFactory.getLogger(InterleavedLedgerStorage.class);
 
@@ -88,7 +98,18 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
     private final AtomicBoolean somethingWritten = new AtomicBoolean(false);
 
     // Expose Stats
+    @StatsDoc(
+        name = STORAGE_GET_OFFSET,
+        help = "Operation stats of getting offset from ledger cache",
+        parent = BOOKIE_READ_ENTRY
+    )
     private OpStatsLogger getOffsetStats;
+    @StatsDoc(
+        name = STORAGE_GET_ENTRY,
+        help = "Operation stats of getting entry from entry logger",
+        parent = BOOKIE_READ_ENTRY,
+        happensAfter = STORAGE_GET_OFFSET
+    )
     private OpStatsLogger getEntryStats;
     private OpStatsLogger pageScanStats;
 
@@ -204,6 +225,11 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
     @Override
     public void forceGC() {
         gcThread.enableForceGC();
+    }
+
+    @Override
+    public boolean isInForceGC() {
+        return gcThread.isInForceGC();
     }
 
     @Override
@@ -543,10 +569,10 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
 
                         if (success.booleanValue()) {
                             pageScanStats.registerSuccessfulEvent(
-                                    MathUtils.elapsedNanos(start), TimeUnit.NANOSECONDS);
+                                MathUtils.elapsedNanos(start), TimeUnit.NANOSECONDS);
                         } else {
                             pageScanStats.registerFailedEvent(
-                                    MathUtils.elapsedNanos(start), TimeUnit.NANOSECONDS);
+                                MathUtils.elapsedNanos(start), TimeUnit.NANOSECONDS);
                         }
                     } while (retry.booleanValue());
                     checkedPages++;
@@ -564,15 +590,20 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
             checkedLedgers++;
         }
         LOG.info(
-                "Finished localConsistencyCheck, took {}s to scan {} ledgers, {} pages, "
-                        + "{} entries with {} retries, {} errors",
-                TimeUnit.NANOSECONDS.toSeconds(MathUtils.elapsedNanos(checkStart)),
-                checkedLedgers,
-                checkedPages,
-                checkedEntries.longValue(),
-                pageRetries.longValue(),
-                errors.size());
+            "Finished localConsistencyCheck, took {}s to scan {} ledgers, {} pages, "
+                + "{} entries with {} retries, {} errors",
+            TimeUnit.NANOSECONDS.toSeconds(MathUtils.elapsedNanos(checkStart)),
+            checkedLedgers,
+            checkedPages,
+            checkedEntries.longValue(),
+            pageRetries.longValue(),
+            errors.size());
 
         return errors;
+    }
+
+    @Override
+    public List<GarbageCollectionStatus> getGarbageCollectionStatus() {
+        return Collections.singletonList(gcThread.getGarbageCollectionStatus());
     }
 }
