@@ -21,14 +21,6 @@
 
 package org.apache.bookkeeper.bookie;
 
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.ACTIVE_ENTRY_LOG_COUNT;
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.ACTIVE_ENTRY_LOG_SPACE_BYTES;
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.MAJOR_COMPACTION_COUNT;
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.MINOR_COMPACTION_COUNT;
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.RECLAIMED_COMPACTION_SPACE_BYTES;
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.RECLAIMED_DELETION_SPACE_BYTES;
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.THREAD_RUNTIME;
-
 import com.google.common.annotations.VisibleForTesting;
 import io.netty.util.concurrent.DefaultThreadFactory;
 
@@ -46,11 +38,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import java.util.concurrent.atomic.AtomicLong;
 import org.apache.bookkeeper.bookie.GarbageCollector.GarbageCleaner;
+import org.apache.bookkeeper.bookie.stats.GarbageCollectorStats;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager;
-import org.apache.bookkeeper.stats.Counter;
-import org.apache.bookkeeper.stats.Gauge;
-import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.MathUtils;
 import org.apache.bookkeeper.util.SafeRunnable;
@@ -92,12 +82,7 @@ public class GarbageCollectorThread extends SafeRunnable {
     final AbstractLogCompactor compactor;
 
     // Stats loggers for garbage collection operations
-    final StatsLogger statsLogger;
-    private final Counter minorCompactionCounter;
-    private final Counter majorCompactionCounter;
-    private final Counter reclaimedSpaceViaDeletes;
-    private final Counter reclaimedSpaceViaCompaction;
-    private final OpStatsLogger gcThreadRuntime;
+    private final GarbageCollectorStats gcStats;
 
     private volatile long totalEntryLogSize;
     private volatile int numActiveEntryLogs;
@@ -124,7 +109,7 @@ public class GarbageCollectorThread extends SafeRunnable {
     // Boolean to disable minor compaction, when disk is full
     final AtomicBoolean suspendMinorCompaction = new AtomicBoolean(false);
 
-    final GarbageCollector garbageCollector;
+    final ScanAndCompareGarbageCollector garbageCollector;
     final GarbageCleaner garbageCleaner;
 
     final ServerConfiguration conf;
@@ -162,51 +147,27 @@ public class GarbageCollectorThread extends SafeRunnable {
         this.ledgerStorage = ledgerStorage;
         this.gcWaitTime = conf.getGcWaitTime();
 
+        this.numActiveEntryLogs = 0;
+        this.totalEntryLogSize = 0L;
+        this.garbageCollector = new ScanAndCompareGarbageCollector(ledgerManager, ledgerStorage, conf, statsLogger);
+        this.gcStats = new GarbageCollectorStats(
+            statsLogger,
+            () -> numActiveEntryLogs,
+            () -> totalEntryLogSize,
+            () -> garbageCollector.getNumActiveLedgers()
+        );
+
         this.garbageCleaner = ledgerId -> {
             try {
                 if (LOG.isDebugEnabled()) {
                     LOG.debug("delete ledger : " + ledgerId);
                 }
+                gcStats.getDeletedLedgerCounter().inc();
                 ledgerStorage.deleteLedger(ledgerId);
             } catch (IOException e) {
                 LOG.error("Exception when deleting the ledger index file on the Bookie: ", e);
             }
         };
-
-        // Stat state initialization
-        this.statsLogger = statsLogger;
-
-        this.minorCompactionCounter = statsLogger.getCounter(MINOR_COMPACTION_COUNT);
-        this.majorCompactionCounter = statsLogger.getCounter(MAJOR_COMPACTION_COUNT);
-        this.reclaimedSpaceViaCompaction = statsLogger.getCounter(RECLAIMED_COMPACTION_SPACE_BYTES);
-        this.reclaimedSpaceViaDeletes = statsLogger.getCounter(RECLAIMED_DELETION_SPACE_BYTES);
-        this.gcThreadRuntime = statsLogger.getOpStatsLogger(THREAD_RUNTIME);
-        this.numActiveEntryLogs = 0;
-        statsLogger.registerGauge(ACTIVE_ENTRY_LOG_COUNT, new Gauge<Integer>() {
-            @Override
-            public Integer getDefaultValue() {
-                return 0;
-            }
-
-            @Override
-            public Integer getSample() {
-                return numActiveEntryLogs;
-            }
-        });
-        this.totalEntryLogSize = 0L;
-        statsLogger.registerGauge(ACTIVE_ENTRY_LOG_SPACE_BYTES, new Gauge<Long>() {
-            @Override
-            public Long getDefaultValue() {
-                return 0L;
-            }
-
-            @Override
-            public Long getSample() {
-                return totalEntryLogSize;
-            }
-        });
-
-        this.garbageCollector = new ScanAndCompareGarbageCollector(ledgerManager, ledgerStorage, conf, statsLogger);
 
         // compaction parameters
         minorCompactionThreshold = conf.getMinorCompactionThreshold();
@@ -389,7 +350,7 @@ public class GarbageCollectorThread extends SafeRunnable {
             lastMajorCompactionTime = System.currentTimeMillis();
             // and also move minor compaction time
             lastMinorCompactionTime = lastMajorCompactionTime;
-            majorCompactionCounter.inc();
+            gcStats.getMajorCompactionCounter().inc();
             majorCompacting.set(false);
         } else if (enableMinorCompaction && (!suspendMinor)
             && (force || curTime - lastMinorCompactionTime > minorCompactionInterval)) {
@@ -398,7 +359,7 @@ public class GarbageCollectorThread extends SafeRunnable {
             minorCompacting.set(true);
             doCompactEntryLogs(minorCompactionThreshold);
             lastMinorCompactionTime = System.currentTimeMillis();
-            minorCompactionCounter.inc();
+            gcStats.getMinorCompactionCounter().inc();
             minorCompacting.set(false);
         }
 
@@ -408,7 +369,7 @@ public class GarbageCollectorThread extends SafeRunnable {
                     .currentThread().getName());
             }
         }
-        this.gcThreadRuntime.registerSuccessfulEvent(
+        gcStats.getGcThreadRuntime().registerSuccessfulEvent(
                 MathUtils.nowInNano() - threadStart, TimeUnit.NANOSECONDS);
     }
 
@@ -434,7 +395,7 @@ public class GarbageCollectorThread extends SafeRunnable {
                // We can remove this entry log file now.
                LOG.info("Deleting entryLogId " + entryLogId + " as it has no active ledgers!");
                removeEntryLog(entryLogId);
-               this.reclaimedSpaceViaDeletes.add(meta.getTotalSize());
+               gcStats.getReclaimedSpaceViaDeletes().add(meta.getTotalSize());
            }
 
            totalEntryLogSizeAcc.getAndAdd(meta.getRemainingSize());
@@ -492,7 +453,7 @@ public class GarbageCollectorThread extends SafeRunnable {
 
             long priorRemainingSize = meta.getRemainingSize();
             compactEntryLog(meta);
-            this.reclaimedSpaceViaCompaction.add(meta.getTotalSize() - priorRemainingSize);
+            gcStats.getReclaimedSpaceViaCompaction().add(meta.getTotalSize() - priorRemainingSize);
 
             if (!running) { // if gc thread is not running, stop compaction
                 return;
@@ -621,8 +582,8 @@ public class GarbageCollectorThread extends SafeRunnable {
             .minorCompacting(minorCompacting.get())
             .lastMajorCompactionTime(lastMajorCompactionTime)
             .lastMinorCompactionTime(lastMinorCompactionTime)
-            .majorCompactionCounter(majorCompactionCounter.get())
-            .minorCompactionCounter(minorCompactionCounter.get())
+            .majorCompactionCounter(gcStats.getMajorCompactionCounter().get())
+            .minorCompactionCounter(gcStats.getMinorCompactionCounter().get())
             .build();
     }
 }
