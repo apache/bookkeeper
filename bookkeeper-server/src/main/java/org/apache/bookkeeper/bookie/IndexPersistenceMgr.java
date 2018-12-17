@@ -20,11 +20,6 @@
  */
 package org.apache.bookkeeper.bookie;
 
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.LEDGER_CACHE_NUM_EVICTED_LEDGERS;
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.PENDING_GET_FILE_INFO;
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.READ_FILE_INFO_CACHE_SIZE;
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.WRITE_FILE_INFO_CACHE_SIZE;
-
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
@@ -43,10 +38,9 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.bookie.FileInfoBackingCache.CachedFileInfo;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirException;
+import org.apache.bookkeeper.bookie.stats.IndexPersistenceMgrStats;
 import org.apache.bookkeeper.common.util.Watcher;
 import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.stats.Counter;
-import org.apache.bookkeeper.stats.Gauge;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.SnapshotMap;
 import org.slf4j.Logger;
@@ -89,9 +83,7 @@ public class IndexPersistenceMgr {
     final SnapshotMap<Long, Boolean> activeLedgers;
     final LedgerDirsManager ledgerDirsManager;
 
-    // Stats
-    private final Counter evictedLedgersCounter;
-    private final Counter pendingGetFileInfoCounter;
+    private final IndexPersistenceMgrStats persistenceMgrStats;
 
     public IndexPersistenceMgr(int pageSize,
                                int entriesPerPage,
@@ -127,30 +119,11 @@ public class IndexPersistenceMgr {
             fileInfoEvictionListener);
 
         // Expose Stats
-        evictedLedgersCounter = statsLogger.getCounter(LEDGER_CACHE_NUM_EVICTED_LEDGERS);
-        pendingGetFileInfoCounter = statsLogger.getCounter(PENDING_GET_FILE_INFO);
-        statsLogger.registerGauge(WRITE_FILE_INFO_CACHE_SIZE, new Gauge<Number>() {
-            @Override
-            public Number getDefaultValue() {
-                return 0;
-            }
-
-            @Override
-            public Number getSample() {
-                return writeFileInfoCache.size();
-            }
-        });
-        statsLogger.registerGauge(READ_FILE_INFO_CACHE_SIZE, new Gauge<Number>() {
-            @Override
-            public Number getDefaultValue() {
-                return 0;
-            }
-
-            @Override
-            public Number getSample() {
-                return readFileInfoCache.size();
-            }
-        });
+        persistenceMgrStats = new IndexPersistenceMgrStats(
+            statsLogger,
+            () -> writeFileInfoCache.size(),
+            () -> readFileInfoCache.size()
+        );
     }
 
     private static Cache<Long, CachedFileInfo> buildCache(int concurrencyLevel,
@@ -192,7 +165,7 @@ public class IndexPersistenceMgr {
             return;
         }
         if (notification.wasEvicted()) {
-            evictedLedgersCounter.inc();
+            persistenceMgrStats.getEvictedLedgersCounter().inc();
         }
         fileInfo.release();
     }
@@ -207,7 +180,7 @@ public class IndexPersistenceMgr {
     CachedFileInfo getFileInfo(final Long ledger, final byte masterKey[]) throws IOException {
         try {
             CachedFileInfo fi;
-            pendingGetFileInfoCounter.inc();
+            persistenceMgrStats.getPendingGetFileInfoCounter().inc();
             Callable<CachedFileInfo> loader = () -> {
                 CachedFileInfo fileInfo = fileInfoBackingCache.loadFileInfo(ledger, masterKey);
                 activeLedgers.put(ledger, true);
@@ -243,7 +216,7 @@ public class IndexPersistenceMgr {
                 throw new LedgerCache.NoIndexForLedger("Failed to load file info for ledger " + ledger, ee);
             }
         } finally {
-            pendingGetFileInfoCounter.dec();
+            persistenceMgrStats.getPendingGetFileInfoCounter().dec();
         }
     }
 

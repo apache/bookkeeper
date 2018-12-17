@@ -21,8 +21,6 @@
 package org.apache.bookkeeper.bookie;
 
 import static java.lang.Long.max;
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.INDEX_INMEM_ILLEGAL_STATE_DELETE;
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.INDEX_INMEM_ILLEGAL_STATE_RESET;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.LEDGER_CACHE_HIT;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.LEDGER_CACHE_MISS;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.LEDGER_CACHE_READ_PAGE;
@@ -43,6 +41,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.apache.bookkeeper.bookie.stats.IndexInMemPageMgrStats;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.Gauge;
@@ -64,16 +63,14 @@ class IndexInMemPageMgr {
         final ConcurrentLinkedQueue<LedgerEntryPage> listOfFreePages;
 
         // Stats
-        final Counter illegalStateResetCounter;
-        final Counter illegalStateDeleteCounter;
+        private final IndexInMemPageMgrStats inMemPageMgrStats;
 
         public InMemPageCollection(StatsLogger statsLogger) {
             pages = new ConcurrentHashMap<>();
             lruCleanPageMap =
                     Collections.synchronizedMap(new LinkedHashMap<EntryKey, LedgerEntryPage>(16, 0.75f, true));
             listOfFreePages = new ConcurrentLinkedQueue<LedgerEntryPage>();
-            illegalStateResetCounter = statsLogger.getCounter(INDEX_INMEM_ILLEGAL_STATE_RESET);
-            illegalStateDeleteCounter = statsLogger.getCounter(INDEX_INMEM_ILLEGAL_STATE_DELETE);
+            inMemPageMgrStats = new IndexInMemPageMgrStats(statsLogger);
         }
 
         /**
@@ -294,7 +291,7 @@ class IndexInMemPageMgr {
 
         public void addToListOfFreePages(LedgerEntryPage lep) {
             if ((null == lep) || lep.inUse()) {
-                illegalStateResetCounter.inc();
+                inMemPageMgrStats.getIllegalStateResetCounter().inc();
             }
             if (null != lep) {
                 listOfFreePages.add(lep);
