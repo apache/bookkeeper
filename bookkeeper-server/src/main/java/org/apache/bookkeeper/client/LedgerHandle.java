@@ -2161,7 +2161,7 @@ public class LedgerHandle implements WriteHandle {
             // update the ensemble change metadata again. Otherwise, it means that the ensemble change
             // is already succeed, unset the success and re-adding entries.
             if (!areFailedBookiesReplaced(newMeta, ensembleInfo)) {
-                return updateMetadataIfPossible(newMeta);
+                return updateMetadataIfPossible(metadata, newMeta);
             } else {
                 ensembleChangeCounter.inc();
                 // We've successfully changed an ensemble

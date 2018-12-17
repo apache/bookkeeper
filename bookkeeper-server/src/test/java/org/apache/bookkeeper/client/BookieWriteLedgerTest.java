@@ -65,6 +65,7 @@ import org.apache.bookkeeper.client.api.WriteAdvHandle;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LongHierarchicalLedgerManagerFactory;
 import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.test.TestCallbacks.GenericCallbackFuture;
 import org.apache.bookkeeper.versioning.LongVersion;
@@ -201,16 +202,16 @@ public class BookieWriteLedgerTest extends
         LedgerMetadata myMetadata = new LedgerMetadata(mlh.getLedgerMetadata());
         // Set it in Metadata server
         long savedVersion = ((LongVersion) mlh.getLedgerMetadata().getVersion()).getLongVersion();
-        GenericCallbackFuture<Void> callbackFuture = new GenericCallbackFuture<>();
+        GenericCallbackFuture<LedgerMetadata> callbackFuture = new GenericCallbackFuture<>();
         bkc.getLedgerManager().writeLedgerMetadata(mlh.getId(), myMetadata, callbackFuture);
-        result(callbackFuture);
+        callbackFuture.get();
         // Set the saved version back
         lh.getLedgerMetadata().setVersion(new LongVersion(savedVersion));
         // Add a bookie
         BookieSocketAddress newBkAddr = startNewBookieAndReturnAddress();
         // Put a old bookie to sleep
         CountDownLatch sleepLatch1 = new CountDownLatch(1);
-        ArrayList<BookieSocketAddress> ensemble = mlh.getLedgerMetadata()
+        List<BookieSocketAddress> ensemble = mlh.getLedgerMetadata()
                 .getEnsembles().entrySet().iterator().next().getValue();
         sleepBookie(ensemble.get(0), sleepLatch1);
         Map<Integer, BookieSocketAddress> injectFailedBookies =
