@@ -2118,7 +2118,9 @@ public class LedgerHandle implements WriteHandle {
          */
         private boolean resolveConflict(LedgerMetadata newMeta) {
             LedgerMetadata metadata = getLedgerMetadata();
-            testStubResolveConflict();
+            if (testStubResolveConflict()) {
+                LOG.info("Invoked the Stub - Checkout the test case for the expected behavior");
+            }
             if (LOG.isDebugEnabled()) {
                 LOG.debug("[EnsembleChange-L{}-{}] : resolving conflicts - local metadata = \n {} \n,"
                     + " zk metadata = \n {} \n", ledgerId, ensembleChangeIdx, metadata, newMeta);
