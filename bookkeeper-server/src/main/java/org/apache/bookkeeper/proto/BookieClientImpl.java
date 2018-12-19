@@ -171,8 +171,12 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
     @Override
     public PerChannelBookieClient create(BookieSocketAddress address, PerChannelBookieClientPool pcbcPool,
             SecurityHandlerFactory shFactory) throws SecurityException {
-        return new PerChannelBookieClient(conf, executor, eventLoopGroup, address, statsLogger,
-                                          authProviderFactory, registry, pcbcPool, shFactory);
+        StatsLogger statsLoggerForPCBC = statsLogger;
+        if (conf.getLimitStatsLogging()) {
+            statsLoggerForPCBC = NullStatsLogger.INSTANCE;
+        }
+        return new PerChannelBookieClient(conf, executor, eventLoopGroup, address, statsLoggerForPCBC,
+                authProviderFactory, registry, pcbcPool, shFactory);
     }
 
     public PerChannelBookieClientPool lookupClient(BookieSocketAddress addr) {
