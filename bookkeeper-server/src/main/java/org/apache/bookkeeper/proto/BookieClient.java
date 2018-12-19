@@ -27,6 +27,7 @@ import org.apache.bookkeeper.client.api.WriteFlag;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ForceLedgerCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GetBookieInfoCallback;
+import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GetListOfEntriesOfLedgerCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadLacCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
@@ -214,6 +215,9 @@ public interface BookieClient {
      */
     void getBookieInfo(BookieSocketAddress address, long requested,
                        GetBookieInfoCallback cb, Object ctx);
+
+    void getListOfEntriesOfLedger(BookieSocketAddress address, long ledgerId, GetListOfEntriesOfLedgerCallback cb,
+            Object ctx);
 
     /**
      * @return whether bookie client object has been closed

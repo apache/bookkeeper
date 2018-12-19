@@ -27,8 +27,8 @@ import static org.apache.bookkeeper.meta.MetadataDrivers.runFunctionWithRegistra
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-
 import com.google.common.util.concurrent.UncheckedExecutionException;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -71,6 +71,7 @@ import org.apache.bookkeeper.meta.UnderreplicatedLedger;
 import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
+import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GetListOfEntriesOfLedgerCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.MultiCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.Processor;
 import org.apache.bookkeeper.replication.AuditorElector;
@@ -1661,5 +1662,10 @@ public class BookKeeperAdmin implements AutoCloseable {
             int writeQuorumSize, int ackQuorumSize) {
         return bkc.getPlacementPolicy().isEnsembleAdheringToPlacementPolicy(ensembleBookiesList, writeQuorumSize,
                 ackQuorumSize);
+    }
+
+    public void asyncGetListOfEntriesOfLedger(BookieSocketAddress address, long ledgerId,
+            GetListOfEntriesOfLedgerCallback callback, Object ctx) {
+        bkc.getBookieClient().getListOfEntriesOfLedger(address, ledgerId, callback, ctx);
     }
 }

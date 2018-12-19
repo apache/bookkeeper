@@ -339,6 +339,9 @@ public class BookieRequestProcessor implements RequestProcessor {
                     case START_TLS:
                         processStartTLSRequestV3(r, c);
                         break;
+                    case GET_LIST_OF_ENTRIES_OF_LEDGER:
+                        processGetListOfEntriesOfLedgerProcessorV3(r, c);
+                        break;
                     default:
                         LOG.info("Unknown operation type {}", header.getOperation());
                         BookkeeperProtocol.Response.Builder response =
@@ -584,6 +587,16 @@ public class BookieRequestProcessor implements RequestProcessor {
             getBookieInfo.run();
         } else {
             readThreadPool.submit(getBookieInfo);
+        }
+    }
+
+    private void processGetListOfEntriesOfLedgerProcessorV3(final BookkeeperProtocol.Request r, final Channel c) {
+        GetListOfEntriesOfLedgerProcessorV3 getListOfEntriesOfLedger = new GetListOfEntriesOfLedgerProcessorV3(r, c,
+                this);
+        if (null == readThreadPool) {
+            getListOfEntriesOfLedger.run();
+        } else {
+            readThreadPool.submit(getListOfEntriesOfLedger);
         }
     }
 
