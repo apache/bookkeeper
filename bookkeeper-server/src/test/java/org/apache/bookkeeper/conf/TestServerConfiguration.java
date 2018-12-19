@@ -147,5 +147,9 @@ public class TestServerConfiguration {
         conf.setEntryLogSizeLimit(512 * 1024 * 1024);
         conf.validate();
         assertEquals(512 * 1024 * 1024, conf.getEntryLogSizeLimit());
+
+        conf.setEntryLogSizeLimit(1073741824);
+        conf.validate();
+        assertEquals(1073741824, conf.getEntryLogSizeLimit());
     }
 }
