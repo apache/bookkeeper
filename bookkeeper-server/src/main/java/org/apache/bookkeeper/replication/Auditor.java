@@ -71,6 +71,7 @@ import org.apache.bookkeeper.replication.ReplicationException.BKAuditException;
 import org.apache.bookkeeper.replication.ReplicationException.CompatibilityException;
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
 import org.apache.bookkeeper.stats.Counter;
+import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.stats.annotations.StatsDoc;
@@ -161,12 +162,16 @@ public class Auditor implements AutoCloseable {
     )
     private final Counter numDelayedBookieAuditsCancelled;
 
-    static BookKeeper createBookKeeperClient(ServerConfiguration conf)
+    static BookKeeper createBookKeeperClient(ServerConfiguration conf) throws InterruptedException, IOException {
+        return createBookKeeperClient(conf, NullStatsLogger.INSTANCE);
+    }
+
+    static BookKeeper createBookKeeperClient(ServerConfiguration conf, StatsLogger statsLogger)
             throws InterruptedException, IOException {
         ClientConfiguration clientConfiguration = new ClientConfiguration(conf);
         clientConfiguration.setClientRole(ClientConfiguration.CLIENT_ROLE_SYSTEM);
         try {
-            return BookKeeper.forConfig(clientConfiguration).build();
+            return BookKeeper.forConfig(clientConfiguration).statsLogger(statsLogger).build();
         } catch (BKException e) {
             throw new IOException("Failed to create bookkeeper client", e);
         }
