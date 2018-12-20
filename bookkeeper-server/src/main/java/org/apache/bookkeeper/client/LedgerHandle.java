@@ -1972,6 +1972,11 @@ public class LedgerHandle implements WriteHandle {
         }
     }
 
+    boolean testStubResolveConflict() {
+        // No test inserts by default
+        return false;
+    }
+
     // Contains newly reformed ensemble, bookieIndex, failedBookieAddress
     static final class EnsembleInfo {
         private final ArrayList<BookieSocketAddress> newEnsemble;
@@ -2064,7 +2069,7 @@ public class LedgerHandle implements WriteHandle {
      */
     private final class ReReadLedgerMetadataCb extends OrderedGenericCallback<LedgerMetadata> {
         private final int rc;
-        private final EnsembleInfo ensembleInfo;
+        private EnsembleInfo ensembleInfo;
         private final int curBlockAddCompletions;
         private final int ensembleChangeIdx;
 
@@ -2113,6 +2118,9 @@ public class LedgerHandle implements WriteHandle {
          */
         private boolean resolveConflict(LedgerMetadata newMeta) {
             LedgerMetadata metadata = getLedgerMetadata();
+            if (testStubResolveConflict()) {
+                LOG.info("Invoked the Stub - Checkout the test case for the expected behavior");
+            }
             if (LOG.isDebugEnabled()) {
                 LOG.debug("[EnsembleChange-L{}-{}] : resolving conflicts - local metadata = \n {} \n,"
                     + " zk metadata = \n {} \n", ledgerId, ensembleChangeIdx, metadata, newMeta);
@@ -2155,12 +2163,7 @@ public class LedgerHandle implements WriteHandle {
             // update the ensemble change metadata again. Otherwise, it means that the ensemble change
             // is already succeed, unset the success and re-adding entries.
             if (!areFailedBookiesReplaced(newMeta, ensembleInfo)) {
-                // If the in-memory data doesn't contains the failed bookie, it means the ensemble change
-                // didn't finish, so try to resolve conflicts with the metadata read from zookeeper and
-                // update ensemble changed metadata again.
-                if (areFailedBookiesReplaced(metadata, ensembleInfo)) {
-                    return updateMetadataIfPossible(metadata, newMeta);
-                }
+                return updateMetadataIfPossible(metadata, newMeta);
             } else {
                 ensembleChangeCounter.inc();
                 // We've successfully changed an ensemble
@@ -2222,9 +2225,21 @@ public class LedgerHandle implements WriteHandle {
             metadata.setVersion(newMeta.getVersion());
             // merge ensemble infos from new meta except last ensemble
             // since they might be modified by recovery tool.
+
             metadata.mergeEnsembles(newMeta.getEnsembles());
-            writeLedgerConfig(new ChangeEnsembleCb(ensembleInfo, curBlockAddCompletions,
-                    ensembleChangeIdx));
+            if (!areFailedBookiesReplaced(metadata, ensembleInfo)) {
+                // If the in-memory data contains the failed bookie, someone else
+                // merged the metadata and reinstated old copy. Let's attempt to
+                // replace the bookie again.
+                try {
+                    ensembleInfo = replaceBookieInMetadata(ensembleInfo.failedBookies, numEnsembleChanges.get());
+                } catch (BKException.BKNotEnoughBookiesException e) {
+                    LOG.error("Could not get additional bookie to remake ensemble, closing ledger: {}", ledgerId);
+                    return false;
+                }
+            }
+
+            writeLedgerConfig(new ChangeEnsembleCb(ensembleInfo, curBlockAddCompletions, ensembleChangeIdx));
             return true;
         }
 
