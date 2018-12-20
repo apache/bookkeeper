@@ -118,13 +118,13 @@ public class TestServerConfiguration {
     public void testEntryLogSizeLimit() throws ConfigurationException {
         ServerConfiguration conf = new ServerConfiguration();
         try {
-            conf.setEntryLogSizeLimit(1);
+            conf.setEntryLogSizeLimit(-1);
             fail("should fail setEntryLogSizeLimit since `logSizeLimit` is too small");
         } catch (IllegalArgumentException iae) {
             // expected
         }
         try {
-            conf.setProperty("logSizeLimit", "1");
+            conf.setProperty("logSizeLimit", "-1");
             conf.validate();
             fail("Invalid configuration since `logSizeLimit` is too small");
         } catch (ConfigurationException ce) {
