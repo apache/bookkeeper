@@ -106,7 +106,7 @@ public class LedgerHandle implements WriteHandle {
     };
 
     private HandleState handleState = HandleState.OPEN;
-    private CompletableFuture<Void> closePromise = new CompletableFuture<>();
+    private final CompletableFuture<Void> closePromise = new CompletableFuture<>();
 
     /**
       * Last entryId which has been confirmed to be written durably to the bookies.
