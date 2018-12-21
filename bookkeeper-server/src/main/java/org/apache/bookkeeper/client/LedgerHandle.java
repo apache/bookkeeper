@@ -106,6 +106,7 @@ public class LedgerHandle implements WriteHandle {
     };
 
     private HandleState handleState = HandleState.OPEN;
+    private final CompletableFuture<Void> closePromise = new CompletableFuture<>();
 
     /**
       * Last entryId which has been confirmed to be written durably to the bookies.
@@ -508,6 +509,16 @@ public class LedgerHandle implements WriteHandle {
                 final long lastEntry;
                 final long finalLength;
 
+                closePromise.whenComplete((ignore, ex) -> {
+                        if (ex != null) {
+                            cb.closeComplete(
+                                    BKException.getExceptionCode(ex, BKException.Code.UnexpectedConditionException),
+                                    LedgerHandle.this, ctx);
+                        } else {
+                            cb.closeComplete(BKException.Code.OK, LedgerHandle.this, ctx);
+                        }
+                    });
+
                 synchronized (LedgerHandle.this) {
                     prevHandleState = handleState;
 
@@ -524,9 +535,7 @@ public class LedgerHandle implements WriteHandle {
                 // running under any bk locks.
                 errorOutPendingAdds(rc, pendingAdds);
 
-                if (prevHandleState == HandleState.CLOSED) {
-                    cb.closeComplete(BKException.Code.OK, LedgerHandle.this, ctx);
-                } else {
+                if (prevHandleState != HandleState.CLOSED) {
                     if (LOG.isDebugEnabled()) {
                         LOG.debug("Closing ledger: {} at entryId {} with {} bytes", getId(), lastEntry, finalLength);
                     }
@@ -564,12 +573,9 @@ public class LedgerHandle implements WriteHandle {
                             LedgerHandle.this::setLedgerMetadata)
                         .run().whenComplete((metadata, ex) -> {
                                 if (ex != null) {
-                                    cb.closeComplete(
-                                            BKException.getExceptionCode(
-                                                    ex, BKException.Code.UnexpectedConditionException),
-                                            LedgerHandle.this, ctx);
+                                    closePromise.completeExceptionally(ex);
                                 } else {
-                                    cb.closeComplete(BKException.Code.OK, LedgerHandle.this, ctx);
+                                    FutureUtils.complete(closePromise, null);
                                 }
                         });
                 }
