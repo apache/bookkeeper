@@ -18,12 +18,8 @@
  */
 package org.apache.bookkeeper.meta;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.fail;
-
-import java.io.IOException;
 
 import org.junit.Test;
 
@@ -67,43 +63,4 @@ public class TestLedgerLayout {
             hierarchical1.getLayoutFormatVersion());
     }
 
-    @Test
-    public void testParseNoMaxLedgerMetadataFormatVersion() throws Exception {
-        LedgerLayout layout = LedgerLayout.parseLayout("1\nblahblahLM:3".getBytes(UTF_8));
-
-        assertEquals(layout.getMaxLedgerMetadataFormatVersion(), 2);
-    }
-
-    @Test
-    public void testParseWithMaxLedgerMetadataFormatVersion() throws Exception {
-        LedgerLayout layout = LedgerLayout.parseLayout(
-                "1\nblahblahLM:3\nMAX_LEDGER_METADATA_FORMAT_VERSION:123".getBytes(UTF_8));
-
-        assertEquals(layout.getMaxLedgerMetadataFormatVersion(), 123);
-    }
-
-    @Test
-    public void testCorruptMaxLedgerLayout() throws Exception {
-        try {
-            LedgerLayout.parseLayout("1\nblahblahLM:3\nMAXXX_LEDGER_METADATA_FORMAT_VERSION:123".getBytes(UTF_8));
-            fail("Shouldn't have been able to parse");
-        } catch (IOException ioe) {
-            // expected
-        }
-
-        try {
-            LedgerLayout.parseLayout("1\nblahblahLM:3\nMAXXX_LEDGER_METADATA_FORMAT_VERSION:blah".getBytes(UTF_8));
-            fail("Shouldn't have been able to parse");
-        } catch (IOException ioe) {
-            // expected
-        }
-    }
-
-    @Test
-    public void testMoreFieldsAdded() throws Exception {
-        LedgerLayout layout = LedgerLayout.parseLayout(
-                "1\nblahblahLM:3\nMAX_LEDGER_METADATA_FORMAT_VERSION:123\nFOO:BAR".getBytes(UTF_8));
-
-        assertEquals(layout.getMaxLedgerMetadataFormatVersion(), 123);
-    }
 }

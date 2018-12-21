@@ -46,11 +46,10 @@ class HierarchicalLedgerManager extends AbstractHierarchicalLedgerManager {
     LegacyHierarchicalLedgerManager legacyLM;
     LongHierarchicalLedgerManager longLM;
 
-    public HierarchicalLedgerManager(AbstractConfiguration conf, ZooKeeper zk,
-                                     int maxLedgerMetadataFormatVersion) {
-        super(conf, zk, maxLedgerMetadataFormatVersion);
-        legacyLM = new LegacyHierarchicalLedgerManager(conf, zk, maxLedgerMetadataFormatVersion);
-        longLM = new LongHierarchicalLedgerManager (conf, zk, maxLedgerMetadataFormatVersion);
+    public HierarchicalLedgerManager(AbstractConfiguration conf, ZooKeeper zk) {
+        super(conf, zk);
+        legacyLM = new LegacyHierarchicalLedgerManager(conf, zk);
+        longLM = new LongHierarchicalLedgerManager (conf, zk);
     }
 
     @Override

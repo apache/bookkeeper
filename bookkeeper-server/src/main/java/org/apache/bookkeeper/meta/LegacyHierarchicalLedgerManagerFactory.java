@@ -38,7 +38,6 @@ public class LegacyHierarchicalLedgerManagerFactory extends AbstractZkLedgerMana
     public static final int CUR_VERSION = 1;
 
     AbstractConfiguration conf;
-    int maxLedgerMetadataFormatVersion;
 
     @Override
     public int getCurrentVersion() {
@@ -48,8 +47,7 @@ public class LegacyHierarchicalLedgerManagerFactory extends AbstractZkLedgerMana
     @Override
     public LedgerManagerFactory initialize(final AbstractConfiguration conf,
                                            final LayoutManager lm,
-                                           final int factoryVersion,
-                                           int maxLedgerMetadataFormatVersion)
+                                           final int factoryVersion)
             throws IOException {
         checkArgument(lm instanceof ZkLayoutManager);
 
@@ -60,7 +58,6 @@ public class LegacyHierarchicalLedgerManagerFactory extends AbstractZkLedgerMana
                                 + factoryVersion);
         }
         this.conf = conf;
-        this.maxLedgerMetadataFormatVersion = maxLedgerMetadataFormatVersion;
         this.zk = zkLayoutManager.getZk();
         return this;
     }
@@ -83,7 +80,7 @@ public class LegacyHierarchicalLedgerManagerFactory extends AbstractZkLedgerMana
 
     @Override
     public LedgerManager newLedgerManager() {
-        return new LegacyHierarchicalLedgerManager(conf, zk, maxLedgerMetadataFormatVersion);
+        return new LegacyHierarchicalLedgerManager(conf, zk);
     }
 
     @Override

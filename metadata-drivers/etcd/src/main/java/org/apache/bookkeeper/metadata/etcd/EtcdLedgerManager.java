@@ -64,8 +64,19 @@ import org.apache.zookeeper.AsyncCallback.VoidCallback;
 @Slf4j
 class EtcdLedgerManager implements LedgerManager {
 
-    private final LedgerMetadataSerDe serDe;
-    private final Function<ByteSequence, LedgerMetadata> ledgerMetadataFunction;
+    private final LedgerMetadataSerDe serDe = new LedgerMetadataSerDe();
+    private final Function<ByteSequence, LedgerMetadata> ledgerMetadataFunction = bs -> {
+        try {
+            return serDe.parseConfig(
+                bs.getBytes(),
+                Optional.empty()
+            );
+        } catch (IOException ioe) {
+            log.error("Could not parse ledger metadata : {}", bs.toStringUtf8(), ioe);
+            throw new RuntimeException(
+                "Could not parse ledger metadata : " + bs.toStringUtf8(), ioe);
+        }
+    };
 
     private final String scope;
     private final Client client;
@@ -79,23 +90,11 @@ class EtcdLedgerManager implements LedgerManager {
     private volatile boolean closed = false;
 
     EtcdLedgerManager(Client client,
-                      String scope,
-                      int maxLedgerMetadataFormatVersion) {
+                      String scope) {
         this.client = client;
         this.kvClient = client.getKVClient();
         this.scope = scope;
         this.watchClient = new EtcdWatchClient(client);
-        this.serDe = new LedgerMetadataSerDe(maxLedgerMetadataFormatVersion);
-
-        this.ledgerMetadataFunction = bs -> {
-            try {
-                return serDe.parseConfig(bs.getBytes(), Optional.empty());
-            } catch (IOException ioe) {
-                log.error("Could not parse ledger metadata : {}", bs.toStringUtf8(), ioe);
-                throw new RuntimeException(
-                        "Could not parse ledger metadata : " + bs.toStringUtf8(), ioe);
-            }
-        };
     }
 
     private boolean isClosed() {
