@@ -22,8 +22,10 @@
 package org.apache.bookkeeper.conf;
 
 import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import org.apache.commons.configuration.ConfigurationException;
 import org.junit.Before;
@@ -110,5 +112,44 @@ public class TestServerConfiguration {
         conf.setJournalFormatVersionToWrite(6);
         conf.setFileInfoFormatVersionToWrite(1);
         conf.validate();
+    }
+
+    @Test
+    public void testEntryLogSizeLimit() throws ConfigurationException {
+        ServerConfiguration conf = new ServerConfiguration();
+        try {
+            conf.setEntryLogSizeLimit(-1);
+            fail("should fail setEntryLogSizeLimit since `logSizeLimit` is too small");
+        } catch (IllegalArgumentException iae) {
+            // expected
+        }
+        try {
+            conf.setProperty("logSizeLimit", "-1");
+            conf.validate();
+            fail("Invalid configuration since `logSizeLimit` is too small");
+        } catch (ConfigurationException ce) {
+            // expected
+        }
+
+        try {
+            conf.setEntryLogSizeLimit(2 * 1024 * 1024 * 1024L - 1);
+            fail("Should fail setEntryLogSizeLimit size `logSizeLimit` is too large");
+        } catch (IllegalArgumentException iae) {
+            // expected
+        }
+        try {
+            conf.validate();
+            fail("Invalid configuration since `logSizeLimit` is too large");
+        } catch (ConfigurationException ce) {
+            // expected
+        }
+
+        conf.setEntryLogSizeLimit(512 * 1024 * 1024);
+        conf.validate();
+        assertEquals(512 * 1024 * 1024, conf.getEntryLogSizeLimit());
+
+        conf.setEntryLogSizeLimit(1073741824);
+        conf.validate();
+        assertEquals(1073741824, conf.getEntryLogSizeLimit());
     }
 }
