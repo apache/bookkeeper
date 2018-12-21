@@ -58,7 +58,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     protected static final ConfigKey LEDGER_STORAGE_CLASS_KEY = ConfigKey.builder(LEDGER_STORAGE_CLASS)
         .type(Type.CLASS)
         .description("Ledger storage implementation class")
-        .defaultValue(SortedLedgerStorage.class.getName())
+        .defaultValue(SortedLedgerStorage.class)
         .optionValues(Lists.newArrayList(
             InterleavedLedgerStorage.class.getName(),
             SortedLedgerStorage.class.getName(),
