@@ -58,7 +58,7 @@ public class ListLedgerService implements HttpEndpointService {
         checkNotNull(conf);
         this.conf = conf;
         this.bookieServer = bookieServer;
-        this.serDe = new LedgerMetadataSerDe(LedgerMetadataSerDe.CURRENT_METADATA_FORMAT_VERSION);
+        this.serDe = new LedgerMetadataSerDe();
 
     }
 

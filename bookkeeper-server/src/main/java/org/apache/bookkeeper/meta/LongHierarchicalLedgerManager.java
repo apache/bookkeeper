@@ -70,9 +70,8 @@ class LongHierarchicalLedgerManager extends AbstractHierarchicalLedgerManager {
      * @param zk
      *            ZooKeeper Client Handle
      */
-    public LongHierarchicalLedgerManager(AbstractConfiguration conf, ZooKeeper zk,
-                                         int maxLedgerMetadataFormatVersion) {
-        super(conf, zk, maxLedgerMetadataFormatVersion);
+    public LongHierarchicalLedgerManager(AbstractConfiguration conf, ZooKeeper zk) {
+        super(conf, zk);
     }
 
     @Override

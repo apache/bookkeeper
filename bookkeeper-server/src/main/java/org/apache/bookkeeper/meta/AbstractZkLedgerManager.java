@@ -159,9 +159,8 @@ public abstract class AbstractZkLedgerManager implements LedgerManager, Watcher 
      * @param zk
      *          ZooKeeper Client Handle
      */
-    protected AbstractZkLedgerManager(AbstractConfiguration conf, ZooKeeper zk,
-                                      int maxLedgerMetadataFormatVersion) {
-        this.serDe = new LedgerMetadataSerDe(maxLedgerMetadataFormatVersion);
+    protected AbstractZkLedgerManager(AbstractConfiguration conf, ZooKeeper zk) {
+        this.serDe = new LedgerMetadataSerDe();
         this.conf = conf;
         this.zk = zk;
         this.ledgerRootPath = ZKMetadataDriverBase.resolveZkLedgersRootPath(conf);

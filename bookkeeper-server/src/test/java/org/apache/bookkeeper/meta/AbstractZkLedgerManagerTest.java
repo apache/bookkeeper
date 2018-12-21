@@ -110,9 +110,9 @@ public class AbstractZkLedgerManagerTest extends MockZooKeeperTestCase {
 
         this.conf = new ClientConfiguration();
         this.ledgerManager = mock(
-                AbstractZkLedgerManager.class,
-                withSettings()
-                .useConstructor(conf, mockZk, LedgerMetadataSerDe.CURRENT_METADATA_FORMAT_VERSION)
+            AbstractZkLedgerManager.class,
+            withSettings()
+                .useConstructor(conf, mockZk)
                 .defaultAnswer(CALLS_REAL_METHODS));
         List<BookieSocketAddress> ensemble = Lists.newArrayList(
                 new BookieSocketAddress("192.0.2.1", 3181),
@@ -142,7 +142,7 @@ public class AbstractZkLedgerManagerTest extends MockZooKeeperTestCase {
         assertSame(conf, ledgerManager.conf);
         assertSame(scheduler, ledgerManager.scheduler);
 
-        this.serDe = new LedgerMetadataSerDe(LedgerMetadataSerDe.CURRENT_METADATA_FORMAT_VERSION);
+        this.serDe = new LedgerMetadataSerDe();
     }
 
     @After
@@ -303,15 +303,13 @@ public class AbstractZkLedgerManagerTest extends MockZooKeeperTestCase {
 
     @Test
     public void testRemoveLedgerMetadataHierarchical() throws Exception {
-        HierarchicalLedgerManager hlm = new HierarchicalLedgerManager(conf, mockZk,
-                LedgerMetadataSerDe.CURRENT_METADATA_FORMAT_VERSION);
+        HierarchicalLedgerManager hlm = new HierarchicalLedgerManager(conf, mockZk);
         testRemoveLedgerMetadataHierarchicalLedgerManager(hlm);
     }
 
     @Test
     public void testRemoveLedgerMetadataLongHierarchical() throws Exception {
-        LongHierarchicalLedgerManager hlm = new LongHierarchicalLedgerManager(conf, mockZk,
-                LedgerMetadataSerDe.CURRENT_METADATA_FORMAT_VERSION);
+        LongHierarchicalLedgerManager hlm = new LongHierarchicalLedgerManager(conf, mockZk);
         testRemoveLedgerMetadataHierarchicalLedgerManager(hlm);
     }
 
