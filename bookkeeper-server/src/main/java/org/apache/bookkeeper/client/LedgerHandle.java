@@ -1335,7 +1335,14 @@ public class LedgerHandle implements WriteHandle {
      */
 
     public void asyncReadLastConfirmed(final ReadLastConfirmedCallback cb, final Object ctx) {
-        if (useLegacyMode) {
+        if (clientCtx.getConf().useExplicitLacForReads) {
+            asyncReadExplicitLastConfirmed(cb, ctx);
+        } else {
+            asyncReadLastConfirmedInternal(cb, ctx);
+        }
+    }
+
+    private void asyncReadLastConfirmedInternal(final ReadLastConfirmedCallback cb, final Object ctx) {
         boolean isClosed;
         long lastEntryId;
         synchronized (this) {
@@ -1361,9 +1368,6 @@ public class LedgerHandle implements WriteHandle {
             };
 
         new ReadLastConfirmedOp(this, clientCtx.getBookieClient(), getCurrentEnsemble(), innercb).initiate();
-        } else {
-        asyncReadExplicitLastConfirmed(cb, ctx);
-        }
     }
 
     /**
@@ -1381,7 +1385,14 @@ public class LedgerHandle implements WriteHandle {
      *          callback context
      */
     public void asyncTryReadLastConfirmed(final ReadLastConfirmedCallback cb, final Object ctx) {
-        if (legacyMode) {
+        if (clientCtx.getConf().useExplicitLacForReads) {
+            asyncTryReadExplicitLastConfirmed(cb, ctx);
+        } else {
+            asyncTryReadLastConfirmedInternal(cb, ctx);
+        }
+    }
+
+    private void asyncTryReadLastConfirmedInternal(final ReadLastConfirmedCallback cb, final Object ctx) {
         boolean isClosed;
         long lastEntryId;
         synchronized (this) {
@@ -1412,9 +1423,6 @@ public class LedgerHandle implements WriteHandle {
         };
         new TryReadLastConfirmedOp(this, clientCtx.getBookieClient(), getCurrentEnsemble(),
                                    innercb, getLastAddConfirmed()).initiate();
-} else {
-        asyncTryReadExplicitLastConfirmed(cb, ctx);
-}
     }
 
     /**
@@ -1672,6 +1680,7 @@ public class LedgerHandle implements WriteHandle {
     void asyncTryReadExplicitLastConfirmed(final ReadLastConfirmedCallback cb, final Object ctx) {
         boolean isClosed;
         synchronized (this) {
+            LedgerMetadata metadata = getLedgerMetadata();
             isClosed = metadata.isClosed();
             if (isClosed) {
                 lastAddConfirmed = metadata.getLastEntryId();
@@ -1696,7 +1705,7 @@ public class LedgerHandle implements WriteHandle {
                 }
             }
         };
-        new TryPendingReadLacOp(this, innercb).initiate();
+        new TryPendingReadLacOp(this, clientCtx.getBookieClient(), getCurrentEnsemble(), innercb).initiate();
     }
 
     /*

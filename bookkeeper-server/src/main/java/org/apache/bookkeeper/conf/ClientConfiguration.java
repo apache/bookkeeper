@@ -121,6 +121,7 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
     protected static final String TIMEOUT_MONITOR_INTERVAL_SEC = "timeoutMonitorIntervalSec";
     protected static final String TIMEOUT_TASK_INTERVAL_MILLIS = "timeoutTaskIntervalMillis";
     protected static final String EXPLICIT_LAC_INTERVAL = "explicitLacInterval";
+    protected static final String USE_EXPLICIT_LAC_FOR_READS = "useExplicitLacForReads";
     protected static final String PCBC_TIMEOUT_TIMER_TICK_DURATION_MS = "pcbcTimeoutTimerTickDurationMs";
     protected static final String PCBC_TIMEOUT_TIMER_NUM_TICKS = "pcbcTimeoutTimerNumTicks";
     protected static final String TIMEOUT_TIMER_TICK_DURATION_MS = "timeoutTimerTickDurationMs";
@@ -730,6 +731,28 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
      */
     public ClientConfiguration setExplictLacInterval(int interval) {
         setProperty(EXPLICIT_LAC_INTERVAL, interval);
+        return this;
+    }
+
+    /**
+     * Whether to enable reads of LastAddConfirmed using ExplicitLAC support.
+     *
+     * @return true if enable reads of LastAddConfirmed using ExplicitLAC support. otherwise, return false.
+     */
+    public boolean isUseExplicitLacForReads() {
+        return getBoolean(USE_EXPLICIT_LAC_FOR_READS, false);
+    }
+
+    /**
+     * Enable/Disable reads of LastAddConfirmed using ExplicitLAC support.
+     *
+     * @param value if true the client will consider ExplicitLAC while reading LastAddConfirmed
+     *              from Bookies.
+     *
+     * @return Client configuration.
+     */
+    public ClientConfiguration setUseExplicitLacForReads(boolean value) {
+        setProperty(USE_EXPLICIT_LAC_FOR_READS, value);
         return this;
     }
 

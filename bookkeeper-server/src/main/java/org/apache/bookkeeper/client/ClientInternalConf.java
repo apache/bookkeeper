@@ -48,6 +48,7 @@ class ClientInternalConf {
     final long timeoutMonitorIntervalSec;
     final boolean enableBookieFailureTracking;
     final boolean useV2WireProtocol;
+    final boolean useExplicitLacForReads;
 
     static ClientInternalConf defaultValues() {
         return fromConfig(new ClientConfiguration());
@@ -79,6 +80,7 @@ class ClientInternalConf {
         this.maxAllowedEnsembleChanges = conf.getMaxAllowedEnsembleChanges();
         this.timeoutMonitorIntervalSec = conf.getTimeoutMonitorIntervalSec();
         this.enableBookieFailureTracking = conf.getEnableBookieFailureTracking();
+        this.useExplicitLacForReads = conf.isUseExplicitLacForReads();
         this.useV2WireProtocol = conf.getUseV2WireProtocol();
 
         if (conf.getFirstSpeculativeReadTimeout() > 0) {
