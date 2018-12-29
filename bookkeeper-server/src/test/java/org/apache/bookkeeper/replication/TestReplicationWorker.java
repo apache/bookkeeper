@@ -474,7 +474,7 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
         }
 
         // create couple of replicationworkers
-        baseConf.setLockReleaseOfFailedLedgerGracePeriod("500");
+        baseConf.setLockReleaseOfFailedLedgerGracePeriod(500L);
         ReplicationWorker rw1 = new ReplicationWorker(baseConf);
         ReplicationWorker rw2 = new ReplicationWorker(baseConf);
 

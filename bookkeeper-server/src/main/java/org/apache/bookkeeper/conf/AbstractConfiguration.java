@@ -17,8 +17,7 @@
  */
 package org.apache.bookkeeper.conf;
 
-import static org.apache.bookkeeper.conf.ClientConfiguration.CLIENT_AUTH_PROVIDER_FACTORY_CLASS;
-
+import com.google.common.collect.Lists;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -28,9 +27,11 @@ import java.util.Map;
 import javax.net.ssl.SSLEngine;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.bookkeeper.common.conf.ConfigKey;
+import org.apache.bookkeeper.common.conf.ConfigKeyGroup;
+import org.apache.bookkeeper.common.conf.Type;
 import org.apache.bookkeeper.common.util.JsonUtil;
 import org.apache.bookkeeper.common.util.JsonUtil.ParseJsonException;
-import org.apache.bookkeeper.common.util.ReflectionUtils;
 import org.apache.bookkeeper.feature.Feature;
 import org.apache.bookkeeper.meta.AbstractZkLedgerManagerFactory;
 import org.apache.bookkeeper.meta.HierarchicalLedgerManagerFactory;
@@ -68,93 +69,498 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
         DEFAULT_LOADER = loader;
     }
 
-    // Zookeeper Parameters
-    protected static final String ZK_TIMEOUT = "zkTimeout";
-    protected static final String ZK_SERVERS = "zkServers";
+    //
+    // Metadata Service Settings
+    //
 
-    // Ledger Manager
+    protected static final ConfigKeyGroup GROUP_METADATA_SERVICE = ConfigKeyGroup.builder("metadataservice")
+        .description("Metadata Service related settings")
+        .order(0)
+        .build();
+
+    protected static final String METADATA_SERVICE_URI = "metadataServiceUri";
+    protected static final ConfigKey METADATA_SERVICE_URI_KEY = ConfigKey.builder(METADATA_SERVICE_URI)
+        .type(Type.STRING)
+        .description("metadata service uri that bookkeeper is used for loading corresponding metadata driver"
+            + " and resolving its metadata service location")
+        .required(true)
+        .group(GROUP_METADATA_SERVICE)
+        .orderInGroup(0)
+        .build();
+
     protected static final String LEDGER_MANAGER_TYPE = "ledgerManagerType";
     protected static final String LEDGER_MANAGER_FACTORY_CLASS = "ledgerManagerFactoryClass";
+    protected static final ConfigKey LEDGER_MANAGER_TYPE_KEY = ConfigKey.builder(LEDGER_MANAGER_TYPE)
+        .type(Type.STRING)
+        .description("Ledger Manager Type")
+        .defaultValue("hierarchical")
+        .group(GROUP_METADATA_SERVICE)
+        .orderInGroup(1)
+        .deprecated(true)
+        .deprecatedByConfigKey(LEDGER_MANAGER_FACTORY_CLASS)
+        .build();
+
+    protected static final ConfigKey LEDGER_MANAGER_FACTORY_CLASS_KEY = ConfigKey.builder(LEDGER_MANAGER_FACTORY_CLASS)
+        .type(Type.CLASS)
+        .description("Ledger Manager Class")
+        .documentation("What kind of ledger manager is used to manage how ledgers are stored, managed and"
+            + " garbage collected. Try to read 'BookKeeper Internals' for detail info.")
+        .defaultValue(HierarchicalLedgerManagerFactory.class)
+        .group(GROUP_METADATA_SERVICE)
+        .orderInGroup(2)
+        .deprecated(true)
+        .deprecatedByConfigKey(METADATA_SERVICE_URI)
+        .deprecatedSince("4.7")
+        .build();
+
     protected static final String ALLOW_SHADED_LEDGER_MANAGER_FACTORY_CLASS = "allowShadedLedgerManagerFactoryClass";
+    protected static final ConfigKey ALLOW_SHADED_LEDGER_MANAGER_FACTORY_CLASS_KEY =
+        ConfigKey.builder(ALLOW_SHADED_LEDGER_MANAGER_FACTORY_CLASS)
+            .type(Type.BOOLEAN)
+            .description("Flag to allow using shaded ledger manager class to connect to a bookkeeper cluster")
+            .documentation("sometimes the bookkeeper server classes are shaded. the ledger manager factory"
+                    + " classes might be relocated to be under other packages. this would fail the clients using"
+                    + " shaded factory classes since the factory classes are not matched. Users can enable this flag"
+                    + " to allow using shaded ledger manager class to connect to a bookkeeper cluster.")
+            .defaultValue(false)
+            .group(GROUP_METADATA_SERVICE)
+            .orderInGroup(3)
+            .build();
+
+
     protected static final String SHADED_LEDGER_MANAGER_FACTORY_CLASS_PREFIX = "shadedLedgerManagerFactoryClassPrefix";
-    protected static final String METADATA_SERVICE_URI = "metadataServiceUri";
-    protected static final String ZK_LEDGERS_ROOT_PATH = "zkLedgersRootPath";
-    protected static final String ZK_REQUEST_RATE_LIMIT = "zkRequestRateLimit";
-    protected static final String AVAILABLE_NODE = "available";
-    protected static final String REREPLICATION_ENTRY_BATCH_SIZE = "rereplicationEntryBatchSize";
-    protected static final String STORE_SYSTEMTIME_AS_LEDGER_UNDERREPLICATED_MARK_TIME =
-            "storeSystemTimeAsLedgerUnderreplicatedMarkTime";
-    protected static final String STORE_SYSTEMTIME_AS_LEDGER_CREATION_TIME = "storeSystemTimeAsLedgerCreationTime";
+    protected static final ConfigKey SHADED_LEDGER_MANAGER_FACTORY_CLASS_PREFIX_KEY =
+        ConfigKey.builder(SHADED_LEDGER_MANAGER_FACTORY_CLASS_PREFIX)
+            .type(Type.STRING)
+            .description("the shaded ledger manager factory prefix")
+            .documentation("this is used when `" + ALLOW_SHADED_LEDGER_MANAGER_FACTORY_CLASS + "` is set to true.")
+            .defaultValue("dlshade.")
+            .group(GROUP_METADATA_SERVICE)
+            .orderInGroup(4)
+            .build();
+
+    // Kluge for compatibility testing. Never set this outside tests.
+    public static final String LEDGER_MANAGER_FACTORY_DISABLE_CLASS_CHECK = "ledgerManagerFactoryDisableClassCheck";
 
     // Metastore settings, only being used when LEDGER_MANAGER_FACTORY_CLASS is MSLedgerManagerFactory
     protected static final String METASTORE_IMPL_CLASS = "metastoreImplClass";
+    protected static final ConfigKey METASTORE_IMPL_CLASS_KEY = ConfigKey.builder(METASTORE_IMPL_CLASS)
+        .type(Type.STRING)
+        .description("metastore implementation class, only being used when `" + LEDGER_MANAGER_FACTORY_CLASS
+            + "` is `MSLedgerManagerFactory`")
+        .group(GROUP_METADATA_SERVICE)
+        .orderInGroup(5)
+        .build();
+
     protected static final String METASTORE_MAX_ENTRIES_PER_SCAN = "metastoreMaxEntriesPerScan";
+    protected static final ConfigKey METASTORE_MAX_ENTRIES_PER_SCAN_KEY =
+        ConfigKey.builder(METASTORE_MAX_ENTRIES_PER_SCAN)
+            .type(Type.INT)
+            .description("Max entries per scan in metastore, only being used when `" + LEDGER_MANAGER_FACTORY_CLASS
+                + "` is `MSLedgerManagerFactory`")
+            .defaultValue(50)
+            .group(GROUP_METADATA_SERVICE)
+            .orderInGroup(6)
+            .build();
+
+    //
+    // ZooKeeper Metadata Service Settings
+    //
+
+    protected static final ConfigKeyGroup GROUP_ZK = ConfigKeyGroup.builder("zk")
+        .description("ZooKeeper Metadata Service related settings")
+        .order(1)
+        .build();
+
+    protected static final String AVAILABLE_NODE = "available";
+    protected static final String ZK_LEDGERS_ROOT_PATH = "zkLedgersRootPath";
+    protected static final ConfigKey ZK_LEDGERS_ROOT_PATH_KEY = ConfigKey.builder(ZK_LEDGERS_ROOT_PATH)
+        .type(Type.STRING)
+        .description("Root Zookeeper path to store ledger metadata")
+        .documentation("This parameter is used by zookeeper-based ledger manager as a root znode"
+            + " to store all ledgers.")
+        .defaultValue("/ledgers")
+        .group(GROUP_ZK)
+        .orderInGroup(0)
+        .deprecated(true)
+        .deprecatedByConfigKey(METADATA_SERVICE_URI)
+        .deprecatedSince("4.7")
+        .build();
+    protected static final String ZK_SERVERS = "zkServers";
+    protected static final ConfigKey ZK_SERVERS_KEY = ConfigKey.builder(ZK_SERVERS)
+        .type(Type.LIST)
+        .description("A list of one of more servers on which Zookeeper is running")
+        .documentation("The server list can be comma separated values, for example:"
+            + " zkServers=zk1:2181,zk2:2181,zk3:2181")
+        .required(true)
+        .group(GROUP_ZK)
+        .orderInGroup(1)
+        .deprecated(true)
+        .deprecatedByConfigKey(METADATA_SERVICE_URI)
+        .deprecatedSince("4.7")
+        .build();
+
+    protected static final String ZK_TIMEOUT = "zkTimeout";
+    protected static final ConfigKey ZK_TIMEOUT_KEY = ConfigKey.builder(ZK_TIMEOUT)
+        .type(Type.INT)
+        .description("ZooKeeper client session timeout in milliseconds")
+        .documentation("Bookie server will exit if it received SESSION_EXPIRED because it"
+            + " was partitioned off from ZooKeeper for more than the session timeout"
+            + " JVM garbage collection, disk I/O will cause SESSION_EXPIRED."
+            + " Increment this value could help avoiding this issue")
+        .defaultValue(10000)
+        .group(GROUP_ZK)
+        .orderInGroup(2)
+        .build();
+
+    protected static final String ZK_REQUEST_RATE_LIMIT = "zkRequestRateLimit";
+    protected static final ConfigKey ZK_REQUEST_RATE_LIMIT_KEY = ConfigKey.builder(ZK_REQUEST_RATE_LIMIT)
+        .type(Type.DOUBLE)
+        .description("The Zookeeper request limit")
+        .documentation("It is only enabled when setting a positive value. Default value is 0.")
+        .defaultValue(0)
+        .group(GROUP_ZK)
+        .orderInGroup(3)
+        .build();
+
+    protected static final String ZK_ENABLE_SECURITY = "zkEnableSecurity";
+    protected static final ConfigKey ZK_ENABLE_SECURITY_KEY = ConfigKey.builder(ZK_ENABLE_SECURITY)
+        .type(Type.BOOLEAN)
+        .description("Set ACLs on every node written on ZooKeeper")
+        .documentation("this way only allowed users will be able to read and write BookKeeper"
+            + " metadata stored on ZooKeeper. In order to make ACLs work you need to setup"
+            + " ZooKeeper JAAS authentication all the bookies and Client need to share the"
+            + " same user, and this is usually done using Kerberos authentication. See"
+            + " ZooKeeper documentation")
+        .defaultValue(false)
+        .group(GROUP_ZK)
+        .orderInGroup(4)
+        .build();
+
+    //
+    // Security Settings
+    //
+
+    protected static final ConfigKeyGroup GROUP_SECURITY = ConfigKeyGroup.builder("security")
+        .description("Security related settings")
+        .order(2)
+        .build();
+
+    // Client auth provider factory class name. It must be configured on Bookies to for the Auditor
+    protected static final String CLIENT_AUTH_PROVIDER_FACTORY_CLASS = "clientAuthProviderFactoryClass";
+    protected static final ConfigKey CLIENT_AUTH_PROVIDER_FACTORY_CLASS_KEY =
+        ConfigKey.builder(CLIENT_AUTH_PROVIDER_FACTORY_CLASS)
+            .type(Type.CLASS)
+            .description("Set the client authentication provider factory class name")
+            .documentation("If Authentication is enabled on bookies and Auditor is running along"
+                + " with bookies, this must be configured. Otherwise if this is not set, no authentication"
+                + " will be used")
+            .group(GROUP_SECURITY)
+            .orderInGroup(1)
+            .build();
+
+    //
+    // TLS Settings
+    //
+
+    protected static final ConfigKeyGroup GROUP_TLS = ConfigKeyGroup.builder("tls")
+        .description("TLS Settings")
+        .order(3)
+        .build();
 
     // Common TLS configuration
     // TLS Provider (JDK or OpenSSL)
     protected static final String TLS_PROVIDER = "tlsProvider";
+    protected static final ConfigKey TLS_PROVIDER_KEY = ConfigKey.builder(TLS_PROVIDER)
+        .type(Type.STRING)
+        .description("TLS Provider")
+        .defaultValue("OpenSSL")
+        .optionValues(Lists.newArrayList(
+            "OpenSSL",
+            "JDK"
+        ))
+        .group(GROUP_TLS)
+        .orderInGroup(0)
+        .build();
 
     // TLS provider factory class name
     protected static final String TLS_PROVIDER_FACTORY_CLASS = "tlsProviderFactoryClass";
-
-    protected static final String LEDGERID_FORMATTER_CLASS = "ledgerIdFormatterClass";
-    protected static final String ENTRY_FORMATTER_CLASS = "entryFormatterClass";
+    protected static final ConfigKey TLS_PROVIDER_FACTORY_CLASS_KEY = ConfigKey.builder(TLS_PROVIDER_FACTORY_CLASS)
+        .type(Type.CLASS)
+        .description("TLS Provider factory class name")
+        .group(GROUP_TLS)
+        .orderInGroup(1)
+        .build();
 
     // Enable authentication of the other connection end point (mutual authentication)
     protected static final String TLS_CLIENT_AUTHENTICATION = "tlsClientAuthentication";
+    protected static final ConfigKey TLS_CLIENT_AUTHENTICATION_KEY = ConfigKey.builder(TLS_CLIENT_AUTHENTICATION)
+        .type(Type.BOOLEAN)
+        .description("Enable authentication of the other connection endpoint (mutual authentication)")
+        .defaultValue(false)
+        .group(GROUP_TLS)
+        .orderInGroup(2)
+        .build();
 
-    // Preserve MDC or not for tasks in executor
-    protected static final String PRESERVE_MDC_FOR_TASK_EXECUTION = "preserveMdcForTaskExecution";
+    /**
+     * TLS KeyStore, TrustStore, Password files and Certificate Paths.
+     */
+    protected static final String TLS_KEYSTORE_TYPE = "tlsKeyStoreType";
+    protected static final ConfigKey TLS_KEYSTORE_TYPE_KEY = ConfigKey.builder(TLS_KEYSTORE_TYPE)
+        .type(Type.STRING)
+        .description("TLS Keystore type")
+        .defaultValue("JKS")
+        .optionValues(Lists.newArrayList(
+            "PKCS12",
+            "JKS",
+            "PEM"
+        ))
+        .group(GROUP_TLS)
+        .orderInGroup(3)
+        .build();
 
-    // Default formatter classes
-    protected static final Class<? extends EntryFormatter> DEFAULT_ENTRY_FORMATTER = StringEntryFormatter.class;
-    protected static final Class<? extends LedgerIdFormatter> DEFAULT_LEDGERID_FORMATTER =
-            LedgerIdFormatter.LongLedgerIdFormatter.class;
+    protected static final String TLS_KEYSTORE = "tlsKeyStore";
+    protected static final ConfigKey TLS_KEYSTORE_KEY = ConfigKey.builder(TLS_KEYSTORE)
+        .type(Type.STRING)
+        .description("Path to TLS Keystore location")
+        .group(GROUP_TLS)
+        .orderInGroup(4)
+        .build();
+
+    protected static final String TLS_KEYSTORE_PASSWORD_PATH = "tlsKeyStorePasswordPath";
+    protected static final ConfigKey TLS_KEYSTORE_PASSWORD_PATH_KEY = ConfigKey.builder(TLS_KEYSTORE_PASSWORD_PATH)
+        .type(Type.STRING)
+        .description("Path to TLS Keystore password location, if the key store is protected by a password")
+        .group(GROUP_TLS)
+        .orderInGroup(5)
+        .build();
+
+    protected static final String TLS_TRUSTSTORE_TYPE = "tlsTrustStoreType";
+    protected static final ConfigKey TLS_TRUSTSTORE_TYPE_KEY = ConfigKey.builder(TLS_TRUSTSTORE_TYPE)
+        .type(Type.STRING)
+        .description("TLS Truststore type")
+        .defaultValue("JKS")
+        .optionValues(Lists.newArrayList(
+            "PKCS12",
+            "JKS",
+            "PEM"
+        ))
+        .group(GROUP_TLS)
+        .orderInGroup(6)
+        .build();
+
+    protected static final String TLS_TRUSTSTORE = "tlsTrustStore";
+    protected static final ConfigKey TLS_TRUSTSTORE_KEY = ConfigKey.builder(TLS_TRUSTSTORE)
+        .type(Type.STRING)
+        .description("Path to TLS Truststore location")
+        .group(GROUP_TLS)
+        .orderInGroup(7)
+        .build();
+
+    protected static final String TLS_TRUSTSTORE_PASSWORD_PATH = "tlsTrustStorePasswordPath";
+    protected static final ConfigKey TLS_TRUSTSTORE_PASSWORD_PATH_KEY = ConfigKey.builder(TLS_TRUSTSTORE_PASSWORD_PATH)
+        .type(Type.STRING)
+        .description("Path to TLS Truststore password location, if the trust store is protected by a password")
+        .group(GROUP_TLS)
+        .orderInGroup(8)
+        .build();
+
+    protected static final String TLS_CERTIFICATE_PATH = "tlsCertificatePath";
+    protected static final ConfigKey TLS_CERTIFICATE_PATH_KEY = ConfigKey.builder(TLS_CERTIFICATE_PATH)
+        .type(Type.STRING)
+        .description("Path to TLS certificate location")
+        .group(GROUP_TLS)
+        .orderInGroup(9)
+        .build();
 
     /**
      * This list will be passed to {@link SSLEngine#setEnabledCipherSuites(java.lang.String[]) }.
      * Please refer to official JDK JavaDocs
     */
     protected static final String TLS_ENABLED_CIPHER_SUITES = "tlsEnabledCipherSuites";
+    protected static final ConfigKey TLS_ENABLED_CIPHER_SUITES_KEY = ConfigKey.builder(TLS_ENABLED_CIPHER_SUITES)
+        .type(Type.STRING)
+        .description("Set the list of enabled TLS cipher suites.")
+        .documentation("Leave null not to override default JDK list. This list will be passed to"
+            + " {@link SSLEngine#setEnabledCipherSuites(java.lang.String[]) }. Please refer to official JDK JavaDocs")
+        .group(GROUP_TLS)
+        .orderInGroup(10)
+        .build();
 
     /**
      * This list will be passed to {@link SSLEngine#setEnabledProtocols(java.lang.String[]) }.
      * Please refer to official JDK JavaDocs
     */
     protected static final String TLS_ENABLED_PROTOCOLS = "tlsEnabledProtocols";
+    protected static final ConfigKey TLS_ENABLED_PROTOCOLS_KEY = ConfigKey.builder(TLS_ENABLED_PROTOCOLS)
+        .type(Type.STRING)
+        .description("Set the list of enabled TLS protocols.")
+        .documentation("Leave null not to override default JDK list. This list will be passed to"
+            + " {@link SSLEngine#setEnabledProtocols(java.lang.String[]) }. Please refer to official JDK JavaDocs")
+        .group(GROUP_TLS)
+        .orderInGroup(11)
+        .build();
 
-    /**
-     * TLS KeyStore, TrustStore, Password files and Certificate Paths.
-     */
-    protected static final String TLS_KEYSTORE_TYPE = "tlsKeyStoreType";
-    protected static final String TLS_KEYSTORE = "tlsKeyStore";
-    protected static final String TLS_KEYSTORE_PASSWORD_PATH = "tlsKeyStorePasswordPath";
-    protected static final String TLS_TRUSTSTORE_TYPE = "tlsTrustStoreType";
-    protected static final String TLS_TRUSTSTORE = "tlsTrustStore";
-    protected static final String TLS_TRUSTSTORE_PASSWORD_PATH = "tlsTrustStorePasswordPath";
-    protected static final String TLS_CERTIFICATE_PATH = "tlsCertificatePath";
+    //
+    // AutoRecovery
+    //
 
-    //Netty configuration
-    protected static final String NETTY_MAX_FRAME_SIZE = "nettyMaxFrameSizeBytes";
-    protected static final int DEFAULT_NETTY_MAX_FRAME_SIZE = 5 * 1024 * 1024; // 5MB
+    protected static final ConfigKeyGroup GROUP_AUTORECOVERY = ConfigKeyGroup.builder("autorecovery")
+        .description("AutoRecovery related settings")
+        .order(900)
+        .build();
 
-    // Zookeeper ACL settings
-    protected static final String ZK_ENABLE_SECURITY = "zkEnableSecurity";
+    protected static final ConfigKeyGroup GROUP_AUDITOR = ConfigKeyGroup.builder("auditor")
+        .description("AutoRecovery Auditor related settings")
+        .order(901)
+        .build();
 
-    // Kluge for compatibility testing. Never set this outside tests.
-    public static final String LEDGER_MANAGER_FACTORY_DISABLE_CLASS_CHECK = "ledgerManagerFactoryDisableClassCheck";
+    protected static final String STORE_SYSTEMTIME_AS_LEDGER_UNDERREPLICATED_MARK_TIME =
+        "storeSystemTimeAsLedgerUnderreplicatedMarkTime";
+    protected static final ConfigKey STORE_SYSTEMTIME_AS_LEDGER_UNDERREPLICATED_MARK_TIME_KEY =
+        ConfigKey.builder(STORE_SYSTEMTIME_AS_LEDGER_UNDERREPLICATED_MARK_TIME)
+            .type(Type.BOOLEAN)
+            .description("Enable the Auditor to use system time as underreplicated ledger mark time")
+            .documentation("If this is enabled, Auditor will write a ctime field into the underreplicated"
+                + " ledger znode")
+            .defaultValue(true)
+            .group(GROUP_AUDITOR)
+            .orderInGroup(0)
+            .build();
 
-    // Validate bookie process user
-    public static final String PERMITTED_STARTUP_USERS = "permittedStartupUsers";
+    protected static final ConfigKeyGroup GROUP_REPLICATION_WORKER = ConfigKeyGroup.builder("replicationworker")
+        .description("AutoRecovery Replication Worker related settings")
+        .order(902)
+        .build();
+
+    protected static final String REREPLICATION_ENTRY_BATCH_SIZE = "rereplicationEntryBatchSize";
+    protected static final ConfigKey REREPLICATION_ENTRY_BATCH_SIZE_KEY =
+        ConfigKey.builder(REREPLICATION_ENTRY_BATCH_SIZE)
+            .type(Type.LONG)
+            .description("The number of entries that a replication will rereplicate in parallel")
+            .defaultValue(10)
+            .group(GROUP_REPLICATION_WORKER)
+            .orderInGroup(0)
+            .build();
+
+    //
+    // Placement Policy
+    //
+    protected static final ConfigKeyGroup GROUP_PLACEMENT_POLICY = ConfigKeyGroup.builder("placementpolicy")
+        .description("Placement policy related settings")
+        .order(1000)
+        .build();
 
     // minimum number of racks per write quorum
     public static final String MIN_NUM_RACKS_PER_WRITE_QUORUM = "minNumRacksPerWriteQuorum";
+    protected static final ConfigKey MIN_NUM_RACKS_PER_WRITE_QUORUM_KEY =
+        ConfigKey.builder(MIN_NUM_RACKS_PER_WRITE_QUORUM)
+            .type(Type.INT)
+            .description("minimum number of racks per write quorum")
+            .documentation("RackawareEnsemblePlacementPolicy will try to get bookies from atleast '"
+                + MIN_NUM_RACKS_PER_WRITE_QUORUM + "' racks for a writeQuorum")
+            .defaultValue(2)
+            .group(GROUP_PLACEMENT_POLICY)
+            .orderInGroup(0)
+            .build();
 
     // enforce minimum number of racks per write quorum
     public static final String ENFORCE_MIN_NUM_RACKS_PER_WRITE_QUORUM = "enforceMinNumRacksPerWriteQuorum";
+    protected static final ConfigKey ENFORCE_MIN_NUM_RACKS_PER_WRITE_QUORUM_KEY =
+        ConfigKey.builder(ENFORCE_MIN_NUM_RACKS_PER_WRITE_QUORUM)
+            .type(Type.BOOLEAN)
+            .description("Flag to enforce RackawareEnsemblePlacementPolicy to pick bookies from '"
+                + MIN_NUM_RACKS_PER_WRITE_QUORUM + "' racks for a writeQuorum.")
+            .documentation("If this feature is enabled, when a bookkeeper client cann't find an available bookie"
+                + " then it would throw BKNotEnoughBookiesException instead of picking random one.")
+            .defaultValue(false)
+            .group(GROUP_PLACEMENT_POLICY)
+            .orderInGroup(1)
+            .build();
+
+    //
+    // Netty Settings
+    //
+
+    protected static final ConfigKeyGroup GROUP_NETTY = ConfigKeyGroup.builder("netty")
+        .description("Netty related settings")
+        .order(1001)
+        .build();
+
+    protected static final String NETTY_MAX_FRAME_SIZE = "nettyMaxFrameSizeBytes";
+    protected static final int DEFAULT_NETTY_MAX_FRAME_SIZE = 5 * 1024 * 1024; // 5MB
+    protected static final ConfigKey NETTY_MAX_FRAME_SIZE_KEY = ConfigKey.builder(NETTY_MAX_FRAME_SIZE)
+        .type(Type.INT)
+        .description("The maximum netty frame size in bytes")
+        .documentation("Any message received larger than this will be rejected")
+        .defaultValue(DEFAULT_NETTY_MAX_FRAME_SIZE)
+        .group(GROUP_NETTY)
+        .orderInGroup(0)
+        .build();
+
+    //
+    // Tools related settings
+    //
+
+    protected static final ConfigKeyGroup GROUP_TOOLS = ConfigKeyGroup.builder("tools")
+        .description("Tools Settings")
+        .order(1002)
+        .build();
+
+    // Default formatter classes
+    protected static final Class<? extends EntryFormatter> DEFAULT_ENTRY_FORMATTER = StringEntryFormatter.class;
+    protected static final Class<? extends LedgerIdFormatter> DEFAULT_LEDGERID_FORMATTER =
+            LedgerIdFormatter.LongLedgerIdFormatter.class;
+    protected static final String LEDGERID_FORMATTER_CLASS = "ledgerIdFormatterClass";
+    protected static final ConfigKey LEDGERID_FORMATTER_CLASS_KEY = ConfigKey.builder(LEDGERID_FORMATTER_CLASS)
+        .type(Type.CLASS)
+        .description("The formatter class that bookkeeper tools use to format ledger id")
+        .defaultValue(DEFAULT_LEDGERID_FORMATTER)
+        .group(GROUP_TOOLS)
+        .orderInGroup(0)
+        .build();
+
+    protected static final String ENTRY_FORMATTER_CLASS = "entryFormatterClass";
+    protected static final ConfigKey ENTRY_FORMATTER_CLASS_KEY = ConfigKey.builder(ENTRY_FORMATTER_CLASS)
+        .type(Type.CLASS)
+        .description("The formatter class that bookkeeper tools use to format entries")
+        .defaultValue(DEFAULT_ENTRY_FORMATTER)
+        .group(GROUP_TOOLS)
+        .orderInGroup(1)
+        .build();
+
+    //
+    // Monitoring related settings
+    //
+
+    protected static final ConfigKeyGroup GROUP_MONITORING = ConfigKeyGroup.builder("monitoring")
+        .description("Monitoring related settings")
+        .order(1003)
+        .build();
+
+    // Preserve MDC or not for tasks in executor
+    protected static final String PRESERVE_MDC_FOR_TASK_EXECUTION = "preserveMdcForTaskExecution";
+    protected static final ConfigKey PRESERVE_MDC_FOR_TASK_EXECUTION_KEY =
+        ConfigKey.builder(PRESERVE_MDC_FOR_TASK_EXECUTION)
+            .type(Type.BOOLEAN)
+            .description("Flag to preserve MDC for tasks in Executor.")
+            .defaultValue(false)
+            .group(GROUP_MONITORING)
+            .orderInGroup(0)
+            .since("4.9")
+            .build();
 
     // option to limit stats logging
     public static final String LIMIT_STATS_LOGGING = "limitStatsLogging";
+    protected static final ConfigKey LIMIT_STATS_LOGGING_KEY =
+        ConfigKey.builder(LIMIT_STATS_LOGGING)
+            .type(Type.BOOLEAN)
+            .description("Flag to limit exposing stats (e.g. exposing pcbc stats)")
+            .defaultValue(false)
+            .group(GROUP_MONITORING)
+            .orderInGroup(1)
+            .since("4.9")
+            .build();
 
     protected AbstractConfiguration() {
         super();
@@ -162,20 +568,6 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
             // add configuration for system properties
             addConfiguration(new SystemConfiguration());
         }
-    }
-
-    /**
-     * Limit who can start the application to prevent future permission errors.
-     */
-    public void setPermittedStartupUsers(String s) {
-        setProperty(PERMITTED_STARTUP_USERS, s);
-    }
-
-    /**
-     * Get array of users specified in this property.
-     */
-    public String[] getPermittedStartupUsers() {
-        return getStringArray(PERMITTED_STARTUP_USERS);
     }
 
     /**
@@ -233,7 +625,7 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      * @throws ConfigurationException if the metadata service uri is invalid.
      */
     public String getMetadataServiceUri() throws ConfigurationException {
-        String serviceUri = getString(METADATA_SERVICE_URI);
+        String serviceUri = METADATA_SERVICE_URI_KEY.getString(this);
         if (null == serviceUri) {
             // no service uri is defined, fallback to old settings
             String ledgerManagerType;
@@ -258,7 +650,7 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      * @return the configuration object.
      */
     public T setMetadataServiceUri(String serviceUri) {
-        setProperty(METADATA_SERVICE_URI, serviceUri);
+        METADATA_SERVICE_URI_KEY.set(this, serviceUri);
         return getThis();
     }
 
@@ -272,7 +664,7 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      */
     @Deprecated
     public String getZkServers() {
-        List servers = getList(ZK_SERVERS, null);
+        List servers = ZK_SERVERS_KEY.getList(this);
         if (null == servers || 0 == servers.size()) {
             return null;
         }
@@ -289,7 +681,7 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      */
     @Deprecated
     public T setZkServers(String zkServers) {
-        setProperty(ZK_SERVERS, zkServers);
+        ZK_SERVERS_KEY.set(this, Lists.newArrayList(StringUtils.split(zkServers, ",")));
         return getThis();
     }
 
@@ -299,7 +691,7 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      * @return zookeeper server timeout
      */
     public int getZkTimeout() {
-        return getInt(ZK_TIMEOUT, 10000);
+        return ZK_TIMEOUT_KEY.getInt(this);
     }
 
     /**
@@ -310,7 +702,7 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      * @return server configuration
      */
     public T setZkTimeout(int zkTimeout) {
-        setProperty(ZK_TIMEOUT, Integer.toString(zkTimeout));
+        ZK_TIMEOUT_KEY.set(this, zkTimeout);
         return getThis();
     }
 
@@ -323,7 +715,7 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      */
     @Deprecated
     public void setLedgerManagerType(String lmType) {
-        setProperty(LEDGER_MANAGER_TYPE, lmType);
+        LEDGER_MANAGER_TYPE_KEY.set(this, lmType);
     }
 
     /**
@@ -335,7 +727,7 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      */
     @Deprecated
     public String getLedgerManagerType() {
-        return getString(LEDGER_MANAGER_TYPE);
+        return LEDGER_MANAGER_TYPE_KEY.getString(this);
     }
 
     /**
@@ -347,7 +739,7 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      * @return configuration instance.
      */
     public T setAllowShadedLedgerManagerFactoryClass(boolean allowed) {
-        setProperty(ALLOW_SHADED_LEDGER_MANAGER_FACTORY_CLASS, allowed);
+        ALLOW_SHADED_LEDGER_MANAGER_FACTORY_CLASS_KEY.set(this, allowed);
         return getThis();
     }
 
@@ -358,7 +750,7 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      * @return ledger manager factory class name.
      */
     public boolean isShadedLedgerManagerFactoryClassAllowed() {
-        return getBoolean(ALLOW_SHADED_LEDGER_MANAGER_FACTORY_CLASS, false);
+        return ALLOW_SHADED_LEDGER_MANAGER_FACTORY_CLASS_KEY.getBoolean(this);
     }
 
     /**
@@ -373,7 +765,7 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      * @return configuration instance.
      */
     public T setShadedLedgerManagerFactoryClassPrefix(String classPrefix) {
-        setProperty(SHADED_LEDGER_MANAGER_FACTORY_CLASS_PREFIX, classPrefix);
+        SHADED_LEDGER_MANAGER_FACTORY_CLASS_PREFIX_KEY.set(this, classPrefix);
         return getThis();
     }
 
@@ -388,7 +780,7 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      * @see #isShadedLedgerManagerFactoryClassAllowed()
      */
     public String getShadedLedgerManagerFactoryClassPrefix() {
-        return getString(SHADED_LEDGER_MANAGER_FACTORY_CLASS_PREFIX, "dlshade.");
+        return SHADED_LEDGER_MANAGER_FACTORY_CLASS_PREFIX_KEY.getString(this);
     }
 
     /**
@@ -398,7 +790,7 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      *          Ledger Manager Factory Class Name
      */
     public void setLedgerManagerFactoryClassName(String factoryClassName) {
-        setProperty(LEDGER_MANAGER_FACTORY_CLASS, factoryClassName);
+        LEDGER_MANAGER_FACTORY_CLASS_KEY.set(this, factoryClassName);
     }
 
     /**
@@ -407,7 +799,7 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      * @return ledger manager factory class name.
      */
     public String getLedgerManagerFactoryClassName() {
-        return getString(LEDGER_MANAGER_FACTORY_CLASS);
+        return LEDGER_MANAGER_FACTORY_CLASS_KEY.getString(this);
     }
 
     /**
@@ -450,7 +842,7 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      *          Ledger Manager Factory Class
      */
     public void setLedgerManagerFactoryClass(Class<? extends LedgerManagerFactory> factoryClass) {
-        setProperty(LEDGER_MANAGER_FACTORY_CLASS, factoryClass.getName());
+        LEDGER_MANAGER_FACTORY_CLASS_KEY.set(this, factoryClass);
     }
 
     /**
@@ -460,9 +852,11 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      */
     public Class<? extends LedgerManagerFactory> getLedgerManagerFactoryClass()
         throws ConfigurationException {
-        return ReflectionUtils.getClass(this, LEDGER_MANAGER_FACTORY_CLASS,
-                                        null, LedgerManagerFactory.class,
-                                        DEFAULT_LOADER);
+        try {
+            return LEDGER_MANAGER_FACTORY_CLASS_KEY.getClass(this, LedgerManagerFactory.class);
+        } catch (IllegalArgumentException iae) {
+            throw new ConfigurationException(iae.getMessage(), iae.getCause());
+        }
     }
 
     /**
@@ -472,7 +866,7 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      */
     @Deprecated
     public void setZkLedgersRootPath(String zkLedgersPath) {
-        setProperty(ZK_LEDGERS_ROOT_PATH, zkLedgersPath);
+        ZK_LEDGERS_ROOT_PATH_KEY.set(this, zkLedgersPath);
     }
 
     /**
@@ -482,7 +876,7 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      */
     @Deprecated
     public String getZkLedgersRootPath() {
-        return getString(ZK_LEDGERS_ROOT_PATH, "/ledgers");
+        return ZK_LEDGERS_ROOT_PATH_KEY.getString(this);
     }
 
     /**
@@ -491,7 +885,7 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      * @return zookeeper access request rate limit.
      */
     public double getZkRequestRateLimit() {
-        return getDouble(ZK_REQUEST_RATE_LIMIT, 0);
+        return ZK_REQUEST_RATE_LIMIT_KEY.getDouble(this);
     }
 
     /**
@@ -501,7 +895,7 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      *          zookeeper access request rate limit.
      */
     public void setZkRequestRateLimit(double rateLimit) {
-        setProperty(ZK_REQUEST_RATE_LIMIT, rateLimit);
+        ZK_REQUEST_RATE_LIMIT_KEY.set(this, rateLimit);
     }
 
     /**
@@ -510,7 +904,7 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      * @return usage of secure ZooKeeper ACLs
      */
     public boolean isZkEnableSecurity() {
-        return getBoolean(ZK_ENABLE_SECURITY, false);
+        return ZK_ENABLE_SECURITY_KEY.getBoolean(this);
     }
 
     /**
@@ -519,7 +913,7 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      * @param zkEnableSecurity
      */
     public void setZkEnableSecurity(boolean zkEnableSecurity) {
-        setProperty(ZK_ENABLE_SECURITY, zkEnableSecurity);
+        ZK_ENABLE_SECURITY_KEY.set(this, zkEnableSecurity);
     }
 
     /**
@@ -540,14 +934,14 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      * wise.
      */
     public void setRereplicationEntryBatchSize(long rereplicationEntryBatchSize) {
-        setProperty(REREPLICATION_ENTRY_BATCH_SIZE, rereplicationEntryBatchSize);
+        REREPLICATION_ENTRY_BATCH_SIZE_KEY.set(this, rereplicationEntryBatchSize);
     }
 
     /**
      * Get the re-replication entry batch size.
      */
     public long getRereplicationEntryBatchSize() {
-        return getLong(REREPLICATION_ENTRY_BATCH_SIZE, 10);
+        return REREPLICATION_ENTRY_BATCH_SIZE_KEY.getLong(this);
     }
 
     /**
@@ -556,7 +950,7 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      * @return metastore implementation class name.
      */
     public String getMetastoreImplClass() {
-        return getString(METASTORE_IMPL_CLASS);
+        return METASTORE_IMPL_CLASS_KEY.getString(this);
     }
 
     /**
@@ -566,7 +960,7 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      *          Metastore implementation Class name.
      */
     public void setMetastoreImplClass(String metastoreImplClass) {
-        setProperty(METASTORE_IMPL_CLASS, metastoreImplClass);
+        METASTORE_IMPL_CLASS_KEY.set(this, metastoreImplClass);
     }
 
     /**
@@ -575,7 +969,7 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      * @return max entries per scan in metastore.
      */
     public int getMetastoreMaxEntriesPerScan() {
-        return getInt(METASTORE_MAX_ENTRIES_PER_SCAN, 50);
+        return METASTORE_MAX_ENTRIES_PER_SCAN_KEY.getInt(this);
     }
 
     /**
@@ -585,7 +979,7 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      *          Max entries per scan in metastore.
      */
     public void setMetastoreMaxEntriesPerScan(int maxEntries) {
-        setProperty(METASTORE_MAX_ENTRIES_PER_SCAN, maxEntries);
+        METASTORE_MAX_ENTRIES_PER_SCAN_KEY.set(this, maxEntries);
     }
 
     public void setFeature(String configProperty, Feature feature) {
@@ -607,7 +1001,7 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      *          LedgerIdFormatter Class
      */
     public void setLedgerIdFormatterClass(Class<? extends LedgerIdFormatter> formatterClass) {
-        setProperty(LEDGERID_FORMATTER_CLASS, formatterClass.getName());
+        LEDGERID_FORMATTER_CLASS_KEY.set(this, formatterClass);
     }
 
     /**
@@ -615,10 +1009,8 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      *
      * @return LedgerIdFormatter class
      */
-    public Class<? extends LedgerIdFormatter> getLedgerIdFormatterClass()
-        throws ConfigurationException {
-        return ReflectionUtils.getClass(this, LEDGERID_FORMATTER_CLASS, DEFAULT_LEDGERID_FORMATTER,
-                LedgerIdFormatter.class, DEFAULT_LOADER);
+    public Class<? extends LedgerIdFormatter> getLedgerIdFormatterClass() {
+        return LEDGERID_FORMATTER_CLASS_KEY.getClass(this, LedgerIdFormatter.class);
     }
 
     /**
@@ -628,7 +1020,7 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      *          EntryFormatter Class
      */
     public void setEntryFormatterClass(Class<? extends EntryFormatter> formatterClass) {
-        setProperty(ENTRY_FORMATTER_CLASS, formatterClass.getName());
+        ENTRY_FORMATTER_CLASS_KEY.set(this, formatterClass);
     }
 
     /**
@@ -636,10 +1028,8 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      *
      * @return EntryFormatter class
      */
-    public Class<? extends EntryFormatter> getEntryFormatterClass()
-        throws ConfigurationException {
-        return ReflectionUtils.getClass(this, ENTRY_FORMATTER_CLASS, DEFAULT_ENTRY_FORMATTER, EntryFormatter.class,
-                DEFAULT_LOADER);
+    public Class<? extends EntryFormatter> getEntryFormatterClass(){
+        return ENTRY_FORMATTER_CLASS_KEY.getClass(this, EntryFormatter.class);
     }
 
     /**
@@ -652,7 +1042,7 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      */
     public T setClientAuthProviderFactoryClass(
             String factoryClass) {
-        setProperty(CLIENT_AUTH_PROVIDER_FACTORY_CLASS, factoryClass);
+        CLIENT_AUTH_PROVIDER_FACTORY_CLASS_KEY.set(this, factoryClass);
         return getThis();
     }
 
@@ -663,7 +1053,7 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      * @return the client authentication provider factory class name or null.
      */
     public String getClientAuthProviderFactoryClass() {
-        return getString(CLIENT_AUTH_PROVIDER_FACTORY_CLASS, null);
+        return CLIENT_AUTH_PROVIDER_FACTORY_CLASS_KEY.getString(this);
     }
 
     /**
@@ -673,7 +1063,7 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      * @return the maximum netty frame size in bytes.
      */
     public int getNettyMaxFrameSizeBytes() {
-        return getInt(NETTY_MAX_FRAME_SIZE, DEFAULT_NETTY_MAX_FRAME_SIZE);
+        return NETTY_MAX_FRAME_SIZE_KEY.getInt(this);
     }
 
     /**
@@ -685,7 +1075,7 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      * @return server configuration
      */
     public T setNettyMaxFrameSizeBytes(int maxSize) {
-        setProperty(NETTY_MAX_FRAME_SIZE, String.valueOf(maxSize));
+        NETTY_MAX_FRAME_SIZE_KEY.set(this, maxSize);
         return getThis();
     }
 
@@ -695,7 +1085,7 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      * @return the security provider factory class name or null.
      */
     public String getTLSProviderFactoryClass() {
-        return getString(TLS_PROVIDER_FACTORY_CLASS, null);
+        return TLS_PROVIDER_FACTORY_CLASS_KEY.getString(this);
     }
 
     /**
@@ -706,7 +1096,7 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      * @return client configuration
      */
     public T setTLSProviderFactoryClass(String factoryClass) {
-        setProperty(TLS_PROVIDER_FACTORY_CLASS, factoryClass);
+        TLS_PROVIDER_FACTORY_CLASS_KEY.set(this, factoryClass);
         return getThis();
     }
 
@@ -716,7 +1106,7 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      * @return the TLS provider to use in creating TLS Context
      */
     public String getTLSProvider() {
-        return getString(TLS_PROVIDER, "OpenSSL");
+        return TLS_PROVIDER_KEY.getString(this);
     }
 
     /**
@@ -727,7 +1117,7 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      * @return Client Configuration
      */
     public T setTLSProvider(String provider) {
-        setProperty(TLS_PROVIDER, provider);
+        TLS_PROVIDER_KEY.set(this, provider);
         return getThis();
     }
 
@@ -738,7 +1128,7 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      * @return whether TLS is enabled on the bookie or not.
      */
     public boolean getTLSClientAuthentication() {
-        return getBoolean(TLS_CLIENT_AUTHENTICATION, false);
+        return TLS_CLIENT_AUTHENTICATION_KEY.getBoolean(this);
     }
 
     /**
@@ -749,7 +1139,26 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      * @return client configuration
      */
     public T setTLSClientAuthentication(boolean enabled) {
-        setProperty(TLS_CLIENT_AUTHENTICATION, enabled);
+        TLS_CLIENT_AUTHENTICATION_KEY.set(this, enabled);
+        return getThis();
+    }
+
+    /**
+     * Get the path to file containing TLS Certificate.
+     *
+     * @return
+     */
+    public String getTLSCertificatePath() {
+        return TLS_CERTIFICATE_PATH_KEY.getString(this);
+    }
+
+    /**
+     * Set the path to file containing TLS Certificate.
+     *
+     * @return
+     */
+    public T setTLSCertificatePath(String arg) {
+        TLS_CLIENT_AUTHENTICATION_KEY.set(this, arg);
         return getThis();
     }
 
@@ -763,7 +1172,7 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      */
     public T setTLSEnabledCipherSuites(
             String list) {
-        setProperty(TLS_ENABLED_CIPHER_SUITES, list);
+        TLS_ENABLED_CIPHER_SUITES_KEY.set(this, list);
         return getThis();
     }
 
@@ -775,7 +1184,7 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      * @see #setTLSEnabledCipherSuites(java.lang.String)
      */
     public String getTLSEnabledCipherSuites() {
-        return getString(TLS_ENABLED_CIPHER_SUITES, null);
+        return TLS_ENABLED_CIPHER_SUITES_KEY.getString(this);
     }
 
     /**
@@ -788,7 +1197,7 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      */
     public T setTLSEnabledProtocols(
             String list) {
-        setProperty(TLS_ENABLED_PROTOCOLS, list);
+        TLS_ENABLED_PROTOCOLS_KEY.set(this, list);
         return getThis();
     }
 
@@ -800,35 +1209,35 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      * @see #setTLSEnabledProtocols(java.lang.String)
      */
     public String getTLSEnabledProtocols() {
-        return getString(TLS_ENABLED_PROTOCOLS, null);
+        return TLS_ENABLED_PROTOCOLS_KEY.getString(this);
     }
 
     /**
      * Set the minimum number of racks per write quorum.
      */
     public void setMinNumRacksPerWriteQuorum(int minNumRacksPerWriteQuorum) {
-        setProperty(MIN_NUM_RACKS_PER_WRITE_QUORUM, minNumRacksPerWriteQuorum);
+        MIN_NUM_RACKS_PER_WRITE_QUORUM_KEY.set(this, minNumRacksPerWriteQuorum);
     }
 
     /**
      * Get the minimum number of racks per write quorum.
      */
     public int getMinNumRacksPerWriteQuorum() {
-        return getInteger(MIN_NUM_RACKS_PER_WRITE_QUORUM, 2);
+        return MIN_NUM_RACKS_PER_WRITE_QUORUM_KEY.getInt(this);
     }
 
     /**
      * Set the flag to enforce minimum number of racks per write quorum.
      */
     public void setEnforceMinNumRacksPerWriteQuorum(boolean enforceMinNumRacksPerWriteQuorum) {
-        setProperty(ENFORCE_MIN_NUM_RACKS_PER_WRITE_QUORUM, enforceMinNumRacksPerWriteQuorum);
+        ENFORCE_MIN_NUM_RACKS_PER_WRITE_QUORUM_KEY.set(this, enforceMinNumRacksPerWriteQuorum);
     }
 
     /**
      * Get the flag which enforces the minimum number of racks per write quorum.
      */
     public boolean getEnforceMinNumRacksPerWriteQuorum() {
-        return getBoolean(ENFORCE_MIN_NUM_RACKS_PER_WRITE_QUORUM, false);
+        return ENFORCE_MIN_NUM_RACKS_PER_WRITE_QUORUM_KEY.getBoolean(this);
     }
 
     /**
@@ -843,7 +1252,7 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      *            underreplicated ledger mark time.
      */
     public T setStoreSystemTimeAsLedgerUnderreplicatedMarkTime(boolean enabled) {
-        setProperty(STORE_SYSTEMTIME_AS_LEDGER_UNDERREPLICATED_MARK_TIME, enabled);
+        STORE_SYSTEMTIME_AS_LEDGER_UNDERREPLICATED_MARK_TIME_KEY.set(this, enabled);
         return getThis();
     }
 
@@ -855,7 +1264,7 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      *         underreplicated ledger mark time.
      */
     public boolean getStoreSystemTimeAsLedgerUnderreplicatedMarkTime() {
-        return getBoolean(STORE_SYSTEMTIME_AS_LEDGER_UNDERREPLICATED_MARK_TIME, true);
+        return STORE_SYSTEMTIME_AS_LEDGER_UNDERREPLICATED_MARK_TIME_KEY.getBoolean(this);
     }
 
     /**
@@ -864,7 +1273,7 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      * @return flag to enable/disable MDC preservation in Executor.
      */
     public boolean getPreserveMdcForTaskExecution() {
-        return getBoolean(PRESERVE_MDC_FOR_TASK_EXECUTION, false);
+        return PRESERVE_MDC_FOR_TASK_EXECUTION_KEY.getBoolean(this);
     }
 
     /**
@@ -875,7 +1284,7 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      * @return configuration.
      */
     public T setPreserveMdcForTaskExecution(boolean enabled) {
-        setProperty(PRESERVE_MDC_FOR_TASK_EXECUTION, enabled);
+        PRESERVE_MDC_FOR_TASK_EXECUTION_KEY.set(this, enabled);
         return getThis();
     }
 
@@ -886,7 +1295,7 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      *      the boolean flag indicating whether to limit stats logging
      */
     public boolean getLimitStatsLogging() {
-        return getBoolean(LIMIT_STATS_LOGGING, false);
+        return LIMIT_STATS_LOGGING_KEY.getBoolean(this);
     }
 
     /**
@@ -897,7 +1306,7 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
      * @return configuration.
      */
     public T setLimitStatsLogging(boolean limitStatsLogging) {
-        setProperty(LIMIT_STATS_LOGGING, limitStatsLogging);
+        LIMIT_STATS_LOGGING_KEY.set(this, limitStatsLogging);
         return getThis();
     }
 

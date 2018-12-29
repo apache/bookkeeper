@@ -33,8 +33,10 @@ public enum Type {
     INT((name, value) -> value instanceof Integer),
     SHORT((name, value) -> value instanceof Short),
     LONG((name, value) -> value instanceof Long),
+    FLOAT((name, value) -> value instanceof Float),
     DOUBLE((name, value) -> value instanceof Double),
-    LIST((name, value) -> value instanceof List),
+    LIST((name, value) -> value instanceof List || value instanceof String),
+    ARRAY((name, value) -> value instanceof String[] || value instanceof String),
     CLASS((name, value) -> value instanceof Class || value instanceof String);
 
     private Validator validator;

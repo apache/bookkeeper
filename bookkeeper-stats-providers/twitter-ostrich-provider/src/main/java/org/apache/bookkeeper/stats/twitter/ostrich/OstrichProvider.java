@@ -22,6 +22,8 @@ import com.twitter.ostrich.admin.ServiceTracker;
 import com.twitter.ostrich.admin.StatsFactory;
 import com.twitter.util.Duration;
 import java.util.concurrent.TimeUnit;
+import org.apache.bookkeeper.common.conf.ConfigKey;
+import org.apache.bookkeeper.common.conf.Type;
 import org.apache.bookkeeper.stats.CachingStatsProvider;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.stats.StatsProvider;
@@ -42,6 +44,30 @@ public class OstrichProvider implements StatsProvider {
     protected static final String STATS_EXPORT = "statsExport";
     protected static final String STATS_HTTP_PORT = "statsHttpPort";
     protected static final String SHOULD_SHUTDOWN_SERVICE_TRACKER = "shouldShutdownServiceTracker";
+
+    private static final ConfigKey STATS_EXPORT_KEY = ConfigKey.builder(STATS_EXPORT)
+        .type(Type.BOOLEAN)
+        .description("Flag to control whether to expose ostrich metrics via a http endpoint configured by `"
+            + STATS_HTTP_PORT + "`")
+        .defaultValue(false)
+        .orderInGroup(0)
+        .build();
+
+    private static final ConfigKey STATS_HTTP_PORT_KEY = ConfigKey.builder(STATS_HTTP_PORT)
+        .type(Type.INT)
+        .description("The http port of exposing ostrich stats if `" + STATS_EXPORT + "` is set to true")
+        .defaultValue(9002)
+        .orderInGroup(1)
+        .build();
+
+    private static final ConfigKey SHOULD_SHUTDOWN_SERVICE_TRACKER_KEY =
+        ConfigKey.builder(SHOULD_SHUTDOWN_SERVICE_TRACKER)
+            .type(Type.BOOLEAN)
+            .description("Flag to control whether to shutdown ostrich service tracker when shutting"
+                + " down ostrich provider")
+            .defaultValue(false)
+            .orderInGroup(2)
+            .build();
 
     private com.twitter.ostrich.admin.AdminHttpService statsExporter = null;
     private final CachingStatsProvider cachingStatsProvider;
@@ -90,13 +116,13 @@ public class OstrichProvider implements StatsProvider {
 
     @Override
     public void start(Configuration conf) {
-        if (conf.getBoolean(STATS_EXPORT, false)) {
+        if (STATS_EXPORT_KEY.getBoolean(conf)) {
             statsExporter = new com.twitter.ostrich.admin.AdminServiceFactory(
-                    conf.getInt(STATS_HTTP_PORT, 9002), 20, OstrichProvider.<StatsFactory>emptyList(),
+                    STATS_HTTP_PORT_KEY.getInt(conf), 20, OstrichProvider.<StatsFactory>emptyList(),
                     Some.apply(""), OstrichProvider.<Regex>emptyList(),
                     OstrichProvider.<String, CustomHttpHandler>emptyMap(), list(Duration.apply(1, TimeUnit.MINUTES))
             ).apply(RuntimeEnvironment.apply(this, new String[0]));
-            this.shutdownServiceTracker = conf.getBoolean(SHOULD_SHUTDOWN_SERVICE_TRACKER, false);
+            this.shutdownServiceTracker = SHOULD_SHUTDOWN_SERVICE_TRACKER_KEY.getBoolean(conf);
         }
     }
 

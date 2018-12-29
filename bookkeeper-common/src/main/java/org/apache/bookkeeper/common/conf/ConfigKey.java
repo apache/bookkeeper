@@ -25,6 +25,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Function;
 import lombok.Builder;
 import lombok.Builder.Default;
 import lombok.Data;
@@ -100,7 +101,23 @@ public class ConfigKey {
     @Default
     private Object defaultValue = null;
 
-    private String defaultValueAsString() {
+    /**
+     * Default value supplier.
+     */
+    @Default
+    private Function<Configuration, Object> defaultValueSupplier = (conf) -> null;
+
+    private Object defaultValue(Configuration conf) {
+        Object value = defaultValue();
+        if (null == value) {
+            return defaultValueSupplier.apply(conf);
+        } else {
+            return value;
+        }
+    }
+
+    private String defaultValueAsString(Configuration conf) {
+        Object defaultValue = defaultValue(conf);
         if (null == defaultValue) {
             return null;
         } else if (defaultValue instanceof String) {
@@ -221,10 +238,12 @@ public class ConfigKey {
                 "Invalid value '" + value + "' to set on setting '" + name() + "': required '" + validator() + "'");
         }
 
-        if (value instanceof Class) {
-            conf.setProperty(name(), ((Class) value).getName());
-        } else {
-            conf.setProperty(name(), value);
+        if (null != value) {
+            if (value instanceof Class) {
+                conf.setProperty(name(), ((Class) value).getName());
+            } else {
+                conf.setProperty(name(), value);
+            }
         }
     }
 
@@ -236,7 +255,7 @@ public class ConfigKey {
      */
     public long getLong(Configuration conf) {
         checkArgument(type() == Type.LONG, "'" + name() + "' is NOT a LONG numeric setting");
-        return conf.getLong(name(), (Long) defaultValue());
+        return conf.getLong(name(), (Long) defaultValue(conf));
     }
 
     /**
@@ -247,7 +266,7 @@ public class ConfigKey {
      */
     public int getInt(Configuration conf) {
         checkArgument(type() == Type.INT, "'" + name() + "' is NOT a INT numeric setting");
-        return conf.getInt(name(), (Integer) defaultValue());
+        return conf.getInt(name(), (Integer) defaultValue(conf));
     }
 
     /**
@@ -258,7 +277,7 @@ public class ConfigKey {
      */
     public short getShort(Configuration conf) {
         checkArgument(type() == Type.SHORT, "'" + name() + "' is NOT a SHORT numeric setting");
-        return conf.getShort(name(), (Short) defaultValue());
+        return conf.getShort(name(), (Short) defaultValue(conf));
     }
 
     /**
@@ -269,7 +288,7 @@ public class ConfigKey {
      */
     public boolean getBoolean(Configuration conf) {
         checkArgument(type() == Type.BOOLEAN, "'" + name() + "' is NOT a BOOL numeric setting");
-        return conf.getBoolean(name(), (Boolean) defaultValue());
+        return conf.getBoolean(name(), (Boolean) defaultValue(conf));
     }
 
     /**
@@ -280,7 +299,18 @@ public class ConfigKey {
      */
     public double getDouble(Configuration conf) {
         checkArgument(type() == Type.DOUBLE, "'" + name() + "' is NOT a DOUBLE numeric setting");
-        return conf.getDouble(name(), (Double) defaultValue());
+        return conf.getDouble(name(), (Double) defaultValue(conf));
+    }
+
+    /**
+     * Retrieve the setting from the configuration <tt>conf</tt> as a {@link Float} value.
+     *
+     * @param conf configuration to retrieve the setting
+     * @return the value as a float number
+     */
+    public float getFloat(Configuration conf) {
+        checkArgument(type() == Type.FLOAT, "'" + name() + "' is NOT a FLOAT numeric setting");
+        return conf.getFloat(name(), (Float) defaultValue(conf));
     }
 
     /**
@@ -290,7 +320,18 @@ public class ConfigKey {
      * @return the value as a string.
      */
     public String getString(Configuration conf) {
-        return conf.getString(name(), defaultValueAsString());
+        return conf.getString(name(), defaultValueAsString(conf));
+    }
+
+    /**
+     * Retrieve the setting from the configuration <tt>conf</tt> as a {@link String} value,
+     * if the setting isn't set, return <tt>null</tt>.
+     *
+     * @param conf configuration to retrieve the setting
+     * @return the value as a string
+     */
+    public String getStringWithoutDefault(Configuration conf) {
+        return conf.getString(name());
     }
 
     /**
@@ -303,7 +344,7 @@ public class ConfigKey {
     public <T> Class<? extends T> getClass(Configuration conf, Class<T> interfaceCls) {
         checkArgument(type() == Type.CLASS, "'" + name() + "' is NOT a CLASS setting");
         try {
-            Class<? extends T> defaultClass = (Class<? extends T>) defaultValue();
+            Class<? extends T> defaultClass = (Class<? extends T>) defaultValue(conf);
             return ReflectionUtils.getClass(conf, name(), defaultClass, interfaceCls, getClass().getClassLoader());
         } catch (ConfigurationException e) {
             throw new IllegalArgumentException("Invalid class is set to setting '" + name() + "': ", e);
@@ -320,7 +361,7 @@ public class ConfigKey {
     public Class<?> getClass(Configuration conf) {
         checkArgument(type() == Type.CLASS, "'" + name() + "' is NOT a CLASS setting");
         try {
-            Class<?> defaultClass = (Class<?>) defaultValue();
+            Class<?> defaultClass = (Class<?>) defaultValue(conf);
             return ReflectionUtils.getClass(conf, name(), defaultClass, getClass().getClassLoader());
         } catch (ConfigurationException e) {
             throw new IllegalArgumentException("Invalid class is set to setting '" + name() + "': ", e);
@@ -336,11 +377,44 @@ public class ConfigKey {
     @SuppressWarnings("unchecked")
     public List<Object> getList(Configuration conf) {
         checkArgument(type() == Type.LIST, "'" + name() + "' is NOT a LIST setting");
-        List<Object> list = (List<Object>) defaultValue();
+        List<Object> list = (List<Object>) defaultValue(conf);
         if (null == list) {
             list = Collections.emptyList();
         }
         return conf.getList(name(), list);
+    }
+
+    /**
+     * Retrieve the setting from the configuration <tt>conf</tt> as a string array.
+     *
+     * @param conf configuration to retrieve the setting
+     * @return the value as a string array
+     * @see #getArrayWithoutDefault(Configuration)
+     */
+    public String[] getArray(Configuration conf) {
+        String[] retArray = getArrayWithoutDefault(conf);
+        if (null == retArray || retArray.length == 0) {
+            return (String[]) defaultValue(conf);
+        } else {
+            return retArray;
+        }
+    }
+
+    /**
+     * Retrieve the setting from the configuration <tt>conf</tt> as a string array.
+     * If the key doesn't exist, it doesn't return the default value.
+     *
+     * @param conf configuration to retrieve the setting
+     * @return the value as a string array
+     * @see #getArray(Configuration)
+     */
+    public String[] getArrayWithoutDefault(Configuration conf) {
+        checkArgument(type() == Type.ARRAY, "'" + name() + "' is NOT an ARRAY setting");
+        if (conf.containsKey(name())) {
+            return conf.getStringArray(name());
+        } else {
+            return null;
+        }
     }
 
     /**
@@ -358,10 +432,14 @@ public class ConfigKey {
                 return getShort(conf);
             case DOUBLE:
                 return getDouble(conf);
+            case FLOAT:
+                return getFloat(conf);
             case BOOLEAN:
                 return getBoolean(conf);
             case LIST:
                 return getList(conf);
+            case ARRAY:
+                return getArray(conf);
             case CLASS:
                 return getClass(conf);
             default:

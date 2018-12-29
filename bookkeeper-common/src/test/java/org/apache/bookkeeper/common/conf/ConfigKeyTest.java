@@ -19,6 +19,7 @@
 
 package org.apache.bookkeeper.common.conf;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
@@ -224,6 +225,29 @@ public class ConfigKeyTest {
     }
 
     @Test
+    public void testGetFloat() {
+        String keyName = runtime.getMethodName();
+        float defaultValue = ThreadLocalRandom.current().nextFloat();
+        ConfigKey key = ConfigKey.builder(keyName)
+            .required(true)
+            .type(Type.FLOAT)
+            .defaultValue(defaultValue)
+            .build();
+
+        Configuration conf = new ConcurrentConfiguration();
+
+        // get default value
+        assertEquals(defaultValue, key.getFloat(conf), 0.0001);
+        assertEquals(defaultValue, key.get(conf));
+
+        // set value
+        float newValue = (defaultValue * 2);
+        key.set(conf, newValue);
+        assertEquals(newValue, key.getFloat(conf), 0.0001);
+        assertEquals(newValue, key.get(conf));
+    }
+
+    @Test
     public void testGetBoolean() {
         String keyName = runtime.getMethodName();
         boolean defaultValue = ThreadLocalRandom.current().nextBoolean();
@@ -279,6 +303,41 @@ public class ConfigKeyTest {
         conf.setProperty(key.name(), "item7,item8,item9");
         assertEquals(newList, key.getList(conf));
         assertEquals(newList, key.get(conf));
+    }
+
+    @Test
+    public void testGetArray() {
+        String keyName = runtime.getMethodName();
+        String[] defaultArray = new String[] {
+            "item1", "item2", "item3"
+        };
+        ConfigKey key = ConfigKey.builder(keyName)
+            .required(true)
+            .type(Type.ARRAY)
+            .defaultValue(defaultArray)
+            .build();
+
+        Configuration conf = new CompositeConfiguration();
+
+        // get default value
+        assertArrayEquals(defaultArray, key.getArray(conf));
+        assertArrayEquals(defaultArray, (String[]) key.get(conf));
+
+        // set value
+        String[] newArray = new String[] {
+            "item4", "item5", "item6"
+        };
+        key.set(conf, newArray);
+        assertArrayEquals(newArray, key.getArray(conf));
+        assertArrayEquals(newArray, (String[]) key.get(conf));
+
+        // set string value
+        newArray = new String[] {
+            "item7", "item8", "item9"
+        };
+        conf.setProperty(key.name(), "item7,item8,item9");
+        assertArrayEquals(newArray, key.getArray(conf));
+        assertArrayEquals(newArray, (String[]) key.get(conf));
     }
 
     @Test

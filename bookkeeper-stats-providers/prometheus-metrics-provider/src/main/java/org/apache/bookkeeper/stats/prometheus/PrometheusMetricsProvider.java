@@ -42,6 +42,8 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
+import org.apache.bookkeeper.common.conf.ConfigKey;
+import org.apache.bookkeeper.common.conf.Type;
 import org.apache.bookkeeper.stats.CachingStatsProvider;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.stats.StatsProvider;
@@ -62,12 +64,30 @@ public class PrometheusMetricsProvider implements StatsProvider {
 
     public static final String PROMETHEUS_STATS_HTTP_ENABLE = "prometheusStatsHttpEnable";
     public static final boolean DEFAULT_PROMETHEUS_STATS_HTTP_ENABLE = true;
+    private static final ConfigKey PROMETHEUS_STATS_HTTP_ENABLE_KEY = ConfigKey.builder(PROMETHEUS_STATS_HTTP_ENABLE)
+        .type(Type.BOOLEAN)
+        .description("Flag to enable or disable prometheus http server for exposing stats")
+        .defaultValue(DEFAULT_PROMETHEUS_STATS_HTTP_ENABLE)
+        .orderInGroup(0)
+        .build();
 
     public static final String PROMETHEUS_STATS_HTTP_PORT = "prometheusStatsHttpPort";
     public static final int DEFAULT_PROMETHEUS_STATS_HTTP_PORT = 8000;
+    private static final ConfigKey PROMETHEUS_STATS_HTTP_PORT_KEY = ConfigKey.builder(PROMETHEUS_STATS_HTTP_PORT)
+        .type(Type.INT)
+        .description("Default port for Prometheus metrics exporter")
+        .defaultValue(DEFAULT_PROMETHEUS_STATS_HTTP_PORT)
+        .orderInGroup(1)
+        .build();
 
     public static final String PROMETHEUS_STATS_LATENCY_ROLLOVER_SECONDS = "prometheusStatsLatencyRolloverSeconds";
     public static final int DEFAULT_PROMETHEUS_STATS_LATENCY_ROLLOVER_SECONDS = 60;
+    private static final ConfigKey PROMETHEUS_STATS_LATENCY_ROLLOVER_SECONDS_KEY =
+        ConfigKey.builder(PROMETHEUS_STATS_LATENCY_ROLLOVER_SECONDS)
+            .description("latency stats rollover interval, in seconds")
+            .defaultValue(DEFAULT_PROMETHEUS_STATS_LATENCY_ROLLOVER_SECONDS)
+            .orderInGroup(2)
+            .build();
 
     final CollectorRegistry registry;
 
@@ -120,11 +140,11 @@ public class PrometheusMetricsProvider implements StatsProvider {
 
     @Override
     public void start(Configuration conf) {
-        boolean httpEnabled = conf.getBoolean(PROMETHEUS_STATS_HTTP_ENABLE, DEFAULT_PROMETHEUS_STATS_HTTP_ENABLE);
+        boolean httpEnabled = PROMETHEUS_STATS_HTTP_ENABLE_KEY.getBoolean(conf);
         boolean bkHttpServerEnabled = conf.getBoolean("httpServerEnabled", false);
         // only start its own http server when prometheus http is enabled and bk http server is not enabled.
         if (httpEnabled && !bkHttpServerEnabled) {
-            int httpPort = conf.getInt(PROMETHEUS_STATS_HTTP_PORT, DEFAULT_PROMETHEUS_STATS_HTTP_PORT);
+            int httpPort = PROMETHEUS_STATS_HTTP_PORT_KEY.getInt(conf);
             InetSocketAddress httpEndpoint = InetSocketAddress.createUnresolved("0.0.0.0", httpPort);
             this.server = new Server(httpEndpoint);
             ServletContextHandler context = new ServletContextHandler();
@@ -164,8 +184,7 @@ public class PrometheusMetricsProvider implements StatsProvider {
 
         executor = Executors.newSingleThreadScheduledExecutor(new DefaultThreadFactory("metrics"));
 
-        int latencyRolloverSeconds = conf.getInt(PROMETHEUS_STATS_LATENCY_ROLLOVER_SECONDS,
-                DEFAULT_PROMETHEUS_STATS_LATENCY_ROLLOVER_SECONDS);
+        int latencyRolloverSeconds = PROMETHEUS_STATS_LATENCY_ROLLOVER_SECONDS_KEY.getInt(conf);
 
         executor.scheduleAtFixedRate(() -> {
             rotateLatencyCollection();

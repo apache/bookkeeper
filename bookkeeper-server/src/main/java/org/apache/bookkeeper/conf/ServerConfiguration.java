@@ -20,7 +20,6 @@ package org.apache.bookkeeper.conf;
 import static org.apache.bookkeeper.util.BookKeeperConstants.MAX_LOG_SIZE_LIMIT;
 
 import com.google.common.annotations.Beta;
-import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 import java.io.File;
 import java.util.concurrent.TimeUnit;
@@ -33,9 +32,9 @@ import org.apache.bookkeeper.common.conf.ConfigException;
 import org.apache.bookkeeper.common.conf.ConfigKey;
 import org.apache.bookkeeper.common.conf.ConfigKeyGroup;
 import org.apache.bookkeeper.common.conf.Type;
+import org.apache.bookkeeper.common.conf.Validator;
 import org.apache.bookkeeper.common.conf.validators.ClassValidator;
 import org.apache.bookkeeper.common.conf.validators.RangeValidator;
-import org.apache.bookkeeper.common.util.ReflectionUtils;
 import org.apache.bookkeeper.discover.RegistrationManager;
 import org.apache.bookkeeper.discover.ZKRegistrationManager;
 import org.apache.bookkeeper.stats.NullStatsProvider;
@@ -47,11 +46,908 @@ import org.apache.commons.configuration.ConfigurationException;
  */
 public class ServerConfiguration extends AbstractConfiguration<ServerConfiguration> {
 
+    //
+    // Security Settings
+    //
+
+    protected static final String BOOKIE_AUTH_PROVIDER_FACTORY_CLASS = "bookieAuthProviderFactoryClass";
+    protected static final ConfigKey BOOKIE_AUTH_PROVIDER_FACTORY_CLASS_KEY =
+        ConfigKey.builder(BOOKIE_AUTH_PROVIDER_FACTORY_CLASS)
+            .type(Type.CLASS)
+            .description("The bookie authentication provider factory class name")
+            .documentation("If this is null, no authentication will take place")
+            .group(GROUP_SECURITY)
+            .orderInGroup(100)
+            .build();
+
+    public static final String PERMITTED_STARTUP_USERS = "permittedStartupUsers";
+    protected static final ConfigKey PERMITTED_STARTUP_USERS_KEY = ConfigKey.builder(PERMITTED_STARTUP_USERS)
+        .type(Type.ARRAY)
+        .description("The list of users are permitted to run the bookie process. any users can run the bookie"
+            + " process if it is not set.")
+        .documentation("Example settings: permittedStartupUsers=user1,user2,user3")
+        .group(GROUP_SECURITY)
+        .orderInGroup(101)
+        .build();
+
+    //
+    // Metadata Settings
+    //
+
+    protected static final String REGISTRATION_MANAGER_CLASS = "registrationManagerClass";
+    protected static final ConfigKey REGISTRATION_MANAGER_CLASS_KEY = ConfigKey.builder(REGISTRATION_MANAGER_CLASS)
+        .type(Type.CLASS)
+        .description("The registration manager implementation used for registering bookies for service discovery")
+        .defaultValue(ZKRegistrationManager.class)
+        .group(GROUP_METADATA_SERVICE)
+        .orderInGroup(100)
+        .build();
+
+    //
+    // Discovery Settings
+    //
+
+    private static final ConfigKeyGroup GROUP_BOOKIE_DISCOVERY = ConfigKeyGroup.builder("discovery")
+        .description("Bookie discovery related settings (e.g. nic & port to listen on, advertised address, and etc)")
+        .order(100)
+        .build();
+
+    protected static final String BOOKIE_PORT = "bookiePort";
+    protected static final ConfigKey BOOKIE_PORT_KEY = ConfigKey.builder(BOOKIE_PORT)
+        .type(Type.INT)
+        .description("The port that the bookie server listens on")
+        .defaultValue(3181)
+        .validator(RangeValidator.atLeast(0))
+        .group(GROUP_BOOKIE_DISCOVERY)
+        .orderInGroup(100)
+        .build();
+
+    protected static final String LISTENING_INTERFACE = "listeningInterface";
+    protected static final ConfigKey LISTENING_INTERFACE_KEY = ConfigKey.builder(LISTENING_INTERFACE)
+        .type(Type.STRING)
+        .description("Set the network interface that the bookie should listen on")
+        .documentation("If not set, the bookie will listen on all interfaces")
+        .group(GROUP_BOOKIE_DISCOVERY)
+        .orderInGroup(101)
+        .build();
+
+    protected static final String ADVERTISED_ADDRESS = "advertisedAddress";
+    protected static final ConfigKey ADVERTISED_ADDRESS_KEY = ConfigKey.builder(ADVERTISED_ADDRESS)
+        .type(Type.STRING)
+        .description("Configure a specific hostname or IP address that the bookie should use to"
+            + " advertise itself to clients")
+        .group(GROUP_BOOKIE_DISCOVERY)
+        .orderInGroup(102)
+        .build();
+
+    protected static final String ALLOW_LOOPBACK = "allowLoopback";
+    protected static final ConfigKey ALLOW_LOOPBACK_KEY = ConfigKey.builder(ALLOW_LOOPBACK)
+        .type(Type.BOOLEAN)
+        .description("Whether the bookie allowed to use a loopback interface as its primary"
+            + " interface(i.e. the interface it uses to establish its identity)?")
+        .documentation("By default, loopback interfaces are not allowed as the primary interface."
+            + " Using a loopback interface as the primary interface usually indicates a configuration"
+            + " error. For example, its fairly common in some VPS setups to not configure a hostname,"
+            + " or to have the hostname resolve to 127.0.0.1. If this is the case, then all bookies in"
+            + " the cluster will establish their identities as 127.0.0.1:3181, and only one will be able"
+            + " to join the cluster. For VPSs configured like this, you should explicitly set the listening"
+            + " interface.")
+        .defaultValue(false)
+        .group(GROUP_BOOKIE_DISCOVERY)
+        .orderInGroup(103)
+        .build();
+
+    protected static final String ALLOW_EPHEMERAL_PORTS = "allowEphemeralPorts";
+    protected static final ConfigKey ALLOW_EPHEMERAL_PORTS_KEY = ConfigKey.builder(ALLOW_EPHEMERAL_PORTS)
+        .type(Type.BOOLEAN)
+        .description("Whether the bookie is allowed to use an ephemeral port (port 0) as its server port")
+        .documentation("By default, an ephemeral port is not allowed. Using an ephemeral port as the service"
+            + " port usually indicates a configuration error. However, in unit tests, using an ephemeral"
+            + " port will address port conflict problems and allow running tests in parallel")
+        .defaultValue(false)
+        .group(GROUP_BOOKIE_DISCOVERY)
+        .orderInGroup(104)
+        .build();
+
+
+    protected static final String USE_HOST_NAME_AS_BOOKIE_ID = "useHostNameAsBookieID";
+    protected static final String USE_SHORT_HOST_NAME = "useShortHostName";
+
+    protected static final ConfigKey USE_HOST_NAME_AS_BOOKIE_ID_KEY = ConfigKey.builder(USE_HOST_NAME_AS_BOOKIE_ID)
+        .type(Type.BOOLEAN)
+        .description("Whether the bookie should use its hostname to register with the co-ordination service"
+            + " (eg: Zookeeper service)")
+        .documentation("When false, bookie will use its ipaddress of '" + LISTENING_INTERFACE
+            + "' for the registration")
+        .defaultValue(false)
+        .dependents(Lists.newArrayList(USE_SHORT_HOST_NAME))
+        .group(GROUP_BOOKIE_DISCOVERY)
+        .orderInGroup(105)
+        .build();
+
+    protected static final ConfigKey USE_SHORT_HOST_NAME_KEY = ConfigKey.builder(USE_SHORT_HOST_NAME)
+        .type(Type.BOOLEAN)
+        .description("If bookie is using hostname for registration and in ledger metadata then whether"
+            + " to use short hostname or FQDN hostname")
+        .defaultValue(false)
+        .group(GROUP_BOOKIE_DISCOVERY)
+        .orderInGroup(106)
+        .build();
+
+    protected static final String ENABLE_LOCAL_TRANSPORT = "enableLocalTransport";
+    protected static final ConfigKey ENABLE_LOCAL_TRANSPORT_KEY = ConfigKey.builder(ENABLE_LOCAL_TRANSPORT)
+        .type(Type.BOOLEAN)
+        .description("Whether allow the bookie to listen for BookKeeper clients executed on the local JVM")
+        .defaultValue(false)
+        .group(GROUP_BOOKIE_DISCOVERY)
+        .orderInGroup(107)
+        .build();
+
+    protected static final String DISABLE_SERVER_SOCKET_BIND = "disableServerSocketBind";
+    protected static final ConfigKey DISABLE_SERVER_SOCKET_BIND_KEY = ConfigKey.builder(DISABLE_SERVER_SOCKET_BIND)
+        .type(Type.BOOLEAN)
+        .description("Whether allow the bookie to disable bind on network interfaces, this bookie"
+            + " will be available only to BookKeeper clients executed on the local JVM")
+        .defaultValue(false)
+        .group(GROUP_BOOKIE_DISCOVERY)
+        .orderInGroup(108)
+        .build();
+
+    //
+    // Server Settings
+    //
+
+    private static final ConfigKeyGroup GROUP_SERVER = ConfigKeyGroup.builder("server")
+        .description("Generic bookie server settings")
+        .order(110)
+        .build();
+
+    protected static final String ALLOW_MULTIPLEDIRS_UNDER_SAME_DISKPARTITION =
+        "allowMultipleDirsUnderSameDiskPartition";
+    protected static final ConfigKey ALLOW_MULTIPLEDIRS_UNDER_SAME_DISKPARTITION_KEY =
+        ConfigKey.builder(ALLOW_MULTIPLEDIRS_UNDER_SAME_DISKPARTITION)
+            .type(Type.BOOLEAN)
+            .description("Configure the bookie to allow/disallow multiple ledger/index/journal directories"
+                + " in the same filesystem disk partition")
+            .defaultValue(true)
+            .group(GROUP_SERVER)
+            .orderInGroup(100)
+            .build();
+
+    protected static final String DEATH_WATCH_INTERVAL = "bookieDeathWatchInterval";
+    protected static final ConfigKey DEATH_WATCH_INTERVAL_KEY = ConfigKey.builder(DEATH_WATCH_INTERVAL)
+        .type(Type.INT)
+        .description("Interval to watch whether bookie is dead or not, in milliseconds")
+        .defaultValue(1000)
+        .group(GROUP_SERVER)
+        .orderInGroup(101)
+        .build();
+
+    // Lifecycle Components
+    protected static final String EXTRA_SERVER_COMPONENTS = "extraServerComponents";
+    protected static final ConfigKey EXTRA_SERVER_COMPONENTS_KEY = ConfigKey.builder(EXTRA_SERVER_COMPONENTS)
+        .type(Type.ARRAY)
+        .description("Configure a list of server components to enable and load on a bookie server")
+        .documentation("This provides the plugin run extra services along with a bookie server.\n\n"
+            + "NOTE: if bookie fails to load any of extra components configured below, bookie will continue"
+            + "  functioning by ignoring the components configured below.")
+        .optionValues(Lists.newArrayList(
+            "org.apache.bookkeeper.stream.server.StreamStorageLifecycleComponent"
+        ))
+        .group(GROUP_SERVER)
+        .orderInGroup(102)
+        .build();
+
+    protected static final String IGNORE_EXTRA_SERVER_COMPONENTS_STARTUP_FAILURES =
+        "ignoreExtraServerComponentsStartupFailures";
+    protected static final ConfigKey IGNORE_EXTRA_SERVER_COMPONENTS_STARTUP_FAILURES_KEY =
+        ConfigKey.builder(IGNORE_EXTRA_SERVER_COMPONENTS_STARTUP_FAILURES)
+            .type(Type.BOOLEAN)
+            .description("Whether the bookie should ignore startup failures on loading server components specified"
+                + " by `" + EXTRA_SERVER_COMPONENTS + "`")
+            .defaultValue(false)
+            .group(GROUP_SERVER)
+            .orderInGroup(103)
+            .build();
+
+    //
+    // Thread settings
+    //
+
+    private static final ConfigKeyGroup GROUP_THREAD = ConfigKeyGroup.builder("thread")
+        .description("Thread related settings")
+        .order(120)
+        .build();
+
+    protected static final String NUM_ADD_WORKER_THREADS = "numAddWorkerThreads";
+    protected static final ConfigKey NUM_ADD_WORKER_THREADS_KEY = ConfigKey.builder(NUM_ADD_WORKER_THREADS)
+        .type(Type.INT)
+        .description("Number of threads that should handle write requests")
+        .documentation("If zero, the writes would be handled by netty threads directly")
+        .defaultValue(1)
+        .group(GROUP_THREAD)
+        .orderInGroup(100)
+        .build();
+
+    protected static final String NUM_READ_WORKER_THREADS = "numReadWorkerThreads";
+    protected static final ConfigKey NUM_READ_WORKER_THREADS_KEY = ConfigKey.builder(NUM_READ_WORKER_THREADS)
+        .type(Type.INT)
+        .description("Number of threads that should handle read requests")
+        .documentation("If zero, the reads would be handled by netty threads directly")
+        .defaultValue(8)
+        .group(GROUP_THREAD)
+        .orderInGroup(101)
+        .build();
+
+    protected static final String NUM_LONG_POLL_WORKER_THREADS = "numLongPollWorkerThreads";
+    protected static final ConfigKey NUM_LONG_POLL_WORKER_THREADS_KEY = ConfigKey.builder(NUM_LONG_POLL_WORKER_THREADS)
+        .type(Type.INT)
+        .description("Number of threads that should handle read requests")
+        .documentation("If zero, the reads would be handled by netty threads directly")
+        .defaultValue(0)
+        .group(GROUP_THREAD)
+        .orderInGroup(102)
+        .build();
+
+    protected static final String NUM_JOURNAL_CALLBACK_THREADS = "numJournalCallbackThreads";
+    protected static final ConfigKey NUM_JOURNAL_CALLBACK_THREADS_KEY = ConfigKey.builder(NUM_JOURNAL_CALLBACK_THREADS)
+        .type(Type.INT)
+        .description("The number of threads used for handling journal callback")
+        .documentation("If a zero or negative number is provided, the callbacks are executed"
+            + " directly at force write threads")
+        .defaultValue(1)
+        .group(GROUP_THREAD)
+        .orderInGroup(103)
+        .build();
+
+    protected static final String NUM_HIGH_PRIORITY_WORKER_THREADS = "numHighPriorityWorkerThreads";
+    protected static final ConfigKey NUM_HIGH_PRIORITY_WORKER_THREADS_KEY =
+        ConfigKey.builder(NUM_HIGH_PRIORITY_WORKER_THREADS)
+            .type(Type.INT)
+            .description("Number of threads that should be used for high priority requests"
+                + " (i.e. recovery reads and adds, and fencing)")
+            .defaultValue(8)
+            .group(GROUP_THREAD)
+            .orderInGroup(104)
+            .build();
+
+    protected static final String MAX_PENDING_READ_REQUESTS_PER_THREAD = "maxPendingReadRequestsPerThread";
+    protected static final ConfigKey MAX_PENDING_READ_REQUESTS_PER_THREAD_KEY =
+        ConfigKey.builder(MAX_PENDING_READ_REQUESTS_PER_THREAD)
+            .type(Type.INT)
+            .description("If read workers threads are enabled, limit the number of pending requests,"
+                + " to avoid the executor queue to grow indefinitely")
+            .defaultValue(10000)
+            .group(GROUP_THREAD)
+            .orderInGroup(105)
+            .build();
+
+    protected static final String MAX_PENDING_ADD_REQUESTS_PER_THREAD = "maxPendingAddRequestsPerThread";
+    protected static final ConfigKey MAX_PENDING_ADD_REQUESTS_PER_THREAD_KEY =
+        ConfigKey.builder(MAX_PENDING_ADD_REQUESTS_PER_THREAD)
+            .type(Type.INT)
+            .description("If add workers threads are enabled, limit the number of pending requests,"
+                + " to avoid the executor queue to grow indefinitely")
+            .defaultValue(10000)
+            .group(GROUP_THREAD)
+            .orderInGroup(106)
+            .build();
+
+    //
+    // LongPoll Settings
+    //
+
+    private static final ConfigKeyGroup GROUP_LONGPOLL = ConfigKeyGroup.builder("longpoll")
+        .description("Long poll related settings")
+        .order(130)
+        .build();
+
+    protected static final String REQUEST_TIMER_TICK_DURATION_MILLISEC = "requestTimerTickDurationMs";
+    protected static final ConfigKey REQUEST_TIMER_TICK_DURATION_MILLISEC_KEY =
+        ConfigKey.builder(REQUEST_TIMER_TICK_DURATION_MILLISEC)
+            .type(Type.INT)
+            .description("The tick duration in milliseconds for long poll requests")
+            .defaultValue(10)
+            .group(GROUP_LONGPOLL)
+            .orderInGroup(100)
+            .build();
+
+    protected static final String REQUEST_TIMER_NO_OF_TICKS = "requestTimerNumTicks";
+    protected static final ConfigKey REQUEST_TIMER_NO_OF_TICKS_KEY =
+        ConfigKey.builder(REQUEST_TIMER_NO_OF_TICKS)
+            .type(Type.INT)
+            .description("The number of ticks per wheel for the long poll request timer")
+            .defaultValue(1024)
+            .group(GROUP_LONGPOLL)
+            .orderInGroup(101)
+            .build();
+
+    //
+    // Backpressure control settings
+    //
+
+    private static final ConfigKeyGroup GROUP_BACKPRESSURE = ConfigKeyGroup.builder("backpressure")
+        .description("Backpressure control related settings")
+        .order(140)
+        .build();
+
+    protected static final String MAX_ADDS_IN_PROGRESS_LIMIT = "maxAddsInProgressLimit";
+    protected static final ConfigKey MAX_ADDS_IN_PROGRESS_LIMIT_KEY =
+        ConfigKey.builder(MAX_ADDS_IN_PROGRESS_LIMIT)
+            .type(Type.INT)
+            .description("max number of adds in progress. 0 == unlimited")
+            .documentation("If the number of add requests in progress reaches this threshold, bookie"
+                + " will be blocking the add threads util some add requests are completed")
+            .defaultValue(0)
+            .group(GROUP_BACKPRESSURE)
+            .orderInGroup(100)
+            .build();
+
+    protected static final String MAX_READS_IN_PROGRESS_LIMIT = "maxReadsInProgressLimit";
+    protected static final ConfigKey MAX_READS_IN_PROGRESS_LIMIT_KEY =
+        ConfigKey.builder(MAX_READS_IN_PROGRESS_LIMIT)
+            .type(Type.INT)
+            .description("max number of adds in progress. 0 == unlimited")
+            .documentation("If the number of read requests in progress reaches this threshold, bookie"
+                + " will be blocking the read threads util some read requests are completed")
+            .defaultValue(0)
+            .group(GROUP_BACKPRESSURE)
+            .orderInGroup(101)
+            .build();
+
+    protected static final String WAIT_TIMEOUT_ON_RESPONSE_BACKPRESSURE = "waitTimeoutOnResponseBackpressureMs";
+    protected static final ConfigKey WAIT_TIMEOUT_ON_RESPONSE_BACKPRESSURE_KEY =
+        ConfigKey.builder(WAIT_TIMEOUT_ON_RESPONSE_BACKPRESSURE)
+            .type(Type.LONG)
+            .description("Timeout controlling wait on response send in case of unresponsive client"
+                + " (i.e. client in long GC etc.)")
+            .documentation("negative value disables the feature, 0 to allow request to fail immediately")
+            .defaultValue(-1L)
+            .group(GROUP_BACKPRESSURE)
+            .orderInGroup(102)
+            .build();
+
+    protected static final String CLOSE_CHANNEL_ON_RESPONSE_TIMEOUT = "closeChannelOnResponseTimeout";
+    protected static final ConfigKey CLOSE_CHANNEL_ON_RESPONSE_TIMEOUT_KEY =
+        ConfigKey.builder(CLOSE_CHANNEL_ON_RESPONSE_TIMEOUT)
+            .type(Type.BOOLEAN)
+            .documentation("Configures action in case if server timed out sending response to the client."
+                + " `true` == close the channel and drop response; `false` == drop response. It requires"
+                + " `" + WAIT_TIMEOUT_ON_RESPONSE_BACKPRESSURE + "` >= 0 otherwise ignored.")
+            .defaultValue(false)
+            .group(GROUP_BACKPRESSURE)
+            .orderInGroup(103)
+            .build();
+
+    //
+    // Read-only mode support
+    //
+
+    private static final ConfigKeyGroup GROUP_READONLY = ConfigKeyGroup.builder("readonly")
+        .description("Read-only mode related settings")
+        .order(150)
+        .build();
+
+    protected static final String READ_ONLY_MODE_ENABLED = "readOnlyModeEnabled";
+    protected static final ConfigKey READ_ONLY_MODE_ENABLED_KEY = ConfigKey.builder(READ_ONLY_MODE_ENABLED)
+        .type(Type.BOOLEAN)
+        .description("If all ledger directories configured are full, then support only read requests for clients")
+        .documentation("If `" + READ_ONLY_MODE_ENABLED + "=true` then on all ledger disks full,"
+            + " bookie will be converted to read-only mode and serve only read requests."
+            + " Otherwise the bookie will be shutdown. By default this will be disabled.")
+        .defaultValue(true)
+        .group(GROUP_READONLY)
+        .orderInGroup(100)
+        .build();
+
+
+    protected static final String FORCE_READ_ONLY_BOOKIE = "forceReadOnlyBookie";
+    protected static final ConfigKey FORCE_READ_ONLY_BOOKIE_KEY = ConfigKey.builder(FORCE_READ_ONLY_BOOKIE)
+        .type(Type.BOOLEAN)
+        .description("Whether the bookie is force started in read only mode or not")
+        .defaultValue(false)
+        .group(GROUP_READONLY)
+        .orderInGroup(101)
+        .build();
+
+    //Whether to persist the bookie status
+    protected static final String PERSIST_BOOKIE_STATUS_ENABLED = "persistBookieStatusEnabled";
+    protected static final ConfigKey PERSIST_BOOKIE_STATUS_ENABLED_KEY =
+        ConfigKey.builder(PERSIST_BOOKIE_STATUS_ENABLED)
+            .type(Type.BOOLEAN)
+            .description("Persist the bookie status locally on the disks. So the bookies can keep their"
+                + " status upon restarts")
+            .defaultValue(false)
+            .group(GROUP_READONLY)
+            .orderInGroup(102)
+            .since("4.6")
+            .build();
+
+    //
+    // Netty Server Settings
+    //
+
+    protected static final String SERVER_TCP_NODELAY = "serverTcpNoDelay";
+    protected static final ConfigKey SERVER_TCP_NODELAY_KEY = ConfigKey.builder(SERVER_TCP_NODELAY)
+        .type(Type.BOOLEAN)
+        .description("This settings is used to enabled/disabled Nagle's algorithm")
+        .documentation("The Nagle's algorithm is a means of improving the efficiency of"
+            + " TCP/IP networks by reducing the number of packets that need to be sent"
+            + " over the network. If you are sending many small messages, such that more"
+            + " than one can fit in a single IP packet, setting server.tcpnodelay to false"
+            + " to enable Nagle algorithm can provide better performance.")
+        .defaultValue(true)
+        .group(GROUP_NETTY)
+        .orderInGroup(100)
+        .build();
+
+    protected static final String SERVER_SOCK_KEEPALIVE = "serverSockKeepalive";
+    protected static final ConfigKey SERVER_SOCK_KEEPALIVE_KEY = ConfigKey.builder(SERVER_SOCK_KEEPALIVE)
+        .type(Type.BOOLEAN)
+        .description("This setting is used to send keep-alive messages on connection-oriented sockets")
+        .defaultValue(true)
+        .group(GROUP_NETTY)
+        .orderInGroup(101)
+        .build();
+
+    protected static final String SERVER_SOCK_LINGER = "serverTcpLinger";
+    protected static final ConfigKey SERVER_SOCK_LINGER_KEY = ConfigKey.builder(SERVER_SOCK_LINGER)
+        .type(Type.INT)
+        .description("The socket linger timeout on close")
+        .documentation("When enabled, a close or shutdown will not return until all queued messages for"
+            + " the socket have been successfully sent or the linger timeout has been reached."
+            + " Otherwise, the call returns immediately and the closing is done in the background")
+        .defaultValue(0)
+        .group(GROUP_NETTY)
+        .orderInGroup(102)
+        .build();
+
+    protected static final String SERVER_WRITEBUFFER_LOW_WATER_MARK = "serverWriteBufferLowWaterMark";
+    protected static final ConfigKey SERVER_WRITEBUFFER_LOW_WATER_MARK_KEY =
+        ConfigKey.builder(SERVER_WRITEBUFFER_LOW_WATER_MARK)
+            .type(Type.INT)
+            .description("server netty channel write buffer low water mark")
+            .documentation("Once the number of bytes queued in the write buffer exceeded the `"
+                + SERVER_WRITEBUFFER_LOW_WATER_MARK + "` and then dropped down below this value,"
+                + " a netty channel `Channel.isWritable()` will start to return true again.")
+            .defaultValue(384 * 1024)
+            .group(GROUP_NETTY)
+            .orderInGroup(103)
+            .build();
+
+    protected static final String SERVER_WRITEBUFFER_HIGH_WATER_MARK = "serverWriteBufferHighWaterMark";
+    protected static final ConfigKey SERVER_WRITEBUFFER_HIGH_WATER_MARK_KEY =
+        ConfigKey.builder(SERVER_WRITEBUFFER_HIGH_WATER_MARK)
+            .type(Type.INT)
+            .description("server netty channel write buffer high water mark")
+            .documentation("If the number of bytes queued in the write buffer exceeds this value,"
+                + " a netty channel `Channel.isWritable()` will start to return false.")
+            .defaultValue(512 * 1024)
+            .group(GROUP_NETTY)
+            .orderInGroup(104)
+            .build();
+
+    protected static final String SERVER_NUM_IO_THREADS = "serverNumIOThreads";
+    protected static final ConfigKey SERVER_NUM_IO_THREADS_KEY = ConfigKey.builder(SERVER_NUM_IO_THREADS)
+        .type(Type.INT)
+        .description("The number of netty IO threads")
+        .documentation("This is the number of threads used by Netty to handle TCP connections")
+        .defaultValueSupplier(conf -> 2 * Runtime.getRuntime().availableProcessors())
+        .group(GROUP_NETTY)
+        .orderInGroup(105)
+        .build();
+
+    protected static final String BYTEBUF_ALLOCATOR_SIZE_INITIAL = "byteBufAllocatorSizeInitial";
+    protected static final ConfigKey BYTEBUF_ALLOCATOR_SIZE_INITIAL_KEY =
+        ConfigKey.builder(BYTEBUF_ALLOCATOR_SIZE_INITIAL)
+            .type(Type.INT)
+            .description("The Recv ByteBuf allocator initial buf size")
+            .defaultValue(66536)
+            .group(GROUP_NETTY)
+            .orderInGroup(106)
+            .build();
+
+    protected static final String BYTEBUF_ALLOCATOR_SIZE_MIN = "byteBufAllocatorSizeMin";
+    protected static final ConfigKey BYTEBUF_ALLOCATOR_SIZE_MIN_KEY =
+        ConfigKey.builder(BYTEBUF_ALLOCATOR_SIZE_MIN)
+            .type(Type.INT)
+            .description("The Recv ByteBuf allocator min buf size")
+            .defaultValue(66536)
+            .group(GROUP_NETTY)
+            .orderInGroup(107)
+            .build();
+
+    protected static final String BYTEBUF_ALLOCATOR_SIZE_MAX = "byteBufAllocatorSizeMax";
+    protected static final ConfigKey BYTEBUF_ALLOCATOR_SIZE_MAX_KEY =
+        ConfigKey.builder(BYTEBUF_ALLOCATOR_SIZE_MAX)
+            .type(Type.INT)
+            .description("The Recv ByteBuf allocator max buf size")
+            .defaultValue(1048576)
+            .group(GROUP_NETTY)
+            .orderInGroup(108)
+            .build();
+
+    //
+    // Http Server Settings
+    //
+
+    private static final ConfigKeyGroup GROUP_HTTP = ConfigKeyGroup.builder("http")
+        .description("Admin http server related settings")
+        .order(160)
+        .build();
+
+    protected static final String HTTP_SERVER_ENABLED = "httpServerEnabled";
+    protected static final ConfigKey HTTP_SERVER_ENABLED_KEY = ConfigKey.builder(HTTP_SERVER_ENABLED)
+        .type(Type.BOOLEAN)
+        .description("The flag enables/disables starting the admin http server")
+        .defaultValue(false)
+        .group(GROUP_HTTP)
+        .orderInGroup(100)
+        .build();
+
+    protected static final String HTTP_SERVER_PORT = "httpServerPort";
+    protected static final ConfigKey HTTP_SERVER_PORT_KEY = ConfigKey.builder(HTTP_SERVER_PORT)
+        .type(Type.INT)
+        .description("The http server port to listen on")
+        .defaultValue(8080)
+        .group(GROUP_HTTP)
+        .orderInGroup(101)
+        .build();
+
+    protected static final String HTTP_SERVER_CLASS = "httpServerClass";
+    protected static final ConfigKey HTTP_SERVER_CLASS_KEY = ConfigKey.builder(HTTP_SERVER_CLASS)
+        .type(Type.CLASS)
+        .description("The http server class")
+        .defaultValue("org.apache.bookkeeper.http.vertx.VertxHttpServer")
+        .group(GROUP_HTTP)
+        .orderInGroup(102)
+        .build();
+
+    //
+    // Journal Settings
+    //
+
+    private static final ConfigKeyGroup GROUP_JOURNAL = ConfigKeyGroup.builder("journal")
+        .description("Journal related settings")
+        .order(170)
+        .build();
+
+    protected static final String JOURNAL_DIRS = "journalDirectories";
+    protected static final ConfigKey JOURNAL_DIRS_KEY = ConfigKey.builder(JOURNAL_DIRS)
+        .type(Type.ARRAY)
+        .description("Directories BookKeeper outputs its write ahead log")
+        .documentation("You could define multi directories to store write head logs, separated by ','."
+            + " For example: `journalDirectories=/tmp/bk-journal1,/tmp/bk-journal2`. If journalDirectories"
+            + " is set, bookies will skip journalDirectory and use this setting directory.")
+        .defaultValue("/tmp/bk-txn")
+        .group(GROUP_JOURNAL)
+        .orderInGroup(100)
+        .deprecated(true)
+        .deprecatedSince("4.5.0")
+        .deprecatedByConfigKey(JOURNAL_DIRS)
+        .build();
+
+    protected static final String JOURNAL_DIR = "journalDirectory";
+    protected static final ConfigKey JOURNAL_DIR_KEY = ConfigKey.builder(JOURNAL_DIR)
+        .type(Type.STRING)
+        .description("Directory Bookkeeper outputs its write ahead log")
+        .defaultValue("/tmp/bk-txn")
+        .group(GROUP_JOURNAL)
+        .orderInGroup(100)
+        .deprecated(true)
+        .deprecatedSince("4.5.0")
+        .deprecatedByConfigKey(JOURNAL_DIRS)
+        .build();
+
+    protected static final String JOURNAL_ALIGNMENT_SIZE = "journalAlignmentSize";
+
+    protected static final String JOURNAL_FORMAT_VERSION_TO_WRITE = "journalFormatVersionToWrite";
+    protected static final ConfigKey JOURNAL_FORMAT_VERSION_TO_WRITE_KEY =
+        ConfigKey.builder(JOURNAL_FORMAT_VERSION_TO_WRITE)
+            .type(Type.INT)
+            .description("The journal format version to write")
+            .documentation("If you'd like to disable persisting ExplicitLac, you can set this"
+                + " config to < `6` and also # fileInfoFormatVersionToWrite should be set"
+                + " to 0. If there is mismatch then the serverconfig is considered invalid."
+                + " You can disable `padding-writes` by setting journal version back to `4`."
+                + " This feature is available since 4.5.0 and onward versions.")
+            .optionValues(Lists.newArrayList(
+                " 1: no header",
+                " 2: a header section was added",
+                " 3: ledger key was introduced",
+                " 4: fencing key was introduced",
+                " 5: expanding header to 512 and padding writes to align sector size configured"
+                    + " by `" + JOURNAL_ALIGNMENT_SIZE + "`",
+                " 6: persisting explicitLac is introduced"
+            ))
+            .defaultValue(6)
+            .group(GROUP_JOURNAL)
+            .orderInGroup(101)
+            .build();
+
+    protected static final String MAX_JOURNAL_SIZE = "journalMaxSizeMB";
+    protected static final ConfigKey MAX_JOURNAL_SIZE_KEY = ConfigKey.builder(MAX_JOURNAL_SIZE)
+        .type(Type.LONG)
+        .description("Max file size of journal file, in mega bytes")
+        .documentation("A new journal file will be created when the old one reaches the file size limitation")
+        .defaultValue(2048L)
+        .group(GROUP_JOURNAL)
+        .orderInGroup(102)
+        .build();
+
+    protected static final String MAX_BACKUP_JOURNALS = "journalMaxBackups";
+    protected static final ConfigKey MAX_BACKUP_JOURNALS_KEY = ConfigKey.builder(MAX_BACKUP_JOURNALS)
+        .type(Type.INT)
+        .description("Max number of old journal file to kept")
+        .documentation("Keep a number of old journal files would help data recovery in special case")
+        .defaultValue(5)
+        .group(GROUP_JOURNAL)
+        .orderInGroup(103)
+        .build();
+
+    protected static final String JOURNAL_PRE_ALLOC_SIZE = "journalPreAllocSizeMB";
+    protected static final ConfigKey JOURNAL_PRE_ALLOC_SIZE_KEY = ConfigKey.builder(JOURNAL_PRE_ALLOC_SIZE)
+        .type(Type.INT)
+        .description("How much space should we pre-allocate at a time in the journal")
+        .defaultValue(16)
+        .group(GROUP_JOURNAL)
+        .orderInGroup(104)
+        .build();
+
+    protected static final String JOURNAL_WRITE_BUFFER_SIZE = "journalWriteBufferSizeKB";
+    protected static final ConfigKey JOURNAL_WRITE_BUFFER_SIZE_KEY = ConfigKey.builder(JOURNAL_WRITE_BUFFER_SIZE)
+        .type(Type.INT)
+        .description("Size of the write buffers used for the journal")
+        .defaultValue(64)
+        .group(GROUP_JOURNAL)
+        .orderInGroup(105)
+        .build();
+
+    protected static final String JOURNAL_REMOVE_FROM_PAGE_CACHE = "journalRemoveFromPageCache";
+    protected static final ConfigKey JOURNAL_REMOVE_FROM_PAGE_CACHE_KEY =
+        ConfigKey.builder(JOURNAL_REMOVE_FROM_PAGE_CACHE)
+            .type(Type.BOOLEAN)
+            .description("Should we remove pages from page cache after force write")
+            .defaultValue(true)
+            .group(GROUP_JOURNAL)
+            .orderInGroup(106)
+            .build();
+
+    protected static final String JOURNAL_SYNC_DATA = "journalSyncData";;
+    protected static final ConfigKey JOURNAL_SYNC_DATA_KEY = ConfigKey.builder(JOURNAL_SYNC_DATA)
+        .type(Type.BOOLEAN)
+        .description("Should the data be fsynced on journal before acknowledgment")
+        .documentation("By default, data sync is enabled to guarantee durability of writes."
+            + " Beware: while disabling data sync in the Bookie journal might improve the"
+            + " bookie write performance, it will also introduce the possibility of data"
+            + " loss. With no sync, the journal entries are written in the OS page cache"
+            + " but not flushed to disk. In case of power failure, the affected bookie might"
+            + " lose the unflushed data. If the ledger is replicated to multiple bookies,"
+            + " the chances of data loss are reduced though still present.")
+        .defaultValue(true)
+        .group(GROUP_JOURNAL)
+        .orderInGroup(107)
+        .build();
+
+    protected static final String JOURNAL_ADAPTIVE_GROUP_WRITES = "journalAdaptiveGroupWrites";
+    protected static final ConfigKey JOURNAL_ADAPTIVE_GROUP_WRITES_KEY =
+        ConfigKey.builder(JOURNAL_ADAPTIVE_GROUP_WRITES)
+            .type(Type.BOOLEAN)
+            .description("Should we group journal force writes, which optimize group commit for higher throughput")
+            .defaultValue(true)
+            .group(GROUP_JOURNAL)
+            .orderInGroup(108)
+            .build();
+
+    protected static final String JOURNAL_MAX_GROUP_WAIT_MSEC = "journalMaxGroupWaitMSec";
+    protected static final ConfigKey JOURNAL_MAX_GROUP_WAIT_MSEC_KEY =
+        ConfigKey.builder(JOURNAL_MAX_GROUP_WAIT_MSEC)
+            .type(Type.LONG)
+            .description("Maximum latency to impose on a journal write to achieve grouping")
+            .defaultValue(2L)
+            .group(GROUP_JOURNAL)
+            .orderInGroup(109)
+            .build();
+
+    protected static final String JOURNAL_BUFFERED_WRITES_THRESHOLD = "journalBufferedWritesThreshold";
+    protected static final ConfigKey JOURNAL_BUFFERED_WRITES_THRESHOLD_KEY =
+        ConfigKey.builder(JOURNAL_BUFFERED_WRITES_THRESHOLD)
+            .type(Type.LONG)
+            .description("Maximum bytes to buffer to achieve grouping. 0 or negative value means disabling"
+                + " bytes-based grouping")
+            .defaultValue(524288L)
+            .group(GROUP_JOURNAL)
+            .orderInGroup(110)
+            .build();
+
+    protected static final String JOURNAL_BUFFERED_ENTRIES_THRESHOLD = "journalBufferedEntriesThreshold";
+    protected static final ConfigKey JOURNAL_BUFFERED_ENTRIES_THRESHOLD_KEY =
+        ConfigKey.builder(JOURNAL_BUFFERED_ENTRIES_THRESHOLD)
+            .type(Type.LONG)
+            .description("Maximum entries to buffer to impose on a journal write to achieve grouping."
+                + " 0 or negative value means disable entries-based grouping")
+            .defaultValue(0L)
+            .group(GROUP_JOURNAL)
+            .orderInGroup(111)
+            .build();
+
+    protected static final String JOURNAL_FLUSH_WHEN_QUEUE_EMPTY = "journalFlushWhenQueueEmpty";
+    protected static final ConfigKey JOURNAL_FLUSH_WHEN_QUEUE_EMPTY_KEY =
+        ConfigKey.builder(JOURNAL_FLUSH_WHEN_QUEUE_EMPTY)
+            .type(Type.BOOLEAN)
+            .description("If we should flush the journal when journal queue is empty")
+            .defaultValue(false)
+            .group(GROUP_JOURNAL)
+            .orderInGroup(112)
+            .build();
+
+    protected static final ConfigKey JOURNAL_ALIGNMENT_SIZE_KEY = ConfigKey.builder(JOURNAL_ALIGNMENT_SIZE)
+        .type(Type.INT)
+        .description("All the journal writes and commits should be aligned to given size")
+        .documentation("If not, zeros will be padded to align to given size. It only takes effects"
+            + " when `" + JOURNAL_FORMAT_VERSION_TO_WRITE + "` is set to 5")
+        .defaultValue(512)
+        .validator(new Validator() {
+            @Override
+            public boolean validate(String name, Object value) {
+                if (value instanceof Number) {
+                    int size = ((Number) value).intValue();
+                    return size >= 512 && (size % 512) == 0;
+                } else {
+                    return false;
+                }
+            }
+
+            @Override
+            public String toString() {
+                return "(n * 512) bytes";
+            }
+        })
+        .group(GROUP_JOURNAL)
+        .orderInGroup(113)
+        .build();
+
+    //
+    // Entry Logger Settings
+    //
+
+    private static final ConfigKeyGroup GROUP_LEDGER_STORAGE_ENTRY_LOGGER = ConfigKeyGroup.builder("entrylogger")
+        .description("EntryLogger related settings")
+        .order(180)
+        .build();
+
+    protected static final String ENTRY_LOG_SIZE_LIMIT = "logSizeLimit";
+    protected static final ConfigKey ENTRY_LOG_SIZE_LIMIT_KEY = ConfigKey.builder(ENTRY_LOG_SIZE_LIMIT)
+        .type(Type.LONG)
+        .description("Max file size of entry logger, in bytes")
+        .documentation("A new entry log file will be created when the old one reaches this file size limitation")
+        .defaultValue(MAX_LOG_SIZE_LIMIT)
+        .validator(RangeValidator.between(0, MAX_LOG_SIZE_LIMIT))
+        .group(GROUP_LEDGER_STORAGE_ENTRY_LOGGER)
+        .orderInGroup(0)
+        .build();
+
+    protected static final String ENTRY_LOG_FILE_PREALLOCATION_ENABLED = "entryLogFilePreallocationEnabled";
+    protected static final ConfigKey ENTRY_LOG_FILE_PREALLOCATION_ENABLED_KEY =
+        ConfigKey.builder(ENTRY_LOG_FILE_PREALLOCATION_ENABLED)
+            .type(Type.BOOLEAN)
+            .description("Enable/Disable entry logger preallocation")
+            .defaultValue(true)
+            .group(GROUP_LEDGER_STORAGE_ENTRY_LOGGER)
+            .orderInGroup(1)
+            .build();
+
+    protected static final String FLUSH_ENTRYLOG_INTERVAL_BYTES = "flushEntrylogBytes";
+    protected static final ConfigKey FLUSH_ENTRYLOG_INTERVAL_BYTES_KEY =
+        ConfigKey.builder(FLUSH_ENTRYLOG_INTERVAL_BYTES)
+            .type(Type.LONG)
+            .description("Entry log flush interval in bytes")
+            .documentation("Default is 0. 0 or less disables this feature and effectively flush"
+                + " happens on log rotation.\nFlushing in smaller chunks but more frequently"
+                + " reduces spikes in disk I/O. Flushing too frequently may also affect"
+                + " performance negatively.")
+            .defaultValue(0)
+            .group(GROUP_LEDGER_STORAGE_ENTRY_LOGGER)
+            .orderInGroup(2)
+            .build();
+
+    protected static final String READ_BUFFER_SIZE = "readBufferSizeBytes";
+    protected static final ConfigKey READ_BUFFER_SIZE_KEY = ConfigKey.builder(READ_BUFFER_SIZE)
+        .type(Type.INT)
+        .description("The number of bytes we should use as capacity for BufferedReadChannel. Default is 512 bytes.")
+        .defaultValue(512)
+        .validator(RangeValidator.atLeast(0))
+        .group(GROUP_LEDGER_STORAGE_ENTRY_LOGGER)
+        .orderInGroup(3)
+        .build();
+
+    protected static final String WRITE_BUFFER_SIZE = "writeBufferSizeBytes";
+    protected static final ConfigKey WRITE_BUFFER_SIZE_KEY = ConfigKey.builder(WRITE_BUFFER_SIZE)
+        .type(Type.INT)
+        .description("The number of bytes used as capacity for the write buffer. Default is 64KB.")
+        .defaultValue(64 * 1024)
+        .validator(RangeValidator.atLeast(0))
+        .group(GROUP_LEDGER_STORAGE_ENTRY_LOGGER)
+        .orderInGroup(4)
+        .build();
+
+    protected static final String ENTRY_LOG_PER_LEDGER_ENABLED = "entryLogPerLedgerEnabled";
+    protected static final String NUMBER_OF_MEMTABLE_FLUSH_THREADS = "numOfMemtableFlushThreads";
+    protected static final String ENTRYLOGMAP_ACCESS_EXPIRYTIME_INSECONDS = "entrylogMapAccessExpiryTimeInSeconds";
+    protected static final String MAXIMUM_NUMBER_OF_ACTIVE_ENTRYLOGS = "maximumNumberOfActiveEntryLogs";
+    protected static final String ENTRY_LOG_PER_LEDGER_COUNTER_LIMITS_MULT_FACTOR =
+        "entryLogPerLedgerCounterLimitsMultFactor";
+
+    protected static final ConfigKey ENTRY_LOG_PER_LEDGER_ENABLED_KEY = ConfigKey.builder(ENTRY_LOG_PER_LEDGER_ENABLED)
+        .type(Type.BOOLEAN)
+        .description("Specifies if entryLog per ledger is enabled/disabled")
+        .documentation("If it is enabled, then there would be a active entrylog for each ledger."
+            + " It would be ideal to enable this feature if the underlying storage device has"
+            + " multiple DiskPartitions or SSD and if in a given moment, entries of fewer number"
+            + " of active ledgers are written to a bookie.")
+        .defaultValue(false)
+        .group(GROUP_LEDGER_STORAGE_ENTRY_LOGGER)
+        .orderInGroup(5)
+        .dependents(Lists.newArrayList(
+            NUMBER_OF_MEMTABLE_FLUSH_THREADS,
+            ENTRYLOGMAP_ACCESS_EXPIRYTIME_INSECONDS,
+            MAXIMUM_NUMBER_OF_ACTIVE_ENTRYLOGS
+        ))
+        .build();
+
+    protected static final ConfigKey NUMBER_OF_MEMTABLE_FLUSH_THREADS_KEY =
+        ConfigKey.builder(NUMBER_OF_MEMTABLE_FLUSH_THREADS)
+            .type(Type.INT)
+            .description("In the case of multipleentrylogs, multiple threads can be used to flush the memtable")
+            .defaultValue(8)
+            .validator(RangeValidator.atLeast(0))
+            .group(GROUP_LEDGER_STORAGE_ENTRY_LOGGER)
+            .orderInGroup(6)
+            .build();
+
+    protected static final ConfigKey ENTRYLOGMAP_ACCESS_EXPIRYTIME_INSECONDS_KEY =
+        ConfigKey.builder(ENTRYLOGMAP_ACCESS_EXPIRYTIME_INSECONDS)
+            .type(Type.INT)
+            .description("The amount of time EntryLogManagerForEntryLogPerLedger should wait for closing"
+                + " the entrylog file after the last addEntry call for that ledger, if explicit writeclose"
+                + " for that ledger is not received")
+            .defaultValue(300)
+            .validator(RangeValidator.atLeast(0))
+            .group(GROUP_LEDGER_STORAGE_ENTRY_LOGGER)
+            .orderInGroup(7)
+            .build();
+
+    protected static final ConfigKey MAXIMUM_NUMBER_OF_ACTIVE_ENTRYLOGS_KEY =
+        ConfigKey.builder(MAXIMUM_NUMBER_OF_ACTIVE_ENTRYLOGS)
+            .type(Type.INT)
+            .description("In entryLogPerLedger feature, this specifies the maximum number of entrylogs that"
+                + " can be active at a given point in time")
+            .documentation("If there are more number of active entryLogs then the `"
+                + MAXIMUM_NUMBER_OF_ACTIVE_ENTRYLOGS + "` then the entrylog will be evicted from the cache.")
+            .defaultValue(500)
+            .validator(RangeValidator.atLeast(0))
+            .group(GROUP_LEDGER_STORAGE_ENTRY_LOGGER)
+            .orderInGroup(8)
+            .build();
+
+    protected static final ConfigKey ENTRY_LOG_PER_LEDGER_COUNTER_LIMITS_MULT_FACTOR_KEY =
+        ConfigKey.builder(ENTRY_LOG_PER_LEDGER_COUNTER_LIMITS_MULT_FACTOR)
+            .type(Type.INT)
+            .description("In entryLogPerLedger feature, this config value specifies the metrics cache size"
+                + " limits in multiples of entrylogMap cache size limits")
+            .defaultValue(10)
+            .validator(RangeValidator.atLeast(0))
+            .group(GROUP_LEDGER_STORAGE_ENTRY_LOGGER)
+            .orderInGroup(9)
+            .build();
+
+    //
     // Ledger Storage Settings
+    //
 
     private static final ConfigKeyGroup GROUP_LEDGER_STORAGE = ConfigKeyGroup.builder("ledgerstorage")
         .description("Ledger Storage related settings")
-        .order(10) // place a place holder here
+        .order(190) // place a place holder here
         .build();
 
     protected static final String LEDGER_STORAGE_CLASS = "ledgerStorageClass";
@@ -66,219 +962,708 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
         ))
         .validator(ClassValidator.of(LedgerStorage.class))
         .group(GROUP_LEDGER_STORAGE)
+        .orderInGroup(0)
         .build();
 
-    // Entry Log Parameters
+    protected static final String SORTED_LEDGER_STORAGE_ENABLED = "sortedLedgerStorageEnabled";
+    protected static final ConfigKey SORTED_LEDGER_STORAGE_ENABLED_KEY =
+        ConfigKey.builder(SORTED_LEDGER_STORAGE_ENABLED)
+            .type(Type.BOOLEAN)
+            .description("Whether to use sorted ledger storage or not")
+            .defaultValue(true)
+            .group(GROUP_LEDGER_STORAGE)
+            .orderInGroup(1)
+            .deprecated(true)
+            .deprecatedByConfigKey(LEDGER_STORAGE_CLASS)
+            .build();
 
-    private static final ConfigKeyGroup GROUP_LEDGER_STORAGE_ENTRY_LOGGER = ConfigKeyGroup.builder("entrylogger")
-        .description("EntryLogger related settings")
-        .order(11)
+    protected static final String LEDGER_DIRS = "ledgerDirectories";
+    protected static final ConfigKey LEDGER_DIRS_KEY = ConfigKey.builder(LEDGER_DIRS)
+        .type(Type.ARRAY)
+        .description("Directories that a bookie outputs ledger storage snapshots")
+        .documentation(
+            "Ideally ledger dirs and journal dirs are ach in a different device,"
+                + " which reduce the contention between random I/O and sequential write."
+                + " It is possible to run with a single disk, but performance will be"
+                + " significantly lower.")
+        .defaultValue(new String[] { "/tmp/bk-data" })
+        .group(GROUP_LEDGER_STORAGE)
+        .orderInGroup(2)
         .build();
 
-    protected static final String ENTRY_LOG_SIZE_LIMIT = "logSizeLimit";
-    protected static final ConfigKey ENTRY_LOG_SIZE_LIMIT_KEY = ConfigKey.builder(ENTRY_LOG_SIZE_LIMIT)
-        .type(Type.LONG)
-        .description("Max file size of entry logger, in bytes")
-        .documentation("A new entry log file will be created when the old one reaches this file size limitation")
-        .defaultValue(MAX_LOG_SIZE_LIMIT)
-        .validator(RangeValidator.between(0, MAX_LOG_SIZE_LIMIT))
-        .group(GROUP_LEDGER_STORAGE_ENTRY_LOGGER)
+    protected static final String INDEX_DIRS = "indexDirectories";
+    protected static final ConfigKey INDEX_DIRS_KEY = ConfigKey.builder(INDEX_DIRS)
+        .type(Type.ARRAY)
+        .description("Directories that a bookie stores index files")
+        .documentation("If not specified, `" + LEDGER_DIRS + "` will be used to store the index files.")
+        .group(GROUP_LEDGER_STORAGE)
+        .orderInGroup(3)
         .build();
 
-    protected static final String ENTRY_LOG_FILE_PREALLOCATION_ENABLED = "entryLogFilePreallocationEnabled";
+    protected static final String MIN_USABLESIZE_FOR_INDEXFILE_CREATION = "minUsableSizeForIndexFileCreation";
+    protected static final ConfigKey MIN_USABLESIZE_FOR_INDEXFILE_CREATION_KEY =
+        ConfigKey.builder(MIN_USABLESIZE_FOR_INDEXFILE_CREATION)
+            .type(Type.LONG)
+            .description("Minimum safe usable size to be available in index directory for bookie to create"
+                + " index file while replaying journal at the time of bookie start in readonly mode (in bytes)")
+            .defaultValue(100 * 1024 * 1024L)
+            .validator(RangeValidator.atLeast(0L))
+            .group(GROUP_LEDGER_STORAGE)
+            .orderInGroup(4)
+            .build();
 
+    protected static final String MIN_USABLESIZE_FOR_ENTRYLOG_CREATION = "minUsableSizeForEntryLogCreation";
+    protected static final ConfigKey MIN_USABLESIZE_FOR_ENTRYLOG_CREATION_KEY =
+        ConfigKey.builder(MIN_USABLESIZE_FOR_ENTRYLOG_CREATION)
+            .type(Type.LONG)
+            .description("Minimum safe usable size to be available in ledger directory for bookie to create"
+                + " entry log files (in bytes)")
+            .documentation("This parameter allows creating entry log files when there are enough disk spaces,"
+                + " even when the bookie is running at readonly mode because of the disk usage is exceeding"
+                + " `diskUsageThreshold`. Because compaction, journal replays can still write data to disks"
+                + " when a bookie is readonly.\n\n"
+                + "Default value is 1.2 * `" + ENTRY_LOG_SIZE_LIMIT + "`.")
+            .validator(RangeValidator.atLeast(0L))
+            .defaultValueSupplier(conf -> 1.2 * ENTRY_LOG_SIZE_LIMIT_KEY.getLong(conf))
+            .group(GROUP_LEDGER_STORAGE)
+            .orderInGroup(5)
+            .build();
 
-    protected static final String MINOR_COMPACTION_INTERVAL = "minorCompactionInterval";
-    protected static final String MINOR_COMPACTION_THRESHOLD = "minorCompactionThreshold";
-    protected static final String MAJOR_COMPACTION_INTERVAL = "majorCompactionInterval";
-    protected static final String MAJOR_COMPACTION_THRESHOLD = "majorCompactionThreshold";
-    protected static final String IS_THROTTLE_BY_BYTES = "isThrottleByBytes";
-    protected static final String COMPACTION_MAX_OUTSTANDING_REQUESTS = "compactionMaxOutstandingRequests";
+    protected static final String MIN_USABLESIZE_FOR_HIGH_PRIORITY_WRITES = "minUsableSizeForHighPriorityWrites";
+    protected static final ConfigKey MIN_USABLESIZE_FOR_HIGH_PRIORITY_WRITES_KEY =
+        ConfigKey.builder(MIN_USABLESIZE_FOR_HIGH_PRIORITY_WRITES)
+            .type(Type.LONG)
+            .description("Minimum safe usable size to be available in ledger directory for bookie to accept"
+                + " high priority writes even it is in readonly mode.")
+            .documentation("If not set, it is the value of `" + MIN_USABLESIZE_FOR_ENTRYLOG_CREATION + "`")
+            .validator(RangeValidator.atLeast(0L))
+            .defaultValueSupplier(conf -> MIN_USABLESIZE_FOR_ENTRYLOG_CREATION_KEY.getLong(conf))
+            .group(GROUP_LEDGER_STORAGE)
+            .orderInGroup(6)
+            .build();
+
+    protected static final String FLUSH_INTERVAL = "flushInterval";
+    protected static final ConfigKey FLUSH_INTERVAL_KEY = ConfigKey.builder(FLUSH_INTERVAL)
+        .type(Type.INT)
+        .description("Interval that a bookie flushes ledger storage to disk, in milliseconds")
+        .documentation("When `entryLogPerLedgerEnabled` is enabled, checkpoint doesn't happen"
+            + " when a new active entrylog is created / previous one is rolled over."
+            + " Instead SyncThread checkpoints periodically with 'flushInterval' delay"
+            + " (in milliseconds) in between executions. Checkpoint flushes both ledger"
+            + " entryLogs and ledger index pages to disk. \n"
+            + "Flushing entrylog and index files will introduce much random disk I/O."
+            + " If separating journal dir and ledger dirs each on different devices,"
+            + " flushing would not affect performance. But if putting journal dir"
+            + " and ledger dirs on same device, performance degrade significantly"
+            + " on too frequent flushing. You can consider increment flush interval"
+            + " to get better performance, but you need to pay more time on bookie"
+            + " server restart after failure.\n"
+            + "This config is used only when entryLogPerLedgerEnabled is enabled or"
+            + " `DbLedgerStorage` is used.")
+        .defaultValue(10000)
+        .validator(RangeValidator.atLeast(0))
+        .group(GROUP_LEDGER_STORAGE)
+        .orderInGroup(7)
+        .build();
+
+    protected static final String ALLOW_STORAGE_EXPANSION = "allowStorageExpansion";
+    protected static final ConfigKey ALLOW_STORAGE_EXPANSION_KEY = ConfigKey.builder(ALLOW_STORAGE_EXPANSION)
+        .type(Type.BOOLEAN)
+        .description("Allow the expansion of bookie storage capacity")
+        .documentation("Newly added ledger and index dirs must be empty")
+        .defaultValue(false)
+        .group(GROUP_LEDGER_STORAGE)
+        .orderInGroup(8)
+        .build();
+
+    //
+    // Entry Logger Compaction Settings
+    //
+
+    private static final ConfigKeyGroup GROUP_ENTRY_LOGGER_COMPACTION = ConfigKeyGroup.builder("compaction")
+        .description("Entry log compaction related settings")
+        .order(200)
+        .build();
+
     protected static final String COMPACTION_RATE = "compactionRate";
     protected static final String COMPACTION_RATE_BY_ENTRIES = "compactionRateByEntries";
     protected static final String COMPACTION_RATE_BY_BYTES = "compactionRateByBytes";
 
-    // Gc Parameters
-    protected static final String GC_WAIT_TIME = "gcWaitTime";
-    protected static final String IS_FORCE_GC_ALLOW_WHEN_NO_SPACE = "isForceGCAllowWhenNoSpace";
-    protected static final String GC_OVERREPLICATED_LEDGER_WAIT_TIME = "gcOverreplicatedLedgerWaitTime";
+    protected static final ConfigKey COMPACTION_RATE_KEY = ConfigKey.builder(COMPACTION_RATE)
+        .type(Type.INT)
+        .description("Set the rate at which compaction will readd entries. The unit is adds per second.")
+        .defaultValue(1000)
+        .group(GROUP_ENTRY_LOGGER_COMPACTION)
+        .orderInGroup(0)
+        .deprecated(true)
+        .deprecatedByConfigKey(COMPACTION_RATE_BY_ENTRIES)
+        .build();
+    protected static final ConfigKey COMPACTION_RATE_BY_ENTRIES_KEY = ConfigKey.builder(COMPACTION_RATE_BY_ENTRIES)
+        .type(Type.INT)
+        .description("Set the rate at which compaction will readd entries. The unit is adds per second.")
+        .defaultValueSupplier(conf -> COMPACTION_RATE_KEY.getInt(conf))
+        .group(GROUP_ENTRY_LOGGER_COMPACTION)
+        .orderInGroup(1)
+        .build();
+    protected static final ConfigKey COMPACTION_RATE_BY_BYTES_KEY = ConfigKey.builder(COMPACTION_RATE_BY_BYTES)
+        .type(Type.INT)
+        .description("Set the rate at which compaction will readd entries. The unit is bytes per second.")
+        .defaultValue(1000000)
+        .group(GROUP_ENTRY_LOGGER_COMPACTION)
+        .orderInGroup(2)
+        .build();
+
+    protected static final String IS_THROTTLE_BY_BYTES = "isThrottleByBytes";
+    protected static final ConfigKey IS_THROTTLE_BY_BYTES_KEY = ConfigKey.builder(IS_THROTTLE_BY_BYTES)
+        .type(Type.BOOLEAN)
+        .description("Throttle compaction by bytes or by entries.")
+        .defaultValue(false)
+        .group(GROUP_ENTRY_LOGGER_COMPACTION)
+        .orderInGroup(3)
+        .build();
+
+    protected static final String COMPACTION_MAX_OUTSTANDING_REQUESTS = "compactionMaxOutstandingRequests";
+    protected static final ConfigKey COMPACTION_MAX_OUTSTANDING_REQUESTS_KEY =
+        ConfigKey.builder(COMPACTION_MAX_OUTSTANDING_REQUESTS)
+            .type(Type.INT)
+            .description("Set the maximum number of entries which can be compacted without flushing")
+            .documentation("When compacting, the entries are written to the entrylog and the new offsets"
+                + " are cached in memory. Once the entrylog is flushed the index is updated with the new"
+                + " offsets. This parameter controls the number of entries added to the entrylog before"
+                + " a flush is forced. A higher value for this parameter means more memory will be used"
+                + " for offsets. Each offset consists of 3 longs. This parameter should _not_ be modified"
+                + " unless you know what you're doing.")
+            .defaultValue(100000)
+            .group(GROUP_ENTRY_LOGGER_COMPACTION)
+            .orderInGroup(4)
+            .build();
+
     protected static final String USE_TRANSACTIONAL_COMPACTION = "useTransactionalCompaction";
+    protected static final ConfigKey USE_TRANSACTIONAL_COMPACTION_KEY = ConfigKey.builder(USE_TRANSACTIONAL_COMPACTION)
+        .type(Type.BOOLEAN)
+        .description("Flag to enable/disable transactional compaction")
+        .documentation("If it is set to true, it will use transactional compaction, which it will"
+            + " use new entry log files to store compacted entries during compaction; if it is set"
+            + " to false, it will use normal compaction, which it shares same entry log file with"
+            + " normal add operations")
+        .defaultValue(false)
+        .group(GROUP_ENTRY_LOGGER_COMPACTION)
+        .orderInGroup(5)
+        .build();
+
+    protected static final String MINOR_COMPACTION_INTERVAL = "minorCompactionInterval";
+    protected static final ConfigKey MINOR_COMPACTION_INTERVAL_KEY = ConfigKey.builder(MINOR_COMPACTION_INTERVAL)
+        .type(Type.LONG)
+        .description("Interval to run minor compaction, in seconds")
+        .documentation("If it is set to less than zero, the minor compaction is disabled")
+        .defaultValue(3600)
+        .group(GROUP_ENTRY_LOGGER_COMPACTION)
+        .orderInGroup(6)
+        .build();
+
+    protected static final String MINOR_COMPACTION_THRESHOLD = "minorCompactionThreshold";
+    protected static final ConfigKey MINOR_COMPACTION_THRESHOLD_KEY = ConfigKey.builder(MINOR_COMPACTION_THRESHOLD)
+        .type(Type.DOUBLE)
+        .description("Threshold of minor compaction")
+        .documentation("For those entry log files whose remaining size percentage reaches below"
+            + " this threshold will be compacted in a minor compaction. If it is set to less than zero,"
+            + " the minor compaction is disabled.")
+        .defaultValue(0.2f)
+        .group(GROUP_ENTRY_LOGGER_COMPACTION)
+        .orderInGroup(7)
+        .build();
+
+    protected static final String MAJOR_COMPACTION_INTERVAL = "majorCompactionInterval";
+    protected static final ConfigKey MAJOR_COMPACTION_INTERVAL_KEY = ConfigKey.builder(MAJOR_COMPACTION_INTERVAL)
+        .type(Type.LONG)
+        .description("Interval to run major compaction, in seconds")
+        .documentation("If it is set to less than zero, the major compaction is disabled")
+        .defaultValue(86400)
+        .group(GROUP_ENTRY_LOGGER_COMPACTION)
+        .orderInGroup(8)
+        .build();
+
+    protected static final String MAJOR_COMPACTION_THRESHOLD = "majorCompactionThreshold";
+    protected static final ConfigKey MAJOR_COMPACTION_THRESHOLD_KEY = ConfigKey.builder(MAJOR_COMPACTION_THRESHOLD)
+        .type(Type.DOUBLE)
+        .description("Threshold of major compaction")
+        .documentation("For those entry log files whose remaining size percentage reaches below"
+            + " this threshold will be compacted in a major compaction."
+            + " Those entry log files whose remaining size percentage is still"
+            + " higher than the threshold will never be compacted."
+            + " If it is set to less than zero, the major compaction is disabled.")
+        .defaultValue(0.8f)
+        .group(GROUP_ENTRY_LOGGER_COMPACTION)
+        .orderInGroup(9)
+        .build();
+
+    //
+    // Garbage Collection Settings
+    //
+
+    private static final ConfigKeyGroup GROUP_GC = ConfigKeyGroup.builder("gc")
+        .description("Garbage collection related settings")
+        .order(210)
+        .build();
+
+    protected static final String GC_WAIT_TIME = "gcWaitTime";
+    protected static final ConfigKey GC_WAIT_TIME_KEY = ConfigKey.builder(GC_WAIT_TIME)
+        .type(Type.LONG)
+        .description("How long the interval to trigger next garbage collection, in milliseconds")
+        .documentation("Since garbage collection is running in background, too frequent gc will"
+            + " heart performance. It is better to give a higher number of gc interval if"
+            + " there is enough disk capacity.")
+        .defaultValue(600000)
+        .group(GROUP_GC)
+        .orderInGroup(0)
+        .build();
+
+    protected static final String GC_OVERREPLICATED_LEDGER_WAIT_TIME = "gcOverreplicatedLedgerWaitTime";
+    protected static final ConfigKey GC_OVERREPLICATED_LEDGER_WAIT_TIME_KEY =
+        ConfigKey.builder(GC_OVERREPLICATED_LEDGER_WAIT_TIME)
+            .type(Type.LONG)
+            .description("How long the interval to trigger next garbage collection of overreplicated"
+                + " ledgers, in milliseconds")
+            .documentation("This should not be run very frequently since we read the metadata for all"
+                + " the ledgers on the bookie from zk")
+            .defaultValue(TimeUnit.DAYS.toMillis(1))
+            .group(GROUP_GC)
+            .orderInGroup(1)
+            .build();
+
+    protected static final String IS_FORCE_GC_ALLOW_WHEN_NO_SPACE = "isForceGCAllowWhenNoSpace";
+    protected static final ConfigKey IS_FORCE_GC_ALLOW_WHEN_NO_SPACE_KEY =
+        ConfigKey.builder(IS_FORCE_GC_ALLOW_WHEN_NO_SPACE)
+            .type(Type.BOOLEAN)
+            .description("Whether force compaction is allowed when the disk is full or almost full")
+            .documentation("Forcing GC may get some space back, but may also fill up disk space more"
+                + " quickly. This is because new log files are created before GC, while old garbage"
+                + " log files are deleted after GC.")
+            .defaultValue(false)
+            .group(GROUP_GC)
+            .orderInGroup(2)
+            .build();
+
     protected static final String VERIFY_METADATA_ON_GC = "verifyMetadataOnGC";
-    // Scrub Parameters
-    protected static final String LOCAL_SCRUB_PERIOD = "localScrubInterval";
-    protected static final String LOCAL_SCRUB_RATE_LIMIT = "localScrubRateLimit";
-    // Sync Parameters
-    protected static final String FLUSH_INTERVAL = "flushInterval";
-    protected static final String FLUSH_ENTRYLOG_INTERVAL_BYTES = "flushEntrylogBytes";
-    // Bookie death watch interval
-    protected static final String DEATH_WATCH_INTERVAL = "bookieDeathWatchInterval";
-    // Ledger Cache Parameters
-    protected static final String OPEN_FILE_LIMIT = "openFileLimit";
-    protected static final String PAGE_LIMIT = "pageLimit";
-    protected static final String PAGE_SIZE = "pageSize";
-    protected static final String FILEINFO_CACHE_INITIAL_CAPACITY = "fileInfoCacheInitialCapacity";
-    protected static final String FILEINFO_MAX_IDLE_TIME = "fileInfoMaxIdleTime";
-    protected static final String FILEINFO_FORMAT_VERSION_TO_WRITE = "fileInfoFormatVersionToWrite";
-    // Journal Parameters
-    protected static final String MAX_JOURNAL_SIZE = "journalMaxSizeMB";
-    protected static final String MAX_BACKUP_JOURNALS = "journalMaxBackups";
-    protected static final String JOURNAL_SYNC_DATA = "journalSyncData";
-    protected static final String JOURNAL_ADAPTIVE_GROUP_WRITES = "journalAdaptiveGroupWrites";
-    protected static final String JOURNAL_MAX_GROUP_WAIT_MSEC = "journalMaxGroupWaitMSec";
-    protected static final String JOURNAL_BUFFERED_WRITES_THRESHOLD = "journalBufferedWritesThreshold";
-    protected static final String JOURNAL_BUFFERED_ENTRIES_THRESHOLD = "journalBufferedEntriesThreshold";
-    protected static final String JOURNAL_FLUSH_WHEN_QUEUE_EMPTY = "journalFlushWhenQueueEmpty";
-    protected static final String JOURNAL_REMOVE_FROM_PAGE_CACHE = "journalRemoveFromPageCache";
-    protected static final String JOURNAL_PRE_ALLOC_SIZE = "journalPreAllocSizeMB";
-    protected static final String JOURNAL_WRITE_BUFFER_SIZE = "journalWriteBufferSizeKB";
-    protected static final String JOURNAL_ALIGNMENT_SIZE = "journalAlignmentSize";
-    protected static final String NUM_JOURNAL_CALLBACK_THREADS = "numJournalCallbackThreads";
-    protected static final String JOURNAL_FORMAT_VERSION_TO_WRITE = "journalFormatVersionToWrite";
-    // backpressure control
-    protected static final String MAX_ADDS_IN_PROGRESS_LIMIT = "maxAddsInProgressLimit";
-    protected static final String MAX_READS_IN_PROGRESS_LIMIT = "maxReadsInProgressLimit";
-    protected static final String CLOSE_CHANNEL_ON_RESPONSE_TIMEOUT = "closeChannelOnResponseTimeout";
-    protected static final String WAIT_TIMEOUT_ON_RESPONSE_BACKPRESSURE = "waitTimeoutOnResponseBackpressureMs";
+    protected static final ConfigKey VERIFY_METADATA_ON_GC_KEY = ConfigKey.builder(VERIFY_METADATA_ON_GC)
+        .type(Type.BOOLEAN)
+        .description("True if the bookie should double check readMetadata prior to gc")
+        .defaultValue(false)
+        .group(GROUP_GC)
+        .orderInGroup(3)
+        .build();
 
-    // Bookie Parameters
-    protected static final String BOOKIE_PORT = "bookiePort";
-    protected static final String LISTENING_INTERFACE = "listeningInterface";
-    protected static final String ALLOW_LOOPBACK = "allowLoopback";
-    protected static final String ADVERTISED_ADDRESS = "advertisedAddress";
-    protected static final String ALLOW_EPHEMERAL_PORTS = "allowEphemeralPorts";
+    //
+    // Disk Utilization Settings
+    //
 
-    protected static final String JOURNAL_DIR = "journalDirectory";
-    protected static final String JOURNAL_DIRS = "journalDirectories";
-    protected static final String LEDGER_DIRS = "ledgerDirectories";
-    protected static final String INDEX_DIRS = "indexDirectories";
-    protected static final String ALLOW_STORAGE_EXPANSION = "allowStorageExpansion";
-    // NIO and Netty Parameters
-    protected static final String SERVER_TCP_NODELAY = "serverTcpNoDelay";
-    protected static final String SERVER_SOCK_KEEPALIVE = "serverSockKeepalive";
-    protected static final String SERVER_SOCK_LINGER = "serverTcpLinger";
-    protected static final String SERVER_WRITEBUFFER_LOW_WATER_MARK = "serverWriteBufferLowWaterMark";
-    protected static final String SERVER_WRITEBUFFER_HIGH_WATER_MARK = "serverWriteBufferHighWaterMark";
-    protected static final String SERVER_NUM_IO_THREADS = "serverNumIOThreads";
+    private static final ConfigKeyGroup GROUP_DISK = ConfigKeyGroup.builder("disk")
+        .description("Disk related settings")
+        .order(220)
+        .build();
 
-    // Zookeeper Parameters
-    protected static final String ZK_RETRY_BACKOFF_START_MS = "zkRetryBackoffStartMs";
-    protected static final String ZK_RETRY_BACKOFF_MAX_MS = "zkRetryBackoffMaxMs";
-    protected static final String OPEN_LEDGER_REREPLICATION_GRACE_PERIOD = "openLedgerRereplicationGracePeriod";
-    protected static final String LOCK_RELEASE_OF_FAILED_LEDGER_GRACE_PERIOD = "lockReleaseOfFailedLedgerGracePeriod";
-    //ReadOnly mode support on all disk full
-    protected static final String READ_ONLY_MODE_ENABLED = "readOnlyModeEnabled";
-    //Whether the bookie is force started in ReadOnly mode
-    protected static final String FORCE_READ_ONLY_BOOKIE = "forceReadOnlyBookie";
-    //Whether to persist the bookie status
-    protected static final String PERSIST_BOOKIE_STATUS_ENABLED = "persistBookieStatusEnabled";
-    //Disk utilization
     protected static final String DISK_USAGE_THRESHOLD = "diskUsageThreshold";
+    protected static final ConfigKey DISK_USAGE_THRESHOLD_KEY = ConfigKey.builder(DISK_USAGE_THRESHOLD)
+        .type(Type.FLOAT)
+        .description("For each ledger dir, maximum disk space which can be used")
+        .documentation("Default is 0.95f. i.e. 95% of disk can be used at most after which nothing will"
+            + " be written to that partition. If all ledger dir partions are full, then bookie will turn"
+            + " to readonly mode if 'readOnlyModeEnabled=true' is set, else it will shutdown.")
+        .defaultValue(0.95f)
+        .validator(RangeValidator.between(0f, 1f))
+        .group(GROUP_DISK)
+        .orderInGroup(0)
+        .build();
+
     protected static final String DISK_USAGE_WARN_THRESHOLD = "diskUsageWarnThreshold";
+    protected static final ConfigKey DISK_USAGE_WARN_THRESHOLD_KEY = ConfigKey.builder(DISK_USAGE_WARN_THRESHOLD)
+        .type(Type.FLOAT)
+        .description("The disk free space warn threshold")
+        .documentation("Disk is considered full when usage threshold is exceeded."
+            + " Disk returns back to non-full state when usage is below low water mark threshold."
+            + " This prevents it from going back and forth between these states frequently when"
+            + " concurrent writes and compaction are happening. This also prevent bookie from"
+            + " switching frequently between read-only and read-writes states in the same cases.")
+        .defaultValue(0.95f)
+        .validator(RangeValidator.between(0f, 1f))
+        .group(GROUP_DISK)
+        .orderInGroup(1)
+        .build();
+
     protected static final String DISK_USAGE_LWM_THRESHOLD = "diskUsageLwmThreshold";
+    protected static final ConfigKey DISK_USAGE_LWM_THRESHOLD_KEY = ConfigKey.builder(DISK_USAGE_LWM_THRESHOLD)
+        .type(Type.FLOAT)
+        .description("The disk free space low water mark threshold")
+        .documentation("Disk is considered full when usage threshold is exceeded."
+            + " Disk returns back to non-full state when usage is below low water"
+            + " mark threshold. This prevents it from going back and forth between"
+            + " these states frequently when concurrent writes and compaction are "
+            + " happening. This also prevent bookie from switching frequently between"
+            + " read-only and read-writes states in the same cases.")
+        .defaultValueSupplier((conf) -> DISK_USAGE_THRESHOLD_KEY.getFloat(conf))
+        .validator(RangeValidator.between(0f, 1f))
+        .group(GROUP_DISK)
+        .orderInGroup(2)
+        .build();
+
     protected static final String DISK_CHECK_INTERVAL = "diskCheckInterval";
+    protected static final ConfigKey DISK_CHECK_INTERVAL_KEY = ConfigKey.builder(DISK_CHECK_INTERVAL)
+        .type(Type.INT)
+        .description("Disk check interval in milli seconds")
+        .documentation("Interval to check the ledger dirs usage. Default is 10000")
+        .defaultValue(TimeUnit.SECONDS.toMillis(10))
+        .validator(RangeValidator.atLeast(0))
+        .group(GROUP_DISK)
+        .orderInGroup(3)
+        .build();
 
-    // Replication parameters
-    protected static final String AUDITOR_PERIODIC_CHECK_INTERVAL = "auditorPeriodicCheckInterval";
-    protected static final String AUDITOR_PERIODIC_BOOKIE_CHECK_INTERVAL = "auditorPeriodicBookieCheckInterval";
-    protected static final String AUDITOR_LEDGER_VERIFICATION_PERCENTAGE = "auditorLedgerVerificationPercentage";
-    protected static final String AUTO_RECOVERY_DAEMON_ENABLED = "autoRecoveryDaemonEnabled";
-    protected static final String LOST_BOOKIE_RECOVERY_DELAY = "lostBookieRecoveryDelay";
-    protected static final String RW_REREPLICATE_BACKOFF_MS = "rwRereplicateBackoffMs";
+    //
+    // Disk Scrub Settings
+    //
 
-    // Worker Thread parameters.
-    protected static final String NUM_ADD_WORKER_THREADS = "numAddWorkerThreads";
-    protected static final String NUM_READ_WORKER_THREADS = "numReadWorkerThreads";
-    protected static final String MAX_PENDING_READ_REQUESTS_PER_THREAD = "maxPendingReadRequestsPerThread";
-    protected static final String MAX_PENDING_ADD_REQUESTS_PER_THREAD = "maxPendingAddRequestsPerThread";
-    protected static final String NUM_LONG_POLL_WORKER_THREADS = "numLongPollWorkerThreads";
-    protected static final String NUM_HIGH_PRIORITY_WORKER_THREADS = "numHighPriorityWorkerThreads";
+    private static final ConfigKeyGroup GROUP_SCRUB = ConfigKeyGroup.builder("scrub")
+        .description("Local Scrub related settings")
+        .order(230)
+        .build();
 
-    // Long poll parameters
-    protected static final String REQUEST_TIMER_TICK_DURATION_MILLISEC = "requestTimerTickDurationMs";
-    protected static final String REQUEST_TIMER_NO_OF_TICKS = "requestTimerNumTicks";
+    protected static final String LOCAL_SCRUB_PERIOD = "localScrubInterval";
+    protected static final ConfigKey LOCAL_SCRUB_PERIOD_KEY = ConfigKey.builder(LOCAL_SCRUB_PERIOD)
+        .type(Type.LONG)
+        .description("Set local scrub period in seconds (<= 0 for disabled)")
+        .documentation("Scrub will be scheduled at delays chosen from the interval (.5 * interval, 1.5 * interval)")
+        .defaultValue(0)
+        .group(GROUP_SCRUB)
+        .orderInGroup(0)
+        .build();
 
-    protected static final String READ_BUFFER_SIZE = "readBufferSizeBytes";
-    protected static final String WRITE_BUFFER_SIZE = "writeBufferSizeBytes";
-    // Whether the bookie should use its hostname or ipaddress for the
-    // registration.
-    protected static final String USE_HOST_NAME_AS_BOOKIE_ID = "useHostNameAsBookieID";
-    protected static final String USE_SHORT_HOST_NAME = "useShortHostName";
-    protected static final String ENABLE_LOCAL_TRANSPORT = "enableLocalTransport";
-    protected static final String DISABLE_SERVER_SOCKET_BIND = "disableServerSocketBind";
+    protected static final String LOCAL_SCRUB_RATE_LIMIT = "localScrubRateLimit";
+    protected static final ConfigKey LOCAL_SCRUB_RATE_LIMIT_KEY = ConfigKey.builder(LOCAL_SCRUB_RATE_LIMIT)
+        .type(Type.DOUBLE)
+        .description("local scrub rate limit (entries/second)")
+        .defaultValue(60)
+        .group(GROUP_SCRUB)
+        .orderInGroup(1)
+        .build();
 
-    protected static final String SORTED_LEDGER_STORAGE_ENABLED = "sortedLedgerStorageEnabled";
-    protected static final String SKIP_LIST_SIZE_LIMIT = "skipListSizeLimit";
-    protected static final String SKIP_LIST_CHUNK_SIZE_ENTRY = "skipListArenaChunkSize";
-    protected static final String SKIP_LIST_MAX_ALLOC_ENTRY = "skipListArenaMaxAllocSize";
-
-    // Statistics Parameters
-    protected static final String ENABLE_STATISTICS = "enableStatistics";
-    protected static final String STATS_PROVIDER_CLASS = "statsProviderClass";
-
-
-    // Rx adaptive ByteBuf allocator parameters
-    protected static final String BYTEBUF_ALLOCATOR_SIZE_INITIAL = "byteBufAllocatorSizeInitial";
-    protected static final String BYTEBUF_ALLOCATOR_SIZE_MIN = "byteBufAllocatorSizeMin";
-    protected static final String BYTEBUF_ALLOCATOR_SIZE_MAX = "byteBufAllocatorSizeMax";
-
-    // Bookie auth provider factory class name
-    protected static final String BOOKIE_AUTH_PROVIDER_FACTORY_CLASS = "bookieAuthProviderFactoryClass";
-
-    protected static final String MIN_USABLESIZE_FOR_INDEXFILE_CREATION = "minUsableSizeForIndexFileCreation";
-    protected static final String MIN_USABLESIZE_FOR_ENTRYLOG_CREATION = "minUsableSizeForEntryLogCreation";
-    protected static final String MIN_USABLESIZE_FOR_HIGH_PRIORITY_WRITES = "minUsableSizeForHighPriorityWrites";
-
-    protected static final String ALLOW_MULTIPLEDIRS_UNDER_SAME_DISKPARTITION =
-        "allowMultipleDirsUnderSameDiskPartition";
-
-    // Http Server parameters
-    protected static final String HTTP_SERVER_ENABLED = "httpServerEnabled";
-    protected static final String HTTP_SERVER_PORT = "httpServerPort";
-
-    // Lifecycle Components
-    protected static final String EXTRA_SERVER_COMPONENTS = "extraServerComponents";
-    protected static final String IGNORE_EXTRA_SERVER_COMPONENTS_STARTUP_FAILURES =
-        "ignoreExtraServerComponentsStartupFailures";
-
-    // Registration
-    protected static final String REGISTRATION_MANAGER_CLASS = "registrationManagerClass";
-
-    // Stats
-    protected static final String ENABLE_TASK_EXECUTION_STATS = "enableTaskExecutionStats";
-
-    /*
-     * config specifying if the entrylog per ledger is enabled or not.
-     */
-    protected static final String ENTRY_LOG_PER_LEDGER_ENABLED = "entryLogPerLedgerEnabled";
-    // In the case of multipleentrylogs, multiple threads can be used to flush the memtable parallelly.
-    protected static final String NUMBER_OF_MEMTABLE_FLUSH_THREADS = "numOfMemtableFlushThreads";
-
-
-    /*
-     * config specifying if the entrylog per ledger is enabled, then the amount
-     * of time EntryLogManagerForEntryLogPerLedger should wait for closing the
-     * entrylog file after the last addEntry call for that ledger, if explicit
-     * writeclose for that ledger is not received.
-     */
-    protected static final String ENTRYLOGMAP_ACCESS_EXPIRYTIME_INSECONDS = "entrylogMapAccessExpiryTimeInSeconds";
-
-    /*
-     * in entryLogPerLedger feature, this specifies the maximum number of
-     * entrylogs that can be active at a given point in time. If there are more
-     * number of active entryLogs then the maximumNumberOfActiveEntryLogs then
-     * the entrylog will be evicted from the cache.
-     */
-    protected static final String MAXIMUM_NUMBER_OF_ACTIVE_ENTRYLOGS = "maximumNumberOfActiveEntryLogs";
-
-    /*
-     * in EntryLogManagerForEntryLogPerLedger, this config value specifies the
-     * metrics cache size limits in multiples of entrylogMap cache size limits.
-     */
-    protected static final String ENTRY_LOG_PER_LEDGER_COUNTER_LIMITS_MULT_FACTOR =
-            "entryLogPerLedgerCounterLimitsMultFactor";
-
-    // Perform local consistency check on bookie startup
     protected static final String LOCAL_CONSISTENCY_CHECK_ON_STARTUP = "localConsistencyCheckOnStartup";
+    protected static final ConfigKey LOCAL_CONSISTENCY_CHECK_ON_STARTUP_KEY =
+        ConfigKey.builder(LOCAL_CONSISTENCY_CHECK_ON_STARTUP)
+            .type(Type.BOOLEAN)
+            .description("True if a local consistency check should be performed on startup.")
+            .defaultValue(false)
+            .group(GROUP_SCRUB)
+            .orderInGroup(2)
+            .build();
+
+    //
+    // Sorted Ledger Storage Settings
+    //
+
+    private static final ConfigKeyGroup GROUP_SORTED_LEDGER_STORAGE = ConfigKeyGroup.builder("sortedledgerstorage")
+        .description("SortedLedgerStorage related settings")
+        .order(240)
+        .build();
+
+    protected static final String SKIP_LIST_SIZE_LIMIT = "skipListSizeLimit";
+    protected static final ConfigKey SKIP_LIST_SIZE_LIMIT_KEY = ConfigKey.builder(SKIP_LIST_SIZE_LIMIT)
+        .type(Type.LONG)
+        .description("The skip list data size limitation in EntryMemTable")
+        .defaultValue(64 * 1024 * 1024L)
+        .validator(RangeValidator.between(0, (Integer.MAX_VALUE - 1) / 2))
+        .group(GROUP_SORTED_LEDGER_STORAGE)
+        .orderInGroup(100)
+        .build();
+
+    protected static final String SKIP_LIST_CHUNK_SIZE_ENTRY = "skipListArenaChunkSize";
+    protected static final ConfigKey SKIP_LIST_CHUNK_SIZE_ENTRY_KEY = ConfigKey.builder(SKIP_LIST_CHUNK_SIZE_ENTRY)
+        .type(Type.INT)
+        .description("The number of bytes we should use as chunk allocation for"
+            + " org.apache.bookkeeper.bookie.SkipListArena")
+        .defaultValue(4096 * 1024)
+        .group(GROUP_SORTED_LEDGER_STORAGE)
+        .orderInGroup(101)
+        .build();
+
+    protected static final String SKIP_LIST_MAX_ALLOC_ENTRY = "skipListArenaMaxAllocSize";
+    protected static final ConfigKey SKIP_LIST_MAX_ALLOC_ENTRY_KEY = ConfigKey.builder(SKIP_LIST_MAX_ALLOC_ENTRY)
+        .type(Type.INT)
+        .description("The max size we should allocate from the skiplist arena")
+        .documentation("Allocations larger than this should be allocated directly by the VM to avoid fragmentation.")
+        .defaultValue(128 * 1024)
+        .group(GROUP_SORTED_LEDGER_STORAGE)
+        .orderInGroup(102)
+        .build();
+
+    protected static final String OPEN_FILE_LIMIT = "openFileLimit";
+    protected static final ConfigKey OPEN_FILE_LIMIT_KEY = ConfigKey.builder(OPEN_FILE_LIMIT)
+        .type(Type.INT)
+        .description("Max number of ledger index files could be opened in bookie server")
+        .documentation("If number of ledger index files reaches this limitation, bookie"
+            + " server started to swap some ledgers from memory to disk. Too frequent swap"
+            + " will affect performance. You can tune this number to gain performance according your requirements.")
+        .defaultValue(20000)
+        .group(GROUP_SORTED_LEDGER_STORAGE)
+        .orderInGroup(103)
+        .build();
+
+    protected static final String FILEINFO_CACHE_INITIAL_CAPACITY = "fileInfoCacheInitialCapacity";
+    protected static final ConfigKey FILEINFO_CACHE_INITIAL_CAPACITY_KEY =
+        ConfigKey.builder(FILEINFO_CACHE_INITIAL_CAPACITY)
+            .type(Type.INT)
+            .description("The minimum total size of the internal file info cache table")
+            .documentation("Providing a large enough estimate at construction time avoids the need"
+                + " for expensive resizing operations later, but setting this value unnecessarily"
+                + " high wastes memory. The default value is `1/4` of # `" + OPEN_FILE_LIMIT + "`"
+                + " if " + OPEN_FILE_LIMIT + " is positive, otherwise it is 64.")
+            .defaultValueSupplier(conf -> Math.max(OPEN_FILE_LIMIT_KEY.getInt(conf) / 4, 64))
+            .group(GROUP_SORTED_LEDGER_STORAGE)
+            .orderInGroup(104)
+            .build();
+
+    protected static final String FILEINFO_MAX_IDLE_TIME = "fileInfoMaxIdleTime";
+    protected static final ConfigKey FILEINFO_MAX_IDLE_TIME_KEY = ConfigKey.builder(FILEINFO_MAX_IDLE_TIME)
+        .type(Type.LONG)
+        .description("The max idle time allowed for an open file info existed in the file info cache")
+        .documentation("If the file info is idle for a long time, exceed the given time period. The file info"
+            + " will be evicted and closed. If the value is zero or negative, the file info is evicted"
+            + " only when opened files reached openFileLimit.")
+        .defaultValue(0)
+        .group(GROUP_SORTED_LEDGER_STORAGE)
+        .orderInGroup(105)
+        .build();
+
+    protected static final String FILEINFO_FORMAT_VERSION_TO_WRITE = "fileInfoFormatVersionToWrite";
+    protected static final ConfigKey FILEINFO_FORMAT_VERSION_TO_WRITE_KEY =
+        ConfigKey.builder(FILEINFO_FORMAT_VERSION_TO_WRITE)
+            .type(Type.INT)
+            .description("The fileinfo format version to write")
+            .documentation("If you'd like to disable persisting ExplicitLac, you can set this config to 0 and"
+                + " also journalFormatVersionToWrite should be set to < 6. If there is mismatch then the"
+                + " server config is considered invalid")
+            .optionValues(Lists.newArrayList(
+                "0: Initial version",
+                "1: persisting explicitLac is introduced"
+            ))
+            .defaultValue(1)
+            .group(GROUP_SORTED_LEDGER_STORAGE)
+            .orderInGroup(106)
+            .build();
+
+    protected static final String PAGE_SIZE = "pageSize";
+    protected static final ConfigKey PAGE_SIZE_KEY = ConfigKey.builder(PAGE_SIZE)
+        .type(Type.INT)
+        .description("Size of a index page in ledger cache, in bytes")
+        .documentation("A larger index page can improve performance writing page to disk, which is efficent"
+            + " when you have small number of ledgers and these ledgers have similar number of entries. If"
+            + " you have large number of ledgers and each ledger has fewer entries, smaller index page would"
+            + " improve memory usage.")
+        .defaultValue(8192)
+        .group(GROUP_SORTED_LEDGER_STORAGE)
+        .orderInGroup(107)
+        .build();
+
+    protected static final String PAGE_LIMIT = "pageLimit";
+    protected static final ConfigKey PAGE_LIMIT_KEY = ConfigKey.builder(PAGE_LIMIT)
+        .type(Type.INT)
+        .description("How many index pages provided in ledger cache")
+        .documentation("If number of index pages reaches this limitation, bookie server starts to swap some ledgers"
+            + " from memory to disk. You can increment this value when you found swap became more frequent."
+            + " But make sure pageLimit*pageSize should not more than JVM max memory limitation, otherwise you would"
+            + " got OutOfMemoryException. In general, incrementing pageLimit, using smaller index page would gain"
+            + " bettern performance in lager number of ledgers with fewer entries case If pageLimit is -1, bookie"
+            + " server will use 1/3 of JVM memory to compute the limitation of number of index pages.")
+        .defaultValue(-1)
+        .group(GROUP_SORTED_LEDGER_STORAGE)
+        .orderInGroup(108)
+        .build();
+
+    //
+    // Db Ledger Storage Settings
+    //
+
+    private static final ConfigKeyGroup GROUP_DB_LEDGER_STORAGE = ConfigKeyGroup.builder("dbledgerstorage")
+        .description("DbLedgerStorage related settings")
+        .order(250)
+        .build();
+
+
+    //
+    // ZK metadata service settings
+    //
+
+    protected static final String ZK_RETRY_BACKOFF_START_MS = "zkRetryBackoffStartMs";
+    protected static final ConfigKey ZK_RETRY_BACKOFF_START_MS_KEY = ConfigKey.builder(ZK_RETRY_BACKOFF_START_MS)
+        .type(Type.INT)
+        .description("The Zookeeper client backoff retry start time in millis")
+        .defaultValueSupplier(conf -> ZK_TIMEOUT_KEY.getInt(conf))
+        .group(GROUP_ZK)
+        .orderInGroup(100)
+        .build();
+
+    protected static final String ZK_RETRY_BACKOFF_MAX_MS = "zkRetryBackoffMaxMs";
+    protected static final ConfigKey ZK_RETRY_BACKOFF_MAX_MS_KEY = ConfigKey.builder(ZK_RETRY_BACKOFF_MAX_MS)
+        .type(Type.INT)
+        .description("The Zookeeper client backoff retry max time in millis")
+        .defaultValueSupplier(conf -> ZK_TIMEOUT_KEY.getInt(conf))
+        .group(GROUP_ZK)
+        .orderInGroup(101)
+        .build();
+
+    //
+    // Statistics Settings
+    //
+
+    private static final ConfigKeyGroup GROUP_STATS = ConfigKeyGroup.builder("stats")
+        .description("Stats related settings")
+        .order(260)
+        .children(Lists.newArrayList(
+            "org.apache.bookkeeper.stats.prometheus.PrometheusMetricsProvider",
+            "org.apache.bookkeeper.stats.codahale.CodahaleMetricsProvider",
+            "org.apache.bookkeeper.stats.twitter.finagle.FinagleStatsProvider",
+            "org.apache.bookkeeper.stats.twitter.ostrich.OstrichProvider",
+            "org.apache.bookkeeper.stats.twitter.science.TwitterStatsProvider"
+        ))
+        .build();
+
+    protected static final String ENABLE_STATISTICS = "enableStatistics";
+    protected static final ConfigKey ENABLE_STATISTICS_KEY = ConfigKey.builder(ENABLE_STATISTICS)
+        .type(Type.BOOLEAN)
+        .description("Turn on/off statistics")
+        .defaultValue(true)
+        .group(GROUP_STATS)
+        .orderInGroup(100)
+        .build();
+
+    protected static final String ENABLE_TASK_EXECUTION_STATS = "enableTaskExecutionStats";
+    protected static final ConfigKey ENABLE_TASK_EXECUTION_STATS_KEY = ConfigKey.builder(ENABLE_TASK_EXECUTION_STATS)
+        .type(Type.BOOLEAN)
+        .description("The flag to enable recording task execution stats")
+        .defaultValue(false)
+        .group(GROUP_STATS)
+        .orderInGroup(101)
+        .build();
+
+    protected static final String STATS_PROVIDER_CLASS = "statsProviderClass";
+    protected static final ConfigKey STATS_PROVIDER_CLASS_KEY = ConfigKey.builder(STATS_PROVIDER_CLASS)
+        .type(Type.CLASS)
+        .description("Stats Provider Class (if `" + ENABLE_STATISTICS + "` are enabled)")
+        .defaultValue(NullStatsProvider.class)
+        .optionValues(Lists.newArrayList(
+            "Prometheus        : org.apache.bookkeeper.stats.prometheus.PrometheusMetricsProvider",
+            "Codahale          : org.apache.bookkeeper.stats.codahale.CodahaleMetricsProvider",
+            "Twitter Finagle   : org.apache.bookkeeper.stats.twitter.finagle.FinagleStatsProvider",
+            "Twitter Ostrich   : org.apache.bookkeeper.stats.twitter.ostrich.OstrichProvider",
+            "Twitter Science   : org.apache.bookkeeper.stats.twitter.science.TwitterStatsProvider"
+        ))
+        .group(GROUP_STATS)
+        .orderInGroup(102)
+        .build();
+
+    //
+    // Replication Worker Settings
+    //
+
+    protected static final String OPEN_LEDGER_REREPLICATION_GRACE_PERIOD = "openLedgerRereplicationGracePeriod";
+    protected static final ConfigKey OPEN_LEDGER_REREPLICATION_GRACE_PERIOD_KEY =
+        ConfigKey.builder(OPEN_LEDGER_REREPLICATION_GRACE_PERIOD)
+            .type(Type.INT)
+            .description("The grace period, in seconds, that the replication worker waits"
+                    + " before fencing and replicating a ledger fragment that's still being"
+                    + " written to upon bookie failure.")
+            .defaultValue(30)
+            .group(GROUP_REPLICATION_WORKER)
+            .orderInGroup(100)
+            .build();
+
+    protected static final String RW_REREPLICATE_BACKOFF_MS = "rwRereplicateBackoffMs";
+    protected static final ConfigKey RW_REREPLICATE_BACKOFF_MS_KEY =
+        ConfigKey.builder(RW_REREPLICATE_BACKOFF_MS)
+            .type(Type.INT)
+            .description("The time to backoff when replication worker encounters exceptions on"
+                + " replicating a ledger, in milliseconds")
+            .defaultValue(5000)
+            .group(GROUP_REPLICATION_WORKER)
+            .orderInGroup(101)
+            .build();
+
+    protected static final String LOCK_RELEASE_OF_FAILED_LEDGER_GRACE_PERIOD = "lockReleaseOfFailedLedgerGracePeriod";
+    protected static final ConfigKey LOCK_RELEASE_OF_FAILED_LEDGER_GRACE_PERIOD_KEY =
+        ConfigKey.builder(LOCK_RELEASE_OF_FAILED_LEDGER_GRACE_PERIOD)
+            .type(Type.INT)
+            .description("The grace period, in milliseconds, if the replication worker fails to replicate"
+                + " a underreplicatedledger for more than `10` times, then instead of releasing the lock"
+                + " immediately after failed attempt, it will hold under replicated ledger lock for this"
+                + " grace period and then it will release the lock.")
+            .defaultValue(60000)
+            .group(GROUP_REPLICATION_WORKER)
+            .orderInGroup(102)
+            .build();
+
+    //
+    // Auditor Settings
+    //
+
+    protected static final String AUDITOR_PERIODIC_CHECK_INTERVAL = "auditorPeriodicCheckInterval";
+    protected static final ConfigKey AUDITOR_PERIODIC_CHECK_INTERVAL_KEY =
+        ConfigKey.builder(AUDITOR_PERIODIC_CHECK_INTERVAL)
+            .type(Type.INT)
+            .description("The interval between auditor bookie checks, in seconds")
+            .documentation("The auditor bookie check, checks ledger metadata to see which bookies should"
+                + " contain entries for each ledger. If a bookie which should contain entries is "
+                + " unavailable, then the ledger containing that entry is marked for recovery."
+                + " Setting this to 0 disabled the periodic check. Bookie checks will still run when"
+                + " a bookie fails")
+            .defaultValue(604800)
+            .group(GROUP_AUDITOR)
+            .orderInGroup(100)
+            .build();
+
+    protected static final String AUDITOR_PERIODIC_BOOKIE_CHECK_INTERVAL = "auditorPeriodicBookieCheckInterval";
+    protected static final ConfigKey AUDITOR_PERIODIC_BOOKIE_CHECK_INTERVAL_KEY =
+        ConfigKey.builder(AUDITOR_PERIODIC_BOOKIE_CHECK_INTERVAL)
+            .type(Type.INT)
+            .description("Interval at which the auditor will do a check of all ledgers in the cluster, in seconds")
+            .documentation("To disable the periodic check completely, set this to 0. Note that periodic checking"
+                    + " will put extra load on the cluster, so it should not be run more frequently than once a day.")
+            .defaultValue(86400)
+            .group(GROUP_AUDITOR)
+            .orderInGroup(101)
+            .build();
+
+    protected static final String AUDITOR_LEDGER_VERIFICATION_PERCENTAGE = "auditorLedgerVerificationPercentage";
+    protected static final ConfigKey AUDITOR_LEDGER_VERIFICATION_PERCENTAGE_KEY =
+        ConfigKey.builder(AUDITOR_LEDGER_VERIFICATION_PERCENTAGE)
+            .type(Type.INT)
+            .description("The percentage of a ledger (fragment)'s entries will be verified before claiming this"
+                + " fragment as missing fragment")
+            .documentation("Default is 0, which only verify the first and last entries of a given fragment")
+            .defaultValue(0)
+            .group(GROUP_AUDITOR)
+            .orderInGroup(102)
+            .build();
+
+    protected static final String LOST_BOOKIE_RECOVERY_DELAY = "lostBookieRecoveryDelay";
+    protected static final ConfigKey LOST_BOOKIE_RECOVERY_DELAY_KEY = ConfigKey.builder(LOST_BOOKIE_RECOVERY_DELAY)
+        .type(Type.INT)
+        .description("How long to wait, in seconds, before starting auto recovery of a lost bookie")
+        .defaultValue(0)
+        .group(GROUP_AUDITOR)
+        .orderInGroup(103)
+        .build();
+
+    //
+    // AutoRecovery Settings
+    //
+
+    protected static final String AUTO_RECOVERY_DAEMON_ENABLED = "autoRecoveryDaemonEnabled";
+    protected static final ConfigKey AUTO_RECOVERY_DAEMON_ENABLED_KEY =
+        ConfigKey.builder(AUTO_RECOVERY_DAEMON_ENABLED)
+            .type(Type.BOOLEAN)
+            .description("Whether the bookie itself can start auto-recovery service also or not")
+            .defaultValue(false)
+            .group(GROUP_AUTORECOVERY)
+            .orderInGroup(100)
+            .build();
 
     /**
      * Construct a default configuration object.
@@ -324,7 +1709,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return whether entry log file preallocation is enabled or not.
      */
     public boolean isEntryLogFilePreAllocationEnabled() {
-        return this.getBoolean(ENTRY_LOG_FILE_PREALLOCATION_ENABLED, true);
+        return ENTRY_LOG_FILE_PREALLOCATION_ENABLED_KEY.getBoolean(this);
     }
 
     /**
@@ -335,7 +1720,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return server configuration object.
      */
     public ServerConfiguration setEntryLogFilePreAllocationEnabled(boolean enabled) {
-        this.setProperty(ENTRY_LOG_FILE_PREALLOCATION_ENABLED, enabled);
+        ENTRY_LOG_FILE_PREALLOCATION_ENABLED_KEY.set(this, enabled);
         return this;
     }
 
@@ -348,7 +1733,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return gc wait time
      */
     public long getGcWaitTime() {
-        return this.getLong(GC_WAIT_TIME, 600000);
+        return GC_WAIT_TIME_KEY.getLong(this);
     }
 
     /**
@@ -359,7 +1744,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return server configuration
      */
     public ServerConfiguration setGcWaitTime(long gcWaitTime) {
-        this.setProperty(GC_WAIT_TIME, Long.toString(gcWaitTime));
+        GC_WAIT_TIME_KEY.set(this, gcWaitTime);
         return this;
     }
 
@@ -369,7 +1754,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return gc wait time
      */
     public long getGcOverreplicatedLedgerWaitTimeMillis() {
-        return this.getLong(GC_OVERREPLICATED_LEDGER_WAIT_TIME, TimeUnit.DAYS.toMillis(1));
+        return GC_OVERREPLICATED_LEDGER_WAIT_TIME_KEY.getLong(this);
     }
 
     /**
@@ -386,7 +1771,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return server configuration
      */
     public ServerConfiguration setGcOverreplicatedLedgerWaitTime(long gcWaitTime, TimeUnit unit) {
-        this.setProperty(GC_OVERREPLICATED_LEDGER_WAIT_TIME, Long.toString(unit.toMillis(gcWaitTime)));
+        GC_OVERREPLICATED_LEDGER_WAIT_TIME_KEY.set(this, gcWaitTime);
         return this;
     }
 
@@ -396,7 +1781,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return use transactional compaction
      */
     public boolean getUseTransactionalCompaction() {
-        return this.getBoolean(USE_TRANSACTIONAL_COMPACTION, false);
+        return USE_TRANSACTIONAL_COMPACTION_KEY.getBoolean(this);
     }
 
     /**
@@ -405,7 +1790,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return server configuration
      */
     public ServerConfiguration setUseTransactionalCompaction(boolean useTransactionalCompaction) {
-        this.setProperty(USE_TRANSACTIONAL_COMPACTION, useTransactionalCompaction);
+        USE_TRANSACTIONAL_COMPACTION_KEY.set(this, useTransactionalCompaction);
         return this;
     }
 
@@ -415,7 +1800,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return use transactional compaction
      */
     public boolean getVerifyMetadataOnGC() {
-        return this.getBoolean(VERIFY_METADATA_ON_GC, false);
+        return VERIFY_METADATA_ON_GC_KEY.getBoolean(this);
     }
 
     /**
@@ -424,7 +1809,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return server configuration
      */
     public ServerConfiguration setVerifyMetadataOnGc(boolean verifyMetadataOnGC) {
-        this.setProperty(VERIFY_METADATA_ON_GC, verifyMetadataOnGC);
+        VERIFY_METADATA_ON_GC_KEY.set(this, verifyMetadataOnGC);
         return this;
     }
 
@@ -443,15 +1828,16 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return Number of seconds between scrubs, <= 0 for disabled.
      */
     public long getLocalScrubPeriod() {
-        return this.getLong(LOCAL_SCRUB_PERIOD, 0);
+        return LOCAL_SCRUB_PERIOD_KEY.getLong(this);
     }
 
     /**
      * Set local scrub period in seconds (<= 0 for disabled). Scrub will be scheduled at delays
      * chosen from the interval (.5 * interval, 1.5 * interval)
      */
-    public void setLocalScrubPeriod(long period) {
-        this.setProperty(LOCAL_SCRUB_PERIOD, period);
+    public ServerConfiguration setLocalScrubPeriod(long period) {
+        LOCAL_SCRUB_PERIOD_KEY.set(this, period);
+        return this;
     }
 
     /**
@@ -460,7 +1846,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return Max number of entries to scrub per second, 0 for disabled.
      */
     public double getLocalScrubRateLimit() {
-        return this.getDouble(LOCAL_SCRUB_RATE_LIMIT, 60);
+        return LOCAL_SCRUB_RATE_LIMIT_KEY.getDouble(this);
     }
 
     /**
@@ -468,8 +1854,9 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      *
      * @param scrubRateLimit Max number of entries per second to scan.
      */
-    public void setLocalScrubRateLimit(double scrubRateLimit) {
-        this.setProperty(LOCAL_SCRUB_RATE_LIMIT, scrubRateLimit);
+    public ServerConfiguration setLocalScrubRateLimit(double scrubRateLimit) {
+        LOCAL_SCRUB_RATE_LIMIT_KEY.set(this, scrubRateLimit);
+        return this;
     }
 
     /**
@@ -480,7 +1867,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return flush interval
      */
     public int getFlushInterval() {
-        return this.getInt(FLUSH_INTERVAL, 10000);
+        return FLUSH_INTERVAL_KEY.getInt(this);
     }
 
     /**
@@ -491,7 +1878,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return server configuration
      */
     public ServerConfiguration setFlushInterval(int flushInterval) {
-        this.setProperty(FLUSH_INTERVAL, Integer.toString(flushInterval));
+        FLUSH_INTERVAL_KEY.set(this, flushInterval);
         return this;
     }
 
@@ -507,7 +1894,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return Entry log flush interval in bytes
      */
     public long getFlushIntervalInBytes() {
-        return this.getLong(FLUSH_ENTRYLOG_INTERVAL_BYTES, 0);
+        return FLUSH_ENTRYLOG_INTERVAL_BYTES_KEY.getLong(this);
     }
 
     /**
@@ -517,10 +1904,9 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return server configuration
      */
     public ServerConfiguration setFlushIntervalInBytes(long flushInterval) {
-        this.setProperty(FLUSH_ENTRYLOG_INTERVAL_BYTES, Long.toString(flushInterval));
+        FLUSH_ENTRYLOG_INTERVAL_BYTES_KEY.set(this, flushInterval);
         return this;
     }
-
 
     /**
      * Get bookie death watch interval.
@@ -528,7 +1914,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return watch interval
      */
     public int getDeathWatchInterval() {
-        return this.getInt(DEATH_WATCH_INTERVAL, 1000);
+        return DEATH_WATCH_INTERVAL_KEY.getInt(this);
     }
 
     /**
@@ -537,7 +1923,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return max number of files to open
      */
     public int getOpenFileLimit() {
-        return this.getInt(OPEN_FILE_LIMIT, 20000);
+        return OPEN_FILE_LIMIT_KEY.getInt(this);
     }
 
     /**
@@ -548,7 +1934,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return server configuration
      */
     public ServerConfiguration setOpenFileLimit(int fileLimit) {
-        setProperty(OPEN_FILE_LIMIT, fileLimit);
+        OPEN_FILE_LIMIT_KEY.set(this, fileLimit);
         return this;
     }
 
@@ -558,7 +1944,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return max number of index pages in ledger cache
      */
     public int getPageLimit() {
-        return this.getInt(PAGE_LIMIT, -1);
+        return PAGE_LIMIT_KEY.getInt(this);
     }
 
     /**
@@ -569,7 +1955,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return server configuration
      */
     public ServerConfiguration setPageLimit(int pageLimit) {
-        this.setProperty(PAGE_LIMIT, pageLimit);
+        PAGE_LIMIT_KEY.set(this, pageLimit);
         return this;
     }
 
@@ -579,7 +1965,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return page size in ledger cache
      */
     public int getPageSize() {
-        return this.getInt(PAGE_SIZE, 8192);
+        return PAGE_SIZE_KEY.getInt(this);
     }
 
     /**
@@ -592,7 +1978,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return Server Configuration
      */
     public ServerConfiguration setPageSize(int pageSize) {
-        this.setProperty(PAGE_SIZE, pageSize);
+        PAGE_SIZE_KEY.set(this, pageSize);
         return this;
     }
 
@@ -605,7 +1991,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return minimum size of initial file info cache.
      */
     public int getFileInfoCacheInitialCapacity() {
-        return getInt(FILEINFO_CACHE_INITIAL_CAPACITY, Math.max(getOpenFileLimit() / 4, 64));
+        return FILEINFO_CACHE_INITIAL_CAPACITY_KEY.getInt(this);
     }
 
     /**
@@ -616,7 +2002,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return server configuration instance.
      */
     public ServerConfiguration setFileInfoCacheInitialCapacity(int initialCapacity) {
-        setProperty(FILEINFO_CACHE_INITIAL_CAPACITY, initialCapacity);
+        FILEINFO_CACHE_INITIAL_CAPACITY_KEY.set(this, initialCapacity);
         return this;
     }
 
@@ -630,7 +2016,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return max idle time of a file info in the file info cache.
      */
     public long getFileInfoMaxIdleTime() {
-        return this.getLong(FILEINFO_MAX_IDLE_TIME, 0L);
+        return FILEINFO_MAX_IDLE_TIME_KEY.getLong(this);
     }
 
     /**
@@ -642,7 +2028,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return server configuration object.
      */
     public ServerConfiguration setFileInfoMaxIdleTime(long idleTime) {
-        setProperty(FILEINFO_MAX_IDLE_TIME, idleTime);
+        FILEINFO_MAX_IDLE_TIME_KEY.set(this, idleTime);
         return this;
     }
 
@@ -652,7 +2038,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return fileinfo format version to write.
      */
     public int getFileInfoFormatVersionToWrite() {
-        return this.getInt(FILEINFO_FORMAT_VERSION_TO_WRITE, 1);
+        return FILEINFO_FORMAT_VERSION_TO_WRITE_KEY.getInt(this);
     }
 
     /**
@@ -663,7 +2049,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return server configuration.
      */
     public ServerConfiguration setFileInfoFormatVersionToWrite(int version) {
-        this.setProperty(FILEINFO_FORMAT_VERSION_TO_WRITE, version);
+        FILEINFO_FORMAT_VERSION_TO_WRITE_KEY.set(this, version);
         return this;
     }
 
@@ -673,7 +2059,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return max journal file size
      */
     public long getMaxJournalSizeMB() {
-        return this.getLong(MAX_JOURNAL_SIZE, 2 * 1024);
+        return MAX_JOURNAL_SIZE_KEY.getLong(this);
     }
 
     /**
@@ -684,7 +2070,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return server configuration
      */
     public ServerConfiguration setMaxJournalSizeMB(long maxJournalSize) {
-        this.setProperty(MAX_JOURNAL_SIZE, Long.toString(maxJournalSize));
+        MAX_JOURNAL_SIZE_KEY.set(this, maxJournalSize);
         return this;
     }
 
@@ -694,7 +2080,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return journal pre-allocation size in MB
      */
     public int getJournalPreAllocSizeMB() {
-        return this.getInt(JOURNAL_PRE_ALLOC_SIZE, 16);
+        return JOURNAL_PRE_ALLOC_SIZE_KEY.getInt(this);
     }
 
     /**
@@ -703,7 +2089,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return journal write buffer size in KB
      */
     public int getJournalWriteBufferSizeKB() {
-        return this.getInt(JOURNAL_WRITE_BUFFER_SIZE, 64);
+        return JOURNAL_WRITE_BUFFER_SIZE_KEY.getInt(this);
     }
 
     /**
@@ -712,7 +2098,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return max number of older journal files to kept
      */
     public int getMaxBackupJournals() {
-        return this.getInt(MAX_BACKUP_JOURNALS, 5);
+        return MAX_BACKUP_JOURNALS_KEY.getInt(this);
     }
 
     /**
@@ -723,7 +2109,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return server configuration
      */
     public ServerConfiguration setMaxBackupJournals(int maxBackupJournals) {
-        this.setProperty(MAX_BACKUP_JOURNALS, Integer.toString(maxBackupJournals));
+        MAX_JOURNAL_SIZE_KEY.set(this, maxBackupJournals);
         return this;
     }
 
@@ -734,7 +2120,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return journal alignment size
      */
     public int getJournalAlignmentSize() {
-        return this.getInt(JOURNAL_ALIGNMENT_SIZE, 512);
+        return JOURNAL_ALIGNMENT_SIZE_KEY.getInt(this);
     }
 
     /**
@@ -745,7 +2131,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return server configuration.
      */
     public ServerConfiguration setJournalAlignmentSize(int size) {
-        this.setProperty(JOURNAL_ALIGNMENT_SIZE, size);
+        JOURNAL_ALIGNMENT_SIZE_KEY.set(this, size);
         return this;
     }
 
@@ -755,7 +2141,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return journal format version to write.
      */
     public int getJournalFormatVersionToWrite() {
-        return this.getInt(JOURNAL_FORMAT_VERSION_TO_WRITE, 6);
+        return JOURNAL_FORMAT_VERSION_TO_WRITE_KEY.getInt(this);
     }
 
     /**
@@ -766,7 +2152,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return server configuration.
      */
     public ServerConfiguration setJournalFormatVersionToWrite(int version) {
-        this.setProperty(JOURNAL_FORMAT_VERSION_TO_WRITE, version);
+        JOURNAL_FORMAT_VERSION_TO_WRITE_KEY.set(this, version);
         return this;
     }
 
@@ -776,7 +2162,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return Max number of adds in progress.
      */
     public int getMaxAddsInProgressLimit() {
-        return this.getInt(MAX_ADDS_IN_PROGRESS_LIMIT, 0);
+        return MAX_ADDS_IN_PROGRESS_LIMIT_KEY.getInt(this);
     }
 
     /**
@@ -787,7 +2173,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return server configuration.
      */
     public ServerConfiguration setMaxAddsInProgressLimit(int value) {
-        this.setProperty(MAX_ADDS_IN_PROGRESS_LIMIT, value);
+        MAX_ADDS_IN_PROGRESS_LIMIT_KEY.set(this, value);
         return this;
     }
 
@@ -797,7 +2183,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return Max number of reads in progress.
      */
     public int getMaxReadsInProgressLimit() {
-        return this.getInt(MAX_READS_IN_PROGRESS_LIMIT, 0);
+        return MAX_READS_IN_PROGRESS_LIMIT_KEY.getInt(this);
     }
 
     /**
@@ -808,7 +2194,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return server configuration.
      */
     public ServerConfiguration setMaxReadsInProgressLimit(int value) {
-        this.setProperty(MAX_READS_IN_PROGRESS_LIMIT, value);
+        MAX_READS_IN_PROGRESS_LIMIT_KEY.set(this, value);
         return this;
     }
 
@@ -821,7 +2207,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return value indicating if channel should be closed.
      */
     public boolean getCloseChannelOnResponseTimeout(){
-        return this.getBoolean(CLOSE_CHANNEL_ON_RESPONSE_TIMEOUT, false);
+        return CLOSE_CHANNEL_ON_RESPONSE_TIMEOUT_KEY.getBoolean(this);
     }
 
     /**
@@ -834,7 +2220,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return server configuration.
      */
     public ServerConfiguration setCloseChannelOnResponseTimeout(boolean value) {
-        this.setProperty(CLOSE_CHANNEL_ON_RESPONSE_TIMEOUT, value);
+        CLOSE_CHANNEL_ON_RESPONSE_TIMEOUT_KEY.set(this, value);
         return this;
     }
 
@@ -848,7 +2234,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      *        Default is -1 (disabled)
      */
     public long getWaitTimeoutOnResponseBackpressureMillis() {
-        return getLong(WAIT_TIMEOUT_ON_RESPONSE_BACKPRESSURE, -1);
+        return WAIT_TIMEOUT_ON_RESPONSE_BACKPRESSURE_KEY.getLong(this);
     }
 
     /**
@@ -862,7 +2248,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return client configuration.
      */
     public ServerConfiguration setWaitTimeoutOnResponseBackpressureMillis(long value) {
-        setProperty(WAIT_TIMEOUT_ON_RESPONSE_BACKPRESSURE, value);
+        WAIT_TIMEOUT_ON_RESPONSE_BACKPRESSURE_KEY.set(this, value);
         return this;
     }
 
@@ -872,7 +2258,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return bookie port
      */
     public int getBookiePort() {
-        return this.getInt(BOOKIE_PORT, 3181);
+        return BOOKIE_PORT_KEY.getInt(this);
     }
 
     /**
@@ -883,7 +2269,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return server configuration
      */
     public ServerConfiguration setBookiePort(int port) {
-        this.setProperty(BOOKIE_PORT, Integer.toString(port));
+        BOOKIE_PORT_KEY.set(this, port);
         return this;
     }
 
@@ -896,7 +2282,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      *         null if none is specified
      */
     public String getListeningInterface() {
-        return this.getString(LISTENING_INTERFACE);
+        return LISTENING_INTERFACE_KEY.getString(this);
     }
 
     /**
@@ -906,7 +2292,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @param iface the interface to listen on
      */
     public ServerConfiguration setListeningInterface(String iface) {
-        this.setProperty(LISTENING_INTERFACE, iface);
+        LISTENING_INTERFACE_KEY.set(this, iface);
         return this;
     }
 
@@ -929,7 +2315,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return whether a loopback interface can be used as the primary interface
      */
     public boolean getAllowLoopback() {
-        return this.getBoolean(ALLOW_LOOPBACK, false);
+        return ALLOW_LOOPBACK_KEY.getBoolean(this);
     }
 
     /**
@@ -941,7 +2327,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return server configuration
      */
     public ServerConfiguration setAllowLoopback(boolean allow) {
-        this.setProperty(ALLOW_LOOPBACK, allow);
+        ALLOW_LOOPBACK_KEY.set(this, allow);
         return this;
     }
 
@@ -956,7 +2342,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return the configure address to be advertised
      */
     public String getAdvertisedAddress() {
-        return this.getString(ADVERTISED_ADDRESS, null);
+        return ADVERTISED_ADDRESS_KEY.getString(this);
     }
 
     /**
@@ -978,7 +2364,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return server configuration
      */
     public ServerConfiguration setAdvertisedAddress(String advertisedAddress) {
-        this.setProperty(ADVERTISED_ADDRESS, advertisedAddress);
+        ADVERTISED_ADDRESS_KEY.set(this, advertisedAddress);
         return this;
     }
 
@@ -993,7 +2379,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return whether is allowed to use an ephemeral port.
      */
     public boolean getAllowEphemeralPorts() {
-        return this.getBoolean(ALLOW_EPHEMERAL_PORTS, false);
+        return ALLOW_EPHEMERAL_PORTS_KEY.getBoolean(this);
     }
 
     /**
@@ -1003,7 +2389,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return server configuration
      */
     public ServerConfiguration setAllowEphemeralPorts(boolean allow) {
-        this.setProperty(ALLOW_EPHEMERAL_PORTS, allow);
+        ALLOW_EPHEMERAL_PORTS_KEY.set(this, allow);
         return this;
     }
 
@@ -1013,7 +2399,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return true if the addition is allowed; false otherwise
      */
     public boolean getAllowStorageExpansion() {
-        return this.getBoolean(ALLOW_STORAGE_EXPANSION, false);
+        return ALLOW_STORAGE_EXPANSION_KEY.getBoolean(this);
     }
 
     /**
@@ -1025,7 +2411,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return server configuration
      */
     public ServerConfiguration setAllowStorageExpansion(boolean val) {
-        this.setProperty(ALLOW_STORAGE_EXPANSION, val);
+        ALLOW_STORAGE_EXPANSION_KEY.set(this, val);
         return this;
     }
 
@@ -1035,7 +2421,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return journal dir name
      */
     public String[] getJournalDirNames() {
-        String[] journalDirs = this.getStringArray(JOURNAL_DIRS);
+        String[] journalDirs = JOURNAL_DIRS_KEY.getArray(this);
         if (journalDirs == null || journalDirs.length == 0) {
             return new String[] {getJournalDirName()};
         }
@@ -1049,7 +2435,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      */
     @Deprecated
     public String getJournalDirName() {
-        return this.getString(JOURNAL_DIR, "/tmp/bk-txn");
+        return JOURNAL_DIR_KEY.getString(this);
     }
 
     /**
@@ -1058,7 +2444,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return journal dir name
      */
     public String getJournalDirNameWithoutDefault() {
-        return this.getString(JOURNAL_DIR);
+        return JOURNAL_DIR_KEY.getStringWithoutDefault(this);
     }
 
 
@@ -1070,7 +2456,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return server configuration
      */
     public ServerConfiguration setJournalDirName(String journalDir) {
-        this.setProperty(JOURNAL_DIRS, new String[] {journalDir});
+        JOURNAL_DIRS_KEY.set(this, new String[] { journalDir });
         return this;
     }
 
@@ -1082,7 +2468,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return server configuration
      */
     public ServerConfiguration setJournalDirsName(String[] journalDirs) {
-        this.setProperty(JOURNAL_DIRS, journalDirs);
+        JOURNAL_DIRS_KEY.set(this, journalDirs);
         return this;
     }
 
@@ -1106,7 +2492,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return ledger dir names, if not provided return null
      */
     public String[] getLedgerDirWithoutDefault() {
-        return this.getStringArray(LEDGER_DIRS);
+        return LEDGER_DIRS_KEY.getArrayWithoutDefault(this);
     }
 
     /**
@@ -1115,11 +2501,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return ledger dir names, if not provided return null
      */
     public String[] getLedgerDirNames() {
-        String[] ledgerDirs = this.getStringArray(LEDGER_DIRS);
-        if ((null == ledgerDirs) || (0 == ledgerDirs.length)) {
-            return new String[] { "/tmp/bk-data" };
-        }
-        return ledgerDirs;
+        return LEDGER_DIRS_KEY.getArray(this);
     }
 
     /**
@@ -1130,10 +2512,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return server configuration
      */
     public ServerConfiguration setLedgerDirNames(String[] ledgerDirs) {
-        if (null == ledgerDirs) {
-            return this;
-        }
-        this.setProperty(LEDGER_DIRS, ledgerDirs);
+        LEDGER_DIRS_KEY.set(this, ledgerDirs);
         return this;
     }
 
@@ -1158,10 +2537,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return ledger index dir name, if no index dirs provided return null
      */
     public String[] getIndexDirNames() {
-        if (!this.containsKey(INDEX_DIRS)) {
-            return null;
-        }
-        return this.getStringArray(INDEX_DIRS);
+        return INDEX_DIRS_KEY.getArrayWithoutDefault(this);
     }
 
     /**
@@ -1172,7 +2548,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return server configuration.
      */
     public ServerConfiguration setIndexDirName(String[] indexDirs) {
-        this.setProperty(INDEX_DIRS, indexDirs);
+        INDEX_DIRS_KEY.set(this, indexDirs);
         return this;
     }
 
@@ -1199,7 +2575,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return tcp socket nodelay setting
      */
     public boolean getServerTcpNoDelay() {
-        return getBoolean(SERVER_TCP_NODELAY, true);
+        return SERVER_TCP_NODELAY_KEY.getBoolean(this);
     }
 
     /**
@@ -1210,7 +2586,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return server configuration
      */
     public ServerConfiguration setServerTcpNoDelay(boolean noDelay) {
-        setProperty(SERVER_TCP_NODELAY, Boolean.toString(noDelay));
+        SERVER_TCP_NODELAY_KEY.set(this, noDelay);
         return this;
     }
 
@@ -1221,7 +2597,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return the number of IO threads
      */
     public int getServerNumIOThreads() {
-        return getInt(SERVER_NUM_IO_THREADS, 2 * Runtime.getRuntime().availableProcessors());
+        return SERVER_NUM_IO_THREADS_KEY.getInt(this);
     }
 
     /**
@@ -1236,7 +2612,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return client configuration
      */
     public ServerConfiguration setServerNumIOThreads(int numThreads) {
-        setProperty(SERVER_NUM_IO_THREADS, Integer.toString(numThreads));
+        SERVER_NUM_IO_THREADS_KEY.set(this, numThreads);
         return this;
     }
 
@@ -1246,7 +2622,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return socket linger setting
      */
     public int getServerSockLinger() {
-        return getInt(SERVER_SOCK_LINGER, 0);
+        return SERVER_SOCK_LINGER_KEY.getInt(this);
     }
 
     /**
@@ -1261,7 +2637,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return server configuration
      */
     public ServerConfiguration setServerSockLinger(int linger) {
-        setProperty(SERVER_SOCK_LINGER, Integer.toString(linger));
+        SERVER_SOCK_LINGER_KEY.set(this, linger);
         return this;
     }
 
@@ -1271,7 +2647,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return socket keepalive setting
      */
     public boolean getServerSockKeepalive() {
-        return getBoolean(SERVER_SOCK_KEEPALIVE, true);
+        return SERVER_SOCK_KEEPALIVE_KEY.getBoolean(this);
     }
 
     /**
@@ -1284,7 +2660,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return server configuration
      */
     public ServerConfiguration setServerSockKeepalive(boolean keepalive) {
-        setProperty(SERVER_SOCK_KEEPALIVE, Boolean.toString(keepalive));
+        SERVER_SOCK_KEEPALIVE_KEY.set(this, keepalive);
         return this;
     }
 
@@ -1294,7 +2670,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return zk backoff retry start time in millis.
      */
     public int getZkRetryBackoffStartMs() {
-        return getInt(ZK_RETRY_BACKOFF_START_MS, getZkTimeout());
+        return ZK_RETRY_BACKOFF_START_MS_KEY.getInt(this);
     }
 
     /**
@@ -1305,7 +2681,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return server configuration.
      */
     public ServerConfiguration setZkRetryBackoffStartMs(int retryMs) {
-        setProperty(ZK_RETRY_BACKOFF_START_MS, retryMs);
+        ZK_RETRY_BACKOFF_START_MS_KEY.set(this, retryMs);
         return this;
     }
 
@@ -1315,7 +2691,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return zk backoff retry max time in millis.
      */
     public int getZkRetryBackoffMaxMs() {
-        return getInt(ZK_RETRY_BACKOFF_MAX_MS, getZkTimeout());
+        return ZK_RETRY_BACKOFF_MAX_MS_KEY.getInt(this);
     }
 
     /**
@@ -1326,7 +2702,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return server configuration.
      */
     public ServerConfiguration setZkRetryBackoffMaxMs(int retryMs) {
-        setProperty(ZK_RETRY_BACKOFF_MAX_MS, retryMs);
+        ZK_RETRY_BACKOFF_MAX_MS_KEY.set(this, retryMs);
         return this;
     }
 
@@ -1336,7 +2712,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return is statistics enabled
      */
     public boolean isStatisticsEnabled() {
-        return getBoolean(ENABLE_STATISTICS, true);
+        return ENABLE_STATISTICS_KEY.getBoolean(this);
     }
 
     /**
@@ -1347,7 +2723,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return server configuration
      */
     public ServerConfiguration setStatisticsEnabled(boolean enabled) {
-        setProperty(ENABLE_STATISTICS, Boolean.toString(enabled));
+        ENABLE_STATISTICS_KEY.set(this, enabled);
         return this;
     }
 
@@ -1362,7 +2738,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return threshold of minor compaction
      */
     public double getMinorCompactionThreshold() {
-        return getDouble(MINOR_COMPACTION_THRESHOLD, 0.2f);
+        return MINOR_COMPACTION_THRESHOLD_KEY.getDouble(this);
     }
 
     /**
@@ -1375,7 +2751,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return server configuration
      */
     public ServerConfiguration setMinorCompactionThreshold(double threshold) {
-        setProperty(MINOR_COMPACTION_THRESHOLD, threshold);
+        MINOR_COMPACTION_THRESHOLD_KEY.set(this, threshold);
         return this;
     }
 
@@ -1390,7 +2766,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return threshold of major compaction
      */
     public double getMajorCompactionThreshold() {
-        return getDouble(MAJOR_COMPACTION_THRESHOLD, 0.8f);
+        return MAJOR_COMPACTION_THRESHOLD_KEY.getDouble(this);
     }
 
     /**
@@ -1403,7 +2779,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return server configuration
      */
     public ServerConfiguration setMajorCompactionThreshold(double threshold) {
-        setProperty(MAJOR_COMPACTION_THRESHOLD, threshold);
+        MAJOR_COMPACTION_THRESHOLD_KEY.set(this, threshold);
         return this;
     }
 
@@ -1415,7 +2791,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return threshold of minor compaction
      */
     public long getMinorCompactionInterval() {
-        return getLong(MINOR_COMPACTION_INTERVAL, 3600);
+        return MINOR_COMPACTION_INTERVAL_KEY.getLong(this);
     }
 
     /**
@@ -1428,7 +2804,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return server configuration
      */
     public ServerConfiguration setMinorCompactionInterval(long interval) {
-        setProperty(MINOR_COMPACTION_INTERVAL, interval);
+        MINOR_COMPACTION_INTERVAL_KEY.set(this, interval);
         return this;
     }
 
@@ -1440,7 +2816,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return high water mark
      */
     public long getMajorCompactionInterval() {
-        return getLong(MAJOR_COMPACTION_INTERVAL, 86400);
+        return MAJOR_COMPACTION_INTERVAL_KEY.getLong(this);
     }
 
     /**
@@ -1453,7 +2829,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return server configuration
      */
     public ServerConfiguration setMajorCompactionInterval(long interval) {
-        setProperty(MAJOR_COMPACTION_INTERVAL, interval);
+        MAJOR_COMPACTION_INTERVAL_KEY.set(this, interval);
         return this;
     }
 
@@ -1468,7 +2844,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      *         false - suspend GC when disk full.
      */
     public boolean getIsForceGCAllowWhenNoSpace() {
-        return getBoolean(IS_FORCE_GC_ALLOW_WHEN_NO_SPACE, false);
+        return IS_FORCE_GC_ALLOW_WHEN_NO_SPACE_KEY.getBoolean(this);
     }
 
     /**
@@ -1479,7 +2855,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return ServerConfiguration
      */
     public ServerConfiguration setIsForceGCAllowWhenNoSpace(boolean force) {
-        setProperty(IS_FORCE_GC_ALLOW_WHEN_NO_SPACE, force);
+        IS_FORCE_GC_ALLOW_WHEN_NO_SPACE_KEY.set(this, force);
         return this;
     }
 
@@ -1499,7 +2875,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @param waitTime time to wait before replicating ledger fragment
      */
     public void setOpenLedgerRereplicationGracePeriod(String waitTime) {
-        setProperty(OPEN_LEDGER_REREPLICATION_GRACE_PERIOD, waitTime);
+        OPEN_LEDGER_REREPLICATION_GRACE_PERIOD_KEY.set(this, waitTime);
     }
 
     /**
@@ -1510,7 +2886,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return long
      */
     public long getOpenLedgerRereplicationGracePeriod() {
-        return getLong(OPEN_LEDGER_REREPLICATION_GRACE_PERIOD, 30000);
+        return OPEN_LEDGER_REREPLICATION_GRACE_PERIOD_KEY.getLong(this);
     }
 
     /**
@@ -1523,8 +2899,8 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      *
      * @param waitTime
      */
-    public void setLockReleaseOfFailedLedgerGracePeriod(String waitTime) {
-        setProperty(LOCK_RELEASE_OF_FAILED_LEDGER_GRACE_PERIOD, waitTime);
+    public void setLockReleaseOfFailedLedgerGracePeriod(long waitTime) {
+        LOCK_RELEASE_OF_FAILED_LEDGER_GRACE_PERIOD_KEY.set(this, waitTime);
     }
 
     /**
@@ -1537,7 +2913,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return
      */
     public long getLockReleaseOfFailedLedgerGracePeriod() {
-        return getLong(LOCK_RELEASE_OF_FAILED_LEDGER_GRACE_PERIOD, 60000);
+        return LOCK_RELEASE_OF_FAILED_LEDGER_GRACE_PERIOD_KEY.getLong(this);
     }
 
     /**
@@ -1547,7 +2923,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return read buffer size
      */
     public int getReadBufferBytes() {
-        return getInt(READ_BUFFER_SIZE, 512);
+        return READ_BUFFER_SIZE_KEY.getInt(this);
     }
 
     /**
@@ -1559,7 +2935,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return server configuration
      */
     public ServerConfiguration setReadBufferBytes(int readBufferSize) {
-        setProperty(READ_BUFFER_SIZE, readBufferSize);
+        READ_BUFFER_SIZE_KEY.set(this, readBufferSize);
         return this;
     }
 
@@ -1571,7 +2947,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return server configuration
      */
     public ServerConfiguration setNumAddWorkerThreads(int numThreads) {
-        setProperty(NUM_ADD_WORKER_THREADS, numThreads);
+        NUM_ADD_WORKER_THREADS_KEY.set(this, numThreads);
         return this;
     }
 
@@ -1581,7 +2957,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return the number of threads that handle write requests.
      */
     public int getNumAddWorkerThreads() {
-        return getInt(NUM_ADD_WORKER_THREADS, 1);
+        return NUM_ADD_WORKER_THREADS_KEY.getInt(this);
     }
 
     /**
@@ -1592,7 +2968,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return server configuration
      */
     public ServerConfiguration setNumLongPollWorkerThreads(int numThreads) {
-        setProperty(NUM_LONG_POLL_WORKER_THREADS, numThreads);
+        NUM_LONG_POLL_WORKER_THREADS_KEY.set(this, numThreads);
         return this;
     }
 
@@ -1606,7 +2982,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return the number of threads that should handle long poll requests, default value is 0.
      */
     public int getNumLongPollWorkerThreads() {
-        return getInt(NUM_LONG_POLL_WORKER_THREADS, 0);
+        return NUM_LONG_POLL_WORKER_THREADS_KEY.getInt(this);
     }
 
     /**
@@ -1618,7 +2994,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return server configuration
      */
     public ServerConfiguration setNumHighPriorityWorkerThreads(int numThreads) {
-        setProperty(NUM_HIGH_PRIORITY_WORKER_THREADS, numThreads);
+        NUM_HIGH_PRIORITY_WORKER_THREADS_KEY.set(this, numThreads);
         return this;
     }
 
@@ -1628,7 +3004,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return
      */
     public int getNumHighPriorityWorkerThreads() {
-        return getInt(NUM_HIGH_PRIORITY_WORKER_THREADS, 8);
+        return NUM_HIGH_PRIORITY_WORKER_THREADS_KEY.getInt(this);
     }
 
 
@@ -1640,7 +3016,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return server configuration
      */
     public ServerConfiguration setNumReadWorkerThreads(int numThreads) {
-        setProperty(NUM_READ_WORKER_THREADS, numThreads);
+        NUM_READ_WORKER_THREADS_KEY.set(this, numThreads);
         return this;
     }
 
@@ -1648,7 +3024,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * Get the number of threads that should handle read requests.
      */
     public int getNumReadWorkerThreads() {
-        return getInt(NUM_READ_WORKER_THREADS, 8);
+        return NUM_READ_WORKER_THREADS_KEY.getInt(this);
     }
 
     /**
@@ -1659,7 +3035,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return server configuration
      */
     public ServerConfiguration setRequestTimerTickDurationMs(int tickDuration) {
-        setProperty(REQUEST_TIMER_TICK_DURATION_MILLISEC, tickDuration);
+        REQUEST_TIMER_TICK_DURATION_MILLISEC_KEY.set(this, tickDuration);
         return this;
     }
 
@@ -1671,7 +3047,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return server configuration
      */
     public ServerConfiguration setMaxPendingReadRequestPerThread(int maxPendingReadRequestsPerThread) {
-        setProperty(MAX_PENDING_READ_REQUESTS_PER_THREAD, maxPendingReadRequestsPerThread);
+        MAX_PENDING_READ_REQUESTS_PER_THREAD_KEY.set(this, maxPendingReadRequestsPerThread);
         return this;
     }
 
@@ -1680,7 +3056,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * indefinitely (default: 10000 entries).
      */
     public int getMaxPendingReadRequestPerThread() {
-        return getInt(MAX_PENDING_READ_REQUESTS_PER_THREAD, 10000);
+        return MAX_PENDING_READ_REQUESTS_PER_THREAD_KEY.getInt(this);
     }
 
     /**
@@ -1691,7 +3067,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return server configuration
      */
     public ServerConfiguration setMaxPendingAddRequestPerThread(int maxPendingAddRequestsPerThread) {
-        setProperty(MAX_PENDING_ADD_REQUESTS_PER_THREAD, maxPendingAddRequestsPerThread);
+        MAX_PENDING_ADD_REQUESTS_PER_THREAD_KEY.set(this, maxPendingAddRequestsPerThread);
         return this;
     }
 
@@ -1700,17 +3076,15 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * indefinitely (default: 10000 entries).
      */
     public int getMaxPendingAddRequestPerThread() {
-        return getInt(MAX_PENDING_ADD_REQUESTS_PER_THREAD, 10000);
+        return MAX_PENDING_ADD_REQUESTS_PER_THREAD_KEY.getInt(this);
     }
-
-
 
     /**
      * Get the tick duration in milliseconds.
      * @return
      */
     public int getRequestTimerTickDurationMs() {
-        return getInt(REQUEST_TIMER_TICK_DURATION_MILLISEC, 10);
+        return REQUEST_TIMER_TICK_DURATION_MILLISEC_KEY.getInt(this);
     }
 
     /**
@@ -1721,7 +3095,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return server configuration
      */
     public ServerConfiguration setRequestTimerNumTicks(int tickCount) {
-        setProperty(REQUEST_TIMER_NO_OF_TICKS, tickCount);
+        REQUEST_TIMER_NO_OF_TICKS_KEY.set(this, tickCount);
         return this;
     }
 
@@ -1730,7 +3104,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return
      */
     public int getRequestTimerNumTicks() {
-        return getInt(REQUEST_TIMER_NO_OF_TICKS, 1024);
+        return REQUEST_TIMER_NO_OF_TICKS_KEY.getInt(this);
     }
 
     /**
@@ -1740,7 +3114,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return the size of the write buffer in bytes
      */
     public int getWriteBufferBytes() {
-        return getInt(WRITE_BUFFER_SIZE, 65536);
+        return WRITE_BUFFER_SIZE_KEY.getInt(this);
     }
 
     /**
@@ -1751,7 +3125,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return server configuration
      */
     public ServerConfiguration setWriteBufferBytes(int writeBufferBytes) {
-        setProperty(WRITE_BUFFER_SIZE, writeBufferBytes);
+        WRITE_BUFFER_SIZE_KEY.set(this, writeBufferBytes);
         return this;
     }
 
@@ -1763,7 +3137,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return server configuration
      */
     public ServerConfiguration setNumJournalCallbackThreads(int numThreads) {
-        setProperty(NUM_JOURNAL_CALLBACK_THREADS, numThreads);
+        NUM_JOURNAL_CALLBACK_THREADS_KEY.set(this, numThreads);
         return this;
     }
 
@@ -1773,7 +3147,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return the number of threads that handle journal callbacks.
      */
     public int getNumJournalCallbackThreads() {
-        return getInt(NUM_JOURNAL_CALLBACK_THREADS, 1);
+        return NUM_JOURNAL_CALLBACK_THREADS_KEY.getInt(this);
     }
 
     /**
@@ -1783,7 +3157,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @param enabled
      */
     public ServerConfiguration setSortedLedgerStorageEnabled(boolean enabled) {
-        this.setProperty(SORTED_LEDGER_STORAGE_ENABLED, enabled);
+        SORTED_LEDGER_STORAGE_ENABLED_KEY.set(this, enabled);
         return this;
     }
 
@@ -1793,7 +3167,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return true if sorted ledger storage is enabled, false otherwise
      */
     public boolean getSortedLedgerStorageEnabled() {
-        return this.getBoolean(SORTED_LEDGER_STORAGE_ENABLED, true);
+        return SORTED_LEDGER_STORAGE_ENABLED_KEY.getBoolean(this);
     }
 
     /**
@@ -1803,7 +3177,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return skip list data size limitation
      */
     public long getSkipListSizeLimit() {
-        return this.getLong(SKIP_LIST_SIZE_LIMIT, 64 * 1024 * 1024L);
+        return SKIP_LIST_SIZE_LIMIT_KEY.getLong(this);
     }
 
     /**
@@ -1813,11 +3187,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return server configuration object.
      */
     public ServerConfiguration setSkipListSizeLimit(int size) {
-        if (size > (Integer.MAX_VALUE - 1) / 2) {
-            // gives max of 2*1023MB for mem table (one being checkpointed and still writable).
-            throw new IllegalArgumentException("skiplist size over " + ((Integer.MAX_VALUE - 1) / 2));
-        }
-        setProperty(SKIP_LIST_SIZE_LIMIT, size);
+        SKIP_LIST_SIZE_LIMIT_KEY.set(this, size);
         return this;
     }
 
@@ -1828,7 +3198,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return the number of bytes to use for each chunk in the skiplist arena
      */
     public int getSkipListArenaChunkSize() {
-        return getInt(SKIP_LIST_CHUNK_SIZE_ENTRY, 4096 * 1024);
+        return SKIP_LIST_CHUNK_SIZE_ENTRY_KEY.getInt(this);
     }
 
     /**
@@ -1839,7 +3209,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return server configuration object.
      */
     public ServerConfiguration setSkipListArenaChunkSize(int size) {
-        setProperty(SKIP_LIST_CHUNK_SIZE_ENTRY, size);
+        SKIP_LIST_CHUNK_SIZE_ENTRY_KEY.set(this, size);
         return this;
     }
 
@@ -1850,7 +3220,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return max size allocatable from the skiplist arena (Default is 128 KB)
      */
     public int getSkipListArenaMaxAllocSize() {
-        return getInt(SKIP_LIST_MAX_ALLOC_ENTRY, 128 * 1024);
+        return SKIP_LIST_MAX_ALLOC_ENTRY_KEY.getInt(this);
     }
 
     /**
@@ -1861,7 +3231,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return server configuration object.
      */
     public ServerConfiguration setSkipListArenaMaxAllocSize(int size) {
-        setProperty(SKIP_LIST_MAX_ALLOC_ENTRY, size);
+        SKIP_LIST_MAX_ALLOC_ENTRY_KEY.set(this, size);
         return this;
     }
 
@@ -1873,7 +3243,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return
      */
     public boolean getJournalSyncData() {
-        return getBoolean(JOURNAL_SYNC_DATA, true);
+        return JOURNAL_SYNC_DATA_KEY.getBoolean(this);
     }
 
     /**
@@ -1891,7 +3261,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return server configuration object
      */
     public ServerConfiguration setJournalSyncData(boolean syncData) {
-        setProperty(JOURNAL_SYNC_DATA, syncData);
+        JOURNAL_SYNC_DATA_KEY.set(this, syncData);
         return this;
     }
 
@@ -1901,7 +3271,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return group journal force writes
      */
     public boolean getJournalAdaptiveGroupWrites() {
-        return getBoolean(JOURNAL_ADAPTIVE_GROUP_WRITES, true);
+        return JOURNAL_ADAPTIVE_GROUP_WRITES_KEY.getBoolean(this);
     }
 
     /**
@@ -1910,7 +3280,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @param enabled flag to enable/disable group journal force writes
      */
     public ServerConfiguration setJournalAdaptiveGroupWrites(boolean enabled) {
-        setProperty(JOURNAL_ADAPTIVE_GROUP_WRITES, enabled);
+        JOURNAL_ADAPTIVE_GROUP_WRITES_KEY.set(this, enabled);
         return this;
     }
 
@@ -1920,7 +3290,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return max wait for grouping
      */
     public long getJournalMaxGroupWaitMSec() {
-        return getLong(JOURNAL_MAX_GROUP_WAIT_MSEC, 2);
+        return JOURNAL_MAX_GROUP_WAIT_MSEC_KEY.getLong(this);
     }
 
     /**
@@ -1931,7 +3301,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return server configuration.
      */
     public ServerConfiguration setJournalMaxGroupWaitMSec(long journalMaxGroupWaitMSec) {
-        setProperty(JOURNAL_MAX_GROUP_WAIT_MSEC, journalMaxGroupWaitMSec);
+        JOURNAL_MAX_GROUP_WAIT_MSEC_KEY.set(this, journalMaxGroupWaitMSec);
         return this;
     }
 
@@ -1941,7 +3311,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return max bytes to buffer
      */
     public long getJournalBufferedWritesThreshold() {
-        return getLong(JOURNAL_BUFFERED_WRITES_THRESHOLD, 512 * 1024);
+        return JOURNAL_BUFFERED_WRITES_THRESHOLD_KEY.getLong(this);
     }
 
     /**
@@ -1952,7 +3322,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return max entries to buffer.
      */
     public long getJournalBufferedEntriesThreshold() {
-        return getLong(JOURNAL_BUFFERED_ENTRIES_THRESHOLD, 0);
+        return JOURNAL_BUFFERED_ENTRIES_THRESHOLD_KEY.getLong(this);
     }
 
     /**
@@ -1973,7 +3343,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * Set if we should flush the journal when queue is empty.
      */
     public ServerConfiguration setJournalFlushWhenQueueEmpty(boolean enabled) {
-        setProperty(JOURNAL_FLUSH_WHEN_QUEUE_EMPTY, enabled);
+        JOURNAL_FLUSH_WHEN_QUEUE_EMPTY_KEY.set(this, enabled);
         return this;
     }
 
@@ -1983,7 +3353,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return flush when queue is empty
      */
     public boolean getJournalFlushWhenQueueEmpty() {
-        return getBoolean(JOURNAL_FLUSH_WHEN_QUEUE_EMPTY, false);
+        return JOURNAL_FLUSH_WHEN_QUEUE_EMPTY_KEY.getBoolean(this);
     }
 
     /**
@@ -1996,7 +3366,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return ServerConfiguration
      */
     public ServerConfiguration setReadOnlyModeEnabled(boolean enabled) {
-        setProperty(READ_ONLY_MODE_ENABLED, enabled);
+        READ_ONLY_MODE_ENABLED_KEY.set(this, enabled);
         return this;
     }
 
@@ -2006,7 +3376,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return boolean
      */
     public boolean isReadOnlyModeEnabled() {
-        return getBoolean(READ_ONLY_MODE_ENABLED, true);
+        return READ_ONLY_MODE_ENABLED_KEY.getBoolean(this);
     }
 
     /**
@@ -2017,7 +3387,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return ServerConfiguration
      */
     public ServerConfiguration setDiskUsageWarnThreshold(float threshold) {
-        setProperty(DISK_USAGE_WARN_THRESHOLD, threshold);
+        DISK_USAGE_WARN_THRESHOLD_KEY.set(this, threshold);
         return this;
     }
 
@@ -2027,7 +3397,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return the percentage at which a disk usage warning will trigger
      */
     public float getDiskUsageWarnThreshold() {
-        return getFloat(DISK_USAGE_WARN_THRESHOLD, 0.90f);
+        return DISK_USAGE_WARN_THRESHOLD_KEY.getFloat(this);
     }
 
     /**
@@ -2039,7 +3409,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return ServerConfiguration
      */
     public ServerConfiguration setPersistBookieStatusEnabled(boolean enabled) {
-        setProperty(PERSIST_BOOKIE_STATUS_ENABLED, enabled);
+        PERSIST_BOOKIE_STATUS_ENABLED_KEY.set(this, enabled);
         return this;
     }
 
@@ -2050,7 +3420,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return true - if need to start a bookie in read only mode. Otherwise false.
      */
     public boolean isPersistBookieStatusEnabled() {
-        return getBoolean(PERSIST_BOOKIE_STATUS_ENABLED, false);
+        return PERSIST_BOOKIE_STATUS_ENABLED_KEY.getBoolean(this);
     }
 
     /**
@@ -2062,7 +3432,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return ServerConfiguration
      */
     public ServerConfiguration setDiskUsageThreshold(float threshold) {
-        setProperty(DISK_USAGE_THRESHOLD, threshold);
+        DISK_USAGE_THRESHOLD_KEY.set(this, threshold);
         return this;
     }
 
@@ -2072,7 +3442,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return the percentage at which a disk will be considered full
      */
     public float getDiskUsageThreshold() {
-        return getFloat(DISK_USAGE_THRESHOLD, 0.95f);
+        return DISK_USAGE_THRESHOLD_KEY.getFloat(this);
     }
 
     /**
@@ -2088,7 +3458,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return ServerConfiguration
      */
     public ServerConfiguration setDiskLowWaterMarkUsageThreshold(float threshold) {
-        setProperty(DISK_USAGE_LWM_THRESHOLD, threshold);
+        DISK_USAGE_LWM_THRESHOLD_KEY.set(this, threshold);
         return this;
     }
 
@@ -2099,7 +3469,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return the percentage below which a disk will NOT be considered full
      */
     public float getDiskLowWaterMarkUsageThreshold() {
-        return getFloat(DISK_USAGE_LWM_THRESHOLD, getDiskUsageThreshold());
+        return DISK_USAGE_LWM_THRESHOLD_KEY.getFloat(this);
     }
 
     /**
@@ -2110,7 +3480,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return ServerConfiguration
      */
     public ServerConfiguration setDiskCheckInterval(int interval) {
-        setProperty(DISK_CHECK_INTERVAL, interval);
+        DISK_CHECK_INTERVAL_KEY.set(this, interval);
         return this;
     }
 
@@ -2120,7 +3490,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return int
      */
     public int getDiskCheckInterval() {
-        return getInt(DISK_CHECK_INTERVAL, 10 * 1000);
+        return DISK_CHECK_INTERVAL_KEY.getInt(this);
     }
 
     /**
@@ -2132,7 +3502,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @param interval The interval in seconds. e.g. 86400 = 1 day, 604800 = 1 week
      */
     public void setAuditorPeriodicCheckInterval(long interval) {
-        setProperty(AUDITOR_PERIODIC_CHECK_INTERVAL, interval);
+        AUDITOR_PERIODIC_CHECK_INTERVAL_KEY.set(this, interval);
     }
 
     /**
@@ -2140,7 +3510,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return The interval in seconds. Default is 604800 (1 week).
      */
     public long getAuditorPeriodicCheckInterval() {
-        return getLong(AUDITOR_PERIODIC_CHECK_INTERVAL, 604800);
+        return AUDITOR_PERIODIC_CHECK_INTERVAL_KEY.getLong(this);
     }
 
     /**
@@ -2154,7 +3524,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @param interval The period in seconds.
      */
     public void setAuditorPeriodicBookieCheckInterval(long interval) {
-        setProperty(AUDITOR_PERIODIC_BOOKIE_CHECK_INTERVAL, interval);
+        AUDITOR_PERIODIC_BOOKIE_CHECK_INTERVAL_KEY.set(this, interval);
     }
 
     /**
@@ -2163,7 +3533,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return the interval between bookie check runs, in seconds. Default is 86400 (= 1 day)
      */
     public long getAuditorPeriodicBookieCheckInterval() {
-        return getLong(AUDITOR_PERIODIC_BOOKIE_CHECK_INTERVAL, 86400);
+        return AUDITOR_PERIODIC_BOOKIE_CHECK_INTERVAL_KEY.getLong(this);
     }
 
     /**
@@ -2175,7 +3545,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return ServerConfiguration
      */
     public ServerConfiguration setAuditorLedgerVerificationPercentage(long auditorLedgerVerificationPercentage) {
-        setProperty(AUDITOR_LEDGER_VERIFICATION_PERCENTAGE, auditorLedgerVerificationPercentage);
+        AUDITOR_LEDGER_VERIFICATION_PERCENTAGE_KEY.set(this, auditorLedgerVerificationPercentage);
         return this;
     }
 
@@ -2185,7 +3555,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return percentage of a ledger (fragment)'s entries will be verified. Default is 0.
      */
     public long getAuditorLedgerVerificationPercentage() {
-        return getLong(AUDITOR_LEDGER_VERIFICATION_PERCENTAGE, 0);
+        return AUDITOR_LEDGER_VERIFICATION_PERCENTAGE_KEY.getLong(this);
     }
 
     /**
@@ -2198,7 +3568,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return ServerConfiguration
      */
     public ServerConfiguration setAutoRecoveryDaemonEnabled(boolean enabled) {
-        setProperty(AUTO_RECOVERY_DAEMON_ENABLED, enabled);
+        AUTO_RECOVERY_DAEMON_ENABLED_KEY.set(this, enabled);
         return this;
     }
 
@@ -2209,7 +3579,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      *         it. false otherwise.
      */
     public boolean isAutoRecoveryDaemonEnabled() {
-        return getBoolean(AUTO_RECOVERY_DAEMON_ENABLED, false);
+        return AUTO_RECOVERY_DAEMON_ENABLED_KEY.getBoolean(this);
     }
 
     /**
@@ -2218,14 +3588,14 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return delay interval in seconds
      */
     public int getLostBookieRecoveryDelay() {
-        return getInt(LOST_BOOKIE_RECOVERY_DELAY, 0);
+        return LOST_BOOKIE_RECOVERY_DELAY_KEY.getInt(this);
     }
 
     /**
      * Set the delay interval for starting recovery of a lost bookie.
      */
     public void setLostBookieRecoveryDelay(int interval) {
-        setProperty(LOST_BOOKIE_RECOVERY_DELAY, interval);
+        LOST_BOOKIE_RECOVERY_DELAY_KEY.set(this, interval);
     }
 
     /**
@@ -2234,7 +3604,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return backoff time in milliseconds
      */
     public int getRwRereplicateBackoffMs() {
-        return getInt(RW_REREPLICATE_BACKOFF_MS, 5000);
+        return RW_REREPLICATE_BACKOFF_MS_KEY.getInt(this);
     }
 
     /**
@@ -2243,7 +3613,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @param backoffMs backoff time in milliseconds
      */
     public void setRwRereplicateBackoffMs(int backoffMs) {
-        setProperty(RW_REREPLICATE_BACKOFF_MS, backoffMs);
+        RW_REREPLICATE_BACKOFF_MS_KEY.set(this, backoffMs);
     }
 
     /**
@@ -2255,7 +3625,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return ServerConfiguration
      */
     public ServerConfiguration setForceReadOnlyBookie(boolean enabled) {
-        setProperty(FORCE_READ_ONLY_BOOKIE, enabled);
+        FORCE_READ_ONLY_BOOKIE_KEY.set(this, enabled);
         return this;
     }
 
@@ -2266,7 +3636,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      *         false.
      */
     public boolean isForceReadOnlyBookie() {
-        return getBoolean(FORCE_READ_ONLY_BOOKIE, false);
+        return FORCE_READ_ONLY_BOOKIE_KEY.getBoolean(this);
     }
 
     /**
@@ -2276,7 +3646,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      *         false - use Entries.
      */
     public boolean getIsThrottleByBytes() {
-        return getBoolean(IS_THROTTLE_BY_BYTES, false);
+        return IS_THROTTLE_BY_BYTES_KEY.getBoolean(this);
     }
 
     /**
@@ -2287,7 +3657,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return ServerConfiguration
      */
     public ServerConfiguration setIsThrottleByBytes(boolean byBytes) {
-        setProperty(IS_THROTTLE_BY_BYTES, byBytes);
+        IS_THROTTLE_BY_BYTES_KEY.set(this, byBytes);
         return this;
     }
 
@@ -2298,7 +3668,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return the maximum number of unflushed entries
      */
     public int getCompactionMaxOutstandingRequests() {
-        return getInt(COMPACTION_MAX_OUTSTANDING_REQUESTS, 100000);
+        return COMPACTION_MAX_OUTSTANDING_REQUESTS_KEY.getInt(this);
     }
 
     /**
@@ -2318,7 +3688,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return ServerConfiguration
      */
     public ServerConfiguration setCompactionMaxOutstandingRequests(int maxOutstandingRequests) {
-        setProperty(COMPACTION_MAX_OUTSTANDING_REQUESTS, maxOutstandingRequests);
+        COMPACTION_MAX_OUTSTANDING_REQUESTS_KEY.set(this, maxOutstandingRequests);
         return this;
     }
 
@@ -2330,7 +3700,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      */
     @Deprecated
     public int getCompactionRate() {
-        return getInt(COMPACTION_RATE, 1000);
+        return COMPACTION_RATE_KEY.getInt(this);
     }
 
     /**
@@ -2341,7 +3711,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return ServerConfiguration
      */
     public ServerConfiguration setCompactionRate(int rate) {
-        setProperty(COMPACTION_RATE, rate);
+        COMPACTION_RATE_KEY.set(this, rate);
         return this;
     }
 
@@ -2351,7 +3721,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return rate of compaction (adds entries per second)
      */
     public int getCompactionRateByEntries() {
-        return getInt(COMPACTION_RATE_BY_ENTRIES, getCompactionRate());
+        return COMPACTION_RATE_BY_ENTRIES_KEY.getInt(this);
     }
 
     /**
@@ -2362,7 +3732,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return ServerConfiguration
      */
     public ServerConfiguration setCompactionRateByEntries(int rate) {
-        setProperty(COMPACTION_RATE_BY_ENTRIES, rate);
+        COMPACTION_RATE_BY_ENTRIES_KEY.set(this, rate);
         return this;
     }
 
@@ -2372,7 +3742,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return rate of compaction (adds bytes per second)
      */
     public int getCompactionRateByBytes() {
-        return getInt(COMPACTION_RATE_BY_BYTES, 1000000);
+        return COMPACTION_RATE_BY_BYTES_KEY.getInt(this);
     }
 
     /**
@@ -2383,7 +3753,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return ServerConfiguration
      */
     public ServerConfiguration setCompactionRateByBytes(int rate) {
-        setProperty(COMPACTION_RATE_BY_BYTES, rate);
+        COMPACTION_RATE_BY_BYTES_KEY.set(this, rate);
         return this;
     }
 
@@ -2394,7 +3764,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      */
     @Beta
     public boolean getJournalRemovePagesFromCache() {
-        return getBoolean(JOURNAL_REMOVE_FROM_PAGE_CACHE, true);
+        return JOURNAL_REMOVE_FROM_PAGE_CACHE_KEY.getBoolean(this);
     }
 
     /**
@@ -2405,7 +3775,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return ServerConfiguration
      */
     public ServerConfiguration setJournalRemovePagesFromCache(boolean enabled) {
-        setProperty(JOURNAL_REMOVE_FROM_PAGE_CACHE, enabled);
+        JOURNAL_REMOVE_FROM_PAGE_CACHE_KEY.set(this, enabled);
         return this;
     }
 
@@ -2451,7 +3821,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      *         use its ipaddress
      */
     public boolean getUseHostNameAsBookieID() {
-        return getBoolean(USE_HOST_NAME_AS_BOOKIE_ID, false);
+        return USE_HOST_NAME_AS_BOOKIE_ID_KEY.getBoolean(this);
     }
 
     /**
@@ -2464,7 +3834,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return server configuration
      */
     public ServerConfiguration setUseHostNameAsBookieID(boolean useHostName) {
-        setProperty(USE_HOST_NAME_AS_BOOKIE_ID, useHostName);
+        USE_HOST_NAME_AS_BOOKIE_ID_KEY.set(this, useHostName);
         return this;
     }
 
@@ -2477,7 +3847,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      *         will use its FQDN hostname
      */
     public boolean getUseShortHostName() {
-        return getBoolean(USE_SHORT_HOST_NAME, false);
+        return USE_SHORT_HOST_NAME_KEY.getBoolean(this);
     }
 
     /**
@@ -2492,7 +3862,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return server configuration
      */
     public ServerConfiguration setUseShortHostName(boolean useShortHostName) {
-        setProperty(USE_SHORT_HOST_NAME, useShortHostName);
+        USE_SHORT_HOST_NAME_KEY.set(this, useShortHostName);
         return this;
     }
 
@@ -2502,7 +3872,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return true, then bookie will be listen for local JVM clients
      */
     public boolean isEnableLocalTransport() {
-        return getBoolean(ENABLE_LOCAL_TRANSPORT, false);
+        return ENABLE_LOCAL_TRANSPORT_KEY.getBoolean(this);
     }
 
     /**
@@ -2514,7 +3884,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return server configuration
      */
     public ServerConfiguration setEnableLocalTransport(boolean enableLocalTransport) {
-        setProperty(ENABLE_LOCAL_TRANSPORT, enableLocalTransport);
+        ENABLE_LOCAL_TRANSPORT_KEY.set(this, enableLocalTransport);
         return this;
     }
 
@@ -2524,7 +3894,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return true, then bookie will not listen for network connections
      */
     public boolean isDisableServerSocketBind() {
-        return getBoolean(DISABLE_SERVER_SOCKET_BIND, false);
+        return DISABLE_SERVER_SOCKET_BIND_KEY.getBoolean(this);
     }
 
     /**
@@ -2537,7 +3907,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return server configuration
      */
     public ServerConfiguration setDisableServerSocketBind(boolean disableServerSocketBind) {
-        setProperty(DISABLE_SERVER_SOCKET_BIND, disableServerSocketBind);
+        DISABLE_SERVER_SOCKET_BIND_KEY.set(this, disableServerSocketBind);
         return this;
     }
 
@@ -2547,11 +3917,8 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return stats provider class
      * @throws ConfigurationException
      */
-    public Class<? extends StatsProvider> getStatsProviderClass()
-        throws ConfigurationException {
-        return ReflectionUtils.getClass(this, STATS_PROVIDER_CLASS,
-                                        NullStatsProvider.class, StatsProvider.class,
-                                        DEFAULT_LOADER);
+    public Class<? extends StatsProvider> getStatsProviderClass() {
+        return STATS_PROVIDER_CLASS_KEY.getClass(this, StatsProvider.class);
     }
 
     /**
@@ -2562,7 +3929,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return server configuration
      */
     public ServerConfiguration setStatsProviderClass(Class<? extends StatsProvider> providerClass) {
-        setProperty(STATS_PROVIDER_CLASS, providerClass.getName());
+        STATS_PROVIDER_CLASS_KEY.set(this, providerClass);
         return this;
     }
 
@@ -2607,7 +3974,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return initial byteBuf size
      */
     public int getRecvByteBufAllocatorSizeInitial() {
-        return getInt(BYTEBUF_ALLOCATOR_SIZE_INITIAL, 64 * 1024);
+        return BYTEBUF_ALLOCATOR_SIZE_INITIAL_KEY.getInt(this);
     }
 
     /**
@@ -2617,7 +3984,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      *            buffer size
      */
     public void setRecvByteBufAllocatorSizeInitial(int size) {
-        setProperty(BYTEBUF_ALLOCATOR_SIZE_INITIAL, size);
+        BYTEBUF_ALLOCATOR_SIZE_INITIAL_KEY.set(this, size);
     }
 
     /**
@@ -2626,7 +3993,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return min byteBuf size
      */
     public int getRecvByteBufAllocatorSizeMin() {
-        return getInt(BYTEBUF_ALLOCATOR_SIZE_MIN, 64 * 1024);
+        return BYTEBUF_ALLOCATOR_SIZE_MIN_KEY.getInt(this);
     }
 
     /**
@@ -2636,7 +4003,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      *            buffer size
      */
     public void setRecvByteBufAllocatorSizeMin(int size) {
-        setProperty(BYTEBUF_ALLOCATOR_SIZE_MIN, size);
+        BYTEBUF_ALLOCATOR_SIZE_MIN_KEY.set(this, size);
     }
 
     /**
@@ -2645,7 +4012,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return max byteBuf size
      */
     public int getRecvByteBufAllocatorSizeMax() {
-        return getInt(BYTEBUF_ALLOCATOR_SIZE_MAX, 1 * 1024 * 1024);
+        return BYTEBUF_ALLOCATOR_SIZE_MAX_KEY.getInt(this);
     }
 
     /**
@@ -2655,7 +4022,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      *            buffer size
      */
     public void setRecvByteBufAllocatorSizeMax(int size) {
-        setProperty(BYTEBUF_ALLOCATOR_SIZE_MAX, size);
+        BYTEBUF_ALLOCATOR_SIZE_MAX_KEY.set(this, size);
     }
 
     /**
@@ -2666,7 +4033,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      *          the bookie authentication provider factory class name
      */
     public void setBookieAuthProviderFactoryClass(String factoryClass) {
-        setProperty(BOOKIE_AUTH_PROVIDER_FACTORY_CLASS, factoryClass);
+        BOOKIE_AUTH_PROVIDER_FACTORY_CLASS_KEY.set(this, factoryClass);
     }
 
     /**
@@ -2676,7 +4043,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return the bookie authentication provider factory class name or null.
      */
     public String getBookieAuthProviderFactoryClass() {
-        return getString(BOOKIE_AUTH_PROVIDER_FACTORY_CLASS, null);
+        return BOOKIE_AUTH_PROVIDER_FACTORY_CLASS_KEY.getString(this);
     }
 
     /**
@@ -2694,7 +4061,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return
      */
     public String getTLSTrustStoreType() {
-        return getString(TLS_TRUSTSTORE_TYPE, "JKS");
+        return TLS_TRUSTSTORE_TYPE_KEY.getString(this);
     }
 
     /**
@@ -2703,7 +4070,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return
      */
     public ServerConfiguration setTLSKeyStoreType(String arg) {
-        setProperty(TLS_KEYSTORE_TYPE, arg);
+        TLS_TRUSTSTORE_TYPE_KEY.set(this, arg);
         return this;
     }
 
@@ -2713,7 +4080,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return
      */
     public String getTLSKeyStore() {
-        return getString(TLS_KEYSTORE, null);
+        return TLS_KEYSTORE_KEY.getString(this);
     }
 
     /**
@@ -2722,7 +4089,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return
      */
     public ServerConfiguration setTLSKeyStore(String arg) {
-        setProperty(TLS_KEYSTORE, arg);
+        TLS_KEYSTORE_KEY.set(this, arg);
         return this;
     }
 
@@ -2732,7 +4099,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return
      */
     public String getTLSKeyStorePasswordPath() {
-        return getString(TLS_KEYSTORE_PASSWORD_PATH, null);
+        return TLS_KEYSTORE_PASSWORD_PATH_KEY.getString(this);
     }
 
     /**
@@ -2741,7 +4108,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return
      */
     public ServerConfiguration setTLSKeyStorePasswordPath(String arg) {
-        setProperty(TLS_KEYSTORE_PASSWORD_PATH, arg);
+        TLS_KEYSTORE_PASSWORD_PATH_KEY.set(this, arg);
         return this;
     }
 
@@ -2751,7 +4118,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return
      */
     public String getTLSKeyStoreType() {
-        return getString(TLS_KEYSTORE_TYPE, "JKS");
+        return TLS_KEYSTORE_TYPE_KEY.getString(this);
     }
 
     /**
@@ -2770,7 +4137,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return
      */
     public String getTLSTrustStore() {
-        return getString(TLS_TRUSTSTORE, null);
+        return TLS_TRUSTSTORE_KEY.getString(this);
     }
 
     /**
@@ -2779,7 +4146,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return
      */
     public ServerConfiguration setTLSTrustStore(String arg) {
-        setProperty(TLS_TRUSTSTORE, arg);
+        TLS_TRUSTSTORE_KEY.set(this, arg);
         return this;
     }
 
@@ -2790,7 +4157,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return
      */
     public String getTLSTrustStorePasswordPath() {
-        return getString(TLS_TRUSTSTORE_PASSWORD_PATH, null);
+        return TLS_TRUSTSTORE_PASSWORD_PATH_KEY.getString(this);
     }
 
     /**
@@ -2799,29 +4166,9 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return
      */
     public ServerConfiguration setTLSTrustStorePasswordPath(String arg) {
-        setProperty(TLS_TRUSTSTORE_PASSWORD_PATH, arg);
+        TLS_TRUSTSTORE_PASSWORD_PATH_KEY.set(this, arg);
         return this;
     }
-
-    /**
-     * Get the path to file containing TLS Certificate.
-     *
-     * @return
-     */
-    public String getTLSCertificatePath() {
-        return getString(TLS_CERTIFICATE_PATH, null);
-    }
-
-    /**
-     * Set the path to file containing TLS Certificate.
-     *
-     * @return
-     */
-    public ServerConfiguration setTLSCertificatePath(String arg) {
-        setProperty(TLS_CERTIFICATE_PATH, arg);
-        return this;
-    }
-
 
     /**
      * Whether to enable recording task execution stats.
@@ -2829,7 +4176,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return flag to enable/disable recording task execution stats.
      */
     public boolean getEnableTaskExecutionStats() {
-        return getBoolean(ENABLE_TASK_EXECUTION_STATS, false);
+        return ENABLE_TASK_EXECUTION_STATS_KEY.getBoolean(this);
     }
 
     /**
@@ -2840,7 +4187,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return client configuration.
      */
     public ServerConfiguration setEnableTaskExecutionStats(boolean enabled) {
-        setProperty(ENABLE_TASK_EXECUTION_STATS, enabled);
+        ENABLE_TASK_EXECUTION_STATS_KEY.set(this, enabled);
         return this;
     }
 
@@ -2852,7 +4199,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @see #setMinUsableSizeForIndexFileCreation(long)
      */
     public long getMinUsableSizeForIndexFileCreation() {
-        return this.getLong(MIN_USABLESIZE_FOR_INDEXFILE_CREATION, 100 * 1024 * 1024L);
+        return MIN_USABLESIZE_FOR_INDEXFILE_CREATION_KEY.getLong(this);
     }
 
     /**
@@ -2867,7 +4214,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return server configuration
      */
     public ServerConfiguration setMinUsableSizeForIndexFileCreation(long minUsableSizeForIndexFileCreation) {
-        this.setProperty(MIN_USABLESIZE_FOR_INDEXFILE_CREATION, minUsableSizeForIndexFileCreation);
+        MIN_USABLESIZE_FOR_INDEXFILE_CREATION_KEY.set(this, minUsableSizeForIndexFileCreation);
         return this;
     }
 
@@ -2878,7 +4225,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @see #setMinUsableSizeForEntryLogCreation(long)
      */
     public long getMinUsableSizeForEntryLogCreation() {
-        return this.getLong(MIN_USABLESIZE_FOR_ENTRYLOG_CREATION, (long) 1.2 * getEntryLogSizeLimit());
+        return MIN_USABLESIZE_FOR_ENTRYLOG_CREATION_KEY.getLong(this);
     }
 
     /**
@@ -2892,7 +4239,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return server configuration
      */
     public ServerConfiguration setMinUsableSizeForEntryLogCreation(long minUsableSizeForEntryLogCreation) {
-        this.setProperty(MIN_USABLESIZE_FOR_ENTRYLOG_CREATION, minUsableSizeForEntryLogCreation);
+        MIN_USABLESIZE_FOR_ENTRYLOG_CREATION_KEY.set(this, minUsableSizeForEntryLogCreation);
         return this;
     }
 
@@ -2904,7 +4251,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return the minimum safe usable size per ledger directory for bookie to accept high priority writes.
      */
     public long getMinUsableSizeForHighPriorityWrites() {
-        return this.getLong(MIN_USABLESIZE_FOR_HIGH_PRIORITY_WRITES, getMinUsableSizeForEntryLogCreation());
+        return MIN_USABLESIZE_FOR_HIGH_PRIORITY_WRITES_KEY.getLong(this);
     }
 
     /**
@@ -2915,7 +4262,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return server configuration.
      */
     public ServerConfiguration setMinUsableSizeForHighPriorityWrites(long minUsableSizeForHighPriorityWrites) {
-        this.setProperty(MIN_USABLESIZE_FOR_HIGH_PRIORITY_WRITES, minUsableSizeForHighPriorityWrites);
+        MIN_USABLESIZE_FOR_HIGH_PRIORITY_WRITES_KEY.set(this, minUsableSizeForHighPriorityWrites);
         return this;
     }
 
@@ -2926,7 +4273,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return
      */
     public boolean isAllowMultipleDirsUnderSameDiskPartition() {
-        return this.getBoolean(ALLOW_MULTIPLEDIRS_UNDER_SAME_DISKPARTITION, true);
+        return ALLOW_MULTIPLEDIRS_UNDER_SAME_DISKPARTITION_KEY.getBoolean(this);
     }
 
     /**
@@ -2938,7 +4285,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return server configuration object.
      */
     public ServerConfiguration setAllowMultipleDirsUnderSameDiskPartition(boolean allow) {
-        this.setProperty(ALLOW_MULTIPLEDIRS_UNDER_SAME_DISKPARTITION, allow);
+        ALLOW_MULTIPLEDIRS_UNDER_SAME_DISKPARTITION_KEY.set(this, allow);
         return this;
     }
 
@@ -2948,7 +4295,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return true - if http server should start
      */
     public boolean isHttpServerEnabled() {
-        return getBoolean(HTTP_SERVER_ENABLED, false);
+        return HTTP_SERVER_ENABLED_KEY.getBoolean(this);
     }
 
     /**
@@ -2959,7 +4306,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return ServerConfiguration
      */
     public ServerConfiguration setHttpServerEnabled(boolean enabled) {
-        setProperty(HTTP_SERVER_ENABLED, enabled);
+        HTTP_SERVER_ENABLED_KEY.set(this, enabled);
         return this;
     }
 
@@ -2969,7 +4316,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return http server port
      */
     public int getHttpServerPort() {
-        return getInt(HTTP_SERVER_PORT, 8080);
+        return HTTP_SERVER_PORT_KEY.getInt(this);
     }
 
     /**
@@ -2980,7 +4327,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return server configuration
      */
     public ServerConfiguration setHttpServerPort(int port) {
-        setProperty(HTTP_SERVER_PORT, port);
+        HTTP_SERVER_PORT_KEY.set(this, port);
         return this;
     }
 
@@ -2990,11 +4337,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return the extra list of server lifecycle components to enable on a bookie server.
      */
     public String[] getExtraServerComponents() {
-        String extraServerComponentsStr = getString(EXTRA_SERVER_COMPONENTS);
-        if (Strings.isNullOrEmpty(extraServerComponentsStr)) {
-            return null;
-        }
-        return this.getStringArray(EXTRA_SERVER_COMPONENTS);
+        return EXTRA_SERVER_COMPONENTS_KEY.getArrayWithoutDefault(this);
     }
 
     /**
@@ -3005,7 +4348,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return server configuration.
      */
     public ServerConfiguration setExtraServerComponents(String[] componentClasses) {
-        this.setProperty(EXTRA_SERVER_COMPONENTS, componentClasses);
+        EXTRA_SERVER_COMPONENTS_KEY.set(this, componentClasses);
         return this;
     }
 
@@ -3017,7 +4360,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * {@link #getExtraServerComponents()}. The default value is <tt>false</tt>.
      */
     public boolean getIgnoreExtraServerComponentsStartupFailures() {
-        return getBoolean(IGNORE_EXTRA_SERVER_COMPONENTS_STARTUP_FAILURES, false);
+        return IGNORE_EXTRA_SERVER_COMPONENTS_STARTUP_FAILURES_KEY.getBoolean(this);
     }
 
     /**
@@ -3028,7 +4371,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return server configuration.
      */
     public ServerConfiguration setIgnoreExtraServerComponentsStartupFailures(boolean enabled) {
-        setProperty(IGNORE_EXTRA_SERVER_COMPONENTS_STARTUP_FAILURES, enabled);
+        IGNORE_EXTRA_SERVER_COMPONENTS_STARTUP_FAILURES_KEY.set(this, enabled);
         return this;
     }
 
@@ -3038,7 +4381,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return netty channel write buffer low water mark.
      */
     public int getServerWriteBufferLowWaterMark() {
-        return getInt(SERVER_WRITEBUFFER_LOW_WATER_MARK, 384 * 1024);
+        return SERVER_WRITEBUFFER_LOW_WATER_MARK_KEY.getInt(this);
     }
 
     /**
@@ -3049,7 +4392,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return client configuration.
      */
     public ServerConfiguration setServerWriteBufferLowWaterMark(int waterMark) {
-        setProperty(SERVER_WRITEBUFFER_LOW_WATER_MARK, waterMark);
+        SERVER_WRITEBUFFER_LOW_WATER_MARK_KEY.set(this, waterMark);
         return this;
     }
 
@@ -3059,7 +4402,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return netty channel write buffer high water mark.
      */
     public int getServerWriteBufferHighWaterMark() {
-        return getInt(SERVER_WRITEBUFFER_HIGH_WATER_MARK, 512 * 1024);
+        return SERVER_WRITEBUFFER_HIGH_WATER_MARK_KEY.getInt(this);
     }
 
     /**
@@ -3070,9 +4413,10 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return client configuration.
      */
     public ServerConfiguration setServerWriteBufferHighWaterMark(int waterMark) {
-        setProperty(SERVER_WRITEBUFFER_HIGH_WATER_MARK, waterMark);
+        SERVER_WRITEBUFFER_HIGH_WATER_MARK_KEY.set(this, waterMark);
         return this;
     }
+
     /**
      * Set registration manager class.
      *
@@ -3083,7 +4427,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     @Deprecated
     public void setRegistrationManagerClass(
             Class<? extends RegistrationManager> regManagerClass) {
-        setProperty(REGISTRATION_MANAGER_CLASS, regManagerClass);
+        REGISTRATION_MANAGER_CLASS_KEY.set(this, regManagerClass);
     }
 
     /**
@@ -3095,9 +4439,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     @Deprecated
     public Class<? extends RegistrationManager> getRegistrationManagerClass()
             throws ConfigurationException {
-        return ReflectionUtils.getClass(this, REGISTRATION_MANAGER_CLASS,
-                ZKRegistrationManager.class, RegistrationManager.class,
-                DEFAULT_LOADER);
+        return REGISTRATION_MANAGER_CLASS_KEY.getClass(this, RegistrationManager.class);
     }
 
     @Override
@@ -3110,7 +4452,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * would be a active entrylog for each ledger
      */
     public boolean isEntryLogPerLedgerEnabled() {
-        return this.getBoolean(ENTRY_LOG_PER_LEDGER_ENABLED, false);
+        return ENTRY_LOG_PER_LEDGER_ENABLED_KEY.getBoolean(this);
     }
 
     /*
@@ -3118,7 +4460,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      *
      */
     public ServerConfiguration setEntryLogPerLedgerEnabled(boolean entryLogPerLedgerEnabled) {
-        this.setProperty(ENTRY_LOG_PER_LEDGER_ENABLED, Boolean.toString(entryLogPerLedgerEnabled));
+        ENTRY_LOG_PER_LEDGER_ENABLED_KEY.set(this, entryLogPerLedgerEnabled);
         return this;
     }
 
@@ -3128,7 +4470,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * Gets the number of threads used to flush entrymemtable
      */
     public int getNumOfMemtableFlushThreads() {
-        return this.getInt(NUMBER_OF_MEMTABLE_FLUSH_THREADS, 8);
+        return NUMBER_OF_MEMTABLE_FLUSH_THREADS_KEY.getInt(this);
     }
 
     /*
@@ -3136,7 +4478,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      *
      */
     public ServerConfiguration setNumOfMemtableFlushThreads(int numOfMemtableFlushThreads) {
-        this.setProperty(NUMBER_OF_MEMTABLE_FLUSH_THREADS, Integer.toString(numOfMemtableFlushThreads));
+        NUMBER_OF_MEMTABLE_FLUSH_THREADS_KEY.set(this, numOfMemtableFlushThreads);
         return this;
     }
 
@@ -3146,7 +4488,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * automatically removed from the cache
      */
     public int getEntrylogMapAccessExpiryTimeInSeconds() {
-        return this.getInt(ENTRYLOGMAP_ACCESS_EXPIRYTIME_INSECONDS, 5 * 60);
+        return ENTRYLOGMAP_ACCESS_EXPIRYTIME_INSECONDS_KEY.getInt(this);
     }
 
     /*
@@ -3154,8 +4496,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * policy, in entrylogperledger feature.
      */
     public ServerConfiguration setEntrylogMapAccessExpiryTimeInSeconds(int entrylogMapAccessExpiryTimeInSeconds) {
-        this.setProperty(ENTRYLOGMAP_ACCESS_EXPIRYTIME_INSECONDS,
-                Integer.toString(entrylogMapAccessExpiryTimeInSeconds));
+        ENTRYLOGMAP_ACCESS_EXPIRYTIME_INSECONDS_KEY.set(this, entrylogMapAccessExpiryTimeInSeconds);
         return this;
     }
 
@@ -3164,7 +4505,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * in time.
      */
     public int getMaximumNumberOfActiveEntryLogs() {
-        return this.getInt(MAXIMUM_NUMBER_OF_ACTIVE_ENTRYLOGS, 500);
+        return MAXIMUM_NUMBER_OF_ACTIVE_ENTRYLOGS_KEY.getInt(this);
     }
 
     /*
@@ -3172,8 +4513,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * in time.
      */
     public ServerConfiguration setMaximumNumberOfActiveEntryLogs(int maximumNumberOfActiveEntryLogs) {
-        this.setProperty(MAXIMUM_NUMBER_OF_ACTIVE_ENTRYLOGS,
-                Integer.toString(maximumNumberOfActiveEntryLogs));
+        MAXIMUM_NUMBER_OF_ACTIVE_ENTRYLOGS_KEY.set(this, maximumNumberOfActiveEntryLogs);
         return this;
     }
 
@@ -3182,7 +4522,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * metrics cache size limits in multiples of entrylogMap cache size limits.
      */
     public int getEntryLogPerLedgerCounterLimitsMultFactor() {
-        return this.getInt(ENTRY_LOG_PER_LEDGER_COUNTER_LIMITS_MULT_FACTOR, 10);
+        return ENTRY_LOG_PER_LEDGER_COUNTER_LIMITS_MULT_FACTOR_KEY.getInt(this);
     }
 
     /*
@@ -3191,8 +4531,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      */
     public ServerConfiguration setEntryLogPerLedgerCounterLimitsMultFactor(
             int entryLogPerLedgerCounterLimitsMultFactor) {
-        this.setProperty(ENTRY_LOG_PER_LEDGER_COUNTER_LIMITS_MULT_FACTOR,
-                Integer.toString(entryLogPerLedgerCounterLimitsMultFactor));
+        ENTRYLOGMAP_ACCESS_EXPIRYTIME_INSECONDS_KEY.set(this, entryLogPerLedgerCounterLimitsMultFactor);
         return this;
     }
 
@@ -3200,6 +4539,20 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * True if a local consistency check should be performed on startup.
      */
     public boolean isLocalConsistencyCheckOnStartup() {
-        return this.getBoolean(LOCAL_CONSISTENCY_CHECK_ON_STARTUP, false);
+        return LOCAL_CONSISTENCY_CHECK_ON_STARTUP_KEY.getBoolean(this);
+    }
+
+    /**
+     * Limit who can start the application to prevent future permission errors.
+     */
+    public void setPermittedStartupUsers(String s) {
+        PERMITTED_STARTUP_USERS_KEY.set(this, s);
+    }
+
+    /**
+     * Get array of users specified in this property.
+     */
+    public String[] getPermittedStartupUsers() {
+        return PERMITTED_STARTUP_USERS_KEY.getArray(this);
     }
 }

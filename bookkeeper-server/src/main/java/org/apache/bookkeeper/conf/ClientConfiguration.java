@@ -178,11 +178,11 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
      */
     public static final String CLIENT_ROLE_SYSTEM = "system";
 
-    // Client auth provider factory class name. It must be configured on Bookies to for the Auditor
-    protected static final String CLIENT_AUTH_PROVIDER_FACTORY_CLASS = "clientAuthProviderFactoryClass";
-
     // Registration Client
     protected static final String REGISTRATION_CLIENT_CLASS = "registrationClientClass";
+
+    // Ledger Metadata
+    protected static final String STORE_SYSTEMTIME_AS_LEDGER_CREATION_TIME = "storeSystemTimeAsLedgerCreationTime";
 
     /**
      * Construct a default client-side configuration.
@@ -1637,25 +1637,6 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
      */
     public ClientConfiguration setTLSTrustStorePasswordPath(String arg) {
         setProperty(TLS_TRUSTSTORE_PASSWORD_PATH, arg);
-        return this;
-    }
-
-    /**
-     * Get the path to file containing TLS Certificate.
-     *
-     * @return
-     */
-    public String getTLSCertificatePath() {
-        return getString(TLS_CERTIFICATE_PATH, null);
-    }
-
-    /**
-     * Set the path to file containing TLS Certificate.
-     *
-     * @return
-     */
-    public ClientConfiguration setTLSCertificatePath(String arg) {
-        setProperty(TLS_CERTIFICATE_PATH, arg);
         return this;
     }
 

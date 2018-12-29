@@ -33,6 +33,8 @@ import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import org.apache.bookkeeper.common.conf.ConfigKey;
+import org.apache.bookkeeper.common.conf.Type;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.stats.StatsProvider;
 import org.apache.commons.configuration.Configuration;
@@ -46,6 +48,54 @@ import org.slf4j.LoggerFactory;
 public class CodahaleMetricsProvider implements StatsProvider {
 
     static final Logger LOG = LoggerFactory.getLogger(CodahaleMetricsProvider.class);
+
+    private static final ConfigKey STATS_PREFIX_KEY =
+        ConfigKey.builder("codahaleStatsPrefix")
+            .type(Type.STRING)
+            .description("metric name prefix, default is \"\"")
+            .defaultValue("")
+            .orderInGroup(0)
+            .build();
+
+    private static final ConfigKey STATS_OUTPUT_FREQUENCY_SECONDS_KEY =
+        ConfigKey.builder("codahaleStatsOutputFrequencySeconds")
+            .type(Type.INT)
+            .description("the frequency that stats reporters report stats, in seconds")
+            .defaultValue(60)
+            .orderInGroup(1)
+            .build();
+
+    private static final ConfigKey STATS_GRAPHITE_ENDPOINT_KEY =
+        ConfigKey.builder("codahaleStatsGraphiteEndpoint")
+            .type(Type.STRING)
+            .description("the graphite endpoint for reporting stats")
+            .documentation("See {@link http://metrics.dropwizard.io/3.1.0/manual/graphite/} for more details")
+            .orderInGroup(2)
+            .build();
+
+    private static final ConfigKey STATS_CSV_ENDPOINT_KEY =
+        ConfigKey.builder("codahaleStatsCSVEndpoint")
+            .type(Type.STRING)
+            .description("the directory for reporting stats in csv format")
+            .documentation("See {@link http://metrics.dropwizard.io/3.1.0/manual/core/#csv} for more details")
+            .orderInGroup(3)
+            .build();
+
+    private static final ConfigKey STATS_SLF4J_ENDPOINT_KEY =
+        ConfigKey.builder("codahaleStatsSlf4jEndpoint")
+            .type(Type.STRING)
+            .description("the slf4j endpoint for reporting stats")
+            .documentation("See {@link http://metrics.dropwizard.io/3.1.0/manual/core/#slf4j} for more details")
+            .orderInGroup(4)
+            .build();
+
+    private static final ConfigKey STATS_JMX_ENDPOINT_KEY =
+        ConfigKey.builder("codahaleStatsJmxEndpoint")
+            .type(Type.STRING)
+            .description("the jmx endpoint for reporting stats")
+            .documentation("See {@link http://metrics.dropwizard.io/3.1.0/manual/core/#jmx} for more details")
+            .orderInGroup(5)
+            .build();
 
     MetricRegistry metrics = null;
     List<ScheduledReporter> reporters = new ArrayList<ScheduledReporter>();
@@ -67,12 +117,12 @@ public class CodahaleMetricsProvider implements StatsProvider {
     public void start(Configuration conf) {
         initIfNecessary();
 
-        int metricsOutputFrequency = conf.getInt("codahaleStatsOutputFrequencySeconds", 60);
-        String prefix = conf.getString("codahaleStatsPrefix", "");
-        String graphiteHost = conf.getString("codahaleStatsGraphiteEndpoint");
-        String csvDir = conf.getString("codahaleStatsCSVEndpoint");
-        String slf4jCat = conf.getString("codahaleStatsSlf4jEndpoint");
-        String jmxDomain = conf.getString("codahaleStatsJmxEndpoint");
+        int metricsOutputFrequency = STATS_OUTPUT_FREQUENCY_SECONDS_KEY.getInt(conf);
+        String prefix = STATS_PREFIX_KEY.getString(conf);
+        String graphiteHost = STATS_GRAPHITE_ENDPOINT_KEY.getString(conf);
+        String csvDir = STATS_CSV_ENDPOINT_KEY.getString(conf);
+        String slf4jCat = STATS_SLF4J_ENDPOINT_KEY.getString(conf);
+        String jmxDomain = STATS_JMX_ENDPOINT_KEY.getString(conf);
 
         if (!Strings.isNullOrEmpty(graphiteHost)) {
             LOG.info("Configuring stats with graphite");
