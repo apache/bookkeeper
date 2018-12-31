@@ -17,6 +17,8 @@
  */
 package org.apache.bookkeeper.client;
 
+import java.util.Arrays;
+import java.util.Collection;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -25,26 +27,41 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.apache.bookkeeper.bookie.InterleavedLedgerStorage;
+import org.apache.bookkeeper.bookie.SortedLedgerStorage;
+import org.apache.bookkeeper.bookie.storage.ldb.DbLedgerStorage;
 
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * Test try read last confirmed.
  */
+@RunWith(Parameterized.class)
 public class TestTryReadLastConfirmed extends BookKeeperClusterTestCase {
 
     private static final Logger logger = LoggerFactory.getLogger(TestTryReadLastConfirmed.class);
 
     final DigestType digestType;
 
-    public TestTryReadLastConfirmed() {
+    public TestTryReadLastConfirmed(boolean useExplicitLacForReads) {
         super(6);
         this.digestType = DigestType.CRC32;
+        this.baseClientConf.setUseExplicitLacForReads(useExplicitLacForReads);
+    }
+
+    @Parameterized.Parameters
+    public static Collection<Object[]> configs() {
+        return Arrays.asList(new Object[][] {
+            { true },
+            { false }
+        });
     }
 
     @Test

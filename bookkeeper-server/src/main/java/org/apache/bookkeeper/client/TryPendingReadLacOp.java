@@ -30,7 +30,7 @@ import org.slf4j.LoggerFactory;
 
 /**
  * This op is try to read last confirmed without involving quorum coverage checking.
- * Use {@link PendingLacOp} if you need quorum coverage checking.
+ * Use {@link PendingReadLacOp} if you need quorum coverage checking.
  */
 
 class TryPendingReadLacOp implements ReadLacCallback {
@@ -104,9 +104,9 @@ class TryPendingReadLacOp implements ReadLacCallback {
                 // Extract lac from last entry on the disk
                 if (lastEntryBuffer != null && lastEntryBuffer.readableBytes() > 0) {
                     RecoveryData recoveryData = lh.macManager.verifyDigestAndReturnLastConfirmed(lastEntryBuffer);
-                    long recoveredLac = recoveryData.getLastAddConfirmed();
-                    if (recoveredLac > maxLac) {
-                        newLac = recoveredLac;
+                    long piggyBackedLAC = recoveryData.getLastAddConfirmed();
+                    if (piggyBackedLAC > newLac) {
+                        newLac = piggyBackedLAC;
                     }
                 }
                 if (newLac > maxLac) {

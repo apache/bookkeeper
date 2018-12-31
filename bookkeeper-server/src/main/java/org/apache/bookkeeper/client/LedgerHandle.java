@@ -1338,11 +1338,11 @@ public class LedgerHandle implements WriteHandle {
         if (clientCtx.getConf().useExplicitLacForReads) {
             asyncReadExplicitLastConfirmed(cb, ctx);
         } else {
-            asyncReadLastConfirmedInternal(cb, ctx);
+            asyncReadPiggybackLastConfirmed(cb, ctx);
         }
     }
 
-    private void asyncReadLastConfirmedInternal(final ReadLastConfirmedCallback cb, final Object ctx) {
+    private void asyncReadPiggybackLastConfirmed(final ReadLastConfirmedCallback cb, final Object ctx) {
         boolean isClosed;
         long lastEntryId;
         synchronized (this) {
